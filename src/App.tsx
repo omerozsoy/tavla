@@ -43,6 +43,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import Home from './ui/Home'
+import MatchResult from './ui/MatchResult'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
@@ -240,11 +241,12 @@ export default function App() {
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
   const [ranked, setRanked] = useState<RankedMove[] | null>(null)
   const [analysisBoard, setAnalysisBoard] = useState<GameState | null>(null) // mini board pozisyonu
-  // PR (Performans Reytingi): karar basina wildbg'ye gore kaybedilen equity
-  const [prStats, setPrStats] = useState<{ loss: number; decisions: number }>({
-    loss: 0,
-    decisions: 0,
-  })
+  // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
+  const [prStats, setPrStats] = useState<{
+    white: { loss: number; decisions: number }
+    black: { loss: number; decisions: number }
+  }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+  const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
@@ -401,25 +403,33 @@ export default function App() {
   // PR: insanin bu hamlesinde wildbg'ye gore kaybettigi equity'yi kaydet (arka planda)
   async function recordPR(before: GameState, steps: Step[]) {
     if (steps.length === 0) return
+    const mover = before.turn
+    const moves = generateMoves(before)
+    if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
+    // Bot (pvb'de siyah) her zaman agin en iyisini oynar -> kayip 0
+    if (mode === 'pvb' && mover === BOT_PLAYER) {
+      setPrStats((s) => ({ ...s, black: { loss: s.black.loss, decisions: s.black.decisions + 1 } }))
+      return
+    }
     try {
-      const moves = generateMoves(before)
-      if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
       const rankedMoves = await neuralRef.current.analyzeMoves(before)
       if (rankedMoves.length === 0) return
       const key = boardKey(applyPlayed(before, steps))
       const pl = rankedMoves.find((r) => r.move.resultKey === key)
       if (!pl) return
       const loss = Math.max(0, rankedMoves[0].equity - pl.equity)
-      setPrStats((s) => ({ loss: s.loss + loss, decisions: s.decisions + 1 }))
+      setPrStats((s) => ({
+        ...s,
+        [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
+      }))
     } catch {
       /* sinir agi yok -> PR atla */
     }
   }
 
   function commitTurn(finalPlayed: Step[]) {
-    // Insanin hamlesiyse PR'a ekle (bot degil)
-    const humanColor: Player = online ? myColor : 'white'
-    if (turnStart.turn === humanColor) void recordPR(turnStart, finalPlayed)
+    // Her oyuncunun hamlesini PR'a ekle (online'da sadece kendi hamlelerim gecer)
+    void recordPR(turnStart, finalPlayed)
     const s = applyPlayed(turnStart, finalPlayed)
     s.turn = opponent(s.turn)
     s.dice = []
@@ -781,8 +791,12 @@ export default function App() {
     ratingReportedRef.current = true
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
+    const before = user.rating ?? 1500
     reportRating(won, oppRating)
-      .then((r) => setUser((u) => (u ? { ...u, rating: r.rating } : u)))
+      .then((r) => {
+        setRatingChange({ before, after: r.rating })
+        setUser((u) => (u ? { ...u, rating: r.rating } : u))
+      })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
@@ -795,8 +809,12 @@ export default function App() {
     ratingReportedRef.current = true
     const botRating = difficulty === 'neural' ? 1700 : 1300
     const won = mW === 'white' // pvb'de insan beyaz
+    const before = user.rating ?? 1500
     reportRating(won, botRating)
-      .then((r) => setUser((u) => (u ? { ...u, rating: r.rating } : u)))
+      .then((r) => {
+        setRatingChange({ before, after: r.rating })
+        setUser((u) => (u ? { ...u, rating: r.rating } : u))
+      })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, user, match, difficulty])
@@ -921,7 +939,8 @@ export default function App() {
       setOppStarted(false)
       setChat([])
       ratingReportedRef.current = false
-      setPrStats({ loss: 0, decisions: 0 })
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setMatch(newMatch(target))
       setStarter('white')
@@ -959,7 +978,8 @@ export default function App() {
       setOppStarted(false)
       setChat([])
       ratingReportedRef.current = false
-      setPrStats({ loss: 0, decisions: 0 })
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setOpening(null)
       setRoom({
@@ -1091,7 +1111,8 @@ export default function App() {
     setStarter('white')
     setTurnStart(freshBoard('white'))
     resetGameUi()
-    setPrStats({ loss: 0, decisions: 0 }) // yeni mac -> PR sifirla
+    setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
   }
 
@@ -1151,19 +1172,23 @@ export default function App() {
   const pipBottom = pipCount(working, 'white')
 
   // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
-  const prValue = prStats.decisions > 0 ? (prStats.loss / prStats.decisions) * 500 : null
-  const prBandKey =
-    prValue == null
+  const prOf = (c: Player): number | null =>
+    prStats[c].decisions > 0 ? (prStats[c].loss / prStats[c].decisions) * 500 : null
+  const prBand = (p: number | null): string =>
+    p == null
       ? ''
-      : prValue <= 3
+      : p <= 3
         ? 'pr.worldClass'
-        : prValue <= 6
+        : p <= 6
           ? 'pr.expert'
-          : prValue <= 10
+          : p <= 10
             ? 'pr.strong'
-            : prValue <= 15
+            : p <= 15
               ? 'pr.intermediate'
               : 'pr.beginner'
+  const prHumanColor: Player = online ? myColor : 'white'
+  const prValue = prOf(prHumanColor)
+  const prBandKey = prBand(prValue)
 
   let centerMain: React.ReactNode = null
   if (opening === 'roll') {
@@ -1198,12 +1223,12 @@ export default function App() {
         </div>
       </div>
     )
-  } else if (gameEnd) {
+  } else if (gameEnd && !matchOver) {
+    // Oyun bitti ama mac surer -> kucuk kutu (mac bitince tam ekran MatchResult gosterilir)
     const multKey =
       gameEnd.mult === 3 ? 'mult.backgammon' : gameEnd.mult === 2 ? 'mult.gammon' : 'mult.normal'
-    const title = matchOver
-      ? t('result.matchWon', { name: pName(mWinner!) })
-      : gameEnd.timeout
+    const title =
+      gameEnd.timeout
         ? t('result.timeout', { name: pName(gameEnd.winner) })
         : gameEnd.resigned
           ? t('result.resign', { name: pName(gameEnd.winner) })
@@ -1654,6 +1679,29 @@ export default function App() {
         <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
       )}
       {authModal}
+
+      {gameEnd && matchOver && mWinner && (
+        <MatchResult
+          winnerName={mWinner === 'white' ? whiteName : blackName}
+          loserName={mWinner === 'white' ? blackName : whiteName}
+          winnerAvatar={mWinner === 'white' ? bottomInfo.avatarUrl : topInfo.avatarUrl}
+          loserAvatar={mWinner === 'white' ? topInfo.avatarUrl : bottomInfo.avatarUrl}
+          winnerColor={mWinner}
+          loserColor={opponent(mWinner)}
+          winnerScore={match.score[mWinner]}
+          loserScore={match.score[opponent(mWinner)]}
+          winnerPr={prOf(mWinner)}
+          loserPr={prOf(opponent(mWinner))}
+          winnerBand={t(prBand(prOf(mWinner)))}
+          loserBand={t(prBand(prOf(opponent(mWinner))))}
+          ratingBefore={ratingChange?.before ?? null}
+          ratingAfter={ratingChange?.after ?? null}
+          ratingIsWinner={prHumanColor === mWinner}
+          onRematch={() => handleNewMatch(match.target, mode === 'online' ? 'pvb' : mode)}
+          onNewMatch={() => setSetup('pvb')}
+          onHome={() => (online ? handleLeaveRoom() : setHome(true))}
+        />
+      )}
 
       {resignOpen && (
         <div className="register-overlay modal" onClick={() => setResignOpen(false)}>
