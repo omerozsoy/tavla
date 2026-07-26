@@ -31,6 +31,7 @@ export interface SavedGame {
     mult: number
     dropped: boolean
     timeout?: boolean
+    resigned?: boolean
   } | null
 }
 
