@@ -2,10 +2,37 @@ import type { ReactNode } from 'react'
 import type { GameState, Player } from '../engine/types'
 
 // Ucgen index dizilimleri (index = ucgen numarasi - 1)
-const TOP_LEFT = [12, 13, 14, 15, 16, 17]
-const TOP_RIGHT = [18, 19, 20, 21, 22, 23]
-const BOTTOM_LEFT = [11, 10, 9, 8, 7, 6]
-const BOTTOM_RIGHT = [5, 4, 3, 2, 1, 0]
+// normal = beyazin bakisi (kendi evi sag-alt). flipped = siyahin bakisi (180 cevrilmis).
+const LAYOUT = {
+  normal: {
+    TL: [12, 13, 14, 15, 16, 17],
+    TR: [18, 19, 20, 21, 22, 23],
+    BL: [11, 10, 9, 8, 7, 6],
+    BR: [5, 4, 3, 2, 1, 0],
+    topNums: [
+      [13, 14, 15, 16, 17, 18],
+      [19, 20, 21, 22, 23, 24],
+    ],
+    botNums: [
+      [12, 11, 10, 9, 8, 7],
+      [6, 5, 4, 3, 2, 1],
+    ],
+  },
+  flipped: {
+    TL: [11, 10, 9, 8, 7, 6],
+    TR: [5, 4, 3, 2, 1, 0],
+    BL: [12, 13, 14, 15, 16, 17],
+    BR: [18, 19, 20, 21, 22, 23],
+    topNums: [
+      [12, 11, 10, 9, 8, 7],
+      [6, 5, 4, 3, 2, 1],
+    ],
+    botNums: [
+      [13, 14, 15, 16, 17, 18],
+      [19, 20, 21, 22, 23, 24],
+    ],
+  },
+} as const
 
 interface BoardProps {
   state: GameState
@@ -21,6 +48,7 @@ interface BoardProps {
   centerLeft?: ReactNode
   centerRight?: ReactNode
   centerMain?: ReactNode
+  flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -131,7 +159,10 @@ export default function Board({
   centerLeft,
   centerRight,
   centerMain,
+  flip = false,
 }: BoardProps) {
+  const L = flip ? LAYOUT.flipped : LAYOUT.normal
+
   const renderPoint = (index: number, top: boolean) => (
     <Point
       key={index}
@@ -150,15 +181,27 @@ export default function Board({
   const barSelectable = selectableFroms.has('bar')
   const offTarget = targets.has('off')
 
+  // Cevrilince ust/alt taraflar yer degistirir (kendi taslarin hep altta)
+  const topPip = flip ? pipBottom : pipTop
+  const bottomPip = flip ? pipTop : pipBottom
+  const topBarPlayer: Player = flip ? 'white' : 'black'
+  const bottomBarPlayer: Player = flip ? 'black' : 'white'
+  const topBarCount = flip ? state.bar.white : state.bar.black
+  const bottomBarCount = flip ? state.bar.black : state.bar.white
+  const topOffPlayer: Player = flip ? 'white' : 'black'
+  const topOffCount = flip ? state.off.white : state.off.black
+  const bottomOffPlayer: Player = flip ? 'black' : 'white'
+  const bottomOffCount = flip ? state.off.black : state.off.white
+
   return (
     <div className="board">
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
-        {[13, 14, 15, 16, 17, 18].map((n) => (
+        {L.topNums[0].map((n) => (
           <span key={n}>{n}</span>
         ))}
         <span className="num-gap" />
-        {[19, 20, 21, 22, 23, 24].map((n) => (
+        {L.topNums[1].map((n) => (
           <span key={n}>{n}</span>
         ))}
       </div>
@@ -166,8 +209,8 @@ export default function Board({
       <div className="board-inner">
         {/* Sol yari */}
         <div className="half">
-          <div className="quadrant top">{TOP_LEFT.map((i) => renderPoint(i, true))}</div>
-          <div className="quadrant bottom">{BOTTOM_LEFT.map((i) => renderPoint(i, false))}</div>
+          <div className="quadrant top">{L.TL.map((i) => renderPoint(i, true))}</div>
+          <div className="quadrant bottom">{L.BL.map((i) => renderPoint(i, false))}</div>
         </div>
 
         {/* Orta bar: pip sayilari + cube + bar taslari */}
@@ -175,12 +218,12 @@ export default function Board({
           className={`bar ${barSelectable ? 'selectable' : ''} ${selectedFrom === 'bar' ? 'selected' : ''}`}
           onClick={() => barSelectable && onSelectFrom('bar')}
         >
-          <div className="pip pip-top">{pipTop}</div>
+          <div className="pip pip-top">{topPip}</div>
           <div className="bar-checkers top">
-            {Array.from({ length: state.bar.black }).map((_, i) => (
+            {Array.from({ length: topBarCount }).map((_, i) => (
               <Checker
                 key={i}
-                player="black"
+                player={topBarPlayer}
                 draggable={barSelectable}
                 onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
               />
@@ -190,22 +233,22 @@ export default function Board({
             {cube.value === 1 ? 64 : cube.value}
           </div>
           <div className="bar-checkers bottom">
-            {Array.from({ length: state.bar.white }).map((_, i) => (
+            {Array.from({ length: bottomBarCount }).map((_, i) => (
               <Checker
                 key={i}
-                player="white"
+                player={bottomBarPlayer}
                 draggable={barSelectable}
                 onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
               />
             ))}
           </div>
-          <div className="pip pip-bottom">{pipBottom}</div>
+          <div className="pip pip-bottom">{bottomPip}</div>
         </div>
 
         {/* Sag yari */}
         <div className="half">
-          <div className="quadrant top">{TOP_RIGHT.map((i) => renderPoint(i, true))}</div>
-          <div className="quadrant bottom">{BOTTOM_RIGHT.map((i) => renderPoint(i, false))}</div>
+          <div className="quadrant top">{L.TR.map((i) => renderPoint(i, true))}</div>
+          <div className="quadrant bottom">{L.BR.map((i) => renderPoint(i, false))}</div>
         </div>
 
         {/* Merkez overlay (Double / Roll / zar / kup / oyun sonu) */}
@@ -221,11 +264,11 @@ export default function Board({
 
       {/* Alt ucgen numaralari */}
       <div className="pt-numbers bottom">
-        {[12, 11, 10, 9, 8, 7].map((n) => (
+        {L.botNums[0].map((n) => (
           <span key={n}>{n}</span>
         ))}
         <span className="num-gap" />
-        {[6, 5, 4, 3, 2, 1].map((n) => (
+        {L.botNums[1].map((n) => (
           <span key={n}>{n}</span>
         ))}
       </div>
@@ -238,13 +281,13 @@ export default function Board({
         onDrop={offTarget ? () => onSelectTarget('off') : undefined}
       >
         <div className="bearoff-slot top">
-          {Array.from({ length: state.off.black }).map((_, i) => (
-            <span key={i} className="off-checker black" />
+          {Array.from({ length: topOffCount }).map((_, i) => (
+            <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
         </div>
         <div className="bearoff-slot bottom">
-          {Array.from({ length: state.off.white }).map((_, i) => (
-            <span key={i} className="off-checker white" />
+          {Array.from({ length: bottomOffCount }).map((_, i) => (
+            <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
         </div>
       </div>

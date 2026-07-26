@@ -264,6 +264,8 @@ export default function App() {
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
   const online = mode === 'online' && room !== null
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
+  // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
+  const flipBoard = online && myColor === 'black'
   const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
@@ -994,8 +996,9 @@ export default function App() {
             )
           : null
 
-  // Senin zarin (beyaz) sagda, rakibin (siyah) solda
-  const mySideRight = turnStart.turn === 'white'
+  // Sirasi gelenin ana butonu (Onayla/Zar) kendi ev tarafinda durur.
+  // Normal tahtada beyaz sagda; cevrili tahtada (siyah bakisi) siyah sagda.
+  const mySideRight = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
   const centerRight = mySideRight ? primary : secondary
   const centerLeft = mySideRight ? secondary : primary
 
@@ -1264,6 +1267,7 @@ export default function App() {
           centerLeft={centerLeft}
           centerRight={centerRight}
           centerMain={centerMain}
+          flip={flipBoard}
         />
       </div>
 
