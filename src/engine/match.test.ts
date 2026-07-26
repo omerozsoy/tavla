@@ -64,7 +64,7 @@ describe('kup', () => {
   })
 
   it('sahipli kupu sadece sahip teklif eder', () => {
-    const m = { ...newMatch(7), cube: { value: 2, owner: WHITE as const } }
+    const m = { ...newMatch(7), cube: { value: 2, owner: 'white' as const } }
     expect(canDouble(m, WHITE, false)).toBe(true)
     expect(canDouble(m, BLACK, false)).toBe(false)
   })

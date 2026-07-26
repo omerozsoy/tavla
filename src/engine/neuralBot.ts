@@ -35,12 +35,14 @@ function getOrt(): Promise<Ort> {
     ortPromise = import('onnxruntime-web').then((ort) => {
       ort.env.wasm.numThreads = 1
       ort.env.wasm.proxy = false
-      ort.env.wasm.wasmPaths = {
+      const wasmPaths: Record<string, string> = {
         'ort-wasm-simd-threaded.wasm': wasmUrl,
         'ort-wasm-simd-threaded.mjs': wasmMjsUrl,
         'ort-wasm-simd-threaded.jsep.wasm': jsepWasmUrl,
         'ort-wasm-simd-threaded.jsep.mjs': jsepMjsUrl,
       }
+      // ort tipi obje-eslesmeyi kabul etmiyor ama runtime bunu destekliyor
+      ort.env.wasm.wasmPaths = wasmPaths as unknown as typeof ort.env.wasm.wasmPaths
       return ort
     })
   }

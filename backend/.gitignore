@@ -21,6 +21,12 @@
 /vendor
 /database/*.sqlite
 /database/*.sqlite-journal
+# React build ciktilari (public'e kopyalanir; kaynak degil)
+/public/assets
+/public/models
+/public/index.html
+/public/favicon.svg
+/public/icons.svg
 Homestead.json
 Homestead.yaml
 Thumbs.db

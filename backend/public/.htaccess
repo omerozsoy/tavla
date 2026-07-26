@@ -1,3 +1,6 @@
+# onnxruntime-web icin .wasm dogru MIME tipiyle servis edilmeli (sinir agi)
+AddType application/wasm .wasm
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

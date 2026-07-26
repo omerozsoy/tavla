@@ -481,15 +481,15 @@ export default function App() {
     const moves = generateMoves(turnStart)
     if (hasNoMove(moves)) {
       setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
-      const t = window.setTimeout(() => commitTurn([]), 1600)
-      return () => window.clearTimeout(t)
+      const timer = window.setTimeout(() => commitTurn([]), 1600)
+      return () => window.clearTimeout(timer)
     }
     // Zorunlu tek hamle -> otomatik oyna (gorebilmen icin yavas)
     if (moves.length === 1 && moves[0].steps.length > 0) {
       const only = moves[0]
       setMessage(t('msg.forcedAuto'))
-      const t = window.setTimeout(() => commitTurn(only.steps), 1600)
-      return () => window.clearTimeout(t)
+      const timer = window.setTimeout(() => commitTurn(only.steps), 1600)
+      return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, diceRolled, played.length, turnStart])
@@ -551,9 +551,9 @@ export default function App() {
     setSelectedFrom(null)
   }
 
-  function handleNewMatch(t = match.target, nextMode = mode) {
+  function handleNewMatch(target = match.target, nextMode = mode) {
     setMode(nextMode)
-    setMatch(newMatch(t))
+    setMatch(newMatch(target))
     setStarter('white')
     setTurnStart(freshBoard('white'))
     resetGameUi()
