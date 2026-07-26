@@ -124,6 +124,23 @@ export async function login(loginId: string, password: string): Promise<ServerUs
   return data.user
 }
 
+// Sifremi unuttum -> sifirlama linki gonder
+export async function forgotPassword(email: string): Promise<void> {
+  await req('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+// Sifreyi sifirla (link'teki token + yeni sifre)
+export async function resetPassword(
+  email: string,
+  token: string,
+  password: string,
+): Promise<void> {
+  await req('/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email, token, password }),
+  })
+}
+
 export async function me(): Promise<ServerUser> {
   const data = await req<{ user: ServerUser }>('/me')
   return data.user

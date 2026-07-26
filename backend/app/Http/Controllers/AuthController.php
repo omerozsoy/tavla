@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -189,6 +190,44 @@ class AuthController extends Controller
         $user->save();
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
+    }
+
+    // Sifremi unuttum -> sifirlama linki e-postala
+    public function forgotPassword(Request $request)
+    {
+        $request->validate(['email' => ['required', 'email']]);
+        // Google hesaplari sifre kullanmasa da guvenlik icin ayni yaniti veririz
+        Password::sendResetLink($request->only('email'));
+        return response()->json(['message' => 'ok']);
+    }
+
+    // Sifreyi sifirla (link'teki token + yeni sifre)
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'token'    => ['required', 'string'],
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'string', 'min:6', 'max:100'],
+        ]);
+
+        $status = Password::reset(
+            [
+                'email'                 => $request->email,
+                'password'              => $request->password,
+                'password_confirmation' => $request->password,
+                'token'                 => $request->token,
+            ],
+            function (User $user, string $password) {
+                $user->password = Hash::make($password);
+                $user->save();
+                $user->tokens()->delete(); // eski oturumlari kapat
+            }
+        );
+
+        if ($status === Password::PASSWORD_RESET) {
+            return response()->json(['message' => 'ok']);
+        }
+        return response()->json(['message' => 'Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.'], 400);
     }
 
     // Takma isim musait mi? (kayit formu icin, halka acik)
