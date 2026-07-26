@@ -1,0 +1,12 @@
+# onnxruntime-web icin .wasm dosyalari dogru MIME tipiyle servis edilmeli.
+# Aksi halde sinir agi tarayicida yuklenmez.
+AddType application/wasm .wasm
+
+# Statik asset onbellek (opsiyonel, performans)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType application/wasm "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/css "access plus 1 year"
+</IfModule>

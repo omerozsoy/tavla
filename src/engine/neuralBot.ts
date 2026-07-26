@@ -102,8 +102,10 @@ export class NeuralBot implements Engine {
     const ort = await getOrt()
     this.ort = ort
     const opts = { executionProviders: ['wasm' as const] }
-    if (!this.contact) this.contact = await ort.InferenceSession.create('/models/contact.onnx', opts)
-    if (!this.race) this.race = await ort.InferenceSession.create('/models/race.onnx', opts)
+    const base = import.meta.env.BASE_URL // '/' veya alt-klasor ('/tavla/')
+    if (!this.contact)
+      this.contact = await ort.InferenceSession.create(`${base}models/contact.onnx`, opts)
+    if (!this.race) this.race = await ort.InferenceSession.create(`${base}models/race.onnx`, opts)
     return ort
   }
 
