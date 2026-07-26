@@ -147,3 +147,68 @@ export async function saveServerGame(game: unknown): Promise<void> {
 export function isApiConfigured(): boolean {
   return true
 }
+
+// ---- Multiplayer odalari ----
+const PLAYER_TOKEN_KEY = 'tavla.playerToken'
+
+// Bu istemci icin kalici rastgele token (hesap gerekmez)
+export function playerToken(): string {
+  try {
+    let t = localStorage.getItem(PLAYER_TOKEN_KEY)
+    if (!t) {
+      t = 'p_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+      localStorage.setItem(PLAYER_TOKEN_KEY, t)
+    }
+    return t
+  } catch {
+    return 'p_' + Math.random().toString(36).slice(2)
+  }
+}
+
+export type Slot = 'p1' | 'p2'
+export interface RoomView {
+  code: string
+  p1_name: string
+  p2_name: string | null
+  state: unknown
+  version: number
+  status: 'waiting' | 'playing' | 'finished'
+}
+
+export async function createRoom(name: string): Promise<{ room: RoomView; slot: Slot }> {
+  return req('/rooms', {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), name }),
+  })
+}
+
+export async function joinRoom(code: string, name: string): Promise<{ room: RoomView; slot: Slot }> {
+  return req(`/rooms/${encodeURIComponent(code)}/join`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), name }),
+  })
+}
+
+// Poll: since verilirse degismemisse null doner
+export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
+  const token = getToken()
+  const q = since !== undefined ? `?since=${since}` : ''
+  const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(code)}${q}`, {
+    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  })
+  if (res.status === 204) return null
+  if (!res.ok) throw new ApiError(res.status, 'Oda hatası')
+  const data = await res.json()
+  return data.room as RoomView
+}
+
+export async function updateRoom(
+  code: string,
+  state: unknown,
+  status?: 'playing' | 'finished',
+): Promise<{ version: number; status: string }> {
+  return req(`/rooms/${encodeURIComponent(code)}`, {
+    method: 'PUT',
+    body: JSON.stringify({ token: playerToken(), state, status }),
+  })
+}
