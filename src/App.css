@@ -1813,6 +1813,17 @@ body {
   width: 100%;
   margin-top: 6px;
 }
+.pa-dice select {
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 700;
+}
+.lobby-analyzer {
+  margin-top: 12px;
+}
 .pa-result {
   margin-top: 14px;
   padding: 12px;

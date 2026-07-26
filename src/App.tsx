@@ -1579,6 +1579,7 @@ export default function App() {
         {accountBar}
         <PositionAnalyzer
           neuralEval={(s, p) => neuralRef.current.evalPosition(s, p)}
+          neuralAnalyze={(s) => neuralRef.current.analyzeMoves(s)}
           onClose={() => setAnalyzerOpen(false)}
         />
       </>
@@ -1642,6 +1643,9 @@ export default function App() {
         </div>
 
         <div className="menu-group">
+          <button className="menu-btn" onClick={() => setAnalyzerOpen(true)}>
+            🔬 {t('pa.title')}
+          </button>
           <button className="menu-btn" onClick={() => setBoardSettingsOpen(true)}>
             ⚙️ {t('menu.settings')}
           </button>

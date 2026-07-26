@@ -41,6 +41,9 @@ export default function Home({ playerName, onNewGame, onBoardSettings, onAnalyze
           <button className="galaxy-btn roll lobby-start" onClick={onNewGame}>
             🎮 {t('setup.newGame')}
           </button>
+          <button className="menu-btn lobby-analyzer" onClick={onAnalyzer}>
+            🔬 {t('pa.title')}
+          </button>
         </div>
       </main>
     </div>
