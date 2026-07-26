@@ -114,6 +114,7 @@ class AuthController extends Controller
                 'first_name' => $first,
                 'last_name'  => $last,
                 'country'    => '',
+                'avatar'     => $p['picture'] ?? null, // Google profil fotografi (onerilir, degistirilebilir)
                 'nickname'   => $nick,
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz

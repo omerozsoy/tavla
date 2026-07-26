@@ -1324,6 +1324,17 @@ body {
   font-size: 1rem;
   color: var(--muted);
 }
+.home-brand .brand-full {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+.home-tagline {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 6px 0 16px;
+  line-height: 1.4;
+}
 .home-hello {
   color: var(--text);
   margin-bottom: 18px;
