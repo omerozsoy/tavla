@@ -1586,6 +1586,12 @@ export default function App() {
             boardTheme={boardTheme}
             setBoardTheme={setBoardTheme}
             boardThemes={BOARD_THEMES}
+            theme={theme}
+            setTheme={setTheme}
+            showPip={showPip}
+            setShowPip={setShowPip}
+            showAnalysis={showAnalysis}
+            setShowAnalysis={setShowAnalysis}
             onClose={() => setBoardSettingsOpen(false)}
           />
         )}
@@ -1621,7 +1627,7 @@ export default function App() {
 
         <div className="menu-group">
           <button className="menu-btn" onClick={() => setBoardSettingsOpen(true)}>
-            🎨 {t('menu.boardSettings')}
+            ⚙️ {t('menu.settings')}
           </button>
         </div>
 
@@ -1726,6 +1732,12 @@ export default function App() {
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={BOARD_THEMES}
+          theme={theme}
+          setTheme={setTheme}
+          showPip={showPip}
+          setShowPip={setShowPip}
+          showAnalysis={showAnalysis}
+          setShowAnalysis={setShowAnalysis}
           onClose={() => setBoardSettingsOpen(false)}
         />
       )}
