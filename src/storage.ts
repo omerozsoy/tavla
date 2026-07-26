@@ -12,6 +12,8 @@ export interface Profile {
   country: string
   nickname: string
   email: string
+  avatar?: string // profil fotografi (kucultulmus data URL)
+  birthDate?: string // dogum tarihi (YYYY-MM-DD)
 }
 
 export interface SavedGame {

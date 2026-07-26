@@ -30,6 +30,8 @@ export interface ServerUser {
   country: string
   nickname: string
   email: string
+  avatar?: string | null
+  birth_date?: string | null
   rating?: number
   is_admin?: boolean
   game_state?: unknown
@@ -43,6 +45,8 @@ export function toProfile(u: ServerUser): Profile {
     country: u.country,
     nickname: u.nickname,
     email: u.email,
+    avatar: u.avatar ?? undefined,
+    birthDate: u.birth_date ?? undefined,
   }
 }
 
@@ -84,6 +88,8 @@ export async function register(input: Profile & { password: string }): Promise<S
       first_name: input.firstName,
       last_name: input.lastName,
       country: input.country,
+      avatar: input.avatar ?? null,
+      birth_date: input.birthDate || null,
       nickname: input.nickname,
       email: input.email,
       password: input.password,
@@ -130,6 +136,8 @@ export async function updateProfile(input: Profile): Promise<ServerUser> {
       first_name: input.firstName,
       last_name: input.lastName,
       country: input.country,
+      avatar: input.avatar ?? null,
+      birth_date: input.birthDate || null,
       nickname: input.nickname,
       email: input.email,
     }),

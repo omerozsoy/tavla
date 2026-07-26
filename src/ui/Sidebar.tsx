@@ -8,6 +8,7 @@ interface PlayerInfo {
   score: number
   target: number
   rating?: number | null
+  avatarUrl?: string | null
 }
 
 interface SidebarProps {
@@ -19,7 +20,7 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
   return (
     <div className={`player-card ${p.active ? 'active' : ''}`}>
       <div className={`avatar ${p.color} ${p.active ? 'active' : ''}`}>
-        <span>{p.avatar}</span>
+        {p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <span>{p.avatar}</span>}
       </div>
       <div className="player-name">{p.name}</div>
       <div className="player-sub">{p.sub}</div>

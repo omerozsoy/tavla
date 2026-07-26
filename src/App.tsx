@@ -1194,6 +1194,7 @@ export default function App() {
     score: match.score.black,
     target: match.target,
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
+    avatarUrl: online ? (myColor === 'black' ? profile.avatar : null) : null,
   }
   const bottomInfo = {
     name: whiteName,
@@ -1211,6 +1212,7 @@ export default function App() {
     score: match.score.white,
     target: match.target,
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
+    avatarUrl: online ? (myColor === 'white' ? profile.avatar : null) : profile.avatar,
   }
 
   // Auth kontrolu bitene kadar bekle
@@ -1332,7 +1334,12 @@ export default function App() {
     <div className="app">
       <div className="account-bar">
         <span className="account-name">
-          👤 {profile.nickname}
+          {profile.avatar ? (
+            <img className="account-avatar" src={profile.avatar} alt="" />
+          ) : (
+            '👤 '
+          )}
+          {profile.nickname}
           {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
         </span>
         {user ? (

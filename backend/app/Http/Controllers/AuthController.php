@@ -19,6 +19,8 @@ class AuthController extends Controller
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
             'country'    => ['required', 'string', 'max:80'],
+            'avatar'     => ['nullable', 'string', 'max:300000'],
+            'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:40', 'unique:users,nickname'],
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             'password'   => ['required', 'string', 'min:6', 'max:100'],
@@ -156,6 +158,8 @@ class AuthController extends Controller
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
             'country'    => ['required', 'string', 'max:80'],
+            'avatar'     => ['nullable', 'string', 'max:300000'],
+            'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:40', Rule::unique('users', 'nickname')->ignore($user->id)],
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
