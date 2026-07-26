@@ -1,27 +1,12 @@
 import { useT } from '../i18n'
 
-interface BoardThemeOpt {
-  id: string
-  name: string
-  a: string
-  b: string
-}
-
 interface Props {
   playerName: string
   onNewGame: () => void
-  boardTheme: string
-  setBoardTheme: (id: string) => void
-  boardThemes: BoardThemeOpt[]
+  onBoardSettings: () => void
 }
 
-export default function Home({
-  playerName,
-  onNewGame,
-  boardTheme,
-  setBoardTheme,
-  boardThemes,
-}: Props) {
+export default function Home({ playerName, onNewGame, onBoardSettings }: Props) {
   const { t } = useT()
   return (
     <div className="app lobby">
@@ -38,18 +23,9 @@ export default function Home({
         </div>
 
         <div className="menu-group">
-          <div className="menu-label">{t('menu.boardSettings')}</div>
-          <div className="board-swatches">
-            {boardThemes.map((bt) => (
-              <button
-                key={bt.id}
-                className={`swatch ${boardTheme === bt.id ? 'active' : ''}`}
-                title={bt.name}
-                onClick={() => setBoardTheme(bt.id)}
-                style={{ background: `linear-gradient(135deg, ${bt.a} 0 50%, ${bt.b} 50% 100%)` }}
-              />
-            ))}
-          </div>
+          <button className="menu-btn" onClick={onBoardSettings}>
+            🎨 {t('menu.boardSettings')}
+          </button>
         </div>
       </aside>
 

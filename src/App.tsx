@@ -42,6 +42,7 @@ import {
 } from './api'
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
+import BoardSettings from './ui/BoardSettings'
 import Home from './ui/Home'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -240,6 +241,7 @@ export default function App() {
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
+  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -1576,11 +1578,17 @@ export default function App() {
         <Home
           playerName={profile.nickname}
           onNewGame={() => setSetup('pvb')}
-          boardTheme={boardTheme}
-          setBoardTheme={setBoardTheme}
-          boardThemes={BOARD_THEMES}
+          onBoardSettings={() => setBoardSettingsOpen(true)}
         />
         {authModal}
+        {boardSettingsOpen && (
+          <BoardSettings
+            boardTheme={boardTheme}
+            setBoardTheme={setBoardTheme}
+            boardThemes={BOARD_THEMES}
+            onClose={() => setBoardSettingsOpen(false)}
+          />
+        )}
       </>
     )
   }
@@ -1612,18 +1620,9 @@ export default function App() {
         </div>
 
         <div className="menu-group">
-          <div className="menu-label">{t('menu.boardSettings')}</div>
-          <div className="board-swatches">
-            {BOARD_THEMES.map((bt) => (
-              <button
-                key={bt.id}
-                className={`swatch ${boardTheme === bt.id ? 'active' : ''}`}
-                title={bt.name}
-                onClick={() => setBoardTheme(bt.id)}
-                style={{ background: `linear-gradient(135deg, ${bt.a} 0 50%, ${bt.b} 50% 100%)` }}
-              />
-            ))}
-          </div>
+          <button className="menu-btn" onClick={() => setBoardSettingsOpen(true)}>
+            🎨 {t('menu.boardSettings')}
+          </button>
         </div>
 
         <div className="menu-group">
@@ -1721,6 +1720,15 @@ export default function App() {
         <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
       )}
       {authModal}
+
+      {boardSettingsOpen && (
+        <BoardSettings
+          boardTheme={boardTheme}
+          setBoardTheme={setBoardTheme}
+          boardThemes={BOARD_THEMES}
+          onClose={() => setBoardSettingsOpen(false)}
+        />
+      )}
 
       {gameEnd && matchOver && mWinner && (
         <MatchResult
