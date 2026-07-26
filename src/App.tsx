@@ -41,6 +41,7 @@ import {
 } from './api'
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
+import Home from './ui/Home'
 import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
@@ -131,9 +132,11 @@ interface GameEnd {
   timeout?: boolean // sure bitiminden dolayi kayip
 }
 
-// Oyun saati: her turda 12sn gecikme, tukenince 6dk rezervden duser, rezerv biterse kaybeder
+// Oyun saati: her turda 12sn gecikme, tukenince rezervden duser, rezerv biterse kaybeder
 const MOVE_DELAY = 12
-const RESERVE_SECONDS = 6 * 60
+type TimeControl = 'off' | 'standard' | 'fast'
+// Rezerv (sn): kapali=saat yok, standart=6dk, hizli=1dk (gecikme her ikisinde 12sn)
+const RESERVE_PRESETS: Record<TimeControl, number> = { off: 0, standard: 6 * 60, fast: 60 }
 
 // Rezerv saniyeyi mm:ss bicimine cevir
 function fmtClock(sec: number): string {
@@ -185,12 +188,15 @@ export default function App() {
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
-  const [setup, setSetup] = useState<null | 'local' | 'online'>(null) // mac kurulum ekrani
+  const [setup, setSetup] = useState<null | Mode>(null) // mac kurulum ekrani (hangi mod icin)
+  const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
+  const [timeControl, setTimeControl] = useState<TimeControl>('standard')
+  const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
   // Oyun saati: bu turun gecikmesi (sn) + her oyuncunun rezervi (sn)
   const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
     delay: MOVE_DELAY,
-    white: RESERVE_SECONDS,
-    black: RESERVE_SECONDS,
+    white: RESERVE_PRESETS.standard,
+    black: RESERVE_PRESETS.standard,
   })
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
@@ -292,8 +298,8 @@ export default function App() {
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
-  // Saat sadece iki insanli modlarda (online / iki kisi) calisir
-  const clockOn = mode === 'online' || mode === 'pvp'
+  // Saat, kurulumda bir sure secildiyse (kapali degilse) calisir
+  const clockOn = timeControl !== 'off'
   const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
@@ -345,7 +351,7 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
-    setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
+    setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
   }
 
   function commitTurn(finalPlayed: Step[]) {
@@ -773,7 +779,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
-      setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
+      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
@@ -802,7 +808,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
-      setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
+      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -829,7 +835,7 @@ export default function App() {
     appliedVersionRef.current = -1
     setOppStarted(false)
     setChat([])
-    handleNewMatch(match.target, 'pvb')
+    setHome(true)
   }
 
   // Online sohbet: mesaj gonder (sunucu guncel listeyi doner)
@@ -848,9 +854,13 @@ export default function App() {
     const which = setup
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
+    setTimeControl(opts.timeControl)
+    reserveRef.current = RESERVE_PRESETS[opts.timeControl]
+    if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
+    setHome(false)
     if (which === 'online') handleCreateRoom(opts.target)
-    else handleNewMatch(opts.target)
+    else handleNewMatch(opts.target, which ?? 'pvb')
   }
 
   // Hamleyi onayla ve sirayi rakibe ver
@@ -1197,15 +1207,38 @@ export default function App() {
     )
   }
 
-  // Mac kurulum ekrani (oyun kacta bitsin / pip / analiz)
+  // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz)
   if (setup) {
     return (
       <MatchSetup
         mode={setup}
         targets={TARGETS}
-        initial={{ target: match.target, showPip, showAnalysis }}
+        initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty }}
         onConfirm={applyMatchSetup}
         onCancel={() => setSetup(null)}
+      />
+    )
+  }
+
+  // Baslangic ekrani: oyuncu kendi secip baslatsin (direkt oyuna sokmayiz)
+  if (home) {
+    return (
+      <Home
+        onVsBot={() => setSetup('pvb')}
+        onTwoPlayer={() => setSetup('pvp')}
+        onOnline={() => {
+          setRoom(null)
+          setRoomError('')
+          setMode('online')
+          setHome(false)
+        }}
+        onEditProfile={() => setEditProfile(true)}
+        onLogout={user ? handleLogout : undefined}
+        theme={theme}
+        onToggleTheme={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
+        lang={lang}
+        onToggleLang={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+        playerName={profile?.nickname ?? ''}
       />
     )
   }
@@ -1298,16 +1331,22 @@ export default function App() {
         </div>
 
         <div className="menu-group">
+          <button className="menu-btn" onClick={() => setHome(true)}>
+            🏠 {t('home.title')}
+          </button>
+        </div>
+
+        <div className="menu-group">
           <div className="menu-label">{t('menu.mode')}</div>
           <button
             className={mode === 'pvb' ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => handleNewMatch(match.target, 'pvb')}
+            onClick={() => setSetup('pvb')}
           >
             {t('menu.vsBot')}
           </button>
           <button
             className={mode === 'pvp' ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => handleNewMatch(match.target, 'pvp')}
+            onClick={() => setSetup('pvp')}
           >
             {t('menu.twoPlayer')}
           </button>
@@ -1363,7 +1402,7 @@ export default function App() {
           >
             {t('menu.analysis')}
           </button>
-          <button className="menu-btn" onClick={() => setSetup('local')}>
+          <button className="menu-btn" onClick={() => setSetup(mode)}>
             {t('menu.newMatch')}
           </button>
         </div>

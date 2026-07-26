@@ -1073,6 +1073,97 @@ body {
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
+/* ---- Baslangic ekrani (Home) ---- */
+.home-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 20px;
+}
+.home-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 26px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  text-align: center;
+}
+.home-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.home-brand .brand-badge {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--accent);
+  letter-spacing: 1px;
+}
+.home-brand .brand-full {
+  font-size: 1rem;
+  color: var(--muted);
+}
+.home-hello {
+  color: var(--text);
+  margin-bottom: 18px;
+  font-size: 0.95rem;
+}
+.home-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-btn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.08s, border-color 0.15s;
+}
+.home-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.home-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.home-btn-ico {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.home-btn-text {
+  display: flex;
+  flex-direction: column;
+}
+.home-btn-text b {
+  font-size: 1.05rem;
+}
+.home-btn-text small {
+  opacity: 0.8;
+  font-size: 0.8rem;
+}
+.home-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 22px;
+}
+
 /* ---- Mac kurulum ekrani ---- */
 .setup-card {
   text-align: left;
