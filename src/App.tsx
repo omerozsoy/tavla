@@ -34,9 +34,12 @@ import {
   joinRoom,
   showRoom,
   updateRoom,
+  sendChat,
   ApiError as ApiErr,
   type Slot,
+  type ChatMsg,
 } from './api'
+import Chat from './ui/Chat'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
 import {
@@ -166,6 +169,7 @@ export default function App() {
   const [roomBusy, setRoomBusy] = useState(false)
   const [roomError, setRoomError] = useState('')
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
+  const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
@@ -656,6 +660,7 @@ export default function App() {
         setRoom((r) =>
           r ? { ...r, oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name, status: rv.status } : r,
         )
+        if (rv.messages) setChat(rv.messages)
         if (rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
@@ -694,6 +699,7 @@ export default function App() {
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
+      setChat([])
       setMatch(newMatch(1))
       setStarter('white')
       setTurnsPlayed(0)
@@ -721,6 +727,7 @@ export default function App() {
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
+      setChat([])
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -746,7 +753,19 @@ export default function App() {
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
     setOppStarted(false)
+    setChat([])
     handleNewMatch(match.target, 'pvb')
+  }
+
+  // Online sohbet: mesaj gonder (sunucu guncel listeyi doner)
+  async function handleSendChat(text: string) {
+    if (!room) return
+    try {
+      const res = await sendChat(room.code, text)
+      if (res.messages) setChat(res.messages)
+    } catch {
+      /* yoksay - sonraki yoklamada gelir */
+    }
   }
 
   // Hamleyi onayla ve sirayi rakibe ver
@@ -1293,6 +1312,10 @@ export default function App() {
         />
       )}
       </main>
+
+      {online && room && (
+        <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
+      )}
     </div>
   )
 }
