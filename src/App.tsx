@@ -3,7 +3,14 @@ import './App.css'
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
-import { initialState, legalNextSteps, newTurn, reachableFromChecker, rollDice } from './engine/game'
+import {
+  initialState,
+  legalNextSteps,
+  newTurn,
+  reachableFromChecker,
+  rollDice,
+  secureDie,
+} from './engine/game'
 import { HeuristicBot } from './engine/engine'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
@@ -18,7 +25,7 @@ import {
 } from './engine/match'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
-import DiceRow from './ui/Dice'
+import DiceRow, { Die } from './ui/Dice'
 import Auth from './ui/Auth'
 import AnalysisPanel, { type MoveError } from './ui/AnalysisPanel'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
@@ -87,6 +94,14 @@ interface BotAnim {
   index: number
 }
 
+interface OpeningResult {
+  white: number
+  black: number
+  winner: Player
+  winnerDie: number
+  loserDie: number
+}
+
 interface GameEnd {
   winner: Player
   points: number
@@ -128,6 +143,8 @@ export default function App() {
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
+  const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
+  const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -156,6 +173,8 @@ export default function App() {
     setCubePending(null)
     setGameEnd(null)
     setBotAnim(null)
+    setOpening(null)
+    setOpeningResult(null)
   }
 
   // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle
@@ -220,7 +239,7 @@ export default function App() {
   const diceRolled = turnStart.dice.length > 0
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
   const interactive =
-    !isBotTurn && !gameWon && gameEnd === null && !matchOver && cubePending === null
+    !isBotTurn && !gameWon && gameEnd === null && !matchOver && cubePending === null && !opening
 
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
@@ -260,6 +279,8 @@ export default function App() {
     setRanked(null)
     setCurrentProbs(null)
     setTurnsPlayed(0)
+    setOpening('roll') // her yeni oyun acilis atisiyla baslar
+    setOpeningResult(null)
   }
 
   function commitTurn(finalPlayed: Step[]) {
@@ -347,7 +368,8 @@ export default function App() {
 
   // ---- Bot sirasi: kup teklifi -> zar -> oyna ----
   useEffect(() => {
-    if (!isBotTurn || gameEnd || matchOver || cubePending || botAnim || played.length > 0) return
+    if (!isBotTurn || gameEnd || matchOver || cubePending || botAnim || opening || played.length > 0)
+      return
     let cancelled = false
     let timer: number
     if (!diceRolled) {
@@ -398,7 +420,7 @@ export default function App() {
       window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBotTurn, gameEnd, matchOver, cubePending, botAnim, diceRolled, played, turnStart, engine, match, turnsPlayed])
+  }, [isBotTurn, gameEnd, matchOver, cubePending, botAnim, opening, diceRolled, played, turnStart, engine, match, turnsPlayed])
 
   // ---- Bot hamlesini tas tas oynat ----
   useEffect(() => {
@@ -493,6 +515,43 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, diceRolled, played.length, turnStart])
+
+  // Acilis atisi: her iki oyuncu birer zar atar, esitse tekrar, yuksek olan baslar.
+  function handleOpeningRoll() {
+    let w = secureDie()
+    let b = secureDie()
+    while (w === b) {
+      w = secureDie()
+      b = secureDie()
+    }
+    const winner: Player = w > b ? 'white' : 'black'
+    setOpeningResult({
+      white: w,
+      black: b,
+      winner,
+      winnerDie: Math.max(w, b),
+      loserDie: Math.min(w, b),
+    })
+    setOpening('reveal')
+    setMessage(t('msg.openingResult', { name: pName(winner), a: Math.max(w, b), b: Math.min(w, b) }))
+  }
+
+  // Acilis sonucunu goster, sonra kazananin turuyla basla (iki FARKLI zar -> ilk hamle asla cift degil)
+  useEffect(() => {
+    if (opening !== 'reveal' || !openingResult) return
+    const { winner, winnerDie, loserDie } = openingResult
+    const timer = window.setTimeout(() => {
+      const s = freshBoard(winner)
+      s.dice = [winnerDie, loserDie]
+      s.diceUsed = [false, false]
+      setTurnStart(s)
+      setStarter(winner)
+      setOpening(null)
+      setMessage(t('msg.playing', { name: pName(winner), dice: `${winnerDie}, ${loserDie}` }))
+    }, 1700)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opening, openingResult])
 
   // Hamleyi onayla ve sirayi rakibe ver
   function handleConfirm() {
@@ -615,7 +674,39 @@ export default function App() {
   const pipBottom = pipCount(working, 'white')
 
   let centerMain: React.ReactNode = null
-  if (gameEnd) {
+  if (opening === 'roll') {
+    centerMain = (
+      <div className="result-box">
+        <div className="result-title">{t('opening.title')}</div>
+        <button className="galaxy-btn roll" onClick={handleOpeningRoll}>
+          {t('btn.roll')}
+        </button>
+      </div>
+    )
+  } else if (opening === 'reveal' && openingResult) {
+    centerMain = (
+      <div className="result-box">
+        <div className="result-title">{t('opening.title')}</div>
+        <div className="opening-dice">
+          <div className={`opening-side ${openingResult.winner === 'white' ? 'win' : ''}`}>
+            <Die value={openingResult.white} owner="white" used={false} />
+            <span>{t('player.white')}</span>
+          </div>
+          <div className={`opening-side ${openingResult.winner === 'black' ? 'win' : ''}`}>
+            <Die value={openingResult.black} owner="black" used={false} />
+            <span>{t('player.black')}</span>
+          </div>
+        </div>
+        <div className="result-points">
+          {t('msg.openingResult', {
+            name: pName(openingResult.winner),
+            a: openingResult.winnerDie,
+            b: openingResult.loserDie,
+          })}
+        </div>
+      </div>
+    )
+  } else if (gameEnd) {
     const multKey =
       gameEnd.mult === 3 ? 'mult.backgammon' : gameEnd.mult === 2 ? 'mult.gammon' : 'mult.normal'
     const title = matchOver

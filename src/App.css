@@ -19,9 +19,14 @@
 
   /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz) */
   --board-h: max(360px, min(calc(100vh - 96px), calc((100vw - 380px) / 1.4)));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.12);
+  --bar-w: calc(var(--checker) * 0.85);
+  --bearoff-w: calc(var(--checker) * 1);
+  --tri-h: calc(var(--board-h) * 0.44);
 }
 
-/* Acik tema */
+/* Acik tema (sadece kroma renkleri degisir; board olculeri :root'ta) */
 :root[data-theme='light'] {
   --bg: #e9edf6;
   --area: #ffffff;
@@ -32,11 +37,6 @@
   --btn-border: #c4cceb;
   --border: #d6dcef;
   --input-bg: #f4f6fc;
-  --checker: calc(var(--board-h) / 11);
-  --col: calc(var(--checker) * 1.12);
-  --bar-w: calc(var(--checker) * 0.85);
-  --bearoff-w: calc(var(--checker) * 1);
-  --tri-h: calc(var(--board-h) * 0.44);
 }
 
 * {
@@ -700,6 +700,25 @@ body {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+}
+.opening-dice {
+  display: flex;
+  gap: 28px;
+  justify-content: center;
+  margin: 12px 0 8px;
+}
+.opening-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.5;
+  font-size: 0.85rem;
+}
+.opening-side.win {
+  opacity: 1;
+  font-weight: 700;
+  color: #ffd54a;
 }
 .result-box .err-detail {
   font-size: 0.85rem;
