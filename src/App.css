@@ -1537,6 +1537,14 @@ body {
 .rep-worst code {
   color: var(--text);
 }
+.rep-filter {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 10px;
+}
+.rep-filter .menu-btn {
+  flex: 1;
+}
 .report-list {
   display: flex;
   flex-direction: column;
@@ -2046,6 +2054,82 @@ body {
   font-weight: 800;
   color: #7ee0a0;
   font-variant-numeric: tabular-nums;
+}
+
+/* Profil / istatistik modali */
+.stats-card {
+  width: min(440px, 94vw);
+}
+.stats-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 6px 0 16px;
+}
+.stats-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+  font-size: 1.4rem;
+}
+.stats-id {
+  flex: 1;
+  min-width: 0;
+}
+.stats-name {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+.stats-rank {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.stats-rating {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: #7ee0a0;
+  font-variant-numeric: tabular-nums;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.stats-box {
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 6px;
+  text-align: center;
+}
+.stats-val {
+  font-size: 1.4rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.stats-val.good {
+  color: #7ee0a0;
+}
+.stats-val.bad {
+  color: #ff9db0;
+}
+.stats-lbl {
+  color: var(--muted);
+  font-size: 0.74rem;
+  margin-top: 2px;
+}
+.stats-bar {
+  margin-top: 14px;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, #ff9db0 35%, transparent);
+  overflow: hidden;
+}
+.stats-bar-win {
+  height: 100%;
+  background: linear-gradient(90deg, #4fb477, #7ee0a0);
 }
 .board-swatches.big .swatch {
   width: 100%;
