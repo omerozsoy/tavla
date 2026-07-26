@@ -4,9 +4,10 @@ interface Props {
   playerName: string
   onNewGame: () => void
   onBoardSettings: () => void
+  onAnalyzer: () => void
 }
 
-export default function Home({ playerName, onNewGame, onBoardSettings }: Props) {
+export default function Home({ playerName, onNewGame, onBoardSettings, onAnalyzer }: Props) {
   const { t } = useT()
   return (
     <div className="app lobby">
@@ -23,6 +24,9 @@ export default function Home({ playerName, onNewGame, onBoardSettings }: Props) 
         </div>
 
         <div className="menu-group">
+          <button className="menu-btn" onClick={onAnalyzer}>
+            🔬 {t('pa.title')}
+          </button>
           <button className="menu-btn" onClick={onBoardSettings}>
             ⚙️ {t('menu.settings')}
           </button>

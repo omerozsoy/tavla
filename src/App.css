@@ -1768,6 +1768,71 @@ body {
   background: var(--accent);
   color: #fff;
 }
+/* ---- Pozisyon analiz modulu ---- */
+.analyzer {
+  min-height: 100vh;
+  padding: calc(var(--header-h) + 6px) 14px 14px;
+  background: var(--bg);
+  overflow-y: auto;
+}
+.analyzer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.analyzer-head h2 {
+  margin: 0;
+}
+.analyzer-body {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.analyzer-board {
+  flex: 1;
+  min-width: 320px;
+  max-width: 720px;
+}
+.analyzer-controls {
+  width: 300px;
+  flex-shrink: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+}
+.pa-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+.pa-analyze {
+  width: 100%;
+  margin-top: 6px;
+}
+.pa-result {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.pa-win {
+  font-size: 1.1rem;
+  margin-bottom: 6px;
+}
+.pa-win b {
+  color: #7ee0a0;
+}
+@media (max-width: 760px) {
+  .analyzer-controls {
+    width: 100%;
+  }
+}
+
 .board-settings-card {
   text-align: center;
 }
