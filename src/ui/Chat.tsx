@@ -8,10 +8,19 @@ interface Props {
   onSend: (text: string) => void
 }
 
+// Yaygin emojiler (hazir panel)
+const EMOJIS = [
+  '😀', '😂', '😉', '😎', '😍', '🤔', '😅', '😴',
+  '😢', '😡', '👍', '👎', '👏', '🙏', '💪', '🔥',
+  '🎲', '🎉', '❤️', '💔', '😱', '🤯', '🥳', '🤝',
+  '😏', '🫡', '👋', '🍀', '⭐', '💯', '😤', '🙈',
+]
+
 export default function Chat({ messages, mySlot, onSend }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(true)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 
   // Yeni mesajda en alta kaydir
@@ -25,6 +34,7 @@ export default function Chat({ messages, mySlot, onSend }: Props) {
     if (!v) return
     onSend(v)
     setText('')
+    setEmojiOpen(false)
   }
 
   return (
@@ -49,7 +59,30 @@ export default function Chat({ messages, mySlot, onSend }: Props) {
             )}
           </div>
 
+          {emojiOpen && (
+            <div className="chat-emojis">
+              {EMOJIS.map((e) => (
+                <button
+                  key={e}
+                  type="button"
+                  className="emoji-btn"
+                  onClick={() => setText((v) => (v + e).slice(0, 280))}
+                >
+                  {e}
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="chat-input">
+            <button
+              type="button"
+              className="emoji-toggle"
+              onClick={() => setEmojiOpen((v) => !v)}
+              title="Emoji"
+            >
+              😊
+            </button>
             <input
               value={text}
               maxLength={280}

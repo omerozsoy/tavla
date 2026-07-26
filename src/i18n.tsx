@@ -131,6 +131,16 @@ const TR: Dict = {
   'chat.placeholder': 'Mesaj yaz…',
   'chat.send': 'Gönder',
   'chat.empty': 'Henüz mesaj yok. Selam ver! 👋',
+  'setup.title': 'Yeni Maç',
+  'setup.titleOnline': 'Online Maç Kur',
+  'setup.length': 'Oyun kaç puanda bitsin?',
+  'setup.pip': 'Pip sayısı göster',
+  'setup.analysis': 'Analizi göster',
+  'setup.on': 'Açık',
+  'setup.off': 'Kapalı',
+  'setup.start': 'Başla',
+  'setup.create': 'Oda Oluştur',
+  'setup.cancel': 'Vazgeç',
 }
 
 const EN: Dict = {
@@ -260,6 +270,16 @@ const EN: Dict = {
   'chat.placeholder': 'Type a message…',
   'chat.send': 'Send',
   'chat.empty': 'No messages yet. Say hi! 👋',
+  'setup.title': 'New Match',
+  'setup.titleOnline': 'Set Up Online Match',
+  'setup.length': 'Match length (points)?',
+  'setup.pip': 'Show pip count',
+  'setup.analysis': 'Show analysis',
+  'setup.on': 'On',
+  'setup.off': 'Off',
+  'setup.start': 'Start',
+  'setup.create': 'Create Room',
+  'setup.cancel': 'Cancel',
 }
 
 const DICT: Record<Lang, Dict> = { tr: TR, en: EN }

@@ -49,6 +49,7 @@ interface BoardProps {
   centerRight?: ReactNode
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
+  showPip?: boolean // pip sayilari gorunur mu
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -160,6 +161,7 @@ export default function Board({
   centerRight,
   centerMain,
   flip = false,
+  showPip = true,
 }: BoardProps) {
   const L = flip ? LAYOUT.flipped : LAYOUT.normal
 
@@ -218,7 +220,7 @@ export default function Board({
           className={`bar ${barSelectable ? 'selectable' : ''} ${selectedFrom === 'bar' ? 'selected' : ''}`}
           onClick={() => barSelectable && onSelectFrom('bar')}
         >
-          <div className="pip pip-top">{topPip}</div>
+          {showPip && <div className="pip pip-top">{topPip}</div>}
           <div className="bar-checkers top">
             {Array.from({ length: topBarCount }).map((_, i) => (
               <Checker
@@ -242,7 +244,7 @@ export default function Board({
               />
             ))}
           </div>
-          <div className="pip pip-bottom">{bottomPip}</div>
+          {showPip && <div className="pip pip-bottom">{bottomPip}</div>}
         </div>
 
         {/* Sag yari */}
