@@ -1114,15 +1114,23 @@ export default function App() {
       <div className="result-box">
         <div className="result-title">{title}</div>
         <div className="result-points">{t('result.points', { n: gameEnd.points })}</div>
-        {matchOver ? (
-          <button className="galaxy-btn roll" onClick={() => handleNewMatch()}>
-            {t('btn.newMatch')}
+        <div className="result-actions">
+          {matchOver ? (
+            <button className="galaxy-btn roll" onClick={() => handleNewMatch()}>
+              {t('btn.newMatch')}
+            </button>
+          ) : (
+            <button className="galaxy-btn roll" onClick={nextGame}>
+              {t('btn.nextGame')}
+            </button>
+          )}
+          <button
+            className="menu-btn"
+            onClick={() => (online ? handleLeaveRoom() : setHome(true))}
+          >
+            🏠 {t('home.title')}
           </button>
-        ) : (
-          <button className="galaxy-btn roll" onClick={nextGame}>
-            {t('btn.nextGame')}
-          </button>
-        )}
+        </div>
       </div>
     )
   } else if (humanRespond) {
