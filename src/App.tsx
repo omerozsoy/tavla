@@ -239,6 +239,7 @@ export default function App() {
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
   const [ranked, setRanked] = useState<RankedMove[] | null>(null)
+  const [analysisBoard, setAnalysisBoard] = useState<GameState | null>(null) // mini board pozisyonu
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
@@ -616,6 +617,7 @@ export default function App() {
         if (!cancelled) {
           setRanked(r)
           setCurrentProbs(cp)
+          setAnalysisBoard(analysisState)
           if (played.length === 0) turnRankedRef.current = r // tur basi tam siralamayi sakla
         }
       } catch (e) {
@@ -632,6 +634,7 @@ export default function App() {
             .sort((a, b) => b.equity - a.equity)
           setRanked(ranks)
           setCurrentProbs(null)
+          setAnalysisBoard(analysisState)
           if (played.length === 0) turnRankedRef.current = ranks
         }
       } finally {
@@ -1575,6 +1578,7 @@ export default function App() {
             ranked={ranked}
             player={turnStart.turn}
             lastError={lastError}
+            boardState={analysisBoard}
           />
         )}
       </div>

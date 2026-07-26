@@ -30,7 +30,12 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
   if (awaitingResponse) return false
   if (m.isCrawford) return false // Crawford oyununda kup yok
   if (m.cube.value >= 64) return false
-  return m.cube.owner === null || m.cube.owner === player
+  if (m.cube.owner !== null && m.cube.owner !== player) return false
+  // Olu kup: mevcut kup degeri, oyuncunun maci kazanmak icin gereken puani zaten
+  // karsiliyorsa katlamak anlamsizdir (1 puanlik macta hic kup yok).
+  const away = m.target - m.score[player]
+  if (m.cube.value >= away) return false
+  return true
 }
 
 // Mac bitti mi? Kazanan doner.

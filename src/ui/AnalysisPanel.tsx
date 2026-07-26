@@ -1,8 +1,10 @@
-import type { Player } from '../engine/types'
+import { useEffect, useState } from 'react'
+import type { GameState, Player } from '../engine/types'
 import type { RankedMove } from '../engine/neuralBot'
 import { equityFrom } from '../engine/encoding'
 import { moveNotation } from '../engine/notation'
 import { useT } from '../i18n'
+import MiniBoard from './MiniBoard'
 
 export interface MoveError {
   loss: number
@@ -18,11 +20,23 @@ interface Props {
   ranked: RankedMove[] | null
   player: Player
   lastError: MoveError | null
+  boardState: GameState | null // hamlelerin uygulandigi konum (mini board icin)
 }
 
-export default function AnalysisPanel({ loading, currentProbs, ranked, player, lastError }: Props) {
+export default function AnalysisPanel({
+  loading,
+  currentProbs,
+  ranked,
+  player,
+  lastError,
+  boardState,
+}: Props) {
   const { t } = useT()
+  const [selected, setSelected] = useState(0)
+  // Yeni pozisyon analiz edildiginde en iyi hamleye don
+  useEffect(() => setSelected(0), [boardState])
   const bestEq = ranked && ranked.length > 0 ? ranked[0].equity : 0
+  const sel = ranked && ranked.length > 0 ? ranked[Math.min(selected, ranked.length - 1)] : null
 
   return (
     <div className="analysis">
@@ -62,11 +76,20 @@ export default function AnalysisPanel({ loading, currentProbs, ranked, player, l
         </div>
       )}
 
+      {/* Secili hamleyi mini board uzerinde ok ile goster */}
+      {!loading && boardState && sel && (
+        <MiniBoard state={boardState} steps={sel.move.steps} player={player} />
+      )}
+
       {!loading && ranked && ranked.length > 0 && (
         <div className="move-list">
           <div className="move-list-head">{t('an.bestMoves')}</div>
           {ranked.slice(0, 6).map((r, i) => (
-            <div key={r.move.resultKey} className={`move-row ${i === 0 ? 'best' : ''}`}>
+            <div
+              key={r.move.resultKey}
+              className={`move-row ${i === 0 ? 'best' : ''} ${i === selected ? 'sel' : ''}`}
+              onClick={() => setSelected(i)}
+            >
               <span className="rank">{i + 1}.</span>
               <span className="notation">{moveNotation(r.move, player)}</span>
               <span className="eq">{r.equity.toFixed(3)}</span>

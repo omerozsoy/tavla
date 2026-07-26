@@ -88,7 +88,10 @@ describe('Crawford kurali', () => {
     m = setupNextGame(m)
     expect(m.isCrawford).toBe(false)
     expect(m.crawfordDone).toBe(true)
-    expect(canDouble(m, WHITE, false)).toBe(true)
+    // Geride olan (siyah, 5 puan uzakta) kupu teklif edebilir; kup geri geldi.
+    expect(canDouble(m, 'black', false)).toBe(true)
+    // 1 puan kala olan (beyaz) icin kup oludur -> teklif edemez.
+    expect(canDouble(m, WHITE, false)).toBe(false)
   })
 
   it('Crawford oyununda kup teklif edilemez', () => {

@@ -480,7 +480,7 @@ body {
 }
 .checker.black {
   background: var(--navy);
-  border: 2px solid rgba(0, 0, 0, 0.35);
+  border: 2px solid transparent;
 }
 .overflow {
   position: absolute;
@@ -828,6 +828,20 @@ body {
 }
 .pos-eval {
   margin-bottom: 12px;
+}
+.mini-board {
+  display: block;
+  margin: 4px 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.move-row {
+  cursor: pointer;
+  border-radius: 6px;
+}
+.move-row.sel {
+  outline: 2px solid #ffd54a;
+  outline-offset: -2px;
 }
 .prob-row {
   display: flex;
