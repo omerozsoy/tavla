@@ -5,7 +5,7 @@ interface RoomInfo {
   code: string
   slot: 'p1' | 'p2'
   oppName: string | null
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 
 interface Props {
@@ -14,12 +14,39 @@ interface Props {
   error: string
   onCreate: () => void
   onJoin: (code: string) => void
+  onMatchmake: () => void
+  onCancelMatch: () => void
   onLeave: () => void
 }
 
-export default function Lobby({ room, busy, error, onCreate, onJoin, onLeave }: Props) {
+export default function Lobby({
+  room,
+  busy,
+  error,
+  onCreate,
+  onJoin,
+  onMatchmake,
+  onCancelMatch,
+  onLeave,
+}: Props) {
   const { t } = useT()
   const [code, setCode] = useState('')
+
+  // Hizli eslesme: rakip araniyor
+  if (room && room.status === 'mm_waiting') {
+    return (
+      <div className="register-overlay">
+        <div className="register-card mm-searching">
+          <div className="mm-spinner" />
+          <h2>{t('mp.searching')}</h2>
+          <p className="register-sub">{t('mp.searchingSub')}</p>
+          <button className="menu-btn" onClick={onCancelMatch}>
+            {t('mp.cancel')}
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   // Odaya girildi, rakip bekleniyor
   if (room && room.status === 'waiting') {
@@ -52,7 +79,14 @@ export default function Lobby({ room, busy, error, onCreate, onJoin, onLeave }: 
         <h2>🌐 {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>
 
-        <button className="galaxy-btn roll" disabled={busy} onClick={onCreate}>
+        <button className="galaxy-btn roll mm-quick" disabled={busy} onClick={onMatchmake}>
+          🎯 {t('mp.quickMatch')}
+        </button>
+        <p className="mm-quick-note">{t('mp.quickMatchNote')}</p>
+
+        <div className="mp-or">— {t('mp.or')} —</div>
+
+        <button className="menu-btn" disabled={busy} onClick={onCreate}>
           {t('mp.create')}
         </button>
 

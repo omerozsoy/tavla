@@ -43,6 +43,65 @@ class RoomController extends Controller
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1']);
     }
 
+    // Hizli eslesme: bekleyen biri varsa esle, yoksa havuza gir ve bekle.
+    public function matchmaking(Request $request)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['required', 'string', 'max:40'],
+            'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
+            'avatar' => ['nullable', 'string', 'max:300000'],
+        ]);
+
+        // Zaten havuzda bekleyen kendi odam varsa onu don (cift istek korumasi)
+        $mine = Room::where('status', 'mm_waiting')->where('p1_token', $data['token'])->first();
+        if ($mine) {
+            return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
+        }
+
+        // Bekleyen baska bir oyuncu bul (en eski). Kilit yaris kosulunu azaltir.
+        $opponent = Room::where('status', 'mm_waiting')
+            ->where('p1_token', '!=', $data['token'])
+            ->whereNull('p2_token')
+            ->orderBy('created_at')
+            ->lockForUpdate()
+            ->first();
+
+        if ($opponent) {
+            $opponent->p2_token = $data['token'];
+            $opponent->p2_name = $data['name'];
+            $opponent->p2_rating = $data['rating'] ?? null;
+            $opponent->p2_avatar = $data['avatar'] ?? null;
+            $opponent->status = 'playing';
+            $opponent->save();
+            return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
+        }
+
+        // Kimse yok -> havuza gir
+        $room = Room::create([
+            'code' => $this->generateCode(),
+            'p1_token' => $data['token'],
+            'p1_name' => $data['name'],
+            'p1_rating' => $data['rating'] ?? null,
+            'p1_avatar' => $data['avatar'] ?? null,
+            'status' => 'mm_waiting',
+            'version' => 0,
+        ]);
+
+        return response()->json(['room' => $room->toClient(), 'slot' => 'p1', 'matched' => false]);
+    }
+
+    // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)
+    public function matchmakingCancel(Request $request)
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        Room::where('status', 'mm_waiting')
+            ->where('p1_token', $data['token'])
+            ->whereNull('p2_token')
+            ->delete();
+        return response()->json(['ok' => true]);
+    }
+
     // Odaya katil (kod ile)
     public function join(Request $request, string $code)
     {

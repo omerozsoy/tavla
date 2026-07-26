@@ -32,6 +32,8 @@ import AnalysisPanel, { type MoveError } from './ui/AnalysisPanel'
 import {
   createRoom,
   joinRoom,
+  matchmake,
+  cancelMatchmake,
   showRoom,
   updateRoom,
   sendChat,
@@ -113,7 +115,7 @@ interface RoomState {
   oppName: string | null
   oppRating: number | null
   oppAvatar: string | null
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7]
@@ -1017,6 +1019,56 @@ export default function App() {
     }
   }
 
+  // Hizli eslesme: havuza gir; matched ise hemen basla, degilse mm_waiting'de bekle
+  async function handleMatchmake() {
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const res = await matchmake(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      appliedVersionRef.current = -1
+      lastSyncRef.current = ''
+      syncEnabledRef.current = false
+      setOppStarted(false)
+      setChat([])
+      ratingReportedRef.current = false
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+      setMatchLog([])
+      setRatingChange(null)
+      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setMatch(newMatch(onlineTargetRef.current))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      setOpening(null)
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
+        oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        status: res.room.status,
+      })
+    } catch {
+      setRoomError(t('mp.connError'))
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
+  async function handleCancelMatch() {
+    try {
+      await cancelMatchmake()
+    } catch {
+      /* yoksay */
+    }
+    handleLeaveRoom()
+  }
+
   async function handleJoinRoom(code: string) {
     setRoomBusy(true)
     setRoomError('')
@@ -1648,6 +1700,8 @@ export default function App() {
           error={roomError}
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}
+          onMatchmake={handleMatchmake}
+          onCancelMatch={handleCancelMatch}
           onLeave={handleLeaveRoom}
         />
       </>
