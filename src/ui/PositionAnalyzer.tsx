@@ -30,6 +30,9 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
   const [editMode, setEditMode] = useState<'add' | 'remove'>('add')
   const [d1, setD1] = useState(0) // 0 = zar yok
   const [d2, setD2] = useState(0)
+  const [matchLen, setMatchLen] = useState(0) // 0 = para oyunu; 1,3,5,7,9,11
+  const [scoreW, setScoreW] = useState(0)
+  const [scoreB, setScoreB] = useState(0)
   const [result, setResult] = useState<number[] | null>(null)
   const [moveRanked, setMoveRanked] = useState<RankedMove[] | null>(null)
   const [busy, setBusy] = useState(false)
@@ -94,24 +97,73 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
   const bg = result ? result[2] * 100 : 0
   const winOf = (p: number[]) => (p[0] + p[1] + p[2]) * 100
 
-  // Küp kararı (para oyunu / cubeless yaklaşımı; equity mover perspektifi)
-  const eq = result ? equityFrom(result) : 0
-  const gammonWinProb = result ? result[1] : 0
-  const tooGood = eq >= 0.7 && gammonWinProb >= 0.35
-  const doublerKey = !result
-    ? ''
-    : eq < 0.3
-      ? 'cube.noDouble'
-      : tooGood
-        ? 'cube.tooGood'
-        : 'cube.double'
-  const takerKey = !result ? '' : tooGood ? '' : eq < 0.5 ? 'cube.take' : 'cube.pass'
+  // Maç eşitlik tablosu (MET): mover_away (satır) x opp_away (sütun) -> mover'ın maç kazanma olasılığı
+  const MET = [
+    [0.5, 0.68, 0.75, 0.82, 0.85, 0.9, 0.91],
+    [0.32, 0.5, 0.6, 0.68, 0.75, 0.8, 0.84],
+    [0.25, 0.4, 0.5, 0.59, 0.66, 0.71, 0.76],
+    [0.18, 0.32, 0.41, 0.5, 0.58, 0.64, 0.7],
+    [0.15, 0.25, 0.34, 0.42, 0.5, 0.57, 0.62],
+    [0.1, 0.2, 0.29, 0.36, 0.43, 0.5, 0.56],
+    [0.09, 0.16, 0.24, 0.3, 0.38, 0.44, 0.5],
+  ]
+  const ME = (a: number, b: number): number => {
+    if (a <= 0) return 1
+    if (b <= 0) return 0
+    return MET[Math.min(a, 7) - 1][Math.min(b, 7) - 1]
+  }
+
+  // Küp kararı: skor girildiyse MET tabanlı (maç), yoksa para oyunu (cubeless)
+  function cubeDecision(): { doublerKey: string; takerKey: string } {
+    if (!result) return { doublerKey: '', takerKey: '' }
+    const p = result
+    const V = cube.value
+    if (matchLen > 0) {
+      const aM = turn === 'white' ? matchLen - scoreW : matchLen - scoreB
+      const aO = turn === 'white' ? matchLen - scoreB : matchLen - scoreW
+      const outs: [number, number, boolean][] = [
+        [p[0] - p[1], 1, true],
+        [p[1] - p[2], 2, true],
+        [p[2], 3, true],
+        [p[3] - p[4], 1, false],
+        [p[4] - p[5], 2, false],
+        [p[5], 3, false],
+      ]
+      const meAt = (cv: number) => {
+        let m = 0
+        for (const [pr, mult, win] of outs) {
+          if (pr <= 0) continue
+          const pts = cv * mult
+          m += pr * (win ? ME(aM - pts, aO) : ME(aM, aO - pts))
+        }
+        return m
+      }
+      const meCash = aM - V <= 0 ? 1 : ME(aM - V, aO)
+      const nd = meAt(V)
+      const dt = meAt(V * 2)
+      const opponentTakes = dt < meCash
+      const afterDbl = Math.min(dt, meCash)
+      if (afterDbl > nd + 0.002) {
+        return { doublerKey: 'cube.double', takerKey: opponentTakes ? 'cube.take' : 'cube.pass' }
+      }
+      if (nd > meCash + 0.005) return { doublerKey: 'cube.tooGood', takerKey: '' }
+      return { doublerKey: 'cube.noDouble', takerKey: opponentTakes ? 'cube.take' : 'cube.pass' }
+    }
+    // Para oyunu
+    const eq = equityFrom(p)
+    const tooGood = eq >= 0.7 && p[1] >= 0.35
+    return {
+      doublerKey: eq < 0.3 ? 'cube.noDouble' : tooGood ? 'cube.tooGood' : 'cube.double',
+      takerKey: tooGood ? '' : eq < 0.5 ? 'cube.take' : 'cube.pass',
+    }
+  }
+  const { doublerKey, takerKey } = cubeDecision()
 
   return (
     <div className="analyzer">
       <div className="analyzer-head">
         <h2>🔬 {t('pa.title')}</h2>
-        <button className="menu-btn" onClick={onClose}>
+        <button className="analyzer-close" onClick={onClose}>
           ✕ {t('pa.close')}
         </button>
       </div>
@@ -230,6 +282,45 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
           </div>
 
           <div className="setup-row">
+            <div className="setup-label">{t('pa.match')}</div>
+            <div className="menu-targets">
+              {[0, 1, 3, 5, 7, 9, 11].map((n) => (
+                <button
+                  key={n}
+                  className={matchLen === n ? 'menu-btn active' : 'menu-btn'}
+                  onClick={() => setMatchLen(n)}
+                >
+                  {n === 0 ? t('pa.money') : n}
+                </button>
+              ))}
+            </div>
+            {matchLen > 0 && (
+              <div className="pa-score">
+                <label>
+                  ⚪
+                  <input
+                    type="number"
+                    min={0}
+                    max={matchLen - 1}
+                    value={scoreW}
+                    onChange={(e) => setScoreW(Math.max(0, Number(e.target.value)))}
+                  />
+                </label>
+                <label>
+                  ⚫
+                  <input
+                    type="number"
+                    min={0}
+                    max={matchLen - 1}
+                    value={scoreB}
+                    onChange={(e) => setScoreB(Math.max(0, Number(e.target.value)))}
+                  />
+                </label>
+              </div>
+            )}
+          </div>
+
+          <div className="setup-row">
             <div className="setup-label">{t('pa.dice')}</div>
             <div className="menu-targets pa-dice">
               <button
@@ -316,7 +407,11 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
                     <b className={takerKey === 'cube.take' ? 'good' : 'bad'}>{t(takerKey)}</b>
                   </div>
                 )}
-                <div className="pa-cube-note">{t('cube.note')}</div>
+                <div className="pa-cube-note">
+                  {matchLen > 0
+                    ? t('cube.matchNote', { n: matchLen, sw: scoreW, sb: scoreB })
+                    : t('cube.note')}
+                </div>
               </div>
             </div>
           )}
