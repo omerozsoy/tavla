@@ -1228,12 +1228,17 @@ export default function App() {
         modal
         editUser={editProfile ? user : null}
         editGuest={editProfile && !user ? guestProfile : null}
-        onAuthed={(u) => {
+        onAuthed={(u, isNew) => {
           const wasEditing = editProfile
           setUser(u)
           setGuestProfile(null)
-          setEditProfile(false)
           setShowAuth(false)
+          // Yeni Google kullanicisi: takma ismini kendi secsin (profil ekrani acilir)
+          if (isNew) {
+            setEditProfile(true)
+            return
+          }
+          setEditProfile(false)
           if (!wasEditing) {
             loadServerGame()
               .then((g) => {
