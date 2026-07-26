@@ -1768,6 +1768,32 @@ body {
   background: var(--accent);
   color: #fff;
 }
+.level-slider {
+  width: 100%;
+  margin: 6px 0 8px;
+  accent-color: var(--accent);
+}
+.level-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+}
+.level-chip {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.8rem;
+  text-align: left;
+}
+.level-chip.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+}
 .setup-row {
   margin: 6px 0 14px;
 }

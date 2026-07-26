@@ -18,7 +18,7 @@ export interface Profile {
 
 export interface SavedGame {
   mode: 'pvp' | 'pvb' | 'online'
-  difficulty: 'neural' | 'heuristic'
+  difficulty: number | 'neural' | 'heuristic' // 1..10 (eski kayitlar string olabilir)
   match: MatchState
   starter: 'white' | 'black'
   turnsPlayed: number
