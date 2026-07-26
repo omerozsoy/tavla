@@ -265,7 +265,7 @@ export interface RoomView {
   state: unknown
   messages: ChatMsg[]
   version: number
-  status: 'waiting' | 'playing' | 'finished'
+  status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 
 export async function createRoom(
@@ -288,6 +288,25 @@ export async function joinRoom(
   return req(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+  })
+}
+
+// Hizli eslesme: bekleyen biriyle esle ya da havuza gir. matched=true -> hemen basla.
+export async function matchmake(
+  name: string,
+  rating?: number,
+  avatar?: string,
+): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
+  return req('/matchmaking', {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+  })
+}
+
+export async function cancelMatchmake(): Promise<void> {
+  await req('/matchmaking/cancel', {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken() }),
   })
 }
 

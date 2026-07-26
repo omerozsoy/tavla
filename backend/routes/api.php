@@ -15,6 +15,8 @@ Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 
 // Multiplayer odalari (misafir dostu, token bazli)
+Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
+Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
 Route::post('/rooms', [RoomController::class, 'create']);
 Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
 Route::post('/rooms/{code}/chat', [RoomController::class, 'chat']);
