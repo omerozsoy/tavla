@@ -229,6 +229,7 @@ export default function App() {
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
+  const turnRankedRef = useRef<RankedMove[] | null>(null) // tur basi tam siralama (hata tespiti)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -401,11 +402,13 @@ export default function App() {
   }
 
   function computeMoveError(finalPlayed: Step[]): MoveError | null {
-    if (!showAnalysis || !ranked || ranked.length === 0) return null
+    // Hata tespiti icin TUM turun siralamasini kullan (tur basinda hesaplanan)
+    const turnRanked = turnRankedRef.current
+    if (!showAnalysis || !turnRanked || turnRanked.length === 0) return null
     const resultKey = boardKey(applyPlayed(turnStart, finalPlayed))
-    const pl = ranked.find((r) => r.move.resultKey === resultKey)
+    const pl = turnRanked.find((r) => r.move.resultKey === resultKey)
     if (!pl) return null
-    const best = ranked[0]
+    const best = turnRanked[0]
     const loss = Math.max(0, best.equity - pl.equity)
     const { key, cls } = classifyError(loss)
     return {
@@ -573,20 +576,32 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cubePending, mode, turnStart])
 
-  // ---- Analiz ----
+  // ---- Analiz (her zar sonrasi guncellenir) ----
   useEffect(() => {
-    if (!showAnalysis || !interactive || !diceRolled || played.length > 0) return
+    if (!showAnalysis || !interactive || !diceRolled || gameWon) return
+    if (remainingDice.length === 0) return // tur tamamlandi, analiz yok
+    // Analiz durumu: hic oynanmadiysa tur basi; oynandiysa mevcut konum + kalan zarlar
+    const analysisState =
+      played.length === 0
+        ? turnStart
+        : (() => {
+            const s = cloneState(working)
+            s.dice = remainingDice.slice()
+            s.diceUsed = remainingDice.map(() => false)
+            return s
+          })()
     let cancelled = false
     setAnalysisLoading(true)
     ;(async () => {
       try {
         const [r, cp] = await Promise.all([
-          neuralRef.current.analyzeMoves(turnStart),
-          neuralRef.current.evalPosition(turnStart, turnStart.turn),
+          neuralRef.current.analyzeMoves(analysisState),
+          neuralRef.current.evalPosition(analysisState, analysisState.turn),
         ])
         if (!cancelled) {
           setRanked(r)
           setCurrentProbs(cp)
+          if (played.length === 0) turnRankedRef.current = r // tur basi tam siralamayi sakla
         }
       } catch {
         /* sessizce gec */
@@ -598,7 +613,7 @@ export default function App() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnalysis, interactive, diceRolled, played.length, turnStart])
+  }, [showAnalysis, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
 
   // Insan sirasi + hamle yok -> otomatik "hamle yok" deyip gec (Pas butonu yok)
   useEffect(() => {
