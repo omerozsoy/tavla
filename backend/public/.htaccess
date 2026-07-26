@@ -1,6 +1,10 @@
 # onnxruntime-web icin .wasm dogru MIME tipiyle servis edilmeli (sinir agi)
 AddType application/wasm .wasm
 
+# Kok istegi (/) once React index.html'i dogrudan servis etsin (Laravel kurulmadan da acilir).
+# /api/* yine Laravel'e gider.
+DirectoryIndex index.html index.php
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
