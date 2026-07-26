@@ -15,9 +15,10 @@ interface Props {
   onAuthed: (user: ServerUser) => void
   onGuest: (profile: Profile) => void
   onCancel?: () => void
+  modal?: boolean // true: yari saydam arka planla modal pencere
 }
 
-export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel }: Props) {
+export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel, modal }: Props) {
   const { t } = useT()
   const editing = !!(editUser || editGuest)
   const seed = editUser
@@ -230,11 +231,19 @@ export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel 
   )
 
   return (
-    <div className="register-overlay">
+    <div
+      className={`register-overlay ${modal ? 'modal' : ''}`}
+      onClick={modal && onCancel ? (e) => e.target === e.currentTarget && onCancel() : undefined}
+    >
       <form
         className="register-card"
         onSubmit={editing ? doEdit : tab === 'login' ? doLogin : doRegister}
       >
+        {modal && onCancel && (
+          <button type="button" className="modal-close" onClick={onCancel} aria-label="Kapat">
+            ✕
+          </button>
+        )}
         <h2>{title}</h2>
 
         {!editing && (
