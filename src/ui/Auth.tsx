@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Profile } from '../storage'
 import { COUNTRIES } from '../countries'
 import { useT } from '../i18n'
@@ -35,6 +35,50 @@ export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel 
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
+
+  // Google butonu: onAuthed'i ref'te tut (efekt bagimliligini sabit tut)
+  const googleBtnRef = useRef<HTMLDivElement>(null)
+  const onAuthedRef = useRef(onAuthed)
+  onAuthedRef.current = onAuthed
+
+  useEffect(() => {
+    if (editing) return
+    let cancelled = false
+    const handleCredential = (resp: { credential: string }) => {
+      setBusy(true)
+      setError('')
+      api
+        .googleLogin(resp.credential)
+        .then((u) => onAuthedRef.current(u))
+        .catch(() => setError(t('auth.googleFail')))
+        .finally(() => setBusy(false))
+    }
+    const render = (): boolean => {
+      const g = (window as unknown as { google?: any }).google
+      if (!g?.accounts?.id || !googleBtnRef.current || cancelled) return false
+      g.accounts.id.initialize({ client_id: api.GOOGLE_CLIENT_ID, callback: handleCredential })
+      googleBtnRef.current.innerHTML = ''
+      g.accounts.id.renderButton(googleBtnRef.current, {
+        theme: 'filled_blue',
+        size: 'large',
+        text: 'continue_with',
+        shape: 'pill',
+        width: 300,
+      })
+      return true
+    }
+    if (render()) return
+    const s = document.createElement('script')
+    s.src = 'https://accounts.google.com/gsi/client'
+    s.async = true
+    s.defer = true
+    s.onload = () => render()
+    document.body.appendChild(s)
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, tab])
 
   // Takma isim musaitlik kontrolu (API, debounce) - kayit/duzenlemede
   useEffect(() => {
@@ -215,6 +259,13 @@ export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel 
             >
               {t('auth.register')}
             </button>
+          </div>
+        )}
+
+        {!editing && (
+          <div className="google-auth">
+            <div ref={googleBtnRef} className="google-btn" />
+            <div className="auth-divider">{t('auth.or')}</div>
           </div>
         )}
 

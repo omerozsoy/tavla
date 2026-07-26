@@ -91,6 +91,20 @@ export async function register(input: Profile & { password: string }): Promise<S
   return data.user
 }
 
+// Google Sign-In istemci kimligi (gizli degil)
+export const GOOGLE_CLIENT_ID =
+  '306143287506-kpasng1ualupme10gc7ir29rkgqkr9ev.apps.googleusercontent.com'
+
+// Google ID token'i ile giris/kayit
+export async function googleLogin(credential: string): Promise<ServerUser> {
+  const data = await req<{ user: ServerUser; token: string; isNew: boolean }>('/auth/google', {
+    method: 'POST',
+    body: JSON.stringify({ credential }),
+  })
+  setToken(data.token)
+  return data.user
+}
+
 export async function login(loginId: string, password: string): Promise<ServerUser> {
   const data = await req<{ user: ServerUser; token: string }>('/login', {
     method: 'POST',
