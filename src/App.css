@@ -1484,6 +1484,108 @@ body {
   margin-top: 22px;
 }
 
+/* ---- Mac raporu (stats / analiz) ---- */
+.report-overlay {
+  z-index: 130;
+}
+.report-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  max-height: 82vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+.report-card h2 {
+  margin: 0 0 12px;
+}
+.rep-pr {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+.rep-pr b {
+  color: #7ee0a0;
+}
+.rep-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  margin-bottom: 6px;
+}
+.rep-line.good b {
+  color: #7ee0a0;
+}
+.rep-line.ok b {
+  color: #ffd54a;
+}
+.rep-line.bad b {
+  color: #ffa05a;
+}
+.rep-line.blunder b {
+  color: #ff7a8a;
+}
+.rep-worst {
+  margin-top: 10px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.rep-worst code {
+  color: var(--text);
+}
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.rep-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto auto;
+  gap: 8px;
+  align-items: center;
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--bg);
+  font-size: 0.9rem;
+  border-left: 3px solid transparent;
+}
+.rep-row.good {
+  border-left-color: #7ee0a0;
+}
+.rep-row.ok {
+  border-left-color: #ffd54a;
+}
+.rep-row.bad {
+  border-left-color: #ffa05a;
+}
+.rep-row.blunder {
+  border-left-color: #ff7a8a;
+  background: #ff7a8a1a;
+}
+.rep-no {
+  color: var(--muted);
+}
+.rep-move {
+  font-weight: 700;
+}
+.rep-best {
+  color: #7ee0a0;
+  font-size: 0.85rem;
+}
+.rep-loss {
+  color: #ff7a8a;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.rep-tag {
+  color: #7ee0a0;
+  font-size: 0.82rem;
+}
+
 /* ---- Mac sonucu ekrani ---- */
 .mr-overlay {
   z-index: 120;
