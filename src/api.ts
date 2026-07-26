@@ -211,8 +211,10 @@ export interface RoomView {
   code: string
   p1_name: string
   p1_rating: number | null
+  p1_avatar: string | null
   p2_name: string | null
   p2_rating: number | null
+  p2_avatar: string | null
   state: unknown
   messages: ChatMsg[]
   version: number
@@ -222,10 +224,11 @@ export interface RoomView {
 export async function createRoom(
   name: string,
   rating?: number,
+  avatar?: string,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
   })
 }
 
@@ -233,10 +236,11 @@ export async function joinRoom(
   code: string,
   name: string,
   rating?: number,
+  avatar?: string,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
   })
 }
 

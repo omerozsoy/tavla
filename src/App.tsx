@@ -85,6 +85,7 @@ interface RoomState {
   slot: Slot
   oppName: string | null
   oppRating: number | null
+  oppAvatar: string | null
   status: 'waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
@@ -365,6 +366,7 @@ export default function App() {
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
     setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+    ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
   function commitTurn(finalPlayed: Step[]) {
@@ -695,6 +697,20 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
+  // Bota karsi mac bitince de puan islensin (bot puani zorluga gore)
+  useEffect(() => {
+    if (mode !== 'pvb' || !user || ratingReportedRef.current) return
+    const mW = matchWinner(match)
+    if (!mW) return
+    ratingReportedRef.current = true
+    const botRating = difficulty === 'neural' ? 1700 : 1300
+    const won = mW === 'white' // pvb'de insan beyaz
+    reportRating(won, botRating)
+      .then((r) => setUser((u) => (u ? { ...u, rating: r.rating } : u)))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, user, match, difficulty])
+
   // ---- Online: sunucudan gelen durumu uygula ----
   function applyOnlineState(snap: SavedGame) {
     // Uygulanan durumu imzala ki geri gonderme (echo) olmasin
@@ -769,6 +785,7 @@ export default function App() {
                 ...r,
                 oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name,
                 oppRating: r.slot === 'p1' ? rv.p2_rating : rv.p1_rating,
+                oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
                 status: rv.status,
               }
             : r,
@@ -807,7 +824,7 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -830,6 +847,7 @@ export default function App() {
         slot: res.slot,
         oppName: null,
         oppRating: null,
+        oppAvatar: null,
         status: res.room.status,
       })
     } catch {
@@ -843,7 +861,7 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating)
+      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -857,6 +875,7 @@ export default function App() {
         slot: res.slot,
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
+        oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         status: res.room.status,
       })
     } catch (e) {
@@ -1194,7 +1213,7 @@ export default function App() {
     score: match.score.black,
     target: match.target,
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
-    avatarUrl: online ? (myColor === 'black' ? profile.avatar : null) : null,
+    avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
   }
   const bottomInfo = {
     name: whiteName,
@@ -1212,7 +1231,7 @@ export default function App() {
     score: match.score.white,
     target: match.target,
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
-    avatarUrl: online ? (myColor === 'white' ? profile.avatar : null) : profile.avatar,
+    avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
   }
 
   // Auth kontrolu bitene kadar bekle

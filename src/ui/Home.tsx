@@ -37,8 +37,9 @@ export default function Home({
       <div className="home-card">
         <div className="home-brand">
           <span className="brand-badge">{t('brand.short')}</span>
-          <span className="brand-full">{t('brand.name')}</span>
+          <h1 className="brand-full">{t('brand.name')}</h1>
         </div>
+        <p className="home-tagline">{t('home.tagline')}</p>
 
         {playerName && (
           <div className="home-hello">
