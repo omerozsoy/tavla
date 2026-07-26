@@ -19,17 +19,19 @@ import {
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import DiceRow from './ui/Dice'
-import Register from './ui/Register'
+import Auth from './ui/Auth'
 import AnalysisPanel, { type MoveError } from './ui/AnalysisPanel'
-import {
-  addNickname,
-  loadGame,
-  loadProfile,
-  saveGame,
-  saveProfile,
-  type Profile,
-} from './storage'
+import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
+import {
+  getToken,
+  loadServerGame,
+  logout as apiLogout,
+  me as apiMe,
+  saveServerGame,
+  toProfile,
+  type ServerUser,
+} from './api'
 
 // gnubg tarzi hata siniflandirmasi (equity kaybina gore) -> ceviri anahtari
 function classifyError(loss: number): { key: string; cls: string } {
@@ -96,8 +98,11 @@ export default function App() {
   const { t, lang, setLang } = useT()
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
-  const [profile, setProfile] = useState<Profile | null>(() => loadProfile())
+  const [user, setUser] = useState<ServerUser | null>(null)
+  const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
+  const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
+  const profile: Profile | null = user ? toProfile(user) : guestProfile
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       return localStorage.getItem('tavla.theme') === 'light' ? 'light' : 'dark'
@@ -133,10 +138,64 @@ export default function App() {
   const neuralRef = useRef(new NeuralBot())
   const engine = difficulty === 'neural' ? neuralRef.current : heuristicRef.current
 
-  // Oyunu otomatik kaydet (yarim kalmasin)
+  // Oyunu yerel kaydet (offline/misafir icin)
   useEffect(() => {
     saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played })
   }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played])
+
+  // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
+  function applySavedGame(g: SavedGame) {
+    setMode(g.mode)
+    setDifficulty(g.difficulty)
+    setMatch(g.match)
+    setStarter(g.starter)
+    setTurnStart(g.turnStart)
+    setPlayed(g.played)
+    setTurnsPlayed(g.turnsPlayed)
+    setSelectedFrom(null)
+    setCubePending(null)
+    setGameEnd(null)
+    setBotAnim(null)
+  }
+
+  // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle
+  useEffect(() => {
+    const token = getToken()
+    if (!token) {
+      setAuthChecked(true)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const u = await apiMe()
+        if (cancelled) return
+        setUser(u)
+        const g = await loadServerGame().catch(() => null)
+        if (!cancelled && g) applySavedGame(g as SavedGame)
+      } catch {
+        await apiLogout() // gecersiz token -> temizle
+      } finally {
+        if (!cancelled) setAuthChecked(true)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Giris yapmissa oyunu sunucuya da kaydet (debounce)
+  useEffect(() => {
+    if (!user) return
+    const timer = window.setTimeout(() => {
+      saveServerGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played }).catch(
+        () => {},
+      )
+    }, 800)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, mode, difficulty, match, starter, turnsPlayed, turnStart, played])
 
   // Tema (koyu/acik) + board rengi -> DOM'a uygula ve kaydet
   useEffect(() => {
@@ -501,6 +560,12 @@ export default function App() {
     setMessage(t('msg.newMatch'))
   }
 
+  function handleLogout() {
+    apiLogout()
+    setUser(null)
+    setGuestProfile(null)
+  }
+
   function nextGame() {
     const m2 = setupNextGame(match)
     const s = opponent(starter)
@@ -665,15 +730,38 @@ export default function App() {
     target: match.target,
   }
 
-  // Uye kaydi yoksa (veya duzenleniyorsa) kayit formunu goster
+  // Auth kontrolu bitene kadar bekle
+  if (!authChecked) {
+    return (
+      <div className="register-overlay">
+        <div className="register-card">{t('an.loading')}</div>
+      </div>
+    )
+  }
+
+  // Giris/kayit yoksa veya profil duzenleniyorsa Auth ekrani
   if (!profile || editProfile) {
     return (
-      <Register
-        initial={profile}
-        onDone={(p) => {
+      <Auth
+        editUser={editProfile ? user : null}
+        editGuest={editProfile && !user ? guestProfile : null}
+        onAuthed={(u) => {
+          const wasEditing = editProfile
+          setUser(u)
+          setGuestProfile(null)
+          setEditProfile(false)
+          if (!wasEditing) {
+            loadServerGame()
+              .then((g) => {
+                if (g) applySavedGame(g as SavedGame)
+              })
+              .catch(() => {})
+          }
+        }}
+        onGuest={(p) => {
           saveProfile(p)
-          addNickname(p.nickname)
-          setProfile(p)
+          setGuestProfile(p)
+          setUser(null)
           setEditProfile(false)
         }}
         onCancel={profile ? () => setEditProfile(false) : undefined}
@@ -690,11 +778,20 @@ export default function App() {
         </div>
 
         <div className="menu-group">
-          <div className="menu-label">{t('menu.member')}</div>
+          <div className="menu-label">{t('menu.account')}</div>
           <div className="menu-profile">👤 {profile.nickname}</div>
           <button className="menu-btn" onClick={() => setEditProfile(true)}>
             {t('menu.editProfile')}
           </button>
+          {user ? (
+            <button className="menu-btn" onClick={handleLogout}>
+              {t('auth.logout')}
+            </button>
+          ) : (
+            <button className="menu-btn" onClick={() => setGuestProfile(null)}>
+              {t('menu.login')}
+            </button>
+          )}
         </div>
 
         <div className="menu-group">

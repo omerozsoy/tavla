@@ -95,6 +95,20 @@ const TR: Dict = {
   'reg.submitEdit': 'Kaydet',
   'reg.nickTaken': 'Bu takma isim alınmış.',
   'reg.countryPlaceholder': 'Ülke ara / seç…',
+  'reg.password': 'Şifre',
+  'auth.login': 'Giriş',
+  'auth.register': 'Kayıt',
+  'auth.loginId': 'E-posta veya Takma İsim',
+  'auth.doLogin': 'Giriş Yap',
+  'auth.guest': 'Misafir olarak oyna',
+  'auth.guestNick': 'Misafir',
+  'auth.logout': 'Çıkış Yap',
+  'auth.haveAccount': 'Hesabın var mı? Giriş yap',
+  'auth.noAccount': 'Hesabın yok mu? Kayıt ol',
+  'auth.failed': 'İşlem başarısız. Bilgileri kontrol et.',
+  'auth.offline': 'Sunucuya ulaşılamadı.',
+  'menu.account': 'Hesap',
+  'menu.login': '🔑 Giriş / Kayıt',
 }
 
 const EN: Dict = {
@@ -188,6 +202,20 @@ const EN: Dict = {
   'reg.submitEdit': 'Save',
   'reg.nickTaken': 'This nickname is taken.',
   'reg.countryPlaceholder': 'Search / select country…',
+  'reg.password': 'Password',
+  'auth.login': 'Log In',
+  'auth.register': 'Sign Up',
+  'auth.loginId': 'Email or Nickname',
+  'auth.doLogin': 'Log In',
+  'auth.guest': 'Play as guest',
+  'auth.guestNick': 'Guest',
+  'auth.logout': 'Log Out',
+  'auth.haveAccount': 'Have an account? Log in',
+  'auth.noAccount': 'No account? Sign up',
+  'auth.failed': 'Failed. Check your details.',
+  'auth.offline': 'Could not reach the server.',
+  'menu.account': 'Account',
+  'menu.login': '🔑 Log in / Sign up',
 }
 
 const DICT: Record<Lang, Dict> = { tr: TR, en: EN }

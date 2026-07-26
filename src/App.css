@@ -935,6 +935,24 @@ body {
   justify-content: flex-end;
   margin-top: 8px;
 }
+.auth-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.auth-tabs .menu-btn {
+  text-align: center;
+}
+.guest-link {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  margin-top: 6px;
+  align-self: center;
+}
 
 @media (max-width: 720px) {
   .game-area {
