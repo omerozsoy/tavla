@@ -19,7 +19,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
-            'country'    => ['required', 'string', 'max:80'],
+            'country'    => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:40', 'unique:users,nickname'],
@@ -159,7 +159,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'first_name' => ['required', 'string', 'max:80'],
             'last_name'  => ['required', 'string', 'max:80'],
-            'country'    => ['required', 'string', 'max:80'],
+            'country'    => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
             'nickname'   => ['required', 'string', 'max:40', Rule::unique('users', 'nickname')->ignore($user->id)],

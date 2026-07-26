@@ -173,7 +173,8 @@ export default function Auth({
   }
 
   function validProfile(): boolean {
-    if (!firstName.trim() || !lastName.trim() || !country.trim() || !nickname.trim()) {
+    // Ulke zorunlu degil (sonra profilden eklenebilir)
+    if (!firstName.trim() || !lastName.trim() || !nickname.trim()) {
       setError(t('reg.fillAll'))
       return false
     }
@@ -250,30 +251,33 @@ export default function Auth({
 
   const profileFields = (
     <>
-      <div className="avatar-picker">
-        <div className="avatar-preview">
-          {avatar ? <img src={avatar} alt="" /> : <span>📷</span>}
+      {/* Fotograf/ulke/dogum tarihi sadece profil duzenlemede (kayitta sade) */}
+      {editing && (
+        <div className="avatar-picker">
+          <div className="avatar-preview">
+            {avatar ? <img src={avatar} alt="" /> : <span>📷</span>}
+          </div>
+          <div className="avatar-actions">
+            <label className="menu-btn avatar-btn">
+              {t('reg.photoPick')}
+              <input
+                type="file"
+                accept="image/*"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) resizeImage(f).then(setAvatar).catch(() => {})
+                }}
+              />
+            </label>
+            {avatar && (
+              <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
+                {t('reg.photoRemove')}
+              </button>
+            )}
+          </div>
         </div>
-        <div className="avatar-actions">
-          <label className="menu-btn avatar-btn">
-            {t('reg.photoPick')}
-            <input
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) resizeImage(f).then(setAvatar).catch(() => {})
-              }}
-            />
-          </label>
-          {avatar && (
-            <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
-              {t('reg.photoRemove')}
-            </button>
-          )}
-        </div>
-      </div>
+      )}
       <label>
         {t('reg.firstName')}
         <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
@@ -282,20 +286,22 @@ export default function Auth({
         {t('reg.lastName')}
         <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
       </label>
-      <label>
-        {t('reg.country')}
-        <input
-          list="country-list"
-          value={country}
-          onChange={(e) => setCountry(e.target.value)}
-          placeholder={t('reg.countryPlaceholder')}
-        />
-        <datalist id="country-list">
-          {COUNTRIES.map((c) => (
-            <option key={c} value={c} />
-          ))}
-        </datalist>
-      </label>
+      {editing && (
+        <label>
+          {t('reg.country')}
+          <input
+            list="country-list"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder={t('reg.countryPlaceholder')}
+          />
+          <datalist id="country-list">
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
+        </label>
+      )}
       <label>
         {t('reg.nickname')}
         <input
@@ -305,10 +311,12 @@ export default function Auth({
         />
         {nickTaken && <span className="field-error">{t('reg.nickTaken')}</span>}
       </label>
-      <label>
-        {t('reg.birthDate')}
-        <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
-      </label>
+      {editing && (
+        <label>
+          {t('reg.birthDate')}
+          <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+        </label>
+      )}
       <label>
         {t('reg.email')}
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
