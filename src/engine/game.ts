@@ -4,10 +4,23 @@ import { allMaximalSequences, applyStep } from './moves'
 
 export { initialState, winner }
 
-// Iki zar at (1-6)
+// Kriptografik guvenli tek zar (1-6).
+// crypto.getRandomValues + rejection sampling: 256 = 42*6 + 4, bu yuzden 252 ve
+// ustu reddedilir (252 = 42*6). Kalan 0..251 esit dagilir -> modulo yanliligi yok.
+export function secureDie(): number {
+  const buf = new Uint8Array(1)
+  let v: number
+  do {
+    crypto.getRandomValues(buf)
+    v = buf[0]
+  } while (v >= 252)
+  return (v % 6) + 1
+}
+
+// Iki zar at (1-6). Cift ise 4 hamle.
 export function rollDice(): number[] {
-  const a = 1 + Math.floor(Math.random() * 6)
-  const b = 1 + Math.floor(Math.random() * 6)
+  const a = secureDie()
+  const b = secureDie()
   return a === b ? [a, a, a, a] : [a, b]
 }
 
