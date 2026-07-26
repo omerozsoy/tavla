@@ -1578,8 +1578,12 @@ export default function App() {
       <>
         {accountBar}
         <PositionAnalyzer
-          neuralEval={(s, p) => neuralRef.current.evalPosition(s, p)}
-          neuralAnalyze={(s) => neuralRef.current.analyzeMoves(s)}
+          neuralEval={(s, p, deep) =>
+            deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
+          }
+          neuralAnalyze={(s, deep) =>
+            deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
+          }
           onClose={() => setAnalyzerOpen(false)}
         />
       </>

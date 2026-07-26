@@ -149,6 +149,67 @@ export class NeuralBot implements Engine {
     return ranked
   }
 
+  // 21 zar kombinasyonu (agirlikli): cift 1/36, farkli 2/36
+  private static ROLLS: [number, number, number][] = (() => {
+    const r: [number, number, number][] = []
+    for (let a = 1; a <= 6; a++) for (let b = a; b <= 6; b++) r.push([a, b, a === b ? 1 / 36 : 2 / 36])
+    return r
+  })()
+
+  // 2-ply: pozisyonda (onRoll sirada) her zar icin en iyi 1-ply hamle oynanir,
+  // sonuclar agirlikli ortalanir -> onRoll perspektifli 6-olasilik.
+  async eval2ply(state: GameState, onRoll: Player): Promise<number[]> {
+    await this.init()
+    const acc = [0, 0, 0, 0, 0, 0]
+    for (const [d1, d2, w] of NeuralBot.ROLLS) {
+      const st = cloneState(state)
+      st.turn = onRoll
+      st.dice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
+      st.diceUsed = st.dice.map(() => false)
+      const moves = generateMoves(st)
+      let probs: number[]
+      if (moves.length === 0) {
+        probs = await this.evalPosition(st, onRoll) // gele: pozisyonu 1-ply degerlendir
+      } else {
+        const cands = await this.scoreMoves(st, moves)
+        let best = cands[0]
+        for (const c of cands) if (c.equity > best.equity) best = c
+        probs = best.probs
+      }
+      for (let i = 0; i < 6; i++) acc[i] += w * probs[i]
+    }
+    return acc
+  }
+
+  // 2-ply hamle analizi: 1-ply ile en iyi topK hamleyi bulur, onlari 2-ply degerlendirir.
+  async analyzeMoves2ply(state: GameState, topK = 6): Promise<RankedMove[]> {
+    const mover = state.turn
+    const moves = generateMoves(state)
+    if (moves.length === 0) return []
+    if (moves.length === 1) {
+      const c = (await this.scoreMoves(state, moves))[0]
+      return [{ move: c.move, equity: c.equity, probs: c.probs }]
+    }
+    const oneP = await this.analyzeMoves(state)
+    const opp = opponent(mover)
+    const deep: RankedMove[] = []
+    for (const rm of oneP.slice(0, topK)) {
+      const after = cloneState(state)
+      for (const st of rm.move.steps) applyStep(after, st, mover)
+      if (after.off[mover] === 15) {
+        deep.push(rm) // oyun bitti -> 1-ply degeri kesin
+        continue
+      }
+      const oppProbs = await this.eval2ply(after, opp)
+      const moverProbs = switchSides(oppProbs)
+      deep.push({ move: rm.move, equity: equityFrom(moverProbs), probs: moverProbs })
+    }
+    const deepKeys = new Set(deep.map((d) => d.move.resultKey))
+    const all = [...deep, ...oneP.filter((r) => !deepKeys.has(r.move.resultKey))]
+    all.sort((a, b) => b.equity - a.equity)
+    return all
+  }
+
   // Mevcut pozisyonun mover-perspektifli olasiliklari (hamleden once)
   async evalPosition(state: GameState, onRoll: Player): Promise<number[]> {
     await this.init()
