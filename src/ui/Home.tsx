@@ -1,93 +1,68 @@
-import { useT, type Lang } from '../i18n'
+import { useT } from '../i18n'
+
+interface BoardThemeOpt {
+  id: string
+  name: string
+  a: string
+  b: string
+}
 
 interface Props {
-  isUser: boolean
-  rating: number | null
-  onVsBot: () => void
-  onOnline: () => void
-  onLogin: () => void
-  onEditProfile: () => void
-  onLogout?: () => void
-  theme: 'dark' | 'light'
-  onToggleTheme: () => void
-  lang: Lang
-  onToggleLang: () => void
   playerName: string
+  onNewGame: () => void
+  boardTheme: string
+  setBoardTheme: (id: string) => void
+  boardThemes: BoardThemeOpt[]
 }
 
 export default function Home({
-  isUser,
-  rating,
-  onVsBot,
-  onOnline,
-  onLogin,
-  onEditProfile,
-  onLogout,
-  theme,
-  onToggleTheme,
-  lang,
-  onToggleLang,
   playerName,
+  onNewGame,
+  boardTheme,
+  setBoardTheme,
+  boardThemes,
 }: Props) {
   const { t } = useT()
   return (
-    <div className="home-screen">
-      <div className="home-card">
-        <div className="home-brand">
+    <div className="app lobby">
+      <aside className="side-menu">
+        <div className="brand">
           <span className="brand-badge">{t('brand.short')}</span>
-          <h1 className="brand-full">{t('brand.name')}</h1>
+          <span className="brand-full">{t('brand.name')}</span>
         </div>
-        <p className="home-tagline">{t('home.tagline')}</p>
 
-        {playerName && (
-          <div className="home-hello">
-            {t('home.hello', { name: playerName })}
-            {rating != null && <span className="account-rating">⭐ {rating}</span>}
+        <div className="menu-group">
+          <button className="menu-btn lobby-new" onClick={onNewGame}>
+            🎮 {t('setup.newGame')}
+          </button>
+        </div>
+
+        <div className="menu-group">
+          <div className="menu-label">{t('menu.boardSettings')}</div>
+          <div className="board-swatches">
+            {boardThemes.map((bt) => (
+              <button
+                key={bt.id}
+                className={`swatch ${boardTheme === bt.id ? 'active' : ''}`}
+                title={bt.name}
+                onClick={() => setBoardTheme(bt.id)}
+                style={{ background: `linear-gradient(135deg, ${bt.a} 0 50%, ${bt.b} 50% 100%)` }}
+              />
+            ))}
           </div>
-        )}
+        </div>
+      </aside>
 
-        <div className="home-actions">
-          <button className="home-btn primary" onClick={onVsBot}>
-            <span className="home-btn-ico">🤖</span>
-            <span className="home-btn-text">
-              <b>{t('home.vsBot')}</b>
-              <small>{t('home.vsBotSub')}</small>
-            </span>
-          </button>
-          <button className="home-btn" onClick={onOnline}>
-            <span className="home-btn-ico">🌐</span>
-            <span className="home-btn-text">
-              <b>{t('home.online')}</b>
-              <small>{t('home.onlineSub')}</small>
-            </span>
+      <main className="main lobby-main">
+        <div className="lobby-welcome">
+          <h1 className="lobby-title">{t('brand.name')}</h1>
+          <p className="lobby-tagline">{t('home.tagline')}</p>
+          {playerName && <p className="lobby-hello">{t('home.hello', { name: playerName })}</p>}
+          <button className="galaxy-btn roll lobby-start" onClick={onNewGame}>
+            🎮 {t('setup.newGame')}
           </button>
         </div>
-
-        <div className="home-footer">
-          <button className="menu-btn" onClick={onToggleLang}>
-            {lang === 'tr' ? 'EN' : 'TR'}
-          </button>
-          <button className="menu-btn" onClick={onToggleTheme}>
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-          {isUser ? (
-            <>
-              <button className="menu-btn" onClick={onEditProfile}>
-                {t('home.profile')}
-              </button>
-              {onLogout && (
-                <button className="menu-btn" onClick={onLogout}>
-                  {t('auth.logout')}
-                </button>
-              )}
-            </>
-          ) : (
-            <button className="menu-btn active" onClick={onLogin}>
-              {t('account.auth')}
-            </button>
-          )}
-        </div>
-      </div>
+      </main>
     </div>
   )
 }

@@ -221,6 +221,7 @@ export default function App() {
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
+  const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
   // Oyun saati: bu turun gecikmesi (sn) + her oyuncunun rezervi (sn)
   const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
     delay: MOVE_DELAY,
@@ -980,9 +981,15 @@ export default function App() {
     if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
     setHome(false)
-    // Mod modalda secildi: online -> oda kur, degilse bota karsi mac
-    if (opts.mode === 'online') handleCreateRoom(opts.target)
-    else handleNewMatch(opts.target, 'pvb')
+    // Mod modalda secildi: online -> lobiye (oda kur/katil), degilse bota karsi mac
+    if (opts.mode === 'online') {
+      onlineTargetRef.current = opts.target
+      setRoom(null)
+      setRoomError('')
+      setMode('online')
+    } else {
+      handleNewMatch(opts.target, 'pvb')
+    }
   }
 
   // Hamleyi onayla ve sirayi rakibe ver
@@ -1382,6 +1389,50 @@ export default function App() {
       />
     ) : null
 
+  // Sag ust hesap bari (lobi + oyun ekraninda ortak)
+  const accountBar = (
+    <div className="account-bar">
+      <span className="account-name">
+        {profile.avatar ? (
+          <img className="account-avatar" src={profile.avatar} alt="" />
+        ) : (
+          '👤 '
+        )}
+        {profile.nickname}
+        {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
+      </span>
+      {user ? (
+        <>
+          <button className="account-btn" onClick={() => setEditProfile(true)}>
+            {t('menu.editProfile')}
+          </button>
+          <button className="account-btn" onClick={handleLogout}>
+            {t('auth.logout')}
+          </button>
+        </>
+      ) : (
+        <button className="account-btn primary" onClick={() => setShowAuth(true)}>
+          {t('account.auth')}
+        </button>
+      )}
+      <span className="account-sep" />
+      <button
+        className="account-btn icon"
+        title={lang === 'tr' ? 'English' : 'Türkçe'}
+        onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+      >
+        {lang === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR'}
+      </button>
+      <button
+        className="account-btn icon"
+        title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+        onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
+      >
+        {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
+    </div>
+  )
+
   // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz)
   if (setup) {
     return (
@@ -1398,28 +1449,17 @@ export default function App() {
     )
   }
 
-  // Baslangic ekrani: oyuncu kendi secip baslatsin (direkt oyuna sokmayiz)
+  // Lobi (ana menu): solda Yeni Oyun, ortasi bos. Akis burdan baslar.
   if (home) {
     return (
       <>
+        {accountBar}
         <Home
-          isUser={!!user}
-          rating={user?.rating ?? null}
-          onVsBot={() => setSetup('pvb')}
-          onOnline={() => {
-            setRoom(null)
-            setRoomError('')
-            setMode('online')
-            setHome(false)
-          }}
-          onLogin={() => setShowAuth(true)}
-          onEditProfile={() => setEditProfile(true)}
-          onLogout={user ? handleLogout : undefined}
-          theme={theme}
-          onToggleTheme={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
-          lang={lang}
-          onToggleLang={() => setLang(lang === 'tr' ? 'en' : 'tr')}
           playerName={profile.nickname}
+          onNewGame={() => setSetup('pvb')}
+          boardTheme={boardTheme}
+          setBoardTheme={setBoardTheme}
+          boardThemes={BOARD_THEMES}
         />
         {authModal}
       </>
@@ -1429,59 +1469,23 @@ export default function App() {
   // Online mod: oyun baslamadiysa lobi (oda olustur/katil/bekle)
   if (mode === 'online' && (!room || room.status !== 'playing')) {
     return (
-      <Lobby
-        room={room}
-        busy={roomBusy}
-        error={roomError}
-        onCreate={() => setSetup('online')}
-        onJoin={handleJoinRoom}
-        onLeave={handleLeaveRoom}
-      />
+      <>
+        {accountBar}
+        <Lobby
+          room={room}
+          busy={roomBusy}
+          error={roomError}
+          onCreate={() => handleCreateRoom(onlineTargetRef.current)}
+          onJoin={handleJoinRoom}
+          onLeave={handleLeaveRoom}
+        />
+      </>
     )
   }
 
   return (
     <div className="app">
-      <div className="account-bar">
-        <span className="account-name">
-          {profile.avatar ? (
-            <img className="account-avatar" src={profile.avatar} alt="" />
-          ) : (
-            '👤 '
-          )}
-          {profile.nickname}
-          {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
-        </span>
-        {user ? (
-          <>
-            <button className="account-btn" onClick={() => setEditProfile(true)}>
-              {t('menu.editProfile')}
-            </button>
-            <button className="account-btn" onClick={handleLogout}>
-              {t('auth.logout')}
-            </button>
-          </>
-        ) : (
-          <button className="account-btn primary" onClick={() => setShowAuth(true)}>
-            {t('account.auth')}
-          </button>
-        )}
-        <span className="account-sep" />
-        <button
-          className="account-btn icon"
-          title={lang === 'tr' ? 'English' : 'Türkçe'}
-          onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
-        >
-          {lang === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR'}
-        </button>
-        <button
-          className="account-btn icon"
-          title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
-          onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
-        >
-          {theme === 'dark' ? '☀️' : '🌙'}
-        </button>
-      </div>
+      {accountBar}
       <aside className="side-menu">
         <div className="brand">
           <span className="brand-badge">{t('brand.short')}</span>
