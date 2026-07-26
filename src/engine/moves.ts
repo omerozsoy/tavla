@@ -110,10 +110,10 @@ export function maximalTerminals(state: GameState): Terminal[] {
   const player = state.turn
   if (state.dice.length === 0) return []
 
-  const isDoubles = state.dice.length >= 2 && state.dice[0] === state.dice[1]
-  const remaining = isDoubles
-    ? [state.dice[0], state.dice[0], state.dice[0], state.dice[0]]
-    : [state.dice[0], state.dice[1]]
+  // Kalan zarlar: cift zar zaten [d,d,d,d] gelir; normalde [a,b]; kismi turda tek zar da olabilir.
+  // (Onceden [dice[0], dice[1]] varsayiliyordu; tek zarli analiz durumunda dice[1]=undefined ->
+  //  bar'da NaN step uretiyordu. Simdi dizinin gercek uzunlugunu kullaniyoruz.)
+  const remaining = state.dice.slice()
 
   const terminals: Terminal[] = []
 
@@ -144,8 +144,8 @@ export function maximalTerminals(state: GameState): Terminal[] {
   const maxLen = terminals.reduce((m, t) => Math.max(m, t.steps.length), 0)
   let best = terminals.filter((t) => t.steps.length === maxLen)
 
-  // Ozel kural: tek zar oynanabiliyorsa ve cift degilse buyuk zari oynamak zorunlu
-  if (maxLen === 1 && !isDoubles) {
+  // Ozel kural: iki FARKLI zardan sadece biri oynanabiliyorsa buyugu oynamak zorunlu
+  if (maxLen === 1 && state.dice.length === 2 && state.dice[0] !== state.dice[1]) {
     const larger = Math.max(state.dice[0], state.dice[1])
     const withLarger = best.filter((t) => t.steps[0].die === larger)
     if (withLarger.length > 0) best = withLarger
