@@ -74,6 +74,22 @@ export default function Auth({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
+  const [forgot, setForgot] = useState(false) // sifremi unuttum modu
+  const [forgotSent, setForgotSent] = useState(false)
+
+  async function doForgot(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+    setBusy(true)
+    try {
+      await api.forgotPassword(loginId.trim())
+    } catch {
+      /* guvenlik: her durumda ayni mesaj */
+    } finally {
+      setForgotSent(true)
+      setBusy(false)
+    }
+  }
 
   // Google butonu: onAuthed'i ref'te tut (efekt bagimliligini sabit tut)
   const googleBtnRef = useRef<HTMLDivElement>(null)
@@ -307,7 +323,9 @@ export default function Auth({
     >
       <form
         className="register-card"
-        onSubmit={editing ? doEdit : tab === 'login' ? doLogin : doRegister}
+        onSubmit={
+          !editing && forgot ? doForgot : editing ? doEdit : tab === 'login' ? doLogin : doRegister
+        }
       >
         {modal && onCancel && (
           <button type="button" className="modal-close" onClick={onCancel} aria-label="Kapat">
@@ -316,7 +334,53 @@ export default function Auth({
         )}
         <h2>{title}</h2>
 
-        {!editing && (
+        {/* Sifremi unuttum */}
+        {!editing && forgot && (
+          <div className="forgot-box">
+            {forgotSent ? (
+              <>
+                <p className="register-sub">{t('auth.forgotSent')}</p>
+                <button
+                  type="button"
+                  className="menu-btn"
+                  onClick={() => {
+                    setForgot(false)
+                    setForgotSent(false)
+                  }}
+                >
+                  {t('auth.backToLogin')}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="register-sub">{t('auth.forgotHelp')}</p>
+                <label>
+                  {t('reg.email')}
+                  <input
+                    type="email"
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
+                    autoFocus
+                  />
+                </label>
+                <div className="register-actions">
+                  <button type="button" className="menu-btn" onClick={() => setForgot(false)}>
+                    {t('reg.cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="galaxy-btn roll"
+                    disabled={busy || !loginId.trim()}
+                  >
+                    {t('auth.forgotSend')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {!editing && !forgot && (
           <div className="auth-tabs">
             <button
               type="button"
@@ -341,32 +405,20 @@ export default function Auth({
           </div>
         )}
 
-        {!editing && (
+        {!editing && !forgot && (
           <div className="google-auth">
             <div ref={googleBtnRef} className="google-btn" />
             <div className="auth-divider">{t('auth.or')}</div>
           </div>
         )}
 
-        {!editing && tab === 'login' ? (
-          <>
-            <label>
-              {t('auth.loginId')}
-              <input value={loginId} onChange={(e) => setLoginId(e.target.value)} autoFocus />
-            </label>
-            <label>
-              {t('reg.password')}
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
-          </>
-        ) : (
-          <>
-            {profileFields}
-            {!editUser && (
+        {!forgot &&
+          (!editing && tab === 'login' ? (
+            <>
+              <label>
+                {t('auth.loginId')}
+                <input value={loginId} onChange={(e) => setLoginId(e.target.value)} autoFocus />
+              </label>
               <label>
                 {t('reg.password')}
                 <input
@@ -375,28 +427,53 @@ export default function Auth({
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </label>
+              <button
+                type="button"
+                className="forgot-link"
+                onClick={() => {
+                  setForgot(true)
+                  setError('')
+                }}
+              >
+                {t('auth.forgot')}
+              </button>
+            </>
+          ) : (
+            <>
+              {profileFields}
+              {!editUser && (
+                <label>
+                  {t('reg.password')}
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </label>
+              )}
+            </>
+          ))}
+
+        {!forgot && error && <div className="register-error">{error}</div>}
+
+        {!forgot && (
+          <div className="register-actions">
+            {onCancel && (
+              <button type="button" className="menu-btn" onClick={onCancel}>
+                {t('reg.cancel')}
+              </button>
             )}
-          </>
+            <button type="submit" className="galaxy-btn roll" disabled={busy || nickTaken}>
+              {editing
+                ? t('reg.submitEdit')
+                : tab === 'login'
+                  ? t('auth.doLogin')
+                  : t('reg.submitNew')}
+            </button>
+          </div>
         )}
 
-        {error && <div className="register-error">{error}</div>}
-
-        <div className="register-actions">
-          {onCancel && (
-            <button type="button" className="menu-btn" onClick={onCancel}>
-              {t('reg.cancel')}
-            </button>
-          )}
-          <button type="submit" className="galaxy-btn roll" disabled={busy || nickTaken}>
-            {editing
-              ? t('reg.submitEdit')
-              : tab === 'login'
-                ? t('auth.doLogin')
-                : t('reg.submitNew')}
-          </button>
-        </div>
-
-        {!editing && (
+        {!editing && !forgot && (
           <button
             type="button"
             className="guest-link"

@@ -43,6 +43,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import Home from './ui/Home'
+import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT } from './i18n'
@@ -158,6 +159,18 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
+  // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
+  const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
+    try {
+      const p = new URLSearchParams(window.location.search)
+      if (p.get('action') === 'reset' && p.get('token') && p.get('email')) {
+        return { email: p.get('email') as string, token: p.get('token') as string }
+      }
+    } catch {
+      /* yok */
+    }
+    return null
+  })
   // Profil hep dolu: giris yoksa varsayilan misafir (Auth artik modal, tam ekran gate degil)
   const guestDefault: Profile = {
     firstName: '',
@@ -1232,6 +1245,24 @@ export default function App() {
     target: match.target,
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
+  }
+
+  // Sifre sifirlama ekrani (e-postadaki linkten gelince)
+  if (resetInfo) {
+    return (
+      <ResetPassword
+        email={resetInfo.email}
+        token={resetInfo.token}
+        onDone={() => {
+          setResetInfo(null)
+          try {
+            window.history.replaceState(null, '', '/')
+          } catch {
+            /* yok */
+          }
+        }}
+      />
+    )
   }
 
   // Auth kontrolu bitene kadar bekle

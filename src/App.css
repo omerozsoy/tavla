@@ -1229,6 +1229,22 @@ body {
   text-align: center;
 }
 
+.forgot-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.85rem;
+  text-align: right;
+  padding: 0;
+  margin-top: -2px;
+}
+.forgot-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 /* ---- Hesap sil (tehlike bolgesi) ---- */
 .danger-zone {
   margin-top: 12px;
