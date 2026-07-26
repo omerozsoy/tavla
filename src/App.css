@@ -1313,7 +1313,45 @@ body {
   background: var(--border);
 }
 
-/* ---- Baslangic ekrani (Home) ---- */
+/* ---- Lobi (ana menu) ---- */
+.lobby-main {
+  justify-content: center;
+}
+.lobby-welcome {
+  text-align: center;
+  max-width: 460px;
+  padding: 24px;
+}
+.lobby-title {
+  font-size: 2rem;
+  font-weight: 900;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+.lobby-tagline {
+  color: var(--muted);
+  font-size: 1rem;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+.lobby-hello {
+  color: var(--text);
+  margin: 0 0 20px;
+}
+.lobby-start {
+  font-size: 1.1rem;
+  padding: 14px 28px;
+}
+.menu-btn.lobby-new {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 12px;
+}
+
+/* ---- Baslangic ekrani (Home eski) ---- */
 .home-screen {
   min-height: 100vh;
   display: flex;
