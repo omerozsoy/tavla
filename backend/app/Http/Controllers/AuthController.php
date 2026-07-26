@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -49,6 +51,68 @@ class AuthController extends Controller
         $token = $user->createToken('web')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token]);
+    }
+
+    // Google ile giris/kayit (Google Identity Services'ten gelen ID token)
+    public function googleLogin(Request $request)
+    {
+        $data = $request->validate([
+            'credential' => ['required', 'string'],
+        ]);
+
+        // ID token'i Google'da dogrula (imza + sona erme kontrolu Google tarafinda)
+        $resp = Http::asForm()->get('https://oauth2.googleapis.com/tokeninfo', [
+            'id_token' => $data['credential'],
+        ]);
+        if (! $resp->ok()) {
+            return response()->json(['message' => 'Google doğrulaması başarısız.'], 401);
+        }
+        $p = $resp->json();
+
+        // Guvenlik: token bizim uygulamamiz icin mi + Google mi verdi?
+        $clientId = config('services.google.client_id');
+        $iss = $p['iss'] ?? '';
+        if (($p['aud'] ?? null) !== $clientId) {
+            return response()->json(['message' => 'Geçersiz istemci.'], 401);
+        }
+        if ($iss !== 'accounts.google.com' && $iss !== 'https://accounts.google.com') {
+            return response()->json(['message' => 'Geçersiz sağlayıcı.'], 401);
+        }
+        $emailVerified = ($p['email_verified'] ?? false);
+        $email = $p['email'] ?? null;
+        if (! $email || ($emailVerified !== true && $emailVerified !== 'true')) {
+            return response()->json(['message' => 'E-posta doğrulanamadı.'], 401);
+        }
+
+        $user = User::where('email', $email)->first();
+        $isNew = false;
+        if (! $user) {
+            $isNew = true;
+            // Benzersiz takma isim uret (email onekinden)
+            $base = Str::slug(explode('@', $email)[0], '');
+            if ($base === '') {
+                $base = 'oyuncu';
+            }
+            $base = substr($base, 0, 30);
+            $nick = $base;
+            $i = 0;
+            while (User::where('nickname', $nick)->exists()) {
+                $i++;
+                $nick = substr($base, 0, 26).$i;
+            }
+            $user = User::create([
+                'first_name' => $p['given_name'] ?? ($p['name'] ?? ''),
+                'last_name'  => $p['family_name'] ?? '',
+                'country'    => '',
+                'nickname'   => $nick,
+                'email'      => $email,
+                'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
+            ]);
+        }
+
+        $token = $user->createToken('google')->plainTextToken;
+
+        return response()->json(['user' => $user, 'token' => $token, 'isNew' => $isNew]);
     }
 
     // Cikis (mevcut token'i iptal et)

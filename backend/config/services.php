@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // Google Sign-In (ID token dogrulama). Client ID gizli degildir.
+    'google' => [
+        'client_id' => env(
+            'GOOGLE_CLIENT_ID',
+            '306143287506-kpasng1ualupme10gc7ir29rkgqkr9ev.apps.googleusercontent.com',
+        ),
+    ],
+
 ];
