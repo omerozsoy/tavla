@@ -7,6 +7,7 @@ interface PlayerInfo {
   color: 'white' | 'black'
   score: number
   target: number
+  rating?: number | null
 }
 
 interface SidebarProps {
@@ -22,6 +23,7 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
       </div>
       <div className="player-name">{p.name}</div>
       <div className="player-sub">{p.sub}</div>
+      {p.rating != null && <div className="player-rating">⭐ {p.rating}</div>}
       <div className="score-badge">
         ⭐ {p.score} / {p.target}
       </div>
