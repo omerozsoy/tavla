@@ -62,10 +62,12 @@ function Checker({
   player,
   draggable,
   onDragStart,
+  label,
 }: {
   player: Player
   draggable?: boolean
   onDragStart?: () => void
+  label?: number // 5'ten fazla tasta ustteki tasa toplam sayi yazilir
 }) {
   return (
     <div
@@ -80,7 +82,9 @@ function Checker({
             }
           : undefined
       }
-    />
+    >
+      {label != null && <span className="checker-count">{label}</span>}
+    </div>
   )
 }
 
@@ -138,9 +142,9 @@ function Point({
             player={stack!.player}
             draggable={selectable}
             onDragStart={selectable ? () => onDragFrom(index) : undefined}
+            label={stack!.count > 5 && i === visible - 1 ? stack!.count : undefined}
           />
         ))}
-        {stack && stack.count > 5 && <div className="overflow">{stack.count}</div>}
       </div>
     </div>
   )
