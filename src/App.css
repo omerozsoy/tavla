@@ -1783,6 +1783,8 @@ body {
   overflow-y: auto;
 }
 .analyzer-board .board {
+  width: fit-content; /* genis flex kolonda gerilmesin -> numaralar hizalansin */
+  max-width: 100%;
   margin: 0;
 }
 .analyzer-head {
