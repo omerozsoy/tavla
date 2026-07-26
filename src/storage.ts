@@ -22,6 +22,14 @@ export interface SavedGame {
   turnsPlayed: number
   turnStart: GameState
   played: Step[]
+  clock?: { white: number; black: number } // oyun saati rezervleri (sn)
+  gameEnd?: {
+    winner: 'white' | 'black'
+    points: number
+    mult: number
+    dropped: boolean
+    timeout?: boolean
+  } | null
 }
 
 export function loadProfile(): Profile | null {

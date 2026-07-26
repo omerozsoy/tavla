@@ -40,6 +40,7 @@ import {
   type ChatMsg,
 } from './api'
 import Chat from './ui/Chat'
+import ClockStack from './ui/ClockStack'
 import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
@@ -127,6 +128,18 @@ interface GameEnd {
   points: number
   mult: number
   dropped: boolean
+  timeout?: boolean // sure bitiminden dolayi kayip
+}
+
+// Oyun saati: her turda 12sn gecikme, tukenince 6dk rezervden duser, rezerv biterse kaybeder
+const MOVE_DELAY = 12
+const RESERVE_SECONDS = 6 * 60
+
+// Rezerv saniyeyi mm:ss bicimine cevir
+function fmtClock(sec: number): string {
+  const s = Math.max(0, Math.floor(sec))
+  const m = Math.floor(s / 60)
+  return `${m}:${String(s % 60).padStart(2, '0')}`
 }
 
 export default function App() {
@@ -173,6 +186,12 @@ export default function App() {
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [setup, setSetup] = useState<null | 'local' | 'online'>(null) // mac kurulum ekrani
+  // Oyun saati: bu turun gecikmesi (sn) + her oyuncunun rezervi (sn)
+  const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
+    delay: MOVE_DELAY,
+    white: RESERVE_SECONDS,
+    black: RESERVE_SECONDS,
+  })
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
@@ -273,6 +292,8 @@ export default function App() {
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
+  // Saat sadece iki insanli modlarda (online / iki kisi) calisir
+  const clockOn = mode === 'online' || mode === 'pvp'
   const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
@@ -324,6 +345,7 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
+    setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
   }
 
   function commitTurn(finalPlayed: Step[]) {
@@ -607,6 +629,39 @@ export default function App() {
     return JSON.stringify({ match: m, starter: st, turnsPlayed: tp, turnStart: ts, played: pl })
   }
 
+  // ---- Oyun saati ----
+  // Yeni tur baslayinca gecikmeyi 12sn'e sifirla
+  useEffect(() => {
+    setClock((c) => ({ ...c, delay: MOVE_DELAY }))
+  }, [turnStart.turn, turnsPlayed])
+
+  // Her saniye: aktif oyuncunun once gecikmesi, o bitince rezervi azalir
+  useEffect(() => {
+    if (!clockOn || gameEnd || matchOver || opening || cubePending || gameWon) return
+    if (online && !onlineReady) return
+    const who = turnStart.turn
+    const id = window.setInterval(() => {
+      setClock((c) => {
+        if (c.delay > 0) return { ...c, delay: c.delay - 1 }
+        return { ...c, [who]: Math.max(0, c[who] - 1) }
+      })
+    }, 1000)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clockOn, gameEnd, matchOver, opening, cubePending, gameWon, turnStart.turn, online, onlineReady])
+
+  // Rezerv bitti -> aktif oyuncu oyunu kaybeder (skora bakilmaksizin)
+  useEffect(() => {
+    if (!clockOn || gameEnd || matchOver) return
+    const who = turnStart.turn
+    if (clock[who] > 0) return
+    if (online && myColor !== who) return // online'da sadece suresi biten ilan etsin
+    const w = opponent(who)
+    setMatch((m) => scoreGame(m, w, m.cube.value))
+    setGameEnd({ winner: w, points: match.cube.value, mult: 1, dropped: false, timeout: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, online, myColor])
+
   // ---- Online: sunucudan gelen durumu uygula ----
   function applyOnlineState(snap: SavedGame) {
     // Uygulanan durumu imzala ki geri gonderme (echo) olmasin
@@ -622,11 +677,16 @@ export default function App() {
     setTurnsPlayed(snap.turnsPlayed)
     setTurnStart(snap.turnStart)
     setPlayed(snap.played ?? [])
+    // Rakibin gonderdigi rezervleri al (gecikmeyi yeni tur icin 12'ye kur)
+    if (snap.clock) setClock((c) => ({ delay: c.delay, white: snap.clock!.white, black: snap.clock!.black }))
     setSelectedFrom(null)
     setCubePending(null)
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
+    // Sure bitimini rakip yerelde goremez (hamle degismez) -> senkronla goster.
+    // Normal galibiyetler iki istemcide de yerel algilanir, onlari burda islemeyiz.
+    if (snap.gameEnd?.timeout) setGameEnd(snap.gameEnd)
   }
 
   // Online: yerel degisikligi odaya gonder (senkron)
@@ -641,7 +701,17 @@ export default function App() {
     if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
     const timer = window.setTimeout(() => {
       lastSyncRef.current = sig
-      const snap = { mode, difficulty, match, starter, turnsPlayed, turnStart, played }
+      const snap = {
+        mode,
+        difficulty,
+        match,
+        starter,
+        turnsPlayed,
+        turnStart,
+        played,
+        clock: { white: clock.white, black: clock.black },
+        gameEnd,
+      }
       updateRoom(roomCode, snap)
         .then((r) => {
           appliedVersionRef.current = r.version
@@ -703,6 +773,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
+      setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
       setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
@@ -731,6 +802,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
+      setClock({ delay: MOVE_DELAY, white: RESERVE_SECONDS, black: RESERVE_SECONDS })
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -944,9 +1016,11 @@ export default function App() {
       gameEnd.mult === 3 ? 'mult.backgammon' : gameEnd.mult === 2 ? 'mult.gammon' : 'mult.normal'
     const title = matchOver
       ? t('result.matchWon', { name: pName(mWinner!) })
-      : gameEnd.dropped
-        ? t('result.cubeDrop', { name: pName(gameEnd.winner) })
-        : t('result.won', { name: pName(gameEnd.winner), type: t(multKey) })
+      : gameEnd.timeout
+        ? t('result.timeout', { name: pName(gameEnd.winner) })
+        : gameEnd.dropped
+          ? t('result.cubeDrop', { name: pName(gameEnd.winner) })
+          : t('result.won', { name: pName(gameEnd.winner), type: t(multKey) })
     centerMain = (
       <div className="result-box">
         <div className="result-title">{title}</div>
@@ -1298,6 +1372,16 @@ export default function App() {
       <main className="main">
       <div className="game-area">
         <Sidebar top={topInfo} bottom={bottomInfo} />
+        {clockOn && (
+          <ClockStack
+            topTime={fmtClock(clock.black)}
+            bottomTime={fmtClock(clock.white)}
+            delay={clock.delay}
+            active={gameWon || gameEnd || opening ? null : turnStart.turn}
+            lowTop={clock.black <= 30}
+            lowBottom={clock.white <= 30}
+          />
+        )}
         <Board
           state={working}
           selectableFroms={selectableFroms}
@@ -1315,6 +1399,15 @@ export default function App() {
           flip={flipBoard}
           showPip={showPip}
         />
+        {showAnalysis && (
+          <AnalysisPanel
+            loading={analysisLoading}
+            currentProbs={currentProbs}
+            ranked={ranked}
+            player={turnStart.turn}
+            lastError={lastError}
+          />
+        )}
       </div>
 
       <div className="status">
@@ -1328,16 +1421,6 @@ export default function App() {
           {online && onlineReady && !myTurn && !gameEnd && !opening ? t('mp.oppTurn') : message}
         </span>
       </div>
-
-      {showAnalysis && (
-        <AnalysisPanel
-          loading={analysisLoading}
-          currentProbs={currentProbs}
-          ranked={ranked}
-          player={turnStart.turn}
-          lastError={lastError}
-        />
-      )}
       </main>
 
       {online && room && (
