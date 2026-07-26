@@ -14,7 +14,7 @@ import {
 import { HeuristicBot } from './engine/engine'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
-import { pipCount } from './engine/evaluate'
+import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
   matchWinner,
@@ -617,8 +617,22 @@ export default function App() {
           setCurrentProbs(cp)
           if (played.length === 0) turnRankedRef.current = r // tur basi tam siralamayi sakla
         }
-      } catch {
-        /* sessizce gec */
+      } catch (e) {
+        // Sinir agi yuklenemedi/hata -> hizli (heuristik) siralama ile en azindan hamle listesi
+        console.error('Analiz: sinir agi hatasi, hizli tahmine geciliyor:', e)
+        if (!cancelled) {
+          const mover = analysisState.turn
+          const ranks = generateMoves(analysisState)
+            .map((move) => ({
+              move,
+              equity: evaluatePosition(applyPlayed(analysisState, move.steps), mover),
+              probs: [] as number[],
+            }))
+            .sort((a, b) => b.equity - a.equity)
+          setRanked(ranks)
+          setCurrentProbs(null)
+          if (played.length === 0) turnRankedRef.current = ranks
+        }
       } finally {
         if (!cancelled) setAnalysisLoading(false)
       }
