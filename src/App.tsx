@@ -45,7 +45,7 @@ import ClockStack from './ui/ClockStack'
 import Home from './ui/Home'
 import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
-import { useT, type Lang } from './i18n'
+import { useT } from './i18n'
 import {
   getToken,
   loadServerGame,
@@ -1319,6 +1319,21 @@ export default function App() {
             {t('account.auth')}
           </button>
         )}
+        <span className="account-sep" />
+        <button
+          className="account-btn icon"
+          title={lang === 'tr' ? 'English' : 'Türkçe'}
+          onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+        >
+          {lang === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR'}
+        </button>
+        <button
+          className="account-btn icon"
+          title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+          onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </div>
       <aside className="side-menu">
         <div className="brand">
@@ -1327,40 +1342,7 @@ export default function App() {
         </div>
 
         <div className="menu-group">
-          <div className="menu-label">{t('menu.language')}</div>
-          <div className="menu-targets">
-            {(['tr', 'en'] as Lang[]).map((l) => (
-              <button
-                key={l}
-                className={lang === l ? 'menu-btn active' : 'menu-btn'}
-                onClick={() => setLang(l)}
-              >
-                {l === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="menu-group">
-          <div className="menu-label">{t('menu.theme')}</div>
-          <div className="menu-targets">
-            <button
-              className={theme === 'dark' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setTheme('dark')}
-            >
-              {t('theme.dark')}
-            </button>
-            <button
-              className={theme === 'light' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setTheme('light')}
-            >
-              {t('theme.light')}
-            </button>
-          </div>
-        </div>
-
-        <div className="menu-group">
-          <div className="menu-label">{t('menu.board')}</div>
+          <div className="menu-label">{t('menu.boardSettings')}</div>
           <div className="board-swatches">
             {BOARD_THEMES.map((bt) => (
               <button
