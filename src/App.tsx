@@ -1023,8 +1023,9 @@ export default function App() {
     setSelectedFrom(null)
   }
 
+  // Geri al: son oynanan tek adimi geri al (komple degil)
   function handleUndo() {
-    setPlayed([])
+    setPlayed((p) => p.slice(0, -1))
     setSelectedFrom(null)
   }
 
