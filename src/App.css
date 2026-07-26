@@ -1770,8 +1770,8 @@ body {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Tahtayi oyun-boyutundan kucult: tum board olculerini burada yeniden tanimla */
-  --board-h: clamp(220px, 38vh, 340px);
+  /* Tahta boyutu (buyuk ama panele yer birakir) */
+  --board-h: clamp(300px, 60vh, 560px);
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -1800,12 +1800,12 @@ body {
   display: flex;
   gap: 16px;
   align-items: flex-start;
+  justify-content: space-between; /* tahta solda, panel en sagda */
   flex-wrap: wrap;
 }
 .analyzer-board {
-  flex: 1;
-  min-width: 320px;
-  max-width: 720px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 .analyzer-controls {
   width: 300px;
