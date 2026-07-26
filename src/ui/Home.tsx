@@ -1,9 +1,12 @@
 import { useT, type Lang } from '../i18n'
 
 interface Props {
+  isUser: boolean
+  rating: number | null
   onVsBot: () => void
   onTwoPlayer: () => void
   onOnline: () => void
+  onLogin: () => void
   onEditProfile: () => void
   onLogout?: () => void
   theme: 'dark' | 'light'
@@ -14,9 +17,12 @@ interface Props {
 }
 
 export default function Home({
+  isUser,
+  rating,
   onVsBot,
   onTwoPlayer,
   onOnline,
+  onLogin,
   onEditProfile,
   onLogout,
   theme,
@@ -34,7 +40,12 @@ export default function Home({
           <span className="brand-full">{t('brand.name')}</span>
         </div>
 
-        {playerName && <div className="home-hello">{t('home.hello', { name: playerName })}</div>}
+        {playerName && (
+          <div className="home-hello">
+            {t('home.hello', { name: playerName })}
+            {rating != null && <span className="account-rating">⭐ {rating}</span>}
+          </div>
+        )}
 
         <div className="home-actions">
           <button className="home-btn primary" onClick={onVsBot}>
@@ -67,12 +78,20 @@ export default function Home({
           <button className="menu-btn" onClick={onToggleTheme}>
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-          <button className="menu-btn" onClick={onEditProfile}>
-            {t('home.profile')}
-          </button>
-          {onLogout && (
-            <button className="menu-btn" onClick={onLogout}>
-              {t('auth.logout')}
+          {isUser ? (
+            <>
+              <button className="menu-btn" onClick={onEditProfile}>
+                {t('home.profile')}
+              </button>
+              {onLogout && (
+                <button className="menu-btn" onClick={onLogout}>
+                  {t('auth.logout')}
+                </button>
+              )}
+            </>
+          ) : (
+            <button className="menu-btn active" onClick={onLogin}>
+              {t('account.auth')}
             </button>
           )}
         </div>

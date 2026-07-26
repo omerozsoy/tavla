@@ -155,7 +155,16 @@ export default function App() {
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
-  const profile: Profile | null = user ? toProfile(user) : guestProfile
+  const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
+  // Profil hep dolu: giris yoksa varsayilan misafir (Auth artik modal, tam ekran gate degil)
+  const guestDefault: Profile = {
+    firstName: '',
+    lastName: '',
+    country: '',
+    nickname: t('auth.guestNick'),
+    email: '',
+  }
+  const profile: Profile = user ? toProfile(user) : (guestProfile ?? guestDefault)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
       return localStorage.getItem('tavla.theme') === 'light' ? 'light' : 'dark'
@@ -1212,10 +1221,11 @@ export default function App() {
     )
   }
 
-  // Giris/kayit yoksa veya profil duzenleniyorsa Auth ekrani
-  if (!profile || editProfile) {
-    return (
+  // Giris/kayit/profil modali (tam ekran degil, ustte pencere)
+  const authModal =
+    showAuth || editProfile ? (
       <Auth
+        modal
         editUser={editProfile ? user : null}
         editGuest={editProfile && !user ? guestProfile : null}
         onAuthed={(u) => {
@@ -1223,6 +1233,7 @@ export default function App() {
           setUser(u)
           setGuestProfile(null)
           setEditProfile(false)
+          setShowAuth(false)
           if (!wasEditing) {
             loadServerGame()
               .then((g) => {
@@ -1236,11 +1247,14 @@ export default function App() {
           setGuestProfile(p)
           setUser(null)
           setEditProfile(false)
+          setShowAuth(false)
         }}
-        onCancel={profile ? () => setEditProfile(false) : undefined}
+        onCancel={() => {
+          setEditProfile(false)
+          setShowAuth(false)
+        }}
       />
-    )
-  }
+    ) : null
 
   // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz)
   if (setup) {
@@ -1258,23 +1272,29 @@ export default function App() {
   // Baslangic ekrani: oyuncu kendi secip baslatsin (direkt oyuna sokmayiz)
   if (home) {
     return (
-      <Home
-        onVsBot={() => setSetup('pvb')}
-        onTwoPlayer={() => setSetup('pvp')}
-        onOnline={() => {
-          setRoom(null)
-          setRoomError('')
-          setMode('online')
-          setHome(false)
-        }}
-        onEditProfile={() => setEditProfile(true)}
-        onLogout={user ? handleLogout : undefined}
-        theme={theme}
-        onToggleTheme={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
-        lang={lang}
-        onToggleLang={() => setLang(lang === 'tr' ? 'en' : 'tr')}
-        playerName={profile?.nickname ?? ''}
-      />
+      <>
+        <Home
+          isUser={!!user}
+          rating={user?.rating ?? null}
+          onVsBot={() => setSetup('pvb')}
+          onTwoPlayer={() => setSetup('pvp')}
+          onOnline={() => {
+            setRoom(null)
+            setRoomError('')
+            setMode('online')
+            setHome(false)
+          }}
+          onLogin={() => setShowAuth(true)}
+          onEditProfile={() => setEditProfile(true)}
+          onLogout={user ? handleLogout : undefined}
+          theme={theme}
+          onToggleTheme={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
+          lang={lang}
+          onToggleLang={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+          playerName={profile.nickname}
+        />
+        {authModal}
+      </>
     )
   }
 
@@ -1309,13 +1329,7 @@ export default function App() {
             </button>
           </>
         ) : (
-          <button
-            className="account-btn primary"
-            onClick={() => {
-              setUser(null)
-              setGuestProfile(null)
-            }}
-          >
+          <button className="account-btn primary" onClick={() => setShowAuth(true)}>
             {t('account.auth')}
           </button>
         )}
@@ -1491,6 +1505,7 @@ export default function App() {
       {online && room && (
         <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
       )}
+      {authModal}
     </div>
   )
 }

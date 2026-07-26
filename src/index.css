@@ -3,6 +3,15 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Butonlar/inputlar da Outfit kullansin (varsayilan olarak miras almazlar) */
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
 }
 
 #root {
