@@ -24,7 +24,7 @@ export default function Home({ playerName, onNewGame, onBoardSettings }: Props) 
 
         <div className="menu-group">
           <button className="menu-btn" onClick={onBoardSettings}>
-            🎨 {t('menu.boardSettings')}
+            ⚙️ {t('menu.settings')}
           </button>
         </div>
       </aside>
