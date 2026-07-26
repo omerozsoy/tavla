@@ -45,6 +45,7 @@ import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import Home from './ui/Home'
+import Leaderboard from './ui/Leaderboard'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -244,6 +245,7 @@ export default function App() {
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -1600,8 +1602,12 @@ export default function App() {
           onNewGame={() => setSetup('pvb')}
           onBoardSettings={() => setBoardSettingsOpen(true)}
           onAnalyzer={() => setAnalyzerOpen(true)}
+          onLeaderboard={() => setLeaderboardOpen(true)}
         />
         {authModal}
+        {leaderboardOpen && (
+          <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
+        )}
         {boardSettingsOpen && (
           <BoardSettings
             boardTheme={boardTheme}

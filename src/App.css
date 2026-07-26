@@ -1958,6 +1958,95 @@ body {
   gap: 10px;
   margin-top: 8px;
 }
+
+/* Liderlik tablosu */
+.leaderboard-card {
+  width: min(560px, 94vw);
+  max-width: 560px;
+}
+.lb-empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 28px 12px;
+}
+.lb-table {
+  margin-top: 8px;
+}
+.lb-head,
+.lb-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 56px 72px 64px;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+}
+.lb-head {
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+.lb-body {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+}
+.lb-row {
+  border-radius: 10px;
+}
+.lb-row:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.lb-row.top .lb-rank {
+  font-size: 1.1rem;
+}
+.lb-row.mine {
+  background: color-mix(in srgb, #5b8def 22%, transparent);
+  outline: 1px solid color-mix(in srgb, #5b8def 55%, transparent);
+}
+.lb-rank {
+  text-align: center;
+  font-weight: 700;
+  color: var(--muted);
+}
+.lb-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lb-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: none;
+}
+.lb-avatar-ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #5b8def, #7b5bef);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.lb-games,
+.lb-wr {
+  text-align: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.lb-rating {
+  text-align: right;
+  font-weight: 800;
+  color: #7ee0a0;
+  font-variant-numeric: tabular-nums;
+}
 .board-swatches.big .swatch {
   width: 100%;
   height: 48px;

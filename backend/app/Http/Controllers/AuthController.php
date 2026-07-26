@@ -187,9 +187,40 @@ class AuthController extends Controller
         $newRating = max(100, $newRating); // taban
 
         $user->rating = $newRating;
+        $user->games_played = ($user->games_played ?? 0) + 1;
+        if ($data['won']) {
+            $user->wins = ($user->wins ?? 0) + 1;
+        } else {
+            $user->losses = ($user->losses ?? 0) + 1;
+        }
         $user->save();
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
+    }
+
+    // Liderlik tablosu: rating'e gore en iyi oyuncular (halka acik)
+    public function leaderboard(Request $request)
+    {
+        $limit = min(100, max(1, (int) $request->query('limit', 100)));
+        $users = User::orderByDesc('rating')
+            ->orderByDesc('wins')
+            ->limit($limit)
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'country', 'rating', 'wins', 'losses', 'games_played']);
+
+        $rows = $users->values()->map(function ($u, $i) {
+            return [
+                'rank'    => $i + 1,
+                'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+                'avatar'  => $u->avatar,
+                'country' => $u->country,
+                'rating'  => $u->rating ?? 1500,
+                'wins'    => $u->wins ?? 0,
+                'losses'  => $u->losses ?? 0,
+                'games'   => $u->games_played ?? 0,
+            ];
+        });
+
+        return response()->json(['players' => $rows]);
     }
 
     // Sifremi unuttum -> sifirlama linki e-postala
