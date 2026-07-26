@@ -15,7 +15,15 @@ rmSync(`${dest}/assets`, { recursive: true, force: true })
 rmSync(`${dest}/models`, { recursive: true, force: true })
 
 // Sadece frontend ciktilarini kopyala (.htaccess ve index.php haric)
-for (const item of ['index.html', 'favicon.svg', 'icons.svg', 'assets', 'models']) {
+for (const item of [
+  'index.html',
+  'favicon.svg',
+  'icons.svg',
+  'robots.txt',
+  'sitemap.xml',
+  'assets',
+  'models',
+]) {
   const src = `dist/${item}`
   if (existsSync(src)) cpSync(src, `${dest}/${item}`, { recursive: true })
 }
