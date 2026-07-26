@@ -167,8 +167,8 @@ export default function App() {
   const [roomError, setRoomError] = useState('')
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const appliedVersionRef = useRef(-1)
-  const skipSyncRef = useRef(false)
   const syncEnabledRef = useRef(false)
+  const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -587,8 +587,27 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, openingResult])
 
+  // Oyun durumunun imzasi (sadece oyunu ilgilendiren alanlar) -> echo tespiti
+  function stateSig(
+    m: MatchState,
+    st: Player,
+    tp: number,
+    ts: GameState,
+    pl: Step[],
+  ): string {
+    return JSON.stringify({ match: m, starter: st, turnsPlayed: tp, turnStart: ts, played: pl })
+  }
+
   // ---- Online: sunucudan gelen durumu uygula ----
   function applyOnlineState(snap: SavedGame) {
+    // Uygulanan durumu imzala ki geri gonderme (echo) olmasin
+    lastSyncRef.current = stateSig(
+      snap.match,
+      snap.starter,
+      snap.turnsPlayed,
+      snap.turnStart,
+      snap.played ?? [],
+    )
     setMatch(snap.match)
     setStarter(snap.starter)
     setTurnsPlayed(snap.turnsPlayed)
@@ -602,15 +621,19 @@ export default function App() {
   }
 
   // Online: yerel degisikligi odaya gonder (senkron)
+  // ONEMLI: bagimliliklarda tum `room` nesnesi YOK -> her yoklamada (oppName/status
+  // yenilenince) tekrar gondermeyi onler. Ayrica imza ayni ise (echo) gondermez;
+  // aksi halde iki istemci birbirinin eski durumunu yeniden uygulayip hamleyi siler.
+  const roomCode = room?.code
+  const roomStatus = room?.status
   useEffect(() => {
-    if (!online || !room || room.status !== 'playing' || !syncEnabledRef.current) return
-    if (skipSyncRef.current) {
-      skipSyncRef.current = false
-      return
-    }
-    const snap = { mode, difficulty, match, starter, turnsPlayed, turnStart, played }
+    if (!online || !roomCode || roomStatus !== 'playing' || !syncEnabledRef.current) return
+    const sig = stateSig(match, starter, turnsPlayed, turnStart, played)
+    if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
     const timer = window.setTimeout(() => {
-      updateRoom(room.code, snap)
+      lastSyncRef.current = sig
+      const snap = { mode, difficulty, match, starter, turnsPlayed, turnStart, played }
+      updateRoom(roomCode, snap)
         .then((r) => {
           appliedVersionRef.current = r.version
         })
@@ -618,7 +641,7 @@ export default function App() {
     }, 200)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, room, match, starter, turnsPlayed, turnStart, played])
+  }, [online, roomCode, roomStatus, match, starter, turnsPlayed, turnStart, played])
 
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
@@ -633,9 +656,8 @@ export default function App() {
         )
         if (rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
-          skipSyncRef.current = true
           syncEnabledRef.current = true
-          applyOnlineState(rv.state as SavedGame)
+          applyOnlineState(rv.state as SavedGame) // lastSyncRef'i kendi ayarlar (echo yok)
         }
       } catch {
         /* gecici */
@@ -667,6 +689,7 @@ export default function App() {
     try {
       const res = await createRoom(profile?.nickname ?? t('auth.guestNick'))
       appliedVersionRef.current = -1
+      lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
       setMatch(newMatch(1))
@@ -693,6 +716,7 @@ export default function App() {
     try {
       const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'))
       appliedVersionRef.current = -1
+      lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
       setOpening(null)
