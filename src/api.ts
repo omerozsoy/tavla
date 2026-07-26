@@ -145,6 +145,15 @@ export async function logout(): Promise<void> {
   setToken(null)
 }
 
+// Hesabi kalici olarak sil
+export async function deleteAccount(): Promise<void> {
+  try {
+    await req('/account', { method: 'DELETE' })
+  } finally {
+    setToken(null)
+  }
+}
+
 export async function nicknameAvailable(nickname: string): Promise<boolean> {
   const data = await req<{ available: boolean }>(
     `/nickname-available?nickname=${encodeURIComponent(nickname)}`,

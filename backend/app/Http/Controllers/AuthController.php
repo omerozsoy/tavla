@@ -122,6 +122,15 @@ class AuthController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    // Hesabi kalici olarak sil (kullanici kendi hesabini siler)
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+        $user->tokens()->delete(); // tum oturum token'lari
+        $user->delete();
+        return response()->json(['ok' => true]);
+    }
+
     // Giris yapmis kullanici
     public function me(Request $request)
     {
