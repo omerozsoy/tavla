@@ -43,6 +43,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
+import PositionAnalyzer from './ui/PositionAnalyzer'
 import Home from './ui/Home'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -242,6 +243,7 @@ export default function App() {
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
+  const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -1570,6 +1572,19 @@ export default function App() {
     )
   }
 
+  // Pozisyon analiz modulu (tam ekran)
+  if (analyzerOpen) {
+    return (
+      <>
+        {accountBar}
+        <PositionAnalyzer
+          neuralEval={(s, p) => neuralRef.current.evalPosition(s, p)}
+          onClose={() => setAnalyzerOpen(false)}
+        />
+      </>
+    )
+  }
+
   // Lobi (ana menu): solda Yeni Oyun, ortasi bos. Akis burdan baslar.
   if (home) {
     return (
@@ -1579,6 +1594,7 @@ export default function App() {
           playerName={profile.nickname}
           onNewGame={() => setSetup('pvb')}
           onBoardSettings={() => setBoardSettingsOpen(true)}
+          onAnalyzer={() => setAnalyzerOpen(true)}
         />
         {authModal}
         {boardSettingsOpen && (
