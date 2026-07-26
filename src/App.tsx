@@ -40,6 +40,7 @@ import {
   type ChatMsg,
 } from './api'
 import Chat from './ui/Chat'
+import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
 import {
@@ -170,6 +171,8 @@ export default function App() {
   const [roomError, setRoomError] = useState('')
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
+  const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
+  const [setup, setSetup] = useState<null | 'local' | 'online'>(null) // mac kurulum ekrani
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
@@ -690,7 +693,7 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.slot, room?.status])
 
-  async function handleCreateRoom() {
+  async function handleCreateRoom(target = 1) {
     setRoomBusy(true)
     setRoomError('')
     try {
@@ -700,7 +703,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
-      setMatch(newMatch(1))
+      setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
       setTurnStart(freshBoard('white'))
@@ -766,6 +769,16 @@ export default function App() {
     } catch {
       /* yoksay - sonraki yoklamada gelir */
     }
+  }
+
+  // Mac kurulum ekrani onaylandi -> ayarlari uygula, maci/odayi baslat
+  function applyMatchSetup(opts: MatchOptions) {
+    const which = setup
+    setShowPip(opts.showPip)
+    setShowAnalysis(opts.showAnalysis)
+    setSetup(null)
+    if (which === 'online') handleCreateRoom(opts.target)
+    else handleNewMatch(opts.target)
   }
 
   // Hamleyi onayla ve sirayi rakibe ver
@@ -1110,6 +1123,19 @@ export default function App() {
     )
   }
 
+  // Mac kurulum ekrani (oyun kacta bitsin / pip / analiz)
+  if (setup) {
+    return (
+      <MatchSetup
+        mode={setup}
+        targets={TARGETS}
+        initial={{ target: match.target, showPip, showAnalysis }}
+        onConfirm={applyMatchSetup}
+        onCancel={() => setSetup(null)}
+      />
+    )
+  }
+
   // Online mod: oyun baslamadiysa lobi (oda olustur/katil/bekle)
   if (mode === 'online' && (!room || room.status !== 'playing')) {
     return (
@@ -1117,7 +1143,7 @@ export default function App() {
         room={room}
         busy={roomBusy}
         error={roomError}
-        onCreate={handleCreateRoom}
+        onCreate={() => setSetup('online')}
         onJoin={handleJoinRoom}
         onLeave={handleLeaveRoom}
       />
@@ -1263,7 +1289,7 @@ export default function App() {
           >
             {t('menu.analysis')}
           </button>
-          <button className="menu-btn" onClick={() => handleNewMatch()}>
+          <button className="menu-btn" onClick={() => setSetup('local')}>
             {t('menu.newMatch')}
           </button>
         </div>
@@ -1287,6 +1313,7 @@ export default function App() {
           centerRight={centerRight}
           centerMain={centerMain}
           flip={flipBoard}
+          showPip={showPip}
         />
       </div>
 
