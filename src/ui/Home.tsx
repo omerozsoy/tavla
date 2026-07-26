@@ -4,7 +4,6 @@ interface Props {
   isUser: boolean
   rating: number | null
   onVsBot: () => void
-  onTwoPlayer: () => void
   onOnline: () => void
   onLogin: () => void
   onEditProfile: () => void
@@ -20,7 +19,6 @@ export default function Home({
   isUser,
   rating,
   onVsBot,
-  onTwoPlayer,
   onOnline,
   onLogin,
   onEditProfile,
@@ -61,13 +59,6 @@ export default function Home({
             <span className="home-btn-text">
               <b>{t('home.online')}</b>
               <small>{t('home.onlineSub')}</small>
-            </span>
-          </button>
-          <button className="home-btn" onClick={onTwoPlayer}>
-            <span className="home-btn-ico">👥</span>
-            <span className="home-btn-text">
-              <b>{t('home.twoPlayer')}</b>
-              <small>{t('home.twoPlayerSub')}</small>
             </span>
           </button>
         </div>
