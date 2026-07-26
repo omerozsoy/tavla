@@ -109,6 +109,41 @@ class RoomController extends Controller
         return response()->json(['version' => $room->version, 'status' => $room->status]);
     }
 
+    // Sohbet mesaji gonder (odadaki oyuncular). Son 50 mesaj tutulur.
+    public function chat(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'text' => ['required', 'string', 'max:280'],
+        ]);
+
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+        }
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+        }
+
+        $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;
+        $messages = $room->messages ?? [];
+        $messages[] = [
+            'slot' => $slot,
+            'name' => $name,
+            'text' => trim($data['text']),
+            'id' => (string) round(microtime(true) * 1000).'-'.$slot,
+        ];
+        // Son 50 mesaji tut
+        if (count($messages) > 50) {
+            $messages = array_slice($messages, -50);
+        }
+        $room->messages = $messages;
+        $room->save();
+
+        return response()->json(['messages' => $messages]);
+    }
+
     private function slotOf(Room $room, string $token): ?string
     {
         if ($room->p1_token === $token) {

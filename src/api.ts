@@ -166,11 +166,18 @@ export function playerToken(): string {
 }
 
 export type Slot = 'p1' | 'p2'
+export interface ChatMsg {
+  slot: Slot
+  name: string
+  text: string
+  id: string
+}
 export interface RoomView {
   code: string
   p1_name: string
   p2_name: string | null
   state: unknown
+  messages: ChatMsg[]
   version: number
   status: 'waiting' | 'playing' | 'finished'
 }
@@ -210,5 +217,13 @@ export async function updateRoom(
   return req(`/rooms/${encodeURIComponent(code)}`, {
     method: 'PUT',
     body: JSON.stringify({ token: playerToken(), state, status }),
+  })
+}
+
+// Sohbet mesaji gonder -> guncel mesaj listesini doner
+export async function sendChat(code: string, text: string): Promise<{ messages: ChatMsg[] }> {
+  return req(`/rooms/${encodeURIComponent(code)}/chat`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), text }),
   })
 }

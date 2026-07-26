@@ -13,6 +13,7 @@ class Room extends Model
         'p2_token',
         'p2_name',
         'state',
+        'messages',
         'version',
         'status',
     ];
@@ -21,6 +22,7 @@ class Room extends Model
     {
         return [
             'state' => 'array',
+            'messages' => 'array',
         ];
     }
 
@@ -32,6 +34,7 @@ class Room extends Model
             'p1_name' => $this->p1_name,
             'p2_name' => $this->p2_name,
             'state' => $this->state,
+            'messages' => $this->messages ?? [],
             'version' => $this->version,
             'status' => $this->status,
         ];

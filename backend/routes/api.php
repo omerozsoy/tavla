@@ -13,6 +13,7 @@ Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 // Multiplayer odalari (misafir dostu, token bazli)
 Route::post('/rooms', [RoomController::class, 'create']);
 Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
+Route::post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 Route::get('/rooms/{code}', [RoomController::class, 'show']);
 Route::put('/rooms/{code}', [RoomController::class, 'update']);
 

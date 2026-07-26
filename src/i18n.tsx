@@ -127,6 +127,10 @@ const TR: Dict = {
   'mp.roomNotFound': 'Oda bulunamadı.',
   'mp.roomFull': 'Oda dolu.',
   'mp.connError': 'Sunucuya ulaşılamadı.',
+  'chat.title': 'Sohbet',
+  'chat.placeholder': 'Mesaj yaz…',
+  'chat.send': 'Gönder',
+  'chat.empty': 'Henüz mesaj yok. Selam ver! 👋',
 }
 
 const EN: Dict = {
@@ -252,6 +256,10 @@ const EN: Dict = {
   'mp.roomNotFound': 'Room not found.',
   'mp.roomFull': 'Room is full.',
   'mp.connError': 'Could not reach the server.',
+  'chat.title': 'Chat',
+  'chat.placeholder': 'Type a message…',
+  'chat.send': 'Send',
+  'chat.empty': 'No messages yet. Say hi! 👋',
 }
 
 const DICT: Record<Lang, Dict> = { tr: TR, en: EN }
