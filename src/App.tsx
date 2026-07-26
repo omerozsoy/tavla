@@ -135,6 +135,7 @@ interface GameEnd {
   mult: number
   dropped: boolean
   timeout?: boolean // sure bitiminden dolayi kayip
+  resigned?: boolean // pes etme/cekilme
 }
 
 // Oyun saati: her turda 12sn gecikme, tukenince rezervden duser, rezerv biterse kaybeder
@@ -215,6 +216,7 @@ export default function App() {
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
+  const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -458,6 +460,16 @@ export default function App() {
     setMatch((m) => scoreGame(m, doubler, points))
     setGameEnd({ winner: doubler, points, mult: 1, dropped: true })
     setCubePending(null)
+  }
+
+  // ---- Pes etme / cekilme (1=oyun, 2=gammon, 3=backgammon) ----
+  function handleResign(mult: 1 | 2 | 3) {
+    setResignOpen(false)
+    const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
+    const w = opponent(loser)
+    const points = match.cube.value * mult
+    setMatch((m) => scoreGame(m, w, m.cube.value * mult))
+    setGameEnd({ winner: w, points, mult, dropped: false, resigned: true })
   }
 
   // ---- Oyun sonu (bear off) cozumleme ----
@@ -765,9 +777,9 @@ export default function App() {
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
-    // Sure bitimini rakip yerelde goremez (hamle degismez) -> senkronla goster.
+    // Sure bitimi/pes etme rakip yerelde goremez (hamle degismez) -> senkronla goster.
     // Normal galibiyetler iki istemcide de yerel algilanir, onlari burda islemeyiz.
-    if (snap.gameEnd?.timeout) setGameEnd(snap.gameEnd)
+    if (snap.gameEnd?.timeout || snap.gameEnd?.resigned) setGameEnd(snap.gameEnd)
   }
 
   // Online: yerel degisikligi odaya gonder (senkron)
@@ -1122,9 +1134,11 @@ export default function App() {
       ? t('result.matchWon', { name: pName(mWinner!) })
       : gameEnd.timeout
         ? t('result.timeout', { name: pName(gameEnd.winner) })
-        : gameEnd.dropped
-          ? t('result.cubeDrop', { name: pName(gameEnd.winner) })
-          : t('result.won', { name: pName(gameEnd.winner), type: t(multKey) })
+        : gameEnd.resigned
+          ? t('result.resign', { name: pName(gameEnd.winner) })
+          : gameEnd.dropped
+            ? t('result.cubeDrop', { name: pName(gameEnd.winner) })
+            : t('result.won', { name: pName(gameEnd.winner), type: t(multKey) })
     centerMain = (
       <div className="result-box">
         <div className="result-title">{title}</div>
@@ -1495,6 +1509,11 @@ export default function App() {
           >
             {t('menu.analysis')}
           </button>
+          {!gameEnd && !matchOver && !opening && (mode === 'pvb' || online) && (
+            <button className="menu-btn resign-btn" onClick={() => setResignOpen(true)}>
+              🏳️ {t('resign.button')}
+            </button>
+          )}
         </div>
       </aside>
 
@@ -1556,6 +1575,27 @@ export default function App() {
         <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
       )}
       {authModal}
+
+      {resignOpen && (
+        <div className="register-overlay modal" onClick={() => setResignOpen(false)}>
+          <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+            <h2>🏳️ {t('resign.title')}</h2>
+            <p className="register-sub">{t('resign.help')}</p>
+            <button className="galaxy-btn double" onClick={() => handleResign(1)}>
+              {t('resign.single', { n: match.cube.value })}
+            </button>
+            <button className="galaxy-btn double" onClick={() => handleResign(2)}>
+              {t('resign.gammon', { n: match.cube.value * 2 })}
+            </button>
+            <button className="galaxy-btn double" onClick={() => handleResign(3)}>
+              {t('resign.backgammon', { n: match.cube.value * 3 })}
+            </button>
+            <button className="menu-btn" onClick={() => setResignOpen(false)}>
+              {t('reg.cancel')}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

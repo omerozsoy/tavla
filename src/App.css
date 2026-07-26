@@ -1415,6 +1415,19 @@ body {
   margin-top: 22px;
 }
 
+/* ---- Pes et modali ---- */
+.resign-card {
+  max-width: 320px;
+  text-align: center;
+}
+.resign-card .galaxy-btn {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.resign-btn {
+  color: #ff9db0;
+}
+
 /* ---- Mac kurulum ekrani ---- */
 .setup-card {
   text-align: left;
