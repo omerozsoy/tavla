@@ -39,7 +39,7 @@ return [
     'google' => [
         'client_id' => env(
             'GOOGLE_CLIENT_ID',
-            '306143287506-kpasng1ualupme10gc7ir29rkgqkr9ev.apps.googleusercontent.com',
+            '306143287506-u64icc2893q517phi6oi7089eicru801.apps.googleusercontent.com',
         ),
     ],
 
