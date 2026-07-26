@@ -9,8 +9,8 @@ import Board from './Board'
 import { useT } from '../i18n'
 
 interface Props {
-  neuralEval: (state: GameState, onRoll: Player) => Promise<number[]>
-  neuralAnalyze: (state: GameState) => Promise<RankedMove[]>
+  neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
+  neuralAnalyze: (state: GameState, deep: boolean) => Promise<RankedMove[]>
   onClose: () => void
 }
 
@@ -35,6 +35,7 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
   const [scoreB, setScoreB] = useState(0)
   const [result, setResult] = useState<number[] | null>(null)
   const [moveRanked, setMoveRanked] = useState<RankedMove[] | null>(null)
+  const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
   const [busy, setBusy] = useState(false)
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
@@ -76,14 +77,15 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
     setResult(null)
     setMoveRanked(null)
     try {
+      const deep = ply === 2
       if (d1 && d2) {
         // Zar verildi -> en iyi hamle(ler)
         const dice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
         const st: GameState = { ...state, dice, diceUsed: dice.map(() => false) }
-        setMoveRanked(await neuralAnalyze(st))
+        setMoveRanked(await neuralAnalyze(st, deep))
       } else {
         // Zarsiz -> pozisyonun genel kazanma sansi
-        setResult(await neuralEval(state, turn))
+        setResult(await neuralEval(state, turn, deep))
       }
     } catch {
       /* sinir agi yok */
@@ -357,6 +359,25 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="setup-row">
+            <div className="setup-label">{t('pa.depth')}</div>
+            <div className="menu-targets">
+              <button
+                className={ply === 1 ? 'menu-btn active' : 'menu-btn'}
+                onClick={() => setPly(1)}
+              >
+                {t('pa.ply1')}
+              </button>
+              <button
+                className={ply === 2 ? 'menu-btn active' : 'menu-btn'}
+                onClick={() => setPly(2)}
+              >
+                {t('pa.ply2')}
+              </button>
+            </div>
+            <div className="pa-depth-note">{ply === 2 ? t('pa.ply2Note') : t('pa.ply1Note')}</div>
           </div>
 
           <div className="setup-row">
