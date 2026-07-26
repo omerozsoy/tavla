@@ -1770,12 +1770,20 @@ body {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Tahtayi oyun-boyutundan kucult (kontrol paneline sigsin) */
-  --board-h: clamp(240px, 40vh, 360px);
+  /* Tahtayi oyun-boyutundan kucult: tum board olculerini burada yeniden tanimla */
+  --board-h: clamp(220px, 38vh, 340px);
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.12);
+  --bar-w: calc(var(--checker) * 0.85);
+  --bearoff-w: calc(var(--checker) * 1);
+  --tri-h: calc(var(--board-h) * 0.44);
   min-height: 100vh;
   padding: calc(var(--header-h) + 6px) 14px 14px;
   background: var(--bg);
   overflow-y: auto;
+}
+.analyzer-board .board {
+  margin: 0;
 }
 .analyzer-head {
   display: flex;
@@ -1825,6 +1833,36 @@ body {
 }
 .lobby-analyzer {
   margin-top: 12px;
+}
+.pa-cube {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.pa-cube-head {
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+.pa-cube-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.92rem;
+  margin-bottom: 3px;
+}
+.pa-cube-row b.good {
+  color: #7ee0a0;
+}
+.pa-cube-row b.bad {
+  color: #ff9db0;
+}
+.pa-cube-row b.muted {
+  color: var(--muted);
+}
+.pa-cube-note {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 6px;
+  line-height: 1.3;
 }
 .pa-result {
   margin-top: 14px;
