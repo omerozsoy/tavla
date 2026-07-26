@@ -240,6 +240,11 @@ export default function App() {
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
   const [ranked, setRanked] = useState<RankedMove[] | null>(null)
   const [analysisBoard, setAnalysisBoard] = useState<GameState | null>(null) // mini board pozisyonu
+  // PR (Performans Reytingi): karar basina wildbg'ye gore kaybedilen equity
+  const [prStats, setPrStats] = useState<{ loss: number; decisions: number }>({
+    loss: 0,
+    decisions: 0,
+  })
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
@@ -393,7 +398,28 @@ export default function App() {
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
+  // PR: insanin bu hamlesinde wildbg'ye gore kaybettigi equity'yi kaydet (arka planda)
+  async function recordPR(before: GameState, steps: Step[]) {
+    if (steps.length === 0) return
+    try {
+      const moves = generateMoves(before)
+      if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
+      const rankedMoves = await neuralRef.current.analyzeMoves(before)
+      if (rankedMoves.length === 0) return
+      const key = boardKey(applyPlayed(before, steps))
+      const pl = rankedMoves.find((r) => r.move.resultKey === key)
+      if (!pl) return
+      const loss = Math.max(0, rankedMoves[0].equity - pl.equity)
+      setPrStats((s) => ({ loss: s.loss + loss, decisions: s.decisions + 1 }))
+    } catch {
+      /* sinir agi yok -> PR atla */
+    }
+  }
+
   function commitTurn(finalPlayed: Step[]) {
+    // Insanin hamlesiyse PR'a ekle (bot degil)
+    const humanColor: Player = online ? myColor : 'white'
+    if (turnStart.turn === humanColor) void recordPR(turnStart, finalPlayed)
     const s = applyPlayed(turnStart, finalPlayed)
     s.turn = opponent(s.turn)
     s.dice = []
@@ -895,6 +921,7 @@ export default function App() {
       setOppStarted(false)
       setChat([])
       ratingReportedRef.current = false
+      setPrStats({ loss: 0, decisions: 0 })
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setMatch(newMatch(target))
       setStarter('white')
@@ -932,6 +959,7 @@ export default function App() {
       setOppStarted(false)
       setChat([])
       ratingReportedRef.current = false
+      setPrStats({ loss: 0, decisions: 0 })
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setOpening(null)
       setRoom({
@@ -1063,6 +1091,7 @@ export default function App() {
     setStarter('white')
     setTurnStart(freshBoard('white'))
     resetGameUi()
+    setPrStats({ loss: 0, decisions: 0 }) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
   }
 
@@ -1121,6 +1150,21 @@ export default function App() {
   const pipTop = pipCount(working, 'black')
   const pipBottom = pipCount(working, 'white')
 
+  // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
+  const prValue = prStats.decisions > 0 ? (prStats.loss / prStats.decisions) * 500 : null
+  const prBandKey =
+    prValue == null
+      ? ''
+      : prValue <= 3
+        ? 'pr.worldClass'
+        : prValue <= 6
+          ? 'pr.expert'
+          : prValue <= 10
+            ? 'pr.strong'
+            : prValue <= 15
+              ? 'pr.intermediate'
+              : 'pr.beginner'
+
   let centerMain: React.ReactNode = null
   if (opening === 'roll') {
     centerMain = (
@@ -1170,6 +1214,11 @@ export default function App() {
       <div className="result-box">
         <div className="result-title">{title}</div>
         <div className="result-points">{t('result.points', { n: gameEnd.points })}</div>
+        {prValue != null && (
+          <div className="result-pr">
+            {t('pr.your')}: <b>PR {prValue.toFixed(1)}</b> · {t(prBandKey)}
+          </div>
+        )}
         <div className="result-actions">
           {matchOver ? (
             <button className="galaxy-btn roll" onClick={() => handleNewMatch()}>
@@ -1593,6 +1642,11 @@ export default function App() {
         <span>
           {online && onlineReady && !myTurn && !gameEnd && !opening ? t('mp.oppTurn') : message}
         </span>
+        {prValue != null && (
+          <span className="pr-chip" title={t('pr.title')}>
+            PR {prValue.toFixed(1)}
+          </span>
+        )}
       </div>
       </main>
 

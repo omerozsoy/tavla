@@ -712,6 +712,23 @@ body {
   gap: 8px;
   align-items: stretch;
 }
+.result-pr {
+  color: var(--text);
+  font-size: 0.95rem;
+  margin-bottom: 12px;
+}
+.result-pr b {
+  color: #7ee0a0;
+}
+.pr-chip {
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.82rem;
+}
 .cube-actions {
   display: flex;
   gap: 10px;
