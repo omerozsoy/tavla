@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useT } from '../i18n'
 
 export interface LogEntry {
@@ -23,6 +24,7 @@ function band(loss: number): { cls: string; key: string } {
 
 export default function MatchReport({ mode, log, pr, onClose }: Props) {
   const { t } = useT()
+  const [worstFirst, setWorstFirst] = useState(false) // hatalari en kotuden sirala
 
   // Istatistik: bant sayilari + en kotu hamle
   const counts = { good: 0, ok: 0, bad: 0, blunder: 0 }
@@ -31,6 +33,12 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
     counts[band(e.loss).cls as keyof typeof counts]++
     if (!worst || e.loss > worst.loss) worst = e
   }
+
+  // Analiz listesi: sirali (hamle sirasi) veya en kotuden. Filtreliyse sadece hatalar.
+  const mistakes = log.map((e, i) => ({ e, i })).filter(({ e }) => e.loss >= 0.02)
+  const rows = worstFirst
+    ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss)
+    : log.map((e, i) => ({ e, i }))
 
   return (
     <div className="register-overlay modal report-overlay" onClick={onClose}>
@@ -79,25 +87,45 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
             )}
           </div>
         ) : (
-          <div className="report-list">
-            {log.map((e, i) => {
-              const b = band(e.loss)
-              return (
-                <div key={i} className={`rep-row ${b.cls}`}>
-                  <span className="rep-no">{i + 1}.</span>
-                  <span className="rep-move">{e.notation}</span>
-                  {e.loss >= 0.02 ? (
-                    <>
-                      <span className="rep-best">→ {e.best}</span>
-                      <span className="rep-loss">-{e.loss.toFixed(3)}</span>
-                    </>
-                  ) : (
-                    <span className="rep-tag">{t('rep.perfect')}</span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          <>
+            <div className="rep-filter">
+              <button
+                className={worstFirst ? 'menu-btn' : 'menu-btn active'}
+                onClick={() => setWorstFirst(false)}
+              >
+                {t('rep.byOrder')}
+              </button>
+              <button
+                className={worstFirst ? 'menu-btn active' : 'menu-btn'}
+                onClick={() => setWorstFirst(true)}
+              >
+                {t('rep.byWorst', { n: mistakes.length })}
+              </button>
+            </div>
+            <div className="report-list">
+              {worstFirst && mistakes.length === 0 ? (
+                <p className="register-sub">{t('rep.noMistakes')}</p>
+              ) : (
+                rows.map(({ e, i }) => {
+                  const b = band(e.loss)
+                  return (
+                    <div key={i} className={`rep-row ${b.cls}`}>
+                      <span className="rep-no">{i + 1}.</span>
+                      <span className="rep-move">{e.notation}</span>
+                      {e.loss >= 0.02 ? (
+                        <>
+                          <span className="rep-best">→ {e.best}</span>
+                          <span className="rep-loss">-{e.loss.toFixed(3)}</span>
+                        </>
+                      ) : (
+                        <span className="rep-tag">{t('rep.perfect')}</span>
+                      )}
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </>
         )}
       </div>
     </div>

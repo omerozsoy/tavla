@@ -46,6 +46,7 @@ import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import Home from './ui/Home'
 import Leaderboard from './ui/Leaderboard'
+import ProfileStats from './ui/ProfileStats'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -246,6 +247,7 @@ export default function App() {
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
+  const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -1599,14 +1601,23 @@ export default function App() {
         {accountBar}
         <Home
           playerName={profile.nickname}
+          loggedIn={!!user}
           onNewGame={() => setSetup('pvb')}
           onBoardSettings={() => setBoardSettingsOpen(true)}
           onAnalyzer={() => setAnalyzerOpen(true)}
           onLeaderboard={() => setLeaderboardOpen(true)}
+          onMyStats={() => setStatsOpen(true)}
         />
         {authModal}
         {leaderboardOpen && (
           <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
+        )}
+        {statsOpen && user && (
+          <ProfileStats
+            name={profile.nickname || profile.firstName}
+            avatar={profile.avatar}
+            onClose={() => setStatsOpen(false)}
+          />
         )}
         {boardSettingsOpen && (
           <BoardSettings

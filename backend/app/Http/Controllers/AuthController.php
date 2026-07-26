@@ -149,7 +149,11 @@ class AuthController extends Controller
     // Giris yapmis kullanici
     public function me(Request $request)
     {
-        return response()->json(['user' => $request->user()]);
+        $user = $request->user();
+        // Kendi rating siralamasi (kacinci sirada)
+        $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
+        $total = User::count();
+        return response()->json(['user' => $user, 'rank' => $rank, 'total_players' => $total]);
     }
 
     // Profil guncelle

@@ -2,18 +2,22 @@ import { useT } from '../i18n'
 
 interface Props {
   playerName: string
+  loggedIn: boolean
   onNewGame: () => void
   onBoardSettings: () => void
   onAnalyzer: () => void
   onLeaderboard: () => void
+  onMyStats: () => void
 }
 
 export default function Home({
   playerName,
+  loggedIn,
   onNewGame,
   onBoardSettings,
   onAnalyzer,
   onLeaderboard,
+  onMyStats,
 }: Props) {
   const { t } = useT()
   return (
@@ -34,6 +38,11 @@ export default function Home({
           <button className="menu-btn" onClick={onLeaderboard}>
             🏆 {t('menu.leaderboard')}
           </button>
+          {loggedIn && (
+            <button className="menu-btn" onClick={onMyStats}>
+              📊 {t('menu.myStats')}
+            </button>
+          )}
           <button className="menu-btn" onClick={onAnalyzer}>
             🔬 {t('pa.title')}
           </button>

@@ -33,6 +33,9 @@ export interface ServerUser {
   avatar?: string | null
   birth_date?: string | null
   rating?: number
+  wins?: number
+  losses?: number
+  games_played?: number
   is_admin?: boolean
   game_state?: unknown
 }
@@ -144,6 +147,17 @@ export async function resetPassword(
 export async function me(): Promise<ServerUser> {
   const data = await req<{ user: ServerUser }>('/me')
   return data.user
+}
+
+export interface MyStats {
+  user: ServerUser
+  rank: number
+  total: number
+}
+
+export async function myStats(): Promise<MyStats> {
+  const data = await req<{ user: ServerUser; rank: number; total_players: number }>('/me')
+  return { user: data.user, rank: data.rank, total: data.total_players }
 }
 
 export async function updateProfile(input: Profile): Promise<ServerUser> {
