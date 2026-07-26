@@ -96,14 +96,16 @@ export async function register(input: Profile & { password: string }): Promise<S
 export const GOOGLE_CLIENT_ID =
   '306143287506-u64icc2893q517phi6oi7089eicru801.apps.googleusercontent.com'
 
-// Google ID token'i ile giris/kayit
-export async function googleLogin(credential: string): Promise<ServerUser> {
+// Google ID token'i ile giris/kayit. isNew=true ise takma isim secmesi istenir.
+export async function googleLogin(
+  credential: string,
+): Promise<{ user: ServerUser; isNew: boolean }> {
   const data = await req<{ user: ServerUser; token: string; isNew: boolean }>('/auth/google', {
     method: 'POST',
     body: JSON.stringify({ credential }),
   })
   setToken(data.token)
-  return data.user
+  return { user: data.user, isNew: data.isNew }
 }
 
 export async function login(loginId: string, password: string): Promise<ServerUser> {

@@ -12,7 +12,7 @@ function isEmail(v: string): boolean {
 interface Props {
   editUser?: ServerUser | null
   editGuest?: Profile | null
-  onAuthed: (user: ServerUser) => void
+  onAuthed: (user: ServerUser, isNew?: boolean) => void
   onGuest: (profile: Profile) => void
   onCancel?: () => void
   modal?: boolean // true: yari saydam arka planla modal pencere
@@ -50,7 +50,7 @@ export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel,
       setError('')
       api
         .googleLogin(resp.credential)
-        .then((u) => onAuthedRef.current(u))
+        .then(({ user, isNew }) => onAuthedRef.current(user, isNew))
         .catch(() => setError(t('auth.googleFail')))
         .finally(() => setBusy(false))
     }
