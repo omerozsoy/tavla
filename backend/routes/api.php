@@ -2,12 +2,19 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
 
 // Halka acik
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
+
+// Multiplayer odalari (misafir dostu, token bazli)
+Route::post('/rooms', [RoomController::class, 'create']);
+Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
+Route::get('/rooms/{code}', [RoomController::class, 'show']);
+Route::put('/rooms/{code}', [RoomController::class, 'update']);
 
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {

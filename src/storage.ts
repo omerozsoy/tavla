@@ -15,7 +15,7 @@ export interface Profile {
 }
 
 export interface SavedGame {
-  mode: 'pvp' | 'pvb'
+  mode: 'pvp' | 'pvb' | 'online'
   difficulty: 'neural' | 'heuristic'
   match: MatchState
   starter: 'white' | 'black'

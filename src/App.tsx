@@ -27,7 +27,16 @@ import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import DiceRow, { Die } from './ui/Dice'
 import Auth from './ui/Auth'
+import Lobby from './ui/Lobby'
 import AnalysisPanel, { type MoveError } from './ui/AnalysisPanel'
+import {
+  createRoom,
+  joinRoom,
+  showRoom,
+  updateRoom,
+  ApiError as ApiErr,
+  type Slot,
+} from './api'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT, type Lang } from './i18n'
 import {
@@ -60,8 +69,15 @@ function freshBoard(turn: Player): GameState {
   return s
 }
 
-type Mode = 'pvp' | 'pvb'
+type Mode = 'pvp' | 'pvb' | 'online'
 type Difficulty = 'neural' | 'heuristic'
+
+interface RoomState {
+  code: string
+  slot: Slot
+  oppName: string | null
+  status: 'waiting' | 'playing' | 'finished'
+}
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7]
 
@@ -145,6 +161,14 @@ export default function App() {
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
   const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
+  // Online oda
+  const [room, setRoom] = useState<RoomState | null>(null)
+  const [roomBusy, setRoomBusy] = useState(false)
+  const [roomError, setRoomError] = useState('')
+  const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
+  const appliedVersionRef = useRef(-1)
+  const skipSyncRef = useRef(false)
+  const syncEnabledRef = useRef(false)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -238,8 +262,18 @@ export default function App() {
   const matchOver = mWinner !== null
   const diceRolled = turnStart.dice.length > 0
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
+  const online = mode === 'online' && room !== null
+  const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
+  const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
+  const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
-    !isBotTurn && !gameWon && gameEnd === null && !matchOver && cubePending === null && !opening
+    onlineReady &&
+    myTurn &&
+    !gameWon &&
+    gameEnd === null &&
+    !matchOver &&
+    cubePending === null &&
+    !opening
 
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
@@ -553,6 +587,142 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, openingResult])
 
+  // ---- Online: sunucudan gelen durumu uygula ----
+  function applyOnlineState(snap: SavedGame) {
+    setMatch(snap.match)
+    setStarter(snap.starter)
+    setTurnsPlayed(snap.turnsPlayed)
+    setTurnStart(snap.turnStart)
+    setPlayed(snap.played ?? [])
+    setSelectedFrom(null)
+    setCubePending(null)
+    setBotAnim(null)
+    setOpening(null)
+    setOppStarted(true)
+  }
+
+  // Online: yerel degisikligi odaya gonder (senkron)
+  useEffect(() => {
+    if (!online || !room || room.status !== 'playing' || !syncEnabledRef.current) return
+    if (skipSyncRef.current) {
+      skipSyncRef.current = false
+      return
+    }
+    const snap = { mode, difficulty, match, starter, turnsPlayed, turnStart, played }
+    const timer = window.setTimeout(() => {
+      updateRoom(room.code, snap)
+        .then((r) => {
+          appliedVersionRef.current = r.version
+        })
+        .catch(() => {})
+    }, 200)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room, match, starter, turnsPlayed, turnStart, played])
+
+  // Online: odayi periyodik yokla (rakip hamlesi + durum)
+  useEffect(() => {
+    if (!online || !room) return
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const rv = await showRoom(room.code)
+        if (cancelled || !rv) return
+        setRoom((r) =>
+          r ? { ...r, oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name, status: rv.status } : r,
+        )
+        if (rv.version > appliedVersionRef.current && rv.state) {
+          appliedVersionRef.current = rv.version
+          skipSyncRef.current = true
+          syncEnabledRef.current = true
+          applyOnlineState(rv.state as SavedGame)
+        }
+      } catch {
+        /* gecici */
+      }
+    }
+    const id = window.setInterval(poll, 1200)
+    poll()
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.code])
+
+  // Online host (p1): rakip katilinca acilis atisini baslat
+  useEffect(() => {
+    if (!online || room?.slot !== 'p1' || room?.status !== 'playing') return
+    if (syncEnabledRef.current) return
+    syncEnabledRef.current = true
+    setTurnStart(freshBoard('white'))
+    setPlayed([])
+    setOpening('roll')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.slot, room?.status])
+
+  async function handleCreateRoom() {
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'))
+      appliedVersionRef.current = -1
+      syncEnabledRef.current = false
+      setOppStarted(false)
+      setMatch(newMatch(1))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      setOpening(null)
+      setRoom({ code: res.room.code, slot: res.slot, oppName: null, status: res.room.status })
+    } catch {
+      setRoomError(t('mp.connError'))
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
+  async function handleJoinRoom(code: string) {
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'))
+      appliedVersionRef.current = -1
+      syncEnabledRef.current = false
+      setOppStarted(false)
+      setOpening(null)
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        status: res.room.status,
+      })
+    } catch (e) {
+      setRoomError(
+        e instanceof ApiErr && e.status === 404
+          ? t('mp.roomNotFound')
+          : e instanceof ApiErr && e.status === 409
+            ? t('mp.roomFull')
+            : t('mp.connError'),
+      )
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
+  function handleLeaveRoom() {
+    setRoom(null)
+    syncEnabledRef.current = false
+    appliedVersionRef.current = -1
+    setOppStarted(false)
+    handleNewMatch(match.target, 'pvb')
+  }
+
   // Hamleyi onayla ve sirayi rakibe ver
   function handleConfirm() {
     const err = computeMoveError(played)
@@ -611,6 +781,10 @@ export default function App() {
   }
 
   function handleNewMatch(target = match.target, nextMode = mode) {
+    if (nextMode !== 'online') {
+      setRoom(null)
+      syncEnabledRef.current = false
+    }
     setMode(nextMode)
     setMatch(newMatch(target))
     setStarter('white')
@@ -641,7 +815,8 @@ export default function App() {
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
-  const humanCanDouble = showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
+  const humanCanDouble =
+    showRoll && turnsPlayed > 0 && !online && canDouble(match, turnStart.turn, false)
   const humanRespond = cubePending !== null && (mode === 'pvp' || cubePending === BOT_PLAYER)
   const canSwapDice =
     interactive &&
@@ -800,11 +975,29 @@ export default function App() {
   const centerRight = mySideRight ? primary : secondary
   const centerLeft = mySideRight ? secondary : primary
 
+  const myName = profile?.nickname ?? t('player.you')
+  const blackName = online
+    ? myColor === 'black'
+      ? myName
+      : (room?.oppName ?? '…')
+    : mode === 'pvb'
+      ? t('player.bot')
+      : t('player.black')
+  const whiteName = online
+    ? myColor === 'white'
+      ? myName
+      : (room?.oppName ?? '…')
+    : mode === 'pvb'
+      ? myName
+      : t('player.white')
   const topInfo = {
-    name: mode === 'pvb' ? t('player.bot') : t('player.black'),
+    name: blackName,
     avatar: '🐱',
-    sub:
-      mode === 'pvb'
+    sub: online
+      ? myColor === 'black'
+        ? t('player.you')
+        : t('mp.title')
+      : mode === 'pvb'
         ? difficulty === 'neural'
           ? t('sub.neural')
           : t('sub.heuristic')
@@ -816,9 +1009,15 @@ export default function App() {
     target: match.target,
   }
   const bottomInfo = {
-    name: mode === 'pvb' ? (profile?.nickname ?? t('player.you')) : t('player.white'),
+    name: whiteName,
     avatar: '🧑‍🚀',
-    sub: mode === 'pvb' ? t('player.human') : t('player.p1'),
+    sub: online
+      ? myColor === 'white'
+        ? t('player.you')
+        : t('mp.title')
+      : mode === 'pvb'
+        ? t('player.human')
+        : t('player.p1'),
     off: working.off.white,
     active: turnStart.turn === 'white' && !gameWon && !gameEnd,
     color: 'white' as const,
@@ -861,6 +1060,20 @@ export default function App() {
           setEditProfile(false)
         }}
         onCancel={profile ? () => setEditProfile(false) : undefined}
+      />
+    )
+  }
+
+  // Online mod: oyun baslamadiysa lobi (oda olustur/katil/bekle)
+  if (mode === 'online' && (!room || room.status !== 'playing')) {
+    return (
+      <Lobby
+        room={room}
+        busy={roomBusy}
+        error={roomError}
+        onCreate={handleCreateRoom}
+        onJoin={handleJoinRoom}
+        onLeave={handleLeaveRoom}
       />
     )
   }
@@ -952,6 +1165,16 @@ export default function App() {
           >
             {t('menu.twoPlayer')}
           </button>
+          <button
+            className={mode === 'online' ? 'menu-btn active' : 'menu-btn'}
+            onClick={() => {
+              setRoom(null)
+              setRoomError('')
+              setMode('online')
+            }}
+          >
+            {t('menu.online')}
+          </button>
         </div>
 
         {mode === 'pvb' && (
@@ -1022,7 +1245,14 @@ export default function App() {
 
       <div className="status">
         {match.isCrawford && !gameEnd && <span className="crawford">{t('status.crawford')}</span>}
-        <span>{message}</span>
+        {online && (
+          <span className="room-tag">
+            {t('mp.enterCode')}: {room?.code} ·{' '}
+          </span>
+        )}
+        <span>
+          {online && onlineReady && !myTurn && !gameEnd && !opening ? t('mp.oppTurn') : message}
+        </span>
       </div>
 
       {showAnalysis && (

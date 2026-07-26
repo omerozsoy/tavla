@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Room;
+use Illuminate\Http\Request;
+
+class RoomController extends Controller
+{
+    // Benzersiz oda kodu (karisik olmayan karakterler)
+    private function generateCode(): string
+    {
+        $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 0/O/1/I yok
+        do {
+            $code = '';
+            for ($i = 0; $i < 5; $i++) {
+                $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+            }
+        } while (Room::where('code', $code)->exists());
+        return $code;
+    }
+
+    // Oda olustur
+    public function create(Request $request)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['required', 'string', 'max:40'],
+        ]);
+
+        $room = Room::create([
+            'code' => $this->generateCode(),
+            'p1_token' => $data['token'],
+            'p1_name' => $data['name'],
+            'status' => 'waiting',
+            'version' => 0,
+        ]);
+
+        return response()->json(['room' => $room->toClient(), 'slot' => 'p1']);
+    }
+
+    // Odaya katil (kod ile)
+    public function join(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['required', 'string', 'max:40'],
+        ]);
+
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+        }
+
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            // Yeni katilimci
+            if ($room->p2_token) {
+                return response()->json(['message' => 'Oda dolu.'], 409);
+            }
+            $room->p2_token = $data['token'];
+            $room->p2_name = $data['name'];
+            $room->status = 'playing';
+            $room->save();
+            $slot = 'p2';
+        }
+
+        return response()->json(['room' => $room->toClient(), 'slot' => $slot]);
+    }
+
+    // Oda durumunu getir (polling). ?since=version verilirse degismediyse 204.
+    public function show(Request $request, string $code)
+    {
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+        }
+        $since = (int) $request->query('since', -1);
+        if ($since >= 0 && $room->version <= $since) {
+            return response()->noContent(); // degismedi
+        }
+        return response()->json(['room' => $room->toClient()]);
+    }
+
+    // Oyun durumunu guncelle (hamle). Sadece odadaki oyuncular.
+    public function update(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'state' => ['required', 'array'],
+            'status' => ['nullable', 'string', 'in:playing,finished'],
+        ]);
+
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+        }
+        if ($this->slotOf($room, $data['token']) === null) {
+            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+        }
+
+        $room->state = $data['state'];
+        $room->version = $room->version + 1;
+        if (! empty($data['status'])) {
+            $room->status = $data['status'];
+        }
+        $room->save();
+
+        return response()->json(['version' => $room->version, 'status' => $room->status]);
+    }
+
+    private function slotOf(Room $room, string $token): ?string
+    {
+        if ($room->p1_token === $token) {
+            return 'p1';
+        }
+        if ($room->p2_token === $token) {
+            return 'p2';
+        }
+        return null;
+    }
+}
