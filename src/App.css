@@ -706,6 +706,12 @@ body {
   font-weight: 800;
   margin-bottom: 12px;
 }
+.result-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
 .cube-actions {
   display: flex;
   gap: 10px;
