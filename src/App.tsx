@@ -92,23 +92,24 @@ interface RoomState {
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7]
 
-// Board renk temalari (panel zemin, acik ucgen, koyu ucgen)
+// Board renk temalari (panel zemin, acik ucgen, koyu ucgen, koyu pul)
 interface BoardTheme {
   id: string
   name: string
   panel: string
   a: string
   b: string
+  checker: string // koyu pul rengi (temaya uyar)
 }
 const BOARD_THEMES: BoardTheme[] = [
-  { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4' },
-  { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e' },
-  { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826' },
-  { id: 'purple', name: 'Mor', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c' },
-  { id: 'gray', name: 'Gri', panel: '#5a6478', a: '#8b95a8', b: '#434c5e' },
-  { id: 'red', name: 'Kırmızı', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a' },
-  { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666' },
-  { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444' },
+  { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#2a2ac0' },
+  { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#0e5a30' },
+  { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826', checker: '#4d2e15' },
+  { id: 'purple', name: 'Mor', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c', checker: '#4a2d85' },
+  { id: 'gray', name: 'Gri', panel: '#5a6478', a: '#8b95a8', b: '#434c5e', checker: '#2e3644' },
+  { id: 'red', name: 'Kırmızı', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a', checker: '#7d1f1f' },
+  { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666', checker: '#0d4d4d' },
+  { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444', checker: '#26305e' },
 ]
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
@@ -314,6 +315,7 @@ export default function App() {
     root.style.setProperty('--panel', bt.panel)
     root.style.setProperty('--tri-a', bt.a)
     root.style.setProperty('--tri-b', bt.b)
+    root.style.setProperty('--navy', bt.checker) // koyu pul temaya uyar
     try {
       localStorage.setItem('tavla.theme', theme)
       localStorage.setItem('tavla.board', boardTheme)
