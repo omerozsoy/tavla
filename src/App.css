@@ -17,8 +17,10 @@
   --border: #24306a;
   --input-bg: #141c44;
 
+  /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
+  --header-h: 56px;
   /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz) */
-  --board-h: max(360px, min(calc(100vh - 96px), calc((100vw - 380px) / 1.4)));
+  --board-h: max(360px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 380px) / 1.4)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -159,6 +161,7 @@ body {
   align-items: center;
   justify-content: flex-start;
   gap: 6px;
+  padding-top: var(--header-h); /* ust hesap bari cakismasin */
   overflow-x: hidden;
   overflow-y: auto;
 }
