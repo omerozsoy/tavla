@@ -1770,6 +1770,8 @@ body {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
+  /* Tahtayi oyun-boyutundan kucult (kontrol paneline sigsin) */
+  --board-h: clamp(240px, 40vh, 360px);
   min-height: 100vh;
   padding: calc(var(--header-h) + 6px) 14px 14px;
   background: var(--bg);
