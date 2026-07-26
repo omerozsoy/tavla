@@ -12,6 +12,7 @@ Route::post('/auth/google', [AuthController::class, 'googleLogin']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
+Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 
 // Multiplayer odalari (misafir dostu, token bazli)
 Route::post('/rooms', [RoomController::class, 'create']);

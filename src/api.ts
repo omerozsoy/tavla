@@ -187,6 +187,22 @@ export async function nicknameAvailable(nickname: string): Promise<boolean> {
   return data.available
 }
 
+export interface LeaderRow {
+  rank: number
+  name: string
+  avatar?: string | null
+  country?: string | null
+  rating: number
+  wins: number
+  losses: number
+  games: number
+}
+
+export async function leaderboard(limit = 100): Promise<LeaderRow[]> {
+  const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}`)
+  return data.players
+}
+
 export async function loadServerGame(): Promise<unknown | null> {
   const data = await req<{ game: unknown }>('/game')
   return data.game ?? null
