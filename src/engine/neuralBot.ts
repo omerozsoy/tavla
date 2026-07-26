@@ -92,6 +92,8 @@ export interface RankedMove {
 
 export class NeuralBot implements Engine {
   name = 'Sinir Agi (wildbg)'
+  level = 10 // 1..10 zorluk (10 = her zaman en iyi)
+  lastLoss = 0 // son secilen hamlenin equity kaybi (bot PR'i icin)
   private ort: Ort | null = null
   private contact: InferenceSession | null = null
   private race: InferenceSession | null = null
@@ -113,11 +115,28 @@ export class NeuralBot implements Engine {
 
   async chooseMove(state: GameState): Promise<Move> {
     const moves = generateMoves(state)
+    this.lastLoss = 0
     if (moves.length <= 1) return moves[0] ?? { steps: [], resultKey: '' }
     const cands = await this.scoreMoves(state, moves)
+    // En iyi equity
     let best = cands[0]
     for (const c of cands) if (c.equity > best.equity) best = c
-    return best.move
+    // Seviye 10 -> her zaman en iyi. Dusuk seviye -> equity'lere gurultu ekleyip sec.
+    let chosen = best
+    if (this.level < 10) {
+      // Seviyeye gore gurultu buyuklugu (dusuk seviye = buyuk hata)
+      const sigma = 0.45 * Math.pow((10 - this.level) / 9, 1.4)
+      let bestNoisy = -Infinity
+      for (const c of cands) {
+        const noisy = c.equity + (Math.random() * 2 - 1) * sigma
+        if (noisy > bestNoisy) {
+          bestNoisy = noisy
+          chosen = c
+        }
+      }
+    }
+    this.lastLoss = Math.max(0, best.equity - chosen.equity)
+    return chosen.move
   }
 
   // Tum legal hamleleri equity'ye gore sirala (en iyi ilk). Mover perspektifi.

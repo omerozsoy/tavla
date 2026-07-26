@@ -81,7 +81,27 @@ function freshBoard(turn: Player): GameState {
 }
 
 type Mode = 'pvp' | 'pvb' | 'online'
-type Difficulty = 'neural' | 'heuristic'
+type Difficulty = number // 1..10 AI seviyesi
+
+// AI zorluk seviyeleri (1..10)
+const AI_LEVELS = [
+  'Beginner',
+  'Rookie',
+  'Casual',
+  'Skilled',
+  'Expert',
+  'Master',
+  'Grandmaster',
+  'Elite',
+  'Legend',
+  'Neural AI',
+]
+// Eski kayit ('neural'/'heuristic') veya sayi -> 1..10
+function normDifficulty(d: unknown): number {
+  if (typeof d === 'number' && d >= 1 && d <= 10) return Math.round(d)
+  if (d === 'heuristic') return 3
+  return 10 // 'neural' veya bilinmeyen -> en yuksek
+}
 
 interface RoomState {
   code: string
@@ -199,7 +219,7 @@ export default function App() {
     }
   })
   const [mode, setMode] = useState<Mode>(saved?.mode ?? 'pvb')
-  const [difficulty, setDifficulty] = useState<Difficulty>(saved?.difficulty ?? 'neural')
+  const [difficulty, setDifficulty] = useState<Difficulty>(normDifficulty(saved?.difficulty))
   const [match, setMatch] = useState<MatchState>(() => saved?.match ?? newMatch(1))
   const [starter, setStarter] = useState<Player>(saved?.starter ?? 'white')
   const [turnStart, setTurnStart] = useState<GameState>(() => saved?.turnStart ?? freshBoard('white'))
@@ -256,7 +276,8 @@ export default function App() {
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
-  const engine = difficulty === 'neural' ? neuralRef.current : heuristicRef.current
+  neuralRef.current.level = difficulty // AI seviyesini uygula
+  const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
   // Oyunu yerel kaydet (offline/misafir icin). gameEnd de kaydedilir ki
   // refresh'te bitmis oyun yeniden "kazanildi" sayilip tekrar puanlanmasin.
@@ -267,7 +288,7 @@ export default function App() {
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
     setMode(g.mode)
-    setDifficulty(g.difficulty)
+    setDifficulty(normDifficulty(g.difficulty))
     setMatch(g.match)
     setStarter(g.starter)
     setTurnStart(g.turnStart)
@@ -412,9 +433,13 @@ export default function App() {
     const mover = before.turn
     const moves = generateMoves(before)
     if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
-    // Bot (pvb'de siyah) her zaman agin en iyisini oynar -> kayip 0
+    // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (seviyeye gore)
     if (mode === 'pvb' && mover === BOT_PLAYER) {
-      setPrStats((s) => ({ ...s, black: { loss: s.black.loss, decisions: s.black.decisions + 1 } }))
+      const loss = neuralRef.current.lastLoss ?? 0
+      setPrStats((s) => ({
+        ...s,
+        black: { loss: s.black.loss + loss, decisions: s.black.decisions + 1 },
+      }))
       return
     }
     // Insan: tur basi hesaplanan NEURAL siralamayi kullan (heuristik olcegi PR'a uygun degil)
@@ -566,7 +591,7 @@ export default function App() {
         }
         let move: Move
         try {
-          if (difficulty === 'neural') setMessage(t('msg.neuralThinking'))
+          setMessage(t('msg.neuralThinking'))
           move = await Promise.resolve(engine.chooseMove(turnStart))
         } catch (e) {
           // Sinir agi yuklenemedi -> oyun takilmasin, hizli bota dus
@@ -823,7 +848,7 @@ export default function App() {
     const mW = matchWinner(match)
     if (!mW) return
     ratingReportedRef.current = true
-    const botRating = difficulty === 'neural' ? 1700 : 1300
+    const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
     const won = mW === 'white' // pvb'de insan beyaz
     const before = user.rating ?? 1500
     reportRating(won, botRating)
@@ -1377,9 +1402,7 @@ export default function App() {
         ? t('player.you')
         : t('mp.title')
       : mode === 'pvb'
-        ? difficulty === 'neural'
-          ? t('sub.neural')
-          : t('sub.heuristic')
+        ? `${AI_LEVELS[difficulty - 1]} (${difficulty})`
         : t('player.p2'),
     off: working.off.black,
     active: turnStart.turn === 'black' && !gameWon && !gameEnd,

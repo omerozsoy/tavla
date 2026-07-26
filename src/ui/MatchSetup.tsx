@@ -10,8 +10,21 @@ export interface MatchOptions {
   showPip: boolean
   showAnalysis: boolean
   timeControl: TimeControl
-  difficulty?: 'neural' | 'heuristic'
+  difficulty?: number // 1..10 AI seviyesi
 }
+
+const AI_LEVELS = [
+  'Beginner',
+  'Rookie',
+  'Casual',
+  'Skilled',
+  'Expert',
+  'Master',
+  'Grandmaster',
+  'Elite',
+  'Legend',
+  'Neural AI',
+]
 
 interface Props {
   mode: SetupMode
@@ -28,9 +41,7 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
   const [showPip, setShowPip] = useState(initial.showPip)
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
-  const [difficulty, setDifficulty] = useState<'neural' | 'heuristic'>(
-    initial.difficulty ?? 'neural',
-  )
+  const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
 
   return (
     <div className="register-overlay">
@@ -58,23 +69,31 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
           </div>
         </div>
 
-        {/* Zorluk (yalnizca yapay zekaya karsi) */}
+        {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - 10 kademe */}
         {mode === 'pvb' && (
           <div className="setup-row">
-            <div className="setup-label">{t('setup.difficulty')}</div>
-            <div className="menu-targets">
-              <button
-                className={difficulty === 'neural' ? 'menu-btn active' : 'menu-btn'}
-                onClick={() => setDifficulty('neural')}
-              >
-                {t('menu.neural')}
-              </button>
-              <button
-                className={difficulty === 'heuristic' ? 'menu-btn active' : 'menu-btn'}
-                onClick={() => setDifficulty('heuristic')}
-              >
-                {t('menu.fast')}
-              </button>
+            <div className="setup-label">
+              {t('setup.difficulty')}: <b>{AI_LEVELS[difficulty - 1]}</b> ({difficulty}/10)
+            </div>
+            <input
+              type="range"
+              className="level-slider"
+              min={1}
+              max={10}
+              step={1}
+              value={difficulty}
+              onChange={(e) => setDifficulty(Number(e.target.value))}
+            />
+            <div className="level-grid">
+              {AI_LEVELS.map((name, i) => (
+                <button
+                  key={name}
+                  className={`level-chip ${difficulty === i + 1 ? 'active' : ''}`}
+                  onClick={() => setDifficulty(i + 1)}
+                >
+                  {i + 1}. {name}
+                </button>
+              ))}
             </div>
           </div>
         )}
