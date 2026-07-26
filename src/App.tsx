@@ -748,6 +748,11 @@ export default function App() {
   } else if (noMove) {
     centerMain = (
       <div className="result-box no-moves">
+        <div className="board-dice nm-dice">
+          {diceFaces.map((f, i) => (
+            <Die key={i} value={f.value} owner={turnStart.turn} used={f.used} />
+          ))}
+        </div>
         <div className="result-title">{t('overlay.noMoves')}</div>
         <div className="err-detail">{t('overlay.noMovesSub')}</div>
       </div>

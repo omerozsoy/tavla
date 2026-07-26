@@ -729,6 +729,10 @@ body {
   color: #ffd54a;
   font-size: 1.4rem;
 }
+.nm-dice {
+  justify-content: center;
+  margin-bottom: 10px;
+}
 .cube .owner-center {
 }
 .cube.owner-black {
