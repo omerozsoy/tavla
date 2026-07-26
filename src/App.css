@@ -1772,7 +1772,7 @@ body {
 .analyzer {
   /* Tahta: cozunurluk yuksekliginden ~50px kucuk; iki panele (kontrol+sonuc)
      yer birakacak sekilde genislige de sigar */
-  --board-h: max(300px, min(calc(100vh - var(--header-h) - 96px), calc((100vw - 720px) / 1.35)));
+  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((100vw - 720px) / 1.35)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
