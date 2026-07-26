@@ -1096,11 +1096,14 @@ body {
   right: 14px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: calc(100vw - 28px);
   gap: 8px;
   padding: 6px 10px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 18px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   z-index: 60;
 }
@@ -1128,6 +1131,16 @@ body {
   background: var(--accent);
   border-color: var(--accent);
   color: #fff;
+}
+.account-btn.icon {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+}
+.account-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 2px 2px;
 }
 @media (max-width: 720px) {
   .account-bar {
