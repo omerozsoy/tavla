@@ -1,0 +1,234 @@
+import { createContext, useContext, useState, type ReactNode } from 'react'
+
+export type Lang = 'tr' | 'en'
+
+type Dict = Record<string, string>
+
+const TR: Dict = {
+  'menu.member': 'Üye',
+  'menu.editProfile': 'Profili Düzenle',
+  'menu.mode': 'Mod',
+  'menu.vsBot': 'vs Bot',
+  'menu.twoPlayer': '2 Kişi',
+  'menu.botStrength': 'Bot Gücü',
+  'menu.neural': '🧠 Sinir Ağı',
+  'menu.fast': '⚡ Hızlı',
+  'menu.matchLength': 'Maç Uzunluğu',
+  'menu.analysis': '📊 Analiz',
+  'menu.newMatch': '🔄 Yeni Maç',
+  'menu.language': 'Dil',
+  'menu.theme': 'Tema',
+  'menu.board': 'Tahta Rengi',
+  'theme.dark': '🌙 Koyu',
+  'theme.light': '☀️ Açık',
+  'player.bot': 'Bot',
+  'player.you': 'Sen',
+  'player.white': 'Beyaz',
+  'player.black': 'Siyah',
+  'player.human': 'İnsan',
+  'player.p1': 'Oyuncu 1',
+  'player.p2': 'Oyuncu 2',
+  'sub.neural': 'wildbg NN',
+  'sub.heuristic': 'Heuristik',
+  'msg.roll': 'Zar at.',
+  'msg.turnOf': "Sıra {name}'da.",
+  'msg.playing': '{name} oynuyor. Zarlar: {dice}',
+  'msg.noMovePass': '{name} için hamle yok — geçiliyor…',
+  'msg.forcedAuto': 'Zorunlu hamle otomatik oynanıyor…',
+  'msg.botPlaying': 'Bot oynuyor. Zarlar: {dice}',
+  'msg.neuralThinking': 'Sinir ağı düşünüyor…',
+  'msg.neuralFailed': 'Sinir ağı yüklenemedi — hızlı bot oynuyor.',
+  'msg.newMatch': 'Yeni maç! Zar at.',
+  'msg.crawfordGame': 'Crawford oyunu (küp yok). Zar at.',
+  'msg.nextGame': 'Sonraki oyun. Zar at.',
+  'msg.doubled': "{name} kübü {value}'e katladı!",
+  'msg.doubledAsk': "Bot kübü {value}'e katladı! Kabul mü?",
+  'msg.took': "{name} kabul etti. Sıra {doubler}'da.",
+  'btn.confirm': '✓ Onayla',
+  'btn.roll': 'Roll',
+  'btn.double': 'Double',
+  'btn.undo': '↩ Geri',
+  'btn.take': 'Kabul',
+  'btn.drop': 'Pas',
+  'btn.newMatch': 'Yeni Maç',
+  'btn.nextGame': 'Sonraki Oyun',
+  'overlay.noMoves': 'Hamle Yok',
+  'overlay.noMovesSub': 'Oynanacak hamle yok — sıra geçiliyor…',
+  'overlay.bot': 'Bot…',
+  'result.matchWon': '{name} maçı kazandı! 🏆',
+  'result.cubeDrop': '{name} küp pasıyla kazandı',
+  'result.won': '{name} {type} kazandı!',
+  'result.points': '+{n} puan',
+  'mult.normal': '',
+  'mult.gammon': 'gammon',
+  'mult.backgammon': 'backgammon',
+  'status.crawford': 'Crawford · ',
+  'err.veryGood': 'Çok iyi hamle',
+  'err.small': 'Küçük hata (şüpheli)',
+  'err.error': 'Hata',
+  'err.blunder': 'Büyük hata (blunder)',
+  'an.title': '📊 Analiz (wildbg)',
+  'an.loading': 'Analiz ediliyor…',
+  'an.win': 'Kazanma',
+  'an.gammon': 'Gammon',
+  'an.bg': 'BG',
+  'an.equity': 'Equity',
+  'an.bestMoves': 'En iyi hamleler',
+  'an.equityLoss': 'equity kaybı',
+  'an.played': 'Oynanan',
+  'an.best': 'En iyi',
+  'reg.titleNew': 'Üye Kaydı',
+  'reg.titleEdit': 'Üye Bilgileri',
+  'brand.name': 'Dünya Tavla Konseyi',
+  'brand.short': 'DTK',
+  'reg.brandTitle': '🌍 {brand} — {title}',
+  'reg.sub': 'Devam etmek için bilgilerini gir.',
+  'reg.firstName': 'Ad',
+  'reg.lastName': 'Soyad',
+  'reg.country': 'Ülke',
+  'reg.nickname': 'Takma İsim',
+  'reg.email': 'E-posta',
+  'reg.fillAll': 'Lütfen tüm alanları doldurun.',
+  'reg.validEmail': 'Geçerli bir e-posta girin.',
+  'reg.cancel': 'Vazgeç',
+  'reg.submitNew': 'Kayıt Ol ve Başla',
+  'reg.submitEdit': 'Kaydet',
+  'reg.nickTaken': 'Bu takma isim alınmış.',
+  'reg.countryPlaceholder': 'Ülke ara / seç…',
+}
+
+const EN: Dict = {
+  'menu.member': 'Member',
+  'menu.editProfile': 'Edit Profile',
+  'menu.mode': 'Mode',
+  'menu.vsBot': 'vs Bot',
+  'menu.twoPlayer': '2 Players',
+  'menu.botStrength': 'Bot Strength',
+  'menu.neural': '🧠 Neural Net',
+  'menu.fast': '⚡ Fast',
+  'menu.matchLength': 'Match Length',
+  'menu.analysis': '📊 Analysis',
+  'menu.newMatch': '🔄 New Match',
+  'menu.language': 'Language',
+  'menu.theme': 'Theme',
+  'menu.board': 'Board Color',
+  'theme.dark': '🌙 Dark',
+  'theme.light': '☀️ Light',
+  'player.bot': 'Bot',
+  'player.you': 'You',
+  'player.white': 'White',
+  'player.black': 'Black',
+  'player.human': 'Human',
+  'player.p1': 'Player 1',
+  'player.p2': 'Player 2',
+  'sub.neural': 'wildbg NN',
+  'sub.heuristic': 'Heuristic',
+  'msg.roll': 'Roll the dice.',
+  'msg.turnOf': "{name}'s turn.",
+  'msg.playing': '{name} is playing. Dice: {dice}',
+  'msg.noMovePass': 'No moves for {name} — skipping…',
+  'msg.forcedAuto': 'Forced move played automatically…',
+  'msg.botPlaying': 'Bot is playing. Dice: {dice}',
+  'msg.neuralThinking': 'Neural net is thinking…',
+  'msg.neuralFailed': 'Neural net failed to load — using fast bot.',
+  'msg.newMatch': 'New match! Roll the dice.',
+  'msg.crawfordGame': 'Crawford game (no cube). Roll the dice.',
+  'msg.nextGame': 'Next game. Roll the dice.',
+  'msg.doubled': '{name} doubled the cube to {value}!',
+  'msg.doubledAsk': 'Bot doubled the cube to {value}! Take?',
+  'msg.took': "{name} took. {doubler}'s turn.",
+  'btn.confirm': '✓ Confirm',
+  'btn.roll': 'Roll',
+  'btn.double': 'Double',
+  'btn.undo': '↩ Undo',
+  'btn.take': 'Take',
+  'btn.drop': 'Drop',
+  'btn.newMatch': 'New Match',
+  'btn.nextGame': 'Next Game',
+  'overlay.noMoves': 'No Moves',
+  'overlay.noMovesSub': 'No moves to play — skipping…',
+  'overlay.bot': 'Bot…',
+  'result.matchWon': '{name} won the match! 🏆',
+  'result.cubeDrop': '{name} wins by cube drop',
+  'result.won': '{name} wins {type}!',
+  'result.points': '+{n} pts',
+  'mult.normal': '',
+  'mult.gammon': 'a gammon',
+  'mult.backgammon': 'a backgammon',
+  'status.crawford': 'Crawford · ',
+  'err.veryGood': 'Very good move',
+  'err.small': 'Small error (doubtful)',
+  'err.error': 'Error',
+  'err.blunder': 'Blunder',
+  'an.title': '📊 Analysis (wildbg)',
+  'an.loading': 'Analyzing…',
+  'an.win': 'Win',
+  'an.gammon': 'Gammon',
+  'an.bg': 'BG',
+  'an.equity': 'Equity',
+  'an.bestMoves': 'Best moves',
+  'an.equityLoss': 'equity lost',
+  'an.played': 'Played',
+  'an.best': 'Best',
+  'reg.titleNew': 'Sign Up',
+  'reg.titleEdit': 'Member Info',
+  'brand.name': 'World Backgammon Council',
+  'brand.short': 'WBC',
+  'reg.brandTitle': '🌍 {brand} — {title}',
+  'reg.sub': 'Enter your details to continue.',
+  'reg.firstName': 'First name',
+  'reg.lastName': 'Last name',
+  'reg.country': 'Country',
+  'reg.nickname': 'Nickname',
+  'reg.email': 'Email',
+  'reg.fillAll': 'Please fill in all fields.',
+  'reg.validEmail': 'Enter a valid email.',
+  'reg.cancel': 'Cancel',
+  'reg.submitNew': 'Sign Up & Start',
+  'reg.submitEdit': 'Save',
+  'reg.nickTaken': 'This nickname is taken.',
+  'reg.countryPlaceholder': 'Search / select country…',
+}
+
+const DICT: Record<Lang, Dict> = { tr: TR, en: EN }
+
+interface LangCtx {
+  lang: Lang
+  setLang: (l: Lang) => void
+  t: (key: string, params?: Record<string, string | number>) => string
+}
+
+const Ctx = createContext<LangCtx>({ lang: 'tr', setLang: () => {}, t: (k) => k })
+
+export function LangProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(() => {
+    try {
+      const s = localStorage.getItem('tavla.lang')
+      return s === 'en' ? 'en' : 'tr'
+    } catch {
+      return 'tr'
+    }
+  })
+  const setLang = (l: Lang) => {
+    setLangState(l)
+    try {
+      localStorage.setItem('tavla.lang', l)
+    } catch {
+      /* yok */
+    }
+  }
+  const t = (key: string, params?: Record<string, string | number>) => {
+    let s = DICT[lang][key] ?? DICT.tr[key] ?? key
+    if (params) {
+      for (const [k, v] of Object.entries(params)) {
+        s = s.split(`{${k}}`).join(String(v))
+      }
+    }
+    return s
+  }
+  return <Ctx.Provider value={{ lang, setLang, t }}>{children}</Ctx.Provider>
+}
+
+export function useT(): LangCtx {
+  return useContext(Ctx)
+}
