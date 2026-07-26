@@ -1770,8 +1770,9 @@ body {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Tahta maksimum: hem yukseklige hem (panele yer birakarak) genislige sigar */
-  --board-h: max(300px, min(calc(100vh - 130px), calc((100vw - 400px) / 1.35)));
+  /* Tahta: cozunurluk yuksekliginden ~50px kucuk; iki panele (kontrol+sonuc)
+     yer birakacak sekilde genislige de sigar */
+  --board-h: max(300px, min(calc(100vh - var(--header-h) - 50px), calc((100vw - 720px) / 1.35)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -1815,7 +1816,7 @@ body {
   display: flex;
   gap: 16px;
   align-items: flex-start;
-  justify-content: space-between; /* tahta solda, panel en sagda */
+  justify-content: flex-start; /* board | kontrol | sonuc yan yana */
   flex-wrap: wrap;
 }
 .analyzer-board {
@@ -1829,6 +1830,26 @@ body {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
+}
+.analyzer-results {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.analyzer-results .pa-result {
+  margin-top: 0;
+}
+.pa-placeholder {
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  padding: 18px 14px;
+  text-align: center;
 }
 .pa-hint {
   color: var(--muted);
@@ -1921,8 +1942,9 @@ body {
 .pa-win b {
   color: #7ee0a0;
 }
-@media (max-width: 760px) {
-  .analyzer-controls {
+@media (max-width: 1100px) {
+  .analyzer-controls,
+  .analyzer-results {
     width: 100%;
   }
 }

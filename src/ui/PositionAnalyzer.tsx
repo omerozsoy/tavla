@@ -410,6 +410,10 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
           <button className="galaxy-btn roll pa-analyze" disabled={busy} onClick={analyze}>
             {busy ? t('an.loading') : `🔍 ${t('pa.analyze')}`}
           </button>
+        </div>
+
+        <div className="analyzer-results">
+          {!result && !moveRanked && <div className="pa-placeholder">{t('pa.hint')}</div>}
 
           {result && (
             <div className="pa-result">
