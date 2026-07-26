@@ -1226,6 +1226,7 @@ export default function App() {
   const authModal =
     showAuth || editProfile ? (
       <Auth
+        key={editProfile && user ? `edit-${user.id}` : editProfile ? 'edit-guest' : 'auth'}
         modal
         editUser={editProfile ? user : null}
         editGuest={editProfile && !user ? guestProfile : null}

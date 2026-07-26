@@ -38,6 +38,9 @@ class User extends Authenticatable
         'remember_token',
     ];
 
+    // is_admin'i JSON'a ekle (email tabanli hesaplanir)
+    protected $appends = ['is_admin'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -50,5 +53,12 @@ class User extends Authenticatable
             'password' => 'hashed',
             'game_state' => 'array',
         ];
+    }
+
+    // Yonetici mi? (config'deki admin e-posta listesine gore)
+    public function getIsAdminAttribute(): bool
+    {
+        $admins = array_map('strtolower', config('services.admin_emails', []));
+        return in_array(strtolower((string) $this->email), $admins, true);
     }
 }
