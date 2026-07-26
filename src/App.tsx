@@ -50,6 +50,7 @@ import {
   getToken,
   loadServerGame,
   logout as apiLogout,
+  deleteAccount as apiDeleteAccount,
   me as apiMe,
   saveServerGame,
   toProfile,
@@ -1257,6 +1258,15 @@ export default function App() {
         onCancel={() => {
           setEditProfile(false)
           setShowAuth(false)
+        }}
+        onDeleteAccount={() => {
+          apiDeleteAccount().finally(() => {
+            setUser(null)
+            setGuestProfile(null)
+            setEditProfile(false)
+            setShowAuth(false)
+            setHome(true)
+          })
         }}
       />
     ) : null

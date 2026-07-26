@@ -15,11 +15,21 @@ interface Props {
   onAuthed: (user: ServerUser, isNew?: boolean) => void
   onGuest: (profile: Profile) => void
   onCancel?: () => void
+  onDeleteAccount?: () => void // profil duzenlemede hesabi sil
   modal?: boolean // true: yari saydam arka planla modal pencere
 }
 
-export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel, modal }: Props) {
+export default function Auth({
+  editUser,
+  editGuest,
+  onAuthed,
+  onGuest,
+  onCancel,
+  onDeleteAccount,
+  modal,
+}: Props) {
   const { t } = useT()
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
   const seed = editUser
     ? api.toProfile(editUser)
@@ -342,6 +352,37 @@ export default function Auth({ editUser, editGuest, onAuthed, onGuest, onCancel,
           >
             {t('auth.guest')}
           </button>
+        )}
+
+        {/* Hesabi sil (yalnizca giris yapmis kullanicinin profil duzenlemesinde) */}
+        {editUser && onDeleteAccount && (
+          <div className="danger-zone">
+            {confirmDelete ? (
+              <>
+                <div className="danger-warn">{t('account.deleteConfirm')}</div>
+                <div className="register-actions">
+                  <button
+                    type="button"
+                    className="menu-btn"
+                    onClick={() => setConfirmDelete(false)}
+                  >
+                    {t('reg.cancel')}
+                  </button>
+                  <button type="button" className="danger-btn" onClick={onDeleteAccount}>
+                    {t('account.deleteYes')}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="danger-link"
+                onClick={() => setConfirmDelete(true)}
+              >
+                {t('account.delete')}
+              </button>
+            )}
+          </div>
         )}
       </form>
     </div>
