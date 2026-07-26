@@ -1073,6 +1073,73 @@ body {
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 
+.account-rating {
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.player-rating {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ---- Sag ust hesap bari ---- */
+.account-bar {
+  position: fixed;
+  top: 10px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  z-index: 60;
+}
+.account-name {
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0 4px;
+  white-space: nowrap;
+}
+.account-btn {
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.account-btn:hover {
+  border-color: var(--accent);
+}
+.account-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+@media (max-width: 720px) {
+  .account-bar {
+    top: 6px;
+    right: 8px;
+    padding: 4px 8px;
+  }
+  .account-name {
+    display: none;
+  }
+}
+
 /* ---- Google ile giris ---- */
 .google-auth {
   display: flex;

@@ -30,6 +30,7 @@ export interface ServerUser {
   country: string
   nickname: string
   email: string
+  rating?: number
   game_state?: unknown
 }
 
@@ -189,24 +190,44 @@ export interface ChatMsg {
 export interface RoomView {
   code: string
   p1_name: string
+  p1_rating: number | null
   p2_name: string | null
+  p2_rating: number | null
   state: unknown
   messages: ChatMsg[]
   version: number
   status: 'waiting' | 'playing' | 'finished'
 }
 
-export async function createRoom(name: string): Promise<{ room: RoomView; slot: Slot }> {
+export async function createRoom(
+  name: string,
+  rating?: number,
+): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null }),
   })
 }
 
-export async function joinRoom(code: string, name: string): Promise<{ room: RoomView; slot: Slot }> {
+export async function joinRoom(
+  code: string,
+  name: string,
+  rating?: number,
+): Promise<{ room: RoomView; slot: Slot }> {
   return req(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null }),
+  })
+}
+
+// Oyun sonucu -> Elo puani guncelle (rakip puanina gore). Guncel puani doner.
+export async function reportRating(
+  won: boolean,
+  opponentRating: number,
+): Promise<{ rating: number }> {
+  return req('/rating/report', {
+    method: 'POST',
+    body: JSON.stringify({ won, opponent_rating: opponentRating }),
   })
 }
 

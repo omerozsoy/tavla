@@ -24,6 +24,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
+    Route::post('/rating/report', [AuthController::class, 'reportRating']);
+
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);
     Route::delete('/game', [GameController::class, 'clear']);

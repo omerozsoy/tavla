@@ -35,6 +35,7 @@ import {
   showRoom,
   updateRoom,
   sendChat,
+  reportRating,
   ApiError as ApiErr,
   type Slot,
   type ChatMsg,
@@ -82,6 +83,7 @@ interface RoomState {
   code: string
   slot: Slot
   oppName: string | null
+  oppRating: number | null
   status: 'waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
@@ -201,6 +203,7 @@ export default function App() {
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
+  const ratingReportedRef = useRef(false) // bu online mac icin puan bildirildi mi
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -668,6 +671,20 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, online, myColor])
 
+  // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
+  useEffect(() => {
+    if (!online || !user || ratingReportedRef.current) return
+    const mW = matchWinner(match)
+    if (!mW) return
+    ratingReportedRef.current = true
+    const won = mW === myColor
+    const oppRating = room?.oppRating ?? 1500
+    reportRating(won, oppRating)
+      .then((r) => setUser((u) => (u ? { ...u, rating: r.rating } : u)))
+      .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, user, match, myColor, room])
+
   // ---- Online: sunucudan gelen durumu uygula ----
   function applyOnlineState(snap: SavedGame) {
     // Uygulanan durumu imzala ki geri gonderme (echo) olmasin
@@ -737,7 +754,14 @@ export default function App() {
         const rv = await showRoom(room.code)
         if (cancelled || !rv) return
         setRoom((r) =>
-          r ? { ...r, oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name, status: rv.status } : r,
+          r
+            ? {
+                ...r,
+                oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name,
+                oppRating: r.slot === 'p1' ? rv.p2_rating : rv.p1_rating,
+                status: rv.status,
+              }
+            : r,
         )
         if (rv.messages) setChat(rv.messages)
         if (rv.version > appliedVersionRef.current && rv.state) {
@@ -773,12 +797,13 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'))
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
+      ratingReportedRef.current = false
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setMatch(newMatch(target))
       setStarter('white')
@@ -790,7 +815,13 @@ export default function App() {
       setGameEnd(null)
       setBotAnim(null)
       setOpening(null)
-      setRoom({ code: res.room.code, slot: res.slot, oppName: null, status: res.room.status })
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: null,
+        oppRating: null,
+        status: res.room.status,
+      })
     } catch {
       setRoomError(t('mp.connError'))
     } finally {
@@ -802,18 +833,20 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'))
+      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
+      ratingReportedRef.current = false
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setOpening(null)
       setRoom({
         code: res.room.code,
         slot: res.slot,
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         status: res.room.status,
       })
     } catch (e) {
@@ -1150,6 +1183,7 @@ export default function App() {
     color: 'black' as const,
     score: match.score.black,
     target: match.target,
+    rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
   }
   const bottomInfo = {
     name: whiteName,
@@ -1166,6 +1200,7 @@ export default function App() {
     color: 'white' as const,
     score: match.score.white,
     target: match.target,
+    rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
   }
 
   // Auth kontrolu bitene kadar bekle
@@ -1259,27 +1294,36 @@ export default function App() {
 
   return (
     <div className="app">
+      <div className="account-bar">
+        <span className="account-name">
+          👤 {profile.nickname}
+          {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
+        </span>
+        {user ? (
+          <>
+            <button className="account-btn" onClick={() => setEditProfile(true)}>
+              {t('menu.editProfile')}
+            </button>
+            <button className="account-btn" onClick={handleLogout}>
+              {t('auth.logout')}
+            </button>
+          </>
+        ) : (
+          <button
+            className="account-btn primary"
+            onClick={() => {
+              setUser(null)
+              setGuestProfile(null)
+            }}
+          >
+            {t('account.auth')}
+          </button>
+        )}
+      </div>
       <aside className="side-menu">
         <div className="brand">
           <span className="brand-badge">{t('brand.short')}</span>
           <span className="brand-full">{t('brand.name')}</span>
-        </div>
-
-        <div className="menu-group">
-          <div className="menu-label">{t('menu.account')}</div>
-          <div className="menu-profile">👤 {profile.nickname}</div>
-          <button className="menu-btn" onClick={() => setEditProfile(true)}>
-            {t('menu.editProfile')}
-          </button>
-          {user ? (
-            <button className="menu-btn" onClick={handleLogout}>
-              {t('auth.logout')}
-            </button>
-          ) : (
-            <button className="menu-btn" onClick={() => setGuestProfile(null)}>
-              {t('menu.login')}
-            </button>
-          )}
         </div>
 
         <div className="menu-group">

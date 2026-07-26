@@ -143,6 +143,29 @@ class AuthController extends Controller
         return response()->json(['user' => $user]);
     }
 
+    // Oyun sonucu -> Elo puanini guncelle (giris yapmis kullanici kendi puanini bildirir)
+    public function reportRating(Request $request)
+    {
+        $data = $request->validate([
+            'won'             => ['required', 'boolean'],
+            'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
+        ]);
+        $user = $request->user();
+
+        $k = 32;
+        $ra = $user->rating ?? 1500;
+        $rb = $data['opponent_rating'];
+        $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
+        $score = $data['won'] ? 1 : 0;
+        $newRating = (int) round($ra + $k * ($score - $expected));
+        $newRating = max(100, $newRating); // taban
+
+        $user->rating = $newRating;
+        $user->save();
+
+        return response()->json(['rating' => $newRating, 'user' => $user]);
+    }
+
     // Takma isim musait mi? (kayit formu icin, halka acik)
     public function nicknameAvailable(Request $request)
     {

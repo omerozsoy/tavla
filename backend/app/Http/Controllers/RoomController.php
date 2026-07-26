@@ -26,12 +26,14 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:40'],
+            'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
         ]);
 
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
             'p1_name' => $data['name'],
+            'p1_rating' => $data['rating'] ?? null,
             'status' => 'waiting',
             'version' => 0,
         ]);
@@ -45,6 +47,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:40'],
+            'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
         ]);
 
         $room = Room::where('code', strtoupper($code))->first();
@@ -60,6 +63,7 @@ class RoomController extends Controller
             }
             $room->p2_token = $data['token'];
             $room->p2_name = $data['name'];
+            $room->p2_rating = $data['rating'] ?? null;
             $room->status = 'playing';
             $room->save();
             $slot = 'p2';
