@@ -31,6 +31,7 @@ export interface ServerUser {
   nickname: string
   email: string
   rating?: number
+  is_admin?: boolean
   game_state?: unknown
 }
 

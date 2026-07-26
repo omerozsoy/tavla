@@ -354,8 +354,8 @@ export default function Auth({
           </button>
         )}
 
-        {/* Hesabi sil (yalnizca giris yapmis kullanicinin profil duzenlemesinde) */}
-        {editUser && onDeleteAccount && (
+        {/* Hesabi sil (yalnizca yonetici) */}
+        {editUser && editUser.is_admin && onDeleteAccount && (
           <div className="danger-zone">
             {confirmDelete ? (
               <>

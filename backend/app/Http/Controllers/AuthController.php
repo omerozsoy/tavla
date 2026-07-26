@@ -100,9 +100,17 @@ class AuthController extends Controller
                 $i++;
                 $nick = substr($base, 0, 26).$i;
             }
+            // Ad/soyad: once given/family, yoksa tam adi bol
+            $first = $p['given_name'] ?? '';
+            $last = $p['family_name'] ?? '';
+            if ($first === '' && ! empty($p['name'])) {
+                $parts = preg_split('/\s+/', trim($p['name']), 2);
+                $first = $parts[0] ?? '';
+                $last = $parts[1] ?? '';
+            }
             $user = User::create([
-                'first_name' => $p['given_name'] ?? ($p['name'] ?? ''),
-                'last_name'  => $p['family_name'] ?? '',
+                'first_name' => $first,
+                'last_name'  => $last,
                 'country'    => '',
                 'nickname'   => $nick,
                 'email'      => $email,
@@ -122,10 +130,13 @@ class AuthController extends Controller
         return response()->json(['ok' => true]);
     }
 
-    // Hesabi kalici olarak sil (kullanici kendi hesabini siler)
+    // Hesabi kalici olarak sil (yalnizca yonetici)
     public function deleteAccount(Request $request)
     {
         $user = $request->user();
+        if (! $user->is_admin) {
+            return response()->json(['message' => 'Bu işlem için yetkin yok.'], 403);
+        }
         $user->tokens()->delete(); // tum oturum token'lari
         $user->delete();
         return response()->json(['ok' => true]);
