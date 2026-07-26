@@ -94,6 +94,19 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
   const bg = result ? result[2] * 100 : 0
   const winOf = (p: number[]) => (p[0] + p[1] + p[2]) * 100
 
+  // Küp kararı (para oyunu / cubeless yaklaşımı; equity mover perspektifi)
+  const eq = result ? equityFrom(result) : 0
+  const gammonWinProb = result ? result[1] : 0
+  const tooGood = eq >= 0.7 && gammonWinProb >= 0.35
+  const doublerKey = !result
+    ? ''
+    : eq < 0.3
+      ? 'cube.noDouble'
+      : tooGood
+        ? 'cube.tooGood'
+        : 'cube.double'
+  const takerKey = !result ? '' : tooGood ? '' : eq < 0.5 ? 'cube.take' : 'cube.pass'
+
   return (
     <div className="analyzer">
       <div className="analyzer-head">
@@ -288,6 +301,22 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
               </div>
               <div className="prob-sub">
                 {t('an.equity')}: {equityFrom(result).toFixed(3)}
+              </div>
+              <div className="pa-cube">
+                <div className="pa-cube-head">🎲 {t('cube.title')}</div>
+                <div className="pa-cube-row">
+                  <span>{t('cube.doublerAction')}</span>
+                  <b className={doublerKey === 'cube.noDouble' ? 'muted' : 'good'}>
+                    {t(doublerKey)}
+                  </b>
+                </div>
+                {takerKey && (
+                  <div className="pa-cube-row">
+                    <span>{t('cube.opponentAction')}</span>
+                    <b className={takerKey === 'cube.take' ? 'good' : 'bad'}>{t(takerKey)}</b>
+                  </div>
+                )}
+                <div className="pa-cube-note">{t('cube.note')}</div>
               </div>
             </div>
           )}
