@@ -9,6 +9,32 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
+// Secilen resmi kucult (max kenar) ve JPEG data URL dondur
+function resizeImage(file: File, max = 160): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = reject
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = reject
+      img.onload = () => {
+        const scale = Math.min(1, max / Math.max(img.width, img.height))
+        const w = Math.max(1, Math.round(img.width * scale))
+        const h = Math.max(1, Math.round(img.height * scale))
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return reject(new Error('canvas'))
+        ctx.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL('image/jpeg', 0.82))
+      }
+      img.src = reader.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
 interface Props {
   editUser?: ServerUser | null
   editGuest?: Profile | null
@@ -41,6 +67,8 @@ export default function Auth({
   const [country, setCountry] = useState(seed.country)
   const [nickname, setNickname] = useState(seed.nickname)
   const [email, setEmail] = useState(seed.email)
+  const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
+  const [birthDate, setBirthDate] = useState(seed.birthDate ?? '')
   const [loginId, setLoginId] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -160,6 +188,8 @@ export default function Auth({
         country: country.trim(),
         nickname: nickname.trim(),
         email: email.trim(),
+        avatar,
+        birthDate,
         password,
       })
       onAuthed(user)
@@ -180,6 +210,8 @@ export default function Auth({
       country: country.trim(),
       nickname: nickname.trim(),
       email: email.trim(),
+      avatar,
+      birthDate,
     }
     if (editUser) {
       setBusy(true)
@@ -202,6 +234,30 @@ export default function Auth({
 
   const profileFields = (
     <>
+      <div className="avatar-picker">
+        <div className="avatar-preview">
+          {avatar ? <img src={avatar} alt="" /> : <span>📷</span>}
+        </div>
+        <div className="avatar-actions">
+          <label className="menu-btn avatar-btn">
+            {t('reg.photoPick')}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                if (f) resizeImage(f).then(setAvatar).catch(() => {})
+              }}
+            />
+          </label>
+          {avatar && (
+            <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
+              {t('reg.photoRemove')}
+            </button>
+          )}
+        </div>
+      </div>
       <label>
         {t('reg.firstName')}
         <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
@@ -232,6 +288,10 @@ export default function Auth({
           onChange={(e) => setNickname(e.target.value)}
         />
         {nickTaken && <span className="field-error">{t('reg.nickTaken')}</span>}
+      </label>
+      <label>
+        {t('reg.birthDate')}
+        <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
       </label>
       <label>
         {t('reg.email')}

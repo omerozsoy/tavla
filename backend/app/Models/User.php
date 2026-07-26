@@ -22,6 +22,8 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'country',
+        'avatar',
+        'birth_date',
         'nickname',
         'email',
         'password',
@@ -52,6 +54,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'game_state' => 'array',
+            'birth_date' => 'date:Y-m-d',
         ];
     }
 
