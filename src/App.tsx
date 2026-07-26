@@ -44,6 +44,7 @@ import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import Home from './ui/Home'
 import MatchResult from './ui/MatchResult'
+import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
@@ -247,6 +248,11 @@ export default function App() {
     black: { loss: number; decisions: number }
   }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
+  // Mac gunlugu (insanin kararlari): rapor/istatistik icin
+  const [matchLog, setMatchLog] = useState<
+    { notation: string; best: string; loss: number }[]
+  >([])
+  const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
@@ -400,8 +406,8 @@ export default function App() {
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
-  // PR: insanin bu hamlesinde wildbg'ye gore kaybettigi equity'yi kaydet (arka planda)
-  async function recordPR(before: GameState, steps: Step[]) {
+  // PR: bu hamlede wildbg'ye gore kaybedilen equity'yi kaydet (senkron; tur basi analizini kullanir)
+  function recordPR(before: GameState, steps: Step[]) {
     if (steps.length === 0) return
     const mover = before.turn
     const moves = generateMoves(before)
@@ -411,19 +417,23 @@ export default function App() {
       setPrStats((s) => ({ ...s, black: { loss: s.black.loss, decisions: s.black.decisions + 1 } }))
       return
     }
-    try {
-      const rankedMoves = await neuralRef.current.analyzeMoves(before)
-      if (rankedMoves.length === 0) return
-      const key = boardKey(applyPlayed(before, steps))
-      const pl = rankedMoves.find((r) => r.move.resultKey === key)
-      if (!pl) return
-      const loss = Math.max(0, rankedMoves[0].equity - pl.equity)
-      setPrStats((s) => ({
-        ...s,
-        [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
-      }))
-    } catch {
-      /* sinir agi yok -> PR atla */
+    // Insan: tur basi hesaplanan NEURAL siralamayi kullan (heuristik olcegi PR'a uygun degil)
+    const ranks = turnRankedRef.current
+    if (!ranks || ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
+    const key = boardKey(applyPlayed(before, steps))
+    const pl = ranks.find((r) => r.move.resultKey === key)
+    if (!pl) return // siralama bu tur icin hazir degil -> atla
+    const loss = Math.max(0, ranks[0].equity - pl.equity)
+    setPrStats((s) => ({
+      ...s,
+      [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
+    }))
+    const humanColor: Player = online ? myColor : 'white'
+    if (mover === humanColor) {
+      setMatchLog((log) => [
+        ...log,
+        { notation: moveNotation(pl.move, mover), best: moveNotation(ranks[0].move, mover), loss },
+      ])
     }
   }
 
@@ -629,9 +639,11 @@ export default function App() {
   }, [cubePending, mode, turnStart])
 
   // ---- Analiz (her zar sonrasi guncellenir) ----
+  // Not: PR/hata tespiti icin tur basi siralama panel KAPALIYKEN de hesaplanir.
   useEffect(() => {
-    if (!showAnalysis || !interactive || !diceRolled || gameWon) return
+    if (!interactive || !diceRolled || gameWon) return
     if (remainingDice.length === 0) return // tur tamamlandi, analiz yok
+    if (!showAnalysis && played.length > 0) return // panel kapali: sadece tur basi (PR icin)
     // Analiz durumu: hic oynanmadiysa tur basi; oynandiysa mevcut konum + kalan zarlar
     const analysisState =
       played.length === 0
@@ -651,13 +663,15 @@ export default function App() {
           neuralRef.current.evalPosition(analysisState, analysisState.turn),
         ])
         if (!cancelled) {
-          setRanked(r)
-          setCurrentProbs(cp)
-          setAnalysisBoard(analysisState)
-          if (played.length === 0) turnRankedRef.current = r // tur basi tam siralamayi sakla
+          if (played.length === 0) turnRankedRef.current = r // tur basi siralama (PR + hata)
+          if (showAnalysis) {
+            setRanked(r)
+            setCurrentProbs(cp)
+            setAnalysisBoard(analysisState)
+          }
         }
       } catch (e) {
-        // Sinir agi yuklenemedi/hata -> hizli (heuristik) siralama ile en azindan hamle listesi
+        // Sinir agi yuklenemedi/hata -> hizli (heuristik) siralama
         console.error('Analiz: sinir agi hatasi, hizli tahmine geciliyor:', e)
         if (!cancelled) {
           const mover = analysisState.turn
@@ -668,10 +682,12 @@ export default function App() {
               probs: [] as number[],
             }))
             .sort((a, b) => b.equity - a.equity)
-          setRanked(ranks)
-          setCurrentProbs(null)
-          setAnalysisBoard(analysisState)
           if (played.length === 0) turnRankedRef.current = ranks
+          if (showAnalysis) {
+            setRanked(ranks)
+            setCurrentProbs(null)
+            setAnalysisBoard(analysisState)
+          }
         }
       } finally {
         if (!cancelled) setAnalysisLoading(false)
@@ -940,6 +956,7 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setMatchLog([])
     setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setMatch(newMatch(target))
@@ -979,6 +996,7 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setMatchLog([])
     setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
       setOpening(null)
@@ -1112,6 +1130,7 @@ export default function App() {
     setTurnStart(freshBoard('white'))
     resetGameUi()
     setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setMatchLog([])
     setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
   }
@@ -1700,6 +1719,18 @@ export default function App() {
           onRematch={() => handleNewMatch(match.target, mode === 'online' ? 'pvb' : mode)}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
+          hasReport={matchLog.length > 0}
+          onStats={() => setResultView('stats')}
+          onAnalysis={() => setResultView('analysis')}
+        />
+      )}
+
+      {resultView && (
+        <MatchReport
+          mode={resultView}
+          log={matchLog}
+          pr={prOf(prHumanColor)}
+          onClose={() => setResultView(null)}
         />
       )}
 

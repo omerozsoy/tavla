@@ -22,6 +22,9 @@ interface Props {
   onNewMatch: () => void
   onRematch: () => void
   onHome: () => void
+  onStats: () => void
+  onAnalysis: () => void
+  hasReport: boolean
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -51,6 +54,9 @@ export default function MatchResult({
   onNewMatch,
   onRematch,
   onHome,
+  onStats,
+  onAnalysis,
+  hasReport,
 }: Props) {
   const { t } = useT()
   const fmtPr = (p: number | null) => (p == null ? '—' : p.toFixed(2))
@@ -117,6 +123,16 @@ export default function MatchResult({
           </div>
         </div>
 
+        {hasReport && (
+          <div className="mr-actions mr-report-actions">
+            <button className="menu-btn" onClick={onAnalysis}>
+              🔍 {t('mr.analysis')}
+            </button>
+            <button className="menu-btn" onClick={onStats}>
+              📊 {t('mr.stats')}
+            </button>
+          </div>
+        )}
         <div className="mr-actions">
           <button className="galaxy-btn roll" onClick={onRematch}>
             🔄 {t('mr.rematch')}
