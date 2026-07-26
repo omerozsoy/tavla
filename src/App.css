@@ -1413,6 +1413,33 @@ body {
 .setup-card {
   text-align: left;
 }
+.setup-modes {
+  display: flex;
+  gap: 8px;
+}
+.mode-choice {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.mode-choice .mode-ico {
+  font-size: 1.6rem;
+}
+.mode-choice.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
 .setup-row {
   margin: 6px 0 14px;
 }

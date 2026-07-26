@@ -44,7 +44,7 @@ import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import Home from './ui/Home'
 import ResetPassword from './ui/ResetPassword'
-import MatchSetup, { type MatchOptions } from './ui/MatchSetup'
+import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
 import { useT } from './i18n'
 import {
@@ -202,7 +202,7 @@ export default function App() {
   const [played, setPlayed] = useState<Step[]>(saved?.played ?? [])
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
-  const [gameEnd, setGameEnd] = useState<GameEnd | null>(null)
+  const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
@@ -214,7 +214,7 @@ export default function App() {
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
-  const [setup, setSetup] = useState<null | Mode>(null) // mac kurulum ekrani (hangi mod icin)
+  const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -227,7 +227,8 @@ export default function App() {
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
-  const ratingReportedRef = useRef(false) // bu online mac icin puan bildirildi mi
+  // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
+  const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -238,10 +239,11 @@ export default function App() {
   const neuralRef = useRef(new NeuralBot())
   const engine = difficulty === 'neural' ? neuralRef.current : heuristicRef.current
 
-  // Oyunu yerel kaydet (offline/misafir icin)
+  // Oyunu yerel kaydet (offline/misafir icin). gameEnd de kaydedilir ki
+  // refresh'te bitmis oyun yeniden "kazanildi" sayilip tekrar puanlanmasin.
   useEffect(() => {
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played })
-  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played])
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd })
+  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
@@ -254,10 +256,12 @@ export default function App() {
     setTurnsPlayed(g.turnsPlayed)
     setSelectedFrom(null)
     setCubePending(null)
-    setGameEnd(null)
+    setGameEnd(g.gameEnd ?? null)
     setBotAnim(null)
     setOpening(null)
     setOpeningResult(null)
+    // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
+    ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
   }
 
   // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle
@@ -926,7 +930,6 @@ export default function App() {
 
   // Mac kurulum ekrani onaylandi -> ayarlari uygula, maci/odayi baslat
   function applyMatchSetup(opts: MatchOptions) {
-    const which = setup
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
     setTimeControl(opts.timeControl)
@@ -934,8 +937,9 @@ export default function App() {
     if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
     setHome(false)
-    if (which === 'online') handleCreateRoom(opts.target)
-    else handleNewMatch(opts.target, which ?? 'pvb')
+    // Mod modalda secildi: online -> oda kur, degilse bota karsi mac
+    if (opts.mode === 'online') handleCreateRoom(opts.target)
+    else handleNewMatch(opts.target, 'pvb')
   }
 
   // Hamleyi onayla ve sirayi rakibe ver
@@ -1332,7 +1336,10 @@ export default function App() {
         targets={TARGETS}
         initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty }}
         onConfirm={applyMatchSetup}
-        onCancel={() => setSetup(null)}
+        onCancel={() => {
+          setSetup(null)
+          if (mode === 'online' && !room) setHome(true)
+        }}
       />
     )
   }
@@ -1345,7 +1352,6 @@ export default function App() {
           isUser={!!user}
           rating={user?.rating ?? null}
           onVsBot={() => setSetup('pvb')}
-          onTwoPlayer={() => setSetup('pvp')}
           onOnline={() => {
             setRoom(null)
             setRoomError('')
@@ -1450,62 +1456,13 @@ export default function App() {
         </div>
 
         <div className="menu-group">
-          <div className="menu-label">{t('menu.mode')}</div>
+          <div className="menu-label">{t('setup.mode')}</div>
           <button
-            className={mode === 'pvb' ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => setSetup('pvb')}
+            className="menu-btn"
+            onClick={() => setSetup(mode === 'online' ? 'online' : 'pvb')}
           >
-            {t('menu.vsBot')}
+            🎮 {t('setup.newGame')}
           </button>
-          <button
-            className={mode === 'pvp' ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => setSetup('pvp')}
-          >
-            {t('menu.twoPlayer')}
-          </button>
-          <button
-            className={mode === 'online' ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => {
-              setRoom(null)
-              setRoomError('')
-              setMode('online')
-            }}
-          >
-            {t('menu.online')}
-          </button>
-        </div>
-
-        {mode === 'pvb' && (
-          <div className="menu-group">
-            <div className="menu-label">{t('menu.botStrength')}</div>
-            <button
-              className={difficulty === 'neural' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setDifficulty('neural')}
-            >
-              {t('menu.neural')}
-            </button>
-            <button
-              className={difficulty === 'heuristic' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setDifficulty('heuristic')}
-            >
-              {t('menu.fast')}
-            </button>
-          </div>
-        )}
-
-        <div className="menu-group">
-          <div className="menu-label">{t('menu.matchLength')}</div>
-          <div className="menu-targets">
-            {TARGETS.map((n) => (
-              <button
-                key={n}
-                className={match.target === n ? 'menu-btn active' : 'menu-btn'}
-                onClick={() => handleNewMatch(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
         </div>
 
         <div className="menu-group">
@@ -1514,9 +1471,6 @@ export default function App() {
             onClick={() => setShowAnalysis((v) => !v)}
           >
             {t('menu.analysis')}
-          </button>
-          <button className="menu-btn" onClick={() => setSetup(mode)}>
-            {t('menu.newMatch')}
           </button>
         </div>
       </aside>

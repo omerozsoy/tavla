@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 
 export type TimeControl = 'off' | 'standard' | 'fast'
+export type SetupMode = 'pvb' | 'online'
 
 export interface MatchOptions {
+  mode: SetupMode
   target: number
   showPip: boolean
   showAnalysis: boolean
@@ -12,15 +14,16 @@ export interface MatchOptions {
 }
 
 interface Props {
-  mode: 'pvb' | 'pvp' | 'online'
+  mode: SetupMode
   targets: readonly number[]
-  initial: MatchOptions
+  initial: Omit<MatchOptions, 'mode'>
   onConfirm: (opts: MatchOptions) => void
   onCancel: () => void
 }
 
-export default function MatchSetup({ mode, targets, initial, onConfirm, onCancel }: Props) {
+export default function MatchSetup({ mode: initialMode, targets, initial, onConfirm, onCancel }: Props) {
   const { t } = useT()
+  const [mode, setMode] = useState<SetupMode>(initialMode)
   const [target, setTarget] = useState(initial.target)
   const [showPip, setShowPip] = useState(initial.showPip)
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
@@ -29,13 +32,31 @@ export default function MatchSetup({ mode, targets, initial, onConfirm, onCancel
     initial.difficulty ?? 'neural',
   )
 
-  const title =
-    mode === 'online' ? t('setup.titleOnline') : mode === 'pvb' ? t('setup.titleBot') : t('setup.title')
-
   return (
     <div className="register-overlay">
       <div className="register-card setup-card">
-        <h2>{title}</h2>
+        <h2>{t('setup.newGame')}</h2>
+
+        {/* Oyun modu (2 secenek) */}
+        <div className="setup-row">
+          <div className="setup-label">{t('setup.mode')}</div>
+          <div className="setup-modes">
+            <button
+              className={`mode-choice ${mode === 'pvb' ? 'active' : ''}`}
+              onClick={() => setMode('pvb')}
+            >
+              <span className="mode-ico">🤖</span>
+              {t('home.vsBot')}
+            </button>
+            <button
+              className={`mode-choice ${mode === 'online' ? 'active' : ''}`}
+              onClick={() => setMode('online')}
+            >
+              <span className="mode-ico">🌐</span>
+              {t('home.online')}
+            </button>
+          </div>
+        </div>
 
         {/* Zorluk (yalnizca yapay zekaya karsi) */}
         {mode === 'pvb' && (
@@ -122,6 +143,7 @@ export default function MatchSetup({ mode, targets, initial, onConfirm, onCancel
             className="galaxy-btn roll"
             onClick={() =>
               onConfirm({
+                mode,
                 target,
                 showPip,
                 showAnalysis,
