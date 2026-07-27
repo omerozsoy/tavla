@@ -29,6 +29,7 @@ const TR: Dict = {
   'lb.empty': 'Henüz sıralamada oyuncu yok.',
   'lb.error': 'Liderlik tablosu yüklenemedi.',
   'menu.leaderboard': 'Liderlik Tablosu',
+  'menu.install': 'Uygulamayı Yükle',
   'menu.myStats': 'İstatistiklerim',
   'fair.title': 'Adil Zar',
   'fair.intro':
@@ -316,6 +317,7 @@ const EN: Dict = {
   'lb.empty': 'No ranked players yet.',
   'lb.error': 'Could not load the leaderboard.',
   'menu.leaderboard': 'Leaderboard',
+  'menu.install': 'Install App',
   'menu.myStats': 'My Stats',
   'fair.title': 'Fair Dice',
   'fair.intro':

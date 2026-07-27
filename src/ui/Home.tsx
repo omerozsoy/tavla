@@ -9,6 +9,8 @@ interface Props {
   onLeaderboard: () => void
   onMyStats: () => void
   onFairness: () => void
+  canInstall: boolean
+  onInstall: () => void
 }
 
 export default function Home({
@@ -20,6 +22,8 @@ export default function Home({
   onLeaderboard,
   onMyStats,
   onFairness,
+  canInstall,
+  onInstall,
 }: Props) {
   const { t } = useT()
   return (
@@ -54,6 +58,11 @@ export default function Home({
           <button className="menu-btn" onClick={onBoardSettings}>
             ⚙️ {t('menu.settings')}
           </button>
+          {canInstall && (
+            <button className="menu-btn menu-install" onClick={onInstall}>
+              📲 {t('menu.install')}
+            </button>
+          )}
         </div>
       </aside>
 

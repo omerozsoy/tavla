@@ -21,6 +21,10 @@ for (const item of [
   'icons.svg',
   'robots.txt',
   'sitemap.xml',
+  'manifest.webmanifest',
+  'sw.js',
+  'icon-192.png',
+  'icon-512.png',
   'assets',
   'models',
 ]) {

@@ -252,6 +252,8 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
+  const installPromptRef = useRef<{ prompt: () => void } | null>(null)
+  const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -971,6 +973,29 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.code])
 
+  // PWA: yukleme istemini yakala (tarayici destekliyorsa)
+  useEffect(() => {
+    const onPrompt = (e: Event) => {
+      e.preventDefault()
+      installPromptRef.current = e as unknown as { prompt: () => void }
+      setCanInstall(true)
+    }
+    const onInstalled = () => {
+      installPromptRef.current = null
+      setCanInstall(false)
+    }
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  function handleInstall() {
+    installPromptRef.current?.prompt()
+  }
+
   // Online host (p1): rakip katilinca acilis atisini baslat
   useEffect(() => {
     if (!online || room?.slot !== 'p1' || room?.status !== 'playing') return
@@ -1667,6 +1692,8 @@ export default function App() {
           onLeaderboard={() => setLeaderboardOpen(true)}
           onMyStats={() => setStatsOpen(true)}
           onFairness={() => setFairOpen(true)}
+          canInstall={canInstall}
+          onInstall={handleInstall}
         />
         {authModal}
         {leaderboardOpen && (
