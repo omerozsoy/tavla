@@ -8,6 +8,7 @@ interface Props {
   onAnalyzer: () => void
   onLeaderboard: () => void
   onMyStats: () => void
+  onFairness: () => void
 }
 
 export default function Home({
@@ -18,6 +19,7 @@ export default function Home({
   onAnalyzer,
   onLeaderboard,
   onMyStats,
+  onFairness,
 }: Props) {
   const { t } = useT()
   return (
@@ -45,6 +47,9 @@ export default function Home({
           )}
           <button className="menu-btn" onClick={onAnalyzer}>
             🔬 {t('pa.title')}
+          </button>
+          <button className="menu-btn" onClick={onFairness}>
+            🎲 {t('fair.title')}
           </button>
           <button className="menu-btn" onClick={onBoardSettings}>
             ⚙️ {t('menu.settings')}

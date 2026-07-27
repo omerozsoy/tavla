@@ -8,10 +8,10 @@ import {
   legalNextSteps,
   newTurn,
   reachableFromChecker,
-  rollDice,
   secureDie,
 } from './engine/game'
 import { HeuristicBot } from './engine/engine'
+import { FairDice } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { evaluatePosition, pipCount } from './engine/evaluate'
@@ -49,6 +49,7 @@ import PositionAnalyzer from './ui/PositionAnalyzer'
 import Home from './ui/Home'
 import Leaderboard from './ui/Leaderboard'
 import ProfileStats from './ui/ProfileStats'
+import FairnessModal from './ui/FairnessModal'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -250,6 +251,7 @@ export default function App() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
+  const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
@@ -286,6 +288,7 @@ export default function App() {
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
+  const fairRef = useRef(new FairDice()) // adil (dogrulanabilir) zar ureticisi
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
@@ -508,7 +511,7 @@ export default function App() {
   }
 
   function doRoll() {
-    const dice = rollDice()
+    const dice = fairRef.current.next()
     const rolled = newTurn(turnStart, dice)
     setTurnStart(rolled)
     setPlayed([])
@@ -646,7 +649,7 @@ export default function App() {
   }, [botAnim])
 
   function doRollFor(base: GameState) {
-    const dice = rollDice()
+    const dice = fairRef.current.next()
     setTurnStart(newTurn(base, dice))
     setMessage(t('msg.botPlaying', { dice: dice.join(', ') }))
   }
@@ -994,6 +997,7 @@ export default function App() {
     setMatchLog([])
     setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      fairRef.current = new FairDice()
       setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
@@ -1035,6 +1039,7 @@ export default function App() {
       setMatchLog([])
       setRatingChange(null)
       setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      fairRef.current = new FairDice()
       setMatch(newMatch(onlineTargetRef.current))
       setStarter('white')
       setTurnsPlayed(0)
@@ -1077,6 +1082,7 @@ export default function App() {
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
+      fairRef.current = new FairDice()
       setOppStarted(false)
       setChat([])
       ratingReportedRef.current = false
@@ -1210,6 +1216,7 @@ export default function App() {
       syncEnabledRef.current = false
     }
     setMode(nextMode)
+    fairRef.current = new FairDice() // yeni mac -> yeni adil-zar taahhudu
     setMatch(newMatch(target))
     setStarter('white')
     setTurnStart(freshBoard('white'))
@@ -1659,6 +1666,7 @@ export default function App() {
           onAnalyzer={() => setAnalyzerOpen(true)}
           onLeaderboard={() => setLeaderboardOpen(true)}
           onMyStats={() => setStatsOpen(true)}
+          onFairness={() => setFairOpen(true)}
         />
         {authModal}
         {leaderboardOpen && (
@@ -1669,6 +1677,15 @@ export default function App() {
             name={profile.nickname || profile.firstName}
             avatar={profile.avatar}
             onClose={() => setStatsOpen(false)}
+          />
+        )}
+        {fairOpen && (
+          <FairnessModal
+            commitment={fairRef.current.commitment}
+            clientSeed={fairRef.current.clientSeed}
+            serverSeed={matchWinner(match) ? fairRef.current.serverSeed : undefined}
+            rolls={fairRef.current.nonce}
+            onClose={() => setFairOpen(false)}
           />
         )}
         {boardSettingsOpen && (
