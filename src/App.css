@@ -2157,6 +2157,74 @@ body {
   height: 100%;
   background: linear-gradient(90deg, #4fb477, #7ee0a0);
 }
+
+/* Adil zar modali */
+.fair-card {
+  width: min(500px, 94vw);
+  text-align: left;
+}
+.fair-field {
+  margin: 8px 0;
+}
+.fair-field label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-bottom: 2px;
+}
+.fair-code {
+  display: block;
+  word-break: break-all;
+  font-family: ui-monospace, monospace;
+  font-size: 0.78rem;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.fair-hidden {
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.85rem;
+}
+.fair-rolls {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 6px 0 4px;
+}
+.fair-verify {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.fair-verify h3 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.fair-verify label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.fair-verify input {
+  width: 100%;
+  margin-top: 3px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8rem;
+}
+.fair-result {
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+.fair-ok {
+  color: #7ee0a0;
+  font-weight: 700;
+}
+.fair-bad {
+  color: #ff9db0;
+  font-weight: 700;
+}
 .board-swatches.big .swatch {
   width: 100%;
   height: 48px;
