@@ -2158,6 +2158,11 @@ body {
   background: linear-gradient(90deg, #4fb477, #7ee0a0);
 }
 
+.menu-install {
+  border-color: color-mix(in srgb, #5b8def 55%, transparent);
+  color: #9db8ff;
+}
+
 /* Adil zar modali */
 .fair-card {
   width: min(500px, 94vw);
