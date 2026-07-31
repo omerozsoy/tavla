@@ -19,8 +19,10 @@
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
-  /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz) */
-  --board-h: max(360px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 380px) / 1.4)));
+  /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz).
+     Yan icerik (sol menu 160 + oyuncu kartlari + analiz paneli) icin ~640px ayrilir
+     ki genis ekranda board menuyu disari itmesin. */
+  --board-h: max(340px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 640px) / 1.4)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
