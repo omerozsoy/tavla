@@ -2292,6 +2292,21 @@ body {
   color: #7ee0a0;
   font-weight: 700;
 }
+.tm-play {
+  width: calc(100% - 8px);
+  margin: 4px;
+  padding: 6px;
+  border: none;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #5b8def, #7b5bef);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.tm-play:hover {
+  filter: brightness(1.08);
+}
 .tm-actions {
   display: flex;
   gap: 4px;
