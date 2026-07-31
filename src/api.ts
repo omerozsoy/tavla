@@ -369,6 +369,19 @@ export async function joinRoom(
   })
 }
 
+// Belirli kodla odaya gir (yoksa olustur, varsa katil). Turnuva maclari icin.
+export async function enterRoom(
+  code: string,
+  name: string,
+  rating?: number,
+  avatar?: string,
+): Promise<{ room: RoomView; slot: Slot }> {
+  return req(`/rooms/${encodeURIComponent(code)}/enter`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+  })
+}
+
 // Hizli eslesme: bekleyen biriyle esle ya da havuza gir. matched=true -> hemen basla.
 export async function matchmake(
   name: string,

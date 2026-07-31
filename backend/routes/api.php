@@ -23,6 +23,7 @@ Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
 Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
 Route::post('/rooms', [RoomController::class, 'create']);
 Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
+Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
 Route::post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 Route::get('/rooms/{code}', [RoomController::class, 'show']);
 Route::put('/rooms/{code}', [RoomController::class, 'update']);
@@ -44,6 +45,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tournaments', [TournamentController::class, 'create']);
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
+    Route::post('/tournaments/{tournament}/match-room', [TournamentController::class, 'matchRoom']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);
