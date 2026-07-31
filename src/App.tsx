@@ -46,6 +46,7 @@ import {
   inviteFriend,
   respondInvite,
   type GameInvite as GameInviteT,
+  type TournNotice as TournNoticeT,
   showRoom,
   updateRoom,
   sendChat,
@@ -283,6 +284,7 @@ export default function App() {
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
+  const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
@@ -1130,13 +1132,17 @@ export default function App() {
   useEffect(() => {
     if (!user) {
       setInvites([])
+      setTournNotices([])
       return
     }
     let cancelled = false
     const beat = () => {
       ping()
         .then((r) => {
-          if (!cancelled) setInvites(r.invites ?? [])
+          if (!cancelled) {
+            setInvites(r.invites ?? [])
+            setTournNotices(r.tournament_matches ?? [])
+          }
         })
         .catch(() => {})
     }
@@ -2019,8 +2025,9 @@ export default function App() {
     onInstall: handleInstall,
   }
 
-  // Gelen oyun davetleri (sabit, ust uste)
-  const inviteBanner = invites.length > 0 && (
+  // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
+  const showTournNotices = home && tournNotices.length > 0
+  const inviteBanner = (invites.length > 0 || showTournNotices) && (
     <div className="invite-stack">
       {invites.map((inv) => (
         <div key={inv.id} className="invite-card">
@@ -2035,6 +2042,20 @@ export default function App() {
           </button>
         </div>
       ))}
+      {showTournNotices &&
+        tournNotices.map((tn) => (
+          <div key={`${tn.tid}-${tn.match}`} className="invite-card tourn-notice">
+            <span className="invite-text">
+              🏅 <b>{tn.tname}</b>: {t('tourn.yourMatch', { name: tn.oppName })}
+            </span>
+            <button
+              className="invite-acc"
+              onClick={() => handlePlayTournamentMatch(tn.tid, { key: tn.match }, tn.oppId)}
+            >
+              {t('tourn.play')}
+            </button>
+          </div>
+        ))}
     </div>
   )
 

@@ -257,7 +257,14 @@ export interface GameInvite {
   from: string
   avatar?: string | null
 }
-export async function ping(): Promise<{ invites: GameInvite[] }> {
+export interface TournNotice {
+  tid: number
+  tname: string
+  match: string
+  oppId: number
+  oppName: string
+}
+export async function ping(): Promise<{ invites: GameInvite[]; tournament_matches: TournNotice[] }> {
   return req('/ping', { method: 'POST' })
 }
 export async function inviteFriend(userId: number): Promise<{ code: string }> {
