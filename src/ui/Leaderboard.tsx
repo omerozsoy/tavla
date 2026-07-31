@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
+import { frameStyle } from '../cosmetics'
 
 interface Props {
   currentName?: string
@@ -55,11 +56,15 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                   <div key={r.rank} className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''}`}>
                     <span className="lb-rank">{medal(r.rank) || r.rank}</span>
                     <span className="lb-name">
-                      {r.avatar ? (
-                        <img className="lb-avatar" src={r.avatar} alt="" />
-                      ) : (
-                        <span className="lb-avatar lb-avatar-ph">{r.name.charAt(0).toUpperCase()}</span>
-                      )}
+                      <span className="av-frame" style={frameStyle(r.frame)}>
+                        {r.avatar ? (
+                          <img className="lb-avatar" src={r.avatar} alt="" />
+                        ) : (
+                          <span className="lb-avatar lb-avatar-ph">
+                            {r.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                      </span>
                       {r.name}
                     </span>
                     <span className="lb-games">{r.games}</span>
