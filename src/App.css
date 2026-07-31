@@ -2171,6 +2171,56 @@ body {
   color: #9db8ff;
 }
 
+/* Dersler modali */
+.lessons-card {
+  width: min(560px, 94vw);
+  text-align: left;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.lessons-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+.lesson-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.lesson-q {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.98rem;
+  text-align: left;
+}
+.lesson-item.open .lesson-q {
+  background: color-mix(in srgb, #5b8def 14%, transparent);
+}
+.lesson-caret {
+  color: var(--muted);
+  font-size: 1.2rem;
+}
+.lesson-a {
+  padding: 4px 14px 12px;
+}
+.lesson-a p {
+  margin: 8px 0;
+  line-height: 1.5;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
 /* Arkadaslar modali */
 .friends-card {
   width: min(460px, 94vw);
