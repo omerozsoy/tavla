@@ -1243,6 +1243,14 @@ body {
   padding: 6px 10px;
   font-size: 0.82rem;
 }
+.lang-select {
+  appearance: none;
+  cursor: pointer;
+}
+.lang-select option {
+  background: var(--card-bg);
+  color: var(--text);
+}
 .account-sep {
   width: 1px;
   align-self: stretch;

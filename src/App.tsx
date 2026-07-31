@@ -55,7 +55,7 @@ import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
-import { useT } from './i18n'
+import { useT, LANGS } from './i18n'
 import {
   getToken,
   loadServerGame,
@@ -1627,13 +1627,18 @@ export default function App() {
         </button>
       )}
       <span className="account-sep" />
-      <button
-        className="account-btn icon"
-        title={lang === 'tr' ? 'English' : 'Türkçe'}
-        onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+      <select
+        className="account-btn icon lang-select"
+        title={t('menu.language')}
+        value={lang}
+        onChange={(e) => setLang(e.target.value as typeof lang)}
       >
-        {lang === 'tr' ? '🇬🇧 EN' : '🇹🇷 TR'}
-      </button>
+        {LANGS.map((l) => (
+          <option key={l.code} value={l.code}>
+            {l.flag} {l.code.toUpperCase()}
+          </option>
+        ))}
+      </select>
       <button
         className="account-btn icon"
         title={theme === 'dark' ? t('theme.light') : t('theme.dark')}

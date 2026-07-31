@@ -1,6 +1,15 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 
-export type Lang = 'tr' | 'en'
+export type Lang = 'tr' | 'en' | 'es' | 'de' | 'fr'
+
+// Dil secici icin liste (bayrak + etiket)
+export const LANGS: { code: Lang; flag: string; label: string }[] = [
+  { code: 'tr', flag: '🇹🇷', label: 'Türkçe' },
+  { code: 'en', flag: '🇬🇧', label: 'English' },
+  { code: 'es', flag: '🇪🇸', label: 'Español' },
+  { code: 'de', flag: '🇩🇪', label: 'Deutsch' },
+  { code: 'fr', flag: '🇫🇷', label: 'Français' },
+]
 
 type Dict = Record<string, string>
 
@@ -580,7 +589,222 @@ const EN: Dict = {
   'home.profile': 'Profile',
 }
 
-const DICT: Record<Lang, Dict> = { tr: TR, en: EN }
+// Yeni diller: cekirdek arayuz cevirileri. Cevrilmeyen anahtarlar EN'e duser
+// (taban olarak {...EN} kullanildigi icin eksik anahtar olmaz).
+const ES: Dict = {
+  ...EN,
+  'brand.name': 'Consejo Mundial de Backgammon',
+  'brand.short': 'CMB',
+  'home.tagline': '¡Juega backgammon online gratis!',
+  'home.hello': 'Hola, {name} 👋',
+  'menu.leaderboard': 'Clasificación',
+  'menu.install': 'Instalar App',
+  'menu.myStats': 'Mis Estadísticas',
+  'menu.settings': 'Ajustes',
+  'menu.language': 'Idioma',
+  'menu.theme': 'Tema',
+  'menu.board': 'Color del Tablero',
+  'menu.newMatch': '🔄 Nueva Partida',
+  'menu.account': 'Cuenta',
+  'menu.login': 'Entrar',
+  'menu.online': 'Online',
+  'menu.editProfile': 'Editar Perfil',
+  'theme.dark': 'Oscuro',
+  'theme.light': 'Claro',
+  'pa.title': 'Análisis de Posición',
+  'fair.title': 'Dados Justos',
+  'stats.title': 'Mis Estadísticas',
+  'stats.games': 'Partidas',
+  'stats.wins': 'Victorias',
+  'stats.losses': 'Derrotas',
+  'stats.winRate': '% Victoria',
+  'lb.title': 'Clasificación',
+  'lb.player': 'Jugador',
+  'lb.games': 'Partidas',
+  'lb.winRate': 'Victorias',
+  'lb.rating': 'Puntos',
+  'setup.title': 'Configurar Partida',
+  'setup.newGame': 'Nueva Partida',
+  'setup.mode': 'Modo',
+  'setup.length': 'Duración del Match',
+  'setup.difficulty': 'Dificultad',
+  'setup.time': 'Tiempo',
+  'setup.start': 'Empezar',
+  'setup.cancel': 'Cancelar',
+  'setup.on': 'Sí',
+  'setup.off': 'No',
+  'mp.title': 'Juego Online',
+  'mp.create': '🎮 Crear Partida',
+  'mp.quickMatch': 'Buscar Rival',
+  'mp.quickMatchNote': 'Emparéjate automáticamente con un jugador de tu nivel.',
+  'mp.searching': 'Buscando rival…',
+  'mp.searchingSub': 'La partida empieza automáticamente al encontrar rival.',
+  'mp.cancel': 'Cancelar',
+  'mp.join': 'Unirse',
+  'mp.back': 'Atrás',
+  'mp.leave': 'Salir',
+  'btn.roll': 'Tirar',
+  'btn.confirm': 'Confirmar',
+  'btn.double': 'Doblar',
+  'btn.undo': 'Deshacer',
+  'btn.take': 'Aceptar',
+  'btn.drop': 'Rechazar',
+  'btn.newMatch': 'Nueva Partida',
+  'btn.nextGame': 'Siguiente Juego',
+  'auth.login': 'Entrar',
+  'auth.register': 'Registrarse',
+  'auth.logout': 'Salir',
+  'auth.guest': 'Jugar como invitado',
+  'account.auth': 'Entrar',
+  'mr.rematch': 'Revancha',
+  'mr.newMatch': 'Nueva Partida',
+  'mr.stats': 'Estadísticas',
+  'mr.analysis': 'Análisis',
+}
+
+const DE: Dict = {
+  ...EN,
+  'brand.name': 'Backgammon-Weltrat',
+  'brand.short': 'BWR',
+  'home.tagline': 'Spiele kostenlos Backgammon online!',
+  'home.hello': 'Hallo, {name} 👋',
+  'menu.leaderboard': 'Bestenliste',
+  'menu.install': 'App installieren',
+  'menu.myStats': 'Meine Statistik',
+  'menu.settings': 'Einstellungen',
+  'menu.language': 'Sprache',
+  'menu.theme': 'Design',
+  'menu.board': 'Brettfarbe',
+  'menu.newMatch': '🔄 Neues Match',
+  'menu.account': 'Konto',
+  'menu.login': 'Anmelden',
+  'menu.online': 'Online',
+  'menu.editProfile': 'Profil bearbeiten',
+  'theme.dark': 'Dunkel',
+  'theme.light': 'Hell',
+  'pa.title': 'Positionsanalyse',
+  'fair.title': 'Faire Würfel',
+  'stats.title': 'Meine Statistik',
+  'stats.games': 'Spiele',
+  'stats.wins': 'Siege',
+  'stats.losses': 'Niederlagen',
+  'stats.winRate': 'Siegquote',
+  'lb.title': 'Bestenliste',
+  'lb.player': 'Spieler',
+  'lb.games': 'Spiele',
+  'lb.winRate': 'Siege',
+  'lb.rating': 'Punkte',
+  'setup.title': 'Match einrichten',
+  'setup.newGame': 'Neues Spiel',
+  'setup.mode': 'Modus',
+  'setup.length': 'Matchlänge',
+  'setup.difficulty': 'Schwierigkeit',
+  'setup.time': 'Zeit',
+  'setup.start': 'Start',
+  'setup.cancel': 'Abbrechen',
+  'setup.on': 'An',
+  'setup.off': 'Aus',
+  'mp.title': 'Online-Spiel',
+  'mp.create': '🎮 Spiel erstellen',
+  'mp.quickMatch': 'Gegner finden',
+  'mp.quickMatchNote': 'Automatisch mit einem Spieler deines Niveaus paaren.',
+  'mp.searching': 'Suche Gegner…',
+  'mp.searchingSub': 'Das Spiel startet automatisch, sobald ein Gegner gefunden ist.',
+  'mp.cancel': 'Abbrechen',
+  'mp.join': 'Beitreten',
+  'mp.back': 'Zurück',
+  'mp.leave': 'Verlassen',
+  'btn.roll': 'Würfeln',
+  'btn.confirm': 'Bestätigen',
+  'btn.double': 'Doppeln',
+  'btn.undo': 'Zurück',
+  'btn.take': 'Annehmen',
+  'btn.drop': 'Ablehnen',
+  'btn.newMatch': 'Neues Match',
+  'btn.nextGame': 'Nächstes Spiel',
+  'auth.login': 'Anmelden',
+  'auth.register': 'Registrieren',
+  'auth.logout': 'Abmelden',
+  'auth.guest': 'Als Gast spielen',
+  'account.auth': 'Anmelden',
+  'mr.rematch': 'Revanche',
+  'mr.newMatch': 'Neues Match',
+  'mr.stats': 'Statistik',
+  'mr.analysis': 'Analyse',
+}
+
+const FR: Dict = {
+  ...EN,
+  'brand.name': 'Conseil Mondial du Backgammon',
+  'brand.short': 'CMB',
+  'home.tagline': 'Jouez au backgammon en ligne gratuitement !',
+  'home.hello': 'Bonjour, {name} 👋',
+  'menu.leaderboard': 'Classement',
+  'menu.install': "Installer l'app",
+  'menu.myStats': 'Mes Statistiques',
+  'menu.settings': 'Paramètres',
+  'menu.language': 'Langue',
+  'menu.theme': 'Thème',
+  'menu.board': 'Couleur du Plateau',
+  'menu.newMatch': '🔄 Nouveau Match',
+  'menu.account': 'Compte',
+  'menu.login': 'Connexion',
+  'menu.online': 'En ligne',
+  'menu.editProfile': 'Modifier le Profil',
+  'theme.dark': 'Sombre',
+  'theme.light': 'Clair',
+  'pa.title': 'Analyse de Position',
+  'fair.title': 'Dés Équitables',
+  'stats.title': 'Mes Statistiques',
+  'stats.games': 'Parties',
+  'stats.wins': 'Victoires',
+  'stats.losses': 'Défaites',
+  'stats.winRate': '% Victoire',
+  'lb.title': 'Classement',
+  'lb.player': 'Joueur',
+  'lb.games': 'Parties',
+  'lb.winRate': 'Victoires',
+  'lb.rating': 'Points',
+  'setup.title': 'Configurer le Match',
+  'setup.newGame': 'Nouvelle Partie',
+  'setup.mode': 'Mode',
+  'setup.length': 'Longueur du Match',
+  'setup.difficulty': 'Difficulté',
+  'setup.time': 'Temps',
+  'setup.start': 'Commencer',
+  'setup.cancel': 'Annuler',
+  'setup.on': 'Oui',
+  'setup.off': 'Non',
+  'mp.title': 'Jeu en Ligne',
+  'mp.create': '🎮 Créer une Partie',
+  'mp.quickMatch': 'Trouver un Adversaire',
+  'mp.quickMatchNote': 'Associez-vous automatiquement à un joueur de votre niveau.',
+  'mp.searching': "Recherche d'un adversaire…",
+  'mp.searchingSub': "La partie démarre automatiquement dès qu'un joueur est trouvé.",
+  'mp.cancel': 'Annuler',
+  'mp.join': 'Rejoindre',
+  'mp.back': 'Retour',
+  'mp.leave': 'Quitter',
+  'btn.roll': 'Lancer',
+  'btn.confirm': 'Confirmer',
+  'btn.double': 'Doubler',
+  'btn.undo': 'Annuler',
+  'btn.take': 'Accepter',
+  'btn.drop': 'Refuser',
+  'btn.newMatch': 'Nouveau Match',
+  'btn.nextGame': 'Partie Suivante',
+  'auth.login': 'Connexion',
+  'auth.register': "S'inscrire",
+  'auth.logout': 'Déconnexion',
+  'auth.guest': 'Jouer en invité',
+  'account.auth': 'Connexion',
+  'mr.rematch': 'Revanche',
+  'mr.newMatch': 'Nouveau Match',
+  'mr.stats': 'Statistiques',
+  'mr.analysis': 'Analyse',
+}
+
+const DICT: Record<Lang, Dict> = { tr: TR, en: EN, es: ES, de: DE, fr: FR }
 
 interface LangCtx {
   lang: Lang
@@ -594,7 +818,7 @@ export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     try {
       const s = localStorage.getItem('tavla.lang')
-      return s === 'en' ? 'en' : 'tr'
+      return LANGS.some((l) => l.code === s) ? (s as Lang) : 'tr'
     } catch {
       return 'tr'
     }
@@ -607,8 +831,11 @@ export function LangProvider({ children }: { children: ReactNode }) {
       /* yok */
     }
   }
+  useEffect(() => {
+    document.documentElement.lang = lang
+  }, [lang])
   const t = (key: string, params?: Record<string, string | number>) => {
-    let s = DICT[lang][key] ?? DICT.tr[key] ?? key
+    let s = DICT[lang][key] ?? DICT.en[key] ?? DICT.tr[key] ?? key
     if (params) {
       for (const [k, v] of Object.entries(params)) {
         s = s.split(`{${k}}`).join(String(v))
