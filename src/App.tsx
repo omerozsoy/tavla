@@ -1668,8 +1668,20 @@ export default function App() {
     ) : null
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
+  // Oyun ekraninda mi (cekilme butonu bunun icin)
+  const inActiveGame =
+    !home &&
+    !setup &&
+    !matchOver &&
+    (mode === 'pvb' || (mode === 'online' && !!room && room.status === 'playing'))
+
   const accountBar = (
     <div className="account-bar">
+      {inActiveGame && (
+        <button className="account-btn leave" onClick={() => setResignOpen(true)}>
+          🏳️ {t('resign.button')}
+        </button>
+      )}
       <span className="account-name">
         {profile.avatar ? (
           <img className="account-avatar" src={profile.avatar} alt="" />
@@ -2013,6 +2025,19 @@ export default function App() {
             </button>
             <button className="galaxy-btn double" onClick={() => handleResign(3)}>
               {t('resign.backgammon', { n: match.cube.value * 3 })}
+            </button>
+            <button
+              className="menu-btn resign-home"
+              onClick={() => {
+                setResignOpen(false)
+                if (online) handleLeaveRoom()
+                else {
+                  tournMatchRef.current = null
+                  setHome(true)
+                }
+              }}
+            >
+              🏠 {t('resign.toHome')}
             </button>
             <button className="menu-btn" onClick={() => setResignOpen(false)}>
               {t('reg.cancel')}
