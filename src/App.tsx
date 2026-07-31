@@ -1204,6 +1204,15 @@ export default function App() {
   // Tam ekran ac/kapat
   const [isFull, setIsFull] = useState(false)
   const [muted, setMutedState] = useState(isMuted())
+  // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
+  const [portraitMobile, setPortraitMobile] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 820px) and (orientation: portrait)')
+    const on = () => setPortraitMobile(mq.matches)
+    on()
+    mq.addEventListener('change', on)
+    return () => mq.removeEventListener('change', on)
+  }, [])
   useEffect(() => {
     const onChange = () => setIsFull(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onChange)
@@ -2259,6 +2268,12 @@ export default function App() {
   return (
     <div className="app">
       {accountBar}
+      {portraitMobile && (
+        <div className="rotate-hint">
+          <div className="rotate-icon">📱↻</div>
+          <div className="rotate-text">{t('mobile.rotate')}</div>
+        </div>
+      )}
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
           <div className="hint-head">
