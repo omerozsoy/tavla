@@ -1268,22 +1268,59 @@ body {
   50% { transform: rotate(90deg); }
 }
 
+/* ---- Hamburger (mobil menu dugmesi) ---- */
+.hamburger {
+  display: none;
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 110;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 1.3rem;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+}
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.5);
+}
+
 /* ---- Mobil / kucuk ekran duzeni ---- */
 @media (max-width: 900px) {
   .app {
     padding: 4px 5px;
     gap: 6px;
   }
+  .hamburger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Sol menu -> soldan kayan drawer (board'a tam yer acilir) */
   .side-menu {
-    width: 118px;
-    gap: 8px;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100%;
+    width: 210px;
+    max-width: 82vw;
+    z-index: 100;
+    background: var(--card-bg);
+    padding: 54px 12px 12px;
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
+    transform: translateX(-102%);
+    transition: transform 0.25s ease;
+    overflow-y: auto;
   }
-  .side-menu .menu-btn {
-    padding: 7px 8px;
-    font-size: 0.8rem;
-  }
-  .brand-full {
-    display: none;
+  .side-menu.open {
+    transform: translateX(0);
   }
   .account-bar {
     top: 6px;
@@ -1293,23 +1330,24 @@ body {
   }
   .account-name {
     font-size: 0.78rem;
-    max-width: 90px;
+    max-width: 84px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .account-btn {
-    padding: 5px 9px;
-    font-size: 0.76rem;
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+  .lobby-main,
+  .main {
+    padding-top: 52px;
   }
 }
-/* Yatay mobil: board'a maksimum yer (menu daralir, analiz alti) */
+/* Yatay mobil: board'a maksimum yer */
 @media (max-height: 560px) and (orientation: landscape) {
   :root {
     --header-h: 40px;
-    --board-h: max(240px, min(calc(100vh - 60px), calc((100vw - 360px) / 1.4)));
-  }
-  .side-menu {
-    width: 100px;
+    --board-h: max(220px, min(calc(100vh - 54px), calc((100vw - 180px) / 1.4)));
   }
 }
 

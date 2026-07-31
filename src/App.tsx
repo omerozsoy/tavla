@@ -1204,6 +1204,7 @@ export default function App() {
   // Tam ekran ac/kapat
   const [isFull, setIsFull] = useState(false)
   const [muted, setMutedState] = useState(isMuted())
+  const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
   // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
   const [portraitMobile, setPortraitMobile] = useState(false)
   useEffect(() => {
@@ -1220,8 +1221,25 @@ export default function App() {
   }, [])
   function toggleFullscreen() {
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen?.().catch(() => {})
+      const el = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>
+      }
+      const req = el.requestFullscreen?.() ?? el.webkitRequestFullscreen?.()
+      Promise.resolve(req)
+        .then(() => {
+          // Mobilde tam ekranda yatay kilitle (destekleyen tarayicilarda)
+          const orient = screen.orientation as ScreenOrientation & {
+            lock?: (o: string) => Promise<void>
+          }
+          orient?.lock?.('landscape').catch(() => {})
+        })
+        .catch(() => {})
     } else {
+      try {
+        ;(screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.()
+      } catch {
+        /* yok */
+      }
       document.exitFullscreen?.().catch(() => {})
     }
   }
@@ -2045,6 +2063,20 @@ export default function App() {
     </div>
   )
 
+  // Mobil hamburger + arka perde (drawer menu)
+  const mobileNav = (
+    <>
+      <button
+        className="hamburger"
+        onClick={() => setMenuOpen((v) => !v)}
+        aria-label="Menü"
+      >
+        ☰
+      </button>
+      {menuOpen && <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />}
+    </>
+  )
+
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
 
@@ -2211,8 +2243,14 @@ export default function App() {
     return (
       <>
         {accountBar}
+        {mobileNav}
         <div className="app lobby">
-          <SideMenu inGame={false} {...menuProps} />
+          <SideMenu
+            inGame={false}
+            {...menuProps}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+          />
           <main className="main lobby-main">
             <div className="lobby-welcome">
               <h1 className="lobby-title">{t('brand.name')}</h1>
@@ -2268,6 +2306,7 @@ export default function App() {
   return (
     <div className="app">
       {accountBar}
+      {mobileNav}
       {portraitMobile && (
         <div className="rotate-hint">
           <div className="rotate-icon">📱↻</div>
@@ -2300,6 +2339,8 @@ export default function App() {
       <SideMenu
         inGame
         {...menuProps}
+        mobileOpen={menuOpen}
+        onCloseMobile={() => setMenuOpen(false)}
         showAnalysis={showAnalysis}
         canResign={!matchOver && (mode === 'pvb' || online)}
         onToggleAnalysis={() => setShowAnalysis((v) => !v)}
