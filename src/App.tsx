@@ -362,7 +362,8 @@ export default function App() {
     setMatch(g.match)
     setStarter(g.starter)
     setTurnStart(g.turnStart)
-    setPlayed(g.played)
+    // Bot yarim animasyonda kaydedildiyse (played>0, sira bot) temizle -> bot devam etsin (takilma fix)
+    setPlayed(g.mode === 'pvb' && g.turnStart.turn === BOT_PLAYER ? [] : g.played)
     setTurnsPlayed(g.turnsPlayed)
     setSelectedFrom(null)
     setCubePending(null)
@@ -1102,6 +1103,15 @@ export default function App() {
   function handleInstall() {
     installPromptRef.current?.prompt()
   }
+
+  // Acilista takilma fix: kayitli oyun bot yarim-animasyonda kaydedildiyse
+  // (sira bot + played>0) played temizlenir ki bot turunu bastan oynasin.
+  useEffect(() => {
+    if (saved && saved.mode === 'pvb' && saved.turnStart?.turn === BOT_PLAYER && (saved.played?.length ?? 0) > 0) {
+      setPlayed([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Kalp atisi: giris yapiliysa cevrimici tut + gelen davetleri yokla
   useEffect(() => {
