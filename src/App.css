@@ -2745,6 +2745,9 @@ body {
   font-size: 0.8rem;
   cursor: pointer;
 }
+.invite-card.tourn-notice {
+  border-color: color-mix(in srgb, #ffd76a 50%, var(--border));
+}
 .invite-acc {
   background: linear-gradient(135deg, #4fb477, #2f8a52);
   color: #fff;

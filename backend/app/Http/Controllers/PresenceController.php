@@ -35,7 +35,39 @@ class PresenceController extends Controller
                 'avatar' => $r->avatar,
             ]);
 
-        return response()->json(['invites' => $invites]);
+        // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
+        $tmatches = [];
+        $running = \App\Models\Tournament::where('status', 'running')->get();
+        foreach ($running as $tr) {
+            $inThis = false;
+            foreach (($tr->players ?? []) as $p) {
+                if (($p['id'] ?? null) === $me->id) {
+                    $inThis = true;
+                    break;
+                }
+            }
+            if (! $inThis) {
+                continue;
+            }
+            foreach (($tr->bracket ?? []) as $round) {
+                foreach ($round as $m) {
+                    $p1 = $m['p1']['id'] ?? null;
+                    $p2 = $m['p2']['id'] ?? null;
+                    if (empty($m['winner']) && $p1 && $p2 && ($p1 === $me->id || $p2 === $me->id)) {
+                        $opp = $p1 === $me->id ? $m['p2'] : $m['p1'];
+                        $tmatches[] = [
+                            'tid' => $tr->id,
+                            'tname' => $tr->name,
+                            'match' => $m['key'],
+                            'oppId' => $opp['id'],
+                            'oppName' => $opp['name'] ?? 'Rakip',
+                        ];
+                    }
+                }
+            }
+        }
+
+        return response()->json(['invites' => $invites, 'tournament_matches' => $tmatches]);
     }
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur
