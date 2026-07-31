@@ -10,6 +10,7 @@ interface Props {
   onMyStats: () => void
   onFairness: () => void
   onFriends: () => void
+  onLessons: () => void
   canInstall: boolean
   onInstall: () => void
 }
@@ -24,6 +25,7 @@ export default function Home({
   onMyStats,
   onFairness,
   onFriends,
+  onLessons,
   canInstall,
   onInstall,
 }: Props) {
@@ -58,6 +60,9 @@ export default function Home({
           )}
           <button className="menu-btn" onClick={onAnalyzer}>
             🔬 {t('pa.title')}
+          </button>
+          <button className="menu-btn" onClick={onLessons}>
+            📚 {t('menu.lessons')}
           </button>
           <button className="menu-btn" onClick={onFairness}>
             🎲 {t('fair.title')}
