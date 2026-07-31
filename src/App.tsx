@@ -16,6 +16,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { FRAMES, frameStyle } from './cosmetics'
+import { Sound, isMuted, setMuted } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -556,6 +557,7 @@ export default function App() {
 
   function doRoll() {
     const dice = fairRef.current.next()
+    Sound.dice()
     const rolled = newTurn(turnStart, dice)
     setTurnStart(rolled)
     setPlayed([])
@@ -707,6 +709,7 @@ export default function App() {
 
   function doRollFor(base: GameState) {
     const dice = fairRef.current.next()
+    Sound.dice()
     setTurnStart(newTurn(base, dice))
     setMessage(t('msg.botPlaying', { dice: dice.join(', ') }))
   }
@@ -1090,6 +1093,30 @@ export default function App() {
     installPromptRef.current?.prompt()
   }
 
+  // Ses: her tas oynandiginda (played uzayinca)
+  const prevPlayedLenRef = useRef(0)
+  useEffect(() => {
+    if (played.length > prevPlayedLenRef.current) Sound.move()
+    prevPlayedLenRef.current = played.length
+  }, [played.length])
+  // Ses: oyun bitince kazanma/kaybetme
+  const soundedEndRef = useRef(false)
+  useEffect(() => {
+    if (!gameEnd) {
+      soundedEndRef.current = false
+      return
+    }
+    if (soundedEndRef.current) return
+    soundedEndRef.current = true
+    const humanColor: Player = mode === 'online' && room?.slot === 'p2' ? 'black' : 'white'
+    if (gameEnd.winner === humanColor) Sound.win()
+    else Sound.lose()
+  }, [gameEnd, mode, room])
+  // Ses: kup teklifi
+  useEffect(() => {
+    if (cubePending) Sound.double()
+  }, [cubePending])
+
   // Acilista takilma fix: kayitli oyun bot yarim-animasyonda kaydedildiyse
   // (sira bot + played>0) played temizlenir ki bot turunu bastan oynasin.
   useEffect(() => {
@@ -1144,6 +1171,7 @@ export default function App() {
 
   // Tam ekran ac/kapat
   const [isFull, setIsFull] = useState(false)
+  const [muted, setMutedState] = useState(isMuted())
   useEffect(() => {
     const onChange = () => setIsFull(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onChange)
@@ -1946,6 +1974,18 @@ export default function App() {
         onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
       >
         {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
+      <button
+        className="account-btn icon"
+        title={muted ? t('menu.soundOn') : t('menu.soundOff')}
+        onClick={() => {
+          const nv = !muted
+          setMuted(nv)
+          setMutedState(nv)
+          if (!nv) Sound.move()
+        }}
+      >
+        {muted ? '🔇' : '🔊'}
       </button>
       <button
         className="account-btn icon"
