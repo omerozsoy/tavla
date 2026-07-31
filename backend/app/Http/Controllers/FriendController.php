@@ -25,7 +25,7 @@ class FriendController extends Controller
             ->values();
 
         $friends = User::whereIn('id', $friendIds)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'rating'])
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'rating', 'last_seen'])
             ->map(fn ($u) => $this->pub($u));
 
         // Bana gelen bekleyen istekler
@@ -33,7 +33,7 @@ class FriendController extends Controller
             ->join('users', 'users.id', '=', 'friendships.user_id')
             ->where('friendships.friend_id', $me)
             ->where('friendships.status', 'pending')
-            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.rating'])
+            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.avatar_frame', 'users.rating', 'users.last_seen'])
             ->map(fn ($u) => $this->pub($u));
 
         return response()->json(['friends' => $friends, 'incoming' => $incoming]);
@@ -116,11 +116,15 @@ class FriendController extends Controller
 
     private function pub($u): array
     {
+        // Son 70 sn icinde gorulduyse cevrimici
+        $online = $u->last_seen && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
         return [
             'id' => $u->id,
             'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
             'avatar' => $u->avatar,
+            'frame' => $u->avatar_frame ?? null,
             'rating' => $u->rating ?? 1500,
+            'online' => (bool) $online,
         ];
     }
 }

@@ -2695,6 +2695,63 @@ body {
   border-color: #4fb477;
   color: #7ee0a0;
 }
+.friend-btn.play:hover {
+  border-color: #5b8def;
+  color: #9db8ff;
+}
+.friend-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #6b7280;
+  flex: none;
+}
+.friend-dot.on {
+  background: #4fce6a;
+  box-shadow: 0 0 6px #4fce6a;
+}
+.invite-stack {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(380px, 94vw);
+}
+.invite-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid color-mix(in srgb, #5b8def 45%, var(--border));
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+}
+.invite-text {
+  flex: 1;
+  font-size: 0.88rem;
+}
+.invite-acc,
+.invite-dec {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.invite-acc {
+  background: linear-gradient(135deg, #4fb477, #2f8a52);
+  color: #fff;
+}
+.invite-dec {
+  background: var(--border);
+  color: var(--text);
+}
 .friend-btn.no:hover {
   border-color: #e0455e;
   color: #ff9db0;
