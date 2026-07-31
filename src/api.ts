@@ -34,6 +34,8 @@ export interface ServerUser {
   birth_date?: string | null
   rating?: number
   coins?: number
+  unlocks?: string[]
+  avatar_frame?: string | null
   wins?: number
   losses?: number
   games_played?: number
@@ -206,11 +208,29 @@ export interface LeaderRow {
   rank: number
   name: string
   avatar?: string | null
+  frame?: string | null
   country?: string | null
   rating: number
+  coins?: number
   wins: number
   losses: number
   games: number
+}
+
+export interface ShopState {
+  catalog: Record<string, number>
+  unlocks: string[]
+  avatar_frame: string | null
+  coins: number
+}
+export async function getShop(): Promise<ShopState> {
+  return req('/shop')
+}
+export async function buyItem(id: string): Promise<{ unlocks: string[]; coins: number }> {
+  return req('/shop/buy', { method: 'POST', body: JSON.stringify({ id }) })
+}
+export async function selectFrame(id: string | null): Promise<{ avatar_frame: string | null }> {
+  return req('/shop/frame', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
 }
 
 export async function leaderboard(limit = 100): Promise<LeaderRow[]> {
