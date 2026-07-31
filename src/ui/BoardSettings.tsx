@@ -17,6 +17,8 @@ interface Props {
   setShowPip: (v: boolean) => void
   showAnalysis: boolean
   setShowAnalysis: (v: boolean) => void
+  learnMode: boolean
+  setLearnMode: (v: boolean) => void
   onClose: () => void
 }
 
@@ -30,6 +32,8 @@ export default function BoardSettings({
   setShowPip,
   showAnalysis,
   setShowAnalysis,
+  learnMode,
+  setLearnMode,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -90,6 +94,16 @@ export default function BoardSettings({
           <span>{t('setup.analysis')}</span>
           <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
         </button>
+
+        {/* Ogrenme modu */}
+        <button
+          className={`setup-toggle ${learnMode ? 'on' : ''}`}
+          onClick={() => setLearnMode(!learnMode)}
+        >
+          <span>🎓 {t('hint.learnMode')}</span>
+          <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
+        </button>
+        <p className="setup-note">{t('hint.learnNote')}</p>
       </div>
     </div>
   )

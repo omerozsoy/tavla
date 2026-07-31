@@ -14,6 +14,7 @@ import { HeuristicBot } from './engine/engine'
 import { FairDice } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
+import { explainMove, type Reason } from './engine/explain'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -285,6 +286,16 @@ export default function App() {
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
   const [ranked, setRanked] = useState<RankedMove[] | null>(null)
   const [analysisBoard, setAnalysisBoard] = useState<GameState | null>(null) // mini board pozisyonu
+  // Ipucu / Ogrenme modu: mevcut konumdaki en iyi hamle + gerekceleri (ekstra ag cagrisi yok)
+  const [curBest, setCurBest] = useState<{ notation: string; equity: number; reasons: Reason[] } | null>(null)
+  const [hintShown, setHintShown] = useState(false) // ipucu butonuna basildi mi
+  const [learnMode, setLearnMode] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tavla.learn') === '1'
+    } catch {
+      return false
+    }
+  })
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
   const [prStats, setPrStats] = useState<{
     white: { loss: number; decisions: number }
@@ -693,7 +704,8 @@ export default function App() {
   useEffect(() => {
     if (!interactive || !diceRolled || gameWon) return
     if (remainingDice.length === 0) return // tur tamamlandi, analiz yok
-    if (!showAnalysis && played.length > 0) return // panel kapali: sadece tur basi (PR icin)
+    // Panel kapali VE ogrenme modu kapali: mid-turn analiz yok (sadece tur basi -> PR)
+    if (!showAnalysis && !learnMode && played.length > 0) return
     // Analiz durumu: hic oynanmadiysa tur basi; oynandiysa mevcut konum + kalan zarlar
     const analysisState =
       played.length === 0
@@ -714,6 +726,14 @@ export default function App() {
         ])
         if (!cancelled) {
           if (played.length === 0) turnRankedRef.current = r // tur basi siralama (PR + hata)
+          if (r.length > 0) {
+            const b = r[0]
+            setCurBest({
+              notation: moveNotation(b.move, analysisState.turn),
+              equity: b.equity,
+              reasons: explainMove(analysisState, b.move, analysisState.turn),
+            })
+          }
           if (showAnalysis) {
             setRanked(r)
             setCurrentProbs(cp)
@@ -733,6 +753,14 @@ export default function App() {
             }))
             .sort((a, b) => b.equity - a.equity)
           if (played.length === 0) turnRankedRef.current = ranks
+          if (ranks.length > 0) {
+            const b = ranks[0]
+            setCurBest({
+              notation: moveNotation(b.move, mover),
+              equity: b.equity,
+              reasons: explainMove(analysisState, b.move, mover),
+            })
+          }
           if (showAnalysis) {
             setRanked(ranks)
             setCurrentProbs(null)
@@ -747,7 +775,22 @@ export default function App() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnalysis, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
+  }, [showAnalysis, learnMode, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
+
+  // Ogrenme modu tercihini sakla
+  useEffect(() => {
+    try {
+      localStorage.setItem('tavla.learn', learnMode ? '1' : '0')
+    } catch {
+      /* yok */
+    }
+  }, [learnMode])
+
+  // Tur/hamle degisince ipucu gorunumu sifirlansin (ogrenme modunda otomatik geri gelir)
+  useEffect(() => {
+    setHintShown(false)
+    setCurBest(null)
+  }, [turnStart, played.length])
 
   // Insan sirasi + hamle yok -> otomatik "hamle yok" deyip gec (Pas butonu yok)
   useEffect(() => {
@@ -1822,6 +1865,8 @@ export default function App() {
             setShowPip={setShowPip}
             showAnalysis={showAnalysis}
             setShowAnalysis={setShowAnalysis}
+            learnMode={learnMode}
+            setLearnMode={setLearnMode}
             onClose={() => setBoardSettingsOpen(false)}
           />
         )}
@@ -1848,9 +1893,35 @@ export default function App() {
     )
   }
 
+  const showHintUI =
+    mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
+
   return (
     <div className="app">
       {accountBar}
+      {showHintUI && (learnMode || hintShown) && curBest && (
+        <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
+          <div className="hint-head">
+            {learnMode ? `🎓 ${t('hint.learnTitle')}` : `💡 ${t('hint.title')}`}
+            {!learnMode && (
+              <button className="hint-close" onClick={() => setHintShown(false)} aria-label="Kapat">
+                ✕
+              </button>
+            )}
+          </div>
+          <div className="hint-move">{curBest.notation}</div>
+          <ul className="hint-reasons">
+            {curBest.reasons.map((r, i) => (
+              <li key={i}>{t(r.key, r.params)}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {showHintUI && !learnMode && !hintShown && (
+        <button className="hint-fab" onClick={() => setHintShown(true)}>
+          💡 {t('hint.button')}
+        </button>
+      )}
       <aside className="side-menu">
         <div className="brand">
           <span className="brand-badge">{t('brand.short')}</span>
@@ -1973,6 +2044,8 @@ export default function App() {
           setShowPip={setShowPip}
           showAnalysis={showAnalysis}
           setShowAnalysis={setShowAnalysis}
+          learnMode={learnMode}
+          setLearnMode={setLearnMode}
           onClose={() => setBoardSettingsOpen(false)}
         />
       )}
