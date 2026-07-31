@@ -2260,6 +2260,25 @@ body {
   border-color: color-mix(in srgb, #5b8def 55%, transparent);
   color: #9db8ff;
 }
+.menu-active-game {
+  border-color: color-mix(in srgb, #e0455e 60%, transparent);
+  color: #ff9db0;
+  font-weight: 800;
+  animation: pulse-red 1.6s ease-in-out infinite;
+}
+@keyframes pulse-red {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(224, 69, 94, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(224, 69, 94, 0);
+  }
+}
+.lobby-resume {
+  background: linear-gradient(135deg, #e0455e, #b0293f) !important;
+  margin-bottom: 8px;
+}
 
 /* Turnuvalar */
 .tourn-card {
