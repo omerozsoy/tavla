@@ -52,7 +52,7 @@ import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
-import Home from './ui/Home'
+import SideMenu from './ui/SideMenu'
 import Leaderboard from './ui/Leaderboard'
 import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
@@ -1851,6 +1851,93 @@ export default function App() {
     </div>
   )
 
+  // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
+  const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
+
+  // Ortak menu callback'leri (ana sayfa + oyun ekrani ayni menu)
+  const menuProps = {
+    loggedIn: !!user,
+    canInstall,
+    hasActiveGame,
+    onNewGame: () => setSetup(mode === 'online' ? 'online' : 'pvb'),
+    onResume: () => setHome(false),
+    onLeaderboard: () => setLeaderboardOpen(true),
+    onTournaments: () => setTournOpen(true),
+    onShop: () => setShopOpen(true),
+    onMyStats: () => setStatsOpen(true),
+    onFriends: () => setFriendsOpen(true),
+    onAnalyzer: () => setAnalyzerOpen(true),
+    onLessons: () => setLessonsOpen(true),
+    onFairness: () => setFairOpen(true),
+    onBoardSettings: () => setBoardSettingsOpen(true),
+    onInstall: handleInstall,
+  }
+
+  // Menuden acilan tum modaller (her iki ekranda ortak)
+  const menuModals = (
+    <>
+      {leaderboardOpen && (
+        <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
+      )}
+      {statsOpen && user && (
+        <ProfileStats
+          name={profile.nickname || profile.firstName}
+          avatar={profile.avatar}
+          onClose={() => setStatsOpen(false)}
+        />
+      )}
+      {fairOpen && (
+        <FairnessModal
+          commitment={fairRef.current.commitment}
+          clientSeed={fairRef.current.clientSeed}
+          serverSeed={matchWinner(match) ? fairRef.current.serverSeed : undefined}
+          rolls={fairRef.current.nonce}
+          onClose={() => setFairOpen(false)}
+        />
+      )}
+      {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
+      {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
+      {shopOpen && user && (
+        <Shop
+          coins={user.coins ?? 0}
+          unlocks={user.unlocks ?? []}
+          currentFrame={user.avatar_frame ?? null}
+          boardTheme={boardTheme}
+          themes={PREMIUM_THEMES.map((th) => ({ id: th.id, name: th.name, price: th.price, a: th.a, b: th.b }))}
+          frames={FRAMES}
+          onBuy={handleBuy}
+          onEquip={handleEquipFrame}
+          onSelectTheme={setBoardTheme}
+          onClose={() => setShopOpen(false)}
+        />
+      )}
+      {tournOpen && (
+        <Tournaments
+          myId={user?.id ?? null}
+          isAdmin={!!user?.is_admin}
+          onPlayMatch={handlePlayTournamentMatch}
+          onClose={() => setTournOpen(false)}
+        />
+      )}
+      {boardSettingsOpen && (
+        <BoardSettings
+          boardTheme={boardTheme}
+          setBoardTheme={setBoardTheme}
+          boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
+          theme={theme}
+          setTheme={setTheme}
+          showPip={showPip}
+          setShowPip={setShowPip}
+          showAnalysis={showAnalysis}
+          setShowAnalysis={setShowAnalysis}
+          learnMode={learnMode}
+          setLearnMode={setLearnMode}
+          onClose={() => setBoardSettingsOpen(false)}
+        />
+      )}
+    </>
+  )
+
   // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz)
   if (setup) {
     return (
@@ -1890,82 +1977,34 @@ export default function App() {
     return (
       <>
         {accountBar}
-        <Home
-          playerName={profile.nickname}
-          loggedIn={!!user}
-          onNewGame={() => setSetup('pvb')}
-          onBoardSettings={() => setBoardSettingsOpen(true)}
-          onAnalyzer={() => setAnalyzerOpen(true)}
-          onLeaderboard={() => setLeaderboardOpen(true)}
-          onMyStats={() => setStatsOpen(true)}
-          onFairness={() => setFairOpen(true)}
-          onFriends={() => setFriendsOpen(true)}
-          onLessons={() => setLessonsOpen(true)}
-          onTournaments={() => setTournOpen(true)}
-          onShop={() => setShopOpen(true)}
-          canInstall={canInstall}
-          onInstall={handleInstall}
-        />
+        <div className="app lobby">
+          <SideMenu inGame={false} {...menuProps} />
+          <main className="main lobby-main">
+            <div className="lobby-welcome">
+              <h1 className="lobby-title">{t('brand.name')}</h1>
+              <p className="lobby-tagline">{t('home.tagline')}</p>
+              {profile.nickname && (
+                <p className="lobby-hello">{t('home.hello', { name: profile.nickname })}</p>
+              )}
+              {hasActiveGame && (
+                <button
+                  className="galaxy-btn roll lobby-resume"
+                  onClick={() => setHome(false)}
+                >
+                  🔴 {t('menu.resumeGame')}
+                </button>
+              )}
+              <button className="galaxy-btn roll lobby-start" onClick={menuProps.onNewGame}>
+                🎮 {t('setup.newGame')}
+              </button>
+              <button className="menu-btn lobby-analyzer" onClick={() => setAnalyzerOpen(true)}>
+                🔬 {t('pa.title')}
+              </button>
+            </div>
+          </main>
+        </div>
         {authModal}
-        {leaderboardOpen && (
-          <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
-        )}
-        {statsOpen && user && (
-          <ProfileStats
-            name={profile.nickname || profile.firstName}
-            avatar={profile.avatar}
-            onClose={() => setStatsOpen(false)}
-          />
-        )}
-        {fairOpen && (
-          <FairnessModal
-            commitment={fairRef.current.commitment}
-            clientSeed={fairRef.current.clientSeed}
-            serverSeed={matchWinner(match) ? fairRef.current.serverSeed : undefined}
-            rolls={fairRef.current.nonce}
-            onClose={() => setFairOpen(false)}
-          />
-        )}
-        {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
-        {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
-        {shopOpen && user && (
-          <Shop
-            coins={user.coins ?? 0}
-            unlocks={user.unlocks ?? []}
-            currentFrame={user.avatar_frame ?? null}
-            boardTheme={boardTheme}
-            themes={PREMIUM_THEMES.map((th) => ({ id: th.id, name: th.name, price: th.price, a: th.a, b: th.b }))}
-            frames={FRAMES}
-            onBuy={handleBuy}
-            onEquip={handleEquipFrame}
-            onSelectTheme={setBoardTheme}
-            onClose={() => setShopOpen(false)}
-          />
-        )}
-        {tournOpen && (
-          <Tournaments
-            myId={user?.id ?? null}
-            isAdmin={!!user?.is_admin}
-            onPlayMatch={handlePlayTournamentMatch}
-            onClose={() => setTournOpen(false)}
-          />
-        )}
-        {boardSettingsOpen && (
-          <BoardSettings
-            boardTheme={boardTheme}
-            setBoardTheme={setBoardTheme}
-            boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
-            theme={theme}
-            setTheme={setTheme}
-            showPip={showPip}
-            setShowPip={setShowPip}
-            showAnalysis={showAnalysis}
-            setShowAnalysis={setShowAnalysis}
-            learnMode={learnMode}
-            setLearnMode={setLearnMode}
-            onClose={() => setBoardSettingsOpen(false)}
-          />
-        )}
+        {menuModals}
       </>
     )
   }
@@ -2018,51 +2057,15 @@ export default function App() {
           💡 {t('hint.button')}
         </button>
       )}
-      <aside className="side-menu">
-        <div className="brand">
-          <span className="brand-badge">{t('brand.short')}</span>
-          <span className="brand-full">{t('brand.name')}</span>
-        </div>
-
-        <div className="menu-group">
-          <button className="menu-btn" onClick={() => setAnalyzerOpen(true)}>
-            🔬 {t('pa.title')}
-          </button>
-          <button className="menu-btn" onClick={() => setBoardSettingsOpen(true)}>
-            ⚙️ {t('menu.settings')}
-          </button>
-        </div>
-
-        <div className="menu-group">
-          <button className="menu-btn" onClick={() => setHome(true)}>
-            🏠 {t('home.title')}
-          </button>
-        </div>
-
-        <div className="menu-group">
-          <div className="menu-label">{t('setup.mode')}</div>
-          <button
-            className="menu-btn"
-            onClick={() => setSetup(mode === 'online' ? 'online' : 'pvb')}
-          >
-            🎮 {t('setup.newGame')}
-          </button>
-        </div>
-
-        <div className="menu-group">
-          <button
-            className={showAnalysis ? 'menu-btn active' : 'menu-btn'}
-            onClick={() => setShowAnalysis((v) => !v)}
-          >
-            {t('menu.analysis')}
-          </button>
-          {!gameEnd && !matchOver && !opening && (mode === 'pvb' || online) && (
-            <button className="menu-btn resign-btn" onClick={() => setResignOpen(true)}>
-              🏳️ {t('resign.button')}
-            </button>
-          )}
-        </div>
-      </aside>
+      <SideMenu
+        inGame
+        {...menuProps}
+        showAnalysis={showAnalysis}
+        canResign={!gameEnd && !matchOver && !opening && (mode === 'pvb' || online)}
+        onHome={() => setHome(true)}
+        onToggleAnalysis={() => setShowAnalysis((v) => !v)}
+        onResign={() => setResignOpen(true)}
+      />
 
       <main className="main">
       <div className="game-area">
@@ -2128,23 +2131,7 @@ export default function App() {
         <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
       )}
       {authModal}
-
-      {boardSettingsOpen && (
-        <BoardSettings
-          boardTheme={boardTheme}
-          setBoardTheme={setBoardTheme}
-          boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
-          theme={theme}
-          setTheme={setTheme}
-          showPip={showPip}
-          setShowPip={setShowPip}
-          showAnalysis={showAnalysis}
-          setShowAnalysis={setShowAnalysis}
-          learnMode={learnMode}
-          setLearnMode={setLearnMode}
-          onClose={() => setBoardSettingsOpen(false)}
-        />
-      )}
+      {menuModals}
 
       {gameEnd && matchOver && mWinner && (
         <MatchResult
