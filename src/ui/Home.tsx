@@ -9,6 +9,7 @@ interface Props {
   onLeaderboard: () => void
   onMyStats: () => void
   onFairness: () => void
+  onFriends: () => void
   canInstall: boolean
   onInstall: () => void
 }
@@ -22,6 +23,7 @@ export default function Home({
   onLeaderboard,
   onMyStats,
   onFairness,
+  onFriends,
   canInstall,
   onInstall,
 }: Props) {
@@ -47,6 +49,11 @@ export default function Home({
           {loggedIn && (
             <button className="menu-btn" onClick={onMyStats}>
               📊 {t('menu.myStats')}
+            </button>
+          )}
+          {loggedIn && (
+            <button className="menu-btn" onClick={onFriends}>
+              👥 {t('menu.friends')}
             </button>
           )}
           <button className="menu-btn" onClick={onAnalyzer}>

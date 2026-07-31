@@ -2171,6 +2171,71 @@ body {
   color: #9db8ff;
 }
 
+/* Arkadaslar modali */
+.friends-card {
+  width: min(460px, 94vw);
+  text-align: left;
+}
+.friends-add {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 4px;
+}
+.friends-add input {
+  flex: 1;
+}
+.friends-msg {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin: 4px 0;
+}
+.friends-section {
+  margin-top: 14px;
+}
+.friends-section h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--border);
+}
+.friend-name {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.friend-rating {
+  font-weight: 800;
+  color: #7ee0a0;
+  font-variant-numeric: tabular-nums;
+}
+.friend-btn {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.friend-btn.ok:hover {
+  border-color: #4fb477;
+  color: #7ee0a0;
+}
+.friend-btn.no:hover {
+  border-color: #e0455e;
+  color: #ff9db0;
+}
+
 /* Adil zar modali */
 .fair-card {
   width: min(500px, 94vw);
