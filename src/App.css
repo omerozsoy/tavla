@@ -78,6 +78,18 @@ body {
   gap: 5px;
   padding: 4px 2px 8px;
 }
+.brand-link {
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+  border-radius: 10px;
+  transition: opacity 0.15s;
+}
+.brand-link:hover {
+  opacity: 0.8;
+}
 .brand-badge {
   align-self: flex-start;
   background: var(--accent);

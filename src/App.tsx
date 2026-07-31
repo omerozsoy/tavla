@@ -2023,6 +2023,7 @@ export default function App() {
     hasActiveGame,
     onNewGame: () => setSetup(mode === 'online' ? 'online' : 'pvb'),
     onResume: () => setHome(false),
+    onHome: () => (online ? handleLeaveRoom() : setHome(true)),
     onLeaderboard: () => setLeaderboardOpen(true),
     onTournaments: () => setTournOpen(true),
     onShop: () => setShopOpen(true),
@@ -2263,7 +2264,6 @@ export default function App() {
         {...menuProps}
         showAnalysis={showAnalysis}
         canResign={!gameEnd && !matchOver && !opening && (mode === 'pvb' || online)}
-        onHome={() => setHome(true)}
         onToggleAnalysis={() => setShowAnalysis((v) => !v)}
         onResign={() => setResignOpen(true)}
       />
