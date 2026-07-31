@@ -54,7 +54,10 @@ export default function ProfileStats({ avatar, name, onClose }: Props) {
                   {t('stats.rank', { r: data.rank, n: data.total })}
                 </div>
               </div>
-              <div className="stats-rating">{u?.rating ?? 1500}</div>
+              <div className="stats-rating">
+                {u?.rating ?? 1500}
+                <div className="stats-coins">🪙 {u?.coins ?? 0}</div>
+              </div>
             </div>
 
             <div className="stats-grid">

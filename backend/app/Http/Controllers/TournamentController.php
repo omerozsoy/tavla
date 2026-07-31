@@ -25,15 +25,23 @@ class TournamentController extends Controller
 
     public function create(Request $request)
     {
+        // Yalnizca yonetici turnuva olusturabilir
+        if (! $request->user()->is_admin) {
+            return response()->json(['message' => 'Yalnızca yönetici turnuva oluşturabilir.'], 403);
+        }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
             'size' => ['required', 'integer', 'in:4,8,16'],
+            'prize_coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'prize_desc' => ['nullable', 'string', 'max:120'],
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
             'size' => $data['size'],
             'status' => 'open',
             'creator_id' => $request->user()->id,
+            'prize_coins' => $data['prize_coins'] ?? 0,
+            'prize_desc' => $data['prize_desc'] ?? null,
             'players' => [],
         ]);
         // Olusturan otomatik katilir
@@ -108,6 +116,15 @@ class TournamentController extends Controller
             // Final bitti -> sampiyon
             $tournament->champion_id = $data['winner_id'];
             $tournament->status = 'finished';
+            // Odul coin'i sampiyona ode (bir kez)
+            if (! $tournament->prize_paid && $tournament->prize_coins > 0) {
+                $champ = \App\Models\User::find($data['winner_id']);
+                if ($champ) {
+                    $champ->coins = ($champ->coins ?? 0) + $tournament->prize_coins;
+                    $champ->save();
+                    $tournament->prize_paid = true;
+                }
+            }
         }
 
         $tournament->bracket = $bracket;
@@ -233,6 +250,8 @@ class TournamentController extends Controller
             'size' => $t->size,
             'status' => $t->status,
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
+            'prize_coins' => $t->prize_coins ?? 0,
+            'prize_desc' => $t->prize_desc,
         ];
     }
 

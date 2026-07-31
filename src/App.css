@@ -2322,6 +2322,55 @@ body {
   color: #ffd76a;
   font-size: 1.1rem;
 }
+.tourn-create-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.tourn-prize-in {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.tourn-prize-in input {
+  width: 100%;
+}
+.tourn-adminonly {
+  color: var(--muted);
+  font-size: 0.85rem;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 6px 0 12px;
+}
+.tourn-prize {
+  background: color-mix(in srgb, #ffd76a 14%, transparent);
+  border: 1px solid color-mix(in srgb, #ffd76a 40%, transparent);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 8px 0;
+  font-size: 0.92rem;
+}
+.tourn-prize b {
+  color: #ffd76a;
+}
+.tourn-prize-badge {
+  margin-left: 8px;
+  color: #ffd76a;
+  font-size: 0.82rem;
+}
+.account-coins {
+  color: #ffd76a;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.stats-coins {
+  font-size: 0.9rem;
+  color: #ffd76a;
+  margin-top: 2px;
+}
 .tourn-players h3,
 .tourn-round-title {
   color: var(--muted);
