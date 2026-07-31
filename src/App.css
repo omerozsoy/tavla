@@ -481,6 +481,8 @@ body {
   width: var(--checker);
   height: var(--checker);
   border-radius: 50%;
+  /* Her tas hafif "yerlesme" animasyonuyla belirir (yeni konan taslar) */
+  animation: checker-place 0.22s ease-out;
 }
 .checker.draggable {
   cursor: grab;
@@ -488,18 +490,46 @@ body {
 .checker.draggable:active {
   cursor: grabbing;
 }
+/* Derinlik: ust-sol isik parlamasi + ic golge + dis golge (kabarik tas hissi) */
 .checker.white {
-  background: var(--cream);
-  border: 2px solid #cdd5f2;
+  background: radial-gradient(circle at 34% 28%, #fffdf7 0%, var(--cream) 55%, #cdbf9f 100%);
+  border: 1px solid #c3ccec;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.75),
+    inset 0 -3px 5px rgba(120, 110, 85, 0.35),
+    0 2px 4px rgba(0, 0, 0, 0.35);
 }
 .checker.black {
-  background: var(--navy);
-  border: 2px solid transparent;
-  /* Her tahtada belirgin dursun: hafif ic parlaklik + dis golge (sert kenar yok) */
+  background: radial-gradient(
+    circle at 34% 28%,
+    color-mix(in srgb, var(--navy) 60%, #fff) 0%,
+    var(--navy) 55%,
+    color-mix(in srgb, var(--navy) 70%, #000) 100%
+  );
+  border: 1px solid transparent;
   box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.22),
-    inset 0 -2px 4px rgba(0, 0, 0, 0.35),
-    0 1px 3px rgba(0, 0, 0, 0.4);
+    inset 0 2px 3px rgba(255, 255, 255, 0.28),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.4);
+}
+@keyframes checker-place {
+  0% {
+    transform: translateY(-18%) scale(0.86);
+    opacity: 0.4;
+  }
+  60% {
+    transform: translateY(0) scale(1.04);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .checker,
+  .die-face {
+    animation: none;
+  }
 }
 .overflow {
   position: absolute;
@@ -609,6 +639,22 @@ body {
   height: calc(var(--checker) * 0.92);
   border-radius: 18%;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  /* Yeni atista donerek belirir */
+  animation: die-roll 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+@keyframes die-roll {
+  0% {
+    transform: rotate(-220deg) scale(0.5);
+    opacity: 0;
+  }
+  55% {
+    transform: rotate(12deg) scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0) scale(1);
+    opacity: 1;
+  }
 }
 .die-face.white {
   background: #eef1fc;
