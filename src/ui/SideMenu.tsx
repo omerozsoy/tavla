@@ -93,9 +93,6 @@ export default function SideMenu(p: SideMenuProps) {
         <button className="menu-btn" onClick={p.onAnalyzer}>
           🔬 {t('pa.title')}
         </button>
-        <button className="menu-btn" onClick={p.onLessons}>
-          📚 {t('menu.lessons')}
-        </button>
         <button className="menu-btn" onClick={p.onFairness}>
           🎲 {t('fair.title')}
         </button>
