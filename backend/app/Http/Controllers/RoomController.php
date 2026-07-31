@@ -23,6 +23,7 @@ class RoomController extends Controller
     // Oda olustur
     public function create(Request $request)
     {
+        $this->cleanupStale();
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:40'],
@@ -43,9 +44,29 @@ class RoomController extends Controller
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1']);
     }
 
+    // Bayat odalari temizle (cron gerekmez, erisimde firsatci calisir):
+    // - mm_waiting: 2 dk'dan eski, eslesememis
+    // - biten/terkedilmis odalar: 1 gunden eski
+    private function cleanupStale(): void
+    {
+        try {
+            Room::where('status', 'mm_waiting')
+                ->whereNull('p2_token')
+                ->where('created_at', '<', now()->subMinutes(2))
+                ->delete();
+            Room::where('updated_at', '<', now()->subDay())->delete();
+            \Illuminate\Support\Facades\DB::table('game_invites')
+                ->where('created_at', '<', now()->subMinutes(10))
+                ->delete();
+        } catch (\Throwable $e) {
+            // temizlik best-effort; hata olsa da akisi bozma
+        }
+    }
+
     // Hizli eslesme: bekleyen biri varsa esle, yoksa havuza gir ve bekle.
     public function matchmaking(Request $request)
     {
+        $this->cleanupStale();
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'name' => ['required', 'string', 'max:40'],
