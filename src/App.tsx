@@ -286,9 +286,11 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
+  const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
-  const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
+  // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
+  const [home, setHome] = useState(true)
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
@@ -1143,6 +1145,8 @@ export default function App() {
           if (!cancelled) {
             setInvites(r.invites ?? [])
             setTournNotices(r.tournament_matches ?? [])
+            setRewardReady(!!r.reward_ready)
+            if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
         })
         .catch(() => {})
@@ -1176,9 +1180,19 @@ export default function App() {
     try {
       const r = await claimDaily()
       setUser((u) => (u ? { ...u, coins: r.coins } : u))
+      if (r.claimed) setRewardReady(false)
       return { claimed: r.claimed, reward: r.reward }
     } catch {
       return { claimed: false }
+    }
+  }
+  // Ust coin rozetine tiklaninca: odul hazirsa al, degilse magazayi ac
+  async function handleCoinClick() {
+    if (rewardReady) {
+      const r = await handleDaily()
+      if (r.claimed) Sound.win()
+    } else {
+      setShopOpen(true)
     }
   }
   const ownedPremiumThemes = PREMIUM_THEMES.filter((th) =>
@@ -1953,10 +1967,17 @@ export default function App() {
         )}
         {profile.nickname}
         {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
-        {user?.coins != null && user.coins > 0 && (
-          <span className="account-coins">🪙 {user.coins}</span>
-        )}
       </span>
+      {user && (
+        <button
+          className={`account-coins-btn ${rewardReady ? 'ready' : ''}`}
+          onClick={handleCoinClick}
+          title={rewardReady ? t('reward.claim') : t('reward.next')}
+        >
+          🪙 {user.coins ?? 0}
+          {rewardReady && <span className="coin-gift">🎁</span>}
+        </button>
+      )}
       {user ? (
         <>
           <button className="account-btn" onClick={() => setEditProfile(true)}>
@@ -2263,7 +2284,7 @@ export default function App() {
         inGame
         {...menuProps}
         showAnalysis={showAnalysis}
-        canResign={!gameEnd && !matchOver && !opening && (mode === 'pvb' || online)}
+        canResign={!matchOver && (mode === 'pvb' || online)}
         onToggleAnalysis={() => setShowAnalysis((v) => !v)}
         onResign={() => setResignOpen(true)}
       />

@@ -2410,6 +2410,38 @@ body {
   font-weight: 700;
   font-size: 0.85rem;
 }
+.account-coins-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, #ffd76a 45%, var(--border));
+  background: color-mix(in srgb, #ffd76a 12%, transparent);
+  color: #ffd76a;
+  font-weight: 800;
+  font-size: 0.85rem;
+  border-radius: 999px;
+  padding: 5px 10px;
+  cursor: pointer;
+}
+.account-coins-btn:hover {
+  background: color-mix(in srgb, #ffd76a 20%, transparent);
+}
+.account-coins-btn.ready {
+  border-color: #ffd76a;
+  animation: coin-pulse 1.4s ease-in-out infinite;
+}
+.coin-gift {
+  font-size: 0.9rem;
+}
+@keyframes coin-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 215, 106, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(255, 215, 106, 0);
+  }
+}
 
 /* Avatar cercevesi */
 .av-frame {
