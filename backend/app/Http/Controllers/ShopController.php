@@ -56,6 +56,21 @@ class ShopController extends Controller
         return response()->json(['unlocks' => $unlocks, 'coins' => $u->coins]);
     }
 
+    // Gunluk odul: gunde bir kez coin ver
+    public function daily(Request $request)
+    {
+        $u = $request->user();
+        $today = now()->toDateString();
+        if ((string) $u->last_daily === $today) {
+            return response()->json(['claimed' => false, 'coins' => $u->coins ?? 0]);
+        }
+        $reward = 50;
+        $u->coins = ($u->coins ?? 0) + $reward;
+        $u->last_daily = $today;
+        $u->save();
+        return response()->json(['claimed' => true, 'reward' => $reward, 'coins' => $u->coins]);
+    }
+
     // Avatar cercevesini sec (sahip olunmali; 'none' serbest)
     public function selectFrame(Request $request)
     {

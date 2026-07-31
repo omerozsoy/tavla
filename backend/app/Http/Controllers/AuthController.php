@@ -206,7 +206,8 @@ class AuthController extends Controller
     public function leaderboard(Request $request)
     {
         $limit = min(100, max(1, (int) $request->query('limit', 100)));
-        $users = User::orderByDesc('rating')
+        $byCoins = $request->query('by') === 'coins';
+        $users = User::orderByDesc($byCoins ? 'coins' : 'rating')
             ->orderByDesc('wins')
             ->limit($limit)
             ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'wins', 'losses', 'games_played']);

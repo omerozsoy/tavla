@@ -25,6 +25,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
   const [name, setName] = useState('')
   const [size, setSize] = useState(8)
   const [prize, setPrize] = useState(0)
+  const [fee, setFee] = useState(0)
   const [busy, setBusy] = useState(false)
 
   async function refreshList() {
@@ -53,9 +54,10 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     if (!name.trim() || busy) return
     setBusy(true)
     try {
-      const tr = await createTournament(name.trim(), size, prize)
+      const tr = await createTournament(name.trim(), size, prize, '', fee)
       setName('')
       setPrize(0)
+      setFee(0)
       setActive(tr)
       refreshList()
     } finally {
@@ -104,11 +106,14 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
             {active.count}/{active.size}
           </div>
-          {(!!active.prize_coins || active.prize_desc) && (
+          {(!!active.prize_coins || active.prize_desc || !!active.entry_fee) && (
             <div className="tourn-prize">
               🏅 {t('tourn.prizeLabel')}:{' '}
               {!!active.prize_coins && <b>🪙 {active.prize_coins} coin</b>}
               {active.prize_desc && <span> {active.prize_desc}</span>}
+              {!!active.entry_fee && (
+                <span className="tourn-fee"> · 🎟️ {t('tourn.entryFee')}: {active.entry_fee}</span>
+              )}
             </div>
           )}
 
@@ -206,14 +211,24 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 <option value={8}>8</option>
                 <option value={16}>16</option>
               </select>
-              <label className="tourn-prize-in">
-                🪙
+              <label className="tourn-prize-in" title={t('tourn.prize')}>
+                🏆
                 <input
                   type="number"
                   min={0}
                   value={prize}
                   onChange={(e) => setPrize(Math.max(0, Number(e.target.value)))}
                   placeholder={t('tourn.prize')}
+                />
+              </label>
+              <label className="tourn-prize-in" title={t('tourn.entryFee')}>
+                🎟️
+                <input
+                  type="number"
+                  min={0}
+                  value={fee}
+                  onChange={(e) => setFee(Math.max(0, Number(e.target.value)))}
+                  placeholder={t('tourn.entryFee')}
                 />
               </label>
               <button className="menu-btn" disabled={busy || !name.trim()} onClick={create}>
