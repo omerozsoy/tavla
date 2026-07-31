@@ -1248,6 +1248,18 @@ body {
   padding: 6px 10px;
   font-size: 0.82rem;
 }
+.account-btn.leave {
+  border-color: color-mix(in srgb, #e0455e 60%, transparent);
+  color: #ff9db0;
+  font-weight: 700;
+}
+.account-btn.leave:hover {
+  background: color-mix(in srgb, #e0455e 20%, transparent);
+}
+.resign-home {
+  border-color: color-mix(in srgb, #5b8def 55%, transparent) !important;
+  color: #9db8ff !important;
+}
 .lang-select {
   appearance: none;
   cursor: pointer;
