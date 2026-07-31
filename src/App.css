@@ -478,11 +478,28 @@ body {
   padding: 0 0 2px;
 }
 .checker {
+  position: relative;
   width: var(--checker);
   height: var(--checker);
   border-radius: 50%;
   /* Her tas hafif "yerlesme" animasyonuyla belirir (yeni konan taslar) */
   animation: checker-place 0.22s ease-out;
+}
+/* Fis-tarzi ic ic halka (premium tas gorunumu) */
+.checker::after {
+  content: '';
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.checker.white::after {
+  border: 2px solid rgba(150, 135, 100, 0.4);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+.checker.black::after {
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
 }
 .checker.draggable {
   cursor: grab;
@@ -530,6 +547,46 @@ body {
   .die-face {
     animation: none;
   }
+}
+
+/* ---- Ceviz (ahsap) temasi: gercekci ahsap doku ---- */
+[data-board='walnut'] .half {
+  background:
+    repeating-linear-gradient(88deg, rgba(0, 0, 0, 0.055) 0 1px, transparent 1px 6px),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--panel) 88%, #000) 0%,
+      var(--panel) 45%,
+      color-mix(in srgb, var(--panel) 82%, #000) 100%
+    );
+}
+[data-board='walnut'] .board-inner {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 5px),
+    linear-gradient(180deg, #4a3018 0%, #34210f 50%, #22150a 100%);
+  box-shadow:
+    inset 0 0 34px rgba(0, 0, 0, 0.55),
+    inset 0 2px 0 rgba(255, 220, 170, 0.08);
+  border: 2px solid #26160a;
+}
+/* Ucgenlere hafif dikey ahsap tonlama (parlak-mat gecis) */
+[data-board='walnut'] .point::before {
+  filter: brightness(1.02);
+}
+[data-board='walnut'] .board-inner::after {
+  /* uzerinde hafif cila parlamasi */
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 30%,
+    transparent 70%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  z-index: 0;
 }
 .overflow {
   position: absolute;

@@ -150,6 +150,7 @@ interface BoardTheme {
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
 }
 const BOARD_THEMES: BoardTheme[] = [
+  { id: 'walnut', name: 'Ceviz', panel: '#7a5230', a: '#caa06a', b: '#5c3a20', checker: '#242424' },
   { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#3a3ad8' },
   { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#188a4a' },
   { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826', checker: '#6b4524' },
@@ -248,7 +249,7 @@ export default function App() {
   })
   const [boardTheme, setBoardTheme] = useState<string>(() => {
     try {
-      return localStorage.getItem('tavla.board') || 'blue'
+      return localStorage.getItem('tavla.board') || 'walnut'
     } catch {
       return 'blue'
     }
@@ -410,6 +411,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement
     root.setAttribute('data-theme', theme)
+    root.setAttribute('data-board', boardTheme)
     const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
     root.style.setProperty('--panel', bt.panel)
     root.style.setProperty('--tri-a', bt.a)
