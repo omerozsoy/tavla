@@ -1056,6 +1056,21 @@ export default function App() {
     installPromptRef.current?.prompt()
   }
 
+  // Tam ekran ac/kapat
+  const [isFull, setIsFull] = useState(false)
+  useEffect(() => {
+    const onChange = () => setIsFull(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onChange)
+    return () => document.removeEventListener('fullscreenchange', onChange)
+  }, [])
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen?.().catch(() => {})
+    } else {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }
+
   // Online host (p1): rakip katilinca acilis atisini baslat
   useEffect(() => {
     if (!online || room?.slot !== 'p1' || room?.status !== 'playing') return
@@ -1770,6 +1785,13 @@ export default function App() {
         onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
       >
         {theme === 'dark' ? '☀️' : '🌙'}
+      </button>
+      <button
+        className="account-btn icon"
+        title={isFull ? t('menu.exitFull') : t('menu.fullscreen')}
+        onClick={toggleFullscreen}
+      >
+        {isFull ? '🗗' : '⛶'}
       </button>
     </div>
   )
