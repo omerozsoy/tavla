@@ -2416,11 +2416,30 @@ body {
   max-height: 88vh;
   overflow-y: auto;
 }
+.shop-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 2px 0 6px;
+}
 .shop-coins {
   color: #ffd76a;
   font-weight: 800;
   font-size: 1.1rem;
-  margin: 2px 0 8px;
+}
+.shop-daily {
+  border: 1px solid color-mix(in srgb, #ffd76a 50%, transparent);
+  background: color-mix(in srgb, #ffd76a 14%, transparent);
+  color: #ffd76a;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.shop-daily-msg {
+  color: #7ee0a0;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
 }
 .shop-sec {
   margin: 14px 0 6px;

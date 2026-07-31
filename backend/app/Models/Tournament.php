@@ -8,7 +8,7 @@ class Tournament extends Model
 {
     protected $fillable = [
         'name', 'size', 'status', 'creator_id', 'players', 'bracket', 'champion_id',
-        'prize_coins', 'prize_desc', 'prize_paid',
+        'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee',
     ];
 
     protected $casts = [

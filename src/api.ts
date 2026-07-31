@@ -233,9 +233,13 @@ export async function selectFrame(id: string | null): Promise<{ avatar_frame: st
   return req('/shop/frame', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
 }
 
-export async function leaderboard(limit = 100): Promise<LeaderRow[]> {
-  const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}`)
+export async function leaderboard(limit = 100, by: 'rating' | 'coins' = 'rating'): Promise<LeaderRow[]> {
+  const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}&by=${by}`)
   return data.players
+}
+
+export async function claimDaily(): Promise<{ claimed: boolean; reward?: number; coins: number }> {
+  return req('/shop/daily', { method: 'POST' })
 }
 
 export interface Friend {
@@ -307,6 +311,7 @@ export interface Tournament {
   count: number
   prize_coins?: number
   prize_desc?: string | null
+  entry_fee?: number
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
@@ -325,10 +330,17 @@ export async function createTournament(
   size: number,
   prizeCoins = 0,
   prizeDesc = '',
+  entryFee = 0,
 ): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>('/tournaments', {
     method: 'POST',
-    body: JSON.stringify({ name, size, prize_coins: prizeCoins, prize_desc: prizeDesc || null }),
+    body: JSON.stringify({
+      name,
+      size,
+      prize_coins: prizeCoins,
+      prize_desc: prizeDesc || null,
+      entry_fee: entryFee,
+    }),
   })
   return d.tournament
 }

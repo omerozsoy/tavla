@@ -34,6 +34,7 @@ class TournamentController extends Controller
             'size' => ['required', 'integer', 'in:4,8,16'],
             'prize_coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prize_desc' => ['nullable', 'string', 'max:120'],
+            'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
@@ -42,6 +43,7 @@ class TournamentController extends Controller
             'creator_id' => $request->user()->id,
             'prize_coins' => $data['prize_coins'] ?? 0,
             'prize_desc' => $data['prize_desc'] ?? null,
+            'entry_fee' => $data['entry_fee'] ?? 0,
             'players' => [],
         ]);
         // Olusturan otomatik katilir
@@ -58,7 +60,27 @@ class TournamentController extends Controller
         if (count($players) >= $tournament->size) {
             return response()->json(['message' => 'Turnuva dolu.'], 422);
         }
-        $this->addPlayer($tournament, $request->user());
+        $me = $request->user();
+        // Zaten kayitli mi?
+        $already = false;
+        foreach ($players as $p) {
+            if (($p['id'] ?? null) === $me->id) {
+                $already = true;
+                break;
+            }
+        }
+        // Giris ucreti (kayitli degilse) -> coin dus, odul havuzuna ekle
+        $fee = $tournament->entry_fee ?? 0;
+        if (! $already && $fee > 0) {
+            if (($me->coins ?? 0) < $fee) {
+                return response()->json(['message' => 'Giriş ücreti için yetersiz coin.'], 422);
+            }
+            $me->coins = ($me->coins ?? 0) - $fee;
+            $me->save();
+            $tournament->prize_coins = ($tournament->prize_coins ?? 0) + $fee;
+            $tournament->save();
+        }
+        $this->addPlayer($tournament, $me);
         $t = $tournament->fresh();
         // Dolduysa otomatik basla
         if (count($t->players) >= $t->size) {
@@ -252,6 +274,7 @@ class TournamentController extends Controller
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'prize_coins' => $t->prize_coins ?? 0,
             'prize_desc' => $t->prize_desc,
+            'entry_fee' => $t->entry_fee ?? 0,
         ];
     }
 

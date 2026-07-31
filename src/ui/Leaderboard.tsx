@@ -12,16 +12,19 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const { t } = useT()
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
+  const [by, setBy] = useState<'rating' | 'coins'>('rating')
 
   useEffect(() => {
     let alive = true
-    leaderboard(100)
+    setRows(null)
+    setError(false)
+    leaderboard(100, by)
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
       alive = false
     }
-  }, [])
+  }, [by])
 
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
 
@@ -32,6 +35,14 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           ✕
         </button>
         <h2>🏆 {t('lb.title')}</h2>
+        <div className="rep-filter">
+          <button className={by === 'rating' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('rating')}>
+            ⭐ {t('lb.rating')}
+          </button>
+          <button className={by === 'coins' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('coins')}>
+            🪙 {t('lb.byCoins')}
+          </button>
+        </div>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && rows === null && <div className="lb-empty">{t('an.loading')}</div>}
@@ -46,7 +57,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-rating">{t('lb.rating')}</span>
+              <span className="lb-rating">{by === 'coins' ? '🪙' : t('lb.rating')}</span>
             </div>
             <div className="lb-body">
               {rows.map((r) => {
@@ -69,7 +80,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                     </span>
                     <span className="lb-games">{r.games}</span>
                     <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
-                    <span className="lb-rating">{r.rating}</span>
+                    <span className="lb-rating">{by === 'coins' ? (r.coins ?? 0) : r.rating}</span>
                   </div>
                 )
               })}

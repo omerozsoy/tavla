@@ -25,6 +25,7 @@ interface Props {
   onBuy: (shopId: string) => Promise<void>
   onEquip: (frameId: string | null) => Promise<void>
   onSelectTheme: (id: string) => void
+  onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onClose: () => void
 }
 
@@ -38,10 +39,22 @@ export default function Shop({
   onBuy,
   onEquip,
   onSelectTheme,
+  onDaily,
   onClose,
 }: Props) {
   const { t } = useT()
   const [busy, setBusy] = useState<string | null>(null)
+  const [dailyMsg, setDailyMsg] = useState('')
+
+  async function daily() {
+    setBusy('daily')
+    try {
+      const r = await onDaily()
+      setDailyMsg(r.claimed ? t('shop.dailyGot', { n: r.reward ?? 0 }) : t('shop.dailyDone'))
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const owns = (shopId: string) => unlocks.includes(shopId)
 
@@ -69,7 +82,13 @@ export default function Shop({
           ✕
         </button>
         <h2>🛍️ {t('shop.title')}</h2>
-        <div className="shop-coins">🪙 {coins} coin</div>
+        <div className="shop-top">
+          <div className="shop-coins">🪙 {coins} coin</div>
+          <button className="shop-daily" disabled={busy === 'daily'} onClick={daily}>
+            🎁 {t('shop.daily')}
+          </button>
+        </div>
+        {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}
 
         <h3 className="shop-sec">{t('shop.themes')}</h3>
         <div className="shop-grid">

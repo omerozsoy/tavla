@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
     Route::post('/shop/frame', [ShopController::class, 'selectFrame']);
+    Route::post('/shop/daily', [ShopController::class, 'daily']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);

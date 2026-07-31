@@ -42,6 +42,7 @@ import {
   reportTournament,
   buyItem,
   selectFrame,
+  claimDaily,
   ping,
   inviteFriend,
   respondInvite,
@@ -1171,6 +1172,15 @@ export default function App() {
       /* yoksay */
     }
   }
+  async function handleDaily() {
+    try {
+      const r = await claimDaily()
+      setUser((u) => (u ? { ...u, coins: r.coins } : u))
+      return { claimed: r.claimed, reward: r.reward }
+    } catch {
+      return { claimed: false }
+    }
+  }
   const ownedPremiumThemes = PREMIUM_THEMES.filter((th) =>
     (user?.unlocks ?? []).includes('theme.' + th.id),
   )
@@ -2098,6 +2108,7 @@ export default function App() {
           onBuy={handleBuy}
           onEquip={handleEquipFrame}
           onSelectTheme={setBoardTheme}
+          onDaily={handleDaily}
           onClose={() => setShopOpen(false)}
         />
       )}
