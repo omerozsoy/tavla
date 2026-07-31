@@ -50,6 +50,7 @@ import Home from './ui/Home'
 import Leaderboard from './ui/Leaderboard'
 import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
+import Friends from './ui/Friends'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -252,6 +253,7 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
+  const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
@@ -1697,6 +1699,7 @@ export default function App() {
           onLeaderboard={() => setLeaderboardOpen(true)}
           onMyStats={() => setStatsOpen(true)}
           onFairness={() => setFairOpen(true)}
+          onFriends={() => setFriendsOpen(true)}
           canInstall={canInstall}
           onInstall={handleInstall}
         />
@@ -1720,6 +1723,7 @@ export default function App() {
             onClose={() => setFairOpen(false)}
           />
         )}
+        {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
         {boardSettingsOpen && (
           <BoardSettings
             boardTheme={boardTheme}

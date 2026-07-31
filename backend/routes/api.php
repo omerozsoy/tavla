@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\RoomController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);
+
+    Route::get('/friends', [FriendController::class, 'index']);
+    Route::post('/friends/request', [FriendController::class, 'request']);
+    Route::post('/friends/{userId}/accept', [FriendController::class, 'accept']);
+    Route::delete('/friends/{userId}', [FriendController::class, 'destroy']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);

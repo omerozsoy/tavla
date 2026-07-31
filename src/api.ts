@@ -217,6 +217,29 @@ export async function leaderboard(limit = 100): Promise<LeaderRow[]> {
   return data.players
 }
 
+export interface Friend {
+  id: number
+  name: string
+  avatar?: string | null
+  rating: number
+}
+
+export async function getFriends(): Promise<{ friends: Friend[]; incoming: Friend[] }> {
+  return req('/friends')
+}
+
+export async function requestFriend(nickname: string): Promise<{ status: string }> {
+  return req('/friends/request', { method: 'POST', body: JSON.stringify({ nickname }) })
+}
+
+export async function acceptFriend(userId: number): Promise<void> {
+  await req(`/friends/${userId}/accept`, { method: 'POST' })
+}
+
+export async function removeFriend(userId: number): Promise<void> {
+  await req(`/friends/${userId}`, { method: 'DELETE' })
+}
+
 export async function loadServerGame(): Promise<unknown | null> {
   const data = await req<{ game: unknown }>('/game')
   return data.game ?? null
