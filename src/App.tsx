@@ -134,14 +134,14 @@ interface BoardTheme {
   checker: string // koyu pul rengi (temaya uyar)
 }
 const BOARD_THEMES: BoardTheme[] = [
-  { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#2a2ac0' },
-  { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#0e5a30' },
-  { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826', checker: '#4d2e15' },
-  { id: 'purple', name: 'Mor', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c', checker: '#4a2d85' },
-  { id: 'gray', name: 'Gri', panel: '#5a6478', a: '#8b95a8', b: '#434c5e', checker: '#2e3644' },
-  { id: 'red', name: 'Kırmızı', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a', checker: '#7d1f1f' },
-  { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666', checker: '#0d4d4d' },
-  { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444', checker: '#26305e' },
+  { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#3a3ad8' },
+  { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#188a4a' },
+  { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826', checker: '#6b4524' },
+  { id: 'purple', name: 'Mor', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c', checker: '#6841ad' },
+  { id: 'gray', name: 'Gri', panel: '#5a6478', a: '#8b95a8', b: '#434c5e', checker: '#454f63' },
+  { id: 'red', name: 'Kırmızı', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a', checker: '#c24545' },
+  { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666', checker: '#177575' },
+  { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444', checker: '#3a477e' },
 ]
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once

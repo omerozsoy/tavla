@@ -115,6 +115,46 @@ class TournamentController extends Controller
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
+    // Bir turnuva maci icin paylasimli oda kodu (bir kez uretilir, bracket'e saklanir)
+    public function matchRoom(Request $request, Tournament $tournament)
+    {
+        $data = $request->validate(['match' => ['required', 'string', 'max:16']]);
+        if ($tournament->status !== 'running') {
+            return response()->json(['message' => 'Turnuva aktif değil.'], 422);
+        }
+        $me = $request->user()->id;
+        $bracket = $tournament->bracket;
+        foreach ($bracket as $ri => $round) {
+            foreach ($round as $mi => $m) {
+                if ($m['key'] !== $data['match']) {
+                    continue;
+                }
+                $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
+                if (! in_array($me, $ids, true)) {
+                    return response()->json(['message' => 'Bu maçta değilsin.'], 403);
+                }
+                if (! empty($m['winner'])) {
+                    return response()->json(['message' => 'Maç bitti.'], 422);
+                }
+                if (empty($m['room'])) {
+                    // Benzersiz kod uret
+                    $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+                    do {
+                        $code = '';
+                        for ($i = 0; $i < 5; $i++) {
+                            $code .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+                        }
+                    } while (\App\Models\Room::where('code', $code)->exists());
+                    $bracket[$ri][$mi]['room'] = $code;
+                    $tournament->bracket = $bracket;
+                    $tournament->save();
+                }
+                return response()->json(['code' => $bracket[$ri][$mi]['room']]);
+            }
+        }
+        return response()->json(['message' => 'Maç bulunamadı.'], 404);
+    }
+
     /* ---------- yardimcilar ---------- */
 
     private function addPlayer(Tournament $t, $user): void

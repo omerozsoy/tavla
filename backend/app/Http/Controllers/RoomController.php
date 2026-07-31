@@ -135,6 +135,47 @@ class RoomController extends Controller
         return response()->json(['room' => $room->toClient(), 'slot' => $slot]);
     }
 
+    // Belirli bir kodla odaya gir: yoksa olustur (p1), varsa katil (p2).
+    // Turnuva maclari icin: iki oyuncu ayni kodu kullanip ayni odada bulusur.
+    public function enter(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['required', 'string', 'max:40'],
+            'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
+            'avatar' => ['nullable', 'string', 'max:300000'],
+        ]);
+        $code = strtoupper($code);
+
+        $room = Room::firstOrCreate(
+            ['code' => $code],
+            [
+                'p1_token' => $data['token'],
+                'p1_name' => $data['name'],
+                'p1_rating' => $data['rating'] ?? null,
+                'p1_avatar' => $data['avatar'] ?? null,
+                'status' => 'waiting',
+                'version' => 0,
+            ],
+        );
+
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            if ($room->p2_token) {
+                return response()->json(['message' => 'Oda dolu.'], 409);
+            }
+            $room->p2_token = $data['token'];
+            $room->p2_name = $data['name'];
+            $room->p2_rating = $data['rating'] ?? null;
+            $room->p2_avatar = $data['avatar'] ?? null;
+            $room->status = 'playing';
+            $room->save();
+            $slot = 'p2';
+        }
+
+        return response()->json(['room' => $room->toClient(), 'slot' => $slot]);
+    }
+
     // Oda durumunu getir (polling). ?since=version verilirse degismediyse 204.
     public function show(Request $request, string $code)
     {
