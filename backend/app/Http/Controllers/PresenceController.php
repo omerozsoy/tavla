@@ -67,7 +67,16 @@ class PresenceController extends Controller
             }
         }
 
-        return response()->json(['invites' => $invites, 'tournament_matches' => $tmatches]);
+        // 6 saatlik odul hazir mi
+        $last = $me->last_reward ? \Illuminate\Support\Carbon::parse($me->last_reward) : null;
+        $rewardReady = ! $last || now()->diffInSeconds($last) >= 6 * 3600;
+
+        return response()->json([
+            'invites' => $invites,
+            'tournament_matches' => $tmatches,
+            'reward_ready' => $rewardReady,
+            'coins' => $me->coins ?? 0,
+        ]);
     }
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur

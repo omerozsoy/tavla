@@ -56,19 +56,31 @@ class ShopController extends Controller
         return response()->json(['unlocks' => $unlocks, 'coins' => $u->coins]);
     }
 
-    // Gunluk odul: gunde bir kez coin ver
+    private const REWARD_AMOUNT = 500;
+    private const REWARD_COOLDOWN = 6 * 3600; // 6 saat (saniye)
+
+    // 6 saatte bir 500 coin odulu
     public function daily(Request $request)
     {
         $u = $request->user();
-        $today = now()->toDateString();
-        if ((string) $u->last_daily === $today) {
-            return response()->json(['claimed' => false, 'coins' => $u->coins ?? 0]);
+        $last = $u->last_reward ? \Illuminate\Support\Carbon::parse($u->last_reward) : null;
+        $elapsed = $last ? now()->diffInSeconds($last) : self::REWARD_COOLDOWN;
+        if ($last && $elapsed < self::REWARD_COOLDOWN) {
+            return response()->json([
+                'claimed' => false,
+                'coins' => $u->coins ?? 0,
+                'next_in' => self::REWARD_COOLDOWN - $elapsed,
+            ]);
         }
-        $reward = 50;
-        $u->coins = ($u->coins ?? 0) + $reward;
-        $u->last_daily = $today;
+        $u->coins = ($u->coins ?? 0) + self::REWARD_AMOUNT;
+        $u->last_reward = now();
         $u->save();
-        return response()->json(['claimed' => true, 'reward' => $reward, 'coins' => $u->coins]);
+        return response()->json([
+            'claimed' => true,
+            'reward' => self::REWARD_AMOUNT,
+            'coins' => $u->coins,
+            'next_in' => self::REWARD_COOLDOWN,
+        ]);
     }
 
     // Avatar cercevesini sec (sahip olunmali; 'none' serbest)
