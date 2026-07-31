@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
 use App\Http\Controllers\TournamentController;
@@ -42,6 +43,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/friends/request', [FriendController::class, 'request']);
     Route::post('/friends/{userId}/accept', [FriendController::class, 'accept']);
     Route::delete('/friends/{userId}', [FriendController::class, 'destroy']);
+
+    Route::post('/ping', [PresenceController::class, 'ping']);
+    Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);
+    Route::post('/invites/{inviteId}/respond', [PresenceController::class, 'respond']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);

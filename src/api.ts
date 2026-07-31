@@ -242,11 +242,29 @@ export interface Friend {
   id: number
   name: string
   avatar?: string | null
+  frame?: string | null
   rating: number
+  online?: boolean
 }
 
 export async function getFriends(): Promise<{ friends: Friend[]; incoming: Friend[] }> {
   return req('/friends')
+}
+
+export interface GameInvite {
+  id: number
+  code: string
+  from: string
+  avatar?: string | null
+}
+export async function ping(): Promise<{ invites: GameInvite[] }> {
+  return req('/ping', { method: 'POST' })
+}
+export async function inviteFriend(userId: number): Promise<{ code: string }> {
+  return req(`/friends/${userId}/invite`, { method: 'POST' })
+}
+export async function respondInvite(id: number, accept: boolean): Promise<{ code: string | null }> {
+  return req(`/invites/${id}/respond`, { method: 'POST', body: JSON.stringify({ accept }) })
 }
 
 export async function requestFriend(nickname: string): Promise<{ status: string }> {

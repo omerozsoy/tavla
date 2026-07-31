@@ -9,10 +9,11 @@ import {
 } from '../api'
 
 interface Props {
+  onInvite: (userId: number) => void
   onClose: () => void
 }
 
-export default function Friends({ onClose }: Props) {
+export default function Friends({ onInvite, onClose }: Props) {
   const { t } = useT()
   const [friends, setFriends] = useState<Friend[]>([])
   const [incoming, setIncoming] = useState<Friend[]>([])
@@ -121,9 +122,19 @@ export default function Friends({ onClose }: Props) {
               ) : (
                 friends.map((f) => (
                   <div key={f.id} className="friend-row">
+                    <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
                     {avatar(f)}
                     <span className="friend-name">{f.name}</span>
                     <span className="friend-rating">{f.rating}</span>
+                    {f.online && (
+                      <button
+                        className="friend-btn play"
+                        title={t('friends.invite')}
+                        onClick={() => onInvite(f.id)}
+                      >
+                        🎮
+                      </button>
+                    )}
                     <button
                       className="friend-btn no"
                       title={t('friends.remove')}

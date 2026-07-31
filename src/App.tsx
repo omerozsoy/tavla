@@ -40,6 +40,10 @@ import {
   reportTournament,
   buyItem,
   selectFrame,
+  ping,
+  inviteFriend,
+  respondInvite,
+  type GameInvite as GameInviteT,
   showRoom,
   updateRoom,
   sendChat,
@@ -291,6 +295,7 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+  const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
@@ -1098,6 +1103,28 @@ export default function App() {
     installPromptRef.current?.prompt()
   }
 
+  // Kalp atisi: giris yapiliysa cevrimici tut + gelen davetleri yokla
+  useEffect(() => {
+    if (!user) {
+      setInvites([])
+      return
+    }
+    let cancelled = false
+    const beat = () => {
+      ping()
+        .then((r) => {
+          if (!cancelled) setInvites(r.invites ?? [])
+        })
+        .catch(() => {})
+    }
+    beat()
+    const id = window.setInterval(beat, 20000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+  }, [user])
+
   // Magaza: satin al / cerceve tak
   async function handleBuy(shopId: string) {
     try {
@@ -1322,6 +1349,76 @@ export default function App() {
     } finally {
       setRoomBusy(false)
     }
+  }
+
+  // Paylasimli kodla online oyuna gir (arkadas daveti). Turnuva baglami yok.
+  async function enterOnlineByCode(code: string, target = 3) {
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      tournMatchRef.current = null
+      appliedVersionRef.current = -1
+      lastSyncRef.current = ''
+      syncEnabledRef.current = false
+      fairRef.current = new FairDice()
+      setOppStarted(false)
+      setChat([])
+      ratingReportedRef.current = false
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+      setMatchLog([])
+      setRatingChange(null)
+      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      onlineTargetRef.current = target
+      setMatch(newMatch(target))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      setOpening(null)
+      setHome(false)
+      setMode('online')
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
+        oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        status: res.room.status,
+      })
+    } catch {
+      setRoomError(t('mp.connError'))
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
+  // Arkadasi oyuna davet et: kod al, odaya gir, arkadas kabul edince baslar
+  async function handleInviteFriend(userId: number) {
+    setFriendsOpen(false)
+    try {
+      const { code } = await inviteFriend(userId)
+      await enterOnlineByCode(code)
+    } catch {
+      /* yoksay */
+    }
+  }
+  async function handleAcceptInvite(inv: GameInviteT) {
+    setInvites((list) => list.filter((i) => i.id !== inv.id))
+    try {
+      const r = await respondInvite(inv.id, true)
+      if (r.code) await enterOnlineByCode(r.code)
+    } catch {
+      /* yoksay */
+    }
+  }
+  async function handleDeclineInvite(inv: GameInviteT) {
+    setInvites((list) => list.filter((i) => i.id !== inv.id))
+    respondInvite(inv.id, false).catch(() => {})
   }
 
   function handleLeaveRoom() {
@@ -1886,9 +1983,32 @@ export default function App() {
     onInstall: handleInstall,
   }
 
+  // Gelen oyun davetleri (sabit, ust uste)
+  const inviteBanner = invites.length > 0 && (
+    <div className="invite-stack">
+      {invites.map((inv) => (
+        <div key={inv.id} className="invite-card">
+          <span className="invite-text">
+            🎮 <b>{inv.from}</b> {t('friends.invitedYou')}
+          </span>
+          <button className="invite-acc" onClick={() => handleAcceptInvite(inv)}>
+            {t('friends.accept')}
+          </button>
+          <button className="invite-dec" onClick={() => handleDeclineInvite(inv)}>
+            {t('friends.decline')}
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+
   // Menuden acilan tum modaller (her iki ekranda ortak)
   const menuModals = (
     <>
+      {inviteBanner}
+      {friendsOpen && user && (
+        <Friends onInvite={handleInviteFriend} onClose={() => setFriendsOpen(false)} />
+      )}
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
@@ -1908,7 +2028,6 @@ export default function App() {
           onClose={() => setFairOpen(false)}
         />
       )}
-      {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
       {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
       {shopOpen && user && (
         <Shop
