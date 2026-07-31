@@ -15,6 +15,7 @@ import { FairDice } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
+import { FRAMES, frameStyle } from './cosmetics'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -164,21 +165,6 @@ const PREMIUM_THEMES: BoardTheme[] = [
 ]
 const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES]
 
-// Avatar cerceveleri (coin ile acilir). id 'gold' -> magaza 'frame.gold'
-export interface FrameDef {
-  id: string
-  name: string
-  price: number
-  css: string // cerceve halkasi (background/box-shadow)
-}
-const FRAMES: FrameDef[] = [
-  { id: 'bronze', name: 'Bronz', price: 100, css: 'linear-gradient(135deg,#cd7f32,#8a5320)' },
-  { id: 'silver', name: 'Gümüş', price: 250, css: 'linear-gradient(135deg,#e0e0e0,#9aa0a8)' },
-  { id: 'gold', name: 'Altın', price: 500, css: 'linear-gradient(135deg,#ffe066,#c9971f)' },
-  { id: 'neon', name: 'Neon', price: 700, css: 'linear-gradient(135deg,#18e0c0,#7a1fb0)' },
-  { id: 'fire', name: 'Ateş', price: 900, css: 'linear-gradient(135deg,#ffcf3f,#ff5a1f,#c81f1f)' },
-]
-export const FRAME_CSS: Record<string, string> = Object.fromEntries(FRAMES.map((f) => [f.id, f.css]))
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
 const BOT_MOVE_DELAY = 600 // dusunme (ilk tas oynanmadan once)
@@ -1914,7 +1900,7 @@ export default function App() {
         {profile.avatar ? (
           <span
             className="av-frame"
-            style={user?.avatar_frame ? { background: FRAME_CSS[user.avatar_frame] } : undefined}
+            style={frameStyle(user?.avatar_frame)}
           >
             <img className="account-avatar" src={profile.avatar} alt="" />
           </span>
@@ -2026,6 +2012,7 @@ export default function App() {
         <ProfileStats
           name={profile.nickname || profile.firstName}
           avatar={profile.avatar}
+          frame={user.avatar_frame}
           onClose={() => setStatsOpen(false)}
         />
       )}

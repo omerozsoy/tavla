@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { myStats, type MyStats } from '../api'
+import { frameStyle } from '../cosmetics'
 
 interface Props {
   avatar?: string
+  frame?: string | null
   name: string
   onClose: () => void
 }
 
-export default function ProfileStats({ avatar, name, onClose }: Props) {
+export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   const { t } = useT()
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
@@ -43,11 +45,13 @@ export default function ProfileStats({ avatar, name, onClose }: Props) {
         {data && (
           <>
             <div className="stats-head">
-              {avatar ? (
-                <img className="stats-avatar" src={avatar} alt="" />
-              ) : (
-                <span className="stats-avatar lb-avatar-ph">{name.charAt(0).toUpperCase()}</span>
-              )}
+              <span className="av-frame" style={frameStyle(frame)}>
+                {avatar ? (
+                  <img className="stats-avatar" src={avatar} alt="" />
+                ) : (
+                  <span className="stats-avatar lb-avatar-ph">{name.charAt(0).toUpperCase()}</span>
+                )}
+              </span>
               <div className="stats-id">
                 <div className="stats-name">{name}</div>
                 <div className="stats-rank">
