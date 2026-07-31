@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\RoomController;
+use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 
 // Halka acik
@@ -14,6 +15,8 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
+Route::get('/tournaments', [TournamentController::class, 'index']);
+Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 
 // Multiplayer odalari (misafir dostu, token bazli)
 Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
@@ -37,6 +40,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/friends/request', [FriendController::class, 'request']);
     Route::post('/friends/{userId}/accept', [FriendController::class, 'accept']);
     Route::delete('/friends/{userId}', [FriendController::class, 'destroy']);
+
+    Route::post('/tournaments', [TournamentController::class, 'create']);
+    Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
+    Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);

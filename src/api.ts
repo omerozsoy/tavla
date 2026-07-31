@@ -240,6 +240,61 @@ export async function removeFriend(userId: number): Promise<void> {
   await req(`/friends/${userId}`, { method: 'DELETE' })
 }
 
+// ---- Turnuvalar ----
+export interface TPlayer {
+  id: number
+  name: string
+  rating: number
+  avatar?: string | null
+}
+export interface TMatch {
+  key: string
+  p1: TPlayer | null
+  p2: TPlayer | null
+  winner: number | null
+}
+export interface Tournament {
+  id: number
+  name: string
+  size: number
+  status: 'open' | 'running' | 'finished'
+  count: number
+  players?: TPlayer[]
+  bracket?: TMatch[][]
+  champion_id?: number | null
+}
+
+export async function listTournaments(): Promise<Tournament[]> {
+  const d = await req<{ tournaments: Tournament[] }>('/tournaments')
+  return d.tournaments
+}
+export async function showTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)
+  return d.tournament
+}
+export async function createTournament(name: string, size: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>('/tournaments', {
+    method: 'POST',
+    body: JSON.stringify({ name, size }),
+  })
+  return d.tournament
+}
+export async function joinTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, { method: 'POST' })
+  return d.tournament
+}
+export async function reportTournament(
+  id: number,
+  matchKey: string,
+  winnerId: number,
+): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/report`, {
+    method: 'POST',
+    body: JSON.stringify({ match: matchKey, winner_id: winnerId }),
+  })
+  return d.tournament
+}
+
 export async function loadServerGame(): Promise<unknown | null> {
   const data = await req<{ game: unknown }>('/game')
   return data.game ?? null
