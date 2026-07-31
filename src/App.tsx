@@ -38,6 +38,8 @@ import {
   enterRoom,
   tournamentMatchRoom,
   reportTournament,
+  buyItem,
+  selectFrame,
   showRoom,
   updateRoom,
   sendChat,
@@ -57,6 +59,7 @@ import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
+import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -136,6 +139,7 @@ interface BoardTheme {
   a: string
   b: string
   checker: string // koyu pul rengi (temaya uyar)
+  price?: number // coin ile acilan premium tema (yoksa ucretsiz)
 }
 const BOARD_THEMES: BoardTheme[] = [
   { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#3a3ad8' },
@@ -147,6 +151,30 @@ const BOARD_THEMES: BoardTheme[] = [
   { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666', checker: '#177575' },
   { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444', checker: '#3a477e' },
 ]
+// Premium tahta temalari (coin ile acilir). id 'gold' -> magaza 'theme.gold'
+const PREMIUM_THEMES: BoardTheme[] = [
+  { id: 'ocean', name: 'Okyanus', panel: '#1f6f8b', a: '#3fa9c9', b: '#144f63', checker: '#0e5a70', price: 300 },
+  { id: 'gold', name: 'Altın', panel: '#b8912f', a: '#e8c14a', b: '#8a6a1a', checker: '#7a5f14', price: 500 },
+  { id: 'sunset', name: 'Gün Batımı', panel: '#c25a3a', a: '#f0894f', b: '#8f3a22', checker: '#a3401f', price: 600 },
+  { id: 'neon', name: 'Neon', panel: '#2a2a4a', a: '#18e0c0', b: '#7a1fb0', checker: '#00b0ff', price: 800 },
+]
+const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES]
+
+// Avatar cerceveleri (coin ile acilir). id 'gold' -> magaza 'frame.gold'
+export interface FrameDef {
+  id: string
+  name: string
+  price: number
+  css: string // cerceve halkasi (background/box-shadow)
+}
+const FRAMES: FrameDef[] = [
+  { id: 'bronze', name: 'Bronz', price: 100, css: 'linear-gradient(135deg,#cd7f32,#8a5320)' },
+  { id: 'silver', name: 'Gümüş', price: 250, css: 'linear-gradient(135deg,#e0e0e0,#9aa0a8)' },
+  { id: 'gold', name: 'Altın', price: 500, css: 'linear-gradient(135deg,#ffe066,#c9971f)' },
+  { id: 'neon', name: 'Neon', price: 700, css: 'linear-gradient(135deg,#18e0c0,#7a1fb0)' },
+  { id: 'fire', name: 'Ateş', price: 900, css: 'linear-gradient(135deg,#ffcf3f,#ff5a1f,#c81f1f)' },
+]
+export const FRAME_CSS: Record<string, string> = Object.fromEntries(FRAMES.map((f) => [f.id, f.css]))
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
 const BOT_MOVE_DELAY = 600 // dusunme (ilk tas oynanmadan once)
@@ -262,6 +290,7 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
+  const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
@@ -383,7 +412,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement
     root.setAttribute('data-theme', theme)
-    const bt = BOARD_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+    const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
     root.style.setProperty('--panel', bt.panel)
     root.style.setProperty('--tri-a', bt.a)
     root.style.setProperty('--tri-b', bt.b)
@@ -1055,6 +1084,27 @@ export default function App() {
   function handleInstall() {
     installPromptRef.current?.prompt()
   }
+
+  // Magaza: satin al / cerceve tak
+  async function handleBuy(shopId: string) {
+    try {
+      const r = await buyItem(shopId)
+      setUser((u) => (u ? { ...u, coins: r.coins, unlocks: r.unlocks } : u))
+    } catch {
+      /* yetersiz coin vb. -> sessizce yoksay */
+    }
+  }
+  async function handleEquipFrame(id: string | null) {
+    try {
+      const r = await selectFrame(id)
+      setUser((u) => (u ? { ...u, avatar_frame: r.avatar_frame } : u))
+    } catch {
+      /* yoksay */
+    }
+  }
+  const ownedPremiumThemes = PREMIUM_THEMES.filter((th) =>
+    (user?.unlocks ?? []).includes('theme.' + th.id),
+  )
 
   // Tam ekran ac/kapat
   const [isFull, setIsFull] = useState(false)
@@ -1742,7 +1792,12 @@ export default function App() {
       )}
       <span className="account-name">
         {profile.avatar ? (
-          <img className="account-avatar" src={profile.avatar} alt="" />
+          <span
+            className="av-frame"
+            style={user?.avatar_frame ? { background: FRAME_CSS[user.avatar_frame] } : undefined}
+          >
+            <img className="account-avatar" src={profile.avatar} alt="" />
+          </span>
         ) : (
           '👤 '
         )}
@@ -1847,6 +1902,7 @@ export default function App() {
           onFriends={() => setFriendsOpen(true)}
           onLessons={() => setLessonsOpen(true)}
           onTournaments={() => setTournOpen(true)}
+          onShop={() => setShopOpen(true)}
           canInstall={canInstall}
           onInstall={handleInstall}
         />
@@ -1872,6 +1928,20 @@ export default function App() {
         )}
         {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
         {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
+        {shopOpen && user && (
+          <Shop
+            coins={user.coins ?? 0}
+            unlocks={user.unlocks ?? []}
+            currentFrame={user.avatar_frame ?? null}
+            boardTheme={boardTheme}
+            themes={PREMIUM_THEMES.map((th) => ({ id: th.id, name: th.name, price: th.price, a: th.a, b: th.b }))}
+            frames={FRAMES}
+            onBuy={handleBuy}
+            onEquip={handleEquipFrame}
+            onSelectTheme={setBoardTheme}
+            onClose={() => setShopOpen(false)}
+          />
+        )}
         {tournOpen && (
           <Tournaments
             myId={user?.id ?? null}
@@ -1884,7 +1954,7 @@ export default function App() {
           <BoardSettings
             boardTheme={boardTheme}
             setBoardTheme={setBoardTheme}
-            boardThemes={BOARD_THEMES}
+            boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
             theme={theme}
             setTheme={setTheme}
             showPip={showPip}
@@ -2063,7 +2133,7 @@ export default function App() {
         <BoardSettings
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
-          boardThemes={BOARD_THEMES}
+          boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
           theme={theme}
           setTheme={setTheme}
           showPip={showPip}

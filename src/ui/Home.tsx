@@ -12,6 +12,7 @@ interface Props {
   onFriends: () => void
   onLessons: () => void
   onTournaments: () => void
+  onShop: () => void
   canInstall: boolean
   onInstall: () => void
 }
@@ -28,6 +29,7 @@ export default function Home({
   onFriends,
   onLessons,
   onTournaments,
+  onShop,
   canInstall,
   onInstall,
 }: Props) {
@@ -53,6 +55,11 @@ export default function Home({
           <button className="menu-btn" onClick={onTournaments}>
             🏅 {t('menu.tournaments')}
           </button>
+          {loggedIn && (
+            <button className="menu-btn" onClick={onShop}>
+              🛍️ {t('shop.title')}
+            </button>
+          )}
           {loggedIn && (
             <button className="menu-btn" onClick={onMyStats}>
               📊 {t('menu.myStats')}
