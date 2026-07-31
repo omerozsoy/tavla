@@ -45,7 +45,8 @@ export default function DiceRow({
       title={swappable ? 'Sırayı değiştir' : undefined}
     >
       {faces.map((f, i) => (
-        <Die key={i} value={f.value} owner={owner} used={f.used} />
+        // key'e deger dahil -> yeni atista yeniden mount olur, donme animasyonu oynar
+        <Die key={`${i}-${f.value}`} value={f.value} owner={owner} used={f.used} />
       ))}
     </div>
   )
