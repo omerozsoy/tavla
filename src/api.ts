@@ -295,6 +295,15 @@ export async function reportTournament(
   return d.tournament
 }
 
+// Turnuva maci icin paylasimli oda kodu al (iki oyuncu ayni koda girer)
+export async function tournamentMatchRoom(id: number, matchKey: string): Promise<string> {
+  const d = await req<{ code: string }>(`/tournaments/${id}/match-room`, {
+    method: 'POST',
+    body: JSON.stringify({ match: matchKey }),
+  })
+  return d.code
+}
+
 export async function loadServerGame(): Promise<unknown | null> {
   const data = await req<{ game: unknown }>('/game')
   return data.game ?? null

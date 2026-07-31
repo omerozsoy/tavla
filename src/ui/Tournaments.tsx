@@ -7,14 +7,16 @@ import {
   joinTournament,
   reportTournament,
   type Tournament,
+  type TMatch,
 } from '../api'
 
 interface Props {
   myId: number | null
+  onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
 }
 
-export default function Tournaments({ myId, onClose }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
   const { t } = useT()
   const [list, setList] = useState<Tournament[]>([])
   const [active, setActive] = useState<Tournament | null>(null)
@@ -136,19 +138,29 @@ export default function Tournaments({ myId, onClose }: Props) {
                           {m.p2?.name ?? '—'}
                         </div>
                         {playable && (
-                          <div className="tm-actions">
-                            <button disabled={busy} onClick={() => report(m.key, myId!)}>
-                              {t('tourn.iWon')}
-                            </button>
+                          <>
                             <button
-                              disabled={busy}
+                              className="tm-play"
                               onClick={() =>
-                                report(m.key, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
+                                onPlayMatch(active.id, m, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
                               }
                             >
-                              {t('tourn.iLost')}
+                              🎮 {t('tourn.play')}
                             </button>
-                          </div>
+                            <div className="tm-actions">
+                              <button disabled={busy} onClick={() => report(m.key, myId!)}>
+                                {t('tourn.iWon')}
+                              </button>
+                              <button
+                                disabled={busy}
+                                onClick={() =>
+                                  report(m.key, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
+                                }
+                              >
+                                {t('tourn.iLost')}
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     )

@@ -34,6 +34,9 @@ import {
   joinRoom,
   matchmake,
   cancelMatchmake,
+  enterRoom,
+  tournamentMatchRoom,
+  reportTournament,
   showRoom,
   updateRoom,
   sendChat,
@@ -297,6 +300,7 @@ export default function App() {
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
   const fairRef = useRef(new FairDice()) // adil (dogrulanabilir) zar ureticisi
+  const tournMatchRef = useRef<{ tid: number; matchKey: string; oppId: number } | null>(null)
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
@@ -860,6 +864,13 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
+    // Turnuva maciysa sonucu otomatik bildir (bracket ilerlesin)
+    const tm = tournMatchRef.current
+    if (tm && user) {
+      const winnerId = won ? user.id : tm.oppId
+      reportTournament(tm.tid, tm.matchKey, winnerId).catch(() => {})
+      tournMatchRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
@@ -1143,12 +1154,62 @@ export default function App() {
     }
   }
 
+  // Turnuva maci: iki oyuncu ayni odaya girer; mac bitince sonuc otomatik bildirilir
+  async function handlePlayTournamentMatch(tid: number, m: { key: string }, oppId: number) {
+    setTournOpen(false)
+    setRoomBusy(true)
+    setRoomError('')
+    try {
+      const code = await tournamentMatchRoom(tid, m.key)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      tournMatchRef.current = { tid, matchKey: m.key, oppId }
+      appliedVersionRef.current = -1
+      lastSyncRef.current = ''
+      syncEnabledRef.current = false
+      fairRef.current = new FairDice()
+      setOppStarted(false)
+      setChat([])
+      ratingReportedRef.current = false
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+      setMatchLog([])
+      setRatingChange(null)
+      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      onlineTargetRef.current = 1 // turnuva maci: tek oyun
+      setMatch(newMatch(1))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      setOpening(null)
+      setHome(false)
+      setMode('online')
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
+        oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
+        oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        status: res.room.status,
+      })
+    } catch {
+      setRoomError(t('mp.connError'))
+      setTournOpen(true)
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
   function handleLeaveRoom() {
     setRoom(null)
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
     setOppStarted(false)
     setChat([])
+    tournMatchRef.current = null
     setHome(true)
   }
 
@@ -1732,7 +1793,11 @@ export default function App() {
         {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
         {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
         {tournOpen && (
-          <Tournaments myId={user?.id ?? null} onClose={() => setTournOpen(false)} />
+          <Tournaments
+            myId={user?.id ?? null}
+            onPlayMatch={handlePlayTournamentMatch}
+            onClose={() => setTournOpen(false)}
+          />
         )}
         {boardSettingsOpen && (
           <BoardSettings
