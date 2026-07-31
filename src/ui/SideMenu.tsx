@@ -29,10 +29,15 @@ export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
   return (
     <aside className="side-menu">
-      <div className="brand">
+      <button
+        type="button"
+        className="brand brand-link"
+        onClick={p.onHome}
+        title={t('home.title')}
+      >
         <span className="brand-badge">{t('brand.short')}</span>
         <span className="brand-full">{t('brand.name')}</span>
-      </div>
+      </button>
 
       <div className="menu-group">
         <button className="menu-btn lobby-new" onClick={p.onNewGame}>
@@ -58,11 +63,6 @@ export default function SideMenu(p: SideMenuProps) {
           {p.canResign && p.onResign && (
             <button className="menu-btn resign-btn" onClick={p.onResign}>
               🏳️ {t('resign.button')}
-            </button>
-          )}
-          {p.onHome && (
-            <button className="menu-btn" onClick={p.onHome}>
-              🏠 {t('home.title')}
             </button>
           )}
         </div>
