@@ -603,10 +603,23 @@ export default function App() {
   }
 
   // ---- Pes etme / cekilme (1=oyun, 2=gammon, 3=backgammon) ----
-  function handleResign(mult: 1 | 2 | 3) {
+  // Cekilen oyuncunun konumuna gore adil puan: tas topladiysa 1 (single),
+  // hic toplamadiysa 2 (gammon), barda/rakip evinde tasi varsa 3 (backgammon).
+  function resignMultiplier(state: GameState, loser: Player): 1 | 2 | 3 {
+    if (state.off[loser] > 0) return 1
+    const w = opponent(loser)
+    if (state.bar[loser] > 0) return 3
+    const [hs, he] = w === 'white' ? [0, 6] : [18, 24]
+    const sign = loser === 'white' ? 1 : -1
+    for (let i = hs; i < he; i++) if (state.points[i] * sign > 0) return 3
+    return 2
+  }
+
+  function handleResign() {
     setResignOpen(false)
     const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
     const w = opponent(loser)
+    const mult = resignMultiplier(working, loser)
     const points = match.cube.value * mult
     setMatch((m) => scoreGame(m, w, m.cube.value * mult))
     setGameEnd({ winner: w, points, mult, dropped: false, resigned: true })
@@ -2172,16 +2185,24 @@ export default function App() {
         <div className="register-overlay modal" onClick={() => setResignOpen(false)}>
           <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
             <h2>🏳️ {t('resign.title')}</h2>
-            <p className="register-sub">{t('resign.help')}</p>
-            <button className="galaxy-btn double" onClick={() => handleResign(1)}>
-              {t('resign.single', { n: match.cube.value })}
-            </button>
-            <button className="galaxy-btn double" onClick={() => handleResign(2)}>
-              {t('resign.gammon', { n: match.cube.value * 2 })}
-            </button>
-            <button className="galaxy-btn double" onClick={() => handleResign(3)}>
-              {t('resign.backgammon', { n: match.cube.value * 3 })}
-            </button>
+            {(() => {
+              const loser: Player = online ? myColor : 'white'
+              const mult = resignMultiplier(working, loser)
+              const pts = match.cube.value * mult
+              const typeKey =
+                mult === 3 ? 'resign.tBackgammon' : mult === 2 ? 'resign.tGammon' : 'resign.tSingle'
+              return (
+                <>
+                  <p className="register-sub">{t('resign.autoHelp')}</p>
+                  <div className="resign-auto">
+                    {t(typeKey)} — <b>{t('resign.losePts', { n: pts })}</b>
+                  </div>
+                  <button className="galaxy-btn double" onClick={handleResign}>
+                    🏳️ {t('resign.confirm')}
+                  </button>
+                </>
+              )
+            })()}
             <button
               className="menu-btn resign-home"
               onClick={() => {

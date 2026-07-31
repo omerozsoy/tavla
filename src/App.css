@@ -1333,6 +1333,17 @@ body {
   border-color: color-mix(in srgb, #5b8def 55%, transparent) !important;
   color: #9db8ff !important;
 }
+.resign-auto {
+  background: color-mix(in srgb, #e0455e 12%, transparent);
+  border: 1px solid color-mix(in srgb, #e0455e 35%, transparent);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 8px 0 12px;
+  font-size: 0.95rem;
+}
+.resign-auto b {
+  color: #ff9db0;
+}
 .lang-select {
   appearance: none;
   cursor: pointer;
