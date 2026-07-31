@@ -2171,6 +2171,141 @@ body {
   color: #9db8ff;
 }
 
+/* Turnuvalar */
+.tourn-card {
+  width: min(680px, 95vw);
+  text-align: left;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.tourn-back {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0;
+  margin-bottom: 4px;
+}
+.tourn-meta {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 10px;
+}
+.tourn-create {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.tourn-create input {
+  flex: 1;
+}
+.tourn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.tourn-litem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.tourn-litem:hover {
+  border-color: #5b8def;
+}
+.tourn-lname {
+  font-weight: 700;
+}
+.tourn-lmeta {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.tourn-champ {
+  margin: 10px 0;
+  font-weight: 800;
+  color: #ffd76a;
+  font-size: 1.1rem;
+}
+.tourn-players h3,
+.tourn-round-title {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 8px 0 6px;
+}
+.tourn-prow {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.tourn-prow b {
+  color: #7ee0a0;
+}
+.tourn-wait {
+  color: var(--muted);
+  font-size: 0.82rem;
+  margin-top: 8px;
+}
+.tourn-bracket {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.tourn-round {
+  min-width: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tourn-match {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tourn-match.mine {
+  border-color: #5b8def;
+}
+.tm-p {
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tm-p:last-child {
+  border-bottom: none;
+}
+.tm-p.win {
+  color: #7ee0a0;
+  font-weight: 700;
+}
+.tm-actions {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+.tm-actions button {
+  flex: 1;
+  font-size: 0.72rem;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.tm-actions button:hover {
+  border-color: #5b8def;
+}
+
 /* Dersler modali */
 .lessons-card {
   width: min(560px, 94vw);

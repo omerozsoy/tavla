@@ -11,6 +11,7 @@ interface Props {
   onFairness: () => void
   onFriends: () => void
   onLessons: () => void
+  onTournaments: () => void
   canInstall: boolean
   onInstall: () => void
 }
@@ -26,6 +27,7 @@ export default function Home({
   onFairness,
   onFriends,
   onLessons,
+  onTournaments,
   canInstall,
   onInstall,
 }: Props) {
@@ -47,6 +49,9 @@ export default function Home({
         <div className="menu-group">
           <button className="menu-btn" onClick={onLeaderboard}>
             🏆 {t('menu.leaderboard')}
+          </button>
+          <button className="menu-btn" onClick={onTournaments}>
+            🏅 {t('menu.tournaments')}
           </button>
           {loggedIn && (
             <button className="menu-btn" onClick={onMyStats}>

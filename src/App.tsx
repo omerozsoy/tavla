@@ -52,6 +52,7 @@ import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
+import Tournaments from './ui/Tournaments'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
@@ -256,6 +257,7 @@ export default function App() {
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
+  const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   const [home, setHome] = useState(!saved) // baslangic ekrani (kayitli oyun yoksa)
@@ -1703,6 +1705,7 @@ export default function App() {
           onFairness={() => setFairOpen(true)}
           onFriends={() => setFriendsOpen(true)}
           onLessons={() => setLessonsOpen(true)}
+          onTournaments={() => setTournOpen(true)}
           canInstall={canInstall}
           onInstall={handleInstall}
         />
@@ -1728,6 +1731,9 @@ export default function App() {
         )}
         {friendsOpen && user && <Friends onClose={() => setFriendsOpen(false)} />}
         {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
+        {tournOpen && (
+          <Tournaments myId={user?.id ?? null} onClose={() => setTournOpen(false)} />
+        )}
         {boardSettingsOpen && (
           <BoardSettings
             boardTheme={boardTheme}
