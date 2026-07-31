@@ -1733,6 +1733,9 @@ export default function App() {
         )}
         {profile.nickname}
         {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
+        {user?.coins != null && user.coins > 0 && (
+          <span className="account-coins">🪙 {user.coins}</span>
+        )}
       </span>
       {user ? (
         <>
@@ -1850,6 +1853,7 @@ export default function App() {
         {tournOpen && (
           <Tournaments
             myId={user?.id ?? null}
+            isAdmin={!!user?.is_admin}
             onPlayMatch={handlePlayTournamentMatch}
             onClose={() => setTournOpen(false)}
           />

@@ -33,6 +33,7 @@ export interface ServerUser {
   avatar?: string | null
   birth_date?: string | null
   rating?: number
+  coins?: number
   wins?: number
   losses?: number
   games_played?: number
@@ -259,6 +260,8 @@ export interface Tournament {
   size: number
   status: 'open' | 'running' | 'finished'
   count: number
+  prize_coins?: number
+  prize_desc?: string | null
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null
@@ -272,10 +275,15 @@ export async function showTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)
   return d.tournament
 }
-export async function createTournament(name: string, size: number): Promise<Tournament> {
+export async function createTournament(
+  name: string,
+  size: number,
+  prizeCoins = 0,
+  prizeDesc = '',
+): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>('/tournaments', {
     method: 'POST',
-    body: JSON.stringify({ name, size }),
+    body: JSON.stringify({ name, size, prize_coins: prizeCoins, prize_desc: prizeDesc || null }),
   })
   return d.tournament
 }
