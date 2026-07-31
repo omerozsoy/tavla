@@ -22,13 +22,21 @@ export interface SideMenuProps {
   onHome?: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
+  mobileOpen?: boolean
+  onCloseMobile?: () => void
 }
 
 // Ana sayfa ve oyun ekraninda ortak tek menu.
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
   return (
-    <aside className="side-menu">
+    <aside
+      className={`side-menu ${p.mobileOpen ? 'open' : ''}`}
+      onClickCapture={(e) => {
+        // Mobilde bir menu ogesine dokununca drawer'i kapat
+        if (p.onCloseMobile && (e.target as HTMLElement).closest('button')) p.onCloseMobile()
+      }}
+    >
       <button
         type="button"
         className="brand brand-link"
