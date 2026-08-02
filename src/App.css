@@ -22,7 +22,7 @@
   /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz).
      Yan icerik (sol menu 160 + oyuncu kartlari + analiz paneli) icin ~640px ayrilir
      ki genis ekranda board menuyu disari itmesin. */
-  --board-h: max(340px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 640px) / 1.4)));
+  --board-h: max(340px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 560px) / 1.4)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -1290,6 +1290,125 @@ body {
   inset: 0;
   z-index: 99;
   background: rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Oyun-ici menu (Galaxy tarzi, sagda) ---- */
+.game-ham {
+  position: fixed;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+  width: 46px;
+  height: 60px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #5b8def, #3a5fd0);
+  color: #fff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+.game-ham:hover {
+  filter: brightness(1.08);
+}
+.gm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(0, 0, 0, 0.35);
+}
+.game-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(360px, 88vw);
+  z-index: 130;
+  background: linear-gradient(180deg, #2f4fb0, #223a8c);
+  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.5);
+  transform: translateX(102%);
+  transition: transform 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 22px 18px;
+  overflow-y: auto;
+}
+.game-menu.open {
+  transform: translateX(0);
+}
+.gm-rows {
+  display: flex;
+  flex-direction: column;
+}
+.gm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 6px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.gm-state {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.gm-state.on {
+  color: #8effb0;
+}
+.gm-state.off {
+  color: #b9c4e8;
+}
+.gm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  padding-top: 18px;
+}
+.gm-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+}
+.gm-circle-ic {
+  width: 74px;
+  height: 74px;
+  border-radius: 50%;
+  background: #17204a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.gm-circle.resign .gm-circle-ic {
+  background: #5a1e2a;
+}
+.gm-circle:hover .gm-circle-ic {
+  filter: brightness(1.15);
+}
+.gm-circle-lbl {
+  font-size: 1rem;
+}
+
+/* Animasyonlari kapat */
+[data-anim='off'] .checker,
+[data-anim='off'] .die-face,
+[data-anim='off'] .fc-num,
+[data-anim='off'] .clock-reserve.final {
+  animation: none;
 }
 
 /* ---- Mobil / kucuk ekran duzeni ---- */
