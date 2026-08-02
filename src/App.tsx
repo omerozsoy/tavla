@@ -197,18 +197,15 @@ interface GameEnd {
   resigned?: boolean // pes etme/cekilme
 }
 
-// Oyun saati: her turda 12sn gecikme, tukenince rezervden duser, rezerv biterse kaybeder
-const MOVE_DELAY = 12
+// Oyun saati (her hamle sirasi icin, her turda sifirlanir):
+//  12sn hamle suresi -> bitince 30sn geri sayim -> sonra 30sn "son asama" (30dan)
+//  son asama da biterse sirasi gelen oyuncu oyunu kaybeder.
+const MOVE_DELAY = 12 // hamle suresi (sn)
+const FINAL_STAGE = 30 // son asama geri sayimi (sn)
+const OVER_TOTAL = 30 + FINAL_STAGE // 12sn sonrasi toplam ek sure (30 + 30)
 type TimeControl = 'off' | 'standard' | 'fast'
-// Rezerv (sn): kapali=saat yok, standart=6dk, hizli=1dk (gecikme her ikisinde 12sn)
-const RESERVE_PRESETS: Record<TimeControl, number> = { off: 0, standard: 6 * 60, fast: 60 }
-
-// Rezerv saniyeyi mm:ss bicimine cevir
-function fmtClock(sec: number): string {
-  const s = Math.max(0, Math.floor(sec))
-  const m = Math.floor(s / 60)
-  return `${m}:${String(s % 60).padStart(2, '0')}`
-}
+// Saat acik/kapali (standart ve hizli ayni 12/30/30 semasini kullanir)
+const RESERVE_PRESETS: Record<TimeControl, number> = { off: 0, standard: OVER_TOTAL, fast: OVER_TOTAL }
 
 export default function App() {
   const { t, lang, setLang } = useT()
@@ -295,11 +292,10 @@ export default function App() {
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
-  // Oyun saati: bu turun gecikmesi (sn) + her oyuncunun rezervi (sn)
-  const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
+  // Saat: aktif turun gecikmesi (delay) + ek sure (over). Her turda sifirlanir.
+  const [clock, setClock] = useState<{ delay: number; over: number }>({
     delay: MOVE_DELAY,
-    white: RESERVE_PRESETS.standard,
-    black: RESERVE_PRESETS.standard,
+    over: OVER_TOTAL,
   })
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
@@ -488,7 +484,7 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
-    setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+    setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
@@ -904,31 +900,30 @@ export default function App() {
   }
 
   // ---- Oyun saati ----
-  // Yeni tur baslayinca gecikmeyi 12sn'e sifirla
+  // Yeni tur/hamle sirasi baslayinca 12sn + 60sn ek sureyi sifirla
   useEffect(() => {
-    setClock((c) => ({ ...c, delay: MOVE_DELAY }))
+    setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
   }, [turnStart.turn, turnsPlayed])
 
-  // Her saniye: aktif oyuncunun once gecikmesi, o bitince rezervi azalir
+  // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir
   useEffect(() => {
     if (!clockOn || gameEnd || matchOver || opening || cubePending || gameWon) return
     if (online && !onlineReady) return
-    const who = turnStart.turn
     const id = window.setInterval(() => {
       setClock((c) => {
-        if (c.delay > 0) return { ...c, delay: c.delay - 1 }
-        return { ...c, [who]: Math.max(0, c[who] - 1) }
+        if (c.delay > 0) return { delay: c.delay - 1, over: c.over }
+        return { delay: 0, over: Math.max(0, c.over - 1) }
       })
     }, 1000)
     return () => window.clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockOn, gameEnd, matchOver, opening, cubePending, gameWon, turnStart.turn, online, onlineReady])
 
-  // Rezerv bitti -> aktif oyuncu oyunu kaybeder (skora bakilmaksizin)
+  // Ek sure bitti -> sirasi gelen oyuncu oyunu kaybeder
   useEffect(() => {
     if (!clockOn || gameEnd || matchOver) return
     const who = turnStart.turn
-    if (clock[who] > 0) return
+    if (clock.delay > 0 || clock.over > 0) return
     if (online && myColor !== who) return // online'da sadece suresi biten ilan etsin
     const w = opponent(who)
     setMatch((m) => scoreGame(m, w, m.cube.value))
@@ -994,8 +989,8 @@ export default function App() {
     setTurnsPlayed(snap.turnsPlayed)
     setTurnStart(snap.turnStart)
     setPlayed(snap.played ?? [])
-    // Rakibin gonderdigi rezervleri al (gecikmeyi yeni tur icin 12'ye kur)
-    if (snap.clock) setClock((c) => ({ delay: c.delay, white: snap.clock!.white, black: snap.clock!.black }))
+    // Rakibin gonderdigi saati al
+    if (snap.clock) setClock({ delay: snap.clock.delay ?? MOVE_DELAY, over: snap.clock.over ?? OVER_TOTAL })
     setSelectedFrom(null)
     setCubePending(null)
     setBotAnim(null)
@@ -1026,7 +1021,7 @@ export default function App() {
         turnsPlayed,
         turnStart,
         played,
-        clock: { white: clock.white, black: clock.black },
+        clock: { delay: clock.delay, over: clock.over },
         gameEnd,
       }
       updateRoom(roomCode, snap)
@@ -1269,7 +1264,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
       fairRef.current = new FairDice()
       setMatch(newMatch(target))
       setStarter('white')
@@ -1311,7 +1306,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
       fairRef.current = new FairDice()
       setMatch(newMatch(onlineTargetRef.current))
       setStarter('white')
@@ -1362,7 +1357,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -1404,7 +1399,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
       onlineTargetRef.current = 1 // turnuva maci: tek oyun
       setMatch(newMatch(1))
       setStarter('white')
@@ -1451,7 +1446,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, white: reserveRef.current, black: reserveRef.current })
+      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
       onlineTargetRef.current = target
       setMatch(newMatch(target))
       setStarter('white')
@@ -2303,10 +2298,25 @@ export default function App() {
   const showHintUI =
     mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
 
+  const inFinalCountdown =
+    clockOn &&
+    !gameEnd &&
+    !matchOver &&
+    !opening &&
+    clock.delay === 0 &&
+    clock.over <= FINAL_STAGE &&
+    clock.over > 0
+
   return (
     <div className="app">
       {accountBar}
       {mobileNav}
+      {inFinalCountdown && (
+        <div className="final-countdown" aria-live="assertive">
+          <div className="fc-num">{clock.over}</div>
+          <div className="fc-label">{t('clock.finalWarn')}</div>
+        </div>
+      )}
       {portraitMobile && (
         <div className="rotate-hint">
           <div className="rotate-icon">📱↻</div>
@@ -2352,12 +2362,10 @@ export default function App() {
         <Sidebar top={topInfo} bottom={bottomInfo} />
         {clockOn && (
           <ClockStack
-            topTime={fmtClock(clock.black)}
-            bottomTime={fmtClock(clock.white)}
-            delay={clock.delay}
             active={gameWon || gameEnd || opening ? null : turnStart.turn}
-            lowTop={clock.black <= 30}
-            lowBottom={clock.white <= 30}
+            delay={clock.delay}
+            over={clock.over}
+            final={FINAL_STAGE}
           />
         )}
         <Board

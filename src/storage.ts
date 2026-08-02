@@ -24,7 +24,7 @@ export interface SavedGame {
   turnsPlayed: number
   turnStart: GameState
   played: Step[]
-  clock?: { white: number; black: number } // oyun saati rezervleri (sn)
+  clock?: { delay: number; over: number } // hamle sirasi saati (12sn + ek sure)
   gameEnd?: {
     winner: 'white' | 'black'
     points: number

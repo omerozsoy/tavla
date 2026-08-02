@@ -1375,8 +1375,59 @@ body {
   opacity: 1;
   box-shadow: 0 0 0 2px #fff3;
 }
-.clock-reserve.low {
+/* 12sn hamle suresi (yesilimsi) */
+.clock-reserve.delay {
+  background: #2f8a52;
+}
+/* 12sn sonrasi ek sure (turuncu uyari) */
+.clock-reserve.over {
+  background: #d98324;
+}
+/* son asama geri sayim (kirmizi, yanip soner) */
+.clock-reserve.final {
   background: #e0455e;
+  animation: clock-flash 1s steps(2, start) infinite;
+}
+.clock-reserve.idle {
+  opacity: 0.4;
+}
+@keyframes clock-flash {
+  50% {
+    opacity: 0.5;
+  }
+}
+/* Son asama buyuk geri sayim overlay'i (30dan) */
+.final-countdown {
+  position: fixed;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 70;
+  text-align: center;
+  pointer-events: none;
+}
+.fc-num {
+  font-size: clamp(3rem, 12vw, 7rem);
+  font-weight: 900;
+  color: #ff5a6e;
+  text-shadow: 0 0 24px rgba(224, 69, 94, 0.7);
+  line-height: 1;
+  animation: fc-pop 1s ease-in-out infinite;
+}
+.fc-label {
+  margin-top: 4px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ff9db0;
+}
+@keyframes fc-pop {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.12);
+  }
 }
 .clock-delay {
   min-width: 62px;
