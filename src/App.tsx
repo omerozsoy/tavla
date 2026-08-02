@@ -61,6 +61,7 @@ import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
+import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
@@ -1200,6 +1201,22 @@ export default function App() {
   const [isFull, setIsFull] = useState(false)
   const [muted, setMutedState] = useState(isMuted())
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
+  const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
+  const [animOn, setAnimOn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tavla.animoff') !== '1'
+    } catch {
+      return true
+    }
+  })
+  useEffect(() => {
+    document.documentElement.setAttribute('data-anim', animOn ? 'on' : 'off')
+    try {
+      localStorage.setItem('tavla.animoff', animOn ? '0' : '1')
+    } catch {
+      /* yok */
+    }
+  }, [animOn])
   // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
   const [portraitMobile, setPortraitMobile] = useState(false)
   useEffect(() => {
@@ -2308,9 +2325,8 @@ export default function App() {
     clock.over > 0
 
   return (
-    <div className="app">
+    <div className="app game-view">
       {accountBar}
-      {mobileNav}
       {inFinalCountdown && (
         <div className="final-countdown" aria-live="assertive">
           <div className="fc-num">{clock.over}</div>
@@ -2346,15 +2362,35 @@ export default function App() {
           💡 {t('hint.button')}
         </button>
       )}
-      <SideMenu
-        inGame
-        {...menuProps}
-        mobileOpen={menuOpen}
-        onCloseMobile={() => setMenuOpen(false)}
+      <button
+        className="game-ham"
+        onClick={() => setGameMenuOpen((v) => !v)}
+        aria-label={t('gm.title')}
+        title={t('gm.title')}
+      >
+        ☰
+      </button>
+      <GameMenu
+        open={gameMenuOpen}
+        showPip={showPip}
+        setShowPip={setShowPip}
         showAnalysis={showAnalysis}
+        setShowAnalysis={setShowAnalysis}
+        learnMode={learnMode}
+        setLearnMode={setLearnMode}
+        soundOn={!muted}
+        toggleSound={() => {
+          const nv = !muted
+          setMuted(nv)
+          setMutedState(nv)
+          if (!nv) Sound.move()
+        }}
+        animOn={animOn}
+        toggleAnim={() => setAnimOn((v) => !v)}
         canResign={!matchOver && (mode === 'pvb' || online)}
-        onToggleAnalysis={() => setShowAnalysis((v) => !v)}
+        onLobby={() => (online ? handleLeaveRoom() : setHome(true))}
         onResign={() => setResignOpen(true)}
+        onClose={() => setGameMenuOpen(false)}
       />
 
       <main className="main">
