@@ -577,6 +577,15 @@ export default function App() {
     )
   }
 
+  // Otomatik zar: acikken insanin sirasi gelince zar otomatik atilir (kucuk gecikme)
+  useEffect(() => {
+    if (!autoRoll) return
+    if (!interactive || diceRolled || opening || cubePending || gameWon) return
+    const id = window.setTimeout(() => doRoll(), 500)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart])
+
   // ---- Kup ----
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
@@ -1202,6 +1211,20 @@ export default function App() {
   const [muted, setMutedState] = useState(isMuted())
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
   const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
+  const [autoRoll, setAutoRoll] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('tavla.autoroll') === '1'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('tavla.autoroll', autoRoll ? '1' : '0')
+    } catch {
+      /* yok */
+    }
+  }, [autoRoll])
   const [animOn, setAnimOn] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.animoff') !== '1'
@@ -2378,6 +2401,8 @@ export default function App() {
         setShowAnalysis={setShowAnalysis}
         learnMode={learnMode}
         setLearnMode={setLearnMode}
+        autoRoll={autoRoll}
+        setAutoRoll={setAutoRoll}
         soundOn={!muted}
         toggleSound={() => {
           const nv = !muted

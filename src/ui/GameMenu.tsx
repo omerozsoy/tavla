@@ -14,6 +14,8 @@ interface Props {
   setShowAnalysis: (v: boolean) => void
   learnMode: boolean
   setLearnMode: (v: boolean) => void
+  autoRoll: boolean
+  setAutoRoll: (v: boolean) => void
   soundOn: boolean
   toggleSound: () => void
   animOn: boolean
@@ -28,6 +30,7 @@ interface Props {
 export default function GameMenu(p: Props) {
   const { t } = useT()
   const rows: Row[] = [
+    { label: t('gm.autoRoll'), on: p.autoRoll, toggle: () => p.setAutoRoll(!p.autoRoll) },
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
     { label: t('setup.analysis'), on: p.showAnalysis, toggle: () => p.setShowAnalysis(!p.showAnalysis) },
     { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
