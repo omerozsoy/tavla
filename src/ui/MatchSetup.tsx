@@ -119,16 +119,10 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
           <div className="setup-label">{t('setup.time')}</div>
           <div className="menu-targets">
             <button
-              className={timeControl === 'standard' ? 'menu-btn active' : 'menu-btn'}
+              className={timeControl !== 'off' ? 'menu-btn active' : 'menu-btn'}
               onClick={() => setTimeControl('standard')}
             >
               {t('setup.timeStandard')}
-            </button>
-            <button
-              className={timeControl === 'fast' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setTimeControl('fast')}
-            >
-              {t('setup.timeFast')}
             </button>
             <button
               className={timeControl === 'off' ? 'menu-btn active' : 'menu-btn'}
