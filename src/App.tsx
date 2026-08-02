@@ -577,15 +577,6 @@ export default function App() {
     )
   }
 
-  // Otomatik zar: acikken insanin sirasi gelince zar otomatik atilir (kucuk gecikme)
-  useEffect(() => {
-    if (!autoRoll) return
-    if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    const id = window.setTimeout(() => doRoll(), 500)
-    return () => window.clearTimeout(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart])
-
   // ---- Kup ----
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
@@ -1240,6 +1231,16 @@ export default function App() {
       /* yok */
     }
   }, [animOn])
+
+  // Otomatik zar: acikken insanin sirasi gelince zar otomatik atilir (kucuk gecikme)
+  useEffect(() => {
+    if (!autoRoll) return
+    if (!interactive || diceRolled || opening || cubePending || gameWon) return
+    const id = window.setTimeout(() => doRoll(), 500)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart])
+
   // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
   const [portraitMobile, setPortraitMobile] = useState(false)
   useEffect(() => {
