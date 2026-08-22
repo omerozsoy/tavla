@@ -209,6 +209,16 @@ class AuthController extends Controller
         }
         $user->save();
 
+        // Mac gecmisine kaydet (yonetim panelinde gorunur)
+        \App\Models\MatchResult::create([
+            'user_id'         => $user->id,
+            'won'             => (bool) $data['won'],
+            'opponent_rating' => $rb,
+            'rating_before'   => (int) $ra,
+            'rating_after'    => $newRating,
+            'delta'           => $newRating - (int) $ra,
+        ]);
+
         return response()->json(['rating' => $newRating, 'user' => $user]);
     }
 

@@ -81,6 +81,20 @@ class AdminController extends Controller
         return response()->json(['user' => $this->row($user->fresh())]);
     }
 
+    // Uyenin son maclari (mac gecmisi)
+    public function userMatches(Request $request, User $user)
+    {
+        if (! $request->user()?->is_admin) {
+            return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+        $matches = \App\Models\MatchResult::where('user_id', $user->id)
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'created_at']);
+
+        return response()->json(['matches' => $matches]);
+    }
+
     private function row(User $u): array
     {
         return [
