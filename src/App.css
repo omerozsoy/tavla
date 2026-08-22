@@ -370,7 +370,8 @@ body {
   font-weight: 600;
 }
 .menu-targets {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
   gap: 5px;
 }
 .menu-targets .menu-btn {
