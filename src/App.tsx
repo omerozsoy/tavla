@@ -145,7 +145,7 @@ interface RoomState {
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
-const TARGETS = [1, 3, 5, 7]
+const TARGETS = [1, 3, 5, 7, 9, 11, 13, 15, 21, 25] // Galaxy: 1-25 puanlik maclar
 
 // Board renk temalari (panel zemin, acik ucgen, koyu ucgen, koyu pul)
 interface BoardTheme {
