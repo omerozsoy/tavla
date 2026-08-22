@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 
 interface ThemeItem {
@@ -43,6 +45,7 @@ export default function Shop({
   onClose,
 }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [busy, setBusy] = useState<string | null>(null)
   const [dailyMsg, setDailyMsg] = useState('')
 
@@ -81,11 +84,11 @@ export default function Shop({
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>🛍️ {t('shop.title')}</h2>
+        <h2><Icon name="shop" size={20} /> {t('shop.title')}</h2>
         <div className="shop-top">
-          <div className="shop-coins">🪙 {coins} coin</div>
+          <div className="shop-coins"><Icon name="coin" size={16} /> {coins} coin</div>
           <button className="shop-daily" disabled={busy === 'daily'} onClick={daily}>
-            🎁 {t('shop.daily')}
+            <Icon name="gift" size={16} /> {t('shop.daily')}
           </button>
         </div>
         {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}
@@ -117,7 +120,7 @@ export default function Shop({
                     disabled={busy === sid || coins < (th.price ?? 0)}
                     onClick={() => buy(sid)}
                   >
-                    🪙 {th.price}
+<Icon name="coin" size={14} /> {th.price}
                   </button>
                 )}
               </div>
@@ -162,7 +165,7 @@ export default function Shop({
                     disabled={busy === sid || coins < fr.price}
                     onClick={() => buy(sid)}
                   >
-                    🪙 {fr.price}
+<Icon name="coin" size={14} /> {fr.price}
                   </button>
                 )}
               </div>

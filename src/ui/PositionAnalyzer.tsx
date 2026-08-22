@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import type { GameState, Player } from '../engine/types'
 import { initialState } from '../engine/game'
 import { pipCount } from '../engine/evaluate'
@@ -18,6 +20,7 @@ const emptyPoints = () => new Array(24).fill(0)
 
 export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [pts, setPts] = useState<number[]>(() => initialState().points)
   const [bar, setBar] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
   const [off, setOff] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
@@ -173,7 +176,7 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
   return (
     <div className="analyzer">
       <div className="analyzer-head">
-        <h2>🔬 {t('pa.title')}</h2>
+        <h2><Icon name="analyze" size={20} /> {t('pa.title')}</h2>
         <button className="analyzer-close" onClick={onClose}>
           ✕ {t('pa.close')}
         </button>
@@ -408,7 +411,13 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
           </div>
 
           <button className="galaxy-btn roll pa-analyze" disabled={busy} onClick={analyze}>
-            {busy ? t('an.loading') : `🔍 ${t('pa.analyze')}`}
+            {busy ? (
+              t('an.loading')
+            ) : (
+              <>
+                <Icon name="search" size={16} /> {t('pa.analyze')}
+              </>
+            )}
           </button>
         </div>
 
@@ -428,7 +437,7 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
                 {t('an.equity')}: {equityFrom(result).toFixed(3)}
               </div>
               <div className="pa-cube">
-                <div className="pa-cube-head">🎲 {t('cube.title')}</div>
+                <div className="pa-cube-head"><Icon name="dice" size={16} /> {t('cube.title')}</div>
                 <div className="pa-cube-row">
                   <span>{t('cube.doublerAction')}</span>
                   <b className={doublerKey === 'cube.noDouble' ? 'muted' : 'good'}>

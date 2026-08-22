@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { sha256Hex, verifyRoll } from '../engine/fairDice'
 
@@ -12,6 +14,7 @@ interface Props {
 
 export default function FairnessModal({ commitment, clientSeed, serverSeed, rolls, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [vServer, setVServer] = useState(serverSeed ?? '')
   const [vClient, setVClient] = useState(clientSeed)
   const [vNonce, setVNonce] = useState(0)
@@ -29,7 +32,7 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>🎲 {t('fair.title')}</h2>
+        <h2><Icon name="dice" size={20} /> {t('fair.title')}</h2>
         <p className="register-sub">{t('fair.intro')}</p>
 
         <div className="fair-field">
@@ -80,7 +83,15 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
                 {result.dice.length === 4 && ' (çift)'}
               </div>
               <div className={result.match ? 'fair-ok' : 'fair-bad'}>
-                {result.match ? `✓ ${t('fair.hashOk')}` : `✕ ${t('fair.hashBad')}`}
+                {result.match ? (
+                  <>
+                    <Icon name="check" size={16} /> {t('fair.hashOk')}
+                  </>
+                ) : (
+                  <>
+                    <Icon name="x" size={16} /> {t('fair.hashBad')}
+                  </>
+                )}
               </div>
             </div>
           )}

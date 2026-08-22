@@ -1,4 +1,5 @@
 import type { Player } from '../engine/types'
+import { Icon } from './Icon'
 
 interface Props {
   active: Player | null // sirasi gelen oyuncu
@@ -22,7 +23,9 @@ export default function ClockStack({ active, delay, over, final }: Props) {
       <div className={`clock-reserve ${active === 'black' ? 'active' : ''} ${top.cls}`}>
         {top.text}
       </div>
-      <div className="clock-delay">{active ? (delay > 0 ? '⏱' : '⚠') : '–'}</div>
+      <div className="clock-delay">
+        {active ? delay > 0 ? <Icon name="dice" size={13} /> : <Icon name="alert" size={13} /> : '–'}
+      </div>
       <div className={`clock-reserve ${active === 'white' ? 'active' : ''} ${bottom.cls}`}>
         {bottom.text}
       </div>

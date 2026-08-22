@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { myStats, type MyStats } from '../api'
 import { frameStyle } from '../cosmetics'
@@ -12,6 +14,7 @@ interface Props {
 
 export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
 
@@ -37,7 +40,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>📊 {t('stats.title')}</h2>
+        <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && !data && <div className="lb-empty">{t('an.loading')}</div>}
@@ -60,7 +63,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
               </div>
               <div className="stats-rating">
                 {u?.rating ?? 1500}
-                <div className="stats-coins">🪙 {u?.coins ?? 0}</div>
+                <div className="stats-coins"><Icon name="coin" size={14} /> {u?.coins ?? 0}</div>
               </div>
             </div>
 
