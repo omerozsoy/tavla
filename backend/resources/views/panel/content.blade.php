@@ -11,7 +11,7 @@
 
   <div class="card">
     <h2>{{ $editing ? 'Düzenle' : 'Yeni '.$labels[$type] }}</h2>
-    <form method="post" action="/panel/content">
+    <form method="post" action="/panel/content" enctype="multipart/form-data">
       @csrf
       <input type="hidden" name="type" value="{{ $type }}">
       @if($editing)<input type="hidden" name="id" value="{{ $editing->id }}">@endif
@@ -38,6 +38,16 @@
         <div class="field" style="max-width:260px">
           <label>Yayın Tarihi</label>
           <input type="date" name="event_at" value="{{ $editing && $editing->event_at ? $editing->event_at->format('Y-m-d') : '' }}">
+        </div>
+      @endif
+
+      @if(in_array($type,['event','blog','news']))
+        <div class="field">
+          <label>Görsel (isteğe bağlı)</label>
+          @if($editing && $editing->image)
+            <div style="margin-bottom:8px"><img src="{{ $editing->image }}" alt="" style="max-height:90px;border-radius:8px;border:1px solid var(--line)"></div>
+          @endif
+          <input type="file" name="image_file" accept="image/*">
         </div>
       @endif
 
