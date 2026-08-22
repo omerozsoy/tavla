@@ -2683,6 +2683,107 @@ body {
 .admin-badge.ban {
   background: var(--tv-brick);
 }
+.admin-coin-quick {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.coin-chip {
+  padding: 5px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--btn-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.coin-chip:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.admin-matches {
+  width: 100%;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.admin-matches-head {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.admin-empty.small {
+  padding: 8px;
+  font-size: 0.82rem;
+  text-align: left;
+}
+.admin-match {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  padding: 4px 0;
+  font-variant-numeric: tabular-nums;
+}
+.am-res {
+  min-width: 82px;
+  font-weight: 600;
+}
+.admin-match.win .am-res,
+.admin-match.win .am-delta {
+  color: #2e9e5b;
+}
+.admin-match.loss .am-res,
+.admin-match.loss .am-delta {
+  color: var(--tv-brick-light);
+}
+.am-opp {
+  color: var(--muted);
+}
+.am-delta {
+  margin-left: auto;
+}
+.am-date {
+  color: var(--muted);
+  min-width: 74px;
+  text-align: right;
+}
+.tourn-litem-wrap {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.tourn-litem-wrap .tourn-litem {
+  flex: 1;
+}
+.tourn-admin-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.tourn-admin-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.tourn-admin-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.tourn-admin-btn.danger:hover {
+  color: var(--tv-brick-light);
+  border-color: var(--tv-brick);
+}
 .admin-row-main {
   display: flex;
   flex-direction: column;

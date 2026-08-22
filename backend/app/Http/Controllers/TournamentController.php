@@ -194,6 +194,27 @@ class TournamentController extends Controller
         return response()->json(['message' => 'Maç bulunamadı.'], 404);
     }
 
+    // Turnuvayi bitir (yalnizca yonetici)
+    public function finish(Request $request, Tournament $tournament)
+    {
+        if (! $request->user()?->is_admin) {
+            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+        }
+        $tournament->status = 'finished';
+        $tournament->save();
+        return response()->json(['tournament' => $this->full($tournament)]);
+    }
+
+    // Turnuvayi sil (yalnizca yonetici)
+    public function destroy(Request $request, Tournament $tournament)
+    {
+        if (! $request->user()?->is_admin) {
+            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+        }
+        $tournament->delete();
+        return response()->json(['ok' => true]);
+    }
+
     /* ---------- yardimcilar ---------- */
 
     private function addPlayer(Tournament $t, $user): void
