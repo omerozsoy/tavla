@@ -309,6 +309,7 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
+  const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -989,14 +990,15 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
-    // Bahisli Tek Oyun ise coin transferi (kazanan +bahis / kaybeden -bahis)
-    if (stakeRef.current > 0 && room?.code) {
+    // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi
+    if ((stakeRef.current > 0 || betPctRef.current > 0) && room?.code) {
       settleRoom(room.code, won)
         .then((r) => {
           if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
         })
         .catch(() => {})
       stakeRef.current = 0
+      betPctRef.current = 0
     }
     // Turnuva maciysa sonucu otomatik bildir (bracket ilerlesin)
     const tm = tournMatchRef.current
@@ -1386,6 +1388,7 @@ export default function App() {
   // Tek Oyun: bahis + tema sec -> ayni bahisli online eslesmeye gir (tek oyun)
   function startSoloStake(stake: number, theme: string) {
     stakeRef.current = stake
+    betPctRef.current = 0 // Tek Oyun sabit bahis (pct degil)
     minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
     setBoardTheme(theme)
     setSoloOpen(false)
@@ -1407,6 +1410,7 @@ export default function App() {
         stakeRef.current,
         user?.id,
         minRatingRef.current,
+        betPctRef.current,
       )
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
@@ -1446,6 +1450,7 @@ export default function App() {
 
   async function handleCancelMatch() {
     stakeRef.current = 0 // bahis eslesmesi iptal edildi
+    betPctRef.current = 0
     try {
       await cancelMatchmake()
     } catch {
@@ -1613,6 +1618,7 @@ export default function App() {
 
   function handleLeaveRoom() {
     stakeRef.current = 0
+    betPctRef.current = 0
     setRoom(null)
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
@@ -1645,7 +1651,8 @@ export default function App() {
     // Mac Oyunu: her zaman online -> gercek rakiple dogrudan eslesme (Oyunu Baslat)
     if (opts.mode === 'online') {
       onlineTargetRef.current = opts.target
-      stakeRef.current = Math.floor(((user?.coins ?? 0) * (opts.betPct ?? 0)) / 100)
+      stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
+      betPctRef.current = opts.betPct ?? 0
       minRatingRef.current = opts.minRating ?? 0
       setMode('online')
       setHome(false)
