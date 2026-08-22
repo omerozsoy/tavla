@@ -2607,13 +2607,81 @@ body {
 }
 .admin-row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+  flex-direction: column;
+  gap: 10px;
   padding: 10px 12px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 4px;
+}
+.admin-row.banned {
+  border-color: var(--tv-brick);
+  opacity: 0.7;
+}
+.admin-row-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--btn-bg);
+  color: var(--muted);
+  cursor: pointer;
+}
+.admin-edit-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.admin-edit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.admin-edit-coins {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-edit-coins > svg {
+  color: var(--accent);
+}
+.admin-edit-coins input {
+  width: 110px;
+  padding: 6px 8px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.85rem;
+}
+.admin-edit-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.admin-edit .menu-btn {
+  width: auto;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+.admin-danger {
+  border-color: var(--tv-brick);
+  color: var(--tv-brick-light);
+}
+.admin-badge.ban {
+  background: var(--tv-brick);
 }
 .admin-row-main {
   display: flex;

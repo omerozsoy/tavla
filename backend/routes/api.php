@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Yonetim (admin e-postasi gerektirir; kontrol controller'da)
     Route::get('/admin/users', [AdminController::class, 'users']);
+    Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
 
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
