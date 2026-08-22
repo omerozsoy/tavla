@@ -86,15 +86,21 @@ export default function Register({
             className={nickTaken ? 'invalid' : ''}
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
+            autoComplete="username"
           />
-          {nickTaken && <span className="field-error">{t('reg.nickTaken')}</span>}
+          {nickTaken && <span className="field-error" role="alert">{t('reg.nickTaken')}</span>}
         </label>
         <label>
           {t('reg.email')}
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+          />
         </label>
 
-        {error && <div className="register-error">{error}</div>}
+        {error && <div className="register-error" role="alert">{error}</div>}
 
         <div className="register-actions">
           {onCancel && (

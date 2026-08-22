@@ -255,9 +255,9 @@ const TR: Dict = {
   'an.best': 'En iyi',
   'reg.titleNew': 'Üye Kaydı',
   'reg.titleEdit': 'Üye Bilgileri',
-  'brand.name': 'Dünya Tavla Konseyi',
-  'brand.short': 'DTK',
-  'reg.brandTitle': '🌍 {brand} — {title}',
+  'brand.name': 'TavlaTv',
+  'brand.short': 'TV',
+  'reg.brandTitle': '{brand} — {title}',
   'reg.sub': 'Devam etmek için bilgilerini gir.',
   'reg.firstName': 'Ad',
   'reg.lastName': 'Soyad',
@@ -634,9 +634,9 @@ const EN: Dict = {
   'an.best': 'Best',
   'reg.titleNew': 'Sign Up',
   'reg.titleEdit': 'Member Info',
-  'brand.name': 'World Backgammon Council',
-  'brand.short': 'WBC',
-  'reg.brandTitle': '🌍 {brand} — {title}',
+  'brand.name': 'TavlaTv',
+  'brand.short': 'TV',
+  'reg.brandTitle': '{brand} — {title}',
   'reg.sub': 'Enter your details to continue.',
   'reg.firstName': 'First name',
   'reg.lastName': 'Last name',
@@ -775,8 +775,8 @@ const EN: Dict = {
 // (taban olarak {...EN} kullanildigi icin eksik anahtar olmaz).
 const ES: Dict = {
   ...EN,
-  'brand.name': 'Consejo Mundial de Backgammon',
-  'brand.short': 'CMB',
+  'brand.name': 'TavlaTv',
+  'brand.short': 'TV',
   'home.tagline': '¡Juega backgammon online gratis!',
   'home.hello': 'Hola, {name} 👋',
   'menu.leaderboard': 'Clasificación',
@@ -1004,8 +1004,8 @@ const ES: Dict = {
 
 const DE: Dict = {
   ...EN,
-  'brand.name': 'Backgammon-Weltrat',
-  'brand.short': 'BWR',
+  'brand.name': 'TavlaTv',
+  'brand.short': 'TV',
   'home.tagline': 'Spiele kostenlos Backgammon online!',
   'home.hello': 'Hallo, {name} 👋',
   'menu.leaderboard': 'Bestenliste',
@@ -1233,8 +1233,8 @@ const DE: Dict = {
 
 const FR: Dict = {
   ...EN,
-  'brand.name': 'Conseil Mondial du Backgammon',
-  'brand.short': 'CMB',
+  'brand.name': 'TavlaTv',
+  'brand.short': 'TV',
   'home.tagline': 'Jouez au backgammon en ligne gratuitement !',
   'home.hello': 'Bonjour, {name} 👋',
   'menu.leaderboard': 'Classement',

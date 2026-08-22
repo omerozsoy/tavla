@@ -1,3 +1,5 @@
+import { Icon } from './Icon'
+
 interface PlayerInfo {
   name: string
   avatar: string
@@ -24,9 +26,13 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
       </div>
       <div className="player-name">{p.name}</div>
       <div className="player-sub">{p.sub}</div>
-      {p.rating != null && <div className="player-rating">⭐ {p.rating}</div>}
+      {p.rating != null && (
+        <div className="player-rating">
+          <Icon name="star" size={13} /> {p.rating}
+        </div>
+      )}
       <div className="score-badge">
-        ⭐ {p.score} / {p.target}
+        <Icon name="star" size={13} /> {p.score} / {p.target}
       </div>
       <div className="off-box">{p.off}</div>
     </div>

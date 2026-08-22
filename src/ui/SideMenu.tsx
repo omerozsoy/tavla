@@ -1,4 +1,6 @@
 import { useT } from '../i18n'
+import { TavlaTvLogo } from './TavlaTvLogo'
+import { Icon } from './Icon'
 
 export interface SideMenuProps {
   loggedIn: boolean
@@ -42,18 +44,18 @@ export default function SideMenu(p: SideMenuProps) {
         className="brand brand-link"
         onClick={p.onHome}
         title={t('home.title')}
+        aria-label={t('brand.name')}
       >
-        <span className="brand-badge">{t('brand.short')}</span>
-        <span className="brand-full">{t('brand.name')}</span>
+        <TavlaTvLogo size={26} />
       </button>
 
       <div className="menu-group">
         <button className="menu-btn lobby-new" onClick={p.onNewGame}>
-          🎮 {t('setup.newGame')}
+          <Icon name="play" /> {t('setup.newGame')}
         </button>
         {p.hasActiveGame && !p.inGame && (
           <button className="menu-btn menu-active-game" onClick={p.onResume}>
-            🔴 {t('menu.activeGames')}
+            <Icon name="live" /> {t('menu.activeGames')}
           </button>
         )}
       </div>
@@ -70,7 +72,7 @@ export default function SideMenu(p: SideMenuProps) {
           )}
           {p.canResign && p.onResign && (
             <button className="menu-btn resign-btn" onClick={p.onResign}>
-              🏳️ {t('resign.button')}
+              <Icon name="flag" /> {t('resign.button')}
             </button>
           )}
         </div>
@@ -78,40 +80,36 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         <button className="menu-btn" onClick={p.onLeaderboard}>
-          🏆 {t('menu.leaderboard')}
+          <Icon name="trophy" /> {t('menu.leaderboard')}
         </button>
         <button className="menu-btn" onClick={p.onTournaments}>
-          🏅 {t('menu.tournaments')}
+          <Icon name="medal" /> {t('menu.tournaments')}
         </button>
         {p.loggedIn && (
           <button className="menu-btn" onClick={p.onShop}>
-            🛍️ {t('shop.title')}
+            <Icon name="shop" /> {t('shop.title')}
           </button>
         )}
         {p.loggedIn && (
           <button className="menu-btn" onClick={p.onMyStats}>
-            📊 {t('menu.myStats')}
+            <Icon name="chart" /> {t('menu.myStats')}
           </button>
         )}
         {p.loggedIn && (
           <button className="menu-btn" onClick={p.onFriends}>
-            👥 {t('menu.friends')}
+            <Icon name="users" /> {t('menu.friends')}
           </button>
         )}
         <button className="menu-btn" onClick={p.onAnalyzer}>
-          🔬 {t('pa.title')}
+          <Icon name="analyze" /> {t('pa.title')}
         </button>
         <button className="menu-btn" onClick={p.onFairness}>
-          🎲 {t('fair.title')}
+          <Icon name="dice" /> {t('fair.title')}
         </button>
         <button className="menu-btn" onClick={p.onBoardSettings}>
-          ⚙️ {t('menu.settings')}
+          <Icon name="settings" /> {t('menu.settings')}
         </button>
-        {p.canInstall && (
-          <button className="menu-btn menu-install" onClick={p.onInstall}>
-            📲 {t('menu.install')}
-          </button>
-        )}
+        {/* "Uygulamayi Yukle" dugmesi simdilik gizli (altyapi p.canInstall/onInstall duruyor) */}
       </div>
     </aside>
   )

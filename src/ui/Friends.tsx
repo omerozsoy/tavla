@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import {
   getFriends,
@@ -16,6 +18,7 @@ interface Props {
 
 export default function Friends({ onInvite, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [friends, setFriends] = useState<Friend[]>([])
   const [incoming, setIncoming] = useState<Friend[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,7 +84,7 @@ export default function Friends({ onInvite, onClose }: Props) {
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>👥 {t('friends.title')}</h2>
+        <h2><Icon name="users" size={20} /> {t('friends.title')}</h2>
 
         <div className="friends-add">
           <input
@@ -108,11 +111,11 @@ export default function Friends({ onInvite, onClose }: Props) {
                     {avatar(f)}
                     <span className="friend-name">{f.name}</span>
                     <span className="friend-rating">{f.rating}</span>
-                    <button className="friend-btn ok" onClick={() => doAccept(f.id)}>
-                      ✓
+                    <button className="friend-btn ok" onClick={() => doAccept(f.id)} aria-label="Kabul">
+                      <Icon name="check" size={16} />
                     </button>
-                    <button className="friend-btn no" onClick={() => doRemove(f.id)}>
-                      ✕
+                    <button className="friend-btn no" onClick={() => doRemove(f.id)} aria-label="Sil">
+                      <Icon name="x" size={16} />
                     </button>
                   </div>
                 ))}
@@ -136,7 +139,7 @@ export default function Friends({ onInvite, onClose }: Props) {
                         title={t('friends.invite')}
                         onClick={() => onInvite(f.id)}
                       >
-                        🎮
+                        <Icon name="play" size={16} />
                       </button>
                     )}
                     <button
@@ -144,7 +147,7 @@ export default function Friends({ onInvite, onClose }: Props) {
                       title={t('friends.remove')}
                       onClick={() => doRemove(f.id)}
                     >
-                      🗑
+                      <Icon name="trash" size={16} />
                     </button>
                   </div>
                 ))

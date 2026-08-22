@@ -1,4 +1,6 @@
 import { useT } from '../i18n'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 
 interface BoardThemeOpt {
   id: string
@@ -37,13 +39,14 @@ export default function BoardSettings({
   onClose,
 }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   return (
     <div className="register-overlay modal" onClick={onClose}>
       <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>⚙️ {t('menu.settings')}</h2>
+        <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>
 
         {/* Tema (koyu/acik) */}
         <div className="setup-row">
@@ -53,13 +56,13 @@ export default function BoardSettings({
               className={theme === 'dark' ? 'menu-btn active' : 'menu-btn'}
               onClick={() => setTheme('dark')}
             >
-              🌙 {t('theme.dark')}
+<Icon name="moon" size={16} /> {t('theme.dark')}
             </button>
             <button
               className={theme === 'light' ? 'menu-btn active' : 'menu-btn'}
               onClick={() => setTheme('light')}
             >
-              ☀️ {t('theme.light')}
+<Icon name="sun" size={16} /> {t('theme.light')}
             </button>
           </div>
         </div>
@@ -100,7 +103,7 @@ export default function BoardSettings({
           className={`setup-toggle ${learnMode ? 'on' : ''}`}
           onClick={() => setLearnMode(!learnMode)}
         >
-          <span>🎓 {t('hint.learnMode')}</span>
+          <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
           <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
         </button>
         <p className="setup-note">{t('hint.learnNote')}</p>

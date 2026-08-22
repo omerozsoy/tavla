@@ -61,6 +61,8 @@ import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
+import { TavlaTvLogo } from './ui/TavlaTvLogo'
+import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import ProfileStats from './ui/ProfileStats'
@@ -151,6 +153,8 @@ interface BoardTheme {
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
 }
 const BOARD_THEMES: BoardTheme[] = [
+  // TavlaTv marka tahtasi: krem zemin + kiremit/terracotta uicgen + ink pul (site paletiyle ayni)
+  { id: 'tavla', name: 'TavlaTv', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b', checker: '#1c1a17' },
   { id: 'walnut', name: 'Ceviz', panel: '#7a5230', a: '#caa06a', b: '#5c3a20', checker: '#242424' },
   { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#3a3ad8' },
   { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#188a4a' },
@@ -240,16 +244,17 @@ export default function App() {
   const profile: Profile = user ? toProfile(user) : (guestProfile ?? guestDefault)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
-      return localStorage.getItem('tavla.theme') === 'light' ? 'light' : 'dark'
+      // TavlaTv marka birincil kimligi krem/acik tema -> varsayilan 'light'
+      return localStorage.getItem('tavla.theme') === 'dark' ? 'dark' : 'light'
     } catch {
-      return 'dark'
+      return 'light'
     }
   })
   const [boardTheme, setBoardTheme] = useState<string>(() => {
     try {
-      return localStorage.getItem('tavla.board') || 'walnut'
+      return localStorage.getItem('tavla.board') || 'tavla'
     } catch {
-      return 'blue'
+      return 'tavla'
     }
   })
   const [mode, setMode] = useState<Mode>(saved?.mode ?? 'pvb')
@@ -1798,7 +1803,7 @@ export default function App() {
             className="menu-btn"
             onClick={() => (online ? handleLeaveRoom() : setHome(true))}
           >
-            🏠 {t('home.title')}
+            <Icon name="home" /> {t('home.title')}
           </button>
         </div>
       </div>
@@ -2016,7 +2021,7 @@ export default function App() {
     <div className="account-bar">
       {inActiveGame && (
         <button className="account-btn leave" onClick={() => setResignOpen(true)}>
-          🏳️ {t('resign.button')}
+          <Icon name="flag" /> {t('resign.button')}
         </button>
       )}
       <span className="account-name">
@@ -2028,10 +2033,14 @@ export default function App() {
             <img className="account-avatar" src={profile.avatar} alt="" />
           </span>
         ) : (
-          '👤 '
+          <Icon name="user" size={16} />
         )}
         {profile.nickname}
-        {user?.rating != null && <span className="account-rating">⭐ {user.rating}</span>}
+        {user?.rating != null && (
+          <span className="account-rating">
+            <Icon name="star" size={14} /> {user.rating}
+          </span>
+        )}
       </span>
       {user && (
         <button
@@ -2039,8 +2048,12 @@ export default function App() {
           onClick={handleCoinClick}
           title={rewardReady ? t('reward.claim') : t('reward.next')}
         >
-          🪙 {user.coins ?? 0}
-          {rewardReady && <span className="coin-gift">🎁</span>}
+          <Icon name="coin" size={16} /> {user.coins ?? 0}
+          {rewardReady && (
+            <span className="coin-gift">
+              <Icon name="gift" size={14} />
+            </span>
+          )}
         </button>
       )}
       {user ? (
@@ -2075,7 +2088,7 @@ export default function App() {
         title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
         onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
       >
-        {theme === 'dark' ? '☀️' : '🌙'}
+        {theme === 'dark' ? <Icon name="sun" size={18} /> : <Icon name="moon" size={18} />}
       </button>
       <button
         className="account-btn icon"
@@ -2087,14 +2100,14 @@ export default function App() {
           if (!nv) Sound.move()
         }}
       >
-        {muted ? '🔇' : '🔊'}
+        {muted ? <Icon name="mute" size={18} /> : <Icon name="volume" size={18} />}
       </button>
       <button
         className="account-btn icon"
         title={isFull ? t('menu.exitFull') : t('menu.fullscreen')}
         onClick={toggleFullscreen}
       >
-        {isFull ? '🗗' : '⛶'}
+        {isFull ? <Icon name="minimize" size={18} /> : <Icon name="maximize" size={18} />}
       </button>
     </div>
   )
@@ -2107,7 +2120,7 @@ export default function App() {
         onClick={() => setMenuOpen((v) => !v)}
         aria-label="Menü"
       >
-        ☰
+        <Icon name="menu" size={24} />
       </button>
       {menuOpen && <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />}
     </>
@@ -2143,7 +2156,7 @@ export default function App() {
       {invites.map((inv) => (
         <div key={inv.id} className="invite-card">
           <span className="invite-text">
-            🎮 <b>{inv.from}</b> {t('friends.invitedYou')}
+            <Icon name="play" size={16} /> <b>{inv.from}</b> {t('friends.invitedYou')}
           </span>
           <button className="invite-acc" onClick={() => handleAcceptInvite(inv)}>
             {t('friends.accept')}
@@ -2157,7 +2170,8 @@ export default function App() {
         tournNotices.map((tn) => (
           <div key={`${tn.tid}-${tn.match}`} className="invite-card tourn-notice">
             <span className="invite-text">
-              🏅 <b>{tn.tname}</b>: {t('tourn.yourMatch', { name: tn.oppName })}
+              <Icon name="medal" size={16} /> <b>{tn.tname}</b>:{' '}
+              {t('tourn.yourMatch', { name: tn.oppName })}
             </span>
             <button
               className="invite-acc"
@@ -2289,7 +2303,7 @@ export default function App() {
           />
           <main className="main lobby-main">
             <div className="lobby-welcome">
-              <h1 className="lobby-title">{t('brand.name')}</h1>
+              <h1 className="lobby-title"><TavlaTvLogo size={60} /></h1>
               <p className="lobby-tagline">{t('home.tagline')}</p>
               {profile.nickname && (
                 <p className="lobby-hello">{t('home.hello', { name: profile.nickname })}</p>
@@ -2299,14 +2313,14 @@ export default function App() {
                   className="galaxy-btn roll lobby-resume"
                   onClick={() => setHome(false)}
                 >
-                  🔴 {t('menu.resumeGame')}
+                  <Icon name="live" /> {t('menu.resumeGame')}
                 </button>
               )}
               <button className="galaxy-btn roll lobby-start" onClick={menuProps.onNewGame}>
-                🎮 {t('setup.newGame')}
+                <Icon name="play" /> {t('setup.newGame')}
               </button>
               <button className="menu-btn lobby-analyzer" onClick={() => setAnalyzerOpen(true)}>
-                🔬 {t('pa.title')}
+                <Icon name="analyze" /> {t('pa.title')}
               </button>
             </div>
           </main>
@@ -2366,7 +2380,10 @@ export default function App() {
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
           <div className="hint-head">
-            {learnMode ? `🎓 ${t('hint.learnTitle')}` : `💡 ${t('hint.title')}`}
+            <span className="hint-title">
+              {learnMode ? <Icon name="graduation" size={16} /> : <Icon name="bulb" size={16} />}{' '}
+              {learnMode ? t('hint.learnTitle') : t('hint.title')}
+            </span>
             {!learnMode && (
               <button className="hint-close" onClick={() => setHintShown(false)} aria-label="Kapat">
                 ✕
@@ -2383,7 +2400,7 @@ export default function App() {
       )}
       {showHintUI && !learnMode && !hintShown && (
         <button className="hint-fab" onClick={() => setHintShown(true)}>
-          💡 {t('hint.button')}
+          <Icon name="bulb" size={16} /> {t('hint.button')}
         </button>
       )}
       <button
@@ -2392,7 +2409,7 @@ export default function App() {
         aria-label={t('gm.title')}
         title={t('gm.title')}
       >
-        ☰
+        <Icon name="menu" size={24} />
       </button>
       <GameMenu
         open={gameMenuOpen}
@@ -2521,7 +2538,7 @@ export default function App() {
       {resignOpen && (
         <div className="register-overlay modal" onClick={() => setResignOpen(false)}>
           <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
-            <h2>🏳️ {t('resign.title')}</h2>
+            <h2><Icon name="flag" size={20} /> {t('resign.title')}</h2>
             {(() => {
               const loser: Player = online ? myColor : 'white'
               const mult = resignMultiplier(working, loser)
@@ -2535,7 +2552,7 @@ export default function App() {
                     {t(typeKey)} — <b>{t('resign.losePts', { n: pts })}</b>
                   </div>
                   <button className="galaxy-btn double" onClick={handleResign}>
-                    🏳️ {t('resign.confirm')}
+                    <Icon name="flag" /> {t('resign.confirm')}
                   </button>
                 </>
               )
@@ -2551,7 +2568,7 @@ export default function App() {
                 }
               }}
             >
-              🏠 {t('resign.toHome')}
+              <Icon name="home" /> {t('resign.toHome')}
             </button>
             <button className="menu-btn" onClick={() => setResignOpen(false)}>
               {t('reg.cancel')}

@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
 import { COUNTRIES } from '../countries'
 import { useT } from '../i18n'
@@ -55,6 +57,7 @@ export default function Auth({
   modal,
 }: Props) {
   const { t } = useT()
+  useEscape(onCancel)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
   const seed = editUser
@@ -245,7 +248,7 @@ export default function Auth({
     }
   }
 
-  const title = `🌍 ${t('brand.short')} — ${
+  const title = `${t('brand.name')} — ${
     editing ? t('reg.titleEdit') : tab === 'login' ? t('auth.login') : t('auth.register')
   }`
 
@@ -255,7 +258,7 @@ export default function Auth({
       {editing && (
         <div className="avatar-picker">
           <div className="avatar-preview">
-            {avatar ? <img src={avatar} alt="" /> : <span>📷</span>}
+            {avatar ? <img src={avatar} alt="" /> : <span><Icon name="camera" size={28} /></span>}
           </div>
           <div className="avatar-actions">
             <label className="menu-btn avatar-btn">
@@ -308,8 +311,9 @@ export default function Auth({
           className={nickTaken ? 'invalid' : ''}
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
+          autoComplete="username"
         />
-        {nickTaken && <span className="field-error">{t('reg.nickTaken')}</span>}
+        {nickTaken && <span className="field-error" role="alert">{t('reg.nickTaken')}</span>}
       </label>
       {editing && (
         <label>
@@ -319,7 +323,12 @@ export default function Auth({
       )}
       <label>
         {t('reg.email')}
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+        />
       </label>
     </>
   )
@@ -368,6 +377,7 @@ export default function Auth({
                     type="email"
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
+                    autoComplete="email"
                     autoFocus
                   />
                 </label>
@@ -425,7 +435,12 @@ export default function Auth({
             <>
               <label>
                 {t('auth.loginId')}
-                <input value={loginId} onChange={(e) => setLoginId(e.target.value)} autoFocus />
+                <input
+                  value={loginId}
+                  onChange={(e) => setLoginId(e.target.value)}
+                  autoComplete="username"
+                  autoFocus
+                />
               </label>
               <label>
                 {t('reg.password')}
@@ -433,6 +448,7 @@ export default function Auth({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                 />
               </label>
               <button
@@ -456,13 +472,14 @@ export default function Auth({
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
                   />
                 </label>
               )}
             </>
           ))}
 
-        {!forgot && error && <div className="register-error">{error}</div>}
+        {!forgot && error && <div className="register-error" role="alert">{error}</div>}
 
         {!forgot && (
           <div className="register-actions">
