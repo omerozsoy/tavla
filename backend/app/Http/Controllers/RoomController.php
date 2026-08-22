@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class RoomController extends Controller
@@ -72,16 +73,35 @@ class RoomController extends Controller
             'name' => ['required', 'string', 'max:40'],
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
+            'stake' => ['nullable', 'integer', 'min:0', 'max:1000000000'],
+            'user_id' => ['nullable', 'integer'],
         ]);
+        $stake = (int) ($data['stake'] ?? 0);
+        $userId = $data['user_id'] ?? null;
 
-        // Zaten havuzda bekleyen kendi odam varsa onu don (cift istek korumasi)
-        $mine = Room::where('status', 'mm_waiting')->where('p1_token', $data['token'])->first();
+        // Bahisli oyun: giris + yeterli coin sart
+        if ($stake > 0) {
+            if (! $userId) {
+                return response()->json(['message' => 'Bahisli oyun için giriş yapmalısın.'], 422);
+            }
+            $u = User::find($userId);
+            if (! $u || ($u->coins ?? 0) < $stake) {
+                return response()->json(['message' => 'Yetersiz coin.'], 422);
+            }
+        }
+
+        // Zaten havuzda bekleyen kendi odam (ayni bahis) varsa onu don
+        $mine = Room::where('status', 'mm_waiting')
+            ->where('p1_token', $data['token'])
+            ->where('stake', $stake)
+            ->first();
         if ($mine) {
             return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
         }
 
-        // Bekleyen baska bir oyuncu bul (en eski). Kilit yaris kosulunu azaltir.
+        // Ayni bahisli bekleyen rakip bul (en eski)
         $opponent = Room::where('status', 'mm_waiting')
+            ->where('stake', $stake)
             ->where('p1_token', '!=', $data['token'])
             ->whereNull('p2_token')
             ->orderBy('created_at')
@@ -90,6 +110,7 @@ class RoomController extends Controller
 
         if ($opponent) {
             $opponent->p2_token = $data['token'];
+            $opponent->p2_user_id = $userId;
             $opponent->p2_name = $data['name'];
             $opponent->p2_rating = $data['rating'] ?? null;
             $opponent->p2_avatar = $data['avatar'] ?? null;
@@ -102,14 +123,69 @@ class RoomController extends Controller
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
+            'p1_user_id' => $userId,
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'mm_waiting',
+            'stake' => $stake,
             'version' => 0,
         ]);
 
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1', 'matched' => false]);
+    }
+
+    // Bahisli online mac sonucu: coin transferi (oda basina bir kez, atomik)
+    public function settle(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'won' => ['required', 'boolean'],
+        ]);
+        $room = Room::where('code', $code)->first();
+        if (! $room) {
+            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+        }
+        $stake = (int) $room->stake;
+        if ($stake <= 0 || ! $room->p1_user_id || ! $room->p2_user_id) {
+            return response()->json(['ok' => false]);
+        }
+        $callerIsP1 = $room->p1_token === $data['token'];
+        $callerIsP2 = $room->p2_token === $data['token'];
+        if (! $callerIsP1 && ! $callerIsP2) {
+            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+        }
+
+        // Atomik "settled" iddiasi -> yalnizca ilk cagri coin tasir
+        $claimed = Room::where('code', $code)->where('settled', false)->update(['settled' => true]);
+        $callerId = $callerIsP1 ? $room->p1_user_id : $room->p2_user_id;
+        if (! $claimed) {
+            $caller = User::find($callerId);
+            return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
+        }
+
+        $oppId = $callerIsP1 ? $room->p2_user_id : $room->p1_user_id;
+        $winnerId = $data['won'] ? $callerId : $oppId;
+        $loserId = $data['won'] ? $oppId : $callerId;
+
+        $winner = User::find($winnerId);
+        if ($winner) {
+            $winner->coins = ($winner->coins ?? 0) + $stake;
+            $winner->save();
+        }
+        $loser = User::find($loserId);
+        if ($loser) {
+            $loser->coins = max(0, ($loser->coins ?? 0) - $stake);
+            $loser->save();
+        }
+
+        $caller = User::find($callerId);
+        return response()->json([
+            'ok' => true,
+            'coins' => $caller?->coins ?? 0,
+            'stake' => $stake,
+            'won' => (bool) $data['won'],
+        ]);
     }
 
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)

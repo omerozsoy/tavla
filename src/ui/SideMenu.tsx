@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useT } from '../i18n'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { Icon } from './Icon'
@@ -10,6 +11,7 @@ export interface SideMenuProps {
   showAnalysis?: boolean
   canResign?: boolean
   onNewGame: () => void
+  onSolo?: () => void
   onResume: () => void
   onLeaderboard: () => void
   onTournaments: () => void
@@ -33,6 +35,7 @@ export interface SideMenuProps {
 // Ana sayfa ve oyun ekraninda ortak tek menu.
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
+  const [moreOpen, setMoreOpen] = useState(false)
   return (
     <aside
       className={`side-menu ${p.mobileOpen ? 'open' : ''}`}
@@ -52,9 +55,16 @@ export default function SideMenu(p: SideMenuProps) {
       </button>
 
       <div className="menu-group">
-        <button className="menu-btn lobby-new" onClick={p.onNewGame}>
-          <Icon name="play" /> {t('setup.newGame')}
-        </button>
+        {!p.inGame && p.onSolo && (
+          <button className="menu-btn lobby-new" onClick={p.onSolo}>
+            <Icon name="play" /> {t('menu.solo')}
+          </button>
+        )}
+        {!p.inGame && (
+          <button className="menu-btn menu-match" onClick={p.onNewGame}>
+            <Icon name="target" /> {t('menu.match')}
+          </button>
+        )}
         {p.hasActiveGame && !p.inGame && (
           <button className="menu-btn menu-active-game" onClick={p.onResume}>
             <Icon name="live" /> {t('menu.activeGames')}
@@ -88,34 +98,56 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
+      {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
-        <button className="menu-btn" onClick={p.onLeaderboard}>
-          <Icon name="trophy" /> {t('menu.leaderboard')}
-        </button>
         <button className="menu-btn" onClick={p.onTournaments}>
           <Icon name="medal" /> {t('menu.tournaments')}
         </button>
-        {p.loggedIn && (
-          <button className="menu-btn" onClick={p.onShop}>
-            <Icon name="shop" /> {t('shop.title')}
-          </button>
-        )}
-        {p.loggedIn && (
-          <button className="menu-btn" onClick={p.onMyStats}>
-            <Icon name="chart" /> {t('menu.myStats')}
-          </button>
-        )}
+        <button className="menu-btn" onClick={p.onLeaderboard}>
+          <Icon name="trophy" /> {t('menu.leaderboard')}
+        </button>
         {p.loggedIn && (
           <button className="menu-btn" onClick={p.onFriends}>
             <Icon name="users" /> {t('menu.friends')}
           </button>
         )}
-        <button className="menu-btn" onClick={p.onAnalyzer}>
-          <Icon name="analyze" /> {t('pa.title')}
+      </div>
+
+      {/* Hesap */}
+      {p.loggedIn && (
+        <div className="menu-group">
+          <button className="menu-btn" onClick={p.onShop}>
+            <Icon name="shop" /> {t('shop.title')}
+          </button>
+          <button className="menu-btn" onClick={p.onMyStats}>
+            <Icon name="chart" /> {t('menu.myStats')}
+          </button>
+        </div>
+      )}
+
+      {/* Ikincil araclar -> "Daha fazla" altinda */}
+      <div className="menu-group">
+        <button
+          className="menu-btn menu-more"
+          onClick={() => setMoreOpen((v) => !v)}
+          aria-expanded={moreOpen}
+        >
+          <Icon name="chevron" className={moreOpen ? 'chev-open' : ''} /> {t('menu.more')}
         </button>
-        <button className="menu-btn" onClick={p.onFairness}>
-          <Icon name="dice" /> {t('fair.title')}
-        </button>
+        {moreOpen && (
+          <>
+            <button className="menu-btn" onClick={p.onAnalyzer}>
+              <Icon name="analyze" /> {t('pa.title')}
+            </button>
+            <button className="menu-btn" onClick={p.onFairness}>
+              <Icon name="dice" /> {t('fair.title')}
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Ayarlar en altta sabit */}
+      <div className="menu-group menu-bottom">
         <button className="menu-btn" onClick={p.onBoardSettings}>
           <Icon name="settings" /> {t('menu.settings')}
         </button>
