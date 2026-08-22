@@ -1,21 +1,37 @@
 :root {
-  --bg: #0a0d2e; /* dis koyu lacivert */
-  --area: #0a0d2e;
-  --panel: #3f5fd4; /* board yari zemini - orta mavi */
-  --tri-a: #6f92f5; /* acik ucgen */
-  --tri-b: #3856c4; /* koyu ucgen */
-  --bar: #0a0d2e; /* orta bar / cerceve - koyu */
-  --navy: #3a34cf; /* koyu tas - indigo */
-  --cream: #edf0fc; /* acik tas */
-  --accent: #3f5fd4;
-  --text: #dfe4ff;
-  --muted: #8b96c8;
+  /* ---- TavlaTv marka token'lari (logo yonu 4a: krem/kiremit/ink) ---- */
+  --tv-cream: #f4efe6; /* ana krem zemin */
+  --tv-cream-deep: #efeae1; /* ikincil zemin */
+  --tv-white: #ffffff; /* kart */
+  --tv-line: #ded7ca; /* kenarlik */
+  --tv-ink: #1c1a17; /* metin + koyu hane + koyu zemin */
+  --tv-ink-muted: #5e574c; /* ikincil metin (acik zemin) */
+  --tv-ink-faint: #8a8377; /* etiket / ucuncul */
+  --tv-brick: #a83a2b; /* aksan - acik zeminde */
+  --tv-brick-light: #c9563f; /* aksan - koyu zeminde */
+  --tv-on-dark: #c6bfb2; /* ikincil metin (koyu zemin) */
+  --tv-font-ui: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
+  --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ---- Koyu tema (TavlaTv 'dark' varyanti) ---- */
+  color-scheme: dark;
+  --bg: #1c1a17; /* ink dis zemin */
+  --area: #1c1a17;
+  --panel: #2a2620; /* board yari zemini - sicak koyu */
+  --tri-a: #c9563f; /* acik ucgen - kiremit */
+  --tri-b: #33302b; /* koyu ucgen */
+  --bar: #12100e; /* orta bar / cerceve - en koyu */
+  --navy: #100e0c; /* koyu tas */
+  --cream: #f4efe6; /* acik tas - krem */
+  --accent: #c9563f; /* kiremit aksan (koyu zeminde) */
+  --text: #f4efe6; /* krem metin */
+  --muted: #c6bfb2;
   /* Kurumsal kroma (tema ile degisir) */
-  --card-bg: #0e1436;
-  --btn-bg: #1a2350;
-  --btn-border: #2b3a7a;
-  --border: #24306a;
-  --input-bg: #141c44;
+  --card-bg: #24211d;
+  --btn-bg: #2a2622;
+  --btn-border: #3a342d;
+  --border: #33302b;
+  --input-bg: #24211d;
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
@@ -30,21 +46,49 @@
   --tri-h: calc(var(--board-h) * 0.44);
 }
 
-/* Acik tema (sadece kroma renkleri degisir; board olculeri :root'ta) */
+/* Acik tema (TavlaTv 'light/cream' varyanti - marka birincil kimligi) */
 :root[data-theme='light'] {
-  --bg: #e9edf6;
+  color-scheme: light;
+  --bg: #efeae1; /* krem-deep sayfa zemini */
   --area: #ffffff;
-  --text: #1a2340;
-  --muted: #5a6690;
+  --panel: #efeae1; /* board yari zemini - krem */
+  --tri-a: #c9563f; /* acik ucgen - kiremit */
+  --tri-b: #ded7ca; /* koyu ucgen - sicak ten */
+  --bar: #ded7ca; /* orta bar / cerceve */
+  --navy: #1c1a17; /* koyu tas - ink */
+  --cream: #f4efe6; /* acik tas - krem */
+  --accent: #a83a2b; /* kiremit aksan (acik zeminde) */
+  --text: #1c1a17;
+  --muted: #5e574c;
   --card-bg: #ffffff;
-  --btn-bg: #eef1fb;
-  --btn-border: #c4cceb;
-  --border: #d6dcef;
-  --input-bg: #f4f6fc;
+  --btn-bg: #f4efe6;
+  --btn-border: #ded7ca;
+  --border: #ded7ca;
+  --input-bg: #f7f4ee;
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* Klavye odak halkasi (WCAG focus-states + TavlaTv handoff: 2px kiremit, 2px offset).
+   :focus-visible -> yalnizca klavye/AT ile gezerken gorunur, fare tiklamasinda cikmaz. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Mobil tap gecikmesini (300ms) kaldir (ux: Tap Delay) */
+button,
+a,
+select,
+[role='button'] {
+  touch-action: manipulation;
 }
 
 body {
@@ -58,7 +102,9 @@ body {
 .app {
   display: flex;
   gap: 12px;
-  padding: 8px 10px;
+  /* Sabit ust/alt/yan cubuklar ve centik icin safe-area (viewport-fit=cover ile) */
+  padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   height: 100vh;
   overflow: hidden;
 }
@@ -139,6 +185,9 @@ body {
 }
 .menu-btn {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   text-align: left;
   padding: 9px 12px;
   border-radius: 8px;
@@ -147,6 +196,9 @@ body {
   border: 1px solid var(--btn-border);
   font-size: 0.9rem;
   cursor: pointer;
+}
+.menu-btn > svg {
+  color: var(--accent);
 }
 .menu-btn:hover {
   border-color: var(--accent);
@@ -543,9 +595,16 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .checker,
-  .die-face {
-    animation: none;
+  /* WCAG/HIG: kullanicinin hareket tercihine saygi. Tum animasyon ve gecisleri
+     etkisizlestir; sonsuz dekoratif animasyonlar (spinner, wiggle, pulse) durur,
+     durum gecisleri aninda tamamlanir (transitionend yine tetiklenir). */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -1097,6 +1156,9 @@ body {
   right: 12px;
   width: 30px;
   height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   border-radius: 50%;
   background: var(--bg);
@@ -1104,6 +1166,16 @@ body {
   cursor: pointer;
   font-size: 0.9rem;
   line-height: 1;
+}
+/* Gorsel 30px kalir; dokunma hedefi 44px'e genisler (ux: Touch Target, kose butonu -> komsu cakismasi yok) */
+.modal-close::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
 }
 .modal-close:hover {
   background: var(--border);
@@ -1275,13 +1347,17 @@ body {
   top: 8px;
   left: 8px;
   z-index: 110;
-  width: 42px;
-  height: 42px;
+  top: calc(8px + env(safe-area-inset-top));
+  left: calc(8px + env(safe-area-inset-left));
+  width: 44px;
+  height: 44px;
+  display: none;
+  align-items: center;
+  justify-content: center;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--card-bg);
   color: var(--text);
-  font-size: 1.3rem;
   cursor: pointer;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
 }
@@ -1295,17 +1371,19 @@ body {
 /* ---- Oyun-ici menu (Galaxy tarzi, sagda) ---- */
 .game-ham {
   position: fixed;
-  right: 12px;
+  right: calc(12px + env(safe-area-inset-right));
   top: 50%;
   transform: translateY(-50%);
   z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 46px;
   height: 60px;
   border: none;
   border-radius: 12px;
-  background: linear-gradient(135deg, #5b8def, #3a5fd0);
-  color: #fff;
-  font-size: 1.4rem;
+  background: linear-gradient(135deg, var(--tv-brick-light), var(--tv-brick));
+  color: var(--tv-cream);
   cursor: pointer;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
@@ -1604,8 +1682,8 @@ body {
 /* ---- Sag ust hesap bari ---- */
 .account-bar {
   position: fixed;
-  top: 10px;
-  right: 14px;
+  top: calc(10px + env(safe-area-inset-top));
+  right: calc(14px + env(safe-area-inset-right));
   display: flex;
   align-items: center;
   flex-wrap: wrap;

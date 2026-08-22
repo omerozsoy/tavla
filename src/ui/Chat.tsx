@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Icon } from './Icon'
 import { useT } from '../i18n'
 import type { ChatMsg, Slot } from '../api'
 
@@ -40,7 +41,7 @@ export default function Chat({ messages, mySlot, onSend }: Props) {
   return (
     <div className={`chat-panel ${open ? 'open' : 'closed'}`}>
       <button className="chat-head" onClick={() => setOpen((v) => !v)}>
-        <span>💬 {t('chat.title')}</span>
+        <span><Icon name="chat" size={16} /> {t('chat.title')}</span>
         <span className="chat-toggle">{open ? '▾' : '▴'}</span>
       </button>
 

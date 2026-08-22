@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import {
   listTournaments,
   showTournament,
@@ -19,6 +21,7 @@ interface Props {
 
 export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [list, setList] = useState<Tournament[]>([])
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
@@ -101,18 +104,25 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
           <button className="tourn-back" onClick={() => setActive(null)}>
             ← {t('tourn.back')}
           </button>
-          <h2>🏆 {active.name}</h2>
+          <h2><Icon name="trophy" size={20} /> {active.name}</h2>
           <div className="tourn-meta">
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
             {active.count}/{active.size}
           </div>
           {(!!active.prize_coins || active.prize_desc || !!active.entry_fee) && (
             <div className="tourn-prize">
-              🏅 {t('tourn.prizeLabel')}:{' '}
-              {!!active.prize_coins && <b>🪙 {active.prize_coins} coin</b>}
+              <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}:{' '}
+              {!!active.prize_coins && (
+                <b>
+                  <Icon name="coin" size={14} /> {active.prize_coins} coin
+                </b>
+              )}
               {active.prize_desc && <span> {active.prize_desc}</span>}
               {!!active.entry_fee && (
-                <span className="tourn-fee"> · 🎟️ {t('tourn.entryFee')}: {active.entry_fee}</span>
+                <span className="tourn-fee">
+                  {' '}
+                  · <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
+                </span>
               )}
             </div>
           )}
@@ -123,7 +133,11 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
             </button>
           )}
 
-          {champ && <div className="tourn-champ">👑 {t('tourn.champion')}: {champ.name}</div>}
+          {champ && (
+            <div className="tourn-champ">
+              <Icon name="crown" size={16} /> {t('tourn.champion')}: {champ.name}
+            </div>
+          )}
 
           {active.status === 'open' ? (
             <div className="tourn-players">
@@ -160,7 +174,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                                 onPlayMatch(active.id, m, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
                               }
                             >
-                              🎮 {t('tourn.play')}
+                              <Icon name="play" size={16} /> {t('tourn.play')}
                             </button>
                             <div className="tm-actions">
                               <button disabled={busy} onClick={() => report(m.key, myId!)}>
@@ -196,7 +210,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
         </button>
-        <h2>🏆 {t('tourn.title')}</h2>
+        <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
         {isAdmin ? (
           <div className="tourn-create">
@@ -212,7 +226,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 <option value={16}>16</option>
               </select>
               <label className="tourn-prize-in" title={t('tourn.prize')}>
-                🏆
+                <Icon name="trophy" size={16} />
                 <input
                   type="number"
                   min={0}
@@ -222,7 +236,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 />
               </label>
               <label className="tourn-prize-in" title={t('tourn.entryFee')}>
-                🎟️
+                <Icon name="ticket" size={16} />
                 <input
                   type="number"
                   min={0}
@@ -250,7 +264,11 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
               <button key={tr.id} className="tourn-litem" onClick={() => open(tr.id)}>
                 <span className="tourn-lname">
                   {tr.name}
-                  {!!tr.prize_coins && <span className="tourn-prize-badge">🪙 {tr.prize_coins}</span>}
+                  {!!tr.prize_coins && (
+                    <span className="tourn-prize-badge">
+                      <Icon name="coin" size={13} /> {tr.prize_coins}
+                    </span>
+                  )}
                 </span>
                 <span className="tourn-lmeta">
                   {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}

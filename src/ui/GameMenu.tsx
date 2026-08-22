@@ -1,4 +1,5 @@
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 interface Row {
   label: string
@@ -59,7 +60,7 @@ export default function GameMenu(p: Props) {
               p.onLobby()
             }}
           >
-            <span className="gm-circle-ic">🏠</span>
+            <span className="gm-circle-ic"><Icon name="home" size={22} /></span>
             <span className="gm-circle-lbl">{t('gm.lobby')}</span>
           </button>
           {p.canResign && (
@@ -70,7 +71,7 @@ export default function GameMenu(p: Props) {
                 p.onResign()
               }}
             >
-              <span className="gm-circle-ic">🏳️</span>
+              <span className="gm-circle-ic"><Icon name="flag" size={22} /></span>
               <span className="gm-circle-lbl">{t('resign.button')}</span>
             </button>
           )}
