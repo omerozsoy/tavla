@@ -39,7 +39,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
   const fmt = (n: number) => n.toLocaleString('tr-TR')
 
   return (
-    <div className="register-overlay modal" onClick={onClose}>
+    <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card solo-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
