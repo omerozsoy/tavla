@@ -376,6 +376,49 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   const d = await req<{ matches: AdminMatch[] }>(`/admin/users/${id}/matches`)
   return d.matches
 }
+// ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----
+export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club'
+export interface Content {
+  id: number
+  type: ContentType
+  title: string
+  body?: string | null
+  organizer?: string | null
+  place?: string | null
+  province?: string | null
+  contact?: string | null
+  image?: string | null
+  event_at?: string | null
+  sort: number
+  published: boolean
+}
+export async function listContents(type: ContentType): Promise<Content[]> {
+  const d = await req<{ items: Content[] }>(`/contents?type=${encodeURIComponent(type)}`)
+  return d.items
+}
+export async function adminListContents(type?: ContentType): Promise<Content[]> {
+  const q = type ? `?type=${encodeURIComponent(type)}` : ''
+  const d = await req<{ items: Content[] }>(`/admin/contents${q}`)
+  return d.items
+}
+export async function createContent(data: Partial<Content>): Promise<Content> {
+  const d = await req<{ item: Content }>('/admin/contents', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  })
+  return d.item
+}
+export async function updateContent(id: number, data: Partial<Content>): Promise<Content> {
+  const d = await req<{ item: Content }>(`/admin/contents/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(data),
+  })
+  return d.item
+}
+export async function deleteContent(id: number): Promise<void> {
+  await req(`/admin/contents/${id}`, { method: 'DELETE' })
+}
+
 // ---- Hata gunlugu (blunder log) ----
 export interface BlunderEntry {
   loss: number
