@@ -21,6 +21,8 @@ export interface SideMenuProps {
   onFairness: () => void
   onBoardSettings: () => void
   onInstall: () => void
+  isAdmin?: boolean
+  onAdmin?: () => void
   onHome?: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
@@ -75,6 +77,14 @@ export default function SideMenu(p: SideMenuProps) {
               <Icon name="flag" /> {t('resign.button')}
             </button>
           )}
+        </div>
+      )}
+
+      {p.isAdmin && p.onAdmin && (
+        <div className="menu-group">
+          <button className="menu-btn menu-admin" onClick={p.onAdmin}>
+            <Icon name="crown" /> {t('menu.admin')}
+          </button>
         </div>
       )}
 
