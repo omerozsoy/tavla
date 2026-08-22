@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BlunderController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\PresenceController;
@@ -66,6 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/shop/buy', [ShopController::class, 'buy']);
     Route::post('/shop/frame', [ShopController::class, 'selectFrame']);
     Route::post('/shop/daily', [ShopController::class, 'daily']);
+
+    Route::get('/blunders', [BlunderController::class, 'index']);
+    Route::post('/blunders', [BlunderController::class, 'store']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::put('/game', [GameController::class, 'save']);

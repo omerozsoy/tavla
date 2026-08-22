@@ -38,6 +38,7 @@ import {
   matchmake,
   cancelMatchmake,
   settleRoom,
+  saveBlunders,
   enterRoom,
   tournamentMatchRoom,
   reportTournament,
@@ -75,6 +76,7 @@ import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import AdminPanel from './ui/AdminPanel'
 import SoloStakes from './ui/SoloStakes'
+import BlunderLog from './ui/BlunderLog'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -307,6 +309,7 @@ export default function App() {
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
+  const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -1021,6 +1024,15 @@ export default function App() {
       reportTournament(tm.tid, tm.matchKey, winnerId).catch(() => {})
       tournMatchRef.current = null
     }
+    // Hata gunlugu: bu macin en kotu hamlelerini kaydet
+    if (user) {
+      const bl = matchLog
+        .filter((e) => e.loss >= 0.08)
+        .sort((a, b) => b.loss - a.loss)
+        .slice(0, 5)
+        .map((e) => ({ loss: e.loss, played: e.notation, best: e.best }))
+      saveBlunders(bl).catch(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
@@ -1039,6 +1051,13 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
+    // Hata gunlugu: bu macin en kotu hamlelerini kaydet
+    const bl = matchLog
+      .filter((e) => e.loss >= 0.08)
+      .sort((a, b) => b.loss - a.loss)
+      .slice(0, 5)
+      .map((e) => ({ loss: e.loss, played: e.notation, best: e.best }))
+    saveBlunders(bl).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, user, match, difficulty])
 
@@ -2239,6 +2258,7 @@ export default function App() {
     onMyStats: () => setStatsOpen(true),
     onFriends: () => setFriendsOpen(true),
     onAnalyzer: () => setAnalyzerOpen(true),
+    onBlunders: user ? () => setBlunderOpen(true) : undefined,
     onLessons: () => setLessonsOpen(true),
     onFairness: () => setFairOpen(true),
     onBoardSettings: () => setBoardSettingsOpen(true),
@@ -2349,6 +2369,7 @@ export default function App() {
           onClose={() => setSoloOpen(false)}
         />
       )}
+      {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}

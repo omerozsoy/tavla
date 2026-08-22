@@ -19,6 +19,7 @@ export interface SideMenuProps {
   onMyStats: () => void
   onFriends: () => void
   onAnalyzer: () => void
+  onBlunders?: () => void
   onLessons: () => void
   onFairness: () => void
   onBoardSettings: () => void
@@ -139,6 +140,11 @@ export default function SideMenu(p: SideMenuProps) {
             <button className="menu-btn" onClick={p.onAnalyzer}>
               <Icon name="analyze" /> {t('pa.title')}
             </button>
+            {p.onBlunders && (
+              <button className="menu-btn" onClick={p.onBlunders}>
+                <Icon name="alert" /> {t('menu.blunders')}
+              </button>
+            )}
             <button className="menu-btn" onClick={p.onFairness}>
               <Icon name="dice" /> {t('fair.title')}
             </button>
