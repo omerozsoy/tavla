@@ -253,16 +253,16 @@ body {
   flex-wrap: wrap;
 }
 .chip {
-  background: #1a2350;
+  background: #241f1c;
   color: var(--text);
-  border: 1px solid #2b3a7a;
+  border: 1px solid #3a342d;
   border-radius: 20px;
   padding: 6px 14px;
   font-size: 0.85rem;
   cursor: pointer;
 }
 .chip:hover {
-  background: #24316b;
+  background: #2a2622;
 }
 .chip.active {
   background: var(--accent);
@@ -273,7 +273,7 @@ body {
 .sep {
   width: 1px;
   height: 20px;
-  background: #2b3a7a;
+  background: #3a342d;
   margin: 0 4px;
 }
 
@@ -323,12 +323,12 @@ body {
   border-radius: 50%;
 }
 .avatar.black {
-  border-color: #8b6cff;
-  box-shadow: 0 0 14px rgba(139, 108, 255, 0.6);
+  border-color: #c9563f;
+  box-shadow: 0 0 14px rgba(201, 86, 63, 0.6);
 }
 .avatar.white {
-  border-color: #4d9fff;
-  box-shadow: 0 0 14px rgba(77, 159, 255, 0.6);
+  border-color: #c9563f;
+  box-shadow: 0 0 14px rgba(201, 86, 63, 0.6);
 }
 .avatar.active {
   animation: ring-pulse 1.4s ease-in-out infinite;
@@ -431,7 +431,7 @@ body {
   grid-column: 1;
   display: flex;
   align-items: center;
-  color: #cdd6ff;
+  color: #c6bfb2;
   font-size: 0.9rem;
   font-weight: 600;
 }
@@ -562,7 +562,7 @@ body {
 /* Derinlik: ust-sol isik parlamasi + ic golge + dis golge (kabarik tas hissi) */
 .checker.white {
   background: radial-gradient(circle at 34% 28%, #fffdf7 0%, var(--cream) 55%, #cdbf9f 100%);
-  border: 1px solid #c3ccec;
+  border: 1px solid #c6bfb2;
   box-shadow:
     inset 0 2px 3px rgba(255, 255, 255, 0.75),
     inset 0 -3px 5px rgba(120, 110, 85, 0.35),
@@ -717,7 +717,7 @@ body {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: #3d5edb;
+  background: #a83a2b;
   color: #fff;
   width: calc(var(--bar-w) * 0.95);
   height: calc(var(--bar-w) * 0.95);
@@ -786,7 +786,7 @@ body {
   transform: translate(-50%, -50%);
 }
 .die-face.white .pip-dot {
-  background: #3d5edb;
+  background: #a83a2b;
 }
 .die-face.black .pip-dot {
   background: #eef1fc;
@@ -870,7 +870,7 @@ body {
 }
 .result-box {
   background: rgba(8, 12, 40, 0.95);
-  border: 1px solid #33448c;
+  border: 1px solid #3a342d;
   border-radius: 12px;
   padding: 16px 22px;
   text-align: center;
@@ -936,7 +936,7 @@ body {
 }
 .result-box .err-detail {
   font-size: 0.85rem;
-  color: #c3cbf0;
+  color: #c6bfb2;
   margin-top: 4px;
 }
 .result-box.no-moves .result-title {
@@ -950,13 +950,13 @@ body {
 .cube .owner-center {
 }
 .cube.owner-black {
-  border: 2px solid #8b6cff;
+  border: 2px solid #c9563f;
 }
 .cube.owner-white {
-  border: 2px solid #4d9fff;
+  border: 2px solid #c9563f;
 }
 .galaxy-btn {
-  background: #3d5edb;
+  background: #a83a2b;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -1047,7 +1047,7 @@ body {
   font-size: 1.1rem;
 }
 .prob-row b {
-  color: #5b8cff;
+  color: #c9563f;
 }
 .prob-sub {
   color: var(--muted);
@@ -1070,7 +1070,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .move-row.best {
-  background: rgba(77, 107, 255, 0.18);
+  background: rgba(201, 86, 63, 0.18);
 }
 .move-row .rank {
   color: var(--muted);
@@ -1086,7 +1086,7 @@ body {
   color: #e57373;
 }
 .move-row.best .eq {
-  color: #5b8cff;
+  color: #c9563f;
   font-weight: bold;
 }
 .move-error {
@@ -1097,7 +1097,7 @@ body {
 }
 .move-error .err-detail {
   font-size: 0.82rem;
-  color: #c3cbf0;
+  color: #c6bfb2;
   margin-top: 3px;
 }
 .move-error code {
@@ -1275,7 +1275,7 @@ body {
   height: 46px;
   margin: 6px auto 14px;
   border: 4px solid color-mix(in srgb, var(--text) 15%, transparent);
-  border-top-color: #5b8def;
+  border-top-color: #c9563f;
   border-radius: 50%;
   animation: mm-spin 0.9s linear infinite;
 }
@@ -1403,7 +1403,7 @@ body {
   height: 100%;
   width: min(360px, 88vw);
   z-index: 130;
-  background: linear-gradient(180deg, #2f4fb0, #223a8c);
+  background: linear-gradient(180deg, #a83a2b, #7a2a20);
   box-shadow: -8px 0 28px rgba(0, 0, 0, 0.5);
   transform: translateX(102%);
   transition: transform 0.25s ease;
@@ -1441,7 +1441,7 @@ body {
   color: #8effb0;
 }
 .gm-state.off {
-  color: #b9c4e8;
+  color: #c6bfb2;
 }
 .gm-actions {
   display: flex;
@@ -1464,7 +1464,7 @@ body {
   width: 74px;
   height: 74px;
   border-radius: 50%;
-  background: #17204a;
+  background: #241f1c;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1764,7 +1764,7 @@ body {
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
 }
 .hint-box.learn {
-  border-color: color-mix(in srgb, #7b5bef 60%, var(--border));
+  border-color: color-mix(in srgb, #a83a2b 60%, var(--border));
 }
 .hint-head {
   display: flex;
@@ -1808,8 +1808,8 @@ body {
   background: color-mix(in srgb, #e0455e 20%, transparent);
 }
 .resign-home {
-  border-color: color-mix(in srgb, #5b8def 55%, transparent) !important;
-  color: #9db8ff !important;
+  border-color: color-mix(in srgb, #c9563f 55%, transparent) !important;
+  color: #f0c9c0 !important;
 }
 .resign-auto {
   background: color-mix(in srgb, #e0455e 12%, transparent);
@@ -2253,10 +2253,10 @@ body {
   background: var(--bg);
 }
 .mr-avatar.white {
-  border-color: #4d9fff;
+  border-color: #c9563f;
 }
 .mr-avatar.black {
-  border-color: #8b6cff;
+  border-color: #c9563f;
 }
 .mr-avatar img {
   width: 100%;
@@ -2622,8 +2622,8 @@ body {
   font-size: 1.1rem;
 }
 .lb-row.mine {
-  background: color-mix(in srgb, #5b8def 22%, transparent);
-  outline: 1px solid color-mix(in srgb, #5b8def 55%, transparent);
+  background: color-mix(in srgb, #c9563f 22%, transparent);
+  outline: 1px solid color-mix(in srgb, #c9563f 55%, transparent);
 }
 .lb-rank {
   text-align: center;
@@ -2651,7 +2651,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #5b8def, #7b5bef);
+  background: linear-gradient(135deg, #c9563f, #a83a2b);
   color: #fff;
   font-size: 0.8rem;
   font-weight: 700;
@@ -2746,8 +2746,8 @@ body {
 }
 
 .menu-install {
-  border-color: color-mix(in srgb, #5b8def 55%, transparent);
-  color: #9db8ff;
+  border-color: color-mix(in srgb, #c9563f 55%, transparent);
+  color: #f0c9c0;
 }
 .menu-active-game {
   border-color: color-mix(in srgb, #e0455e 60%, transparent);
@@ -2815,7 +2815,7 @@ body {
   cursor: pointer;
 }
 .tourn-litem:hover {
-  border-color: #5b8def;
+  border-color: #c9563f;
 }
 .tourn-lname {
   font-weight: 700;
@@ -3064,7 +3064,7 @@ body {
   overflow: hidden;
 }
 .tourn-match.mine {
-  border-color: #5b8def;
+  border-color: #c9563f;
 }
 .tm-p {
   padding: 6px 8px;
@@ -3087,7 +3087,7 @@ body {
   padding: 6px;
   border: none;
   border-radius: 6px;
-  background: linear-gradient(135deg, #5b8def, #7b5bef);
+  background: linear-gradient(135deg, #c9563f, #a83a2b);
   color: #fff;
   font-weight: 700;
   font-size: 0.78rem;
@@ -3112,7 +3112,7 @@ body {
   cursor: pointer;
 }
 .tm-actions button:hover {
-  border-color: #5b8def;
+  border-color: #c9563f;
 }
 
 /* Dersler modali */
@@ -3149,7 +3149,7 @@ body {
   text-align: left;
 }
 .lesson-item.open .lesson-q {
-  background: color-mix(in srgb, #5b8def 14%, transparent);
+  background: color-mix(in srgb, #c9563f 14%, transparent);
 }
 .lesson-caret {
   color: var(--muted);
@@ -3226,8 +3226,8 @@ body {
   color: #7ee0a0;
 }
 .friend-btn.play:hover {
-  border-color: #5b8def;
-  color: #9db8ff;
+  border-color: #c9563f;
+  color: #f0c9c0;
 }
 .friend-dot {
   width: 9px;
@@ -3256,7 +3256,7 @@ body {
   align-items: center;
   gap: 8px;
   background: var(--card-bg);
-  border: 1px solid color-mix(in srgb, #5b8def 45%, var(--border));
+  border: 1px solid color-mix(in srgb, #c9563f 45%, var(--border));
   border-radius: 12px;
   padding: 10px 12px;
   box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
