@@ -75,9 +75,11 @@ class RoomController extends Controller
             'avatar' => ['nullable', 'string', 'max:300000'],
             'stake' => ['nullable', 'integer', 'min:0', 'max:1000000000'],
             'user_id' => ['nullable', 'integer'],
+            'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         $userId = $data['user_id'] ?? null;
+        $minRating = (int) ($data['min_rating'] ?? 0);
 
         // Bahisli oyun: giris + yeterli coin sart
         if ($stake > 0) {
@@ -99,14 +101,15 @@ class RoomController extends Controller
             return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
         }
 
-        // Ayni bahisli bekleyen rakip bul (en eski)
-        $opponent = Room::where('status', 'mm_waiting')
+        // Ayni bahisli bekleyen rakip bul (en eski); min puan filtresi (tek yonlu)
+        $q = Room::where('status', 'mm_waiting')
             ->where('stake', $stake)
             ->where('p1_token', '!=', $data['token'])
-            ->whereNull('p2_token')
-            ->orderBy('created_at')
-            ->lockForUpdate()
-            ->first();
+            ->whereNull('p2_token');
+        if ($minRating > 0) {
+            $q->where('p1_rating', '>=', $minRating);
+        }
+        $opponent = $q->orderBy('created_at')->lockForUpdate()->first();
 
         if ($opponent) {
             $opponent->p2_token = $data['token'];

@@ -311,6 +311,45 @@ body {
 .solo-stake > svg {
   color: var(--accent);
 }
+/* Mac Oyunu kurulum tile'lari (saat / maks bahis) */
+.setup-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.setup-tiles.bets {
+  grid-template-columns: repeat(2, 1fr);
+}
+.setup-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 8px;
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.setup-tile:hover {
+  border-color: var(--accent);
+}
+.setup-tile.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--btn-bg));
+}
+.setup-tile .bet-pct {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.setup-tile.active .bet-pct {
+  color: var(--accent);
+}
 @media (max-width: 560px) {
   .solo-grid {
     grid-template-columns: repeat(3, 1fr);
