@@ -3,18 +3,20 @@ import { Icon } from './Icon'
 
 interface Props {
   active: Player | null // sirasi gelen oyuncu
-  delay: number // 12sn hamle suresi (aktif tur)
-  over: number // 12sn sonrasi kalan ek sure (30+30)
-  final: number // son asama esigi (over bu degerin altinda -> son geri sayim)
+  delay: number // hamle gecikmesi (aktif tur; her turda sifirlanir)
+  white: number // beyaz oyuncunun kalan rezerv bankasi (sn)
+  black: number // siyah oyuncunun kalan rezerv bankasi (sn)
+  final: number // son asama esigi (banka bu degerin altinda -> kirmizi)
 }
 
-// Dikey saat: her hamle sirasi icin 12sn + ek sure. Aktif oyuncunun kutusu sayar.
-export default function ClockStack({ active, delay, over, final }: Props) {
+// Dikey saat: her oyuncunun kendi rezerv bankasi (maca yayilir). Aktif oyuncu once
+// hamle gecikmesini, o bitince kendi bankasini tuketir.
+export default function ClockStack({ active, delay, white, black, final }: Props) {
   const box = (player: Player) => {
-    if (active !== player) return { text: '–', cls: 'idle' }
-    if (delay > 0) return { text: String(delay), cls: 'delay' }
-    // 12sn bitti -> ek sure sayiyor; son asamada kirmizi
-    return { text: String(over), cls: over <= final ? 'final' : 'over' }
+    const bank = player === 'white' ? white : black
+    if (active === player && delay > 0) return { text: String(delay), cls: 'delay' }
+    const counting = active === player
+    return { text: String(bank), cls: bank <= final ? 'final' : counting ? 'over' : 'idle' }
   }
   const top = box('black')
   const bottom = box('white')
