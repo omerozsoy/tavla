@@ -40,6 +40,7 @@ export type IconName =
   | 'check'
   | 'x'
   | 'pencil'
+  | 'chevron'
   | 'refresh'
   | 'target'
   | 'globe'
@@ -274,6 +275,7 @@ const PATHS: Record<IconName, { fill?: boolean; body: ReactNode }> = {
       </>
     ),
   },
+  chevron: { body: <polyline points="6 9 12 15 18 9" /> },
   target: {
     body: (
       <>

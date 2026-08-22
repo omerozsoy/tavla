@@ -37,6 +37,7 @@ import {
   joinRoom,
   matchmake,
   cancelMatchmake,
+  settleRoom,
   enterRoom,
   tournamentMatchRoom,
   reportTournament,
@@ -73,6 +74,7 @@ import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import AdminPanel from './ui/AdminPanel'
+import SoloStakes from './ui/SoloStakes'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -300,6 +302,8 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
+  const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
+  const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -980,6 +984,15 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
+    // Bahisli Tek Oyun ise coin transferi (kazanan +bahis / kaybeden -bahis)
+    if (stakeRef.current > 0 && room?.code) {
+      settleRoom(room.code, won)
+        .then((r) => {
+          if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
+        })
+        .catch(() => {})
+      stakeRef.current = 0
+    }
     // Turnuva maciysa sonucu otomatik bildir (bracket ilerlesin)
     const tm = tournMatchRef.current
     if (tm && user) {
@@ -1365,12 +1378,29 @@ export default function App() {
     }
   }
 
+  // Tek Oyun: bahis + tema sec -> ayni bahisli online eslesmeye gir (tek oyun)
+  function startSoloStake(stake: number, theme: string) {
+    stakeRef.current = stake
+    setBoardTheme(theme)
+    setSoloOpen(false)
+    onlineTargetRef.current = 1
+    setMode('online')
+    setHome(false)
+    handleMatchmake()
+  }
+
   // Hizli eslesme: havuza gir; matched ise hemen basla, degilse mm_waiting'de bekle
   async function handleMatchmake() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await matchmake(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      const res = await matchmake(
+        profile?.nickname ?? t('auth.guestNick'),
+        user?.rating,
+        profile.avatar,
+        stakeRef.current,
+        user?.id,
+      )
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -1408,6 +1438,7 @@ export default function App() {
   }
 
   async function handleCancelMatch() {
+    stakeRef.current = 0 // bahis eslesmesi iptal edildi
     try {
       await cancelMatchmake()
     } catch {
@@ -1574,6 +1605,7 @@ export default function App() {
   }
 
   function handleLeaveRoom() {
+    stakeRef.current = 0
     setRoom(null)
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
@@ -2163,6 +2195,7 @@ export default function App() {
     canInstall,
     hasActiveGame,
     onNewGame: () => setSetup(mode === 'online' ? 'online' : 'pvb'),
+    onSolo: () => setSoloOpen(true),
     onResume: () => setHome(false),
     onHome: () => (online ? handleLeaveRoom() : setHome(true)),
     onLeaderboard: () => setLeaderboardOpen(true),
@@ -2272,6 +2305,13 @@ export default function App() {
             setAdminOpen(false)
             setTournOpen(true)
           }}
+        />
+      )}
+      {soloOpen && (
+        <SoloStakes
+          coins={user?.coins ?? 0}
+          onPick={startSoloStake}
+          onClose={() => setSoloOpen(false)}
         />
       )}
       {boardSettingsOpen && (
