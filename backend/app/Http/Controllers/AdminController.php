@@ -26,13 +26,64 @@ class AdminController extends Controller
             });
         }
 
-        $p = $query->paginate($perPage, [
-            'id', 'first_name', 'nickname', 'email', 'country',
-            'rating', 'coins', 'wins', 'losses', 'games_played',
-            'last_seen', 'created_at',
+        $p = $query->paginate($perPage);
+        $rows = collect($p->items())->map(fn ($u) => $this->row($u));
+
+        return response()->json([
+            'users'     => $rows,
+            'total'     => $p->total(),
+            'page'      => $p->currentPage(),
+            'last_page' => $p->lastPage(),
+        ]);
+    }
+
+    // Uye guncelle: coin / yasak / yonetici bayragi
+    public function updateUser(Request $request, User $user)
+    {
+        $me = $request->user();
+        if (! $me?->is_admin) {
+            return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+
+        $data = $request->validate([
+            'coins'    => ['sometimes', 'integer', 'min:0', 'max:100000000'],
+            'is_admin' => ['sometimes', 'boolean'],
+            'banned'   => ['sometimes', 'boolean'],
         ]);
 
-        $rows = collect($p->items())->map(fn ($u) => [
+        // Kendini yasaklama / yetkiden dusurme engeli
+        if ($user->id === $me->id) {
+            if ((array_key_exists('banned', $data) && $data['banned'])
+                || (array_key_exists('is_admin', $data) && ! $data['is_admin'])) {
+                return response()->json(['message' => 'Kendini yasaklayamaz veya yetkiden düşüremezsin.'], 422);
+            }
+        }
+
+        // Config e-postali admin'in yonetici bayragi DB'den kaldirilamaz (yine admin kalir)
+        if (array_key_exists('is_admin', $data) && ! $data['is_admin'] && $user->isConfigAdmin()) {
+            return response()->json(['message' => 'Bu hesap yapılandırmada yönetici; yetkisi kaldırılamaz.'], 422);
+        }
+
+        if (array_key_exists('coins', $data)) {
+            $user->coins = $data['coins'];
+        }
+        if (array_key_exists('is_admin', $data)) {
+            $user->is_admin = $data['is_admin'];
+        }
+        if (array_key_exists('banned', $data)) {
+            $user->banned_at = $data['banned'] ? now() : null;
+            if ($data['banned']) {
+                $user->tokens()->delete(); // acik oturumlari kapat
+            }
+        }
+        $user->save();
+
+        return response()->json(['user' => $this->row($user->fresh())]);
+    }
+
+    private function row(User $u): array
+    {
+        return [
             'id'         => $u->id,
             'name'       => $u->nickname ?: $u->first_name ?: 'Oyuncu',
             'email'      => $u->email,
@@ -45,13 +96,7 @@ class AdminController extends Controller
             'last_seen'  => $u->last_seen,
             'created_at' => $u->created_at,
             'is_admin'   => $u->is_admin,
-        ]);
-
-        return response()->json([
-            'users'     => $rows,
-            'total'     => $p->total(),
-            'page'      => $p->currentPage(),
-            'last_page' => $p->lastPage(),
-        ]);
+            'banned'     => $u->banned_at !== null,
+        ];
     }
 }

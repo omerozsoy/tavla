@@ -2,14 +2,14 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { adminListUsers, type AdminUser } from '../api'
+import { adminListUsers, adminUpdateUser, type AdminUser } from '../api'
 
 interface Props {
   onClose: () => void
   onCreateTournament?: () => void
 }
 
-// Yonetim paneli: uye listesi (arama + sayfalama) + turnuva kurma kisayolu.
+// Yonetim paneli: uye listesi (arama+sayfalama) + coin/yasak/yonetici duzenleme + turnuva kurma.
 export default function AdminPanel({ onClose, onCreateTournament }: Props) {
   const { t } = useT()
   useEscape(onClose)
@@ -19,6 +19,9 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
   const [total, setTotal] = useState(0)
   const [lastPage, setLastPage] = useState(1)
   const [loading, setLoading] = useState(true)
+  const [editId, setEditId] = useState<number | null>(null)
+  const [coinDraft, setCoinDraft] = useState('')
+  const [busyId, setBusyId] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +46,27 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
   }, [q, page])
 
   const fmtDate = (s?: string | null) => (s ? new Date(s).toLocaleDateString() : '—')
+
+  async function patch(id: number, body: { coins?: number; is_admin?: boolean; banned?: boolean }) {
+    setBusyId(id)
+    try {
+      const updated = await adminUpdateUser(id, body)
+      setUsers((list) => list.map((x) => (x.id === id ? updated : x)))
+    } catch {
+      /* yoksay */
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  function openEdit(u: AdminUser) {
+    if (editId === u.id) {
+      setEditId(null)
+    } else {
+      setEditId(u.id)
+      setCoinDraft(String(u.coins))
+    }
+  }
 
   return (
     <div className="register-overlay modal" onClick={onClose}>
@@ -82,26 +106,76 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
         ) : (
           <div className="admin-list">
             {users.map((u) => (
-              <div key={u.id} className="admin-row">
-                <div className="admin-row-main">
-                  <span className="admin-name">
-                    {u.name}
-                    {u.is_admin && <span className="admin-badge">admin</span>}
-                  </span>
-                  <span className="admin-email">{u.email || '—'}</span>
+              <div key={u.id} className={`admin-row ${u.banned ? 'banned' : ''}`}>
+                <div className="admin-row-top">
+                  <div className="admin-row-main">
+                    <span className="admin-name">
+                      {u.name}
+                      {u.is_admin && <span className="admin-badge">admin</span>}
+                      {u.banned && <span className="admin-badge ban">{t('admin.banned')}</span>}
+                    </span>
+                    <span className="admin-email">{u.email || '—'}</span>
+                  </div>
+                  <div className="admin-row-stats">
+                    <span title={t('lb.rating')}>
+                      <Icon name="star" size={12} /> {u.rating}
+                    </span>
+                    <span title={t('shop.title')}>
+                      <Icon name="coin" size={12} /> {u.coins}
+                    </span>
+                    <span title="G / M">
+                      {u.wins}/{u.losses}
+                    </span>
+                    <span className="admin-seen">{fmtDate(u.last_seen)}</span>
+                    <button
+                      className="admin-edit-btn"
+                      onClick={() => openEdit(u)}
+                      aria-label={t('admin.edit')}
+                      title={t('admin.edit')}
+                    >
+                      <Icon name="pencil" size={15} />
+                    </button>
+                  </div>
                 </div>
-                <div className="admin-row-stats">
-                  <span title={t('lb.rating')}>
-                    <Icon name="star" size={12} /> {u.rating}
-                  </span>
-                  <span title={t('shop.title')}>
-                    <Icon name="coin" size={12} /> {u.coins}
-                  </span>
-                  <span title="G / M">
-                    {u.wins}/{u.losses}
-                  </span>
-                  <span className="admin-seen">{fmtDate(u.last_seen)}</span>
-                </div>
+
+                {editId === u.id && (
+                  <div className="admin-edit">
+                    <label className="admin-edit-coins">
+                      <Icon name="coin" size={14} />
+                      <input
+                        type="number"
+                        min={0}
+                        value={coinDraft}
+                        onChange={(e) => setCoinDraft(e.target.value)}
+                      />
+                      <button
+                        className="menu-btn"
+                        disabled={busyId === u.id}
+                        onClick={() => patch(u.id, { coins: Math.max(0, Number(coinDraft) || 0) })}
+                      >
+                        {t('admin.save')}
+                      </button>
+                    </label>
+                    <div className="admin-edit-actions">
+                      <button
+                        className={`menu-btn ${u.banned ? '' : 'admin-danger'}`}
+                        disabled={busyId === u.id}
+                        onClick={() => patch(u.id, { banned: !u.banned })}
+                      >
+                        <Icon name={u.banned ? 'check' : 'x'} size={14} />{' '}
+                        {u.banned ? t('admin.unban') : t('admin.ban')}
+                      </button>
+                      <button
+                        className="menu-btn"
+                        disabled={busyId === u.id}
+                        onClick={() => patch(u.id, { is_admin: !u.is_admin })}
+                      >
+                        <Icon name="crown" size={14} />{' '}
+                        {u.is_admin ? t('admin.revokeAdmin') : t('admin.makeAdmin')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
