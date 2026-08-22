@@ -350,6 +350,77 @@ body {
 .setup-tile.active .bet-pct {
   color: var(--accent);
 }
+/* Hata gunlugu (blunder log) */
+.blunder-card {
+  max-width: 560px;
+  width: 100%;
+}
+.blunder-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.blunder-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border);
+  border-radius: 4px;
+}
+.blunder-row.blunder {
+  border-left-color: var(--tv-brick);
+}
+.blunder-row.bad {
+  border-left-color: #d98b3a;
+}
+.blunder-row.ok {
+  border-left-color: #c9a83a;
+}
+.blunder-band {
+  flex: none;
+  font-size: 0.63rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.blunder-band.blunder {
+  background: var(--tv-brick);
+  color: var(--tv-cream);
+}
+.blunder-band.bad {
+  background: #d98b3a;
+  color: #1c1a17;
+}
+.blunder-band.ok {
+  background: #c9a83a;
+  color: #1c1a17;
+}
+.blunder-moves {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.blunder-moves .bl-arrow {
+  color: var(--muted);
+  margin: 0 2px;
+}
+.blunder-moves b {
+  color: var(--accent);
+}
+.blunder-loss {
+  flex: none;
+  font-weight: 700;
+  color: var(--tv-brick-light);
+  font-variant-numeric: tabular-nums;
+}
 @media (max-width: 560px) {
   .solo-grid {
     grid-template-columns: repeat(3, 1fr);
