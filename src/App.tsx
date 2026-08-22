@@ -74,11 +74,9 @@ import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
-import AdminPanel from './ui/AdminPanel'
 import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import ContentView from './ui/ContentView'
-import AdminContent from './ui/AdminContent'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
@@ -310,11 +308,9 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
-  const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
-  const [adminContentOpen, setAdminContentOpen] = useState(false) // icerik yonetimi (admin)
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -2269,8 +2265,7 @@ export default function App() {
     onBoardSettings: () => setBoardSettingsOpen(true),
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
-    onAdmin: () => setAdminOpen(true),
-    onAdminContent: () => setAdminContentOpen(true),
+    onAdmin: () => window.open('/panel', '_blank'),
     onCalendar: () => setContentView('event'),
     onClubs: () => setContentView('club'),
     onServices: () => setContentView('service'),
@@ -2364,15 +2359,6 @@ export default function App() {
           onClose={() => setTournOpen(false)}
         />
       )}
-      {adminOpen && user?.is_admin && (
-        <AdminPanel
-          onClose={() => setAdminOpen(false)}
-          onCreateTournament={() => {
-            setAdminOpen(false)
-            setTournOpen(true)
-          }}
-        />
-      )}
       {soloOpen && (
         <SoloStakes
           coins={user?.coins ?? 0}
@@ -2382,9 +2368,6 @@ export default function App() {
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
-      {adminContentOpen && user?.is_admin && (
-        <AdminContent onClose={() => setAdminContentOpen(false)} />
-      )}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}
