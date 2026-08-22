@@ -164,12 +164,27 @@ class PanelController extends Controller
             'province' => ['nullable', 'string', 'max:60'],
             'contact' => ['nullable', 'string', 'max:200'],
             'image' => ['nullable', 'string', 'max:500'],
+            'image_file' => ['nullable', 'image', 'max:5120'],
             'event_at' => ['nullable', 'date'],
             'sort' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'published' => ['nullable'],
         ]);
         $data['published'] = $request->boolean('published');
         $data['sort'] = $data['sort'] ?? 0;
+        unset($data['image_file']);
+
+        // Gorsel yuklendiyse public/uploads'a tasi
+        if ($request->hasFile('image_file')) {
+            $file = $request->file('image_file');
+            $ext = $file->getClientOriginalExtension() ?: 'jpg';
+            $name = 'c_'.uniqid().'.'.$ext;
+            $dir = public_path('uploads');
+            if (! is_dir($dir)) {
+                @mkdir($dir, 0755, true);
+            }
+            $file->move($dir, $name);
+            $data['image'] = '/uploads/'.$name;
+        }
 
         if (! empty($data['id'])) {
             $c = Content::findOrFail($data['id']);
