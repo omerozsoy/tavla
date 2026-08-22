@@ -56,13 +56,30 @@ class User extends Authenticatable
             'game_state' => 'array',
             'unlocks' => 'array',
             'birth_date' => 'date:Y-m-d',
+            'banned_at' => 'datetime',
         ];
     }
 
-    // Yonetici mi? (config'deki admin e-posta listesine gore)
+    // Yonetici mi? DB bayragi VEYA config'deki admin e-posta listesi.
+    // (Config e-postalari her zaman admin kalir -> sahip kendini kilitleyemez.)
     public function getIsAdminAttribute(): bool
+    {
+        if (! empty($this->attributes['is_admin'])) {
+            return true;
+        }
+        $admins = array_map('strtolower', config('services.admin_emails', []));
+        return in_array(strtolower((string) $this->email), $admins, true);
+    }
+
+    // Config e-postasiyla admin mi? (DB bayragi degistirilemez olanlar)
+    public function isConfigAdmin(): bool
     {
         $admins = array_map('strtolower', config('services.admin_emails', []));
         return in_array(strtolower((string) $this->email), $admins, true);
+    }
+
+    public function isBanned(): bool
+    {
+        return $this->banned_at !== null;
     }
 }

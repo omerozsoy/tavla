@@ -51,6 +51,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if ($user->isBanned()) {
+            throw ValidationException::withMessages([
+                'login' => ['Bu hesap askıya alınmış.'],
+            ]);
+        }
+
         $token = $user->createToken('web')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token]);
@@ -120,6 +126,10 @@ class AuthController extends Controller
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
             ]);
+        }
+
+        if ($user->isBanned()) {
+            return response()->json(['message' => 'Bu hesap askıya alınmış.'], 403);
         }
 
         $token = $user->createToken('google')->plainTextToken;

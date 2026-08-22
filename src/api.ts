@@ -341,6 +341,7 @@ export interface AdminUser {
   last_seen?: string | null
   created_at?: string | null
   is_admin: boolean
+  banned: boolean
 }
 export interface AdminUsersResp {
   users: AdminUser[]
@@ -352,6 +353,16 @@ export async function adminListUsers(q = '', page = 1): Promise<AdminUsersResp> 
   const params = new URLSearchParams({ page: String(page) })
   if (q) params.set('q', q)
   return req<AdminUsersResp>(`/admin/users?${params.toString()}`)
+}
+export async function adminUpdateUser(
+  id: number,
+  patch: { coins?: number; is_admin?: boolean; banned?: boolean },
+): Promise<AdminUser> {
+  const d = await req<{ user: AdminUser }>(`/admin/users/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  })
+  return d.user
 }
 export async function showTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)

@@ -39,6 +39,7 @@ export type IconName =
   | 'ticket'
   | 'check'
   | 'x'
+  | 'pencil'
   | 'refresh'
   | 'target'
   | 'globe'
@@ -265,6 +266,14 @@ const PATHS: Record<IconName, { fill?: boolean; body: ReactNode }> = {
     ),
   },
   check: { body: <polyline points="20 6 9 17 4 12" /> },
+  pencil: {
+    body: (
+      <>
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+      </>
+    ),
+  },
   target: {
     body: (
       <>
