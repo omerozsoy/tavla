@@ -26,7 +26,6 @@ export interface SideMenuProps {
   onInstall: () => void
   isAdmin?: boolean
   onAdmin?: () => void
-  onAdminContent?: () => void
   onCalendar?: () => void
   onClubs?: () => void
   onServices?: () => void
@@ -102,11 +101,6 @@ export default function SideMenu(p: SideMenuProps) {
           <button className="menu-btn menu-admin" onClick={p.onAdmin}>
             <Icon name="crown" /> {t('menu.admin')}
           </button>
-          {p.onAdminContent && (
-            <button className="menu-btn menu-admin" onClick={p.onAdminContent}>
-              <Icon name="pencil" /> {t('content.manage')}
-            </button>
-          )}
         </div>
       )}
 
