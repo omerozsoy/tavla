@@ -116,6 +116,7 @@ export default function ContentView({ type, onClose }: { type: ContentType; onCl
                   </button>
                   {open && (
                     <div className="content-post-body">
+                      {p.image && <img className="content-img" src={p.image} alt="" />}
                       {paras(p.body).map((x, i) => (
                         <p key={i}>{x}</p>
                       ))}
@@ -177,6 +178,7 @@ export default function ContentView({ type, onClose }: { type: ContentType; onCl
 function EventRow({ ev, upcoming }: { ev: Content; upcoming: boolean }) {
   return (
     <div className={`event-row ${upcoming ? '' : 'past'}`}>
+      {ev.image && <img className="content-img" src={ev.image} alt="" />}
       <div className="event-date">
         <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
       </div>
