@@ -40,6 +40,8 @@ import {
   enterRoom,
   tournamentMatchRoom,
   reportTournament,
+  listTournaments,
+  type Tournament,
   buyItem,
   selectFrame,
   claimDaily,
@@ -295,6 +297,7 @@ export default function App() {
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
+  const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
   const [timeControl, setTimeControl] = useState<TimeControl>('standard')
   const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
@@ -426,6 +429,20 @@ export default function App() {
       /* yok */
     }
   }, [theme, boardTheme])
+
+  // Lobiye girildiginde aktif turnuvalari cek (bitmis olanlar haric)
+  useEffect(() => {
+    if (!home) return
+    let cancelled = false
+    listTournaments()
+      .then((ts) => {
+        if (!cancelled) setLobbyTourns(ts.filter((x) => x.status !== 'finished'))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [home])
 
   const working = useMemo(() => applyPlayed(turnStart, played), [turnStart, played])
   const gameWon = winner(working) !== null
@@ -2319,9 +2336,31 @@ export default function App() {
               <button className="galaxy-btn roll lobby-start" onClick={menuProps.onNewGame}>
                 <Icon name="play" /> {t('setup.newGame')}
               </button>
-              <button className="menu-btn lobby-analyzer" onClick={() => setAnalyzerOpen(true)}>
-                <Icon name="analyze" /> {t('pa.title')}
-              </button>
+              {lobbyTourns.length > 0 && (
+                <div className="lobby-tourns">
+                  <div className="lobby-tourns-head">
+                    <Icon name="medal" size={16} /> {t('menu.tournaments')}
+                  </div>
+                  {lobbyTourns.slice(0, 5).map((tr) => (
+                    <button
+                      key={tr.id}
+                      className="lobby-tourn-row"
+                      onClick={() => setTournOpen(true)}
+                    >
+                      <span className="lt-name">{tr.name}</span>
+                      <span className="lt-meta">
+                        {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
+                        {!!tr.prize_coins && (
+                          <>
+                            {' '}
+                            · <Icon name="coin" size={12} /> {tr.prize_coins}
+                          </>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </main>
         </div>
