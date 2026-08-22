@@ -46,7 +46,7 @@ export default function SideMenu(p: SideMenuProps) {
         title={t('home.title')}
         aria-label={t('brand.name')}
       >
-        <TavlaTvLogo size={26} />
+        <TavlaTvLogo size={32} />
       </button>
 
       <div className="menu-group">
