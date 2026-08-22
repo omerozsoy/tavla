@@ -322,11 +322,18 @@ export default function App() {
   const [timeControl, setTimeControl] = useState<TimeControl>('normal')
   const clockRef = useRef(CLOCK_PRESETS.normal) // secili saat preseti (delay/over)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
-  // Saat: aktif turun gecikmesi (delay) + ek sure (over). Her turda sifirlanir.
-  const [clock, setClock] = useState<{ delay: number; over: number }>({
+  // Saat: hamle gecikmesi (delay, her tur sifirlanir) + oyuncu-basi rezerv bankasi
+  // (white/black; maca gore kurulur, turlar boyunca tukenir - Galaxy tarzi).
+  const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
     delay: MOVE_DELAY,
-    over: OVER_TOTAL,
+    white: OVER_TOTAL,
+    black: OVER_TOTAL,
   })
+  // Mac basi taze saat: rezerv bankasi = puan-basi sure x mac uzunlugu (her oyuncuya)
+  const freshMatchClock = (target: number) => {
+    const bank = clockRef.current.over * Math.max(1, target)
+    return { delay: clockRef.current.move, white: bank, black: bank }
+  }
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
@@ -528,7 +535,10 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
-    setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+    {
+      const bank = clockRef.current.over * Math.max(1, match.target)
+      setClock({ delay: clockRef.current.move, white: bank, black: bank })
+    }
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
@@ -946,7 +956,8 @@ export default function App() {
   // ---- Oyun saati ----
   // Yeni tur/hamle sirasi baslayinca 12sn + 60sn ek sureyi sifirla
   useEffect(() => {
-    setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+    // Yeni tur: yalnizca hamle gecikmesini sifirla; rezerv bankasi tukenmeye devam eder
+    setClock((c) => ({ ...c, delay: clockRef.current.move }))
   }, [turnStart.turn, turnsPlayed])
 
   // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir
@@ -955,8 +966,10 @@ export default function App() {
     if (online && !onlineReady) return
     const id = window.setInterval(() => {
       setClock((c) => {
-        if (c.delay > 0) return { delay: c.delay - 1, over: c.over }
-        return { delay: 0, over: Math.max(0, c.over - 1) }
+        if (c.delay > 0) return { ...c, delay: c.delay - 1 }
+        // Gecikme bitti -> sirasi gelen oyuncunun rezerv bankasi azalir
+        if (turnStart.turn === 'white') return { ...c, delay: 0, white: Math.max(0, c.white - 1) }
+        return { ...c, delay: 0, black: Math.max(0, c.black - 1) }
       })
     }, 1000)
     return () => window.clearInterval(id)
@@ -967,7 +980,8 @@ export default function App() {
   useEffect(() => {
     if (!clockOn || gameEnd || matchOver) return
     const who = turnStart.turn
-    if (clock.delay > 0 || clock.over > 0) return
+    const bank = who === 'white' ? clock.white : clock.black
+    if (clock.delay > 0 || bank > 0) return
     if (online && myColor !== who) return // online'da sadece suresi biten ilan etsin
     const w = opponent(who)
     setMatch((m) => scoreGame(m, w, m.cube.value))
@@ -1044,7 +1058,12 @@ export default function App() {
     setTurnStart(snap.turnStart)
     setPlayed(snap.played ?? [])
     // Rakibin gonderdigi saati al
-    if (snap.clock) setClock({ delay: snap.clock.delay ?? MOVE_DELAY, over: snap.clock.over ?? OVER_TOTAL })
+    if (snap.clock)
+      setClock({
+        delay: snap.clock.delay ?? MOVE_DELAY,
+        white: snap.clock.white ?? snap.clock.over ?? OVER_TOTAL,
+        black: snap.clock.black ?? snap.clock.over ?? OVER_TOTAL,
+      })
     setSelectedFrom(null)
     setCubePending(null)
     setBotAnim(null)
@@ -1075,7 +1094,7 @@ export default function App() {
         turnsPlayed,
         turnStart,
         played,
-        clock: { delay: clock.delay, over: clock.over },
+        clock: { delay: clock.delay, white: clock.white, black: clock.black },
         gameEnd,
       }
       updateRoom(roomCode, snap)
@@ -1358,7 +1377,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+      setClock(freshMatchClock(onlineTargetRef.current))
       fairRef.current = new FairDice()
       setMatch(newMatch(target))
       setStarter('white')
@@ -1421,7 +1440,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+      setClock(freshMatchClock(onlineTargetRef.current))
       fairRef.current = new FairDice()
       setMatch(newMatch(onlineTargetRef.current))
       setStarter('white')
@@ -1474,7 +1493,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+      setClock(freshMatchClock(onlineTargetRef.current))
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -1516,7 +1535,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+      setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = 1 // turnuva maci: tek oyun
       setMatch(newMatch(1))
       setStarter('white')
@@ -1563,7 +1582,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
+      setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = target
       setMatch(newMatch(target))
       setStarter('white')
@@ -2471,21 +2490,22 @@ export default function App() {
   const showHintUI =
     mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
 
+  const activeBank = turnStart.turn === 'white' ? clock.white : clock.black
   const inFinalCountdown =
     clockOn &&
     !gameEnd &&
     !matchOver &&
     !opening &&
     clock.delay === 0 &&
-    clock.over <= FINAL_STAGE &&
-    clock.over > 0
+    activeBank <= FINAL_STAGE &&
+    activeBank > 0
 
   return (
     <div className="app game-view">
       {accountBar}
       {inFinalCountdown && (
         <div className="final-countdown" aria-live="assertive">
-          <div className="fc-num">{clock.over}</div>
+          <div className="fc-num">{activeBank}</div>
           <div className="fc-label">{t('clock.finalWarn')}</div>
         </div>
       )}
@@ -2561,7 +2581,8 @@ export default function App() {
           <ClockStack
             active={gameWon || gameEnd || opening ? null : turnStart.turn}
             delay={clock.delay}
-            over={clock.over}
+            white={clock.white}
+            black={clock.black}
             final={FINAL_STAGE}
           />
         )}
