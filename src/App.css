@@ -2490,8 +2490,59 @@ body {
   color: var(--text);
   font-weight: 700;
 }
-.lobby-analyzer {
-  margin-top: 12px;
+/* Lobide aktif turnuvalar */
+.lobby-tourns {
+  margin-top: 22px;
+  text-align: left;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+.lobby-tourns-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+}
+.lobby-tourns-head > svg {
+  color: var(--accent);
+}
+.lobby-tourn-row {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.12s;
+}
+.lobby-tourn-row:hover {
+  border-color: var(--accent);
+}
+.lt-name {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+}
+.lt-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lt-meta > svg {
+  color: var(--accent);
 }
 .pa-score {
   display: flex;
