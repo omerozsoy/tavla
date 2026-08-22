@@ -77,6 +77,9 @@ import Tournaments from './ui/Tournaments'
 import AdminPanel from './ui/AdminPanel'
 import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
+import ContentView from './ui/ContentView'
+import AdminContent from './ui/AdminContent'
+import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -310,6 +313,8 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
+  const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
+  const [adminContentOpen, setAdminContentOpen] = useState(false) // icerik yonetimi (admin)
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -2265,6 +2270,12 @@ export default function App() {
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () => setAdminOpen(true),
+    onAdminContent: () => setAdminContentOpen(true),
+    onCalendar: () => setContentView('event'),
+    onClubs: () => setContentView('club'),
+    onServices: () => setContentView('service'),
+    onBlog: () => setContentView('blog'),
+    onNews: () => setContentView('news'),
   }
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
@@ -2370,6 +2381,10 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
+      {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
+      {adminContentOpen && user?.is_admin && (
+        <AdminContent onClose={() => setAdminContentOpen(false)} />
+      )}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}

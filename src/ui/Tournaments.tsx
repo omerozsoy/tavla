@@ -243,42 +243,50 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
         {isAdmin ? (
-          <div className="tourn-create">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t('tourn.namePlaceholder')}
-            />
-            <div className="tourn-create-row">
-              <select value={size} onChange={(e) => setSize(Number(e.target.value))}>
-                <option value={4}>4</option>
-                <option value={8}>8</option>
-                <option value={16}>16</option>
-              </select>
-              <label className="tourn-prize-in" title={t('tourn.prize')}>
-                <Icon name="trophy" size={16} />
+          <div className="content-form tourn-create">
+            <label className="cf-row">
+              <span>{t('tourn.fName')}</span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t('tourn.namePlaceholder')}
+              />
+            </label>
+            <div className="cf-grid">
+              <label className="cf-row">
+                <span>{t('tourn.fSize')}</span>
+                <select value={size} onChange={(e) => setSize(Number(e.target.value))}>
+                  <option value={4}>4</option>
+                  <option value={8}>8</option>
+                  <option value={16}>16</option>
+                </select>
+              </label>
+              <label className="cf-row">
+                <span>{t('tourn.prize')}</span>
                 <input
                   type="number"
                   min={0}
                   value={prize}
                   onChange={(e) => setPrize(Math.max(0, Number(e.target.value)))}
-                  placeholder={t('tourn.prize')}
                 />
               </label>
-              <label className="tourn-prize-in" title={t('tourn.entryFee')}>
-                <Icon name="ticket" size={16} />
+              <label className="cf-row">
+                <span>{t('tourn.entryFee')}</span>
                 <input
                   type="number"
                   min={0}
                   value={fee}
                   onChange={(e) => setFee(Math.max(0, Number(e.target.value)))}
-                  placeholder={t('tourn.entryFee')}
                 />
               </label>
-              <button className="menu-btn" disabled={busy || !name.trim()} onClick={create}>
-                {t('tourn.create')}
-              </button>
             </div>
+            <button
+              className="galaxy-btn roll"
+              disabled={busy || !name.trim()}
+              onClick={create}
+            >
+              <Icon name="trophy" size={16} /> {t('tourn.create')}
+            </button>
           </div>
         ) : (
           <p className="tourn-adminonly">{t('tourn.adminOnly')}</p>

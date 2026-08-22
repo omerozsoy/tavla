@@ -26,6 +26,12 @@ export interface SideMenuProps {
   onInstall: () => void
   isAdmin?: boolean
   onAdmin?: () => void
+  onAdminContent?: () => void
+  onCalendar?: () => void
+  onClubs?: () => void
+  onServices?: () => void
+  onBlog?: () => void
+  onNews?: () => void
   onHome?: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
@@ -96,6 +102,11 @@ export default function SideMenu(p: SideMenuProps) {
           <button className="menu-btn menu-admin" onClick={p.onAdmin}>
             <Icon name="crown" /> {t('menu.admin')}
           </button>
+          {p.onAdminContent && (
+            <button className="menu-btn menu-admin" onClick={p.onAdminContent}>
+              <Icon name="pencil" /> {t('content.manage')}
+            </button>
+          )}
         </div>
       )}
 
@@ -123,6 +134,37 @@ export default function SideMenu(p: SideMenuProps) {
           <button className="menu-btn" onClick={p.onMyStats}>
             <Icon name="chart" /> {t('menu.myStats')}
           </button>
+        </div>
+      )}
+
+      {/* Bilgi / icerik sayfalari (herkese acik) */}
+      {!p.inGame && (p.onCalendar || p.onClubs || p.onServices || p.onBlog || p.onNews) && (
+        <div className="menu-group">
+          {p.onCalendar && (
+            <button className="menu-btn" onClick={p.onCalendar}>
+              <Icon name="calendar" /> {t('menu.calendar')}
+            </button>
+          )}
+          {p.onClubs && (
+            <button className="menu-btn" onClick={p.onClubs}>
+              <Icon name="pin" /> {t('menu.clubs')}
+            </button>
+          )}
+          {p.onServices && (
+            <button className="menu-btn" onClick={p.onServices}>
+              <Icon name="star" /> {t('menu.services')}
+            </button>
+          )}
+          {p.onBlog && (
+            <button className="menu-btn" onClick={p.onBlog}>
+              <Icon name="book" /> {t('menu.blog')}
+            </button>
+          )}
+          {p.onNews && (
+            <button className="menu-btn" onClick={p.onNews}>
+              <Icon name="chat" /> {t('menu.news')}
+            </button>
+          )}
         </div>
       )}
 
