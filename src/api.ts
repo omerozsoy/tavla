@@ -376,6 +376,23 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   const d = await req<{ matches: AdminMatch[] }>(`/admin/users/${id}/matches`)
   return d.matches
 }
+// ---- Hata gunlugu (blunder log) ----
+export interface BlunderEntry {
+  loss: number
+  played: string
+  best: string
+  created_at?: string
+}
+export async function listBlunders(): Promise<BlunderEntry[]> {
+  const d = await req<{ blunders: BlunderEntry[] }>('/blunders')
+  return d.blunders
+}
+export async function saveBlunders(
+  items: { loss: number; played: string; best: string }[],
+): Promise<void> {
+  if (items.length === 0) return
+  await req('/blunders', { method: 'POST', body: JSON.stringify({ items }) })
+}
 export async function finishTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/finish`, { method: 'POST' })
   return d.tournament
