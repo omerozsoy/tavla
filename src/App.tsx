@@ -72,6 +72,7 @@ import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
+import AdminPanel from './ui/AdminPanel'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
@@ -298,6 +299,7 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
+  const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -2173,6 +2175,8 @@ export default function App() {
     onFairness: () => setFairOpen(true),
     onBoardSettings: () => setBoardSettingsOpen(true),
     onInstall: handleInstall,
+    isAdmin: !!user?.is_admin,
+    onAdmin: () => setAdminOpen(true),
   }
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
@@ -2259,6 +2263,15 @@ export default function App() {
           isAdmin={!!user?.is_admin}
           onPlayMatch={handlePlayTournamentMatch}
           onClose={() => setTournOpen(false)}
+        />
+      )}
+      {adminOpen && user?.is_admin && (
+        <AdminPanel
+          onClose={() => setAdminOpen(false)}
+          onCreateTournament={() => {
+            setAdminOpen(false)
+            setTournOpen(true)
+          }}
         />
       )}
       {boardSettingsOpen && (
