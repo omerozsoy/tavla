@@ -526,6 +526,7 @@ export async function matchmake(
   stake?: number,
   userId?: number,
   minRating?: number,
+  betPct?: number,
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -537,6 +538,7 @@ export async function matchmake(
       stake: stake ?? 0,
       user_id: userId ?? null,
       min_rating: minRating ?? 0,
+      bet_pct: betPct ?? 0,
     }),
   })
 }
