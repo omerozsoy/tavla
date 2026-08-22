@@ -8,6 +8,8 @@ import {
   createTournament,
   joinTournament,
   reportTournament,
+  finishTournament,
+  deleteTournament,
   type Tournament,
   type TMatch,
 } from '../api'
@@ -50,6 +52,34 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
       setActive(await showTournament(id))
     } catch {
       /* yoksay */
+    }
+  }
+
+  async function doFinish(id: number) {
+    if (busy) return
+    setBusy(true)
+    try {
+      await finishTournament(id)
+      await refreshList()
+      if (active?.id === id) setActive(await showTournament(id))
+    } catch {
+      /* yoksay */
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function doDelete(id: number) {
+    if (busy || !confirm(t('admin.confirmDelTourn'))) return
+    setBusy(true)
+    try {
+      await deleteTournament(id)
+      if (active?.id === id) setActive(null)
+      await refreshList()
+    } catch {
+      /* yoksay */
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -261,19 +291,45 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
         ) : (
           <div className="tourn-list">
             {list.map((tr) => (
-              <button key={tr.id} className="tourn-litem" onClick={() => open(tr.id)}>
-                <span className="tourn-lname">
-                  {tr.name}
-                  {!!tr.prize_coins && (
-                    <span className="tourn-prize-badge">
-                      <Icon name="coin" size={13} /> {tr.prize_coins}
-                    </span>
-                  )}
-                </span>
-                <span className="tourn-lmeta">
-                  {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
-                </span>
-              </button>
+              <div key={tr.id} className="tourn-litem-wrap">
+                <button className="tourn-litem" onClick={() => open(tr.id)}>
+                  <span className="tourn-lname">
+                    {tr.name}
+                    {!!tr.prize_coins && (
+                      <span className="tourn-prize-badge">
+                        <Icon name="coin" size={13} /> {tr.prize_coins}
+                      </span>
+                    )}
+                  </span>
+                  <span className="tourn-lmeta">
+                    {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
+                  </span>
+                </button>
+                {isAdmin && (
+                  <div className="tourn-admin-actions">
+                    {tr.status !== 'finished' && (
+                      <button
+                        className="tourn-admin-btn"
+                        disabled={busy}
+                        onClick={() => doFinish(tr.id)}
+                        title={t('admin.finishTournament')}
+                        aria-label={t('admin.finishTournament')}
+                      >
+                        <Icon name="check" size={15} />
+                      </button>
+                    )}
+                    <button
+                      className="tourn-admin-btn danger"
+                      disabled={busy}
+                      onClick={() => doDelete(tr.id)}
+                      title={t('admin.delTournament')}
+                      aria-label={t('admin.delTournament')}
+                    >
+                      <Icon name="trash" size={15} />
+                    </button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}

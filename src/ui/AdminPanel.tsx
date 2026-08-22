@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { adminListUsers, adminUpdateUser, type AdminUser } from '../api'
+import {
+  adminListUsers,
+  adminUpdateUser,
+  adminUserMatches,
+  type AdminUser,
+  type AdminMatch,
+} from '../api'
 
 interface Props {
   onClose: () => void
@@ -22,6 +28,8 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
   const [editId, setEditId] = useState<number | null>(null)
   const [coinDraft, setCoinDraft] = useState('')
   const [busyId, setBusyId] = useState<number | null>(null)
+  const [matches, setMatches] = useState<AdminMatch[]>([])
+  const [matchesLoading, setMatchesLoading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -62,10 +70,16 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
   function openEdit(u: AdminUser) {
     if (editId === u.id) {
       setEditId(null)
-    } else {
-      setEditId(u.id)
-      setCoinDraft(String(u.coins))
+      return
     }
+    setEditId(u.id)
+    setCoinDraft(String(u.coins))
+    setMatches([])
+    setMatchesLoading(true)
+    adminUserMatches(u.id)
+      .then(setMatches)
+      .catch(() => {})
+      .finally(() => setMatchesLoading(false))
   }
 
   return (
@@ -156,6 +170,20 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
                         {t('admin.save')}
                       </button>
                     </label>
+                    <div className="admin-coin-quick">
+                      {[100, 1000, -100, -1000].map((d) => (
+                        <button
+                          key={d}
+                          type="button"
+                          className="coin-chip"
+                          onClick={() =>
+                            setCoinDraft((c) => String(Math.max(0, (Number(c) || 0) + d)))
+                          }
+                        >
+                          {d > 0 ? `+${d}` : d}
+                        </button>
+                      ))}
+                    </div>
                     <div className="admin-edit-actions">
                       <button
                         className={`menu-btn ${u.banned ? '' : 'admin-danger'}`}
@@ -173,6 +201,27 @@ export default function AdminPanel({ onClose, onCreateTournament }: Props) {
                         <Icon name="crown" size={14} />{' '}
                         {u.is_admin ? t('admin.revokeAdmin') : t('admin.makeAdmin')}
                       </button>
+                    </div>
+                    <div className="admin-matches">
+                      <div className="admin-matches-head">{t('admin.matchHistory')}</div>
+                      {matchesLoading ? (
+                        <div className="admin-empty small">{t('admin.loading')}</div>
+                      ) : matches.length === 0 ? (
+                        <div className="admin-empty small">{t('admin.noMatches')}</div>
+                      ) : (
+                        matches.map((m, i) => (
+                          <div key={i} className={`admin-match ${m.won ? 'win' : 'loss'}`}>
+                            <span className="am-res">{m.won ? t('admin.won') : t('admin.lost')}</span>
+                            <span className="am-opp">vs {m.opponent_rating}</span>
+                            <span className="am-delta">
+                              {m.delta >= 0 ? `+${m.delta}` : m.delta}
+                            </span>
+                            <span className="am-date">
+                              {new Date(m.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
