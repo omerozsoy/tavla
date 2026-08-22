@@ -326,6 +326,33 @@ export async function listTournaments(): Promise<Tournament[]> {
   const d = await req<{ tournaments: Tournament[] }>('/tournaments')
   return d.tournaments
 }
+
+// ---- Yonetim paneli (admin) ----
+export interface AdminUser {
+  id: number
+  name: string
+  email: string
+  country?: string | null
+  rating: number
+  coins: number
+  wins: number
+  losses: number
+  games: number
+  last_seen?: string | null
+  created_at?: string | null
+  is_admin: boolean
+}
+export interface AdminUsersResp {
+  users: AdminUser[]
+  total: number
+  page: number
+  last_page: number
+}
+export async function adminListUsers(q = '', page = 1): Promise<AdminUsersResp> {
+  const params = new URLSearchParams({ page: String(page) })
+  if (q) params.set('q', q)
+  return req<AdminUsersResp>(`/admin/users?${params.toString()}`)
+}
 export async function showTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)
   return d.tournament

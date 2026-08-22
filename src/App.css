@@ -2544,6 +2544,146 @@ body {
 .lt-meta > svg {
   color: var(--accent);
 }
+
+/* ---- Yonetim paneli ---- */
+.menu-admin {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.menu-admin > svg {
+  color: var(--accent);
+}
+.admin-card {
+  max-width: 620px;
+  width: 100%;
+}
+.admin-toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 8px 0 12px;
+}
+.admin-search {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.admin-search > svg {
+  color: var(--muted);
+  flex: none;
+}
+.admin-search input {
+  flex: 1;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 0.9rem;
+  outline: none;
+}
+.admin-new-tourn {
+  width: auto;
+  flex: none;
+}
+.admin-count {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+}
+.admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.admin-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.admin-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.admin-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: var(--text);
+}
+.admin-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--tv-cream);
+}
+.admin-email {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-row-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.admin-row-stats > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-row-stats svg {
+  color: var(--accent);
+}
+.admin-seen {
+  min-width: 74px;
+  text-align: right;
+}
+.admin-empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+.admin-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.admin-pager .menu-btn {
+  width: auto;
+  padding: 6px 14px;
+}
 .pa-score {
   display: flex;
   gap: 10px;
