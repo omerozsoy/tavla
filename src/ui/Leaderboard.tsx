@@ -32,7 +32,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
 
   return (
-    <div className="register-overlay modal" onClick={onClose}>
+    <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card leaderboard-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕

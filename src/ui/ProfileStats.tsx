@@ -35,7 +35,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   const wr = games > 0 ? Math.round((wins / games) * 100) : 0
 
   return (
-    <div className="register-overlay modal" onClick={onClose}>
+    <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card stats-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           ✕
