@@ -210,12 +210,16 @@ interface GameEnd {
 // Oyun saati (her hamle sirasi icin, her turda sifirlanir):
 //  12sn hamle suresi -> bitince 30sn geri sayim -> sonra 30sn "son asama" (30dan)
 //  son asama da biterse sirasi gelen oyuncu oyunu kaybeder.
-const MOVE_DELAY = 12 // hamle suresi (sn)
-const FINAL_STAGE = 30 // son asama geri sayimi (sn)
-const OVER_TOTAL = 30 + FINAL_STAGE // 12sn sonrasi toplam ek sure (30 + 30)
-type TimeControl = 'off' | 'standard' | 'fast'
-// Saat acik/kapali (standart ve hizli ayni 12/30/30 semasini kullanir)
-const RESERVE_PRESETS: Record<TimeControl, number> = { off: 0, standard: OVER_TOTAL, fast: OVER_TOTAL }
+// Saat: hamle suresi (delay) + rezerv (over). Backgammon Galaxy tarzi 3 preset.
+type TimeControl = 'casual' | 'normal' | 'speed'
+const CLOCK_PRESETS: Record<TimeControl, { move: number; over: number }> = {
+  casual: { move: 15, over: 180 }, // Casual: 15sn/hamle + 3dk rezerv
+  normal: { move: 10, over: 60 }, // Normal: 10sn/hamle + 1dk rezerv
+  speed: { move: 8, over: 20 }, // Speed: 8sn/hamle + 20sn rezerv
+}
+const FINAL_STAGE = 30 // son asama uyari esigi (sn)
+const MOVE_DELAY = CLOCK_PRESETS.normal.move // varsayilan/fallback
+const OVER_TOTAL = CLOCK_PRESETS.normal.over
 
 export default function App() {
   const { t, lang, setLang } = useT()
@@ -304,6 +308,7 @@ export default function App() {
   const [adminOpen, setAdminOpen] = useState(false) // yonetim paneli (admin)
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
+  const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -313,8 +318,8 @@ export default function App() {
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
-  const [timeControl, setTimeControl] = useState<TimeControl>('standard')
-  const reserveRef = useRef(RESERVE_PRESETS.standard) // secili rezerv (sn)
+  const [timeControl, setTimeControl] = useState<TimeControl>('normal')
+  const clockRef = useRef(CLOCK_PRESETS.normal) // secili saat preseti (delay/over)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
   // Saat: aktif turun gecikmesi (delay) + ek sure (over). Her turda sifirlanir.
   const [clock, setClock] = useState<{ delay: number; over: number }>({
@@ -470,7 +475,7 @@ export default function App() {
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
   // Saat, kurulumda bir sure secildiyse (kapali degilse) calisir
-  const clockOn = timeControl !== 'off'
+  const clockOn = true // Galaxy tarzi: her oyunda saat acik (3 preset)
   const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
@@ -522,7 +527,7 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
-    setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+    setClock({ delay: clockRef.current.move, over: clockRef.current.over })
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
 
@@ -940,7 +945,7 @@ export default function App() {
   // ---- Oyun saati ----
   // Yeni tur/hamle sirasi baslayinca 12sn + 60sn ek sureyi sifirla
   useEffect(() => {
-    setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+    setClock({ delay: clockRef.current.move, over: clockRef.current.over })
   }, [turnStart.turn, turnsPlayed])
 
   // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir
@@ -1351,7 +1356,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
       fairRef.current = new FairDice()
       setMatch(newMatch(target))
       setStarter('white')
@@ -1381,6 +1386,7 @@ export default function App() {
   // Tek Oyun: bahis + tema sec -> ayni bahisli online eslesmeye gir (tek oyun)
   function startSoloStake(stake: number, theme: string) {
     stakeRef.current = stake
+    minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
     setBoardTheme(theme)
     setSoloOpen(false)
     onlineTargetRef.current = 1
@@ -1400,6 +1406,7 @@ export default function App() {
         profile.avatar,
         stakeRef.current,
         user?.id,
+        minRatingRef.current,
       )
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
@@ -1410,7 +1417,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
       fairRef.current = new FairDice()
       setMatch(newMatch(onlineTargetRef.current))
       setStarter('white')
@@ -1462,7 +1469,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setMatchLog([])
     setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
       setOpening(null)
       setRoom({
         code: res.room.code,
@@ -1504,7 +1511,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
       onlineTargetRef.current = 1 // turnuva maci: tek oyun
       setMatch(newMatch(1))
       setStarter('white')
@@ -1551,7 +1558,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
       setMatchLog([])
       setRatingChange(null)
-      setClock({ delay: MOVE_DELAY, over: OVER_TOTAL })
+      setClock({ delay: clockRef.current.move, over: clockRef.current.over })
       onlineTargetRef.current = target
       setMatch(newMatch(target))
       setStarter('white')
@@ -1631,16 +1638,18 @@ export default function App() {
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
     setTimeControl(opts.timeControl)
-    reserveRef.current = RESERVE_PRESETS[opts.timeControl]
+    clockRef.current = CLOCK_PRESETS[opts.timeControl]
     if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
     setHome(false)
-    // Mod modalda secildi: online -> lobiye (oda kur/katil), degilse bota karsi mac
+    // Mac Oyunu: her zaman online -> gercek rakiple dogrudan eslesme (Oyunu Baslat)
     if (opts.mode === 'online') {
       onlineTargetRef.current = opts.target
-      setRoom(null)
-      setRoomError('')
+      stakeRef.current = Math.floor(((user?.coins ?? 0) * (opts.betPct ?? 0)) / 100)
+      minRatingRef.current = opts.minRating ?? 0
       setMode('online')
+      setHome(false)
+      handleMatchmake()
     } else {
       handleNewMatch(opts.target, 'pvb')
     }
@@ -2194,7 +2203,7 @@ export default function App() {
     loggedIn: !!user,
     canInstall,
     hasActiveGame,
-    onNewGame: () => setSetup(mode === 'online' ? 'online' : 'pvb'),
+    onNewGame: () => setSetup('online'), // Mac Oyunu her zaman online (gercek rakip)
     onSolo: () => setSoloOpen(true),
     onResume: () => setHome(false),
     onHome: () => (online ? handleLeaveRoom() : setHome(true)),
@@ -2339,6 +2348,7 @@ export default function App() {
       <MatchSetup
         mode={setup}
         targets={TARGETS}
+        coins={user?.coins ?? 0}
         initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty }}
         onConfirm={applyMatchSetup}
         onCancel={() => {

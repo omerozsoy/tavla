@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 
-export type TimeControl = 'off' | 'standard' | 'fast'
+export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
 
 export interface MatchOptions {
@@ -12,7 +12,23 @@ export interface MatchOptions {
   showAnalysis: boolean
   timeControl: TimeControl
   difficulty?: number // 1..10 AI seviyesi
+  betPct?: number // online: bakiyenin % kaci bahis (10/30/50/100)
+  minRating?: number // online: rakip min puan filtresi
 }
+
+// Saat presetleri (Casual / Normal / Speed)
+const CLOCKS: { id: TimeControl; key: string }[] = [
+  { id: 'casual', key: 'setup.clockCasual' },
+  { id: 'normal', key: 'setup.clockNormal' },
+  { id: 'speed', key: 'setup.clockSpeed' },
+]
+// Maks bahis: bakiyenin yuzdesi
+const BETS: { pct: number; key: string }[] = [
+  { pct: 10, key: 'setup.betCareful' },
+  { pct: 30, key: 'setup.betNormal' },
+  { pct: 50, key: 'setup.betAggr' },
+  { pct: 100, key: 'setup.betAll' },
+]
 
 const AI_LEVELS = [
   'Beginner',
@@ -31,44 +47,44 @@ interface Props {
   mode: SetupMode
   targets: readonly number[]
   initial: Omit<MatchOptions, 'mode'>
+  coins?: number
   onConfirm: (opts: MatchOptions) => void
   onCancel: () => void
 }
 
-export default function MatchSetup({ mode: initialMode, targets, initial, onConfirm, onCancel }: Props) {
+export default function MatchSetup({
+  mode: initialMode,
+  targets,
+  initial,
+  coins = 0,
+  onConfirm,
+  onCancel,
+}: Props) {
   const { t } = useT()
-  const [mode, setMode] = useState<SetupMode>(initialMode)
+  const mode = initialMode // Mac Oyunu online-only; rematch pvb (mod degistirilmez)
   const [target, setTarget] = useState(initial.target)
   const [showPip, setShowPip] = useState(initial.showPip)
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
+  const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
+  const [minRating, setMinRating] = useState<number>(initial.minRating ?? 0)
+  const stake = Math.floor((coins * betPct) / 100)
 
   return (
     <div className="register-overlay">
       <div className="register-card setup-card">
-        <h2>{t('setup.newGame')}</h2>
-
-        {/* Oyun modu (2 secenek) */}
-        <div className="setup-row">
-          <div className="setup-label">{t('setup.mode')}</div>
-          <div className="setup-modes">
-            <button
-              className={`mode-choice ${mode === 'pvb' ? 'active' : ''}`}
-              onClick={() => setMode('pvb')}
-            >
-              <span className="mode-ico"><Icon name="robot" size={26} /></span>
-              {t('home.vsBot')}
-            </button>
-            <button
-              className={`mode-choice ${mode === 'online' ? 'active' : ''}`}
-              onClick={() => setMode('online')}
-            >
-              <span className="mode-ico"><Icon name="globe" size={26} /></span>
-              {t('home.online')}
-            </button>
-          </div>
-        </div>
+        <h2>
+          {mode === 'online' ? (
+            <>
+              <Icon name="globe" size={20} /> {t('menu.match')}
+            </>
+          ) : (
+            <>
+              <Icon name="robot" size={20} /> {t('home.vsBot')}
+            </>
+          )}
+        </h2>
 
         {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - 10 kademe */}
         {mode === 'pvb' && (
@@ -115,42 +131,79 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
           </div>
         </div>
 
-        {/* Süre (saat) */}
+        {/* Süre (saat) — 3 preset */}
         <div className="setup-row">
           <div className="setup-label">{t('setup.time')}</div>
-          <div className="menu-targets">
-            <button
-              className={timeControl !== 'off' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setTimeControl('standard')}
-            >
-              {t('setup.timeStandard')}
-            </button>
-            <button
-              className={timeControl === 'off' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => setTimeControl('off')}
-            >
-              {t('setup.timeOff')}
-            </button>
+          <div className="setup-tiles">
+            {CLOCKS.map((c) => (
+              <button
+                key={c.id}
+                className={`setup-tile ${timeControl === c.id ? 'active' : ''}`}
+                onClick={() => setTimeControl(c.id)}
+              >
+                {t(c.key)}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Pip göster */}
-        <button
-          className={`setup-toggle ${showPip ? 'on' : ''}`}
-          onClick={() => setShowPip((v) => !v)}
-        >
-          <span>{t('setup.pip')}</span>
-          <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
-        </button>
+        {/* Maks bahis + rakip min puan (yalnizca online) */}
+        {mode === 'online' && (
+          <>
+            <div className="setup-row">
+              <div className="setup-label">
+                {t('setup.maxBet')} · <Icon name="coin" size={13} /> {stake.toLocaleString('tr-TR')}
+              </div>
+              <div className="setup-tiles bets">
+                {BETS.map((b) => (
+                  <button
+                    key={b.pct}
+                    className={`setup-tile ${betPct === b.pct ? 'active' : ''}`}
+                    onClick={() => setBetPct(b.pct)}
+                  >
+                    <span>{t(b.key)}</span>
+                    <span className="bet-pct">%{b.pct}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {/* Analiz göster */}
-        <button
-          className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
-          onClick={() => setShowAnalysis((v) => !v)}
-        >
-          <span>{t('setup.analysis')}</span>
-          <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
-        </button>
+            <div className="setup-row">
+              <div className="setup-label">
+                {t('setup.minRating')}: <b>{minRating}</b>
+              </div>
+              <input
+                type="range"
+                className="level-slider"
+                min={0}
+                max={2000}
+                step={50}
+                value={minRating}
+                onChange={(e) => setMinRating(Number(e.target.value))}
+              />
+            </div>
+          </>
+        )}
+
+        {/* Pip + analiz (yalnizca bota karsi) */}
+        {mode === 'pvb' && (
+          <>
+            <button
+              className={`setup-toggle ${showPip ? 'on' : ''}`}
+              onClick={() => setShowPip((v) => !v)}
+            >
+              <span>{t('setup.pip')}</span>
+              <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
+            </button>
+            <button
+              className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
+              onClick={() => setShowAnalysis((v) => !v)}
+            >
+              <span>{t('setup.analysis')}</span>
+              <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
+            </button>
+          </>
+        )}
 
         <div className="register-actions">
           <button
@@ -163,10 +216,12 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
                 showAnalysis,
                 timeControl,
                 difficulty: mode === 'pvb' ? difficulty : undefined,
+                betPct: mode === 'online' ? betPct : undefined,
+                minRating: mode === 'online' ? minRating : undefined,
               })
             }
           >
-            {mode === 'online' ? t('setup.create') : t('setup.start')}
+            {t('setup.start')}
           </button>
           <button className="menu-btn" onClick={onCancel}>
             {t('setup.cancel')}
