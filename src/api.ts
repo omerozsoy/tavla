@@ -364,6 +364,25 @@ export async function adminUpdateUser(
   })
   return d.user
 }
+export interface AdminMatch {
+  won: boolean
+  opponent_rating: number
+  rating_before: number
+  rating_after: number
+  delta: number
+  created_at: string
+}
+export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
+  const d = await req<{ matches: AdminMatch[] }>(`/admin/users/${id}/matches`)
+  return d.matches
+}
+export async function finishTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/finish`, { method: 'POST' })
+  return d.tournament
+}
+export async function deleteTournament(id: number): Promise<void> {
+  await req(`/tournaments/${id}`, { method: 'DELETE' })
+}
 export async function showTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}`)
   return d.tournament

@@ -53,10 +53,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/match-room', [TournamentController::class, 'matchRoom']);
+    Route::post('/tournaments/{tournament}/finish', [TournamentController::class, 'finish']);
+    Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy']);
 
     // Yonetim (admin e-postasi gerektirir; kontrol controller'da)
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
+    Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
 
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
