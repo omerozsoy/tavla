@@ -421,6 +421,257 @@ body {
   color: var(--tv-brick-light);
   font-variant-numeric: tabular-nums;
 }
+
+/* ==== Icerik sayfalari + yonetim (okunakli, ferah) ==== */
+.content-card {
+  max-width: 760px;
+  width: 100%;
+}
+.content-type-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  margin-bottom: 16px;
+}
+/* Hizmetler */
+.content-services {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.content-service h3 {
+  margin: 0 0 8px;
+  font-size: 1.2rem;
+  color: var(--text);
+}
+.content-service p {
+  margin: 0 0 10px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+/* Blog/haber */
+.content-posts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.content-post {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card-bg);
+  overflow: hidden;
+}
+.content-post-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+.cp-title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.cp-date {
+  font-size: 0.8rem;
+  color: var(--muted);
+  flex: none;
+}
+.content-post-body {
+  padding: 0 16px 16px;
+}
+.content-post-body p {
+  margin: 0 0 10px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+/* Takvim */
+.content-events {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.event-month-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 5px;
+}
+.event-month-title.past {
+  color: var(--muted);
+}
+.event-row {
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+}
+.event-row.past {
+  border-left-color: var(--muted);
+  opacity: 0.72;
+}
+.event-date {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+.event-row.past .event-date {
+  color: var(--muted);
+}
+.event-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 7px;
+}
+.event-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.event-meta span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.event-meta svg {
+  color: var(--accent);
+}
+.event-body {
+  margin: 10px 0 0;
+  line-height: 1.55;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+/* Kulupler */
+.content-clubs {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.club-province-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.club-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 7px;
+  background: var(--card-bg);
+}
+.club-name {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1.02rem;
+}
+.club-addr {
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.club-contact {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.club-contact svg,
+.club-province-title svg {
+  color: var(--accent);
+}
+/* Icerik formu (ferah) */
+.content-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cf-row > span {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.cf-row input,
+.cf-row textarea {
+  padding: 11px 13px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-family: inherit;
+  width: 100%;
+}
+.cf-row textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+.cf-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.cf-check input {
+  width: 18px;
+  height: 18px;
+}
+.cf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+.cf-row select {
+  padding: 11px 13px;
+  background: var(--input-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.98rem;
+  font-family: inherit;
+  width: 100%;
+}
+/* Turnuva olusturma formu artik content-form kullaniyor; eski dar satiri sifirla */
+.tourn-create.content-form {
+  margin-bottom: 18px;
+}
+.tourn-create.content-form .galaxy-btn {
+  align-self: flex-start;
+  padding: 10px 20px;
+}
 @media (max-width: 560px) {
   .solo-grid {
     grid-template-columns: repeat(3, 1fr);

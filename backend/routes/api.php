@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlunderController;
+use App\Http\Controllers\ContentController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\PresenceController;
@@ -19,6 +20,7 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
+Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 
@@ -62,6 +64,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/admin/users', [AdminController::class, 'users']);
     Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
     Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
+    // Icerik yonetimi (hizmet/blog/haber/etkinlik/kulup)
+    Route::get('/admin/contents', [ContentController::class, 'adminIndex']);
+    Route::post('/admin/contents', [ContentController::class, 'store']);
+    Route::put('/admin/contents/{content}', [ContentController::class, 'update']);
+    Route::delete('/admin/contents/{content}', [ContentController::class, 'destroy']);
 
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
