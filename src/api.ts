@@ -523,10 +523,29 @@ export async function matchmake(
   name: string,
   rating?: number,
   avatar?: string,
+  stake?: number,
+  userId?: number,
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+    body: JSON.stringify({
+      token: playerToken(),
+      name,
+      rating: rating ?? null,
+      avatar: avatar ?? null,
+      stake: stake ?? 0,
+      user_id: userId ?? null,
+    }),
+  })
+}
+// Bahisli online mac coin transferi (mac bitince cagrilir)
+export async function settleRoom(
+  code: string,
+  won: boolean,
+): Promise<{ ok: boolean; coins?: number; stake?: number; won?: boolean }> {
+  return req(`/rooms/${code}/settle`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), won }),
   })
 }
 
