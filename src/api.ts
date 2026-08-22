@@ -525,6 +525,7 @@ export async function matchmake(
   avatar?: string,
   stake?: number,
   userId?: number,
+  minRating?: number,
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -535,6 +536,7 @@ export async function matchmake(
       avatar: avatar ?? null,
       stake: stake ?? 0,
       user_id: userId ?? null,
+      min_rating: minRating ?? 0,
     }),
   })
 }
