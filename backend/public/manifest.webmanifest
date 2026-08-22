@@ -1,13 +1,13 @@
 {
-  "name": "Tavla — Online & Ücretsiz Tavla",
-  "short_name": "Tavla",
+  "name": "TavlaTv — Online & Ücretsiz Tavla",
+  "short_name": "TavlaTv",
   "description": "Ücretsiz online tavla: arkadaşınla oyna, yapay zekaya karşı yarış, rating kazan.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0a0d2e",
-  "theme_color": "#0a0d2e",
+  "background_color": "#1C1A17",
+  "theme_color": "#A83A2B",
   "lang": "tr",
   "categories": ["games", "board"],
   "icons": [
