@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 interface RoomInfo {
   code: string
@@ -76,11 +77,11 @@ export default function Lobby({
   return (
     <div className="register-overlay">
       <div className="register-card">
-        <h2>🌐 {t('mp.title')}</h2>
+        <h2><Icon name="globe" size={20} /> {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>
 
         <button className="galaxy-btn roll mm-quick" disabled={busy} onClick={onMatchmake}>
-          🎯 {t('mp.quickMatch')}
+<Icon name="target" size={18} /> {t('mp.quickMatch')}
         </button>
         <p className="mm-quick-note">{t('mp.quickMatchNote')}</p>
 

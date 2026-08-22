@@ -1,4 +1,5 @@
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 type Side = 'white' | 'black'
 
@@ -76,7 +77,7 @@ export default function MatchResult({
       <div className="mr-card">
         <div className="mr-head">
           <div className="mr-player">
-            <div className="mr-role win">{t('mr.winner')} 👑</div>
+            <div className="mr-role win">{t('mr.winner')} <Icon name="crown" size={16} /></div>
             <Avatar url={winnerAvatar} color={winnerColor} />
             <div className="mr-name">
               <span className={`dot ${winnerColor}`} /> {winnerName}
@@ -109,11 +110,11 @@ export default function MatchResult({
           </div>
           <div className="mr-row">
             <span className="mr-a">
-              {fmtPr(winnerPr)} {wBetter && '👑'}
+              {fmtPr(winnerPr)} {wBetter && <Icon name="crown" size={14} />}
             </span>
             <span className="mr-label">{t('mr.errorRate')}</span>
             <span className="mr-b">
-              {fmtPr(loserPr)} {lBetter && '👑'}
+              {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
             </span>
           </div>
           <div className="mr-row">
@@ -126,22 +127,22 @@ export default function MatchResult({
         {hasReport && (
           <div className="mr-actions mr-report-actions">
             <button className="menu-btn" onClick={onAnalysis}>
-              🔍 {t('mr.analysis')}
+              <Icon name="search" /> {t('mr.analysis')}
             </button>
             <button className="menu-btn" onClick={onStats}>
-              📊 {t('mr.stats')}
+              <Icon name="chart" /> {t('mr.stats')}
             </button>
           </div>
         )}
         <div className="mr-actions">
           <button className="galaxy-btn roll" onClick={onRematch}>
-            🔄 {t('mr.rematch')}
+            <Icon name="refresh" /> {t('mr.rematch')}
           </button>
           <button className="menu-btn" onClick={onNewMatch}>
             {t('mr.newMatch')}
           </button>
           <button className="menu-btn" onClick={onHome}>
-            🏠 {t('home.title')}
+            <Icon name="home" /> {t('home.title')}
           </button>
         </div>
       </div>

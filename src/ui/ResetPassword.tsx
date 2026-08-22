@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import * as api from '../api'
 
 interface Props {
@@ -10,6 +12,7 @@ interface Props {
 
 export default function ResetPassword({ email, token, onDone }: Props) {
   const { t } = useT()
+  useEscape(onDone)
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [busy, setBusy] = useState(false)
@@ -41,7 +44,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
   return (
     <div className="register-overlay">
       <form className="register-card" onSubmit={submit}>
-        <h2>🔒 {t('reset.title')}</h2>
+        <h2><Icon name="lock" size={20} /> {t('reset.title')}</h2>
         {done ? (
           <>
             <p className="register-sub">{t('reset.success')}</p>
@@ -58,6 +61,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 autoFocus
               />
             </label>
@@ -67,9 +71,10 @@ export default function ResetPassword({ email, token, onDone }: Props) {
                 type="password"
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
+                autoComplete="new-password"
               />
             </label>
-            {error && <div className="register-error">{error}</div>}
+            {error && <div className="register-error" role="alert">{error}</div>}
             <div className="register-actions">
               <button type="button" className="menu-btn" onClick={onDone}>
                 {t('reg.cancel')}

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 
 export type TimeControl = 'off' | 'standard' | 'fast'
 export type SetupMode = 'pvb' | 'online'
@@ -56,14 +57,14 @@ export default function MatchSetup({ mode: initialMode, targets, initial, onConf
               className={`mode-choice ${mode === 'pvb' ? 'active' : ''}`}
               onClick={() => setMode('pvb')}
             >
-              <span className="mode-ico">🤖</span>
+              <span className="mode-ico"><Icon name="robot" size={26} /></span>
               {t('home.vsBot')}
             </button>
             <button
               className={`mode-choice ${mode === 'online' ? 'active' : ''}`}
               onClick={() => setMode('online')}
             >
-              <span className="mode-ico">🌐</span>
+              <span className="mode-ico"><Icon name="globe" size={26} /></span>
               {t('home.online')}
             </button>
           </div>

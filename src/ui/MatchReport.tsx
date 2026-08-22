@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { Icon } from './Icon'
+import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 
 export interface LogEntry {
@@ -24,6 +26,7 @@ function band(loss: number): { cls: string; key: string } {
 
 export default function MatchReport({ mode, log, pr, onClose }: Props) {
   const { t } = useT()
+  useEscape(onClose)
   const [worstFirst, setWorstFirst] = useState(false) // hatalari en kotuden sirala
 
   // Istatistik: bant sayilari + en kotu hamle
@@ -47,7 +50,8 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
           ✕
         </button>
         <h2>
-          {mode === 'stats' ? '📊' : '🔍'} {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
+          {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
+          {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
         </h2>
 
         {log.length === 0 ? (
