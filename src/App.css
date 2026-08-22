@@ -200,6 +200,127 @@ body {
 .menu-btn > svg {
   color: var(--accent);
 }
+/* Ayarlar grubunu menunun en altina sabitle */
+.menu-bottom {
+  margin-top: auto;
+}
+/* "Daha fazla" satiri ve chevron donusu */
+.menu-more {
+  color: var(--muted);
+}
+.menu-more > svg {
+  color: var(--muted);
+  transition: transform 0.15s ease;
+}
+.menu-more > svg.chev-open {
+  transform: rotate(180deg);
+}
+/* Tek Oyun bahis gridi */
+.solo-card {
+  max-width: 560px;
+  width: 100%;
+}
+.solo-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+  margin-bottom: 14px;
+}
+.solo-balance > svg {
+  color: var(--accent);
+}
+.solo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+.solo-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    transform 0.12s;
+}
+.solo-tile:hover:not(:disabled) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.solo-tile.locked {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.solo-lvl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.solo-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.solo-dots {
+  display: flex;
+  gap: 4px;
+}
+.solo-dots > i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+.solo-lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+}
+.solo-stake {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.solo-stake > svg {
+  color: var(--accent);
+}
+@media (max-width: 560px) {
+  .solo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 400px) {
+  .solo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .menu-btn:hover {
   border-color: var(--accent);
 }

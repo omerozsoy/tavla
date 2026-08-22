@@ -9,10 +9,12 @@ class Room extends Model
     protected $fillable = [
         'code',
         'p1_token',
+        'p1_user_id',
         'p1_name',
         'p1_rating',
         'p1_avatar',
         'p2_token',
+        'p2_user_id',
         'p2_name',
         'p2_rating',
         'p2_avatar',
@@ -20,6 +22,8 @@ class Room extends Model
         'messages',
         'version',
         'status',
+        'stake',
+        'settled',
     ];
 
     protected function casts(): array
@@ -45,6 +49,7 @@ class Room extends Model
             'messages' => $this->messages ?? [],
             'version' => $this->version,
             'status' => $this->status,
+            'stake' => (int) $this->stake,
         ];
     }
 }
