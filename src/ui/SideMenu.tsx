@@ -56,7 +56,7 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <button className="menu-btn lobby-new" onClick={p.onSolo}>
+          <button className="menu-btn" onClick={p.onSolo}>
             <Icon name="play" /> {t('menu.solo')}
           </button>
         )}

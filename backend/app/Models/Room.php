@@ -23,6 +23,7 @@ class Room extends Model
         'version',
         'status',
         'stake',
+        'bet_pct',
         'settled',
     ];
 
@@ -50,6 +51,7 @@ class Room extends Model
             'version' => $this->version,
             'status' => $this->status,
             'stake' => (int) $this->stake,
+            'bet_pct' => (int) $this->bet_pct,
         ];
     }
 }

@@ -76,34 +76,38 @@ class RoomController extends Controller
             'stake' => ['nullable', 'integer', 'min:0', 'max:1000000000'],
             'user_id' => ['nullable', 'integer'],
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
+            'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         $userId = $data['user_id'] ?? null;
         $minRating = (int) ($data['min_rating'] ?? 0);
+        $betPct = (int) ($data['bet_pct'] ?? 0);
 
-        // Bahisli oyun: giris + yeterli coin sart
-        if ($stake > 0) {
+        // Bahisli oyun (sabit stake VEYA % bahis): giris + coin sart
+        if ($stake > 0 || $betPct > 0) {
             if (! $userId) {
                 return response()->json(['message' => 'Bahisli oyun için giriş yapmalısın.'], 422);
             }
             $u = User::find($userId);
-            if (! $u || ($u->coins ?? 0) < $stake) {
+            if (! $u || ($u->coins ?? 0) < max($stake, 1)) {
                 return response()->json(['message' => 'Yetersiz coin.'], 422);
             }
         }
 
-        // Zaten havuzda bekleyen kendi odam (ayni bahis) varsa onu don
+        // Zaten havuzda bekleyen kendi odam (ayni bahis/kategori) varsa onu don
         $mine = Room::where('status', 'mm_waiting')
             ->where('p1_token', $data['token'])
             ->where('stake', $stake)
+            ->where('bet_pct', $betPct)
             ->first();
         if ($mine) {
             return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
         }
 
-        // Ayni bahisli bekleyen rakip bul (en eski); min puan filtresi (tek yonlu)
+        // Ayni bahis/kategorili bekleyen rakip bul; min puan filtresi (tek yonlu)
         $q = Room::where('status', 'mm_waiting')
             ->where('stake', $stake)
+            ->where('bet_pct', $betPct)
             ->where('p1_token', '!=', $data['token'])
             ->whereNull('p2_token');
         if ($minRating > 0) {
@@ -132,6 +136,7 @@ class RoomController extends Controller
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'mm_waiting',
             'stake' => $stake,
+            'bet_pct' => $betPct,
             'version' => 0,
         ]);
 
@@ -150,7 +155,8 @@ class RoomController extends Controller
             return response()->json(['message' => 'Oda bulunamadı.'], 404);
         }
         $stake = (int) $room->stake;
-        if ($stake <= 0 || ! $room->p1_user_id || ! $room->p2_user_id) {
+        $betPct = (int) $room->bet_pct;
+        if (($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return response()->json(['ok' => false]);
         }
         $callerIsP1 = $room->p1_token === $data['token'];
@@ -172,13 +178,23 @@ class RoomController extends Controller
         $loserId = $data['won'] ? $oppId : $callerId;
 
         $winner = User::find($winnerId);
+        $loser = User::find($loserId);
+
+        // Transfer tutari: sabit stake, ya da % ise iki oyuncunun bahsinin min'i
+        if ($betPct > 0) {
+            $wBet = (int) floor((($winner->coins ?? 0) * $betPct) / 100);
+            $lBet = (int) floor((($loser->coins ?? 0) * $betPct) / 100);
+            $amount = max(0, min($wBet, $lBet));
+        } else {
+            $amount = $stake;
+        }
+
         if ($winner) {
-            $winner->coins = ($winner->coins ?? 0) + $stake;
+            $winner->coins = ($winner->coins ?? 0) + $amount;
             $winner->save();
         }
-        $loser = User::find($loserId);
         if ($loser) {
-            $loser->coins = max(0, ($loser->coins ?? 0) - $stake);
+            $loser->coins = max(0, ($loser->coins ?? 0) - $amount);
             $loser->save();
         }
 
@@ -186,7 +202,7 @@ class RoomController extends Controller
         return response()->json([
             'ok' => true,
             'coins' => $caller?->coins ?? 0,
-            'stake' => $stake,
+            'stake' => $amount,
             'won' => (bool) $data['won'],
         ]);
     }
