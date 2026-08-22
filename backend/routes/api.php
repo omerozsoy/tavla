@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
@@ -52,6 +53,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/match-room', [TournamentController::class, 'matchRoom']);
+
+    // Yonetim (admin e-postasi gerektirir; kontrol controller'da)
+    Route::get('/admin/users', [AdminController::class, 'users']);
 
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
