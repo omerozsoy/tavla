@@ -254,7 +254,16 @@ export default function App() {
   })
   const [boardTheme, setBoardTheme] = useState<string>(() => {
     try {
-      return localStorage.getItem('tavla.board') || 'tavla'
+      const stored = localStorage.getItem('tavla.board')
+      // Rebrand migration: eski varsayilan tahtalari (blue/walnut) bir kez TavlaTv'ye tasi
+      if (!localStorage.getItem('tavla.board.rebrand')) {
+        localStorage.setItem('tavla.board.rebrand', '1')
+        if (!stored || stored === 'blue' || stored === 'walnut') {
+          localStorage.setItem('tavla.board', 'tavla')
+          return 'tavla'
+        }
+      }
+      return stored || 'tavla'
     } catch {
       return 'tavla'
     }
