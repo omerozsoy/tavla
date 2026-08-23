@@ -65,7 +65,6 @@ import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
-import { TavlaTvLogo } from './ui/TavlaTvLogo'
 import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
@@ -367,6 +366,10 @@ export default function App() {
     white: { loss: number; decisions: number }
     black: { loss: number; decisions: number }
   }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+  // Sans (luck): oyuncu-basi birikmis equity sansi (zarlarin sanslilik toplami)
+  const [prLuck, setPrLuck] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
+  const luckSigRef = useRef('') // ayni turda sansi iki kez saymayi engelle
+  const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kazanan coin transferi
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
   const [matchLog, setMatchLog] = useState<
@@ -845,7 +848,25 @@ export default function App() {
           neuralRef.current.evalPosition(analysisState, analysisState.turn),
         ])
         if (!cancelled) {
-          if (played.length === 0) turnRankedRef.current = r // tur basi siralama (PR + hata)
+          if (played.length === 0) {
+            turnRankedRef.current = r // tur basi siralama (PR + hata)
+            // Sans (luck): gercek zarin en iyi equity'si vs TUM 21 zarin beklenen en
+            // iyi equity'si. Fark bu turun sansi; oyuncu-basi birikir. Ayni tur bir kez.
+            const mover = analysisState.turn
+            const luckSig = `${mover}:${turnsPlayed}:${analysisState.dice.join(',')}`
+            if (r.length > 0 && luckSig !== luckSigRef.current) {
+              luckSigRef.current = luckSig
+              const actualBest = r[0].equity
+              neuralRef.current
+                .expectedBestEquity(analysisState, mover)
+                .then((expEq) => {
+                  if (!cancelled) {
+                    setPrLuck((s) => ({ ...s, [mover]: s[mover] + (actualBest - expEq) }))
+                  }
+                })
+                .catch(() => {})
+            }
+          }
           if (r.length > 0) {
             const b = r[0]
             setCurBest({
@@ -1038,6 +1059,8 @@ export default function App() {
       settleRoomConfirmed(room.code, won)
         .then((r) => {
           if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
+          // Mac sonu ekraninda gosterilecek coin transferi (kazanan +, kaybeden -)
+          if (r.ok && typeof r.stake === 'number') setCoinDelta(won ? r.stake : -r.stake)
         })
         .catch(() => {})
       stakeRef.current = 0
@@ -1434,6 +1457,8 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
     setMatchLog([])
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -1497,6 +1522,8 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -1550,6 +1577,8 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
     setMatchLog([])
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -1592,6 +1621,8 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -1639,6 +1670,8 @@ export default function App() {
       setChat([])
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -1810,6 +1843,8 @@ export default function App() {
     setTurnStart(freshBoard('white'))
     resetGameUi()
     setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+    setPrLuck({ white: 0, black: 0 })
+    setCoinDelta(null)
     setMatchLog([])
     setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
@@ -1888,6 +1923,13 @@ export default function App() {
   const prHumanColor: Player = online ? myColor : 'white'
   const prValue = prOf(prHumanColor)
   const prBandKey = prBand(prValue)
+  // Sans: yalnizca yerel-interaktif oyuncu(lar) icin hesaplanir.
+  // Online'da rakip, pvb'de bot bu istemcide hesaplanmaz -> null (—).
+  const luckOf = (c: Player): number | null => {
+    if (online && c !== myColor) return null
+    if (mode === 'pvb' && c === BOT_PLAYER) return null
+    return prLuck[c]
+  }
 
   let centerMain: React.ReactNode = null
   if (opening === 'roll') {
@@ -2486,11 +2528,6 @@ export default function App() {
           />
           <main className="main lobby-main">
             <div className="lobby-welcome">
-              <h1 className="lobby-title"><TavlaTvLogo size={60} /></h1>
-              <p className="lobby-tagline">{t('home.tagline')}</p>
-              {profile.nickname && (
-                <p className="lobby-hello">{t('home.hello', { name: profile.nickname })}</p>
-              )}
               {hasActiveGame && (
                 <button
                   className="galaxy-btn roll lobby-resume"
@@ -2499,9 +2536,6 @@ export default function App() {
                   <Icon name="live" /> {t('menu.resumeGame')}
                 </button>
               )}
-              <button className="galaxy-btn roll lobby-start" onClick={menuProps.onNewGame}>
-                <Icon name="play" /> {t('setup.newGame')}
-              </button>
               {lobbyTourns.length > 0 && (
                 <div className="lobby-tourns">
                   <div className="lobby-tourns-head">
@@ -2722,6 +2756,9 @@ export default function App() {
           loserPr={prOf(opponent(mWinner))}
           winnerBand={t(prBand(prOf(mWinner)))}
           loserBand={t(prBand(prOf(opponent(mWinner))))}
+          winnerLuck={luckOf(mWinner)}
+          loserLuck={luckOf(opponent(mWinner))}
+          coinAmount={coinDelta == null ? null : Math.abs(coinDelta)}
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
