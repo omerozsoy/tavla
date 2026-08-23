@@ -395,6 +395,136 @@ export default function App() {
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+
+  // --- URL yonlendirme (hash tabanli) ---
+  // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
+  // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
+  const currentSlug = leaderboardOpen
+    ? 'lider-tablosu'
+    : tournOpen
+      ? 'turnuvalar'
+      : shopOpen
+        ? 'magaza'
+        : statsOpen
+          ? 'istatistiklerim'
+          : friendsOpen
+            ? 'arkadaslar'
+            : blunderOpen
+              ? 'hata-gunlugu'
+              : fairOpen
+                ? 'adillik'
+                : lessonsOpen
+                  ? 'dersler'
+                  : soloOpen
+                    ? 'tek-oyun'
+                    : contentView === 'event'
+                      ? 'turnuva-takvimi'
+                      : contentView === 'service'
+                        ? 'hizmetler'
+                        : contentView === 'blog'
+                          ? 'blog'
+                          : contentView === 'news'
+                            ? 'haberler'
+                            : boardSettingsOpen
+                              ? 'tahta-ayarlari'
+                              : quizOpen
+                                ? 'bulmaca'
+                                : clubsOpen
+                                  ? 'kulupler'
+                                  : rulesOpen
+                                    ? 'nasil-oynanir'
+                                    : setup === 'online'
+                                      ? 'yeni-oyun'
+                                      : setup === 'pvb'
+                                        ? 'yapay-zeka'
+                                        : ''
+
+  // Hash -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
+  useEffect(() => {
+    const applyFromHash = () => {
+      const slug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
+      closeAllPages()
+      setAnalyzerOpen(false)
+      setMemOpen(false)
+      switch (slug) {
+        case 'lider-tablosu':
+          setLeaderboardOpen(true)
+          break
+        case 'turnuvalar':
+          setTournOpen(true)
+          break
+        case 'magaza':
+          setShopOpen(true)
+          break
+        case 'istatistiklerim':
+          setStatsOpen(true)
+          break
+        case 'arkadaslar':
+          setFriendsOpen(true)
+          break
+        case 'hata-gunlugu':
+          setBlunderOpen(true)
+          break
+        case 'adillik':
+          setFairOpen(true)
+          break
+        case 'dersler':
+          setLessonsOpen(true)
+          break
+        case 'tek-oyun':
+          setSoloOpen(true)
+          break
+        case 'turnuva-takvimi':
+          setContentView('event')
+          break
+        case 'hizmetler':
+          setContentView('service')
+          break
+        case 'blog':
+          setContentView('blog')
+          break
+        case 'haberler':
+          setContentView('news')
+          break
+        case 'tahta-ayarlari':
+          setBoardSettingsOpen(true)
+          break
+        case 'bulmaca':
+          setQuizOpen(true)
+          break
+        case 'kulupler':
+          setClubsOpen(true)
+          break
+        case 'nasil-oynanir':
+          setRulesOpen(true)
+          break
+        case 'yeni-oyun':
+          setSetup('online')
+          break
+        case 'yapay-zeka':
+          setSetup('pvb')
+          break
+        default:
+          break // ana sayfa (bos hash)
+      }
+    }
+    applyFromHash()
+    window.addEventListener('popstate', applyFromHash)
+    return () => window.removeEventListener('popstate', applyFromHash)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // state -> hash: menuden sayfa acildikca URL guncellenir
+  useEffect(() => {
+    const hashSlug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
+    if (hashSlug === currentSlug) return // zaten senkron (hash'ten uygulandi)
+    if (currentSlug) {
+      window.history.pushState(null, '', '#/' + currentSlug)
+    } else {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }, [currentSlug])
+
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
@@ -2801,134 +2931,6 @@ export default function App() {
     onNews: () => goPage(() => setContentView('news')),
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
-
-  // --- URL yonlendirme (hash tabanli) ---
-  // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
-  const currentSlug = leaderboardOpen
-    ? 'lider-tablosu'
-    : tournOpen
-      ? 'turnuvalar'
-      : shopOpen
-        ? 'magaza'
-        : statsOpen
-          ? 'istatistiklerim'
-          : friendsOpen
-            ? 'arkadaslar'
-            : blunderOpen
-              ? 'hata-gunlugu'
-              : fairOpen
-                ? 'adillik'
-                : lessonsOpen
-                  ? 'dersler'
-                  : soloOpen
-                    ? 'tek-oyun'
-                    : contentView === 'event'
-                      ? 'turnuva-takvimi'
-                      : contentView === 'service'
-                        ? 'hizmetler'
-                        : contentView === 'blog'
-                          ? 'blog'
-                          : contentView === 'news'
-                            ? 'haberler'
-                            : boardSettingsOpen
-                              ? 'tahta-ayarlari'
-                              : quizOpen
-                                ? 'bulmaca'
-                                : clubsOpen
-                                  ? 'kulupler'
-                                  : rulesOpen
-                                    ? 'nasil-oynanir'
-                                    : setup === 'online'
-                                      ? 'yeni-oyun'
-                                      : setup === 'pvb'
-                                        ? 'yapay-zeka'
-                                        : ''
-
-  // Hash -> state: dogrudan link, yer imi, geri/ileri tusu
-  useEffect(() => {
-    const applyFromHash = () => {
-      const slug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
-      closeAllPages()
-      setAnalyzerOpen(false)
-      setMemOpen(false)
-      switch (slug) {
-        case 'lider-tablosu':
-          setLeaderboardOpen(true)
-          break
-        case 'turnuvalar':
-          setTournOpen(true)
-          break
-        case 'magaza':
-          setShopOpen(true)
-          break
-        case 'istatistiklerim':
-          setStatsOpen(true)
-          break
-        case 'arkadaslar':
-          setFriendsOpen(true)
-          break
-        case 'hata-gunlugu':
-          setBlunderOpen(true)
-          break
-        case 'adillik':
-          setFairOpen(true)
-          break
-        case 'dersler':
-          setLessonsOpen(true)
-          break
-        case 'tek-oyun':
-          setSoloOpen(true)
-          break
-        case 'turnuva-takvimi':
-          setContentView('event')
-          break
-        case 'hizmetler':
-          setContentView('service')
-          break
-        case 'blog':
-          setContentView('blog')
-          break
-        case 'haberler':
-          setContentView('news')
-          break
-        case 'tahta-ayarlari':
-          setBoardSettingsOpen(true)
-          break
-        case 'bulmaca':
-          setQuizOpen(true)
-          break
-        case 'kulupler':
-          setClubsOpen(true)
-          break
-        case 'nasil-oynanir':
-          setRulesOpen(true)
-          break
-        case 'yeni-oyun':
-          setSetup('online')
-          break
-        case 'yapay-zeka':
-          setSetup('pvb')
-          break
-        default:
-          break // ana sayfa (bos hash)
-      }
-    }
-    applyFromHash()
-    window.addEventListener('popstate', applyFromHash)
-    return () => window.removeEventListener('popstate', applyFromHash)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // state -> hash: menuden sayfa acildikca URL guncellenir
-  useEffect(() => {
-    const hashSlug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
-    if (hashSlug === currentSlug) return // zaten senkron (hash'ten uygulandi)
-    if (currentSlug) {
-      window.history.pushState(null, '', '#/' + currentSlug)
-    } else {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
-    }
-  }, [currentSlug])
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0
