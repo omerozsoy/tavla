@@ -167,9 +167,6 @@ export default function SideMenu(p: SideMenuProps) {
             <Icon name="alert" /> {t('menu.blunders')}
           </button>
         )}
-        <button className="menu-btn" onClick={p.onLessons}>
-          <Icon name="book" /> {t('menu.lessons')}
-        </button>
         <button className="menu-btn" onClick={p.onFairness}>
           <Icon name="dice" /> {t('fair.title')}
         </button>

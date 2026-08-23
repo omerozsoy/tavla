@@ -1476,7 +1476,10 @@ export default function App() {
     try {
       const r = await claimDaily()
       setUser((u) => (u ? { ...u, coins: r.coins } : u))
-      if (r.claimed) setRewardReady(false)
+      if (r.claimed) {
+        setRewardReady(false)
+        setRewardSecs(6 * 3600) // hemen 6 saat geri sayima gec (ping dogrular)
+      }
       return { claimed: r.claimed, reward: r.reward }
     } catch {
       return { claimed: false }
@@ -2479,13 +2482,6 @@ export default function App() {
           </option>
         ))}
       </select>
-      <button
-        className="account-btn icon"
-        title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
-        onClick={() => setTheme((v) => (v === 'dark' ? 'light' : 'dark'))}
-      >
-        {theme === 'dark' ? <Icon name="sun" size={18} /> : <Icon name="moon" size={18} />}
-      </button>
       <button
         className="account-btn icon"
         title={muted ? t('menu.soundOn') : t('menu.soundOff')}
