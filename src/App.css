@@ -1937,7 +1937,9 @@ body {
   z-index: 100;
 }
 /* Modal: arka plan yari saydam, arkadaki ekran gorunur */
-.register-overlay.modal {
+/* Karartma sadece ortalanmis modallara (mac sonucu, profil vb.); saga yasli
+   sayfalar (.page) kendi kart zeminini kullanir -> koyu gri scrim olmaz. */
+.register-overlay.modal:not(.page) {
   background: rgba(4, 6, 22, 0.62);
   backdrop-filter: blur(3px);
 }
