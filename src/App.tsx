@@ -425,7 +425,9 @@ export default function App() {
                           ? 'blog'
                           : contentView === 'news'
                             ? 'haberler'
-                            : boardSettingsOpen
+                            : contentView === 'club'
+                              ? 'kulup-rehberi'
+                              : boardSettingsOpen
                               ? 'tahta-ayarlari'
                               : quizOpen
                                 ? 'bulmaca'
@@ -485,6 +487,9 @@ export default function App() {
           break
         case 'haberler':
           setContentView('news')
+          break
+        case 'kulup-rehberi':
+          setContentView('club')
           break
         case 'tahta-ayarlari':
           setBoardSettingsOpen(true)
@@ -2925,7 +2930,9 @@ export default function App() {
     onAdmin: () =>
       window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => goPage(() => setContentView('event')),
-    onClubs: () => goPage(() => setClubsOpen(true)),
+    onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
+    onClubLeague: () => goPage(() => setClubsOpen(true)), // Kulup Ligi = online lig/kulup kurma
+
     onServices: () => goPage(() => setContentView('service')),
     onBlog: () => goPage(() => setContentView('blog')),
     onNews: () => goPage(() => setContentView('news')),
