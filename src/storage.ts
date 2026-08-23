@@ -1,6 +1,21 @@
 // Yerel depolama (localStorage): uye profili + oyun kaydi (yarim kalmasin).
-import type { GameState, Step } from './engine/types'
+import type { GameState, Step, Player } from './engine/types'
 import type { MatchState } from './engine/match'
+
+// Oyun-sonu analiz hamlesi (online'da rakip hamleleri de senkronlanir)
+export interface MoveLogEntry {
+  notation: string
+  best: string
+  loss: number
+  pos?: GameState
+  steps?: Step[]
+  player?: Player
+  dice?: number[]
+  playedSteps?: Step[]
+  cands?: { notation: string; equity: number; steps: Step[] }[]
+  probs?: number[]
+  seq?: number
+}
 
 const PROFILE_KEY = 'tavla.profile'
 const GAME_KEY = 'tavla.game'
@@ -40,6 +55,9 @@ export interface SavedGame {
   // rakibin rengini bu alandan alir -> mac sonu ekraninda iki PR/Sans da gorunur.
   pr?: { white: { loss: number; decisions: number }; black: { loss: number; decisions: number } }
   luck?: { white: number; black: number }
+  // Analiz hamleleri (online): her istemci kendi hamlelerini gonderir, karsi taraf
+  // rakip renkli olanlari alir -> analiz ekraninda iki tarafin hamleleri gorunur.
+  moves?: MoveLogEntry[]
 }
 
 export function loadProfile(): Profile | null {
