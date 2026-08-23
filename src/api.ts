@@ -377,7 +377,7 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   return d.matches
 }
 // ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----
-export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad'
+export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz'
 export interface Content {
   id: number
   type: ContentType
