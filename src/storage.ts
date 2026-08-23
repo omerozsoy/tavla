@@ -36,6 +36,10 @@ export interface SavedGame {
   } | null
   // Bekleyen kup teklifi (online senkron icin): teklif eden oyuncu, yoksa null
   cubePending?: 'white' | 'black' | null
+  // PR + Sans (online senkron icin): her istemci kendi rengini doldurur; karsi taraf
+  // rakibin rengini bu alandan alir -> mac sonu ekraninda iki PR/Sans da gorunur.
+  pr?: { white: { loss: number; decisions: number }; black: { loss: number; decisions: number } }
+  luck?: { white: number; black: number }
 }
 
 export function loadProfile(): Profile | null {

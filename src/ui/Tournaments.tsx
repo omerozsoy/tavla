@@ -129,7 +129,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
       <div className="register-overlay modal page" onClick={onClose}>
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
           <button className="modal-close" onClick={onClose} aria-label="Kapat">
-            ✕
+            <Icon name="x" size={16} />
           </button>
           <button className="tourn-back" onClick={() => setActive(null)}>
             ← {t('tourn.back')}
@@ -238,7 +238,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          ✕
+          <Icon name="x" size={16} />
         </button>
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 

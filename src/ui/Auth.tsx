@@ -358,7 +358,7 @@ export default function Auth({
       >
         {modal && onCancel && (
           <button type="button" className="modal-close" onClick={onCancel} aria-label="Kapat">
-            ✕
+            <Icon name="x" size={16} />
           </button>
         )}
         <h2>{title}</h2>
