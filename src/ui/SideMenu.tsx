@@ -23,6 +23,7 @@ export interface SideMenuProps {
   onBlunders?: () => void
   onQuiz?: () => void
   onLessons: () => void
+  onRules?: () => void
   onFairness: () => void
   onBoardSettings: () => void
   onInstall: () => void
@@ -176,6 +177,11 @@ export default function SideMenu(p: SideMenuProps) {
         <button className="menu-btn" onClick={p.onFairness}>
           <Icon name="dice" /> {t('fair.title')}
         </button>
+        {p.onRules && (
+          <button className="menu-btn" onClick={p.onRules}>
+            <Icon name="book" /> {t('menu.rules')}
+          </button>
+        )}
       </div>
 
       {/* Ayarlar en altta sabit */}

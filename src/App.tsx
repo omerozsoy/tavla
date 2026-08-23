@@ -81,6 +81,7 @@ import BlunderLog from './ui/BlunderLog'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
+import Rules from './ui/Rules'
 import NotificationBell from './ui/NotificationBell'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
@@ -373,6 +374,7 @@ export default function App() {
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
+  const [rulesOpen, setRulesOpen] = useState(false) // nasil oynanir rehberi
   const [spectate, setSpectate] = useState<{ code: string; p1: string; p2: string } | null>(null)
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
@@ -2706,6 +2708,7 @@ export default function App() {
     setBoardSettingsOpen(false)
     setQuizOpen(false)
     setClubsOpen(false)
+    setRulesOpen(false)
     setSetup(null)
   }
   const goPage = (open: () => void) => {
@@ -2747,6 +2750,7 @@ export default function App() {
       ? () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true))
       : undefined,
     onLessons: () => goPage(() => setLessonsOpen(true)),
+    onRules: () => goPage(() => setRulesOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
     onInstall: handleInstall,
@@ -2811,7 +2815,8 @@ export default function App() {
     !!contentView ||
     boardSettingsOpen ||
     quizOpen ||
-    clubsOpen
+    clubsOpen ||
+    rulesOpen
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
@@ -2874,6 +2879,7 @@ export default function App() {
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {clubsOpen && user && <Clubs onClose={() => setClubsOpen(false)} />}
+      {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}
