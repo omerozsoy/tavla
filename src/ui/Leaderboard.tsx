@@ -37,7 +37,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
     <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card leaderboard-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          ✕
+          <Icon name="x" size={16} />
         </button>
         <h2><Icon name="trophy" size={20} /> {t('lb.title')}</h2>
         <div className="rep-filter">

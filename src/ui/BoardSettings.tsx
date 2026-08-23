@@ -44,7 +44,7 @@ export default function BoardSettings({
     <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          ✕
+          <Icon name="x" size={16} />
         </button>
         <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>
 
