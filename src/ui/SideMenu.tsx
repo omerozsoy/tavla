@@ -12,6 +12,7 @@ export interface SideMenuProps {
   canResign?: boolean
   onNewGame: () => void
   onSolo?: () => void
+  onAiGame?: () => void
   onResume: () => void
   onLeaderboard: () => void
   onTournaments: () => void
@@ -63,14 +64,18 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <button className="menu-btn menu-solo" onClick={p.onSolo}>
+          <button className="menu-btn" onClick={p.onSolo}>
             <Icon name="play" /> {t('menu.solo')}
-            <Icon name="coin" size={14} className="menu-coin" />
           </button>
         )}
         {!p.inGame && (
           <button className="menu-btn menu-match" onClick={p.onNewGame}>
             <Icon name="target" /> {t('menu.match')}
+          </button>
+        )}
+        {!p.inGame && p.onAiGame && (
+          <button className="menu-btn" onClick={p.onAiGame}>
+            <Icon name="dice" /> {t('menu.aiGame')}
           </button>
         )}
         {p.hasActiveGame && !p.inGame && (

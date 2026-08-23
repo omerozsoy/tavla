@@ -20,6 +20,7 @@ Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
+Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
@@ -40,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
     Route::get('/me', [AuthController::class, 'me']);
+    Route::get('/me/matches', [AuthController::class, 'myMatches']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);
