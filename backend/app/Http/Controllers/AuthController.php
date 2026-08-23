@@ -25,12 +25,19 @@ class AuthController extends Controller
             'nickname'   => ['required', 'string', 'max:40', 'unique:users,nickname'],
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             'password'   => ['required', 'string', 'min:6', 'max:100'],
+            'start_rating' => ['nullable', 'integer', 'in:900,1100,1400,1700'],
         ]);
 
         // Ulke bos/eksikse '' ata (kolon NOT NULL olsa bile kayit patlamaz)
         $data['country'] = $data['country'] ?? '';
 
+        // Baslangic puani: oyuncu kendi seviyesini secer (Galaxy tarzi). Yoksa 1400.
+        $startRating = $data['start_rating'] ?? 1400;
+        unset($data['start_rating']);
+
         $user = User::create($data);
+        $user->rating = $startRating;
+        $user->save();
         $token = $user->createToken('web')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token], 201);

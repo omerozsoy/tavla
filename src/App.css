@@ -6293,3 +6293,45 @@ body {
   gap: 4px;
   font-weight: 600;
 }
+
+/* ---- Kayit: baslangic seviyesi ---- */
+.reg-rating {
+  margin: 4px 0 8px;
+}
+.reg-rating-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  opacity: 0.9;
+}
+.reg-rating-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.reg-rating-opt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line, #d9cfbd);
+  background: var(--card-bg, #fff);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.reg-rating-opt.active {
+  border-color: var(--navy, #2e4372);
+  background: rgba(46, 67, 114, 0.08);
+}
+.rr-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.rr-num {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--navy, #2e4372);
+}
