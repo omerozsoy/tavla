@@ -87,7 +87,7 @@ export default function BoardSettings({
   const { t } = useT()
   useEscape(onClose)
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

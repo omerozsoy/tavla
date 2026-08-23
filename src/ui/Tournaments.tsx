@@ -127,7 +127,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     const joined = active.players?.some((p) => p.id === myId)
     const canJoin = active.status === 'open' && !joined && myId != null
     return (
-      <div className="register-overlay modal page" onClick={onClose}>
+      <div className="register-overlay modal page">
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
           <button className="modal-close" onClick={onClose} aria-label="Kapat">
             <Icon name="x" size={16} />
@@ -253,7 +253,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
 
   // ---- Liste + olustur ----
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

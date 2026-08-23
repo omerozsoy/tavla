@@ -27,7 +27,7 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
   }
 
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

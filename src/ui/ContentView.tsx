@@ -82,7 +82,7 @@ export default function ContentView({ type, onClose }: { type: ContentType; onCl
   }, [items, type])
 
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card content-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

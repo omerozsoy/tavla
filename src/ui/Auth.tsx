@@ -348,10 +348,7 @@ export default function Auth({
   )
 
   return (
-    <div
-      className={`register-overlay ${modal ? 'modal' : ''}`}
-      onClick={modal && onCancel ? (e) => e.target === e.currentTarget && onCancel() : undefined}
-    >
+    <div className={`register-overlay ${modal ? 'modal' : ''}`}>
       <form
         className="register-card"
         onSubmit={

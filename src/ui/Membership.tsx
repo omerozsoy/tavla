@@ -51,7 +51,7 @@ export default function Membership({
   }
 
   return (
-    <div className="register-overlay modal mem-overlay" onClick={onClose}>
+    <div className="register-overlay modal mem-overlay">
       <div className="mem-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

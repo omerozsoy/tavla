@@ -164,7 +164,7 @@ export default function Rules({ onClose }: Props) {
   const c = lang === 'tr' ? CONTENT.tr : CONTENT.en
 
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card rules-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

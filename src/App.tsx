@@ -3351,8 +3351,8 @@ export default function App() {
       )}
 
       {resignOpen && (
-        <div className="register-overlay modal" onClick={() => setResignOpen(false)}>
-          <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+        <div className="register-overlay modal">
+          <div className="register-card resign-card">
             <h2><Icon name="flag" size={20} /> {t('resign.title')}</h2>
             {(() => {
               const loser: Player = online ? myColor : 'white'
