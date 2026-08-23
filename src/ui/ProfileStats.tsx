@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { myStats, myMatches, type MyStats, type MyMatch } from '../api'
 import { frameStyle } from '../cosmetics'
+import { DivisionChip, BadgeList } from './Badges'
 
 interface Props {
   avatar?: string
@@ -71,6 +72,8 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
               </div>
             </div>
 
+            <DivisionChip rating={u?.rating ?? 1500} />
+
             <div className="stats-grid">
               <div className="stats-box">
                 <div className="stats-val">{games}</div>
@@ -95,6 +98,8 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                 <div className="stats-bar-win" style={{ width: `${wr}%` }} />
               </div>
             )}
+
+            <BadgeList ids={u?.badges} />
 
             {/* Rating grafigi (son maclarin rating_after degerleri) */}
             {matches && matches.length >= 2 && <RatingSpark matches={matches} />}
