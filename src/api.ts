@@ -45,6 +45,7 @@ export interface ServerUser {
   losses?: number
   games_played?: number
   is_admin?: boolean
+  email_verified_at?: string | null
   game_state?: unknown
 }
 
@@ -141,6 +142,11 @@ export async function login(loginId: string, password: string): Promise<ServerUs
 // Sifremi unuttum -> sifirlama linki gonder
 export async function forgotPassword(email: string): Promise<void> {
   await req('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) })
+}
+
+// E-posta dogrulama linkini tekrar gonder (giris yapmis kullanici)
+export async function resendVerification(): Promise<void> {
+  await req('/email/resend', { method: 'POST' })
 }
 
 // Sifreyi sifirla (link'teki token + yeni sifre)

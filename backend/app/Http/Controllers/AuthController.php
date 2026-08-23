@@ -38,6 +38,14 @@ class AuthController extends Controller
         $user = User::create($data);
         $user->rating = $startRating;
         $user->save();
+
+        // E-posta dogrulama linki gonder (teslim icin gercek SMTP gerekir; MAIL_MAILER)
+        try {
+            $user->sendEmailVerificationNotification();
+        } catch (\Throwable $e) {
+            // Mail gonderilemezse kayit yine de tamamlanir (kullanici sonra tekrar gonderebilir)
+        }
+
         $token = $user->createToken('web')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token], 201);
@@ -135,6 +143,7 @@ class AuthController extends Controller
                 'nickname'   => $nick,
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
+                'email_verified_at' => now(), // Google e-postasi zaten dogrulanmis
             ]);
         }
 
@@ -477,6 +486,32 @@ class AuthController extends Controller
             return response()->json(['message' => 'ok']);
         }
         return response()->json(['message' => 'Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.'], 400);
+    }
+
+    // E-posta dogrulama linki (imzali). Basari/hata sonrasi SPA'ya yonlendirir.
+    public function verifyEmail(Request $request, int $id, string $hash)
+    {
+        $base = rtrim((string) config('app.frontend_url', config('app.url')), '/');
+        $user = User::find($id);
+        if (! $user || ! hash_equals(sha1($user->getEmailForVerification()), $hash)) {
+            return redirect("{$base}/?verified=0");
+        }
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+            event(new \Illuminate\Auth\Events\Verified($user));
+        }
+        return redirect("{$base}/?verified=1");
+    }
+
+    // Dogrulama e-postasini tekrar gonder (giris yapmis kullanici)
+    public function resendVerification(Request $request)
+    {
+        $user = $request->user();
+        if ($user->hasVerifiedEmail()) {
+            return response()->json(['message' => 'already_verified']);
+        }
+        $user->sendEmailVerificationNotification();
+        return response()->json(['message' => 'sent']);
     }
 
     // Takma isim musait mi? (kayit formu icin, halka acik)

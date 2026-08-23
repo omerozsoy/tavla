@@ -59,6 +59,7 @@ import {
   updateRoom,
   sendChat,
   reportRating,
+  resendVerification,
   ApiError as ApiErr,
   type Slot,
   type ChatMsg,
@@ -303,6 +304,18 @@ export default function App() {
     }
     return null
   })
+  // E-posta dogrulama sonucu: link'ten ?verified=1/0 geldiyse bildirim goster
+  const [verifyNotice, setVerifyNotice] = useState<'ok' | 'fail' | null>(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get('verified')
+      if (v === '1') return 'ok'
+      if (v === '0') return 'fail'
+    } catch {
+      /* yok */
+    }
+    return null
+  })
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
   // Profil hep dolu: giris yoksa varsayilan misafir (Auth artik modal, tam ekran gate degil)
   const guestDefault: Profile = {
     firstName: '',
@@ -1526,6 +1539,30 @@ export default function App() {
 
   function handleInstall() {
     installPromptRef.current?.prompt()
+  }
+
+  // Dogrulama sonucu okununca URL'den ?verified= parametresini temizle (refresh'te tekrar cikmasin)
+  useEffect(() => {
+    if (!verifyNotice) return
+    try {
+      const url = new URL(window.location.href)
+      url.searchParams.delete('verified')
+      window.history.replaceState({}, '', url.pathname + url.search)
+    } catch {
+      /* yok */
+    }
+  }, [verifyNotice])
+
+  // E-posta dogrulama linkini tekrar gonder
+  async function handleResendVerification() {
+    if (resendState === 'sending') return
+    setResendState('sending')
+    try {
+      await resendVerification()
+      setResendState('sent')
+    } catch {
+      setResendState('idle')
+    }
   }
 
   // Ses: her tas oynandiginda (played uzayinca)
@@ -2906,8 +2943,41 @@ export default function App() {
   )
 
   // Ortalanmis modallar / yuzen katmanlar (her zaman overlay)
+  // E-posta dogrulama: link sonucu bildirimi + giris yapmis dogrulanmamis kullaniciya uyari
+  const verifyBanner = (
+    <>
+      {verifyNotice && (
+        <div className={`verify-toast ${verifyNotice}`}>
+          <Icon name={verifyNotice === 'ok' ? 'check' : 'alert'} size={16} />
+          <span>{t(verifyNotice === 'ok' ? 'verify.ok' : 'verify.fail')}</span>
+          <button className="verify-close" onClick={() => setVerifyNotice(null)} aria-label="Kapat">
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+      )}
+      {user && !user.email_verified_at && (
+        <div className="verify-bar">
+          <Icon name="alert" size={15} />
+          <span>{t('verify.needed')}</span>
+          {resendState === 'sent' ? (
+            <span className="verify-sent">{t('verify.sent')}</span>
+          ) : (
+            <button
+              className="verify-resend"
+              disabled={resendState === 'sending'}
+              onClick={handleResendVerification}
+            >
+              {t('verify.resend')}
+            </button>
+          )}
+        </div>
+      )}
+    </>
+  )
+
   const menuOverlays = (
     <>
+      {verifyBanner}
       {inviteBanner}
       {spectate && (
         <Spectate
