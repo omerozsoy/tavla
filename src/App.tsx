@@ -996,8 +996,19 @@ export default function App() {
     tp: number,
     ts: GameState,
     pl: Step[],
+    cp: Player | null = null,
+    ge: GameEnd | null = null,
   ): string {
-    return JSON.stringify({ match: m, starter: st, turnsPlayed: tp, turnStart: ts, played: pl })
+    return JSON.stringify({
+      match: m,
+      starter: st,
+      turnsPlayed: tp,
+      turnStart: ts,
+      played: pl,
+      cubePending: cp,
+      // Sadece senkronla gosterilen bitisler imzayi degistirsin (normal galibiyet lokal)
+      gameEnd: ge && (ge.dropped || ge.timeout || ge.resigned) ? ge : null,
+    })
   }
 
   // ---- Oyun saati ----
@@ -1133,6 +1144,8 @@ export default function App() {
       snap.turnsPlayed,
       snap.turnStart,
       snap.played ?? [],
+      snap.cubePending ?? null,
+      snap.gameEnd ?? null,
     )
     setMatch(snap.match)
     setStarter(snap.starter)
@@ -1147,13 +1160,14 @@ export default function App() {
         black: snap.clock.black ?? snap.clock.over ?? OVER_TOTAL,
       })
     setSelectedFrom(null)
-    setCubePending(null)
+    setCubePending(snap.cubePending ?? null) // rakibin kup teklifi/yaniti senkron
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
-    // Sure bitimi/pes etme rakip yerelde goremez (hamle degismez) -> senkronla goster.
+    // Sure bitimi/pes/kup-pas rakip yerelde goremez (hamle degismez) -> senkronla goster.
     // Normal galibiyetler iki istemcide de yerel algilanir, onlari burda islemeyiz.
-    if (snap.gameEnd?.timeout || snap.gameEnd?.resigned) setGameEnd(snap.gameEnd)
+    if (snap.gameEnd?.timeout || snap.gameEnd?.resigned || snap.gameEnd?.dropped)
+      setGameEnd(snap.gameEnd)
   }
 
   // Online: yerel degisikligi odaya gonder (senkron)
@@ -1164,7 +1178,7 @@ export default function App() {
   const roomStatus = room?.status
   useEffect(() => {
     if (!online || !roomCode || roomStatus !== 'playing' || !syncEnabledRef.current) return
-    const sig = stateSig(match, starter, turnsPlayed, turnStart, played)
+    const sig = stateSig(match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd)
     if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
     const timer = window.setTimeout(() => {
       lastSyncRef.current = sig
@@ -1178,6 +1192,7 @@ export default function App() {
         played,
         clock: { delay: clock.delay, white: clock.white, black: clock.black },
         gameEnd,
+        cubePending,
       }
       updateRoom(roomCode, snap)
         .then((r) => {
@@ -1187,7 +1202,7 @@ export default function App() {
     }, 200)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, roomCode, roomStatus, match, starter, turnsPlayed, turnStart, played])
+  }, [online, roomCode, roomStatus, match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd])
 
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
@@ -1873,8 +1888,13 @@ export default function App() {
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
   const humanCanDouble =
-    showRoll && turnsPlayed > 0 && !online && canDouble(match, turnStart.turn, false)
-  const humanRespond = cubePending !== null && (mode === 'pvp' || cubePending === BOT_PLAYER)
+    showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
+  // Kup teklifine yanit: pvp (ayni ekran), bota karsi, veya online'da rakip teklif ettiyse
+  const humanRespond =
+    cubePending !== null &&
+    (mode === 'pvp' || cubePending === BOT_PLAYER || (online && cubePending !== myColor))
+  // Online'da kendi teklifim: rakibin yanitini bekliyorum
+  const cubeWaiting = online && cubePending === myColor
   const canSwapDice =
     interactive &&
     played.length === 0 &&
@@ -2018,6 +2038,15 @@ export default function App() {
             {t('btn.drop')}
           </button>
         </div>
+      </div>
+    )
+  } else if (cubeWaiting) {
+    centerMain = (
+      <div className="result-box">
+        <div className="result-title">
+          {t('msg.doubled', { name: pName(cubePending!), value: match.cube.value * 2 })}
+        </div>
+        <div className="err-detail">{t('cube.waiting')}</div>
       </div>
     )
   } else if (noMove) {
