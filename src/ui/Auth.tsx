@@ -161,6 +161,17 @@ export default function Auth({
     }
   }, [nickname, tab, editing, seed.nickname])
 
+  // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
+  function apiErrorMsg(err: unknown): string {
+    if (!(err instanceof api.ApiError)) return t('auth.offline')
+    const f = err.errors
+    if (f?.email) return t('reg.emailTaken')
+    if (f?.nickname) return t('reg.nickTaken')
+    if (f?.password) return t('reg.pwShort')
+    const first = f ? Object.values(f)[0]?.[0] : undefined
+    return first || err.message || t('auth.failed')
+  }
+
   async function doLogin(e: React.FormEvent) {
     e.preventDefault()
     setError('')
@@ -169,7 +180,8 @@ export default function Auth({
       const user = await api.login(loginId.trim(), password)
       onAuthed(user)
     } catch (err) {
-      setError(err instanceof api.ApiError ? t('auth.failed') : t('auth.offline'))
+      // Giriste alan bazli mesaj yerine tek anlasilir uyari
+      setError(err instanceof api.ApiError ? t('auth.badLogin') : t('auth.offline'))
     } finally {
       setBusy(false)
     }
@@ -197,7 +209,7 @@ export default function Auth({
     setError('')
     if (!validProfile()) return
     if (password.length < 6) {
-      setError(t('reg.validEmail'))
+      setError(t('reg.pwShort'))
       return
     }
     setBusy(true)
@@ -214,7 +226,7 @@ export default function Auth({
       })
       onAuthed(user)
     } catch (err) {
-      setError(err instanceof api.ApiError ? t('auth.failed') : t('auth.offline'))
+      setError(apiErrorMsg(err))
     } finally {
       setBusy(false)
     }
