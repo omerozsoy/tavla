@@ -424,6 +424,9 @@ export interface BlunderEntry {
   loss: number
   played: string
   best: string
+  pos?: string | null // JSON: hamle oncesi GameState
+  steps?: string | null // JSON: en iyi hamlenin Step[]
+  player?: string | null
   created_at?: string
 }
 export async function listBlunders(): Promise<BlunderEntry[]> {
@@ -431,7 +434,14 @@ export async function listBlunders(): Promise<BlunderEntry[]> {
   return d.blunders
 }
 export async function saveBlunders(
-  items: { loss: number; played: string; best: string }[],
+  items: {
+    loss: number
+    played: string
+    best: string
+    pos?: string
+    steps?: string
+    player?: string
+  }[],
 ): Promise<void> {
   if (items.length === 0) return
   await req('/blunders', { method: 'POST', body: JSON.stringify({ items }) })
