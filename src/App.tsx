@@ -2931,7 +2931,6 @@ export default function App() {
       window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
-    onClubLeague: () => goPage(() => setClubsOpen(true)), // Kulup Ligi = online lig/kulup kurma
 
     onServices: () => goPage(() => setContentView('service')),
     onBlog: () => goPage(() => setContentView('blog')),
