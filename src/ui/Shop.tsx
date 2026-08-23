@@ -82,7 +82,7 @@ export default function Shop({
     <div className="register-overlay modal page" onClick={onClose}>
       <div className="register-card shop-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          ✕
+          <Icon name="x" size={16} />
         </button>
         <h2><Icon name="shop" size={20} /> {t('shop.title')}</h2>
         <div className="shop-top">

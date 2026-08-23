@@ -1672,6 +1672,33 @@ body {
   justify-content: center;
   margin: 12px 0 8px;
 }
+/* Otomatik acilis: zarlar atiliyor animasyonu */
+.opening-rolling {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  margin: 14px 0 10px;
+}
+.die-face.rolling {
+  animation: die-roll 0.5s ease-in-out infinite;
+}
+.die-face.rolling:last-child {
+  animation-delay: 0.15s;
+}
+@keyframes die-roll {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(18deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .die-face.rolling {
+    animation: none;
+  }
+}
 .opening-side {
   display: flex;
   flex-direction: column;

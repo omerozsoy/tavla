@@ -178,7 +178,7 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
       <div className="analyzer-head">
         <h2><Icon name="analyze" size={20} /> {t('pa.title')}</h2>
         <button className="analyzer-close" onClick={onClose}>
-          ✕ {t('pa.close')}
+          <Icon name="x" size={14} /> {t('pa.close')}
         </button>
       </div>
 

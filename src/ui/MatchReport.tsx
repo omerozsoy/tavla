@@ -47,7 +47,7 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
     <div className="register-overlay modal report-overlay" onClick={onClose}>
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          ✕
+          <Icon name="x" size={16} />
         </button>
         <h2>
           {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
