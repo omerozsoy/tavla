@@ -212,23 +212,8 @@ class AuthController extends Controller
         }
         $user->save();
 
-        // Rating kilometre tasi: yeni puan bir esigi ilk kez gectiyse otomatik bildirim
-        $tiers = [
-            ['min' => 1600, 'name' => 'Usta'],
-            ['min' => 1800, 'name' => 'Master'],
-            ['min' => 2000, 'name' => 'Grandmaster'],
-            ['min' => 2200, 'name' => 'Efsane'],
-        ];
-        foreach ($tiers as $tier) {
-            if ((int) $ra < $tier['min'] && $newRating >= $tier['min']) {
-                \App\Models\Notification::notify(
-                    $user->id,
-                    "{$tier['min']} puanını geçtin — {$tier['name']} oldun!",
-                    "Tebrikler! Rating’in {$newRating}. Yeni ünvanın: {$tier['name']}.",
-                    'crown',
-                );
-            }
-        }
+        // Basarim rozetleri: yeni hak kazanilanlari ekle + bildirim gonder
+        $this->awardBadges($user, $newRating);
 
         // Mac gecmisine kaydet (yonetim panelinde gorunur)
         \App\Models\MatchResult::create([
@@ -241,6 +226,63 @@ class AuthController extends Controller
         ]);
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
+    }
+
+    // Rozet tanimlari (id => [ad, ikon]) — frontend ile ayni id'ler
+    private const BADGE_LABELS = [
+        'first_win'    => ['İlk Galibiyet', 'medal'],
+        'games_10'     => ['10 Maç', 'medal'],
+        'games_50'     => ['50 Maç', 'medal'],
+        'games_100'    => ['100 Maç', 'medal'],
+        'games_500'    => ['500 Maç', 'medal'],
+        'wins_10'      => ['10 Galibiyet', 'trophy'],
+        'wins_50'      => ['50 Galibiyet', 'trophy'],
+        'wins_100'     => ['100 Galibiyet', 'trophy'],
+        'rating_1600'  => ['Usta (1600)', 'crown'],
+        'rating_1800'  => ['Master (1800)', 'crown'],
+        'rating_2000'  => ['Grandmaster (2000)', 'crown'],
+        'rating_2200'  => ['Efsane (2200)', 'crown'],
+    ];
+
+    // Yeni hak kazanilan rozetleri ekle + her biri icin bildirim gonder
+    private function awardBadges(User $user, int $rating): void
+    {
+        $earned = $user->badges ?? [];
+        $games = $user->games_played ?? 0;
+        $wins = $user->wins ?? 0;
+
+        $qualify = [];
+        if ($wins >= 1) {
+            $qualify[] = 'first_win';
+        }
+        foreach ([10, 50, 100, 500] as $g) {
+            if ($games >= $g) {
+                $qualify[] = "games_$g";
+            }
+        }
+        foreach ([10, 50, 100] as $w) {
+            if ($wins >= $w) {
+                $qualify[] = "wins_$w";
+            }
+        }
+        foreach ([1600, 1800, 2000, 2200] as $r) {
+            if ($rating >= $r) {
+                $qualify[] = "rating_$r";
+            }
+        }
+
+        $new = array_values(array_diff($qualify, $earned));
+        if (empty($new)) {
+            return;
+        }
+        $user->badges = array_values(array_unique(array_merge($earned, $new)));
+        $user->save();
+
+        foreach ($new as $b) {
+            $label = self::BADGE_LABELS[$b][0] ?? $b;
+            $icon = self::BADGE_LABELS[$b][1] ?? 'medal';
+            \App\Models\Notification::notify($user->id, "Yeni rozet: {$label}", null, $icon);
+        }
     }
 
     // Liderlik tablosu: rating'e gore en iyi oyuncular (halka acik)
@@ -295,6 +337,7 @@ class AuthController extends Controller
             'games' => $user->games_played ?? 0,
             'rank' => $rank,
             'form' => $form,
+            'badges' => $user->badges ?? [],
         ]);
     }
 

@@ -36,6 +36,7 @@ export interface ServerUser {
   coins?: number
   unlocks?: string[]
   avatar_frame?: string | null
+  badges?: string[]
   wins?: number
   losses?: number
   games_played?: number
@@ -267,6 +268,7 @@ export interface PublicProfile {
   games: number
   rank: number
   form: boolean[] // en yeni once, true=galibiyet
+  badges?: string[]
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)

@@ -55,6 +55,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'game_state' => 'array',
             'unlocks' => 'array',
+            'badges' => 'array',
             'birth_date' => 'date:Y-m-d',
             'banned_at' => 'datetime',
         ];
