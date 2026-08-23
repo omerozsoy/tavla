@@ -1736,7 +1736,7 @@ body {
   border: 2px solid #c9563f;
 }
 .galaxy-btn {
-  background: #a83a2b;
+  background: var(--accent);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -1745,14 +1745,28 @@ body {
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
+  transition:
+    filter 0.12s,
+    transform 0.06s;
 }
 .galaxy-btn:hover:not(:disabled) {
-  filter: brightness(1.1);
+  filter: brightness(1.08);
+}
+.galaxy-btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 .galaxy-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   box-shadow: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .galaxy-btn {
+    transition: none;
+  }
+  .galaxy-btn:active:not(:disabled) {
+    transform: none;
+  }
 }
 .center-msg {
   background: rgba(10, 16, 48, 0.85);
