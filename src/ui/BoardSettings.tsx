@@ -9,12 +9,16 @@ interface BoardThemeOpt {
   a: string
   b: string
   checker?: string
+  price?: number // coin ile alinan premium tema (plan kilidinden muaf)
 }
 
 interface Props {
   boardTheme: string
   setBoardTheme: (id: string) => void
   boardThemes: BoardThemeOpt[]
+  freeCount?: number // ilk N tahta ucretsiz; gerisi premium (kilitli)
+  premium?: boolean
+  onUpgrade?: () => void
   theme: 'dark' | 'light'
   setTheme: (t: 'dark' | 'light') => void
   showPip: boolean
@@ -67,6 +71,9 @@ export default function BoardSettings({
   boardTheme,
   setBoardTheme,
   boardThemes,
+  freeCount = 6,
+  premium = false,
+  onUpgrade,
   theme,
   setTheme,
   showPip,
@@ -110,21 +117,32 @@ export default function BoardSettings({
         <div className="setup-row">
           <div className="setup-label">{t('menu.board')}</div>
           <div className="board-previews">
-            {boardThemes.map((bt) => (
-              <button
-                key={bt.id}
-                className={`board-prev ${boardTheme === bt.id ? 'active' : ''}`}
-                onClick={() => setBoardTheme(bt.id)}
-              >
-                <BoardPreview
-                  panel={bt.panel ?? bt.b}
-                  a={bt.a}
-                  b={bt.b}
-                  checker={bt.checker ?? bt.b}
-                />
-                <span className="bp-name">{bt.name}</span>
-              </button>
-            ))}
+            {boardThemes.map((bt, i) => {
+              // Premium olmayan icin ilk freeCount haric kilitli (satin alinmis premium temalar haric)
+              const locked = !premium && i >= freeCount && bt.price === undefined
+              return (
+                <button
+                  key={bt.id}
+                  className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
+                  onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
+                >
+                  <BoardPreview
+                    panel={bt.panel ?? bt.b}
+                    a={bt.a}
+                    b={bt.b}
+                    checker={bt.checker ?? bt.b}
+                  />
+                  <span className="bp-name">
+                    {locked && <Icon name="crown" size={11} />} {bt.name}
+                  </span>
+                  {locked && (
+                    <span className="bp-lock">
+                      <Icon name="crown" size={16} />
+                    </span>
+                  )}
+                </button>
+              )
+            })}
           </div>
         </div>
 
