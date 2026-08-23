@@ -181,6 +181,34 @@ export class NeuralBot implements Engine {
     return acc
   }
 
+  // Sans (luck) icin: onRoll sirada, TUM 21 zar icin en iyi hamlenin equity'sini
+  // (mover perspektifi) agirlikli ortalar -> "zardan once beklenen en iyi equity".
+  // Bir turun sansi = (gercek zarin en iyi equity'si) - (bu beklenen deger).
+  // Pozitif = sanslı zar, negatif = sanssiz.
+  async expectedBestEquity(state: GameState, onRoll: Player): Promise<number> {
+    await this.init()
+    let acc = 0
+    for (const [d1, d2, w] of NeuralBot.ROLLS) {
+      const st = cloneState(state)
+      st.turn = onRoll
+      st.dice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
+      st.diceUsed = st.dice.map(() => false)
+      const moves = generateMoves(st)
+      let eq: number
+      if (moves.length === 0) {
+        // Gele: oynanabilir hamle yok -> pozisyonun kendisini degerlendir
+        eq = equityFrom(await this.evalPosition(st, onRoll))
+      } else {
+        const cands = await this.scoreMoves(st, moves)
+        let best = cands[0]
+        for (const c of cands) if (c.equity > best.equity) best = c
+        eq = best.equity
+      }
+      acc += w * eq
+    }
+    return acc
+  }
+
   // 2-ply hamle analizi: 1-ply ile en iyi topK hamleyi bulur, onlari 2-ply degerlendirir.
   async analyzeMoves2ply(state: GameState, topK = 6): Promise<RankedMove[]> {
     const mover = state.turn
