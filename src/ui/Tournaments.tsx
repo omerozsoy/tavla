@@ -242,7 +242,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
         </button>
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
-        {isAdmin ? (
+        {isAdmin && (
           <div className="content-form tourn-create">
             <label className="cf-row">
               <span>{t('tourn.fName')}</span>
@@ -288,8 +288,6 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
               <Icon name="trophy" size={16} /> {t('tourn.create')}
             </button>
           </div>
-        ) : (
-          <p className="tourn-adminonly">{t('tourn.adminOnly')}</p>
         )}
 
         {loading ? (

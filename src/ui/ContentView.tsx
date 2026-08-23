@@ -10,6 +10,7 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   news: { icon: 'chat', titleKey: 'menu.news' },
   event: { icon: 'calendar', titleKey: 'menu.calendar' },
   club: { icon: 'pin', titleKey: 'menu.clubs' },
+  ad: { icon: 'star', titleKey: 'menu.services' }, // reklamlar ContentView'de gosterilmez
 }
 
 const paras = (body?: string | null) =>

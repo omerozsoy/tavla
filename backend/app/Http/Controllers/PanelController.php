@@ -131,7 +131,7 @@ class PanelController extends Controller
 
     /* ---------- Icerik ---------- */
 
-    private const TYPES = ['service', 'event', 'club', 'blog', 'news'];
+    private const TYPES = ['service', 'event', 'club', 'blog', 'news', 'ad'];
 
     public function contents(Request $request)
     {

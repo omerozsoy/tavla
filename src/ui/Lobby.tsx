@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { listContents, type Content } from '../api'
 
 interface RoomInfo {
   code: string
@@ -13,6 +14,7 @@ interface Props {
   room: RoomInfo | null
   busy: boolean
   error: string
+  myAvatar?: string | null
   onCreate: () => void
   onJoin: (code: string) => void
   onMatchmake: () => void
@@ -24,6 +26,7 @@ export default function Lobby({
   room,
   busy,
   error,
+  myAvatar,
   onCreate,
   onJoin,
   onMatchmake,
@@ -32,16 +35,63 @@ export default function Lobby({
 }: Props) {
   const { t } = useT()
   const [code, setCode] = useState('')
+  const [ads, setAds] = useState<Content[]>([])
+  const [adIdx, setAdIdx] = useState(0)
 
-  // Hizli eslesme: rakip araniyor
+  useEffect(() => {
+    listContents('ad')
+      .then(setAds)
+      .catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (ads.length < 2) return
+    const id = window.setInterval(() => setAdIdx((i) => (i + 1) % ads.length), 4000)
+    return () => window.clearInterval(id)
+  }, [ads.length])
+
+  // Hizli eslesme: rakip araniyor (avatar VS spinner + reklam)
   if (room && room.status === 'mm_waiting') {
+    const ad = ads.length ? ads[adIdx % ads.length] : null
     return (
       <div className="register-overlay">
         <div className="register-card mm-searching">
-          <div className="mm-spinner" />
           <h2>{t('mp.searching')}</h2>
-          <p className="register-sub">{t('mp.searchingSub')}</p>
-          <button className="menu-btn" onClick={onCancelMatch}>
+          <div className="mm-vs">
+            <div className="mm-side">
+              {myAvatar ? <img src={myAvatar} alt="" /> : <Icon name="user" size={30} />}
+            </div>
+            <span className="mm-vs-label">VS</span>
+            <div className="mm-side mm-opp">
+              <div className="mm-spinner" />
+            </div>
+          </div>
+
+          {ad && (
+            <div className="mm-ad">
+              <a
+                className="mm-ad-img"
+                href={ad.body || undefined}
+                target="_blank"
+                rel="noreferrer"
+                style={{ pointerEvents: ad.body ? 'auto' : 'none' }}
+              >
+                {ad.image ? (
+                  <img src={ad.image} alt={ad.title} />
+                ) : (
+                  <div className="mm-ad-ph">{ad.title}</div>
+                )}
+              </a>
+              {ads.length > 1 && (
+                <div className="mm-ad-dots">
+                  {ads.map((_, i) => (
+                    <span key={i} className={i === adIdx ? 'on' : ''} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          <button className="galaxy-btn double mm-cancel" onClick={onCancelMatch}>
             {t('mp.cancel')}
           </button>
         </div>

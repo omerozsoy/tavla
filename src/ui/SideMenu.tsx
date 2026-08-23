@@ -96,14 +96,6 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
-      {p.isAdmin && p.onAdmin && (
-        <div className="menu-group">
-          <button className="menu-btn menu-admin" onClick={p.onAdmin}>
-            <Icon name="crown" /> {t('menu.admin')}
-          </button>
-        </div>
-      )}
-
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
         <button className="menu-btn" onClick={p.onTournaments}>
