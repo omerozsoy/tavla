@@ -49,6 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
+    Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::post('/friends/request', [FriendController::class, 'request']);

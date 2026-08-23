@@ -284,6 +284,14 @@ export async function startTrial(plan: 'star' | 'starpro'): Promise<{ user: Serv
   return req('/membership/trial', { method: 'POST', body: JSON.stringify({ plan }) })
 }
 
+// Abonelik odemesi baslat (Garanti 3D). Kart sayfasi URL'si doner.
+export async function subscribe(
+  plan: 'star' | 'starpro',
+  period: 'yearly' | 'monthly',
+): Promise<{ url: string }> {
+  return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period }) })
+}
+
 // Herkese acik oyuncu profili
 export interface PublicProfile {
   id: number
