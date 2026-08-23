@@ -3,7 +3,7 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
-import { startTrial, type ServerUser } from '../api'
+import { startTrial, subscribe, type ServerUser } from '../api'
 
 export default function Membership({
   current,
@@ -33,6 +33,19 @@ export default function Membership({
       const m = e as { message?: string }
       setErr(m?.message || t('mem.err'))
     } finally {
+      setBusy(null)
+    }
+  }
+
+  async function pay(plan: 'star' | 'starpro') {
+    setErr('')
+    setBusy(plan)
+    try {
+      const r = await subscribe(plan, yearly ? 'yearly' : 'monthly')
+      window.location.href = r.url // Garanti kart sayfasina yonlendir
+    } catch (e) {
+      const m = e as { message?: string }
+      setErr(m?.message || t('mem.err'))
       setBusy(null)
     }
   }
@@ -89,6 +102,13 @@ export default function Membership({
                         onClick={() => trial(p.id as 'star' | 'starpro')}
                       >
                         {busy === p.id ? '…' : trialUsed ? t('mem.trialUsed') : t('mem.tryFree')}
+                      </button>
+                      <button
+                        className="mem-sub"
+                        disabled={busy !== null}
+                        onClick={() => pay(p.id as 'star' | 'starpro')}
+                      >
+                        {t('mem.subscribe')}
                       </button>
                       <div className="mem-price">
                         {t('mem.after', {

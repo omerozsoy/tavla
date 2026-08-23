@@ -4527,6 +4527,24 @@ body {
   opacity: 0.6;
   cursor: not-allowed;
 }
+.mem-sub {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.mem-sub:hover {
+  border-color: var(--accent);
+}
+.mem-sub:disabled {
+  opacity: 0.6;
+}
 .mem-price {
   font-size: 0.74rem;
   color: var(--muted);
