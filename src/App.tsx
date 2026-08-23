@@ -48,9 +48,11 @@ import {
   selectFrame,
   claimDaily,
   ping,
+  markNotificationsRead,
   inviteFriend,
   respondInvite,
   type GameInvite as GameInviteT,
+  type AppNotification,
   type TournNotice as TournNoticeT,
   showRoom,
   updateRoom,
@@ -77,6 +79,7 @@ import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
+import NotificationBell from './ui/NotificationBell'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
@@ -318,6 +321,8 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
+  const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
+  const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
@@ -1303,6 +1308,8 @@ export default function App() {
     if (!user) {
       setInvites([])
       setTournNotices([])
+      setNotifications([])
+      setUnreadNotif(0)
       return
     }
     let cancelled = false
@@ -1313,6 +1320,8 @@ export default function App() {
             setInvites(r.invites ?? [])
             setTournNotices(r.tournament_matches ?? [])
             setRewardReady(!!r.reward_ready)
+            setNotifications(r.notifications ?? [])
+            setUnreadNotif(r.unread ?? 0)
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
         })
@@ -2280,6 +2289,17 @@ export default function App() {
             </span>
           )}
         </button>
+      )}
+      {user && (
+        <NotificationBell
+          items={notifications}
+          unread={unreadNotif}
+          onOpen={() => {
+            setUnreadNotif(0)
+            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+            markNotificationsRead().catch(() => {})
+          }}
+        />
       )}
       {user ? (
         <>

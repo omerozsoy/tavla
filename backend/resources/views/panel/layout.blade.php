@@ -75,6 +75,7 @@
         <a href="/panel/users" class="{{ request()->is('panel/users') ? 'active' : '' }}">Üyeler</a>
         <a href="/panel/tournaments" class="{{ request()->is('panel/tournaments') ? 'active' : '' }}">Turnuvalar</a>
         <a href="/panel/content" class="{{ request()->is('panel/content*') ? 'active' : '' }}">İçerik</a>
+        <a href="/panel/notifications" class="{{ request()->is('panel/notifications*') ? 'active' : '' }}">Bildirimler</a>
         <a href="/" target="_blank">↗ Siteyi Aç</a>
       </nav>
       <form method="post" action="/panel/logout" class="logout">@csrf<button>Çıkış Yap</button></form>
