@@ -6335,3 +6335,33 @@ body {
   font-weight: 800;
   color: var(--navy, #2e4372);
 }
+
+/* ---- Nasil Oynanir rehberi ---- */
+.rules-card {
+  width: min(760px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+}
+.rules-intro {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  margin-bottom: 8px;
+}
+.rules-section {
+  margin-top: 18px;
+}
+.rules-section h3 {
+  font-size: 1.08rem;
+  font-weight: 700;
+  color: var(--navy, #2e4372);
+  margin-bottom: 6px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--line, #e6ddcf);
+}
+.rules-section p {
+  font-size: 0.92rem;
+  line-height: 1.62;
+  margin: 6px 0;
+  opacity: 0.92;
+}
