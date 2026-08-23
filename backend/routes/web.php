@@ -29,6 +29,8 @@ Route::prefix('panel')->group(function () {
         Route::post('/content/{content}/delete', [PanelController::class, 'contentDelete']);
         Route::get('/notifications', [PanelController::class, 'notifications']);
         Route::post('/notifications', [PanelController::class, 'notificationSend']);
+        Route::get('/mail', [PanelController::class, 'mail']);
+        Route::post('/mail', [PanelController::class, 'mailTest']);
     });
 });
 

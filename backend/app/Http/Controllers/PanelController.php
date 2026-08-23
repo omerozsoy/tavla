@@ -306,4 +306,45 @@ class PanelController extends Controller
         \App\Models\Notification::notify($user->id, $data['title'], $data['body'] ?? null, $icon);
         return back()->with('ok', "Bildirim gönderildi: {$user->nickname}");
     }
+
+    // ---- Mail testi: mevcut SMTP ayarini goster + tek tikla test e-postasi ----
+    public function mail(Request $request)
+    {
+        return view('panel.mail', [
+            'cfg' => [
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'username' => config('mail.mailers.smtp.username'),
+                'from' => config('mail.from.address'),
+                'from_name' => config('mail.from.name'),
+            ],
+            'defaultTo' => $request->user()?->email,
+        ]);
+    }
+
+    public function mailTest(Request $request)
+    {
+        $data = $request->validate([
+            'to' => ['required', 'email'],
+        ]);
+        $mailer = config('mail.default');
+        try {
+            \Illuminate\Support\Facades\Mail::raw(
+                "TavlaTv test e-postasi.\n\nBu mesaji gorduyseniz mail ayarlariniz calisiyor. \n(surucu: {$mailer})\n\nTarih: ".now()->toDateTimeString(),
+                function ($m) use ($data) {
+                    $m->to($data['to'])->subject('TavlaTv — Mail Testi');
+                }
+            );
+        } catch (\Throwable $e) {
+            return back()->withErrors(['to' => 'Gönderim hatası: '.$e->getMessage()])->withInput();
+        }
+        if ($mailer === 'log') {
+            return back()->with(
+                'ok',
+                "Gönderildi ama sürücü 'log' — e-posta storage/logs/laravel.log'a yazıldı, gelen kutusuna GİTMEDİ. Gerçek teslim için .env'de SMTP ayarla."
+            );
+        }
+        return back()->with('ok', "Test e-postası gönderildi: {$data['to']} (sürücü: {$mailer}). Gelen kutusunu ve spam'i kontrol et.");
+    }
 }
