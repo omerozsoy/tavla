@@ -15,6 +15,14 @@ export interface MoveLogEntry {
   cands?: { notation: string; equity: number; steps: Step[] }[]
   probs?: number[]
   seq?: number
+  // Kup (cube) karari kaydi (taş oyunu degil). Varsa bu bir kup satiridir.
+  cube?: {
+    win: number // karar aninda kazanma %
+    equity: number
+    recommended: string // 'double-take'|'double-pass'|'no-double'|'too-good'|'take'|'drop'
+    chosen: string // 'double'|'no-double'|'take'|'drop'
+    correct: boolean
+  }
 }
 
 const PROFILE_KEY = 'tavla.profile'
