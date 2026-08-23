@@ -131,7 +131,7 @@ class PanelController extends Controller
 
     /* ---------- Icerik ---------- */
 
-    private const TYPES = ['service', 'event', 'club', 'blog', 'news', 'ad'];
+    private const TYPES = ['service', 'event', 'club', 'blog', 'news', 'ad', 'quiz'];
 
     public function contents(Request $request)
     {
@@ -184,6 +184,28 @@ class PanelController extends Controller
             }
             $file->move($dir, $name);
             $data['image'] = '/uploads/'.$name;
+        }
+
+        // Quiz: soru = title; sikler + dogru cevap + aciklama -> body JSON
+        if ($data['type'] === 'quiz') {
+            $opts = array_values(array_filter(
+                [
+                    trim((string) $request->input('opt1', '')),
+                    trim((string) $request->input('opt2', '')),
+                    trim((string) $request->input('opt3', '')),
+                    trim((string) $request->input('opt4', '')),
+                ],
+                fn ($o) => $o !== ''
+            ));
+            $answer = (int) $request->input('answer', 0);
+            if ($answer < 0 || $answer >= count($opts)) {
+                $answer = 0;
+            }
+            $data['body'] = json_encode([
+                'options' => $opts,
+                'answer' => $answer,
+                'explain' => trim((string) $request->input('explain', '')),
+            ], JSON_UNESCAPED_UNICODE);
         }
 
         if (! empty($data['id'])) {
