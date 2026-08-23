@@ -2389,6 +2389,7 @@ export default function App() {
     hasActiveGame,
     onNewGame: () => setSetup('online'), // Mac Oyunu her zaman online (gercek rakip)
     onSolo: () => setSoloOpen(true),
+    onAiGame: () => setSetup('pvb'), // Yapay zekaya karsi oyna (bot)
     onResume: () => setHome(false),
     onHome: () => (online ? handleLeaveRoom() : setHome(true)),
     onLeaderboard: () => setLeaderboardOpen(true),
