@@ -140,7 +140,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   }
 
   return (
-    <div className="register-overlay modal report-overlay" onClick={onClose}>
+    <div className="register-overlay modal report-overlay">
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

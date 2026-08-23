@@ -139,7 +139,7 @@ export default function Lessons({ onClose }: Props) {
   const [open, setOpen] = useState(0)
 
   return (
-    <div className="register-overlay modal page" onClick={onClose}>
+    <div className="register-overlay modal page">
       <div className="register-card lessons-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
