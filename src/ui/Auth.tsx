@@ -553,8 +553,8 @@ export default function Auth({
           </button>
         )}
 
-        {/* Hesabi sil (yalnizca yonetici) */}
-        {editUser && editUser.is_admin && onDeleteAccount && (
+        {/* Hesabi sil (KVKK/GDPR: kullanici kendi hesabini silebilir) */}
+        {editUser && onDeleteAccount && (
           <div className="danger-zone">
             {confirmDelete ? (
               <>
