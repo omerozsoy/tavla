@@ -1383,7 +1383,7 @@ body {
   background-image: var(--marble),
     radial-gradient(circle at 36% 30%, #fffef9 0%, var(--cream) 48%, #cdbf9f 88%, #b3a684 100%);
   background-size: cover, cover;
-  background-blend-mode: soft-light, normal;
+  background-blend-mode: overlay, normal;
   border: 1px solid #b8ab90;
   box-shadow:
     inset 0 2px 4px rgba(255, 255, 255, 0.85),
@@ -1400,7 +1400,7 @@ body {
       color-mix(in srgb, var(--navy) 60%, #000) 100%
     );
   background-size: cover, cover;
-  background-blend-mode: soft-light, normal;
+  background-blend-mode: overlay, normal;
   border: 1px solid rgba(0, 0, 0, 0.5);
   box-shadow:
     inset 0 2px 4px rgba(255, 255, 255, 0.32),
