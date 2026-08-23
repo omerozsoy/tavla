@@ -5,6 +5,7 @@ import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
 import { frameStyle } from '../cosmetics'
 import PublicProfile from './PublicProfile'
+import { DivisionChip } from './Badges'
 
 interface Props {
   currentName?: string
@@ -86,6 +87,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                         )}
                       </span>
                       {r.name}
+                      <DivisionChip rating={r.rating} size="sm" />
                     </span>
                     <span className="lb-games">{r.games}</span>
                     <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>

@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
 import { frameStyle } from '../cosmetics'
+import { DivisionChip, BadgeList } from './Badges'
 
 // Herkese acik oyuncu profili karti (liderlik/rakip isminden acilir)
 export default function PublicProfile({ id, onClose }: { id: number; onClose: () => void }) {
@@ -58,6 +59,8 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
               </div>
             </div>
 
+            <DivisionChip rating={p.rating} />
+
             <div className="pp-grid">
               <div className="pp-box">
                 <div className="pp-val">{p.games}</div>
@@ -87,6 +90,8 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
                 ))}
               </div>
             )}
+
+            <BadgeList ids={p.badges} />
           </>
         )}
       </div>
