@@ -107,6 +107,15 @@ import {
   type ServerUser,
 } from './api'
 
+// Geri sayim bicimi: saniye -> "S:DD:SS"
+function fmtCountdown(total: number): string {
+  const s = Math.max(0, Math.floor(total))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  return `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+}
+
 // Zar gorunum sirasi: varsayilan olarak buyuk zar once (ciftte/tek zarda degismez).
 // Oyuncu tahtada zara tiklayarak sirayi degistirebilir (canSwapDice).
 function orderDice(dice: number[]): number[] {
@@ -339,6 +348,7 @@ export default function App() {
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
+  const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
   const installPromptRef = useRef<{ prompt: () => void } | null>(null)
   const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
@@ -1422,6 +1432,7 @@ export default function App() {
             setInvites(r.invites ?? [])
             setTournNotices(r.tournament_matches ?? [])
             setRewardReady(!!r.reward_ready)
+            setRewardSecs(r.reward_seconds ?? 0)
             setNotifications(r.notifications ?? [])
             setUnreadNotif(r.unread ?? 0)
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
@@ -1436,6 +1447,13 @@ export default function App() {
       window.clearInterval(id)
     }
   }, [user])
+
+  // Odul geri sayimi: her saniye azalt (ping 20sn'de bir gercek degeri yeniler)
+  useEffect(() => {
+    if (rewardReady || rewardSecs <= 0) return
+    const id = window.setInterval(() => setRewardSecs((s) => Math.max(0, s - 1)), 1000)
+    return () => window.clearInterval(id)
+  }, [rewardReady, rewardSecs > 0])
 
   // Magaza: satin al / cerceve tak
   async function handleBuy(shopId: string) {
@@ -2389,16 +2407,30 @@ export default function App() {
       </span>
       {user && (
         <button
-          className={`account-coins-btn ${rewardReady ? 'ready' : ''}`}
-          onClick={handleCoinClick}
-          title={rewardReady ? t('reward.claim') : t('reward.next')}
+          className="account-coins-btn"
+          onClick={() => setShopOpen(true)}
+          title={t('shop.title')}
         >
           <Icon name="coin" size={16} /> {user.coins ?? 0}
-          {rewardReady && (
-            <span className="coin-gift">
-              <Icon name="gift" size={14} />
-            </span>
-          )}
+        </button>
+      )}
+      {user &&
+        (rewardReady ? (
+          <button
+            className="account-btn account-reward ready"
+            onClick={handleCoinClick}
+            title={t('reward.claim')}
+          >
+            <Icon name="gift" size={15} /> 500
+          </button>
+        ) : (
+          <span className="account-reward count" title={t('reward.in')}>
+            <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
+          </span>
+        ))}
+      {user && (
+        <button className="account-btn account-shop" onClick={() => setShopOpen(true)}>
+          <Icon name="shop" size={15} /> {t('shop.title')}
         </button>
       )}
       {user && (

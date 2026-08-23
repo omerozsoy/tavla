@@ -4559,6 +4559,32 @@ body {
 .coin-gift {
   font-size: 0.9rem;
 }
+/* Gunluk odul: hazir -> tiklanabilir; degil -> geri sayim */
+.account-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.account-reward.count {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.account-reward.count > svg {
+  color: var(--accent);
+}
+.account-reward.ready {
+  background: color-mix(in srgb, #e6b422 24%, var(--card-bg));
+  border-color: #e6b422;
+  color: var(--text);
+  font-weight: 800;
+  animation: coin-pulse 1.6s ease-in-out infinite;
+}
 @keyframes coin-pulse {
   0%,
   100% {
