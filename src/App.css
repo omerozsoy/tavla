@@ -1063,8 +1063,9 @@ body {
   justify-content: center;
   font-size: 34px;
   margin: 0 auto 6px;
-  border: 3px solid #333;
-  background: #12183a;
+  border: 3px solid var(--border);
+  background: var(--panel);
+  color: var(--text);
   overflow: hidden;
 }
 .avatar img {
@@ -1114,7 +1115,7 @@ body {
 }
 .off-box {
   background: var(--cream);
-  color: #0a1030;
+  color: var(--tv-ink);
   width: 52px;
   height: 42px;
   border-radius: 8px;
@@ -1124,6 +1125,7 @@ body {
   align-items: center;
   justify-content: center;
   margin: 0 auto;
+  border: 1px solid var(--border);
 }
 .dice-area {
   display: flex;
@@ -1154,7 +1156,7 @@ body {
 }
 .clock-die {
   background: var(--cream);
-  color: #0a1030;
+  color: var(--tv-ink);
   width: 40px;
   height: 40px;
   border-radius: 8px;
@@ -1524,7 +1526,7 @@ body {
   }
 }
 .die-face.white {
-  background: #eef1fc;
+  background: var(--cream);
 }
 .die-face.black {
   background: var(--navy);
@@ -1540,7 +1542,7 @@ body {
   background: #a83a2b;
 }
 .die-face.black .pip-dot {
-  background: #eef1fc;
+  background: var(--cream);
 }
 .die-face.used {
   opacity: 0.35;
@@ -1560,7 +1562,7 @@ body {
 .bearoff {
   grid-column: 2;
   grid-row: 1 / 4;
-  background: #0c1233;
+  background: var(--bar);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1569,7 +1571,7 @@ body {
 }
 .bearoff-slot {
   flex: 1;
-  background: #070b22;
+  background: rgba(0, 0, 0, 0.16);
   border-radius: 4px;
   display: flex;
   flex-direction: column;
@@ -2498,7 +2500,7 @@ body {
   min-width: 62px;
   padding: 6px 10px;
   border-radius: 8px;
-  background: #0a0d2e;
+  background: var(--tv-ink);
   color: #fff;
   font-size: 1.25rem;
   font-weight: 800;
@@ -2519,7 +2521,7 @@ body {
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
 }
 .checker.white .checker-count {
-  color: #1a2340;
+  color: var(--tv-ink);
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
 

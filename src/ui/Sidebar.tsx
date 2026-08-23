@@ -32,7 +32,7 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
         </div>
       )}
       <div className="score-badge">
-        <Icon name="star" size={13} /> {p.score} / {p.target}
+        <Icon name="medal" size={13} /> {p.score} / {p.target}
       </div>
       <div className="off-box">{p.off}</div>
     </div>
