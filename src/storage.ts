@@ -34,6 +34,8 @@ export interface SavedGame {
     timeout?: boolean
     resigned?: boolean
   } | null
+  // Bekleyen kup teklifi (online senkron icin): teklif eden oyuncu, yoksa null
+  cubePending?: 'white' | 'black' | null
 }
 
 export function loadProfile(): Profile | null {
