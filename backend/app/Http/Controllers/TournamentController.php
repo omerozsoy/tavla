@@ -31,7 +31,7 @@ class TournamentController extends Controller
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
-            'size' => ['required', 'integer', 'in:4,8,16'],
+            'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sinirsiz
             'prize_coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prize_desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
@@ -57,7 +57,8 @@ class TournamentController extends Controller
             return response()->json(['message' => 'Turnuva kayıtları kapalı.'], 422);
         }
         $players = $tournament->players ?? [];
-        if (count($players) >= $tournament->size) {
+        // size 0 = sinirsiz (kapasite yok); aksi halde dolulukta kayit kapali
+        if ($tournament->size > 0 && count($players) >= $tournament->size) {
             return response()->json(['message' => 'Turnuva dolu.'], 422);
         }
         $me = $request->user();
@@ -82,8 +83,8 @@ class TournamentController extends Controller
         }
         $this->addPlayer($tournament, $me);
         $t = $tournament->fresh();
-        // Dolduysa otomatik basla
-        if (count($t->players) >= $t->size) {
+        // Sabit boyut dolduysa otomatik basla (sinirsizda admin elle baslatir)
+        if ($t->size > 0 && count($t->players) >= $t->size) {
             $this->startBracket($t);
             $t = $t->fresh();
         }
@@ -205,6 +206,22 @@ class TournamentController extends Controller
         return response()->json(['tournament' => $this->full($tournament)]);
     }
 
+    // Turnuvayi elle baslat (sinirsiz turnuvalar icin; yalnizca yonetici)
+    public function start(Request $request, Tournament $tournament)
+    {
+        if (! $request->user()?->is_admin) {
+            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+        }
+        if ($tournament->status !== 'open') {
+            return response()->json(['message' => 'Turnuva zaten başladı.'], 422);
+        }
+        if (count($tournament->players ?? []) < 2) {
+            return response()->json(['message' => 'En az 2 oyuncu gerekli.'], 422);
+        }
+        $this->startBracket($tournament);
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
     // Turnuvayi sil (yalnizca yonetici)
     public function destroy(Request $request, Tournament $tournament)
     {
@@ -240,7 +257,15 @@ class TournamentController extends Controller
     {
         $players = $t->players ?? [];
         usort($players, fn ($a, $b) => ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0));
-        $size = $t->size;
+        $size = (int) $t->size;
+        // Sinirsiz (0): oyuncu sayisina gore bir sonraki 2'nin kuvvetine yuvarla
+        if ($size < 4) {
+            $n = max(2, count($players));
+            $size = 1;
+            while ($size < $n) {
+                $size *= 2;
+            }
+        }
         while (count($players) < $size) {
             $players[] = null; // bye
         }

@@ -9,6 +9,7 @@ import {
   joinTournament,
   reportTournament,
   finishTournament,
+  startTournament,
   deleteTournament,
   type Tournament,
   type TMatch,
@@ -178,7 +179,24 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                   <b>{p.rating}</b>
                 </div>
               ))}
-              <div className="tourn-wait">{t('tourn.waitFull')}</div>
+              {isAdmin && (active.players?.length ?? 0) >= 2 ? (
+                <button
+                  className="galaxy-btn roll"
+                  disabled={busy}
+                  onClick={async () => {
+                    setBusy(true)
+                    try {
+                      setActive(await startTournament(active.id))
+                    } finally {
+                      setBusy(false)
+                    }
+                  }}
+                >
+                  <Icon name="play" size={16} /> {t('tourn.start')}
+                </button>
+              ) : (
+                <div className="tourn-wait">{t('tourn.waitFull')}</div>
+              )}
             </div>
           ) : (
             <div className="tourn-bracket">
@@ -259,6 +277,11 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                   <option value={4}>4</option>
                   <option value={8}>8</option>
                   <option value={16}>16</option>
+                  <option value={32}>32</option>
+                  <option value={64}>64</option>
+                  <option value={128}>128</option>
+                  <option value={256}>256</option>
+                  <option value={0}>{t('tourn.unlimited')}</option>
                 </select>
               </label>
               <label className="cf-row">
