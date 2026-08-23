@@ -14,12 +14,14 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 
-// Halka acik
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/auth/google', [AuthController::class, 'googleLogin']);
-Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+// Halka acik — kimlik dogrulama uclari kaba kuvvete karsi hiz sinirli (IP basi/dk)
+Route::middleware('throttle:20,1')->group(function () {
+    Route::post('/register', [AuthController::class, 'register']);
+    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/auth/google', [AuthController::class, 'googleLogin']);
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+});
 Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil

@@ -166,10 +166,9 @@ class AuthController extends Controller
     // Hesabi kalici olarak sil (yalnizca yonetici)
     public function deleteAccount(Request $request)
     {
+        // Kullanici kendi hesabini silebilir (KVKK/GDPR: veri silme hakki).
+        // Endpoint auth:sanctum altinda; her zaman istegi yapan kullaniciya isler.
         $user = $request->user();
-        if (! $user->is_admin) {
-            return response()->json(['message' => 'Bu işlem için yetkin yok.'], 403);
-        }
         $user->tokens()->delete(); // tum oturum token'lari
         $user->delete();
         return response()->json(['ok' => true]);
