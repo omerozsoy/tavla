@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { myStats, type MyStats } from '../api'
+import { myStats, myMatches, type MyStats, type MyMatch } from '../api'
 import { frameStyle } from '../cosmetics'
 
 interface Props {
@@ -17,12 +17,16 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   useEscape(onClose)
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
+  const [matches, setMatches] = useState<MyMatch[] | null>(null)
 
   useEffect(() => {
     let alive = true
     myStats()
       .then((d) => alive && setData(d))
       .catch(() => alive && setError(true))
+    myMatches()
+      .then((m) => alive && setMatches(m))
+      .catch(() => alive && setMatches([]))
     return () => {
       alive = false
     }
@@ -91,9 +95,74 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                 <div className="stats-bar-win" style={{ width: `${wr}%` }} />
               </div>
             )}
+
+            {/* Rating grafigi (son maclarin rating_after degerleri) */}
+            {matches && matches.length >= 2 && <RatingSpark matches={matches} />}
+
+            {/* Son maclar (mac gecmisi) */}
+            <div className="mh-head">{t('stats.recent')}</div>
+            {matches === null ? (
+              <div className="lb-empty small">{t('an.loading')}</div>
+            ) : matches.length === 0 ? (
+              <div className="lb-empty small">{t('stats.noMatches')}</div>
+            ) : (
+              <div className="mh-list">
+                {matches.map((m, i) => (
+                  <div key={i} className="mh-row">
+                    <span className={`mh-res ${m.won ? 'win' : 'loss'}`}>
+                      {m.won ? t('stats.win') : t('stats.loss')}
+                    </span>
+                    <span className="mh-opp">vs {m.opponent_rating}</span>
+                    <span className={`mh-delta ${m.delta >= 0 ? 'up' : 'down'}`}>
+                      {m.delta >= 0 ? '+' : ''}
+                      {m.delta}
+                    </span>
+                    <span className="mh-date">{fmtDate(m.created_at)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function fmtDate(iso?: string | null): string {
+  if (!iso) return ''
+  return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+}
+
+// Basit rating grafigi (SVG polyline). matches en yeni once -> ters cevir.
+function RatingSpark({ matches }: { matches: MyMatch[] }) {
+  const pts = matches
+    .slice()
+    .reverse()
+    .map((m) => m.rating_after)
+  const w = 260
+  const h = 54
+  const min = Math.min(...pts)
+  const max = Math.max(...pts)
+  const span = Math.max(1, max - min)
+  const step = pts.length > 1 ? w / (pts.length - 1) : w
+  const coords = pts.map((v, i) => {
+    const x = i * step
+    const y = h - 4 - ((v - min) / span) * (h - 8)
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  })
+  return (
+    <div className="mh-spark">
+      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h}>
+        <polyline
+          points={coords.join(' ')}
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+      </svg>
     </div>
   )
 }

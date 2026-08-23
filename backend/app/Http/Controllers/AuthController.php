@@ -253,6 +253,7 @@ class AuthController extends Controller
         $rows = $users->values()->map(function ($u, $i) {
             return [
                 'rank'    => $i + 1,
+                'id'      => $u->id,
                 'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
                 'avatar'  => $u->avatar,
                 'frame'   => $u->avatar_frame,
@@ -266,6 +267,52 @@ class AuthController extends Controller
         });
 
         return response()->json(['players' => $rows]);
+    }
+
+    // Herkese acik oyuncu profili: temel istatistik + son mac formu (W/L)
+    public function publicProfile(Request $request, User $user)
+    {
+        $recent = \App\Models\MatchResult::where('user_id', $user->id)
+            ->orderByDesc('id')
+            ->limit(10)
+            ->get(['won', 'delta', 'created_at']);
+        $form = $recent->map(fn ($m) => (bool) $m->won)->all(); // en yeni once
+        $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->nickname ?: $user->first_name ?: 'Oyuncu',
+            'avatar' => $user->avatar,
+            'frame' => $user->avatar_frame,
+            'country' => $user->country,
+            'rating' => $user->rating ?? 1500,
+            'coins' => $user->coins ?? 0,
+            'wins' => $user->wins ?? 0,
+            'losses' => $user->losses ?? 0,
+            'games' => $user->games_played ?? 0,
+            'rank' => $rank,
+            'form' => $form,
+        ]);
+    }
+
+    // Giris yapan kullanicinin son maclari (mac gecmisi)
+    public function myMatches(Request $request)
+    {
+        $me = $request->user();
+        $matches = \App\Models\MatchResult::where('user_id', $me->id)
+            ->orderByDesc('id')
+            ->limit(30)
+            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'created_at'])
+            ->map(fn ($m) => [
+                'won' => (bool) $m->won,
+                'opponent_rating' => $m->opponent_rating,
+                'rating_before' => $m->rating_before,
+                'rating_after' => $m->rating_after,
+                'delta' => $m->delta,
+                'created_at' => optional($m->created_at)->toIso8601String(),
+            ]);
+
+        return response()->json(['matches' => $matches]);
     }
 
     // Sifremi unuttum -> sifirlama linki e-postala

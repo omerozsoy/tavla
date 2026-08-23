@@ -204,11 +204,6 @@ body {
 .menu-btn > svg {
   color: var(--accent);
 }
-/* Tek Oyun: sondaki coin ikonu saga yasli */
-.menu-solo .menu-coin {
-  margin-left: auto;
-  color: var(--gold, #e6b422);
-}
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
   margin-top: auto;
@@ -3877,6 +3872,181 @@ body {
 .stats-bar-win {
   height: 100%;
   background: linear-gradient(90deg, #4fb477, #7ee0a0);
+}
+
+/* Mac gecmisi + rating grafigi */
+.mh-spark {
+  margin-top: 16px;
+  padding: 8px 4px 2px;
+}
+.mh-head {
+  margin-top: 18px;
+  margin-bottom: 8px;
+  font-weight: 800;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.lb-empty.small {
+  padding: 12px;
+  font-size: 0.85rem;
+}
+.mh-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.mh-row {
+  display: grid;
+  grid-template-columns: 34px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  font-size: 0.86rem;
+}
+.mh-res {
+  font-weight: 800;
+  text-align: center;
+  border-radius: 6px;
+  padding: 2px 0;
+}
+.mh-res.win {
+  color: #2e9e5b;
+  background: color-mix(in srgb, #2e9e5b 14%, transparent);
+}
+.mh-res.loss {
+  color: var(--tv-brick-light);
+  background: color-mix(in srgb, var(--tv-brick) 14%, transparent);
+}
+.mh-opp {
+  color: var(--muted);
+}
+.mh-delta {
+  font-weight: 700;
+}
+.mh-delta.up {
+  color: #2e9e5b;
+}
+.mh-delta.down {
+  color: var(--tv-brick-light);
+}
+.mh-date {
+  color: var(--muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+/* Herkese acik profil karti */
+.pp-card {
+  max-width: 420px;
+}
+.lb-row.clickable {
+  cursor: pointer;
+}
+.lb-row.clickable:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.pp-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.pp-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: var(--btn-bg);
+}
+.pp-id {
+  flex: 1;
+  min-width: 0;
+}
+.pp-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.pp-rank {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.pp-rating {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--accent);
+  text-align: right;
+}
+.pp-coins {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.pp-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+}
+.pp-box {
+  text-align: center;
+  padding: 10px 4px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.pp-val {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.pp-val.good {
+  color: #2e9e5b;
+}
+.pp-val.bad {
+  color: var(--tv-brick-light);
+}
+.pp-lbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pp-form {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.pp-form-lbl {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-right: 4px;
+}
+.pp-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #fff;
+}
+.pp-dot.win {
+  background: #2e9e5b;
+}
+.pp-dot.loss {
+  background: var(--tv-brick);
 }
 
 .menu-install {
