@@ -64,7 +64,8 @@ class ShopController extends Controller
     {
         $u = $request->user();
         $last = $u->last_reward ? \Illuminate\Support\Carbon::parse($u->last_reward) : null;
-        $elapsed = $last ? now()->diffInSeconds($last) : self::REWARD_COOLDOWN;
+        // abs(): Carbon 3 diffInSeconds isaretli doner -> mutlak gecen sure
+        $elapsed = $last ? (int) abs(now()->diffInSeconds($last)) : self::REWARD_COOLDOWN;
         if ($last && $elapsed < self::REWARD_COOLDOWN) {
             return response()->json([
                 'claimed' => false,

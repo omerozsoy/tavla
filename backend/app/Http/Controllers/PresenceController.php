@@ -68,8 +68,9 @@ class PresenceController extends Controller
         }
 
         // 6 saatlik odul hazir mi + sonraki odule kalan saniye
+        // abs(): Carbon 3'te diffInSeconds isaretli doner -> mutlak gecen sure al
         $last = $me->last_reward ? \Illuminate\Support\Carbon::parse($me->last_reward) : null;
-        $elapsed = $last ? now()->diffInSeconds($last) : PHP_INT_MAX;
+        $elapsed = $last ? (int) abs(now()->diffInSeconds($last)) : PHP_INT_MAX;
         $rewardReady = $elapsed >= 6 * 3600;
         $rewardSeconds = $rewardReady ? 0 : (6 * 3600 - $elapsed);
 
