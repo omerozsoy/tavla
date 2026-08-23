@@ -17,12 +17,14 @@ export interface LogEntry {
   playedSteps?: Step[]
   cands?: { notation: string; equity: number; steps: Step[] }[]
   probs?: number[]
+  seq?: number
 }
 
 interface Props {
   mode: 'stats' | 'analysis'
   log: LogEntry[]
   pr: number | null
+  humanColor?: Player // istatistik yalnizca insanin hamlelerini saysin (bot haric)
   onClose: () => void
 }
 
@@ -40,7 +42,7 @@ function winPct(probs?: number[]): number | null {
   return Math.round((probs[0] + probs[1] + probs[2]) * 100)
 }
 
-export default function MatchReport({ mode, log, pr, onClose }: Props) {
+export default function MatchReport({ mode, log, pr, humanColor, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [worstFirst, setWorstFirst] = useState(false)
@@ -49,17 +51,21 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
   const [sel, setSel] = useState(firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [candIdx, setCandIdx] = useState(0) // tahtada gosterilen aday (0 = oynanan/en iyi)
 
+  // Istatistik yalnizca insanin hamleleri; analiz listesi iki tarafi da gosterir
+  const statLog = humanColor ? log.filter((e) => e.player === humanColor) : log
   const counts = { good: 0, ok: 0, bad: 0, blunder: 0 }
   let worst: LogEntry | null = null
-  for (const e of log) {
+  for (const e of statLog) {
     counts[band(e.loss).cls as keyof typeof counts]++
     if (!worst || e.loss > worst.loss) worst = e
   }
 
   const mistakes = log.map((e, i) => ({ e, i })).filter(({ e }) => e.loss >= 0.02)
-  const rows = worstFirst
-    ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss)
-    : log.map((e, i) => ({ e, i }))
+  // Sira: seq'e gore (async bot kayitlari dogru yere otursun); yoksa dizideki sira
+  const ordered = log
+    .map((e, i) => ({ e, i }))
+    .sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
+  const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
 
   const cur = log[sel]
   // Tahtada hangi hamle: secili aday varsa o, yoksa oynanan
@@ -96,7 +102,7 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
             )}
             <div className="rep-line">
               <span>{t('rep.decisions')}</span>
-              <b>{log.length}</b>
+              <b>{statLog.length}</b>
             </div>
             <div className="rep-line good">
               <span>{t('rep.perfect')}</span>
@@ -140,7 +146,7 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
                 </button>
               </div>
               <div className="analysis-rows">
-                {rows.map(({ e, i }) => {
+                {rows.map(({ e, i }, idx) => {
                   const b = band(e.loss)
                   return (
                     <button
@@ -149,7 +155,7 @@ export default function MatchReport({ mode, log, pr, onClose }: Props) {
                       onClick={() => selectMove(i)}
                     >
                       <span className={`aq-dot ${b.cls}`} />
-                      <span className="ar-no">{i + 1}.</span>
+                      <span className="ar-no">{idx + 1}.</span>
                       {e.dice && e.dice.length >= 2 && e.player && (
                         <span className="ar-dice">
                           <Die value={e.dice[0]} owner={e.player} used={false} />
