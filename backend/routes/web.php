@@ -1,7 +1,13 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PanelController;
 use Illuminate\Support\Facades\Route;
+
+// E-posta dogrulama linki (imzali URL). Dogrular ve SPA'ya yonlendirir.
+Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+    ->middleware('signed')
+    ->name('verification.verify');
 
 // ---- Yonetim paneli (ayri backend sayfasi, Blade) ----
 Route::prefix('panel')->group(function () {

@@ -51,6 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);
+    Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
 

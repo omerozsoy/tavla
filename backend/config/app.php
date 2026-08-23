@@ -54,6 +54,9 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // SPA (on yuz) taban adresi: sifre sifirlama + e-posta dogrulama yonlendirmesi
+    'frontend_url' => env('FRONTEND_URL', env('APP_URL', 'https://tavlai.com')),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

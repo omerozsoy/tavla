@@ -6377,3 +6377,73 @@ body {
 .menu-install {
   color: #1f8a4c;
 }
+
+/* ---- E-posta dogrulama uyarilari ---- */
+.verify-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  border-radius: 999px;
+  background: #4a3410;
+  color: #ffe6a8;
+  border: 1px solid #6b4d18;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  font-size: 0.88rem;
+  max-width: 94vw;
+}
+.verify-resend {
+  background: #e6b422;
+  color: #3a2a06;
+  border: none;
+  border-radius: 999px;
+  padding: 5px 13px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.verify-resend:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.verify-sent {
+  font-weight: 600;
+  color: #b7f0c6;
+}
+.verify-toast {
+  position: fixed;
+  left: 50%;
+  top: 16px;
+  transform: translateX(-50%);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  max-width: 94vw;
+}
+.verify-toast.ok {
+  background: #1f8a4c;
+  color: #fff;
+}
+.verify-toast.fail {
+  background: #c0392b;
+  color: #fff;
+}
+.verify-close {
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  opacity: 0.85;
+  display: inline-flex;
+}
