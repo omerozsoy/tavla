@@ -376,6 +376,7 @@ export default function App() {
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
   const [timeControl, setTimeControl] = useState<TimeControl>('normal')
+  const [rankedMatch, setRankedMatch] = useState(true) // false = casual (puana etki etmez)
   const clockRef = useRef(CLOCK_PRESETS.normal) // secili saat preseti (delay/over)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
   // Saat: hamle gecikmesi (delay, her tur sifirlanir) + oyuncu-basi rezerv bankasi
@@ -1241,21 +1242,25 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
-  // Bota karsi mac bitince de puan islensin (bot puani zorluga gore)
+  // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).
+  // Casual (rankedMatch=false) macta puana/lig'e etki yok; PR + hata gunlugu kalir.
   useEffect(() => {
     if (mode !== 'pvb' || !user || ratingReportedRef.current) return
     const mW = matchWinner(match)
     if (!mW) return
     ratingReportedRef.current = true
-    const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
-    const won = mW === 'white' // pvb'de insan beyaz
-    const before = user.rating ?? 1500
-    reportRating(won, botRating, match.target, prOf('white'))
-      .then((r) => {
-        setRatingChange({ before, after: r.rating })
-        setUser((u) => (u ? { ...u, rating: r.rating } : u))
-      })
-      .catch(() => {})
+    // Puansiz (casual) macta Elo/lig islenmez; PR + hata gunlugu yine calisir.
+    if (rankedMatch) {
+      const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
+      const won = mW === 'white' // pvb'de insan beyaz
+      const before = user.rating ?? 1500
+      reportRating(won, botRating, match.target, prOf('white'))
+        .then((r) => {
+          setRatingChange({ before, after: r.rating })
+          setUser((u) => (u ? { ...u, rating: r.rating } : u))
+        })
+        .catch(() => {})
+    }
     // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
     const bl = matchLog
       .filter((e) => e.loss >= 0.08 && e.player === 'white')
@@ -1947,6 +1952,7 @@ export default function App() {
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
     setTimeControl(opts.timeControl)
+    setRankedMatch(opts.ranked ?? true)
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
     if (opts.difficulty) setDifficulty(opts.difficulty)
     setSetup(null)
@@ -2804,7 +2810,7 @@ export default function App() {
         mode={setup}
         targets={TARGETS}
         coins={user?.coins ?? 0}
-        initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty }}
+        initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
         onConfirm={applyMatchSetup}
         onCancel={() => {
           setSetup(null)

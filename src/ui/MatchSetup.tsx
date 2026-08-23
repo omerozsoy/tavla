@@ -11,6 +11,7 @@ export interface MatchOptions {
   showPip: boolean
   showAnalysis: boolean
   timeControl: TimeControl
+  ranked?: boolean // false = casual (puana etki etmez); yalnizca pvb
   difficulty?: number // 1..10 AI seviyesi
   betPct?: number // online: bakiyenin % kaci bahis (10/30/50/100)
   minRating?: number // online: rakip min puan filtresi
@@ -67,6 +68,7 @@ export default function MatchSetup({
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
+  const [ranked, setRanked] = useState<boolean>(initial.ranked ?? true)
   const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
   const [minRating, setMinRating] = useState<number>(initial.minRating ?? 0)
   const stake = Math.floor((coins * betPct) / 100)
@@ -186,9 +188,18 @@ export default function MatchSetup({
           </>
         )}
 
-        {/* Pip + analiz (yalnizca bota karsi) */}
+        {/* Pip + analiz + puanli/casual (yalnizca bota karsi) */}
         {mode === 'pvb' && (
           <>
+            <button
+              className={`setup-toggle ${ranked ? 'on' : ''}`}
+              onClick={() => setRanked((v) => !v)}
+            >
+              <span>{t('setup.ranked')}</span>
+              <span className="setup-switch">
+                {ranked ? t('setup.rankedOn') : t('setup.rankedOff')}
+              </span>
+            </button>
             <button
               className={`setup-toggle ${showPip ? 'on' : ''}`}
               onClick={() => setShowPip((v) => !v)}
@@ -219,6 +230,7 @@ export default function MatchSetup({
                 showPip,
                 showAnalysis,
                 timeControl,
+                ranked: mode === 'pvb' ? ranked : true,
                 difficulty: mode === 'pvb' ? difficulty : undefined,
                 betPct: mode === 'online' ? betPct : undefined,
                 minRating: mode === 'online' ? minRating : undefined,
