@@ -2782,6 +2782,11 @@ export default function App() {
           neuralAnalyze={(s, deep) =>
             deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
           }
+          premium={premium}
+          onUpgrade={() => {
+            setAnalyzerOpen(false)
+            setMemOpen(true)
+          }}
           onClose={() => setAnalyzerOpen(false)}
         />
       </>
@@ -3021,7 +3026,13 @@ export default function App() {
       </main>
 
       {online && room && (
-        <Chat messages={chat} mySlot={room.slot} onSend={handleSendChat} />
+        <Chat
+          messages={chat}
+          mySlot={room.slot}
+          onSend={handleSendChat}
+          canText={premium}
+          onUpgrade={() => setMemOpen(true)}
+        />
       )}
       {authModal}
       {menuModals}

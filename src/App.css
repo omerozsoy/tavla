@@ -5924,6 +5924,24 @@ body {
   font-size: 13px;
   font-weight: 600;
 }
+/* Premium kilidi: yazili sohbet + derin analiz */
+.chat-input .chat-premium {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: color-mix(in srgb, #e6b422 16%, var(--bg));
+  border: 1px solid #e6b422;
+  color: var(--text);
+  font-size: 0.8rem;
+}
+.chat-input .chat-premium > svg {
+  color: #e6b422;
+}
+.menu-btn.locked > svg {
+  color: #e6b422;
+}
 .chat-input .emoji-toggle {
   padding: 6px 8px;
   background: transparent;

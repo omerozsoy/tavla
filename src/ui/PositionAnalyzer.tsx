@@ -13,12 +13,20 @@ import { useT } from '../i18n'
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
   neuralAnalyze: (state: GameState, deep: boolean) => Promise<RankedMove[]>
+  premium?: boolean // 2-ply (derin) analiz premium
+  onUpgrade?: () => void
   onClose: () => void
 }
 
 const emptyPoints = () => new Array(24).fill(0)
 
-export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }: Props) {
+export default function PositionAnalyzer({
+  neuralEval,
+  neuralAnalyze,
+  premium = true,
+  onUpgrade,
+  onClose,
+}: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [pts, setPts] = useState<number[]>(() => initialState().points)
@@ -374,10 +382,10 @@ export default function PositionAnalyzer({ neuralEval, neuralAnalyze, onClose }:
                 {t('pa.ply1')}
               </button>
               <button
-                className={ply === 2 ? 'menu-btn active' : 'menu-btn'}
-                onClick={() => setPly(2)}
+                className={`${ply === 2 ? 'menu-btn active' : 'menu-btn'} ${premium ? '' : 'locked'}`}
+                onClick={() => (premium ? setPly(2) : onUpgrade?.())}
               >
-                {t('pa.ply2')}
+                {!premium && <Icon name="crown" size={13} />} {t('pa.ply2')}
               </button>
             </div>
             <div className="pa-depth-note">{ply === 2 ? t('pa.ply2Note') : t('pa.ply1Note')}</div>
