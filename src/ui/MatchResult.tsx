@@ -16,6 +16,11 @@ interface Props {
   loserPr: number | null
   winnerBand: string
   loserBand: string
+  // Sans (luck): oyuncu-basi birikmis equity sansi. null = hesaplanmadi (—)
+  winnerLuck: number | null
+  loserLuck: number | null
+  // Bahisli macta coin transfer tutari (mutlak); kazanan +, kaybeden -. null = bahissiz
+  coinAmount: number | null
   // Rating degisimi (giris yapmis insan icin). Hangi tarafta gosterilecegi:
   ratingBefore: number | null
   ratingAfter: number | null
@@ -49,6 +54,9 @@ export default function MatchResult({
   loserPr,
   winnerBand,
   loserBand,
+  winnerLuck,
+  loserLuck,
+  coinAmount,
   ratingBefore,
   ratingAfter,
   ratingIsWinner,
@@ -71,6 +79,14 @@ export default function MatchResult({
     const sign = d >= 0 ? '+' : ''
     return `${Math.round(ratingAfter)} (${sign}${d})`
   }
+  // Sans: equity toplamini okunur bir skora olcekle (x100), isaretli goster
+  const fmtLuck = (v: number | null) => {
+    if (v == null) return '—'
+    const s = Math.round(v * 100)
+    return `${s >= 0 ? '+' : ''}${s}`
+  }
+  const fmtCoins = (isWinner: boolean) =>
+    coinAmount == null ? '—' : `${isWinner ? '+' : '-'}${coinAmount} GC`
 
   return (
     <div className="register-overlay modal mr-overlay">
@@ -121,6 +137,22 @@ export default function MatchResult({
             <span className="mr-a">{ratingCell(ratingIsWinner)}</span>
             <span className="mr-label">{t('mr.rating')}</span>
             <span className="mr-b">{ratingCell(!ratingIsWinner)}</span>
+          </div>
+          {coinAmount != null && (
+            <div className="mr-row">
+              <span className="mr-a mr-pos">{fmtCoins(true)}</span>
+              <span className="mr-label">{t('mr.coins')}</span>
+              <span className="mr-b mr-neg">{fmtCoins(false)}</span>
+            </div>
+          )}
+          <div className="mr-row">
+            <span className={`mr-a ${(winnerLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
+              {fmtLuck(winnerLuck)}
+            </span>
+            <span className="mr-label">{t('mr.luck')}</span>
+            <span className={`mr-b ${(loserLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
+              {fmtLuck(loserLuck)}
+            </span>
           </div>
         </div>
 
