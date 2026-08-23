@@ -1988,12 +1988,13 @@ body {
 }
 .register-card input,
 .register-card select {
-  padding: 9px 10px;
+  padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid var(--btn-border);
   background: var(--input-bg);
   color: var(--text);
-  font-size: 0.95rem;
+  /* 16px: iOS'ta odaklaninca otomatik zoom'u onler (ux: readable-font-size) */
+  font-size: 16px;
 }
 .register-error {
   color: #ff6b6b;
@@ -5023,7 +5024,7 @@ body {
   border-radius: 8px;
   background: var(--bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: 16px; /* iOS auto-zoom onleme */
 }
 .chat-input input:focus {
   outline: none;
