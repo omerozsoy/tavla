@@ -368,7 +368,14 @@ export default function App() {
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
   const [matchLog, setMatchLog] = useState<
-    { notation: string; best: string; loss: number }[]
+    {
+      notation: string
+      best: string
+      loss: number
+      pos?: GameState // hamle oncesi board (blunder tahtada gosterim)
+      steps?: Step[] // en iyi hamlenin adimlari
+      player?: Player
+    }[]
   >([])
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
   const [lastError, setLastError] = useState<MoveError | null>(null)
@@ -576,7 +583,15 @@ export default function App() {
     if (mover === humanColor) {
       setMatchLog((log) => [
         ...log,
-        { notation: moveNotation(pl.move, mover), best: moveNotation(ranks[0].move, mover), loss },
+        {
+          notation: moveNotation(pl.move, mover),
+          best: moveNotation(ranks[0].move, mover),
+          loss,
+          // Onemli hatalarda pozisyon + en iyi hamleyi de sakla (blunder tahtasi icin)
+          ...(loss >= 0.04
+            ? { pos: before, steps: ranks[0].move.steps, player: mover }
+            : {}),
+        },
       ])
     }
   }
@@ -1031,7 +1046,14 @@ export default function App() {
         .filter((e) => e.loss >= 0.08)
         .sort((a, b) => b.loss - a.loss)
         .slice(0, 5)
-        .map((e) => ({ loss: e.loss, played: e.notation, best: e.best }))
+        .map((e) => ({
+        loss: e.loss,
+        played: e.notation,
+        best: e.best,
+        pos: e.pos ? JSON.stringify(e.pos) : undefined,
+        steps: e.steps ? JSON.stringify(e.steps) : undefined,
+        player: e.player,
+      }))
       saveBlunders(bl).catch(() => {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1057,7 +1079,14 @@ export default function App() {
       .filter((e) => e.loss >= 0.08)
       .sort((a, b) => b.loss - a.loss)
       .slice(0, 5)
-      .map((e) => ({ loss: e.loss, played: e.notation, best: e.best }))
+      .map((e) => ({
+        loss: e.loss,
+        played: e.notation,
+        best: e.best,
+        pos: e.pos ? JSON.stringify(e.pos) : undefined,
+        steps: e.steps ? JSON.stringify(e.steps) : undefined,
+        player: e.player,
+      }))
     saveBlunders(bl).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, user, match, difficulty])

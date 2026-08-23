@@ -13,7 +13,7 @@ class BlunderController extends Controller
         $rows = Blunder::where('user_id', $request->user()->id)
             ->orderByDesc('loss')
             ->limit(60)
-            ->get(['loss', 'played', 'best', 'created_at']);
+            ->get(['loss', 'played', 'best', 'pos', 'steps', 'player', 'created_at']);
 
         return response()->json(['blunders' => $rows]);
     }
@@ -26,6 +26,9 @@ class BlunderController extends Controller
             'items.*.loss' => ['required', 'numeric', 'min:0', 'max:10'],
             'items.*.played' => ['required', 'string', 'max:32'],
             'items.*.best' => ['required', 'string', 'max:32'],
+            'items.*.pos' => ['nullable', 'string', 'max:4000'],
+            'items.*.steps' => ['nullable', 'string', 'max:2000'],
+            'items.*.player' => ['nullable', 'string', 'in:white,black'],
         ]);
 
         $userId = $request->user()->id;
@@ -35,6 +38,9 @@ class BlunderController extends Controller
                 'loss' => $it['loss'],
                 'played' => $it['played'],
                 'best' => $it['best'],
+                'pos' => $it['pos'] ?? null,
+                'steps' => $it['steps'] ?? null,
+                'player' => $it['player'] ?? null,
             ]);
         }
 
