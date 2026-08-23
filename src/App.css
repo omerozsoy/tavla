@@ -4389,6 +4389,162 @@ body {
   color: var(--accent);
 }
 
+/* ---- Uyelik (membership) ---- */
+.mem-overlay {
+  z-index: 140;
+}
+.mem-card {
+  position: relative;
+  width: min(880px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+.mem-title {
+  text-align: center;
+  margin: 0 0 16px;
+}
+.mem-toggle {
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 auto 18px;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px;
+}
+.mem-toggle button {
+  padding: 7px 22px;
+  border-radius: 999px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.mem-toggle button.active {
+  background: var(--accent);
+  color: #fff;
+}
+.mem-err {
+  text-align: center;
+  margin-bottom: 10px;
+}
+.mem-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+@media (max-width: 720px) {
+  .mem-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.mem-plan {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+}
+.mem-plan.paid {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.mem-save {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.mem-plan-name {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+.mem-feats {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
+}
+.mem-feats li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  color: var(--text);
+}
+.mem-feats li.off {
+  color: var(--muted);
+}
+.mem-feats li.on > svg {
+  color: #2e9e5b;
+  flex: none;
+  margin-top: 2px;
+}
+.mem-feats li.off > svg {
+  color: var(--muted);
+  flex: none;
+  margin-top: 2px;
+}
+.mem-cta {
+  text-align: center;
+}
+.mem-btn {
+  width: 100%;
+  padding: 11px;
+  border: none;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.mem-btn.current {
+  background: var(--btn-bg);
+  color: var(--muted);
+  border: 1px solid var(--border);
+  cursor: default;
+}
+.mem-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.mem-price {
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
+.mem-free-note {
+  color: var(--muted);
+}
+.mem-foot {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.76rem;
+  margin: 16px 0 0;
+}
+.menu-upgrade > svg {
+  color: #e6b422;
+}
+
 /* Profil / istatistik modali */
 .stats-card {
   width: min(440px, 94vw);

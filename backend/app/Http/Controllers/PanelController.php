@@ -99,6 +99,14 @@ class PanelController extends Controller
                 $user->is_admin = ! $user->is_admin;
                 $user->save();
             }
+        } elseif ($action === 'plan') {
+            $plan = $request->input('plan', 'free');
+            $days = max(0, (int) $request->input('days', 30));
+            if (in_array($plan, ['free', 'star', 'starpro'], true)) {
+                $user->plan = $plan;
+                $user->plan_until = $plan === 'free' ? null : now()->addDays($days ?: 30);
+                $user->save();
+            }
         }
         return back()->with('ok', 'Üye güncellendi.');
     }

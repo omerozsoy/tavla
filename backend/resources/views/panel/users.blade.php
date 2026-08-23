@@ -21,6 +21,7 @@
               <b>{{ $u->nickname ?: $u->first_name ?: 'Oyuncu' }}</b>
               @if($u->is_admin)<span class="tag">admin</span>@endif
               @if($u->banned_at)<span class="tag">yasaklı</span>@endif
+              @if($u->plan_active !== 'free')<span class="tag">{{ $u->plan_active }}</span>@endif
             </td>
             <td class="muted">{{ $u->email }}</td>
             <td>{{ $u->rating ?? 1500 }}</td>
@@ -40,6 +41,16 @@
               <form method="post" action="/panel/users/{{ $u->id }}">
                 @csrf<input type="hidden" name="action" value="admin">
                 <button class="btn sm ghost">{{ $u->is_admin ? 'Yetkiyi Al' : 'Yönetici Yap' }}</button>
+              </form>
+              <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
+                @csrf<input type="hidden" name="action" value="plan">
+                <select name="plan" style="width:auto">
+                  <option value="free" @selected($u->plan_active==='free')>Ücretsiz</option>
+                  <option value="star" @selected($u->plan_active==='star')>Star</option>
+                  <option value="starpro" @selected($u->plan_active==='starpro')>StarPRO</option>
+                </select>
+                <input type="number" name="days" value="365" min="1" title="Gün" style="width:70px">
+                <button class="btn sm ghost">Plan Ver</button>
               </form>
             </td>
           </tr>

@@ -16,6 +16,7 @@ export interface SideMenuProps {
   onLeaderboard: () => void
   onTournaments: () => void
   onShop: () => void
+  onMembership?: () => void
   onMyStats: () => void
   onFriends: () => void
   onAnalyzer: () => void
@@ -119,6 +120,11 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Hesap */}
       {p.loggedIn && (
         <div className="menu-group">
+          {p.onMembership && (
+            <button className="menu-btn menu-upgrade" onClick={p.onMembership}>
+              <Icon name="crown" /> {t('mem.menu')}
+            </button>
+          )}
           <button className="menu-btn" onClick={p.onMyStats}>
             <Icon name="chart" /> {t('menu.myStats')}
           </button>

@@ -87,6 +87,8 @@ import MatchReport from './ui/MatchReport'
 import { LiveMatchesPanel, RankingPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
+import Membership from './ui/Membership'
+import type { PlanId } from './plans'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import {
@@ -344,6 +346,7 @@ export default function App() {
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const [spectate, setSpectate] = useState<{ code: string; p1: string; p2: string } | null>(null)
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
+  const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -2541,6 +2544,7 @@ export default function App() {
     onLeaderboard: () => setLeaderboardOpen(true),
     onTournaments: () => setTournOpen(true),
     onShop: () => setShopOpen(true),
+    onMembership: () => setMemOpen(true),
     onMyStats: () => setStatsOpen(true),
     onFriends: () => setFriendsOpen(true),
     onAnalyzer: () => setAnalyzerOpen(true),
@@ -2664,6 +2668,14 @@ export default function App() {
       )}
       {homeProfileId !== null && (
         <PublicProfile id={homeProfileId} onClose={() => setHomeProfileId(null)} />
+      )}
+      {memOpen && user && (
+        <Membership
+          current={(user.plan_active ?? 'free') as PlanId}
+          trialUsed={!!user.trial_used}
+          onUpgraded={(u) => setUser(u)}
+          onClose={() => setMemOpen(false)}
+        />
       )}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
