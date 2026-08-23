@@ -74,7 +74,7 @@ export default function MatchSetup({
   const stake = Math.floor((coins * betPct) / 100)
 
   return (
-    <div className="register-overlay">
+    <div className="register-overlay page setup-page">
       <div className="register-card setup-card">
         <h2>
           {mode === 'online' ? (
