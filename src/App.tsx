@@ -86,7 +86,15 @@ import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
-import { loadGame, loadProfile, saveGame, saveProfile, type Profile, type SavedGame } from './storage'
+import {
+  loadGame,
+  loadProfile,
+  saveGame,
+  saveProfile,
+  type Profile,
+  type SavedGame,
+  type MoveLogEntry,
+} from './storage'
 import { useT, LANGS } from './i18n'
 import {
   getToken,
@@ -384,21 +392,7 @@ export default function App() {
   const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kazanan coin transferi
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
-  const [matchLog, setMatchLog] = useState<
-    {
-      notation: string
-      best: string
-      loss: number
-      pos?: GameState // hamle oncesi board (tahtada gosterim)
-      steps?: Step[] // en iyi hamlenin adimlari
-      player?: Player
-      dice?: number[] // bu turun zarlari
-      playedSteps?: Step[] // oynanan hamlenin adimlari (vurgulama)
-      cands?: { notation: string; equity: number; steps: Step[] }[] // siralı adaylar (equity)
-      probs?: number[] // oynanan konumun kazanma olasiliklari (6)
-      seq?: number // tur sirasi (async bot kaydinda dogru siralama icin)
-    }[]
-  >([])
+  const [matchLog, setMatchLog] = useState<MoveLogEntry[]>([])
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
@@ -1265,6 +1259,11 @@ export default function App() {
     if (snap.luck && typeof snap.luck[oppColor] === 'number') {
       setPrLuck((s) => ({ ...s, [oppColor]: snap.luck![oppColor] }))
     }
+    // Rakibin analiz hamlelerini birlestir: kendi hamlelerim + rakibin gonderdikleri
+    if (snap.moves) {
+      const oppMoves = snap.moves.filter((e) => e.player === oppColor)
+      setMatchLog((prev) => [...prev.filter((e) => e.player === myColor), ...oppMoves])
+    }
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
@@ -1299,6 +1298,8 @@ export default function App() {
         cubePending,
         pr: prStats,
         luck: prLuck,
+        // Analiz hamleleri: yuk boyutunu sinirla (son 80 hamle senkronlanir)
+        moves: matchLog.slice(-80),
       }
       updateRoom(roomCode, snap)
         .then((r) => {
