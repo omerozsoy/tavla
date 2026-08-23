@@ -67,9 +67,11 @@ class PresenceController extends Controller
             }
         }
 
-        // 6 saatlik odul hazir mi
+        // 6 saatlik odul hazir mi + sonraki odule kalan saniye
         $last = $me->last_reward ? \Illuminate\Support\Carbon::parse($me->last_reward) : null;
-        $rewardReady = ! $last || now()->diffInSeconds($last) >= 6 * 3600;
+        $elapsed = $last ? now()->diffInSeconds($last) : PHP_INT_MAX;
+        $rewardReady = $elapsed >= 6 * 3600;
+        $rewardSeconds = $rewardReady ? 0 : (6 * 3600 - $elapsed);
 
         // Bildirimler (son 20) + okunmamis sayisi
         $notifications = \App\Models\Notification::where('user_id', $me->id)
@@ -90,6 +92,7 @@ class PresenceController extends Controller
             'invites' => $invites,
             'tournament_matches' => $tmatches,
             'reward_ready' => $rewardReady,
+            'reward_seconds' => $rewardSeconds,
             'coins' => $me->coins ?? 0,
             'notifications' => $notifications,
             'unread' => $unread,

@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useT } from '../i18n'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { Icon } from './Icon'
@@ -43,7 +42,6 @@ export interface SideMenuProps {
 // Ana sayfa ve oyun ekraninda ortak tek menu.
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
-  const [moreOpen, setMoreOpen] = useState(false)
   return (
     <aside
       className={`side-menu ${p.mobileOpen ? 'open' : ''}`}
@@ -121,9 +119,6 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Hesap */}
       {p.loggedIn && (
         <div className="menu-group">
-          <button className="menu-btn" onClick={p.onShop}>
-            <Icon name="shop" /> {t('shop.title')}
-          </button>
           <button className="menu-btn" onClick={p.onMyStats}>
             <Icon name="chart" /> {t('menu.myStats')}
           </button>
@@ -161,38 +156,23 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
-      {/* Ikincil araclar -> "Daha fazla" altinda */}
+      {/* Araclar (dogrudan; "Daha fazla" acilir menu yok) */}
       <div className="menu-group">
-        <button
-          className="menu-btn menu-more"
-          onClick={() => setMoreOpen((v) => !v)}
-          aria-expanded={moreOpen}
-        >
-          <Icon name="chevron" className={moreOpen ? 'chev-open' : ''} /> {t('menu.more')}
+        <div className="menu-label">{t('menu.tools')}</div>
+        <button className="menu-btn" onClick={p.onAnalyzer}>
+          <Icon name="analyze" /> {t('pa.title')}
         </button>
-        {moreOpen && (
-          <>
-            <button className="menu-btn" onClick={p.onAnalyzer}>
-              <Icon name="analyze" /> {t('pa.title')}
-            </button>
-            {p.onBlunders && (
-              <button className="menu-btn" onClick={p.onBlunders}>
-                <Icon name="alert" /> {t('menu.blunders')}
-              </button>
-            )}
-            <button className="menu-btn" onClick={p.onLessons}>
-              <Icon name="book" /> {t('menu.lessons')}
-            </button>
-            {p.onQuiz && (
-              <button className="menu-btn" onClick={p.onQuiz}>
-                <Icon name="target" /> {t('menu.quiz')}
-              </button>
-            )}
-            <button className="menu-btn" onClick={p.onFairness}>
-              <Icon name="dice" /> {t('fair.title')}
-            </button>
-          </>
+        {p.onBlunders && (
+          <button className="menu-btn" onClick={p.onBlunders}>
+            <Icon name="alert" /> {t('menu.blunders')}
+          </button>
         )}
+        <button className="menu-btn" onClick={p.onLessons}>
+          <Icon name="book" /> {t('menu.lessons')}
+        </button>
+        <button className="menu-btn" onClick={p.onFairness}>
+          <Icon name="dice" /> {t('fair.title')}
+        </button>
       </div>
 
       {/* Ayarlar en altta sabit */}

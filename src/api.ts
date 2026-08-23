@@ -316,6 +316,7 @@ export async function ping(): Promise<{
   invites: GameInvite[]
   tournament_matches: TournNotice[]
   reward_ready: boolean
+  reward_seconds?: number
   coins: number
   notifications?: AppNotification[]
   unread?: number
