@@ -37,7 +37,7 @@ import {
   joinRoom,
   matchmake,
   cancelMatchmake,
-  settleRoom,
+  settleRoomConfirmed,
   saveBlunders,
   enterRoom,
   tournamentMatchRoom,
@@ -537,7 +537,10 @@ export default function App() {
     return dice
   }, [turnStart, played])
 
-  function resetGameUi() {
+  // freshBank=true: yeni MAC -> rezerv bankasi bastan dolar.
+  // freshBank=false: mac ici SONRAKI oyun -> rezerv bankasi korunur (Galaxy: mac-basi saat),
+  //   sadece hamle gecikmesi sifirlanir.
+  function resetGameUi(freshBank = true) {
     setPlayed([])
     setSelectedFrom(null)
     setCubePending(null)
@@ -548,9 +551,11 @@ export default function App() {
     setTurnsPlayed(0)
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
-    {
+    if (freshBank) {
       const bank = clockRef.current.over * Math.max(1, match.target)
       setClock({ delay: clockRef.current.move, white: bank, black: bank })
+    } else {
+      setClock((c) => ({ ...c, delay: clockRef.current.move }))
     }
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
   }
@@ -1005,7 +1010,8 @@ export default function App() {
     if (clock.delay > 0 || bank > 0) return
     if (online && myColor !== who) return // online'da sadece suresi biten ilan etsin
     const w = opponent(who)
-    setMatch((m) => scoreGame(m, w, m.cube.value))
+    // Rezerv saati mac-basidir: bitince maci komple kaybedersin (Galaxy tarzi forfeit)
+    setMatch((m) => scoreGame(m, w, Math.max(m.cube.value, m.target - m.score[w])))
     setGameEnd({ winner: w, points: match.cube.value, mult: 1, dropped: false, timeout: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, online, myColor])
@@ -1025,9 +1031,11 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
-    // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi
+    // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
+    // Sunucu kazanani yetkili belirler; rakip beyani/durum gec gelirse pending doner,
+    // settleRoomConfirmed birkac kez deneyip guncel bakiyeyi getirir.
     if ((stakeRef.current > 0 || betPctRef.current > 0) && room?.code) {
-      settleRoom(room.code, won)
+      settleRoomConfirmed(room.code, won)
         .then((r) => {
           if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
         })
@@ -1819,7 +1827,7 @@ export default function App() {
     setStarter(s)
     setMatch(m2)
     setTurnStart(freshBoard(s))
-    resetGameUi()
+    resetGameUi(false) // mac-basi rezerv saati: bankayi koru, sadece hamle gecikmesini sifirla
     setMessage(m2.isCrawford ? t('msg.crawfordGame') : t('msg.nextGame'))
   }
 
