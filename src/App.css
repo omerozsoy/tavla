@@ -115,7 +115,7 @@ body {
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 7px;
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
@@ -178,7 +178,7 @@ body {
 .menu-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 .menu-label {
   color: var(--muted);
@@ -193,7 +193,7 @@ body {
   align-items: center;
   gap: 9px;
   text-align: left;
-  padding: 9px 12px;
+  padding: 7px 12px;
   border-radius: 8px;
   background: var(--btn-bg);
   color: var(--text);
@@ -2570,18 +2570,18 @@ body {
 .account-bar {
   position: fixed;
   top: calc(10px + env(safe-area-inset-top));
-  right: calc(14px + env(safe-area-inset-right));
+  right: calc(16px + env(safe-area-inset-right));
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-  max-width: calc(100vw - 28px);
-  gap: 8px;
-  padding: 6px 10px;
+  max-width: calc(100vw - 32px);
+  gap: 12px;
+  padding: 9px 18px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
   z-index: 60;
 }
 .account-name {
