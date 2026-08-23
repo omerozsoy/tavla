@@ -209,6 +209,24 @@ class AuthController extends Controller
         }
         $user->save();
 
+        // Rating kilometre tasi: yeni puan bir esigi ilk kez gectiyse otomatik bildirim
+        $tiers = [
+            ['min' => 1600, 'name' => 'Usta'],
+            ['min' => 1800, 'name' => 'Master'],
+            ['min' => 2000, 'name' => 'Grandmaster'],
+            ['min' => 2200, 'name' => 'Efsane'],
+        ];
+        foreach ($tiers as $tier) {
+            if ((int) $ra < $tier['min'] && $newRating >= $tier['min']) {
+                \App\Models\Notification::notify(
+                    $user->id,
+                    "{$tier['min']} puanını geçtin — {$tier['name']} oldun!",
+                    "Tebrikler! Rating’in {$newRating}. Yeni ünvanın: {$tier['name']}.",
+                    'crown',
+                );
+            }
+        }
+
         // Mac gecmisine kaydet (yonetim panelinde gorunur)
         \App\Models\MatchResult::create([
             'user_id'         => $user->id,

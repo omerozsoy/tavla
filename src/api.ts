@@ -268,13 +268,30 @@ export interface TournNotice {
   oppId: number
   oppName: string
 }
+export interface AppNotification {
+  id: number
+  title: string
+  body?: string | null
+  icon?: string | null
+  read: boolean
+  created_at?: string | null
+}
 export async function ping(): Promise<{
   invites: GameInvite[]
   tournament_matches: TournNotice[]
   reward_ready: boolean
   coins: number
+  notifications?: AppNotification[]
+  unread?: number
 }> {
   return req('/ping', { method: 'POST' })
+}
+// Bildirimleri okundu isaretle (id verilmezse hepsi)
+export async function markNotificationsRead(ids?: number[]): Promise<void> {
+  await req('/notifications/read', {
+    method: 'POST',
+    body: JSON.stringify(ids ? { ids } : {}),
+  })
 }
 export async function inviteFriend(userId: number): Promise<{ code: string }> {
   return req(`/friends/${userId}/invite`, { method: 'POST' })

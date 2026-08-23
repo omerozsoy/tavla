@@ -71,12 +71,46 @@ class PresenceController extends Controller
         $last = $me->last_reward ? \Illuminate\Support\Carbon::parse($me->last_reward) : null;
         $rewardReady = ! $last || now()->diffInSeconds($last) >= 6 * 3600;
 
+        // Bildirimler (son 20) + okunmamis sayisi
+        $notifications = \App\Models\Notification::where('user_id', $me->id)
+            ->orderByDesc('id')
+            ->limit(20)
+            ->get(['id', 'title', 'body', 'icon', 'read', 'created_at'])
+            ->map(fn ($n) => [
+                'id' => $n->id,
+                'title' => $n->title,
+                'body' => $n->body,
+                'icon' => $n->icon,
+                'read' => (bool) $n->read,
+                'created_at' => optional($n->created_at)->toIso8601String(),
+            ]);
+        $unread = \App\Models\Notification::where('user_id', $me->id)->where('read', false)->count();
+
         return response()->json([
             'invites' => $invites,
             'tournament_matches' => $tmatches,
             'reward_ready' => $rewardReady,
             'coins' => $me->coins ?? 0,
+            'notifications' => $notifications,
+            'unread' => $unread,
         ]);
+    }
+
+    // Bildirimleri okundu isaretle (hepsi veya verilen id'ler)
+    public function readNotifications(Request $request)
+    {
+        $me = $request->user();
+        $data = $request->validate([
+            'ids' => ['nullable', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+        $q = \App\Models\Notification::where('user_id', $me->id)->where('read', false);
+        if (! empty($data['ids'])) {
+            $q->whereIn('id', $data['ids']);
+        }
+        $q->update(['read' => true]);
+
+        return response()->json(['ok' => true]);
     }
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur
