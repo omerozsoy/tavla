@@ -43,13 +43,15 @@ export default function MiniBoard({
   for (let idx = 0; idx < 24; idx++) {
     const l = LAYOUT[idx]
     const cx = colX(l.col)
-    const shade = idx % 2 === 0 ? '#ffffff14' : '#ffffff08'
+    // Gercek tahta gibi iki renk ucgen (tema uyumlu; onceki soluk beyaz gorunmuyordu)
+    const shade = idx % 2 === 0 ? 'var(--tri-a)' : 'var(--tri-b)'
     if (l.row === 'top') {
       tris.push(
         <polygon
           key={idx}
           points={`${cx - COL_W / 2 + 1},0 ${cx + COL_W / 2 - 1},0 ${cx},${TRI_H}`}
           fill={shade}
+          opacity="0.7"
         />,
       )
     } else {
@@ -58,6 +60,7 @@ export default function MiniBoard({
           key={idx}
           points={`${cx - COL_W / 2 + 1},${H} ${cx + COL_W / 2 - 1},${H} ${cx},${H - TRI_H}`}
           fill={shade}
+          opacity="0.7"
         />,
       )
     }

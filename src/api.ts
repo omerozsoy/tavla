@@ -37,6 +37,10 @@ export interface ServerUser {
   unlocks?: string[]
   avatar_frame?: string | null
   badges?: string[]
+  plan?: string
+  plan_active?: 'free' | 'star' | 'starpro'
+  plan_until?: string | null
+  trial_used?: boolean
   wins?: number
   losses?: number
   games_played?: number
@@ -273,6 +277,11 @@ export interface Analytics {
 }
 export async function myAnalytics(): Promise<Analytics> {
   return req<Analytics>('/me/analytics')
+}
+
+// 7 gunluk ucretsiz deneme baslat
+export async function startTrial(plan: 'star' | 'starpro'): Promise<{ user: ServerUser }> {
+  return req('/membership/trial', { method: 'POST', body: JSON.stringify({ plan }) })
 }
 
 // Herkese acik oyuncu profili
