@@ -195,14 +195,23 @@ body {
   text-align: left;
   padding: 9px 12px;
   border-radius: 8px;
-  background: transparent;
+  background: var(--btn-bg);
   color: var(--text);
-  border: 1px solid transparent; /* cerceve yok */
+  border: 1px solid var(--btn-border);
   font-size: 0.9rem;
   cursor: pointer;
 }
 .menu-btn > svg {
   color: var(--accent);
+}
+/* Sol menu (sidebar) navigasyonu: cercevesiz, duz -> tikla hafif ton */
+.side-menu .menu-btn {
+  background: transparent;
+  border-color: transparent;
+}
+.side-menu .menu-btn:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: transparent;
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
@@ -353,6 +362,77 @@ body {
 }
 .setup-tile.active .bet-pct {
   color: var(--accent);
+}
+/* Mac uzunlugu secici: net chip'ler (tikla-secilebilir) */
+.target-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 8px;
+}
+.target-chip {
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+  padding: 0 6px;
+  border: 1px solid var(--btn-border);
+  border-radius: 10px;
+  background: var(--btn-bg);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    transform 0.06s;
+}
+.target-chip:hover {
+  border-color: var(--accent);
+}
+.target-chip:active {
+  transform: scale(0.96);
+}
+.target-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+/* Mac kurulum alt aksiyonlari: tek belirgin CTA + net ikincil dugme */
+.setup-actions {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 22px;
+}
+.setup-actions .setup-start {
+  flex: 1 1 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 50px;
+  font-size: 1.05rem;
+}
+.btn-secondary {
+  flex: 0 0 auto;
+  min-height: 50px;
+  padding: 0 22px;
+  border-radius: 12px;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background 0.12s;
+}
+.btn-secondary:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--btn-bg));
 }
 /* Hata gunlugu (blunder log) */
 .blunder-card {
@@ -871,8 +951,7 @@ body {
   }
 }
 .menu-btn:hover {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border-color: transparent;
+  border-color: var(--accent);
 }
 .menu-btn.active {
   background: var(--accent);
