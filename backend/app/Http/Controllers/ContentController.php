@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class ContentController extends Controller
 {
-    private const TYPES = ['service', 'blog', 'news', 'event', 'club'];
+    private const TYPES = ['service', 'blog', 'news', 'event', 'club', 'ad'];
 
     // Herkese acik: bir turun yayinlanmis icerikleri (uygun siralamayla)
     public function index(Request $request)
@@ -25,6 +25,8 @@ class ContentController extends Controller
             $q->orderByDesc('event_at')->orderByDesc('created_at');
         } elseif ($type === 'club') {
             $q->orderBy('province')->orderBy('title');
+        } elseif ($type === 'ad') {
+            $q->orderBy('sort')->orderBy('id');
         } else {
             $q->orderBy('sort')->orderBy('id');
         }

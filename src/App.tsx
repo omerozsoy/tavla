@@ -2202,6 +2202,14 @@ export default function App() {
       )}
       {user ? (
         <>
+          {user.is_admin && (
+            <button
+              className="account-btn account-admin"
+              onClick={() => window.open('/panel', '_blank')}
+            >
+              <Icon name="crown" size={14} /> {t('menu.admin')}
+            </button>
+          )}
           <button className="account-btn" onClick={() => setEditProfile(true)}>
             {t('menu.editProfile')}
           </button>
@@ -2525,6 +2533,7 @@ export default function App() {
           room={room}
           busy={roomBusy}
           error={roomError}
+          myAvatar={profile.avatar}
           onCreate={() => handleCreateRoom(onlineTargetRef.current)}
           onJoin={handleJoinRoom}
           onMatchmake={handleMatchmake}

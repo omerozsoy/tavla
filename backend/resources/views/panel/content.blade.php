@@ -1,6 +1,6 @@
 @extends('panel.layout')
 @section('content')
-  @php $labels=['service'=>'Hizmetler','event'=>'Takvim','club'=>'Kulüpler','blog'=>'Blog','news'=>'Haberler']; @endphp
+  @php $labels=['service'=>'Hizmetler','event'=>'Takvim','club'=>'Kulüpler','blog'=>'Blog','news'=>'Haberler','ad'=>'Reklamlar']; @endphp
   <h1>İçerik Yönetimi</h1>
 
   <div class="type-tabs">
@@ -41,20 +41,27 @@
         </div>
       @endif
 
-      @if(in_array($type,['event','blog','news']))
+      @if(in_array($type,['event','blog','news','ad']))
         <div class="field">
-          <label>Görsel (isteğe bağlı)</label>
+          <label>{{ $type==='ad' ? 'Reklam Görseli' : 'Görsel (isteğe bağlı)' }}</label>
           @if($editing && $editing->image)
-            <div style="margin-bottom:8px"><img src="{{ $editing->image }}" alt="" style="max-height:90px;border-radius:8px;border:1px solid var(--line)"></div>
+            <div style="margin-bottom:8px"><img src="{{ $editing->image }}" alt="" style="max-height:120px;border-radius:8px;border:1px solid var(--line)"></div>
           @endif
           <input type="file" name="image_file" accept="image/*">
         </div>
       @endif
 
-      <div class="field">
-        <label>Metin</label>
-        <textarea name="body" rows="{{ in_array($type,['service','blog','news']) ? 9 : 3 }}">{{ $editing->body ?? '' }}</textarea>
-      </div>
+      @if($type==='ad')
+        <div class="field">
+          <label>Bağlantı (tıklanınca gidilecek adres, isteğe bağlı)</label>
+          <input name="body" value="{{ $editing->body ?? '' }}" placeholder="https://...">
+        </div>
+      @else
+        <div class="field">
+          <label>Metin</label>
+          <textarea name="body" rows="{{ in_array($type,['service','blog','news']) ? 9 : 3 }}">{{ $editing->body ?? '' }}</textarea>
+        </div>
+      @endif
 
       <label style="display:flex;gap:8px;align-items:center;margin-bottom:6px">
         <input type="checkbox" name="published" value="1" {{ (!$editing || $editing->published) ? 'checked' : '' }} style="width:18px">
