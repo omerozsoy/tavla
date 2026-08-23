@@ -77,6 +77,7 @@ export default function Auth({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
+  const [startRating, setStartRating] = useState(1400) // baslangic seviyesi (Galaxy tarzi)
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
   const [forgotSent, setForgotSent] = useState(false)
 
@@ -223,6 +224,7 @@ export default function Auth({
         avatar,
         birthDate,
         password,
+        start_rating: startRating,
       })
       onAuthed(user)
     } catch (err) {
@@ -478,15 +480,38 @@ export default function Auth({
             <>
               {profileFields}
               {!editUser && (
-                <label>
-                  {t('reg.password')}
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="new-password"
-                  />
-                </label>
+                <>
+                  <label>
+                    {t('reg.password')}
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      autoComplete="new-password"
+                    />
+                  </label>
+                  <div className="reg-rating">
+                    <div className="reg-rating-label">{t('reg.startLevel')}</div>
+                    <div className="reg-rating-grid">
+                      {[
+                        { r: 900, key: 'reg.lvlBeginner' },
+                        { r: 1100, key: 'reg.lvlCasual' },
+                        { r: 1400, key: 'reg.lvlClub' },
+                        { r: 1700, key: 'reg.lvlStrong' },
+                      ].map((o) => (
+                        <button
+                          type="button"
+                          key={o.r}
+                          className={`reg-rating-opt ${startRating === o.r ? 'active' : ''}`}
+                          onClick={() => setStartRating(o.r)}
+                        >
+                          <span className="rr-name">{t(o.key)}</span>
+                          <span className="rr-num">{o.r}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
               )}
             </>
           ))}
