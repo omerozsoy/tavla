@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
 import { frameStyle } from '../cosmetics'
+import PublicProfile from './PublicProfile'
 
 interface Props {
   currentName?: string
@@ -16,6 +17,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
   const [by, setBy] = useState<'rating' | 'coins'>('rating')
+  const [profileId, setProfileId] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -67,7 +69,11 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                 const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
                 const mine = currentName && r.name === currentName
                 return (
-                  <div key={r.rank} className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''}`}>
+                  <div
+                    key={r.rank}
+                    className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
+                    onClick={() => r.id && setProfileId(r.id)}
+                  >
                     <span className="lb-rank">{medal(r.rank) || r.rank}</span>
                     <span className="lb-name">
                       <span className="av-frame" style={frameStyle(r.frame)}>
@@ -91,6 +97,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           </div>
         )}
       </div>
+      {profileId !== null && (
+        <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+      )}
     </div>
   )
 }

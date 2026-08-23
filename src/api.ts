@@ -206,6 +206,7 @@ export async function nicknameAvailable(nickname: string): Promise<boolean> {
 
 export interface LeaderRow {
   rank: number
+  id?: number
   name: string
   avatar?: string | null
   frame?: string | null
@@ -236,6 +237,39 @@ export async function selectFrame(id: string | null): Promise<{ avatar_frame: st
 export async function leaderboard(limit = 100, by: 'rating' | 'coins' = 'rating'): Promise<LeaderRow[]> {
   const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}&by=${by}`)
   return data.players
+}
+
+// Mac gecmisi (giris yapan kullanici)
+export interface MyMatch {
+  won: boolean
+  opponent_rating: number
+  rating_before: number
+  rating_after: number
+  delta: number
+  created_at?: string | null
+}
+export async function myMatches(): Promise<MyMatch[]> {
+  const data = await req<{ matches: MyMatch[] }>('/me/matches')
+  return data.matches
+}
+
+// Herkese acik oyuncu profili
+export interface PublicProfile {
+  id: number
+  name: string
+  avatar?: string | null
+  frame?: string | null
+  country?: string | null
+  rating: number
+  coins: number
+  wins: number
+  losses: number
+  games: number
+  rank: number
+  form: boolean[] // en yeni once, true=galibiyet
+}
+export async function userProfile(id: number): Promise<PublicProfile> {
+  return req<PublicProfile>(`/users/${id}/profile`)
 }
 
 export async function claimDaily(): Promise<{ claimed: boolean; reward?: number; coins: number }> {
