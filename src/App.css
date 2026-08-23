@@ -168,6 +168,7 @@ body {
   gap: 10px;
 }
 .board-prev {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -194,6 +195,22 @@ body {
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--text);
+}
+.board-prev.locked .bp-svg {
+  opacity: 0.42;
+}
+.board-prev.locked .bp-name > svg,
+.bp-lock {
+  color: #e6b422;
+}
+.bp-lock {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
 }
 .swatch {
   aspect-ratio: 1;

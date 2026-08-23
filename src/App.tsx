@@ -2542,6 +2542,9 @@ export default function App() {
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
 
+  // Ucretli plan aktif mi (premium ozellik kilidi)
+  const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+
   // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir)
   function closeAllPages() {
     setLeaderboardOpen(false)
@@ -2592,7 +2595,9 @@ export default function App() {
       closeAllPages()
       setAnalyzerOpen(true)
     },
-    onBlunders: user ? () => goPage(() => setBlunderOpen(true)) : undefined,
+    onBlunders: user
+      ? () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true))
+      : undefined,
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
@@ -2728,6 +2733,12 @@ export default function App() {
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
+          freeCount={6}
+          premium={premium}
+          onUpgrade={() => {
+            setBoardSettingsOpen(false)
+            setMemOpen(true)
+          }}
           theme={theme}
           setTheme={setTheme}
           showPip={showPip}
