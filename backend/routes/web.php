@@ -26,6 +26,15 @@ Route::prefix('panel')->group(function () {
     });
 });
 
+// ---- Odeme (Garanti Sanal POS 3D) ----
+Route::get('/pay/card/{payment}', [\App\Http\Controllers\PaymentController::class, 'card'])
+    ->name('pay.card')->middleware('signed');
+Route::post('/pay/submit/{payment}', [\App\Http\Controllers\PaymentController::class, 'submit'])
+    ->name('pay.submit');
+Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])
+    ->name('pay.callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+Route::get('/pay/result', fn () => view('pay.result', ['ok' => false, 'msg' => '']))->name('pay.result');
+
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.
 // Statik dosyalar (assets/, models/) web sunucusu tarafindan dogrudan sunulur.
 Route::fallback(function () {
