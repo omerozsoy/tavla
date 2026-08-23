@@ -192,18 +192,29 @@ interface BoardTheme {
   checker: string // koyu pul rengi (temaya uyar)
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
 }
+// UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
+// id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
 const BOARD_THEMES: BoardTheme[] = [
-  // TavlaTv marka tahtasi: krem zemin + kiremit/terracotta uicgen + ink pul (site paletiyle ayni)
-  { id: 'tavla', name: 'TavlaTv', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b', checker: '#1c1a17' },
-  { id: 'walnut', name: 'Ceviz', panel: '#7a5230', a: '#caa06a', b: '#5c3a20', checker: '#242424' },
-  { id: 'blue', name: 'Mavi', panel: '#3f5fd4', a: '#6f92f5', b: '#3856c4', checker: '#3a3ad8' },
-  { id: 'green', name: 'Yeşil', panel: '#2f7d4f', a: '#56b37a', b: '#22633e', checker: '#188a4a' },
-  { id: 'wood', name: 'Ahşap', panel: '#9c6b3f', a: '#c89b6a', b: '#744826', checker: '#6b4524' },
-  { id: 'purple', name: 'Mor', panel: '#7a4fb0', a: '#a77ad0', b: '#5a3a8c', checker: '#6841ad' },
-  { id: 'gray', name: 'Gri', panel: '#5a6478', a: '#8b95a8', b: '#434c5e', checker: '#454f63' },
-  { id: 'red', name: 'Kırmızı', panel: '#a83a3a', a: '#cc6a6a', b: '#7a2a2a', checker: '#c24545' },
-  { id: 'teal', name: 'Turkuaz', panel: '#2a8a8a', a: '#4fb3b3', b: '#1e6666', checker: '#177575' },
-  { id: 'night', name: 'Gece', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444', checker: '#3a477e' },
+  { id: 'tavla', name: 'Latte', panel: '#e6e9ef', a: '#dd7878', b: '#ccd0da', checker: '#4c4f69' },
+  { id: 'nord', name: 'Nord', panel: '#3b4252', a: '#88c0d0', b: '#2e3440', checker: '#4c566a' },
+  { id: 'dracula', name: 'Dracula', panel: '#282a36', a: '#bd93f9', b: '#44475a', checker: '#6272a4' },
+  { id: 'gruvbox', name: 'Gruvbox', panel: '#3c3836', a: '#d79921', b: '#282828', checker: '#504945' },
+  { id: 'solarized', name: 'Solarized', panel: '#073642', a: '#b58900', b: '#002b36', checker: '#586e75' },
+  { id: 'tokyonight', name: 'Tokyo Night', panel: '#24283b', a: '#7aa2f7', b: '#1a1b26', checker: '#414868' },
+  { id: 'rosepine', name: 'Rosé Pine', panel: '#26233a', a: '#ebbcba', b: '#1f1d2e', checker: '#6e6a86' },
+  { id: 'mocha', name: 'Mocha', panel: '#313244', a: '#f5c2e7', b: '#1e1e2e', checker: '#585b70' },
+  { id: 'monokai', name: 'Monokai', panel: '#3e3d32', a: '#a6e22e', b: '#272822', checker: '#75715e' },
+  { id: 'everforest', name: 'Everforest', panel: '#374145', a: '#a7c080', b: '#2b3339', checker: '#4f5b58' },
+  { id: 'ayu', name: 'Ayu', panel: '#1f2430', a: '#ffcc66', b: '#171b24', checker: '#444a55' },
+  { id: 'onedark', name: 'One Dark', panel: '#3a3f4b', a: '#61afef', b: '#282c34', checker: '#4b5263' },
+  { id: 'nightowl', name: 'Night Owl', panel: '#1d3b53', a: '#82aaff', b: '#011627', checker: '#365069' },
+  { id: 'synthwave', name: 'Synthwave', panel: '#2b213a', a: '#ff7edb', b: '#1a1526', checker: '#5a4b7c' },
+  { id: 'horizon', name: 'Horizon', panel: '#2e303e', a: '#e95678', b: '#1c1e26', checker: '#4d4f5c' },
+  { id: 'palenight', name: 'Palenight', panel: '#292d3e', a: '#c792ea', b: '#1c1f2b', checker: '#4a4f66' },
+  { id: 'oceanic', name: 'Oceanic', panel: '#263238', a: '#6699cc', b: '#1b2b34', checker: '#405860' },
+  { id: 'gruvlight', name: 'Gruvbox Light', panel: '#ebdbb2', a: '#d79921', b: '#bdae93', checker: '#504945' },
+  { id: 'sollight', name: 'Solarized Light', panel: '#eee8d5', a: '#268bd2', b: '#93a1a1', checker: '#586e75' },
+  { id: 'dawn', name: 'Dawn', panel: '#faf4ed', a: '#d7827e', b: '#dfdad9', checker: '#575279' },
 ]
 // Premium tahta temalari (coin ile acilir). id 'gold' -> magaza 'theme.gold'
 const PREMIUM_THEMES: BoardTheme[] = [
