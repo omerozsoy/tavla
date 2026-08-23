@@ -2585,6 +2585,7 @@ export default function App() {
     setBoardSettingsOpen(false)
     setQuizOpen(false)
     setClubsOpen(false)
+    setSetup(null)
   }
   const goPage = (open: () => void) => {
     closeAllPages()
@@ -2803,20 +2804,39 @@ export default function App() {
     </>
   )
 
-  // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz)
+  // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz).
+  // Diger menu sayfalari gibi: sol menu gorunur kalir, kurulum icerik alaninda acilir.
   if (setup) {
     return (
-      <MatchSetup
-        mode={setup}
-        targets={TARGETS}
-        coins={user?.coins ?? 0}
-        initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
-        onConfirm={applyMatchSetup}
-        onCancel={() => {
-          setSetup(null)
-          if (mode === 'online' && !room) setHome(true)
-        }}
-      />
+      <>
+        {accountBar}
+        {mobileNav}
+        <div className="app lobby">
+          <SideMenu
+            inGame={false}
+            {...menuProps}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <MatchSetup
+                mode={setup}
+                targets={TARGETS}
+                coins={user?.coins ?? 0}
+                initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
+                onConfirm={applyMatchSetup}
+                onCancel={() => {
+                  setSetup(null)
+                  if (mode === 'online' && !room) setHome(true)
+                }}
+              />
+            </div>
+          </main>
+        </div>
+        {authModal}
+        {menuOverlays}
+      </>
     )
   }
 
