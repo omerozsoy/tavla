@@ -244,6 +244,60 @@ export async function leaderboard(limit = 100, by: 'rating' | 'coins' = 'rating'
   return data.players
 }
 
+// ---- Kulupler & Lig ----
+export interface ClubSummary {
+  id: number
+  name: string
+  tag: string | null
+  description: string | null
+  members_count: number
+  points: number
+}
+export interface ClubMemberRow {
+  user_id: number
+  nickname: string
+  avatar?: string | null
+  rating: number
+  role: 'owner' | 'member'
+  points: number
+  wins: number
+  losses: number
+}
+export interface ClubFull extends ClubSummary {
+  owner_id: number
+  table: ClubMemberRow[]
+}
+export async function listClubs(): Promise<ClubSummary[]> {
+  const d = await req<{ clubs: ClubSummary[] }>('/clubs')
+  return d.clubs
+}
+export async function getClub(id: number): Promise<ClubFull> {
+  const d = await req<{ club: ClubFull }>(`/clubs/${id}`)
+  return d.club
+}
+export async function myClub(): Promise<ClubFull | null> {
+  const d = await req<{ club: ClubFull | null }>('/me/club')
+  return d.club
+}
+export async function createClub(input: {
+  name: string
+  tag?: string
+  description?: string
+}): Promise<ClubFull> {
+  const d = await req<{ club: ClubFull }>('/clubs', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+  return d.club
+}
+export async function joinClub(id: number): Promise<ClubFull> {
+  const d = await req<{ club: ClubFull }>(`/clubs/${id}/join`, { method: 'POST' })
+  return d.club
+}
+export async function leaveClub(): Promise<void> {
+  await req('/clubs/leave', { method: 'POST' })
+}
+
 // Mac gecmisi (giris yapan kullanici)
 export interface MyMatch {
   won: boolean

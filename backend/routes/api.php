@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlunderController;
+use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
@@ -25,6 +26,8 @@ Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); /
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
+Route::get('/clubs', [ClubController::class, 'index']);
+Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
 // Multiplayer odalari (misafir dostu, token bazli)
 Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
@@ -60,6 +63,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
     Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);
     Route::post('/invites/{inviteId}/respond', [PresenceController::class, 'respond']);
+
+    Route::get('/me/club', [ClubController::class, 'mine']);
+    Route::post('/clubs', [ClubController::class, 'create']);
+    Route::post('/clubs/{club}/join', [ClubController::class, 'join']);
+    Route::post('/clubs/leave', [ClubController::class, 'leave']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);

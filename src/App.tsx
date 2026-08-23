@@ -79,6 +79,7 @@ import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
+import Clubs from './ui/Clubs'
 import NotificationBell from './ui/NotificationBell'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
@@ -355,6 +356,7 @@ export default function App() {
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
+  const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
   const [spectate, setSpectate] = useState<{ code: string; p1: string; p2: string } | null>(null)
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
@@ -2576,6 +2578,7 @@ export default function App() {
     setContentView(null)
     setBoardSettingsOpen(false)
     setQuizOpen(false)
+    setClubsOpen(false)
   }
   const goPage = (open: () => void) => {
     closeAllPages()
@@ -2623,7 +2626,7 @@ export default function App() {
     onAdmin: () =>
       window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => goPage(() => setContentView('event')),
-    onClubs: () => goPage(() => setContentView('club')),
+    onClubs: () => goPage(() => setClubsOpen(true)),
     onServices: () => goPage(() => setContentView('service')),
     onBlog: () => goPage(() => setContentView('blog')),
     onNews: () => goPage(() => setContentView('news')),
@@ -2679,7 +2682,8 @@ export default function App() {
     soloOpen ||
     !!contentView ||
     boardSettingsOpen ||
-    quizOpen
+    quizOpen ||
+    clubsOpen
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
@@ -2741,6 +2745,7 @@ export default function App() {
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
+      {clubsOpen && user && <Clubs onClose={() => setClubsOpen(false)} />}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}

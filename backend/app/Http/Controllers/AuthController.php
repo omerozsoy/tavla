@@ -214,6 +214,19 @@ class AuthController extends Controller
         }
         $user->save();
 
+        // Kulup lig puani: uyeyse galibiyet +3, katilim +1. Kulup toplami da artar.
+        $mem = \App\Models\ClubMember::where('user_id', $user->id)->first();
+        if ($mem) {
+            $gain = $data['won'] ? 3 : 1;
+            $mem->increment('points', $gain);
+            if ($data['won']) {
+                $mem->increment('wins');
+            } else {
+                $mem->increment('losses');
+            }
+            \App\Models\Club::where('id', $mem->club_id)->increment('points', $gain);
+        }
+
         // Basarim rozetleri: yeni hak kazanilanlari ekle + bildirim gonder
         $this->awardBadges($user, $newRating);
 
