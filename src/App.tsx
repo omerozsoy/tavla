@@ -396,6 +396,7 @@ export default function App() {
       playedSteps?: Step[] // oynanan hamlenin adimlari (vurgulama)
       cands?: { notation: string; equity: number; steps: Step[] }[] // siralı adaylar (equity)
       probs?: number[] // oynanan konumun kazanma olasiliklari (6)
+      seq?: number // tur sirasi (async bot kaydinda dogru siralama icin)
     }[]
   >([])
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
@@ -585,6 +586,7 @@ export default function App() {
     const mover = before.turn
     const moves = generateMoves(before)
     if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
+    const seq = turnsPlayed // bu turun sirasi (async bot kaydinda korunur)
     // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (seviyeye gore)
     if (mode === 'pvb' && mover === BOT_PLAYER) {
       const loss = neuralRef.current.lastLoss ?? 0
@@ -592,6 +594,36 @@ export default function App() {
         ...s,
         black: { loss: s.black.loss + loss, decisions: s.black.decisions + 1 },
       }))
+      // Botun (rakip) hamlesini de analize kaydet: siralamayi arka planda hesapla
+      const playedKey = boardKey(applyPlayed(before, steps))
+      neuralRef.current
+        .analyzeMoves(before)
+        .then((ranks) => {
+          if (ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
+          const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
+          const cands = ranks.slice(0, 5).map((r) => ({
+            notation: moveNotation(r.move, mover),
+            equity: r.equity,
+            steps: r.move.steps,
+          }))
+          setMatchLog((log) => [
+            ...log,
+            {
+              notation: moveNotation(pl.move, mover),
+              best: moveNotation(ranks[0].move, mover),
+              loss: Math.max(0, ranks[0].equity - pl.equity),
+              pos: before,
+              steps: ranks[0].move.steps,
+              playedSteps: pl.move.steps,
+              player: mover,
+              dice: [...before.dice],
+              cands,
+              probs: pl.probs,
+              seq,
+            },
+          ])
+        })
+        .catch(() => {})
       return
     }
     // Insan: tur basi hesaplanan NEURAL siralamayi kullan (heuristik olcegi PR'a uygun degil)
@@ -626,6 +658,7 @@ export default function App() {
           dice: [...before.dice],
           cands,
           probs: pl.probs,
+          seq,
         },
       ])
     }
@@ -1147,10 +1180,10 @@ export default function App() {
       reportTournament(tm.tid, tm.matchKey, winnerId).catch(() => {})
       tournMatchRef.current = null
     }
-    // Hata gunlugu: bu macin en kotu hamlelerini kaydet
+    // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca kendi hamlelerim)
     if (user) {
       const bl = matchLog
-        .filter((e) => e.loss >= 0.08)
+        .filter((e) => e.loss >= 0.08 && e.player === myColor)
         .sort((a, b) => b.loss - a.loss)
         .slice(0, 5)
         .map((e) => ({
@@ -1181,9 +1214,9 @@ export default function App() {
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
       })
       .catch(() => {})
-    // Hata gunlugu: bu macin en kotu hamlelerini kaydet
+    // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
     const bl = matchLog
-      .filter((e) => e.loss >= 0.08)
+      .filter((e) => e.loss >= 0.08 && e.player === 'white')
       .sort((a, b) => b.loss - a.loss)
       .slice(0, 5)
       .map((e) => ({
@@ -2903,6 +2936,7 @@ export default function App() {
           mode={resultView}
           log={matchLog}
           pr={prOf(prHumanColor)}
+          humanColor={prHumanColor}
           onClose={() => setResultView(null)}
         />
       )}
