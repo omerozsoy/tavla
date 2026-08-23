@@ -192,6 +192,8 @@ class AuthController extends Controller
         $data = $request->validate([
             'won'             => ['required', 'boolean'],
             'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
+            'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
+            'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
         ]);
         $user = $request->user();
 
@@ -215,7 +217,7 @@ class AuthController extends Controller
         // Basarim rozetleri: yeni hak kazanilanlari ekle + bildirim gonder
         $this->awardBadges($user, $newRating);
 
-        // Mac gecmisine kaydet (yonetim panelinde gorunur)
+        // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         \App\Models\MatchResult::create([
             'user_id'         => $user->id,
             'won'             => (bool) $data['won'],
@@ -223,6 +225,9 @@ class AuthController extends Controller
             'rating_before'   => (int) $ra,
             'rating_after'    => $newRating,
             'delta'           => $newRating - (int) $ra,
+            'match_length'    => $data['match_length'] ?? null,
+            'pr'              => $data['pr'] ?? null,
+            'coins_after'     => $user->coins ?? 0,
         ]);
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
@@ -359,6 +364,61 @@ class AuthController extends Controller
             ]);
 
         return response()->json(['matches' => $matches]);
+    }
+
+    // Profil analizi: rating/coin gecmisi + mac-uzunluguna gore kazanma%/PR + WXP
+    public function analytics(Request $request)
+    {
+        $me = $request->user();
+        $rows = \App\Models\MatchResult::where('user_id', $me->id)
+            ->orderBy('id')
+            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr']);
+
+        $ratingHistory = $rows->map(fn ($r) => (int) $r->rating_after)->values();
+        $coinsHistory = $rows->filter(fn ($r) => $r->coins_after !== null)
+            ->map(fn ($r) => (int) $r->coins_after)->values();
+
+        // Maç uzunluguna gore grupla (kazanma% + ortalama PR)
+        $byLen = [];
+        $wxp = 0;
+        foreach ($rows as $r) {
+            if ($r->won) {
+                $wxp += (int) ($r->match_length ?? 1);
+            }
+            $len = $r->match_length;
+            if (! $len) {
+                continue;
+            }
+            if (! isset($byLen[$len])) {
+                $byLen[$len] = ['length' => (int) $len, 'games' => 0, 'wins' => 0, 'pr_sum' => 0.0, 'pr_n' => 0];
+            }
+            $byLen[$len]['games']++;
+            if ($r->won) {
+                $byLen[$len]['wins']++;
+            }
+            if ($r->pr !== null) {
+                $byLen[$len]['pr_sum'] += (float) $r->pr;
+                $byLen[$len]['pr_n']++;
+            }
+        }
+        ksort($byLen);
+        $byLength = array_values(array_map(fn ($g) => [
+            'length' => $g['length'],
+            'games' => $g['games'],
+            'wins' => $g['wins'],
+            'win_pct' => $g['games'] > 0 ? round($g['wins'] / $g['games'] * 100, 1) : 0,
+            'avg_pr' => $g['pr_n'] > 0 ? round($g['pr_sum'] / $g['pr_n'], 2) : null,
+        ], $byLen));
+
+        return response()->json([
+            'rating_history' => $ratingHistory,
+            'coins_history' => $coinsHistory,
+            'by_length' => $byLength,
+            'wxp' => $wxp,
+            'games' => $me->games_played ?? 0,
+            'wins' => $me->wins ?? 0,
+            'losses' => $me->losses ?? 0,
+        ]);
     }
 
     // Sifremi unuttum -> sifirlama linki e-postala
