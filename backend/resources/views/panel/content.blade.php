@@ -1,6 +1,13 @@
 @extends('panel.layout')
 @section('content')
-  @php $labels=['service'=>'Hizmetler','event'=>'Takvim','club'=>'Kulüpler','blog'=>'Blog','news'=>'Haberler','ad'=>'Reklamlar']; @endphp
+  @php $labels=['service'=>'Hizmetler','event'=>'Takvim','club'=>'Kulüpler','blog'=>'Blog','news'=>'Haberler','ad'=>'Reklamlar','quiz'=>'Quizler']; @endphp
+  @php
+    $quiz = ['options'=>['','','',''], 'answer'=>0, 'explain'=>''];
+    if($type==='quiz' && $editing && $editing->body){
+      $q = json_decode($editing->body, true);
+      if(is_array($q)){ $quiz['answer']=(int)($q['answer']??0); $quiz['explain']=$q['explain']??''; foreach(($q['options']??[]) as $k=>$v){ $quiz['options'][$k]=$v; } }
+    }
+  @endphp
   <h1>İçerik Yönetimi</h1>
 
   <div class="type-tabs">
@@ -17,7 +24,7 @@
       @if($editing)<input type="hidden" name="id" value="{{ $editing->id }}">@endif
 
       <div class="field">
-        <label>{{ $type==='club' ? 'Kulüp Adı' : 'Başlık' }}</label>
+        <label>{{ $type==='club' ? 'Kulüp Adı' : ($type==='quiz' ? 'Soru' : 'Başlık') }}</label>
         <input name="title" value="{{ old('title', $editing->title ?? '') }}" required>
       </div>
 
@@ -55,6 +62,18 @@
         <div class="field">
           <label>Bağlantı (tıklanınca gidilecek adres, isteğe bağlı)</label>
           <input name="body" value="{{ $editing->body ?? '' }}" placeholder="https://...">
+        </div>
+      @elseif($type==='quiz')
+        <label style="margin-bottom:8px">Şıklar — doğru olanı işaretle</label>
+        @for($i=0;$i<4;$i++)
+          <div class="field" style="display:flex;gap:10px;align-items:center">
+            <input type="radio" name="answer" value="{{ $i }}" {{ (int)$quiz['answer']===$i ? 'checked':'' }} style="width:20px;flex:none">
+            <input name="opt{{ $i+1 }}" value="{{ $quiz['options'][$i] ?? '' }}" placeholder="{{ $i+1 }}. şık">
+          </div>
+        @endfor
+        <div class="field">
+          <label>Açıklama (cevaptan sonra gösterilir, isteğe bağlı)</label>
+          <textarea name="explain" rows="3">{{ $quiz['explain'] }}</textarea>
         </div>
       @else
         <div class="field">

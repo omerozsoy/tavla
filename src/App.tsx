@@ -77,6 +77,7 @@ import Tournaments from './ui/Tournaments'
 import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import ContentView from './ui/ContentView'
+import QuizPlay from './ui/QuizPlay'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
@@ -311,6 +312,7 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
+  const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -2308,6 +2310,7 @@ export default function App() {
     onServices: () => setContentView('service'),
     onBlog: () => setContentView('blog'),
     onNews: () => setContentView('news'),
+    onQuiz: () => setQuizOpen(true),
   }
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
@@ -2405,6 +2408,7 @@ export default function App() {
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
+      {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}

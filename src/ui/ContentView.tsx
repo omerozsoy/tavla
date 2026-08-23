@@ -11,6 +11,7 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   event: { icon: 'calendar', titleKey: 'menu.calendar' },
   club: { icon: 'pin', titleKey: 'menu.clubs' },
   ad: { icon: 'star', titleKey: 'menu.services' }, // reklamlar ContentView'de gosterilmez
+  quiz: { icon: 'book', titleKey: 'menu.quiz' }, // quiz QuizPlay ile oynatilir
 }
 
 const paras = (body?: string | null) =>
