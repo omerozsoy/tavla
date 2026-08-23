@@ -189,7 +189,11 @@ export default function SideMenu(p: SideMenuProps) {
         <button className="menu-btn" onClick={p.onBoardSettings}>
           <Icon name="settings" /> {t('menu.settings')}
         </button>
-        {/* "Uygulamayi Yukle" dugmesi simdilik gizli (altyapi p.canInstall/onInstall duruyor) */}
+        {p.canInstall && (
+          <button className="menu-btn menu-install" onClick={p.onInstall}>
+            <Icon name="install" /> {t('menu.install')}
+          </button>
+        )}
       </div>
     </aside>
   )

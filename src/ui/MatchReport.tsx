@@ -100,6 +100,45 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
     setCandIdx(0)
   }
 
+  // Maci okunabilir metin olarak disa aktar (kocluk/paylasim icin)
+  function exportMatch() {
+    const lines: string[] = []
+    lines.push('TavlaTv — Mac Raporu / Match Report')
+    if (pr != null) lines.push(`PR: ${pr.toFixed(2)}`)
+    lines.push(
+      `${t('rep.decisions')}: ${statLog.length}  ` +
+        `(${counts.good}/${counts.ok}/${counts.bad}/${counts.blunder})`,
+    )
+    lines.push('')
+    lines.push('# Hamleler / Moves')
+    ordered.forEach(({ e }, n) => {
+      const who = e.player === 'white' ? 'W' : 'B'
+      const dice = e.dice && e.dice.length >= 2 ? `${e.dice[0]}-${e.dice[1]}` : '--'
+      const lossStr = e.loss >= 0.005 ? `  (-${e.loss.toFixed(3)})` : ''
+      const bestStr = e.best && e.best !== e.notation ? `  [${t('rep.best')}: ${e.best}]` : ''
+      lines.push(`${n + 1}. [${who}] ${dice}: ${e.notation}${bestStr}${lossStr}`)
+    })
+    if (cubeLog.length > 0) {
+      lines.push('')
+      lines.push(`# ${t('cube.decisions')}`)
+      cubeLog.forEach((e) => {
+        const verdict = e.cube!.correct
+          ? t('cube.correct')
+          : `${t('cube.wrong')} -> ${recLabel(e.cube!.recommended)}`
+        lines.push(
+          `- ${t(`cube.chose.${e.cube!.chosen}`)} (${t('cube.win')} ${e.cube!.win.toFixed(0)}%) — ${verdict}`,
+        )
+      })
+    }
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'tavlatv-mac.txt'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="register-overlay modal report-overlay" onClick={onClose}>
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
@@ -110,6 +149,11 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
           {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
           {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
         </h2>
+        {log.length > 0 && (
+          <button className="menu-btn rep-export" onClick={exportMatch}>
+            <Icon name="install" size={14} /> {t('rep.export')}
+          </button>
+        )}
 
         {log.length === 0 ? (
           <p className="register-sub">{t('rep.empty')}</p>
