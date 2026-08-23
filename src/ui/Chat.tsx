@@ -7,6 +7,8 @@ interface Props {
   messages: ChatMsg[]
   mySlot: Slot
   onSend: (text: string) => void
+  canText?: boolean // serbest yazili sohbet (premium); false ise sadece emoji
+  onUpgrade?: () => void
 }
 
 // Yaygin emojiler (hazir panel)
@@ -17,7 +19,7 @@ const EMOJIS = [
   '😏', '🫡', '👋', '🍀', '⭐', '💯', '😤', '🙈',
 ]
 
-export default function Chat({ messages, mySlot, onSend }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   const [open, setOpen] = useState(true)
@@ -84,16 +86,24 @@ export default function Chat({ messages, mySlot, onSend }: Props) {
             >
               😊
             </button>
-            <input
-              value={text}
-              maxLength={280}
-              placeholder={t('chat.placeholder')}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') submit()
-              }}
-            />
-            <button onClick={submit}>{t('chat.send')}</button>
+            {canText ? (
+              <>
+                <input
+                  value={text}
+                  maxLength={280}
+                  placeholder={t('chat.placeholder')}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') submit()
+                  }}
+                />
+                <button onClick={submit}>{t('chat.send')}</button>
+              </>
+            ) : (
+              <button className="chat-premium" onClick={onUpgrade}>
+                <Icon name="crown" size={14} /> {t('chat.premium')}
+              </button>
+            )}
           </div>
         </>
       )}
