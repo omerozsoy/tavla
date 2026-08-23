@@ -441,10 +441,11 @@ export default function App() {
                                         ? 'yapay-zeka'
                                         : ''
 
-  // Hash -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
+  // URL yolu -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
+  // Temiz path kullanilir (SEO): /yapay-zeka  (hash # yok)
   useEffect(() => {
-    const applyFromHash = () => {
-      const slug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
+    const applyFromPath = () => {
+      const slug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
       closeAllPages()
       setAnalyzerOpen(false)
       setMemOpen(false)
@@ -510,23 +511,24 @@ export default function App() {
           setSetup('pvb')
           break
         default:
-          break // ana sayfa (bos hash)
+          break // ana sayfa (bos path)
       }
     }
-    applyFromHash()
-    window.addEventListener('popstate', applyFromHash)
-    return () => window.removeEventListener('popstate', applyFromHash)
+    applyFromPath()
+    window.addEventListener('popstate', applyFromPath)
+    return () => window.removeEventListener('popstate', applyFromPath)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // state -> hash: menuden sayfa acildikca URL guncellenir
+  // state -> URL yolu: menuden sayfa acildikca temiz path guncellenir
   useEffect(() => {
-    const hashSlug = decodeURIComponent(window.location.hash.replace(/^#\/?/, '')).trim()
-    if (hashSlug === currentSlug) return // zaten senkron (hash'ten uygulandi)
+    const pathSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
+    if (pathSlug === currentSlug) return // zaten senkron (path'ten uygulandi)
+    const search = window.location.search
     if (currentSlug) {
-      window.history.pushState(null, '', '#/' + currentSlug)
+      window.history.pushState(null, '', '/' + currentSlug + search)
     } else {
-      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+      window.history.replaceState(null, '', '/' + search)
     }
   }, [currentSlug])
 
