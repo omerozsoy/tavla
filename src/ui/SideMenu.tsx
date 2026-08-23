@@ -63,8 +63,9 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <button className="menu-btn" onClick={p.onSolo}>
+          <button className="menu-btn menu-solo" onClick={p.onSolo}>
             <Icon name="play" /> {t('menu.solo')}
+            <Icon name="coin" size={14} className="menu-coin" />
           </button>
         )}
         {!p.inGame && (

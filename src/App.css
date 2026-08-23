@@ -111,12 +111,16 @@ body {
 
 /* ---- Sol menu ---- */
 .side-menu {
-  width: 160px;
+  width: 172px;
   flex: none;
   display: flex;
   flex-direction: column;
   gap: 14px;
   overflow-y: auto;
+  /* Bir ton koyu panel */
+  background: color-mix(in srgb, var(--bg) 90%, #000);
+  border-radius: 14px;
+  padding: 12px 10px;
 }
 .side-menu .brand {
   display: flex;
@@ -191,14 +195,19 @@ body {
   text-align: left;
   padding: 9px 12px;
   border-radius: 8px;
-  background: var(--btn-bg);
+  background: transparent;
   color: var(--text);
-  border: 1px solid var(--btn-border);
+  border: 1px solid transparent; /* cerceve yok */
   font-size: 0.9rem;
   cursor: pointer;
 }
 .menu-btn > svg {
   color: var(--accent);
+}
+/* Tek Oyun: sondaki coin ikonu saga yasli */
+.menu-solo .menu-coin {
+  margin-left: auto;
+  color: var(--gold, #e6b422);
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
@@ -797,15 +806,22 @@ body {
 }
 
 /* ==== Modal yerine TAM SAYFA gorunum (menuden acilan sayfalar) ==== */
+/* Sol menuden acilan sayfalar: modal degil, sol menunun sagina yasli panel */
 .register-overlay.page {
   position: fixed;
-  inset: 0;
+  top: 62px;
+  right: 10px;
+  bottom: 10px;
+  left: 196px;
   align-items: stretch;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 0;
-  background: var(--bg);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   overflow-y: auto;
-  z-index: 200;
+  z-index: 50;
 }
 .register-overlay.page > * {
   width: 100%;
@@ -815,21 +831,39 @@ body {
   max-height: none;
   border: none;
   border-radius: 0;
-  background: var(--bg);
+  background: transparent;
   box-shadow: none;
-  padding: 26px clamp(16px, 4vw, 44px) 64px;
+  padding: 24px clamp(16px, 4vw, 40px) 48px;
 }
 .register-overlay.page > * > h2 {
   font-size: 1.7rem;
   margin-bottom: 18px;
 }
 .register-overlay.page .modal-close {
-  position: fixed;
-  top: 14px;
+  position: absolute;
+  top: 12px;
   right: 14px;
   z-index: 5;
-  background: var(--card-bg);
+  background: var(--bg);
   border: 1px solid var(--border);
+}
+/* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
+@media (max-width: 900px) {
+  .register-overlay.page {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    background: var(--bg);
+    z-index: 200;
+  }
+  .register-overlay.page .modal-close {
+    position: fixed;
+    background: var(--card-bg);
+  }
 }
 @media (max-width: 560px) {
   .solo-grid {
@@ -842,7 +876,8 @@ body {
   }
 }
 .menu-btn:hover {
-  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: transparent;
 }
 .menu-btn.active {
   background: var(--accent);
