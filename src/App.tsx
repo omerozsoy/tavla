@@ -2542,37 +2542,70 @@ export default function App() {
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
 
+  // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir)
+  function closeAllPages() {
+    setLeaderboardOpen(false)
+    setTournOpen(false)
+    setShopOpen(false)
+    setStatsOpen(false)
+    setFriendsOpen(false)
+    setBlunderOpen(false)
+    setFairOpen(false)
+    setLessonsOpen(false)
+    setSoloOpen(false)
+    setContentView(null)
+    setBoardSettingsOpen(false)
+    setQuizOpen(false)
+  }
+  const goPage = (open: () => void) => {
+    closeAllPages()
+    open()
+  }
+
   // Ortak menu callback'leri (ana sayfa + oyun ekrani ayni menu)
   const menuProps = {
     loggedIn: !!user,
     canInstall,
     hasActiveGame,
-    onNewGame: () => setSetup('online'), // Mac Oyunu her zaman online (gercek rakip)
-    onSolo: () => setSoloOpen(true),
-    onAiGame: () => setSetup('pvb'), // Yapay zekaya karsi oyna (bot)
+    onNewGame: () => {
+      closeAllPages()
+      setSetup('online')
+    }, // Mac Oyunu her zaman online (gercek rakip)
+    onSolo: () => goPage(() => setSoloOpen(true)),
+    onAiGame: () => {
+      closeAllPages()
+      setSetup('pvb')
+    }, // Yapay zekaya karsi oyna (bot)
     onResume: () => setHome(false),
-    onHome: () => (online ? handleLeaveRoom() : setHome(true)),
-    onLeaderboard: () => setLeaderboardOpen(true),
-    onTournaments: () => setTournOpen(true),
-    onShop: () => setShopOpen(true),
+    onHome: () => {
+      closeAllPages()
+      if (online) handleLeaveRoom()
+      else setHome(true)
+    },
+    onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
+    onTournaments: () => goPage(() => setTournOpen(true)),
+    onShop: () => goPage(() => setShopOpen(true)),
     onMembership: () => setMemOpen(true),
-    onMyStats: () => setStatsOpen(true),
-    onFriends: () => setFriendsOpen(true),
-    onAnalyzer: () => setAnalyzerOpen(true),
-    onBlunders: user ? () => setBlunderOpen(true) : undefined,
-    onLessons: () => setLessonsOpen(true),
-    onFairness: () => setFairOpen(true),
-    onBoardSettings: () => setBoardSettingsOpen(true),
+    onMyStats: () => goPage(() => setStatsOpen(true)),
+    onFriends: () => goPage(() => setFriendsOpen(true)),
+    onAnalyzer: () => {
+      closeAllPages()
+      setAnalyzerOpen(true)
+    },
+    onBlunders: user ? () => goPage(() => setBlunderOpen(true)) : undefined,
+    onLessons: () => goPage(() => setLessonsOpen(true)),
+    onFairness: () => goPage(() => setFairOpen(true)),
+    onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () =>
       window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
-    onCalendar: () => setContentView('event'),
-    onClubs: () => setContentView('club'),
-    onServices: () => setContentView('service'),
-    onBlog: () => setContentView('blog'),
-    onNews: () => setContentView('news'),
-    onQuiz: () => setQuizOpen(true),
+    onCalendar: () => goPage(() => setContentView('event')),
+    onClubs: () => goPage(() => setContentView('club')),
+    onServices: () => goPage(() => setContentView('service')),
+    onBlog: () => goPage(() => setContentView('blog')),
+    onNews: () => goPage(() => setContentView('news')),
+    onQuiz: () => goPage(() => setQuizOpen(true)),
   }
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)

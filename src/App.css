@@ -951,14 +951,9 @@ body {
   font-size: 1.7rem;
   margin-bottom: 18px;
 }
+/* Sayfa gorunumu: X kapatma dugmesi yok - menuden baska ogeye tiklayarak gecilir */
 .register-overlay.page .modal-close {
-  position: fixed;
-  top: 14px;
-  left: 200px;
-  right: auto;
-  z-index: 55;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
+  display: none;
 }
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
 @media (max-width: 900px) {
@@ -973,11 +968,14 @@ body {
     background: var(--bg);
     z-index: 200;
   }
+  /* Mobilde menu drawer oldugundan X geri gelir (sayfayi kapatmak icin) */
   .register-overlay.page .modal-close {
+    display: flex;
     position: fixed;
     top: 10px;
     left: auto;
     right: 12px;
+    z-index: 210;
     background: var(--card-bg);
   }
   .register-overlay.page > * {
@@ -1334,51 +1332,23 @@ body {
   /* Her tas hafif "yerlesme" animasyonuyla belirir (yeni konan taslar) */
   animation: checker-place 0.22s ease-out;
 }
-/* Parlak "cam" isik yansimasi (ust-sol specular) - Galaxy tarzi cilali disk */
+/* FLAT pul: kubbe/gloss yok. Bombe hissi veren specular yansima kaldirildi. */
 .checker::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 33% 24%,
-    rgba(255, 255, 255, 0.6) 0%,
-    rgba(255, 255, 255, 0.16) 20%,
-    transparent 46%
-  );
-  pointer-events: none;
+  display: none;
 }
-/* Fis-tarzi ic ic halka (premium tas gorunumu) */
-/* Ortadaki oyulmus halka + kabarik ic disk - premium pul tasarimi */
+/* Ortadaki DUZ halka (ince cizgi) - mermer disk uzerinde net */
 .checker::after {
   content: '';
   position: absolute;
-  inset: 26%;
+  inset: 25%;
   border-radius: 50%;
   pointer-events: none;
 }
 .checker.white::after {
-  background: radial-gradient(circle at 40% 34%, #fffdf7 0%, var(--cream) 60%, #cdbf9f 100%);
-  border: 1px solid rgba(140, 125, 95, 0.45);
-  box-shadow:
-    0 0 0 2px rgba(120, 110, 85, 0.28),
-    0 1.5px 2px rgba(255, 255, 255, 0.55),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.85),
-    inset 0 -2px 3px rgba(120, 110, 85, 0.45);
+  border: 1.5px solid rgba(120, 108, 82, 0.55);
 }
 .checker.black::after {
-  background: radial-gradient(
-    circle at 40% 34%,
-    color-mix(in srgb, var(--navy) 55%, #fff) 0%,
-    var(--navy) 60%,
-    color-mix(in srgb, var(--navy) 75%, #000) 100%
-  );
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  box-shadow:
-    0 0 0 2px rgba(0, 0, 0, 0.35),
-    0 1.5px 2px rgba(255, 255, 255, 0.14),
-    inset 0 1.5px 2px rgba(255, 255, 255, 0.3),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.28);
 }
 .checker.draggable {
   cursor: grab;
@@ -1386,38 +1356,26 @@ body {
 .checker.draggable:active {
   cursor: grabbing;
 }
-/* Derinlik: kure gibi radyal gradyan + rim + ic/dis golge (kabarik cilali tas) */
 /* Prosedürel mermer damari (SVG feTurbulence; harici dosya yok, tema-tintable) */
 :root {
   --marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.11' numOctaves='4' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='gamma' exponent='2.4'/%3E%3CfeFuncG type='gamma' exponent='2.4'/%3E%3CfeFuncB type='gamma' exponent='2.4'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
 }
+/* Duz zemin renk + mermer dokusu (overlay). Radyal kure + ic golge YOK. */
 .checker.white {
-  background-image: var(--marble),
-    radial-gradient(circle at 36% 30%, #fffef9 0%, var(--cream) 48%, #cdbf9f 88%, #b3a684 100%);
-  background-size: cover, cover;
-  background-blend-mode: overlay, normal;
+  background-color: var(--cream);
+  background-image: var(--marble);
+  background-size: cover;
+  background-blend-mode: overlay;
   border: 1px solid #b8ab90;
-  box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.85),
-    inset 0 -4px 7px rgba(120, 110, 85, 0.4),
-    0 3px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
 }
 .checker.black {
-  background-image: var(--marble),
-    radial-gradient(
-      circle at 36% 30%,
-      color-mix(in srgb, var(--navy) 52%, #fff) 0%,
-      var(--navy) 50%,
-      color-mix(in srgb, var(--navy) 78%, #000) 92%,
-      color-mix(in srgb, var(--navy) 60%, #000) 100%
-    );
-  background-size: cover, cover;
-  background-blend-mode: overlay, normal;
-  border: 1px solid rgba(0, 0, 0, 0.5);
-  box-shadow:
-    inset 0 2px 4px rgba(255, 255, 255, 0.32),
-    inset 0 -4px 7px rgba(0, 0, 0, 0.5),
-    0 3px 6px rgba(0, 0, 0, 0.45);
+  background-color: var(--navy);
+  background-image: var(--marble);
+  background-size: cover;
+  background-blend-mode: overlay;
+  border: 1px solid rgba(0, 0, 0, 0.45);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 @keyframes checker-place {
   0% {
