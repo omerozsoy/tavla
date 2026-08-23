@@ -118,12 +118,13 @@ export default function MatchSetup({
         {/* Oyun kaçta bitsin */}
         <div className="setup-row">
           <div className="setup-label">{t('setup.length')}</div>
-          <div className="menu-targets">
+          <div className="target-grid">
             {targets.map((n) => (
               <button
                 key={n}
-                className={target === n ? 'menu-btn active' : 'menu-btn'}
+                className={`target-chip ${target === n ? 'active' : ''}`}
                 onClick={() => setTarget(n)}
+                aria-pressed={target === n}
               >
                 {n}
               </button>
@@ -205,9 +206,12 @@ export default function MatchSetup({
           </>
         )}
 
-        <div className="register-actions">
+        <div className="setup-actions">
+          <button className="btn-secondary" onClick={onCancel}>
+            {t('setup.cancel')}
+          </button>
           <button
-            className="galaxy-btn roll"
+            className="galaxy-btn roll setup-start"
             onClick={() =>
               onConfirm({
                 mode,
@@ -221,10 +225,7 @@ export default function MatchSetup({
               })
             }
           >
-            {t('setup.start')}
-          </button>
-          <button className="menu-btn" onClick={onCancel}>
-            {t('setup.cancel')}
+            <Icon name="play" size={18} /> {t('setup.start')}
           </button>
         </div>
       </div>
