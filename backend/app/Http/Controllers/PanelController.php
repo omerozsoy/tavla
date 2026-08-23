@@ -123,7 +123,7 @@ class PanelController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
-            'size' => ['required', 'integer', 'in:4,8,16'],
+            'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'],
             'prize_coins' => ['nullable', 'integer', 'min:0', 'max:100000000'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);

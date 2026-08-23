@@ -542,6 +542,10 @@ export async function finishTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/finish`, { method: 'POST' })
   return d.tournament
 }
+export async function startTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/start`, { method: 'POST' })
+  return d.tournament
+}
 export async function deleteTournament(id: number): Promise<void> {
   await req(`/tournaments/${id}`, { method: 'DELETE' })
 }
