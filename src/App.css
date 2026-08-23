@@ -999,6 +999,32 @@ body {
     padding-top: 56px;
   }
 }
+/* Ana sayfada menu ogeleri IN-FLOW acilir: overlay degil, icerik alaninin
+   kendisi olur (sag panel yerine gecer). .page-host lobby-main icinde yasar. */
+.lobby-main.has-page {
+  display: block;
+  padding: 0;
+}
+.page-host {
+  width: 100%;
+}
+.page-host .register-overlay.page {
+  position: static;
+  inset: auto;
+  left: auto;
+  z-index: auto;
+  overflow: visible;
+  background: transparent;
+}
+.page-host .register-overlay.page > * {
+  padding: 8px clamp(4px, 2vw, 24px) 48px;
+  min-height: 0;
+  max-width: 1000px;
+}
+.page-host .register-overlay.page .modal-close {
+  display: none;
+}
+
 @media (max-width: 560px) {
   .solo-grid {
     grid-template-columns: repeat(3, 1fr);

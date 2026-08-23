@@ -649,19 +649,21 @@ export default function App() {
         .catch(() => {})
       return
     }
-    // Insan: tur basi hesaplanan NEURAL siralamayi kullan (heuristik olcegi PR'a uygun degil)
-    const ranks = turnRankedRef.current
-    if (!ranks || ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
-    const key = boardKey(applyPlayed(before, steps))
-    const pl = ranks.find((r) => r.move.resultKey === key)
-    if (!pl) return // siralama bu tur icin hazir degil -> atla
-    const loss = Math.max(0, ranks[0].equity - pl.equity)
-    setPrStats((s) => ({
-      ...s,
-      [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
-    }))
+    // Insan: hamlenin gercek equity kaybini NEURAL siralamayla kaydet.
+    // Onemli: tur basi siralama (turnRankedRef) async oldugundan hizli oynanınca
+    // (ozellikle otomatik zar) hazir olmayabilir. O yuzden hazirsa hizli yol,
+    // degilse HER ZAMAN arka planda yeniden analiz ederek kaydi garanti et.
     const humanColor: Player = online ? myColor : 'white'
-    if (mover === humanColor) {
+    const playedKey = boardKey(applyPlayed(before, steps))
+    const record = (ranks: RankedMove[]) => {
+      if (ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
+      const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
+      const loss = Math.max(0, ranks[0].equity - pl.equity)
+      setPrStats((s) => ({
+        ...s,
+        [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
+      }))
+      if (mover !== humanColor) return
       // Her hamle icin tam analiz verisi: konum, zar, siralı adaylar (equity), kazanma%
       const cands = ranks.slice(0, 5).map((r) => ({
         notation: moveNotation(r.move, mover),
@@ -684,6 +686,21 @@ export default function App() {
           seq,
         },
       ])
+    }
+    // Hizli yol: tur basi siralama tam ve bu turun konumuna aitse dogrudan kullan
+    const pre = turnRankedRef.current
+    if (
+      pre &&
+      pre.length > 0 &&
+      (pre[0].probs?.length ?? 0) >= 6 &&
+      pre.some((r) => r.move.resultKey === playedKey)
+    ) {
+      record(pre)
+    } else {
+      neuralRef.current
+        .analyzeMoves(before)
+        .then(record)
+        .catch(() => {})
     }
   }
 
@@ -2649,9 +2666,24 @@ export default function App() {
   )
 
   // Menuden acilan tum modaller (her iki ekranda ortak)
-  const menuModals = (
+  // Menuden acilan sayfa acik mi (ana sayfada icerik alanina AKIS ICINDE gomulur)
+  const anyPageOpen =
+    leaderboardOpen ||
+    tournOpen ||
+    shopOpen ||
+    statsOpen ||
+    friendsOpen ||
+    blunderOpen ||
+    fairOpen ||
+    lessonsOpen ||
+    soloOpen ||
+    !!contentView ||
+    boardSettingsOpen ||
+    quizOpen
+
+  // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
+  const menuPages = (
     <>
-      {inviteBanner}
       {friendsOpen && user && (
         <Friends onInvite={handleInviteFriend} onClose={() => setFriendsOpen(false)} />
       )}
@@ -2707,25 +2739,6 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
-      {spectate && (
-        <Spectate
-          code={spectate.code}
-          p1={spectate.p1}
-          p2={spectate.p2}
-          onClose={() => setSpectate(null)}
-        />
-      )}
-      {homeProfileId !== null && (
-        <PublicProfile id={homeProfileId} onClose={() => setHomeProfileId(null)} />
-      )}
-      {memOpen && user && (
-        <Membership
-          current={(user.plan_active ?? 'free') as PlanId}
-          trialUsed={!!user.trial_used}
-          onUpgraded={(u) => setUser(u)}
-          onClose={() => setMemOpen(false)}
-        />
-      )}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {boardSettingsOpen && (
@@ -2748,6 +2761,32 @@ export default function App() {
           learnMode={learnMode}
           setLearnMode={setLearnMode}
           onClose={() => setBoardSettingsOpen(false)}
+        />
+      )}
+    </>
+  )
+
+  // Ortalanmis modallar / yuzen katmanlar (her zaman overlay)
+  const menuOverlays = (
+    <>
+      {inviteBanner}
+      {spectate && (
+        <Spectate
+          code={spectate.code}
+          p1={spectate.p1}
+          p2={spectate.p2}
+          onClose={() => setSpectate(null)}
+        />
+      )}
+      {homeProfileId !== null && (
+        <PublicProfile id={homeProfileId} onClose={() => setHomeProfileId(null)} />
+      )}
+      {memOpen && user && (
+        <Membership
+          current={(user.plan_active ?? 'free') as PlanId}
+          trialUsed={!!user.trial_used}
+          onUpgraded={(u) => setUser(u)}
+          onClose={() => setMemOpen(false)}
         />
       )}
     </>
@@ -2806,7 +2845,11 @@ export default function App() {
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
           />
-          <main className="main lobby-main">
+          <main className={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}>
+            {anyPageOpen ? (
+              <div className="page-host">{menuPages}</div>
+            ) : (
+            <>
             <div className="lobby-welcome">
               {hasActiveGame && (
                 <button
@@ -2851,10 +2894,12 @@ export default function App() {
                 onProfile={(id) => setHomeProfileId(id)}
               />
             </div>
+            </>
+            )}
           </main>
         </div>
         {authModal}
-        {menuModals}
+        {menuOverlays}
       </>
     )
   }
@@ -3035,7 +3080,8 @@ export default function App() {
         />
       )}
       {authModal}
-      {menuModals}
+      {menuPages}
+      {menuOverlays}
 
       {gameEnd && matchOver && mWinner && (
         <MatchResult
