@@ -143,7 +143,11 @@ class RoomController extends Controller
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1', 'matched' => false]);
     }
 
-    // Bahisli online mac sonucu: coin transferi (oda basina bir kez, atomik)
+    // Bahisli online mac sonucu: coin transferi (oda basina bir kez, atomik).
+    // GUVENLIK: istemcinin 'won' beyanina KORU KORUNE guvenilmez. Kazanan;
+    //   (1) sunucudaki senkron mac durumundan (yetkili), ya da
+    //   (2) iki oyuncunun birbirini tutan beyanindan belirlenir.
+    // Tek tarafli/celiskili beyanla, durum da dogrulamıyorsa coin tasinmaz.
     public function settle(Request $request, string $code)
     {
         $data = $request->validate([
@@ -164,18 +168,33 @@ class RoomController extends Controller
         if (! $callerIsP1 && ! $callerIsP2) {
             return response()->json(['message' => 'Bu odada değilsin.'], 403);
         }
+        $callerSlot = $callerIsP1 ? 'p1' : 'p2';
+        $callerId = $callerIsP1 ? $room->p1_user_id : $room->p2_user_id;
+
+        // Bu oyuncunun beyan ettigi sonucu (bir kez) kaydet
+        $resultCol = $callerSlot.'_result';
+        if ($room->$resultCol === null) {
+            $room->$resultCol = $data['won'] ? 'won' : 'lost';
+            $room->save();
+        }
+
+        // Kazanani yetkili sekilde coz; henuz belli degilse odeme yapma (rakip beyani
+        // veya son mac durumu senkronu gelince tamamlanir).
+        $winnerSlot = $this->resolveWinnerSlot($room->fresh());
+        if ($winnerSlot === null) {
+            $caller = User::find($callerId);
+            return response()->json(['ok' => false, 'pending' => true, 'coins' => $caller?->coins ?? 0]);
+        }
 
         // Atomik "settled" iddiasi -> yalnizca ilk cagri coin tasir
         $claimed = Room::where('code', $code)->where('settled', false)->update(['settled' => true]);
-        $callerId = $callerIsP1 ? $room->p1_user_id : $room->p2_user_id;
         if (! $claimed) {
             $caller = User::find($callerId);
             return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
         }
 
-        $oppId = $callerIsP1 ? $room->p2_user_id : $room->p1_user_id;
-        $winnerId = $data['won'] ? $callerId : $oppId;
-        $loserId = $data['won'] ? $oppId : $callerId;
+        $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;
+        $loserId = $winnerSlot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
 
         $winner = User::find($winnerId);
         $loser = User::find($loserId);
@@ -203,8 +222,63 @@ class RoomController extends Controller
             'ok' => true,
             'coins' => $caller?->coins ?? 0,
             'stake' => $amount,
-            'won' => (bool) $data['won'],
+            'won' => $winnerId === $callerId,
         ]);
+    }
+
+    // Kazanan slot'u ('p1'|'p2') yetkili sekilde belirle, yoksa null.
+    // Oncelik: iki tarafli mutabakat > celiskide yetkili durum > tek taraf + durum dogrulamasi.
+    private function resolveWinnerSlot(Room $room): ?string
+    {
+        $r1 = $room->p1_result;
+        $r2 = $room->p2_result;
+        $stateWinner = $this->winnerFromState($room); // 'p1'|'p2'|null
+
+        // Mutabakat: biri 'won' digeri 'lost' -> net kazanan
+        if ($r1 === 'won' && $r2 === 'lost') {
+            return 'p1';
+        }
+        if ($r2 === 'won' && $r1 === 'lost') {
+            return 'p2';
+        }
+        // Ikisi de bildirdi ama celiskili (ikisi de 'won' vb.) -> yetkili mac durumu hakem
+        if ($r1 !== null && $r2 !== null) {
+            return $stateWinner;
+        }
+        // Tek taraf bildirdi -> yalnizca yetkili durum bu beyani DOGRULARSA ode
+        $reporter = $r1 !== null ? 'p1' : ($r2 !== null ? 'p2' : null);
+        if ($reporter === null || $stateWinner === null) {
+            return null;
+        }
+        $claimWinner = $room->{$reporter.'_result'} === 'won'
+            ? $reporter
+            : ($reporter === 'p1' ? 'p2' : 'p1');
+
+        return $stateWinner === $claimWinner ? $stateWinner : null;
+    }
+
+    // Senkronlanan mac durumundan kazanan slot (p1=beyaz, p2=siyah). Karar yoksa null.
+    private function winnerFromState(Room $room): ?string
+    {
+        $state = $room->state;
+        $match = is_array($state) ? ($state['match'] ?? null) : null;
+        if (! is_array($match) || ! isset($match['target'], $match['score'])) {
+            return null;
+        }
+        $target = (int) $match['target'];
+        $w = (int) ($match['score']['white'] ?? 0);
+        $b = (int) ($match['score']['black'] ?? 0);
+        if ($target <= 0) {
+            return null;
+        }
+        if ($w >= $target && $w > $b) {
+            return 'p1';
+        }
+        if ($b >= $target && $b > $w) {
+            return 'p2';
+        }
+
+        return null;
     }
 
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)
