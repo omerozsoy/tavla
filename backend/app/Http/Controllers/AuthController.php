@@ -27,6 +27,9 @@ class AuthController extends Controller
             'password'   => ['required', 'string', 'min:6', 'max:100'],
         ]);
 
+        // Ulke bos/eksikse '' ata (kolon NOT NULL olsa bile kayit patlamaz)
+        $data['country'] = $data['country'] ?? '';
+
         $user = User::create($data);
         $token = $user->createToken('web')->plainTextToken;
 
