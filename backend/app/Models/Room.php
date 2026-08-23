@@ -25,6 +25,8 @@ class Room extends Model
         'stake',
         'bet_pct',
         'settled',
+        'p1_result',
+        'p2_result',
     ];
 
     protected function casts(): array
