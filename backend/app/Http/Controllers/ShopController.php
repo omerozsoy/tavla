@@ -73,12 +73,18 @@ class ShopController extends Controller
                 'next_in' => self::REWARD_COOLDOWN - $elapsed,
             ]);
         }
-        $u->coins = ($u->coins ?? 0) + self::REWARD_AMOUNT;
+        // Gunluk bonus plana gore: Free 500, Star 800, StarPRO 1200
+        $amount = match ($u->plan_active) {
+            'starpro' => 1200,
+            'star' => 800,
+            default => self::REWARD_AMOUNT,
+        };
+        $u->coins = ($u->coins ?? 0) + $amount;
         $u->last_reward = now();
         $u->save();
         return response()->json([
             'claimed' => true,
-            'reward' => self::REWARD_AMOUNT,
+            'reward' => $amount,
             'coins' => $u->coins,
             'next_in' => self::REWARD_COOLDOWN,
         ]);

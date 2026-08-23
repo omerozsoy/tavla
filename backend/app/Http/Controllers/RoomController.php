@@ -288,6 +288,7 @@ class RoomController extends Controller
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')
             ->whereNotNull('state')
+            ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
             ->get(['code', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct']);

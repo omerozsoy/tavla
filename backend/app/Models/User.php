@@ -40,8 +40,22 @@ class User extends Authenticatable
         'remember_token',
     ];
 
-    // is_admin'i JSON'a ekle (email tabanli hesaplanir)
-    protected $appends = ['is_admin'];
+    // is_admin (email tabanli) + plan_active (suresi gecerli plan) JSON'a eklenir
+    protected $appends = ['is_admin', 'plan_active'];
+
+    // Suresi gecerli aktif plan: 'free' | 'star' | 'starpro'
+    public function getPlanActiveAttribute(): string
+    {
+        $plan = $this->attributes['plan'] ?? 'free';
+        if ($plan === 'free') {
+            return 'free';
+        }
+        $until = $this->plan_until ? \Illuminate\Support\Carbon::parse($this->plan_until) : null;
+        if (! $until || $until->isPast()) {
+            return 'free';
+        }
+        return $plan;
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -56,6 +70,8 @@ class User extends Authenticatable
             'game_state' => 'array',
             'unlocks' => 'array',
             'badges' => 'array',
+            'plan_until' => 'datetime',
+            'trial_used' => 'boolean',
             'birth_date' => 'date:Y-m-d',
             'banned_at' => 'datetime',
         ];
