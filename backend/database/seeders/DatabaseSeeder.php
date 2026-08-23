@@ -14,6 +14,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ContentSeeder::class,
             TournamentCalendarSeeder::class,
+            ClubDirectorySeeder::class,
         ]);
     }
 }
