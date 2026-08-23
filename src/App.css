@@ -4470,6 +4470,105 @@ body {
   margin-top: 16px;
   padding: 8px 4px 2px;
 }
+/* ---- Profil analiz grafikleri ---- */
+.an-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 18px;
+}
+.an-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.an-chart-head > svg {
+  color: var(--accent);
+}
+.line-chart {
+  display: block;
+  border-radius: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+}
+.chart-empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 12px;
+}
+.an-wxp {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+  border: 1px solid var(--border);
+}
+.an-wxp-lbl {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.an-wxp-val {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: calc(var(--bc-h, 90px) + 42px);
+}
+.bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+.bar-val {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+  font-variant-numeric: tabular-nums;
+}
+.bar-track {
+  width: 100%;
+  height: var(--bc-h, 90px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.bar-fill {
+  width: 62%;
+  border-radius: 6px 6px 0 0;
+  min-height: 3px;
+  transition: height 0.3s;
+}
+.bar-fill.good {
+  background: #2e9e5b;
+}
+.bar-fill.bad {
+  background: var(--tv-brick);
+}
+.bar-label {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 600;
+}
+.bar-sub {
+  font-size: 0.66rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
 .mh-head {
   margin-top: 18px;
   margin-bottom: 8px;

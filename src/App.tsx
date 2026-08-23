@@ -1162,7 +1162,7 @@ export default function App() {
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
     const before = user.rating ?? 1500
-    reportRating(won, oppRating)
+    reportRating(won, oppRating, match.target, prOf(myColor))
       .then((r) => {
         setRatingChange({ before, after: r.rating })
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
@@ -1217,7 +1217,7 @@ export default function App() {
     const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
     const won = mW === 'white' // pvb'de insan beyaz
     const before = user.rating ?? 1500
-    reportRating(won, botRating)
+    reportRating(won, botRating, match.target, prOf('white'))
       .then((r) => {
         setRatingChange({ before, after: r.rating })
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
@@ -2457,7 +2457,9 @@ export default function App() {
           {user.is_admin && (
             <button
               className="account-btn account-admin"
-              onClick={() => window.open('/panel', '_blank')}
+              onClick={() =>
+                window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
+              }
             >
               <Icon name="crown" size={14} /> {t('menu.admin')}
             </button>
@@ -2548,7 +2550,8 @@ export default function App() {
     onBoardSettings: () => setBoardSettingsOpen(true),
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
-    onAdmin: () => window.open('/panel', '_blank'),
+    onAdmin: () =>
+      window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => setContentView('event'),
     onClubs: () => setContentView('club'),
     onServices: () => setContentView('service'),

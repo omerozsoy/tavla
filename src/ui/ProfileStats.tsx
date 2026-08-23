@@ -2,9 +2,10 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { myStats, myMatches, type MyStats, type MyMatch } from '../api'
+import { myStats, myMatches, myAnalytics, type MyStats, type MyMatch, type Analytics } from '../api'
 import { frameStyle } from '../cosmetics'
 import { DivisionChip, BadgeList } from './Badges'
+import { LineChart, BarChart } from './Charts'
 
 interface Props {
   avatar?: string
@@ -19,6 +20,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
   const [matches, setMatches] = useState<MyMatch[] | null>(null)
+  const [an, setAn] = useState<Analytics | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -28,10 +30,15 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
     myMatches()
       .then((m) => alive && setMatches(m))
       .catch(() => alive && setMatches([]))
+    myAnalytics()
+      .then((a) => alive && setAn(a))
+      .catch(() => alive && setAn(null))
     return () => {
       alive = false
     }
   }, [])
+  // Maç uzunlugu etiketi: 1 -> "Jeton", digerleri -> "NS"
+  const lenLabel = (n: number) => (n === 1 ? t('an.jeton') : `${n}S`)
 
   const u = data?.user
   const games = u?.games_played ?? 0
@@ -101,8 +108,62 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
 
             <BadgeList ids={u?.badges} />
 
-            {/* Rating grafigi (son maclarin rating_after degerleri) */}
-            {matches && matches.length >= 2 && <RatingSpark matches={matches} />}
+            {/* Analiz grafikleri */}
+            {an && (
+              <div className="an-charts">
+                {an.rating_history.length >= 2 && (
+                  <div className="an-chart">
+                    <div className="an-chart-head">
+                      <Icon name="chart" size={14} /> {t('an.ratingGraph')}
+                    </div>
+                    <LineChart data={an.rating_history} />
+                  </div>
+                )}
+                {an.coins_history.length >= 2 && (
+                  <div className="an-chart">
+                    <div className="an-chart-head">
+                      <Icon name="coin" size={14} /> {t('an.balanceGraph')}
+                    </div>
+                    <LineChart data={an.coins_history} color="#e6b422" />
+                  </div>
+                )}
+                <div className="an-wxp">
+                  <span className="an-wxp-lbl">{t('an.wxp')}</span>
+                  <span className="an-wxp-val">{an.wxp}</span>
+                </div>
+                {an.by_length.length > 0 && (
+                  <div className="an-chart">
+                    <div className="an-chart-head">
+                      <Icon name="chart" size={14} /> {t('an.winByLen')}
+                    </div>
+                    <BarChart
+                      items={an.by_length.map((b) => ({
+                        label: lenLabel(b.length),
+                        value: b.win_pct,
+                        sub: `${b.wins}/${b.games}`,
+                      }))}
+                      suffix="%"
+                      threshold={50}
+                    />
+                  </div>
+                )}
+                {an.by_length.some((b) => b.avg_pr != null) && (
+                  <div className="an-chart">
+                    <div className="an-chart-head">
+                      <Icon name="alert" size={14} /> {t('an.prByLen')}
+                    </div>
+                    <BarChart
+                      items={an.by_length.map((b) => ({
+                        label: lenLabel(b.length),
+                        value: b.avg_pr,
+                      }))}
+                      threshold={8}
+                      invert
+                    />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Son maclar (mac gecmisi) */}
             <div className="mh-head">{t('stats.recent')}</div>
@@ -137,37 +198,4 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
 function fmtDate(iso?: string | null): string {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
-}
-
-// Basit rating grafigi (SVG polyline). matches en yeni once -> ters cevir.
-function RatingSpark({ matches }: { matches: MyMatch[] }) {
-  const pts = matches
-    .slice()
-    .reverse()
-    .map((m) => m.rating_after)
-  const w = 260
-  const h = 54
-  const min = Math.min(...pts)
-  const max = Math.max(...pts)
-  const span = Math.max(1, max - min)
-  const step = pts.length > 1 ? w / (pts.length - 1) : w
-  const coords = pts.map((v, i) => {
-    const x = i * step
-    const y = h - 4 - ((v - min) / span) * (h - 8)
-    return `${x.toFixed(1)},${y.toFixed(1)}`
-  })
-  return (
-    <div className="mh-spark">
-      <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height={h}>
-        <polyline
-          points={coords.join(' ')}
-          fill="none"
-          stroke="var(--accent)"
-          strokeWidth="2"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-      </svg>
-    </div>
-  )
 }
