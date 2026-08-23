@@ -6,6 +6,7 @@ use App\Http\Controllers\BlunderController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
+use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
@@ -47,6 +48,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);
+    Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::post('/friends/request', [FriendController::class, 'request']);
