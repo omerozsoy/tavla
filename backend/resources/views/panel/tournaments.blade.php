@@ -18,6 +18,11 @@
             <option value="4">4</option>
             <option value="8" selected>8</option>
             <option value="16">16</option>
+            <option value="32">32</option>
+            <option value="64">64</option>
+            <option value="128">128</option>
+            <option value="256">256</option>
+            <option value="0">Sınırsız</option>
           </select>
         </div>
         <div>

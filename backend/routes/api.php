@@ -65,6 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/match-room', [TournamentController::class, 'matchRoom']);
+    Route::post('/tournaments/{tournament}/start', [TournamentController::class, 'start']);
     Route::post('/tournaments/{tournament}/finish', [TournamentController::class, 'finish']);
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy']);
 
