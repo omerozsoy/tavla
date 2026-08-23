@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
     Route::post('/login', [PanelController::class, 'login']);
+    Route::get('/enter', [PanelController::class, 'enter']); // token ile sifresiz giris (siteden)
     Route::post('/logout', [PanelController::class, 'logout']);
 
     Route::middleware('admin')->group(function () {

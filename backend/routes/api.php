@@ -43,6 +43,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
+    Route::get('/me/analytics', [AuthController::class, 'analytics']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     Route::post('/rating/report', [AuthController::class, 'reportRating']);

@@ -254,6 +254,27 @@ export async function myMatches(): Promise<MyMatch[]> {
   return data.matches
 }
 
+// Profil analizi (grafikler)
+export interface ByLength {
+  length: number
+  games: number
+  wins: number
+  win_pct: number
+  avg_pr: number | null
+}
+export interface Analytics {
+  rating_history: number[]
+  coins_history: number[]
+  by_length: ByLength[]
+  wxp: number
+  games: number
+  wins: number
+  losses: number
+}
+export async function myAnalytics(): Promise<Analytics> {
+  return req<Analytics>('/me/analytics')
+}
+
 // Herkese acik oyuncu profili
 export interface PublicProfile {
   id: number
@@ -724,10 +745,17 @@ export async function liveMatches(): Promise<LiveMatch[]> {
 export async function reportRating(
   won: boolean,
   opponentRating: number,
+  matchLength?: number,
+  pr?: number | null,
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
-    body: JSON.stringify({ won, opponent_rating: opponentRating }),
+    body: JSON.stringify({
+      won,
+      opponent_rating: opponentRating,
+      match_length: matchLength ?? null,
+      pr: pr ?? null,
+    }),
   })
 }
 

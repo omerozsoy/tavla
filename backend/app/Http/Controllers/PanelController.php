@@ -38,6 +38,21 @@ class PanelController extends Controller
         return redirect('/panel/users');
     }
 
+    // Sitede giris yapmis admin, Sanctum token'i ile /panel'e sifresiz girer.
+    // "Yonetim" dugmesi -> /panel/enter?token=<sanctum-token>
+    public function enter(Request $request)
+    {
+        $token = (string) $request->query('token', '');
+        $access = $token ? \Laravel\Sanctum\PersonalAccessToken::findToken($token) : null;
+        $user = $access?->tokenable;
+        if ($user && $user->is_admin) {
+            Auth::login($user);
+            $request->session()->regenerate();
+            return redirect('/panel/users');
+        }
+        return redirect('/panel/login')->withErrors(['email' => 'Oturum doğrulanamadı, giriş yap.']);
+    }
+
     public function logout(Request $request)
     {
         Auth::logout();
