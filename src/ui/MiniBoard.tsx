@@ -79,7 +79,7 @@ export default function MiniBoard({
           fontSize="9"
           fontWeight="700"
           textAnchor="middle"
-          fill={white ? '#1a2340' : '#fff'}
+          fill={white ? 'var(--tv-ink)' : '#fff'}
         >
           {Math.abs(v)}
         </text>
@@ -113,7 +113,7 @@ export default function MiniBoard({
           opacity={0.95}
         />
         <circle cx={from.x} cy={from.y} r={7} fill="#ffd54a" />
-        <text x={from.x} y={from.y + 3} fontSize="9" fontWeight="800" textAnchor="middle" fill="#1a2340">
+        <text x={from.x} y={from.y + 3} fontSize="9" fontWeight="800" textAnchor="middle" fill="var(--tv-ink)">
           {i + 1}
         </text>
       </g>
@@ -129,9 +129,9 @@ export default function MiniBoard({
       </defs>
       <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
       {/* orta bar */}
-      <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="#0a0d2e" opacity="0.5" />
+      <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="var(--bar)" />
       {/* bear-off */}
-      <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="#0a0d2e" opacity="0.6" />
+      <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="var(--bar)" />
       {tris}
       {discs}
       {arrows}

@@ -389,9 +389,13 @@ export default function App() {
       notation: string
       best: string
       loss: number
-      pos?: GameState // hamle oncesi board (blunder tahtada gosterim)
+      pos?: GameState // hamle oncesi board (tahtada gosterim)
       steps?: Step[] // en iyi hamlenin adimlari
       player?: Player
+      dice?: number[] // bu turun zarlari
+      playedSteps?: Step[] // oynanan hamlenin adimlari (vurgulama)
+      cands?: { notation: string; equity: number; steps: Step[] }[] // siralı adaylar (equity)
+      probs?: number[] // oynanan konumun kazanma olasiliklari (6)
     }[]
   >([])
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
@@ -603,16 +607,25 @@ export default function App() {
     }))
     const humanColor: Player = online ? myColor : 'white'
     if (mover === humanColor) {
+      // Her hamle icin tam analiz verisi: konum, zar, siralı adaylar (equity), kazanma%
+      const cands = ranks.slice(0, 5).map((r) => ({
+        notation: moveNotation(r.move, mover),
+        equity: r.equity,
+        steps: r.move.steps,
+      }))
       setMatchLog((log) => [
         ...log,
         {
           notation: moveNotation(pl.move, mover),
           best: moveNotation(ranks[0].move, mover),
           loss,
-          // Onemli hatalarda pozisyon + en iyi hamleyi de sakla (blunder tahtasi icin)
-          ...(loss >= 0.04
-            ? { pos: before, steps: ranks[0].move.steps, player: mover }
-            : {}),
+          pos: before,
+          steps: ranks[0].move.steps,
+          playedSteps: pl.move.steps,
+          player: mover,
+          dice: [...before.dice],
+          cands,
+          probs: pl.probs,
         },
       ])
     }
