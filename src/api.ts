@@ -703,6 +703,23 @@ export async function cancelMatchmake(): Promise<void> {
   })
 }
 
+// Canli maclar (izlenebilir odalar)
+export interface LiveMatch {
+  code: string
+  p1_name: string
+  p1_rating?: number | null
+  p1_avatar?: string | null
+  p2_name: string
+  p2_rating?: number | null
+  p2_avatar?: string | null
+  stake: number
+  bet_pct: number
+}
+export async function liveMatches(): Promise<LiveMatch[]> {
+  const data = await req<{ matches: LiveMatch[] }>('/live-matches')
+  return data.matches
+}
+
 // Oyun sonucu -> Elo puani guncelle (rakip puanina gore). Guncel puani doner.
 export async function reportRating(
   won: boolean,

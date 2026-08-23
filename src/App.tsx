@@ -84,6 +84,9 @@ import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
+import { LiveMatchesPanel, RankingPanel } from './ui/HomePanels'
+import Spectate from './ui/Spectate'
+import PublicProfile from './ui/PublicProfile'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import {
@@ -339,6 +342,8 @@ export default function App() {
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
+  const [spectate, setSpectate] = useState<{ code: string; p1: string; p2: string } | null>(null)
+  const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
@@ -2646,6 +2651,17 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
+      {spectate && (
+        <Spectate
+          code={spectate.code}
+          p1={spectate.p1}
+          p2={spectate.p2}
+          onClose={() => setSpectate(null)}
+        />
+      )}
+      {homeProfileId !== null && (
+        <PublicProfile id={homeProfileId} onClose={() => setHomeProfileId(null)} />
+      )}
       {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {boardSettingsOpen && (
@@ -2750,6 +2766,15 @@ export default function App() {
                   ))}
                 </div>
               )}
+            </div>
+            <div className="home-panels">
+              <LiveMatchesPanel
+                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+              />
+              <RankingPanel
+                currentName={profile.nickname}
+                onProfile={(id) => setHomeProfileId(id)}
+              />
             </div>
           </main>
         </div>

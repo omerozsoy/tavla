@@ -28,6 +28,7 @@ Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 // Multiplayer odalari (misafir dostu, token bazli)
 Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
 Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
+Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
 Route::post('/rooms', [RoomController::class, 'create']);
 Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
 Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);

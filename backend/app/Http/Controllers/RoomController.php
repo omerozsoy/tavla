@@ -281,6 +281,32 @@ class RoomController extends Controller
         return null;
     }
 
+    // Canli maclar: su an oynanan odalar (izlenebilir). Herkese acik.
+    public function liveMatches()
+    {
+        $rooms = Room::where('status', 'playing')
+            ->whereNotNull('p1_name')
+            ->whereNotNull('p2_name')
+            ->whereNotNull('state')
+            ->orderByDesc('updated_at')
+            ->limit(30)
+            ->get(['code', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct']);
+
+        $list = $rooms->map(fn ($r) => [
+            'code' => $r->code,
+            'p1_name' => $r->p1_name,
+            'p1_rating' => $r->p1_rating,
+            'p1_avatar' => $r->p1_avatar,
+            'p2_name' => $r->p2_name,
+            'p2_rating' => $r->p2_rating,
+            'p2_avatar' => $r->p2_avatar,
+            'stake' => (int) $r->stake,
+            'bet_pct' => (int) $r->bet_pct,
+        ]);
+
+        return response()->json(['matches' => $list]);
+    }
+
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)
     public function matchmakingCancel(Request $request)
     {
