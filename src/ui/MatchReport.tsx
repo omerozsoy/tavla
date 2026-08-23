@@ -18,6 +18,13 @@ export interface LogEntry {
   cands?: { notation: string; equity: number; steps: Step[] }[]
   probs?: number[]
   seq?: number
+  cube?: {
+    win: number
+    equity: number
+    recommended: string
+    chosen: string
+    correct: boolean
+  }
 }
 
 interface Props {
@@ -46,13 +53,19 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   const { t } = useT()
   useEscape(onClose)
   const [worstFirst, setWorstFirst] = useState(false)
-  // Ilk analiz edilebilir (pos'lu) hamleyi sec
-  const firstAnalyzable = log.findIndex((e) => e.pos)
+  // Ilk analiz edilebilir (pos'lu, kup olmayan) hamleyi sec
+  const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
   const [sel, setSel] = useState(firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [candIdx, setCandIdx] = useState(0) // tahtada gosterilen aday (0 = oynanan/en iyi)
 
+  // Kup kararlari ayri gosterilir; tas oyunu istatistigi/listesi kup satirlarini haric tutar
+  const cubeLog = humanColor
+    ? log.filter((e) => e.cube && e.player === humanColor)
+    : log.filter((e) => e.cube)
   // Istatistik yalnizca insanin hamleleri; analiz listesi iki tarafi da gosterir
-  const statLog = humanColor ? log.filter((e) => e.player === humanColor) : log
+  const statLog = (humanColor ? log.filter((e) => e.player === humanColor) : log).filter(
+    (e) => !e.cube,
+  )
   const counts = { good: 0, ok: 0, bad: 0, blunder: 0 }
   let worst: LogEntry | null = null
   for (const e of statLog) {
@@ -60,12 +73,19 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
     if (!worst || e.loss > worst.loss) worst = e
   }
 
-  const mistakes = log.map((e, i) => ({ e, i })).filter(({ e }) => e.loss >= 0.02)
+  const mistakes = log
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => !e.cube && e.loss >= 0.02)
   // Sira: seq'e gore (async bot kayitlari dogru yere otursun); yoksa dizideki sira
   const ordered = log
     .map((e, i) => ({ e, i }))
+    .filter(({ e }) => !e.cube)
     .sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
   const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
+
+  // Kup tavsiyesi etiketi (take/drop veya double-* icin dogru anahtar)
+  const recLabel = (rec: string) =>
+    rec === 'take' ? t('cube.advTake') : rec === 'drop' ? t('cube.advDrop') : t(`cube.adv.${rec}`)
 
   const cur = log[sel]
   // Tahtada hangi hamle: secili aday varsa o, yoksa oynanan
@@ -124,6 +144,31 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
               <div className="rep-worst">
                 {t('rep.worst')}: <code>{worst.notation}</code> → <code>{worst.best}</code> (
                 {worst.loss.toFixed(3)})
+              </div>
+            )}
+            {cubeLog.length > 0 && (
+              <div className="rep-cube">
+                <div className="rep-cube-head">
+                  <Icon name="target" size={14} /> {t('cube.decisions')}
+                </div>
+                {cubeLog.map((e, i) => (
+                  <div
+                    key={i}
+                    className={`rep-cube-row ${e.cube!.correct ? 'ok' : 'wrong'}`}
+                  >
+                    <span className="rcc-chose">{t(`cube.chose.${e.cube!.chosen}`)}</span>
+                    <span className="rcc-win">{t('cube.win')} {e.cube!.win.toFixed(0)}%</span>
+                    <span className="rcc-verdict">
+                      {e.cube!.correct ? (
+                        <>
+                          <Icon name="check" size={12} /> {t('cube.correct')}
+                        </>
+                      ) : (
+                        recLabel(e.cube!.recommended)
+                      )}
+                    </span>
+                  </div>
+                ))}
               </div>
             )}
           </div>

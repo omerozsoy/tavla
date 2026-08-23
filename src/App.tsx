@@ -26,6 +26,7 @@ import {
   setupNextGame,
   type MatchState,
 } from './engine/match'
+import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import DiceRow, { Die } from './ui/Dice'
@@ -254,6 +255,18 @@ interface GameEnd {
   resigned?: boolean // pes etme/cekilme
 }
 
+// Kup danismani ipucu: ya roll-oncesi teklif tavsiyesi (offer) ya da take/drop (respond)
+type CubeHint =
+  | {
+      kind: 'offer'
+      winPct: number
+      gammonPct: number
+      equity: number
+      oppTakePct: number
+      action: CubeAction
+    }
+  | { kind: 'respond'; take: TakeAction; winPct: number; tpPct: number }
+
 // Oyun saati (her hamle sirasi icin, her turda sifirlanir):
 //  12sn hamle suresi -> bitince 30sn geri sayim -> sonra 30sn "son asama" (30dan)
 //  son asama da biterse sirasi gelen oyuncu oyunu kaybeder.
@@ -330,6 +343,9 @@ export default function App() {
   const [played, setPlayed] = useState<Step[]>(saved?.played ?? [])
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
+  // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
+  const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
+  const cubeHintRef = useRef<CubeHint | null>(null) // karar aninda loglamak icin
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
@@ -743,6 +759,9 @@ export default function App() {
   }
 
   function doRoll() {
+    // Roll oncesi kup teklif tavsiyesi varsa: insan katlamak yerine zar atti ->
+    // "pas" karari olarak logla (guclu tavsiyeyi kacirdiysa hata sayilir).
+    if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
     const dice = orderDice(fairRef.current.next()) // varsayilan: buyuk zar once (tikla-degistir mevcut)
     Sound.dice()
     const rolled = newTurn(turnStart, dice)
@@ -761,8 +780,46 @@ export default function App() {
   }
 
   // ---- Kup ----
+  // Insan kup kararini (teklif/pas/take/drop) danisman tavsiyesiyle karsilastir
+  // ve mac raporuna kaydet. Yalnizca insanin kendi karari loglanir.
+  function logCubeDecision(chosen: 'double' | 'no-double' | 'take' | 'drop') {
+    const h = cubeHintRef.current
+    if (!h) return
+    cubeHintRef.current = null // ayni karari iki kez loglama
+    const humanColor: Player = online ? myColor : 'white'
+    let recommended: string
+    let correct: boolean
+    let win: number
+    let equity = 0
+    if (h.kind === 'offer') {
+      recommended = h.action
+      win = h.winPct
+      equity = h.equity
+      const shouldDouble = h.action === 'double-take' || h.action === 'double-pass'
+      correct = chosen === 'double' ? shouldDouble : !shouldDouble
+    } else {
+      recommended = h.take
+      win = h.winPct
+      correct = chosen === h.take
+    }
+    setMatchLog((log) => [
+      ...log,
+      {
+        notation: '',
+        best: '',
+        loss: 0,
+        player: humanColor,
+        pos: turnStart,
+        seq: turnsPlayed,
+        cube: { win, equity, recommended, chosen, correct },
+      },
+    ])
+  }
+
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
+    const humanColor: Player = online ? myColor : 'white'
+    if (player === humanColor) logCubeDecision('double')
     setCubePending(player)
     setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
   }
@@ -770,6 +827,8 @@ export default function App() {
     if (!cubePending) return
     const doubler = cubePending
     const taker = opponent(doubler)
+    const humanColor: Player = online ? myColor : 'white'
+    if (taker === humanColor) logCubeDecision('take')
     setMatch((m) => ({ ...m, cube: { value: m.cube.value * 2, owner: taker } }))
     setCubePending(null)
     setMessage(t('msg.took', { name: pName(taker), doubler: pName(doubler) }))
@@ -777,6 +836,8 @@ export default function App() {
   function handleDrop() {
     if (!cubePending) return
     const doubler = cubePending
+    const humanColor: Player = online ? myColor : 'white'
+    if (opponent(doubler) === humanColor) logCubeDecision('drop')
     const points = match.cube.value
     setMatch((m) => scoreGame(m, doubler, points))
     setGameEnd({ winner: doubler, points, mult: 1, dropped: true })
@@ -1018,6 +1079,46 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showAnalysis, learnMode, interactive, diceRolled, played, turnStart, working, remainingDice, gameWon])
+
+  // ---- Kup danismani (insan) ----
+  // Roll oncesi insan katlayabiliyorsa: teklif tavsiyesi. Insan kup teklifiyle
+  // karsilastiysa: take/drop tavsiyesi. Sinir agiyla pozisyonu 1-ply degerlendirir.
+  useEffect(() => {
+    const humanColor: Player = online ? myColor : 'white'
+    const onRollCanDouble =
+      interactive &&
+      !diceRolled &&
+      !gameWon &&
+      turnsPlayed > 0 &&
+      cubePending === null &&
+      turnStart.turn === humanColor &&
+      canDouble(match, humanColor, false)
+    const facingDouble =
+      cubePending !== null &&
+      cubePending !== humanColor &&
+      opponent(cubePending) === humanColor
+    if (!onRollCanDouble && !facingDouble) {
+      setCubeHint(null)
+      cubeHintRef.current = null
+      return
+    }
+    let cancelled = false
+    neuralRef.current
+      .evalPosition(turnStart, humanColor)
+      .then((probs) => {
+        if (cancelled || (probs?.length ?? 0) < 6) return
+        const hint: CubeHint = onRollCanDouble
+          ? { kind: 'offer', ...cubeAdvice(probs) }
+          : { kind: 'respond', ...takeDecision(probs) }
+        setCubeHint(hint)
+        cubeHintRef.current = hint
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [interactive, diceRolled, gameWon, turnsPlayed, cubePending, turnStart, match, online, myColor])
 
   // Ogrenme modu tercihini sakla
   useEffect(() => {
@@ -2215,6 +2316,13 @@ export default function App() {
         <div className="result-title">
           {t('msg.doubled', { name: pName(cubePending!), value: match.cube.value * 2 })}
         </div>
+        {cubeHint?.kind === 'respond' && (
+          <div className={`cube-advice ${cubeHint.take === 'take' ? 'ok' : 'warn'}`}>
+            <Icon name="bulb" size={14} />
+            {t(cubeHint.take === 'take' ? 'cube.advTake' : 'cube.advDrop')} ·{' '}
+            {t('cube.win')} {cubeHint.winPct.toFixed(0)}%
+          </div>
+        )}
         <div className="cube-actions">
           <button className="galaxy-btn roll" onClick={handleTake}>
             {t('btn.take')}
@@ -2272,9 +2380,22 @@ export default function App() {
       ? null
       : humanCanDouble
         ? (
-            <button className="galaxy-btn double" onClick={() => handleDouble(turnStart.turn)}>
-              {t('btn.double')}
-            </button>
+            <div className="cube-offer">
+              {cubeHint?.kind === 'offer' && (
+                <div
+                  className={`cube-advice ${
+                    cubeHint.action === 'no-double' ? 'muted' : 'ok'
+                  }`}
+                >
+                  <Icon name="bulb" size={14} />
+                  {t(`cube.adv.${cubeHint.action}`)} · {t('cube.win')}{' '}
+                  {cubeHint.winPct.toFixed(0)}%
+                </div>
+              )}
+              <button className="galaxy-btn double" onClick={() => handleDouble(turnStart.turn)}>
+                {t('btn.double')}
+              </button>
+            </div>
           )
         : diceRolled && played.length > 0
           ? (
