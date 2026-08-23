@@ -20,6 +20,8 @@ Route::prefix('panel')->group(function () {
         Route::get('/content', [PanelController::class, 'contents']);
         Route::post('/content', [PanelController::class, 'contentSave']);
         Route::post('/content/{content}/delete', [PanelController::class, 'contentDelete']);
+        Route::get('/notifications', [PanelController::class, 'notifications']);
+        Route::post('/notifications', [PanelController::class, 'notificationSend']);
     });
 });
 

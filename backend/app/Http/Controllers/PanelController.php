@@ -223,4 +223,64 @@ class PanelController extends Controller
         $content->delete();
         return redirect('/panel/content?type='.$type)->with('ok', 'İçerik silindi.');
     }
+
+    /* ---------- Bildirimler ---------- */
+
+    public function notifications()
+    {
+        $recent = \App\Models\Notification::orderByDesc('id')->limit(50)->get();
+        // id -> nickname eslemesi (gonderilenlerin kime gittigini gostermek icin)
+        $userIds = $recent->pluck('user_id')->unique()->all();
+        $names = User::whereIn('id', $userIds)->pluck('nickname', 'id');
+        $memberCount = User::count();
+        return view('panel.notifications', [
+            'recent' => $recent,
+            'names' => $names,
+            'memberCount' => $memberCount,
+        ]);
+    }
+
+    public function notificationSend(Request $request)
+    {
+        $data = $request->validate([
+            'target' => ['required', 'in:all,user'],
+            'query' => ['nullable', 'string', 'max:120'],
+            'title' => ['required', 'string', 'max:200'],
+            'body' => ['nullable', 'string', 'max:2000'],
+            'icon' => ['nullable', 'string', 'max:32'],
+        ]);
+        $icon = $data['icon'] ?: 'bell';
+
+        if ($data['target'] === 'all') {
+            // Tum uyelere: her uye icin bir satir (parca parca ekle)
+            $now = now();
+            User::select('id')->chunk(500, function ($chunk) use ($data, $icon, $now) {
+                $rows = $chunk->map(fn ($u) => [
+                    'user_id' => $u->id,
+                    'title' => $data['title'],
+                    'body' => $data['body'] ?? null,
+                    'icon' => $icon,
+                    'read' => false,
+                    'created_at' => $now,
+                ])->all();
+                \App\Models\Notification::insert($rows);
+            });
+            return back()->with('ok', 'Bildirim tüm üyelere gönderildi.');
+        }
+
+        // Tek uye: nickname / e-posta / id ile bul
+        $q = trim((string) ($data['query'] ?? ''));
+        if ($q === '') {
+            return back()->withErrors(['query' => 'Üye seç (nickname, e-posta veya id).'])->withInput();
+        }
+        $user = User::where('nickname', $q)
+            ->orWhere('email', $q)
+            ->orWhere('id', is_numeric($q) ? (int) $q : 0)
+            ->first();
+        if (! $user) {
+            return back()->withErrors(['query' => 'Üye bulunamadı.'])->withInput();
+        }
+        \App\Models\Notification::notify($user->id, $data['title'], $data['body'] ?? null, $icon);
+        return back()->with('ok', "Bildirim gönderildi: {$user->nickname}");
+    }
 }
