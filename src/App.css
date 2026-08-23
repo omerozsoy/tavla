@@ -5339,25 +5339,48 @@ body {
   font-size: 0.82rem;
   margin-top: 8px;
 }
+/* Klasik eslesme agaci (bracket): turlar saga daralir, maclar dikeyde ortalanir */
 .tourn-bracket {
   display: flex;
-  gap: 14px;
+  gap: 28px;
   overflow-x: auto;
-  padding-bottom: 6px;
+  padding: 8px 6px 10px;
+  align-items: stretch;
 }
 .tourn-round {
-  min-width: 150px;
+  min-width: 158px;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  justify-content: space-around;
 }
 .tourn-match {
+  position: relative;
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
+  margin: 7px 0;
+  background: var(--card-bg);
+}
+.tourn-round:not(:last-child) .tourn-match::after {
+  content: '';
+  position: absolute;
+  right: -28px;
+  top: 50%;
+  width: 28px;
+  height: 2px;
+  background: var(--border);
+}
+.tourn-round:not(:first-child) .tourn-match::before {
+  content: '';
+  position: absolute;
+  left: -28px;
+  top: 50%;
+  width: 28px;
+  height: 2px;
+  background: var(--border);
 }
 .tourn-match.mine {
-  border-color: #c9563f;
+  border-color: var(--accent);
 }
 .tm-p {
   padding: 6px 8px;
