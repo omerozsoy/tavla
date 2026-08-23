@@ -3093,11 +3093,16 @@ body {
 /* ---- Izleme (spectate) ---- */
 .spectate-card {
   position: relative;
-  width: min(420px, 94vw);
+  width: min(680px, 96vw);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 18px;
+  padding: 20px;
+}
+.spectate-card .mini-board {
+  max-width: 640px;
+  margin: 0 auto;
+  display: block;
 }
 .spectate-head {
   display: flex;
@@ -4340,6 +4345,19 @@ body {
 .lb-body {
   max-height: min(60vh, 520px);
   overflow-y: auto;
+}
+.lb-div-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  font-size: 0.9rem;
+  margin: 12px 0 5px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.lb-div-head:first-child {
+  margin-top: 2px;
 }
 .lb-row {
   border-radius: 10px;

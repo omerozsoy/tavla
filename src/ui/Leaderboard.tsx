@@ -6,6 +6,7 @@ import { leaderboard, type LeaderRow } from '../api'
 import { frameStyle } from '../cosmetics'
 import PublicProfile from './PublicProfile'
 import { DivisionChip } from './Badges'
+import { DIVISIONS, divisionOf } from '../badges'
 
 interface Props {
   currentName?: string
@@ -17,14 +18,14 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
-  const [by, setBy] = useState<'rating' | 'coins'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'league'>('rating')
   const [profileId, setProfileId] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
     setRows(null)
     setError(false)
-    leaderboard(100, by)
+    leaderboard(100, by === 'coins' ? 'coins' : 'rating')
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
@@ -33,6 +34,34 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   }, [by])
 
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
+
+  const renderRow = (r: LeaderRow) => {
+    const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
+    const mine = currentName && r.name === currentName
+    return (
+      <div
+        key={r.rank}
+        className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
+        onClick={() => r.id && setProfileId(r.id)}
+      >
+        <span className="lb-rank">{by === 'league' ? '' : medal(r.rank) || r.rank}</span>
+        <span className="lb-name">
+          <span className="av-frame" style={frameStyle(r.frame)}>
+            {r.avatar ? (
+              <img className="lb-avatar" src={r.avatar} alt="" />
+            ) : (
+              <span className="lb-avatar lb-avatar-ph">{r.name.charAt(0).toUpperCase()}</span>
+            )}
+          </span>
+          {r.name}
+          {by !== 'league' && <DivisionChip rating={r.rating} size="sm" />}
+        </span>
+        <span className="lb-games">{r.games}</span>
+        <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
+        <span className="lb-rating">{by === 'coins' ? (r.coins ?? 0) : r.rating}</span>
+      </div>
+    )
+  }
 
   return (
     <div className="register-overlay modal page" onClick={onClose}>
@@ -47,6 +76,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           </button>
           <button className={by === 'coins' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('coins')}>
 <Icon name="coin" size={16} /> {t('lb.byCoins')}
+          </button>
+          <button className={by === 'league' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('league')}>
+            <Icon name="medal" size={16} /> {t('lb.league')}
           </button>
         </div>
 
@@ -66,35 +98,22 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-rating">{by === 'coins' ? <Icon name="coin" size={14} /> : t('lb.rating')}</span>
             </div>
             <div className="lb-body">
-              {rows.map((r) => {
-                const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
-                const mine = currentName && r.name === currentName
-                return (
-                  <div
-                    key={r.rank}
-                    className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
-                    onClick={() => r.id && setProfileId(r.id)}
-                  >
-                    <span className="lb-rank">{medal(r.rank) || r.rank}</span>
-                    <span className="lb-name">
-                      <span className="av-frame" style={frameStyle(r.frame)}>
-                        {r.avatar ? (
-                          <img className="lb-avatar" src={r.avatar} alt="" />
-                        ) : (
-                          <span className="lb-avatar lb-avatar-ph">
-                            {r.name.charAt(0).toUpperCase()}
-                          </span>
-                        )}
-                      </span>
-                      {r.name}
-                      <DivisionChip rating={r.rating} size="sm" />
-                    </span>
-                    <span className="lb-games">{r.games}</span>
-                    <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
-                    <span className="lb-rating">{by === 'coins' ? (r.coins ?? 0) : r.rating}</span>
-                  </div>
-                )
-              })}
+              {by === 'league'
+                ? DIVISIONS.slice()
+                    .reverse()
+                    .map((d) => {
+                      const inDiv = rows.filter((r) => divisionOf(r.rating).key === d.key)
+                      if (inDiv.length === 0) return null
+                      return (
+                        <div key={d.key}>
+                          <div className="lb-div-head" style={{ color: d.color }}>
+                            <Icon name={d.icon} size={15} /> {t(d.key)} · {inDiv.length}
+                          </div>
+                          {inDiv.map(renderRow)}
+                        </div>
+                      )
+                    })
+                : rows.map(renderRow)}
             </div>
           </div>
         )}
