@@ -5,8 +5,10 @@ import { useEscape } from './useEscape'
 interface BoardThemeOpt {
   id: string
   name: string
+  panel?: string
   a: string
   b: string
+  checker?: string
 }
 
 interface Props {
@@ -22,6 +24,43 @@ interface Props {
   learnMode: boolean
   setLearnMode: (v: boolean) => void
   onClose: () => void
+}
+
+// Kucuk tahta onizlemesi (Galaxy tarzi): zemin + iki renk ucgen + ornek pullar
+function BoardPreview({ panel, a, b, checker }: { panel: string; a: string; b: string; checker: string }) {
+  const W = 104
+  const H = 64
+  const BAR = 6
+  const half = (W - BAR) / 2
+  const cw = half / 6
+  const triH = 22
+  const colX = (i: number) => (i < 6 ? i * cw : half + BAR + (i - 6) * cw)
+  const tris = []
+  for (let i = 0; i < 12; i++) {
+    const x = colX(i)
+    const cx = x + cw / 2
+    tris.push(
+      <polygon key={`t${i}`} points={`${x + 1},0 ${x + cw - 1},0 ${cx},${triH}`} fill={i % 2 === 0 ? a : b} opacity="0.92" />,
+      <polygon key={`b${i}`} points={`${x + 1},${H} ${x + cw - 1},${H} ${cx},${H - triH}`} fill={i % 2 === 0 ? b : a} opacity="0.92" />,
+    )
+  }
+  // Ornek pullar: sol-ust krem, sag-alt koyu (iki taraf da gorunsun)
+  const disc = (x: number, y: number, fill: string) => (
+    <circle cx={x} cy={y} r={cw / 2 - 0.5} fill={fill} stroke="#0004" strokeWidth="0.5" />
+  )
+  const c0 = colX(0) + cw / 2
+  const c11 = colX(11) + cw / 2
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="bp-svg" width="100%">
+      <rect x="0" y="0" width={W} height={H} rx="5" fill={panel} />
+      <rect x={half} y="0" width={BAR} height={H} fill="#0003" />
+      {tris}
+      {disc(c0, 7, 'var(--cream)')}
+      {disc(c0, 7 + cw, 'var(--cream)')}
+      {disc(c11, H - 7, checker)}
+      {disc(c11, H - 7 - cw, checker)}
+    </svg>
+  )
 }
 
 export default function BoardSettings({
@@ -56,29 +95,35 @@ export default function BoardSettings({
               className={theme === 'dark' ? 'menu-btn active' : 'menu-btn'}
               onClick={() => setTheme('dark')}
             >
-<Icon name="moon" size={16} /> {t('theme.dark')}
+              <Icon name="moon" size={16} /> {t('theme.dark')}
             </button>
             <button
               className={theme === 'light' ? 'menu-btn active' : 'menu-btn'}
               onClick={() => setTheme('light')}
             >
-<Icon name="sun" size={16} /> {t('theme.light')}
+              <Icon name="sun" size={16} /> {t('theme.light')}
             </button>
           </div>
         </div>
 
-        {/* Tahta rengi */}
+        {/* Tahta rengi: mini tahta onizlemeleri */}
         <div className="setup-row">
           <div className="setup-label">{t('menu.board')}</div>
-          <div className="board-swatches big">
+          <div className="board-previews">
             {boardThemes.map((bt) => (
               <button
                 key={bt.id}
-                className={`swatch ${boardTheme === bt.id ? 'active' : ''}`}
-                title={bt.name}
+                className={`board-prev ${boardTheme === bt.id ? 'active' : ''}`}
                 onClick={() => setBoardTheme(bt.id)}
-                style={{ background: `linear-gradient(135deg, ${bt.a} 0 50%, ${bt.b} 50% 100%)` }}
-              />
+              >
+                <BoardPreview
+                  panel={bt.panel ?? bt.b}
+                  a={bt.a}
+                  b={bt.b}
+                  checker={bt.checker ?? bt.b}
+                />
+                <span className="bp-name">{bt.name}</span>
+              </button>
             ))}
           </div>
         </div>

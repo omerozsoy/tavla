@@ -161,6 +161,40 @@ body {
   grid-template-columns: repeat(4, 1fr);
   gap: 6px;
 }
+/* Mini tahta onizlemeleri (Galaxy tarzi tahta secici) */
+.board-previews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 10px;
+}
+.board-prev {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 6px 8px;
+  border-radius: 12px;
+  border: 2px solid transparent;
+  background: var(--btn-bg);
+  cursor: pointer;
+  transition: border-color 0.12s;
+}
+.board-prev:hover {
+  border-color: var(--border);
+}
+.board-prev.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.bp-svg {
+  display: block;
+  border-radius: 6px;
+}
+.bp-name {
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+}
 .swatch {
   aspect-ratio: 1;
   border-radius: 6px;
@@ -882,25 +916,27 @@ body {
 
 /* ==== Modal yerine TAM SAYFA gorunum (menuden acilan sayfalar) ==== */
 /* Sol menuden acilan sayfalar: modal degil, sol menunun sagina yasli panel */
+/* Sol menuden acilanlar: temiz TAM SAYFA (panel/modal degil). Icerik alanini
+   (menunin sagi, hesap barinin alti) bastan basa doldurur; cerceve/golge yok. */
 .register-overlay.page {
   position: fixed;
-  top: 62px;
-  right: 10px;
-  bottom: 10px;
-  left: 196px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 190px;
   align-items: stretch;
   justify-content: flex-start;
   padding: 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  background: var(--bg);
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   overflow-y: auto;
   z-index: 50;
 }
 .register-overlay.page > * {
   width: 100%;
-  max-width: 900px;
+  max-width: 940px;
   margin: 0 auto;
   min-height: 100%;
   max-height: none;
@@ -908,18 +944,20 @@ body {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  padding: 24px clamp(16px, 4vw, 40px) 48px;
+  /* ust padding hesap barini gecer */
+  padding: 66px clamp(16px, 4vw, 44px) 48px;
 }
 .register-overlay.page > * > h2 {
   font-size: 1.7rem;
   margin-bottom: 18px;
 }
 .register-overlay.page .modal-close {
-  position: absolute;
-  top: 12px;
-  right: 14px;
-  z-index: 5;
-  background: var(--bg);
+  position: fixed;
+  top: 14px;
+  left: 200px;
+  right: auto;
+  z-index: 55;
+  background: var(--card-bg);
   border: 1px solid var(--border);
 }
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
@@ -937,7 +975,13 @@ body {
   }
   .register-overlay.page .modal-close {
     position: fixed;
+    top: 10px;
+    left: auto;
+    right: 12px;
     background: var(--card-bg);
+  }
+  .register-overlay.page > * {
+    padding-top: 56px;
   }
 }
 @media (max-width: 560px) {
