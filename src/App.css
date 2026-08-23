@@ -4099,7 +4099,7 @@ body {
 .lb-rating {
   text-align: right;
   font-weight: 800;
-  color: #7ee0a0;
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
 }
 
