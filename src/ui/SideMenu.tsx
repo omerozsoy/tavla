@@ -31,7 +31,6 @@ export interface SideMenuProps {
   onAdmin?: () => void
   onCalendar?: () => void
   onClubs?: () => void
-  onClubLeague?: () => void
   onServices?: () => void
   onBlog?: () => void
   onNews?: () => void
@@ -134,8 +133,7 @@ export default function SideMenu(p: SideMenuProps) {
       )}
 
       {/* Bilgi / icerik sayfalari (herkese acik) */}
-      {!p.inGame &&
-        (p.onCalendar || p.onClubs || p.onClubLeague || p.onServices || p.onBlog || p.onNews) && (
+      {!p.inGame && (p.onCalendar || p.onClubs || p.onServices || p.onBlog || p.onNews) && (
         <div className="menu-group">
           {p.onCalendar && (
             <button className="menu-btn" onClick={p.onCalendar}>
@@ -145,11 +143,6 @@ export default function SideMenu(p: SideMenuProps) {
           {p.onClubs && (
             <button className="menu-btn" onClick={p.onClubs}>
               <Icon name="pin" /> {t('menu.clubs')}
-            </button>
-          )}
-          {p.onClubLeague && (
-            <button className="menu-btn" onClick={p.onClubLeague}>
-              <Icon name="users" /> {t('menu.clubLeague')}
             </button>
           )}
           {p.onServices && (
