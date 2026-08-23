@@ -3065,6 +3065,13 @@ body {
 .mr-b {
   text-align: right;
 }
+/* Sans / coin: brick zemin uzerinde pozitif/negatif vurgu */
+.mr-pos {
+  color: #b8f5c8;
+}
+.mr-neg {
+  color: #ffd2c8;
+}
 .mr-actions {
   display: flex;
   flex-wrap: wrap;
