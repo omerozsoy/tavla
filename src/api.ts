@@ -616,11 +616,30 @@ export async function matchmake(
 export async function settleRoom(
   code: string,
   won: boolean,
-): Promise<{ ok: boolean; coins?: number; stake?: number; won?: boolean }> {
+): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean }> {
   return req(`/rooms/${code}/settle`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), won }),
   })
+}
+
+// Settle'i odenene kadar birkac kez dene: sunucu kazanani iki tarafli mutabakat
+// veya senkron mac durumundan cozer; rakip beyani/durum gec gelirse 'pending' doner.
+export async function settleRoomConfirmed(
+  code: string,
+  won: boolean,
+): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean }> {
+  let last: Awaited<ReturnType<typeof settleRoom>> = { ok: false }
+  for (let i = 0; i < 4; i++) {
+    try {
+      last = await settleRoom(code, won)
+    } catch {
+      /* gecici hata -> yeniden dene */
+    }
+    if (last.ok || !last.pending) return last
+    await new Promise((r) => setTimeout(r, 1200))
+  }
+  return last
 }
 
 export async function cancelMatchmake(): Promise<void> {
