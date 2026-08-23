@@ -953,8 +953,9 @@ body {
 }
 .register-overlay.page > * {
   width: 100%;
-  max-width: 940px;
-  margin: 0 auto;
+  max-width: 1400px;
+  /* sola dayali (ortalanmaz) */
+  margin: 0;
   min-height: 100%;
   max-height: none;
   border: none;
@@ -962,11 +963,19 @@ body {
   background: transparent;
   box-shadow: none;
   /* ust padding hesap barini gecer */
-  padding: 66px clamp(16px, 4vw, 44px) 48px;
+  padding: 78px clamp(16px, 3vw, 48px) 56px;
 }
 .register-overlay.page > * > h2 {
-  font-size: 1.7rem;
-  margin-bottom: 18px;
+  font-size: 1.9rem;
+  font-weight: 700;
+  text-align: left;
+  justify-content: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 /* Sayfa gorunumu: X kapatma dugmesi yok - menuden baska ogeye tiklayarak gecilir */
 .register-overlay.page .modal-close {
@@ -1017,9 +1026,16 @@ body {
   background: transparent;
 }
 .page-host .register-overlay.page > * {
-  padding: 8px clamp(4px, 2vw, 24px) 48px;
+  /* ust padding sabit hesap barini gecer; sola dayali + genis */
+  padding: 78px clamp(16px, 3vw, 44px) 56px;
   min-height: 0;
-  max-width: 1000px;
+  max-width: 1400px;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .page-host .register-overlay.page > * {
+    padding: 60px 14px 40px;
+  }
 }
 .page-host .register-overlay.page .modal-close {
   display: none;
