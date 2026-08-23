@@ -99,6 +99,13 @@ import {
   type ServerUser,
 } from './api'
 
+// Zar gorunum sirasi: varsayilan olarak buyuk zar once (ciftte/tek zarda degismez).
+// Oyuncu tahtada zara tiklayarak sirayi degistirebilir (canSwapDice).
+function orderDice(dice: number[]): number[] {
+  if (dice.length === 2 && dice[0] < dice[1]) return [dice[1], dice[0]]
+  return dice
+}
+
 // gnubg tarzi hata siniflandirmasi (equity kaybina gore) -> ceviri anahtari
 function classifyError(loss: number): { key: string; cls: string } {
   if (loss < 0.02) return { key: 'err.veryGood', cls: 'good' }
@@ -647,7 +654,7 @@ export default function App() {
   }
 
   function doRoll() {
-    const dice = fairRef.current.next()
+    const dice = orderDice(fairRef.current.next()) // varsayilan: buyuk zar once (tikla-degistir mevcut)
     Sound.dice()
     const rolled = newTurn(turnStart, dice)
     setTurnStart(rolled)
@@ -799,7 +806,7 @@ export default function App() {
   }, [botAnim])
 
   function doRollFor(base: GameState) {
-    const dice = fairRef.current.next()
+    const dice = orderDice(fairRef.current.next()) // buyuk zar once (gorunum)
     Sound.dice()
     setTurnStart(newTurn(base, dice))
     setMessage(t('msg.botPlaying', { dice: dice.join(', ') }))
@@ -957,14 +964,8 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, diceRolled, played.length, turnStart])
 
-  // Acilis atisi: her iki oyuncu birer zar atar, esitse tekrar, yuksek olan baslar.
-  function handleOpeningRoll() {
-    let w = secureDie()
-    let b = secureDie()
-    while (w === b) {
-      w = secureDie()
-      b = secureDie()
-    }
+  // Acilis atisi sonucunu uygula: yuksek zar baslar (esit olamaz - cagiran garanti eder).
+  function resolveOpening(w: number, b: number) {
     const winner: Player = w > b ? 'white' : 'black'
     setOpeningResult({
       white: w,
@@ -975,6 +976,32 @@ export default function App() {
     })
     setOpening('reveal')
     setMessage(t('msg.openingResult', { name: pName(winner), a: Math.max(w, b), b: Math.min(w, b) }))
+  }
+
+  // Lokal: rasgele iki farkli zar.
+  function handleOpeningRoll() {
+    let w = secureDie()
+    let b = secureDie()
+    while (w === b) {
+      w = secureDie()
+      b = secureDie()
+    }
+    resolveOpening(w, b)
+  }
+
+  // Online: oda kodu + oyun no'dan DETERMINISTIK acilis -> iki istemci ayni sonucu
+  // uretir (ekstra senkron gerekmez). Her oyunda skor toplamiyla degisir.
+  function seededOpening(code: string, gameNo: number) {
+    const seed = `${code}:${gameNo}`
+    let h = 2166136261
+    for (let i = 0; i < seed.length; i++) {
+      h ^= seed.charCodeAt(i)
+      h = Math.imul(h, 16777619)
+    }
+    const w = (Math.abs(h) % 6) + 1
+    let b = (Math.abs(h >> 5) % 6) + 1
+    if (b === w) b = (b % 6) + 1 // esitse kaydir (asla berabere degil)
+    resolveOpening(w, b)
   }
 
   // Acilis sonucunu goster, sonra kazananin turuyla basla (iki FARKLI zar -> ilk hamle asla cift degil)
@@ -993,6 +1020,24 @@ export default function App() {
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, openingResult])
+
+  // Acilis zarini OTOMATIK at (tum oyunlarda). Lokal -> rasgele; online -> oda
+  // kodu + oyun no'dan deterministik (iki istemci ayni). Kimin baslayacagini belirler.
+  useEffect(() => {
+    if (opening !== 'roll' || cubePending || gameEnd || matchOver) return
+    // Online'da rakip hazir olana kadar bekle (mm_waiting / tek kisi)
+    if (online && (!onlineReady || room?.status !== 'playing')) return
+    const id = window.setTimeout(() => {
+      if (online && room) {
+        // Oyun no = macta bugune dek toplanan puan (iki istemci ayni deger)
+        seededOpening(room.code, match.score.white + match.score.black)
+      } else {
+        handleOpeningRoll()
+      }
+    }, 800)
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
 
   // Oyun durumunun imzasi (sadece oyunu ilgilendiren alanlar) -> echo tespiti
   function stateSig(
@@ -1166,6 +1211,14 @@ export default function App() {
       })
     setSelectedFrom(null)
     setCubePending(snap.cubePending ?? null) // rakibin kup teklifi/yaniti senkron
+    // Rakibin PR + Sans'ini kendi renginden al (kendi rengimi lokal hesaplarim)
+    const oppColor = opponent(myColor)
+    if (snap.pr?.[oppColor]) {
+      setPrStats((s) => ({ ...s, [oppColor]: snap.pr![oppColor] }))
+    }
+    if (snap.luck && typeof snap.luck[oppColor] === 'number') {
+      setPrLuck((s) => ({ ...s, [oppColor]: snap.luck![oppColor] }))
+    }
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
@@ -1198,6 +1251,8 @@ export default function App() {
         clock: { delay: clock.delay, white: clock.white, black: clock.black },
         gameEnd,
         cubePending,
+        pr: prStats,
+        luck: prLuck,
       }
       updateRoom(roomCode, snap)
         .then((r) => {
@@ -1496,7 +1551,7 @@ export default function App() {
       setCubePending(null)
       setGameEnd(null)
       setBotAnim(null)
-      setOpening(null)
+      setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       setRoom({
         code: res.room.code,
         slot: res.slot,
@@ -1561,7 +1616,7 @@ export default function App() {
       setCubePending(null)
       setGameEnd(null)
       setBotAnim(null)
-      setOpening(null)
+      setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       setRoom({
         code: res.room.code,
         slot: res.slot,
@@ -1570,8 +1625,15 @@ export default function App() {
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         status: res.room.status,
       })
-    } catch {
-      setRoomError(t('mp.connError'))
+    } catch (err) {
+      // ApiError (status var) -> sunucunun gercek mesajini goster; yoksa ag hatasi
+      const e = err as { status?: number; errors?: Record<string, string[]>; message?: string }
+      if (e?.status) {
+        const first = e.errors ? Object.values(e.errors)[0]?.[0] : undefined
+        setRoomError(first || e.message || t('mp.connError'))
+      } else {
+        setRoomError(t('mp.connError'))
+      }
     } finally {
       setRoomBusy(false)
     }
@@ -1606,7 +1668,7 @@ export default function App() {
     setMatchLog([])
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
-      setOpening(null)
+      setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       setRoom({
         code: res.room.code,
         slot: res.slot,
@@ -1660,7 +1722,7 @@ export default function App() {
       setCubePending(null)
       setGameEnd(null)
       setBotAnim(null)
-      setOpening(null)
+      setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       setHome(false)
       setMode('online')
       setRoom({
@@ -1709,7 +1771,7 @@ export default function App() {
       setCubePending(null)
       setGameEnd(null)
       setBotAnim(null)
-      setOpening(null)
+      setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       setHome(false)
       setMode('online')
       setRoom({
@@ -1952,11 +2014,11 @@ export default function App() {
   const prHumanColor: Player = online ? myColor : 'white'
   const prValue = prOf(prHumanColor)
   const prBandKey = prBand(prValue)
-  // Sans: yalnizca yerel-interaktif oyuncu(lar) icin hesaplanir.
-  // Online'da rakip, pvb'de bot bu istemcide hesaplanmaz -> null (—).
+  // Sans: kendi rengim lokal; online rakip senkronla gelir (hesaplamadiysa —).
+  // pvb'de bot hesaplanmaz -> null (—).
   const luckOf = (c: Player): number | null => {
-    if (online && c !== myColor) return null
     if (mode === 'pvb' && c === BOT_PLAYER) return null
+    if (online && c !== myColor && prStats[c].decisions === 0) return null
     return prLuck[c]
   }
 
@@ -1965,9 +2027,11 @@ export default function App() {
     centerMain = (
       <div className="result-box">
         <div className="result-title">{t('opening.title')}</div>
-        <button className="galaxy-btn roll" onClick={handleOpeningRoll}>
-          {t('btn.roll')}
-        </button>
+        <div className="opening-rolling">
+          <Die value={1} owner="white" used={false} className="rolling" />
+          <Die value={6} owner="black" used={false} className="rolling" />
+        </div>
+        <div className="result-points">{t('opening.rolling')}</div>
       </div>
     )
   } else if (opening === 'reveal' && openingResult) {
@@ -2677,7 +2741,7 @@ export default function App() {
             </span>
             {!learnMode && (
               <button className="hint-close" onClick={() => setHintShown(false)} aria-label="Kapat">
-                ✕
+                <Icon name="x" size={14} />
               </button>
             )}
           </div>

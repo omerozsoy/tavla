@@ -15,10 +15,20 @@ export interface DieFace {
   used: boolean // oynanmis zar -> soluk
 }
 
-export function Die({ value, owner, used }: { value: number; owner: Player; used: boolean }) {
+export function Die({
+  value,
+  owner,
+  used,
+  className = '',
+}: {
+  value: number
+  owner: Player
+  used: boolean
+  className?: string
+}) {
   const pos = PIP_POS[value] ?? []
   return (
-    <div className={`die-face ${owner} ${used ? 'used' : ''}`}>
+    <div className={`die-face ${owner} ${used ? 'used' : ''} ${className}`}>
       {pos.map(([x, y], i) => (
         <span key={i} className="pip-dot" style={{ left: `${x}%`, top: `${y}%` }} />
       ))}
