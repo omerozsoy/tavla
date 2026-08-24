@@ -1,10 +1,8 @@
-import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 
-// Tek Oyun: oyunun kacta bitecegi (cok/tek puan). Maç akisiyla ayni mantik.
-const SOLO_TARGETS = [1, 3, 5, 7, 11] as const
+// Tek Oyun = money game: her zaman TEK oyun (1 puan). Puan/uzunluk secimi YOK.
 
 export interface SoloLevel {
   level: number
@@ -33,7 +31,7 @@ export const SOLO_LEVELS: SoloLevel[] = [
 
 interface Props {
   coins: number
-  onPick: (stake: number, theme: string, target: number) => void
+  onPick: (stake: number, theme: string) => void
   onClose: () => void
 }
 
@@ -41,7 +39,6 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const fmt = (n: number) => n.toLocaleString('tr-TR')
-  const [target, setTarget] = useState<number>(1) // oyun kacta bitsin (varsayilan tek oyun)
 
   return (
     <div className="register-overlay modal page">
@@ -57,23 +54,6 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
           <Icon name="coin" size={15} /> {fmt(coins)}
         </div>
 
-        {/* Oyun kacta bitsin (cok/tek puan) */}
-        <div className="setup-row solo-target">
-          <div className="setup-label">{t('setup.length')}</div>
-          <div className="target-grid">
-            {SOLO_TARGETS.map((n) => (
-              <button
-                key={n}
-                className={`target-chip ${target === n ? 'active' : ''}`}
-                onClick={() => setTarget(n)}
-                aria-pressed={target === n}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <div className="solo-grid">
           {SOLO_LEVELS.map((lv) => {
             const locked = coins < lv.stake
@@ -82,7 +62,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
                 key={lv.level}
                 className={`solo-tile ${locked ? 'locked' : ''}`}
                 disabled={locked}
-                onClick={() => onPick(lv.stake, lv.theme, target)}
+                onClick={() => onPick(lv.stake, lv.theme)}
                 title={locked ? t('solo.locked') : t('solo.play')}
               >
                 <span className="solo-lvl">{t('solo.level', { n: lv.level })}</span>
