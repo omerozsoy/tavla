@@ -53,6 +53,14 @@ export default function PositionAnalyzer({
 
   const allFroms = new Set<number | 'bar'>([...Array(24).keys(), 'bar'])
 
+  // Standart tavla: her renk toplam 15 pul. Tahtadaki (nokta + bar + toplanan) toplam.
+  const MAX_CHECKERS = 15
+  const whiteCount =
+    bar.white + off.white + pts.reduce((s, v) => s + (v > 0 ? v : 0), 0)
+  const blackCount =
+    bar.black + off.black + pts.reduce((s, v) => s + (v < 0 ? -v : 0), 0)
+  const atLimit = (color: Player) => (color === 'white' ? whiteCount : blackCount) >= MAX_CHECKERS
+
   function editPoint(idx: number) {
     setResult(null)
     setPts((p) => {
@@ -61,9 +69,11 @@ export default function PositionAnalyzer({
       if (editMode === 'remove') {
         n[idx] = cur > 0 ? cur - 1 : cur < 0 ? cur + 1 : 0
       } else if (placeColor === 'white') {
-        n[idx] = cur >= 0 ? Math.min(cur + 1, 15) : 1
+        if (atLimit('white')) return p // 15 pul siniri asilmaz
+        n[idx] = cur >= 0 ? cur + 1 : 1
       } else {
-        n[idx] = cur <= 0 ? Math.max(cur - 1, -15) : -1
+        if (atLimit('black')) return p
+        n[idx] = cur <= 0 ? cur - 1 : -1
       }
       return n
     })
@@ -73,8 +83,9 @@ export default function PositionAnalyzer({
     setResult(null)
     setBar((b) => {
       const key = placeColor
-      const d = editMode === 'remove' ? -1 : 1
-      return { ...b, [key]: Math.max(0, Math.min(15, b[key] + d)) }
+      if (editMode === 'remove') return { ...b, [key]: Math.max(0, b[key] - 1) }
+      if (atLimit(placeColor)) return b // 15 pul siniri asilmaz
+      return { ...b, [key]: b[key] + 1 }
     })
   }
 
@@ -237,6 +248,14 @@ export default function PositionAnalyzer({
               >
                 ➖ {t('pa.remove')}
               </button>
+            </div>
+            <div className="pa-count">
+              <span className={whiteCount >= MAX_CHECKERS ? 'full' : ''}>
+                ⚪ {whiteCount}/{MAX_CHECKERS}
+              </span>
+              <span className={blackCount >= MAX_CHECKERS ? 'full' : ''}>
+                ⚫ {blackCount}/{MAX_CHECKERS}
+              </span>
             </div>
           </div>
 
