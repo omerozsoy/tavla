@@ -8,6 +8,7 @@ export type SetupMode = 'pvb' | 'online'
 export interface MatchOptions {
   mode: SetupMode
   target: number
+  targets?: number[] // online: kabul edilen uzunluklar (coklu -> kolay eslesme)
   showPip: boolean
   showAnalysis: boolean
   timeControl: TimeControl
@@ -63,7 +64,17 @@ export default function MatchSetup({
 }: Props) {
   const { t } = useT()
   const mode = initialMode // Mac Oyunu online-only; rematch pvb (mod degistirilmez)
-  const [target, setTarget] = useState(initial.target)
+  // Online: coklu uzunluk secilebilir (kolay eslesme). pvb: tek uzunluk.
+  const [accepted, setAccepted] = useState<number[]>([initial.target])
+  const toggleTarget = (n: number) => {
+    if (mode !== 'online') {
+      setAccepted([n])
+      return
+    }
+    setAccepted((cur) =>
+      cur.includes(n) ? (cur.length > 1 ? cur.filter((x) => x !== n) : cur) : [...cur, n].sort((a, b) => a - b),
+    )
+  }
   const [showPip, setShowPip] = useState(initial.showPip)
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
@@ -117,21 +128,24 @@ export default function MatchSetup({
           </div>
         )}
 
-        {/* Oyun kaçta bitsin */}
+        {/* Oyun kaçta bitsin (online: birden fazla seçilebilir -> daha kolay eşleşme) */}
         <div className="setup-row">
           <div className="setup-label">{t('setup.length')}</div>
           <div className="target-grid">
             {targets.map((n) => (
               <button
                 key={n}
-                className={`target-chip ${target === n ? 'active' : ''}`}
-                onClick={() => setTarget(n)}
-                aria-pressed={target === n}
+                className={`target-chip ${accepted.includes(n) ? 'active' : ''}`}
+                onClick={() => toggleTarget(n)}
+                aria-pressed={accepted.includes(n)}
               >
                 {n}
               </button>
             ))}
           </div>
+          {mode === 'online' && (
+            <div className="pa-depth-note">{t('setup.lengthMulti')}</div>
+          )}
         </div>
 
         {/* Süre (saat) — 3 preset */}
@@ -226,7 +240,8 @@ export default function MatchSetup({
             onClick={() =>
               onConfirm({
                 mode,
-                target,
+                target: mode === 'online' ? Math.max(...accepted) : accepted[0],
+                targets: accepted,
                 showPip,
                 showAnalysis,
                 timeControl,

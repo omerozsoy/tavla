@@ -24,6 +24,8 @@ class Room extends Model
         'status',
         'stake',
         'bet_pct',
+        'target',
+        'targets',
         'settled',
         'p1_result',
         'p2_result',
@@ -34,6 +36,7 @@ class Room extends Model
         return [
             'state' => 'array',
             'messages' => 'array',
+            'targets' => 'array',
         ];
     }
 
@@ -54,6 +57,7 @@ class Room extends Model
             'status' => $this->status,
             'stake' => (int) $this->stake,
             'bet_pct' => (int) $this->bet_pct,
+            'target' => $this->target !== null ? (int) $this->target : null,
         ];
     }
 }

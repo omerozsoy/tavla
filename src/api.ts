@@ -711,6 +711,7 @@ export interface RoomView {
   messages: ChatMsg[]
   version: number
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
+  target?: number | null
 }
 
 export async function createRoom(
@@ -758,6 +759,7 @@ export async function matchmake(
   userId?: number,
   minRating?: number,
   betPct?: number,
+  targets?: number[],
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -770,6 +772,7 @@ export async function matchmake(
       user_id: userId ?? null,
       min_rating: minRating ?? 0,
       bet_pct: betPct ?? 0,
+      targets: targets ?? [1],
     }),
   })
 }

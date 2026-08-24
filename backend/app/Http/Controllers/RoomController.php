@@ -78,11 +78,19 @@ class RoomController extends Controller
             'user_id' => ['nullable', 'integer'],
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
             'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
+            'targets' => ['nullable', 'array'],
+            'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         $userId = $data['user_id'] ?? null;
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
+        // Kabul edilen mac uzunluklari (kolay eslesme icin coklu). Bos -> tek oyun.
+        $targets = array_values(array_unique(array_map('intval', $data['targets'] ?? [])));
+        $targets = array_values(array_filter($targets, fn ($n) => in_array($n, [1, 3, 5, 7, 9, 11], true)));
+        if (empty($targets)) {
+            $targets = [1];
+        }
 
         // Bahisli oyun (sabit stake VEYA % bahis): giris + coin sart
         if ($stake > 0 || $betPct > 0) {
@@ -105,7 +113,8 @@ class RoomController extends Controller
             return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
         }
 
-        // Ayni bahis/kategorili bekleyen rakip bul; min puan filtresi (tek yonlu)
+        // Ayni bahis/kategorili bekleyen adaylar; min puan filtresi (tek yonlu).
+        // Uzunluk KESISIMI olan ilk (en eski) rakip secilir -> coklu secim = kolay eslesme.
         $q = Room::where('status', 'mm_waiting')
             ->where('stake', $stake)
             ->where('bet_pct', $betPct)
@@ -114,7 +123,19 @@ class RoomController extends Controller
         if ($minRating > 0) {
             $q->where('p1_rating', '>=', $minRating);
         }
-        $opponent = $q->orderBy('created_at')->lockForUpdate()->first();
+        $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
+
+        $opponent = null;
+        $agreed = null;
+        foreach ($candidates as $cand) {
+            $candTargets = is_array($cand->targets) ? $cand->targets : [1];
+            $common = array_values(array_intersect($candTargets, $targets));
+            if (! empty($common)) {
+                $opponent = $cand;
+                $agreed = max($common); // ortak uzunluklardan en uzunu
+                break;
+            }
+        }
 
         if ($opponent) {
             $opponent->p2_token = $data['token'];
@@ -122,12 +143,13 @@ class RoomController extends Controller
             $opponent->p2_name = $data['name'];
             $opponent->p2_rating = $data['rating'] ?? null;
             $opponent->p2_avatar = $data['avatar'] ?? null;
+            $opponent->target = $agreed; // anlasilan uzunluk (iki oyuncu da bunu kullanir)
             $opponent->status = 'playing';
             $opponent->save();
             return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
         }
 
-        // Kimse yok -> havuza gir
+        // Kimse yok -> havuza gir (kabul edilen uzunluklar saklanir)
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
@@ -138,6 +160,8 @@ class RoomController extends Controller
             'status' => 'mm_waiting',
             'stake' => $stake,
             'bet_pct' => $betPct,
+            'targets' => $targets,
+            'target' => count($targets) === 1 ? $targets[0] : null,
             'version' => 0,
         ]);
 
