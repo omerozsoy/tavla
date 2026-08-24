@@ -24,7 +24,13 @@
               @if($u->plan_active !== 'free')<span class="tag">{{ $u->plan_active }}</span>@endif
             </td>
             <td class="muted">{{ $u->email }}</td>
-            <td>{{ $u->rating ?? 1500 }}</td>
+            <td>
+              <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
+                @csrf<input type="hidden" name="action" value="rating">
+                <input type="number" name="rating" value="{{ $u->rating ?? 1500 }}" min="100" max="4000" style="width:80px">
+                <button class="btn sm">Kaydet</button>
+              </form>
+            </td>
             <td>
               <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
                 @csrf<input type="hidden" name="action" value="coins">
