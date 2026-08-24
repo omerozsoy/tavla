@@ -112,7 +112,7 @@ export default function Membership({
                       </button>
                       <div className="mem-price">
                         {t('mem.after', {
-                          price: `$${price.toFixed(2)}`,
+                          price: `${price.toLocaleString('tr-TR')} ₺`,
                           period: yearly ? t('mem.perYear') : t('mem.perMonth'),
                         })}
                       </div>

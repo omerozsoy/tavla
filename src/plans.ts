@@ -37,8 +37,8 @@ export const PLANS: Plan[] = [
     id: 'star',
     nameKey: 'plan.star',
     color: '#a06bd4',
-    yearly: 79.99,
-    monthly: 7.99,
+    yearly: 2000, // TL/yil
+    monthly: 200, // TL/ay
     features: [
       { key: 'feat.analysis4ply', on: true },
       { key: 'feat.bonus800', on: true },
@@ -48,21 +48,6 @@ export const PLANS: Plan[] = [
       { key: 'feat.chat', on: true },
       { key: 'feat.errorDb4ply', on: true },
       { key: 'feat.customBoards', on: true },
-    ],
-  },
-  {
-    id: 'starpro',
-    nameKey: 'plan.starpro',
-    color: '#3f9bd4',
-    yearly: 149.99,
-    monthly: 14.99,
-    features: [
-      { key: 'feat.allStar', on: true },
-      { key: 'feat.rollouts', on: true },
-      { key: 'feat.bonus1200', on: true },
-      { key: 'feat.errorDbRollouts', on: true },
-      { key: 'feat.allBoardsAvatars', on: true },
-      { key: 'feat.aiTrainer', on: true },
     ],
   },
 ]
