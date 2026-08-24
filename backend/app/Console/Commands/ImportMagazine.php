@@ -7,21 +7,30 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 
 /**
- * Tavla Magazin: @TavlaTV YouTube kanalinin videolarini kanal RSS feed'inden cekip
- * 'magazine' icerigi olarak iceri aktarir. Video kimligi (video_id) embed icin saklanir;
- * kapak olarak YouTube kucuk resmi (ytimg CDN) kullanilir. Baslik+video_id ile idempotent.
+ * Tavla Magazin: @TavlaTV YouTube kanalindaki 3 seriyi (playlist) iceri aktarir.
+ * Her playlist sayfasindan videolarin ID'leri (sirali) cikarilir, basliklar YouTube
+ * oEmbed'den alinir. organizer = seri adi (bolum). type='magazine', video_id ile idempotent.
  *
- * Kullanim:  php artisan magazine:import
- *            php artisan magazine:import --file=database/data/magazine.json  (offline; deploy)
+ * Not: Sunucudan YouTube'a cikis engelli olabilir -> canli cekim YERELDE yapilir ve
+ * database/data/magazine.json'a yazilir; deploy her zaman --file (offline) ile calisir.
+ *
+ * Kullanim:  php artisan magazine:import                 (playlist'lerden canli cek)
+ *            php artisan magazine:import --file=database/data/magazine.json  (offline)
  */
 class ImportMagazine extends Command
 {
     protected $signature = 'magazine:import
-        {--channel=UCaV5mugEVc1U18ESfNUXyZg : YouTube kanal ID (TavlaTV)}
-        {--file= : RSS yerine yerel JSON dosyasindan yukle (offline; deploy icin)}
+        {--file= : RSS/playlist yerine yerel JSON dosyasindan yukle (offline; deploy icin)}
         {--dry : Veritabanina yazmadan sadece listele}';
 
-    protected $description = 'TavlaTV YouTube kanal videolarini Tavla Magazin (magazine) icerigine aktarir';
+    protected $description = 'TavlaTV YouTube serilerini (playlist) Tavla Magazin icerigine aktarir';
+
+    /** Sayfadaki 3 seri: kullanici sirasiyla (seri adi => YouTube playlist ID). */
+    private const PLAYLISTS = [
+        'Tavla Sohbetleri' => 'PLlK6ulCZ0xO4ZMcbgct_C3A_JuEjBqh35',
+        'Kısa Kısa Tavla' => 'PLlK6ulCZ0xO52s5sxPdJb1HBza9PdU0XR',
+        'Tavla Magazin' => 'PLlK6ulCZ0xO7oXN5ugNhBc9iH2ZWA5Uhm',
+    ];
 
     public function handle(): int
     {
@@ -37,36 +46,19 @@ class ImportMagazine extends Command
             $this->info("Yerel dosyadan yukleniyor: {$path}");
             $items = $this->parseJson((string) file_get_contents($path));
         } else {
-            $channel = (string) $this->option('channel');
-            $url = 'https://www.youtube.com/feeds/videos.xml?channel_id='.$channel;
-            $this->info("Kanal feed'i cekiliyor: {$url}");
-            try {
-                $res = Http::timeout(20)
-                    ->withHeaders(['User-Agent' => 'TavlaTvBot/1.0 (+https://www.tavlai.com)'])
-                    ->get($url);
-            } catch (\Throwable $e) {
-                $this->error('Feed cekilemedi: '.$e->getMessage());
-                return self::FAILURE;
-            }
-            if (! $res->ok()) {
-                $this->error('Feed HTTP hatasi: '.$res->status());
-                return self::FAILURE;
-            }
-            $items = $this->parseFeed($res->body());
+            $items = $this->fetchPlaylists();
         }
 
         if (empty($items)) {
-            $this->warn('Video bulunamadi (bos veya bicim taninmadi).');
+            $this->warn('Video bulunamadi.');
             return self::FAILURE;
         }
 
         $this->info(count($items).' video bulundu.');
         $created = 0;
         $updated = 0;
-        $n = count($items);
-        foreach ($items as $i => $it) {
-            $sort = $n - $i; // en yeni en ustte
-            $this->line(sprintf(' • [%s] %s  (%s)', $it['event_at'] ?? '—', $it['title'], $it['video_id']));
+        foreach ($items as $it) {
+            $this->line(sprintf(' • [%s] %s  (%s)', $it['organizer'], $it['title'], $it['video_id']));
             if ($dry) {
                 continue;
             }
@@ -75,10 +67,10 @@ class ImportMagazine extends Command
                 ['type' => 'magazine', 'video_id' => $it['video_id']],
                 [
                     'title' => $it['title'],
-                    'body' => $it['body'],
+                    'organizer' => $it['organizer'], // seri adi (bolum)
                     'image' => $it['image'],
                     'event_at' => $it['event_at'],
-                    'sort' => $sort,
+                    'sort' => $it['sort'],
                     'published' => true,
                 ],
             );
@@ -94,48 +86,80 @@ class ImportMagazine extends Command
     }
 
     /**
-     * YouTube kanal Atom feed'ini ayristirir.
-     * @return array<int, array{title:string, video_id:string, image:?string, body:?string, event_at:?string}>
+     * 3 playlist'i sirayla cek; her videonun ID+baslik+kapak+seri bilgisini dondur.
+     * @return array<int, array{title:string, video_id:string, organizer:string, image:string, event_at:null, sort:int}>
      */
-    private function parseFeed(string $xml): array
+    private function fetchPlaylists(): array
     {
-        $prev = libxml_use_internal_errors(true);
-        $doc = simplexml_load_string($xml);
-        libxml_use_internal_errors($prev);
-        if ($doc === false) {
-            return [];
-        }
         $out = [];
-        foreach ($doc->entry ?? [] as $entry) {
-            $yt = $entry->children('http://www.youtube.com/xml/schemas/2015');
-            $media = $entry->children('http://search.yahoo.com/mrss/');
-            $vid = trim((string) ($yt->videoId ?? ''));
-            $title = trim((string) ($entry->title ?? ''));
-            if ($vid === '' || $title === '') {
+        $sort = 0;
+        foreach (self::PLAYLISTS as $section => $plid) {
+            $this->info("Seri cekiliyor: {$section} ({$plid})");
+            $vids = $this->playlistVideoIds($plid);
+            if (empty($vids)) {
+                $this->warn("   ! bu seride video bulunamadi");
                 continue;
             }
-            $desc = '';
-            if (isset($media->group->description)) {
-                $desc = trim((string) $media->group->description);
+            foreach ($vids as $vid) {
+                $meta = $this->oembed($vid);
+                $title = $meta['title'] ?? $vid;
+                $out[] = [
+                    'title' => mb_substr($title, 0, 200),
+                    'video_id' => $vid,
+                    'organizer' => $section,
+                    'image' => "https://i.ytimg.com/vi/{$vid}/hqdefault.jpg",
+                    'event_at' => null,
+                    'sort' => $sort++, // seri + playlist sirasi korunur (kucuk = once)
+                ];
             }
-            $pub = (string) ($entry->published ?? '');
-            $eventAt = null;
-            if ($pub !== '' && ($ts = strtotime($pub)) !== false) {
-                $eventAt = date('Y-m-d H:i:s', $ts);
-            }
-            $out[] = [
-                'title' => mb_substr($title, 0, 200),
-                'video_id' => $vid,
-                // maxres bazen yok; hqdefault her videoda vardir
-                'image' => "https://i.ytimg.com/vi/{$vid}/hqdefault.jpg",
-                'body' => $desc !== '' ? mb_substr($desc, 0, 5000) : null,
-                'event_at' => $eventAt,
-            ];
         }
         return $out;
     }
 
-    /** Yerel JSON: [{title, video_id, image, body, event_at}, ...] */
+    /** Bir YouTube playlist sayfasindan sirali, benzersiz video ID'leri (lockupViewModel). */
+    private function playlistVideoIds(string $plid): array
+    {
+        try {
+            $res = Http::timeout(25)
+                ->withHeaders(['User-Agent' => 'Mozilla/5.0 TavlaTvBot/1.0', 'Accept-Language' => 'tr'])
+                ->get('https://www.youtube.com/playlist', ['list' => $plid]);
+        } catch (\Throwable $e) {
+            return [];
+        }
+        if (! $res->ok()) {
+            return [];
+        }
+        $html = $res->body();
+        $ids = [];
+        // Her lockupViewModel blogundaki ilk contentId = video (kuyruk komutu degil)
+        if (preg_match_all('/"lockupViewModel":\{.*?"contentId":"([A-Za-z0-9_-]{11})"/s', $html, $m)) {
+            foreach ($m[1] as $vid) {
+                if (! in_array($vid, $ids, true)) {
+                    $ids[] = $vid;
+                }
+            }
+        }
+        return $ids;
+    }
+
+    /** YouTube oEmbed'den video basligi (ve kapak). Basarisizsa bos. */
+    private function oembed(string $vid): array
+    {
+        try {
+            $res = Http::timeout(15)->get('https://www.youtube.com/oembed', [
+                'format' => 'json',
+                'url' => "https://www.youtube.com/watch?v={$vid}",
+            ]);
+            if ($res->ok()) {
+                return $res->json() ?? [];
+            }
+        } catch (\Throwable $e) {
+            /* baslik yok -> id kullanilir */
+        }
+        return [];
+    }
+
+    /** Yerel JSON: [{title, video_id, organizer, image, event_at, sort}, ...] */
     private function parseJson(string $json): array
     {
         $data = json_decode($json, true);
@@ -143,6 +167,7 @@ class ImportMagazine extends Command
             return [];
         }
         $out = [];
+        $i = 0;
         foreach ($data as $row) {
             $vid = trim((string) ($row['video_id'] ?? ''));
             $title = trim((string) ($row['title'] ?? ''));
@@ -152,10 +177,12 @@ class ImportMagazine extends Command
             $out[] = [
                 'title' => mb_substr($title, 0, 200),
                 'video_id' => $vid,
+                'organizer' => (string) ($row['organizer'] ?? ''),
                 'image' => isset($row['image']) && $row['image'] !== '' ? (string) $row['image'] : "https://i.ytimg.com/vi/{$vid}/hqdefault.jpg",
-                'body' => isset($row['body']) && $row['body'] !== '' ? mb_substr((string) $row['body'], 0, 5000) : null,
                 'event_at' => isset($row['event_at']) && $row['event_at'] !== '' ? (string) $row['event_at'] : null,
+                'sort' => isset($row['sort']) ? (int) $row['sort'] : $i,
             ];
+            $i++;
         }
         return $out;
     }

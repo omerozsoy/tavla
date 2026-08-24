@@ -93,6 +93,22 @@ export default function ContentView({
       .finally(() => setLoading(false))
   }, [type])
 
+  // Magazin: videolari seriye gore grupla (organizer), playlist sirasi korunur
+  const magSections = useMemo(() => {
+    if (type !== 'magazine') return [] as [string, Content[]][]
+    const groups: [string, Content[]][] = []
+    for (const it of items) {
+      const key = it.organizer || 'Videolar'
+      let g = groups.find((x) => x[0] === key)
+      if (!g) {
+        g = [key, []]
+        groups.push(g)
+      }
+      g[1].push(it)
+    }
+    return groups
+  }, [items, type])
+
   const head = HEAD[type]
 
   // Etkinlik: yaklasan / gecmis ayrimi + aya gore grupla
@@ -183,24 +199,33 @@ export default function ContentView({
             </div>
           )
         ) : type === 'magazine' ? (
-          <div className="mag-grid">
-            {items.map((v) => (
-              <button
-                key={v.id}
-                className="mag-card"
-                onClick={() => v.video_id && setPlayVideo(v.video_id)}
-              >
-                <div className="mag-thumb">
-                  {v.image && <img src={v.image} alt="" loading="lazy" />}
-                  <span className="mag-play">
-                    <Icon name="play" size={22} />
-                  </span>
+          <div className="mag-sections">
+            {magSections.map(([section, vids]) => (
+              <section key={section} className="mag-section">
+                <h3 className="mag-section-title">
+                  {section}
+                  <span className="mag-section-count">{vids.length}</span>
+                </h3>
+                <div className="mag-grid">
+                  {vids.map((v) => (
+                    <button
+                      key={v.id}
+                      className="mag-card"
+                      onClick={() => v.video_id && setPlayVideo(v.video_id)}
+                    >
+                      <div className="mag-thumb">
+                        {v.image && <img src={v.image} alt="" loading="lazy" />}
+                        <span className="mag-play">
+                          <Icon name="play" size={22} />
+                        </span>
+                      </div>
+                      <div className="mag-info">
+                        <span className="mag-title">{v.title}</span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                <div className="mag-info">
-                  <span className="mag-title">{v.title}</span>
-                  <span className="mag-date">{fmtDate(v.event_at ?? null)}</span>
-                </div>
-              </button>
+              </section>
             ))}
           </div>
         ) : type === 'blog' ? (
