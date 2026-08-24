@@ -25,11 +25,14 @@ class ImportMagazine extends Command
 
     protected $description = 'TavlaTV YouTube serilerini (playlist) Tavla Magazin icerigine aktarir';
 
-    /** Sayfadaki 3 seri: kullanici sirasiyla (seri adi => YouTube playlist ID). */
+    /** TavlaTV kanalindaki tum seriler (seri adi => YouTube playlist ID). */
     private const PLAYLISTS = [
         'Tavla Sohbetleri' => 'PLlK6ulCZ0xO4ZMcbgct_C3A_JuEjBqh35',
         'Kısa Kısa Tavla' => 'PLlK6ulCZ0xO52s5sxPdJb1HBza9PdU0XR',
         'Tavla Magazin' => 'PLlK6ulCZ0xO7oXN5ugNhBc9iH2ZWA5Uhm',
+        'Turnuva Karşılaşmaları' => 'PLlK6ulCZ0xO5KettpFroIR36T5Zju6B_U',
+        'Tavla Haberleri' => 'PLlK6ulCZ0xO5avVRzUsFgy-N8xifhxzFe',
+        'Şampiyonluk Anları' => 'PLlK6ulCZ0xO42cVaGhuoj9SRx8WPwmaEx',
     ];
 
     public function handle(): int
