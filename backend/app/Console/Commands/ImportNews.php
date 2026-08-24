@@ -216,10 +216,17 @@ class ImportNews extends Command
             : 'jpg';
     }
 
-    /** --file degerini gercek yola cevirir: mutlak, cwd'ye gore veya base_path'e gore. */
+    /** --file degerini gercek yola cevirir: mutlak/cwd/base_path/'backend/' oneki/dosya adi. */
     private function resolveFile(string $file): ?string
     {
-        foreach ([$file, base_path($file), database_path('data/'.ltrim($file, '/'))] as $cand) {
+        $noBackend = preg_replace('#^/?backend/#', '', $file); // yanlislikla 'backend/' onekini at
+        $cands = [
+            $file,
+            base_path($file),
+            base_path($noBackend),
+            database_path('data/'.basename($file)), // son care: dosya adiyla data/ altinda ara
+        ];
+        foreach ($cands as $cand) {
             if (is_file($cand)) {
                 return $cand;
             }
