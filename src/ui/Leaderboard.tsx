@@ -6,7 +6,7 @@ import { leaderboard, type LeaderRow } from '../api'
 import { frameStyle } from '../cosmetics'
 import PublicProfile from './PublicProfile'
 import { DivisionChip } from './Badges'
-import { DIVISIONS, divisionOf } from '../badges'
+import { MAIN_DIVISIONS, mainDivisionOf } from '../badges'
 
 interface Props {
   currentName?: string
@@ -99,10 +99,10 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             </div>
             <div className="lb-body">
               {by === 'league'
-                ? DIVISIONS.slice()
+                ? MAIN_DIVISIONS.slice()
                     .reverse()
                     .map((d) => {
-                      const inDiv = rows.filter((r) => divisionOf(r.rating).key === d.key)
+                      const inDiv = rows.filter((r) => mainDivisionOf(r.rating).key === d.key)
                       if (inDiv.length === 0) return null
                       return (
                         <div key={d.key}>
