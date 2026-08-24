@@ -30,6 +30,15 @@ return [
 
     'disks' => [
 
+        // Panelden yuklenen gorseller dogrudan public/uploads altina (storage:link gerekmez).
+        'uploads' => [
+            'driver' => 'local',
+            'root' => public_path('uploads'),
+            'url' => '/uploads',
+            'visibility' => 'public',
+            'throw' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

@@ -542,6 +542,7 @@ export interface Content {
   place?: string | null
   province?: string | null
   contact?: string | null
+  contacts?: { name: string; phone: string }[] | null
   image?: string | null
   gallery?: string[] | null
   video_id?: string | null

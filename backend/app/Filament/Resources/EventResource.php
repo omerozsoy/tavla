@@ -32,6 +32,20 @@ class EventResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    // Turkiye'nin 81 ili (plaka sirasi).
+    public const PROVINCES = [
+        'Adana', 'Adıyaman', 'Afyonkarahisar', 'Ağrı', 'Amasya', 'Ankara', 'Antalya', 'Artvin',
+        'Aydın', 'Balıkesir', 'Bilecik', 'Bingöl', 'Bitlis', 'Bolu', 'Burdur', 'Bursa', 'Çanakkale',
+        'Çankırı', 'Çorum', 'Denizli', 'Diyarbakır', 'Edirne', 'Elazığ', 'Erzincan', 'Erzurum',
+        'Eskişehir', 'Gaziantep', 'Giresun', 'Gümüşhane', 'Hakkari', 'Hatay', 'Isparta', 'Mersin',
+        'İstanbul', 'İzmir', 'Kars', 'Kastamonu', 'Kayseri', 'Kırklareli', 'Kırşehir', 'Kocaeli',
+        'Konya', 'Kütahya', 'Malatya', 'Manisa', 'Kahramanmaraş', 'Mardin', 'Muğla', 'Muş',
+        'Nevşehir', 'Niğde', 'Ordu', 'Rize', 'Sakarya', 'Samsun', 'Siirt', 'Sinop', 'Sivas',
+        'Tekirdağ', 'Tokat', 'Trabzon', 'Tunceli', 'Şanlıurfa', 'Uşak', 'Van', 'Yozgat', 'Zonguldak',
+        'Aksaray', 'Bayburt', 'Karaman', 'Kırıkkale', 'Batman', 'Şırnak', 'Bartın', 'Ardahan',
+        'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
+    ];
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('type', 'event');
@@ -43,12 +57,27 @@ class EventResource extends Resource
             Forms\Components\Hidden::make('type')->default('event'),
             Forms\Components\TextInput::make('title')->label('Etkinlik adı')->required()->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Tarih & saat')->required(),
+            Forms\Components\Select::make('province')->label('İl')
+                ->options(array_combine(self::PROVINCES, self::PROVINCES))
+                ->searchable(),
             Forms\Components\TextInput::make('organizer')->label('Düzenleyen'),
-            Forms\Components\TextInput::make('place')->label('Yer'),
-            Forms\Components\TextInput::make('province')->label('İl'),
-            Forms\Components\TextInput::make('contact')->label('İletişim'),
+            Forms\Components\TextInput::make('place')->label('Yer / adres')->columnSpanFull(),
+            // Cok kisili iletisim: her satir kisi adi + cep telefonu
+            Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
+                ->schema([
+                    Forms\Components\TextInput::make('name')->label('Kişi adı')->required(),
+                    Forms\Components\TextInput::make('phone')->label('Cep telefonu')->tel()->required(),
+                ])
+                ->columns(2)
+                ->addActionLabel('Kişi ekle')
+                ->reorderable(false)
+                ->columnSpanFull(),
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(4)->columnSpanFull(),
-            Forms\Components\TextInput::make('image')->label('Görsel URL')->maxLength(500)->columnSpanFull(),
+            // Görsel: bilgisayardan resim seç (public/uploads/takvim altina yuklenir)
+            Forms\Components\FileUpload::make('image')->label('Görsel')
+                ->image()->disk('uploads')->directory('takvim')->visibility('public')
+                ->imageEditor()->maxSize(5120)
+                ->columnSpanFull(),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }

@@ -1345,6 +1345,23 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-size: 0.92rem;
 }
+.event-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+.event-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--accent);
+  text-decoration: none;
+}
+.event-contact:hover {
+  text-decoration: underline;
+}
 /* Kulupler */
 .content-clubs {
   display: flex;
