@@ -87,6 +87,17 @@ class PanelController extends Controller
         'Rookie' => 0,
     ];
 
+    // Rating -> mevcut unvan (rating'in ulastigi en yuksek kademe).
+    public static function levelLabel(int $rating): string
+    {
+        foreach (self::LEVELS as $label => $min) { // yuksekten dusuge
+            if ($rating >= $min) {
+                return $label;
+            }
+        }
+        return 'Rookie';
+    }
+
     public function users(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
