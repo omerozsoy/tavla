@@ -385,6 +385,7 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
+  const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
   const [rulesOpen, setRulesOpen] = useState(false) // nasil oynanir rehberi
@@ -424,7 +425,9 @@ export default function App() {
                         : contentView === 'blog'
                           ? 'blog'
                           : contentView === 'news'
-                            ? 'haberler'
+                            ? newsSlug
+                              ? 'haberler/' + newsSlug
+                              : 'haberler'
                             : contentView === 'club'
                               ? 'kulup-rehberi'
                               : boardSettingsOpen
@@ -448,10 +451,12 @@ export default function App() {
   useEffect(() => {
     const applyFromPath = () => {
       const slug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
+      const seg = slug.split('/')
+      const root = seg[0] // ilk segment (ör. 'haberler/<slug>' -> 'haberler')
       closeAllPages()
       setAnalyzerOpen(false)
       setMemOpen(false)
-      switch (slug) {
+      switch (root) {
         case 'lider-tablosu':
           setLeaderboardOpen(true)
           break
@@ -490,6 +495,7 @@ export default function App() {
           break
         case 'haberler':
           setContentView('news')
+          setNewsSlug(seg[1] ?? null) // /haberler/<slug> -> detay
           break
         case 'kulup-rehberi':
           setContentView('club')
@@ -2914,6 +2920,7 @@ export default function App() {
     setLessonsOpen(false)
     setSoloOpen(false)
     setContentView(null)
+    setNewsSlug(null)
     setBoardSettingsOpen(false)
     setQuizOpen(false)
     setClubsOpen(false)
@@ -3084,7 +3091,15 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
-      {contentView && <ContentView type={contentView} onClose={() => setContentView(null)} />}
+      {contentView && (
+        <ContentView
+          type={contentView}
+          onClose={() => setContentView(null)}
+          slug={newsSlug}
+          onOpenDetail={(s) => setNewsSlug(s)}
+          onCloseDetail={() => setNewsSlug(null)}
+        />
+      )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {clubsOpen && user && <Clubs onClose={() => setClubsOpen(false)} />}
       {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}

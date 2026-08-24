@@ -36,12 +36,40 @@ const monthKey = (s?: string | null) => {
   return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
 }
 
-export default function ContentView({ type, onClose }: { type: ContentType; onClose: () => void }) {
+// Baslik -> URL slug (Turkce karakter donusumlu). Detay linkleri + eslestirme icin.
+const TR_MAP: Record<string, string> = {
+  ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', İ: 'i', Ç: 'c', Ğ: 'g', Ö: 'o', Ş: 's', Ü: 'u',
+}
+export function slugify(s: string): string {
+  return s
+    .replace(/[çğıöşüİÇĞÖŞÜ]/g, (c) => TR_MAP[c] ?? c)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export default function ContentView({
+  type,
+  onClose,
+  slug = null,
+  onOpenDetail,
+  onCloseDetail,
+}: {
+  type: ContentType
+  onClose: () => void
+  slug?: string | null
+  onOpenDetail?: (slug: string) => void
+  onCloseDetail?: () => void
+}) {
   const { t } = useT()
-  useEscape(onClose)
   const [items, setItems] = useState<Content[]>([])
   const [loading, setLoading] = useState(true)
   const [openId, setOpenId] = useState<number | null>(null)
+  // Haber detayi acik mi (slug bir habere denk geliyorsa)
+  const newsItem =
+    type === 'news' && slug ? (items.find((i) => slugify(i.title) === slug) ?? null) : null
+  // Detaydayken Esc -> listeye don; degilse sayfayi kapat
+  useEscape(newsItem && onCloseDetail ? onCloseDetail : onClose)
 
   useEffect(() => {
     listContents(type)
@@ -106,7 +134,31 @@ export default function ContentView({ type, onClose }: { type: ContentType; onCl
               </section>
             ))}
           </div>
-        ) : type === 'blog' || type === 'news' ? (
+        ) : type === 'news' ? (
+          newsItem ? (
+            <NewsDetail item={newsItem} onBack={onCloseDetail ?? onClose} backLabel={t(head.titleKey)} />
+          ) : (
+            <div className="news-grid">
+              {items.map((p) => (
+                <button
+                  key={p.id}
+                  className="news-card"
+                  onClick={() => onOpenDetail?.(slugify(p.title))}
+                >
+                  {p.image && (
+                    <img className="news-card-img" src={p.image} alt="" loading="lazy" />
+                  )}
+                  <div className="news-card-info">
+                    <span className="news-card-title">{p.title}</span>
+                    <span className="news-card-date">
+                      <Icon name="calendar" size={12} /> {fmtDate(p.event_at ?? null)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )
+        ) : type === 'blog' ? (
           <div className="content-posts">
             {items.map((p) => {
               const open = openId === p.id
@@ -174,6 +226,46 @@ export default function ContentView({ type, onClose }: { type: ContentType; onCl
         ) : null}
       </div>
     </div>
+  )
+}
+
+// Haber detay sayfasi: kapak + tam metin + galeri gorselleri
+function NewsDetail({
+  item,
+  onBack,
+  backLabel,
+}: {
+  item: Content
+  onBack: () => void
+  backLabel: string
+}) {
+  const gallery = (item.gallery ?? []).filter(Boolean)
+  return (
+    <article className="news-detail">
+      <button className="news-back" onClick={onBack}>
+        <span className="news-back-chev">
+          <Icon name="chevron" size={16} />
+        </span>{' '}
+        {backLabel}
+      </button>
+      <h3 className="news-detail-title">{item.title}</h3>
+      <div className="news-detail-date">
+        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
+      </div>
+      {item.image && <img className="news-detail-hero" src={item.image} alt={item.title} />}
+      <div className="news-detail-body">
+        {paras(item.body).map((x, i) => (
+          <p key={i}>{x}</p>
+        ))}
+      </div>
+      {gallery.length > 0 && (
+        <div className="news-gallery">
+          {gallery.map((g, i) => (
+            <img key={i} className="news-gallery-img" src={g} alt="" loading="lazy" />
+          ))}
+        </div>
+      )}
+    </article>
   )
 }
 
