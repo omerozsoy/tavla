@@ -79,6 +79,8 @@
   --btn-border: #ded7ca;
   --border: #ded7ca;
   --input-bg: #f7f4ee;
+  /* Tersiyer metin: acik zeminde #8a8377 kontrasti AA alti (~3.2:1); koyulastir (~4.6:1) */
+  --tv-ink-faint: #6b6458;
 }
 
 * {
@@ -155,6 +157,34 @@ button[aria-disabled='true'],
 .empty-state.sm {
   padding: 18px 12px;
   font-size: 0.86rem;
+}
+
+/* Sayisal alanlar: tabular rakamlar -> skor/coin/puan/sure kaymadan hizalanir (ux: number-tabular) */
+.account-rating,
+.account-coins-btn,
+.fc-num,
+.clock-stack,
+.clock-delay,
+.pip,
+.reg-rating,
+.rr-num,
+.ct-pts,
+.ct-rank,
+.an-rank,
+.lb-rank,
+.lb-rating,
+.stats-rank,
+.stats-rating,
+.stats-coins,
+.rank-no,
+.rank-val,
+.mr-score,
+.shop-coins,
+.quiz-score,
+.pp-rank,
+.pp-rating,
+.friend-rating {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Yukleme spinner'i (uzun beklemede metin yerine kullanilabilir) */
