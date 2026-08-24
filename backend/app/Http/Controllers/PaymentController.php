@@ -77,23 +77,31 @@ class PaymentController extends Controller
         $res = $garanti->verifyCallback($post);
         $payment = Payment::where('order_id', $res['order_id'])->first();
 
-        if ($payment && $payment->status === 'pending') {
-            if ($res['ok']) {
-                $payment->status = 'paid';
-                $payment->bank_msg = $res['msg'];
-                $payment->save();
-                // Plani aktive et
-                $u = $payment->user;
-                $u->plan = $payment->plan;
-                $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
-                $u->save();
-            } else {
+        if ($payment) {
+            // Tutar dogrulamasi: bankanin donusundeki txnamount kayitli tutarla uyusmali
+            // (forged/tampered callback'e karsi ek savunma).
+            $bankAmount = (string) ($post['txnamount'] ?? '');
+            $amountOk = $bankAmount === '' || $bankAmount === (string) $payment->amount;
+
+            if ($res['ok'] && $amountOk) {
+                // ATOMIK idempotency: yalnizca ILK basarili callback plani aktive eder.
+                // (Banka retry'i / replay / yaris kosulunda cift aktivasyon olmaz.)
+                $claimed = Payment::where('id', $payment->id)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'paid', 'bank_msg' => $res['msg']]);
+                if ($claimed) {
+                    $u = $payment->user;
+                    $u->plan = $payment->plan;
+                    $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
+                    $u->save();
+                }
+            } elseif ($payment->status === 'pending') {
                 $payment->status = 'failed';
-                $payment->bank_msg = $res['msg'];
+                $payment->bank_msg = $amountOk ? $res['msg'] : 'Tutar uyusmuyor';
                 $payment->save();
             }
         }
 
-        return view('pay.result', ['ok' => $res['ok'], 'msg' => $res['msg']]);
+        return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg']]);
     }
 }

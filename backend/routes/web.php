@@ -40,7 +40,9 @@ Route::get('/pay/card/{payment}', [\App\Http\Controllers\PaymentController::clas
 Route::post('/pay/submit/{payment}', [\App\Http\Controllers\PaymentController::class, 'submit'])
     ->name('pay.submit');
 Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])
-    ->name('pay.callback')->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
+    ->name('pay.callback')
+    ->middleware('throttle:30,1') // forged callback flood'una karsi
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 Route::get('/pay/result', fn () => view('pay.result', ['ok' => false, 'msg' => '']))->name('pay.result');
 
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.

@@ -29,7 +29,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'game_state',
-        'email_verified_at',
+        // NOT: 'email_verified_at' bilincli olarak fillable DEGIL — kotu niyetli
+        // mass-assignment ile e-posta dogrulamasi atlanamasin. Dogrulama yalnizca
+        // markEmailAsVerified() / imzali dogrulama akisi ile yapilir.
     ];
 
     /**
