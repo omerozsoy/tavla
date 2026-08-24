@@ -25,6 +25,9 @@
             </td>
             <td class="muted">{{ $u->email }}</td>
             <td>
+              <div class="tag" style="margin-bottom:4px" title="Mevcut ünvan (rating'e göre)">
+                {{ \App\Http\Controllers\PanelController::levelLabel((int)($u->rating ?? 1500)) }}
+              </div>
               <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
                 @csrf<input type="hidden" name="action" value="rating">
                 <input type="number" name="rating" value="{{ $u->rating ?? 1500 }}" min="100" max="4000" style="width:80px">
@@ -32,9 +35,10 @@
               </form>
               <form method="post" action="/panel/users/{{ $u->id }}" class="inline" style="margin-top:4px">
                 @csrf<input type="hidden" name="action" value="level">
+                @php($curLabel = \App\Http\Controllers\PanelController::levelLabel((int)($u->rating ?? 1500)))
                 <select name="level_min" style="width:auto">
                   @foreach($levels as $label => $min)
-                    <option value="{{ $min }}">{{ $label }}</option>
+                    <option value="{{ $min }}" @selected($label === $curLabel)>{{ $label }}</option>
                   @endforeach
                 </select>
                 <button class="btn sm ghost" title="Secilen unvana gore puani ayarlar">Ünvan Ata</button>
