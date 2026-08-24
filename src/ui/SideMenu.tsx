@@ -151,11 +151,6 @@ export default function SideMenu(p: SideMenuProps) {
               <Icon name="star" /> {t('menu.services')}
             </button>
           )}
-          {p.onBlog && (
-            <button className="menu-btn" onClick={p.onBlog}>
-              <Icon name="book" /> {t('menu.blog')}
-            </button>
-          )}
           {p.onNews && (
             <button className="menu-btn" onClick={p.onNews}>
               <Icon name="chat" /> {t('menu.news')}
