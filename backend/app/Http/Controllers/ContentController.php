@@ -21,8 +21,10 @@ class ContentController extends Controller
         // Siralama: etkinlik -> tarihe gore; blog/haber -> en yeni; kulup -> il; hizmet -> sort
         if ($type === 'event') {
             $q->orderBy('event_at');
-        } elseif ($type === 'blog' || $type === 'news' || $type === 'magazine') {
+        } elseif ($type === 'blog' || $type === 'news') {
             $q->orderByDesc('event_at')->orderByDesc('created_at');
+        } elseif ($type === 'magazine') {
+            $q->orderBy('sort')->orderBy('id'); // seri + playlist sirasi
         } elseif ($type === 'club') {
             $q->orderBy('province')->orderBy('title');
         } elseif ($type === 'ad') {
