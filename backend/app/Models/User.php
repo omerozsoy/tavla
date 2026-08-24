@@ -19,6 +19,15 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser
         return $this->is_admin && ! $this->isBanned();
     }
 
+    // Filament ust menude gosterilen ad. Modelde 'name' yok -> nickname/ad kullan.
+    public function getFilamentName(): string
+    {
+        return (string) ($this->nickname
+            ?: trim(($this->first_name ?? '').' '.($this->last_name ?? ''))
+            ?: $this->email
+            ?: 'Admin');
+    }
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, HasApiTokens;
 
