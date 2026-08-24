@@ -86,6 +86,10 @@ class PanelController extends Controller
         if ($action === 'coins') {
             $user->coins = max(0, (int) $request->input('coins', 0));
             $user->save();
+        } elseif ($action === 'rating') {
+            // Rating'i (Elo) elle ayarla; seviye/lig bu degere gore hesaplanir.
+            $user->rating = max(100, min(4000, (int) $request->input('rating', 1500)));
+            $user->save();
         } elseif ($action === 'ban') {
             if ($user->id !== $me->id) {
                 $user->banned_at = $user->banned_at ? null : now();
