@@ -108,7 +108,7 @@ export default function Register({
               {t('reg.cancel')}
             </button>
           )}
-          <button type="submit" className="galaxy-btn roll" disabled={nickTaken}>
+          <button type="submit" className="galaxy-btn" disabled={nickTaken}>
             {initial ? t('reg.submitEdit') : t('reg.submitNew')}
           </button>
         </div>

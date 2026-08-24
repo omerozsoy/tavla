@@ -437,7 +437,7 @@ export default function PositionAnalyzer({
             </div>
           </div>
 
-          <button className="galaxy-btn roll pa-analyze" disabled={busy} onClick={analyze}>
+          <button className="galaxy-btn pa-analyze" disabled={busy} onClick={analyze}>
             {busy ? (
               t('an.loading')
             ) : (

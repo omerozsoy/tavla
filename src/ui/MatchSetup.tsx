@@ -236,7 +236,7 @@ export default function MatchSetup({
             {t('setup.cancel')}
           </button>
           <button
-            className="galaxy-btn roll setup-start"
+            className="galaxy-btn setup-start"
             onClick={() =>
               onConfirm({
                 mode,

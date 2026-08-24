@@ -2591,11 +2591,11 @@ export default function App() {
         )}
         <div className="result-actions">
           {matchOver ? (
-            <button className="galaxy-btn roll" onClick={() => handleNewMatch()}>
+            <button className="galaxy-btn" onClick={() => handleNewMatch()}>
               {t('btn.newMatch')}
             </button>
           ) : (
-            <button className="galaxy-btn roll" onClick={nextGame}>
+            <button className="galaxy-btn" onClick={nextGame}>
               {t('btn.nextGame')}
             </button>
           )}
@@ -2622,10 +2622,10 @@ export default function App() {
           </div>
         )}
         <div className="cube-actions">
-          <button className="galaxy-btn roll" onClick={handleTake}>
+          <button className="galaxy-btn" onClick={handleTake}>
             {t('btn.take')}
           </button>
-          <button className="galaxy-btn double" onClick={handleDrop}>
+          <button className="galaxy-btn" onClick={handleDrop}>
             {t('btn.drop')}
           </button>
         </div>
@@ -2656,11 +2656,11 @@ export default function App() {
 
   // Ana slot (sirasi gelenin): Onayla / Roll / zarlar
   const primary = centerMain ? null : turnComplete ? (
-    <button className="galaxy-btn roll" onClick={handleConfirm}>
+    <button className="galaxy-btn" onClick={handleConfirm}>
       {t('btn.confirm')}
     </button>
   ) : showRoll ? (
-    <button className="galaxy-btn roll" onClick={doRoll}>
+    <button className="galaxy-btn" onClick={doRoll}>
       {t('btn.roll')}
     </button>
   ) : diceRolled && diceFaces.length > 0 ? (
@@ -2690,7 +2690,7 @@ export default function App() {
                   {cubeHint.winPct.toFixed(0)}%
                 </div>
               )}
-              <button className="galaxy-btn double" onClick={() => handleDouble(turnStart.turn)}>
+              <button className="galaxy-btn" onClick={() => handleDouble(turnStart.turn)}>
                 {t('btn.double')}
               </button>
             </div>
@@ -3356,10 +3356,43 @@ export default function App() {
               <div className="page-host">{menuPages}</div>
             ) : (
             <>
+            <section className="lobby-hero">
+              <div className="hero-copy">
+                <span className="hero-kicker">
+                  <Icon name="dice" size={15} /> {t('home.heroKicker')}
+                </span>
+                <h1 className="hero-title">
+                  {user ? t('home.hello', { name: profile.nickname }) : t('home.heroTitle')}
+                </h1>
+                <p className="hero-tagline">{t('home.tagline')}</p>
+                <div className="hero-cta">
+                  <button className="galaxy-btn hero-btn-primary" onClick={menuProps.onAiGame}>
+                    <Icon name="robot" size={18} /> {t('home.vsBot')}
+                  </button>
+                  <button className="btn-secondary hero-btn-secondary" onClick={menuProps.onNewGame}>
+                    <Icon name="users" size={18} /> {t('home.online')}
+                  </button>
+                </div>
+              </div>
+              <div className="hero-board" aria-hidden="true">
+                <div className="hero-points">
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <span
+                      key={i}
+                      className={`hero-point ${i % 2 ? 'down' : 'up'} ${i % 2 ? 'a' : 'b'}`}
+                    />
+                  ))}
+                </div>
+                <div className="hero-dice">
+                  <span className="hero-die hero-die--5" />
+                  <span className="hero-die hero-die--3" />
+                </div>
+              </div>
+            </section>
             <div className="lobby-welcome">
               {hasActiveGame && (
                 <button
-                  className="galaxy-btn roll lobby-resume"
+                  className="galaxy-btn lobby-resume"
                   onClick={() => setHome(false)}
                 >
                   <Icon name="live" /> {t('menu.resumeGame')}
@@ -3457,7 +3490,7 @@ export default function App() {
           <div className="rotate-icon">📱↻</div>
           <div className="rotate-text">{t('mobile.rotate')}</div>
           {/* Donme kilidi acilamayanlar icin: fiziksel cevirmeden yatay oyna */}
-          <button className="galaxy-btn roll rotate-play" onClick={enableManualLandscape}>
+          <button className="galaxy-btn rotate-play" onClick={enableManualLandscape}>
             {t('mobile.playLandscape')}
           </button>
         </div>
@@ -3658,7 +3691,7 @@ export default function App() {
                   <div className="resign-auto">
                     {t(typeKey)} — <b>{t('resign.losePts', { n: pts })}</b>
                   </div>
-                  <button className="galaxy-btn double" onClick={handleResign}>
+                  <button className="galaxy-btn" onClick={handleResign}>
                     <Icon name="flag" /> {t('resign.confirm')}
                   </button>
                 </>

@@ -167,7 +167,7 @@ export default function MatchResult({
           </div>
         )}
         <div className="mr-actions">
-          <button className="galaxy-btn roll" onClick={onRematch}>
+          <button className="galaxy-btn" onClick={onRematch}>
             <Icon name="refresh" /> {t('mr.rematch')}
           </button>
           <button className="menu-btn" onClick={onNewMatch}>
