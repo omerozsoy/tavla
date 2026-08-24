@@ -553,7 +553,9 @@ button[aria-disabled='true'],
 }
 .setup-tile.active {
   border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, var(--btn-bg));
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
 }
 .setup-tile .bet-pct {
   font-size: 0.72rem;
@@ -561,7 +563,7 @@ button[aria-disabled='true'],
   font-variant-numeric: tabular-nums;
 }
 .setup-tile.active .bet-pct {
-  color: var(--accent);
+  color: rgba(255, 255, 255, 0.85);
 }
 /* Mac uzunlugu secici: net chip'ler (tikla-secilebilir) */
 .target-grid {
