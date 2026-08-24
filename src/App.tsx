@@ -2886,7 +2886,7 @@ export default function App() {
             <button
               className="account-btn account-admin"
               onClick={() =>
-                window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
+                window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
               }
             >
               <Icon name="crown" size={14} /> {t('menu.admin')}
@@ -3028,7 +3028,7 @@ export default function App() {
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () =>
-      window.open('/panel/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
+      window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
 

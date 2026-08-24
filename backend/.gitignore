@@ -24,3 +24,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Filament (deploy.sh -> filament:assets ile sunucuda uretilir)
+/public/css/filament
+/public/js/filament

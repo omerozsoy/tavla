@@ -2,7 +2,23 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PanelController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
+use Laravel\Sanctum\PersonalAccessToken;
+
+// Filament SSO: React uygulamasindaki "Yonetici" butonu Sanctum token'i ile buraya
+// gelir; token gecerli ve admin ise web oturumu acilir ve Filament paneline yonlenir.
+Route::get('/admin/enter', function (Request $request) {
+    $pat = PersonalAccessToken::findToken((string) $request->query('token', ''));
+    $user = $pat?->tokenable;
+    if ($user && $user->is_admin && ! $user->isBanned()) {
+        Auth::guard('web')->login($user);
+        $request->session()->regenerate();
+        return redirect('/admin');
+    }
+    return redirect('/admin/login');
+});
 
 // E-posta dogrulama linki (imzali URL). Dogrular ve SPA'ya yonlendirir.
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
