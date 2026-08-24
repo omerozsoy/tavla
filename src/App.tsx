@@ -1919,6 +1919,56 @@ export default function App() {
       /* yok */
     }
   }
+
+  // Lobide asagi-cek-yenile (pull-to-refresh). App sabit ekran (body overflow:hidden)
+  // oldugu icin tarayicinin native jesti calismaz; en ustteyken cekince kendimiz reload ederiz.
+  const [ptrDist, setPtrDist] = useState(0)
+  const ptrDistRef = useRef(0)
+  const ptrPullingRef = useRef(false)
+  useEffect(() => {
+    if (!home) return
+    const THRESHOLD = 66
+    const MAX = 92
+    let startY = 0
+    const scroller = () => document.querySelector('.lobby-main') as HTMLElement | null
+    const onStart = (e: TouchEvent) => {
+      const sc = scroller()
+      if (sc && sc.scrollTop <= 0 && e.touches.length === 1) {
+        startY = e.touches[0].clientY
+        ptrPullingRef.current = true
+      } else {
+        ptrPullingRef.current = false
+      }
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!ptrPullingRef.current) return
+      const dy = e.touches[0].clientY - startY
+      const d = dy > 0 ? Math.min(dy * 0.45, MAX) : 0
+      ptrDistRef.current = d
+      setPtrDist(d)
+    }
+    const onEnd = () => {
+      if (ptrPullingRef.current && ptrDistRef.current >= THRESHOLD) {
+        setPtrDist(MAX)
+        window.location.reload()
+        return
+      }
+      ptrPullingRef.current = false
+      ptrDistRef.current = 0
+      setPtrDist(0)
+    }
+    window.addEventListener('touchstart', onStart, { passive: true })
+    window.addEventListener('touchmove', onMove, { passive: true })
+    window.addEventListener('touchend', onEnd, { passive: true })
+    window.addEventListener('touchcancel', onEnd, { passive: true })
+    return () => {
+      window.removeEventListener('touchstart', onStart)
+      window.removeEventListener('touchmove', onMove)
+      window.removeEventListener('touchend', onEnd)
+      window.removeEventListener('touchcancel', onEnd)
+    }
+  }, [home])
+
   useEffect(() => {
     const onChange = () => setIsFull(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onChange)
@@ -3254,6 +3304,22 @@ export default function App() {
       <>
         {accountBar}
         {mobileNav}
+        {ptrDist > 0 && (
+          <div
+            className="ptr"
+            style={{
+              transform: `translateX(-50%) translateY(${ptrDist}px)`,
+              opacity: Math.min(ptrDist / 66, 1),
+            }}
+          >
+            <div
+              className={`ptr-circle ${ptrDist >= 66 ? 'ready' : ''}`}
+              style={{ transform: `rotate(${Math.round(ptrDist * 3)}deg)` }}
+            >
+              ↻
+            </div>
+          </div>
+        )}
         <div className="app lobby">
           <SideMenu
             inGame={false}
