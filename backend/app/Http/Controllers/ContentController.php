@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class ContentController extends Controller
 {
-    private const TYPES = ['service', 'blog', 'news', 'event', 'club', 'ad', 'quiz'];
+    private const TYPES = ['service', 'blog', 'news', 'event', 'club', 'ad', 'quiz', 'magazine'];
 
     // Herkese acik: bir turun yayinlanmis icerikleri (uygun siralamayla)
     public function index(Request $request)
@@ -21,7 +21,7 @@ class ContentController extends Controller
         // Siralama: etkinlik -> tarihe gore; blog/haber -> en yeni; kulup -> il; hizmet -> sort
         if ($type === 'event') {
             $q->orderBy('event_at');
-        } elseif ($type === 'blog' || $type === 'news') {
+        } elseif ($type === 'blog' || $type === 'news' || $type === 'magazine') {
             $q->orderByDesc('event_at')->orderByDesc('created_at');
         } elseif ($type === 'club') {
             $q->orderBy('province')->orderBy('title');

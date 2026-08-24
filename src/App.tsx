@@ -428,6 +428,8 @@ export default function App() {
                             ? newsSlug
                               ? 'haberler/' + newsSlug
                               : 'haberler'
+                          : contentView === 'magazine'
+                            ? 'tavla-magazin'
                             : contentView === 'club'
                               ? 'kulup-rehberi'
                               : boardSettingsOpen
@@ -496,6 +498,9 @@ export default function App() {
         case 'haberler':
           setContentView('news')
           setNewsSlug(seg[1] ?? null) // /haberler/<slug> -> detay
+          break
+        case 'tavla-magazin':
+          setContentView('magazine')
           break
         case 'kulup-rehberi':
           setContentView('club')
@@ -2986,6 +2991,7 @@ export default function App() {
     onServices: () => goPage(() => setContentView('service')),
     onBlog: () => goPage(() => setContentView('blog')),
     onNews: () => goPage(() => setContentView('news')),
+    onMagazine: () => goPage(() => setContentView('magazine')),
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
 

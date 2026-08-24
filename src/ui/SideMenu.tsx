@@ -34,6 +34,7 @@ export interface SideMenuProps {
   onServices?: () => void
   onBlog?: () => void
   onNews?: () => void
+  onMagazine?: () => void
   onHome?: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
@@ -160,6 +161,11 @@ export default function SideMenu(p: SideMenuProps) {
               <Icon name="chat" /> {t('menu.news')}
             </button>
           )}
+          {p.onMagazine && (
+            <button className="menu-btn" onClick={p.onMagazine}>
+              <Icon name="play" /> {t('menu.magazine')}
+            </button>
+          )}
         </div>
       )}
 
@@ -179,17 +185,6 @@ export default function SideMenu(p: SideMenuProps) {
         </button>
       </div>
 
-      {/* Ayarlar en altta sabit */}
-      <div className="menu-group menu-bottom">
-        <button className="menu-btn" onClick={p.onBoardSettings}>
-          <Icon name="settings" /> {t('menu.settings')}
-        </button>
-        {p.canInstall && (
-          <button className="menu-btn menu-install" onClick={p.onInstall}>
-            <Icon name="install" /> {t('menu.install')}
-          </button>
-        )}
-      </div>
     </aside>
   )
 }

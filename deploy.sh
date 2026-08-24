@@ -13,5 +13,6 @@ $PHP artisan optimize:clear
 # Haberleri commit'li JSON'dan ice aktar (offline; sunucudan internet gerekmez).
 # Gorseller de commit'li (public/news) -> tekrar indirme yok. Hata olsa deploy patlamasin.
 $PHP artisan news:import --file=database/data/news.json || echo "UYARI: news:import atlandi."
+$PHP artisan magazine:import --file=database/data/magazine.json || echo "UYARI: magazine:import atlandi."
 
 echo "Deploy tamam: migrate + cache + haber importu."
