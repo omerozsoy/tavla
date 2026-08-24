@@ -565,6 +565,8 @@ export default function App() {
   const [rankedMatch, setRankedMatch] = useState(true) // false = casual (puana etki etmez)
   const clockRef = useRef(CLOCK_PRESETS.normal) // secili saat preseti (delay/over)
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
+  const targetsRef = useRef<number[]>([1]) // eslesme icin kabul edilen uzunluklar (coklu)
+  const matchTargetSyncedRef = useRef(false) // eslesme sonrasi anlasilan uzunluk uygulandi mi
   // Saat: hamle gecikmesi (delay, her tur sifirlanir) + oyuncu-basi rezerv bankasi
   // (white/black; maca gore kurulur, turlar boyunca tukenir - Galaxy tarzi).
   const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
@@ -1655,6 +1657,16 @@ export default function App() {
             : r,
         )
         if (rv.messages) setChat(rv.messages)
+        // Bekleyen oyuncu (p1) eslesince: sunucunun anlastigi uzunlugu uygula (henuz
+        // hamle senkronu gelmeden). Bir kez ve yalnizca oyun baslamadan.
+        if (!matchTargetSyncedRef.current && rv.target != null && appliedVersionRef.current < 0) {
+          matchTargetSyncedRef.current = true
+          if (onlineTargetRef.current !== rv.target) {
+            onlineTargetRef.current = rv.target
+            setMatch(newMatch(rv.target))
+            setClock(freshMatchClock(rv.target))
+          }
+        }
         if (rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
@@ -2064,6 +2076,7 @@ export default function App() {
     setSoloOpen(false)
     mmOriginRef.current = 'solo' // iptalde Tek Oyun ekranina don
     onlineTargetRef.current = target // secilen puan hedefi (1 = tek oyun)
+    targetsRef.current = [target]
     setMode('online')
     setHome(false)
     handleMatchmake()
@@ -2082,7 +2095,11 @@ export default function App() {
         user?.id,
         minRatingRef.current,
         betPctRef.current,
+        targetsRef.current,
       )
+      // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
+      matchTargetSyncedRef.current = res.room.target != null
+      if (res.room.target != null) onlineTargetRef.current = res.room.target
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -2212,6 +2229,7 @@ export default function App() {
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = 1 // turnuva maci: tek oyun
+      targetsRef.current = [1]
       setMatch(newMatch(1))
       setStarter('white')
       setTurnsPlayed(0)
@@ -2261,6 +2279,7 @@ export default function App() {
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = target
+      targetsRef.current = [target]
       setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
@@ -2348,7 +2367,8 @@ export default function App() {
     // Mac Oyunu: her zaman online -> gercek rakiple dogrudan eslesme (Oyunu Baslat)
     if (opts.mode === 'online') {
       mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
-      onlineTargetRef.current = opts.target
+      targetsRef.current = opts.targets && opts.targets.length ? opts.targets : [opts.target]
+      onlineTargetRef.current = Math.max(...targetsRef.current) // gecici; anlasilan uzunluk eslesmede kesinlesir
       stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
       betPctRef.current = opts.betPct ?? 0
       minRatingRef.current = opts.minRating ?? 0
