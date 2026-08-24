@@ -7,6 +7,21 @@ set -e
 PHP=/opt/plesk/php/8.2/bin/php
 cd "$(dirname "$0")/backend"
 
+# ÖNEMLI: vendor/ git'e dahil DEGIL. Filament (ve diger paketler) sunucuda composer
+# install ile kurulmali. Bu adim basarisiz olursa (composer PATH'te yoksa) Plesk
+# "Composer" sekmesinden ELLE Install calistir; aksi halde uygulama Filament siniflarini
+# bulamaz ve site acilmaz.
+if command -v composer >/dev/null 2>&1; then
+  composer install --no-dev --optimize-autoloader --no-interaction
+elif [ -f composer.phar ]; then
+  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction
+else
+  echo "UYARI: composer bulunamadi -> Plesk 'Composer' sekmesinden Install calistir!"
+fi
+
+# Filament statik varliklarini (css/js) public'e yayinla
+$PHP artisan filament:assets || echo "UYARI: filament:assets atlandi"
+
 $PHP artisan migrate --force
 $PHP artisan optimize:clear
 
