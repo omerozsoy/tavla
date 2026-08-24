@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
+import { divisionOfPR } from '../badges'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -161,7 +162,15 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
           <div className="report-stats">
             {pr != null && (
               <div className="rep-pr">
-                PR <b>{pr.toFixed(2)}</b>
+                <span className="rep-pr-num">
+                  PR <b>{pr.toFixed(2)}</b>
+                </span>
+                <span
+                  className="rep-pr-title"
+                  style={{ color: divisionOfPR(pr).color, borderColor: divisionOfPR(pr).color }}
+                >
+                  <Icon name={divisionOfPR(pr).icon} size={14} /> {t(divisionOfPR(pr).key)}
+                </span>
               </div>
             )}
             <div className="rep-line">

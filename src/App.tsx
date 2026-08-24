@@ -16,6 +16,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { FRAMES, frameStyle } from './cosmetics'
+import { divisionOfPR } from './badges'
 import { Sound, isMuted, setMuted } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
@@ -2499,18 +2500,8 @@ export default function App() {
   // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
   const prOf = (c: Player): number | null =>
     prStats[c].decisions > 0 ? (prStats[c].loss / prStats[c].decisions) * 500 : null
-  const prBand = (p: number | null): string =>
-    p == null
-      ? ''
-      : p <= 3
-        ? 'pr.worldClass'
-        : p <= 6
-          ? 'pr.expert'
-          : p <= 10
-            ? 'pr.strong'
-            : p <= 15
-              ? 'pr.intermediate'
-              : 'pr.beginner'
+  // PR -> seviye unvani (9 kademeli standart tavla tablosu; badges.ts)
+  const prBand = (p: number | null): string => (p == null ? '' : divisionOfPR(p).key)
   const prHumanColor: Player = online ? myColor : 'white'
   const prValue = prOf(prHumanColor)
   const prBandKey = prBand(prValue)

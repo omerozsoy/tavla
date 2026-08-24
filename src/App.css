@@ -4053,11 +4053,25 @@ button[aria-disabled='true'],
   margin: 0 0 12px;
 }
 .rep-pr {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   font-size: 1.2rem;
   margin-bottom: 10px;
 }
 .rep-pr b {
   color: #7ee0a0;
+}
+.rep-pr-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
 }
 .rep-line {
   display: flex;
