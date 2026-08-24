@@ -128,6 +128,51 @@ h4,
   letter-spacing: -0.01em;
 }
 
+/* ---- Tutarli durumlar (P1: butonlar / bos durum / yukleme) ---- */
+/* Devre disi: tum etkilesimli ogeler ayni his (ux: disabled-states) */
+button:disabled,
+button[aria-disabled='true'],
+.menu-btn:disabled,
+.galaxy-btn:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Bos durum: tek gorsel dil (admin/lb/home paneli hepsi ayni) */
+.admin-empty,
+.lb-empty,
+.home-panel-empty,
+.empty-state {
+  padding: 28px 14px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.admin-empty.small,
+.lb-empty.small,
+.empty-state.sm {
+  padding: 18px 12px;
+  font-size: 0.86rem;
+}
+
+/* Yukleme spinner'i (uzun beklemede metin yerine kullanilabilir) */
+.loading-spinner {
+  width: 42px;
+  height: 42px;
+  margin: 22px auto;
+  border: 3px solid color-mix(in srgb, var(--text) 16%, transparent);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: tv-spin 0.85s linear infinite;
+}
+@keyframes tv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .app {
   display: flex;
   gap: 12px;
@@ -2130,9 +2175,13 @@ h4,
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-shadow: var(--shadow-lg);
 }
 .register-card h2 {
   margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.25;
 }
 .register-sub {
   color: var(--muted);
@@ -2147,27 +2196,43 @@ h4,
   color: var(--muted);
 }
 .register-card input,
-.register-card select {
+.register-card select,
+.register-card textarea {
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid var(--btn-border);
   background: var(--input-bg);
   color: var(--text);
+  font-family: inherit;
   /* 16px: iOS'ta odaklaninca otomatik zoom'u onler (ux: readable-font-size) */
   font-size: 16px;
+  transition:
+    border-color 0.12s,
+    box-shadow 0.12s;
+}
+/* Odak halkasi: tutarli, gorunur (ux: focus-states) */
+.register-card input:focus,
+.register-card select:focus,
+.register-card textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .register-error {
-  color: #ff6b6b;
+  color: var(--color-error);
   font-size: 0.85rem;
 }
 .field-error {
-  color: #ff6b6b;
+  color: var(--color-error);
   font-size: 0.78rem;
   margin-top: 2px;
 }
 .register-card input.invalid {
-  border-color: #ff6b6b;
-  background: rgba(255, 107, 107, 0.08);
+  border-color: var(--color-error);
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+}
+.register-card input.invalid:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-error) 25%, transparent);
 }
 .register-actions {
   display: flex;
@@ -2369,6 +2434,41 @@ h4,
 @keyframes rotate-wiggle {
   0%, 100% { transform: rotate(0); }
   50% { transform: rotate(90deg); }
+}
+.rotate-play {
+  margin-top: 4px;
+}
+
+/* Manuel yatay: cihazin donme kilidi acikken gorunumu 90 dondur.
+   #root'a transform verildiginde tum position:fixed ogeler bu ataya gore
+   konumlanir -> hesap bari, saat, menu her sey birlikte doner. */
+#root.force-landscape {
+  position: fixed;
+  top: 0;
+  left: 100vw;
+  width: 100vh;
+  height: 100vw;
+  overflow: hidden;
+  transform-origin: top left;
+  transform: rotate(90deg);
+  /* Dondurulmus cerceveye gore board olcusu (yatay yerlesim) */
+  --board-h: max(300px, min(calc(100vw - 44px), calc((100vh - 360px) / 1.4)));
+}
+.force-landscape-exit {
+  position: fixed;
+  top: 8px;
+  right: 8px;
+  z-index: 300;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 /* ---- Hamburger (mobil menu dugmesi) ---- */
@@ -3037,9 +3137,10 @@ h4,
 }
 .home-panel-empty {
   color: var(--muted);
-  font-size: 0.88rem;
-  padding: 18px 4px;
+  font-size: 0.9rem;
+  padding: 22px 8px;
   text-align: center;
+  line-height: 1.5;
 }
 .live-dot {
   width: 9px;
@@ -3282,7 +3383,7 @@ h4,
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 26px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--shadow-xl);
   text-align: center;
 }
 .home-brand {
@@ -3669,7 +3770,7 @@ h4,
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 22px 20px;
-  box-shadow: 0 12px 44px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--shadow-xl);
 }
 .mr-head {
   display: grid;
@@ -4294,9 +4395,11 @@ h4,
   text-align: right;
 }
 .admin-empty {
-  padding: 24px;
+  padding: 28px 14px;
   text-align: center;
   color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 .admin-pager {
   display: flex;
@@ -4406,7 +4509,9 @@ h4,
 .lb-empty {
   color: var(--muted);
   text-align: center;
-  padding: 28px 12px;
+  padding: 28px 14px;
+  font-size: 0.92rem;
+  line-height: 1.5;
 }
 .lb-table {
   margin-top: 8px;

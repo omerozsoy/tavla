@@ -1876,6 +1876,36 @@ export default function App() {
     mq.addEventListener('change', on)
     return () => mq.removeEventListener('change', on)
   }, [])
+  // Manuel yatay: cihazin donme kilidi acikken (iPhone) fiziksel cevirmeden
+  // gorunumu 90 dondurup yatay oynatir. Kullanici "yine de yatay oyna" ile secer.
+  const [manualLandscape, setManualLandscape] = useState(() => {
+    try {
+      return localStorage.getItem('tv-force-landscape') === '1'
+    } catch {
+      return false
+    }
+  })
+  useEffect(() => {
+    const root = document.getElementById('root')
+    if (!root) return
+    root.classList.toggle('force-landscape', portraitMobile && manualLandscape)
+  }, [portraitMobile, manualLandscape])
+  const enableManualLandscape = () => {
+    setManualLandscape(true)
+    try {
+      localStorage.setItem('tv-force-landscape', '1')
+    } catch {
+      /* yok */
+    }
+  }
+  const disableManualLandscape = () => {
+    setManualLandscape(false)
+    try {
+      localStorage.removeItem('tv-force-landscape')
+    } catch {
+      /* yok */
+    }
+  }
   useEffect(() => {
     const onChange = () => setIsFull(!!document.fullscreenElement)
     document.addEventListener('fullscreenchange', onChange)
@@ -3311,11 +3341,25 @@ export default function App() {
           <div className="fc-label">{t('clock.finalWarn')}</div>
         </div>
       )}
-      {portraitMobile && (
+      {portraitMobile && !manualLandscape && (
         <div className="rotate-hint">
           <div className="rotate-icon">📱↻</div>
           <div className="rotate-text">{t('mobile.rotate')}</div>
+          {/* Donme kilidi acilamayanlar icin: fiziksel cevirmeden yatay oyna */}
+          <button className="galaxy-btn roll rotate-play" onClick={enableManualLandscape}>
+            {t('mobile.playLandscape')}
+          </button>
         </div>
+      )}
+      {portraitMobile && manualLandscape && (
+        <button
+          className="force-landscape-exit"
+          onClick={disableManualLandscape}
+          aria-label={t('mobile.exitLandscape')}
+          title={t('mobile.exitLandscape')}
+        >
+          <Icon name="x" size={16} />
+        </button>
       )}
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
