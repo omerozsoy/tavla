@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class RoomController extends Controller
 {
@@ -186,42 +187,56 @@ class RoomController extends Controller
             return response()->json(['ok' => false, 'pending' => true, 'coins' => $caller?->coins ?? 0]);
         }
 
-        // Atomik "settled" iddiasi -> yalnizca ilk cagri coin tasir
-        $claimed = Room::where('code', $code)->where('settled', false)->update(['settled' => true]);
-        if (! $claimed) {
-            $caller = User::find($callerId);
-            return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
-        }
-
         $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;
         $loserId = $winnerSlot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
 
-        $winner = User::find($winnerId);
-        $loser = User::find($loserId);
+        // ATOMIK: "settled" iddiasi + coin transferi TEK transaction, kullanicilar kilitli.
+        // Ayni oyuncunun es zamanli birden fazla oda cozumunde net coin uretimi/kaybi engellenir.
+        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake) {
+            // Yalnizca ilk cagri coin tasir
+            $claimed = Room::where('code', $code)->where('settled', false)->update(['settled' => true]);
+            if (! $claimed) {
+                return ['already' => true];
+            }
+            // Deadlock'u onlemek icin deterministik kilit sirasi (id'ye gore)
+            $ids = array_values(array_unique(array_filter([$winnerId, $loserId])));
+            sort($ids);
+            $locked = [];
+            foreach ($ids as $uid) {
+                $locked[$uid] = User::lockForUpdate()->find($uid);
+            }
+            $winner = $winnerId ? ($locked[$winnerId] ?? null) : null;
+            $loser = $loserId ? ($locked[$loserId] ?? null) : null;
 
-        // Transfer tutari: sabit stake, ya da % ise iki oyuncunun bahsinin min'i
-        if ($betPct > 0) {
-            $wBet = (int) floor((($winner->coins ?? 0) * $betPct) / 100);
-            $lBet = (int) floor((($loser->coins ?? 0) * $betPct) / 100);
-            $amount = max(0, min($wBet, $lBet));
-        } else {
-            $amount = $stake;
-        }
+            // Transfer tutari: sabit stake, ya da % ise iki oyuncunun bahsinin min'i
+            if ($betPct > 0) {
+                $wBet = (int) floor((($winner->coins ?? 0) * $betPct) / 100);
+                $lBet = (int) floor((($loser->coins ?? 0) * $betPct) / 100);
+                $amount = max(0, min($wBet, $lBet));
+            } else {
+                $amount = $stake;
+            }
+            if ($winner) {
+                $winner->coins = ($winner->coins ?? 0) + $amount;
+                $winner->save();
+            }
+            if ($loser) {
+                $loser->coins = max(0, ($loser->coins ?? 0) - $amount);
+                $loser->save();
+            }
+            return ['amount' => $amount];
+        });
 
-        if ($winner) {
-            $winner->coins = ($winner->coins ?? 0) + $amount;
-            $winner->save();
-        }
-        if ($loser) {
-            $loser->coins = max(0, ($loser->coins ?? 0) - $amount);
-            $loser->save();
+        if (isset($out['already'])) {
+            $caller = User::find($callerId);
+            return response()->json(['ok' => false, 'coins' => $caller?->coins ?? 0]);
         }
 
         $caller = User::find($callerId);
         return response()->json([
             'ok' => true,
             'coins' => $caller?->coins ?? 0,
-            'stake' => $amount,
+            'stake' => $out['amount'],
             'won' => $winnerId === $callerId,
         ]);
     }
