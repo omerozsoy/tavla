@@ -2840,11 +2840,21 @@ button[aria-disabled='true'],
   transform-origin: top left;
   transform: rotate(90deg);
   /* Dondurulmus cerceveye gore board olcusu (numaralar icin ust/alt ~48px pay birakir) */
-  --board-h: max(250px, min(calc(100vw - 58px), calc((100vh - 280px) / 1.4)));
+  --board-h: max(220px, min(calc(100vw - 96px), calc((100vh - 240px) / 1.4)));
 }
 /* Force-landscape: gercek viewport 390px dikey oldugundan max-width:720/900 DIKEY
    mobil kurallari tetikleniyor; #root 844px genis oldugu icin bunlari geri alip
    Galaxy tarzi YATAY duzeni zorluyoruz. */
+/* Hesap cubugu (ust menu) oyun-ici yatayda board'a biniyordu -> gizle (menu game-ham'da) */
+#root.force-landscape .account-bar {
+  display: none;
+}
+#root.force-landscape .analysis {
+  display: none;
+}
+#root.force-landscape .status {
+  display: none;
+}
 #root.force-landscape .app {
   padding: 4px 6px;
   gap: 6px;
@@ -3114,8 +3124,13 @@ button[aria-disabled='true'],
 /* Yatay mobil: board'a maksimum yer */
 @media (max-height: 560px) and (orientation: landscape) {
   :root {
-    --header-h: 40px;
-    --board-h: max(220px, min(calc(100vh - 54px), calc((100vw - 150px) / 1.4)));
+    --header-h: 6px;
+    --board-h: max(200px, min(calc(100vh - 62px), calc((100vw - 150px) / 1.4)));
+  }
+  /* Hesap cubugu oyun-ici yatayda board'a biniyordu -> gizle (menu game-ham'da) */
+  .account-bar,
+  .status {
+    display: none;
   }
   /* Fiziksel yatayda da panel dar, avatarlar kucuk (Galaxy tarzi) */
   .main {
