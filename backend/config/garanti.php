@@ -24,8 +24,9 @@ return [
     ],
 
     // Plan fiyatlari (TRY, kurus cinsinden). Kendi fiyatlariniza gore guncelleyin.
+    // Tutarlar kurus cinsindendir (TL x 100). Tek tip uyelik "Premium": aylik 200 TL, yillik 2000 TL.
     'prices' => [
-        'star'    => ['yearly' => 79999, 'monthly' => 7999],
-        'starpro' => ['yearly' => 149999, 'monthly' => 14999],
+        'star'    => ['yearly' => 200000, 'monthly' => 20000],
+        'starpro' => ['yearly' => 200000, 'monthly' => 20000], // eski id -> ayni fiyata esitlendi
     ],
 ];

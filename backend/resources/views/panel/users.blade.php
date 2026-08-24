@@ -65,8 +65,7 @@
                 @csrf<input type="hidden" name="action" value="plan">
                 <select name="plan" style="width:auto">
                   <option value="free" @selected($u->plan_active==='free')>Ücretsiz</option>
-                  <option value="star" @selected($u->plan_active==='star')>Star</option>
-                  <option value="starpro" @selected($u->plan_active==='starpro')>StarPRO</option>
+                  <option value="star" @selected($u->plan_active==='star' || $u->plan_active==='starpro')>Premium</option>
                 </select>
                 <input type="number" name="days" value="365" min="1" title="Gün" style="width:70px">
                 <button class="btn sm ghost">Plan Ver</button>
