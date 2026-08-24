@@ -20,15 +20,6 @@ const paras = (body?: string | null) =>
     .map((s) => s.trim())
     .filter(Boolean)
 
-// Kart ozeti: govdenin ilk cumlelerinden ~N karakterlik temiz metin
-const excerpt = (body?: string | null, max = 120): string => {
-  const flat = (body ?? '').replace(/\s+/g, ' ').trim()
-  if (flat.length <= max) return flat
-  const cut = flat.slice(0, max)
-  const lastSpace = cut.lastIndexOf(' ')
-  return (lastSpace > 40 ? cut.slice(0, lastSpace) : cut).trimEnd() + '…'
-}
-
 function fmtDate(s?: string | null, withTime = false): string {
   if (!s) return ''
   const d = new Date(s)
@@ -169,51 +160,22 @@ export default function ContentView({
               onOpenImage={setLightbox}
             />
           ) : (
-            <div className="news-board">
-              {items[0] && (
+            <div className="news-grid">
+              {items.map((p) => (
                 <button
-                  className="news-featured"
-                  onClick={() => onOpenDetail?.(slugify(items[0].title))}
+                  key={p.id}
+                  className="news-card"
+                  onClick={() => onOpenDetail?.(slugify(p.title))}
                 >
-                  {items[0].image && (
-                    <div className="news-featured-media">
-                      <img src={items[0].image} alt="" />
-                    </div>
+                  {p.image && (
+                    <img className="news-card-img" src={p.image} alt="" loading="lazy" />
                   )}
-                  <div className="news-featured-text">
-                    <span className="news-kicker">
-                      <span className="news-kicker-dot" /> Öne çıkan
-                    </span>
-                    <h3 className="news-featured-title">{items[0].title}</h3>
-                    <p className="news-featured-excerpt">{excerpt(items[0].body, 180)}</p>
-                    <span className="news-meta">
-                      <Icon name="calendar" size={13} /> {fmtDate(items[0].event_at ?? null)}
-                    </span>
+                  <div className="news-card-info">
+                    <span className="news-card-title">{p.title}</span>
+                    <span className="news-card-date">{fmtDate(p.event_at ?? null)}</span>
                   </div>
                 </button>
-              )}
-              <div className="news-grid">
-                {items.slice(1).map((p) => (
-                  <button
-                    key={p.id}
-                    className="news-card"
-                    onClick={() => onOpenDetail?.(slugify(p.title))}
-                  >
-                    {p.image && (
-                      <div className="news-card-media">
-                        <img src={p.image} alt="" loading="lazy" />
-                      </div>
-                    )}
-                    <div className="news-card-info">
-                      <span className="news-card-title">{p.title}</span>
-                      <p className="news-card-excerpt">{excerpt(p.body, 96)}</p>
-                      <span className="news-meta">
-                        <Icon name="calendar" size={12} /> {fmtDate(p.event_at ?? null)}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           )
         ) : type === 'blog' ? (
@@ -309,8 +271,6 @@ function NewsDetail({
   onOpenImage: (index: number) => void
 }) {
   const gallery = (item.gallery ?? []).filter(Boolean)
-  const body = paras(item.body)
-  const [lead, ...rest] = body
   return (
     <article className="news-detail">
       <button className="news-back" onClick={onBack}>
@@ -319,49 +279,35 @@ function NewsDetail({
         </span>{' '}
         {backLabel}
       </button>
-      <header className="news-article-head">
-        <span className="news-kicker">
-          <span className="news-kicker-dot" /> {backLabel}
-        </span>
-        <h3 className="news-detail-title">{item.title}</h3>
-        <div className="news-detail-date">
-          <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
-        </div>
-      </header>
+      <h3 className="news-detail-title">{item.title}</h3>
+      <div className="news-detail-date">
+        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
+      </div>
       {item.image && (
-        <figure className="news-detail-hero-wrap">
-          <img
-            className="news-detail-hero"
-            src={item.image}
-            alt={item.title}
-            onClick={() => onOpenImage(0)}
-          />
-        </figure>
+        <img
+          className="news-detail-hero"
+          src={item.image}
+          alt={item.title}
+          onClick={() => onOpenImage(0)}
+        />
       )}
       <div className="news-detail-body">
-        {lead && <p className="news-lead">{lead}</p>}
-        {rest.map((x, i) => (
+        {paras(item.body).map((x, i) => (
           <p key={i}>{x}</p>
         ))}
       </div>
       {gallery.length > 0 && (
-        <div className="news-gallery-section">
-          <div className="news-gallery-label">
-            <Icon name="camera" size={14} /> Galeri
-            <span className="news-gallery-count">{gallery.length}</span>
-          </div>
-          <div className="news-gallery">
-            {gallery.map((g, i) => (
-              <button
-                key={i}
-                className="news-gallery-thumb"
-                onClick={() => onOpenImage(i + 1)}
-                aria-label={`Görsel ${i + 2}`}
-              >
-                <img src={g} alt="" loading="lazy" />
-              </button>
-            ))}
-          </div>
+        <div className="news-gallery">
+          {gallery.map((g, i) => (
+            <button
+              key={i}
+              className="news-gallery-thumb"
+              onClick={() => onOpenImage(i + 1)}
+              aria-label={`Görsel ${i + 2}`}
+            >
+              <img src={g} alt="" loading="lazy" />
+            </button>
+          ))}
         </div>
       )}
     </article>
