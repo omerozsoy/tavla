@@ -12,6 +12,7 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   club: { icon: 'pin', titleKey: 'menu.clubs' },
   ad: { icon: 'star', titleKey: 'menu.services' }, // reklamlar ContentView'de gosterilmez
   quiz: { icon: 'book', titleKey: 'menu.quiz' }, // quiz QuizPlay ile oynatilir
+  magazine: { icon: 'play', titleKey: 'menu.magazine' }, // Tavla Magazin (YouTube videolari)
 }
 
 const paras = (body?: string | null) =>
@@ -73,13 +74,16 @@ export default function ContentView({
     ? [newsItem.image, ...(newsItem.gallery ?? [])].filter((x): x is string => !!x)
     : []
   const [lightbox, setLightbox] = useState<number | null>(null) // acik gorsel indeksi
-  // Esc onceligi: once lightbox, sonra detaydan listeye, sonra sayfayi kapat
+  const [playVideo, setPlayVideo] = useState<string | null>(null) // oynatilan YouTube video id
+  // Esc onceligi: once video oynatici/lightbox, sonra detaydan listeye, sonra sayfayi kapat
   useEscape(
-    lightbox !== null
-      ? () => setLightbox(null)
-      : newsItem && onCloseDetail
-        ? onCloseDetail
-        : onClose,
+    playVideo
+      ? () => setPlayVideo(null)
+      : lightbox !== null
+        ? () => setLightbox(null)
+        : newsItem && onCloseDetail
+          ? onCloseDetail
+          : onClose,
   )
 
   useEffect(() => {
@@ -125,7 +129,7 @@ export default function ContentView({
     <div className="register-overlay modal page">
       <div
         className={`register-card content-card${
-          type === 'news' && !newsItem ? ' content-card-wide' : ''
+          (type === 'news' && !newsItem) || type === 'magazine' ? ' content-card-wide' : ''
         }`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -178,6 +182,27 @@ export default function ContentView({
               ))}
             </div>
           )
+        ) : type === 'magazine' ? (
+          <div className="mag-grid">
+            {items.map((v) => (
+              <button
+                key={v.id}
+                className="mag-card"
+                onClick={() => v.video_id && setPlayVideo(v.video_id)}
+              >
+                <div className="mag-thumb">
+                  {v.image && <img src={v.image} alt="" loading="lazy" />}
+                  <span className="mag-play">
+                    <Icon name="play" size={22} />
+                  </span>
+                </div>
+                <div className="mag-info">
+                  <span className="mag-title">{v.title}</span>
+                  <span className="mag-date">{fmtDate(v.event_at ?? null)}</span>
+                </div>
+              </button>
+            ))}
+          </div>
         ) : type === 'blog' ? (
           <div className="content-posts">
             {items.map((p) => {
@@ -254,7 +279,27 @@ export default function ContentView({
           onIndex={setLightbox}
         />
       )}
+      {playVideo && <VideoPlayer videoId={playVideo} onClose={() => setPlayVideo(null)} />}
     </>
+  )
+}
+
+// YouTube video oynatici (tam ekran overlay, arka plana/carpiya tikla kapat)
+function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => void }) {
+  return (
+    <div className="videobox" onClick={onClose}>
+      <button className="videobox-close" onClick={onClose} aria-label="Kapat">
+        <Icon name="x" size={22} />
+      </button>
+      <div className="videobox-frame" onClick={(e) => e.stopPropagation()}>
+        <iframe
+          src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
+          title="Tavla Magazin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowFullScreen
+        />
+      </div>
+    </div>
   )
 }
 

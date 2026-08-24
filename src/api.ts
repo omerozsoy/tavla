@@ -532,7 +532,7 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   return d.matches
 }
 // ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----
-export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz'
+export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz' | 'magazine'
 export interface Content {
   id: number
   type: ContentType
@@ -544,6 +544,7 @@ export interface Content {
   contact?: string | null
   image?: string | null
   gallery?: string[] | null
+  video_id?: string | null
   event_at?: string | null
   sort: number
   published: boolean
