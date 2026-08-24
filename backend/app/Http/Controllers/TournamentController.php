@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tournament;
+use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TournamentController extends Controller
 {
@@ -53,35 +55,44 @@ class TournamentController extends Controller
 
     public function join(Request $request, Tournament $tournament)
     {
-        if ($tournament->status !== 'open') {
-            return response()->json(['message' => 'Turnuva kayıtları kapalı.'], 422);
-        }
-        $players = $tournament->players ?? [];
-        // size 0 = sinirsiz (kapasite yok); aksi halde dolulukta kayit kapali
-        if ($tournament->size > 0 && count($players) >= $tournament->size) {
-            return response()->json(['message' => 'Turnuva dolu.'], 422);
-        }
         $me = $request->user();
-        // Zaten kayitli mi?
-        $already = false;
-        foreach ($players as $p) {
-            if (($p['id'] ?? null) === $me->id) {
-                $already = true;
-                break;
-            }
-        }
-        // Giris ucreti (kayitli degilse) -> coin dus, odul havuzuna ekle
         $fee = $tournament->entry_fee ?? 0;
-        if (! $already && $fee > 0) {
-            if (($me->coins ?? 0) < $fee) {
-                return response()->json(['message' => 'Giriş ücreti için yetersiz coin.'], 422);
+
+        // ATOMIK: turnuva satirini kilitle -> kapasite/kayit/ucret kontrolu tutarli
+        // (cift katilim, cift ucret tahsili, eksi bakiye yaris korumasi).
+        $out = DB::transaction(function () use ($tournament, $me, $fee) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t || $t->status !== 'open') {
+                return ['err' => 'Turnuva kayıtları kapalı.', 'code' => 422];
             }
-            $me->coins = ($me->coins ?? 0) - $fee;
-            $me->save();
-            $tournament->prize_coins = ($tournament->prize_coins ?? 0) + $fee;
-            $tournament->save();
+            $players = $t->players ?? [];
+            if ($t->size > 0 && count($players) >= $t->size) {
+                return ['err' => 'Turnuva dolu.', 'code' => 422];
+            }
+            $already = false;
+            foreach ($players as $p) {
+                if (($p['id'] ?? null) === $me->id) {
+                    $already = true;
+                    break;
+                }
+            }
+            if (! $already && $fee > 0) {
+                $u = User::lockForUpdate()->find($me->id);
+                if (($u->coins ?? 0) < $fee) {
+                    return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
+                }
+                $u->coins = ($u->coins ?? 0) - $fee;
+                $u->save();
+                $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
+                $t->save();
+            }
+            $this->addPlayer($t, $me); // kilit altinda, idempotent
+            return ['ok' => true];
+        });
+
+        if (isset($out['err'])) {
+            return response()->json(['message' => $out['err']], $out['code']);
         }
-        $this->addPlayer($tournament, $me);
         $t = $tournament->fresh();
         // Sabit boyut dolduysa otomatik basla (sinirsizda admin elle baslatir)
         if ($t->size > 0 && count($t->players) >= $t->size) {
@@ -102,57 +113,68 @@ class TournamentController extends Controller
             return response()->json(['message' => 'Turnuva aktif değil.'], 422);
         }
         $me = $request->user()->id;
-        $bracket = $tournament->bracket;
-        $found = null;
-        foreach ($bracket as $ri => $round) {
-            foreach ($round as $mi => $m) {
-                if ($m['key'] === $data['match']) {
-                    $found = [$ri, $mi, $m];
-                    break 2;
+
+        // ATOMIK: turnuva satirini kilitle -> "sonuc zaten girildi" ve odul odemesi
+        // yaris-guvenli (bracket bozulmasi + cift odul odemesi engellenir).
+        $out = DB::transaction(function () use ($tournament, $data, $me) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t || $t->status !== 'running') {
+                return ['err' => 'Turnuva aktif değil.', 'code' => 422];
+            }
+            $bracket = $t->bracket;
+            $found = null;
+            foreach ($bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if ($m['key'] === $data['match']) {
+                        $found = [$ri, $mi, $m];
+                        break 2;
+                    }
                 }
             }
-        }
-        if (! $found) {
-            return response()->json(['message' => 'Maç bulunamadı.'], 404);
-        }
-        [$ri, $mi, $m] = $found;
-        $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
-        if (! in_array($me, $ids, true)) {
-            return response()->json(['message' => 'Bu maçta değilsin.'], 403);
-        }
-        if (! in_array($data['winner_id'], $ids, true)) {
-            return response()->json(['message' => 'Geçersiz kazanan.'], 422);
-        }
-        if (! empty($m['winner'])) {
-            return response()->json(['message' => 'Sonuç zaten girildi.'], 422);
-        }
+            if (! $found) {
+                return ['err' => 'Maç bulunamadı.', 'code' => 404];
+            }
+            [$ri, $mi, $m] = $found;
+            $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
+            if (! in_array($me, $ids, true)) {
+                return ['err' => 'Bu maçta değilsin.', 'code' => 403];
+            }
+            if (! in_array($data['winner_id'], $ids, true)) {
+                return ['err' => 'Geçersiz kazanan.', 'code' => 422];
+            }
+            if (! empty($m['winner'])) {
+                return ['err' => 'Sonuç zaten girildi.', 'code' => 422];
+            }
 
-        $bracket[$ri][$mi]['winner'] = $data['winner_id'];
-        $winner = $bracket[$ri][$mi][$m['p1']['id'] === $data['winner_id'] ? 'p1' : 'p2'];
+            $bracket[$ri][$mi]['winner'] = $data['winner_id'];
+            $winner = $bracket[$ri][$mi][$m['p1']['id'] === $data['winner_id'] ? 'p1' : 'p2'];
 
-        // Kazanani bir sonraki tura tasi
-        if (isset($bracket[$ri + 1])) {
-            $nextIndex = intdiv($mi, 2);
-            $slot = $mi % 2 === 0 ? 'p1' : 'p2';
-            $bracket[$ri + 1][$nextIndex][$slot] = $winner;
-        } else {
-            // Final bitti -> sampiyon
-            $tournament->champion_id = $data['winner_id'];
-            $tournament->status = 'finished';
-            // Odul coin'i sampiyona ode (bir kez)
-            if (! $tournament->prize_paid && $tournament->prize_coins > 0) {
-                $champ = \App\Models\User::find($data['winner_id']);
-                if ($champ) {
-                    $champ->coins = ($champ->coins ?? 0) + $tournament->prize_coins;
-                    $champ->save();
-                    $tournament->prize_paid = true;
+            if (isset($bracket[$ri + 1])) {
+                $nextIndex = intdiv($mi, 2);
+                $slot = $mi % 2 === 0 ? 'p1' : 'p2';
+                $bracket[$ri + 1][$nextIndex][$slot] = $winner;
+            } else {
+                // Final bitti -> sampiyon
+                $t->champion_id = $data['winner_id'];
+                $t->status = 'finished';
+                // Odul coin'i sampiyona bir kez ode (kilit altinda check-then-set guvenli)
+                if (! $t->prize_paid && ($t->prize_coins ?? 0) > 0) {
+                    User::where('id', $data['winner_id'])->update([
+                        'coins' => DB::raw('COALESCE(coins,0) + '.(int) $t->prize_coins),
+                    ]);
+                    $t->prize_paid = true;
                 }
             }
-        }
 
-        $tournament->bracket = $bracket;
-        $tournament->save();
-        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+            $t->bracket = $bracket;
+            $t->save();
+            return ['t' => $t];
+        });
+
+        if (isset($out['err'])) {
+            return response()->json(['message' => $out['err']], $out['code']);
+        }
+        return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
 
     // Bir turnuva maci icin paylasimli oda kodu (bir kez uretilir, bracket'e saklanir)

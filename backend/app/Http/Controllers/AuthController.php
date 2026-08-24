@@ -143,8 +143,8 @@ class AuthController extends Controller
                 'nickname'   => $nick,
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
-                'email_verified_at' => now(), // Google e-postasi zaten dogrulanmis
             ]);
+            $user->markEmailAsVerified(); // Google e-postasi zaten dogrulanmis (fillable disi, guvenli)
         }
 
         if ($user->isBanned()) {
