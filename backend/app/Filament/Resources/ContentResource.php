@@ -27,19 +27,17 @@ class ContentResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
-    // Genel icerik turleri (Tavla Takvimi=event ayri sayfada; haber/video komutla gelir).
+    // Genel icerik turleri. Takvim/Haberler/Kulupler/Hizmetler/Magazin ayri sayfalarda.
     private const TYPES = [
         'blog' => 'Blog',
-        'service' => 'Hizmet',
-        'club' => 'Kulüp',
         'ad' => 'Reklam',
-        'news' => 'Haber',
     ];
 
     public static function getEloquentQuery(): Builder
     {
-        // Etkinlik (Tavla Takvimi) ve magazin videolari bu listede gorunmez.
-        return parent::getEloquentQuery()->whereNotIn('type', ['event', 'magazine', 'quiz']);
+        // Ayri sayfasi olan turler bu genel listede gorunmez.
+        return parent::getEloquentQuery()
+            ->whereNotIn('type', ['event', 'magazine', 'quiz', 'news', 'club', 'service']);
     }
 
     public static function form(Form $form): Form
