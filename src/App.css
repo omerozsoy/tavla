@@ -4587,6 +4587,17 @@ button[aria-disabled='true'],
   margin-bottom: 12px;
   line-height: 1.4;
 }
+.pa-count {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.pa-count .full {
+  color: var(--accent);
+  font-weight: 700;
+}
 .pa-analyze {
   width: 100%;
   margin-top: 6px;
