@@ -435,8 +435,10 @@ export default function App() {
                                   ? 'kulupler'
                                   : rulesOpen
                                     ? 'nasil-oynanir'
-                                    : setup === 'online'
-                                      ? 'yeni-oyun'
+                                    : analyzerOpen
+                                      ? 'pozisyon-analizi'
+                                      : setup === 'online'
+                                        ? 'yeni-oyun'
                                       : setup === 'pvb'
                                         ? 'yapay-zeka'
                                         : ''
@@ -503,6 +505,9 @@ export default function App() {
           break
         case 'nasil-oynanir':
           setRulesOpen(true)
+          break
+        case 'pozisyon-analizi':
+          setAnalyzerOpen(true)
           break
         case 'yeni-oyun':
           setSetup('online')
@@ -2883,6 +2888,7 @@ export default function App() {
     setQuizOpen(false)
     setClubsOpen(false)
     setRulesOpen(false)
+    setAnalyzerOpen(false)
     setSetup(null)
   }
   const goPage = (open: () => void) => {
@@ -2916,15 +2922,11 @@ export default function App() {
     onMembership: () => setMemOpen(true),
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
-    onAnalyzer: () => {
-      closeAllPages()
-      setAnalyzerOpen(true)
-    },
+    onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
     onBlunders: user
       ? () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true))
       : undefined,
     onLessons: () => goPage(() => setLessonsOpen(true)),
-    onRules: () => goPage(() => setRulesOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
     onInstall: handleInstall,
@@ -2991,7 +2993,8 @@ export default function App() {
     boardSettingsOpen ||
     quizOpen ||
     clubsOpen ||
-    rulesOpen
+    rulesOpen ||
+    analyzerOpen
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
@@ -3055,6 +3058,24 @@ export default function App() {
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {clubsOpen && user && <Clubs onClose={() => setClubsOpen(false)} />}
       {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}
+      {analyzerOpen && (
+        <div className="register-overlay modal page">
+          <PositionAnalyzer
+            neuralEval={(s, p, deep) =>
+              deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
+            }
+            neuralAnalyze={(s, deep) =>
+              deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
+            }
+            premium={premium}
+            onUpgrade={() => {
+              setAnalyzerOpen(false)
+              setMemOpen(true)
+            }}
+            onClose={() => setAnalyzerOpen(false)}
+          />
+        </div>
+      )}
       {boardSettingsOpen && (
         <BoardSettings
           boardTheme={boardTheme}
@@ -3176,28 +3197,6 @@ export default function App() {
   }
 
   // Pozisyon analiz modulu (tam ekran)
-  if (analyzerOpen) {
-    return (
-      <>
-        {accountBar}
-        <PositionAnalyzer
-          neuralEval={(s, p, deep) =>
-            deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
-          }
-          neuralAnalyze={(s, deep) =>
-            deep ? neuralRef.current.analyzeMoves2ply(s) : neuralRef.current.analyzeMoves(s)
-          }
-          premium={premium}
-          onUpgrade={() => {
-            setAnalyzerOpen(false)
-            setMemOpen(true)
-          }}
-          onClose={() => setAnalyzerOpen(false)}
-        />
-      </>
-    )
-  }
-
   // Lobi (ana menu): solda Yeni Oyun, ortasi bos. Akis burdan baslar.
   if (home) {
     return (

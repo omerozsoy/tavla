@@ -177,11 +177,6 @@ export default function SideMenu(p: SideMenuProps) {
         <button className="menu-btn" onClick={p.onFairness}>
           <Icon name="dice" /> {t('fair.title')}
         </button>
-        {p.onRules && (
-          <button className="menu-btn" onClick={p.onRules}>
-            <Icon name="book" /> {t('menu.rules')}
-          </button>
-        )}
       </div>
 
       {/* Ayarlar en altta sabit */}
