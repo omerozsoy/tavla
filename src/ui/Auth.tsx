@@ -77,6 +77,7 @@ export default function Auth({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
+  const [showPw, setShowPw] = useState(false)
   const [startRating, setStartRating] = useState(1400) // baslangic seviyesi (Galaxy tarzi)
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
   const [forgotSent, setForgotSent] = useState(false)
@@ -398,7 +399,7 @@ export default function Auth({
                   </button>
                   <button
                     type="submit"
-                    className="galaxy-btn roll"
+                    className="galaxy-btn"
                     disabled={busy || !loginId.trim()}
                   >
                     {t('auth.forgotSend')}
@@ -455,12 +456,23 @@ export default function Auth({
               </label>
               <label>
                 {t('reg.password')}
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                />
+                <div className="pw-field">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowPw((v) => !v)}
+                    aria-label={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                    title={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                  >
+                    <Icon name="eye" size={16} />
+                  </button>
+                </div>
               </label>
               <button
                 type="button"
@@ -480,12 +492,23 @@ export default function Auth({
                 <>
                   <label>
                     {t('reg.password')}
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      autoComplete="new-password"
-                    />
+                    <div className="pw-field">
+                      <input
+                        type={showPw ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        className="pw-toggle"
+                        onClick={() => setShowPw((v) => !v)}
+                        aria-label={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                        title={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                      >
+                        <Icon name="eye" size={16} />
+                      </button>
+                    </div>
                   </label>
                   <div className="reg-rating">
                     <div className="reg-rating-label">{t('reg.startLevel')}</div>
@@ -522,7 +545,7 @@ export default function Auth({
                 {t('reg.cancel')}
               </button>
             )}
-            <button type="submit" className="galaxy-btn roll" disabled={busy || nickTaken}>
+            <button type="submit" className="galaxy-btn" disabled={busy || nickTaken}>
               {editing
                 ? t('reg.submitEdit')
                 : tab === 'login'

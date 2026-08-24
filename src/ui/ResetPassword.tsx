@@ -16,6 +16,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showPw, setShowPw] = useState(false)
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
 
@@ -48,7 +49,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
         {done ? (
           <>
             <p className="register-sub">{t('reset.success')}</p>
-            <button type="button" className="galaxy-btn roll" onClick={onDone}>
+            <button type="button" className="galaxy-btn" onClick={onDone}>
               {t('reset.toLogin')}
             </button>
           </>
@@ -57,18 +58,29 @@ export default function ResetPassword({ email, token, onDone }: Props) {
             <p className="register-sub">{email}</p>
             <label>
               {t('reset.newPassword')}
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                autoFocus
-              />
+              <div className="pw-field">
+                <input
+                  type={showPw ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="pw-toggle"
+                  onClick={() => setShowPw((v) => !v)}
+                  aria-label={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                  title={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                >
+                  <Icon name="eye" size={16} />
+                </button>
+              </div>
             </label>
             <label>
               {t('reset.confirm')}
               <input
-                type="password"
+                type={showPw ? 'text' : 'password'}
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
                 autoComplete="new-password"
@@ -79,7 +91,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
               <button type="button" className="menu-btn" onClick={onDone}>
                 {t('reg.cancel')}
               </button>
-              <button type="submit" className="galaxy-btn roll" disabled={busy}>
+              <button type="submit" className="galaxy-btn" disabled={busy}>
                 {t('reset.submit')}
               </button>
             </div>

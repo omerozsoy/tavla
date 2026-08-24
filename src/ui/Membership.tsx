@@ -101,7 +101,13 @@ export default function Membership({
                         disabled={busy !== null || trialUsed}
                         onClick={() => trial(p.id as 'star' | 'starpro')}
                       >
-                        {busy === p.id ? '…' : trialUsed ? t('mem.trialUsed') : t('mem.tryFree')}
+                        {busy === p.id ? (
+                          <span className="btn-spinner" aria-hidden="true" />
+                        ) : trialUsed ? (
+                          t('mem.trialUsed')
+                        ) : (
+                          t('mem.tryFree')
+                        )}
                       </button>
                       <button
                         className="mem-sub"

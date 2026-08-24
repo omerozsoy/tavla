@@ -159,7 +159,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
           )}
 
           {canJoin && (
-            <button className="galaxy-btn roll" disabled={busy} onClick={() => join(active.id)}>
+            <button className="galaxy-btn" disabled={busy} onClick={() => join(active.id)}>
               {t('tourn.join')}
             </button>
           )}
@@ -181,7 +181,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
               ))}
               {isAdmin && (active.players?.length ?? 0) >= 2 ? (
                 <button
-                  className="galaxy-btn roll"
+                  className="galaxy-btn"
                   disabled={busy}
                   onClick={async () => {
                     setBusy(true)
@@ -304,7 +304,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
               </label>
             </div>
             <button
-              className="galaxy-btn roll"
+              className="galaxy-btn"
               disabled={busy || !name.trim()}
               onClick={create}
             >

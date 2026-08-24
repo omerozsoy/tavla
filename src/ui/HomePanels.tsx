@@ -42,7 +42,7 @@ export function LiveMatchesPanel({
         <Icon name="live" size={17} /> {t('live.title')}
       </div>
       {matches === null ? (
-        <div className="home-panel-empty">{t('an.loading')}</div>
+        <div className="home-panel-empty">{t('common.loading')}</div>
       ) : matches.length === 0 ? (
         <div className="home-panel-empty">{t('live.empty')}</div>
       ) : (
@@ -108,7 +108,9 @@ export function RankingPanel({
         </button>
       </div>
       {rows === null ? (
-        <div className="home-panel-empty">{t('an.loading')}</div>
+        <div className="home-panel-empty">{t('common.loading')}</div>
+      ) : rows.length === 0 ? (
+        <div className="home-panel-empty">{t('lb.empty')}</div>
       ) : (
         <div className="rank-list">
           {rows.map((r) => (
@@ -117,7 +119,9 @@ export function RankingPanel({
               className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
               onClick={() => r.id && onProfile(r.id)}
             >
-              <span className="rank-no">{r.rank}</span>
+              <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>
+                {r.rank}
+              </span>
               <span className="rank-name">
                 <span className="av-frame" style={frameStyle(r.frame)}>
                   <Avatar url={r.avatar} name={r.name} />

@@ -86,7 +86,7 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
               {score} / {questions.length}
             </div>
             <p className="register-sub">{t('quiz.done')}</p>
-            <button className="galaxy-btn roll" onClick={restart}>
+            <button className="galaxy-btn" onClick={restart}>
               <Icon name="refresh" /> {t('quiz.again')}
             </button>
           </div>
@@ -121,7 +121,7 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
                   {picked === q.answer ? t('quiz.correct') : t('quiz.wrong')}
                 </div>
                 {q.explain && <p>{q.explain}</p>}
-                <button className="galaxy-btn roll" onClick={next}>
+                <button className="galaxy-btn" onClick={next}>
                   {t('quiz.next')} →
                 </button>
               </div>

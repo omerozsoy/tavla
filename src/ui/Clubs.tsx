@@ -229,7 +229,7 @@ export default function Clubs({ onClose }: Props) {
                     {t('setup.cancel')}
                   </button>
                   <button
-                    className="galaxy-btn roll"
+                    className="galaxy-btn"
                     disabled={busy || !name.trim()}
                     onClick={doCreate}
                   >
@@ -300,7 +300,7 @@ export default function Clubs({ onClose }: Props) {
             {view.description && <div className="club-desc">{view.description}</div>}
             {!mine && (
               <button
-                className="galaxy-btn roll club-join-big"
+                className="galaxy-btn club-join-big"
                 disabled={busy}
                 onClick={() => doJoin(view.id)}
               >
