@@ -68,8 +68,19 @@ export default function ContentView({
   // Haber detayi acik mi (slug bir habere denk geliyorsa)
   const newsItem =
     type === 'news' && slug ? (items.find((i) => slugify(i.title) === slug) ?? null) : null
-  // Detaydayken Esc -> listeye don; degilse sayfayi kapat
-  useEscape(newsItem && onCloseDetail ? onCloseDetail : onClose)
+  // Detaydaki tum gorseller (kapak + galeri) - lightbox bunlar arasinda gezer
+  const detailImgs = newsItem
+    ? [newsItem.image, ...(newsItem.gallery ?? [])].filter((x): x is string => !!x)
+    : []
+  const [lightbox, setLightbox] = useState<number | null>(null) // acik gorsel indeksi
+  // Esc onceligi: once lightbox, sonra detaydan listeye, sonra sayfayi kapat
+  useEscape(
+    lightbox !== null
+      ? () => setLightbox(null)
+      : newsItem && onCloseDetail
+        ? onCloseDetail
+        : onClose,
+  )
 
   useEffect(() => {
     listContents(type)
@@ -110,6 +121,7 @@ export default function ContentView({
   }, [items, type])
 
   return (
+    <>
     <div className="register-overlay modal page">
       <div className="register-card content-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
@@ -136,7 +148,12 @@ export default function ContentView({
           </div>
         ) : type === 'news' ? (
           newsItem ? (
-            <NewsDetail item={newsItem} onBack={onCloseDetail ?? onClose} backLabel={t(head.titleKey)} />
+            <NewsDetail
+              item={newsItem}
+              onBack={onCloseDetail ?? onClose}
+              backLabel={t(head.titleKey)}
+              onOpenImage={setLightbox}
+            />
           ) : (
             <div className="news-grid">
               {items.map((p) => (
@@ -226,6 +243,15 @@ export default function ContentView({
         ) : null}
       </div>
     </div>
+      {lightbox !== null && detailImgs.length > 0 && (
+        <Lightbox
+          images={detailImgs}
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onIndex={setLightbox}
+        />
+      )}
+    </>
   )
 }
 
@@ -234,10 +260,12 @@ function NewsDetail({
   item,
   onBack,
   backLabel,
+  onOpenImage,
 }: {
   item: Content
   onBack: () => void
   backLabel: string
+  onOpenImage: (index: number) => void
 }) {
   const gallery = (item.gallery ?? []).filter(Boolean)
   return (
@@ -252,7 +280,14 @@ function NewsDetail({
       <div className="news-detail-date">
         <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
       </div>
-      {item.image && <img className="news-detail-hero" src={item.image} alt={item.title} />}
+      {item.image && (
+        <img
+          className="news-detail-hero"
+          src={item.image}
+          alt={item.title}
+          onClick={() => onOpenImage(0)}
+        />
+      )}
       <div className="news-detail-body">
         {paras(item.body).map((x, i) => (
           <p key={i}>{x}</p>
@@ -261,11 +296,92 @@ function NewsDetail({
       {gallery.length > 0 && (
         <div className="news-gallery">
           {gallery.map((g, i) => (
-            <img key={i} className="news-gallery-img" src={g} alt="" loading="lazy" />
+            <img
+              key={i}
+              className="news-gallery-img"
+              src={g}
+              alt=""
+              loading="lazy"
+              onClick={() => onOpenImage(i + 1)}
+            />
           ))}
         </div>
       )}
     </article>
+  )
+}
+
+// Tam ekran gorsel gosterici (lightbox): oklarla gezinme, arka plana/carpiya tikla kapat
+function Lightbox({
+  images,
+  index,
+  onClose,
+  onIndex,
+}: {
+  images: string[]
+  index: number
+  onClose: () => void
+  onIndex: (i: number) => void
+}) {
+  const many = images.length > 1
+  const go = (delta: number) => onIndex((index + delta + images.length) % images.length)
+  // Sol/sag ok tuslariyla gezinme (Esc ust bilesende yonetiliyor)
+  useEffect(() => {
+    if (!many) return
+    const h = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') go(-1)
+      else if (e.key === 'ArrowRight') go(1)
+    }
+    window.addEventListener('keydown', h)
+    return () => window.removeEventListener('keydown', h)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, many, images.length])
+
+  return (
+    <div className="lightbox" onClick={onClose}>
+      <button className="lightbox-close" onClick={onClose} aria-label="Kapat">
+        <Icon name="x" size={22} />
+      </button>
+      {many && (
+        <button
+          className="lightbox-nav prev"
+          onClick={(e) => {
+            e.stopPropagation()
+            go(-1)
+          }}
+          aria-label="Önceki"
+        >
+          <span className="lightbox-chev left">
+            <Icon name="chevron" size={26} />
+          </span>
+        </button>
+      )}
+      <img
+        className="lightbox-img"
+        src={images[index]}
+        alt=""
+        onClick={(e) => e.stopPropagation()}
+      />
+      {many && (
+        <button
+          className="lightbox-nav next"
+          onClick={(e) => {
+            e.stopPropagation()
+            go(1)
+          }}
+          aria-label="Sonraki"
+        >
+          <span className="lightbox-chev right">
+            <Icon name="chevron" size={26} />
+          </span>
+        </button>
+      )}
+      {many && (
+        <div className="lightbox-count">
+          {index + 1} / {images.length}
+        </div>
+      )}
+    </div>
   )
 }
 

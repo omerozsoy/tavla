@@ -77,6 +77,17 @@ class PaymentController extends Controller
         $res = $garanti->verifyCallback($post);
         $payment = Payment::where('order_id', $res['order_id'])->first();
 
+        // Denetim gunlugu: her callback (basari/basarisiz) kaydedilir (anlasmazlik/inceleme icin).
+        \Illuminate\Support\Facades\Log::info('payment.callback', [
+            'order_id' => $res['order_id'] ?? null,
+            'user_id' => $payment->user_id ?? null,
+            'ok' => $res['ok'] ?? false,
+            'hash_ok' => $res['hash_ok'] ?? false,
+            'bank_amount' => $post['txnamount'] ?? null,
+            'record_amount' => $payment->amount ?? null,
+            'ip' => $request->ip(),
+        ]);
+
         if ($payment) {
             // Tutar dogrulamasi: bankanin donusundeki txnamount kayitli tutarla uyusmali
             // (forged/tampered callback'e karsi ek savunma).
