@@ -14,6 +14,8 @@
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* Baslik/display fontu (govde Outfit; basliklar Poppins -> premium, 'AI degil' his) */
   --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
+  /* Coin/odul altini (tek token) */
+  --tv-gold: #ffd76a;
 
   /* Anlamsal durum renkleri (basari/uyari/hata/bilgi) — tablo, rozet, bildirim */
   --color-success: #2e9e5b;
@@ -663,7 +665,7 @@ button[aria-disabled='true'],
   color: var(--tv-cream);
 }
 .blunder-band.bad {
-  background: #d98b3a;
+  background: var(--color-warning);
   color: #1c1a17;
 }
 .blunder-band.ok {
@@ -4588,8 +4590,8 @@ button[aria-disabled='true'],
   font-size: 1.1rem;
 }
 .lb-row.mine {
-  background: color-mix(in srgb, #c9563f 22%, transparent);
-  outline: 1px solid color-mix(in srgb, #c9563f 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .lb-rank {
   text-align: center;
@@ -5281,8 +5283,16 @@ button[aria-disabled='true'],
   color: var(--text);
   cursor: pointer;
 }
+.tourn-litem {
+  transition:
+    border-color 0.12s,
+    background 0.12s,
+    box-shadow 0.12s;
+}
 .tourn-litem:hover {
-  border-color: #c9563f;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+  box-shadow: var(--shadow-sm);
 }
 .tourn-lname {
   font-weight: 700;
@@ -5294,7 +5304,7 @@ button[aria-disabled='true'],
 .tourn-champ {
   margin: 10px 0;
   font-weight: 800;
-  color: #ffd76a;
+  color: var(--tv-gold);
   font-size: 1.1rem;
 }
 .tourn-create-row {
@@ -5321,23 +5331,23 @@ button[aria-disabled='true'],
   margin: 6px 0 12px;
 }
 .tourn-prize {
-  background: color-mix(in srgb, #ffd76a 14%, transparent);
-  border: 1px solid color-mix(in srgb, #ffd76a 40%, transparent);
+  background: color-mix(in srgb, var(--tv-gold) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 40%, transparent);
   border-radius: 10px;
   padding: 8px 12px;
   margin: 8px 0;
   font-size: 0.92rem;
 }
 .tourn-prize b {
-  color: #ffd76a;
+  color: var(--tv-gold);
 }
 .tourn-prize-badge {
   margin-left: 8px;
-  color: #ffd76a;
+  color: var(--tv-gold);
   font-size: 0.82rem;
 }
 .account-coins {
-  color: #ffd76a;
+  color: var(--tv-gold);
   font-weight: 700;
   font-size: 0.85rem;
 }
@@ -5345,9 +5355,9 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  border: 1px solid color-mix(in srgb, #ffd76a 45%, var(--border));
-  background: color-mix(in srgb, #ffd76a 12%, transparent);
-  color: #ffd76a;
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 45%, var(--border));
+  background: color-mix(in srgb, var(--tv-gold) 12%, transparent);
+  color: var(--tv-gold);
   font-weight: 800;
   font-size: 0.85rem;
   border-radius: 999px;
@@ -5355,10 +5365,10 @@ button[aria-disabled='true'],
   cursor: pointer;
 }
 .account-coins-btn:hover {
-  background: color-mix(in srgb, #ffd76a 20%, transparent);
+  background: color-mix(in srgb, var(--tv-gold) 20%, transparent);
 }
 .account-coins-btn.ready {
-  border-color: #ffd76a;
+  border-color: var(--tv-gold);
   animation: coin-pulse 1.4s ease-in-out infinite;
 }
 .coin-gift {
@@ -5525,14 +5535,14 @@ button[aria-disabled='true'],
   margin: 2px 0 6px;
 }
 .shop-coins {
-  color: #ffd76a;
+  color: var(--tv-gold);
   font-weight: 800;
   font-size: 1.1rem;
 }
 .shop-daily {
-  border: 1px solid color-mix(in srgb, #ffd76a 50%, transparent);
-  background: color-mix(in srgb, #ffd76a 14%, transparent);
-  color: #ffd76a;
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 50%, transparent);
+  background: color-mix(in srgb, var(--tv-gold) 14%, transparent);
+  color: var(--tv-gold);
   border-radius: 999px;
   padding: 6px 12px;
   font-weight: 700;
@@ -5597,8 +5607,8 @@ button[aria-disabled='true'],
   font-weight: 700;
 }
 .shop-btn.buy {
-  border-color: color-mix(in srgb, #ffd76a 50%, transparent);
-  color: #ffd76a;
+  border-color: color-mix(in srgb, var(--tv-gold) 50%, transparent);
+  color: var(--tv-gold);
 }
 .shop-btn.active {
   border-color: #4fb477;
@@ -5615,7 +5625,7 @@ button[aria-disabled='true'],
 }
 .stats-coins {
   font-size: 0.9rem;
-  color: #ffd76a;
+  color: var(--tv-gold);
   margin-top: 2px;
 }
 .tourn-players h3,
@@ -5890,7 +5900,7 @@ button[aria-disabled='true'],
   cursor: pointer;
 }
 .invite-card.tourn-notice {
-  border-color: color-mix(in srgb, #ffd76a 50%, var(--border));
+  border-color: color-mix(in srgb, var(--tv-gold) 50%, var(--border));
 }
 .invite-acc {
   background: linear-gradient(135deg, #4fb477, #2f8a52);
@@ -6298,14 +6308,20 @@ button[aria-disabled='true'],
   text-align: left;
   font-size: 0.74rem;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.6;
+  letter-spacing: 0.06em;
+  color: var(--muted);
   padding: 6px 8px;
-  border-bottom: 1px solid var(--line, #e6ddcf);
+  border-bottom: 1px solid var(--border);
 }
 .club-table td {
   padding: 8px;
-  border-bottom: 1px solid var(--line, #efe8db);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.club-table tbody tr {
+  transition: background 0.12s;
+}
+.club-table tbody tr:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
 }
 .ct-rank {
   width: 34px;
@@ -6331,10 +6347,10 @@ button[aria-disabled='true'],
 }
 .ct-pts {
   font-weight: 700;
-  color: var(--navy, #2e4372);
+  color: var(--accent);
 }
 .ct-wl {
-  opacity: 0.75;
+  color: var(--muted);
 }
 .club-list {
   display: flex;
