@@ -458,10 +458,17 @@ function Lightbox({
   )
 }
 
+// Gorsel yolu: tam URL veya /... ise oldugu gibi; ciplak yol ise panelden yuklenmis -> /uploads/
+const mediaSrc = (img?: string | null): string | undefined => {
+  if (!img) return undefined
+  return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
+}
+
 function EventRow({ ev, upcoming }: { ev: Content; upcoming: boolean }) {
+  const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
   return (
     <div className={`event-row ${upcoming ? '' : 'past'}`}>
-      {ev.image && <img className="content-img" src={ev.image} alt="" />}
+      {ev.image && <img className="content-img" src={mediaSrc(ev.image)} alt="" />}
       <div className="event-date">
         <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
       </div>
@@ -472,17 +479,34 @@ function EventRow({ ev, upcoming }: { ev: Content; upcoming: boolean }) {
             <Icon name="star" size={12} /> {ev.organizer}
           </span>
         )}
+        {ev.province && (
+          <span>
+            <Icon name="pin" size={12} /> {ev.province}
+          </span>
+        )}
         {ev.place && (
           <span>
             <Icon name="pin" size={12} /> {ev.place}
           </span>
         )}
-        {ev.contact && (
+        {/* Tek alan iletisim (eski kayitlar) */}
+        {ev.contact && !contacts.length && (
           <span>
             <Icon name="phone" size={12} /> {ev.contact}
           </span>
         )}
       </div>
+      {contacts.length > 0 && (
+        <div className="event-contacts">
+          {contacts.map((c, i) => (
+            <a key={i} className="event-contact" href={c.phone ? `tel:${c.phone}` : undefined}>
+              <Icon name="phone" size={12} /> {c.name}
+              {c.name && c.phone ? ' · ' : ''}
+              {c.phone}
+            </a>
+          ))}
+        </div>
+      )}
       {ev.body && <p className="event-body">{ev.body}</p>}
     </div>
   )
