@@ -63,6 +63,30 @@ class PanelController extends Controller
 
     /* ---------- Uyeler ---------- */
 
+    // Seviye kisayolu: unvan => rating alt esigi (frontend badges.ts ile ayni). Yuksekten dusuge.
+    public const LEVELS = [
+        'Super Grandmaster S1' => 1750,
+        'Super Grandmaster S2' => 1725,
+        'Super Grandmaster S3' => 1700,
+        'Grandmaster G0' => 1675,
+        'Grandmaster G1' => 1650,
+        'Grandmaster G2' => 1625,
+        'Grandmaster G3' => 1600,
+        'Master M1' => 1575,
+        'Master M2' => 1550,
+        'Master M3' => 1525,
+        'Advanced A1' => 1500,
+        'Advanced A2' => 1475,
+        'Advanced A3' => 1450,
+        'Intermediate I1' => 1425,
+        'Intermediate I2' => 1400,
+        'Intermediate I3' => 1375,
+        'Developing' => 1325,
+        'Beginner' => 1250,
+        'Novice' => 1150,
+        'Rookie' => 0,
+    ];
+
     public function users(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
@@ -75,7 +99,7 @@ class PanelController extends Controller
             });
         }
         $users = $query->paginate(30)->withQueryString();
-        return view('panel.users', ['users' => $users, 'q' => $q]);
+        return view('panel.users', ['users' => $users, 'q' => $q, 'levels' => self::LEVELS]);
     }
 
     public function userUpdate(Request $request, User $user)
@@ -90,6 +114,13 @@ class PanelController extends Controller
             // Rating'i (Elo) elle ayarla; seviye/lig bu degere gore hesaplanir.
             $user->rating = max(100, min(4000, (int) $request->input('rating', 1500)));
             $user->save();
+        } elseif ($action === 'level') {
+            // Unvan kisayolu: secilen kademenin alt esigine gore rating'i ayarla.
+            $min = (int) $request->input('level_min', -1);
+            if ($min >= 0 && $min <= 4000) {
+                $user->rating = max(100, $min); // Rookie (0) -> 100 taban
+                $user->save();
+            }
         } elseif ($action === 'ban') {
             if ($user->id !== $me->id) {
                 $user->banned_at = $user->banned_at ? null : now();

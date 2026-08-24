@@ -30,6 +30,15 @@
                 <input type="number" name="rating" value="{{ $u->rating ?? 1500 }}" min="100" max="4000" style="width:80px">
                 <button class="btn sm">Kaydet</button>
               </form>
+              <form method="post" action="/panel/users/{{ $u->id }}" class="inline" style="margin-top:4px">
+                @csrf<input type="hidden" name="action" value="level">
+                <select name="level_min" style="width:auto">
+                  @foreach($levels as $label => $min)
+                    <option value="{{ $min }}">{{ $label }}</option>
+                  @endforeach
+                </select>
+                <button class="btn sm ghost" title="Secilen unvana gore puani ayarlar">Ünvan Ata</button>
+              </form>
             </td>
             <td>
               <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
