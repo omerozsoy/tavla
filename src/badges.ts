@@ -37,17 +37,29 @@ export interface Division {
   color: string
 }
 
-// Dusukten yuksege (rating). divisionOf en yuksek uyani secer.
+// 20 kademe. Dusukten yuksege (rating). divisionOf en yuksek uyani secer.
+// prMax: o kademeye karsilik gelen en yuksek (yaklasik) PR esigi (PR dusuk = iyi).
 export const DIVISIONS: Division[] = [
   { min: 0, prMax: Infinity, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
-  { min: 900, prMax: 40, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
-  { min: 1100, prMax: 30, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
-  { min: 1300, prMax: 22, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
-  { min: 1500, prMax: 16, key: 'div.intermediate', icon: 'trophy', color: '#e6b422' },
-  { min: 1750, prMax: 10, key: 'div.advanced', icon: 'trophy', color: '#3fb6a8' },
-  { min: 2000, prMax: 6.5, key: 'div.master', icon: 'crown', color: '#7b6fd4' },
-  { min: 2250, prMax: 4.0, key: 'div.grandmaster', icon: 'crown', color: '#c9563f' },
-  { min: 2500, prMax: 2.5, key: 'div.superGrandmaster', icon: 'crown', color: '#ffcf40' },
+  { min: 1150, prMax: 40, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
+  { min: 1250, prMax: 30, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
+  { min: 1325, prMax: 22, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
+  { min: 1375, prMax: 16.0, key: 'div.i3', icon: 'trophy', color: '#e6b422' },
+  { min: 1400, prMax: 14.0, key: 'div.i2', icon: 'trophy', color: '#e6b422' },
+  { min: 1425, prMax: 12.0, key: 'div.i1', icon: 'trophy', color: '#e6b422' },
+  { min: 1450, prMax: 10.0, key: 'div.a3', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1475, prMax: 8.5, key: 'div.a2', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1500, prMax: 7.5, key: 'div.a1', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1525, prMax: 6.5, key: 'div.m3', icon: 'crown', color: '#7b6fd4' },
+  { min: 1550, prMax: 5.5, key: 'div.m2', icon: 'crown', color: '#7b6fd4' },
+  { min: 1575, prMax: 4.75, key: 'div.m1', icon: 'crown', color: '#7b6fd4' },
+  { min: 1600, prMax: 4.0, key: 'div.g3', icon: 'crown', color: '#c9563f' },
+  { min: 1625, prMax: 3.5, key: 'div.g2', icon: 'crown', color: '#c9563f' },
+  { min: 1650, prMax: 3.0, key: 'div.g1', icon: 'crown', color: '#c9563f' },
+  { min: 1675, prMax: 2.75, key: 'div.g0', icon: 'crown', color: '#c9563f' },
+  { min: 1700, prMax: 2.5, key: 'div.sgm3', icon: 'crown', color: '#ffcf40' },
+  { min: 1725, prMax: 2.25, key: 'div.sgm2', icon: 'crown', color: '#ffcf40' },
+  { min: 1750, prMax: 2.0, key: 'div.sgm1', icon: 'crown', color: '#ffcf40' },
 ]
 
 // Rating -> seviye: rating'in ulastigi en yuksek kademe.
