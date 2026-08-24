@@ -1040,6 +1040,19 @@ body {
 .page-host .register-overlay.page .modal-close {
   display: none;
 }
+/* Pozisyon Analizi sayfa gorunumunde: kendi 'Kapat' dugmesi gizli (menuden gecilir) */
+.register-overlay.page .analyzer-close {
+  display: none;
+}
+@media (max-width: 900px) {
+  .register-overlay.page .analyzer-close {
+    display: inline-flex;
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    z-index: 210;
+  }
+}
 
 @media (max-width: 560px) {
   .solo-grid {
