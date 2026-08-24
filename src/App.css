@@ -251,7 +251,10 @@ button[aria-disabled='true'],
   /* Sabit ust/alt/yan cubuklar ve centik icin safe-area (viewport-fit=cover ile) */
   padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
     max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
-  height: 100vh;
+  height: 100vh; /* fallback */
+  /* dvh: iOS Safari araç çubuklari gizlenince/gozukunce gercek gorunur yukseklik ->
+     alttaki dugmeler tarayici cubugunun altinda kalmaz (viewport-units) */
+  height: 100dvh;
   overflow: hidden;
 }
 
