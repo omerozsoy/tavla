@@ -2766,19 +2766,9 @@ export default function App() {
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
   // Oyun ekraninda mi (cekilme butonu bunun icin)
-  const inActiveGame =
-    !home &&
-    !setup &&
-    !matchOver &&
-    (mode === 'pvb' || (mode === 'online' && !!room && room.status === 'playing'))
-
   const accountBar = (
     <div className="account-bar">
-      {inActiveGame && (
-        <button className="account-btn leave" onClick={() => setResignOpen(true)}>
-          <Icon name="flag" /> {t('resign.button')}
-        </button>
-      )}
+      {/* 'Pes Et' hesap cubugunda degil, oyun menusunde (game-ham ☰ -> GameMenu) */}
       <span className="account-name">
         {profile.avatar ? (
           <span
