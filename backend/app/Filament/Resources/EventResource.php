@@ -66,7 +66,8 @@ class EventResource extends Resource
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([
                     Forms\Components\TextInput::make('name')->label('Kişi adı')->required(),
-                    Forms\Components\TextInput::make('phone')->label('Cep telefonu')->tel()->required(),
+                    Forms\Components\TextInput::make('phone')->label('Cep telefonu')
+                        ->tel()->mask('999 9999999')->placeholder('532 1111111')->required(),
                 ])
                 ->columns(2)
                 ->addActionLabel('Kişi ekle')
