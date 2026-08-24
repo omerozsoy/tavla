@@ -10,4 +10,8 @@ cd "$(dirname "$0")/backend"
 $PHP artisan migrate --force
 $PHP artisan optimize:clear
 
-echo "Deploy tamam: migrate + cache temizlendi."
+# Haberleri TavlaTv blog RSS'inden ice aktar (gorseller commit'li -> tekrar indirmez).
+# Feed gecici erisilemezse deploy patlamasin diye hatayi yut (|| true).
+$PHP artisan news:import || echo "UYARI: news:import basarisiz (feed erisimi?), atlandi."
+
+echo "Deploy tamam: migrate + cache + haber importu."
