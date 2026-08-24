@@ -69,6 +69,26 @@ export function divisionOf(rating: number): Division {
   return d
 }
 
+// Ana rutbeler (alt-tier'lar S1/S2, I1/I2 vb. katlanmis) - Lig sekmesi bunlari kullanir.
+export const MAIN_DIVISIONS: Division[] = [
+  { min: 0, prMax: Infinity, key: 'div.rookie', icon: 'medal', color: '#8a8377' },
+  { min: 1150, prMax: 40, key: 'div.novice', icon: 'medal', color: '#9aa3ab' },
+  { min: 1250, prMax: 30, key: 'div.beginner', icon: 'medal', color: '#a1663a' },
+  { min: 1325, prMax: 22, key: 'div.developing', icon: 'trophy', color: '#cd7f32' },
+  { min: 1375, prMax: 16.0, key: 'div.intermediate', icon: 'trophy', color: '#e6b422' },
+  { min: 1450, prMax: 10.0, key: 'div.advanced', icon: 'trophy', color: '#3fb6a8' },
+  { min: 1525, prMax: 6.5, key: 'div.master', icon: 'crown', color: '#7b6fd4' },
+  { min: 1600, prMax: 4.0, key: 'div.grandmaster', icon: 'crown', color: '#c9563f' },
+  { min: 1700, prMax: 2.5, key: 'div.superGrandmaster', icon: 'crown', color: '#ffcf40' },
+]
+
+// Rating -> ana rutbe (Lig sekmesi gruplamasi icin).
+export function mainDivisionOf(rating: number): Division {
+  let d = MAIN_DIVISIONS[0]
+  for (const x of MAIN_DIVISIONS) if (rating >= x.min) d = x
+  return d
+}
+
 // PR -> seviye: PR dusuk = iyi. PR'nin girdigi ilk (en iyi) bracket.
 export function divisionOfPR(pr: number): Division {
   const byPr = [...DIVISIONS].sort((a, b) => a.prMax - b.prMax)
