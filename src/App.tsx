@@ -1894,8 +1894,10 @@ export default function App() {
   useEffect(() => {
     const root = document.getElementById('root')
     if (!root) return
-    root.classList.toggle('force-landscape', portraitMobile && manualLandscape)
-  }, [portraitMobile, manualLandscape])
+    // Yalnizca OYUN TAHTASI acikken dondur — lobi/kurulum/analiz dikeyde normal kalir.
+    const inGameBoard = !home && !setup && !analyzerOpen
+    root.classList.toggle('force-landscape', portraitMobile && manualLandscape && inGameBoard)
+  }, [portraitMobile, manualLandscape, home, setup, analyzerOpen])
   const enableManualLandscape = () => {
     setManualLandscape(true)
     try {
@@ -2854,6 +2856,14 @@ export default function App() {
         </button>
       )}
       <span className="account-sep" />
+      <button
+        className="account-btn icon"
+        title={t('menu.settings')}
+        aria-label={t('menu.settings')}
+        onClick={() => goPage(() => setBoardSettingsOpen(true))}
+      >
+        <Icon name="settings" size={18} />
+      </button>
       <select
         className="account-btn icon lang-select"
         title={t('menu.language')}
