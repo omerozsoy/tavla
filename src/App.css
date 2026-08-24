@@ -2846,13 +2846,26 @@ button[aria-disabled='true'],
 }
 
 @media (max-width: 720px) {
+  /* Dikey mobil: tahtayi EKRAN GENISLIGINE gore olcekle (yoksa root varsayilani
+     340px'e dusup board ~500px genisliyor ve yatayda tasiyordu). Genislik ~ 1.48*board-h. */
+  :root {
+    --board-h: max(230px, min(calc((100vw - 16px) / 1.5), calc(100vh - var(--header-h) - 200px)));
+  }
   .game-area {
     flex-direction: column;
+    align-items: center;
   }
   .sidebar {
     width: 100%;
     flex-direction: row;
     justify-content: space-around;
+  }
+  /* Guvenlik: hicbir sey yatay kaydirma yaratmasin */
+  .app,
+  .main,
+  .game-area {
+    max-width: 100%;
+    overflow-x: hidden;
   }
 }
 
@@ -4539,31 +4552,31 @@ button[aria-disabled='true'],
   font-size: 0.9rem;
 }
 .analyzer-close:hover {
-  border-color: #e0455e;
-  color: #ff9db0;
+  border-color: var(--accent);
+  color: var(--accent);
 }
+/* 3 kolon: board (esnek) | kontrol (300) | sonuc (320). Grid -> sonuc her zaman
+   en sagda, flex-wrap kaymasi olmaz. */
 .analyzer-body {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px 320px;
+  grid-template-areas: 'board controls results';
   gap: 16px;
-  align-items: flex-start;
-  justify-content: flex-start; /* board | kontrol | sonuc yan yana */
-  flex-wrap: wrap;
+  align-items: start;
 }
 .analyzer-board {
-  flex: 0 1 auto;
+  grid-area: board;
   min-width: 0;
 }
 .analyzer-controls {
-  width: 300px;
-  flex-shrink: 0;
+  grid-area: controls;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 14px;
 }
 .analyzer-results {
-  width: 320px;
-  flex-shrink: 0;
+  grid-area: results;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -5074,10 +5087,26 @@ button[aria-disabled='true'],
 .pa-win b {
   color: #7ee0a0;
 }
-@media (max-width: 1100px) {
-  .analyzer-controls,
-  .analyzer-results {
-    width: 100%;
+/* Orta ekran: tahta ustte tam genislik, altinda kontrol | sonuc yan yana */
+@media (max-width: 1180px) {
+  .analyzer {
+    --board-h: max(280px, min(calc(100vh - var(--header-h) - 210px), calc((100vw - 40px) / 1.35)));
+  }
+  .analyzer-body {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'board board'
+      'controls results';
+  }
+}
+/* Mobil: hepsi alt alta */
+@media (max-width: 760px) {
+  .analyzer-body {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'board'
+      'controls'
+      'results';
   }
 }
 
