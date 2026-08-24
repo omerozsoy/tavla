@@ -169,8 +169,13 @@ class AuthController extends Controller
         // Kullanici kendi hesabini silebilir (KVKK/GDPR: veri silme hakki).
         // Endpoint auth:sanctum altinda; her zaman istegi yapan kullaniciya isler.
         $user = $request->user();
-        $user->tokens()->delete(); // tum oturum token'lari
-        $user->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+            // Not: blunders/match_results/clubs/club_members/friendships/payments FK'lari
+            // cascadeOnDelete -> otomatik silinir. FK'siz notifications elle temizlenir.
+            \App\Models\Notification::where('user_id', $user->id)->delete();
+            $user->tokens()->delete(); // tum oturum token'lari
+            $user->delete();
+        });
         return response()->json(['ok' => true]);
     }
 
