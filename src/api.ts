@@ -543,6 +543,7 @@ export interface Content {
   province?: string | null
   contact?: string | null
   image?: string | null
+  gallery?: string[] | null
   event_at?: string | null
   sort: number
   published: boolean

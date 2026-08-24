@@ -21,6 +21,7 @@ class ImportNews extends Command
         {--url=https://www.tavlatv.com/blog-feed.xml : RSS/Atom feed adresi}
         {--file= : RSS yerine yerel JSON dosyasindan yukle (offline; deploy icin)}
         {--dry : Veritabanina yazmadan sadece bulunanlari listele}
+        {--no-detail : Post sayfasini cekme; sadece feed ozeti + kapak gorseli}
         {--no-images : Gorselleri indirme, uzak (Wix) URL\'ini oldugu gibi sakla}
         {--force-images : Yerelde ayni dosya olsa bile gorseli tekrar indir}';
 
@@ -74,6 +75,10 @@ class ImportNews extends Command
         $updated = 0;
         $downloaded = 0;
         $withImages = ! $this->option('no-images') && ! $dry;
+        $force = (bool) $this->option('force-images');
+        // Detay sayfasi (tam metin + galeri) yalnizca feed modunda cekilir.
+        // --file offline modunda govde/galeri zaten JSON'da hazir.
+        $detail = ! $this->option('no-detail') && $file === '' && ! $dry;
         if ($withImages) {
             @mkdir(public_path(self::IMAGE_DIR), 0755, true);
         }
@@ -94,28 +99,71 @@ class ImportNews extends Command
                 continue;
             }
 
-            // Gorseli kendi sunucuya indir (basarisizsa uzak URL'e geri dus).
-            // Zaten yerel yol (/news/...) ise indirme; oldugu gibi sakla.
-            $image = $it['image'];
-            $isLocal = $image && str_starts_with($image, '/');
-            if ($withImages && $image && ! $isLocal) {
-                $local = $this->downloadImage($image, (bool) $this->option('force-images'));
+            // Kaynak gorsel listesi: kapak + (varsa) mevcut galeri
+            $body = $it['body'];
+            $srcImages = [];
+            if ($it['image']) {
+                $srcImages[] = $it['image'];
+            }
+            foreach ($it['gallery'] as $g) {
+                $srcImages[] = $g;
+            }
+
+            // Detay sayfasindan tam metin + icerik gorselleri (feed modu)
+            if ($detail && $it['link']) {
+                $d = $this->scrapePost($it['link']);
+                if ($d !== null) {
+                    // Post govdesi feed ozetinden daha tamsa onu kullan
+                    if ($d['body'] !== null && mb_strlen($d['body']) > mb_strlen((string) $body)) {
+                        $body = $d['body'];
+                    }
+                    foreach ($d['images'] as $u) {
+                        $srcImages[] = $u;
+                    }
+                } else {
+                    $this->warn("   ! detay cekilemedi: {$it['link']}");
+                }
+            }
+
+            // Gorselleri yerele indir; kopyalari (kapak == ilk galeri) hash ile ele.
+            $localImages = [];
+            foreach ($srcImages as $src) {
+                if (str_starts_with($src, '/')) { // zaten yerel yol
+                    if (! in_array($src, $localImages, true)) {
+                        $localImages[] = $src;
+                    }
+                    continue;
+                }
+                if (! $withImages) {
+                    if (! in_array($src, $localImages, true)) {
+                        $localImages[] = $src;
+                    }
+                    continue;
+                }
+                $local = $this->downloadImage($src, $force);
                 if ($local !== null) {
                     if ($local['fetched']) {
                         $downloaded++;
                     }
-                    $image = $local['url'];
+                    if (! in_array($local['url'], $localImages, true)) {
+                        $localImages[] = $local['url'];
+                    }
                 } else {
-                    $this->warn("   ! gorsel indirilemedi, uzak URL saklandi: {$image}");
+                    $this->warn("   ! gorsel indirilemedi: {$src}");
                 }
             }
+
+            $cover = $localImages[0] ?? null;
+            $gallery = array_slice($localImages, 1);
+            $this->line(sprintf('   govde %d krk, %d gorsel', mb_strlen((string) $body), count($localImages)));
 
             $existing = Content::where('type', 'news')->where('title', $it['title'])->first();
             Content::updateOrCreate(
                 ['type' => 'news', 'title' => $it['title']],
                 [
-                    'body' => $it['body'],
-                    'image' => $image,
+                    'body' => $body,
+                    'image' => $cover,
+                    'gallery' => $gallery ?: null,
                     'event_at' => $it['event_at'],
                     'sort' => $sort,
                     'published' => true,
@@ -250,10 +298,21 @@ class ImportNews extends Command
             if ($title === '') {
                 continue;
             }
+            $gallery = [];
+            if (isset($row['gallery']) && is_array($row['gallery'])) {
+                foreach ($row['gallery'] as $g) {
+                    $g = (string) $g;
+                    if ($g !== '') {
+                        $gallery[] = mb_substr($g, 0, 500);
+                    }
+                }
+            }
             $out[] = [
                 'title' => mb_substr($title, 0, 200),
                 'body' => isset($row['body']) && $row['body'] !== '' ? mb_substr((string) $row['body'], 0, 20000) : null,
                 'image' => isset($row['image']) && $row['image'] !== '' ? mb_substr((string) $row['image'], 0, 500) : null,
+                'gallery' => $gallery,
+                'link' => isset($row['link']) && $row['link'] !== '' ? (string) $row['link'] : null,
                 'event_at' => isset($row['event_at']) && $row['event_at'] !== '' ? (string) $row['event_at'] : null,
             ];
         }
@@ -314,10 +373,18 @@ class ImportNews extends Command
                 }
             }
 
+            // Post detay sayfasi adresi (tam metin + galeri icin)
+            $link = trim((string) ($node->link ?? ''));
+            if ($link === '' && isset($node->link['href'])) {
+                $link = (string) $node->link['href']; // Atom
+            }
+
             $out[] = [
                 'title' => mb_substr($title, 0, 200),
                 'body' => $body !== '' ? mb_substr($body, 0, 20000) : null,
                 'image' => $image ? mb_substr($image, 0, 500) : null,
+                'gallery' => [],
+                'link' => $link !== '' ? $link : null,
                 'event_at' => $eventAt,
             ];
         }
@@ -355,6 +422,70 @@ class ImportNews extends Command
         }
 
         return null;
+    }
+
+    /**
+     * Wix post detay sayfasindan tam govdeyi ve icerik gorsellerini cikarir.
+     * Govde: data-hook="post-description" kapsayicisi. Gorseller: o kapsayicidaki
+     * wow-image id'leri + image-viewer <img> kaynaklari (media dosya adi).
+     * @return array{body:?string, images:array<int,string>}|null
+     */
+    private function scrapePost(string $url): ?array
+    {
+        try {
+            $res = Http::timeout(30)
+                ->withHeaders(['User-Agent' => 'TavlaTvBot/1.0 (+https://www.tavlatv.com)'])
+                ->get($url);
+        } catch (\Throwable $e) {
+            return null;
+        }
+        if (! $res->ok()) {
+            return null;
+        }
+
+        $prev = libxml_use_internal_errors(true);
+        $doc = new \DOMDocument();
+        $doc->loadHTML('<?xml encoding="utf-8"?>'.$res->body());
+        libxml_use_internal_errors($prev);
+        $xp = new \DOMXPath($doc);
+
+        // Govde: post-description ic HTML'i -> temiz metin
+        $body = null;
+        $desc = $xp->query("//*[@data-hook='post-description']")->item(0);
+        if ($desc) {
+            $inner = '';
+            foreach ($desc->childNodes as $c) {
+                $inner .= $doc->saveHTML($c);
+            }
+            $t = $this->cleanHtml($inner);
+            $body = $t !== '' ? mb_substr($t, 0, 20000) : null;
+        }
+
+        // Icerik gorselleri (sirali): once makale icindeki wow-image, sonra image-viewer
+        $ids = [];
+        foreach ($xp->query("//*[@data-hook='post-description']//wow-image/@id") as $a) {
+            $this->collectMediaId($a->value, $ids);
+        }
+        foreach ($xp->query("//*[starts-with(@data-hook,'image-viewer')]//img/@src") as $a) {
+            $this->collectMediaId($a->value, $ids);
+        }
+        // media dosya adi -> temel Wix URL (downloadImage render + hash ile dedup eder)
+        $images = array_map(
+            static fn ($id) => 'https://static.wixstatic.com/media/'.$id,
+            array_values(array_unique($ids)),
+        );
+
+        return ['body' => $body, 'images' => $images];
+    }
+
+    /** wixstatic media dosya adini (id ya da /media/ URL'inden) $ids'e ekler. */
+    private function collectMediaId(string $val, array &$ids): void
+    {
+        if (preg_match('#^[a-z0-9]+_[a-f0-9]+~mv2\.(?:jpg|jpeg|png)$#i', $val)) {
+            $ids[] = $val;
+        } elseif (preg_match('#/media/([a-z0-9]+_[a-f0-9]+~mv2\.(?:jpg|jpeg|png))#i', $val, $m)) {
+            $ids[] = $m[1];
+        }
     }
 
     /** HTML etiketlerini temizler, bosluklari normalize eder. */
