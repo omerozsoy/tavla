@@ -12,6 +12,20 @@
   --tv-on-dark: #c6bfb2; /* ikincil metin (koyu zemin) */
   --tv-font-ui: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Baslik/display fontu (govde Outfit; basliklar Poppins -> premium, 'AI degil' his) */
+  --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
+
+  /* Anlamsal durum renkleri (basari/uyari/hata/bilgi) — tablo, rozet, bildirim */
+  --color-success: #2e9e5b;
+  --color-warning: #d98b3a;
+  --color-error: #e0455e;
+  --color-info: #6b9bcc;
+
+  /* Yukseltme (elevation) golge olcekleri — kart/modal tutarliligi */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.14);
+  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.36);
+  --shadow-xl: 0 16px 44px rgba(0, 0, 0, 0.46);
 
   /* ---- Koyu tema (TavlaTv 'dark' varyanti) ---- */
   color-scheme: dark;
@@ -97,6 +111,21 @@ body {
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
+}
+
+/* Basliklar display fontu (Poppins) + hafif siki harf araligi.
+   Govde Outfit kalir; basliklarda net display/gövde kontrasti -> markali, elle yapilmis his. */
+h1,
+h2,
+h3,
+h4,
+.register-card h2,
+.mr-card h2,
+.report-card h2,
+.rules-section h3,
+.content-service h3 {
+  font-family: var(--tv-font-display);
+  letter-spacing: -0.01em;
 }
 
 .app {
