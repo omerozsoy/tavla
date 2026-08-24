@@ -395,6 +395,7 @@ export default function App() {
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
+  const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
 
   // --- URL yonlendirme (hash tabanli) ---
@@ -2060,6 +2061,7 @@ export default function App() {
     minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
     setBoardTheme(theme)
     setSoloOpen(false)
+    mmOriginRef.current = 'solo' // iptalde Tek Oyun ekranina don
     onlineTargetRef.current = target // secilen puan hedefi (1 = tek oyun)
     setMode('online')
     setHome(false)
@@ -2133,7 +2135,17 @@ export default function App() {
     } catch {
       /* yoksay */
     }
-    handleLeaveRoom()
+    // Oda/eslesme durumunu temizle. handleLeaveRoom ana sayfaya atardi; burada ise
+    // eslesmeyi baslatan kurulum ekranina geri donuyoruz (kullanici kaldigi yere donsun).
+    setRoom(null)
+    syncEnabledRef.current = false
+    appliedVersionRef.current = -1
+    setOppStarted(false)
+    setChat([])
+    tournMatchRef.current = null
+    setHome(false)
+    if (mmOriginRef.current === 'solo') setSoloOpen(true)
+    else setSetup('online')
   }
 
   async function handleJoinRoom(code: string) {
@@ -2334,6 +2346,7 @@ export default function App() {
     setHome(false)
     // Mac Oyunu: her zaman online -> gercek rakiple dogrudan eslesme (Oyunu Baslat)
     if (opts.mode === 'online') {
+      mmOriginRef.current = 'match' // iptalde Mac kurulum ekranina don
       onlineTargetRef.current = opts.target
       stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
       betPctRef.current = opts.betPct ?? 0
