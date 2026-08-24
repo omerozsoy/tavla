@@ -19,6 +19,7 @@ class ImportNews extends Command
 {
     protected $signature = 'news:import
         {--url=https://www.tavlatv.com/blog-feed.xml : RSS/Atom feed adresi}
+        {--file= : RSS yerine yerel JSON dosyasindan yukle (offline; deploy icin)}
         {--dry : Veritabanina yazmadan sadece bulunanlari listele}
         {--no-images : Gorselleri indirme, uzak (Wix) URL\'ini oldugu gibi sakla}
         {--force-images : Yerelde ayni dosya olsa bile gorseli tekrar indir}';
@@ -30,27 +31,42 @@ class ImportNews extends Command
 
     public function handle(): int
     {
-        $url = (string) $this->option('url');
         $dry = (bool) $this->option('dry');
+        $file = (string) $this->option('file');
 
-        $this->info("Feed cekiliyor: {$url}");
-        try {
-            $res = Http::timeout(20)
-                ->withHeaders(['User-Agent' => 'TavlaTvBot/1.0 (+https://www.tavlatv.com)'])
-                ->get($url);
-        } catch (\Throwable $e) {
-            $this->error('Feed cekilemedi: '.$e->getMessage());
-            return self::FAILURE;
-        }
-        if (! $res->ok()) {
-            $this->error('Feed HTTP hatasi: '.$res->status());
-            return self::FAILURE;
-        }
-
-        $items = $this->parse($res->body());
-        if (empty($items)) {
-            $this->warn('Feed\'te haber bulunamadi (bos veya bicim taninmadi).');
-            return self::FAILURE;
+        // Kaynak: --file verilmisse yerel JSON (offline), yoksa RSS feed.
+        if ($file !== '') {
+            $path = $this->resolveFile($file);
+            if ($path === null) {
+                $this->error("JSON dosyasi bulunamadi: {$file}");
+                return self::FAILURE;
+            }
+            $this->info("Yerel dosyadan yukleniyor: {$path}");
+            $items = $this->parseJson((string) file_get_contents($path));
+            if (empty($items)) {
+                $this->warn('JSON dosyasinda haber bulunamadi (bos veya gecersiz).');
+                return self::FAILURE;
+            }
+        } else {
+            $url = (string) $this->option('url');
+            $this->info("Feed cekiliyor: {$url}");
+            try {
+                $res = Http::timeout(20)
+                    ->withHeaders(['User-Agent' => 'TavlaTvBot/1.0 (+https://www.tavlatv.com)'])
+                    ->get($url);
+            } catch (\Throwable $e) {
+                $this->error('Feed cekilemedi: '.$e->getMessage());
+                return self::FAILURE;
+            }
+            if (! $res->ok()) {
+                $this->error('Feed HTTP hatasi: '.$res->status());
+                return self::FAILURE;
+            }
+            $items = $this->parse($res->body());
+            if (empty($items)) {
+                $this->warn('Feed\'te haber bulunamadi (bos veya bicim taninmadi).');
+                return self::FAILURE;
+            }
         }
 
         $this->info(count($items).' haber bulundu.');
@@ -78,9 +94,11 @@ class ImportNews extends Command
                 continue;
             }
 
-            // Gorseli kendi sunucuya indir (basarisizsa uzak URL'e geri dus)
+            // Gorseli kendi sunucuya indir (basarisizsa uzak URL'e geri dus).
+            // Zaten yerel yol (/news/...) ise indirme; oldugu gibi sakla.
             $image = $it['image'];
-            if ($withImages && $image) {
+            $isLocal = $image && str_starts_with($image, '/');
+            if ($withImages && $image && ! $isLocal) {
                 $local = $this->downloadImage($image, (bool) $this->option('force-images'));
                 if ($local !== null) {
                     if ($local['fetched']) {
@@ -196,6 +214,43 @@ class ImportNews extends Command
         return in_array($ext, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'], true)
             ? ($ext === 'jpeg' ? 'jpg' : $ext)
             : 'jpg';
+    }
+
+    /** --file degerini gercek yola cevirir: mutlak, cwd'ye gore veya base_path'e gore. */
+    private function resolveFile(string $file): ?string
+    {
+        foreach ([$file, base_path($file), database_path('data/'.ltrim($file, '/'))] as $cand) {
+            if (is_file($cand)) {
+                return $cand;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Yerel JSON'u ayristirir. Beklenen bicim: [{title, body, image, event_at, sort}, ...]
+     * @return array<int, array{title:string, body:?string, image:?string, event_at:?string}>
+     */
+    private function parseJson(string $json): array
+    {
+        $data = json_decode($json, true);
+        if (! is_array($data)) {
+            return [];
+        }
+        $out = [];
+        foreach ($data as $row) {
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => mb_substr($title, 0, 200),
+                'body' => isset($row['body']) && $row['body'] !== '' ? mb_substr((string) $row['body'], 0, 20000) : null,
+                'image' => isset($row['image']) && $row['image'] !== '' ? mb_substr((string) $row['image'], 0, 500) : null,
+                'event_at' => isset($row['event_at']) && $row['event_at'] !== '' ? (string) $row['event_at'] : null,
+            ];
+        }
+        return $out;
     }
 
     /**
