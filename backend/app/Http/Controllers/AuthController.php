@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -31,6 +32,11 @@ class AuthController extends Controller
 
         // Ulke bos/eksikse '' ata (kolon NOT NULL olsa bile kayit patlamaz)
         $data['country'] = $data['country'] ?? '';
+
+        // province kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
+        if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
+            unset($data['province']);
+        }
 
         // Baslangic puani: oyuncu kendi seviyesini secer (Galaxy tarzi). Yoksa 1400.
         $startRating = $data['start_rating'] ?? 1400;
@@ -204,6 +210,10 @@ class AuthController extends Controller
             'nickname'   => ['required', 'string', 'max:40', Rule::unique('users', 'nickname')->ignore($user->id)],
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
+        // province kolonu (migration) henuz uygulanmamissa guncelleme patlamasin: atla.
+        if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
+            unset($data['province']);
+        }
         $user->update($data);
         return response()->json(['user' => $user]);
     }

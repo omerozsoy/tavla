@@ -91,7 +91,7 @@ export interface RankedMove {
 }
 
 export class NeuralBot implements Engine {
-  name = 'Sinir Agi (wildbg)'
+  name = 'Sinir Ağı'
   level = 10 // 1..10 zorluk (10 = her zaman en iyi)
   lastLoss = 0 // son secilen hamlenin equity kaybi (bot PR'i icin)
   private ort: Ort | null = null

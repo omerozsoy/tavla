@@ -225,7 +225,7 @@ export default function Auth({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         country: country.trim(),
-        province: country.trim() === 'Türkiye' ? province.trim() : '',
+        province: province.trim(),
         nickname: nickname.trim(),
         email: email.trim(),
         avatar,
@@ -249,7 +249,7 @@ export default function Auth({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       country: country.trim(),
-      province: country.trim() === 'Türkiye' ? province.trim() : '',
+      province: province.trim(),
       nickname: nickname.trim(),
       email: email.trim(),
       avatar,
@@ -325,7 +325,7 @@ export default function Auth({
           </select>
         </label>
       )}
-      {editing && country === 'Türkiye' && (
+      {editing && (
         <label>
           {t('reg.province')}
           <select value={province} onChange={(e) => setProvince(e.target.value)}>
