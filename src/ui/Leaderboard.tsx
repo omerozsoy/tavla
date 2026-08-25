@@ -5,6 +5,7 @@ import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
 import { frameStyle } from '../cosmetics'
 import PublicProfile from './PublicProfile'
+import { Skeleton } from './Skeleton'
 import { DivisionChip } from './Badges'
 import { MAIN_DIVISIONS, mainDivisionOf } from '../badges'
 
@@ -83,7 +84,31 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         </div>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
-        {!error && rows === null && <div className="lb-empty">{t('an.loading')}</div>}
+        {!error && rows === null && (
+          <div className="lb-table" aria-busy="true" aria-live="polite">
+            <div className="lb-head">
+              <span className="lb-rank">#</span>
+              <span className="lb-name">{t('lb.player')}</span>
+              <span className="lb-games">{t('lb.games')}</span>
+              <span className="lb-wr">{t('lb.winRate')}</span>
+              <span className="lb-rating">{by === 'coins' ? <Icon name="coin" size={14} /> : t('lb.rating')}</span>
+            </div>
+            <div className="lb-body">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="lb-row">
+                  <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
+                  <span className="lb-name">
+                    <Skeleton w={22} h={22} r="50%" />
+                    <Skeleton w={90 + ((i * 17) % 50)} h={12} />
+                  </span>
+                  <span className="lb-games"><Skeleton w={24} h={12} /></span>
+                  <span className="lb-wr"><Skeleton w={30} h={12} /></span>
+                  <span className="lb-rating"><Skeleton w={36} h={12} /></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         {!error && rows !== null && rows.length === 0 && (
           <div className="lb-empty">{t('lb.empty')}</div>
         )}
