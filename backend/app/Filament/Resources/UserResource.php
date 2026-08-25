@@ -37,8 +37,12 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('email')->label('E-posta')->email()->required(),
                 Forms\Components\TextInput::make('first_name')->label('Ad'),
                 Forms\Components\TextInput::make('last_name')->label('Soyad'),
-                Forms\Components\TextInput::make('country')->label('Ülke'),
-                Forms\Components\TextInput::make('province')->label('İl'),
+                Forms\Components\Select::make('country')->label('Ülke')
+                    ->options(array_combine(\App\Support\Geo::COUNTRIES, \App\Support\Geo::COUNTRIES))
+                    ->searchable(),
+                Forms\Components\Select::make('province')->label('İl')
+                    ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
+                    ->searchable(),
                 // Sifre: yalnizca doldurulursa degisir (model 'hashed' cast'i ile hash'lenir)
                 Forms\Components\TextInput::make('password')->label('Yeni şifre')
                     ->password()->dehydrated(fn ($state) => filled($state))
