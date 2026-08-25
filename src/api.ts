@@ -1,5 +1,6 @@
 // Laravel API istemcisi (token tabanli auth)
 import type { Profile } from './storage'
+import { normalizeCountry } from './countries'
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
@@ -55,7 +56,7 @@ export function toProfile(u: ServerUser): Profile {
   return {
     firstName: u.first_name,
     lastName: u.last_name,
-    country: u.country,
+    country: normalizeCountry(u.country),
     province: u.province ?? '',
     nickname: u.nickname,
     email: u.email,

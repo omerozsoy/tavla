@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { Profile } from '../storage'
 import { isNicknameTaken } from '../storage'
-import { COUNTRIES } from '../countries'
+import { countryOptions } from '../countries'
 import { useT } from '../i18n'
 
 function isEmail(v: string): boolean {
@@ -17,7 +17,7 @@ export default function Register({
   onDone: (p: Profile) => void
   onCancel?: () => void
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const [firstName, setFirstName] = useState(initial?.firstName ?? '')
   const [lastName, setLastName] = useState(initial?.lastName ?? '')
   const [country, setCountry] = useState(initial?.country ?? '')
@@ -68,17 +68,14 @@ export default function Register({
         </label>
         <label>
           {t('reg.country')}
-          <input
-            list="country-list"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder={t('reg.countryPlaceholder')}
-          />
-          <datalist id="country-list">
-            {COUNTRIES.map((c) => (
-              <option key={c} value={c} />
+          <select value={country} onChange={(e) => setCountry(e.target.value)}>
+            <option value="">{t('reg.countryPlaceholder')}</option>
+            {countryOptions(lang).map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
+              </option>
             ))}
-          </datalist>
+          </select>
         </label>
         <label>
           {t('reg.nickname')}
