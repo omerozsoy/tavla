@@ -131,6 +131,7 @@ function Point({
   return (
     <div
       className={classes}
+      data-point={index}
       onClick={handleClick}
       onDragOver={isTarget ? (e) => e.preventDefault() : undefined}
       onDrop={isTarget ? () => onSelectTarget(index) : undefined}
@@ -222,6 +223,7 @@ export default function Board({
         {/* Orta bar: pip sayilari + cube + bar taslari */}
         <div
           className={`bar ${barSelectable ? 'selectable' : ''} ${selectedFrom === 'bar' ? 'selected' : ''}`}
+          data-slot="bar"
           onClick={() => barSelectable && onSelectFrom('bar')}
         >
           {showPip && <div className="pip pip-top">{topPip}</div>}
@@ -282,6 +284,7 @@ export default function Board({
       {/* Sag bear-off tepsisi (off hedefi) */}
       <div
         className={`bearoff ${offTarget ? 'target' : ''}`}
+        data-slot="off"
         onClick={() => offTarget && onSelectTarget('off')}
         onDragOver={offTarget ? (e) => e.preventDefault() : undefined}
         onDrop={offTarget ? () => onSelectTarget('off') : undefined}

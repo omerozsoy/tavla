@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { GameState, Player } from '../engine/types'
@@ -92,6 +93,104 @@ export default function PositionAnalyzer({
   function handleFrom(from: number | 'bar') {
     if (from === 'bar') editBar()
     else editPoint(from)
+  }
+
+  // ----- Surukle-birak (fare + dokunma): mevcut pulu bir noktadan digerine tasi -----
+  type DragFrom = { type: 'point'; idx: number } | { type: 'bar' }
+  type DropLoc = DragFrom | { type: 'off' } | null
+  const dragRef = useRef<{ color: Player; from: DragFrom; ghost: HTMLDivElement | null; moved: boolean; x0: number; y0: number } | null>(null)
+  const justDraggedRef = useRef(false)
+
+  const locFromPoint = (x: number, y: number): DropLoc => {
+    const el = document.elementFromPoint(x, y)
+    if (!el) return null
+    const pt = el.closest('[data-point]') as HTMLElement | null
+    if (pt) return { type: 'point', idx: Number(pt.dataset.point) }
+    const slot = el.closest('[data-slot]') as HTMLElement | null
+    if (slot?.dataset.slot === 'bar') return { type: 'bar' }
+    if (slot?.dataset.slot === 'off') return { type: 'off' }
+    return null
+  }
+
+  function performMove(color: Player, from: DragFrom, to: DropLoc) {
+    if (!to) return
+    if (from.type === 'point' && to.type === 'point' && from.idx === to.idx) return
+    if (from.type === 'bar' && to.type === 'bar') return
+    const sign = color === 'white' ? 1 : -1
+    // Hedef nokta ters renk ile doluysa tasima yapma
+    if (to.type === 'point') {
+      const tv = pts[to.idx]
+      if ((sign > 0 && tv < 0) || (sign < 0 && tv > 0)) return
+    }
+    const np = pts.slice()
+    const nb = { ...bar }
+    const no = { ...off }
+    if (from.type === 'point') np[from.idx] -= sign
+    else nb[color] = Math.max(0, nb[color] - 1)
+    if (to.type === 'point') np[to.idx] += sign
+    else if (to.type === 'bar') nb[color] += 1
+    else no[color] += 1
+    setPts(np)
+    setBar(nb)
+    setOff(no)
+    setResult(null)
+  }
+
+  function onBoardPointerDown(e: RPointerEvent<HTMLDivElement>) {
+    if (e.button !== 0 && e.pointerType === 'mouse') return
+    const target = e.target as HTMLElement
+    const checkerEl = target.closest('.checker') as HTMLElement | null
+    if (!checkerEl) return // surukleme yalnizca pul uzerinden baslar
+    const color: Player = checkerEl.classList.contains('white') ? 'white' : 'black'
+    const ptEl = target.closest('[data-point]') as HTMLElement | null
+    const slotEl = target.closest('[data-slot]') as HTMLElement | null
+    let from: DragFrom | null = null
+    if (ptEl) from = { type: 'point', idx: Number(ptEl.dataset.point) }
+    else if (slotEl?.dataset.slot === 'bar') from = { type: 'bar' }
+    if (!from) return
+    const rect = checkerEl.getBoundingClientRect()
+    dragRef.current = { color, from, ghost: null, moved: false, x0: e.clientX, y0: e.clientY }
+
+    const onMove = (ev: PointerEvent) => {
+      const d = dragRef.current
+      if (!d) return
+      if (!d.moved && Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0) < 6) return
+      if (!d.moved) {
+        d.moved = true
+        const g = document.createElement('div')
+        g.className = `checker ${d.color} pa-drag-ghost`
+        g.style.width = `${rect.width}px`
+        g.style.height = `${rect.height}px`
+        document.body.appendChild(g)
+        d.ghost = g
+      }
+      if (d.ghost) {
+        d.ghost.style.left = `${ev.clientX}px`
+        d.ghost.style.top = `${ev.clientY}px`
+      }
+    }
+    const onUp = (ev: PointerEvent) => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onUp)
+      const d = dragRef.current
+      dragRef.current = null
+      if (d?.ghost) d.ghost.remove()
+      if (d?.moved) {
+        justDraggedRef.current = true // sonraki click'i (tas ekleme) bastir
+        performMove(d.color, d.from, locFromPoint(ev.clientX, ev.clientY))
+      }
+    }
+    window.addEventListener('pointermove', onMove)
+    window.addEventListener('pointerup', onUp)
+    window.addEventListener('pointercancel', onUp)
+  }
+
+  function onBoardClickCapture(e: RMouseEvent<HTMLDivElement>) {
+    if (justDraggedRef.current) {
+      e.stopPropagation()
+      justDraggedRef.current = false
+    }
   }
 
   async function analyze() {
@@ -202,7 +301,12 @@ export default function PositionAnalyzer({
       </div>
 
       <div className="analyzer-body">
-        <div className="analyzer-board">
+        <div
+          className="analyzer-board"
+          onPointerDown={onBoardPointerDown}
+          onClickCapture={onBoardClickCapture}
+          onDragStartCapture={(e) => e.preventDefault()}
+        >
           <Board
             state={state}
             selectableFroms={allFroms}
