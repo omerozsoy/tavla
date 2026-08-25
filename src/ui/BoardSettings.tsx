@@ -170,6 +170,10 @@ export default function BoardSettings({
           <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
         </button>
         <p className="setup-note">{t('hint.learnNote')}</p>
+
+        <button className="galaxy-btn bs-save" onClick={onClose}>
+          <Icon name="check" size={18} /> {t('settings.save')}
+        </button>
       </div>
     </div>
   )

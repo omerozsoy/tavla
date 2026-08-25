@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
-import { COUNTRIES } from '../countries'
+import { countryOptions, COUNTRY_CODES } from '../countries'
 import { PROVINCES } from '../provinces'
 import DatePicker from './DatePicker'
 import { useT } from '../i18n'
@@ -60,7 +60,7 @@ export default function Auth({
   modal,
   page,
 }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   useEscape(onCancel)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
@@ -225,7 +225,7 @@ export default function Auth({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         country: country.trim(),
-        province: province.trim(),
+        province: country === 'TR' ? province.trim() : '',
         nickname: nickname.trim(),
         email: email.trim(),
         avatar,
@@ -249,7 +249,7 @@ export default function Auth({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       country: country.trim(),
-      province: province.trim(),
+      province: country === 'TR' ? province.trim() : '',
       nickname: nickname.trim(),
       email: email.trim(),
       avatar,
@@ -316,16 +316,19 @@ export default function Auth({
           {t('reg.country')}
           <select value={country} onChange={(e) => setCountry(e.target.value)}>
             <option value="">{t('reg.countryPlaceholder')}</option>
-            {country && !COUNTRIES.includes(country) && <option value={country}>{country}</option>}
-            {COUNTRIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
+            {country && !COUNTRY_CODES.includes(country) && (
+              <option value={country}>{country}</option>
+            )}
+            {countryOptions(lang).map(({ code, name }) => (
+              <option key={code} value={code}>
+                {name}
               </option>
             ))}
           </select>
         </label>
       )}
-      {editing && (
+      {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz) */}
+      {editing && country === 'TR' && (
         <label>
           {t('reg.province')}
           <select value={province} onChange={(e) => setProvince(e.target.value)}>

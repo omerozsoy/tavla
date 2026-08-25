@@ -38,7 +38,7 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('first_name')->label('Ad'),
                 Forms\Components\TextInput::make('last_name')->label('Soyad'),
                 Forms\Components\Select::make('country')->label('Ülke')
-                    ->options(array_combine(\App\Support\Geo::COUNTRIES, \App\Support\Geo::COUNTRIES))
+                    ->options(\App\Support\Geo::countries())
                     ->searchable(),
                 Forms\Components\Select::make('province')->label('İl')
                     ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
