@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Support;
+
+// Ulke listesi (Turkce) — yonetim panelinde ulke dropdown'u icin.
+// Frontend src/countries.ts ile ayni.
+class Geo
+{
+    public const COUNTRIES = [
+        'Afganistan', 'Almanya', 'Amerika Birleşik Devletleri', 'Andorra', 'Angola',
+        'Antigua ve Barbuda', 'Arjantin', 'Arnavutluk', 'Avustralya', 'Avusturya', 'Azerbaycan',
+        'Bahamalar', 'Bahreyn', 'Bangladeş', 'Barbados', 'Belçika', 'Belize', 'Benin', 'Beyaz Rusya',
+        'Bhutan', 'Birleşik Arap Emirlikleri', 'Birleşik Krallık', 'Bolivya', 'Bosna-Hersek',
+        'Botsvana', 'Brezilya', 'Brunei', 'Bulgaristan', 'Burkina Faso', 'Burundi', 'Cezayir',
+        'Cibuti', 'Çad', 'Çekya', 'Çin', 'Danimarka', 'Doğu Timor', 'Dominik Cumhuriyeti', 'Dominika',
+        'Ekvador', 'Ekvator Ginesi', 'El Salvador', 'Endonezya', 'Eritre', 'Ermenistan', 'Estonya',
+        'Esvatini', 'Etiyopya', 'Fas', 'Fiji', 'Fildişi Sahili', 'Filipinler', 'Filistin', 'Finlandiya',
+        'Fransa', 'Gabon', 'Gambiya', 'Gana', 'Gine', 'Gine-Bissau', 'Grenada', 'Guatemala', 'Guyana',
+        'Güney Afrika', 'Güney Kore', 'Güney Sudan', 'Gürcistan', 'Haiti', 'Hindistan', 'Hırvatistan',
+        'Hollanda', 'Honduras', 'Irak', 'İran', 'İrlanda', 'İspanya', 'İsrail', 'İsveç', 'İsviçre',
+        'İtalya', 'İzlanda', 'Jamaika', 'Japonya', 'Kamboçya', 'Kamerun', 'Kanada', 'Karadağ', 'Katar',
+        'Kazakistan', 'Kenya', 'Kıbrıs', 'Kırgızistan', 'Kiribati', 'Kolombiya', 'Komorlar',
+        'Kongo Cumhuriyeti', 'Kongo Demokratik Cumhuriyeti', 'Kosova', 'Kosta Rika', 'Kuveyt',
+        'Kuzey Kore', 'Kuzey Makedonya', 'Küba', 'Laos', 'Lesotho', 'Letonya', 'Liberya', 'Libya',
+        'Liechtenstein', 'Litvanya', 'Lübnan', 'Lüksemburg', 'Macaristan', 'Madagaskar', 'Malavi',
+        'Maldivler', 'Malezya', 'Mali', 'Malta', 'Marshall Adaları', 'Mauritius', 'Meksika', 'Mısır',
+        'Mikronezya', 'Moğolistan', 'Moldova', 'Monako', 'Moritanya', 'Mozambik', 'Myanmar', 'Namibya',
+        'Nauru', 'Nepal', 'Nijer', 'Nijerya', 'Nikaragua', 'Norveç', 'Orta Afrika Cumhuriyeti',
+        'Özbekistan', 'Pakistan', 'Palau', 'Panama', 'Papua Yeni Gine', 'Paraguay', 'Peru', 'Polonya',
+        'Portekiz', 'Romanya', 'Ruanda', 'Rusya', 'Saint Kitts ve Nevis', 'Saint Lucia',
+        'Saint Vincent ve Grenadinler', 'Samoa', 'San Marino', 'Sao Tome ve Principe', 'Senegal',
+        'Seyşeller', 'Sırbistan', 'Singapur', 'Slovakya', 'Slovenya', 'Solomon Adaları', 'Somali',
+        'Sri Lanka', 'Sudan', 'Surinam', 'Suriye', 'Suudi Arabistan', 'Şili', 'Tacikistan', 'Tanzanya',
+        'Tayland', 'Tayvan', 'Togo', 'Tonga', 'Trinidad ve Tobago', 'Tunus', 'Tuvalu', 'Türkiye',
+        'Türkmenistan', 'Uganda', 'Ukrayna', 'Umman', 'Uruguay', 'Ürdün', 'Vanuatu', 'Vatikan',
+        'Venezuela', 'Vietnam', 'Yemen', 'Yeni Zelanda', 'Yunanistan', 'Zambiya', 'Zimbabve',
+    ];
+
+    // 81 il — EventResource::PROVINCES ile ayni kaynak; kolaylik icin burada da erisim.
+    public static function provinces(): array
+    {
+        return \App\Filament\Resources\EventResource::PROVINCES;
+    }
+}

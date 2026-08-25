@@ -402,7 +402,9 @@ export default function App() {
   // --- URL yonlendirme (hash tabanli) ---
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
-  const currentSlug = leaderboardOpen
+  const currentSlug = editProfile
+    ? 'profil-duzenle'
+    : leaderboardOpen
     ? 'lider-tablosu'
     : tournOpen
       ? 'turnuvalar'
@@ -527,6 +529,9 @@ export default function App() {
           break
         case 'yapay-zeka':
           setSetup('pvb')
+          break
+        case 'profil-duzenle':
+          setEditProfile(true)
           break
         default:
           break // ana sayfa (bos path)

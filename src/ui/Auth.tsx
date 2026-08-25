@@ -314,33 +314,28 @@ export default function Auth({
       {editing && (
         <label>
           {t('reg.country')}
-          <input
-            list="country-list"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            placeholder={t('reg.countryPlaceholder')}
-          />
-          <datalist id="country-list">
+          <select value={country} onChange={(e) => setCountry(e.target.value)}>
+            <option value="">{t('reg.countryPlaceholder')}</option>
+            {country && !COUNTRIES.includes(country) && <option value={country}>{country}</option>}
             {COUNTRIES.map((c) => (
-              <option key={c} value={c} />
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
-          </datalist>
+          </select>
         </label>
       )}
       {editing && country === 'Türkiye' && (
         <label>
           {t('reg.province')}
-          <input
-            list="province-list"
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
-            placeholder={t('reg.provincePlaceholder')}
-          />
-          <datalist id="province-list">
+          <select value={province} onChange={(e) => setProvince(e.target.value)}>
+            <option value="">{t('reg.provincePlaceholder')}</option>
             {PROVINCES.map((p) => (
-              <option key={p} value={p} />
+              <option key={p} value={p}>
+                {p}
+              </option>
             ))}
-          </datalist>
+          </select>
         </label>
       )}
       <label>
