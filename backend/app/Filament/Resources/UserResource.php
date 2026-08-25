@@ -38,6 +38,7 @@ class UserResource extends Resource
                 Forms\Components\TextInput::make('first_name')->label('Ad'),
                 Forms\Components\TextInput::make('last_name')->label('Soyad'),
                 Forms\Components\TextInput::make('country')->label('Ülke'),
+                Forms\Components\TextInput::make('province')->label('İl'),
                 // Sifre: yalnizca doldurulursa degisir (model 'hashed' cast'i ile hash'lenir)
                 Forms\Components\TextInput::make('password')->label('Yeni şifre')
                     ->password()->dehydrated(fn ($state) => filled($state))

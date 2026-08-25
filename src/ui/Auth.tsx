@@ -3,6 +3,8 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
 import { COUNTRIES } from '../countries'
+import { PROVINCES } from '../provinces'
+import DatePicker from './DatePicker'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
@@ -64,12 +66,13 @@ export default function Auth({
   const editing = !!(editUser || editGuest)
   const seed = editUser
     ? api.toProfile(editUser)
-    : editGuest || { firstName: '', lastName: '', country: '', nickname: '', email: '' }
+    : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
 
   const [tab, setTab] = useState<'login' | 'register'>('register')
   const [firstName, setFirstName] = useState(seed.firstName)
   const [lastName, setLastName] = useState(seed.lastName)
   const [country, setCountry] = useState(seed.country)
+  const [province, setProvince] = useState(seed.province ?? '')
   const [nickname, setNickname] = useState(seed.nickname)
   const [email, setEmail] = useState(seed.email)
   const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
@@ -222,6 +225,7 @@ export default function Auth({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         country: country.trim(),
+        province: country.trim() === 'Türkiye' ? province.trim() : '',
         nickname: nickname.trim(),
         email: email.trim(),
         avatar,
@@ -245,6 +249,7 @@ export default function Auth({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       country: country.trim(),
+      province: country.trim() === 'Türkiye' ? province.trim() : '',
       nickname: nickname.trim(),
       email: email.trim(),
       avatar,
@@ -322,6 +327,22 @@ export default function Auth({
           </datalist>
         </label>
       )}
+      {editing && country === 'Türkiye' && (
+        <label>
+          {t('reg.province')}
+          <input
+            list="province-list"
+            value={province}
+            onChange={(e) => setProvince(e.target.value)}
+            placeholder={t('reg.provincePlaceholder')}
+          />
+          <datalist id="province-list">
+            {PROVINCES.map((p) => (
+              <option key={p} value={p} />
+            ))}
+          </datalist>
+        </label>
+      )}
       <label>
         {t('reg.nickname')}
         <input
@@ -335,7 +356,12 @@ export default function Auth({
       {editing && (
         <label>
           {t('reg.birthDate')}
-          <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} />
+          <DatePicker
+            value={birthDate}
+            onChange={setBirthDate}
+            max={new Date().toISOString().slice(0, 10)}
+            placeholder="GG.AA.YYYY"
+          />
         </label>
       )}
       <label>

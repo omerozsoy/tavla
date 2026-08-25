@@ -33,6 +33,7 @@ export interface Profile {
   firstName: string
   lastName: string
   country: string
+  province?: string // Turkiye ili (yalnizca ulke Turkiye ise)
   nickname: string
   email: string
   avatar?: string // profil fotografi (kucultulmus data URL)
