@@ -3531,9 +3531,9 @@ export default function App() {
         toggleAnim={() => setAnimOn((v) => !v)}
         canResign={!matchOver && (mode === 'pvb' || online)}
         loggedIn={!!user}
-        onTournaments={menuProps.onTournaments}
-        onFriends={menuProps.onFriends}
-        onShop={menuProps.onShop}
+        onTournaments={online && !matchOver ? undefined : menuProps.onTournaments}
+        onFriends={online && !matchOver ? undefined : menuProps.onFriends}
+        onShop={online && !matchOver ? undefined : menuProps.onShop}
         onLobby={() => (online ? handleLeaveRoom() : setHome(true))}
         onResign={() => setResignOpen(true)}
         onClose={() => setGameMenuOpen(false)}
