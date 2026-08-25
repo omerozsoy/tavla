@@ -3460,6 +3460,35 @@ button[aria-disabled='true'],
 .gm-state.off {
   color: #c6bfb2;
 }
+/* Oyun-ici hizli navigasyon koprusu (Turnuva / Arkadas / Magaza) — drawer kiremit
+   zeminde beyaz metin/ikon (accent kiremit zemine karisir). Overlay olarak acilir,
+   kapaninca oyuna doner. */
+.gm-nav {
+  display: flex;
+  flex-direction: column;
+}
+.gm-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 13px 6px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--tv-white);
+  cursor: pointer;
+  font-size: 1.02rem;
+  font-weight: 600;
+  text-align: left;
+}
+.gm-nav-btn > svg {
+  flex: none;
+  opacity: 0.92;
+}
+.gm-nav-btn:hover {
+  opacity: 0.82;
+}
 .gm-actions {
   display: flex;
   justify-content: center;

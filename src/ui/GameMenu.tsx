@@ -22,6 +22,10 @@ interface Props {
   animOn: boolean
   toggleAnim: () => void
   canResign: boolean
+  loggedIn?: boolean
+  onTournaments?: () => void
+  onFriends?: () => void
+  onShop?: () => void
   onLobby: () => void
   onResign: () => void
   onClose: () => void
@@ -52,6 +56,25 @@ export default function GameMenu(p: Props) {
             </button>
           ))}
         </div>
+        {(p.onTournaments || (p.loggedIn && (p.onFriends || p.onShop))) && (
+          <div className="gm-nav">
+            {p.onTournaments && (
+              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onTournaments!() }}>
+                <Icon name="medal" size={18} /> {t('menu.tournaments')}
+              </button>
+            )}
+            {p.loggedIn && p.onFriends && (
+              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onFriends!() }}>
+                <Icon name="users" size={18} /> {t('menu.friends')}
+              </button>
+            )}
+            {p.loggedIn && p.onShop && (
+              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onShop!() }}>
+                <Icon name="shop" size={18} /> {t('shop.title')}
+              </button>
+            )}
+          </div>
+        )}
         <div className="gm-actions">
           <button
             className="gm-circle lobby"
