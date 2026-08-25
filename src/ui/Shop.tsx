@@ -48,6 +48,7 @@ export default function Shop({
   useEscape(onClose)
   const [busy, setBusy] = useState<string | null>(null)
   const [dailyMsg, setDailyMsg] = useState('')
+  const [buyErr, setBuyErr] = useState('')
 
   async function daily() {
     setBusy('daily')
@@ -63,8 +64,11 @@ export default function Shop({
 
   async function buy(shopId: string) {
     setBusy(shopId)
+    setBuyErr('')
     try {
       await onBuy(shopId)
+    } catch {
+      setBuyErr(t('shop.buyErr'))
     } finally {
       setBusy(null)
     }
@@ -92,6 +96,11 @@ export default function Shop({
           </button>
         </div>
         {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}
+        {buyErr && (
+          <div className="shop-buy-err" role="alert">
+            <Icon name="alert" size={15} /> {buyErr}
+          </div>
+        )}
 
         <h3 className="shop-sec">{t('shop.themes')}</h3>
         <div className="shop-grid">
@@ -115,13 +124,18 @@ export default function Shop({
                     {active ? t('shop.selected') : t('shop.select')}
                   </button>
                 ) : (
-                  <button
-                    className="shop-btn buy"
-                    disabled={busy === sid || coins < (th.price ?? 0)}
-                    onClick={() => buy(sid)}
-                  >
-<Icon name="coin" size={14} /> {th.price}
-                  </button>
+                  <>
+                    <button
+                      className={`shop-btn buy${coins < (th.price ?? 0) ? ' cant' : ''}`}
+                      disabled={busy === sid || coins < (th.price ?? 0)}
+                      onClick={() => buy(sid)}
+                    >
+                      <Icon name="coin" size={14} /> {th.price}
+                    </button>
+                    {coins < (th.price ?? 0) && (
+                      <div className="shop-need">{t('shop.need', { n: (th.price ?? 0) - coins })}</div>
+                    )}
+                  </>
                 )}
               </div>
             )
@@ -160,13 +174,18 @@ export default function Shop({
                     {equipped ? t('shop.equipped') : t('shop.equip')}
                   </button>
                 ) : (
-                  <button
-                    className="shop-btn buy"
-                    disabled={busy === sid || coins < fr.price}
-                    onClick={() => buy(sid)}
-                  >
-<Icon name="coin" size={14} /> {fr.price}
-                  </button>
+                  <>
+                    <button
+                      className={`shop-btn buy${coins < fr.price ? ' cant' : ''}`}
+                      disabled={busy === sid || coins < fr.price}
+                      onClick={() => buy(sid)}
+                    >
+                      <Icon name="coin" size={14} /> {fr.price}
+                    </button>
+                    {coins < fr.price && (
+                      <div className="shop-need">{t('shop.need', { n: fr.price - coins })}</div>
+                    )}
+                  </>
                 )}
               </div>
             )

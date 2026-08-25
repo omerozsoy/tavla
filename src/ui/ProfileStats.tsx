@@ -6,6 +6,7 @@ import { myStats, myMatches, myAnalytics, type MyStats, type MyMatch, type Analy
 import { frameStyle } from '../cosmetics'
 import { DivisionChip, BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
+import { Skeleton } from './Skeleton'
 
 interface Props {
   avatar?: string
@@ -55,7 +56,32 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
         <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
-        {!error && !data && <div className="lb-empty">{t('an.loading')}</div>}
+        {!error && !data && (
+          <div aria-busy="true" aria-live="polite">
+            <div className="stats-head">
+              <Skeleton w={54} h={54} r="50%" />
+              <div className="stats-id">
+                <Skeleton w={130} h={16} style={{ display: 'block' }} />
+                <Skeleton w={90} h={12} style={{ display: 'block', marginTop: 6 }} />
+              </div>
+              <Skeleton w={56} h={30} r={8} />
+            </div>
+            <div className="stats-grid">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="stats-box">
+                  <Skeleton w={40} h={22} style={{ display: 'block', margin: '0 auto' }} />
+                  <Skeleton w={54} h={11} style={{ display: 'block', margin: '8px auto 0' }} />
+                </div>
+              ))}
+            </div>
+            <div className="mh-head"><Skeleton w={120} h={13} /></div>
+            <div className="mh-list">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="mh-row"><Skeleton w="100%" h={14} /></div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {data && (
           <>
@@ -103,6 +129,13 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
             {games > 0 && (
               <div className="stats-bar">
                 <div className="stats-bar-win" style={{ width: `${wr}%` }} />
+              </div>
+            )}
+
+            {games === 0 && (
+              <div className="empty-state sm stats-firstgame">
+                <Icon name="dice" size={22} />
+                <span>{t('stats.firstGame')}</span>
               </div>
             )}
 
