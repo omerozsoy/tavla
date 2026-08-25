@@ -3306,6 +3306,11 @@ export default function App() {
                 targets={TARGETS}
                 coins={user?.coins ?? 0}
                 initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
+                board={(() => {
+                  const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+                  return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
+                })()}
+                onChangeBoard={() => setBoardSettingsOpen(true)}
                 onConfirm={applyMatchSetup}
                 onCancel={() => {
                   setSetup(null)
@@ -3315,6 +3320,8 @@ export default function App() {
             </div>
           </main>
         </div>
+        {/* Kurulumda "Tahtayi Degistir" -> BoardSettings menuPages icinde; overlay olarak render et */}
+        {menuPages}
         {authModal}
         {menuOverlays}
       </>

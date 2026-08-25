@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import SetupBoard from './SetupBoard'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
@@ -45,11 +46,20 @@ const AI_LEVELS = [
   'Neural AI',
 ]
 
+interface BoardColors {
+  panel: string
+  a: string
+  b: string
+  checker: string
+}
+
 interface Props {
   mode: SetupMode
   targets: readonly number[]
   initial: Omit<MatchOptions, 'mode'>
   coins?: number
+  board: BoardColors
+  onChangeBoard: () => void
   onConfirm: (opts: MatchOptions) => void
   onCancel: () => void
 }
@@ -59,6 +69,8 @@ export default function MatchSetup({
   targets,
   initial,
   coins = 0,
+  board,
+  onChangeBoard,
   onConfirm,
   onCancel,
 }: Props) {
@@ -86,6 +98,7 @@ export default function MatchSetup({
 
   return (
     <div className="register-overlay page setup-page">
+      <div className="setup-split">
       <div className="register-card setup-card">
         <h2>
           {mode === 'online' ? (
@@ -255,6 +268,17 @@ export default function MatchSetup({
             <Icon name="play" size={18} /> {t('setup.start')}
           </button>
         </div>
+      </div>
+      <div className="setup-preview">
+        <SetupBoard
+          panel={board.panel}
+          a={board.a}
+          b={board.b}
+          checker={board.checker}
+          onChangeBoard={onChangeBoard}
+          changeLabel={t('setup.changeBoard')}
+        />
+      </div>
       </div>
     </div>
   )
