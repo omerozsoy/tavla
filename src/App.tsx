@@ -2788,55 +2788,60 @@ export default function App() {
     )
   }
 
-  // Giris/kayit/profil modali (tam ekran degil, ustte pencere)
-  const authModal =
-    showAuth || editProfile ? (
-      <Auth
-        key={editProfile && user ? `edit-${user.id}` : editProfile ? 'edit-guest' : 'auth'}
-        modal
-        editUser={editProfile ? user : null}
-        editGuest={editProfile && !user ? guestProfile : null}
-        onAuthed={(u, isNew) => {
-          const wasEditing = editProfile
-          setUser(u)
-          setGuestProfile(null)
-          setShowAuth(false)
-          // Yeni Google kullanicisi: takma ismini kendi secsin (profil ekrani acilir)
-          if (isNew) {
-            setEditProfile(true)
-            return
-          }
-          setEditProfile(false)
-          if (!wasEditing) {
-            loadServerGame()
-              .then((g) => {
-                if (g) applySavedGame(g as SavedGame)
-              })
-              .catch(() => {})
-          }
-        }}
-        onGuest={(p) => {
-          saveProfile(p)
-          setGuestProfile(p)
-          setUser(null)
-          setEditProfile(false)
-          setShowAuth(false)
-        }}
-        onCancel={() => {
-          setEditProfile(false)
-          setShowAuth(false)
-        }}
-        onDeleteAccount={() => {
-          apiDeleteAccount().finally(() => {
-            setUser(null)
-            setGuestProfile(null)
-            setEditProfile(false)
-            setShowAuth(false)
-            setHome(true)
+  // Ortak Auth handler'lari (giris/kayit modali + profil duzenleme sayfasi paylasir)
+  const authProps = {
+    onAuthed: (u: ServerUser, isNew?: boolean) => {
+      const wasEditing = editProfile
+      setUser(u)
+      setGuestProfile(null)
+      setShowAuth(false)
+      // Yeni Google kullanicisi: takma ismini kendi secsin (profil ekrani acilir)
+      if (isNew) {
+        setEditProfile(true)
+        return
+      }
+      setEditProfile(false)
+      if (!wasEditing) {
+        loadServerGame()
+          .then((g) => {
+            if (g) applySavedGame(g as SavedGame)
           })
-        }}
-      />
-    ) : null
+          .catch(() => {})
+      }
+    },
+    onGuest: (p: Profile) => {
+      saveProfile(p)
+      setGuestProfile(p)
+      setUser(null)
+      setEditProfile(false)
+      setShowAuth(false)
+    },
+    onCancel: () => {
+      setEditProfile(false)
+      setShowAuth(false)
+    },
+    onDeleteAccount: () => {
+      apiDeleteAccount().finally(() => {
+        setUser(null)
+        setGuestProfile(null)
+        setEditProfile(false)
+        setShowAuth(false)
+        setHome(true)
+      })
+    },
+  }
+  // Giris/kayit: modal pencere (gate). Profil duzenleme ise menuPages icinde SAYFA olarak acilir.
+  const authModal = showAuth ? <Auth key="auth" modal {...authProps} /> : null
+  // Profil duzenleme sayfasi (normal sayfa, modal degil; sol menu gorunur)
+  const editProfilePage = editProfile ? (
+    <Auth
+      key={user ? `edit-${user.id}` : 'edit-guest'}
+      page
+      editUser={user}
+      editGuest={!user ? guestProfile : null}
+      {...authProps}
+    />
+  ) : null
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
   // Oyun ekraninda mi (cekilme butonu bunun icin)
@@ -2864,7 +2869,7 @@ export default function App() {
       {user && (
         <button
           className="account-coins-btn"
-          onClick={() => setShopOpen(true)}
+          onClick={() => goPage(() => setShopOpen(true))}
           title={t('shop.title')}
         >
           <Icon name="coin" size={16} /> {user.coins ?? 0}
@@ -2885,7 +2890,7 @@ export default function App() {
           </span>
         ))}
       {user && (
-        <button className="account-btn account-shop" onClick={() => setShopOpen(true)}>
+        <button className="account-btn account-shop" onClick={() => goPage(() => setShopOpen(true))}>
           <Icon name="shop" size={15} /> {t('shop.title')}
         </button>
       )}
@@ -2912,7 +2917,7 @@ export default function App() {
               <Icon name="crown" size={14} /> {t('menu.admin')}
             </button>
           )}
-          <button className="account-btn" onClick={() => setEditProfile(true)}>
+          <button className="account-btn" onClick={() => goPage(() => setEditProfile(true))}>
             {t('menu.editProfile')}
           </button>
           <button className="account-btn" onClick={handleLogout}>
@@ -3005,6 +3010,7 @@ export default function App() {
     setClubsOpen(false)
     setRulesOpen(false)
     setAnalyzerOpen(false)
+    setEditProfile(false)
     setSetup(null)
   }
   const goPage = (open: () => void) => {
@@ -3111,11 +3117,13 @@ export default function App() {
     quizOpen ||
     clubsOpen ||
     rulesOpen ||
-    analyzerOpen
+    analyzerOpen ||
+    editProfile
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
     <>
+      {editProfilePage}
       {friendsOpen && user && (
         <Friends onInvite={handleInviteFriend} onClose={() => setFriendsOpen(false)} />
       )}

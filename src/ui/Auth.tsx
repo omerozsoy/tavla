@@ -45,6 +45,7 @@ interface Props {
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
   modal?: boolean // true: yari saydam arka planla modal pencere
+  page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
 }
 
 export default function Auth({
@@ -55,6 +56,7 @@ export default function Auth({
   onCancel,
   onDeleteAccount,
   modal,
+  page,
 }: Props) {
   const { t } = useT()
   useEscape(onCancel)
@@ -349,7 +351,7 @@ export default function Auth({
   )
 
   return (
-    <div className={`register-overlay ${modal ? 'modal' : ''}`}>
+    <div className={`register-overlay ${modal ? 'modal' : ''} ${page ? 'page' : ''}`}>
       <form
         className="register-card"
         onSubmit={
