@@ -24,10 +24,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Marka adi: sunucu .env'inde APP_NAME yanlis olabilir ("World Backgammon
-        // Council"); e-posta basligi/altbilgisi/imzasi config('app.name') kullaniyor.
-        // Kodda sabitle -> tum e-postalar TavlaTv markali.
-        config(['app.name' => 'TavlaTv']);
+        // Marka adi .env'den gelir (APP_NAME=TavlaTv). E-posta basligi/altbilgisi
+        // config('app.name') kullanir; ayrica e-posta govdeleri asagida Turkcelestirildi.
 
         // Filament tarih seciciler: Turkce gun.ay.yil formati + takvim (native degil)
         DatePicker::configureUsing(fn (DatePicker $c) => $c->native(false)->displayFormat('d.m.Y')->locale('tr')->firstDayOfWeek(1));
