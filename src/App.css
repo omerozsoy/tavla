@@ -5001,6 +5001,24 @@ button[aria-disabled='true'],
   max-width: 100%;
   margin: 0;
 }
+/* Analizde surukle-birak: pul uzerinde dokunma kaydirmayi engelle (parmakla surukleme) */
+.analyzer-board .checker {
+  touch-action: none;
+}
+.analyzer-board .point.selectable,
+.analyzer-board .checker {
+  cursor: grab;
+}
+/* Surukleme sirasinda parmagi/imleci izleyen hayalet pul */
+.pa-drag-ghost {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 3000;
+  margin: 0;
+  opacity: 0.92;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
 .analyzer-head {
   display: flex;
   align-items: center;
