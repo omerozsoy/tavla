@@ -347,6 +347,140 @@ button[aria-disabled='true'],
   color: var(--accent);
 }
 
+/* ===== Ozel tarih secici (Turkce takvim, Pazartesi baslar) ===== */
+.datepicker {
+  position: relative;
+}
+.dp-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: left;
+}
+.dp-input > svg {
+  color: var(--accent);
+  flex: none;
+}
+.dp-input.placeholder > span {
+  color: var(--tv-ink-faint);
+}
+.dp-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: var(--z-modal);
+  width: 288px;
+  max-width: 92vw;
+  padding: 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+.dp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.dp-title {
+  font-weight: var(--fw-bold);
+  color: var(--text);
+  text-transform: capitalize;
+}
+.dp-nav {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--btn-bg);
+  color: var(--text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.dp-nav:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dp-weekdays,
+.dp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+.dp-weekdays {
+  margin-bottom: 4px;
+}
+.dp-weekdays span {
+  text-align: center;
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  color: var(--tv-ink-faint);
+  text-transform: capitalize;
+  padding: 4px 0;
+}
+.dp-day {
+  aspect-ratio: 1;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.dp-day:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.dp-day.other {
+  color: var(--tv-ink-faint);
+  opacity: 0.55;
+}
+.dp-day.today {
+  border-color: var(--accent);
+}
+.dp-day.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--tv-white);
+  font-weight: var(--fw-bold);
+}
+.dp-day:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.dp-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.dp-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.dp-link:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
 /* Lobi asagi-cek-yenile gostergesi (native jest calismadigindan kendi implementasyonumuz) */
 .ptr {
   position: fixed;
