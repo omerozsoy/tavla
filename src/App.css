@@ -883,13 +883,17 @@ button[aria-disabled='true'],
   align-items: stretch;
   margin-top: 22px;
 }
+/* Vazgec/Basla esit genislik + esit yukseklik */
+.setup-actions > button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 50px;
+}
 .setup-actions .setup-start {
-  flex: 1 1 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 50px;
   font-size: 1.05rem;
 }
 .btn-secondary {
@@ -2981,8 +2985,14 @@ button[aria-disabled='true'],
 .register-actions {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
   margin-top: 8px;
+}
+/* Butonlar esit genislik (Vazgec/Kaydet). .menu-btn width:100% eziyordu. */
+.register-actions > button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 46px;
+  width: auto;
 }
 .auth-tabs {
   display: flex;
@@ -3651,17 +3661,20 @@ button[aria-disabled='true'],
   height: 22px;
   border-radius: var(--radius-circle);
   object-fit: cover;
-  margin-right: 4px;
-  vertical-align: middle;
+  display: block;
 }
 .account-rating {
-  margin-left: 6px;
-  padding: 1px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   background: var(--accent);
   color: var(--tv-white);
-  font-size: 0.78rem;
+  font-size: 0.86rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 .player-rating {
   margin-top: 2px;
@@ -3831,6 +3844,55 @@ button[aria-disabled='true'],
 .lang-select option {
   background: var(--card-bg);
   color: var(--text);
+}
+/* ---- Bayrakli dil secici (LangMenu) ---- */
+.flag {
+  display: block;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+.lang-menu {
+  position: relative;
+  display: inline-flex;
+}
+.lang-btn {
+  padding: 6px 9px;
+}
+.lang-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: var(--z-modal);
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+}
+.lang-opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9rem;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+}
+.lang-opt:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.lang-opt.active {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  font-weight: 700;
 }
 .account-sep {
   width: 1px;
@@ -6584,15 +6646,20 @@ button[aria-disabled='true'],
 .account-coins-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  border: 1px solid color-mix(in srgb, var(--tv-gold) 45%, var(--border));
-  background: color-mix(in srgb, var(--tv-gold) 12%, transparent);
-  color: var(--tv-gold);
+  gap: 5px;
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 55%, var(--border));
+  background: color-mix(in srgb, var(--tv-gold) 18%, var(--card-bg));
+  color: var(--text);
   font-weight: 800;
   font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
   border-radius: var(--radius-pill);
-  padding: 5px 10px;
+  padding: 5px 11px;
   cursor: pointer;
+}
+/* Coin ikonu altin; sayi okunur (koyu) metin -> kontrast */
+.account-coins-btn > svg {
+  color: #c8961e;
 }
 .account-coins-btn:hover {
   background: color-mix(in srgb, var(--tv-gold) 20%, transparent);
