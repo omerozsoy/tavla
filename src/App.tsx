@@ -2853,7 +2853,12 @@ export default function App() {
   const accountBar = (
     <div className="account-bar">
       {/* 'Pes Et' hesap cubugunda degil, oyun menusunde (game-ham ☰ -> GameMenu) */}
-      <span className="account-name">
+      <button
+        type="button"
+        className="account-name"
+        onClick={() => goPage(() => setEditProfile(true))}
+        title={t('menu.editProfile')}
+      >
         {profile.avatar ? (
           <span
             className="av-frame"
@@ -2870,7 +2875,7 @@ export default function App() {
             <Icon name="star" size={14} /> {user.rating}
           </span>
         )}
-      </span>
+      </button>
       {user && (
         <button
           className="account-coins-btn"
@@ -2922,9 +2927,6 @@ export default function App() {
               <Icon name="crown" size={14} /> {t('menu.admin')}
             </button>
           )}
-          <button className="account-btn" onClick={() => goPage(() => setEditProfile(true))}>
-            {t('menu.editProfile')}
-          </button>
           <button className="account-btn" onClick={handleLogout}>
             {t('auth.logout')}
           </button>
