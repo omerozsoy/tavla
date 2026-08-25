@@ -46,6 +46,7 @@ interface Props {
   onGuest: (profile: Profile) => void
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
+  onLogout?: () => void // profil duzenlemede cikis yap
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
 }
@@ -57,6 +58,7 @@ export default function Auth({
   onGuest,
   onCancel,
   onDeleteAccount,
+  onLogout,
   modal,
   page,
 }: Props) {
@@ -579,6 +581,12 @@ export default function Auth({
                   : t('reg.submitNew')}
             </button>
           </div>
+        )}
+
+        {editUser && onLogout && (
+          <button type="button" className="menu-btn auth-logout" onClick={onLogout}>
+            <Icon name="logout" size={16} /> {t('auth.logout')}
+          </button>
         )}
 
         {!editing && !forgot && (

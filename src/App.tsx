@@ -1853,8 +1853,6 @@ export default function App() {
     (user?.unlocks ?? []).includes('theme.' + th.id),
   )
 
-  // Tam ekran ac/kapat
-  const [isFull, setIsFull] = useState(false)
   const [muted, setMutedState] = useState(isMuted())
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
   const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
@@ -1987,36 +1985,6 @@ export default function App() {
       window.removeEventListener('touchcancel', onEnd)
     }
   }, [home])
-
-  useEffect(() => {
-    const onChange = () => setIsFull(!!document.fullscreenElement)
-    document.addEventListener('fullscreenchange', onChange)
-    return () => document.removeEventListener('fullscreenchange', onChange)
-  }, [])
-  function toggleFullscreen() {
-    if (!document.fullscreenElement) {
-      const el = document.documentElement as HTMLElement & {
-        webkitRequestFullscreen?: () => Promise<void>
-      }
-      const req = el.requestFullscreen?.() ?? el.webkitRequestFullscreen?.()
-      Promise.resolve(req)
-        .then(() => {
-          // Mobilde tam ekranda yatay kilitle (destekleyen tarayicilarda)
-          const orient = screen.orientation as ScreenOrientation & {
-            lock?: (o: string) => Promise<void>
-          }
-          orient?.lock?.('landscape').catch(() => {})
-        })
-        .catch(() => {})
-    } else {
-      try {
-        ;(screen.orientation as ScreenOrientation & { unlock?: () => void })?.unlock?.()
-      } catch {
-        /* yok */
-      }
-      document.exitFullscreen?.().catch(() => {})
-    }
-  }
 
   // Online host (p1): rakip katilinca acilis atisini baslat
   useEffect(() => {
@@ -2844,6 +2812,7 @@ export default function App() {
       page
       editUser={user}
       editGuest={!user ? guestProfile : null}
+      onLogout={handleLogout}
       {...authProps}
     />
   ) : null
@@ -2927,9 +2896,6 @@ export default function App() {
               <Icon name="crown" size={14} /> {t('menu.admin')}
             </button>
           )}
-          <button className="account-btn" onClick={handleLogout}>
-            {t('auth.logout')}
-          </button>
         </>
       ) : (
         <button className="account-btn primary" onClick={() => setShowAuth(true)}>
@@ -2953,7 +2919,7 @@ export default function App() {
       >
         {LANGS.map((l) => (
           <option key={l.code} value={l.code}>
-            {l.flag} {l.code.toUpperCase()}
+            {l.flag}
           </option>
         ))}
       </select>
@@ -2968,13 +2934,6 @@ export default function App() {
         }}
       >
         {muted ? <Icon name="mute" size={18} /> : <Icon name="volume" size={18} />}
-      </button>
-      <button
-        className="account-btn icon"
-        title={isFull ? t('menu.exitFull') : t('menu.fullscreen')}
-        onClick={toggleFullscreen}
-      >
-        {isFull ? <Icon name="minimize" size={18} /> : <Icon name="maximize" size={18} />}
       </button>
     </div>
   )

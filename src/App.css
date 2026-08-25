@@ -347,6 +347,12 @@ button[aria-disabled='true'],
   color: var(--accent);
 }
 
+/* Profil duzenlemede "Cikis Yap" (hesap barindan tasindi) */
+.auth-logout {
+  margin-top: 12px;
+  justify-content: center;
+}
+
 /* ===== Ozel tarih secici (Turkce takvim, Pazartesi baslar) ===== */
 .datepicker {
   position: relative;
