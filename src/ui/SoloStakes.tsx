@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import SetupBoard from './SetupBoard'
 
 // Tek Oyun = money game: her zaman TEK oyun (1 puan). Puan/uzunluk secimi YOK.
 
@@ -39,56 +41,82 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const fmt = (n: number) => n.toLocaleString('tr-TR')
+  // Baslangicta oynanabilir ilk seviye secili (yoksa ilk seviye)
+  const [sel, setSel] = useState<SoloLevel>(
+    () => SOLO_LEVELS.find((l) => coins >= l.stake) ?? SOLO_LEVELS[0],
+  )
+  const selLocked = coins < sel.stake
 
   return (
     <div className="register-overlay modal page">
-      <div className="register-card solo-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          <Icon name="x" size={16} />
-        </button>
-        <h2>
-          <Icon name="play" size={20} /> {t('solo.title')}
-        </h2>
-        <p className="register-sub">{t('solo.sub')}</p>
-        <div className="solo-balance">
-          <Icon name="coin" size={15} /> {fmt(coins)}
+      <div className="setup-split">
+        <div className="register-card solo-card">
+          <button className="modal-close" onClick={onClose} aria-label="Kapat">
+            <Icon name="x" size={16} />
+          </button>
+          <h2>
+            <Icon name="play" size={20} /> {t('solo.title')}
+          </h2>
+          <p className="register-sub">{t('solo.sub')}</p>
+          <div className="solo-balance">
+            <Icon name="coin" size={15} /> {fmt(coins)}
+          </div>
+
+          <div className="solo-grid">
+            {SOLO_LEVELS.map((lv) => {
+              const locked = coins < lv.stake
+              return (
+                <button
+                  key={lv.level}
+                  className={`solo-tile ${locked ? 'locked' : ''} ${sel.level === lv.level ? 'selected' : ''}`}
+                  disabled={locked}
+                  onClick={() => setSel(lv)}
+                  title={locked ? t('solo.locked') : t('solo.play')}
+                >
+                  <span className="solo-lvl">{t('solo.level', { n: lv.level })}</span>
+                  <span
+                    className="solo-board"
+                    style={{
+                      background: `linear-gradient(135deg, ${lv.a} 0%, ${lv.panel} 50%, ${lv.b} 100%)`,
+                    }}
+                  >
+                    <span className="solo-dots">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <i key={i} />
+                      ))}
+                    </span>
+                    {locked && (
+                      <span className="solo-lock">
+                        <Icon name="lock" size={18} />
+                      </span>
+                    )}
+                  </span>
+                  <span className="solo-stake">
+                    <Icon name="coin" size={14} /> {fmt(lv.stake)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <div className="solo-grid">
-          {SOLO_LEVELS.map((lv) => {
-            const locked = coins < lv.stake
-            return (
-              <button
-                key={lv.level}
-                className={`solo-tile ${locked ? 'locked' : ''}`}
-                disabled={locked}
-                onClick={() => onPick(lv.stake, lv.theme)}
-                title={locked ? t('solo.locked') : t('solo.play')}
-              >
-                <span className="solo-lvl">{t('solo.level', { n: lv.level })}</span>
-                <span
-                  className="solo-board"
-                  style={{
-                    background: `linear-gradient(135deg, ${lv.a} 0%, ${lv.panel} 50%, ${lv.b} 100%)`,
-                  }}
-                >
-                  <span className="solo-dots">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <i key={i} />
-                    ))}
-                  </span>
-                  {locked && (
-                    <span className="solo-lock">
-                      <Icon name="lock" size={18} />
-                    </span>
-                  )}
-                </span>
-                <span className="solo-stake">
-                  <Icon name="coin" size={14} /> {fmt(lv.stake)}
-                </span>
-              </button>
-            )
-          })}
+        <div className="setup-preview">
+          <SetupBoard panel={sel.panel} a={sel.a} b={sel.b} checker={sel.b} />
+          <div className="solo-preview-bar">
+            <span className="solo-preview-info">
+              {t('solo.level', { n: sel.level })} ·{' '}
+              <b>
+                <Icon name="coin" size={14} /> {fmt(sel.stake)}
+              </b>
+            </span>
+            <button
+              className="galaxy-btn solo-start"
+              disabled={selLocked}
+              onClick={() => onPick(sel.stake, sel.theme)}
+            >
+              <Icon name="play" size={18} /> {t('setup.start')}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -4851,6 +4851,107 @@ button[aria-disabled='true'],
 .setup-card {
   text-align: left;
 }
+
+/* ===== Kurulum split: sol ayarlar/grid | sag board onizleme ===== */
+.setup-split {
+  display: grid;
+  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
+  gap: clamp(16px, 3vw, 32px);
+  align-items: start;
+  width: 100%;
+}
+.setup-split > .setup-card,
+.setup-split > .solo-card {
+  max-width: none;
+  margin: 0;
+}
+.setup-preview {
+  position: sticky;
+  top: 78px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.setup-board {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+}
+.setup-board-svg {
+  display: block;
+}
+/* Ortadaki "Tahtayi Degistir" butonu (referans tarzi, koyu yari-saydam pill) */
+.setup-board-change {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(18, 20, 30, 0.82);
+  color: #fff;
+  font-weight: var(--fw-bold);
+  font-size: 0.95rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+}
+.setup-board-change:hover {
+  background: rgba(18, 20, 30, 0.92);
+  border-color: var(--accent);
+}
+.setup-split .solo-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.solo-tile.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.solo-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  max-width: 540px;
+}
+.solo-preview-info {
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.solo-preview-info b {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+}
+.solo-start {
+  flex: none;
+}
+@media (max-width: 900px) {
+  .setup-split {
+    grid-template-columns: 1fr;
+  }
+  .setup-preview {
+    position: static;
+    order: -1;
+  }
+}
+@media (max-width: 560px) {
+  .setup-split .solo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .setup-modes {
   display: flex;
   gap: 8px;
@@ -4880,9 +4981,11 @@ button[aria-disabled='true'],
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Tahta: cozunurluk yuksekliginden ~50px kucuk; iki panele (kontrol+sonuc)
-     yer birakacak sekilde genislige de sigar */
-  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((100vw - 720px) / 1.35)));
+  /* Tahta: cozunurluk yuksekliginden ~50px kucuk; iki panele (kontrol 300 + sonuc 320
+     + bosluklar) VE sol menu (190px offset, .register-overlay.page left:190) yer
+     birakacak sekilde genislige de sigar. Aksi halde board saga tasip panellerle
+     ic ice giriyordu (100vw kullanip 190px sidebar'i saymiyordu). */
+  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((100vw - 910px) / 1.35)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);

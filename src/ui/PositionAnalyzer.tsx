@@ -449,7 +449,7 @@ export default function PositionAnalyzer({
         </div>
 
         <div className="analyzer-results">
-          {!result && !moveRanked && <div className="pa-placeholder">{t('pa.hint')}</div>}
+          {!result && !moveRanked && <div className="pa-placeholder">{t('pa.resultsPlaceholder')}</div>}
 
           {result && (
             <div className="pa-result">
