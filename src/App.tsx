@@ -85,6 +85,7 @@ import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
 import Rules from './ui/Rules'
 import NotificationBell from './ui/NotificationBell'
+import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import MatchResult from './ui/MatchResult'
@@ -105,7 +106,7 @@ import {
   type SavedGame,
   type MoveLogEntry,
 } from './storage'
-import { useT, LANGS } from './i18n'
+import { useT } from './i18n'
 import {
   getToken,
   loadServerGame,
@@ -285,7 +286,7 @@ const MOVE_DELAY = CLOCK_PRESETS.normal.move // varsayilan/fallback
 const OVER_TOTAL = CLOCK_PRESETS.normal.over
 
 export default function App() {
-  const { t, lang, setLang } = useT()
+  const { t } = useT()
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)
@@ -2841,10 +2842,21 @@ export default function App() {
         {profile.nickname}
         {user?.rating != null && (
           <span className="account-rating">
-            <Icon name="star" size={14} /> {user.rating}
+            <Icon name="star" size={15} /> {user.rating}
           </span>
         )}
       </button>
+      {user && (
+        <NotificationBell
+          items={notifications}
+          unread={unreadNotif}
+          onOpen={() => {
+            setUnreadNotif(0)
+            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+            markNotificationsRead().catch(() => {})
+          }}
+        />
+      )}
       {user && (
         <button
           className="account-coins-btn"
@@ -2873,17 +2885,6 @@ export default function App() {
           <Icon name="shop" size={15} /> {t('shop.title')}
         </button>
       )}
-      {user && (
-        <NotificationBell
-          items={notifications}
-          unread={unreadNotif}
-          onOpen={() => {
-            setUnreadNotif(0)
-            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
-            markNotificationsRead().catch(() => {})
-          }}
-        />
-      )}
       {user ? (
         <>
           {user.is_admin && (
@@ -2911,18 +2912,7 @@ export default function App() {
       >
         <Icon name="settings" size={18} />
       </button>
-      <select
-        className="account-btn icon lang-select"
-        title={t('menu.language')}
-        value={lang}
-        onChange={(e) => setLang(e.target.value as typeof lang)}
-      >
-        {LANGS.map((l) => (
-          <option key={l.code} value={l.code}>
-            {l.flag}
-          </option>
-        ))}
-      </select>
+      <LangMenu />
       <button
         className="account-btn icon"
         title={muted ? t('menu.soundOn') : t('menu.soundOff')}
