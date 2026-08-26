@@ -204,6 +204,17 @@ interface BoardTheme {
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
 const BOARD_THEMES: BoardTheme[] = [
   { id: 'tavla', name: 'Latte', panel: '#e6e9ef', a: '#dd7878', b: '#ccd0da', checker: '#4c4f69' },
+  // --- Tonal "Backgammon Live" tarzi temalar (duz katlanmis ucgen + dusuk kontrast) ---
+  { id: 'neptune', name: 'Neptune', panel: '#3f66cc', a: '#5a80e0', b: '#3457bf', checker: '#16227a', frame: '#0a0e1c', light: '#eef2fb' },
+  { id: 'nebula', name: 'Nebula', panel: '#7a4fb0', a: '#9265c6', b: '#68409e', checker: '#452a70', frame: '#0d0a16', light: '#efe7f6' },
+  { id: 'montecarlo', name: 'Monte Carlo', panel: '#6d7446', a: '#d6472a', b: '#c8b892', checker: '#141414', frame: '#4a2f18', light: '#f2ede0' },
+  { id: 'earth', name: 'Earth', panel: '#3f8f6a', a: '#54a37f', b: '#357a58', checker: '#123527', frame: '#0e2a20', light: '#eafaf1' },
+  { id: 'toxic', name: 'Toxic', panel: '#aab24d', a: '#c0ca64', b: '#96a03c', checker: '#3d481a', frame: '#20260e', light: '#f3f5da' },
+  { id: 'moon', name: 'Moon', panel: '#7e8aa0', a: '#8f9ab2', b: '#6e7a92', checker: '#333a4d', frame: '#10131f', light: '#eef1f7' },
+  { id: 'pluto', name: 'Pluto', panel: '#8fb4e0', a: '#a8c8ec', b: '#7ea6d8', checker: '#3d5d88', frame: '#0e1830', light: '#f4f9fd' },
+  { id: 'uranus', name: 'Uranus', panel: '#2f9c94', a: '#46b1a7', b: '#238b83', checker: '#0d4a45', frame: '#0a2a28', light: '#eafaf7' },
+  { id: 'reddwarf', name: 'Red Dwarf', panel: '#5f1c16', a: '#c0402a', b: '#8c2a1e', checker: '#280c08', frame: '#1a0806', light: '#e8ded0' },
+  { id: 'eclipse', name: 'Eclipse', panel: '#8a3626', a: '#a44a34', b: '#722a1e', checker: '#e6b64a', frame: '#1e0c08', light: '#f2e6cc' },
   { id: 'nord', name: 'Nord', panel: '#3b4252', a: '#88c0d0', b: '#2e3440', checker: '#4c566a' },
   { id: 'dracula', name: 'Dracula', panel: '#282a36', a: '#bd93f9', b: '#44475a', checker: '#6272a4' },
   { id: 'gruvbox', name: 'Gruvbox', panel: '#3c3836', a: '#d79921', b: '#282828', checker: '#504945' },
@@ -3177,7 +3188,7 @@ export default function App() {
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
-          freeCount={6}
+          freeCount={11}
           premium={premium}
           onUpgrade={() => {
             setBoardSettingsOpen(false)
