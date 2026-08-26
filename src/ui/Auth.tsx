@@ -392,7 +392,7 @@ export default function Auth({
   return (
     <div className={`register-overlay ${modal ? 'modal' : ''} ${page ? 'page' : ''}`}>
       <form
-        className={`register-card ${editing ? 'profile-form' : ''}`}
+        className={`register-card ${editing ? 'profile-form' : 'auth-card'}`}
         onSubmit={
           !editing && forgot ? doForgot : editing ? doEdit : tab === 'login' ? doLogin : doRegister
         }
@@ -547,7 +547,7 @@ export default function Auth({
           ) : (
             <>
               {editing && avatarBlock}
-              {editing ? <div className="form-grid">{profileInputs}</div> : profileInputs}
+              <div className={`form-grid${editing ? '' : ' reg-grid'}`}>{profileInputs}</div>
               {!editUser && (
                 <>
                   <label>
