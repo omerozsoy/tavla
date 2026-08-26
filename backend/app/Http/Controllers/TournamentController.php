@@ -102,7 +102,11 @@ class TournamentController extends Controller
         return response()->json(['tournament' => $this->full($t)]);
     }
 
-    // Bir macin sonucunu bildir (kazanan = winner_id). Sadece macin oyuncularindan biri.
+    // Bir macin sonucunu bildir. GUVENLIK: istemcinin winner_id beyanina KORU KORUNE
+    // guvenilmez (kaybeden kendini kazanan ilan edip odul coin'ini + ust turu calabilir).
+    // Kazanan oncelikle macin oynandigi ODANIN YETKILI mac durumundan belirlenir; yetkili
+    // durum yoksa (oda senkronu yok) akis bozulmasin diye beyana guvenilir. Boylece gercekten
+    // uygulama icinde oynanan maclarda hizli/yalan beyanla odul calinamaz.
     public function report(Request $request, Tournament $tournament)
     {
         $data = $request->validate([
@@ -146,8 +150,14 @@ class TournamentController extends Controller
                 return ['err' => 'Sonuç zaten girildi.', 'code' => 422];
             }
 
-            $bracket[$ri][$mi]['winner'] = $data['winner_id'];
-            $winner = $bracket[$ri][$mi][$m['p1']['id'] === $data['winner_id'] ? 'p1' : 'p2'];
+            // YETKILI kazanan: once odanin senkron mac durumu; yoksa beyan.
+            $authWinner = $this->winnerIdFromRoom($m);
+            $winnerId = ($authWinner !== null && in_array($authWinner, $ids, true))
+                ? $authWinner
+                : (int) $data['winner_id'];
+
+            $bracket[$ri][$mi]['winner'] = $winnerId;
+            $winner = ($m['p1']['id'] ?? null) === $winnerId ? $m['p1'] : $m['p2'];
 
             if (isset($bracket[$ri + 1])) {
                 $nextIndex = intdiv($mi, 2);
@@ -155,11 +165,11 @@ class TournamentController extends Controller
                 $bracket[$ri + 1][$nextIndex][$slot] = $winner;
             } else {
                 // Final bitti -> sampiyon
-                $t->champion_id = $data['winner_id'];
+                $t->champion_id = $winnerId;
                 $t->status = 'finished';
                 // Odul coin'i sampiyona bir kez ode (kilit altinda check-then-set guvenli)
                 if (! $t->prize_paid && ($t->prize_coins ?? 0) > 0) {
-                    User::where('id', $data['winner_id'])->update([
+                    User::where('id', $winnerId)->update([
                         'coins' => DB::raw('COALESCE(coins,0) + '.(int) $t->prize_coins),
                     ]);
                     $t->prize_paid = true;
@@ -255,6 +265,43 @@ class TournamentController extends Controller
     }
 
     /* ---------- yardimcilar ---------- */
+
+    // Macin oynandigi odanin YETKILI durumundan kazanan oyuncunun id'sini coz.
+    // Oda p1=beyaz / p2=siyah; kazanan slot mac skorundan (target'a ulasan taraf) belirlenir.
+    // Turnuva odalarinda p*_user_id bos olabildigi icin oda ismi bracket oyuncusuyla eslenir.
+    // Karar yoksa (oda yok / skor kesin degil / isim eslesmiyor) null -> beyana dusulur.
+    private function winnerIdFromRoom(array $m): ?int
+    {
+        $code = $m['room'] ?? null;
+        if (! $code) {
+            return null;
+        }
+        $room = \App\Models\Room::where('code', $code)->first();
+        $state = $room?->state;
+        $match = is_array($state) ? ($state['match'] ?? null) : null;
+        if (! is_array($match) || ! isset($match['target'], $match['score'])) {
+            return null;
+        }
+        $target = (int) $match['target'];
+        $w = (int) ($match['score']['white'] ?? 0);
+        $b = (int) ($match['score']['black'] ?? 0);
+        if ($target <= 0) {
+            return null;
+        }
+        if ($w >= $target && $w > $b) {
+            $winnerName = $room->p1_name; // beyaz = oda p1
+        } elseif ($b >= $target && $b > $w) {
+            $winnerName = $room->p2_name; // siyah = oda p2
+        } else {
+            return null; // henuz kesin kazanan yok
+        }
+        foreach (['p1', 'p2'] as $slot) {
+            if (isset($m[$slot]['name'], $m[$slot]['id']) && $m[$slot]['name'] === $winnerName) {
+                return (int) $m[$slot]['id'];
+            }
+        }
+        return null;
+    }
 
     private function addPlayer(Tournament $t, $user): void
     {
