@@ -88,6 +88,7 @@ import NotificationBell from './ui/NotificationBell'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
+import FrameGallery from './ui/FrameGallery'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import { LiveMatchesPanel, RankingPanel } from './ui/HomePanels'
@@ -458,6 +459,7 @@ export default function App() {
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+  const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
   // --- URL yonlendirme (hash tabanli) ---
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
@@ -470,6 +472,8 @@ export default function App() {
       ? 'turnuvalar'
       : shopOpen
         ? 'magaza'
+        : frameGalleryOpen
+          ? 'cerceveler'
         : statsOpen
           ? 'istatistiklerim'
           : friendsOpen
@@ -531,6 +535,9 @@ export default function App() {
           break
         case 'magaza':
           setShopOpen(true)
+          break
+        case 'cerceveler':
+          setFrameGalleryOpen(true)
           break
         case 'istatistiklerim':
           setStatsOpen(true)
@@ -3019,6 +3026,7 @@ export default function App() {
     setLeaderboardOpen(false)
     setTournOpen(false)
     setShopOpen(false)
+    setFrameGalleryOpen(false)
     setStatsOpen(false)
     setFriendsOpen(false)
     setBlunderOpen(false)
@@ -3181,7 +3189,15 @@ export default function App() {
           onBuy={handleBuy}
           onEquip={handleEquipFrame}
           onDaily={handleDaily}
+          onOpenGallery={() => goPage(() => setFrameGalleryOpen(true))}
           onClose={() => setShopOpen(false)}
+        />
+      )}
+      {frameGalleryOpen && (
+        <FrameGallery
+          avatar={profile.avatar ?? null}
+          name={profile.nickname}
+          onClose={() => setFrameGalleryOpen(false)}
         />
       )}
       {tournOpen && (
