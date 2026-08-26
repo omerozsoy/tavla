@@ -15,7 +15,7 @@ import { FairDice } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
-import { FRAMES, frameStyle } from './cosmetics'
+import { FRAMES } from './cosmetics'
 import { divisionOfPR } from './badges'
 import { Sound, isMuted, setMuted } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
@@ -89,6 +89,7 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import FrameGallery from './ui/FrameGallery'
+import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import { LiveMatchesPanel, RankingPanel } from './ui/HomePanels'
@@ -2786,6 +2787,7 @@ export default function App() {
     target: match.target,
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
+    frame: online && myColor === 'black' ? (user?.avatar_frame ?? null) : null,
   }
   const bottomInfo = {
     name: whiteName,
@@ -2804,6 +2806,7 @@ export default function App() {
     target: match.target,
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
+    frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : null) : (user?.avatar_frame ?? null),
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
@@ -2902,16 +2905,13 @@ export default function App() {
         onClick={() => goPage(() => setEditProfile(true))}
         title={t('menu.editProfile')}
       >
-        {profile.avatar ? (
-          <span
-            className="av-frame"
-            style={frameStyle(user?.avatar_frame)}
-          >
-            <img className="account-avatar" src={profile.avatar} alt="" />
-          </span>
-        ) : (
-          <Icon name="user" size={16} />
-        )}
+        <AvatarFrame
+          src={profile.avatar}
+          frame={user?.avatar_frame}
+          size={28}
+          name={profile.nickname}
+          className="account-avf"
+        />
         {profile.nickname}
         {user?.rating != null && (
           <span className="account-rating">

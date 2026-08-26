@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { myStats, myMatches, myAnalytics, type MyStats, type MyMatch, type Analytics } from '../api'
-import { frameStyle } from '../cosmetics'
+import AvatarFrame from './AvatarFrame'
 import { DivisionChip, BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
 import { Skeleton } from './Skeleton'
@@ -86,13 +86,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
         {data && (
           <>
             <div className="stats-head">
-              <span className="av-frame" style={frameStyle(frame)}>
-                {avatar ? (
-                  <img className="stats-avatar" src={avatar} alt="" />
-                ) : (
-                  <span className="stats-avatar lb-avatar-ph">{name.charAt(0).toUpperCase()}</span>
-                )}
-              </span>
+              <AvatarFrame src={avatar} frame={frame} size={60} name={name} />
               <div className="stats-id">
                 <div className="stats-name">{name}</div>
                 <div className="stats-rank">

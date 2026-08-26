@@ -9,7 +9,7 @@ import {
   removeFriend,
   type Friend,
 } from '../api'
-import { frameStyle } from '../cosmetics'
+import AvatarFrame from './AvatarFrame'
 
 interface Props {
   onInvite: (userId: number) => void
@@ -69,13 +69,7 @@ export default function Friends({ onInvite, onClose }: Props) {
   }
 
   const avatar = (f: Friend) => (
-    <span className="av-frame" style={frameStyle(f.frame)}>
-      {f.avatar ? (
-        <img className="lb-avatar" src={f.avatar} alt="" />
-      ) : (
-        <span className="lb-avatar lb-avatar-ph">{f.name.charAt(0).toUpperCase()}</span>
-      )}
-    </span>
+    <AvatarFrame src={f.avatar} frame={f.frame} size={30} name={f.name} animated={false} />
   )
 
   return (
