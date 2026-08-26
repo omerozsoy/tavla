@@ -365,8 +365,6 @@ const GALAXY_EXTRA_THEMES: BoardTheme[] = [
   { id: 'polaris', name: 'Polaris', rarity: 'epic', panel: '#5a5d66', a: '#6a6d78', b: '#4a4d55', checker: '#6b3fc0', light: '#bcd6f0', frame: '#0e1018' },
   { id: 'apollo', name: 'Apollo', rarity: 'epic', panel: '#6a6258', a: '#7f766a', b: '#4e4a5a', checker: '#1f2a5a', light: '#eae2d0', frame: '#141026' },
   { id: 'aurora', name: 'Aurora', rarity: 'epic', panel: '#1a2258', a: '#2f3a8a', b: '#141a44', checker: '#7a3fd0', light: '#3fe0d0', frame: '#080a1c', checkerStyle: 'neon' },
-  { id: 'pandora', name: 'Pandora', rarity: 'epic', panel: '#1f4f9a', a: '#2f6ac0', b: '#153f7a', checker: '#2f9ad0', light: '#7fe0f0', frame: '#081428', checkerStyle: 'ice' },
-  { id: 'matrix', name: 'Matrix', rarity: 'epic', panel: '#12261c', a: '#1f5a3a', b: '#0d1a12', checker: '#3aa55f', light: '#7fe0a0', frame: '#050f0a', checkerStyle: 'gloss', surface: 'gradient' },
   // --- LEGENDARY ---
   { id: 'gutenberg', name: 'Gutenberg', rarity: 'legendary', panel: '#c8cdd4', a: '#dfe3e8', b: '#a8afb8', checker: '#1a1c22', light: '#f4f6f9', frame: '#0e0f13', surface: 'gradient' },
   { id: 'krypton', name: 'Krypton', rarity: 'legendary', panel: '#1f5a44', a: '#2f8a5f', b: '#144a34', checker: '#0c3526', light: '#9ff0c8', frame: '#08160f', checkerStyle: 'ice', surface: 'gradient' },

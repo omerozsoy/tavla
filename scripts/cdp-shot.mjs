@@ -17,7 +17,7 @@ const DEFAULT_THEMES = [
   // rare
   'gamma', 'cosmos', 'titan', 'jupiter', 'helix', 'solaris', 'orion', 'kepler',
   // epic
-  'andromeda', 'orbit', 'cassio', 'quasar', 'polaris', 'apollo', 'aurora', 'pandora', 'matrix',
+  'andromeda', 'orbit', 'cassio', 'quasar', 'polaris', 'apollo', 'aurora',
   // legendary
   'gutenberg', 'krypton', 'infinity', 'vega', 'quantum', 'singularity',
   // common
