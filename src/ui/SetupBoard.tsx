@@ -76,12 +76,15 @@ export default function SetupBoard({
     }
   }
 
+  // Dikey istif adimi: en yuksek yigin (5) yariya (PAD..H/2) sigmali; aksi halde
+  // ust ve alt yiginlar merkezde ust uste biner. r*2+1 tercih, sigmiyorsa daraltilir.
+  const maxStack = 5
+  const step = Math.min(r * 2 + 1, (H / 2 - PAD - 2 * r - 4) / (maxStack - 1))
   const discs = []
   for (const s of START) {
     const cx = colCx(s.half, s.col)
     for (let k = 0; k < s.n; k++) {
-      const cy =
-        s.row === 'top' ? PAD + r + 1 + k * (r * 2 + 1) : H - PAD - r - 1 - k * (r * 2 + 1)
+      const cy = s.row === 'top' ? PAD + r + 1 + k * step : H - PAD - r - 1 - k * step
       discs.push(
         <circle
           key={`d-${s.half}-${s.row}-${s.col}-${k}`}
