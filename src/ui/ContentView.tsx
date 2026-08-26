@@ -325,6 +325,7 @@ export default function ContentView({
 
 // YouTube video oynatici (tam ekran overlay, arka plana/carpiya tikla kapat)
 function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => void }) {
+  const { t } = useT()
   return (
     <div className="videobox" onClick={onClose}>
       <button className="videobox-close" onClick={onClose} aria-label={t('common.close')}>
@@ -410,6 +411,7 @@ function Lightbox({
   onClose: () => void
   onIndex: (i: number) => void
 }) {
+  const { t } = useT()
   const many = images.length > 1
   const go = (delta: number) => onIndex((index + delta + images.length) % images.length)
   // Sol/sag ok tuslariyla gezinme (Esc ust bilesende yonetiliyor)
