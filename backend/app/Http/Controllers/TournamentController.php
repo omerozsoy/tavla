@@ -174,6 +174,28 @@ class TournamentController extends Controller
                     ]);
                     $t->prize_paid = true;
                 }
+                // Kazanilan cerceveler: her turnuva -> champion; buyuk (>=8 oyuncu) -> tournament-champion
+                $champ = User::find($winnerId);
+                if ($champ) {
+                    $unlocks = $champ->unlocks ?? [];
+                    $grant = [];
+                    if (! in_array('frame.champion', $unlocks, true)) {
+                        $grant['frame.champion'] = ['Champion', 'trophy'];
+                    }
+                    if (count($t->players ?? []) >= 8 && ! in_array('frame.tournament-champion', $unlocks, true)) {
+                        $grant['frame.tournament-champion'] = ['Turnuva Şampiyonu', 'trophy'];
+                    }
+                    if (! empty($grant)) {
+                        foreach (array_keys($grant) as $fid) {
+                            $unlocks[] = $fid;
+                        }
+                        $champ->unlocks = array_values(array_unique($unlocks));
+                        $champ->save();
+                        foreach ($grant as [$label, $icon]) {
+                            \App\Models\Notification::notify($winnerId, "Yeni çerçeve: {$label}", null, $icon);
+                        }
+                    }
+                }
             }
 
             $t->bracket = $bracket;
