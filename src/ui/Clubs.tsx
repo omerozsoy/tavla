@@ -12,7 +12,7 @@ import {
   type ClubSummary,
   type ClubFull,
 } from '../api'
-import { frameStyle } from '../cosmetics'
+import AvatarFrame from './AvatarFrame'
 import PublicProfile from './PublicProfile'
 
 interface Props {
@@ -136,15 +136,7 @@ export default function Clubs({ onClose }: Props) {
                 <td className="ct-rank">{medal(i)}</td>
                 <td>
                   <button className="ct-player" onClick={() => setProfileId(m.user_id)}>
-                    <span className="av-frame" style={frameStyle(undefined)}>
-                      {m.avatar ? (
-                        <img className="lb-avatar" src={m.avatar} alt="" />
-                      ) : (
-                        <span className="lb-avatar lb-avatar-ph">
-                          {m.nickname.charAt(0).toUpperCase()}
-                        </span>
-                      )}
-                    </span>
+                    <AvatarFrame src={m.avatar} frame={undefined} size={30} name={m.nickname} animated={false} />
                     <span className="ct-name">
                       {m.nickname}
                       {m.role === 'owner' && <Icon name="crown" size={12} />}

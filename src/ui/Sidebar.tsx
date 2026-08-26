@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import AvatarFrame from './AvatarFrame'
 
 interface PlayerInfo {
   name: string
@@ -11,6 +12,7 @@ interface PlayerInfo {
   target: number
   rating?: number | null
   avatarUrl?: string | null
+  frame?: string | null
 }
 
 interface SidebarProps {
@@ -21,9 +23,19 @@ interface SidebarProps {
 function PlayerCard({ p }: { p: PlayerInfo }) {
   return (
     <div className={`player-card ${p.active ? 'active' : ''}`}>
-      <div className={`avatar ${p.color} ${p.active ? 'active' : ''}`}>
-        {p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <span>{p.avatar}</span>}
-      </div>
+      {p.frame ? (
+        <AvatarFrame
+          src={p.avatarUrl}
+          frame={p.frame}
+          size={72}
+          name={p.name}
+          className={`pc-avf ${p.active ? 'active' : ''}`}
+        />
+      ) : (
+        <div className={`avatar ${p.color} ${p.active ? 'active' : ''}`}>
+          {p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <span>{p.avatar}</span>}
+        </div>
+      )}
       <div className="player-name">{p.name}</div>
       <div className="player-sub">{p.sub}</div>
       {p.rating != null && (

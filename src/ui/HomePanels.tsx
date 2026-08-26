@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow } from '../api'
-import { frameStyle } from '../cosmetics'
+import AvatarFrame from './AvatarFrame'
 
 function Avatar({ url, name }: { url?: string | null; name: string }) {
   return url ? (
@@ -123,9 +123,7 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <span className="av-frame" style={frameStyle(r.frame)}>
-                  <Avatar url={r.avatar} name={r.name} />
-                </span>
+                <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
                 {r.name}
               </span>
               <span className="rank-val">

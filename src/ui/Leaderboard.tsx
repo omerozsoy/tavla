@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
-import { frameStyle } from '../cosmetics'
+import AvatarFrame from './AvatarFrame'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
 import { DivisionChip } from './Badges'
@@ -47,13 +47,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
       >
         <span className="lb-rank">{by === 'league' ? '' : medal(r.rank) || r.rank}</span>
         <span className="lb-name">
-          <span className="av-frame" style={frameStyle(r.frame)}>
-            {r.avatar ? (
-              <img className="lb-avatar" src={r.avatar} alt="" />
-            ) : (
-              <span className="lb-avatar lb-avatar-ph">{r.name.charAt(0).toUpperCase()}</span>
-            )}
-          </span>
+          <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
           {r.name}
           {by !== 'league' && <DivisionChip rating={r.rating} size="sm" />}
         </span>
