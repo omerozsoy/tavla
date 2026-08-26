@@ -207,6 +207,9 @@ interface BoardTheme {
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
 const BOARD_THEMES: BoardTheme[] = [
   { id: 'tavla', name: 'Latte', panel: '#e6e9ef', a: '#dd7878', b: '#ccd0da', checker: '#4c4f69' },
+  // Varsayilan premium mavi tavla (Galaxy tarzi turnuva paleti). Tum renkler burada
+  // merkezidir; App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar'a yansir.
+  { id: 'galaxy', name: 'Galaxy', panel: '#3568c8', a: '#72a0ea', b: '#244da7', checker: '#18286e', frame: '#080d2d', light: '#f2f3f7' },
   // --- Tonal "Backgammon Live" tarzi temalar (duz katlanmis ucgen + dusuk kontrast) ---
   { id: 'neptune', name: 'Neptune', panel: '#3f66cc', a: '#5a80e0', b: '#3457bf', checker: '#16227a', frame: '#0a0e1c', light: '#eef2fb' },
   { id: 'nebula', name: 'Nebula', panel: '#7a4fb0', a: '#9265c6', b: '#68409e', checker: '#452a70', frame: '#0d0a16', light: '#efe7f6' },
@@ -407,9 +410,18 @@ export default function App() {
           return 'tavla'
         }
       }
-      return stored || 'tavla'
+      // v2 migration: varsayilan Galaxy mavi tavlaya gec (eski varsayilan 'tavla' veya bos).
+      // Kullanici bilincli baska tema sectiyse (neptune vb.) dokunulmaz.
+      if (!localStorage.getItem('tavla.board.v2galaxy')) {
+        localStorage.setItem('tavla.board.v2galaxy', '1')
+        if (!stored || stored === 'tavla') {
+          localStorage.setItem('tavla.board', 'galaxy')
+          return 'galaxy'
+        }
+      }
+      return stored || 'galaxy'
     } catch {
-      return 'tavla'
+      return 'galaxy'
     }
   })
   const [mode, setMode] = useState<Mode>(saved?.mode ?? 'pvb')
@@ -3662,7 +3674,7 @@ export default function App() {
         onClose={() => setGameMenuOpen(false)}
       />
 
-      <main className="main">
+      <main className="main game-scene">
       <div className="game-area">
         <Sidebar top={topInfo} bottom={bottomInfo} />
         {clockOn && (

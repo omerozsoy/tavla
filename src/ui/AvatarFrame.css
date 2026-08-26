@@ -1,8 +1,16 @@
-/* ===== Animasyonlu Avatar Cerceveleri =====
-   Yapi: .avf (kare, --avf-size) > .avf-ph (foto dairesi, ust katman z2)
-   Dekor katmanlari: .avf::before / .avf::after (halka bandi, z1 - merkez foto ile kapali)
-   ve .avf-deco (+ ::before/::after) (z3 - partikul/spark/glow, fotonun uzerine binebilir).
-   Tum animasyonlar transform/opacity agirlikli (GPU). prefers-reduced-motion desteklenir. */
+/* =====================================================================
+   Avatar Cerceveleri — premium, katmanli sistem
+   Katmanlar (z ekseni):
+     .avf::before  z0  temel metal/mucevher halkasi (+ ::after sheen/bevel)
+     .avf-halo     z0  glow halesi (foto disina tasar, GSAP: breathe/burst/aura)
+     .avf-ph       z2  avatar fotografi
+     .avf-deco     z3  amblemler (tac/kupa/kanat/zar/goz) — ::before/::after + i.avf-d1..3
+     .avf-fx       z3  GSAP surulen efektler: .avf-ring2 .avf-sweep .avf-strike .avf-rays
+     .avf-particles/.avf-rivehost/.avf-lottiehost  z3  agir katmanlar
+   Kural: yalnizca transform/opacity animasyonu (GPU). CSS keyframe'ler yalnizca
+   .avf-anim ile calisir (zengin mod); listeler/statik = hareketsiz ama premium.
+   prefers-reduced-motion global olarak tum hareketi durdurur.
+   ===================================================================== */
 
 .avf {
   position: relative;
@@ -15,6 +23,12 @@
   isolation: isolate;
   --avf-ring: calc(var(--avf-size, 64px) * 0.085);
 }
+/* Nadirlik yukseldikce halka biraz kalinlasir */
+.avf[data-rarity='rare'] { --avf-ring: calc(var(--avf-size) * 0.075); }
+.avf[data-rarity='epic'] { --avf-ring: calc(var(--avf-size) * 0.09); }
+.avf[data-rarity='legendary'] { --avf-ring: calc(var(--avf-size) * 0.1); }
+.avf[data-rarity='mythic'] { --avf-ring: calc(var(--avf-size) * 0.11); }
+
 .avf-ph {
   position: absolute;
   inset: var(--avf-ring);
@@ -22,17 +36,10 @@
   border-radius: 50%;
   overflow: hidden;
   background: var(--card-bg);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.25);
 }
-.avf:not([data-frame]) .avf-ph {
-  inset: 0;
-}
-.avf-ph img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
+.avf:not([data-frame]) .avf-ph { inset: 0; }
+.avf-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .avf-ini {
   display: flex;
   align-items: center;
@@ -44,14 +51,8 @@
   color: var(--muted);
   background: var(--btn-bg);
 }
-.avf-deco {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  border-radius: 50%;
-  pointer-events: none;
-}
-/* Ortak halka bandi (her cerceve icin taban). ::before/::after tam daire; merkez foto ile ortulur. */
+
+/* Temel halka + sheen (her cerceve icin taban) */
 .avf[data-frame]::before,
 .avf[data-frame]::after {
   content: '';
@@ -59,476 +60,362 @@
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
+  z-index: 0;
 }
-.avf[data-frame]::before {
-  z-index: 1;
-}
+/* ::after = polished bevel + sabit isik yansimasi (metal hissi) */
 .avf[data-frame]::after {
-  z-index: 1;
+  background:
+    conic-gradient(from 0deg,
+      rgba(255, 255, 255, 0) 0 12%, rgba(255, 255, 255, 0.55) 20%, rgba(255, 255, 255, 0) 30%,
+      rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.28) 70%, rgba(255, 255, 255, 0) 82%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+    inset 0 0 calc(var(--avf-size) * 0.06) rgba(0, 0, 0, 0.28),
+    inset 0 0 0 calc(var(--avf-ring) * 0.28) rgba(255, 255, 255, 0.06);
+}
+/* Temel metal halkasinin cok yavas donusu (yalnizca zengin modda) */
+.avf-anim[data-frame]::before { animation: avf-spin var(--spin-dur, 14s) linear infinite; }
+
+/* ---- Glow halesi ---- */
+.avf-halo {
+  position: absolute;
+  inset: calc(var(--avf-ring) * -1.1);
+  z-index: 0;
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.55;
+  background: radial-gradient(closest-side, transparent 56%, var(--glow, transparent) 80%, transparent 100%);
+}
+.avf:not(.avf-anim) .avf-halo { opacity: 0.4; }
+
+/* ---- Dekor katmani ---- */
+.avf-deco { position: absolute; inset: 0; z-index: 3; border-radius: 50%; pointer-events: none; }
+.avf-deco > i { position: absolute; display: none; }
+
+/* ---- FX katmani ---- */
+.avf-fx { position: absolute; inset: 0; z-index: 3; border-radius: 50%; pointer-events: none; }
+.avf-fx > i { position: absolute; inset: 0; border-radius: 50%; pointer-events: none; }
+.avf-ring2 { opacity: 0; }
+.avf-sweep {
+  opacity: 0;
+  background: linear-gradient(100deg, transparent 40%, var(--sweep, rgba(255, 255, 255, 0.9)) 50%, transparent 60%);
+  mix-blend-mode: screen;
+}
+.avf-strike {
+  opacity: 0;
+  background: radial-gradient(closest-side, var(--strike, #fff) 0%, transparent 72%);
+  mix-blend-mode: screen;
+}
+.avf-rays { opacity: 0; }
+
+/* ---- Agir katmanlar (partikul/rive/lottie) ---- */
+.avf-particles,
+.avf-rivehost,
+.avf-lottiehost {
+  position: absolute;
+  inset: calc(var(--avf-ring) * -0.5);
+  z-index: 3;
+  border-radius: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+.avf-particles-canvas,
+.avf-rive,
+.avf-lottie {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* ---- Ortak keyframe sozlugu ---- */
 @keyframes avf-spin { to { transform: rotate(360deg); } }
-@keyframes avf-spin-rev { to { transform: rotate(-360deg); } }
-@keyframes avf-breathe { 0%, 100% { opacity: 0.45; } 50% { opacity: 0.95; } }
-@keyframes avf-breathe-scale {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.85; transform: scale(1.07); }
-}
-@keyframes avf-ember {
-  0% { transform: translateY(28%) scale(0.5); opacity: 0; }
-  18% { opacity: 1; }
-  100% { transform: translateY(-70%) scale(1); opacity: 0; }
-}
-@keyframes avf-twinkle { 0%, 100% { opacity: 0; transform: scale(0.3); } 50% { opacity: 1; transform: scale(1); } }
-@keyframes avf-flash { 0%, 90%, 100% { opacity: 0; } 93%, 97% { opacity: 1; } }
-@keyframes avf-flick { 0%, 100% { opacity: 0.8; } 45% { opacity: 1; } 55% { opacity: 0.9; } }
-@keyframes avf-pulse-soft { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.05); } }
-@keyframes avf-glow-burst { 0%, 82%, 100% { opacity: 0.35; transform: scale(1); } 90% { opacity: 1; transform: scale(1.12); } }
 
-/* ===================== NADIR ===================== */
-/* Neon Pulse — ince mavi neon halka, yumusak pulse + border boyunca dolasan parlak nokta */
+/* ================================================================
+   NADIR
+   ================================================================ */
+/* Neon Pulse — ince mavi neon halka; parlak nokta halkayi dolasir (GSAP orbitDot) */
+.avf[data-frame='neon-pulse'] {
+  --glow: rgba(56, 189, 248, 0.6);
+  --spin-dur: 18s;
+}
 .avf[data-frame='neon-pulse']::before {
   background:
-    radial-gradient(closest-side, transparent 72%, #38bdf8 82%, #0ea5e9 100%);
-  animation: avf-breathe 2.4s ease-in-out infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.12) #38bdf8aa;
+    radial-gradient(closest-side, transparent 62%, #0b3a4d 66%, #0891b2 74%, #38bdf8 86%, #7dd3fc 94%, #38bdf8 100%);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.12) rgba(56, 189, 248, 0.55);
 }
-.avf[data-frame='neon-pulse']::after {
-  background: conic-gradient(from 0deg, transparent 0 78%, #e0f2fe 86%, #38bdf8 90%, transparent 96%);
-  animation: avf-spin 3.6s linear infinite;
+.avf[data-frame='neon-pulse']::after { background: none; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3); }
+.avf[data-frame='neon-pulse'] .avf-sweep {
+  opacity: 1;
+  background: radial-gradient(circle at 50% 4%, #fff 0 2.5%, #7dd3fc 3.5%, transparent 6%);
+  filter: drop-shadow(0 0 3px #38bdf8);
+  mix-blend-mode: normal;
 }
 
-/* ===================== EPIK ===================== */
-/* Purple Vortex — iki mor enerji halkasi farkli hizlarda ters yonde doner */
+/* ================================================================
+   EPIK
+   ================================================================ */
+/* Purple Vortex — iki mor enerji halkasi zit yonde doner (GSAP orbit) */
+.avf[data-frame='purple-vortex'] { --glow: rgba(168, 85, 247, 0.5); --spin-dur: 7s; }
 .avf[data-frame='purple-vortex']::before {
-  background: conic-gradient(from 0deg, #7c3aed, #a855f7, #4c1d95, #a855f7, #7c3aed);
-  animation: avf-spin 5s linear infinite;
+  background: conic-gradient(from 0deg, #2e1065, #7c3aed, #c084fc, #4c1d95, #a855f7, #6d28d9, #2e1065);
   filter: saturate(1.2);
 }
-.avf[data-frame='purple-vortex']::after {
-  background: conic-gradient(from 120deg, transparent 0 60%, #d8b4fe 74%, transparent 88%);
-  animation: avf-spin-rev 3.2s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.1) #a855f7aa;
+.avf[data-frame='purple-vortex'] .avf-ring2 {
+  opacity: 1;
+  background: conic-gradient(from 0deg, transparent 0 58%, #e9d5ff 72%, #a855f7 80%, transparent 92%);
 }
 
-/* Ice Crown — kristal buz, soguk mavi glow + kenarlarda sparkle, ustte kristal tac */
+/* Ice Crown — kristal buz, kenar sparkle (GSAP), ustte kristal tac (pseudo) */
+.avf[data-frame='ice-crown'] { --glow: rgba(125, 211, 252, 0.55); --spin-dur: 16s; }
 .avf[data-frame='ice-crown']::before {
-  background: conic-gradient(from 200deg, #e0f2fe, #7dd3fc, #38bdf8, #bae6fd, #e0f2fe);
-  animation: avf-spin 9s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.1) #7dd3fcaa;
+  background: conic-gradient(from 200deg, #eff6ff, #7dd3fc, #38bdf8, #bae6fd, #e0f2fe, #93c5fd, #eff6ff);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.1) rgba(125, 211, 252, 0.5);
 }
-.avf[data-frame='ice-crown']::after {
-  /* buz kristali sparkle noktalari */
-  background:
-    radial-gradient(circle at 50% 6%, #fff 0 6%, transparent 8%),
-    radial-gradient(circle at 85% 30%, #e0f2fe 0 4%, transparent 6%),
-    radial-gradient(circle at 14% 70%, #e0f2fe 0 4%, transparent 6%),
-    radial-gradient(circle at 78% 82%, #fff 0 4%, transparent 6%);
-  animation: avf-twinkle 2.6s ease-in-out infinite;
+.avf[data-frame='ice-crown'] .avf-d1,
+.avf[data-frame='ice-crown'] .avf-d2,
+.avf[data-frame='ice-crown'] .avf-d3 {
+  display: block;
+  width: calc(var(--avf-size) * 0.09);
+  height: calc(var(--avf-size) * 0.09);
+  background: radial-gradient(circle at 50% 40%, #fff 0 30%, #e0f2fe 55%, transparent 72%);
+  filter: drop-shadow(0 0 2px #bae6fd);
 }
+.avf[data-frame='ice-crown'] .avf-d1 { left: 74%; top: 24%; }
+.avf[data-frame='ice-crown'] .avf-d2 { left: 16%; top: 60%; }
+.avf[data-frame='ice-crown'] .avf-d3 { left: 60%; top: 82%; }
 .avf[data-frame='ice-crown'] .avf-deco::before {
   content: '';
   position: absolute;
   left: 50%;
-  top: calc(var(--avf-size) * -0.09);
-  width: calc(var(--avf-size) * 0.34);
-  height: calc(var(--avf-size) * 0.2);
+  top: calc(var(--avf-size) * -0.1);
+  width: calc(var(--avf-size) * 0.36);
+  height: calc(var(--avf-size) * 0.22);
   transform: translateX(-50%);
-  background: linear-gradient(#e0f2fe, #38bdf8);
-  clip-path: polygon(0 100%, 18% 40%, 34% 78%, 50% 12%, 66% 78%, 82% 40%, 100% 100%);
-  filter: drop-shadow(0 0 2px #7dd3fc);
+  background: linear-gradient(#f0f9ff, #38bdf8);
+  clip-path: polygon(0 100%, 16% 42%, 33% 76%, 50% 8%, 67% 76%, 84% 42%, 100% 100%);
+  filter: drop-shadow(0 1px 2px rgba(56, 189, 248, 0.6));
 }
 
-/* Electric — mavi-beyaz elektrik, border ara ara flash + kucuk arklar */
+/* Electric — mavi-beyaz; rastgele kisa yildirim (GSAP strike) */
+.avf[data-frame='electric'] { --glow: rgba(96, 165, 250, 0.55); --strike: #dbeafe; --spin-dur: 9s; }
 .avf[data-frame='electric']::before {
-  background: conic-gradient(from 0deg, #1e3a8a, #3b82f6, #93c5fd, #3b82f6, #1e3a8a);
-  animation: avf-spin 6s linear infinite;
+  background: conic-gradient(from 0deg, #172554, #1d4ed8, #60a5fa, #dbeafe, #3b82f6, #1e3a8a, #172554);
 }
-.avf[data-frame='electric']::after {
-  background: radial-gradient(closest-side, transparent 72%, #dbeafe 82%, #3b82f6 100%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.16) #60a5fa;
-  animation: avf-flash 4.2s steps(1, end) infinite;
-}
-.avf[data-frame='electric'] .avf-deco {
+.avf[data-frame='electric'] .avf-strike {
   background:
-    radial-gradient(circle at 88% 22%, #fff 0 3%, transparent 5%),
-    radial-gradient(circle at 12% 60%, #bfdbfe 0 3%, transparent 5%),
-    radial-gradient(circle at 66% 90%, #fff 0 3%, transparent 5%);
-  animation: avf-flick 3.1s steps(2, end) infinite;
+    radial-gradient(closest-side, rgba(219, 234, 254, 0.9) 0%, transparent 70%),
+    conic-gradient(from 20deg, transparent 0 8%, #fff 9%, transparent 11%, transparent 55%, #bfdbfe 57%, transparent 60%);
 }
 
-/* Cyberpunk — cyan/pembe/mor neon, isik dolasir, ara ara hafif glitch */
+/* Cyberpunk — cyan/pembe/mor; seyrek glitch (GSAP glitch) */
+.avf[data-frame='cyberpunk'] { --glow: rgba(34, 211, 238, 0.45); --sweep: rgba(244, 114, 182, 0.9); --spin-dur: 8s; }
 .avf[data-frame='cyberpunk']::before {
-  background: conic-gradient(from 0deg, #06b6d4, #ec4899, #a855f7, #06b6d4);
-  animation: avf-spin 4.4s linear infinite;
+  background: conic-gradient(from 0deg, #0e7490, #06b6d4, #22d3ee, #a855f7, #ec4899, #f472b6, #7c3aed, #0e7490);
 }
-.avf[data-frame='cyberpunk']::after {
-  background: conic-gradient(from 40deg, transparent 0 74%, #22d3ee 84%, #f472b6 90%, transparent 96%);
-  animation: avf-spin-rev 2.8s linear infinite, avf-flick 5s steps(2, end) infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.1) #22d3eeaa;
+.avf[data-frame='cyberpunk'] .avf-strike {
+  background:
+    linear-gradient(0deg, transparent 44%, rgba(34, 211, 238, 0.85) 46%, transparent 48%),
+    linear-gradient(0deg, transparent 60%, rgba(244, 114, 182, 0.85) 62%, transparent 64%);
 }
 
-/* ===================== EFSANEVI ===================== */
-/* Royal Gold — metalik altin, isik yansimasi cerceveyi dolasir, hafif partikuller */
+/* Dice Master — sag/sol iki premium zar (GSAP dice/float) */
+.avf[data-frame='dice-master'] { --glow: rgba(148, 163, 184, 0.4); --spin-dur: 20s; }
+.avf[data-frame='dice-master']::before {
+  background: conic-gradient(from 0deg, #0f172a, #475569, #cbd5e1, #f1f5f9, #64748b, #334155, #0f172a);
+}
+.avf[data-frame='dice-master'] .avf-d1,
+.avf[data-frame='dice-master'] .avf-d2 {
+  display: block;
+  top: 40%;
+  width: calc(var(--avf-size) * 0.2);
+  height: calc(var(--avf-size) * 0.2);
+  border-radius: calc(var(--avf-size) * 0.045);
+  background:
+    radial-gradient(circle at 32% 30%, #b91c1c 0 11%, transparent 13%),
+    radial-gradient(circle at 68% 68%, #b91c1c 0 11%, transparent 13%),
+    radial-gradient(circle at 68% 32%, #1f2937 0 8%, transparent 10%),
+    radial-gradient(circle at 32% 68%, #1f2937 0 8%, transparent 10%),
+    linear-gradient(150deg, #ffffff, #e2e8f0 70%, #cbd5e1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+}
+.avf[data-frame='dice-master'] .avf-d1 { left: calc(var(--avf-size) * -0.07); }
+.avf[data-frame='dice-master'] .avf-d2 { right: calc(var(--avf-size) * -0.07); }
+
+/* ================================================================
+   EFSANEVI
+   ================================================================ */
+/* Royal Gold — gercek metal altin; isik gecisi (GSAP sweep) + altin toz */
+.avf[data-frame='royal-gold'] { --glow: rgba(251, 191, 36, 0.5); --sweep: rgba(255, 251, 235, 0.95); --spin-dur: 22s; }
 .avf[data-frame='royal-gold']::before {
-  background: conic-gradient(from 0deg, #7c5a12, #ffe89a, #c9971f, #fff3c4, #7c5a12);
-  animation: avf-spin 10s linear infinite;
+  background: conic-gradient(from 0deg, #5a4310, #b8860b, #ffe89a, #fff6cf, #c9971f, #fde68a, #7c5a12, #ffe89a, #5a4310);
 }
 .avf[data-frame='royal-gold']::after {
-  background: conic-gradient(from 0deg, transparent 0 76%, #fffbeb 86%, #fde68a 92%, transparent 98%);
-  animation: avf-spin 3.4s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.08) #fbbf24aa;
-}
-.avf[data-frame='royal-gold'] .avf-deco {
   background:
-    radial-gradient(circle at 26% 18%, #fff8dc 0 3%, transparent 5%),
-    radial-gradient(circle at 82% 66%, #fde68a 0 3%, transparent 5%);
-  animation: avf-twinkle 3.2s ease-in-out infinite;
+    conic-gradient(from 0deg, rgba(255, 255, 255, 0) 0 10%, rgba(255, 255, 255, 0.7) 18%, rgba(255, 255, 255, 0) 28%,
+      rgba(255, 255, 255, 0) 58%, rgba(255, 255, 255, 0.4) 68%, rgba(255, 255, 255, 0) 78%);
+  box-shadow: inset 0 0 0 1px rgba(90, 60, 10, 0.6), inset 0 0 calc(var(--avf-size) * 0.05) rgba(120, 80, 10, 0.4);
 }
 
-/* Inferno — koyu kirmizi/turuncu metal, alttan yukari alevler + kozler */
+/* Inferno — koyu kirmizi metal; alttan alevler (CSS) + kozler (tsParticles ember) */
+.avf[data-frame='inferno'] { --glow: rgba(249, 115, 22, 0.6); --spin-dur: 24s; }
 .avf[data-frame='inferno']::before {
-  background: conic-gradient(from 210deg, #7f1d1d, #ea580c, #f59e0b, #dc2626, #7f1d1d);
-  animation: avf-spin 12s linear infinite;
+  background: conic-gradient(from 210deg, #450a0a, #7f1d1d, #dc2626, #ea580c, #f59e0b, #b91c1c, #450a0a);
 }
-.avf[data-frame='inferno']::after {
-  background: radial-gradient(closest-side at 50% 100%, #f59e0b99 0%, #ea580c55 45%, transparent 70%);
-  animation: avf-breathe 1.6s ease-in-out infinite;
+.avf[data-frame='inferno'] .avf-halo {
+  background: radial-gradient(closest-side at 50% 92%, rgba(245, 158, 11, 0.75) 0%, rgba(234, 88, 12, 0.4) 45%, transparent 72%);
+  opacity: 0.85;
 }
 .avf[data-frame='inferno'] .avf-deco::before,
 .avf[data-frame='inferno'] .avf-deco::after {
   content: '';
   position: absolute;
-  bottom: calc(var(--avf-size) * 0.06);
-  width: calc(var(--avf-size) * 0.09);
-  height: calc(var(--avf-size) * 0.09);
-  border-radius: 50%;
-  background: radial-gradient(#fed7aa, #f97316);
+  bottom: calc(var(--avf-size) * 0.02);
+  width: calc(var(--avf-size) * 0.18);
+  height: calc(var(--avf-size) * 0.26);
+  background: radial-gradient(ellipse at 50% 100%, #fef08a 0%, #f97316 45%, #dc2626 75%, transparent 100%);
+  clip-path: polygon(50% 0, 68% 40%, 60% 55%, 74% 72%, 50% 100%, 26% 72%, 40% 55%, 32% 40%);
   filter: blur(0.4px);
 }
-.avf[data-frame='inferno'] .avf-deco::before { left: 34%; animation: avf-ember 1.9s ease-in infinite; }
-.avf[data-frame='inferno'] .avf-deco::after { left: 62%; animation: avf-ember 2.3s ease-in 0.6s infinite; }
+.avf[data-frame='inferno'] .avf-deco::before { left: 22%; }
+.avf[data-frame='inferno'] .avf-deco::after { right: 22%; transform: scaleX(-1) scale(0.85); }
 
-/* Diamond — kesilmis kristal, isik farkli noktalardan kirilir, sparkle */
+/* Diamond — kesilmis kristal; isik gecisi (sweep) + sparkle */
+.avf[data-frame='diamond'] { --glow: rgba(165, 243, 252, 0.55); --sweep: #ffffff; --spin-dur: 20s; }
 .avf[data-frame='diamond']::before {
-  background: conic-gradient(from 0deg, #cffafe, #a5f3fc, #e0f2fe, #67e8f9, #cffafe);
-  animation: avf-spin 8s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.08) #a5f3fcaa;
+  background:
+    conic-gradient(from 0deg, #67e8f9, #ffffff, #a5f3fc, #cffafe, #ffffff, #22d3ee, #e0f2fe, #67e8f9);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.09) rgba(165, 243, 252, 0.6);
 }
 .avf[data-frame='diamond']::after {
-  background: conic-gradient(from 0deg, transparent 0 82%, #ffffff 88%, transparent 92%),
-    conic-gradient(from 180deg, transparent 0 82%, #ffffff 88%, transparent 92%);
-  animation: avf-spin 2.6s linear infinite;
+  background: conic-gradient(from 0deg,
+    rgba(255, 255, 255, 0) 0 6%, rgba(255, 255, 255, 0.9) 10%, rgba(255, 255, 255, 0) 16%,
+    rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.7) 46%, rgba(255, 255, 255, 0) 54%,
+    rgba(255, 255, 255, 0) 74%, rgba(255, 255, 255, 0.8) 80%, rgba(255, 255, 255, 0) 88%);
+  box-shadow: inset 0 0 0 1px rgba(8, 145, 178, 0.4);
 }
-.avf[data-frame='diamond'] .avf-deco {
+.avf[data-frame='diamond'] .avf-d1,
+.avf[data-frame='diamond'] .avf-d2,
+.avf[data-frame='diamond'] .avf-d3 {
+  display: block;
+  width: calc(var(--avf-size) * 0.14);
+  height: calc(var(--avf-size) * 0.14);
   background:
-    radial-gradient(circle at 50% 8%, #fff 0 5%, transparent 7%),
-    radial-gradient(circle at 88% 50%, #fff 0 4%, transparent 6%),
-    radial-gradient(circle at 12% 50%, #fff 0 4%, transparent 6%),
-    radial-gradient(circle at 50% 92%, #fff 0 4%, transparent 6%);
-  animation: avf-twinkle 2.2s ease-in-out infinite;
+    linear-gradient(#fff, #fff) center/100% 12% no-repeat,
+    linear-gradient(#fff, #fff) center/12% 100% no-repeat;
+  filter: drop-shadow(0 0 2px #fff);
 }
+.avf[data-frame='diamond'] .avf-d1 { left: 46%; top: 4%; }
+.avf[data-frame='diamond'] .avf-d2 { left: 84%; top: 46%; }
+.avf[data-frame='diamond'] .avf-d3 { left: 6%; top: 50%; }
 
-/* Emerald — koyu yesil/zumrut, kristaller uzerinde gezen isik yansimasi */
+/* Emerald — zumrut kristal; yuzeyde gezen isik (sweep) + sparkle */
+.avf[data-frame='emerald'] { --glow: rgba(16, 185, 129, 0.5); --sweep: rgba(209, 250, 229, 0.95); --spin-dur: 21s; }
 .avf[data-frame='emerald']::before {
-  background: conic-gradient(from 0deg, #064e3b, #10b981, #6ee7b7, #059669, #064e3b);
-  animation: avf-spin 9s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.08) #10b98188;
+  background: conic-gradient(from 0deg, #052e21, #047857, #10b981, #6ee7b7, #ecfdf5, #059669, #064e3b, #10b981, #052e21);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.08) rgba(16, 185, 129, 0.45);
 }
-.avf[data-frame='emerald']::after {
-  background: conic-gradient(from 0deg, transparent 0 76%, #d1fae5 86%, #6ee7b7 92%, transparent 98%);
-  animation: avf-spin 3.8s linear infinite;
-}
-
-/* Ruby — koyu kirmizi yakut, cok yavas kirmizi pulse + isik yansimalari */
-.avf[data-frame='ruby']::before {
-  background: conic-gradient(from 0deg, #7f1d1d, #ef4444, #fca5a5, #dc2626, #7f1d1d);
-  animation: avf-spin 11s linear infinite;
-}
-.avf[data-frame='ruby']::after {
-  background: radial-gradient(closest-side, transparent 70%, #ef4444 84%, #b91c1c 100%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.14) #ef4444aa;
-  animation: avf-breathe 3.4s ease-in-out infinite;
-}
-.avf[data-frame='ruby'] .avf-deco {
-  background:
-    radial-gradient(circle at 30% 24%, #fecaca 0 3%, transparent 5%),
-    radial-gradient(circle at 76% 72%, #fff 0 2.5%, transparent 4.5%);
-  animation: avf-twinkle 3.6s ease-in-out infinite;
-}
-
-/* ===================== MITIK ===================== */
-/* Black Hole — siyah/mor, iki halka farkli hizda doner, partikuller merkeze cekilir */
-.avf[data-frame='black-hole']::before {
-  background: conic-gradient(from 0deg, #0b0614, #6d28d9, #1e1b4b, #a78bfa, #0b0614);
-  animation: avf-spin 4s linear infinite;
-}
-.avf[data-frame='black-hole']::after {
-  background: conic-gradient(from 90deg, transparent 0 66%, #c4b5fd 78%, transparent 90%);
-  animation: avf-spin-rev 2.4s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.12) #7c3aedaa,
-    inset 0 0 calc(var(--avf-size) * 0.1) #000;
-}
-.avf[data-frame='black-hole'] .avf-deco::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 4%, #ddd6fe 0 3%, transparent 4%),
-    radial-gradient(circle at 96% 50%, #c4b5fd 0 3%, transparent 4%),
-    radial-gradient(circle at 50% 96%, #ddd6fe 0 3%, transparent 4%);
-  animation: avf-spin 3s linear infinite, avf-pulse-soft 2s ease-in-out infinite;
-}
-
-/* Galaxy — lacivert/mor/cyan uzay, yildizlar + nebula cok yavas doner */
-.avf[data-frame='galaxy']::before {
-  background: conic-gradient(from 0deg, #0b1e4b, #6d28d9, #0891b2, #312e81, #0b1e4b);
-  animation: avf-spin 16s linear infinite;
-  filter: saturate(1.15);
-}
-.avf[data-frame='galaxy']::after {
-  background: radial-gradient(closest-side, transparent 66%, #22d3ee33 78%, transparent 100%);
-  animation: avf-breathe 5s ease-in-out infinite;
-}
-.avf[data-frame='galaxy'] .avf-deco {
-  background:
-    radial-gradient(circle at 22% 20%, #fff 0 2%, transparent 3%),
-    radial-gradient(circle at 80% 30%, #a5f3fc 0 2%, transparent 3%),
-    radial-gradient(circle at 66% 78%, #fff 0 2%, transparent 3%),
-    radial-gradient(circle at 30% 74%, #c4b5fd 0 2%, transparent 3%),
-    radial-gradient(circle at 90% 66%, #fff 0 1.5%, transparent 3%);
-  animation: avf-spin 22s linear infinite, avf-twinkle 4s ease-in-out infinite;
-}
-
-/* Phoenix — altin/kirmizi/turuncu, iki yanda ates kanatlari; 6-8sn'de bir parlar */
-.avf[data-frame='phoenix']::before {
-  background: conic-gradient(from 0deg, #7c2d12, #f97316, #fbbf24, #dc2626, #7c2d12);
-  animation: avf-spin 13s linear infinite;
-}
-.avf[data-frame='phoenix']::after {
-  background: radial-gradient(closest-side, transparent 68%, #fb923c88 82%, transparent 100%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.12) #f9731688;
-  animation: avf-glow-burst 7s ease-in-out infinite;
-}
-.avf[data-frame='phoenix'] .avf-deco::before,
-.avf[data-frame='phoenix'] .avf-deco::after {
-  content: '';
-  position: absolute;
-  top: 22%;
-  width: calc(var(--avf-size) * 0.42);
-  height: calc(var(--avf-size) * 0.6);
-  background: linear-gradient(160deg, #fde68a, #f97316 55%, #b91c1c);
-  clip-path: polygon(50% 0, 100% 22%, 74% 40%, 100% 55%, 70% 66%, 92% 84%, 55% 78%, 50% 100%);
-  filter: drop-shadow(0 0 2px #f9731688);
-  animation: avf-glow-burst 7s ease-in-out infinite;
-}
-.avf[data-frame='phoenix'] .avf-deco::before { left: calc(var(--avf-size) * -0.16); }
-.avf[data-frame='phoenix'] .avf-deco::after { right: calc(var(--avf-size) * -0.16); transform: scaleX(-1); }
-
-/* Dragon — koyu kirmizi pullu halka, ustte iki kirmizi goz ara ara parlar + hafif duman */
-.avf[data-frame='dragon']::before {
-  background: conic-gradient(from 0deg, #1a0505, #7f1d1d, #b91c1c, #450a0a, #1a0505);
-  animation: avf-spin 14s linear infinite;
-}
-.avf[data-frame='dragon']::after {
-  background: radial-gradient(closest-side at 50% 100%, #57534e66 0%, transparent 60%);
-  animation: avf-breathe 4s ease-in-out infinite;
-}
-.avf[data-frame='dragon'] .avf-deco::before,
-.avf[data-frame='dragon'] .avf-deco::after {
-  content: '';
-  position: absolute;
-  top: calc(var(--avf-size) * 0.05);
+.avf[data-frame='emerald'] .avf-d1,
+.avf[data-frame='emerald'] .avf-d2,
+.avf[data-frame='emerald'] .avf-d3 {
+  display: block;
   width: calc(var(--avf-size) * 0.1);
   height: calc(var(--avf-size) * 0.1);
-  border-radius: 50%;
-  background: radial-gradient(#fecaca, #dc2626 55%, #7f1d1d);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.08) #ef4444;
-  animation: avf-flash 5s steps(1, end) infinite;
+  background: radial-gradient(circle at 50% 40%, #fff 0 28%, #d1fae5 52%, transparent 70%);
+  filter: drop-shadow(0 0 2px #6ee7b7);
 }
-.avf[data-frame='dragon'] .avf-deco::before { left: 34%; }
-.avf[data-frame='dragon'] .avf-deco::after { right: 34%; }
+.avf[data-frame='emerald'] .avf-d1 { left: 70%; top: 20%; }
+.avf[data-frame='emerald'] .avf-d2 { left: 18%; top: 66%; }
+.avf[data-frame='emerald'] .avf-d3 { left: 64%; top: 80%; }
 
-/* Thunder God — altin + elektrik mavisi halka, periyodik guclu kisa yildirim flashi */
-.avf[data-frame='thunder-god']::before {
-  background: conic-gradient(from 0deg, #b45309, #fbbf24, #60a5fa, #1d4ed8, #b45309);
-  animation: avf-spin 7s linear infinite;
+/* Ruby — yakut; yavas kalp atisi glow (GSAP breathe) */
+.avf[data-frame='ruby'] { --glow: rgba(239, 68, 68, 0.6); --spin-dur: 26s; }
+.avf[data-frame='ruby']::before {
+  background: conic-gradient(from 0deg, #450a0a, #991b1b, #ef4444, #fca5a5, #fee2e2, #dc2626, #7f1d1d, #ef4444, #450a0a);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.1) rgba(239, 68, 68, 0.45);
 }
-.avf[data-frame='thunder-god']::after {
-  background: radial-gradient(closest-side, transparent 70%, #93c5fd 82%, #2563eb 100%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.18) #3b82f6;
-  animation: avf-flash 3.6s steps(1, end) infinite;
-}
-.avf[data-frame='thunder-god'] .avf-deco {
-  background:
-    radial-gradient(circle at 50% 2%, #fff 0 4%, transparent 6%),
-    radial-gradient(circle at 90% 60%, #fde68a 0 3%, transparent 5%),
-    radial-gradient(circle at 10% 55%, #bfdbfe 0 3%, transparent 5%);
-  animation: avf-flash 3.6s steps(1, end) infinite;
+.avf[data-frame='ruby'] .avf-halo {
+  background: radial-gradient(closest-side, transparent 52%, rgba(239, 68, 68, 0.65) 78%, transparent 100%);
 }
 
-/* ===================== PRESTIJ / OZEL ===================== */
-/* VIP — siyah metal + altin detay, ustte kucuk tac, altin isik dolasir */
+/* VIP — siyah metal + altin; isik gecisi (sweep), ustte kucuk tac */
+.avf[data-frame='vip'] { --glow: rgba(251, 191, 36, 0.4); --sweep: rgba(255, 251, 235, 0.9); --spin-dur: 20s; }
 .avf[data-frame='vip']::before {
-  background: conic-gradient(from 0deg, #0a0a0a, #4b3a12, #fde68a, #1a1a1a, #0a0a0a);
-  animation: avf-spin 12s linear infinite;
-}
-.avf[data-frame='vip']::after {
-  background: conic-gradient(from 0deg, transparent 0 80%, #fffbeb 88%, #fbbf24 93%, transparent 98%);
-  animation: avf-spin 4.6s linear infinite;
+  background: conic-gradient(from 0deg, #0a0a0a, #1c1917, #4b3a12, #d4a017, #fde68a, #4b3a12, #1a1a1a, #0a0a0a);
 }
 .avf[data-frame='vip'] .avf-deco::before {
   content: '';
   position: absolute;
   left: 50%;
   top: calc(var(--avf-size) * -0.08);
-  width: calc(var(--avf-size) * 0.3);
-  height: calc(var(--avf-size) * 0.18);
+  width: calc(var(--avf-size) * 0.32);
+  height: calc(var(--avf-size) * 0.19);
   transform: translateX(-50%);
   background: linear-gradient(#fef3c7, #d4a017);
-  clip-path: polygon(0 100%, 0 38%, 25% 66%, 50% 20%, 75% 66%, 100% 38%, 100% 100%);
-  filter: drop-shadow(0 0 1.5px #fbbf24);
+  clip-path: polygon(0 100%, 0 40%, 25% 66%, 50% 20%, 75% 66%, 100% 40%, 100% 100%);
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5));
 }
 
-/* Champion — altin cerceve + kupa, ustten altin isik yayilir (turnuva ile kazanilir) */
+/* Champion — altin cerceve + kupa (GSAP burst brightens d1) */
+.avf[data-frame='champion'] { --glow: rgba(253, 224, 71, 0.55); --sweep: #fffbeb; --spin-dur: 18s; }
 .avf[data-frame='champion']::before {
-  background: conic-gradient(from 0deg, #a16207, #fde047, #fef9c3, #ca8a04, #a16207);
-  animation: avf-spin 10s linear infinite;
+  background: conic-gradient(from 0deg, #713f12, #a16207, #fde047, #fef9c3, #ca8a04, #eab308, #713f12);
 }
-.avf[data-frame='champion']::after {
-  background: radial-gradient(closest-side at 50% 0%, #fde68aaa 0%, transparent 55%);
-  animation: avf-breathe 3s ease-in-out infinite;
-}
-.avf[data-frame='champion'] .avf-deco::before {
-  content: '';
-  position: absolute;
+.avf[data-frame='champion'] .avf-d1 {
+  display: block;
   left: 50%;
-  top: calc(var(--avf-size) * -0.1);
-  width: calc(var(--avf-size) * 0.22);
-  height: calc(var(--avf-size) * 0.22);
+  top: calc(var(--avf-size) * -0.11);
+  width: calc(var(--avf-size) * 0.24);
+  height: calc(var(--avf-size) * 0.24);
   transform: translateX(-50%);
-  background: radial-gradient(#fff9c4, #eab308 60%, #a16207);
-  clip-path: polygon(24% 0, 76% 0, 72% 42%, 88% 42%, 62% 66%, 66% 88%, 50% 78%, 34% 88%, 38% 66%, 12% 42%, 28% 42%);
-  filter: drop-shadow(0 0 2px #fde047);
+  background: radial-gradient(circle at 50% 40%, #fff9c4, #eab308 55%, #a16207);
+  clip-path: polygon(24% 8%, 76% 8%, 72% 44%, 88% 40%, 64% 64%, 66% 84%, 50% 76%, 34% 84%, 36% 64%, 12% 40%, 28% 44%);
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
-/* Grandmaster — siyah/koyu kirmizi/altin, yavas donen ince enerji halkasi (ciddi/prestijli) */
-.avf[data-frame='grandmaster']::before {
-  background: conic-gradient(from 0deg, #0a0a0a, #7f1d1d, #b8860b, #1a0606, #0a0a0a);
-  animation: avf-spin 15s linear infinite;
-}
-.avf[data-frame='grandmaster']::after {
-  background: conic-gradient(from 0deg, transparent 0 70%, #fbbf24 82%, #dc2626 88%, transparent 96%);
-  animation: avf-spin 6s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.08) #b8860baa;
-}
-
-/* ===================== TAVLAYA OZEL ===================== */
-/* Dice Master — sag/sol iki premium zar; ara ara kisa roll (donme) animasyonu */
-.avf[data-frame='dice-master']::before {
-  background: conic-gradient(from 0deg, #1f2937, #6b7280, #e5e7eb, #374151, #1f2937);
-  animation: avf-spin 12s linear infinite;
-}
-.avf[data-frame='dice-master'] .avf-deco::before,
-.avf[data-frame='dice-master'] .avf-deco::after {
-  content: '';
-  position: absolute;
-  top: 42%;
-  width: calc(var(--avf-size) * 0.2);
-  height: calc(var(--avf-size) * 0.2);
-  border-radius: calc(var(--avf-size) * 0.05);
-  background:
-    radial-gradient(circle at 30% 30%, #b91c1c 0 12%, transparent 14%),
-    radial-gradient(circle at 70% 70%, #b91c1c 0 12%, transparent 14%),
-    linear-gradient(150deg, #fff, #e5e7eb);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  animation: avf-diceroll 6s ease-in-out infinite;
-}
-.avf[data-frame='dice-master'] .avf-deco::before { left: calc(var(--avf-size) * -0.08); }
-.avf[data-frame='dice-master'] .avf-deco::after { right: calc(var(--avf-size) * -0.08); animation-delay: 0.4s; }
-@keyframes avf-diceroll {
-  0%, 70%, 100% { transform: rotate(0); }
-  78% { transform: rotate(180deg); }
-  86% { transform: rotate(360deg); }
-}
-
-/* Backgammon King — siyah+altin, ustte tac, yanlarda tavla pulu, hafif altin partikul */
+/* Backgammon King — siyah+altin; tac (pseudo) + yan pullar (d2/d3), sweep */
+.avf[data-frame='backgammon-king'] { --glow: rgba(245, 158, 11, 0.45); --sweep: #fffbeb; --spin-dur: 19s; }
 .avf[data-frame='backgammon-king']::before {
-  background: conic-gradient(from 0deg, #0a0a0a, #4b3a12, #ffe066, #1a1a1a, #0a0a0a);
-  animation: avf-spin 11s linear infinite;
-}
-.avf[data-frame='backgammon-king']::after {
-  background: conic-gradient(from 0deg, transparent 0 82%, #fffbeb 89%, #f59e0b 94%, transparent 99%);
-  animation: avf-spin 5s linear infinite;
+  background: conic-gradient(from 0deg, #0a0a0a, #1a1a1a, #4b3a12, #ffe066, #fff3c4, #d4a017, #1a1a1a, #0a0a0a);
 }
 .avf[data-frame='backgammon-king'] .avf-deco::before {
   content: '';
   position: absolute;
   left: 50%;
   top: calc(var(--avf-size) * -0.09);
-  width: calc(var(--avf-size) * 0.28);
-  height: calc(var(--avf-size) * 0.17);
+  width: calc(var(--avf-size) * 0.3);
+  height: calc(var(--avf-size) * 0.18);
   transform: translateX(-50%);
   background: linear-gradient(#fef3c7, #d4a017);
-  clip-path: polygon(0 100%, 0 38%, 25% 66%, 50% 20%, 75% 66%, 100% 38%, 100% 100%);
-  filter: drop-shadow(0 0 1.5px #fbbf24);
+  clip-path: polygon(0 100%, 0 40%, 25% 66%, 50% 20%, 75% 66%, 100% 40%, 100% 100%);
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5));
 }
-.avf[data-frame='backgammon-king'] .avf-deco::after {
-  content: '';
-  position: absolute;
-  bottom: calc(var(--avf-size) * 0.02);
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(var(--avf-size) * 0.16);
-  height: calc(var(--avf-size) * 0.16);
+.avf[data-frame='backgammon-king'] .avf-d2,
+.avf[data-frame='backgammon-king'] .avf-d3 {
+  display: block;
+  top: 46%;
+  width: calc(var(--avf-size) * 0.15);
+  height: calc(var(--avf-size) * 0.15);
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #e5e7eb 60%, #9ca3af);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), calc(var(--avf-size) * 0.22) 0 0 -1px #1f2937;
+  background: radial-gradient(circle at 35% 30%, #fff, #e5e7eb 55%, #9ca3af);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(0, 0, 0, 0.2);
 }
+.avf[data-frame='backgammon-king'] .avf-d2 { left: calc(var(--avf-size) * -0.04); }
+.avf[data-frame='backgammon-king'] .avf-d3 { right: calc(var(--avf-size) * -0.04); background: radial-gradient(circle at 35% 30%, #52525b, #27272a 60%, #09090b); }
 
-/* ===================== BASARI (kazanilir) ===================== */
-/* Tournament Champion — altin+siyah, tac/kupa + hafif tavla; guclu prestij glow */
-.avf[data-frame='tournament-champion']::before {
-  background: conic-gradient(from 0deg, #111, #a16207, #fde047, #713f12, #111);
-  animation: avf-spin 9s linear infinite;
-}
-.avf[data-frame='tournament-champion']::after {
-  background: radial-gradient(closest-side at 50% 0%, #fde68a 0%, transparent 55%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.12) #fbbf2488;
-  animation: avf-glow-burst 6s ease-in-out infinite;
-}
-.avf[data-frame='tournament-champion'] .avf-deco::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: calc(var(--avf-size) * -0.11);
-  width: calc(var(--avf-size) * 0.24);
-  height: calc(var(--avf-size) * 0.24);
-  transform: translateX(-50%);
-  background: radial-gradient(#fff9c4, #eab308 60%, #a16207);
-  clip-path: polygon(24% 0, 76% 0, 72% 42%, 88% 42%, 62% 66%, 66% 88%, 50% 78%, 34% 88%, 38% 66%, 12% 42%, 28% 42%);
-  filter: drop-shadow(0 0 3px #fde047);
-}
-
-/* Top 100 — platinum/koyu metal, zarif "TOP 100" rozeti */
+/* Top 100 — platinum; sweep + zarif plaka */
+.avf[data-frame='top-100'] { --glow: rgba(203, 213, 225, 0.5); --sweep: #ffffff; --spin-dur: 20s; }
 .avf[data-frame='top-100']::before {
-  background: conic-gradient(from 0deg, #334155, #cbd5e1, #f8fafc, #64748b, #334155);
-  animation: avf-spin 10s linear infinite;
-  box-shadow: 0 0 calc(var(--avf-size) * 0.06) #cbd5e199;
-}
-.avf[data-frame='top-100']::after {
-  background: conic-gradient(from 0deg, transparent 0 80%, #fff 88%, transparent 94%);
-  animation: avf-spin 4s linear infinite;
+  background: conic-gradient(from 0deg, #1e293b, #64748b, #cbd5e1, #f8fafc, #94a3b8, #475569, #cbd5e1, #1e293b);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.06) rgba(203, 213, 225, 0.5);
 }
 .avf[data-frame='top-100'] .avf-deco::after {
   content: 'TOP 100';
   position: absolute;
   left: 50%;
-  bottom: calc(var(--avf-size) * -0.05);
+  bottom: calc(var(--avf-size) * -0.06);
   transform: translateX(-50%);
-  padding: 0 calc(var(--avf-size) * 0.06);
+  padding: 0 calc(var(--avf-size) * 0.07);
   font-size: calc(var(--avf-size) * 0.15);
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -536,71 +423,236 @@
   color: #0f172a;
   background: linear-gradient(#f8fafc, #cbd5e1);
   border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-/* 1000 Wins — koyu altin/bronz metal, kucuk "1000" rozeti */
+/* 1000 Wins — bronz/altin; sparkle + rozet */
+.avf[data-frame='1000-wins'] { --glow: rgba(217, 119, 6, 0.5); --spin-dur: 22s; }
 .avf[data-frame='1000-wins']::before {
-  background: conic-gradient(from 0deg, #78350f, #d97706, #fcd34d, #92400e, #78350f);
-  animation: avf-spin 11s linear infinite;
+  background: conic-gradient(from 0deg, #451a03, #92400e, #d97706, #fcd34d, #fef3c7, #b45309, #78350f, #451a03);
 }
-.avf[data-frame='1000-wins']::after {
-  background: conic-gradient(from 0deg, transparent 0 82%, #fef3c7 89%, transparent 95%);
-  animation: avf-spin 4.4s linear infinite;
+.avf[data-frame='1000-wins'] .avf-d1,
+.avf[data-frame='1000-wins'] .avf-d2,
+.avf[data-frame='1000-wins'] .avf-d3 {
+  display: block;
+  width: calc(var(--avf-size) * 0.09);
+  height: calc(var(--avf-size) * 0.09);
+  background: radial-gradient(circle at 50% 40%, #fff 0 30%, #fcd34d 55%, transparent 72%);
+  filter: drop-shadow(0 0 2px #fcd34d);
 }
+.avf[data-frame='1000-wins'] .avf-d1 { left: 72%; top: 22%; }
+.avf[data-frame='1000-wins'] .avf-d2 { left: 18%; top: 30%; }
+.avf[data-frame='1000-wins'] .avf-d3 { left: 46%; top: 10%; }
 .avf[data-frame='1000-wins'] .avf-deco::after {
   content: '1000';
   position: absolute;
   left: 50%;
-  bottom: calc(var(--avf-size) * -0.05);
+  bottom: calc(var(--avf-size) * -0.06);
   transform: translateX(-50%);
-  padding: 0 calc(var(--avf-size) * 0.07);
+  padding: 0 calc(var(--avf-size) * 0.08);
   font-size: calc(var(--avf-size) * 0.15);
   font-weight: 800;
-  letter-spacing: 0.02em;
   line-height: 1.5;
   color: #451a03;
   background: linear-gradient(#fcd34d, #d97706);
   border-radius: 999px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
-/* Season Champion — altin+beyaz+kirmizi detay, ustte sezon taci/kupa, prestij glow */
-.avf[data-frame='season-champion']::before {
-  background: conic-gradient(from 0deg, #b91c1c, #fde047, #fff, #f59e0b, #b91c1c);
-  animation: avf-spin 8s linear infinite;
+/* ================================================================
+   MITIK (en az 2-3 bagimsiz katman)
+   ================================================================ */
+/* Black Hole — donen ikinci halka (orbit) + merkeze cekilen partikuller (gravity) */
+.avf[data-frame='black-hole'] { --glow: rgba(124, 58, 237, 0.55); --spin-dur: 5s; }
+.avf[data-frame='black-hole']::before {
+  background: conic-gradient(from 0deg, #05010f, #1e1b4b, #6d28d9, #a78bfa, #2e1065, #4c1d95, #05010f);
 }
-.avf[data-frame='season-champion']::after {
-  background: radial-gradient(closest-side at 50% 0%, #fff8e1 0%, transparent 55%);
-  box-shadow: 0 0 calc(var(--avf-size) * 0.14) #fbbf24aa;
-  animation: avf-glow-burst 5.5s ease-in-out infinite;
+.avf[data-frame='black-hole']::after {
+  background: radial-gradient(closest-side, transparent 40%, rgba(0, 0, 0, 0.85) 58%, transparent 60%);
+  box-shadow: inset 0 0 calc(var(--avf-size) * 0.14) #000, inset 0 0 0 1px rgba(167, 139, 250, 0.4);
 }
-.avf[data-frame='season-champion'] .avf-deco::before {
-  content: '';
-  position: absolute;
+.avf[data-frame='black-hole'] .avf-ring2 {
+  opacity: 1;
+  background: conic-gradient(from 90deg, transparent 0 62%, #ddd6fe 74%, #7c3aed 82%, transparent 94%);
+  filter: drop-shadow(0 0 3px rgba(124, 58, 237, 0.7));
+}
+
+/* Galaxy — nebula (yavas orbit) + kozmik toz/yildizlar (cosmic), hafif aura */
+.avf[data-frame='galaxy'] { --glow: rgba(34, 211, 238, 0.4); --spin-dur: 30s; }
+.avf[data-frame='galaxy']::before {
+  background: conic-gradient(from 0deg, #0a1130, #312e81, #6d28d9, #0891b2, #22d3ee, #1e1b4b, #4c1d95, #0a1130);
+  filter: saturate(1.15);
+}
+.avf[data-frame='galaxy']::after {
+  background:
+    radial-gradient(circle at 24% 22%, #fff 0 1.5%, transparent 2.5%),
+    radial-gradient(circle at 78% 30%, #a5f3fc 0 1.5%, transparent 2.5%),
+    radial-gradient(circle at 64% 78%, #fff 0 1.5%, transparent 2.5%),
+    radial-gradient(circle at 32% 72%, #c4b5fd 0 1.5%, transparent 2.5%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+.avf[data-frame='galaxy'] .avf-ring2 {
+  opacity: 1;
+  background: conic-gradient(from 0deg, transparent 0 55%, rgba(34, 211, 238, 0.35) 70%, rgba(124, 58, 237, 0.35) 85%, transparent 100%);
+}
+
+/* Phoenix — iki ates kanadi (GSAP wing: d2/d3) + koz (ember) + parlama (burst) */
+.avf[data-frame='phoenix'] { --glow: rgba(249, 115, 22, 0.6); --spin-dur: 26s; }
+.avf[data-frame='phoenix']::before {
+  background: conic-gradient(from 0deg, #7c2d12, #b91c1c, #f97316, #fbbf24, #fef08a, #dc2626, #7c2d12);
+}
+.avf[data-frame='phoenix'] .avf-d2,
+.avf[data-frame='phoenix'] .avf-d3 {
+  display: block;
+  top: 20%;
+  width: calc(var(--avf-size) * 0.44);
+  height: calc(var(--avf-size) * 0.62);
+  background: linear-gradient(160deg, #fef08a, #f97316 50%, #b91c1c 90%);
+  clip-path: polygon(50% 0, 100% 20%, 72% 38%, 100% 52%, 68% 64%, 92% 82%, 52% 76%, 50% 100%);
+  filter: drop-shadow(0 0 3px rgba(249, 115, 22, 0.6));
+}
+.avf[data-frame='phoenix'] .avf-d2 { left: calc(var(--avf-size) * -0.18); transform-origin: 100% 50%; }
+.avf[data-frame='phoenix'] .avf-d3 { right: calc(var(--avf-size) * -0.18); transform: scaleX(-1); transform-origin: 0% 50%; }
+.avf[data-frame='phoenix'] .avf-d1 {
+  display: block;
   left: 50%;
-  top: calc(var(--avf-size) * -0.1);
+  top: calc(var(--avf-size) * -0.02);
+  width: calc(var(--avf-size) * 0.12);
+  height: calc(var(--avf-size) * 0.12);
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #fbbf24 50%, #ea580c);
+  filter: drop-shadow(0 0 4px #fbbf24);
+}
+
+/* Dragon — pullu koyu kirmizi halka; parlayan gozler (GSAP eyes: d1/d2) + duman */
+.avf[data-frame='dragon'] { --glow: rgba(220, 38, 38, 0.5); --spin-dur: 28s; }
+.avf[data-frame='dragon']::before {
+  background:
+    repeating-conic-gradient(from 0deg, #1a0505 0deg 8deg, #7f1d1d 8deg 16deg),
+    conic-gradient(from 0deg, #450a0a, #b91c1c, #dc2626, #7f1d1d, #450a0a);
+  background-blend-mode: overlay;
+}
+.avf[data-frame='dragon'] .avf-d1,
+.avf[data-frame='dragon'] .avf-d2 {
+  display: block;
+  top: calc(var(--avf-size) * 0.08);
+  width: calc(var(--avf-size) * 0.1);
+  height: calc(var(--avf-size) * 0.07);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #fff 0 20%, #fca5a5 35%, #dc2626 60%, #7f1d1d);
+  box-shadow: 0 0 calc(var(--avf-size) * 0.06) #ef4444;
+}
+.avf[data-frame='dragon'] .avf-d1 { left: 33%; }
+.avf[data-frame='dragon'] .avf-d2 { right: 33%; }
+.avf[data-frame='dragon'] .avf-d3 {
+  display: block;
+  left: 50%;
+  top: calc(var(--avf-size) * -0.06);
+  width: calc(var(--avf-size) * 0.22);
+  height: calc(var(--avf-size) * 0.14);
+  transform: translateX(-50%);
+  background: linear-gradient(#7f1d1d, #450a0a);
+  clip-path: polygon(50% 100%, 0 40%, 18% 0, 34% 45%, 50% 8%, 66% 45%, 82% 0, 100% 40%);
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6));
+}
+
+/* Thunder God — altin + elektrik mavisi; donen enerji (orbit) + guclu yildirim (strike) */
+.avf[data-frame='thunder-god'] { --glow: rgba(59, 130, 246, 0.55); --strike: #dbeafe; --spin-dur: 9s; }
+.avf[data-frame='thunder-god']::before {
+  background: conic-gradient(from 0deg, #78350f, #b45309, #fbbf24, #fef3c7, #60a5fa, #1d4ed8, #1e3a8a, #b45309, #78350f);
+}
+.avf[data-frame='thunder-god'] .avf-ring2 {
+  opacity: 1;
+  background: conic-gradient(from 0deg, transparent 0 66%, #fde68a 78%, #93c5fd 88%, transparent 98%);
+}
+.avf[data-frame='thunder-god'] .avf-strike {
+  background:
+    radial-gradient(closest-side, rgba(219, 234, 254, 0.95) 0%, transparent 66%),
+    conic-gradient(from 200deg, transparent 0 6%, #fff 7%, transparent 9%, transparent 52%, #fde68a 54%, transparent 57%);
+}
+
+/* Grandmaster — siyah/koyu kirmizi/altin; ince enerji halkasi (orbit) + hafif nabiz */
+.avf[data-frame='grandmaster'] { --glow: rgba(184, 134, 11, 0.45); --spin-dur: 24s; }
+.avf[data-frame='grandmaster']::before {
+  background: conic-gradient(from 0deg, #0a0a0a, #450a0a, #7f1d1d, #b8860b, #fde68a, #1a0606, #0a0a0a);
+}
+.avf[data-frame='grandmaster'] .avf-ring2 {
+  opacity: 1;
+  background: conic-gradient(from 0deg, transparent 0 68%, #fbbf24 80%, #dc2626 88%, transparent 98%);
+}
+
+/* ================================================================
+   BASARI (kazanilir)
+   ================================================================ */
+/* Tournament Champion — altin+siyah; kupa (d1) + isik huzmeleri (rays) + burst */
+.avf[data-frame='tournament-champion'] { --glow: rgba(251, 191, 36, 0.6); --spin-dur: 18s; }
+.avf[data-frame='tournament-champion']::before {
+  background: conic-gradient(from 0deg, #111111, #713f12, #a16207, #fde047, #fef9c3, #ca8a04, #1a1a1a, #111111);
+}
+.avf[data-frame='tournament-champion'] .avf-rays {
+  opacity: 0.45;
+  background: repeating-conic-gradient(from 0deg, rgba(253, 224, 71, 0.5) 0deg 4deg, transparent 4deg 18deg);
+  -webkit-mask: radial-gradient(closest-side, transparent 56%, #000 60%, #000 82%, transparent 92%);
+  mask: radial-gradient(closest-side, transparent 56%, #000 60%, #000 82%, transparent 92%);
+}
+.avf[data-frame='tournament-champion'] .avf-d1 {
+  display: block;
+  left: 50%;
+  top: calc(var(--avf-size) * -0.12);
   width: calc(var(--avf-size) * 0.26);
+  height: calc(var(--avf-size) * 0.26);
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 50% 40%, #fff9c4, #eab308 55%, #a16207);
+  clip-path: polygon(28% 6%, 72% 6%, 68% 30%, 84% 26%, 62% 52%, 60% 70%, 68% 70%, 32% 70%, 40% 70%, 38% 52%, 16% 26%, 32% 30%);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
+}
+
+/* Top-tier prestij glow guclendirme (mitik basari) */
+.avf[data-frame='tournament-champion'] .avf-halo,
+.avf[data-frame='season-champion'] .avf-halo { opacity: 0.7; }
+
+/* Season Champion — altin+beyaz+kirmizi; sezon taci (d1) + aura + burst */
+.avf[data-frame='season-champion'] { --glow: rgba(251, 191, 36, 0.6); --spin-dur: 16s; }
+.avf[data-frame='season-champion']::before {
+  background: conic-gradient(from 0deg, #991b1b, #dc2626, #fde047, #ffffff, #f59e0b, #fef9c3, #b91c1c, #991b1b);
+}
+.avf[data-frame='season-champion'] .avf-d1 {
+  display: block;
+  left: 50%;
+  top: calc(var(--avf-size) * -0.11);
+  width: calc(var(--avf-size) * 0.3);
   height: calc(var(--avf-size) * 0.2);
   transform: translateX(-50%);
   background: linear-gradient(#fffbeb, #f59e0b);
-  clip-path: polygon(0 100%, 0 34%, 22% 62%, 40% 24%, 50% 44%, 60% 24%, 78% 62%, 100% 34%, 100% 100%);
-  filter: drop-shadow(0 0 2px #fde047);
+  clip-path: polygon(0 100%, 0 34%, 22% 62%, 40% 22%, 50% 44%, 60% 22%, 78% 62%, 100% 34%, 100% 100%);
+  filter: drop-shadow(0 1px 2px rgba(180, 83, 9, 0.6));
+}
+.avf[data-frame='season-champion'] .avf-d1::after {
+  content: '';
+  position: absolute;
+  left: 22%;
+  top: -12%;
+  width: 14%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff, #ef4444 70%);
+  box-shadow: calc(var(--avf-size) * 0.14) 0 0 -1px #ef4444;
 }
 
-/* ===================== ESKI CERCEVELER (geri uyumluluk) ===================== */
+/* ================================================================
+   ESKI CERCEVELER (geri uyumluluk)
+   ================================================================ */
 .avf[data-frame='bronze']::before { background: linear-gradient(135deg, #cd7f32, #8a5320); }
 .avf[data-frame='silver']::before { background: linear-gradient(135deg, #e0e0e0, #9aa0a8); }
-.avf[data-frame='gold']::before {
-  background: conic-gradient(from 0deg, #7c5a12, #ffe89a, #c9971f, #fff3c4, #7c5a12);
-  animation: avf-spin 10s linear infinite;
-}
-.avf[data-frame='fire']::before {
-  background: conic-gradient(from 210deg, #7f1d1d, #ea580c, #f59e0b, #dc2626, #7f1d1d);
-  animation: avf-spin 12s linear infinite;
-}
+.avf[data-frame='gold'] { --spin-dur: 12s; }
+.avf[data-frame='gold']::before { background: conic-gradient(from 0deg, #7c5a12, #ffe89a, #c9971f, #fff3c4, #7c5a12); }
+.avf[data-frame='fire'] { --spin-dur: 12s; }
+.avf[data-frame='fire']::before { background: conic-gradient(from 210deg, #7f1d1d, #ea580c, #f59e0b, #dc2626, #7f1d1d); }
 
-/* ===================== ERISILEBILIRLIK ===================== */
+/* ================================================================
+   ERISILEBILIRLIK — hareketi azalt/durdur, gorunumu koru
+   ================================================================ */
 @media (prefers-reduced-motion: reduce) {
   .avf *,
   .avf::before,
@@ -608,13 +660,6 @@
   .avf-deco::before,
   .avf-deco::after {
     animation: none !important;
+    transition: none !important;
   }
-}
-/* Statik istek (yogun listeler): animasyonlari durdur ama gorunumu koru */
-.avf.avf-static::before,
-.avf.avf-static::after,
-.avf.avf-static .avf-deco,
-.avf.avf-static .avf-deco::before,
-.avf.avf-static .avf-deco::after {
-  animation: none !important;
 }
