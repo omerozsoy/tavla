@@ -3,13 +3,6 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 
-interface ThemeItem {
-  id: string
-  name: string
-  price?: number
-  a: string
-  b: string
-}
 interface FrameItem {
   id: string
   name: string
@@ -21,12 +14,9 @@ interface Props {
   coins: number
   unlocks: string[]
   currentFrame: string | null
-  boardTheme: string
-  themes: ThemeItem[]
   frames: FrameItem[]
   onBuy: (shopId: string) => Promise<void>
   onEquip: (frameId: string | null) => Promise<void>
-  onSelectTheme: (id: string) => void
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onClose: () => void
 }
@@ -35,12 +25,9 @@ export default function Shop({
   coins,
   unlocks,
   currentFrame,
-  boardTheme,
-  themes,
   frames,
   onBuy,
   onEquip,
-  onSelectTheme,
   onDaily,
   onClose,
 }: Props) {
@@ -101,46 +88,6 @@ export default function Shop({
             <Icon name="alert" size={15} /> {buyErr}
           </div>
         )}
-
-        <h3 className="shop-sec">{t('shop.themes')}</h3>
-        <div className="shop-grid">
-          {themes.map((th) => {
-            const sid = 'theme.' + th.id
-            const owned = owns(sid)
-            const active = boardTheme === th.id
-            return (
-              <div key={th.id} className="shop-item">
-                <div
-                  className="shop-swatch"
-                  style={{ background: `linear-gradient(135deg, ${th.a} 0 50%, ${th.b} 50% 100%)` }}
-                />
-                <div className="shop-name">{th.name}</div>
-                {owned ? (
-                  <button
-                    className={`shop-btn ${active ? 'active' : ''}`}
-                    disabled={active}
-                    onClick={() => onSelectTheme(th.id)}
-                  >
-                    {active ? t('shop.selected') : t('shop.select')}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      className={`shop-btn buy${coins < (th.price ?? 0) ? ' cant' : ''}`}
-                      disabled={busy === sid || coins < (th.price ?? 0)}
-                      onClick={() => buy(sid)}
-                    >
-                      <Icon name="coin" size={14} /> {th.price}
-                    </button>
-                    {coins < (th.price ?? 0) && (
-                      <div className="shop-need">{t('shop.need', { n: (th.price ?? 0) - coins })}</div>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
-        </div>
 
         <h3 className="shop-sec">{t('shop.frames')}</h3>
         <div className="shop-grid">
