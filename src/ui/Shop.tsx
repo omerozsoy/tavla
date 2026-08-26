@@ -1,20 +1,34 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
+import AvatarFrame from './AvatarFrame'
+import {
+  AVATAR_FRAMES,
+  FRAME_GROUP_ORDER,
+  FRAME_GROUP_LABEL,
+  framePrice,
+  type FrameGroup,
+} from './avatarFrames'
 
-interface FrameItem {
-  id: string
-  name: string
-  price: number
-  css: string
+// Galeri ile ayni grup renkleri
+const GROUP_COLOR: Record<FrameGroup, string> = {
+  rare: '#3B82F6',
+  epic: '#A855F7',
+  legendary: '#F59E0B',
+  mythic: '#EF4444',
+  prestige: '#EAB308',
+  tavla: '#14B8A6',
+  achievement: '#F5D06F',
 }
 
 interface Props {
   coins: number
   unlocks: string[]
   currentFrame: string | null
-  frames: FrameItem[]
+  avatar?: string | null // onizlemede kullanicinin fotografi
+  name?: string // foto yoksa bas harf
   rewardReady?: boolean // 6 saatlik gunluk odul hazir mi
   rewardSecs?: number // sonraki odule kalan saniye (geri sayim)
   onBuy: (shopId: string) => Promise<void>
@@ -36,7 +50,8 @@ export default function Shop({
   coins,
   unlocks,
   currentFrame,
-  frames,
+  avatar,
+  name,
   rewardReady = false,
   rewardSecs = 0,
   onBuy,
@@ -119,7 +134,7 @@ export default function Shop({
         </div>
         <div className="shop-grid">
           <div className="shop-item">
-            <div className="shop-frame-prev" />
+            <AvatarFrame src={avatar} frame={null} size={64} name={name} />
             <div className="shop-name">{t('shop.noFrame')}</div>
             <button
               className={`shop-btn ${!currentFrame ? 'active' : ''}`}
@@ -129,42 +144,67 @@ export default function Shop({
               {!currentFrame ? t('shop.equipped') : t('shop.equip')}
             </button>
           </div>
-          {frames.map((fr) => {
-            const sid = 'frame.' + fr.id
-            const owned = owns(sid)
-            const equipped = currentFrame === fr.id
-            return (
-              <div key={fr.id} className="shop-item">
-                <div className="shop-frame-prev" style={{ background: fr.css }}>
-                  <div className="shop-frame-hole" />
-                </div>
-                <div className="shop-name">{fr.name}</div>
-                {owned ? (
-                  <button
-                    className={`shop-btn ${equipped ? 'active' : ''}`}
-                    disabled={equipped}
-                    onClick={() => equip(fr.id)}
-                  >
-                    {equipped ? t('shop.equipped') : t('shop.equip')}
-                  </button>
-                ) : (
-                  <>
-                    <button
-                      className={`shop-btn buy${coins < fr.price ? ' cant' : ''}`}
-                      disabled={busy === sid || coins < fr.price}
-                      onClick={() => buy(sid)}
-                    >
-                      <Icon name="coin" size={14} /> {fr.price}
-                    </button>
-                    {coins < fr.price && (
-                      <div className="shop-need">{t('shop.need', { n: fr.price - coins })}</div>
-                    )}
-                  </>
-                )}
-              </div>
-            )
-          })}
         </div>
+
+        {FRAME_GROUP_ORDER.map((group) => {
+          const items = AVATAR_FRAMES.filter((f) => f.group === group)
+          if (items.length === 0) return null
+          return (
+            <div
+              className="rarity-group"
+              key={group}
+              style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
+            >
+              <div className="rarity-title">
+                <span className="rarity-dot" /> {t(FRAME_GROUP_LABEL[group])}
+              </div>
+              <div className="shop-grid">
+                {items.map((f) => {
+                  const sid = 'frame.' + f.id
+                  const owned = owns(sid)
+                  const equipped = currentFrame === f.id
+                  const price = framePrice(f)
+                  return (
+                    <div
+                      key={f.id}
+                      className="shop-item"
+                      style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
+                    >
+                      <AvatarFrame src={avatar} frame={f.id} size={64} name={name} />
+                      <div className="shop-name">{f.name}</div>
+                      {owned ? (
+                        <button
+                          className={`shop-btn ${equipped ? 'active' : ''}`}
+                          disabled={equipped}
+                          onClick={() => equip(f.id)}
+                        >
+                          {equipped ? t('shop.equipped') : t('shop.equip')}
+                        </button>
+                      ) : price != null ? (
+                        <>
+                          <button
+                            className={`shop-btn buy${coins < price ? ' cant' : ''}`}
+                            disabled={busy === sid || coins < price}
+                            onClick={() => buy(sid)}
+                          >
+                            <Icon name="coin" size={14} /> {price}
+                          </button>
+                          {coins < price && (
+                            <div className="shop-need">{t('shop.need', { n: price - coins })}</div>
+                          )}
+                        </>
+                      ) : (
+                        <span className="shop-earn">
+                          <Icon name="trophy" size={12} /> {t('frames.earned')}
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
 
         <p className="shop-note">{t('shop.note')}</p>
       </div>
