@@ -1,6 +1,10 @@
+import type { CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import SetupBoard from './SetupBoard'
+
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
 
 interface BoardThemeOpt {
   id: string
@@ -10,16 +14,15 @@ interface BoardThemeOpt {
   b: string
   checker?: string
   light?: string // acik pul rengi (onizleme gercek tahta ile ayni degeri kullansin)
-  price?: number // coin ile alinan premium tema (plan kilidinden muaf)
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary'
+  price?: number
+  rarity?: Rarity
+  locked?: boolean // plan/premium kilidi (App'te hesaplanir)
 }
 
 interface Props {
   boardTheme: string
   setBoardTheme: (id: string) => void
   boardThemes: BoardThemeOpt[]
-  rarityThemes?: BoardThemeOpt[] // rarity koleksiyonu (plan kilidiyle acilir)
-  freeCount?: number // ilk N tahta ucretsiz; gerisi premium (kilitli)
   premium?: boolean
   onUpgrade?: () => void
   theme: 'dark' | 'light'
@@ -33,50 +36,20 @@ interface Props {
   onClose: () => void
 }
 
-// Kucuk tahta onizlemesi (Galaxy tarzi): zemin + iki renk ucgen + ornek pullar
-function BoardPreview({ panel, a, b, checker, light }: { panel: string; a: string; b: string; checker: string; light?: string }) {
-  const W = 104
-  const H = 64
-  const BAR = 6
-  const half = (W - BAR) / 2
-  const cw = half / 6
-  const triH = 22
-  const colX = (i: number) => (i < 6 ? i * cw : half + BAR + (i - 6) * cw)
-  const tris = []
-  for (let i = 0; i < 12; i++) {
-    const x = colX(i)
-    const cx = x + cw / 2
-    tris.push(
-      <polygon key={`t${i}`} points={`${x + 1},0 ${x + cw - 1},0 ${cx},${triH}`} fill={i % 2 === 0 ? a : b} opacity="0.92" />,
-      <polygon key={`b${i}`} points={`${x + 1},${H} ${x + cw - 1},${H} ${cx},${H - triH}`} fill={i % 2 === 0 ? b : a} opacity="0.92" />,
-    )
-  }
-  // Ornek pullar: sol-ust krem, sag-alt koyu (iki taraf da gorunsun)
-  const disc = (x: number, y: number, fill: string) => (
-    <circle cx={x} cy={y} r={cw / 2 - 0.5} fill={fill} stroke="#0004" strokeWidth="0.5" />
-  )
-  const c0 = colX(0) + cw / 2
-  const c11 = colX(11) + cw / 2
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="bp-svg" width="100%">
-      <rect x="0" y="0" width={W} height={H} rx="5" fill={panel} />
-      <rect x={half} y="0" width={BAR} height={H} fill="#0003" />
-      {tris}
-      {disc(c0, 7, light ?? 'var(--cream)')}
-      {disc(c0, 7 + cw, light ?? 'var(--cream)')}
-      {disc(c11, H - 7, checker)}
-      {disc(c11, H - 7 - cw, checker)}
-    </svg>
-  )
+// Nadirlik siralamasi + renkleri (kart cercevesi ve baslik). HEX'ler urun spesifikasyonundan.
+const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic']
+const RARITY_COLOR: Record<Rarity, string> = {
+  common: '#94A3B8',
+  rare: '#3B82F6',
+  epic: '#A855F7',
+  legendary: '#F59E0B',
+  mythic: '#EF4444',
 }
 
 export default function BoardSettings({
   boardTheme,
   setBoardTheme,
   boardThemes,
-  rarityThemes = [],
-  freeCount = 6,
-  premium = false,
   onUpgrade,
   theme,
   setTheme,
@@ -117,81 +90,54 @@ export default function BoardSettings({
           </div>
         </div>
 
-        {/* Tahta rengi: mini tahta onizlemeleri */}
+        {/* Tahta secimi: nadirlik gruplari, buyuk + tam pul dizili onizleme, rarity cercevesi */}
         <div className="setup-row">
           <div className="setup-label">{t('menu.board')}</div>
-          <div className="board-previews">
-            {boardThemes.map((bt, i) => {
-              // Premium olmayan icin ilk freeCount haric kilitli (satin alinmis premium temalar haric)
-              const locked = !premium && i >= freeCount && bt.price === undefined
-              return (
-                <button
-                  key={bt.id}
-                  className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
-                  onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
+          {RARITY_ORDER.map((tier) => {
+            const items = boardThemes.filter((bt) => (bt.rarity ?? 'common') === tier)
+            if (items.length === 0) return null
+            return (
+              <div className="rarity-group" key={tier}>
+                <div
+                  className={`rarity-title rarity-${tier}`}
+                  style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
                 >
-                  <BoardPreview
-                    panel={bt.panel ?? bt.b}
-                    a={bt.a}
-                    b={bt.b}
-                    checker={bt.checker ?? bt.b}
-                    light={bt.light}
-                  />
-                  <span className="bp-name">
-                    {locked && <Icon name="crown" size={11} />} {bt.name}
-                  </span>
-                  {locked && (
-                    <span className="bp-lock">
-                      <Icon name="crown" size={16} />
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* Rarity koleksiyonu: mevcut kart yapisiyla, rarity basliklari altinda */}
-        {(['common', 'rare', 'epic', 'legendary'] as const).map((tier) => {
-          const items = rarityThemes.filter((bt) => bt.rarity === tier)
-          if (items.length === 0) return null
-          return (
-            <div className="setup-row rarity-group" key={tier}>
-              <div className={`setup-label rarity-title rarity-${tier}`}>
-                <span className="rarity-dot" /> {t('rarity.' + tier)}
-              </div>
-              <div className="board-previews">
-                {items.map((bt) => {
-                  // Rarity temalari plan kilidiyle acilir: premium olmayan icin kilitli
-                  const locked = !premium
-                  return (
-                    <button
-                      key={bt.id}
-                      className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
-                      onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
-                    >
-                      <BoardPreview
-                        panel={bt.panel ?? bt.b}
-                        a={bt.a}
-                        b={bt.b}
-                        checker={bt.checker ?? bt.b}
-                        light={bt.light}
-                      />
-                      <span className="bp-name">
-                        {locked && <Icon name="crown" size={11} />} {bt.name}
-                      </span>
-                      {locked && (
-                        <span className="bp-lock">
-                          <Icon name="crown" size={16} />
+                  <span className="rarity-dot" /> {t('rarity.' + tier)}
+                  <span className="rarity-count">{items.length}</span>
+                </div>
+                <div className="board-previews board-previews-lg">
+                  {items.map((bt) => {
+                    const locked = !!bt.locked
+                    return (
+                      <button
+                        key={bt.id}
+                        className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
+                        style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
+                        onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
+                      >
+                        <SetupBoard
+                          panel={bt.panel ?? bt.b}
+                          a={bt.a}
+                          b={bt.b}
+                          checker={bt.checker ?? bt.b}
+                          cream={bt.light}
+                        />
+                        <span className="bp-name">
+                          {locked && <Icon name="crown" size={11} />} {bt.name}
                         </span>
-                      )}
-                    </button>
-                  )
-                })}
+                        {locked && (
+                          <span className="bp-lock">
+                            <Icon name="crown" size={16} />
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
 
         {/* Pip goster */}
         <button className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>

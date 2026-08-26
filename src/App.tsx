@@ -199,7 +199,7 @@ interface BoardTheme {
   frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
   light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary' // rarity koleksiyonu temalari (plan kilidiyle acilir)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' // nadirlik sinifi (kart cercevesi + gruplama)
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -270,8 +270,24 @@ const RARITY_THEMES: BoardTheme[] = [
   { id: 'imperial', name: 'Imperial', rarity: 'epic', panel: '#492354', a: '#9B467D', b: '#C29145', light: '#F1DFB1', checker: '#31152E', frame: '#160A19' },
   // --- LEGENDARY ---
   { id: 'obsidian', name: 'Obsidian', rarity: 'legendary', panel: '#24252B', a: '#565A64', b: '#111318', light: '#D6D8DC', checker: '#050607', frame: '#000000' },
-  { id: 'cyber', name: 'Cyber', rarity: 'legendary', panel: '#16134B', a: '#6638A5', b: '#087C91', light: '#5DE4D0', checker: '#241450', frame: '#07051C' },
+  { id: 'cyber', name: 'Cyber', rarity: 'mythic', panel: '#16134B', a: '#6638A5', b: '#087C91', light: '#5DE4D0', checker: '#241450', frame: '#07051C' },
 ]
+// Mevcut (rarity alani olmayan) temalarin nadirlik siniflandirmasi. id -> rarity.
+// Not: rarity alani tasiyan temalar (RARITY_THEMES) kendi degerini kullanir; bu harita
+// sadece BOARD_THEMES + PREMIUM_THEMES icin. Tanimsiz kalan 'common' varsayilir.
+const THEME_RARITY: Record<string, NonNullable<BoardTheme['rarity']>> = {
+  // BOARD_THEMES — Common (sade / editor paletleri)
+  tavla: 'common', moon: 'common', pluto: 'common', nord: 'common', gruvbox: 'common',
+  solarized: 'common', mocha: 'common', monokai: 'common', everforest: 'common', ayu: 'common',
+  onedark: 'common', palenight: 'common', oceanic: 'common', gruvlight: 'common', sollight: 'common', dawn: 'common',
+  // BOARD_THEMES — Rare (zengin tonal + populer paletler)
+  neptune: 'rare', nebula: 'rare', earth: 'rare', toxic: 'rare', uranus: 'rare',
+  dracula: 'rare', tokyonight: 'rare', rosepine: 'rare', nightowl: 'rare', horizon: 'rare',
+  // BOARD_THEMES — Epic (carpici / dramatik)
+  montecarlo: 'epic', reddwarf: 'epic', eclipse: 'epic', synthwave: 'epic',
+  // PREMIUM_THEMES
+  ocean: 'epic', gold: 'legendary', sunset: 'legendary', neon: 'mythic',
+}
 const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES]
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
@@ -3217,9 +3233,21 @@ export default function App() {
         <BoardSettings
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
-          boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
-          rarityThemes={RARITY_THEMES}
-          freeCount={11}
+          boardThemes={[
+            // Rarity + kilit durumu ile birlesik liste (BoardSettings rarity'ye gore gruplar).
+            // Ilk 11 BOARD_THEMES ucretsiz; gerisi + rarity koleksiyonu plan kilidiyle acilir.
+            ...BOARD_THEMES.map((tt, i) => ({
+              ...tt,
+              rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
+              locked: !premium && i >= 11,
+            })),
+            ...ownedPremiumThemes.map((tt) => ({
+              ...tt,
+              rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
+              locked: false,
+            })),
+            ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
+          ]}
           premium={premium}
           onUpgrade={() => {
             setBoardSettingsOpen(false)

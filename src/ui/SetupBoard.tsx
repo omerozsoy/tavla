@@ -48,7 +48,7 @@ export default function SetupBoard({
   const GAP = 18 // orta bar
   const halfW = (W - 2 * PAD - GAP) / 2
   const colW = halfW / 6
-  const r = colW * 0.42
+  const r = colW * 0.36 // pullar arasi/etrafinda daha ferah bosluk
   const triH = (H - 2 * PAD) * 0.34
   const halfX = (half: 'L' | 'R') => (half === 'L' ? PAD : PAD + halfW + GAP)
   const colCx = (half: 'L' | 'R', col: number) => halfX(half) + colW * (col + 0.5)
