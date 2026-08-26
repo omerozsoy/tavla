@@ -17,12 +17,34 @@ class ShopController extends Controller
         'theme.neon' => 800,
         'theme.ocean' => 300,
         'theme.sunset' => 600,
-        // Avatar cerceveleri
+        // Avatar cerceveleri (eski, geri uyumluluk)
         'frame.bronze' => 100,
         'frame.silver' => 250,
         'frame.gold' => 500,
         'frame.neon' => 700,
         'frame.fire' => 900,
+        // Animasyonli avatar cerceveleri (rarity fiyatlari: rare 500 / epic 1000 /
+        // legendary 2000 / mythic 4000). 'earned' cerceveler burada YOK (kazanilir).
+        // Frontend avatarFrames.ts FRAME_RARITY_PRICE ile birebir ayni.
+        'frame.neon-pulse' => 500,
+        'frame.purple-vortex' => 1000,
+        'frame.ice-crown' => 1000,
+        'frame.electric' => 1000,
+        'frame.cyberpunk' => 1000,
+        'frame.dice-master' => 1000,
+        'frame.royal-gold' => 2000,
+        'frame.inferno' => 2000,
+        'frame.diamond' => 2000,
+        'frame.emerald' => 2000,
+        'frame.ruby' => 2000,
+        'frame.vip' => 2000,
+        'frame.backgammon-king' => 2000,
+        'frame.black-hole' => 4000,
+        'frame.galaxy' => 4000,
+        'frame.phoenix' => 4000,
+        'frame.dragon' => 4000,
+        'frame.thunder-god' => 4000,
+        'frame.grandmaster' => 4000,
     ];
 
     public function index(Request $request)

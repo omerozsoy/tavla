@@ -15,7 +15,6 @@ import { FairDice } from './engine/fairDice'
 import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
-import { FRAMES } from './cosmetics'
 import { divisionOfPR } from './badges'
 import { Sound, isMuted, setMuted } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
@@ -3185,7 +3184,8 @@ export default function App() {
           coins={user.coins ?? 0}
           unlocks={user.unlocks ?? []}
           currentFrame={user.avatar_frame ?? null}
-          frames={FRAMES}
+          avatar={profile.avatar ?? null}
+          name={profile.nickname}
           rewardReady={rewardReady}
           rewardSecs={rewardSecs}
           onBuy={handleBuy}

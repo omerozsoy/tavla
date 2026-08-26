@@ -839,6 +839,18 @@ button[aria-disabled='true'],
   font-size: 0.8rem;
   cursor: pointer;
 }
+/* Kazanilir cerceve rozeti (magazada satin alinamaz) */
+.shop-earn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--rarity-color, var(--muted));
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .swatch {
   aspect-ratio: 1;
   border-radius: var(--radius-sm);
