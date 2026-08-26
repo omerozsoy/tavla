@@ -3721,6 +3721,7 @@ export default function App() {
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
+          oppRating={mode === 'pvb' ? 900 + difficulty * 100 : (room?.oppRating ?? null)}
           onRematch={() => handleNewMatch(match.target, mode === 'online' ? 'pvb' : mode)}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}

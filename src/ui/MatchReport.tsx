@@ -53,10 +53,14 @@ function winPct(probs?: number[]): number | null {
 export default function MatchReport({ mode, log, pr, humanColor, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [worstFirst, setWorstFirst] = useState(false)
-  // Ilk analiz edilebilir (pos'lu, kup olmayan) hamleyi sec
+  // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
+  const mistakes = log
+    .map((e, i) => ({ e, i }))
+    .filter(({ e }) => !e.cube && e.loss >= 0.02)
   const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
-  const [sel, setSel] = useState(firstAnalyzable >= 0 ? firstAnalyzable : 0)
+  const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
+  const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
+  const [sel, setSel] = useState(firstMistake)
   const [candIdx, setCandIdx] = useState(0) // tahtada gosterilen aday (0 = oynanan/en iyi)
 
   // Kup kararlari ayri gosterilir; tas oyunu istatistigi/listesi kup satirlarini haric tutar
@@ -74,9 +78,6 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
     if (!worst || e.loss > worst.loss) worst = e
   }
 
-  const mistakes = log
-    .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube && e.loss >= 0.02)
   // Sira: seq'e gore (async bot kayitlari dogru yere otursun); yoksa dizideki sira
   const ordered = log
     .map((e, i) => ({ e, i }))
@@ -150,11 +151,6 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
           {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
           {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
         </h2>
-        {log.length > 0 && (
-          <button className="menu-btn rep-export" onClick={exportMatch}>
-            <Icon name="install" size={14} /> {t('rep.export')}
-          </button>
-        )}
 
         {log.length === 0 ? (
           <p className="register-sub">{t('rep.empty')}</p>
@@ -307,6 +303,11 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
               )}
             </div>
           </div>
+        )}
+        {log.length > 0 && (
+          <button className="menu-btn rep-export rep-export-bottom" onClick={exportMatch}>
+            <Icon name="install" size={14} /> {t('rep.export')}
+          </button>
         )}
       </div>
     </div>

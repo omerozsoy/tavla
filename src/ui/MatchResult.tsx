@@ -25,6 +25,7 @@ interface Props {
   ratingBefore: number | null
   ratingAfter: number | null
   ratingIsWinner: boolean // true: rating kazanan tarafta
+  oppRating: number | null // rakip rating (online rakip / AI zorluga gore)
   onNewMatch: () => void
   onRematch: () => void
   onHome: () => void
@@ -60,6 +61,7 @@ export default function MatchResult({
   ratingBefore,
   ratingAfter,
   ratingIsWinner,
+  oppRating,
   onNewMatch,
   onRematch,
   onHome,
@@ -73,12 +75,19 @@ export default function MatchResult({
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
   const lBetter = winnerPr != null && loserPr != null && loserPr < winnerPr
 
-  const ratingCell = (isThisSide: boolean) => {
-    if (!isThisSide || ratingBefore == null || ratingAfter == null) return '—'
-    const d = Math.round(ratingAfter - ratingBefore)
-    const sign = d >= 0 ? '+' : ''
-    return `${Math.round(ratingAfter)} (${sign}${d})`
+  // Rating: insan (rating raporlanan) tarafi degisimli; diger taraf = rakip (online
+  // rakip rating / AI zorluk). ratingIsWinner: insan kazanan tarafta mi.
+  const ratingText = (winnerSide: boolean) => {
+    if (winnerSide === ratingIsWinner && ratingBefore != null && ratingAfter != null) {
+      const d = Math.round(ratingAfter - ratingBefore)
+      return `${Math.round(ratingAfter)} (${d >= 0 ? '+' : ''}${d})`
+    }
+    return oppRating != null ? String(Math.round(oppRating)) : '—'
   }
+  // Sans (luck) zero-sum: bir taraf +X ise rakip -X. Tek taraf biliniyorsa digeri
+  // onun negatifi. Ikisi de null ise '—'.
+  const wLuck = winnerLuck ?? (loserLuck != null ? -loserLuck : null)
+  const lLuck = loserLuck ?? (winnerLuck != null ? -winnerLuck : null)
   // Sans: equity toplamini okunur bir skora olcekle (x100), isaretli goster
   const fmtLuck = (v: number | null) => {
     if (v == null) return '—'
@@ -134,9 +143,9 @@ export default function MatchResult({
             </span>
           </div>
           <div className="mr-row">
-            <span className="mr-a">{ratingCell(ratingIsWinner)}</span>
+            <span className="mr-a">{ratingText(true)}</span>
             <span className="mr-label">{t('mr.rating')}</span>
-            <span className="mr-b">{ratingCell(!ratingIsWinner)}</span>
+            <span className="mr-b">{ratingText(false)}</span>
           </div>
           {coinAmount != null && (
             <div className="mr-row">
@@ -146,12 +155,12 @@ export default function MatchResult({
             </div>
           )}
           <div className="mr-row">
-            <span className={`mr-a ${(winnerLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
-              {fmtLuck(winnerLuck)}
+            <span className={`mr-a ${(wLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
+              {fmtLuck(wLuck)}
             </span>
             <span className="mr-label">{t('mr.luck')}</span>
-            <span className={`mr-b ${(loserLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
-              {fmtLuck(loserLuck)}
+            <span className={`mr-b ${(lLuck ?? 0) >= 0 ? 'mr-pos' : 'mr-neg'}`}>
+              {fmtLuck(lLuck)}
             </span>
           </div>
         </div>
