@@ -47,6 +47,9 @@ interface Props {
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
   onLogout?: () => void // profil duzenlemede cikis yap
+  emailUnverified?: boolean // e-posta dogrulanmadi -> profilde uyari
+  resendState?: 'idle' | 'sending' | 'sent'
+  onResendVerification?: () => void
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
 }
@@ -59,6 +62,9 @@ export default function Auth({
   onCancel,
   onDeleteAccount,
   onLogout,
+  emailUnverified,
+  resendState = 'idle',
+  onResendVerification,
   modal,
   page,
 }: Props) {
@@ -397,6 +403,24 @@ export default function Auth({
           </button>
         )}
         <h2>{title}</h2>
+        {editUser && emailUnverified && (
+          <div className="verify-bar profile-verify">
+            <Icon name="alert" size={15} />
+            <span>{t('verify.needed')}</span>
+            {resendState === 'sent' ? (
+              <span className="verify-sent">{t('verify.sent')}</span>
+            ) : (
+              <button
+                type="button"
+                className="verify-resend"
+                disabled={resendState === 'sending'}
+                onClick={onResendVerification}
+              >
+                {t('verify.resend')}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Sifremi unuttum */}
         {!editing && forgot && (
