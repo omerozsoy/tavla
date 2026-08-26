@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import type { GameState, Player } from '../engine/types'
+import { TavlaTvLogo } from './TavlaTvLogo'
 
 // Ucgen index dizilimleri (index = ucgen numarasi - 1)
 // normal = beyazin bakisi (kendi evi sag-alt). flipped = siyahin bakisi (180 cevrilmis).
@@ -220,11 +221,11 @@ export default function Board({
             pointlerin USTUNDE. Logo/arma DEGIL; sadece yazi. Kulup temasinda takim adi. */}
         <div className="board-watermark" aria-hidden="true">
           <div className="wm-cell">
-            <span className="wm-brand">TavlaTV</span>
+            <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
           <div className="wm-cell">
-            <span className="wm-brand">TavlaTV</span>
+            <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
         </div>

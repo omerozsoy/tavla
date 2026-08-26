@@ -30,17 +30,20 @@ const POINT_RATIO = 0.75 // ucgen genisligi / yuksekligi
 export function TavlaTvLogo({
   size = 24,
   tone = 'auto',
+  color,
   className,
 }: {
-  /** font-size (px). Her sey buna gore olceklenir. */
-  size?: number
+  /** font-size. Sayi -> px; string -> dogrudan CSS (or. 'calc(var(--col)*.6)'). */
+  size?: number | string
   tone?: Tone
+  /** Verilirse ucgenler + harfler tek renk olur (watermark: var(--wm-color)). */
+  color?: string
   className?: string
 }) {
   const c = tone === 'auto' ? null : POINT[tone]
-  const up = c ? c.up : 'var(--accent)'
-  const down = c ? c.down : 'var(--text)'
-  const text = c ? c.text : 'var(--text)'
+  const up = color ?? (c ? c.up : 'var(--accent)')
+  const down = color ?? (c ? c.down : 'var(--text)')
+  const text = color ?? (c ? c.text : 'var(--text)')
 
   const point = (dir: 'up' | 'down') => (
     <span

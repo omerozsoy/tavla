@@ -2527,26 +2527,10 @@ button[aria-disabled='true'],
   gap: 0.2em;
   overflow: hidden;
 }
-.wm-brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.32em;
-  color: var(--wm-color, rgba(255, 255, 255, 0.075));
-  font-family: var(--tv-font-display);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  font-size: calc(var(--col) * 0.58);
-  line-height: 1;
+/* Watermark = gercek TavlaTv logosu (TavlaTvLogo, tek renk var(--wm-color)).
+   Duz "TavlaTV" yazisi DEGIL; markanin ucgen-haneli wordmark'i. */
+.wm-logo {
   white-space: nowrap;
-}
-/* Logo isareti (TavlaTv ucgen hane) — arma/logo kopyasi DEGIL, sade marka echo'su */
-.wm-brand::before {
-  content: '';
-  width: 0.6em;
-  height: 0.6em;
-  flex: none;
-  background: var(--wm-color, rgba(255, 255, 255, 0.075));
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 .wm-team {
   color: var(--wm-color, rgba(255, 255, 255, 0.075));
@@ -3018,11 +3002,13 @@ button[aria-disabled='true'],
   border-radius: var(--radius-circle);
   transform: translate(-50%, -50%);
 }
+/* Zar noktalari NOTR (tema-renk tint YOK): acik zar -> koyu nokta, koyu zar -> acik.
+   Tema yine de d1Pip/d2Pip ile bilincli override edebilir (kulup/frostfall vb.). */
 .die-face.white .pip-dot {
-  background: var(--die1-pip, var(--tv-brick));
+  background: var(--die1-pip, #18181b);
 }
 .die-face.black .pip-dot {
-  background: var(--die2-pip, var(--cream));
+  background: var(--die2-pip, #f2f3f7);
 }
 .die-face.used {
   opacity: 0.35;

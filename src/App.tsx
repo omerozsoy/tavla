@@ -260,7 +260,7 @@ const BOARD_THEMES: BoardTheme[] = [
   { id: 'onedark', name: 'One Dark', panel: '#3a3f4b', a: '#61afef', b: '#282c34', checker: '#4b5263' },
   { id: 'nightowl', name: 'Night Owl', panel: '#1d3b53', a: '#82aaff', b: '#011627', checker: '#365069' },
   { id: 'synthwave', name: 'Synthwave', panel: '#2b1a4a', a: '#ff5bd0', b: '#1a1030', checker: '#00d4e8', light: '#ff7be0', frame: '#0f0820', checkerStyle: 'neon', surface: 'gradient' },
-  { id: 'horizon', name: 'Horizon', panel: '#2e303e', a: '#e95678', b: '#1c1e26', checker: '#4d4f5c' },
+  { id: 'horizon', name: 'Horizon', panel: '#3a2a5e', a: '#7a4fd0', b: '#241a40', checker: '#e0553a', light: '#c0a8e8', frame: '#0f0820', checkerStyle: 'gloss', surface: 'gradient' },
   { id: 'palenight', name: 'Palenight', panel: '#292d3e', a: '#c792ea', b: '#1c1f2b', checker: '#4a4f66' },
   { id: 'oceanic', name: 'Oceanic', panel: '#263238', a: '#6699cc', b: '#1b2b34', checker: '#405860' },
   { id: 'gruvlight', name: 'Gruvbox Light', panel: '#ebdbb2', a: '#d79921', b: '#bdae93', checker: '#504945' },
@@ -345,7 +345,40 @@ const CLUB_THEMES: BoardTheme[] = [
     cubeBg: '#111111', cubeText: '#FFFFFF', watermark: 'BEŞİKTAŞ',
   },
 ]
-const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES]
+// Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
+// yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
+const GALAXY_EXTRA_THEMES: BoardTheme[] = [
+  // --- RARE ---
+  { id: 'gamma', name: 'Gamma', rarity: 'rare', panel: '#2f8a80', a: '#4fb0a2', b: '#1f6b63', checker: '#0d3d38', light: '#d9f5ee', frame: '#0a2422', checkerStyle: 'ice' },
+  { id: 'cosmos', name: 'Cosmos', rarity: 'rare', panel: '#0e1230', a: '#232a5a', b: '#0a0e24', checker: '#3a46c0', light: '#eef0ff', frame: '#05060f' },
+  { id: 'titan', name: 'Titan', rarity: 'rare', panel: '#6a5a3a', a: '#8a7548', b: '#4e4228', checker: '#c85a1f', light: '#9aa2e6', frame: '#141026' },
+  { id: 'jupiter', name: 'Jupiter', rarity: 'rare', panel: '#6e6a3e', a: '#8a8550', b: '#4e4a28', checker: '#c98a5a', light: '#eae6d0', frame: '#141026' },
+  { id: 'helix', name: 'Helix', rarity: 'rare', panel: '#2f7a80', a: '#469b8f', b: '#3a4a7a', checker: '#5a3f96', light: '#bff0e6', frame: '#0a2226', checkerStyle: 'ice' },
+  { id: 'solaris', name: 'Solaris', rarity: 'rare', panel: '#e0642f', a: '#f0864f', b: '#b5451f', checker: '#2a2a2a', light: '#f0e2c8', frame: '#141026' },
+  { id: 'orion', name: 'Orion', rarity: 'rare', panel: '#4a4d58', a: '#6a5a80', b: '#3a3d46', checker: '#2f56d0', light: '#eef1f7', frame: '#0e1018' },
+  { id: 'kepler', name: 'Kepler', rarity: 'rare', panel: '#3a5f4a', a: '#4f7a5f', b: '#2a4a38', checker: '#7a4a2f', light: '#bff0d8', frame: '#0e1a14', checkerStyle: 'ice' },
+  // --- EPIC ---
+  { id: 'andromeda', name: 'Andromeda', rarity: 'epic', panel: '#4a2a6a', a: '#8a3a7a', b: '#3a2258', checker: '#8a9a4a', light: '#f0a17f', frame: '#160b24' },
+  { id: 'orbit', name: 'Orbit', rarity: 'epic', panel: '#1a1c22', a: '#2a2d36', b: '#141519', checker: '#c0392b', light: '#c8ccd4', frame: '#000000', checkerStyle: 'ring' },
+  { id: 'cassio', name: 'Cassio', rarity: 'epic', panel: '#2a3d40', a: '#6a5a4a', b: '#3a4a4d', checker: '#e0623a', light: '#3fb598', frame: '#0e1618', cubeBg: '#6b4aa0', cubeText: '#ffffff' },
+  { id: 'quasar', name: 'Quasar', rarity: 'epic', panel: '#5a4a3a', a: '#6a5a48', b: '#3a4a6a', checker: '#d0392b', light: '#3ac0e0', frame: '#141026' },
+  { id: 'polaris', name: 'Polaris', rarity: 'epic', panel: '#5a5d66', a: '#6a6d78', b: '#4a4d55', checker: '#6b3fc0', light: '#bcd6f0', frame: '#0e1018' },
+  { id: 'apollo', name: 'Apollo', rarity: 'epic', panel: '#6a6258', a: '#7f766a', b: '#4e4a5a', checker: '#1f2a5a', light: '#eae2d0', frame: '#141026' },
+  { id: 'aurora', name: 'Aurora', rarity: 'epic', panel: '#1a2258', a: '#2f3a8a', b: '#141a44', checker: '#7a3fd0', light: '#3fe0d0', frame: '#080a1c', checkerStyle: 'neon' },
+  { id: 'pandora', name: 'Pandora', rarity: 'epic', panel: '#1f4f9a', a: '#2f6ac0', b: '#153f7a', checker: '#2f9ad0', light: '#7fe0f0', frame: '#081428', checkerStyle: 'ice' },
+  { id: 'matrix', name: 'Matrix', rarity: 'epic', panel: '#12261c', a: '#1f5a3a', b: '#0d1a12', checker: '#3aa55f', light: '#7fe0a0', frame: '#050f0a', checkerStyle: 'gloss', surface: 'gradient' },
+  // --- LEGENDARY ---
+  { id: 'gutenberg', name: 'Gutenberg', rarity: 'legendary', panel: '#c8cdd4', a: '#dfe3e8', b: '#a8afb8', checker: '#1a1c22', light: '#f4f6f9', frame: '#0e0f13', surface: 'gradient' },
+  { id: 'krypton', name: 'Krypton', rarity: 'legendary', panel: '#1f5a44', a: '#2f8a5f', b: '#144a34', checker: '#0c3526', light: '#9ff0c8', frame: '#08160f', checkerStyle: 'ice', surface: 'gradient' },
+  { id: 'infinity', name: 'Infinity', rarity: 'legendary', panel: '#3a1a6a', a: '#7a3fd0', b: '#241040', checker: '#00d4e8', light: '#ff5bd0', frame: '#0f0820', checkerStyle: 'neon', surface: 'gradient' },
+  { id: 'vega', name: 'Vega', rarity: 'legendary', panel: '#3a4a9a', a: '#5a6ad0', b: '#8a5aa8', checker: '#2f6ad0', light: '#7fe0f0', frame: '#0a0f2a', checkerStyle: 'ice', surface: 'gradient' },
+  { id: 'quantum', name: 'Quantum', rarity: 'legendary', panel: '#123a3f', a: '#1f6f7a', b: '#0c2429', checker: '#57ffc8', light: '#b07bff', frame: '#06171a', checkerStyle: 'neon', surface: 'gradient' },
+  { id: 'singularity', name: 'Singularity', rarity: 'legendary', panel: '#1f3fd0', a: '#3f6ae8', b: '#152f9a', checker: '#00cfe8', light: '#ff5bb0', frame: '#060a28', checkerStyle: 'neon', surface: 'gradient' },
+  // --- COMMON ---
+  { id: 'bazaar', name: 'Bazaar', rarity: 'common', panel: '#7a4a30', a: '#9a5a3a', b: '#5a3420', checker: '#1a120a', light: '#e8d8c0', frame: '#3a2414' },
+  { id: 'miami', name: 'Miami', rarity: 'common', panel: '#e8709a', a: '#f0a84a', b: '#4fd0c0', checker: '#2f5ad0', light: '#f0e8d8', frame: '#18d0e8', checkerStyle: 'gloss' },
+]
+const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...GALAXY_EXTRA_THEMES]
 
 // Rename gecisi: eski board id'leri -> yeni Galaksi koleksiyonu id'leri.
 // Eski temada olan kullanicilar otomatik yeni karsiligina tasinir.
@@ -873,16 +906,20 @@ export default function App() {
     else root.style.removeProperty('--bar')
     if (bt.light) root.style.setProperty('--cream', bt.light)
     else root.style.removeProperty('--cream')
-    // Zar/kup renkleri: kulup temalari ozel verir; digerleri marka varsayilanina duser
+    // Zar arka planlari: tema ozel verir; yoksa acik/koyu pul rengine duser (CSS fallback)
     const dieVars: [string, string | undefined][] = [
       ['--die1-bg', bt.d1Bg], ['--die1-pip', bt.d1Pip],
       ['--die2-bg', bt.d2Bg], ['--die2-pip', bt.d2Pip],
-      ['--cube-bg', bt.cubeBg], ['--cube-text', bt.cubeText],
     ]
     for (const [k, v] of dieVars) {
       if (v) root.style.setProperty(k, v)
       else root.style.removeProperty(k)
     }
+    // Kup HER ZAMAN temaya uyar: ozel verilmezse aksan point rengi (a), metin luminance'a gore
+    const cubeBg = bt.cubeBg ?? bt.a
+    const cubeText = bt.cubeText ?? (hexLum(cubeBg) > 150 ? '#161616' : '#ffffff')
+    root.style.setProperty('--cube-bg', cubeBg)
+    root.style.setProperty('--cube-text', cubeText)
     // Pul stili (flat/gloss/ice/ring/neon) + yuzey motifi (plain/gradient/felt)
     // -> data-attribute; CSS bunlara gore pul/yuzey gorunumunu degistirir.
     root.setAttribute('data-checker', bt.checkerStyle ?? 'flat')
@@ -3423,6 +3460,12 @@ export default function App() {
             ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
             // Kulup temalari: herkese acik (ucretsiz), en ustte 'Kulupler' grubunda
             ...CLUB_THEMES.map((tt) => ({ ...tt, rarity: 'club' as const, locked: false })),
+            // Galaksi ek koleksiyonu: rarity gruplarina dagilir; common ucretsiz, ustu plan kilidi
+            ...GALAXY_EXTRA_THEMES.map((tt) => ({
+              ...tt,
+              rarity: tt.rarity ?? 'common',
+              locked: !premium && (tt.rarity ?? 'common') !== 'common',
+            })),
           ]}
           premium={premium}
           onUpgrade={() => {
