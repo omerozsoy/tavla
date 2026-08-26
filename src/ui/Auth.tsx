@@ -276,35 +276,39 @@ export default function Auth({
     editing ? t('reg.titleEdit') : tab === 'login' ? t('auth.login') : t('auth.register')
   }`
 
-  const profileFields = (
+  // Profil fotografi blogu (yalnizca profil duzenlemede gorunur; grid disinda ust blok)
+  const avatarBlock = (
+    <div className="avatar-picker">
+      <div className="avatar-preview">
+        {avatar ? <img src={avatar} alt="" /> : <span><Icon name="camera" size={28} /></span>}
+      </div>
+      <div className="avatar-actions">
+        <label className="menu-btn avatar-btn">
+          {t('reg.photoPick')}
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) resizeImage(f).then(setAvatar).catch(() => {})
+            }}
+          />
+        </label>
+        {avatar && (
+          <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
+            {t('reg.photoRemove')}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+
+  // Form alanlari (label + input). Duzenlemede .form-grid ile 2 kolon; kayitta tek kolon.
+  // Sira: Ad/Soyad · Ulke/Il · Takma Isim/E-posta · Dogum Tarihi (tek). Ulke/Il/Dogum
+  // tarihi yalnizca profil duzenlemede gosterilir (kayitta sade).
+  const profileInputs = (
     <>
-      {/* Fotograf/ulke/dogum tarihi sadece profil duzenlemede (kayitta sade) */}
-      {editing && (
-        <div className="avatar-picker">
-          <div className="avatar-preview">
-            {avatar ? <img src={avatar} alt="" /> : <span><Icon name="camera" size={28} /></span>}
-          </div>
-          <div className="avatar-actions">
-            <label className="menu-btn avatar-btn">
-              {t('reg.photoPick')}
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) resizeImage(f).then(setAvatar).catch(() => {})
-                }}
-              />
-            </label>
-            {avatar && (
-              <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
-                {t('reg.photoRemove')}
-              </button>
-            )}
-          </div>
-        </div>
-      )}
       <label>
         {t('reg.firstName')}
         <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
@@ -353,6 +357,15 @@ export default function Auth({
         />
         {nickTaken && <span className="field-error" role="alert">{t('reg.nickTaken')}</span>}
       </label>
+      <label>
+        {t('reg.email')}
+        <input
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+        />
+      </label>
       {editing && (
         <label>
           {t('reg.birthDate')}
@@ -364,22 +377,13 @@ export default function Auth({
           />
         </label>
       )}
-      <label>
-        {t('reg.email')}
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-      </label>
     </>
   )
 
   return (
     <div className={`register-overlay ${modal ? 'modal' : ''} ${page ? 'page' : ''}`}>
       <form
-        className="register-card"
+        className={`register-card ${editing ? 'profile-form' : ''}`}
         onSubmit={
           !editing && forgot ? doForgot : editing ? doEdit : tab === 'login' ? doLogin : doRegister
         }
@@ -515,7 +519,8 @@ export default function Auth({
             </>
           ) : (
             <>
-              {profileFields}
+              {editing && avatarBlock}
+              {editing ? <div className="form-grid">{profileInputs}</div> : profileInputs}
               {!editUser && (
                 <>
                   <label>
