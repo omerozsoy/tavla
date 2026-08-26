@@ -97,15 +97,32 @@
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
-  /* Board olculeri: hem yukseklik hem genislige sigar (kaydirma olmaz).
-     Yan icerik (sol menu 160 + oyuncu kartlari + analiz paneli) icin ~640px ayrilir
-     ki genis ekranda board menuyu disari itmesin. */
-  --board-h: max(340px, min(calc(100vh - 96px - var(--header-h)), calc((100vw - 560px) / 1.4)));
-  --checker: calc(var(--board-h) / 11);
-  --col: calc(var(--checker) * 1.12);
-  --bar-w: calc(var(--checker) * 0.85);
-  --bearoff-w: calc(var(--checker) * 1);
-  --tri-h: calc(var(--board-h) * 0.44);
+
+  /* ====== OYUN GEOMETRI SISTEMI (tek merkez) ======
+     Tum olculer birbirinden turetilir; hicbir bilesen magic-number kullanmaz.
+     Zincir: board-h -> checker -> col (point) -> bar/tray/dice/cube.
+     Iliski: CHECKER = POINT WIDTH * 0.877 (0.86-0.90 araligi).
+     Board ekranin ana kahramanidir: viewport yuksekliginin ~%89'unu kaplar. */
+  --player-panel-w: clamp(150px, 12.5vw, 188px); /* dar oyuncu paneli */
+  --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
+  /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
+     520px lump = sol menu + panel + saat + bosluklar icin ayrilan yatay alan. */
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 44px), calc((100vw - 520px) / 1.3)));
+  --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
+  --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 0.62); /* orta bar: board'un ~%4.3'u (dar) */
+  --bearoff-w: var(--tray-w);
+  --tri-h: calc(var(--board-h) * 0.35); /* KISA + genis taban ucgen (guclu geometri) */
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.82);
+  --cube-size: clamp(38px, calc(var(--checker) * 0.7), 46px); /* kucuk, flat kup */
+
+  /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
+     board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
+  --game-scene: #06090f; /* sahne dibi */
+  --game-scene-glow: #0b1230; /* board arkasi hafif mavi hale */
+  --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 }
 
 /* Acik tema (TavlaTv 'light/cream' varyanti - marka birincil kimligi) */
@@ -803,9 +820,62 @@ button[aria-disabled='true'],
 .fg-group {
   margin-top: 20px;
 }
+/* Vitrin araclari (boyut chip'leri + animasyon anahtari) */
+.fg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.fg-tool { display: inline-flex; align-items: center; gap: 10px; }
+.fg-tool-lbl { font-size: 0.8rem; font-weight: 700; color: var(--muted); }
+.fg-sizes { display: inline-flex; gap: 6px; }
+.fg-size-chip {
+  min-width: 40px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.fg-size-chip:hover { border-color: var(--accent); }
+.fg-size-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.fg-switch { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+.fg-switch input { position: absolute; opacity: 0; pointer-events: none; }
+.fg-switch-track {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  transition: background 0.18s, border-color 0.18s;
+}
+.fg-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.18s, background 0.18s;
+}
+.fg-switch input:checked + .fg-switch-track { background: color-mix(in srgb, var(--accent) 55%, transparent); border-color: var(--accent); }
+.fg-switch input:checked + .fg-switch-track .fg-switch-thumb { transform: translateX(18px); background: var(--accent); }
+.fg-switch input:focus-visible + .fg-switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
 .fg-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 18px 12px;
   margin-top: 12px;
 }
@@ -813,11 +883,32 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   padding: 16px 8px 12px;
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--rarity-color, var(--border)) 35%, transparent);
   background: color-mix(in srgb, var(--rarity-color, var(--border)) 7%, var(--card-bg));
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.fg-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--rarity-color, #000) 30%, transparent);
+}
+.fg-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.fg-rarity {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rarity-color, var(--muted));
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--rarity-color, var(--border)) 45%, transparent);
+  background: color-mix(in srgb, var(--rarity-color, var(--border)) 12%, transparent);
 }
 .fg-name {
   font-size: 0.82rem;
@@ -2150,8 +2241,8 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 6px;
+  justify-content: center; /* board dikeyde ortalanir, hero gibi durur */
+  gap: 4px;
   padding-top: var(--header-h); /* ust hesap bari cakismasin */
   overflow-x: hidden;
   overflow-y: auto;
@@ -2203,20 +2294,39 @@ button[aria-disabled='true'],
 }
 
 /* ---- Oyun alani ---- */
+/* Beyaz/krem kart KALDIRILDI: board dogrudan koyu sahne uzerinde durur (#13). */
 .game-area {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
   align-items: center;
-  background: var(--area);
-  border-radius: var(--radius-lg);
-  padding: 10px;
+  background: transparent;
+  border-radius: 0;
+  padding: 2px;
   max-width: 100%;
 }
 
-/* ---- Sidebar ---- */
+/* ---- Koyu oyun sahnesi (#12): site light temada bile oyun alani koyu kalir ---- */
+.main.game-scene {
+  background:
+    radial-gradient(ellipse 120% 82% at 50% 30%, var(--game-scene-glow) 0%, transparent 62%),
+    var(--game-scene);
+}
+/* Sahnede metinler acik (site light temada --text koyu olur; burada override) */
+.main.game-scene .player-name {
+  color: #f2f5ff;
+}
+.main.game-scene .player-sub,
+.main.game-scene .player-rating {
+  color: rgba(220, 230, 255, 0.6);
+}
+.main.game-scene .status {
+  color: rgba(220, 230, 255, 0.68);
+}
+
+/* ---- Sidebar (dar oyuncu paneli, #4) ---- */
 .sidebar {
-  width: 150px;
+  width: var(--player-panel-w);
   flex: none;
   display: flex;
   flex-direction: column;
@@ -2225,21 +2335,21 @@ button[aria-disabled='true'],
 }
 .player-card {
   text-align: center;
-  padding: 6px 0;
+  padding: 4px 0;
   width: 100%;
 }
 .avatar {
-  width: 68px;
-  height: 68px;
+  width: 64px;
+  height: 64px;
   border-radius: var(--radius-circle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 34px;
+  font-size: 30px;
   margin: 0 auto 6px;
-  border: 3px solid var(--border);
-  background: var(--panel);
-  color: var(--text);
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--game-scene) 60%, #223066);
+  color: #eef2ff;
   overflow: hidden;
 }
 .avatar img {
@@ -2248,13 +2358,15 @@ button[aria-disabled='true'],
   object-fit: cover;
   border-radius: var(--radius-circle);
 }
-.avatar.black {
-  border-color: var(--tv-brick-light);
-  box-shadow: 0 0 14px rgba(201, 86, 63, 0.6);
-}
+.avatar.black,
 .avatar.white {
-  border-color: var(--tv-brick-light);
-  box-shadow: 0 0 14px rgba(201, 86, 63, 0.6);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+/* Sirasi gelen oyuncunun avatari aksan halkasiyla belirir */
+.avatar.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .avatar.active {
   animation: ring-pulse 1.4s ease-in-out infinite;
@@ -2269,37 +2381,39 @@ button[aria-disabled='true'],
   }
 }
 .player-name {
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+  line-height: 1.2;
 }
 .player-sub {
   color: var(--muted);
-  font-size: 0.78rem;
-  margin-bottom: 6px;
+  font-size: 0.72rem;
+  margin-bottom: 5px;
 }
 .score-badge {
-  color: #ffd54a;
+  color: var(--tv-gold);
   font-weight: 700;
-  font-size: 0.95rem;
-  margin-bottom: 6px;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
 }
 .crawford {
   color: #ffd54a;
   font-weight: 700;
 }
+/* Buyuk skor/toplanan sayi: karti kaldirdik, cip yerine net rakam (#4) */
 .off-box {
-  background: var(--cream);
-  color: var(--tv-ink);
-  width: 52px;
-  height: 42px;
-  border-radius: var(--radius-md);
-  font-size: 1.5rem;
-  font-weight: 800;
+  background: transparent;
+  color: #f2f5ff;
+  width: auto;
+  height: auto;
+  font-size: 1.8rem;
+  line-height: 1;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto;
-  border: 1px solid var(--border);
+  margin: 2px auto 0;
+  border: none;
 }
 .dice-area {
   display: flex;
@@ -2358,9 +2472,9 @@ button[aria-disabled='true'],
   grid-column: 1;
   display: flex;
   align-items: center;
-  color: #c6bfb2;
-  font-size: 0.9rem;
-  font-weight: 600;
+  color: rgba(226, 234, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 500;
 }
 .pt-numbers.top {
   grid-row: 1;
@@ -2386,6 +2500,9 @@ button[aria-disabled='true'],
   height: var(--board-h);
   background: var(--bar);
   border-radius: var(--radius-sm);
+  /* Board'u koyu sahneden hafifce kaldiran ince cerceve + yumusak golge (buyuk kart YOK) */
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   user-select: none;
 }
@@ -2417,9 +2534,10 @@ button[aria-disabled='true'],
 .point.bottom {
   flex-direction: column-reverse;
 }
-/* Ucgenler: duz renk yerine keçe derinligi. clip-path ucgen + gradyan dolgu
-   (taban = frame yaninda aydinlik, uc = koyu). Renk temadan turetilir (color-mix),
-   boylece 20+ temanin hepsi otomatik olarak daha derin/premium gorunur. */
+/* Ucgenler (Galaxy tarzi): duz "katlanmis" ucgen. Sert 2-tonlu bolme yerine
+   yumusak orta-fold (aydinlik kenar -> taban -> hafif koyu). Boylece dikey
+   band/cizgi hissi gitmis, tas gibi solid + hafif derinlikli okunur.
+   KISA + genis taban (--tri-h/--col) guclu geometrik gorunum verir. */
 .point::before {
   content: '';
   position: absolute;
@@ -2434,8 +2552,9 @@ button[aria-disabled='true'],
   clip-path: polygon(0 0, 100% 0, 50% 100%);
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--tri-a) 91%, #fff) 0 50%,
-    color-mix(in srgb, var(--tri-a) 88%, #000) 50% 100%
+    color-mix(in srgb, var(--tri-a) 94%, #fff) 0%,
+    var(--tri-a) 48%,
+    color-mix(in srgb, var(--tri-a) 90%, #000) 100%
   );
 }
 .point.bottom::before {
@@ -2443,16 +2562,18 @@ button[aria-disabled='true'],
   clip-path: polygon(50% 0, 0 100%, 100% 100%);
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--tri-a) 91%, #fff) 0 50%,
-    color-mix(in srgb, var(--tri-a) 88%, #000) 50% 100%
+    color-mix(in srgb, var(--tri-a) 94%, #fff) 0%,
+    var(--tri-a) 48%,
+    color-mix(in srgb, var(--tri-a) 90%, #000) 100%
   );
 }
 .point.shade-b.top::before,
 .point.shade-b.bottom::before {
   background: linear-gradient(
     to right,
-    color-mix(in srgb, var(--tri-b) 91%, #fff) 0 50%,
-    color-mix(in srgb, var(--tri-b) 88%, #000) 50% 100%
+    color-mix(in srgb, var(--tri-b) 94%, #fff) 0%,
+    var(--tri-b) 48%,
+    color-mix(in srgb, var(--tri-b) 90%, #000) 100%
   );
 }
 
@@ -2477,24 +2598,12 @@ button[aria-disabled='true'],
   /* Her tas hafif "yerlesme" animasyonuyla belirir (yeni konan taslar) */
   animation: checker-place 0.22s ease-out;
 }
-/* FLAT pul: kubbe/gloss yok. Bombe hissi veren specular yansima kaldirildi. */
+/* FLAT pul (#6): kubbe/gloss/ic halka YOK. Poker chip degil, premium duz disk. */
 .checker::before {
   display: none;
 }
-/* Ortadaki DUZ halka (ince cizgi) - mermer disk uzerinde net */
 .checker::after {
-  content: '';
-  position: absolute;
-  inset: 25%;
-  border-radius: var(--radius-circle);
-  pointer-events: none;
-}
-.checker.white::after {
-  border: 1.5px solid color-mix(in srgb, var(--cream) 55%, #000);
-  opacity: 0.5;
-}
-.checker.black::after {
-  border: 1.5px solid rgba(255, 255, 255, 0.26);
+  display: none;
 }
 .checker.draggable {
   cursor: grab;
@@ -2509,30 +2618,17 @@ button[aria-disabled='true'],
 /* Duz zemin renk + mermer dokusu (overlay). Radyal kure + ic golge YOK. */
 /* Duz "fis" pul: mermer yok. Duz renk + hafif ust parlaklik (radyal sheen) +
    yumusak kontak golgesi. Ince ic halka (::after) fiziksel disk hissi verir. */
+/* Duz renk + cok ince kenar + hafif kontak golgesi. Gradient/glow/kalin ring yok. */
 .checker.white {
-  background-color: var(--cream);
-  background-image: radial-gradient(
-    circle at 38% 30%,
-    rgba(255, 255, 255, 0.55),
-    rgba(255, 255, 255, 0) 58%
-  );
-  border: 1px solid color-mix(in srgb, var(--cream) 66%, #000);
-  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.3);
+  background: var(--cream);
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 .checker.black {
-  background-color: var(--navy);
-  background-image: radial-gradient(
-    circle at 38% 30%,
-    rgba(255, 255, 255, 0.16),
-    rgba(255, 255, 255, 0) 58%
-  );
-  border: 1px solid color-mix(in srgb, var(--navy) 62%, #000);
-  /* Koyu zeminde ust-uste dizili koyu pullar arasinda acik "dikis" olusturan
-     ince dis hairline (adaptif: acik zeminde acik-ustune-acik oldugu icin gorunmez).
-     Palet degismez; sadece kenar tanimi. Ikinci katman mevcut kontak golgesi. */
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.18),
-    0 1.5px 3px rgba(0, 0, 0, 0.38);
+  background: var(--navy);
+  /* Koyu pullar ust-uste dizilince ayrisim icin cok ince acik hairline */
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 @keyframes checker-place {
   0% {
@@ -2662,24 +2758,26 @@ button[aria-disabled='true'],
   box-shadow: inset 0 0 0 2px var(--tv-white);
 }
 .pip {
-  color: var(--tv-white);
-  font-weight: 800;
-  font-size: 1.15rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 700;
+  font-size: 0.8rem;
 }
+/* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
 .cube {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
   background: var(--tv-brick);
   color: var(--tv-white);
-  width: calc(var(--bar-w) * 0.95);
-  height: calc(var(--bar-w) * 0.95);
-  border-radius: 7px;
+  width: var(--cube-size);
+  height: var(--cube-size);
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: calc(var(--cube-size) * 0.42);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   z-index: 3;
 }
 /* Kup sahibinin tarafinda durur */
@@ -2704,10 +2802,10 @@ button[aria-disabled='true'],
 }
 .die-face {
   position: relative;
-  width: calc(var(--checker) * 0.92);
-  height: calc(var(--checker) * 0.92);
+  width: var(--dice-size);
+  height: var(--dice-size);
   border-radius: 18%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   /* Yeni atista donerek belirir */
   animation: die-roll 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
@@ -2758,20 +2856,23 @@ button[aria-disabled='true'],
   border-width: 1px;
 }
 
-/* ---- Bear-off tepsisi ---- */
+/* ---- Bear-off tepsisi (#10): board cerceve ailesinden, kopuk siyah kutu DEGIL ---- */
 .bearoff {
   grid-column: 2;
-  grid-row: 1 / 4;
-  background: var(--bar);
+  grid-row: 2; /* board-inner ile ayni hizada (numara satirlarina tasmaz) */
+  background: var(--tray-bg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
-  padding: 4px;
-  gap: 4px;
+  padding: 5px;
+  gap: 6px;
 }
 .bearoff-slot {
   flex: 1;
-  background: rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: var(--radius-xs);
   display: flex;
   flex-direction: column;
@@ -2821,22 +2922,25 @@ button[aria-disabled='true'],
   left: 50%;
   transform: translate(-50%, -50%);
 }
+/* Merkez HUD modali (#11): kompakt, premium game-HUD; dev popup DEGIL */
 .result-box {
-  background: rgba(8, 12, 40, 0.95);
-  border: 1px solid #3a342d;
-  border-radius: var(--radius-lg);
-  padding: 16px 22px;
+  background: rgba(5, 8, 25, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 18px 20px;
+  max-width: 260px;
   text-align: center;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  color: #eef2ff; /* koyu modal: metin daima acik (site light temada bile) */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
 }
 .result-title {
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 700;
   margin-bottom: 4px;
 }
 .result-points {
-  color: #ffd54a;
-  font-size: 1.3rem;
+  color: var(--tv-gold);
+  font-size: 1.1rem;
   font-weight: 800;
   margin-bottom: 12px;
 }
@@ -2870,16 +2974,25 @@ button[aria-disabled='true'],
 }
 .opening-dice {
   display: flex;
-  gap: 28px;
+  gap: 16px;
   justify-content: center;
-  margin: 12px 0 8px;
+  margin: 10px 0 6px;
 }
 /* Otomatik acilis: zarlar atiliyor animasyonu */
 .opening-rolling {
   display: flex;
-  gap: 24px;
+  gap: 16px;
   justify-content: center;
-  margin: 14px 0 10px;
+  margin: 10px 0 8px;
+}
+/* Modaldaki zarlar board olcegunden bagimsiz, sabit kompakt boyut (44-50px) */
+.opening-dice .die-face,
+.opening-rolling .die-face {
+  width: 46px;
+  height: 46px;
+}
+.opening-side {
+  font-size: 0.78rem;
 }
 .die-face.rolling {
   animation: die-roll 0.5s ease-in-out infinite;
@@ -2905,9 +3018,9 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   opacity: 0.5;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
 }
 .opening-side.win {
   opacity: 1;
@@ -2982,8 +3095,8 @@ button[aria-disabled='true'],
 /* ---- Durum ---- */
 .status {
   text-align: center;
-  min-height: 24px;
-  margin-top: 12px;
+  min-height: 22px;
+  margin-top: 6px;
   color: var(--muted);
 }
 .status .win {
@@ -3982,24 +4095,38 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-self: center;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   font-variant-numeric: tabular-nums;
 }
+/* Kompakt scoreboard (#5): pasif kutular sade koyu cip; aktif olan aksanla belirir */
 .clock-reserve {
-  min-width: 62px;
-  padding: 8px 10px;
+  min-width: 44px;
+  padding: 6px 9px;
   border-radius: var(--radius-md);
-  background: var(--accent);
-  color: var(--tv-white);
-  font-size: 1.15rem;
-  font-weight: 800;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #eaf0ff;
+  font-size: 0.95rem;
+  font-weight: 700;
   text-align: center;
   opacity: 0.55;
   transition: opacity 0.15s;
 }
 .clock-reserve.active {
   opacity: 1;
-  box-shadow: 0 0 0 2px #fff3;
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--tv-white);
+}
+/* Kutular arasi ince ayirici cizgi/ikon */
+.clock-delay {
+  color: rgba(226, 234, 255, 0.4);
+  font-size: 0.72rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 /* 12sn hamle suresi (yesilimsi) */
 .clock-reserve.delay {

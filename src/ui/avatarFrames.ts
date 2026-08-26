@@ -84,3 +84,92 @@ export const AVATAR_FRAMES: AvatarFrameDef[] = [
 export const FRAME_BY_ID: Record<string, AvatarFrameDef> = Object.fromEntries(
   AVATAR_FRAMES.map((f) => [f.id, f]),
 )
+
+// ============================================================================
+// FX katmani: her cerceveye ozgu animasyon karakteri. AvatarFrame bunu okuyup
+// katmanlari (GSAP orkestrasyon + tsParticles + Rive/Lottie) adaptif kurar.
+// CSS her zaman temel gorunumu cizer; asagidakiler yalnizca "zengin" modda
+// (buyuk boyut + animated + ekranda + reduced-motion kapali) devreye girer.
+// ----------------------------------------------------------------------------
+// motion: GSAP timeline davranislari (bkz. useFrameFx). Her biri kendine ozgu,
+//         ayni animasyonun renk degistirilmis tekrari DEGIL.
+// particle: tsParticles preset anahtari (bkz. frameParticles). Yalnizca buyuk
+//           tekil baglamlarda (profil/vitrin/oyun) yuklenir; listelerde asla.
+// rive/lottie: dosya URL'si verilirse ilgili katman lazy yuklenir. Su an dosya
+//              yok; mimari hazir (URL eklenince otomatik devreye girer).
+export type FrameMotion =
+  | 'orbit' // ters yonde donen ikinci enerji halkasi
+  | 'orbitDot' // halka boyunca dolasan parlak nokta
+  | 'sweep' // metal yuzeyde gezen isik parlamasi (light sweep)
+  | 'strike' // rastgele araliklarla kisa yildirim/ark
+  | 'wing' // yanlarda kanat parlamasi/acilma (phoenix)
+  | 'dice' // ara ara zar yuvarlama (dice-master)
+  | 'float' // hafif suzulme (zar/pul)
+  | 'breathe' // yavas kalp atisi / hafif nabiz (ruby)
+  | 'burst' // periyodik premium isik patlamasi (sampiyon)
+  | 'sparkle' // rastgele kristal parlamalari
+  | 'eyes' // ara ara parlayan gozler (dragon)
+  | 'smoke' // hafif duman
+  | 'glitch' // seyrek kisa glitch (cyberpunk)
+  | 'gravity' // merkeze cekilen partikuller (black-hole)
+  | 'rays' // donen isik huzmeleri
+  | 'aura' // yavas enerji halesi
+  | 'flames' // yukselen alevler
+
+export type FrameParticle =
+  | 'ember' // koz/kivilcim (ates)
+  | 'gold' // altin tozu
+  | 'snow' // buz/kar
+  | 'spark' // elektrik parcaciklari
+  | 'cosmic' // yildiz/kozmik toz
+  | 'gravity' // merkeze akan mor parcaciklar
+  | 'smoke' // duman
+
+export interface FrameFx {
+  motion: FrameMotion[]
+  particle?: FrameParticle
+  rive?: string // AE/Rive dosyasi eklenince URL; su an bos
+  lottie?: string
+  /** Zengin katmanlar icin min boyut (px). Varsayilan 44. */
+  minRich?: number
+  /** Partikul katmani icin min boyut (px). Varsayilan 76. */
+  minParticle?: number
+}
+
+const RICH = 44
+export const FRAME_FX: Record<string, FrameFx> = {
+  // --- Nadir: hafif, kontrollu ---
+  'neon-pulse': { motion: ['orbitDot', 'breathe'] },
+  // --- Epik: belirgin, cok katmanli ---
+  'purple-vortex': { motion: ['orbit'] },
+  'ice-crown': { motion: ['sparkle'], particle: 'snow' },
+  electric: { motion: ['strike'], particle: 'spark' },
+  cyberpunk: { motion: ['glitch', 'sweep'] },
+  'dice-master': { motion: ['dice', 'float'] },
+  // --- Efsanevi: metal + parcacik + mucevher ---
+  'royal-gold': { motion: ['sweep'], particle: 'gold' },
+  inferno: { motion: ['flames'], particle: 'ember' },
+  diamond: { motion: ['sweep', 'sparkle'] },
+  emerald: { motion: ['sweep', 'sparkle'] },
+  ruby: { motion: ['breathe'] },
+  vip: { motion: ['sweep'], particle: 'gold' },
+  champion: { motion: ['sweep', 'burst'], particle: 'gold' },
+  'backgammon-king': { motion: ['sweep'], particle: 'gold' },
+  'top-100': { motion: ['sweep'] },
+  '1000-wins': { motion: ['sparkle'], particle: 'gold' },
+  // --- Mitik: 2-3 bagimsiz katman; Rive/Lottie'ye hazir ---
+  'black-hole': { motion: ['orbit', 'gravity'], particle: 'gravity', rive: '' },
+  galaxy: { motion: ['orbit', 'aura'], particle: 'cosmic', rive: '' },
+  phoenix: { motion: ['wing', 'burst'], particle: 'ember', rive: '', lottie: '' },
+  dragon: { motion: ['eyes', 'smoke'], particle: 'smoke', rive: '' },
+  'thunder-god': { motion: ['orbit', 'strike'], particle: 'spark', rive: '' },
+  grandmaster: { motion: ['orbit', 'breathe'] },
+  'tournament-champion': { motion: ['burst', 'rays'], particle: 'gold', rive: '' },
+  'season-champion': { motion: ['burst', 'aura'], particle: 'gold', rive: '', lottie: '' },
+}
+
+export function frameFx(id?: string | null): FrameFx | undefined {
+  if (!id) return undefined
+  return FRAME_FX[id]
+}
+export const FRAME_MIN_RICH = RICH

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
@@ -7,6 +8,7 @@ import {
   AVATAR_FRAMES,
   FRAME_GROUP_ORDER,
   FRAME_GROUP_LABEL,
+  FRAME_RARITY_COLOR,
   type FrameGroup,
 } from './avatarFrames'
 
@@ -27,9 +29,14 @@ const GROUP_COLOR: Record<FrameGroup, string> = {
   achievement: '#F5D06F',
 }
 
+const SIZES = [48, 64, 96] as const
+
 export default function FrameGallery({ avatar, name, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  const [size, setSize] = useState<number>(96)
+  const [animated, setAnimated] = useState(true)
+
   return (
     <div className="register-overlay modal page">
       <div className="register-card frame-gallery-card" onClick={(e) => e.stopPropagation()}>
@@ -38,6 +45,29 @@ export default function FrameGallery({ avatar, name, onClose }: Props) {
         </button>
         <h2><Icon name="crown" size={20} /> {t('frames.title')}</h2>
         <p className="setup-note">{t('frames.subtitle')}</p>
+
+        {/* Vitrin araclari: boyut + animasyon */}
+        <div className="fg-toolbar">
+          <div className="fg-tool">
+            <span className="fg-tool-lbl">{t('frames.size')}</span>
+            <div className="fg-sizes">
+              {SIZES.map((s) => (
+                <button
+                  key={s}
+                  className={`fg-size-chip ${size === s ? 'active' : ''}`}
+                  onClick={() => setSize(s)}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="fg-switch">
+            <input type="checkbox" checked={animated} onChange={(e) => setAnimated(e.target.checked)} />
+            <span className="fg-switch-track"><span className="fg-switch-thumb" /></span>
+            <span className="fg-tool-lbl">{t('frames.animate')}</span>
+          </label>
+        </div>
 
         {FRAME_GROUP_ORDER.map((group) => {
           const items = AVATAR_FRAMES.filter((f) => f.group === group)
@@ -57,9 +87,18 @@ export default function FrameGallery({ avatar, name, onClose }: Props) {
                     className="fg-item"
                     key={f.id}
                     style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
+                    title={f.name}
                   >
-                    <AvatarFrame src={avatar} frame={f.id} size={104} name={name || 'T'} />
+                    <div className="fg-preview" style={{ minHeight: SIZES[SIZES.length - 1] + 16 }}>
+                      <AvatarFrame src={avatar} frame={f.id} size={size} name={name || 'T'} animated={animated} />
+                    </div>
                     <span className="fg-name">{f.name}</span>
+                    <span
+                      className="fg-rarity"
+                      style={{ ['--rarity-color']: FRAME_RARITY_COLOR[f.rarity] } as CSSProperties}
+                    >
+                      {t(`rarity.${f.rarity}`)}
+                    </span>
                     {f.earned && (
                       <span className="fg-earned">
                         <Icon name="trophy" size={10} /> {t('frames.earned')}
