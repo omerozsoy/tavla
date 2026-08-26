@@ -2231,30 +2231,43 @@ button[aria-disabled='true'],
 .point.bottom {
   flex-direction: column-reverse;
 }
+/* Ucgenler: duz renk yerine keçe derinligi. clip-path ucgen + gradyan dolgu
+   (taban = frame yaninda aydinlik, uc = koyu). Renk temadan turetilir (color-mix),
+   boylece 20+ temanin hepsi otomatik olarak daha derin/premium gorunur. */
 .point::before {
   content: '';
   position: absolute;
-  width: 0;
-  height: 0;
   left: 50%;
   transform: translateX(-50%);
-  border-left: calc(var(--col) / 2) solid transparent;
-  border-right: calc(var(--col) / 2) solid transparent;
+  width: var(--col);
+  height: var(--tri-h);
   z-index: 0;
 }
 .point.top::before {
   top: 0;
-  border-top: var(--tri-h) solid var(--tri-a);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tri-a) 91%, #fff) 0 50%,
+    color-mix(in srgb, var(--tri-a) 88%, #000) 50% 100%
+  );
 }
 .point.bottom::before {
   bottom: 0;
-  border-bottom: var(--tri-h) solid var(--tri-a);
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tri-a) 91%, #fff) 0 50%,
+    color-mix(in srgb, var(--tri-a) 88%, #000) 50% 100%
+  );
 }
-.point.shade-b.top::before {
-  border-top-color: var(--tri-b);
-}
+.point.shade-b.top::before,
 .point.shade-b.bottom::before {
-  border-bottom-color: var(--tri-b);
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tri-b) 91%, #fff) 0 50%,
+    color-mix(in srgb, var(--tri-b) 88%, #000) 50% 100%
+  );
 }
 
 .checkers {
@@ -2291,10 +2304,11 @@ button[aria-disabled='true'],
   pointer-events: none;
 }
 .checker.white::after {
-  border: 1.5px solid rgba(120, 108, 82, 0.55);
+  border: 1.5px solid color-mix(in srgb, var(--cream) 55%, #000);
+  opacity: 0.5;
 }
 .checker.black::after {
-  border: 1.5px solid rgba(255, 255, 255, 0.28);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
 }
 .checker.draggable {
   cursor: grab;
@@ -2307,21 +2321,27 @@ button[aria-disabled='true'],
   --marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.11' numOctaves='4' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='gamma' exponent='2.4'/%3E%3CfeFuncG type='gamma' exponent='2.4'/%3E%3CfeFuncB type='gamma' exponent='2.4'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
 }
 /* Duz zemin renk + mermer dokusu (overlay). Radyal kure + ic golge YOK. */
+/* Duz "fis" pul: mermer yok. Duz renk + hafif ust parlaklik (radyal sheen) +
+   yumusak kontak golgesi. Ince ic halka (::after) fiziksel disk hissi verir. */
 .checker.white {
   background-color: var(--cream);
-  background-image: var(--marble);
-  background-size: cover;
-  background-blend-mode: overlay;
-  border: 1px solid #b8ab90;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  background-image: radial-gradient(
+    circle at 38% 30%,
+    rgba(255, 255, 255, 0.55),
+    rgba(255, 255, 255, 0) 58%
+  );
+  border: 1px solid color-mix(in srgb, var(--cream) 66%, #000);
+  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.3);
 }
 .checker.black {
   background-color: var(--navy);
-  background-image: var(--marble);
-  background-size: cover;
-  background-blend-mode: overlay;
-  border: 1px solid rgba(0, 0, 0, 0.45);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  background-image: radial-gradient(
+    circle at 38% 30%,
+    rgba(255, 255, 255, 0.16),
+    rgba(255, 255, 255, 0) 58%
+  );
+  border: 1px solid color-mix(in srgb, var(--navy) 62%, #000);
+  box-shadow: 0 1.5px 3px rgba(0, 0, 0, 0.38);
 }
 @keyframes checker-place {
   0% {

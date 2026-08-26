@@ -196,6 +196,8 @@ interface BoardTheme {
   a: string
   b: string
   checker: string // koyu pul rengi (temaya uyar)
+  frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
+  light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
@@ -703,6 +705,11 @@ export default function App() {
     root.style.setProperty('--tri-a', bt.a)
     root.style.setProperty('--tri-b', bt.b)
     root.style.setProperty('--navy', bt.checker) // koyu pul temaya uyar
+    // Cerceve + acik pul: tema verirse uygula, yoksa temizle (CSS varsayilanina don)
+    if (bt.frame) root.style.setProperty('--bar', bt.frame)
+    else root.style.removeProperty('--bar')
+    if (bt.light) root.style.setProperty('--cream', bt.light)
+    else root.style.removeProperty('--cream')
     try {
       localStorage.setItem('tavla.theme', theme)
       localStorage.setItem('tavla.board', boardTheme)
