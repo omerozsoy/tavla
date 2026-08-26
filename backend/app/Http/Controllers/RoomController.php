@@ -36,6 +36,7 @@ class RoomController extends Controller
         $room = Room::create([
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
+            'p1_user_id' => $request->user('sanctum')?->id, // avatar cerceve lookup (bahis stake=0 -> settle'i etkilemez)
             'p1_name' => $data['name'],
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => $data['avatar'] ?? null,
@@ -384,6 +385,7 @@ class RoomController extends Controller
                 return response()->json(['message' => 'Oda dolu.'], 409);
             }
             $room->p2_token = $data['token'];
+            $room->p2_user_id = $request->user('sanctum')?->id;
             $room->p2_name = $data['name'];
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;
@@ -411,6 +413,7 @@ class RoomController extends Controller
             ['code' => $code],
             [
                 'p1_token' => $data['token'],
+                'p1_user_id' => $request->user('sanctum')?->id,
                 'p1_name' => $data['name'],
                 'p1_rating' => $data['rating'] ?? null,
                 'p1_avatar' => $data['avatar'] ?? null,
@@ -425,6 +428,7 @@ class RoomController extends Controller
                 return response()->json(['message' => 'Oda dolu.'], 409);
             }
             $room->p2_token = $data['token'];
+            $room->p2_user_id = $request->user('sanctum')?->id;
             $room->p2_name = $data['name'];
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;

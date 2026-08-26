@@ -48,9 +48,11 @@ class Room extends Model
             'p1_name' => $this->p1_name,
             'p1_rating' => $this->p1_rating,
             'p1_avatar' => $this->p1_avatar,
+            'p1_frame' => $this->frameOf($this->p1_user_id),
             'p2_name' => $this->p2_name,
             'p2_rating' => $this->p2_rating,
             'p2_avatar' => $this->p2_avatar,
+            'p2_frame' => $this->frameOf($this->p2_user_id),
             'state' => $this->state,
             'messages' => $this->messages ?? [],
             'version' => $this->version,
@@ -59,5 +61,12 @@ class Room extends Model
             'bet_pct' => (int) $this->bet_pct,
             'target' => $this->target !== null ? (int) $this->target : null,
         ];
+    }
+
+    // Oyuncunun kusanili avatar cercevesi (user_id ile; guest -> null). Sema
+    // degisikligi gerektirmez; PK ile tek kolon sorgusu (hafif).
+    private function frameOf($userId): ?string
+    {
+        return $userId ? User::whereKey($userId)->value('avatar_frame') : null;
     }
 }
