@@ -51,7 +51,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
     <div className="register-overlay modal page">
       <div className="setup-split">
         <div className="register-card solo-card">
-          <button className="modal-close" onClick={onClose} aria-label="Kapat">
+          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
           </button>
           <h2>
