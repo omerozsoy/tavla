@@ -719,6 +719,11 @@ export default function App() {
     setOpeningResult(null)
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
+    // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse HOME'da kalma -> oyunu goster
+    // (AI macinda sayfa refresh'inde oyun kaybolmasin). Online oda tabanli, haric.
+    if (g.mode !== 'online' && !matchWinner(g.match) && (g.turnsPlayed > 0 || !!g.gameEnd)) {
+      setHome(false)
+    }
   }
 
   // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle
@@ -1385,24 +1390,48 @@ export default function App() {
     setCurBest(null)
   }, [turnStart, played.length])
 
-  // Insan sirasi + hamle yok -> otomatik "hamle yok" deyip gec (Pas butonu yok)
+  // Insan sirasi: hamle yok -> otomatik gec; ZORUNLU adim (tek tam hamle / kirik tas
+  // girisinde alternatif yok / tek yasal adim) -> otomatik oyna. Adim adim ilerler:
+  // sonraki adim da zorunluysa o da oynanir. Secim varsa durur (oyuncu oynar).
   useEffect(() => {
-    if (!interactive || !diceRolled || played.length > 0) return
-    const moves = generateMoves(turnStart)
-    if (hasNoMove(moves)) {
+    if (!interactive || !diceRolled) return
+    // Mevcut pozisyon: tur basi -> turnStart; mid-turn -> working + kalan zarlar
+    const cur =
+      played.length === 0
+        ? turnStart
+        : (() => {
+            const s = cloneState(working)
+            s.dice = remainingDice.slice()
+            s.diceUsed = remainingDice.map(() => false)
+            return s
+          })()
+    const moves = generateMoves(cur)
+    // Tur basi + hic hamle yok -> otomatik "hamle yok" deyip gec
+    if (played.length === 0 && hasNoMove(moves)) {
       setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
       const timer = window.setTimeout(() => commitTurn([]), 1600)
       return () => window.clearTimeout(timer)
     }
-    // Zorunlu tek hamle -> otomatik oyna (gorebilmen icin yavas)
-    if (moves.length === 1 && moves[0].steps.length > 0) {
+    // Tur basi + tek tam hamle -> komple oyna (otomatik onayli, mevcut davranis)
+    if (played.length === 0 && moves.length === 1 && moves[0].steps.length > 0) {
       const only = moves[0]
       setMessage(t('msg.forcedAuto'))
-      const timer = window.setTimeout(() => commitTurn(only.steps), 1600)
+      const timer = window.setTimeout(() => commitTurn(only.steps), 1400)
+      return () => window.clearTimeout(timer)
+    }
+    // Zorunlu ilk adim: tum yasal diziler ayni ilk adimla basliyorsa (kirik tas
+    // girisinde tek giris / tek yasal adim) -> o adimi otomatik oyna.
+    const firstKeys = new Set(
+      moves.map((m) => m.steps[0]).filter(Boolean).map((s) => `${s!.from}>${s!.to}:${s!.die}`),
+    )
+    const onlyStep = moves.map((m) => m.steps[0]).find(Boolean)
+    if (firstKeys.size === 1 && onlyStep) {
+      setMessage(t('msg.forcedAuto'))
+      const timer = window.setTimeout(() => playSteps([onlyStep]), 900)
       return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, diceRolled, played.length, turnStart])
+  }, [interactive, diceRolled, played.length, turnStart, working, remainingDice])
 
   // Acilis atisi sonucunu uygula: yuksek zar baslar (esit olamaz - cagiran garanti eder).
   function resolveOpening(w: number, b: number) {
@@ -3053,6 +3082,9 @@ export default function App() {
     setSetup(null)
   }
   const goPage = (open: () => void) => {
+    // Aktif oyundayken menu sayfalari (Magaza, Turnuvalar, Liderlik, Cerceve Galerisi
+    // vb.) ACILMAZ; oyunu bolmesin. Oyun menusunun Ana Menu/Pes Et'i goPage kullanmaz.
+    if (!home && !setup && hasActiveGame) return
     closeAllPages()
     open()
   }
