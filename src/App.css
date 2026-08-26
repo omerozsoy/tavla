@@ -771,6 +771,26 @@ button[aria-disabled='true'],
   border-color: var(--rarity-color, var(--accent));
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--rarity-color, var(--accent)) 35%, transparent);
 }
+/* Secili tahta: kart uzerinde kirmizi "Secili" rozeti */
+.bp-selected {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 11px;
+  border-radius: var(--radius-pill);
+  background: #d0342c;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
 .board-prev.locked .setup-board {
   opacity: 0.42;
 }

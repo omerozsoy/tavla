@@ -122,6 +122,11 @@ export default function BoardSettings({
                           checker={bt.checker ?? bt.b}
                           cream={bt.light}
                         />
+                        {boardTheme === bt.id && (
+                          <span className="bp-selected">
+                            <Icon name="check" size={12} /> {t('shop.selected')}
+                          </span>
+                        )}
                         <span className="bp-name">
                           {locked && <Icon name="crown" size={11} />} {bt.name}
                         </span>
