@@ -1,16 +1,20 @@
 import type { GameState, Player, Step } from '../engine/types'
 
 // Analiz icin kucuk board: pozisyonu ciz + hamleyi ok(lar) ile goster.
-const W = 280
-const H = 168
-const OFF_W = 16
-const BAR_W = 14
+// Olculer gercek tavla oranina gore turetilir; taslar sutun genisligine bagli
+// (COL_W * 0.86) ve ust uste binmeden istiflenir (STEP >= cap).
+const W = 300
+const H = 210
+const OFF_W = 18
+const BAR_W = 16
 const USABLE_W = W - OFF_W
 const HALF_W = (USABLE_W - BAR_W) / 2
 const COL_W = HALF_W / 6
-const TRI_H = 60
-const TOP_Y = 20
-const BOT_Y = H - 20
+const R = COL_W * 0.43 // tas yaricapi (cap ~= sutunun %86'si)
+const STEP = R * 1.95 // istif adimi (ust uste binme yok)
+const TRI_H = COL_W * 3.4 // kisa+genis ucgen
+const TOP_Y = R + 6
+const BOT_Y = H - (R + 6)
 
 // Nokta index'i (0-23) -> {col 0-11, row}
 const LAYOUT: Record<number, { col: number; row: 'top' | 'bottom' }> = {}
@@ -68,8 +72,6 @@ export default function MiniBoard({
 
   // Pullar: normal tavla gibi ISTIFLENMIS diskler (nokta basina tek daire+sayi DEGIL).
   // 5'ten fazla tasta ust diske toplam sayi yazilir (kompakt board icin).
-  const R = 8
-  const STEP = 13
   const MAX = 5
   const discs = []
   for (let idx = 0; idx < 24; idx++) {
@@ -87,12 +89,12 @@ export default function MiniBoard({
       const overflow = k === show - 1 && n > MAX
       discs.push(
         <g key={`d${idx}-${k}`}>
-          <circle cx={x} cy={cy} r={R} fill={white ? 'var(--cream)' : 'var(--navy)'} stroke="#0006" strokeWidth={0.8} />
+          <circle cx={x} cy={cy} r={R} fill={white ? 'var(--cream)' : 'var(--navy)'} stroke="#0007" strokeWidth={1} />
           {overflow && (
             <text
               x={x}
-              y={cy + 3}
-              fontSize="9"
+              y={cy + R * 0.35}
+              fontSize={R * 1.1}
               fontWeight="700"
               textAnchor="middle"
               fill={white ? 'var(--tv-ink)' : '#fff'}
@@ -107,11 +109,11 @@ export default function MiniBoard({
   // Bar pullari
   if (state.bar.white > 0)
     discs.push(
-      <circle key="bw" cx={HALF_W + BAR_W / 2} cy={H / 2 + 12} r={7} fill="var(--cream)" stroke="#0006" />,
+      <circle key="bw" cx={HALF_W + BAR_W / 2} cy={H / 2 + R + 3} r={R * 0.9} fill="var(--cream)" stroke="#0007" />,
     )
   if (state.bar.black > 0)
     discs.push(
-      <circle key="bb" cx={HALF_W + BAR_W / 2} cy={H / 2 - 12} r={7} fill="var(--navy)" stroke="#0006" />,
+      <circle key="bb" cx={HALF_W + BAR_W / 2} cy={H / 2 - (R + 3)} r={R * 0.9} fill="var(--navy)" stroke="#0007" />,
     )
 
   // Oklar (hamle adimlari)
@@ -126,12 +128,12 @@ export default function MiniBoard({
           x2={to.x}
           y2={to.y}
           stroke="#ffd54a"
-          strokeWidth={2.5}
+          strokeWidth={3}
           markerEnd="url(#mbArrow)"
           opacity={0.95}
         />
-        <circle cx={from.x} cy={from.y} r={7} fill="#ffd54a" />
-        <text x={from.x} y={from.y + 3} fontSize="9" fontWeight="800" textAnchor="middle" fill="var(--tv-ink)">
+        <circle cx={from.x} cy={from.y} r={R * 0.95} fill="#ffd54a" />
+        <text x={from.x} y={from.y + R * 0.36} fontSize={R * 1.15} fontWeight="800" textAnchor="middle" fill="var(--tv-ink)">
           {i + 1}
         </text>
       </g>

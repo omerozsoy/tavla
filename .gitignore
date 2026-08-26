@@ -15,6 +15,10 @@ dist-ssr
 # Claude Code yerel ayarlar
 .claude
 
+# Board dogrulama araclari (dev-only): headless Chrome profili + screenshot ciktilari
+.chrome-cdp
+.shots
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
