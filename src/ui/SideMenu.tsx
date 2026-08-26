@@ -16,6 +16,7 @@ export interface SideMenuProps {
   onLeaderboard: () => void
   onTournaments: () => void
   onShop: () => void
+  onFrameGallery?: () => void
   onMembership?: () => void
   onMyStats: () => void
   onFriends: () => void
@@ -112,6 +113,11 @@ export default function SideMenu(p: SideMenuProps) {
         <button className="menu-btn" onClick={p.onLeaderboard}>
           <Icon name="trophy" /> {t('menu.leaderboard')}
         </button>
+        {p.onFrameGallery && (
+          <button className="menu-btn" onClick={p.onFrameGallery}>
+            <Icon name="crown" /> {t('frames.gallery')}
+          </button>
+        )}
         {p.loggedIn && (
           <button className="menu-btn" onClick={p.onFriends}>
             <Icon name="users" /> {t('menu.friends')}

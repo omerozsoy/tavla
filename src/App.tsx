@@ -3071,6 +3071,7 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
+    onFrameGallery: () => goPage(() => setFrameGalleryOpen(true)),
     onMembership: () => setMemOpen(true),
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
@@ -3136,6 +3137,7 @@ export default function App() {
     leaderboardOpen ||
     tournOpen ||
     shopOpen ||
+    frameGalleryOpen ||
     statsOpen ||
     friendsOpen ||
     blunderOpen ||
