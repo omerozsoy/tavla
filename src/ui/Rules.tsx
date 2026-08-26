@@ -159,7 +159,7 @@ const CONTENT: Record<'tr' | 'en', { title: string; intro: string; sections: Sec
 }
 
 export default function Rules({ onClose }: Props) {
-  const { lang } = useT()
+  const { lang, t } = useT()
   useEscape(onClose)
   const c = lang === 'tr' ? CONTENT.tr : CONTENT.en
 

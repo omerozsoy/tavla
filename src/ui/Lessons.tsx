@@ -133,7 +133,7 @@ const CONTENT: Record<string, { title: string; sections: Section[] }> = {
 }
 
 export default function Lessons({ onClose }: Props) {
-  const { lang } = useT()
+  const { lang, t } = useT()
   useEscape(onClose)
   const c = CONTENT[lang] ?? CONTENT.en
   const [open, setOpen] = useState(0)
