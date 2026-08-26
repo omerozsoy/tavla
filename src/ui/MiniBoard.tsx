@@ -66,28 +66,43 @@ export default function MiniBoard({
     }
   }
 
-  // Pullar (nokta basina bir daire + sayi)
+  // Pullar: normal tavla gibi ISTIFLENMIS diskler (nokta basina tek daire+sayi DEGIL).
+  // 5'ten fazla tasta ust diske toplam sayi yazilir (kompakt board icin).
+  const R = 8
+  const STEP = 13
+  const MAX = 5
   const discs = []
   for (let idx = 0; idx < 24; idx++) {
     const v = state.points[idx]
     if (v === 0) continue
-    const { x, y } = anchor(idx)
+    const n = Math.abs(v)
     const white = v > 0
-    discs.push(
-      <g key={`d${idx}`}>
-        <circle cx={x} cy={y} r={8} fill={white ? 'var(--cream)' : 'var(--navy)'} stroke="#0006" />
-        <text
-          x={x}
-          y={y + 3}
-          fontSize="9"
-          fontWeight="700"
-          textAnchor="middle"
-          fill={white ? 'var(--tv-ink)' : '#fff'}
-        >
-          {Math.abs(v)}
-        </text>
-      </g>,
-    )
+    const l = LAYOUT[idx]
+    const x = colX(l.col)
+    const baseY = l.row === 'top' ? TOP_Y : BOT_Y
+    const dir = l.row === 'top' ? 1 : -1
+    const show = Math.min(n, MAX)
+    for (let k = 0; k < show; k++) {
+      const cy = baseY + dir * k * STEP
+      const overflow = k === show - 1 && n > MAX
+      discs.push(
+        <g key={`d${idx}-${k}`}>
+          <circle cx={x} cy={cy} r={R} fill={white ? 'var(--cream)' : 'var(--navy)'} stroke="#0006" strokeWidth={0.8} />
+          {overflow && (
+            <text
+              x={x}
+              y={cy + 3}
+              fontSize="9"
+              fontWeight="700"
+              textAnchor="middle"
+              fill={white ? 'var(--tv-ink)' : '#fff'}
+            >
+              {n}
+            </text>
+          )}
+        </g>,
+      )
+    }
   }
   // Bar pullari
   if (state.bar.white > 0)

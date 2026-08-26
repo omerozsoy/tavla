@@ -3071,7 +3071,10 @@ export default function App() {
       closeAllPages()
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
-    onResume: () => setHome(false),
+    onResume: () => {
+      closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
+      setHome(false)
+    },
     onHome: () => {
       closeAllPages()
       if (online) handleLeaveRoom()
@@ -3598,7 +3601,7 @@ export default function App() {
         aria-label={t('gm.title')}
         title={t('gm.title')}
       >
-        <Icon name="menu" size={24} />
+        <Icon name="menu" size={30} />
       </button>
       <GameMenu
         open={gameMenuOpen}
