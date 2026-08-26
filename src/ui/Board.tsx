@@ -50,6 +50,7 @@ interface BoardProps {
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
   showPip?: boolean // pip sayilari gorunur mu
+  watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -167,6 +168,7 @@ export default function Board({
   centerMain,
   flip = false,
   showPip = true,
+  watermark,
 }: BoardProps) {
   const L = flip ? LAYOUT.flipped : LAYOUT.normal
 
@@ -214,6 +216,19 @@ export default function Board({
       </div>
 
       <div className="board-inner">
+        {/* TavlaTV watermark: her yarinin merkezinde, taslarin/zarin/kupun ALTINDA,
+            pointlerin USTUNDE. Logo/arma DEGIL; sadece yazi. Kulup temasinda takim adi. */}
+        <div className="board-watermark" aria-hidden="true">
+          <div className="wm-cell">
+            <span className="wm-brand">TavlaTV</span>
+            {watermark && <span className="wm-team">{watermark}</span>}
+          </div>
+          <div className="wm-cell">
+            <span className="wm-brand">TavlaTV</span>
+            {watermark && <span className="wm-team">{watermark}</span>}
+          </div>
+        </div>
+
         {/* Sol yari */}
         <div className="half">
           <div className="quadrant top">{L.TL.map((i) => renderPoint(i, true))}</div>

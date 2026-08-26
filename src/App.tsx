@@ -201,7 +201,16 @@ interface BoardTheme {
   frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
   light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' // nadirlik sinifi (kart cercevesi + gruplama)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' // nadirlik sinifi (kart cercevesi + gruplama)
+  // Kulup temalari icin ozel zar/kup renkleri (yoksa marka varsayilanina duser).
+  // dice1 = acik zar (beyaz oyuncu), dice2 = koyu zar (siyah oyuncu).
+  d1Bg?: string
+  d1Pip?: string
+  d2Bg?: string
+  d2Pip?: string
+  cubeBg?: string
+  cubeText?: string
+  watermark?: string // board ortasindaki cok soluk takim adi (logo/arma DEGIL)
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -293,7 +302,40 @@ const THEME_RARITY: Record<string, NonNullable<BoardTheme['rarity']>> = {
   // PREMIUM_THEMES
   ocean: 'epic', gold: 'legendary', sunset: 'legendary', neon: 'mythic',
 }
-const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES]
+// Kulup takimi temalari: SADECE isim + renk paleti. Logo/arma/yildiz/maskot/monogram
+// KULLANILMAZ. Renklerden turetilmis ozgun tavla + cok soluk takim adi watermark'i.
+const CLUB_THEMES: BoardTheme[] = [
+  {
+    id: 'fenerbahce', name: 'Fenerbahçe', rarity: 'club',
+    panel: '#F3D428', a: '#102A72', b: '#E6BC15', checker: '#173B8F', light: '#F7D72C', frame: '#091B52',
+    d1Bg: '#F4D12B', d1Pip: '#102A72', d2Bg: '#15377F', d2Pip: '#FFFFFF',
+    cubeBg: '#102A72', cubeText: '#F6D42A', watermark: 'FENERBAHÇE',
+  },
+  {
+    id: 'galatasaray', name: 'Galatasaray', rarity: 'club',
+    panel: '#A91B32', a: '#F2B900', b: '#7F1024', checker: '#A71930', light: '#F4BB16', frame: '#6D0B1B',
+    d1Bg: '#F2BC18', d1Pip: '#8D1026', d2Bg: '#A71930', d2Pip: '#F7D344',
+    cubeBg: '#95142B', cubeText: '#F4C01A', watermark: 'GALATASARAY',
+  },
+  {
+    id: 'besiktas', name: 'Beşiktaş', rarity: 'club',
+    panel: '#D9D9D9', a: '#171717', b: '#A3A3A3', checker: '#111111', light: '#F4F4F4', frame: '#111111',
+    d1Bg: '#F3F3F3', d1Pip: '#111111', d2Bg: '#121212', d2Pip: '#FFFFFF',
+    cubeBg: '#111111', cubeText: '#FFFFFF', watermark: 'BEŞİKTAŞ',
+  },
+]
+const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES]
+
+// #RRGGBB -> algilanan parlaklik (0-255). Watermark rengi board zeminine gore secilir
+// (acik board -> koyu logo, koyu board -> acik logo).
+function hexLum(hex: string): number {
+  const h = hex.replace('#', '')
+  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+  const r = parseInt(n.slice(0, 2), 16)
+  const g = parseInt(n.slice(2, 4), 16)
+  const b = parseInt(n.slice(4, 6), 16)
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
@@ -792,6 +834,21 @@ export default function App() {
     else root.style.removeProperty('--bar')
     if (bt.light) root.style.setProperty('--cream', bt.light)
     else root.style.removeProperty('--cream')
+    // Zar/kup renkleri: kulup temalari ozel verir; digerleri marka varsayilanina duser
+    const dieVars: [string, string | undefined][] = [
+      ['--die1-bg', bt.d1Bg], ['--die1-pip', bt.d1Pip],
+      ['--die2-bg', bt.d2Bg], ['--die2-pip', bt.d2Pip],
+      ['--cube-bg', bt.cubeBg], ['--cube-text', bt.cubeText],
+    ]
+    for (const [k, v] of dieVars) {
+      if (v) root.style.setProperty(k, v)
+      else root.style.removeProperty(k)
+    }
+    // Watermark rengi: board zemini acik -> koyu logo, koyu -> acik logo (0.05-0.09 alfa)
+    root.style.setProperty(
+      '--wm-color',
+      hexLum(bt.panel) > 150 ? 'rgba(12,18,45,0.09)' : 'rgba(255,255,255,0.075)',
+    )
     try {
       localStorage.setItem('tavla.theme', theme)
       localStorage.setItem('tavla.board', boardTheme)
@@ -3321,6 +3378,8 @@ export default function App() {
               locked: false,
             })),
             ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
+            // Kulup temalari: herkese acik (ucretsiz), en ustte 'Kulupler' grubunda
+            ...CLUB_THEMES.map((tt) => ({ ...tt, rarity: 'club' as const, locked: false })),
           ]}
           premium={premium}
           onUpgrade={() => {
@@ -3702,6 +3761,7 @@ export default function App() {
           centerMain={centerMain}
           flip={flipBoard}
           showPip={showPip}
+          watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
         />
         {showAnalysis && (
           <AnalysisPanel
