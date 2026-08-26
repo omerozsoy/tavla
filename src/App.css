@@ -1165,6 +1165,7 @@ button[aria-disabled='true'],
   overflow-y: auto;
 }
 .blunder-item {
+  flex: none; /* flex kolonda ezilmesin (satirlar ince cizgiye donuyordu) */
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-left: 3px solid var(--border);
@@ -3739,8 +3740,8 @@ button[aria-disabled='true'],
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 60px;
+  width: 58px;
+  height: 82px;
   border: none;
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--tv-brick-light), var(--tv-brick));
