@@ -184,6 +184,7 @@ interface RoomState {
   oppName: string | null
   oppRating: number | null
   oppAvatar: string | null
+  oppFrame: string | null
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
@@ -1729,6 +1730,7 @@ export default function App() {
                 oppName: r.slot === 'p1' ? rv.p2_name : rv.p1_name,
                 oppRating: r.slot === 'p1' ? rv.p2_rating : rv.p1_rating,
                 oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
+                oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
                 status: rv.status,
               }
             : r,
@@ -2103,6 +2105,7 @@ export default function App() {
         oppName: null,
         oppRating: null,
         oppAvatar: null,
+        oppFrame: null,
         status: res.room.status,
       })
     } catch {
@@ -2174,6 +2177,7 @@ export default function App() {
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
       })
     } catch (err) {
@@ -2236,6 +2240,7 @@ export default function App() {
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
       })
     } catch (e) {
@@ -2293,6 +2298,7 @@ export default function App() {
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
       })
     } catch {
@@ -2343,6 +2349,7 @@ export default function App() {
         oppName: res.slot === 'p2' ? res.room.p1_name : res.room.p2_name,
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
+        oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
       })
     } catch {
@@ -2786,7 +2793,7 @@ export default function App() {
     target: match.target,
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
-    frame: online && myColor === 'black' ? (user?.avatar_frame ?? null) : null,
+    frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
   }
   const bottomInfo = {
     name: whiteName,
@@ -2805,7 +2812,7 @@ export default function App() {
     target: match.target,
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
-    frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : null) : (user?.avatar_frame ?? null),
+    frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)

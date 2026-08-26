@@ -710,9 +710,11 @@ export interface RoomView {
   p1_name: string
   p1_rating: number | null
   p1_avatar: string | null
+  p1_frame?: string | null
   p2_name: string | null
   p2_rating: number | null
   p2_avatar: string | null
+  p2_frame?: string | null
   state: unknown
   messages: ChatMsg[]
   version: number
