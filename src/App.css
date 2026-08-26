@@ -8402,6 +8402,14 @@ button[aria-disabled='true'],
   padding: 6px 12px;
   font-size: 0.82rem;
 }
+/* En altta, in-flow (mutlak konumlandirmayi ez) */
+.rep-export.rep-export-bottom {
+  position: static;
+  top: auto;
+  right: auto;
+  margin: 14px auto 0;
+  width: fit-content;
+}
 .menu-install {
   color: var(--success-fg);
 }
