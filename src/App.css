@@ -8424,6 +8424,16 @@ button[aria-disabled='true'],
   font-size: 0.88rem;
   max-width: 94vw;
 }
+/* Profil formu icindeki (in-flow) dogrulama uyarisi: yuzen degil */
+.profile-verify {
+  position: static;
+  right: auto;
+  bottom: auto;
+  z-index: auto;
+  max-width: none;
+  margin: 4px 0 12px;
+  box-shadow: none;
+}
 .verify-resend {
   background: #e6b422;
   color: #3a2a06;

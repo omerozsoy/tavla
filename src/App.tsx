@@ -2889,6 +2889,9 @@ export default function App() {
       editUser={user}
       editGuest={!user ? guestProfile : null}
       onLogout={handleLogout}
+      emailUnverified={!!user && !user.email_verified_at}
+      resendState={resendState}
+      onResendVerification={handleResendVerification}
       {...authProps}
     />
   ) : null
@@ -3287,7 +3290,8 @@ export default function App() {
   )
 
   // Ortalanmis modallar / yuzen katmanlar (her zaman overlay)
-  // E-posta dogrulama: link sonucu bildirimi + giris yapmis dogrulanmamis kullaniciya uyari
+  // E-posta dogrulama: yalnizca link sonucu bildirimi (toast). Kalici "dogrula" uyarisi
+  // artik her yerde DEGIL; sadece profil (Uye Bilgileri) ekraninda gosterilir.
   const verifyBanner = (
     <>
       {verifyNotice && (
@@ -3297,23 +3301,6 @@ export default function App() {
           <button className="verify-close" onClick={() => setVerifyNotice(null)} aria-label={t('common.close')}>
             <Icon name="x" size={14} />
           </button>
-        </div>
-      )}
-      {user && !user.email_verified_at && (
-        <div className="verify-bar">
-          <Icon name="alert" size={15} />
-          <span>{t('verify.needed')}</span>
-          {resendState === 'sent' ? (
-            <span className="verify-sent">{t('verify.sent')}</span>
-          ) : (
-            <button
-              className="verify-resend"
-              disabled={resendState === 'sending'}
-              onClick={handleResendVerification}
-            >
-              {t('verify.resend')}
-            </button>
-          )}
         </div>
       )}
     </>
