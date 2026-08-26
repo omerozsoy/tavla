@@ -92,7 +92,7 @@ export default function Auth({
   const [nickTaken, setNickTaken] = useState(false)
   const [saved, setSaved] = useState(false) // profil kaydedildi onayi (sayfada kalir)
   const [showPw, setShowPw] = useState(false)
-  const [startRating, setStartRating] = useState(1400) // baslangic seviyesi (Galaxy tarzi)
+  const [startRating] = useState(1400) // baslangic seviyesi: kayitta gizli, sabit 1400 gonderilir
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
   const [forgotSent, setForgotSent] = useState(false)
 
@@ -570,27 +570,6 @@ export default function Auth({
                       </button>
                     </div>
                   </label>
-                  <div className="reg-rating">
-                    <div className="reg-rating-label">{t('reg.startLevel')}</div>
-                    <div className="reg-rating-grid">
-                      {[
-                        { r: 900, key: 'reg.lvlBeginner' },
-                        { r: 1100, key: 'reg.lvlCasual' },
-                        { r: 1400, key: 'reg.lvlClub' },
-                        { r: 1700, key: 'reg.lvlStrong' },
-                      ].map((o) => (
-                        <button
-                          type="button"
-                          key={o.r}
-                          className={`reg-rating-opt ${startRating === o.r ? 'active' : ''}`}
-                          onClick={() => setStartRating(o.r)}
-                        >
-                          <span className="rr-name">{t(o.key)}</span>
-                          <span className="rr-num">{o.r}</span>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </>
               )}
             </>

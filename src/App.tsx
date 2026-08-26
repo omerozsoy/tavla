@@ -3062,8 +3062,9 @@ export default function App() {
       })
     },
   }
-  // Giris/kayit: modal pencere (gate). Profil duzenleme ise menuPages icinde SAYFA olarak acilir.
-  const authModal = showAuth ? <Auth key="auth" modal {...authProps} /> : null
+  // Giris/kayit: modal pencere DEGIL — temiz TAM SAYFA gate (opak app zemini,
+  // ortalanmis kart; arkada dimlenmis icerik yok). Cikis: Vazgec / Misafir olarak oyna.
+  const authModal = showAuth ? <Auth key="auth" {...authProps} /> : null
   // Profil duzenleme sayfasi (normal sayfa, modal degil; sol menu gorunur)
   const editProfilePage = editProfile ? (
     <Auth
