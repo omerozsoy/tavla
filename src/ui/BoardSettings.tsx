@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club'
 
 interface BoardThemeOpt {
   id: string
@@ -37,13 +37,14 @@ interface Props {
 }
 
 // Nadirlik siralamasi + renkleri (kart cercevesi ve baslik). HEX'ler urun spesifikasyonundan.
-const RARITY_ORDER: Rarity[] = ['common', 'rare', 'epic', 'legendary', 'mythic']
+const RARITY_ORDER: Rarity[] = ['club', 'common', 'rare', 'epic', 'legendary', 'mythic']
 const RARITY_COLOR: Record<Rarity, string> = {
   common: '#94A3B8',
   rare: '#3B82F6',
   epic: '#A855F7',
   legendary: '#F59E0B',
   mythic: '#EF4444',
+  club: '#22C55E',
 }
 
 export default function BoardSettings({

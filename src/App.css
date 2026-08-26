@@ -2505,6 +2505,46 @@ button[aria-disabled='true'],
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
   overflow: hidden;
   user-select: none;
+  /* Watermark katmanlamasi icin izole stacking context (tum z-index'ler board-inner ici) */
+  isolation: isolate;
+}
+
+/* ---- TavlaTV watermark (tum boardlarda) ---- */
+.board-watermark {
+  position: absolute;
+  inset: 0;
+  z-index: 1; /* pointlerin (::before z0) ustunde, taslarin (z2) altinda */
+  display: flex;
+  pointer-events: none;
+  user-select: none;
+}
+.wm-cell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2em;
+  overflow: hidden;
+}
+.wm-brand {
+  color: var(--wm-color, rgba(255, 255, 255, 0.075));
+  font-family: var(--tv-font-display);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-size: calc(var(--col) * 0.6);
+  line-height: 1;
+  white-space: nowrap;
+}
+.wm-team {
+  color: var(--wm-color, rgba(255, 255, 255, 0.075));
+  font-family: var(--tv-font-display);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  font-size: calc(var(--col) * 0.28);
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0.8; /* takim adi TavlaTV'den bir tik daha soluk */
 }
 .half {
   flex: 1;
@@ -2579,7 +2619,7 @@ button[aria-disabled='true'],
 
 .checkers {
   position: relative;
-  z-index: 1;
+  z-index: 2; /* watermark (z1) ustunde */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2618,17 +2658,19 @@ button[aria-disabled='true'],
 /* Duz zemin renk + mermer dokusu (overlay). Radyal kure + ic golge YOK. */
 /* Duz "fis" pul: mermer yok. Duz renk + hafif ust parlaklik (radyal sheen) +
    yumusak kontak golgesi. Ince ic halka (::after) fiziksel disk hissi verir. */
-/* Duz renk + cok ince kenar + hafif kontak golgesi. Gradient/glow/kalin ring yok. */
+/* Duz renk + ince kenar + hafif kontak golgesi. Gradient/glow/kalin ring yok.
+   Kenar tanimi, pul ile ayni tonda zemin olan temalarda (kulup boardlari)
+   taslarin okunmasina yardim eder. */
 .checker.white {
   background: var(--cream);
-  border: 1px solid rgba(0, 0, 0, 0.14);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 .checker.black {
   background: var(--navy);
-  /* Koyu pullar ust-uste dizilince ayrisim icin cok ince acik hairline */
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  /* Koyu pullar ust-uste dizilince / ayni tonda zeminde ayrisim icin acik hairline */
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 @keyframes checker-place {
   0% {
@@ -2701,7 +2743,7 @@ button[aria-disabled='true'],
   top: 40%;
   font-weight: 800;
   color: var(--tv-white);
-  z-index: 2;
+  z-index: 3;
   text-shadow: 0 0 4px #000;
   font-size: 1.2rem;
 }
@@ -2724,7 +2766,7 @@ button[aria-disabled='true'],
   border-radius: 3px;
   background: #35d07a;
   box-shadow: 0 0 8px rgba(53, 208, 122, 0.7);
-  z-index: 4;
+  z-index: 6;
 }
 .point.top.target::after {
   top: 3px;
@@ -2748,7 +2790,7 @@ button[aria-disabled='true'],
   align-items: center;
   justify-content: space-between;
   padding: 10px 0;
-  z-index: 2;
+  z-index: 4; /* watermark ustunde */
 }
 .bar.selectable {
   cursor: pointer;
@@ -2767,8 +2809,8 @@ button[aria-disabled='true'],
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--tv-brick);
-  color: var(--tv-white);
+  background: var(--cube-bg, var(--tv-brick));
+  color: var(--cube-text, var(--tv-white));
   width: var(--cube-size);
   height: var(--cube-size);
   border-radius: 8px;
@@ -2778,7 +2820,7 @@ button[aria-disabled='true'],
   font-weight: 800;
   font-size: calc(var(--cube-size) * 0.42);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  z-index: 3;
+  z-index: 5;
 }
 /* Kup sahibinin tarafinda durur */
 .cube.owner-center {
@@ -2824,10 +2866,10 @@ button[aria-disabled='true'],
   }
 }
 .die-face.white {
-  background: var(--cream);
+  background: var(--die1-bg, var(--cream));
 }
 .die-face.black {
-  background: var(--navy);
+  background: var(--die2-bg, var(--navy));
 }
 .pip-dot {
   position: absolute;
@@ -2837,10 +2879,10 @@ button[aria-disabled='true'],
   transform: translate(-50%, -50%);
 }
 .die-face.white .pip-dot {
-  background: var(--tv-brick);
+  background: var(--die1-pip, var(--tv-brick));
 }
 .die-face.black .pip-dot {
-  background: var(--cream);
+  background: var(--die2-pip, var(--cream));
 }
 .die-face.used {
   opacity: 0.35;
@@ -2908,7 +2950,7 @@ button[aria-disabled='true'],
 .center-overlay {
   position: absolute;
   top: 50%;
-  z-index: 6;
+  z-index: 7;
 }
 .center-overlay.left {
   left: 26%;
