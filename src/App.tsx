@@ -3173,12 +3173,9 @@ export default function App() {
           coins={user.coins ?? 0}
           unlocks={user.unlocks ?? []}
           currentFrame={user.avatar_frame ?? null}
-          boardTheme={boardTheme}
-          themes={PREMIUM_THEMES.map((th) => ({ id: th.id, name: th.name, price: th.price, a: th.a, b: th.b }))}
           frames={FRAMES}
           onBuy={handleBuy}
           onEquip={handleEquipFrame}
-          onSelectTheme={setBoardTheme}
           onDaily={handleDaily}
           onClose={() => setShopOpen(false)}
         />

@@ -421,15 +421,51 @@ button[aria-disabled='true'],
   color: var(--text);
   font: inherit;
   font-size: 16px;
-  cursor: pointer;
   text-align: left;
 }
-.dp-input > svg {
+.dp-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.dp-cal {
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  background: transparent;
   color: var(--accent);
+  cursor: pointer;
+  padding: 0;
   flex: none;
 }
-.dp-input.placeholder > span {
+.dp-field {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  padding: 0;
+  outline: none;
+}
+.dp-field::placeholder {
   color: var(--tv-ink-faint);
+}
+.dp-selects {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.dp-selects select {
+  padding: 5px 6px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-sm);
+  background: var(--input-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: capitalize;
 }
 .dp-pop {
   position: absolute;
