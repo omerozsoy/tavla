@@ -2838,8 +2838,10 @@ export default function App() {
         setEditProfile(true)
         return
       }
-      setEditProfile(false)
+      // Profil duzenlemeden kaydedince ANA SAYFAYA DONME: sayfada kal (Auth "Kaydedildi"
+      // gosterir). Sadece giris/kayit akisinda (wasEditing=false) kapat + oyunu yukle.
       if (!wasEditing) {
+        setEditProfile(false)
         loadServerGame()
           .then((g) => {
             if (g) applySavedGame(g as SavedGame)
@@ -3174,6 +3176,8 @@ export default function App() {
           unlocks={user.unlocks ?? []}
           currentFrame={user.avatar_frame ?? null}
           frames={FRAMES}
+          rewardReady={rewardReady}
+          rewardSecs={rewardSecs}
           onBuy={handleBuy}
           onEquip={handleEquipFrame}
           onDaily={handleDaily}

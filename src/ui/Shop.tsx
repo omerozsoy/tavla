@@ -15,10 +15,20 @@ interface Props {
   unlocks: string[]
   currentFrame: string | null
   frames: FrameItem[]
+  rewardReady?: boolean // 6 saatlik gunluk odul hazir mi
+  rewardSecs?: number // sonraki odule kalan saniye (geri sayim)
   onBuy: (shopId: string) => Promise<void>
   onEquip: (frameId: string | null) => Promise<void>
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onClose: () => void
+}
+
+// Saniye -> H:MM:SS (header ile ayni bicim)
+const fmtLeft = (total: number) => {
+  const s = Math.max(0, Math.floor(total))
+  const h = Math.floor(s / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  return `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 
 export default function Shop({
@@ -26,6 +36,8 @@ export default function Shop({
   unlocks,
   currentFrame,
   frames,
+  rewardReady = false,
+  rewardSecs = 0,
   onBuy,
   onEquip,
   onDaily,
@@ -78,8 +90,14 @@ export default function Shop({
         <h2><Icon name="shop" size={20} /> {t('shop.title')}</h2>
         <div className="shop-top">
           <div className="shop-coins"><Icon name="coin" size={16} /> {coins} coin</div>
-          <button className="shop-daily" disabled={busy === 'daily'} onClick={daily}>
-            <Icon name="gift" size={16} /> {t('shop.daily')}
+          <button
+            className={`shop-daily ${rewardReady ? 'ready' : ''}`}
+            disabled={busy === 'daily' || !rewardReady}
+            onClick={daily}
+            title={rewardReady ? t('reward.claim') : t('reward.in')}
+          >
+            <Icon name="gift" size={16} />{' '}
+            {rewardReady ? t('shop.daily') : <span className="sd-count">{fmtLeft(rewardSecs)}</span>}
           </button>
         </div>
         {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}

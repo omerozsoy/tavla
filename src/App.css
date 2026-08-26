@@ -3223,17 +3223,65 @@ button[aria-disabled='true'],
   max-width: 180px;
   min-height: 42px;
 }
-/* Cikis Yap: ayri, kucuk ghost/outline aksiyon, sola yasli */
-.profile-form .auth-logout {
-  align-self: flex-start;
+/* Kaydedildi onayi (sayfada kalir; ana sayfaya donmez) */
+.save-ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  color: var(--success-fg);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+/* Hesap aksiyon bolumu: ust ayirici; Cikis Yap ORTADA belirgin, Hesabi Sil SAG kose */
+.profile-form .profile-foot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.profile-form .profile-foot .auth-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   width: auto;
-  min-height: 0;
-  margin-top: 18px;
-  padding: 8px 14px;
-  font-size: 13px;
+  min-width: 150px;
+  min-height: 42px;
+  justify-content: center;
+  padding: 9px 22px;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: var(--radius-md);
   background: none;
-  border: 1px solid var(--btn-border);
-  color: var(--muted);
+  border: 1.5px solid var(--accent);
+  color: var(--accent);
+  cursor: pointer;
+}
+.profile-form .profile-foot .auth-logout:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.profile-form .profile-foot .danger-zone {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  margin: 0;
+  padding: 0;
+  border: none;
+  text-align: right;
+}
+.profile-form .profile-foot.confirming {
+  flex-direction: column;
+  gap: 14px;
+}
+.profile-form .profile-foot.confirming .danger-zone {
+  position: static;
+  transform: none;
+  text-align: center;
 }
 @media (max-width: 768px) {
   .register-card.profile-form {
@@ -7157,25 +7205,57 @@ button[aria-disabled='true'],
   max-height: 88vh;
   overflow-y: auto;
 }
+/* Coin + gunluk odul: ikisi de solda, net kontrastli chip'ler (geri sayim dahil) */
 .shop-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin: 2px 0 6px;
+  justify-content: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 2px 0 10px;
 }
 .shop-coins {
-  color: var(--tv-gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tv-gold) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 45%, transparent);
+  color: var(--text);
   font-weight: 800;
-  font-size: 1.1rem;
+  font-size: 1rem;
+}
+.shop-coins > svg {
+  color: var(--tv-gold);
 }
 .shop-daily {
-  border: 1px solid color-mix(in srgb, var(--tv-gold) 50%, transparent);
-  background: color-mix(in srgb, var(--tv-gold) 14%, transparent);
-  color: var(--tv-gold);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 55%, transparent);
+  background: color-mix(in srgb, var(--tv-gold) 18%, transparent);
+  color: var(--text);
   border-radius: var(--radius-pill);
   padding: 6px 12px;
   font-weight: 700;
   cursor: pointer;
+}
+.shop-daily > svg {
+  color: var(--tv-gold);
+}
+.shop-daily .sd-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  font-weight: 800;
+}
+.shop-daily.ready {
+  border-color: var(--tv-gold);
+  background: color-mix(in srgb, var(--tv-gold) 30%, transparent);
+}
+.shop-daily:disabled {
+  cursor: default;
+  opacity: 0.9;
 }
 .shop-daily-msg {
   color: var(--success-fg);
