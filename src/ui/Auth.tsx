@@ -84,6 +84,7 @@ export default function Auth({
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
+  const [saved, setSaved] = useState(false) // profil kaydedildi onayi (sayfada kalir)
   const [showPw, setShowPw] = useState(false)
   const [startRating, setStartRating] = useState(1400) // baslangic seviyesi (Galaxy tarzi)
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
@@ -246,6 +247,7 @@ export default function Auth({
   async function doEdit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    setSaved(false)
     if (!validProfile()) return
     const p: Profile = {
       firstName: firstName.trim(),
@@ -262,6 +264,7 @@ export default function Auth({
       try {
         const user = await api.updateProfile(p)
         onAuthed(user)
+        setSaved(true) // ana sayfaya donmez; sayfada "Kaydedildi" gosterilir
       } catch {
         setError(t('auth.failed'))
       } finally {
@@ -570,6 +573,11 @@ export default function Auth({
           ))}
 
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
+        {saved && (
+          <div className="save-ok" role="status">
+            <Icon name="check" size={15} /> {t('reg.saved')}
+          </div>
+        )}
 
         {!forgot && (
           <div className="register-actions">
@@ -586,12 +594,6 @@ export default function Auth({
                   : t('reg.submitNew')}
             </button>
           </div>
-        )}
-
-        {editUser && onLogout && (
-          <button type="button" className="menu-btn auth-logout" onClick={onLogout}>
-            <Icon name="logout" size={16} /> {t('auth.logout')}
-          </button>
         )}
 
         {!editing && !forgot && (
@@ -612,33 +614,42 @@ export default function Auth({
           </button>
         )}
 
-        {/* Hesabi sil (KVKK/GDPR: kullanici kendi hesabini silebilir) */}
-        {editUser && onDeleteAccount && (
-          <div className="danger-zone">
-            {confirmDelete ? (
-              <>
-                <div className="danger-warn">{t('account.deleteConfirm')}</div>
-                <div className="register-actions">
+        {/* Hesap aksiyonlari: Cikis Yap ORTADA + belirgin, Hesabi Sil SAG KOSEDE */}
+        {editUser && (onLogout || onDeleteAccount) && (
+          <div className={`profile-foot ${confirmDelete ? 'confirming' : ''}`}>
+            {onLogout && (
+              <button type="button" className="auth-logout" onClick={onLogout}>
+                <Icon name="logout" size={16} /> {t('auth.logout')}
+              </button>
+            )}
+            {onDeleteAccount && (
+              <div className="danger-zone">
+                {confirmDelete ? (
+                  <>
+                    <div className="danger-warn">{t('account.deleteConfirm')}</div>
+                    <div className="register-actions">
+                      <button
+                        type="button"
+                        className="menu-btn"
+                        onClick={() => setConfirmDelete(false)}
+                      >
+                        {t('reg.cancel')}
+                      </button>
+                      <button type="button" className="danger-btn" onClick={onDeleteAccount}>
+                        {t('account.deleteYes')}
+                      </button>
+                    </div>
+                  </>
+                ) : (
                   <button
                     type="button"
-                    className="menu-btn"
-                    onClick={() => setConfirmDelete(false)}
+                    className="danger-link"
+                    onClick={() => setConfirmDelete(true)}
                   >
-                    {t('reg.cancel')}
+                    {t('account.delete')}
                   </button>
-                  <button type="button" className="danger-btn" onClick={onDeleteAccount}>
-                    {t('account.deleteYes')}
-                  </button>
-                </div>
-              </>
-            ) : (
-              <button
-                type="button"
-                className="danger-link"
-                onClick={() => setConfirmDelete(true)}
-              >
-                {t('account.delete')}
-              </button>
+                )}
+              </div>
             )}
           </div>
         )}
