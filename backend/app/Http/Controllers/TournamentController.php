@@ -179,11 +179,16 @@ class TournamentController extends Controller
                 if ($champ) {
                     $unlocks = $champ->unlocks ?? [];
                     $grant = [];
+                    $playerCount = count($t->players ?? []);
                     if (! in_array('frame.champion', $unlocks, true)) {
                         $grant['frame.champion'] = ['Champion', 'trophy'];
                     }
-                    if (count($t->players ?? []) >= 8 && ! in_array('frame.tournament-champion', $unlocks, true)) {
+                    if ($playerCount >= 8 && ! in_array('frame.tournament-champion', $unlocks, true)) {
                         $grant['frame.tournament-champion'] = ['Turnuva Şampiyonu', 'trophy'];
+                    }
+                    // En prestijli: buyuk turnuva (>=16 oyuncu) galibine season-champion
+                    if ($playerCount >= 16 && ! in_array('frame.season-champion', $unlocks, true)) {
+                        $grant['frame.season-champion'] = ['Sezon Şampiyonu', 'crown'];
                     }
                     if (! empty($grant)) {
                         foreach (array_keys($grant) as $fid) {
