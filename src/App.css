@@ -686,6 +686,37 @@ button[aria-disabled='true'],
   border-radius: var(--radius-circle);
   background: rgba(0, 0, 0, 0.5);
 }
+/* Rarity koleksiyonu basliklari (COMMON/RARE/EPIC/LEGENDARY) */
+.rarity-group {
+  margin-top: 14px;
+}
+.rarity-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  color: var(--text);
+}
+.rarity-title .rarity-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-circle);
+  background: var(--rarity-color, var(--muted));
+}
+.rarity-common {
+  --rarity-color: #9aa3ad;
+}
+.rarity-rare {
+  --rarity-color: #3f8ce0;
+}
+.rarity-epic {
+  --rarity-color: #b061e0;
+}
+.rarity-legendary {
+  --rarity-color: #e6b422;
+}
 .swatch {
   aspect-ratio: 1;
   border-radius: var(--radius-sm);

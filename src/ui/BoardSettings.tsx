@@ -135,6 +135,7 @@ export default function BoardSettings({
                     a={bt.a}
                     b={bt.b}
                     checker={bt.checker ?? bt.b}
+                    light={bt.light}
                   />
                   <span className="bp-name">
                     {locked && <Icon name="crown" size={11} />} {bt.name}
@@ -149,6 +150,48 @@ export default function BoardSettings({
             })}
           </div>
         </div>
+
+        {/* Rarity koleksiyonu: mevcut kart yapisiyla, rarity basliklari altinda */}
+        {(['common', 'rare', 'epic', 'legendary'] as const).map((tier) => {
+          const items = rarityThemes.filter((bt) => bt.rarity === tier)
+          if (items.length === 0) return null
+          return (
+            <div className="setup-row rarity-group" key={tier}>
+              <div className={`setup-label rarity-title rarity-${tier}`}>
+                <span className="rarity-dot" /> {t('rarity.' + tier)}
+              </div>
+              <div className="board-previews">
+                {items.map((bt) => {
+                  // Rarity temalari plan kilidiyle acilir: premium olmayan icin kilitli
+                  const locked = !premium
+                  return (
+                    <button
+                      key={bt.id}
+                      className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
+                      onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
+                    >
+                      <BoardPreview
+                        panel={bt.panel ?? bt.b}
+                        a={bt.a}
+                        b={bt.b}
+                        checker={bt.checker ?? bt.b}
+                        light={bt.light}
+                      />
+                      <span className="bp-name">
+                        {locked && <Icon name="crown" size={11} />} {bt.name}
+                      </span>
+                      {locked && (
+                        <span className="bp-lock">
+                          <Icon name="crown" size={16} />
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
 
         {/* Pip goster */}
         <button className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
