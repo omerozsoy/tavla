@@ -87,11 +87,9 @@ export default function MatchSetup({
       cur.includes(n) ? (cur.length > 1 ? cur.filter((x) => x !== n) : cur) : [...cur, n].sort((a, b) => a - b),
     )
   }
-  const [showPip, setShowPip] = useState(initial.showPip)
   const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
-  const [ranked, setRanked] = useState<boolean>(initial.ranked ?? true)
   const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
   const [minRating, setMinRating] = useState<number>(initial.minRating ?? 0)
   const stake = Math.floor((coins * betPct) / 100)
@@ -215,33 +213,15 @@ export default function MatchSetup({
           </>
         )}
 
-        {/* Pip + analiz + puanli/casual (yalnizca bota karsi) */}
+        {/* Bota karsi: her mac PUANLI + pip ACIK (zorunlu). Yalnizca Analiz opsiyonel. */}
         {mode === 'pvb' && (
-          <>
-            <button
-              className={`setup-toggle ${ranked ? 'on' : ''}`}
-              onClick={() => setRanked((v) => !v)}
-            >
-              <span>{t('setup.ranked')}</span>
-              <span className="setup-switch">
-                {ranked ? t('setup.rankedOn') : t('setup.rankedOff')}
-              </span>
-            </button>
-            <button
-              className={`setup-toggle ${showPip ? 'on' : ''}`}
-              onClick={() => setShowPip((v) => !v)}
-            >
-              <span>{t('setup.pip')}</span>
-              <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
-            </button>
-            <button
-              className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
-              onClick={() => setShowAnalysis((v) => !v)}
-            >
-              <span>{t('setup.analysis')}</span>
-              <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
-            </button>
-          </>
+          <button
+            className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
+            onClick={() => setShowAnalysis((v) => !v)}
+          >
+            <span>{t('setup.analysis')}</span>
+            <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
+          </button>
         )}
 
         <div className="setup-actions">
@@ -255,10 +235,10 @@ export default function MatchSetup({
                 mode,
                 target: mode === 'online' ? Math.max(...accepted) : accepted[0],
                 targets: accepted,
-                showPip,
+                showPip: mode === 'pvb' ? true : initial.showPip,
                 showAnalysis,
                 timeControl,
-                ranked: mode === 'pvb' ? ranked : true,
+                ranked: true,
                 difficulty: mode === 'pvb' ? difficulty : undefined,
                 betPct: mode === 'online' ? betPct : undefined,
                 minRating: mode === 'online' ? minRating : undefined,
