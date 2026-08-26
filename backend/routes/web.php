@@ -54,7 +54,7 @@ Route::prefix('panel')->group(function () {
 Route::get('/pay/card/{payment}', [\App\Http\Controllers\PaymentController::class, 'card'])
     ->name('pay.card')->middleware('signed');
 Route::post('/pay/submit/{payment}', [\App\Http\Controllers\PaymentController::class, 'submit'])
-    ->name('pay.submit');
+    ->name('pay.submit')->middleware('signed'); // imzali: baskasinin bekleyen odemesine POST engellenir
 Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])
     ->name('pay.callback')
     ->middleware('throttle:30,1') // forged callback flood'una karsi

@@ -82,9 +82,14 @@ class RoomController extends Controller
             'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
-        $userId = $data['user_id'] ?? null;
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
+        // GUVENLIK: user_id ISTEMCIYE guvenilerek alinmaz. Dogrulanmis Sanctum token'indan
+        // gelir (route auth middleware'i disinda olsa da bearer token gonderiliyor).
+        // Aksi halde saldirgan baskasinin user_id'siyle bahis odasina girip settle'da onun
+        // coin'ini riske atabilir/eritebilirdi. Giris yoksa userId null (yalnizca ucretsiz oyun).
+        $authUser = $request->user('sanctum');
+        $userId = $authUser?->id ?? null;
         // Kabul edilen mac uzunluklari (kolay eslesme icin coklu). Bos -> tek oyun.
         $targets = array_values(array_unique(array_map('intval', $data['targets'] ?? [])));
         $targets = array_values(array_filter($targets, fn ($n) => in_array($n, [1, 3, 5, 7, 9, 11], true)));
@@ -92,13 +97,12 @@ class RoomController extends Controller
             $targets = [1];
         }
 
-        // Bahisli oyun (sabit stake VEYA % bahis): giris + coin sart
+        // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart
         if ($stake > 0 || $betPct > 0) {
-            if (! $userId) {
+            if (! $authUser) {
                 return response()->json(['message' => 'Bahisli oyun için giriş yapmalısın.'], 422);
             }
-            $u = User::find($userId);
-            if (! $u || ($u->coins ?? 0) < max($stake, 1)) {
+            if (($authUser->coins ?? 0) < max($stake, 1)) {
                 return response()->json(['message' => 'Yetersiz coin.'], 422);
             }
         }
