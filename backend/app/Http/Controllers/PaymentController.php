@@ -43,7 +43,10 @@ class PaymentController extends Controller
     public function card(Request $request, Payment $payment)
     {
         abort_unless($request->hasValidSignature() && $payment->status === 'pending', 403);
-        return view('pay.card', ['payment' => $payment]);
+        // Form submit URL'i de imzali uretilir (bu sayfa zaten imza dogruladi) -> yalnizca
+        // bu odemenin sahibi submit edebilir; baskasinin pending odemesine POST engellenir.
+        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
+        return view('pay.card', ['payment' => $payment, 'submitUrl' => $submitUrl]);
     }
 
     // Kart formu -> Garanti 3D formunu olustur ve bankaya auto-submit et.

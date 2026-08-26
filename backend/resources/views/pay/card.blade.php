@@ -15,7 +15,7 @@
     color:#fff;font-weight:800;font-size:1rem;cursor:pointer}
   .amt{font-weight:800;color:#a83a2b}
 </style></head><body>
-  <form class="pc" method="post" action="{{ route('pay.submit', $payment->id) }}">
+  <form class="pc" method="post" action="{{ $submitUrl }}">
     @csrf
     <h1>Ödeme</h1>
     <p class="sub">{{ strtoupper($payment->plan) }} · {{ $payment->period==='yearly'?'Yıllık':'Aylık' }}
