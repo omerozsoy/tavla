@@ -211,6 +211,11 @@ interface BoardTheme {
   cubeBg?: string
   cubeText?: string
   watermark?: string // board ortasindaki cok soluk takim adi (logo/arma DEGIL)
+  // Pul stili: referans board'un pul karakteri (flat disk / parlak / buz-kristal /
+  // halka / neon). Renkler yine --cream/--navy'den gelir; stil sadece finish/efekt.
+  checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
+  // Yuzey finish'i: duz / dikey gradyan derinlik / kumas (felt) dokusu.
+  surface?: 'plain' | 'gradient' | 'felt'
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -219,15 +224,27 @@ const BOARD_THEMES: BoardTheme[] = [
   // Varsayilan premium mavi tavla (Galaxy tarzi turnuva paleti). Tum renkler burada
   // merkezidir; App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar'a yansir.
   { id: 'galaxy', name: 'Galaxy', panel: '#3568c8', a: '#72a0ea', b: '#244da7', checker: '#18286e', frame: '#080d2d', light: '#f2f3f7' },
-  // --- Tonal "Backgammon Live" tarzi temalar (duz katlanmis ucgen + dusuk kontrast) ---
-  { id: 'neptune', name: 'Neptune', panel: '#3f66cc', a: '#5a80e0', b: '#3457bf', checker: '#16227a', frame: '#0a0e1c', light: '#eef2fb' },
-  { id: 'nebula', name: 'Nebula', panel: '#7a4fb0', a: '#9265c6', b: '#68409e', checker: '#452a70', frame: '#0d0a16', light: '#efe7f6' },
-  { id: 'montecarlo', name: 'Monte Carlo', panel: '#6d7446', a: '#d6472a', b: '#c8b892', checker: '#141414', frame: '#4a2f18', light: '#f2ede0' },
-  { id: 'earth', name: 'Earth', panel: '#3f8f6a', a: '#54a37f', b: '#357a58', checker: '#123527', frame: '#0e2a20', light: '#eafaf1' },
-  { id: 'toxic', name: 'Toxic', panel: '#aab24d', a: '#c0ca64', b: '#96a03c', checker: '#3d481a', frame: '#20260e', light: '#f3f5da' },
-  { id: 'moon', name: 'Moon', panel: '#7e8aa0', a: '#8f9ab2', b: '#6e7a92', checker: '#333a4d', frame: '#10131f', light: '#eef1f7' },
-  { id: 'pluto', name: 'Pluto', panel: '#8fb4e0', a: '#a8c8ec', b: '#7ea6d8', checker: '#3d5d88', frame: '#0e1830', light: '#f4f9fd' },
-  { id: 'uranus', name: 'Uranus', panel: '#2f9c94', a: '#46b1a7', b: '#238b83', checker: '#0d4a45', frame: '#0a2a28', light: '#eafaf7' },
+  // --- Galaksi koleksiyonu: referans screenshot'lardan yeniden uretilen boardlar.
+  // Her biri kendi pul stili (flat/gloss/ice) + yuzey finish'i (felt/plain) tasir. ---
+  { id: 'frostfall', name: 'Frostfall', rarity: 'rare', panel: '#12224a', a: '#2f7d5e', b: '#1f5f45', checker: '#d32f2f', light: '#dbeeff', frame: '#5b3a1e', checkerStyle: 'ice', d1Bg: '#cfe6ff', d1Pip: '#1c3a6b', d2Bg: '#d32f2f', d2Pip: '#ffffff', cubeBg: '#d32f2f', cubeText: '#ffffff' },
+  { id: 'pumpkin', name: 'Pumpkin Night', rarity: 'common', panel: '#3a2352', a: '#e8822a', b: '#4a2f5e', checker: '#241533', light: '#f0e2c8', frame: '#241436', cubeBg: '#e8822a', cubeText: '#241533' },
+  { id: 'marrakesh', name: 'Marrakesh', rarity: 'common', panel: '#efe4d0', a: '#c97b3c', b: '#6e4a2f', checker: '#1c140e', light: '#f6efe2', frame: '#3a281a' },
+  { id: 'bosphorus', name: 'Bosphorus', rarity: 'common', panel: '#7a5230', a: '#9a6a3e', b: '#5f3f24', checker: '#1a120a', light: '#efe6d6', frame: '#3a2616' },
+  { id: 'manhattan', name: 'Manhattan', rarity: 'common', panel: '#0f5c3a', a: '#8fae90', b: '#0c4a2e', checker: '#111111', light: '#f4f4f0', frame: '#3a2a1a', checkerStyle: 'gloss', surface: 'felt' },
+  { id: 'worldmasters', name: 'World Masters', rarity: 'rare', panel: '#5b3f86', a: '#c2a15a', b: '#4a3270', checker: '#161016', light: '#f2f2f6', frame: '#120c1e', cubeBg: '#6b4aa0', cubeText: '#ffffff' },
+  { id: 'retroclub', name: 'Retro Club', rarity: 'rare', panel: '#0b0b0b', a: '#e0821f', b: '#2f7d3f', checker: '#c0392b', light: '#e8ddc0', frame: '#3a2a1e', checkerStyle: 'gloss', d1Bg: '#e8ddc0', d1Pip: '#2a2a2a', d2Bg: '#c0392b', d2Pip: '#ffffff' },
+  { id: 'redplanet', name: 'Red Planet', rarity: 'common', panel: '#b5482f', a: '#cf6a48', b: '#7c2a1c', checker: '#5a1a12', light: '#f0dcc8', frame: '#141026', cubeBg: '#e0632f', cubeText: '#ffffff' },
+  { id: 'glacier', name: 'Glacier', rarity: 'common', panel: '#9fc0e4', a: '#bcd6f0', b: '#7ea6d8', checker: '#35597f', light: '#f4f9fd', frame: '#0e1830' },
+  { id: 'atlantis', name: 'Atlantis', rarity: 'common', panel: '#2f9c94', a: '#46b1a7', b: '#1f7d76', checker: '#0d4a45', light: '#eafaf7', frame: '#0a2a28' },
+  { id: 'amethyst', name: 'Amethyst', rarity: 'common', panel: '#9a5fb8', a: '#b985d0', b: '#7a4596', checker: '#3f2360', light: '#f2e7f8', frame: '#160b24' },
+  { id: 'radioactive', name: 'Radioactive', rarity: 'common', panel: '#a6b24a', a: '#c2cf64', b: '#8a963c', checker: '#3a4818', light: '#f2f6d8', frame: '#1e260c' },
+  { id: 'gaia', name: 'Gaia', rarity: 'common', panel: '#3f8f6a', a: '#5aa583', b: '#2f7a58', checker: '#123527', light: '#eafaf1', frame: '#2a1f16' },
+  { id: 'lunar', name: 'Lunar', rarity: 'common', panel: '#7e8aa0', a: '#9aa4b8', b: '#6a7688', checker: '#2f3646', light: '#eef1f7', frame: '#10131f' },
+  { id: 'monaco', name: 'Monaco', rarity: 'common', panel: '#1f6b40', a: '#c0392b', b: '#d9c9a3', checker: '#141414', light: '#f0ead6', frame: '#5a3b1e', checkerStyle: 'gloss', surface: 'felt' },
+  { id: 'violetstorm', name: 'Violet Storm', rarity: 'common', panel: '#7a4fb0', a: '#9265c6', b: '#5f3f96', checker: '#3a2560', light: '#efe7f6', frame: '#0d0a16' },
+  { id: 'blueorbit', name: 'Blue Orbit', rarity: 'common', panel: '#3f66cc', a: '#6f93e6', b: '#2f52b8', checker: '#16227a', light: '#eef2fb', frame: '#0a0e1c' },
+  { id: 'crimsonash', name: 'Crimson Ash', rarity: 'rare', panel: '#4a4d55', a: '#5e626b', b: '#3a3d44', checker: '#8e2a26', light: '#d9cdbc', frame: '#141622', cubeBg: '#b5382f', cubeText: '#ffffff' },
+  { id: 'ion', name: 'Ion', rarity: 'rare', panel: '#33363e', a: '#40434c', b: '#26282f', checker: '#6b3fc0', light: '#e88a3a', frame: '#14161e' },
   { id: 'reddwarf', name: 'Red Dwarf', panel: '#5f1c16', a: '#c0402a', b: '#8c2a1e', checker: '#280c08', frame: '#1a0806', light: '#e8ded0' },
   { id: 'eclipse', name: 'Eclipse', panel: '#8a3626', a: '#a44a34', b: '#722a1e', checker: '#e6b64a', frame: '#1e0c08', light: '#f2e6cc' },
   { id: 'nord', name: 'Nord', panel: '#3b4252', a: '#88c0d0', b: '#2e3440', checker: '#4c566a' },
@@ -242,7 +259,7 @@ const BOARD_THEMES: BoardTheme[] = [
   { id: 'ayu', name: 'Ayu', panel: '#1f2430', a: '#ffcc66', b: '#171b24', checker: '#444a55' },
   { id: 'onedark', name: 'One Dark', panel: '#3a3f4b', a: '#61afef', b: '#282c34', checker: '#4b5263' },
   { id: 'nightowl', name: 'Night Owl', panel: '#1d3b53', a: '#82aaff', b: '#011627', checker: '#365069' },
-  { id: 'synthwave', name: 'Synthwave', panel: '#2b213a', a: '#ff7edb', b: '#1a1526', checker: '#5a4b7c' },
+  { id: 'synthwave', name: 'Synthwave', panel: '#2b1a4a', a: '#ff5bd0', b: '#1a1030', checker: '#00d4e8', light: '#ff7be0', frame: '#0f0820', checkerStyle: 'neon', surface: 'gradient' },
   { id: 'horizon', name: 'Horizon', panel: '#2e303e', a: '#e95678', b: '#1c1e26', checker: '#4d4f5c' },
   { id: 'palenight', name: 'Palenight', panel: '#292d3e', a: '#c792ea', b: '#1c1f2b', checker: '#4a4f66' },
   { id: 'oceanic', name: 'Oceanic', panel: '#263238', a: '#6699cc', b: '#1b2b34', checker: '#405860' },
@@ -254,7 +271,7 @@ const BOARD_THEMES: BoardTheme[] = [
 const PREMIUM_THEMES: BoardTheme[] = [
   { id: 'ocean', name: 'Okyanus', panel: '#1f6f8b', a: '#3fa9c9', b: '#144f63', checker: '#0e5a70', price: 300 },
   { id: 'gold', name: 'Altın', panel: '#b8912f', a: '#e8c14a', b: '#8a6a1a', checker: '#7a5f14', price: 500 },
-  { id: 'sunset', name: 'Gün Batımı', panel: '#c25a3a', a: '#f0894f', b: '#8f3a22', checker: '#a3401f', price: 600 },
+  { id: 'sunset', name: 'Sunset', panel: '#c25a3a', a: '#f0894f', b: '#8f3a22', checker: '#a3401f', light: '#ffe6c8', frame: '#3a1810', price: 600, checkerStyle: 'gloss', surface: 'gradient' },
   { id: 'neon', name: 'Neon', panel: '#2a2a4a', a: '#18e0c0', b: '#7a1fb0', checker: '#00b0ff', price: 800 },
 ]
 // Rarity koleksiyonu (plan kilidiyle acilir; coin fiyati yok). Alan eslemesi:
@@ -262,9 +279,9 @@ const PREMIUM_THEMES: BoardTheme[] = [
 // Preview ve gercek oyun tahtasi ayni config'i kullanir (App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar).
 const RARITY_THEMES: BoardTheme[] = [
   // --- COMMON ---
-  { id: 'sahara', name: 'Sahara', rarity: 'common', panel: '#C99A5B', a: '#E7C27D', b: '#9C653D', light: '#FFF1CF', checker: '#58382A', frame: '#291A24' },
-  { id: 'emerald', name: 'Emerald', rarity: 'common', panel: '#176B58', a: '#45A37E', b: '#0E493E', light: '#D9F5DF', checker: '#123A32', frame: '#081E1B' },
-  { id: 'arctic', name: 'Arctic', rarity: 'common', panel: '#8DB8D0', a: '#C4DFEA', b: '#5688A5', light: '#F7FBFF', checker: '#294B68', frame: '#101B2A' },
+  { id: 'sahara', name: 'Sahara', rarity: 'common', panel: '#c79a5b', a: '#e0b878', b: '#8a5e38', light: '#f6ecd6', checker: '#4a3324', frame: '#141026', cubeBg: '#d17a2f', cubeText: '#ffffff' },
+  { id: 'emerald', name: 'Emerald', rarity: 'common', panel: '#0f6b52', a: '#1f9d78', b: '#0a4d3b', light: '#dff7ec', checker: '#08352a', frame: '#052620', checkerStyle: 'ice', surface: 'gradient' },
+  { id: 'arctic', name: 'Arctic', rarity: 'common', panel: '#8db8d0', a: '#c4dfea', b: '#5688a5', light: '#f7fbff', checker: '#294b68', frame: '#101b2a', checkerStyle: 'ice', surface: 'gradient' },
   { id: 'coral', name: 'Coral', rarity: 'common', panel: '#D66F61', a: '#F4A17F', b: '#A9474A', light: '#FFF0D5', checker: '#62313B', frame: '#24141D' },
   { id: 'jade', name: 'Jade', rarity: 'common', panel: '#438C72', a: '#78B99A', b: '#24604E', light: '#E7E6CE', checker: '#173D35', frame: '#18231F' },
   { id: 'ocean2', name: 'Ocean', rarity: 'common', panel: '#086D8B', a: '#22A3BA', b: '#06465F', light: '#D8F3F5', checker: '#082E48', frame: '#031727' },
@@ -272,7 +289,7 @@ const RARITY_THEMES: BoardTheme[] = [
   { id: 'lavender', name: 'Lavender', rarity: 'common', panel: '#8064A8', a: '#B18AC5', b: '#584378', light: '#F0E8F4', checker: '#3C285C', frame: '#171126' },
   // --- RARE ---
   { id: 'ruby', name: 'Ruby', rarity: 'rare', panel: '#8F2635', a: '#D14B52', b: '#5A1728', light: '#F6D7C9', checker: '#35121B', frame: '#190A10' },
-  { id: 'royal', name: 'Royal', rarity: 'rare', panel: '#263A83', a: '#536AC5', b: '#171F58', light: '#F0E8D1', checker: '#171735', frame: '#090C24' },
+  { id: 'royal', name: 'Royal Gold', rarity: 'rare', panel: '#182a5e', a: '#e8c14a', b: '#0f1c42', light: '#f6e6b0', checker: '#0a1330', frame: '#0a1330', checkerStyle: 'gloss', surface: 'gradient', cubeBg: '#e8c14a', cubeText: '#0f1c42' },
   { id: 'cherry', name: 'Cherry', rarity: 'rare', panel: '#771E3A', a: '#BC3156', b: '#44152B', light: '#F5D8D5', checker: '#27111C', frame: '#140811' },
   { id: 'copper', name: 'Copper', rarity: 'rare', panel: '#9B593D', a: '#CE8356', b: '#633827', light: '#F3D6AE', checker: '#42251C', frame: '#21130E' },
   { id: 'midnight', name: 'Midnight', rarity: 'rare', panel: '#121B42', a: '#253D82', b: '#10102B', light: '#BFCDF2', checker: '#090A18', frame: '#03040C' },
@@ -283,8 +300,12 @@ const RARITY_THEMES: BoardTheme[] = [
   { id: 'aurora2', name: 'Aurora II', rarity: 'epic', panel: '#174B50', a: '#31A48D', b: '#7046A0', light: '#C7F2DE', checker: '#22265D', frame: '#081B24' },
   { id: 'imperial', name: 'Imperial', rarity: 'epic', panel: '#492354', a: '#9B467D', b: '#C29145', light: '#F1DFB1', checker: '#31152E', frame: '#160A19' },
   // --- LEGENDARY ---
-  { id: 'obsidian', name: 'Obsidian', rarity: 'legendary', panel: '#24252B', a: '#565A64', b: '#111318', light: '#D6D8DC', checker: '#050607', frame: '#000000' },
-  { id: 'cyber', name: 'Cyber', rarity: 'mythic', panel: '#16134B', a: '#6638A5', b: '#087C91', light: '#5DE4D0', checker: '#241450', frame: '#07051C' },
+  { id: 'obsidian', name: 'Obsidian', rarity: 'legendary', panel: '#1a1b20', a: '#3a3d47', b: '#0e0f13', light: '#e6e8ec', checker: '#050608', frame: '#000000', checkerStyle: 'gloss', surface: 'gradient' },
+  { id: 'samurai', name: 'Samurai', rarity: 'legendary', panel: '#161616', a: '#b12a2a', b: '#0c0c0c', light: '#e8dcc0', checker: '#8a1f1f', frame: '#050505', checkerStyle: 'gloss', cubeBg: '#c8a13a', cubeText: '#161616' },
+  { id: 'blackdiamond', name: 'Black Diamond', rarity: 'legendary', panel: '#20222a', a: '#4a4f5e', b: '#14161c', light: '#eef1f7', checker: '#0a0b0f', frame: '#000000', checkerStyle: 'ice', surface: 'gradient' },
+  // --- MYTHIC ---
+  { id: 'cyber', name: 'Cyberpunk', rarity: 'mythic', panel: '#160f2e', a: '#ff2e97', b: '#0e0a24', light: '#ff4fb0', checker: '#0bb8d8', frame: '#07051c', checkerStyle: 'neon', surface: 'gradient' },
+  { id: 'inferno', name: 'Inferno', rarity: 'mythic', panel: '#1a0e0a', a: '#e8541f', b: '#7c1e10', light: '#ffd9a8', checker: '#ff6a2a', frame: '#0a0504', checkerStyle: 'neon', surface: 'gradient', cubeBg: '#e8541f', cubeText: '#ffffff' },
 ]
 // Mevcut (rarity alani olmayan) temalarin nadirlik siniflandirmasi. id -> rarity.
 // Not: rarity alani tasiyan temalar (RARITY_THEMES) kendi degerini kullanir; bu harita
@@ -325,6 +346,19 @@ const CLUB_THEMES: BoardTheme[] = [
   },
 ]
 const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES]
+
+// Rename gecisi: eski board id'leri -> yeni Galaksi koleksiyonu id'leri.
+// Eski temada olan kullanicilar otomatik yeni karsiligina tasinir.
+const BOARD_ID_MIGRATE: Record<string, string> = {
+  neptune: 'blueorbit',
+  nebula: 'violetstorm',
+  montecarlo: 'monaco',
+  earth: 'gaia',
+  toxic: 'radioactive',
+  moon: 'lunar',
+  pluto: 'glacier',
+  uranus: 'atlantis',
+}
 
 // #RRGGBB -> algilanan parlaklik (0-255). Watermark rengi board zeminine gore secilir
 // (acik board -> koyu logo, koyu board -> acik logo).
@@ -822,6 +856,11 @@ export default function App() {
   // Tema (koyu/acik) + board rengi -> DOM'a uygula ve kaydet
   useEffect(() => {
     const root = document.documentElement
+    // Eski id -> yeni id gecisi (rename edilen boardlar): bir kez tasit
+    if (!ALL_THEMES.some((x) => x.id === boardTheme) && BOARD_ID_MIGRATE[boardTheme]) {
+      setBoardTheme(BOARD_ID_MIGRATE[boardTheme])
+      return
+    }
     root.setAttribute('data-theme', theme)
     root.setAttribute('data-board', boardTheme)
     const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
@@ -844,6 +883,10 @@ export default function App() {
       if (v) root.style.setProperty(k, v)
       else root.style.removeProperty(k)
     }
+    // Pul stili (flat/gloss/ice/ring/neon) + yuzey motifi (plain/gradient/felt)
+    // -> data-attribute; CSS bunlara gore pul/yuzey gorunumunu degistirir.
+    root.setAttribute('data-checker', bt.checkerStyle ?? 'flat')
+    root.setAttribute('data-surface', bt.surface ?? 'plain')
     // Watermark rengi: board zemini acik -> koyu logo, koyu -> acik logo (0.05-0.09 alfa)
     root.style.setProperty(
       '--wm-color',

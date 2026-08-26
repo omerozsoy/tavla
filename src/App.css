@@ -2528,13 +2528,25 @@ button[aria-disabled='true'],
   overflow: hidden;
 }
 .wm-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32em;
   color: var(--wm-color, rgba(255, 255, 255, 0.075));
   font-family: var(--tv-font-display);
   font-weight: 700;
   letter-spacing: 0.08em;
-  font-size: calc(var(--col) * 0.6);
+  font-size: calc(var(--col) * 0.58);
   line-height: 1;
   white-space: nowrap;
+}
+/* Logo isareti (TavlaTv ucgen hane) — arma/logo kopyasi DEGIL, sade marka echo'su */
+.wm-brand::before {
+  content: '';
+  width: 0.6em;
+  height: 0.6em;
+  flex: none;
+  background: var(--wm-color, rgba(255, 255, 255, 0.075));
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
 }
 .wm-team {
   color: var(--wm-color, rgba(255, 255, 255, 0.075));
@@ -2672,6 +2684,134 @@ button[aria-disabled='true'],
   border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
+
+/* ===== PUL STILLERI (data-checker) — renk --cream/--navy'den; stil = finish/efekt.
+   Referans board'un pul karakterini yeniden uretir (flat disk / cilali / buz /
+   halka / neon). 'flat' varsayilan; asagidakiler onu override eder. ===== */
+
+/* gloss: cilali disk (ust radyal parlaklik + alt ic golge). Poker chip degil. */
+[data-checker='gloss'] .checker.white {
+  background:
+    radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 55%),
+    var(--cream);
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.16), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+[data-checker='gloss'] .checker.black {
+  background:
+    radial-gradient(circle at 38% 26%, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0) 55%),
+    var(--navy);
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.34), 0 1px 3px rgba(0, 0, 0, 0.36);
+}
+
+/* ice: buz/kristal — soguk highlight, acik kenar, ic parlama */
+[data-checker='ice'] .checker.white {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.08) 62%),
+    var(--cream);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 0 7px rgba(255, 255, 255, 0.55), 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+[data-checker='ice'] .checker.black {
+  background:
+    radial-gradient(circle at 34% 24%, rgba(210, 235, 255, 0.6), rgba(255, 255, 255, 0) 58%),
+    var(--navy);
+  border: 1px solid rgba(200, 225, 255, 0.4);
+  box-shadow: inset 0 0 7px rgba(180, 220, 255, 0.4), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* ring: ortasi bos halka pul (Orbit tarzi) */
+[data-checker='ring'] .checker {
+  background: transparent;
+}
+[data-checker='ring'] .checker.white {
+  border: 3px solid var(--cream);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+[data-checker='ring'] .checker.black {
+  border: 3px solid var(--navy);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+/* neon: parlak neon disk (Quantum/Singularity) — dis glow + ic parlaklik */
+[data-checker='neon'] .checker.white {
+  background: radial-gradient(circle at 38% 30%, #fff, var(--cream) 72%);
+  box-shadow:
+    0 0 9px 1px color-mix(in srgb, var(--cream) 60%, transparent),
+    0 1px 3px rgba(0, 0, 0, 0.3);
+}
+[data-checker='neon'] .checker.black {
+  background: radial-gradient(circle at 38% 30%, color-mix(in srgb, var(--navy) 45%, #fff), var(--navy) 72%);
+  box-shadow:
+    0 0 9px 1px color-mix(in srgb, var(--navy) 70%, transparent),
+    0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* ===== YUZEY FINISH'I (data-surface) ===== */
+/* gradient: dikey derinlik (ust aydinlik -> alt koyu). Legendary/premium his. */
+[data-surface='gradient'] .half {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--panel) 84%, #fff) 0%,
+    var(--panel) 46%,
+    color-mix(in srgb, var(--panel) 82%, #000) 100%
+  );
+}
+/* felt: cuha dokusu (Monaco/Manhattan) — cok ince capraz iplik dokusu */
+[data-surface='felt'] .half {
+  background:
+    repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.028) 0 2px, transparent 2px 4px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.022) 0 2px, transparent 2px 4px),
+    var(--panel);
+}
+
+/* ===== Frostfall (Winter) bespoke: gece-mavi + yildizlar + cam agaci pointler +
+   buz pul (acik) + kirmizi susu topu (koyu). Saf CSS, harici asset yok. ===== */
+[data-board='frostfall'] .half {
+  background-color: var(--panel);
+  background-image:
+    radial-gradient(1.5px 1.5px at 22% 16%, rgba(255, 255, 255, 0.9), transparent 100%),
+    radial-gradient(1px 1px at 64% 40%, rgba(255, 255, 255, 0.7), transparent 100%),
+    radial-gradient(2px 2px at 42% 70%, rgba(255, 238, 170, 0.95), transparent 100%),
+    radial-gradient(1px 1px at 82% 24%, rgba(255, 255, 255, 0.65), transparent 100%),
+    radial-gradient(1.5px 1.5px at 14% 82%, rgba(255, 238, 170, 0.85), transparent 100%),
+    radial-gradient(1px 1px at 74% 66%, rgba(255, 255, 255, 0.7), transparent 100%),
+    radial-gradient(1px 1px at 33% 46%, rgba(255, 255, 255, 0.55), transparent 100%);
+  background-repeat: no-repeat;
+}
+/* Ucgenler cam agaci: yesil gradyan + yatay kar basamaklari */
+[data-board='frostfall'] .point.top::before,
+[data-board='frostfall'] .point.bottom::before {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 20%, rgba(255, 255, 255, 0.22) 20% 24%),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--tri-a) 92%, #fff),
+      color-mix(in srgb, var(--tri-a) 88%, #000)
+    );
+}
+[data-board='frostfall'] .point.shade-b.top::before,
+[data-board='frostfall'] .point.shade-b.bottom::before {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 20%, rgba(255, 255, 255, 0.2) 20% 24%),
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--tri-b) 92%, #fff),
+      color-mix(in srgb, var(--tri-b) 88%, #000)
+    );
+}
+/* Buz pul (acik) */
+[data-board='frostfall'] .checker.white {
+  background: radial-gradient(circle at 34% 24%, #ffffff, #cfe6ff 60%, #a9c9ea);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 0 7px rgba(255, 255, 255, 0.6), 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+/* Kirmizi susu topu (koyu) */
+[data-board='frostfall'] .checker.black {
+  background: radial-gradient(circle at 36% 26%, #ff8a7a, #d32f2f 55%, #9c1f1a);
+  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
 @keyframes checker-place {
   0% {
     transform: translateY(-18%) scale(0.86);
