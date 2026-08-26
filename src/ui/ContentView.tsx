@@ -65,6 +65,7 @@ export default function ContentView({
   const { t } = useT()
   const [items, setItems] = useState<Content[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [openId, setOpenId] = useState<number | null>(null)
   // Haber detayi acik mi (slug bir habere denk geliyorsa)
   const newsItem =
@@ -86,11 +87,17 @@ export default function ContentView({
           : onClose,
   )
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setError(false)
     listContents(type)
       .then(setItems)
-      .catch(() => {})
+      .catch(() => setError(true)) // sessizce yutma: ag hatasi "bos icerik" gibi gorunmesin
       .finally(() => setLoading(false))
+  }
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type])
 
   // Magazin: videolari seriye gore grupla (organizer), playlist sirasi korunur
@@ -149,7 +156,7 @@ export default function ContentView({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2>
@@ -158,6 +165,13 @@ export default function ContentView({
 
         {loading ? (
           <div className="admin-empty">{t('admin.loading')}</div>
+        ) : error ? (
+          <div className="admin-empty">
+            {t('common.loadError')}{' '}
+            <button className="menu-btn" onClick={load}>
+              {t('common.retry')}
+            </button>
+          </div>
         ) : items.length === 0 ? (
           <div className="admin-empty">{t('content.empty')}</div>
         ) : type === 'service' ? (
@@ -313,7 +327,7 @@ export default function ContentView({
 function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => void }) {
   return (
     <div className="videobox" onClick={onClose}>
-      <button className="videobox-close" onClick={onClose} aria-label="Kapat">
+      <button className="videobox-close" onClick={onClose} aria-label={t('common.close')}>
         <Icon name="x" size={22} />
       </button>
       <div className="videobox-frame" onClick={(e) => e.stopPropagation()}>
@@ -412,7 +426,7 @@ function Lightbox({
 
   return (
     <div className="lightbox" onClick={onClose}>
-      <button className="lightbox-close" onClick={onClose} aria-label="Kapat">
+      <button className="lightbox-close" onClick={onClose} aria-label={t('common.close')}>
         <Icon name="x" size={22} />
       </button>
       {many && (

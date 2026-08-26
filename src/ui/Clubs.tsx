@@ -166,7 +166,7 @@ export default function Clubs({ onClose }: Props) {
   return (
     <div className="register-overlay modal page">
       <div className="register-card clubs-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2>
@@ -290,7 +290,7 @@ export default function Clubs({ onClose }: Props) {
       {view && (
         <div className="register-overlay modal">
           <div className="register-card clubs-card" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setView(null)} aria-label="Kapat">
+            <button className="modal-close" onClick={() => setView(null)} aria-label={t('common.close')}>
               <Icon name="x" size={16} />
             </button>
             <h2>

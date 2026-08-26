@@ -27,19 +27,25 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
   useEscape(onClose)
   const [rows, setRows] = useState<BlunderEntry[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [openIdx, setOpenIdx] = useState<number | null>(null)
 
-  useEffect(() => {
+  const load = () => {
+    setLoading(true)
+    setError(false)
     listBlunders()
       .then(setRows)
-      .catch(() => {})
+      .catch(() => setError(true)) // sessizce yutma: ag hatasi "bos liste" gibi gorunmesin
       .finally(() => setLoading(false))
+  }
+  useEffect(() => {
+    load()
   }, [])
 
   return (
     <div className="register-overlay modal page">
       <div className="register-card blunder-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2>
@@ -49,6 +55,13 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
 
         {loading ? (
           <div className="admin-empty">{t('admin.loading')}</div>
+        ) : error ? (
+          <div className="admin-empty">
+            {t('common.loadError')}{' '}
+            <button className="menu-btn" onClick={load}>
+              {t('common.retry')}
+            </button>
+          </div>
         ) : rows.length === 0 ? (
           <div className="admin-empty">{t('blunder.empty')}</div>
         ) : (

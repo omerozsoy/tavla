@@ -30,7 +30,7 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
   return (
     <div className="register-overlay modal">
       <div className="register-card pp-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
 

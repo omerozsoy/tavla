@@ -9,13 +9,16 @@ interface BoardThemeOpt {
   a: string
   b: string
   checker?: string
+  light?: string // acik pul rengi (onizleme gercek tahta ile ayni degeri kullansin)
   price?: number // coin ile alinan premium tema (plan kilidinden muaf)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary'
 }
 
 interface Props {
   boardTheme: string
   setBoardTheme: (id: string) => void
   boardThemes: BoardThemeOpt[]
+  rarityThemes?: BoardThemeOpt[] // rarity koleksiyonu (plan kilidiyle acilir)
   freeCount?: number // ilk N tahta ucretsiz; gerisi premium (kilitli)
   premium?: boolean
   onUpgrade?: () => void
@@ -31,7 +34,7 @@ interface Props {
 }
 
 // Kucuk tahta onizlemesi (Galaxy tarzi): zemin + iki renk ucgen + ornek pullar
-function BoardPreview({ panel, a, b, checker }: { panel: string; a: string; b: string; checker: string }) {
+function BoardPreview({ panel, a, b, checker, light }: { panel: string; a: string; b: string; checker: string; light?: string }) {
   const W = 104
   const H = 64
   const BAR = 6
@@ -59,8 +62,8 @@ function BoardPreview({ panel, a, b, checker }: { panel: string; a: string; b: s
       <rect x="0" y="0" width={W} height={H} rx="5" fill={panel} />
       <rect x={half} y="0" width={BAR} height={H} fill="#0003" />
       {tris}
-      {disc(c0, 7, 'var(--cream)')}
-      {disc(c0, 7 + cw, 'var(--cream)')}
+      {disc(c0, 7, light ?? 'var(--cream)')}
+      {disc(c0, 7 + cw, light ?? 'var(--cream)')}
       {disc(c11, H - 7, checker)}
       {disc(c11, H - 7 - cw, checker)}
     </svg>
@@ -71,6 +74,7 @@ export default function BoardSettings({
   boardTheme,
   setBoardTheme,
   boardThemes,
+  rarityThemes = [],
   freeCount = 6,
   premium = false,
   onUpgrade,
@@ -89,7 +93,7 @@ export default function BoardSettings({
   return (
     <div className="register-overlay modal page">
       <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>

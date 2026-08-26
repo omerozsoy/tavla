@@ -50,7 +50,7 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   return (
     <div className="register-overlay modal page">
       <div className="register-card stats-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>

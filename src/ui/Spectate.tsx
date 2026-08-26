@@ -64,7 +64,7 @@ export default function Spectate({
   return (
     <div className="register-overlay modal spectate-overlay">
       <div className="spectate-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <div className="spectate-head">

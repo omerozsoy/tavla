@@ -199,6 +199,7 @@ interface BoardTheme {
   frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
   light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' // rarity koleksiyonu temalari (plan kilidiyle acilir)
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -242,7 +243,36 @@ const PREMIUM_THEMES: BoardTheme[] = [
   { id: 'sunset', name: 'Gün Batımı', panel: '#c25a3a', a: '#f0894f', b: '#8f3a22', checker: '#a3401f', price: 600 },
   { id: 'neon', name: 'Neon', panel: '#2a2a4a', a: '#18e0c0', b: '#7a1fb0', checker: '#00b0ff', price: 800 },
 ]
-const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES]
+// Rarity koleksiyonu (plan kilidiyle acilir; coin fiyati yok). Alan eslemesi:
+// panel=Board Background, a=Point A, b=Point B, light=Checker Light, checker=Checker Dark, frame=Frame/Bar.
+// Preview ve gercek oyun tahtasi ayni config'i kullanir (App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar).
+const RARITY_THEMES: BoardTheme[] = [
+  // --- COMMON ---
+  { id: 'sahara', name: 'Sahara', rarity: 'common', panel: '#C99A5B', a: '#E7C27D', b: '#9C653D', light: '#FFF1CF', checker: '#58382A', frame: '#291A24' },
+  { id: 'emerald', name: 'Emerald', rarity: 'common', panel: '#176B58', a: '#45A37E', b: '#0E493E', light: '#D9F5DF', checker: '#123A32', frame: '#081E1B' },
+  { id: 'arctic', name: 'Arctic', rarity: 'common', panel: '#8DB8D0', a: '#C4DFEA', b: '#5688A5', light: '#F7FBFF', checker: '#294B68', frame: '#101B2A' },
+  { id: 'coral', name: 'Coral', rarity: 'common', panel: '#D66F61', a: '#F4A17F', b: '#A9474A', light: '#FFF0D5', checker: '#62313B', frame: '#24141D' },
+  { id: 'jade', name: 'Jade', rarity: 'common', panel: '#438C72', a: '#78B99A', b: '#24604E', light: '#E7E6CE', checker: '#173D35', frame: '#18231F' },
+  { id: 'ocean2', name: 'Ocean', rarity: 'common', panel: '#086D8B', a: '#22A3BA', b: '#06465F', light: '#D8F3F5', checker: '#082E48', frame: '#031727' },
+  { id: 'lagoon', name: 'Lagoon', rarity: 'common', panel: '#158A8A', a: '#5AB9A8', b: '#0B5A65', light: '#E5F3D6', checker: '#083D43', frame: '#062127' },
+  { id: 'lavender', name: 'Lavender', rarity: 'common', panel: '#8064A8', a: '#B18AC5', b: '#584378', light: '#F0E8F4', checker: '#3C285C', frame: '#171126' },
+  // --- RARE ---
+  { id: 'ruby', name: 'Ruby', rarity: 'rare', panel: '#8F2635', a: '#D14B52', b: '#5A1728', light: '#F6D7C9', checker: '#35121B', frame: '#190A10' },
+  { id: 'royal', name: 'Royal', rarity: 'rare', panel: '#263A83', a: '#536AC5', b: '#171F58', light: '#F0E8D1', checker: '#171735', frame: '#090C24' },
+  { id: 'cherry', name: 'Cherry', rarity: 'rare', panel: '#771E3A', a: '#BC3156', b: '#44152B', light: '#F5D8D5', checker: '#27111C', frame: '#140811' },
+  { id: 'copper', name: 'Copper', rarity: 'rare', panel: '#9B593D', a: '#CE8356', b: '#633827', light: '#F3D6AE', checker: '#42251C', frame: '#21130E' },
+  { id: 'midnight', name: 'Midnight', rarity: 'rare', panel: '#121B42', a: '#253D82', b: '#10102B', light: '#BFCDF2', checker: '#090A18', frame: '#03040C' },
+  { id: 'gold2', name: 'Gold', rarity: 'rare', panel: '#9C7528', a: '#D8B653', b: '#604318', light: '#FFF0BC', checker: '#382712', frame: '#1B1209' },
+  // --- EPIC ---
+  { id: 'volcano', name: 'Volcano', rarity: 'epic', panel: '#55272A', a: '#C54A31', b: '#29171B', light: '#E5B76D', checker: '#160D10', frame: '#090608' },
+  { id: 'tokyo', name: 'Tokyo', rarity: 'epic', panel: '#26283A', a: '#E0526A', b: '#6676C5', light: '#F1E9DE', checker: '#202131', frame: '#0D0E18' },
+  { id: 'aurora2', name: 'Aurora II', rarity: 'epic', panel: '#174B50', a: '#31A48D', b: '#7046A0', light: '#C7F2DE', checker: '#22265D', frame: '#081B24' },
+  { id: 'imperial', name: 'Imperial', rarity: 'epic', panel: '#492354', a: '#9B467D', b: '#C29145', light: '#F1DFB1', checker: '#31152E', frame: '#160A19' },
+  // --- LEGENDARY ---
+  { id: 'obsidian', name: 'Obsidian', rarity: 'legendary', panel: '#24252B', a: '#565A64', b: '#111318', light: '#D6D8DC', checker: '#050607', frame: '#000000' },
+  { id: 'cyber', name: 'Cyber', rarity: 'legendary', panel: '#16134B', a: '#6638A5', b: '#087C91', light: '#5DE4D0', checker: '#241450', frame: '#07051C' },
+]
+const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES]
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
@@ -3188,6 +3218,7 @@ export default function App() {
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={[...BOARD_THEMES, ...ownedPremiumThemes]}
+          rarityThemes={RARITY_THEMES}
           freeCount={11}
           premium={premium}
           onUpgrade={() => {
@@ -3216,7 +3247,7 @@ export default function App() {
         <div className={`verify-toast ${verifyNotice}`}>
           <Icon name={verifyNotice === 'ok' ? 'check' : 'alert'} size={16} />
           <span>{t(verifyNotice === 'ok' ? 'verify.ok' : 'verify.fail')}</span>
-          <button className="verify-close" onClick={() => setVerifyNotice(null)} aria-label="Kapat">
+          <button className="verify-close" onClick={() => setVerifyNotice(null)} aria-label={t('common.close')}>
             <Icon name="x" size={14} />
           </button>
         </div>
@@ -3502,7 +3533,7 @@ export default function App() {
               {learnMode ? t('hint.learnTitle') : t('hint.title')}
             </span>
             {!learnMode && (
-              <button className="hint-close" onClick={() => setHintShown(false)} aria-label="Kapat">
+              <button className="hint-close" onClick={() => setHintShown(false)} aria-label={t('common.close')}>
                 <Icon name="x" size={14} />
               </button>
             )}

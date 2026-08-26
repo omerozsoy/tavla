@@ -29,7 +29,7 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
   return (
     <div className="register-overlay modal page">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
         <h2><Icon name="dice" size={20} /> {t('fair.title')}</h2>
