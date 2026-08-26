@@ -61,7 +61,14 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
   const [sel, setSel] = useState(firstMistake)
-  const [candIdx, setCandIdx] = useState(0) // tahtada gosterilen aday (0 = oynanan/en iyi)
+  // Bir hamlenin aday listesinde OYNANAN adayin indexi (yoksa 0 = en iyi)
+  const playedCandIdx = (e?: LogEntry) => {
+    const idx = e?.cands?.findIndex((c) => c.notation === e.notation) ?? -1
+    return idx >= 0 ? idx : 0
+  }
+  // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
+  // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
+  const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
 
   // Kup kararlari ayri gosterilir; tas oyunu istatistigi/listesi kup satirlarini haric tutar
   const cubeLog = humanColor
@@ -99,7 +106,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
 
   function selectMove(i: number) {
     setSel(i)
-    setCandIdx(0)
+    setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
   // Maci okunabilir metin olarak disa aktar (kocluk/paylasim icin)
