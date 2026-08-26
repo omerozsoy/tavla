@@ -7383,8 +7383,8 @@ button[aria-disabled='true'],
 }
 .shop-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 12px;
 }
 .shop-item {
   text-align: center;

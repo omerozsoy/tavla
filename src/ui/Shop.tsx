@@ -34,7 +34,6 @@ interface Props {
   onBuy: (shopId: string) => Promise<void>
   onEquip: (frameId: string | null) => Promise<void>
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
-  onOpenGallery?: () => void
   onClose: () => void
 }
 
@@ -57,7 +56,6 @@ export default function Shop({
   onBuy,
   onEquip,
   onDaily,
-  onOpenGallery,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -124,17 +122,10 @@ export default function Shop({
           </div>
         )}
 
-        <div className="shop-sec-row">
-          <h3 className="shop-sec">{t('shop.frames')}</h3>
-          {onOpenGallery && (
-            <button className="shop-gallery-link" onClick={onOpenGallery}>
-              <Icon name="crown" size={14} /> {t('frames.gallery')}
-            </button>
-          )}
-        </div>
+        <h3 className="shop-sec">{t('shop.frames')}</h3>
         <div className="shop-grid">
           <div className="shop-item">
-            <AvatarFrame src={avatar} frame={null} size={64} name={name} />
+            <AvatarFrame src={avatar} frame={null} size={88} name={name} />
             <div className="shop-name">{t('shop.noFrame')}</div>
             <button
               className={`shop-btn ${!currentFrame ? 'active' : ''}`}
@@ -170,7 +161,7 @@ export default function Shop({
                       className="shop-item"
                       style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
                     >
-                      <AvatarFrame src={avatar} frame={f.id} size={64} name={name} />
+                      <AvatarFrame src={avatar} frame={f.id} size={88} name={name} />
                       <div className="shop-name">{f.name}</div>
                       {owned ? (
                         <button
