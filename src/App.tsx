@@ -5,6 +5,9 @@ const HeroDice3D = lazy(() => import('./ui/dice3d/HeroDice3D'))
 // Avatar cerceve prototip demosu: yalnizca gizli /cerceve-demo URL'iyle acilir (menude
 // link yok). Ana bundle'i sismemesi icin lazy yuklenir (#27).
 const FrameDemo = lazy(() => import('./ui/FrameDemo'))
+// Rive avatar cerceve laboratuvari: gizli /cerceve-lab URL'i. Gercek .riv dosyalari +
+// @rive-app runtime iceren agir bir agac -> lazy chunk (ana bundle sismesin).
+const CerceveLab = lazy(() => import('./ui/CerceveLab'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
@@ -378,6 +381,7 @@ export default function App() {
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
+  const [frameLabOpen, setFrameLabOpen] = useState(false) // Rive cerceve laboratuvari (/cerceve-lab)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
@@ -418,6 +422,8 @@ export default function App() {
                 ? 'mac-analizleri'
               : frameDemoOpen
                 ? 'cerceve-demo'
+              : frameLabOpen
+                ? 'cerceve-lab'
               : gamePreviewOpen
                 ? 'oyun-onizleme'
               : fairOpen
@@ -493,6 +499,9 @@ export default function App() {
           break
         case 'cerceve-demo':
           setFrameDemoOpen(true)
+          break
+        case 'cerceve-lab':
+          setFrameLabOpen(true)
           break
         case 'oyun-onizleme':
           setGamePreviewOpen(true)
@@ -3175,6 +3184,7 @@ export default function App() {
     setBlunderOpen(false)
     setMatchHistOpen(false)
     setFrameDemoOpen(false)
+    setFrameLabOpen(false)
     setGamePreviewOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
@@ -3294,6 +3304,7 @@ export default function App() {
     blunderOpen ||
     matchHistOpen ||
     frameDemoOpen ||
+    frameLabOpen ||
     gamePreviewOpen ||
     fairOpen ||
     lessonsOpen ||
@@ -3376,6 +3387,11 @@ export default function App() {
       {frameDemoOpen && (
         <Suspense fallback={null}>
           <FrameDemo onClose={() => setFrameDemoOpen(false)} />
+        </Suspense>
+      )}
+      {frameLabOpen && (
+        <Suspense fallback={null}>
+          <CerceveLab onClose={() => setFrameLabOpen(false)} />
         </Suspense>
       )}
       {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}
