@@ -293,7 +293,7 @@ class AuthController extends Controller
         $this->awardFrames($user);
 
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
-        \App\Models\MatchResult::create([
+        $mr = [
             'user_id'         => $user->id,
             'won'             => (bool) $data['won'],
             'opponent_rating' => $rb,
@@ -303,10 +303,14 @@ class AuthController extends Controller
             'match_length'    => $data['match_length'] ?? null,
             'pr'              => $data['pr'] ?? null,
             'coins_after'     => $user->coins ?? 0,
-            'luck'            => $data['luck'] ?? null,
-            'score_self'      => $data['score_self'] ?? null,
-            'score_opp'       => $data['score_opp'] ?? null,
-        ]);
+        ];
+        // luck/score_* migration ile geldi -> kolonlar varsa ekle (yoksa kayit yine olussun)
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck')) {
+            $mr['luck'] = $data['luck'] ?? null;
+            $mr['score_self'] = $data['score_self'] ?? null;
+            $mr['score_opp'] = $data['score_opp'] ?? null;
+        }
+        \App\Models\MatchResult::create($mr);
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
     }
@@ -460,10 +464,17 @@ class AuthController extends Controller
     public function myMatches(Request $request)
     {
         $me = $request->user();
+        // SAVUNMACI: luck/score_* kolonlari migration ile eklendi. Migration henuz
+        // calismadiysa o kolonlari SECME (aksi halde "unknown column" -> tum liste bos).
+        $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck');
+        $cols = ['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
+        if ($hasNew) {
+            $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
+        }
         $matches = \App\Models\MatchResult::where('user_id', $me->id)
             ->orderByDesc('id')
             ->limit(30)
-            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'created_at'])
+            ->get($cols)
             ->map(fn ($m) => [
                 'won' => (bool) $m->won,
                 'opponent_rating' => $m->opponent_rating,
@@ -473,9 +484,9 @@ class AuthController extends Controller
                 'match_length' => $m->match_length,
                 'pr' => $m->pr,
                 'coins_after' => $m->coins_after,
-                'luck' => $m->luck,
-                'score_self' => $m->score_self,
-                'score_opp' => $m->score_opp,
+                'luck' => $hasNew ? $m->luck : null,
+                'score_self' => $hasNew ? $m->score_self : null,
+                'score_opp' => $hasNew ? $m->score_opp : null,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 
