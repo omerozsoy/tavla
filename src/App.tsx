@@ -823,15 +823,16 @@ export default function App() {
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
-  // Refresh'te oyun kaybolmasin: localStorage kaydini ILK render'da (effect'lerden
-  // ONCE) yakala; asagidaki saveGame effect'i bos baslangic state'ini yazip EZMEDEN
-  // once. Misafirde + sunucuda oyun yokken bu kayittan geri yuklenir.
-  const initialLocalGame = useMemo(() => loadGame(), [])
+  // Refresh'te oyun kaybolmasin: saveGame, ILK restore bitene kadar localStorage'i
+  // EZMEZ (hydratedRef). Boylece restore effect'i kaydi TAZE okur — StrictMode dev
+  // remount'unda bile ezme olmaz. "Once useMemo ile yakala" kirilgan numarasi YOK.
+  const hydratedRef = useRef(false)
 
   // Oyunu yerel kaydet (offline/misafir icin). gameEnd de kaydedilir ki
   // refresh'te bitmis oyun yeniden "kazanildi" sayilip tekrar puanlanmasin.
   useEffect(() => {
-    // pr/luck da kaydedilir -> refresh/resume'da PR/Sans/Seviye kaybolmaz (kritik)
+    if (!hydratedRef.current) return // ilk restore bitene kadar localStorage'i EZME (kritik)
+    // pr/luck da kaydedilir -> refresh/resume'da PR/Sans/Seviye kaybolmaz
     saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck })
   }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck])
 
@@ -864,13 +865,26 @@ export default function App() {
     }
   }
 
-  // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle; yoksa/sunucuda oyun
-  // yoksa YEREL kayda dus (misafir AI oyunu refresh'te kaybolmasin — kritik).
+  // Acilista oyunu geri yukle. KRITIK: ayni cihazda refresh'te YEREL kayit (her hamlede
+  // localStorage'a yazilir) EN TAZE kaynaktir. Sunucu kaydi debounce'lu + cok-cihaz icin;
+  // eski/bos donup taze yerel oyunu EZMEMELI. Bu yuzden aktif bir yerel (bot/lokal) oyun
+  // varsa GIRIS YAPMIS olsa bile once onu yukle; sunucu yalniz yerel yoksa (cok-cihaz).
   useEffect(() => {
     const token = getToken()
-    if (!token) {
-      if (initialLocalGame) applySavedGame(initialLocalGame) // misafir: yerel oyunu geri yukle
+    // saveGame henuz calismadi (hydrated=false) -> localStorage TAZE. Dogrudan oku.
+    const local = loadGame()
+    const localActive =
+      !!local &&
+      local.mode !== 'online' &&
+      !matchWinner(local.match) &&
+      (local.turnsPlayed > 0 || !!local.gameEnd)
+    const finish = () => {
+      hydratedRef.current = true // artik saveGame yazabilir
       setAuthChecked(true)
+    }
+    if (!token) {
+      if (local) applySavedGame(local) // misafir: yerel oyunu geri yukle
+      finish()
       return
     }
     let cancelled = false
@@ -879,14 +893,18 @@ export default function App() {
         const u = await apiMe()
         if (cancelled) return
         setUser(u)
+        if (localActive) {
+          applySavedGame(local!) // taze yerel aktif oyun -> sunucuyu bekleme/ezdirme
+          return
+        }
         const g = await loadServerGame().catch(() => null)
         if (cancelled) return
         if (g) applySavedGame(g as SavedGame)
-        else if (initialLocalGame) applySavedGame(initialLocalGame) // sunucuda yoksa yerele dus
+        else if (local) applySavedGame(local) // sunucuda yoksa yerele dus
       } catch {
         await apiLogout() // gecersiz token -> temizle
       } finally {
-        if (!cancelled) setAuthChecked(true)
+        if (!cancelled) finish()
       }
     })()
     return () => {
