@@ -58,6 +58,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
+    Route::get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
     Route::get('/me/active-rooms', [RoomController::class, 'myActiveRooms']); // devam eden online maclar
     Route::get('/me/analytics', [AuthController::class, 'analytics']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);

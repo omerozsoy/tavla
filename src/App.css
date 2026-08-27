@@ -1332,6 +1332,11 @@ button[aria-disabled='true'],
 .mh-stat-v.bad {
   color: var(--tv-brick, #c9563f);
 }
+.mh-analyze {
+  grid-column: 1 / -1;
+  justify-self: start;
+  margin-top: 4px;
+}
 .mh-item.win {
   border-left-color: var(--success-fg, #4caf7d);
 }

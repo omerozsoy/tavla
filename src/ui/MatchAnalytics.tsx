@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { myMatches, type MyMatch } from '../api'
+import { myMatches, matchLogById, type MyMatch } from '../api'
+import MatchReport from './MatchReport'
+import type { MoveLogEntry } from '../storage'
+import type { Player } from '../engine/types'
 
 // PR bandi (dusuk = iyi). MatchReport ile ayni ruh: kaba renk sinifi.
 function prCls(pr: number | null | undefined): string {
@@ -26,6 +29,23 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [openIdx, setOpenIdx] = useState<number | null>(null)
+  const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
+  const [reportBusy, setReportBusy] = useState(false)
+
+  // Bir macin tam analizini (log) cek -> MatchReport ac
+  async function openReport(m: MyMatch) {
+    setReportBusy(true)
+    try {
+      const raw = await matchLogById(m.id)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as { hc?: Player; log?: MoveLogEntry[] }
+      setReport({ log: parsed.log ?? [], hc: parsed.hc ?? 'white', pr: m.pr ?? null })
+    } catch {
+      /* yoksay */
+    } finally {
+      setReportBusy(false)
+    }
+  }
 
   const load = () => {
     setLoading(true)
@@ -150,6 +170,15 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
                           <span className="mh-stat-v">{m.coins_after}</span>
                         </div>
                       )}
+                      {m.has_log && (
+                        <button
+                          className="menu-btn mh-analyze"
+                          disabled={reportBusy}
+                          onClick={() => openReport(m)}
+                        >
+                          <Icon name="search" size={15} /> {t('mh.analyze')}
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -158,6 +187,15 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
           </div>
         )}
       </div>
+      {report && (
+        <MatchReport
+          mode="analysis"
+          log={report.log}
+          pr={report.pr}
+          humanColor={report.hc}
+          onClose={() => setReport(null)}
+        />
+      )}
     </div>
   )
 }

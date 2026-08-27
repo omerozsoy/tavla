@@ -1599,6 +1599,7 @@ export default function App() {
       match.score[opponent(myColor)],
       room?.oppName ?? null,
       prOf(opponent(myColor)),
+      JSON.stringify({ hc: myColor, log: matchLog.slice(-250) }),
     )
       .then((r) => {
         setRatingChange({ before, after: r.rating })
@@ -1674,6 +1675,7 @@ export default function App() {
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
         prOf('black'),
+        JSON.stringify({ hc: 'white', log: matchLog.slice(-250) }),
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
