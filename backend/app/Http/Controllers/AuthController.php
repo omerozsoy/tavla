@@ -257,43 +257,50 @@ class AuthController extends Controller
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
             'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
+            'ranked'          => ['nullable', 'boolean'],
         ]);
         $user = $request->user();
+        $ranked = $data['ranked'] ?? true; // null/eksik -> puanli (geriye uyum)
 
-        $k = 32;
         $ra = $user->rating ?? 1500;
         $rb = $data['opponent_rating'];
-        $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-        $score = $data['won'] ? 1 : 0;
-        $newRating = (int) round($ra + $k * ($score - $expected));
-        $newRating = max(100, $newRating); // taban
 
-        $user->rating = $newRating;
-        $user->games_played = ($user->games_played ?? 0) + 1;
-        if ($data['won']) {
-            $user->wins = ($user->wins ?? 0) + 1;
-        } else {
-            $user->losses = ($user->losses ?? 0) + 1;
-        }
-        $user->save();
+        if ($ranked) {
+            // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
+            $k = 32;
+            $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
+            $score = $data['won'] ? 1 : 0;
+            $newRating = (int) round($ra + $k * ($score - $expected));
+            $newRating = max(100, $newRating); // taban
 
-        // Kulup lig puani: uyeyse galibiyet +3, katilim +1. Kulup toplami da artar.
-        $mem = \App\Models\ClubMember::where('user_id', $user->id)->first();
-        if ($mem) {
-            $gain = $data['won'] ? 3 : 1;
-            $mem->increment('points', $gain);
+            $user->rating = $newRating;
+            $user->games_played = ($user->games_played ?? 0) + 1;
             if ($data['won']) {
-                $mem->increment('wins');
+                $user->wins = ($user->wins ?? 0) + 1;
             } else {
-                $mem->increment('losses');
+                $user->losses = ($user->losses ?? 0) + 1;
             }
-            \App\Models\Club::where('id', $mem->club_id)->increment('points', $gain);
-        }
+            $user->save();
 
-        // Basarim rozetleri: yeni hak kazanilanlari ekle + bildirim gonder
-        $this->awardBadges($user, $newRating);
-        // Kazanilan avatar cerceveleri (1000 galibiyet, top-100)
-        $this->awardFrames($user);
+            // Kulup lig puani: uyeyse galibiyet +3, katilim +1. Kulup toplami da artar.
+            $mem = \App\Models\ClubMember::where('user_id', $user->id)->first();
+            if ($mem) {
+                $gain = $data['won'] ? 3 : 1;
+                $mem->increment('points', $gain);
+                if ($data['won']) {
+                    $mem->increment('wins');
+                } else {
+                    $mem->increment('losses');
+                }
+                \App\Models\Club::where('id', $mem->club_id)->increment('points', $gain);
+            }
+
+            $this->awardBadges($user, $newRating);
+            $this->awardFrames($user);
+        } else {
+            // CASUAL: rating/istatistik DEGISMEZ; mac yine gecmise kaydedilir (delta=0).
+            $newRating = (int) $ra;
+        }
 
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         $mr = [

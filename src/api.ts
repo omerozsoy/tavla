@@ -875,6 +875,7 @@ export async function reportRating(
   opponentName?: string | null,
   opponentPr?: number | null,
   log?: string | null,
+  ranked = true,
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -889,6 +890,7 @@ export async function reportRating(
       opponent_name: opponentName ?? null,
       opponent_pr: opponentPr ?? null,
       log: log ?? null,
+      ranked,
     }),
   })
 }
