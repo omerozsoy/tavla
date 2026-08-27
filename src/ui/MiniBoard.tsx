@@ -46,11 +46,13 @@ export default function MiniBoard({
   steps,
   player,
   dice,
+  flip = false,
 }: {
   state: GameState
   steps: Step[]
   player: Player
   dice?: number[]
+  flip?: boolean // true: siyah oyuncunun bakisi (180 cevrilir; SEN altta)
 }) {
   // Ucgenler
   const tris = []
@@ -108,6 +110,7 @@ export default function MiniBoard({
               fontWeight="700"
               textAnchor="middle"
               fill={white ? 'var(--tv-ink)' : '#fff'}
+              transform={flip ? `rotate(180 ${x} ${cy})` : undefined}
             >
               {n}
             </text>
@@ -155,7 +158,15 @@ export default function MiniBoard({
           markerEnd="url(#mbArrow)"
         />
         <circle cx={from.x} cy={from.y} r={R * 0.9} fill={ARROW} stroke={ARROW_EDGE} strokeWidth={1.2} />
-        <text x={from.x} y={from.y + R * 0.36} fontSize={R * 1.15} fontWeight="800" textAnchor="middle" fill={ARROW_EDGE}>
+        <text
+          x={from.x}
+          y={from.y + R * 0.36}
+          fontSize={R * 1.15}
+          fontWeight="800"
+          textAnchor="middle"
+          fill={ARROW_EDGE}
+          transform={flip ? `rotate(180 ${from.x} ${from.y})` : undefined}
+        >
           {i + 1}
         </text>
       </g>
@@ -211,15 +222,19 @@ export default function MiniBoard({
           />
         </marker>
       </defs>
-      <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
-      {/* orta bar */}
-      <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="var(--bar)" />
-      {/* bear-off */}
-      <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="var(--bar)" />
-      {tris}
-      {discs}
-      {dieEls}
-      {arrows}
+      {/* flip: tum icerik 180 cevrilir (zar yuzleri 180-simetrik; iki metin yerinde
+          karsi-rotasyonla dik tutulur) -> siyah oyuncu (SEN) altta gorunur */}
+      <g transform={flip ? `rotate(180 ${W / 2} ${H / 2})` : undefined}>
+        <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
+        {/* orta bar */}
+        <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="var(--bar)" />
+        {/* bear-off */}
+        <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="var(--bar)" />
+        {tris}
+        {discs}
+        {dieEls}
+        {arrows}
+      </g>
     </svg>
   )
 }

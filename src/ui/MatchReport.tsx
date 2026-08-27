@@ -275,7 +275,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
             <div className="analysis-detail">
               {cur?.pos && cur.player ? (
                 <>
-                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} />
+                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={humanColor === 'black'} />
                   {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
                   <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
                     {candIdx < 0 || candIdx === playedIdx
