@@ -1660,8 +1660,9 @@ export default function App() {
     const mW = matchWinner(match)
     if (!mW) return
     ratingReportedRef.current = true
-    // Puansiz (casual) macta Elo/lig islenmez; PR + hata gunlugu yine calisir.
-    if (rankedMatch) {
+    // Giris yapmis kullanicinin AI maci HER ZAMAN kaydedilir (misafir haric).
+    // Casual'da rating degismez: ranked=false -> backend Elo/lig islemez, delta=0 kaydeder.
+    {
       const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
       const won = mW === 'white' // pvb'de insan beyaz
       const before = user.rating ?? 1500
@@ -1676,6 +1677,7 @@ export default function App() {
         `${AI_LEVELS[difficulty - 1]}`,
         prOf('black'),
         JSON.stringify({ hc: 'white', log: matchLog.slice(-250) }),
+        rankedMatch,
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
