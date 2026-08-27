@@ -21,6 +21,18 @@ interface Props {
 
 const emptyPoints = () => new Array(24).fill(0)
 
+// Board'un gercek pul rengiyle kucuk yuvarlak isaret (⚪/⚫ emojisi yerine).
+// Tema degisince (kiremit=sari/kirmizi, galaxy=krem/lacivert...) otomatik uyar.
+function Swatch({ color }: { color: Player }) {
+  return (
+    <span
+      className="pa-swatch"
+      style={{ background: color === 'white' ? 'var(--cream)' : 'var(--navy)' }}
+      aria-hidden
+    />
+  )
+}
+
 export default function PositionAnalyzer({
   neuralEval,
   neuralAnalyze,
@@ -348,7 +360,7 @@ export default function PositionAnalyzer({
                   setEditMode('add')
                 }}
               >
-                ⚪ {t('pa.white')}
+                <Swatch color="white" /> {t('pa.white')}
               </button>
               <button
                 className={placeColor === 'black' && editMode === 'add' ? 'menu-btn active' : 'menu-btn'}
@@ -357,7 +369,7 @@ export default function PositionAnalyzer({
                   setEditMode('add')
                 }}
               >
-                ⚫ {t('pa.black')}
+                <Swatch color="black" /> {t('pa.black')}
               </button>
               <button
                 className={editMode === 'remove' ? 'menu-btn active' : 'menu-btn'}
@@ -368,10 +380,10 @@ export default function PositionAnalyzer({
             </div>
             <div className="pa-count">
               <span className={whiteCount >= MAX_CHECKERS ? 'full' : ''}>
-                ⚪ {whiteCount}/{MAX_CHECKERS}
+                <Swatch color="white" /> {whiteCount}/{MAX_CHECKERS}
               </span>
               <span className={blackCount >= MAX_CHECKERS ? 'full' : ''}>
-                ⚫ {blackCount}/{MAX_CHECKERS}
+                <Swatch color="black" /> {blackCount}/{MAX_CHECKERS}
               </span>
             </div>
           </div>
@@ -386,7 +398,7 @@ export default function PositionAnalyzer({
                   setResult(null)
                 }}
               >
-                ⚪ {t('pa.white')}
+                <Swatch color="white" /> {t('pa.white')}
               </button>
               <button
                 className={turn === 'black' ? 'menu-btn active' : 'menu-btn'}
@@ -395,7 +407,7 @@ export default function PositionAnalyzer({
                   setResult(null)
                 }}
               >
-                ⚫ {t('pa.black')}
+                <Swatch color="black" /> {t('pa.black')}
               </button>
             </div>
           </div>
@@ -422,7 +434,7 @@ export default function PositionAnalyzer({
                 className={cube.owner === 'white' ? 'menu-btn active' : 'menu-btn'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'white' }))}
               >
-                ⚪
+                <Swatch color="white" />
               </button>
               <button
                 className={cube.owner === null ? 'menu-btn active' : 'menu-btn'}
@@ -434,7 +446,7 @@ export default function PositionAnalyzer({
                 className={cube.owner === 'black' ? 'menu-btn active' : 'menu-btn'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'black' }))}
               >
-                ⚫
+                <Swatch color="black" />
               </button>
             </div>
           </div>
@@ -455,7 +467,7 @@ export default function PositionAnalyzer({
             {matchLen > 0 && (
               <div className="pa-score">
                 <label>
-                  ⚪
+                  <Swatch color="white" />
                   <input
                     type="number"
                     min={0}
@@ -465,7 +477,7 @@ export default function PositionAnalyzer({
                   />
                 </label>
                 <label>
-                  ⚫
+                  <Swatch color="black" />
                   <input
                     type="number"
                     min={0}
@@ -571,6 +583,7 @@ export default function PositionAnalyzer({
           {result && (
             <div className="pa-result">
               <div className="pa-win">
+                <Swatch color={turn} />{' '}
                 {t('pa.winChance', { name: turn === 'white' ? t('pa.white') : t('pa.black') })}
                 <b> {win.toFixed(1)}%</b>
               </div>
@@ -609,6 +622,7 @@ export default function PositionAnalyzer({
                 {t('pa.bestMove')}: <b>{moveNotation(moveRanked[0].move, turn)}</b>
               </div>
               <div className="prob-sub">
+                <Swatch color={turn} />{' '}
                 {t('pa.winChance', { name: turn === 'white' ? t('pa.white') : t('pa.black') })}{' '}
                 {winOf(moveRanked[0].probs).toFixed(1)}% · {t('an.equity')}:{' '}
                 {moveRanked[0].equity.toFixed(3)}

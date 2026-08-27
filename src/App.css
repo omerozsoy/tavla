@@ -111,12 +111,12 @@
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
-  --bar-w: calc(var(--checker) * 0.62); /* orta bar: board'un ~%4.3'u (dar) */
+  --bar-w: calc(var(--checker) * 1.24); /* orta bar: eskisinin ~2 kati (genis) */
   --bearoff-w: var(--tray-w);
   --tri-h: calc(var(--board-h) * 0.35); /* KISA + genis taban ucgen (guclu geometri) */
   --point-h: var(--tri-h);
   --dice-size: calc(var(--checker) * 0.82);
-  --cube-size: clamp(38px, calc(var(--checker) * 0.7), 46px); /* kucuk, flat kup */
+  --cube-size: clamp(48px, calc(var(--checker) * 1), 64px); /* buyutulmus kup */
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -4027,6 +4027,38 @@ button[aria-disabled='true'],
   cursor: pointer;
 }
 
+/* Tam ekran ac/kapa butonu (oyun ekrani sol ust) */
+.fs-toggle {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  left: calc(12px + env(safe-area-inset-left));
+  z-index: 120;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-circle);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  transition: background 0.15s, transform 0.1s;
+}
+.fs-toggle:hover {
+  background: var(--btn-bg);
+}
+.fs-toggle:active {
+  transform: scale(0.94);
+}
+/* Mobil yatay/dar: gizle (zaten tam ekrana yakin, kose butonlariyla cakismasin) */
+@media (max-height: 560px) and (orientation: landscape) {
+  .fs-toggle {
+    display: none;
+  }
+}
+
 /* ---- Hamburger (mobil menu dugmesi) ---- */
 .hamburger {
   display: none;
@@ -6021,7 +6053,7 @@ button[aria-disabled='true'],
   /* GENISLIK: container max-width 1400px'te durdugu icin 100vw CAP'lenir (min 1560);
      aksi halde genis ekranda board buyumeye devam edip kontrol panelini ORTUYORDU.
      Divisor 1.4 board en-boy oranina gore kolona (board|300|320) sigacak sekilde. */
-  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((min(100vw, 1560px) - 1010px) / 1.4)));
+  --board-h: max(320px, min(calc(100vh - var(--header-h) - 130px), calc((min(100vw, 1590px) - 890px) / 1.4)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -6036,6 +6068,17 @@ button[aria-disabled='true'],
   width: fit-content; /* genis flex kolonda gerilmesin -> numaralar hizalansin */
   max-width: 100%;
   margin: 0;
+}
+/* Board'un gercek pul rengiyle kucuk yuvarlak isaret (⚪/⚫ yerine tema-uyumlu) */
+.pa-swatch {
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.25);
+  vertical-align: -0.12em;
+  flex: none;
 }
 /* Analizde surukle-birak: pul uzerinde dokunma kaydirmayi engelle (parmakla surukleme) */
 .analyzer-board .checker {

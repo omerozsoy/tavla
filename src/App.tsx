@@ -2231,6 +2231,21 @@ export default function App() {
     }
   }
 
+  // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  useEffect(() => {
+    const onFs = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', onFs)
+    return () => document.removeEventListener('fullscreenchange', onFs)
+  }, [])
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {})
+    } else {
+      document.documentElement.requestFullscreen?.().catch(() => {})
+    }
+  }
+
   // Lobide asagi-cek-yenile (pull-to-refresh). App sabit ekran (body overflow:hidden)
   // oldugu icin tarayicinin native jesti calismaz; en ustteyken cekince kendimiz reload ederiz.
   const [ptrDist, setPtrDist] = useState(0)
@@ -3797,6 +3812,14 @@ export default function App() {
           <Icon name="x" size={16} />
         </button>
       )}
+      <button
+        className="fs-toggle"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
+        title={isFullscreen ? t('menu.fsExit') : t('menu.fsEnter')}
+      >
+        <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
+      </button>
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
           <div className="hint-head">
