@@ -4197,6 +4197,24 @@ html.fs-active .account-bar {
   display: none;
 }
 
+/* Oyun ekraninda hesap bari KOMPAKT: yalnizca ad + rating gorunur; uzerine gelince
+   tum menu (bildirim/coin/magaza/ayar/dil/ses...) acilir. */
+.game-view .account-bar {
+  gap: 8px;
+  padding: 6px 12px;
+  transition: padding 0.15s;
+}
+.game-view .account-bar > *:not(.account-name) {
+  display: none;
+}
+.game-view .account-bar:hover {
+  gap: 12px;
+  padding: 9px 18px;
+}
+.game-view .account-bar:hover > *:not(.account-name) {
+  display: inline-flex;
+}
+
 /* Tam ekran ac/kapa butonu (oyun ekrani sol ust) */
 .fs-toggle {
   position: fixed;
@@ -5074,6 +5092,7 @@ html.fs-active .account-bar {
 .lobby-hero {
   width: 100%;
   max-width: 920px;
+  min-height: 340px; /* sabit yukseklik: icerik degisince ziplamaz */
   margin: 8px auto 4px;
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
