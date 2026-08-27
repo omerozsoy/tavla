@@ -84,6 +84,7 @@ import Tournaments from './ui/Tournaments'
 import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import MatchAnalytics from './ui/MatchAnalytics'
+import FrameDemo from './ui/FrameDemo'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
@@ -579,6 +580,7 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
+  const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
@@ -616,6 +618,8 @@ export default function App() {
               ? 'hata-gunlugu'
               : matchHistOpen
                 ? 'mac-analizleri'
+              : frameDemoOpen
+                ? 'cerceve-demo'
               : fairOpen
                 ? 'adillik'
                 : lessonsOpen
@@ -686,6 +690,9 @@ export default function App() {
           break
         case 'mac-analizleri':
           setMatchHistOpen(true)
+          break
+        case 'cerceve-demo':
+          setFrameDemoOpen(true)
           break
         case 'adillik':
           setFairOpen(true)
@@ -3360,6 +3367,7 @@ export default function App() {
     setFriendsOpen(false)
     setBlunderOpen(false)
     setMatchHistOpen(false)
+    setFrameDemoOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
     setSoloOpen(false)
@@ -3477,6 +3485,7 @@ export default function App() {
     friendsOpen ||
     blunderOpen ||
     matchHistOpen ||
+    frameDemoOpen ||
     fairOpen ||
     lessonsOpen ||
     soloOpen ||
@@ -3555,6 +3564,7 @@ export default function App() {
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {matchHistOpen && user && <MatchAnalytics onClose={() => setMatchHistOpen(false)} />}
+      {frameDemoOpen && <FrameDemo onClose={() => setFrameDemoOpen(false)} />}
       {contentView && (
         <ContentView
           type={contentView}
