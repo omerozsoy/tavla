@@ -831,8 +831,9 @@ export default function App() {
   // Oyunu yerel kaydet (offline/misafir icin). gameEnd de kaydedilir ki
   // refresh'te bitmis oyun yeniden "kazanildi" sayilip tekrar puanlanmasin.
   useEffect(() => {
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd })
-  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd])
+    // pr/luck da kaydedilir -> refresh/resume'da PR/Sans/Seviye kaybolmaz (kritik)
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck })
+  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
@@ -850,6 +851,10 @@ export default function App() {
     setBotAnim(null)
     setOpening(null)
     setOpeningResult(null)
+    // PR + Sans'i da geri yukle -> refresh/resume sonrasi mac sonu ekraninda oyuncunun
+    // seviyesi/PR/sansi "—"/+0 olmaz (kayittaki birikmis degerler korunur).
+    if (g.pr) setPrStats(g.pr)
+    if (g.luck) setPrLuck(g.luck)
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
     // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse HOME'da kalma -> oyunu goster
@@ -1107,6 +1112,18 @@ export default function App() {
         ...s,
         [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
       }))
+      // Sans (luck): bu turun sansi = gercek zarin en iyi equity'si (ranks[0]) - 21 zarin
+      // beklenen en iyisi. recordPR promise'i (analiz effect'i gibi) IPTAL EDILMEZ -> hizli
+      // oynayinca bile guvenilir birikir. Tur basina bir kez (luckSig).
+      const luckKey = `${mover}:${seq}`
+      if (luckKey !== luckSigRef.current) {
+        luckSigRef.current = luckKey
+        const actualBest = ranks[0].equity
+        neuralRef.current
+          .expectedBestEquity(before, mover)
+          .then((expEq) => setPrLuck((s) => ({ ...s, [mover]: s[mover] + (actualBest - expEq) })))
+          .catch(() => {})
+      }
       if (mover !== humanColor) return
       // Her hamle icin tam analiz verisi: konum, zar, siralı adaylar (equity), kazanma%
       const cands = ranks.slice(0, 5).map((r) => ({
@@ -1437,22 +1454,8 @@ export default function App() {
         if (!cancelled) {
           if (played.length === 0) {
             turnRankedRef.current = r // tur basi siralama (PR + hata)
-            // Sans (luck): gercek zarin en iyi equity'si vs TUM 21 zarin beklenen en
-            // iyi equity'si. Fark bu turun sansi; oyuncu-basi birikir. Ayni tur bir kez.
-            const mover = analysisState.turn
-            const luckSig = `${mover}:${turnsPlayed}:${analysisState.dice.join(',')}`
-            if (r.length > 0 && luckSig !== luckSigRef.current) {
-              luckSigRef.current = luckSig
-              const actualBest = r[0].equity
-              neuralRef.current
-                .expectedBestEquity(analysisState, mover)
-                .then((expEq) => {
-                  if (!cancelled) {
-                    setPrLuck((s) => ({ ...s, [mover]: s[mover] + (actualBest - expEq) }))
-                  }
-                })
-                .catch(() => {})
-            }
+            // Sans (luck) artik burada DEGIL: recordPR icinde hesaplaniyor (bu effect
+            // hizli oynayinca cleanup ile iptal olup luck'i kaybediyordu).
           }
           if (r.length > 0) {
             const b = r[0]
