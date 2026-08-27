@@ -1,7 +1,7 @@
 import type { Player } from '../engine/types'
 
 // Zar yuzu - pip (nokta) konumlari yuzde olarak (mutlak konumlandirma -> garanti render)
-const PIP_POS: Record<number, [number, number][]> = {
+export const PIP_POS: Record<number, [number, number][]> = {
   1: [[50, 50]],
   2: [[30, 30], [70, 70]],
   3: [[30, 30], [50, 50], [70, 70]],

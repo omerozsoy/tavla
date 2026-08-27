@@ -61,11 +61,9 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
   const [sel, setSel] = useState(firstMistake)
-  // Bir hamlenin aday listesinde OYNANAN adayin indexi (yoksa 0 = en iyi)
-  const playedCandIdx = (e?: LogEntry) => {
-    const idx = e?.cands?.findIndex((c) => c.notation === e.notation) ?? -1
-    return idx >= 0 ? idx : 0
-  }
+  // Aday listesinde OYNANAN adayin indexi; -1 = oynanan hamle top listede yok (blunder)
+  // -1 durumunda tahtada gercek oynanan adimlar (playedSteps) gosterilir.
+  const playedCandIdx = (e?: LogEntry) => e?.cands?.findIndex((c) => c.notation === e.notation) ?? -1
   // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
   // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
   const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
@@ -100,9 +98,11 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   // Tahtada hangi hamle: secili aday varsa o, yoksa oynanan
   const viewSteps = useMemo<Step[]>(() => {
     if (!cur) return []
-    if (cur.cands && cur.cands[candIdx]) return cur.cands[candIdx].steps
+    if (candIdx >= 0 && cur.cands && cur.cands[candIdx]) return cur.cands[candIdx].steps
     return cur.playedSteps ?? cur.steps ?? []
   }, [cur, candIdx])
+  // Oynanan hamlenin aday listesindeki yeri (-1: top listede yok -> ayri "Senin hamlen" satiri)
+  const playedIdx = cur?.cands?.findIndex((c) => c.notation === cur.notation) ?? -1
 
   function selectMove(i: number) {
     setSel(i)
@@ -275,7 +275,13 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
             <div className="analysis-detail">
               {cur?.pos && cur.player ? (
                 <>
-                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} />
+                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} />
+                  {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
+                  <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
+                    {candIdx < 0 || candIdx === playedIdx
+                      ? t('rep.yourMove')
+                      : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
+                  </div>
                   {winPct(cur.probs) != null && (
                     <div className="an-winbar" title={t('rep.winChance')}>
                       <div className="an-winfill" style={{ width: `${winPct(cur.probs)}%` }} />
@@ -287,7 +293,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
                   <div className="an-cands">
                     {(cur.cands ?? []).map((c, ci) => {
                       const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
-                      const isPlayed = c.notation === cur.notation
+                      const isPlayed = ci === playedIdx
                       return (
                         <button
                           key={ci}
@@ -299,10 +305,33 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
                           <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
                             {ci === 0 ? `+${c.equity.toFixed(3)}` : diff.toFixed(3)}
                           </span>
-                          {isPlayed && <Icon name="check" size={13} />}
+                          <span className="an-tags">
+                            {ci === 0 && (
+                              <span className="an-star" title={t('rep.best')}>
+                                <Icon name="star" size={13} />
+                              </span>
+                            )}
+                            {isPlayed && <Icon name="check" size={13} />}
+                          </span>
                         </button>
                       )
                     })}
+                    {/* Oynadigin hamle top listede yoksa (blunder) ayrica goster + isaretle */}
+                    {playedIdx < 0 && cur.notation && (
+                      <button
+                        className={`an-cand played you ${candIdx < 0 ? 'view' : ''}`}
+                        onClick={() => setCandIdx(-1)}
+                      >
+                        <span className="an-rank">·</span>
+                        <span className="an-cmove">{cur.notation}</span>
+                        <span className="an-eq neg">
+                          {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
+                        </span>
+                        <span className="an-tags">
+                          <span className="an-you-tag">{t('rep.yourMove')}</span>
+                        </span>
+                      </button>
+                    )}
                   </div>
                 </>
               ) : (

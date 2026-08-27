@@ -4857,7 +4857,7 @@ button[aria-disabled='true'],
 .hero-board {
   position: relative;
   align-self: stretch;
-  min-height: 150px;
+  min-height: 240px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -4889,36 +4889,13 @@ button[aria-disabled='true'],
 :root[data-theme='light'] .hero-point.b {
   background: linear-gradient(color-mix(in srgb, var(--tv-ink) 24%, transparent), transparent);
 }
-.hero-dice {
-  position: relative;
+/* 3D fizik zar kanvasi: hero board ceyregini seffaf kaplar, noktalar arkada kalir */
+.hero-dice3d {
+  position: absolute;
+  inset: 0;
   z-index: 2;
-  display: flex;
-  gap: 14px;
-  margin-bottom: 26px;
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.3));
-}
-.hero-die {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-lg);
-  background-color: var(--cream);
-  border: 1px solid color-mix(in srgb, var(--tv-ink) 20%, transparent);
-}
-.hero-die--5 {
-  transform: rotate(-8deg);
-  background-image:
-    radial-gradient(circle 5px at 27% 27%, var(--tv-ink) 96%, transparent 100%),
-    radial-gradient(circle 5px at 73% 27%, var(--tv-ink) 96%, transparent 100%),
-    radial-gradient(circle 5px at 50% 50%, var(--tv-ink) 96%, transparent 100%),
-    radial-gradient(circle 5px at 27% 73%, var(--tv-ink) 96%, transparent 100%),
-    radial-gradient(circle 5px at 73% 73%, var(--tv-ink) 96%, transparent 100%);
-}
-.hero-die--3 {
-  transform: rotate(7deg);
-  background-image:
-    radial-gradient(circle 5px at 28% 28%, var(--accent) 96%, transparent 100%),
-    radial-gradient(circle 5px at 50% 50%, var(--accent) 96%, transparent 100%),
-    radial-gradient(circle 5px at 72% 72%, var(--accent) 96%, transparent 100%);
+  width: 100%;
+  height: 100%;
 }
 @media (max-width: 720px) {
   .lobby-hero {
@@ -4935,7 +4912,7 @@ button[aria-disabled='true'],
     justify-content: center;
   }
   .hero-board {
-    min-height: 120px;
+    min-height: 200px;
     order: -1;
   }
 }
@@ -5617,6 +5594,42 @@ button[aria-disabled='true'],
 }
 .an-cand svg {
   color: var(--color-success);
+}
+/* Son sutun: en iyi (altin yildiz) + oynanan (yesil tik) rozetleri */
+.an-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.an-cand .an-star {
+  display: inline-flex;
+}
+.an-cand .an-star svg {
+  color: var(--tv-gold); /* en iyi hamle: altin yildiz (yesil tik'i ezer) */
+}
+/* "Senin hamlen" rozeti (top listede olmayan blunder icin ayri satir) */
+.an-you-tag {
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--tv-brick-light);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  white-space: nowrap;
+}
+.an-cand.you {
+  border-color: var(--accent);
+}
+/* Tahta alti: su an gosterilen hamlenin etiketi (senin hamlen / aday #n) */
+.an-view-label {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.an-view-label.you {
+  color: var(--tv-gold);
 }
 .register-sub.small {
   font-size: 0.85rem;
