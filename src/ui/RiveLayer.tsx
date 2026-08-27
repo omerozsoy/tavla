@@ -1,14 +1,89 @@
+import { useEffect, useRef } from 'react'
 import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
 
-// Rive katmani — yalnizca cerceve config'inde `rive` URL'si tanimliysa mount edilir.
-// Su an hicbir cerceve dosya tanimlamiyor; mimari hazir. .riv dosyasi eklenip
-// FRAME_FX'te URL verilince bu katman otomatik devreye girer (foto ustunde, seffaf).
-export default function RiveLayer({ src, stateMachine }: { src: string; stateMachine?: string }) {
-  const { RiveComponent } = useRive({
+// Avatar cerceve Rive katmani. `.riv` dosyalari 5 adlandirilmis animasyon icerir:
+//   idle · hover · selected · reduced (hepsi loop) · celebrate (oneShot).
+// NEDEN state machine yerine kod-surumlu animasyon: riv_create'in urettigi SM'de bool=false
+// (hover birak / selected kaldir) gecisleri guvenilir atesLENMIYOR (probe ile dogrulandi).
+// Bu yuzden reaksiyonlar .riv icinde ayri animasyon olarak authored edilir, RiveLayer runtime'da
+// (rive.play/stop) hangisinin oynayacagini prop'lara gore secer -> deterministik + gorunur tepki.
+//
+// Oncelik: reduced > selected > hover > idle. celebrate her durumda one-shot oynar, biter, taban
+// state'e doner. intensity (0-100) canvas gorsel yogunlugunu (opacity) surer.
+export type RiveLayerProps = {
+  src: string
+  /** Cok-artboard'li dosyada artboard adi (kontrat: rarity adi) */
+  artboard?: string
+  hover?: boolean
+  selected?: boolean
+  /** prefers-reduced-motion -> minimal hareket, particle yok */
+  reduced?: boolean
+  /** 0-100 global gorsel yogunluk (canvas opacity'sine haritalanir) */
+  intensity?: number
+  /** Bu sayi her degistiginde celebrate one-shot oynar */
+  celebrateSignal?: number
+  className?: string
+}
+
+const BASE = { idle: 'idle', hover: 'hover', selected: 'selected', reduced: 'reduced' } as const
+const CELEBRATE_MS = 1450 // celebrate animasyonu 1.4s; tampon ile taban state'e don
+
+export default function RiveLayer({
+  src,
+  artboard,
+  hover = false,
+  selected = false,
+  reduced = false,
+  intensity = 100,
+  celebrateSignal = 0,
+  className = 'avf-rive',
+}: RiveLayerProps) {
+  const { rive, RiveComponent } = useRive({
     src,
-    stateMachines: stateMachine,
+    artboard,
+    animations: BASE.idle,
     autoplay: true,
     layout: new Layout({ fit: Fit.Contain, alignment: Alignment.Center }),
   })
-  return <RiveComponent className="avf-rive" />
+
+  // Taban state onceligi: reduced > selected > hover > idle
+  const base = reduced ? BASE.reduced : selected ? BASE.selected : hover ? BASE.hover : BASE.idle
+  const baseRef = useRef(base)
+  const celebratingRef = useRef(false)
+
+  // Taban state degisince ilgili animasyona gec (celebrate oynuyorsa sadece hedefi guncelle,
+  // celebrate bitince oraya doneriz).
+  useEffect(() => {
+    baseRef.current = base
+    if (!rive || celebratingRef.current) return
+    rive.stop()
+    rive.play(base)
+  }, [rive, base])
+
+  // celebrate one-shot: taban durur, celebrate oynar, sure sonunda guncel tabana doner.
+  useEffect(() => {
+    if (!rive || celebrateSignal <= 0) return
+    celebratingRef.current = true
+    rive.stop()
+    rive.play('celebrate')
+    const t = setTimeout(() => {
+      celebratingRef.current = false
+      if (!rive) return
+      rive.stop()
+      rive.play(baseRef.current)
+    }, CELEBRATE_MS)
+    return () => clearTimeout(t)
+    // base'i bilerek dependency'ye koymuyoruz: celebrate yalnizca sinyal artisinda tetiklenmeli.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rive, celebrateSignal])
+
+  // intensity -> gorsel yogunluk (canvas opacity). 0 => 0.45, 100 => 1.0
+  const clamped = Math.max(0, Math.min(100, intensity))
+  const layerOpacity = 0.45 + 0.55 * (clamped / 100)
+
+  return (
+    <div className={className} style={{ opacity: layerOpacity }}>
+      <RiveComponent />
+    </div>
+  )
 }

@@ -1,9 +1,19 @@
 # Rive Avatar Frames — Tasarım & Entegrasyon Spec'i
 
-> **Durum:** `@rive-app/react-canvas ^4.32.1` kurulu, `RiveLayer.tsx` bağlı, `.riv` dosyaları YOK.
-> `.riv` yalnızca Rive editöründe (rive.app) çizilir — koddan üretilemez. Bu belge, editörde
-> **birebir** uygulanacak yapım kılavuzu + kodun bağlanacağı sabit kontrattır. Dosyalar bu
-> kontrata uyunca kod tarafı sıfır değişiklikle çalışır.
+> **Durum (güncel):** `@rive-app/react-canvas ^4.32.1` kurulu. **Epic / Legendary / Mythic
+> `.riv` dosyaları Rive MCP (`riv_create`) ile ÜRETİLDİ** ve `RiveLayer.tsx`'e bağlandı;
+> `/cerceve-lab` demosunda canlı. Dosyalar: `src/assets/rive/avatar-frames/{epic,legendary,mythic}.riv`
+> (tek artboard/dosya, artboard adı = rarity, state machine `Frame`, 5 input hazır).
+> Her frame **5 animasyon authored**: idle / hover / selected / reduced (loop) + celebrate (oneShot),
+> hepsi create→render→critique ile koyu zeminde doğrulandı.
+>
+> **Reaksiyon mimarisi:** `riv_create`'in ürettiği state machine'de `bool=false` geçişi (hover-bırak /
+> selected-kaldır) GÜVENİLİR ATEŞLENMİYOR (probe ile kanıtlandı; "hover'da tut, bırakınca dön" kurulamaz).
+> Bu yüzden reaksiyonlar SM grafiğiyle DEĞİL, `RiveLayer.tsx`'te **runtime `rive.play/stop`** ile sürülür
+> (tam-animasyon-swap; öncelik reduced>selected>hover>idle; celebrate one-shot→setTimeout ile tabana dön;
+> `intensity`→canvas opacity). Görsel doğrulama: `/cerceve-lab` demosu (boyut + yoğunluk + reduced +
+> Hover/Selected/Celebrate). Not: kontrat tek-dosya-çok-artboard öngörüyordu; MCP dosya başına tek artboard
+> ürettiği için şimdilik 3 ayrı dosya (RiveLayer `src` başına yükler).
 >
 > **1. teslim (brief §25):** Epic, Legendary, Mythic. Onaydan sonra Common + Rare + production.
 
