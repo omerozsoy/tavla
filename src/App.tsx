@@ -3910,7 +3910,13 @@ export default function App() {
           </span>
         )}
         <span>
-          {online && onlineReady && !myTurn && !gameEnd && !opening ? t('mp.oppTurn') : message}
+          {online && onlineReady && !myTurn && !gameEnd && !opening
+            ? t('mp.oppTurn')
+            : // Yapay zekaya karsi oyunda "Beyaz oynuyor / Zarlar / dusunuyor" gibi
+              // anlatim yazilarini gosterme (board zaten zar+sirayi gorsel veriyor).
+              mode === 'pvb'
+              ? null
+              : message}
         </span>
         {prValue != null && (
           <span className="pr-chip" title={t('pr.title')}>
