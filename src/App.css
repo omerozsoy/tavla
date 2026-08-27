@@ -4116,10 +4116,24 @@ button[aria-disabled='true'],
      yatay cercevesinden tasip sol kenari kesiliyordu (iOS'ta 100dvh adres cubuguyla dar). */
   --board-h: max(220px, min(calc(100vw - 52px), calc((100dvh - 150px) / 1.72)));
 }
+/* Icerigi cerceveye GARANTI ortala: justify-content bazi durumlarda tutmuyordu ->
+   margin:auto + overflow:visible + padding sifirla (board sola kayip kesilmesin) */
+#root.force-landscape .app {
+  padding: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
 #root.force-landscape .main {
-  width: 100%;
-  align-items: center;
-  justify-content: center;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#root.force-landscape .game-area {
+  margin: auto !important;
 }
 /* Force-landscape: gercek viewport 390px dikey oldugundan max-width:720/900 DIKEY
    mobil kurallari tetikleniyor; #root 844px genis oldugu icin bunlari geri alip
