@@ -314,6 +314,8 @@ export async function leaveClub(): Promise<void> {
 
 // Mac gecmisi (giris yapan kullanici)
 export interface MyMatch {
+  id: number
+  has_log?: boolean
   won: boolean
   opponent_rating: number
   opponent_name?: string | null
@@ -872,6 +874,7 @@ export async function reportRating(
   scoreOpp?: number | null,
   opponentName?: string | null,
   opponentPr?: number | null,
+  log?: string | null,
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -885,8 +888,15 @@ export async function reportRating(
       score_opp: scoreOpp ?? null,
       opponent_name: opponentName ?? null,
       opponent_pr: opponentPr ?? null,
+      log: log ?? null,
     }),
   })
+}
+
+// Bir macin tam analiz log'u (JSON string; { hc, log } yapisi). Yoksa null.
+export async function matchLogById(id: number): Promise<string | null> {
+  const data = await req<{ log: string | null }>(`/me/matches/${id}/log`)
+  return data.log
 }
 
 // Poll: since verilirse degismemisse null doner

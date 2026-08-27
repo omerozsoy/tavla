@@ -256,6 +256,7 @@ class AuthController extends Controller
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
+            'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
         ]);
         $user = $request->user();
 
@@ -315,6 +316,9 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
             $mr['opponent_pr'] = $data['opponent_pr'] ?? null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+            $mr['log'] = $data['log'] ?? null;
         }
         \App\Models\MatchResult::create($mr);
 
@@ -474,18 +478,22 @@ class AuthController extends Controller
         // calismadiysa o kolonlari SECME (aksi halde "unknown column" -> tum liste bos).
         $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck');
         $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
-        $cols = ['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
+        $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
+        // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
+        $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
             $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
         }
         if ($hasOpp) {
             $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
         }
-        $matches = \App\Models\MatchResult::where('user_id', $me->id)
-            ->orderByDesc('id')
-            ->limit(30)
-            ->get($cols)
+        $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(30)->select($cols);
+        if ($hasLog) {
+            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL) as has_log'));
+        }
+        $matches = $q->get()
             ->map(fn ($m) => [
+                'id' => $m->id,
                 'won' => (bool) $m->won,
                 'opponent_rating' => $m->opponent_rating,
                 'opponent_name' => $hasOpp ? $m->opponent_name : null,
@@ -499,10 +507,23 @@ class AuthController extends Controller
                 'luck' => $hasNew ? $m->luck : null,
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
+                'has_log' => $hasLog ? (bool) $m->has_log : false,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 
         return response()->json(['matches' => $matches]);
+    }
+
+    // Bir macin tam analiz log'u (hamle-hamle MatchReport icin). Sahiplik kontrolu.
+    public function matchLog(Request $request, \App\Models\MatchResult $match)
+    {
+        if ($match->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+            return response()->json(['log' => null]);
+        }
+        return response()->json(['log' => $match->log]); // JSON string (istemci parse eder)
     }
 
     // Profil analizi: rating/coin gecmisi + mac-uzunluguna gore kazanma%/PR + WXP
