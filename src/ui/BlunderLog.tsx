@@ -90,7 +90,7 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
                   </button>
                   {open && pos && (
                     <div className="blunder-board">
-                      <MiniBoard state={pos} steps={steps ?? []} player={(b.player as Player) ?? 'white'} />
+                      <MiniBoard state={pos} steps={steps ?? []} player={(b.player as Player) ?? 'white'} flip={b.player === 'black'} />
                       <div className="blunder-hint">
                         {t('blunder.bestWas')}: <b>{b.best}</b>
                       </div>

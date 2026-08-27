@@ -3047,9 +3047,10 @@ button[aria-disabled='true'],
   box-shadow: inset 0 0 0 2px var(--tv-white);
 }
 .pip {
-  color: rgba(255, 255, 255, 0.82);
-  font-weight: 700;
-  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.92);
+  font-weight: 800;
+  font-size: 1.2rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
 }
 /* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
 .cube {
