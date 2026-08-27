@@ -4553,6 +4553,19 @@ html.fs-active .account-bar {
   gap: 6px;
   font-variant-numeric: tabular-nums;
 }
+/* Toplanan pul kutusu (Galaxy: saat kolonunda, saatin ust/altinda beyaz kutu) */
+.clock-off {
+  min-width: 44px;
+  padding: 7px 10px;
+  border-radius: var(--radius-md);
+  background: var(--cream, #f4efe6);
+  color: #14110c;
+  font-weight: 800;
+  font-size: 1.15rem;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
 /* Kompakt scoreboard (#5): pasif kutular sade koyu cip; aktif olan aksanla belirir */
 .clock-reserve {
   min-width: 44px;
