@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+// 3D hero zar sahnesi three.js/cannon-es icerir -> ayri chunk (ana paketi sismesin).
+const HeroDice3D = lazy(() => import('./ui/dice3d/HeroDice3D'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
@@ -3633,10 +3635,9 @@ export default function App() {
                     />
                   ))}
                 </div>
-                <div className="hero-dice">
-                  <span className="hero-die hero-die--5" />
-                  <span className="hero-die hero-die--3" />
-                </div>
+                <Suspense fallback={<div className="hero-dice3d" />}>
+                  <HeroDice3D className="hero-dice3d" />
+                </Suspense>
               </div>
             </section>
             <div className="lobby-welcome">

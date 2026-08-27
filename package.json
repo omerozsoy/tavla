@@ -15,16 +15,19 @@
     "@tsparticles/engine": "^4.3.2",
     "@tsparticles/react": "^4.3.2",
     "@tsparticles/slim": "^4.3.2",
+    "cannon-es": "^0.20.0",
     "gsap": "^3.15.0",
     "lottie-react": "^3.1.0",
     "onnxruntime-web": "^1.27.0",
     "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "react-dom": "^19.2.7",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.185.4",
     "@vitejs/plugin-react": "^6.0.3",
     "onnxruntime-node": "^1.27.0",
     "oxlint": "^1.71.0",

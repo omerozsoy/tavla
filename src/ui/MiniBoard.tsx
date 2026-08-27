@@ -1,4 +1,5 @@
 import type { GameState, Player, Step } from '../engine/types'
+import { PIP_POS } from './Dice'
 
 // Analiz icin kucuk board: pozisyonu ciz + hamleyi ok(lar) ile goster.
 // Olculer gercek tavla oranina gore turetilir; taslar sutun genisligine bagli
@@ -37,10 +38,13 @@ function anchor(p: number | 'bar' | 'off'): { x: number; y: number } {
 export default function MiniBoard({
   state,
   steps,
+  player,
+  dice,
 }: {
   state: GameState
   steps: Step[]
   player: Player
+  dice?: number[]
 }) {
   // Ucgenler
   const tris = []
@@ -140,6 +144,32 @@ export default function MiniBoard({
     )
   })
 
+  // Zarlar: normal oyundaki gibi board ortasinda (sag yari), oynayan tarafin rengiyle
+  const dieEls =
+    dice && dice.length >= 2
+      ? (() => {
+          const white = player === 'white'
+          const face = white ? 'var(--cream)' : 'var(--navy)'
+          const pipC = white ? 'var(--tv-ink)' : 'var(--cream)'
+          const s = COL_W * 1.25
+          const gap = s * 0.32
+          const cx = HALF_W + BAR_W + HALF_W / 2 // sag yari merkezi
+          const startX = cx - (s * 2 + gap) / 2
+          const dy = H / 2 - s / 2
+          return [dice[0], dice[1]].map((val, di) => {
+            const dx = startX + di * (s + gap)
+            return (
+              <g key={`die${di}`}>
+                <rect x={dx} y={dy} width={s} height={s} rx={s * 0.18} fill={face} stroke="#0007" strokeWidth={1} />
+                {(PIP_POS[val] ?? []).map(([px, py], pi) => (
+                  <circle key={pi} cx={dx + (s * px) / 100} cy={dy + (s * py) / 100} r={s * 0.08} fill={pipC} />
+                ))}
+              </g>
+            )
+          })
+        })()
+      : null
+
   return (
     <svg className="mini-board" viewBox={`0 0 ${W} ${H}`} width="100%">
       <defs>
@@ -154,6 +184,7 @@ export default function MiniBoard({
       <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="var(--bar)" />
       {tris}
       {discs}
+      {dieEls}
       {arrows}
     </svg>
   )
