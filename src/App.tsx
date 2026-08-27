@@ -81,6 +81,7 @@ import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
+import MatchAnalytics from './ui/MatchAnalytics'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
@@ -575,6 +576,7 @@ export default function App() {
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
+  const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
@@ -609,6 +611,8 @@ export default function App() {
             ? 'arkadaslar'
             : blunderOpen
               ? 'hata-gunlugu'
+              : matchHistOpen
+                ? 'mac-analizleri'
               : fairOpen
                 ? 'adillik'
                 : lessonsOpen
@@ -676,6 +680,9 @@ export default function App() {
           break
         case 'hata-gunlugu':
           setBlunderOpen(true)
+          break
+        case 'mac-analizleri':
+          setMatchHistOpen(true)
           break
         case 'adillik':
           setFairOpen(true)
@@ -3275,6 +3282,7 @@ export default function App() {
     setStatsOpen(false)
     setFriendsOpen(false)
     setBlunderOpen(false)
+    setMatchHistOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
     setSoloOpen(false)
@@ -3328,6 +3336,7 @@ export default function App() {
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
     // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
     onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
+    onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
@@ -3390,6 +3399,7 @@ export default function App() {
     statsOpen ||
     friendsOpen ||
     blunderOpen ||
+    matchHistOpen ||
     fairOpen ||
     lessonsOpen ||
     soloOpen ||
@@ -3467,6 +3477,7 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
+      {matchHistOpen && user && <MatchAnalytics onClose={() => setMatchHistOpen(false)} />}
       {contentView && (
         <ContentView
           type={contentView}

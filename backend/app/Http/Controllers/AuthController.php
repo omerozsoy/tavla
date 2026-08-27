@@ -454,13 +454,16 @@ class AuthController extends Controller
         $matches = \App\Models\MatchResult::where('user_id', $me->id)
             ->orderByDesc('id')
             ->limit(30)
-            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'created_at'])
+            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'])
             ->map(fn ($m) => [
                 'won' => (bool) $m->won,
                 'opponent_rating' => $m->opponent_rating,
                 'rating_before' => $m->rating_before,
                 'rating_after' => $m->rating_after,
                 'delta' => $m->delta,
+                'match_length' => $m->match_length,
+                'pr' => $m->pr,
+                'coins_after' => $m->coins_after,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 
