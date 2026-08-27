@@ -346,6 +346,13 @@ const CLUB_THEMES: BoardTheme[] = [
     d1Bg: '#F3F3F3', d1Pip: '#111111', d2Bg: '#121212', d2Pip: '#FFFFFF',
     cubeBg: '#111111', cubeText: '#FFFFFF', watermark: 'BEŞİKTAŞ',
   },
+  {
+    // Trabzonspor: bordo-mavi (isim+renk, logo yok — eski kulup kurallari)
+    id: 'trabzonspor', name: 'Trabzonspor', rarity: 'club',
+    panel: '#7A1E33', a: '#0E4C92', b: '#5F1728', checker: '#0E4C92', light: '#F5DCE2', frame: '#40101D',
+    d1Bg: '#7A1E33', d1Pip: '#F5DCE2', d2Bg: '#0E4C92', d2Pip: '#FFFFFF',
+    cubeBg: '#0E4C92', cubeText: '#F5DCE2', watermark: 'TRABZONSPOR',
+  },
 ]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
@@ -924,6 +931,7 @@ export default function App() {
     // -> data-attribute; CSS bunlara gore pul/yuzey gorunumunu degistirir.
     root.setAttribute('data-checker', bt.checkerStyle ?? 'flat')
     root.setAttribute('data-surface', bt.surface ?? 'plain')
+    root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
     // Watermark rengi: board zemini acik -> koyu logo, koyu -> acik logo (0.05-0.09 alfa)
     root.style.setProperty(
       '--wm-color',

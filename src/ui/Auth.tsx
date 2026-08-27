@@ -630,12 +630,13 @@ export default function Auth({
           </div>
         )}
 
-        {/* Gate alt bar: Misafir olarak oyna + Vazgec (page modunda X yok) */}
+        {/* Gate alt bar: Misafir olarak oyna + Vazgec — ikisi de ayni SADE ghost
+            buton (dikkat cekmez, hizali). Page modunda X yok; ESC de kapatir. */}
         {!editing && !forgot && (
           <div className="auth-foot">
             <button
               type="button"
-              className="guest-link"
+              className="auth-ghost"
               onClick={() =>
                 onGuest({
                   firstName: '',
@@ -649,7 +650,7 @@ export default function Auth({
               {t('auth.guest')}
             </button>
             {onCancel && (
-              <button type="button" className="forgot-link" onClick={onCancel}>
+              <button type="button" className="auth-ghost" onClick={onCancel}>
                 {t('reg.cancel')}
               </button>
             )}

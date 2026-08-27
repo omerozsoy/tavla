@@ -2674,6 +2674,16 @@ button[aria-disabled='true'],
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
 }
 
+/* Kulup (takim) boardlari: pullar zeminle ayni tonda kalabiliyordu -> ince GUMUS/
+   BEYAZ halka + belirgin golge; taslar zeminden net ayrisir (renk degismez). */
+[data-board-rarity='club'] .checker.white,
+[data-board-rarity='club'] .checker.black {
+  border: 1.5px solid rgba(224, 229, 236, 0.92);
+  box-shadow:
+    0 0 0 0.5px rgba(255, 255, 255, 0.4),
+    0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
 /* ===== PUL STILLERI (data-checker) — renk --cream/--navy'den; stil = finish/efekt.
    Referans board'un pul karakterini yeniden uretir (flat disk / cilali / buz /
    halka / neon). 'flat' varsayilan; asagidakiler onu override eder. ===== */
@@ -6046,6 +6056,32 @@ button[aria-disabled='true'],
 .analyzer-board {
   grid-area: board;
   min-width: 0;
+  position: relative; /* 15 tas limiti toast'i icin */
+}
+/* 15 tas limiti: board ustunde kibar, gecici uyari */
+.pa-limit-toast {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 15px;
+  background: var(--card-bg);
+  border: 1px solid var(--color-warning);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.pa-limit-toast svg {
+  color: var(--color-warning);
+  flex: none;
 }
 .analyzer-controls {
   grid-area: controls;
@@ -9109,9 +9145,11 @@ select:-webkit-autofill {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+  /* Mobilde tek kolon -> dikey ortadan ayirici gizle; yerine yatay ayirici */
+  .auth-cols::before {
+    display: none;
+  }
   .auth-col + .auth-col {
-    border-left: none;
-    padding-left: 0;
     border-top: 1px solid var(--border);
     padding-top: 18px;
   }
@@ -9134,7 +9172,7 @@ select:-webkit-autofill {
 .register-overlay.page > .register-card.auth-card {
   align-self: center;
   margin: 0 auto;
-  max-width: 820px; /* iki kolon (Giris | Kayit) sigsin */
+  max-width: 900px; /* iki kolon (Giris | Kayit) rahat sigsin */
   min-height: 0;
   max-height: none;
   padding: 26px 30px 30px;
@@ -9151,23 +9189,31 @@ select:-webkit-autofill {
   margin: 0 0 14px;
 }
 
-/* ---- Giris | Kayit YAN YANA (iki kolon) ---- */
+/* ---- Giris | Kayit YAN YANA (iki EŞIT kolon) ----
+   1fr 1fr + ortada bosluk. Ayirici cizgi bosluk ORTASINDA (::before) -> kolon
+   iceriklerine asimetrik padding EKLEMEZ; iki kolon birebir esit genislikte. */
 .auth-cols {
+  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0 30px;
+  column-gap: 56px;
   align-items: start;
+}
+.auth-cols::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-50%);
+  background: var(--border);
 }
 .auth-col {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
-}
-/* Ikinci kolon ortada ince ayirici + ic bosluk */
-.auth-col + .auth-col {
-  border-left: 1px solid var(--border);
-  padding-left: 30px;
 }
 .auth-col-title {
   font-size: 1.02rem;
@@ -9183,13 +9229,34 @@ select:-webkit-autofill {
 .auth-col .google-auth {
   margin-top: 2px;
 }
-/* Alt bar: Misafir olarak oyna + Vazgec, ortalanmis */
+/* Alt bar: Misafir olarak oyna + Vazgec, ortalanmis; ikisi de ayni sade ghost buton */
 .auth-foot {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 18px;
-  margin-top: 18px;
+  gap: 12px;
+  margin-top: 20px;
+}
+/* Dikkat cekmeyen (ghost) buton: sade kenar, muted metin; ikisi ayni -> hizali */
+.auth-ghost {
+  padding: 8px 18px;
+  border: 1px solid var(--btn-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease,
+    background-color 0.12s ease;
+}
+.auth-ghost:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 
 .register-card .form-grid.reg-grid {
