@@ -85,6 +85,7 @@ import SoloStakes from './ui/SoloStakes'
 import BlunderLog from './ui/BlunderLog'
 import MatchAnalytics from './ui/MatchAnalytics'
 import FrameDemo from './ui/FrameDemo'
+import GamePreview from './ui/GamePreview'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
@@ -581,6 +582,7 @@ export default function App() {
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
+  const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
@@ -620,6 +622,8 @@ export default function App() {
                 ? 'mac-analizleri'
               : frameDemoOpen
                 ? 'cerceve-demo'
+              : gamePreviewOpen
+                ? 'oyun-onizleme'
               : fairOpen
                 ? 'adillik'
                 : lessonsOpen
@@ -693,6 +697,9 @@ export default function App() {
           break
         case 'cerceve-demo':
           setFrameDemoOpen(true)
+          break
+        case 'oyun-onizleme':
+          setGamePreviewOpen(true)
           break
         case 'adillik':
           setFairOpen(true)
@@ -3348,6 +3355,7 @@ export default function App() {
     setBlunderOpen(false)
     setMatchHistOpen(false)
     setFrameDemoOpen(false)
+    setGamePreviewOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
     setSoloOpen(false)
@@ -3466,6 +3474,7 @@ export default function App() {
     blunderOpen ||
     matchHistOpen ||
     frameDemoOpen ||
+    gamePreviewOpen ||
     fairOpen ||
     lessonsOpen ||
     soloOpen ||
@@ -3545,6 +3554,7 @@ export default function App() {
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {matchHistOpen && user && <MatchAnalytics onClose={() => setMatchHistOpen(false)} />}
       {frameDemoOpen && <FrameDemo onClose={() => setFrameDemoOpen(false)} />}
+      {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}
       {contentView && (
         <ContentView
           type={contentView}
