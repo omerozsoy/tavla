@@ -322,6 +322,9 @@ export interface MyMatch {
   match_length?: number | null
   pr?: number | null
   coins_after?: number | null
+  luck?: number | null
+  score_self?: number | null
+  score_opp?: number | null
   created_at?: string | null
 }
 export async function myMatches(): Promise<MyMatch[]> {
@@ -862,6 +865,9 @@ export async function reportRating(
   opponentRating: number,
   matchLength?: number,
   pr?: number | null,
+  luck?: number | null,
+  scoreSelf?: number | null,
+  scoreOpp?: number | null,
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -870,6 +876,9 @@ export async function reportRating(
       opponent_rating: opponentRating,
       match_length: matchLength ?? null,
       pr: pr ?? null,
+      luck: luck ?? null,
+      score_self: scoreSelf ?? null,
+      score_opp: scoreOpp ?? null,
     }),
   })
 }

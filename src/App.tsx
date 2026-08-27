@@ -1777,7 +1777,15 @@ export default function App() {
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
     const before = user.rating ?? 1500
-    reportRating(won, oppRating, match.target, prOf(myColor))
+    reportRating(
+      won,
+      oppRating,
+      match.target,
+      prOf(myColor),
+      prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
+      match.score[myColor],
+      match.score[opponent(myColor)],
+    )
       .then((r) => {
         setRatingChange({ before, after: r.rating })
         setUser((u) => (u ? { ...u, rating: r.rating } : u))
@@ -1835,7 +1843,15 @@ export default function App() {
       const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
       const won = mW === 'white' // pvb'de insan beyaz
       const before = user.rating ?? 1500
-      reportRating(won, botRating, match.target, prOf('white'))
+      reportRating(
+        won,
+        botRating,
+        match.target,
+        prOf('white'),
+        prLuck.white - prLuck.black, // goreceli sans (zero-sum)
+        match.score.white,
+        match.score.black,
+      )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
           setUser((u) => (u ? { ...u, rating: r.rating } : u))
