@@ -1898,10 +1898,11 @@ export default function App() {
     setBotAnim(null)
     setOpening(null)
     setOppStarted(true)
-    // Sure bitimi/pes/kup-pas rakip yerelde goremez (hamle degismez) -> senkronla goster.
-    // Normal galibiyetler iki istemcide de yerel algilanir, onlari burda islemeyiz.
-    if (snap.gameEnd?.timeout || snap.gameEnd?.resigned || snap.gameEnd?.dropped)
-      setGameEnd(snap.gameEnd)
+    // Oyun sonu (normal galibiyet DAHIL) senkronla: aliciya gameEnd, kendi kazanma
+    // effect'inden ONCE set edilir -> effect `if (gameEnd) return` ile atlar (cift-sayim
+    // yok) ve skor iki istemcide de tutar. null senkronlanmaz (sonraki-oyun gecisinde
+    // rakibin sonuc ekrani erken kapanmasin; her oyuncu kendi "sonraki oyun"uyla ilerler).
+    if (snap.gameEnd) setGameEnd(snap.gameEnd)
   }
 
   // Online: yerel degisikligi odaya gonder (senkron)
