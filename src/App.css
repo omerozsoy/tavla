@@ -4514,12 +4514,17 @@ html.fs-active .account-bar {
     padding-top: 4px;
     gap: 4px;
   }
+  /* Yatay: max-width:900 kurali game-area'yi column yapiyordu -> geri ROW (panel|saat|board) */
   .game-area {
+    flex-direction: row;
+    align-items: center;
     gap: 6px;
     padding: 4px;
   }
   .sidebar {
     width: 104px;
+    flex-direction: column;
+    justify-content: space-between;
   }
   .avatar {
     width: 46px;
