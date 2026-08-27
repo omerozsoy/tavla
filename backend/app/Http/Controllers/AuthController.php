@@ -51,6 +51,9 @@ class AuthController extends Controller
             $user->sendEmailVerificationNotification();
         } catch (\Throwable $e) {
             // Mail gonderilemezse kayit yine de tamamlanir (kullanici sonra tekrar gonderebilir)
+            \Illuminate\Support\Facades\Log::warning('register: verification mail failed', [
+                'user_id' => $user->id, 'err' => $e->getMessage(),
+            ]);
         }
 
         $token = $user->createToken('web')->plainTextToken;

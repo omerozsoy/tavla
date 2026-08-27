@@ -48,7 +48,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
   const selLocked = coins < sel.stake
 
   return (
-    <div className="register-overlay modal page">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="setup-split">
         <div className="register-card solo-card">
           <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>

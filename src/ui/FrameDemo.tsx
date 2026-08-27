@@ -46,7 +46,7 @@ export default function FrameDemo({ onClose }: { onClose: () => void }) {
   const [dark, setDark] = useState(true)
 
   return (
-    <div className="register-overlay modal page">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className={`fd-wrap ${dark ? 'fd-dark' : 'fd-light'}`} onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />

@@ -73,7 +73,7 @@ export default function Friends({ onInvite, onClose }: Props) {
   )
 
   return (
-    <div className="register-overlay modal page">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card friends-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />

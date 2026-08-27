@@ -3,12 +3,15 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { LangProvider } from './i18n.tsx'
+import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LangProvider>
-      <App />
-    </LangProvider>
+    <ErrorBoundary>
+      <LangProvider>
+        <App />
+      </LangProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
 

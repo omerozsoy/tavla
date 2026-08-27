@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "deploy:build": "node scripts/prepare-deploy.mjs",
     "lint": "oxlint",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
   "dependencies": {

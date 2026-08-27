@@ -317,14 +317,27 @@ class TournamentController extends Controller
         }
         if ($w >= $target && $w > $b) {
             $winnerName = $room->p1_name; // beyaz = oda p1
+            $winnerUid = $room->p1_user_id;
         } elseif ($b >= $target && $b > $w) {
             $winnerName = $room->p2_name; // siyah = oda p2
+            $winnerUid = $room->p2_user_id;
         } else {
             return null; // henuz kesin kazanan yok
         }
+        // KIMLIK ONCELIGI: oda slot'unda dogrulanmis user_id varsa bracket oyuncusuyla
+        // BIRE BIR eslesmeli -> ucuncu birinin odayi ele gecirip isim TAKLIDIYLE (spoof)
+        // yetkili sonuc uretmesi engellenir. user_id yoksa (misafir) isimle eslen (eski davranis).
         foreach (['p1', 'p2'] as $slot) {
-            if (isset($m[$slot]['name'], $m[$slot]['id']) && $m[$slot]['name'] === $winnerName) {
-                return (int) $m[$slot]['id'];
+            if (! isset($m[$slot]['id'])) {
+                continue;
+            }
+            $bid = (int) $m[$slot]['id'];
+            if ($winnerUid !== null) {
+                if ((int) $winnerUid === $bid) {
+                    return $bid;
+                }
+            } elseif (isset($m[$slot]['name']) && $m[$slot]['name'] === $winnerName) {
+                return $bid;
             }
         }
         return null;

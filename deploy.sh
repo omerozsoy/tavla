@@ -22,6 +22,9 @@ fi
 # Filament statik varliklarini (css/js) public'e yayinla
 $PHP artisan filament:assets || echo "UYARI: filament:assets atlandi"
 
+# DIKKAT: migrate --force geri alinamaz. Kritik surumlerde ONCE DB yedegi al
+# (Plesk > Databases > Export, ya da mysqldump). set -e sayesinde migrate patlarsa
+# script burada durur; ama yarim uygulanan migration'i GERI ALMAK elle yapilir.
 $PHP artisan migrate --force
 $PHP artisan optimize:clear
 

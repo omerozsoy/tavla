@@ -1,4 +1,5 @@
 import type { Player } from '../engine/types'
+import { useT } from '../i18n'
 
 // Zar yuzu - pip (nokta) konumlari yuzde olarak (mutlak konumlandirma -> garanti render)
 export const PIP_POS: Record<number, [number, number][]> = {
@@ -47,12 +48,13 @@ export default function DiceRow({
   swappable?: boolean
   onSwap?: () => void
 }) {
+  const { t } = useT()
   if (faces.length === 0) return null
   return (
     <div
       className={`board-dice ${swappable ? 'swappable' : ''}`}
       onClick={swappable ? onSwap : undefined}
-      title={swappable ? 'Sırayı değiştir' : undefined}
+      title={swappable ? t('dice.swap') : undefined}
     >
       {faces.map((f, i) => (
         // key'e deger dahil -> yeni atista yeniden mount olur, donme animasyonu oynar

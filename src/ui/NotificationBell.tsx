@@ -18,16 +18,16 @@ const ICONS: Record<string, IconName> = {
   coin: 'coin',
 }
 
-function timeAgo(iso?: string | null): string {
+function timeAgo(iso: string | null | undefined, t: (k: string, p?: Record<string, string | number>) => string): string {
   if (!iso) return ''
   const d = new Date(iso).getTime()
   const s = Math.max(0, Math.floor((Date.now() - d) / 1000))
-  if (s < 60) return 'şimdi'
+  if (s < 60) return t('notif.now')
   const m = Math.floor(s / 60)
-  if (m < 60) return `${m}dk`
+  if (m < 60) return t('notif.minAgo', { m })
   const h = Math.floor(m / 60)
-  if (h < 24) return `${h}sa`
-  return `${Math.floor(h / 24)}g`
+  if (h < 24) return t('notif.hourAgo', { h })
+  return t('notif.dayAgo', { d: Math.floor(h / 24) })
 }
 
 // Ust bardaki bildirim cani + kirmizi rozet + acilir liste
@@ -79,7 +79,7 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
                     <span className="notif-t">{n.title}</span>
                     {n.body && <span className="notif-b">{n.body}</span>}
                   </span>
-                  <span className="notif-time">{timeAgo(n.created_at)}</span>
+                  <span className="notif-time">{timeAgo(n.created_at, t)}</span>
                 </li>
               ))}
             </ul>

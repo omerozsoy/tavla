@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -8,5 +9,11 @@ export default defineConfig({
   // wasm cozumlemesi bozulmasin (Vite native asset olarak servis etsin).
   optimizeDeps: {
     exclude: ['onnxruntime-web'],
+  },
+  // Test yalnizca kendi kaynagimizi tarasin. Onceden config yoktu -> vitest tum
+  // agaci (ornegin .chrome-cdp altindaki uzanti spec'leri) tariyordu ve patliyordu.
+  test: {
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['node_modules', 'dist', 'backend', '.chrome-cdp', '.shots'],
   },
 })
