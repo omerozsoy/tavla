@@ -80,7 +80,21 @@ class PaymentController extends Controller
         $res = $garanti->verifyCallback($post);
         $payment = Payment::where('order_id', $res['order_id'])->first();
 
-        // Denetim gunlugu: her callback (basari/basarisiz) kaydedilir (anlasmazlik/inceleme icin).
+        // Tutar dogrulamasi. Fiyatlar KURUS tam sayi (config/garanti); bankaya (string)amount
+        // gonderilir ve banka txnamount'u ayni kurus degerini echo eder -> TAM SAYI karsilastir
+        // (ondalik/bosluk/sifir-dolgu format varyantlarina dayanikli; TL/kurus belirsizligi YOK).
+        // Uyumsuz tutar HER ZAMAN reddedilir. Bos txnamount: hash zaten sahteciligi engeller;
+        // strict degilse gecirilir ama LOGLANIR, strict ise (banka test sonrasi) reddedilir.
+        $strict = (bool) config('garanti.strict_amount', false);
+        $bankRaw = trim((string) ($post['txnamount'] ?? ''));
+        $amountMissing = ($bankRaw === '');
+        $amountMatches = ! $amountMissing
+            && is_numeric($bankRaw)
+            && $payment
+            && (int) round((float) $bankRaw) === (int) $payment->amount;
+        $amountOk = $amountMatches || ($amountMissing && ! $strict);
+
+        // Denetim gunlugu: her callback + tutar karari (anlasmazlik/inceleme icin).
         \Illuminate\Support\Facades\Log::info('payment.callback', [
             'order_id' => $res['order_id'] ?? null,
             'user_id' => $payment->user_id ?? null,
@@ -88,15 +102,19 @@ class PaymentController extends Controller
             'hash_ok' => $res['hash_ok'] ?? false,
             'bank_amount' => $post['txnamount'] ?? null,
             'record_amount' => $payment->amount ?? null,
+            'amount_ok' => $amountOk,
+            'amount_missing' => $amountMissing,
+            'strict' => $strict,
             'ip' => $request->ip(),
         ]);
+        if ($amountMissing) {
+            \Illuminate\Support\Facades\Log::warning('payment.callback: txnamount bos -> tutar dogrulanamadi', [
+                'order_id' => $res['order_id'] ?? null,
+                'strict' => $strict,
+            ]);
+        }
 
         if ($payment) {
-            // Tutar dogrulamasi: bankanin donusundeki txnamount kayitli tutarla uyusmali
-            // (forged/tampered callback'e karsi ek savunma).
-            $bankAmount = (string) ($post['txnamount'] ?? '');
-            $amountOk = $bankAmount === '' || $bankAmount === (string) $payment->amount;
-
             if ($res['ok'] && $amountOk) {
                 // ATOMIK idempotency: yalnizca ILK basarili callback plani aktive eder.
                 // (Banka retry'i / replay / yaris kosulunda cift aktivasyon olmaz.)
