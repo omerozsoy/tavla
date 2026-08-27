@@ -1,0 +1,170 @@
+/* Cerceve Galerisi (/cerceve-galeri). cg- prefixli; global cakisma yok.
+   50+ kare: Rive (avatar + tint'li canvas) + Klasik (AvatarFrame/PremiumFrame). */
+
+.cg-wrap {
+  position: relative;
+  width: min(1240px, 96vw);
+  max-height: 92vh;
+  overflow-y: auto;
+  margin: 3vh auto;
+  padding: 26px 26px 40px;
+  border-radius: 20px;
+  border: 1px solid rgba(140, 160, 210, 0.16);
+  background: radial-gradient(130% 90% at 50% -10%, #151b30 0%, #0b0f1c 58%, #070a13 100%);
+  color: #e8ecf6;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
+}
+
+.cg-head {
+  text-align: center;
+  max-width: 760px;
+  margin: 0 auto 20px;
+}
+.cg-head h2 {
+  margin: 0 0 6px;
+  font-size: clamp(22px, 3vw, 30px);
+}
+.cg-head p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  opacity: 0.75;
+}
+.cg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+.cg-seg {
+  display: inline-flex;
+  flex-wrap: wrap;
+  padding: 3px;
+  border-radius: 10px;
+  background: rgba(130, 150, 210, 0.1);
+  border: 1px solid rgba(140, 160, 210, 0.16);
+}
+.cg-segbtn {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 11px;
+  border-radius: 8px;
+  cursor: pointer;
+  opacity: 0.72;
+  transition: all 0.15s ease;
+}
+.cg-segbtn.on {
+  opacity: 1;
+  background: linear-gradient(180deg, #3b6ff0, #2f57cf);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(59, 111, 240, 0.35);
+}
+.cg-active {
+  outline: 2px solid #3b6ff0;
+}
+
+.cg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--tile, 120px), 1fr));
+  gap: 14px;
+  align-items: start;
+  justify-items: center;
+}
+
+.cg-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 8px 12px;
+  border: 1px solid rgba(140, 160, 210, 0.12);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.028), rgba(255, 255, 255, 0.006));
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.cg-tile:hover {
+  transform: translateY(-3px);
+  border-color: rgba(150, 170, 220, 0.4);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+}
+.cg-tile:focus-visible {
+  outline: 2px solid #3b6ff0;
+  outline-offset: 2px;
+}
+/* rarity aksan hatti (ust) */
+.cg-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  opacity: 0.9;
+}
+.cg-r-rare::before {
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+.cg-r-epic::before {
+  background: linear-gradient(90deg, #7c3aed, #a855f7);
+}
+.cg-r-legendary::before {
+  background: linear-gradient(90deg, #c9971f, #f5e1a4);
+}
+.cg-r-mythic::before {
+  background: linear-gradient(90deg, #22d3ee, #ef4444);
+}
+
+.cg-stack {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+.cg-avatar {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  object-fit: cover;
+  z-index: 0;
+}
+.cg-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.cg-rive {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.cg-rive canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+.cg-prem {
+  position: relative;
+  z-index: 1;
+}
+
+.cg-name {
+  font-size: 11.5px;
+  letter-spacing: 0.2px;
+  opacity: 0.82;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

@@ -8,6 +8,8 @@ const FrameDemo = lazy(() => import('./ui/FrameDemo'))
 // Rive avatar cerceve laboratuvari: gizli /cerceve-lab URL'i. Gercek .riv dosyalari +
 // @rive-app runtime iceren agir bir agac -> lazy chunk (ana bundle sismesin).
 const CerceveLab = lazy(() => import('./ui/CerceveLab'))
+// Cerceve galerisi: 50+ canli cesit (Klasik premium + Rive). Gizli /cerceve-galeri, lazy.
+const CerceveGaleri = lazy(() => import('./ui/CerceveGaleri'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
@@ -382,6 +384,7 @@ export default function App() {
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
   const [frameLabOpen, setFrameLabOpen] = useState(false) // Rive cerceve laboratuvari (/cerceve-lab)
+  const [frameGaleriOpen, setFrameGaleriOpen] = useState(false) // Cerceve galerisi 50+ (/cerceve-galeri)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
@@ -424,6 +427,8 @@ export default function App() {
                 ? 'cerceve-demo'
               : frameLabOpen
                 ? 'cerceve-lab'
+              : frameGaleriOpen
+                ? 'cerceve-galeri'
               : gamePreviewOpen
                 ? 'oyun-onizleme'
               : fairOpen
@@ -502,6 +507,9 @@ export default function App() {
           break
         case 'cerceve-lab':
           setFrameLabOpen(true)
+          break
+        case 'cerceve-galeri':
+          setFrameGaleriOpen(true)
           break
         case 'oyun-onizleme':
           setGamePreviewOpen(true)
@@ -3185,6 +3193,7 @@ export default function App() {
     setMatchHistOpen(false)
     setFrameDemoOpen(false)
     setFrameLabOpen(false)
+    setFrameGaleriOpen(false)
     setGamePreviewOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
@@ -3305,6 +3314,7 @@ export default function App() {
     matchHistOpen ||
     frameDemoOpen ||
     frameLabOpen ||
+    frameGaleriOpen ||
     gamePreviewOpen ||
     fairOpen ||
     lessonsOpen ||
@@ -3392,6 +3402,11 @@ export default function App() {
       {frameLabOpen && (
         <Suspense fallback={null}>
           <CerceveLab onClose={() => setFrameLabOpen(false)} />
+        </Suspense>
+      )}
+      {frameGaleriOpen && (
+        <Suspense fallback={null}>
+          <CerceveGaleri onClose={() => setFrameGaleriOpen(false)} />
         </Suspense>
       )}
       {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRive, Layout, Fit, Alignment } from '@rive-app/react-canvas'
 
 // Avatar cerceve Rive katmani. `.riv` dosyalari 5 adlandirilmis animasyon icerir:
@@ -51,18 +51,33 @@ export default function RiveLayer({
   const baseRef = useRef(base)
   const celebratingRef = useRef(false)
 
-  // Taban state degisince ilgili animasyona gec (celebrate oynuyorsa sadece hedefi guncelle,
-  // celebrate bitince oraya doneriz).
+  // Performans (brief §17): ekran disinda pause. Cok sayida frame (galeri) icin sart —
+  // gorunmeyen kareler CPU yemesin. Onscreen olunca guncel taban animasyona devam.
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [inView, setInView] = useState(true)
+  useEffect(() => {
+    const el = hostRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setInView(e.isIntersecting), { rootMargin: '150px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+
+  // Taban state degisince (veya gorunurluk degisince) ilgili animasyona gec / pause et.
   useEffect(() => {
     baseRef.current = base
     if (!rive || celebratingRef.current) return
+    if (!inView) {
+      rive.pause()
+      return
+    }
     rive.stop()
     rive.play(base)
-  }, [rive, base])
+  }, [rive, base, inView])
 
   // celebrate one-shot: taban durur, celebrate oynar, sure sonunda guncel tabana doner.
   useEffect(() => {
-    if (!rive || celebrateSignal <= 0) return
+    if (!rive || celebrateSignal <= 0 || !inView) return
     celebratingRef.current = true
     rive.stop()
     rive.play('celebrate')
@@ -82,7 +97,7 @@ export default function RiveLayer({
   const layerOpacity = 0.45 + 0.55 * (clamped / 100)
 
   return (
-    <div className={className} style={{ opacity: layerOpacity }}>
+    <div ref={hostRef} className={className} style={{ opacity: layerOpacity }}>
       <RiveComponent />
     </div>
   )
