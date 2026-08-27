@@ -24,12 +24,14 @@ export interface DiceSceneOptions {
   size?: number
 }
 
-const DIE_SIZE = 1
+const DIE_SIZE = 0.74 // zar kenar uzunlugu (kucultuldu — hero'da abartisiz gorunsun)
 const FIXED_DT = 1 / 120
 const MAX_SIM_MS = 4500 // guvenlik: bu surede oturmazsa zorla oturt
-const SETTLE_MS = 380 // hedef yuze dogal yonlenme suresi
-const REST_SPEED = 0.55 // bu hizin altinda "durgun" say
-const REST_FRAMES = 10 // ardarda durgun kare esigi
+const SETTLE_MS = 560 // hedef yuze yonelim suresi (uzun = son gecis daha yumusak, ani degil)
+// Zar TAM durmadan, hala yavaslarken devralinir; boylece hedefe yonelim dogal
+// yavaslamanin devami gibi kaynasir, ayri bir "son anda zipla-degis" olayi olmaz.
+const REST_SPEED = 2.0 // bu hizin altinda + zemine yakinken "durmak uzere" say
+const REST_FRAMES = 2 // ardarda "durmak uzere" kare esigi
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
 
 /**
@@ -235,7 +237,8 @@ export class DiceScene {
     const r2 = normalizeFace(v2)
     const targets: [FaceValue, FaceValue] = [r1, r2]
 
-    const startX = [-0.85, 0.85]
+    const gap = DIE_SIZE * 0.98
+    const startX = [-gap, gap]
     this.dice.forEach((d, i) => {
       d.result = targets[i]
       const body = d.body
@@ -280,7 +283,8 @@ export class DiceScene {
   showStatic(v1?: number, v2?: number) {
     if (this.disposed) return
     const half = this.dice[0].bundle.half
-    const xs = [-0.82, 0.86]
+    const gap = DIE_SIZE * 0.98
+    const xs = [-gap, gap]
     const targets: [FaceValue, FaceValue] = [normalizeFace(v1), normalizeFace(v2)]
     this.dice.forEach((d, i) => {
       d.result = targets[i]
@@ -372,14 +376,16 @@ export class DiceScene {
   }
 
   private checkRest(t: number) {
-    let allStill = true
+    const half = this.dice[0].bundle.half
+    let ready = true
     for (const d of this.dice) {
       const v = d.body.velocity.length()
       const av = d.body.angularVelocity.length()
-      if (v > REST_SPEED || av > REST_SPEED) allStill = false
+      const nearGround = d.body.position.y < half * 1.6 // sadece zemine inince
+      if (!nearGround || v > REST_SPEED || av > REST_SPEED) ready = false
     }
     const elapsed = t - this.simStart
-    if (allStill && elapsed > 700) this.restCount++
+    if (ready && elapsed > 550) this.restCount++
     else this.restCount = 0
 
     if (this.restCount >= REST_FRAMES || elapsed > MAX_SIM_MS) {
@@ -413,7 +419,7 @@ export class DiceScene {
     for (const d of this.dice) {
       d.bundle.mesh.quaternion.slerpQuaternions(d.startQuat, d.targetQuat, e)
       // Kucuk son "sekme": donme, dogal bir son ziplama gibi okunur.
-      const hop = Math.sin(p * Math.PI) * DIE_SIZE * 0.14
+      const hop = Math.sin(p * Math.PI) * DIE_SIZE * 0.09
       d.bundle.mesh.position.set(d.restX, half + hop, d.restZ)
     }
     if (done) {
