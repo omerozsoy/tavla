@@ -2678,10 +2678,12 @@ button[aria-disabled='true'],
    BEYAZ halka + belirgin golge; taslar zeminden net ayrisir (renk degismez). */
 [data-board-rarity='club'] .checker.white,
 [data-board-rarity='club'] .checker.black {
-  border: 1.5px solid rgba(224, 229, 236, 0.92);
+  /* Kalin gumus halka + DIS ince koyu kenar (cift tanim) -> acik (FB/GS) VE koyu
+     (Trabzonspor/BJK) zeminde net ayrisim; belirgin kontak golgesi. */
+  border: 2.5px solid rgba(236, 240, 246, 0.96);
   box-shadow:
-    0 0 0 0.5px rgba(255, 255, 255, 0.4),
-    0 1px 3px rgba(0, 0, 0, 0.45);
+    0 0 0 1px rgba(0, 0, 0, 0.28),
+    0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
 /* ===== PUL STILLERI (data-checker) — renk --cream/--navy'den; stil = finish/efekt.
