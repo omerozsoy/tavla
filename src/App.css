@@ -5303,14 +5303,14 @@ html.fs-active .account-bar {
 /* ---- Izleme (spectate) ---- */
 .spectate-card {
   position: relative;
-  width: min(680px, 96vw);
+  width: min(820px, 96vw);
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 20px;
 }
 .spectate-card .mini-board {
-  max-width: 640px;
+  max-width: 780px;
   margin: 0 auto;
   display: block;
 }
