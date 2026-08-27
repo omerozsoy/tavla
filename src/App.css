@@ -4131,6 +4131,11 @@ button[aria-disabled='true'],
   cursor: pointer;
 }
 
+/* Tam ekranda ust hesap barini gizle (fs-toggle butonu gorunur kalir -> cikilabilir) */
+html.fs-active .account-bar {
+  display: none;
+}
+
 /* Tam ekran ac/kapa butonu (oyun ekrani sol ust) */
 .fs-toggle {
   position: fixed;
