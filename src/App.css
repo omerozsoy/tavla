@@ -2624,9 +2624,9 @@ button[aria-disabled='true'],
   grid-column: 1;
   display: flex;
   align-items: center;
-  color: rgba(226, 234, 255, 0.72);
-  font-size: 0.72rem;
-  font-weight: 500;
+  color: rgba(230, 238, 255, 0.92);
+  font-size: 1rem;
+  font-weight: 700;
 }
 .pt-numbers.top {
   grid-row: 1;
@@ -3088,10 +3088,10 @@ button[aria-disabled='true'],
   box-shadow: inset 0 0 0 2px var(--tv-white);
 }
 .pip {
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 255, 255, 0.95);
   font-weight: 800;
-  font-size: 1.2rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  font-size: 1.7rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.65);
 }
 /* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
 .cube {
@@ -3231,6 +3231,25 @@ button[aria-disabled='true'],
 }
 .off-checker.black {
   background: var(--navy);
+}
+/* Toplanan pul SAYISI (bear-off tepsisinde). Pul rengiyle (board'a uyar) + okunur halo. */
+.bearoff-count {
+  flex: none;
+  text-align: center;
+  font-weight: 800;
+  font-size: calc(var(--checker) * 0.6);
+  line-height: 1.05;
+  margin: 1px 0;
+}
+.bearoff-count.white {
+  color: var(--cream);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
+}
+.bearoff-count.black {
+  color: var(--navy);
+  text-shadow:
+    0 0 3px rgba(255, 255, 255, 0.95),
+    0 0 6px rgba(255, 255, 255, 0.6);
 }
 .bearoff.target {
   box-shadow: inset 0 0 0 3px #35d07a;
