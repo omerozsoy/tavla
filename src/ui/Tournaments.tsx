@@ -5,7 +5,6 @@ import { useEscape } from './useEscape'
 import {
   listTournaments,
   showTournament,
-  createTournament,
   joinTournament,
   reportTournament,
   finishTournament,
@@ -28,10 +27,6 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
   const [list, setList] = useState<Tournament[]>([])
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
-  const [name, setName] = useState('')
-  const [size, setSize] = useState(8)
-  const [prize, setPrize] = useState(0)
-  const [fee, setFee] = useState(0)
   const [busy, setBusy] = useState(false)
 
   async function refreshList() {
@@ -84,20 +79,6 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     }
   }
 
-  async function create() {
-    if (!name.trim() || busy) return
-    setBusy(true)
-    try {
-      const tr = await createTournament(name.trim(), size, prize, '', fee)
-      setName('')
-      setPrize(0)
-      setFee(0)
-      setActive(tr)
-      refreshList()
-    } finally {
-      setBusy(false)
-    }
-  }
 
   async function join(id: number) {
     setBusy(true)
@@ -259,59 +240,6 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
           <Icon name="x" size={16} />
         </button>
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
-
-        {isAdmin && (
-          <div className="content-form tourn-create">
-            <label className="cf-row">
-              <span>{t('tourn.fName')}</span>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('tourn.namePlaceholder')}
-              />
-            </label>
-            <div className="cf-grid">
-              <label className="cf-row">
-                <span>{t('tourn.fSize')}</span>
-                <select value={size} onChange={(e) => setSize(Number(e.target.value))}>
-                  <option value={4}>4</option>
-                  <option value={8}>8</option>
-                  <option value={16}>16</option>
-                  <option value={32}>32</option>
-                  <option value={64}>64</option>
-                  <option value={128}>128</option>
-                  <option value={256}>256</option>
-                  <option value={0}>{t('tourn.unlimited')}</option>
-                </select>
-              </label>
-              <label className="cf-row">
-                <span>{t('tourn.prize')}</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={prize}
-                  onChange={(e) => setPrize(Math.max(0, Number(e.target.value)))}
-                />
-              </label>
-              <label className="cf-row">
-                <span>{t('tourn.entryFee')}</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={fee}
-                  onChange={(e) => setFee(Math.max(0, Number(e.target.value)))}
-                />
-              </label>
-            </div>
-            <button
-              className="galaxy-btn"
-              disabled={busy || !name.trim()}
-              onClick={create}
-            >
-              <Icon name="trophy" size={16} /> {t('tourn.create')}
-            </button>
-          </div>
-        )}
 
         {loading ? (
           <div className="lb-empty">{t('an.loading')}</div>

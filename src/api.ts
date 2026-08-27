@@ -319,6 +319,9 @@ export interface MyMatch {
   rating_before: number
   rating_after: number
   delta: number
+  match_length?: number | null
+  pr?: number | null
+  coins_after?: number | null
   created_at?: string | null
 }
 export async function myMatches(): Promise<MyMatch[]> {
