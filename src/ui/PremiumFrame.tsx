@@ -1,41 +1,102 @@
 import type { CSSProperties } from 'react'
+import { useId } from 'react'
 import './PremiumFrame.css'
 
 // ============================================================================
-// PremiumFrame — SVG tabanli, cok katmanli avatar cercevesi (prototip)
-//  Rarity'ler geometri + materyal + animasyon acisindan GERCEKTEN farkli:
-//    epic      -> Arcane Energy (violet/cyan, rune + dolasan enerji arki)
-//    legendary -> Royal Gold (metalik altin bevel, tac + yakut, specular sweep)
-//    mythic    -> Cosmic (konik enerji halkasi, yildiz partikulleri, yorunge)
-//  Tum animasyonlar GPU-dostu (transform/opacity) + prefers-reduced-motion.
-//  Her boyutta (48-160px) SVG oldugu icin kalite kaybi yok.
+// PremiumFrame — SVG tabanli, cok katmanli avatar cercevesi.
+//  Rarity geometri/materyal/animasyon acisindan GERCEKTEN farkli:
+//    rare      -> Tempered Silver (temiz metal + hafif enerji shimmer)
+//    epic      -> Arcane Energy   (metal bevel + dolasan enerji arki + runeler)
+//    legendary -> Royal Metal     (metalik bevel + tac + mucevher + specular sweep)
+//    mythic    -> Cosmic          (konik enerji halkasi + yildizlar + wisp + yorunge)
+//  Renkler CSS degiskenlerinden (--pf-1/2/4, --pf-dark, --pf-gem) gelir; boylece
+//  ayni geometri farkli TEMALARLA (fire/ice/emerald/ruby/cyber/dragon...) ayni
+//  premium kalitede ama gorsel olarak farkli olur. color-mix ile ton/golge turetilir.
+//  GPU-dostu (transform/opacity/dash), prefers-reduced-motion destekli.
 // ============================================================================
 
-export type PremiumRarity = 'epic' | 'legendary' | 'mythic'
+export type PremiumRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
+export type FrameTheme =
+  | 'fire'
+  | 'ice'
+  | 'emerald'
+  | 'ruby'
+  | 'cyber'
+  | 'dragon'
+  | 'thunder'
+  | 'silver'
+  | 'gold'
 
 interface Props {
   rarity: PremiumRarity
+  theme?: FrameTheme
   src?: string | null
   name?: string
   size?: number
+  animated?: boolean
   className?: string
 }
 
-// Benzersiz gradient id'leri (ayni sayfada birden fazla ornek cakismasin)
-let _uid = 0
-function useUid() {
-  // Modul-seviyesi artan sayaç; SSR yok, render başına stabil olması gerekmiyor (id sadece kendi svg'sinde)
-  return (_uid = (_uid + 1) % 100000)
+const METAL_HI = 'color-mix(in srgb, var(--pf-2) 42%, #ffffff)'
+const METAL_LO = 'color-mix(in srgb, var(--pf-2) 55%, #000000)'
+const GOLD_HI = 'color-mix(in srgb, var(--pf-2) 30%, #ffffff)'
+const GOLD_SH = 'color-mix(in srgb, var(--pf-2) 60%, #000000)'
+
+function RareFrame({ id }: { id: string }) {
+  const g = (s: string) => `${id}-${s}`
+  return (
+    <svg className="pf-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+      <defs>
+        <radialGradient id={g('aura')} cx="50%" cy="46%" r="56%">
+          <stop offset="60%" stopColor="var(--pf-2)" stopOpacity="0" />
+          <stop offset="90%" stopColor="var(--pf-1)" stopOpacity="0.28" />
+          <stop offset="100%" stopColor="var(--pf-1)" stopOpacity="0" />
+        </radialGradient>
+        <linearGradient id={g('metal')} x1="0.2" y1="0" x2="0.6" y2="1">
+          <stop offset="0" stopColor={METAL_HI} />
+          <stop offset="0.5" stopColor="var(--pf-2)" />
+          <stop offset="1" stopColor={METAL_LO} />
+        </linearGradient>
+        <linearGradient id={g('shine')} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="var(--pf-1)" stopOpacity="0" />
+          <stop offset="0.5" stopColor="var(--pf-1)" stopOpacity="0.9" />
+          <stop offset="1" stopColor="var(--pf-1)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <circle className="pf-aura" cx="50" cy="50" r="49" fill={`url(#${g('aura')})`} />
+      <circle cx="50" cy="50" r="43.5" stroke={`url(#${g('metal')})`} strokeWidth="4" />
+      <circle cx="50" cy="50" r="45.6" stroke="var(--pf-dark)" strokeWidth="1" opacity="0.85" />
+      <circle cx="50" cy="50" r="41.2" stroke="var(--pf-dark)" strokeWidth="1.2" opacity="0.7" />
+      <circle cx="50" cy="50" r="40.2" stroke="var(--pf-1)" strokeWidth="0.6" opacity="0.4" />
+      {/* 4 kucuk kardinal cizik (sade dekor) */}
+      <g stroke="var(--pf-1)" strokeWidth="1.1" opacity="0.55" strokeLinecap="round">
+        <path d="M50,3.5 v3.4" />
+        <path d="M96.5,50 h-3.4" />
+        <path d="M50,96.5 v-3.4" />
+        <path d="M3.5,50 h3.4" />
+      </g>
+      {/* hafif shimmer (yavas) */}
+      <g className="pf-sweep">
+        <circle
+          cx="50"
+          cy="50"
+          r="43.5"
+          stroke={`url(#${g('shine')})`}
+          strokeWidth="3.6"
+          strokeLinecap="round"
+          strokeDasharray="12 264"
+        />
+      </g>
+    </svg>
+  )
 }
 
-function EpicFrame({ id }: { id: number }) {
-  const g = (s: string) => `ep${id}-${s}`
-  // 8 rune (kardinal + ara) — kucuk kristal elmaslar
+function EpicFrame({ id }: { id: string }) {
+  const g = (s: string) => `${id}-${s}`
   const runes = Array.from({ length: 8 }, (_, i) => {
     const a = (i / 8) * Math.PI * 2 - Math.PI / 2
-    const r = 46
-    const cx = 50 + Math.cos(a) * r
-    const cy = 50 + Math.sin(a) * r
+    const cx = 50 + Math.cos(a) * 46
+    const cy = 50 + Math.sin(a) * 46
     return (
       <path
         key={i}
@@ -49,42 +110,35 @@ function EpicFrame({ id }: { id: number }) {
     <svg className="pf-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
       <defs>
         <radialGradient id={g('aura')} cx="50%" cy="44%" r="58%">
-          <stop offset="52%" stopColor="#3a1a6b" stopOpacity="0" />
-          <stop offset="82%" stopColor="#7a45e0" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#12d6ff" stopOpacity="0" />
+          <stop offset="52%" stopColor="var(--pf-2)" stopOpacity="0" />
+          <stop offset="82%" stopColor="var(--pf-2)" stopOpacity="0.42" />
+          <stop offset="100%" stopColor="var(--pf-1)" stopOpacity="0" />
         </radialGradient>
         <linearGradient id={g('metal')} x1="0.15" y1="0" x2="0.7" y2="1">
-          <stop offset="0" stopColor="#d8c7ff" />
-          <stop offset="0.32" stopColor="#7d55d6" />
-          <stop offset="0.62" stopColor="#3a2183" />
-          <stop offset="1" stopColor="#160b34" />
+          <stop offset="0" stopColor={METAL_HI} />
+          <stop offset="0.4" stopColor="var(--pf-2)" />
+          <stop offset="1" stopColor={METAL_LO} />
         </linearGradient>
         <linearGradient id={g('energy')} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#26e9ff" />
-          <stop offset="0.5" stopColor="#7bb6ff" />
-          <stop offset="1" stopColor="#c77bff" />
+          <stop offset="0" stopColor="var(--pf-1)" />
+          <stop offset="1" stopColor="var(--pf-4)" />
         </linearGradient>
         <filter id={g('glow')} x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="1.5" result="b" />
+          <feGaussianBlur stdDeviation="1.4" result="b" />
           <feMerge>
             <feMergeNode in="b" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
-
       <circle className="pf-aura" cx="50" cy="50" r="49" fill={`url(#${g('aura')})`} />
-      {/* dis metalik cerceve */}
       <circle cx="50" cy="50" r="43.5" stroke={`url(#${g('metal')})`} strokeWidth="5" />
-      <circle cx="50" cy="50" r="46" stroke="#0b0620" strokeWidth="1" opacity="0.9" />
-      {/* koyu iç bevel + parlak ic rim (derinlik) */}
-      <circle cx="50" cy="50" r="41" stroke="#0d0726" strokeWidth="1.6" opacity="0.85" />
-      <circle cx="50" cy="50" r="39.9" stroke="#cbb6ff" strokeWidth="0.7" opacity="0.55" />
-      {/* runes */}
-      <g className="pf-runes" stroke="#a789ff" strokeWidth="0.6" fill="#1a0f3d">
+      <circle cx="50" cy="50" r="46" stroke="var(--pf-dark)" strokeWidth="1" opacity="0.9" />
+      <circle cx="50" cy="50" r="41" stroke="var(--pf-dark)" strokeWidth="1.6" opacity="0.85" />
+      <circle cx="50" cy="50" r="39.9" stroke="var(--pf-1)" strokeWidth="0.7" opacity="0.5" />
+      <g className="pf-runes" stroke="var(--pf-1)" strokeWidth="0.6" fill="var(--pf-dark)">
         {runes}
       </g>
-      {/* dolasan enerji arki */}
       <g className="pf-arc">
         <circle
           cx="50"
@@ -101,28 +155,27 @@ function EpicFrame({ id }: { id: number }) {
   )
 }
 
-function LegendaryFrame({ id }: { id: number }) {
-  const g = (s: string) => `lg${id}-${s}`
+function LegendaryFrame({ id }: { id: string }) {
+  const g = (s: string) => `${id}-${s}`
   return (
     <svg className="pf-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
       <defs>
         <radialGradient id={g('aura')} cx="50%" cy="48%" r="56%">
-          <stop offset="60%" stopColor="#4a3208" stopOpacity="0" />
-          <stop offset="88%" stopColor="#e0a93a" stopOpacity="0.32" />
-          <stop offset="100%" stopColor="#fff0c0" stopOpacity="0" />
+          <stop offset="60%" stopColor="var(--pf-2)" stopOpacity="0" />
+          <stop offset="88%" stopColor="var(--pf-2)" stopOpacity="0.34" />
+          <stop offset="100%" stopColor="var(--pf-1)" stopOpacity="0" />
         </radialGradient>
-        {/* metalik altin: koyu -> altin -> sampanya highlight -> koyu */}
         <linearGradient id={g('gold')} x1="0.2" y1="0" x2="0.5" y2="1">
-          <stop offset="0" stopColor="#fff6d8" />
-          <stop offset="0.22" stopColor="#f6dc86" />
-          <stop offset="0.46" stopColor="#cf9b34" />
-          <stop offset="0.7" stopColor="#8a5c18" />
-          <stop offset="1" stopColor="#452a0a" />
+          <stop offset="0" stopColor="var(--pf-1)" />
+          <stop offset="0.22" stopColor={GOLD_HI} />
+          <stop offset="0.5" stopColor="var(--pf-2)" />
+          <stop offset="0.72" stopColor={GOLD_SH} />
+          <stop offset="1" stopColor="var(--pf-dark)" />
         </linearGradient>
-        <radialGradient id={g('ruby')} cx="38%" cy="32%" r="75%">
-          <stop offset="0" stopColor="#ff9a9a" />
-          <stop offset="0.35" stopColor="#e01e3c" />
-          <stop offset="1" stopColor="#66060f" />
+        <radialGradient id={g('gem')} cx="38%" cy="32%" r="75%">
+          <stop offset="0" stopColor="color-mix(in srgb, var(--pf-gem) 45%, #ffffff)" />
+          <stop offset="0.4" stopColor="var(--pf-gem)" />
+          <stop offset="1" stopColor="color-mix(in srgb, var(--pf-gem) 55%, #000000)" />
         </radialGradient>
         <linearGradient id={g('sweep')} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#fff8e0" stopOpacity="0" />
@@ -133,27 +186,20 @@ function LegendaryFrame({ id }: { id: number }) {
           <feGaussianBlur stdDeviation="0.9" />
         </filter>
       </defs>
-
       <circle className="pf-aura" cx="50" cy="50" r="49" fill={`url(#${g('aura')})`} />
-      {/* dis koyu kenar + kalin metalik altin + ic golge + parlak rim */}
-      <circle cx="50" cy="50" r="46.6" stroke="#2a1a06" strokeWidth="1.2" />
+      <circle cx="50" cy="50" r="46.6" stroke="var(--pf-dark)" strokeWidth="1.2" />
       <circle cx="50" cy="50" r="43.5" stroke={`url(#${g('gold')})`} strokeWidth="6" />
-      <circle cx="50" cy="50" r="40.4" stroke="#3a2408" strokeWidth="1.3" opacity="0.9" />
-      <circle cx="50" cy="50" r="39.7" stroke="#fff2c4" strokeWidth="0.7" opacity="0.7" />
-
-      {/* Taç (üst orta) — 3 sivri altın uç + merkez yakut */}
-      <g className="pf-crown" fill={`url(#${g('gold')})`} stroke="#2a1a06" strokeWidth="0.35">
+      <circle cx="50" cy="50" r="40.4" stroke={GOLD_SH} strokeWidth="1.3" opacity="0.9" />
+      <circle cx="50" cy="50" r="39.7" stroke={GOLD_HI} strokeWidth="0.7" opacity="0.75" />
+      <g className="pf-crown" fill={`url(#${g('gold')})`} stroke="var(--pf-dark)" strokeWidth="0.35">
         <path d="M50,1.4 l3.2,6.2 -6.4,0 z" />
         <path d="M41.5,4.2 l2.6,5.4 -5.6,0.4 z" />
         <path d="M58.5,4.2 l3,5.8 -5.6,-0.4 z" />
       </g>
-      <circle cx="50" cy="5.6" r="2.1" fill={`url(#${g('ruby')})`} stroke="#2a1a06" strokeWidth="0.3" />
-      {/* Yan yakutlar (E/W) + alt küçük süs */}
-      <circle cx="93.2" cy="50" r="1.7" fill={`url(#${g('ruby')})`} stroke="#2a1a06" strokeWidth="0.3" />
-      <circle cx="6.8" cy="50" r="1.7" fill={`url(#${g('ruby')})`} stroke="#2a1a06" strokeWidth="0.3" />
-      <circle cx="50" cy="94.4" r="1.6" fill={`url(#${g('ruby')})`} stroke="#2a1a06" strokeWidth="0.3" />
-
-      {/* Specular light sweep — halka üzerinde yavaşça ilerleyen parlak highlight */}
+      <circle cx="50" cy="5.6" r="2.1" fill={`url(#${g('gem')})`} stroke="var(--pf-dark)" strokeWidth="0.3" />
+      <circle cx="93.2" cy="50" r="1.7" fill={`url(#${g('gem')})`} stroke="var(--pf-dark)" strokeWidth="0.3" />
+      <circle cx="6.8" cy="50" r="1.7" fill={`url(#${g('gem')})`} stroke="var(--pf-dark)" strokeWidth="0.3" />
+      <circle cx="50" cy="94.4" r="1.6" fill={`url(#${g('gem')})`} stroke="var(--pf-dark)" strokeWidth="0.3" />
       <g className="pf-sweep" filter={`url(#${g('soft')})`}>
         <circle
           cx="50"
@@ -169,9 +215,8 @@ function LegendaryFrame({ id }: { id: number }) {
   )
 }
 
-function MythicFrame({ id }: { id: number }) {
-  const g = (s: string) => `my${id}-${s}`
-  // yildiz partikulleri (halka bandinda rastgele-gibi konum)
+function MythicFrame({ id }: { id: string }) {
+  const g = (s: string) => `${id}-${s}`
   const stars = [
     [50, 4.5, 1.2],
     [72, 10, 0.8],
@@ -190,13 +235,13 @@ function MythicFrame({ id }: { id: number }) {
     <svg className="pf-svg" viewBox="0 0 100 100" fill="none" aria-hidden="true">
       <defs>
         <radialGradient id={g('aura')} cx="50%" cy="46%" r="60%">
-          <stop offset="50%" stopColor="#1a0b3d" stopOpacity="0" />
-          <stop offset="82%" stopColor="#6a2fd0" stopOpacity="0.42" />
-          <stop offset="100%" stopColor="#20c9ff" stopOpacity="0" />
+          <stop offset="50%" stopColor="var(--pf-2)" stopOpacity="0" />
+          <stop offset="82%" stopColor="var(--pf-2)" stopOpacity="0.44" />
+          <stop offset="100%" stopColor="var(--pf-1)" stopOpacity="0" />
         </radialGradient>
         <linearGradient id={g('struct')} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#2b1b52" />
-          <stop offset="1" stopColor="#070312" />
+          <stop offset="0" stopColor="color-mix(in srgb, var(--pf-2) 55%, var(--pf-dark))" />
+          <stop offset="1" stopColor="var(--pf-dark)" />
         </linearGradient>
         <filter id={g('glow')} x="-60%" y="-60%" width="220%" height="220%">
           <feGaussianBlur stdDeviation="1.1" result="b" />
@@ -206,63 +251,104 @@ function MythicFrame({ id }: { id: number }) {
           </feMerge>
         </filter>
       </defs>
-
       <circle className="pf-aura" cx="50" cy="50" r="49.5" fill={`url(#${g('aura')})`} />
-      {/* koyu dis yapi (kozmik enerji halkasi pf-cosmic ile CSS'ten gelir; SVG yapisal cizgiler ekler) */}
       <circle cx="50" cy="50" r="46.4" stroke={`url(#${g('struct')})`} strokeWidth="3" />
-      <circle cx="50" cy="50" r="41.4" stroke="#0a0518" strokeWidth="1.4" opacity="0.9" />
-      <circle cx="50" cy="50" r="40.4" stroke="#9a7bff" strokeWidth="0.6" opacity="0.55" />
-
-      {/* enerji wisp'leri (yavas akan) */}
-      <g className="pf-wisps" stroke="#b98bff" strokeWidth="0.8" strokeLinecap="round" opacity="0.7">
+      <circle cx="50" cy="50" r="41.4" stroke="var(--pf-dark)" strokeWidth="1.4" opacity="0.9" />
+      <circle cx="50" cy="50" r="40.4" stroke="var(--pf-1)" strokeWidth="0.6" opacity="0.55" />
+      <g className="pf-wisps" stroke="var(--pf-4)" strokeWidth="0.8" strokeLinecap="round" opacity="0.7">
         <circle cx="50" cy="50" r="43.8" strokeDasharray="10 265" pathLength="275" />
-        <circle
-          cx="50"
-          cy="50"
-          r="43.8"
-          strokeDasharray="7 268"
-          pathLength="275"
-          style={{ animationDelay: '-4s' }}
-        />
+        <circle cx="50" cy="50" r="43.8" strokeDasharray="7 268" pathLength="275" style={{ animationDelay: '-4s' }} />
       </g>
-
-      {/* yildiz partikulleri */}
-      <g className="pf-stars" fill="#fff">
+      <g className="pf-stars" fill="var(--pf-1)">
         {stars.map(([x, y, r], i) => (
           <circle key={i} cx={x} cy={y} r={r} style={{ ['--i' as string]: i }} />
         ))}
       </g>
-
-      {/* yorunge — halkayi dolasan tek parlak nokta */}
       <g className="pf-orbit">
-        <circle cx="50" cy="6.2" r="1.7" fill="#dff3ff" filter={`url(#${g('glow')})`} />
+        <circle cx="50" cy="6.2" r="1.7" fill="var(--pf-1)" filter={`url(#${g('glow')})`} />
       </g>
     </svg>
   )
 }
 
+const DESIGN = {
+  rare: RareFrame,
+  epic: EpicFrame,
+  legendary: LegendaryFrame,
+  mythic: MythicFrame,
+} as const
+
 export default function PremiumFrame({
   rarity,
+  theme,
   src,
   name = '',
   size = 96,
+  animated = true,
   className = '',
 }: Props) {
-  const id = useUid()
+  const rid = useId().replace(/:/g, '')
   const initial = name.trim().charAt(0).toUpperCase() || '?'
+  const Design = DESIGN[rarity]
+  const cls = [
+    'pf',
+    `pf-${rarity}`,
+    theme ? `pf-t-${theme}` : '',
+    animated ? '' : 'pf-static',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ')
   return (
-    <span
-      className={`pf pf-${rarity} ${className}`.trim()}
-      style={{ ['--pf-size' as string]: `${size}px` } as CSSProperties}
-      data-rarity={rarity}
-    >
+    <span className={cls} style={{ ['--pf-size' as string]: `${size}px` } as CSSProperties} data-rarity={rarity}>
       {rarity === 'mythic' && <span className="pf-cosmic" aria-hidden="true" />}
       <span className="pf-avatar">
         {src ? <img src={src} alt="" draggable={false} /> : <span className="pf-ini">{initial}</span>}
       </span>
-      {rarity === 'epic' && <EpicFrame id={id} />}
-      {rarity === 'legendary' && <LegendaryFrame id={id} />}
-      {rarity === 'mythic' && <MythicFrame id={id} />}
+      <Design id={rid} />
     </span>
   )
+}
+
+// ---------------------------------------------------------------------------
+// Frame id -> premium gorsel (rarity + tema). Mevcut 24 frame'i buna esler.
+// ---------------------------------------------------------------------------
+export interface FrameVisual {
+  rarity: PremiumRarity
+  theme?: FrameTheme
+}
+const FRAME_VISUAL: Record<string, FrameVisual> = {
+  // rare
+  'neon-pulse': { rarity: 'rare', theme: 'cyber' },
+  // epic
+  'purple-vortex': { rarity: 'epic' },
+  'ice-crown': { rarity: 'epic', theme: 'ice' },
+  electric: { rarity: 'epic', theme: 'thunder' },
+  cyberpunk: { rarity: 'epic', theme: 'cyber' },
+  'dice-master': { rarity: 'epic', theme: 'emerald' },
+  // legendary
+  'royal-gold': { rarity: 'legendary', theme: 'gold' },
+  inferno: { rarity: 'legendary', theme: 'fire' },
+  diamond: { rarity: 'legendary', theme: 'ice' },
+  emerald: { rarity: 'legendary', theme: 'emerald' },
+  ruby: { rarity: 'legendary', theme: 'ruby' },
+  vip: { rarity: 'legendary', theme: 'gold' },
+  champion: { rarity: 'legendary', theme: 'gold' },
+  'backgammon-king': { rarity: 'legendary', theme: 'gold' },
+  'top-100': { rarity: 'legendary', theme: 'silver' },
+  '1000-wins': { rarity: 'legendary', theme: 'gold' },
+  // mythic
+  'black-hole': { rarity: 'mythic' },
+  galaxy: { rarity: 'mythic' },
+  phoenix: { rarity: 'mythic', theme: 'fire' },
+  dragon: { rarity: 'mythic', theme: 'dragon' },
+  'thunder-god': { rarity: 'mythic', theme: 'thunder' },
+  grandmaster: { rarity: 'mythic', theme: 'gold' },
+  'tournament-champion': { rarity: 'mythic', theme: 'gold' },
+  'season-champion': { rarity: 'mythic' },
+}
+
+export function frameVisual(id?: string | null): FrameVisual | undefined {
+  if (!id) return undefined
+  return FRAME_VISUAL[id]
 }
