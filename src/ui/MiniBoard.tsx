@@ -14,8 +14,14 @@ const COL_W = HALF_W / 6
 const R = COL_W * 0.43 // tas yaricapi (cap ~= sutunun %86'si)
 const STEP = R * 1.95 // istif adimi (ust uste binme yok)
 const TRI_H = COL_W * 3.4 // kisa+genis ucgen
-const TOP_Y = R + 6
-const BOT_Y = H - (R + 6)
+const TOP_Y = R + 3 // taslar board kenarina daha yakin otursun (havada durmasin)
+const BOT_Y = H - (R + 3)
+
+// Ok renkleri: parlak cekirdek + koyu casing (kenarlik). Casing sayesinde
+// ok HANGI tema/board olursa olsun (sicak kiremit ya da koyu galaxy) gorunur;
+// sari taslarin uzerinde bile koyu kenar ayirt ettirir.
+const ARROW = '#f0a500' // onceki #ffd54a'dan daha koyu/doygun altin
+const ARROW_EDGE = '#2a1206' // koyu casing/kontur
 
 // Nokta index'i (0-23) -> {col 0-11, row}
 const LAYOUT: Record<number, { col: number; row: 'top' | 'bottom' }> = {}
@@ -126,18 +132,30 @@ export default function MiniBoard({
     const to = anchor(st.to)
     return (
       <g key={`a${i}`}>
+        {/* koyu casing (govde kenarligi) */}
         <line
           x1={from.x}
           y1={from.y}
           x2={to.x}
           y2={to.y}
-          stroke="#ffd54a"
-          strokeWidth={3}
-          markerEnd="url(#mbArrow)"
-          opacity={0.95}
+          stroke={ARROW_EDGE}
+          strokeWidth={4.6}
+          strokeLinecap="round"
+          opacity={0.7}
         />
-        <circle cx={from.x} cy={from.y} r={R * 0.95} fill="#ffd54a" />
-        <text x={from.x} y={from.y + R * 0.36} fontSize={R * 1.15} fontWeight="800" textAnchor="middle" fill="var(--tv-ink)">
+        {/* parlak cekirdek + zarif ok ucu */}
+        <line
+          x1={from.x}
+          y1={from.y}
+          x2={to.x}
+          y2={to.y}
+          stroke={ARROW}
+          strokeWidth={2.2}
+          strokeLinecap="round"
+          markerEnd="url(#mbArrow)"
+        />
+        <circle cx={from.x} cy={from.y} r={R * 0.9} fill={ARROW} stroke={ARROW_EDGE} strokeWidth={1.2} />
+        <text x={from.x} y={from.y + R * 0.36} fontSize={R * 1.15} fontWeight="800" textAnchor="middle" fill={ARROW_EDGE}>
           {i + 1}
         </text>
       </g>
@@ -173,8 +191,24 @@ export default function MiniBoard({
   return (
     <svg className="mini-board" viewBox={`0 0 ${W} ${H}`} width="100%">
       <defs>
-        <marker id="mbArrow" markerWidth="7" markerHeight="7" refX="5" refY="3.5" orient="auto">
-          <polygon points="0,0 7,3.5 0,7" fill="#ffd54a" />
+        {/* Kucuk + zarif chevron ok ucu (userSpaceOnUse -> govde kalinligindan
+            bagimsiz sabit kucuk boyut). Koyu konturlu ki her board'da secilsin. */}
+        <marker
+          id="mbArrow"
+          markerUnits="userSpaceOnUse"
+          markerWidth="11"
+          markerHeight="11"
+          refX="8.4"
+          refY="5.5"
+          orient="auto"
+        >
+          <path
+            d="M1.6,1.4 L9,5.5 L1.6,9.6 L3.9,5.5 Z"
+            fill={ARROW}
+            stroke={ARROW_EDGE}
+            strokeWidth="0.9"
+            strokeLinejoin="round"
+          />
         </marker>
       </defs>
       <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
