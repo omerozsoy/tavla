@@ -823,6 +823,11 @@ export default function App() {
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
+  // Refresh'te oyun kaybolmasin: localStorage kaydini ILK render'da (effect'lerden
+  // ONCE) yakala; asagidaki saveGame effect'i bos baslangic state'ini yazip EZMEDEN
+  // once. Misafirde + sunucuda oyun yokken bu kayittan geri yuklenir.
+  const initialLocalGame = useMemo(() => loadGame(), [])
+
   // Oyunu yerel kaydet (offline/misafir icin). gameEnd de kaydedilir ki
   // refresh'te bitmis oyun yeniden "kazanildi" sayilip tekrar puanlanmasin.
   useEffect(() => {
@@ -854,10 +859,12 @@ export default function App() {
     }
   }
 
-  // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle
+  // Acilista: token varsa kullaniciyi ve sunucudaki oyunu yukle; yoksa/sunucuda oyun
+  // yoksa YEREL kayda dus (misafir AI oyunu refresh'te kaybolmasin — kritik).
   useEffect(() => {
     const token = getToken()
     if (!token) {
+      if (initialLocalGame) applySavedGame(initialLocalGame) // misafir: yerel oyunu geri yukle
       setAuthChecked(true)
       return
     }
@@ -868,7 +875,9 @@ export default function App() {
         if (cancelled) return
         setUser(u)
         const g = await loadServerGame().catch(() => null)
-        if (!cancelled && g) applySavedGame(g as SavedGame)
+        if (cancelled) return
+        if (g) applySavedGame(g as SavedGame)
+        else if (initialLocalGame) applySavedGame(initialLocalGame) // sunucuda yoksa yerele dus
       } catch {
         await apiLogout() // gecersiz token -> temizle
       } finally {
@@ -904,9 +913,13 @@ export default function App() {
     root.setAttribute('data-theme', theme)
     root.setAttribute('data-board', boardTheme)
     const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-    root.style.setProperty('--panel', bt.panel)
-    root.style.setProperty('--tri-a', bt.a)
-    root.style.setProperty('--tri-b', bt.b)
+    // Kulup boardlari: oyun yuzeyini (panel + ucgenler) HAFIF pastel yap (hue korunur,
+    // %15 beyaz karisim) -> pullar daha da ayrisir; renk kimligi bozulmaz. Pul/cerceve haric.
+    const surf = (c: string) =>
+      bt.rarity === 'club' ? `color-mix(in srgb, ${c} 85%, white)` : c
+    root.style.setProperty('--panel', surf(bt.panel))
+    root.style.setProperty('--tri-a', surf(bt.a))
+    root.style.setProperty('--tri-b', surf(bt.b))
     root.style.setProperty('--navy', bt.checker) // koyu pul temaya uyar
     // Cerceve + acik pul: tema verirse uygula, yoksa temizle (CSS varsayilanina don)
     if (bt.frame) root.style.setProperty('--bar', bt.frame)
