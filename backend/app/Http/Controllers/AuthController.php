@@ -250,6 +250,7 @@ class AuthController extends Controller
             'won'             => ['required', 'boolean'],
             'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
             'opponent_name'   => ['nullable', 'string', 'max:40'],
+            'opponent_pr'     => ['nullable', 'numeric', 'min:0', 'max:200'],
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
@@ -313,6 +314,7 @@ class AuthController extends Controller
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
+            $mr['opponent_pr'] = $data['opponent_pr'] ?? null;
         }
         \App\Models\MatchResult::create($mr);
 
@@ -471,9 +473,13 @@ class AuthController extends Controller
         // SAVUNMACI: luck/score_* kolonlari migration ile eklendi. Migration henuz
         // calismadiysa o kolonlari SECME (aksi halde "unknown column" -> tum liste bos).
         $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck');
+        $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
         $cols = ['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
             $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
+        }
+        if ($hasOpp) {
+            $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
         }
         $matches = \App\Models\MatchResult::where('user_id', $me->id)
             ->orderByDesc('id')
@@ -482,6 +488,8 @@ class AuthController extends Controller
             ->map(fn ($m) => [
                 'won' => (bool) $m->won,
                 'opponent_rating' => $m->opponent_rating,
+                'opponent_name' => $hasOpp ? $m->opponent_name : null,
+                'opponent_pr' => $hasOpp ? $m->opponent_pr : null,
                 'rating_before' => $m->rating_before,
                 'rating_after' => $m->rating_after,
                 'delta' => $m->delta,

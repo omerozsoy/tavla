@@ -316,6 +316,8 @@ export async function leaveClub(): Promise<void> {
 export interface MyMatch {
   won: boolean
   opponent_rating: number
+  opponent_name?: string | null
+  opponent_pr?: number | null
   rating_before: number
   rating_after: number
   delta: number
@@ -868,6 +870,8 @@ export async function reportRating(
   luck?: number | null,
   scoreSelf?: number | null,
   scoreOpp?: number | null,
+  opponentName?: string | null,
+  opponentPr?: number | null,
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -879,6 +883,8 @@ export async function reportRating(
       luck: luck ?? null,
       score_self: scoreSelf ?? null,
       score_opp: scoreOpp ?? null,
+      opponent_name: opponentName ?? null,
+      opponent_pr: opponentPr ?? null,
     }),
   })
 }

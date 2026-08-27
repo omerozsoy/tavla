@@ -1597,6 +1597,8 @@ export default function App() {
       prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
       match.score[myColor],
       match.score[opponent(myColor)],
+      room?.oppName ?? null,
+      prOf(opponent(myColor)),
     )
       .then((r) => {
         setRatingChange({ before, after: r.rating })
@@ -1670,6 +1672,8 @@ export default function App() {
         prLuck.white - prLuck.black, // goreceli sans (zero-sum)
         match.score.white,
         match.score.black,
+        `${AI_LEVELS[difficulty - 1]}`,
+        prOf('black'),
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
