@@ -9076,6 +9076,21 @@ select:-webkit-autofill {
   .register-card.profile-form {
     padding: 20px 18px;
   }
+  /* Giris | Kayit yan yana -> mobilde alt alta (tek kolon), ayirici cizgi yatay */
+  .auth-cols {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .auth-col + .auth-col {
+    border-left: none;
+    padding-left: 0;
+    border-top: 1px solid var(--border);
+    padding-top: 18px;
+  }
+  .register-overlay.page > .register-card.auth-card {
+    max-width: 440px;
+    padding: 22px 20px 26px;
+  }
 }
 
 /* --- 13) Kayit/giris karti: iliskili alanlar 2 kolon (Ad|Soyad, Takma ad|
@@ -9085,6 +9100,70 @@ select:-webkit-autofill {
 .register-card.auth-card {
   max-width: 440px;
 }
+/* Giris/kayit 'page' modu: sol menu gorunur; page'in seffaf + sol-yasli + tam-en
+   tabanini ez -> auth-card yine ORTALANMIS KART kalir (kendi zemin/kenar/golgesi).
+   left:190 overlay menunin sagini kaplar, boylece menu solda gorunur. */
+.register-overlay.page > .register-card.auth-card {
+  align-self: center;
+  margin: 0 auto;
+  max-width: 820px; /* iki kolon (Giris | Kayit) sigsin */
+  min-height: 0;
+  max-height: none;
+  padding: 26px 30px 30px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+}
+/* Sayfa basligini (page-header) auth kartinda normal kart basligina indir */
+.register-overlay.page > .register-card.auth-card > h2 {
+  font-size: 1.35rem;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin: 0 0 14px;
+}
+
+/* ---- Giris | Kayit YAN YANA (iki kolon) ---- */
+.auth-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 30px;
+  align-items: start;
+}
+.auth-col {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+/* Ikinci kolon ortada ince ayirici + ic bosluk */
+.auth-col + .auth-col {
+  border-left: 1px solid var(--border);
+  padding-left: 30px;
+}
+.auth-col-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 2px;
+}
+/* Kolon ana aksiyon butonu: kolon genisligi (kolon-ici oldugundan tam-genislik dogru) */
+.auth-col-submit {
+  width: 100%;
+  margin-top: 4px;
+}
+.auth-col .google-auth {
+  margin-top: 2px;
+}
+/* Alt bar: Misafir olarak oyna + Vazgec, ortalanmis */
+.auth-foot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+
 .register-card .form-grid.reg-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

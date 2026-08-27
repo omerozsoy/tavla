@@ -76,7 +76,6 @@ export default function Auth({
     ? api.toProfile(editUser)
     : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
 
-  const [tab, setTab] = useState<'login' | 'register'>('register')
   const [firstName, setFirstName] = useState(seed.firstName)
   const [lastName, setLastName] = useState(seed.lastName)
   const [country, setCountry] = useState(seed.country)
@@ -86,12 +85,14 @@ export default function Auth({
   const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
   const [birthDate, setBirthDate] = useState(seed.birthDate ?? '')
   const [loginId, setLoginId] = useState('')
+  const [loginPw, setLoginPw] = useState('') // giris sifresi (kayit sifresinden AYRI: yan yana)
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [nickTaken, setNickTaken] = useState(false)
   const [saved, setSaved] = useState(false) // profil kaydedildi onayi (sayfada kalir)
   const [showPw, setShowPw] = useState(false)
+  const [showLoginPw, setShowLoginPw] = useState(false)
   const [startRating] = useState(1400) // baslangic seviyesi: kayitta gizli, sabit 1400 gonderilir
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
   const [forgotSent, setForgotSent] = useState(false)
@@ -152,11 +153,10 @@ export default function Auth({
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing, tab])
+  }, [editing])
 
   // Takma isim musaitlik kontrolu (API, debounce) - kayit/duzenlemede
   useEffect(() => {
-    if (tab === 'login' && !editing) return
     const n = nickname.trim()
     if (!n || n === seed.nickname) {
       setNickTaken(false)
@@ -175,7 +175,7 @@ export default function Auth({
       cancelled = true
       clearTimeout(timer)
     }
-  }, [nickname, tab, editing, seed.nickname])
+  }, [nickname, editing, seed.nickname])
 
   // Sunucudan gelen dogrulama hatasini anlasilir mesaja cevir (hangi alan?)
   function apiErrorMsg(err: unknown): string {
@@ -188,12 +188,12 @@ export default function Auth({
     return first || err.message || t('auth.failed')
   }
 
-  async function doLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function doLogin(e?: React.FormEvent) {
+    e?.preventDefault()
     setError('')
     setBusy(true)
     try {
-      const user = await api.login(loginId.trim(), password)
+      const user = await api.login(loginId.trim(), loginPw)
       onAuthed(user)
     } catch (err) {
       // Giriste alan bazli mesaj yerine tek anlasilir uyari
@@ -281,9 +281,11 @@ export default function Auth({
     }
   }
 
-  const title = `${t('brand.name')} — ${
-    editing ? t('reg.titleEdit') : tab === 'login' ? t('auth.login') : t('auth.register')
-  }`
+  const title = editing
+    ? `${t('brand.name')} — ${t('reg.titleEdit')}`
+    : forgot
+      ? `${t('brand.name')} — ${t('auth.login')}`
+      : t('brand.name')
 
   // Profil fotografi blogu (yalnizca profil duzenlemede gorunur; grid disinda ust blok)
   const avatarBlock = (
@@ -393,9 +395,7 @@ export default function Auth({
     <div className={`register-overlay ${modal ? 'modal' : ''} ${page ? 'page' : ''}`}>
       <form
         className={`register-card ${editing ? 'profile-form' : 'auth-card'}`}
-        onSubmit={
-          !editing && forgot ? doForgot : editing ? doEdit : tab === 'login' ? doLogin : doRegister
-        }
+        onSubmit={!editing && forgot ? doForgot : editing ? doEdit : doRegister}
       >
         {modal && onCancel && (
           <button type="button" className="modal-close" onClick={onCancel} aria-label={t('common.close')}>
@@ -469,50 +469,70 @@ export default function Auth({
           </div>
         )}
 
+        {/* GATE: Giris | Kayit YAN YANA (iki kolon) — sekmeler kaldirildi.
+            Tek <form> korunur: Giris type=button->doLogin, Kayit type=submit->doRegister
+            (form onSubmit). Login sifresi AYRI state (loginPw) -> alanlar cakismaz. */}
         {!editing && !forgot && (
-          <div className="auth-tabs">
-            <button
-              type="button"
-              className={tab === 'login' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => {
-                setTab('login')
-                setError('')
-              }}
-            >
-              {t('auth.login')}
-            </button>
-            <button
-              type="button"
-              className={tab === 'register' ? 'menu-btn active' : 'menu-btn'}
-              onClick={() => {
-                setTab('register')
-                setError('')
-              }}
-            >
-              {t('auth.register')}
-            </button>
-          </div>
-        )}
-
-        {!editing && !forgot && (
-          <div className="google-auth">
-            <div ref={googleBtnRef} className="google-btn" />
-            <div className="auth-divider">{t('auth.or')}</div>
-          </div>
-        )}
-
-        {!forgot &&
-          (!editing && tab === 'login' ? (
-            <>
+          <div className="auth-cols">
+            {/* Sol kolon: Giris yap */}
+            <div className="auth-col">
+              <h3 className="auth-col-title">{t('auth.login')}</h3>
               <label>
                 {t('auth.loginId')}
                 <input
                   value={loginId}
                   onChange={(e) => setLoginId(e.target.value)}
                   autoComplete="username"
-                  autoFocus
                 />
               </label>
+              <label>
+                {t('reg.password')}
+                <div className="pw-field">
+                  <input
+                    type={showLoginPw ? 'text' : 'password'}
+                    value={loginPw}
+                    onChange={(e) => setLoginPw(e.target.value)}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowLoginPw((v) => !v)}
+                    aria-label={t(showLoginPw ? 'auth.hidePw' : 'auth.showPw')}
+                    title={t(showLoginPw ? 'auth.hidePw' : 'auth.showPw')}
+                  >
+                    <Icon name="eye" size={16} />
+                  </button>
+                </div>
+              </label>
+              <button
+                type="button"
+                className="galaxy-btn auth-col-submit"
+                onClick={() => doLogin()}
+                disabled={busy}
+              >
+                {t('auth.doLogin')}
+              </button>
+              <button
+                type="button"
+                className="forgot-link"
+                onClick={() => {
+                  setForgot(true)
+                  setError('')
+                }}
+              >
+                {t('auth.forgot')}
+              </button>
+              <div className="google-auth">
+                <div className="auth-divider">{t('auth.or')}</div>
+                <div ref={googleBtnRef} className="google-btn" />
+              </div>
+            </div>
+
+            {/* Sag kolon: Kayit ol */}
+            <div className="auth-col">
+              <h3 className="auth-col-title">{t('auth.register')}</h3>
+              <div className="form-grid reg-grid">{profileInputs}</div>
               <label>
                 {t('reg.password')}
                 <div className="pw-field">
@@ -520,7 +540,7 @@ export default function Auth({
                     type={showPw ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
+                    autoComplete="new-password"
                   />
                   <button
                     type="button"
@@ -534,46 +554,45 @@ export default function Auth({
                 </div>
               </label>
               <button
-                type="button"
-                className="forgot-link"
-                onClick={() => {
-                  setForgot(true)
-                  setError('')
-                }}
+                type="submit"
+                className="galaxy-btn auth-col-submit"
+                disabled={busy || nickTaken}
               >
-                {t('auth.forgot')}
+                {t('reg.submitNew')}
               </button>
-            </>
-          ) : (
-            <>
-              {editing && avatarBlock}
-              <div className={`form-grid${editing ? '' : ' reg-grid'}`}>{profileInputs}</div>
-              {!editUser && (
-                <>
-                  <label>
-                    {t('reg.password')}
-                    <div className="pw-field">
-                      <input
-                        type={showPw ? 'text' : 'password'}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        className="pw-toggle"
-                        onClick={() => setShowPw((v) => !v)}
-                        aria-label={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
-                        title={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
-                      >
-                        <Icon name="eye" size={16} />
-                      </button>
-                    </div>
-                  </label>
-                </>
-              )}
-            </>
-          ))}
+            </div>
+          </div>
+        )}
+
+        {/* EDITING: profil duzenleme (tek kolon; DAVRANIS DEGISMEDI) */}
+        {editing && (
+          <>
+            {avatarBlock}
+            <div className="form-grid">{profileInputs}</div>
+            {!editUser && (
+              <label>
+                {t('reg.password')}
+                <div className="pw-field">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowPw((v) => !v)}
+                    aria-label={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                    title={t(showPw ? 'auth.hidePw' : 'auth.showPw')}
+                  >
+                    <Icon name="eye" size={16} />
+                  </button>
+                </div>
+              </label>
+            )}
+          </>
+        )}
 
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
         {saved && (
@@ -582,7 +601,8 @@ export default function Auth({
           </div>
         )}
 
-        {!forgot && (
+        {/* Editing aksiyonlari (Vazgec + Kaydet); gate submitleri kolon icinde */}
+        {editing && (
           <div className="register-actions">
             {onCancel && (
               <button type="button" className="menu-btn" onClick={onCancel}>
@@ -590,31 +610,35 @@ export default function Auth({
               </button>
             )}
             <button type="submit" className="galaxy-btn" disabled={busy || nickTaken}>
-              {editing
-                ? t('reg.submitEdit')
-                : tab === 'login'
-                  ? t('auth.doLogin')
-                  : t('reg.submitNew')}
+              {t('reg.submitEdit')}
             </button>
           </div>
         )}
 
+        {/* Gate alt bar: Misafir olarak oyna + Vazgec (page modunda X yok) */}
         {!editing && !forgot && (
-          <button
-            type="button"
-            className="guest-link"
-            onClick={() =>
-              onGuest({
-                firstName: '',
-                lastName: '',
-                country: '',
-                nickname: t('auth.guestNick'),
-                email: '',
-              })
-            }
-          >
-            {t('auth.guest')}
-          </button>
+          <div className="auth-foot">
+            <button
+              type="button"
+              className="guest-link"
+              onClick={() =>
+                onGuest({
+                  firstName: '',
+                  lastName: '',
+                  country: '',
+                  nickname: t('auth.guestNick'),
+                  email: '',
+                })
+              }
+            >
+              {t('auth.guest')}
+            </button>
+            {onCancel && (
+              <button type="button" className="forgot-link" onClick={onCancel}>
+                {t('reg.cancel')}
+              </button>
+            )}
+          </div>
         )}
 
         {/* Hesap aksiyonlari: Cikis Yap ORTADA + belirgin, Hesabi Sil SAG KOSEDE */}

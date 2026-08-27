@@ -3064,9 +3064,9 @@ export default function App() {
       })
     },
   }
-  // Giris/kayit: modal pencere DEGIL — temiz TAM SAYFA gate (opak app zemini,
-  // ortalanmis kart; arkada dimlenmis icerik yok). Cikis: Vazgec / Misafir olarak oyna.
-  const authModal = showAuth ? <Auth key="auth" {...authProps} /> : null
+  // Giris/kayit: SAYFA gorunumu (modal degil) — sol menu gorunur kalir, form
+  // menunun sagindaki alanda ortalanmis kart olarak acilir. Cikis: Vazgec / Misafir.
+  const authModal = showAuth ? <Auth key="auth" page {...authProps} /> : null
   // Profil duzenleme sayfasi (normal sayfa, modal degil; sol menu gorunur)
   const editProfilePage = editProfile ? (
     <Auth
