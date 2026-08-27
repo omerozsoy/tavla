@@ -4800,7 +4800,8 @@ button[aria-disabled='true'],
   justify-content: flex-start;
   align-items: stretch;
   overflow-y: auto;
-  padding: 18px clamp(12px, 3vw, 40px) 40px;
+  /* Ust hesap bari (fixed, ~54px) ile cakismasin: ust bosluk bar yuksekligini kapsar */
+  padding: calc(var(--header-h) + 12px) clamp(12px, 3vw, 40px) 40px;
 }
 
 /* ============================================================
