@@ -5786,41 +5786,71 @@ button[aria-disabled='true'],
   font-style: normal;
   color: var(--muted);
 }
+/* Istatistik tablosu: agir kiremit barlar yerine temiz, cizgili tablo */
 .mr-table {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 18px;
+  margin-bottom: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
 }
 .mr-row {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  background: var(--accent);
-  color: var(--tv-white);
-  border-radius: var(--radius-md);
-  padding: 9px 12px;
+  padding: 11px 16px;
   font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--text);
+  background: var(--card-bg);
+}
+.mr-row:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 4%, var(--card-bg));
+}
+.mr-row:not(:last-child) {
+  border-bottom: 1px solid var(--border);
 }
 .mr-label {
-  color: #ffffffcc;
-  font-weight: 800;
-  font-size: 0.9rem;
-  padding: 0 10px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0 14px;
   white-space: nowrap;
 }
 .mr-a {
   text-align: left;
+  font-variant-numeric: tabular-nums;
 }
 .mr-b {
   text-align: right;
+  font-variant-numeric: tabular-nums;
 }
-/* Sans / coin: brick zemin uzerinde pozitif/negatif vurgu */
+/* "Daha iyi" tarafin tac ikonu altin */
+.mr-a svg,
+.mr-b svg {
+  color: var(--tv-gold);
+  vertical-align: middle;
+}
+/* Sans / coin: yuzeye gore anlamsal pozitif/negatif */
 .mr-pos {
-  color: #b8f5c8;
+  color: var(--success-fg);
 }
 .mr-neg {
-  color: #ffd2c8;
+  color: var(--danger-fg);
+}
+/* Kazanan avatarina altin halka + hafif isima (sag: kaybeden notr) */
+.mr-head .mr-player:first-child .mr-avatar {
+  border-color: var(--tv-gold);
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--tv-gold) 20%, transparent),
+    0 4px 16px rgba(0, 0, 0, 0.3);
+}
+/* Kazanan skoru vurgulu (aksan) */
+.mr-score span:first-child {
+  color: var(--accent);
 }
 .mr-actions {
   display: flex;
