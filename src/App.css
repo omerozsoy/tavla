@@ -4111,12 +4111,15 @@ button[aria-disabled='true'],
   overflow: hidden;
   transform-origin: top left;
   transform: rotate(90deg);
-  /* Dondurulmus cercevede board'u dolduracak kadar buyut (numaralar icin ~44px pay) */
-  --board-h: max(240px, min(calc(100vw - 44px), calc((100dvh - 150px) / 1.32)));
+  /* Board hem YUKSEKLIGE (100vw) hem GENISLIGE (100dvh) sigmali. Ikinci terim board'un
+     gercek en-boy oranini (~1.55) + kenar cubugu payini hesaba katar; aksi halde board
+     yatay cercevesinden tasip sol kenari kesiliyordu (iOS'ta 100dvh adres cubuguyla dar). */
+  --board-h: max(220px, min(calc(100vw - 52px), calc((100dvh - 150px) / 1.72)));
 }
 #root.force-landscape .main {
   width: 100%;
   align-items: center;
+  justify-content: center;
 }
 /* Force-landscape: gercek viewport 390px dikey oldugundan max-width:720/900 DIKEY
    mobil kurallari tetikleniyor; #root 844px genis oldugu icin bunlari geri alip
