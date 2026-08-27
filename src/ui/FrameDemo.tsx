@@ -14,6 +14,12 @@ const SAMPLE =
 
 const FRAMES: { rarity: PremiumRarity; name: string; theme: string; desc: string }[] = [
   {
+    rarity: 'rare',
+    name: 'Rare',
+    theme: 'Tempered Silver',
+    desc: 'Temiz metal bevel · hafif enerji shimmer · minimal kardinal dekor',
+  },
+  {
     rarity: 'epic',
     name: 'Epic',
     theme: 'Arcane Energy',
