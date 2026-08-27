@@ -1256,15 +1256,29 @@ button[aria-disabled='true'],
 
 /* ---- Mac Analizleri (gecmis maclar) ---- */
 .mh-card {
-  max-width: 620px;
+  max-width: 100%;
   width: 100%;
 }
-.mh-list {
+/* Tam sayfa liste (kucuk scroll'lu kutu DEGIL): sayfanin kendi scroll'u kullanilir.
+   Ayrica baska bir .mh-* seti (profil) ayni isimleri kullaniyor -> .mh-card altina
+   scope'layarak (2 sinif ozgullugu) o kurallari ez. */
+.mh-card .mh-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 64vh;
-  overflow-y: auto;
+  max-height: none;
+  overflow: visible;
+}
+.mh-card .mh-row {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  font-size: inherit;
+  background: none;
+  border: none;
+  color: inherit;
 }
 .mh-item {
   flex: none;

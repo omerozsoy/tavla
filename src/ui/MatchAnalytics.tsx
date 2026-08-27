@@ -91,9 +91,14 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
                             {m.delta}
                           </b>
                         </span>
-                        <span className="mh-vs">{t('mh.vs', { r: m.opponent_rating })}</span>
+                        <span className="mh-vs">
+                          vs <b>{m.opponent_name || `#${m.opponent_rating}`}</b> ({m.opponent_rating})
+                        </span>
                         {m.pr != null && (
-                          <span className={`mh-pr ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
+                          <span className={`mh-pr ${prCls(m.pr)}`}>
+                            PR {m.pr.toFixed(1)}
+                            {m.opponent_pr != null && <> / {m.opponent_pr.toFixed(1)}</>}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -124,6 +129,19 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
                           <b className={m.delta >= 0 ? 'good' : 'bad'}>
                             ({m.delta >= 0 ? '+' : ''}{m.delta})
                           </b>
+                        </span>
+                      </div>
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dVs')}</span>
+                        <span className="mh-stat-v">
+                          {m.opponent_name || '—'}
+                          {m.opponent_rating ? <span className="mh-stat-sub"> ({m.opponent_rating})</span> : null}
+                        </span>
+                      </div>
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dOppPr')}</span>
+                        <span className={`mh-stat-v ${m.opponent_pr != null ? prCls(m.opponent_pr) : ''}`}>
+                          {m.opponent_pr != null ? m.opponent_pr.toFixed(1) : '—'}
                         </span>
                       </div>
                       {m.coins_after != null && (
