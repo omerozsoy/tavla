@@ -12,6 +12,12 @@ return [
     'store_key'     => env('GARANTI_STORE_KEY'),           // 3D Secure store key
     'hash_version'  => env('GARANTI_HASH_VERSION', 'v2'),  // v2 = SHA512 (yeni), v1 = SHA1 (eski)
 
+    // Tutar dogrulama sikiligi. Callback'te banka txnamount'u kayitli tutarla (kurus)
+    // TAM SAYI olarak karsilastirilir. Banka test'te txnamount'un HER ZAMAN dolu geldigi
+    // dogrulandiktan sonra bunu true yap: o zaman bos/uyumsuz tutar odemeyi REDDEDER.
+    // Varsayilan false: bos txnamount loglanir ama akis bozulmaz (hash zaten korur).
+    'strict_amount' => (bool) env('GARANTI_STRICT_AMOUNT', false),
+
     'urls' => [
         'TEST' => [
             '3d'        => 'https://sanalposprovtest.garantibbva.com.tr/servlet/gt3dengine',

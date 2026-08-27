@@ -249,6 +249,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'won'             => ['required', 'boolean'],
             'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
+            'opponent_name'   => ['nullable', 'string', 'max:40'],
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
@@ -309,6 +310,9 @@ class AuthController extends Controller
             $mr['luck'] = $data['luck'] ?? null;
             $mr['score_self'] = $data['score_self'] ?? null;
             $mr['score_opp'] = $data['score_opp'] ?? null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
+            $mr['opponent_name'] = $data['opponent_name'] ?? null;
         }
         \App\Models\MatchResult::create($mr);
 
