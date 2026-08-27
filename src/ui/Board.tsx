@@ -306,6 +306,9 @@ export default function Board({
         onDrop={offTarget ? () => onSelectTarget('off') : undefined}
       >
         <div className="bearoff-slot top">
+          {topOffCount > 0 && (
+            <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
+          )}
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
@@ -314,6 +317,9 @@ export default function Board({
           {Array.from({ length: bottomOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${bottomOffPlayer}`} />
           ))}
+          {bottomOffCount > 0 && (
+            <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
+          )}
         </div>
       </div>
     </div>
