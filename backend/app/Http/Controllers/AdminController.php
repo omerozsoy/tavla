@@ -11,7 +11,7 @@ class AdminController extends Controller
     public function users(Request $request)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
 
         $q = trim((string) $request->query('q', ''));
@@ -42,7 +42,7 @@ class AdminController extends Controller
     {
         $me = $request->user();
         if (! $me?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
 
         $data = $request->validate([
@@ -55,13 +55,13 @@ class AdminController extends Controller
         if ($user->id === $me->id) {
             if ((array_key_exists('banned', $data) && $data['banned'])
                 || (array_key_exists('is_admin', $data) && ! $data['is_admin'])) {
-                return response()->json(['message' => 'Kendini yasaklayamaz veya yetkiden düşüremezsin.'], 422);
+                return $this->fail('Kendini yasaklayamaz veya yetkiden düşüremezsin.', 422);
             }
         }
 
         // Config e-postali admin'in yonetici bayragi DB'den kaldirilamaz (yine admin kalir)
         if (array_key_exists('is_admin', $data) && ! $data['is_admin'] && $user->isConfigAdmin()) {
-            return response()->json(['message' => 'Bu hesap yapılandırmada yönetici; yetkisi kaldırılamaz.'], 422);
+            return $this->fail('Bu hesap yapılandırmada yönetici; yetkisi kaldırılamaz.', 422);
         }
 
         if (array_key_exists('coins', $data)) {
@@ -85,7 +85,7 @@ class AdminController extends Controller
     public function userMatches(Request $request, User $user)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
         $matches = \App\Models\MatchResult::where('user_id', $user->id)
             ->orderByDesc('created_at')

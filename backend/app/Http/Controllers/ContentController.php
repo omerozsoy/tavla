@@ -14,7 +14,7 @@ class ContentController extends Controller
     {
         $type = (string) $request->query('type', '');
         if (! in_array($type, self::TYPES, true)) {
-            return response()->json(['message' => 'Geçersiz tür.'], 422);
+            return $this->fail('Geçersiz tür.', 422);
         }
 
         $q = Content::where('type', $type)->where('published', true);
@@ -40,7 +40,7 @@ class ContentController extends Controller
     public function adminIndex(Request $request)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
         $type = (string) $request->query('type', '');
         $q = Content::query();
@@ -53,7 +53,7 @@ class ContentController extends Controller
     public function store(Request $request)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
         $data = $this->validated($request);
         $c = Content::create($data);
@@ -63,7 +63,7 @@ class ContentController extends Controller
     public function update(Request $request, Content $content)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
         $data = $this->validated($request);
         $content->update($data);
@@ -73,10 +73,10 @@ class ContentController extends Controller
     public function destroy(Request $request, Content $content)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yetkisiz.'], 403);
+            return $this->fail('Yetkisiz.', 403);
         }
         $content->delete();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     private function validated(Request $request): array

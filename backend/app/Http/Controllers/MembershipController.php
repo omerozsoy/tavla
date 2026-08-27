@@ -15,7 +15,7 @@ class MembershipController extends Controller
         $u = $request->user();
 
         if ($u->trial_used) {
-            return response()->json(['message' => 'Ücretsiz deneme hakkın zaten kullanıldı.'], 422);
+            return $this->fail('Ücretsiz deneme hakkın zaten kullanıldı.', 422);
         }
 
         $u->plan = $data['plan'];

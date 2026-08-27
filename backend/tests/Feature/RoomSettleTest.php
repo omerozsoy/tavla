@@ -79,6 +79,18 @@ class RoomSettleTest extends TestCase
         $this->assertEquals(50, $p2->fresh()->coins);
     }
 
+    public function test_hard_error_uses_standard_message_shape(): void
+    {
+        $p1 = $this->makeUser('gary', 100);
+        $p2 = $this->makeUser('hana', 100);
+        $room = $this->makeRoom($p1, $p2, 50);
+
+        // Odada olmayan token -> SERT HATA: 403 + {message} (fail() konvansiyonu).
+        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'intruder', 'won' => true])
+            ->assertStatus(403)
+            ->assertJsonStructure(['message']);
+    }
+
     public function test_conflicting_claims_do_not_transfer(): void
     {
         $p1 = $this->makeUser('erin', 100);

@@ -51,6 +51,6 @@ class BlunderController extends Controller
             ->pluck('id');
         Blunder::where('user_id', $userId)->whereNotIn('id', $keepIds)->delete();
 
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 }

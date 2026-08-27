@@ -63,7 +63,7 @@ class ShopController extends Controller
         $data = $request->validate(['id' => ['required', 'string', 'max:40']]);
         $id = $data['id'];
         if (! array_key_exists($id, self::CATALOG)) {
-            return response()->json(['message' => 'Ürün bulunamadı.'], 404);
+            return $this->fail('Ürün bulunamadı.', 404);
         }
         $price = self::CATALOG[$id];
 
@@ -85,10 +85,11 @@ class ShopController extends Controller
         });
 
         if (isset($r['insufficient'])) {
-            return response()->json(['message' => 'Yetersiz coin.', 'coins' => $r['coins']], 422);
+            return $this->fail('Yetersiz coin.', 422, ['coins' => $r['coins']]);
         }
         if (isset($r['owned'])) {
-            return response()->json(['message' => 'Zaten sahipsin.', 'unlocks' => $r['unlocks'], 'coins' => $r['coins']], 200);
+            // Yumusak sonuc: zaten sahip (HATA degil) -> 200 + mesaj + guncel durum.
+            return response()->json(['message' => 'Zaten sahipsin.', 'unlocks' => $r['unlocks'], 'coins' => $r['coins']]);
         }
         return response()->json(['unlocks' => $r['unlocks'], 'coins' => $r['coins']]);
     }
@@ -141,7 +142,7 @@ class ShopController extends Controller
         if ($id && $id !== 'none') {
             $unlocks = $u->unlocks ?? [];
             if (! in_array('frame.'.$id, $unlocks, true)) {
-                return response()->json(['message' => 'Bu çerçeveye sahip değilsin.'], 403);
+                return $this->fail('Bu çerçeveye sahip değilsin.', 403);
             }
         }
         $u->avatar_frame = ($id === 'none') ? null : $id;

@@ -103,10 +103,10 @@ class RoomController extends Controller
         // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart
         if ($stake > 0 || $betPct > 0) {
             if (! $authUser) {
-                return response()->json(['message' => 'Bahisli oyun için giriş yapmalısın.'], 422);
+                return $this->fail('Bahisli oyun için giriş yapmalısın.', 422);
             }
             if (($authUser->coins ?? 0) < max($stake, 1)) {
-                return response()->json(['message' => 'Yetersiz coin.'], 422);
+                return $this->fail('Yetersiz coin.', 422);
             }
         }
 
@@ -192,7 +192,7 @@ class RoomController extends Controller
         ]);
         $room = Room::where('code', $code)->first();
         if (! $room) {
-            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+            return $this->fail('Oda bulunamadı.', 404);
         }
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
@@ -202,7 +202,7 @@ class RoomController extends Controller
         $callerIsP1 = $room->p1_token === $data['token'];
         $callerIsP2 = $room->p2_token === $data['token'];
         if (! $callerIsP1 && ! $callerIsP2) {
-            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+            return $this->fail('Bu odada değilsin.', 403);
         }
         $callerSlot = $callerIsP1 ? 'p1' : 'p2';
         $callerId = $callerIsP1 ? $room->p1_user_id : $room->p2_user_id;
@@ -373,7 +373,7 @@ class RoomController extends Controller
             ->where('p1_token', $data['token'])
             ->whereNull('p2_token')
             ->delete();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Odaya katil (kod ile)
@@ -388,14 +388,14 @@ class RoomController extends Controller
 
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
-            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+            return $this->fail('Oda bulunamadı.', 404);
         }
 
         $slot = $this->slotOf($room, $data['token']);
         if ($slot === null) {
             // Yeni katilimci
             if ($room->p2_token) {
-                return response()->json(['message' => 'Oda dolu.'], 409);
+                return $this->fail('Oda dolu.', 409);
             }
             $room->p2_token = $data['token'];
             $room->p2_user_id = $request->user('sanctum')?->id;
@@ -438,7 +438,7 @@ class RoomController extends Controller
         $slot = $this->slotOf($room, $data['token']);
         if ($slot === null) {
             if ($room->p2_token) {
-                return response()->json(['message' => 'Oda dolu.'], 409);
+                return $this->fail('Oda dolu.', 409);
             }
             $room->p2_token = $data['token'];
             $room->p2_user_id = $request->user('sanctum')?->id;
@@ -458,7 +458,7 @@ class RoomController extends Controller
     {
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
-            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+            return $this->fail('Oda bulunamadı.', 404);
         }
         $since = (int) $request->query('since', -1);
         if ($since >= 0 && $room->version <= $since) {
@@ -478,10 +478,10 @@ class RoomController extends Controller
 
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
-            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+            return $this->fail('Oda bulunamadı.', 404);
         }
         if ($this->slotOf($room, $data['token']) === null) {
-            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+            return $this->fail('Bu odada değilsin.', 403);
         }
 
         $room->state = $data['state'];
@@ -504,11 +504,11 @@ class RoomController extends Controller
 
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
-            return response()->json(['message' => 'Oda bulunamadı.'], 404);
+            return $this->fail('Oda bulunamadı.', 404);
         }
         $slot = $this->slotOf($room, $data['token']);
         if ($slot === null) {
-            return response()->json(['message' => 'Bu odada değilsin.'], 403);
+            return $this->fail('Bu odada değilsin.', 403);
         }
 
         $name = $slot === 'p1' ? $room->p1_name : $room->p2_name;

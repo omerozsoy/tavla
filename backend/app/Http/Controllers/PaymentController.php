@@ -13,7 +13,7 @@ class PaymentController extends Controller
     public function subscribe(Request $request, GarantiService $garanti)
     {
         if (! $garanti->isConfigured()) {
-            return response()->json(['message' => 'Ödeme sistemi henüz yapılandırılmadı.'], 503);
+            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
         }
         $data = $request->validate([
             'plan'   => ['required', 'in:star,starpro'],
@@ -21,7 +21,7 @@ class PaymentController extends Controller
         ]);
         $amount = config("garanti.prices.{$data['plan']}.{$data['period']}");
         if (! $amount) {
-            return response()->json(['message' => 'Geçersiz plan.'], 422);
+            return $this->fail('Geçersiz plan.', 422);
         }
 
         $payment = Payment::create([

@@ -47,10 +47,10 @@ class FriendController extends Controller
 
         $target = User::whereRaw('LOWER(nickname) = ?', [strtolower($data['nickname'])])->first();
         if (! $target) {
-            return response()->json(['message' => 'Kullanıcı bulunamadı.'], 404);
+            return $this->fail('Kullanıcı bulunamadı.', 404);
         }
         if ($target->id === $me->id) {
-            return response()->json(['message' => 'Kendini ekleyemezsin.'], 422);
+            return $this->fail('Kendini ekleyemezsin.', 422);
         }
 
         // Zaten iliski var mi? (her iki yon)
@@ -111,7 +111,7 @@ class FriendController extends Controller
             })
             ->delete();
 
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     private function pub($u): array

@@ -114,7 +114,7 @@ class PresenceController extends Controller
         }
         $q->update(['read' => true]);
 
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Bir arkadasi oyuna davet et -> paylasimli oda kodu uret, davet olustur
@@ -122,10 +122,10 @@ class PresenceController extends Controller
     {
         $me = $request->user();
         if ($userId === $me->id) {
-            return response()->json(['message' => 'Kendini davet edemezsin.'], 422);
+            return $this->fail('Kendini davet edemezsin.', 422);
         }
         if (! User::where('id', $userId)->exists()) {
-            return response()->json(['message' => 'Kullanıcı bulunamadı.'], 404);
+            return $this->fail('Kullanıcı bulunamadı.', 404);
         }
 
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -161,7 +161,7 @@ class PresenceController extends Controller
         $me = $request->user()->id;
         $invite = DB::table('game_invites')->where('id', $inviteId)->where('to_user_id', $me)->first();
         if (! $invite) {
-            return response()->json(['message' => 'Davet bulunamadı.'], 404);
+            return $this->fail('Davet bulunamadı.', 404);
         }
         DB::table('game_invites')->where('id', $inviteId)->update([
             'status' => $data['accept'] ? 'accepted' : 'declined',

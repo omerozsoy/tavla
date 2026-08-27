@@ -102,7 +102,7 @@ class AuthController extends Controller
             'id_token' => $data['credential'],
         ]);
         if (! $resp->ok()) {
-            return response()->json(['message' => 'Google doğrulaması başarısız.'], 401);
+            return $this->fail('Google doğrulaması başarısız.', 401);
         }
         $p = $resp->json();
 
@@ -110,15 +110,15 @@ class AuthController extends Controller
         $clientId = config('services.google.client_id');
         $iss = $p['iss'] ?? '';
         if (($p['aud'] ?? null) !== $clientId) {
-            return response()->json(['message' => 'Geçersiz istemci.'], 401);
+            return $this->fail('Geçersiz istemci.', 401);
         }
         if ($iss !== 'accounts.google.com' && $iss !== 'https://accounts.google.com') {
-            return response()->json(['message' => 'Geçersiz sağlayıcı.'], 401);
+            return $this->fail('Geçersiz sağlayıcı.', 401);
         }
         $emailVerified = ($p['email_verified'] ?? false);
         $email = $p['email'] ?? null;
         if (! $email || ($emailVerified !== true && $emailVerified !== 'true')) {
-            return response()->json(['message' => 'E-posta doğrulanamadı.'], 401);
+            return $this->fail('E-posta doğrulanamadı.', 401);
         }
 
         $user = User::where('email', $email)->first();
@@ -158,7 +158,7 @@ class AuthController extends Controller
         }
 
         if ($user->isBanned()) {
-            return response()->json(['message' => 'Bu hesap askıya alınmış.'], 403);
+            return $this->fail('Bu hesap askıya alınmış.', 403);
         }
 
         $token = $user->createToken('google')->plainTextToken;
@@ -170,7 +170,7 @@ class AuthController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()->delete();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Hesabi kalici olarak sil (yalnizca yonetici)
@@ -208,7 +208,7 @@ class AuthController extends Controller
             $user->tokens()->delete(); // tum oturum token'lari
             $user->delete();
         });
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Giris yapmis kullanici
@@ -572,7 +572,7 @@ class AuthController extends Controller
         if ($status === Password::PASSWORD_RESET) {
             return response()->json(['message' => 'ok']);
         }
-        return response()->json(['message' => 'Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.'], 400);
+        return $this->fail('Sıfırlama başarısız. Link geçersiz veya süresi dolmuş.', 400);
     }
 
     // E-posta dogrulama linki (imzali). Basari/hata sonrasi SPA'ya yonlendirir.
