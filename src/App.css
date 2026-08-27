@@ -3528,6 +3528,31 @@ button[aria-disabled='true'],
   font-size: 0.78rem;
   margin-top: 2px;
 }
+/* Takma isim canli musaitlik: MUSAIT -> yesil input + yesil ipucu */
+.register-card input.valid,
+.cf-row input.valid {
+  border-color: var(--color-success);
+  background-color: color-mix(in srgb, var(--color-success) 8%, var(--input-bg));
+}
+.register-card input.valid:focus,
+.cf-row input.valid:focus {
+  border-color: var(--color-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-success) 26%, transparent);
+}
+.nick-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+.nick-hint.ok {
+  color: var(--success-fg);
+  font-weight: 600;
+}
+.nick-hint.checking {
+  color: var(--tv-ink-faint);
+}
 .register-card input.invalid {
   border-color: var(--color-error);
   background: color-mix(in srgb, var(--color-error) 10%, transparent);
@@ -5948,7 +5973,10 @@ button[aria-disabled='true'],
      + bosluklar) VE sol menu (190px offset, .register-overlay.page left:190) yer
      birakacak sekilde genislige de sigar. Aksi halde board saga tasip panellerle
      ic ice giriyordu (100vw kullanip 190px sidebar'i saymiyordu). */
-  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((100vw - 910px) / 1.35)));
+  /* GENISLIK: container max-width 1400px'te durdugu icin 100vw CAP'lenir (min 1560);
+     aksi halde genis ekranda board buyumeye devam edip kontrol panelini ORTUYORDU.
+     Divisor 1.4 board en-boy oranina gore kolona (board|300|320) sigacak sekilde. */
+  --board-h: max(300px, min(calc(100vh - var(--header-h) - 150px), calc((min(100vw, 1560px) - 1010px) / 1.4)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -6539,10 +6567,10 @@ button[aria-disabled='true'],
   color: var(--success-fg);
 }
 /* Orta ekran: tahta ustte tam genislik, altinda kontrol | sonuc yan yana */
-/* BILINCLI analyzer-sayfasi esigi (icerik-genisligine bagli): 3-sutun ->
-   board ustte + controls/results altta 2-sutun. Sistemik 1200'e yuvarlamak
-   1180-1200'de bir sutunu erken dusurur -> gorsel dogrulanmadan degistirme. */
-@media (max-width: 1180px) {
+/* 3-sutun (board|kontrol|sonuc) yalniz GENIS ekranda; daha darda board USTTE
+   tam genislik + altta controls/results 2-sutun. Esik 1400: altinda 300px'lik
+   min board 300+320 panelleriyle ayni satira SIGMIYOR (tasip ortuyordu). */
+@media (max-width: 1400px) {
   .analyzer {
     --board-h: max(280px, min(calc(100vh - var(--header-h) - 210px), calc((100vw - 40px) / 1.35)));
   }

@@ -3269,9 +3269,8 @@ export default function App() {
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
-    onBlunders: user
-      ? () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true))
-      : undefined,
+    // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
+    onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),

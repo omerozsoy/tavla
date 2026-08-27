@@ -119,17 +119,20 @@ export default function SideMenu(p: SideMenuProps) {
         )}
       </div>
 
-      {/* Hesap */}
-      {p.loggedIn && (
+      {/* Hesap. Uyelik (premium) uye OLMAYANA da gorunur -> tiklayinca uyelik ekrani.
+          Istatistiklerim ise yalniz giris yapana (misafirin istatistigi yok). */}
+      {(p.onMembership || p.loggedIn) && (
         <div className="menu-group">
           {p.onMembership && (
             <button className="menu-btn menu-upgrade" onClick={p.onMembership}>
               <Icon name="crown" /> {t('mem.menu')}
             </button>
           )}
-          <button className="menu-btn" onClick={p.onMyStats}>
-            <Icon name="chart" /> {t('menu.myStats')}
-          </button>
+          {p.loggedIn && (
+            <button className="menu-btn" onClick={p.onMyStats}>
+              <Icon name="chart" /> {t('menu.myStats')}
+            </button>
+          )}
         </div>
       )}
 
