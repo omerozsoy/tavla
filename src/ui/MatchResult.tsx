@@ -84,10 +84,19 @@ export default function MatchResult({
     }
     return oppRating != null ? String(Math.round(oppRating)) : '—'
   }
-  // Sans (luck) zero-sum: bir taraf +X ise rakip -X. Tek taraf biliniyorsa digeri
-  // onun negatifi. Ikisi de null ise '—'.
-  const wLuck = winnerLuck ?? (loserLuck != null ? -loserLuck : null)
-  const lLuck = loserLuck ?? (winnerLuck != null ? -winnerLuck : null)
+  // Sans (luck) ZERO-SUM: iki taraf da biliniyorsa goreceli sansi goster
+  // (kazanan - kaybeden, zit isaretli) -> toplam 0 VE iki istemcide ayni deger
+  // (ikisi de ham degerlere sahip). Tek taraf biliniyorsa digeri onun negatifi.
+  let wLuck: number | null
+  let lLuck: number | null
+  if (winnerLuck != null && loserLuck != null) {
+    const net = winnerLuck - loserLuck
+    wLuck = net
+    lLuck = -net
+  } else {
+    wLuck = winnerLuck ?? (loserLuck != null ? -loserLuck : null)
+    lLuck = loserLuck ?? (winnerLuck != null ? -winnerLuck : null)
+  }
   // Sans: equity toplamini okunur bir skora olcekle (x100), isaretli goster
   const fmtLuck = (v: number | null) => {
     if (v == null) return '—'
