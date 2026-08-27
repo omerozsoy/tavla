@@ -2246,7 +2246,9 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center; /* board dikeyde ortalanir, hero gibi durur */
+  /* safe center: board sigdiginda ortalanir, TASTIGINDA ustten hizalanir ->
+     ortalama board'u yukari cekip sabit barin altina sokamaz */
+  justify-content: safe center;
   gap: 4px;
   padding-top: var(--header-h); /* ust hesap bari cakismasin */
   overflow-x: hidden;
