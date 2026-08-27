@@ -14,11 +14,13 @@ interface Props {
 // Dikey saat: her oyuncunun kendi rezerv bankasi (maca yayilir). Aktif oyuncu once
 // hamle gecikmesini, o bitince kendi bankasini tuketir.
 export default function ClockStack({ active, delay, white, black, final, topOff, bottomOff }: Props) {
+  // Rezerv bankasi mm:ss (Galaxy: 01:00); 60sn alti sade saniye
+  const fmt = (n: number) => (n >= 60 ? `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}` : String(n))
   const box = (player: Player) => {
     const bank = player === 'white' ? white : black
     if (active === player && delay > 0) return { text: String(delay), cls: 'delay' }
     const counting = active === player
-    return { text: String(bank), cls: bank <= final ? 'final' : counting ? 'over' : 'idle' }
+    return { text: fmt(bank), cls: bank <= final ? 'final' : counting ? 'over' : 'idle' }
   }
   const top = box('black')
   const bottom = box('white')
