@@ -4105,13 +4105,18 @@ button[aria-disabled='true'],
   position: fixed;
   top: 0;
   left: 100vw;
-  width: 100vh;
+  /* iOS Safari: adres cubugu ile 100vh kayar -> dvh (gorunur yukseklik) kullan */
+  width: 100dvh;
   height: 100vw;
   overflow: hidden;
   transform-origin: top left;
   transform: rotate(90deg);
-  /* Dondurulmus cerceveye gore board olcusu (numaralar icin ust/alt ~48px pay birakir) */
-  --board-h: max(220px, min(calc(100vw - 96px), calc((100vh - 240px) / 1.4)));
+  /* Dondurulmus cercevede board'u dolduracak kadar buyut (numaralar icin ~44px pay) */
+  --board-h: max(240px, min(calc(100vw - 44px), calc((100dvh - 150px) / 1.32)));
+}
+#root.force-landscape .main {
+  width: 100%;
+  align-items: center;
 }
 /* Force-landscape: gercek viewport 390px dikey oldugundan max-width:720/900 DIKEY
    mobil kurallari tetikleniyor; #root 844px genis oldugu icin bunlari geri alip
