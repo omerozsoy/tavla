@@ -2241,7 +2241,12 @@ export default function App() {
   // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.
   const [isFullscreen, setIsFullscreen] = useState(false)
   useEffect(() => {
-    const onFs = () => setIsFullscreen(!!document.fullscreenElement)
+    const onFs = () => {
+      const fs = !!document.fullscreenElement
+      setIsFullscreen(fs)
+      // Tam ekranda ust hesap barini gizle (CSS: html.fs-active .account-bar)
+      document.documentElement.classList.toggle('fs-active', fs)
+    }
     document.addEventListener('fullscreenchange', onFs)
     return () => document.removeEventListener('fullscreenchange', onFs)
   }, [])
