@@ -10,11 +10,13 @@ const OUT = 'C:/Users/Master/PhpstormProjects/tavla/.shots'
 mkdirSync(OUT, { recursive: true })
 const PROFILE = `C:/Users/Master/PhpstormProjects/tavla/.chrome-cdp/form-${process.pid}`
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
+const VW = Number(process.env.WIDTH) || 1440
+const VH = Number(process.env.HEIGHT) || 980
 
 const chrome = spawn(CHROME, [
   '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
   `--remote-debugging-port=${PORT}`, `--user-data-dir=${PROFILE}`,
-  '--window-size=1440,980', '--hide-scrollbars', 'about:blank',
+  `--window-size=${VW},${VH}`, '--hide-scrollbars', 'about:blank',
 ])
 chrome.on('error', (e) => { console.error('chrome spawn error', e); process.exit(1) })
 
@@ -40,7 +42,7 @@ const main = async () => {
   const { targetId } = await cdp(browser, 'Target.createTarget', { url: 'about:blank' })
   const { sessionId: S } = await cdp(browser, 'Target.attachToTarget', { targetId, flatten: true })
   await cdp(browser, 'Page.enable', {}, S); await cdp(browser, 'Runtime.enable', {}, S)
-  await cdp(browser, 'Emulation.setDeviceMetricsOverride', { width: 1440, height: 980, deviceScaleFactor: 1, mobile: false }, S)
+  await cdp(browser, 'Emulation.setDeviceMetricsOverride', { width: VW, height: VH, deviceScaleFactor: 1, mobile: false }, S)
 
   const evalJs = (expr) => cdp(browser, 'Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true }, S).then((r) => r.result?.value)
   const navigate = async (u) => { await cdp(browser, 'Page.navigate', { url: u }, S); await sleep(1500) }

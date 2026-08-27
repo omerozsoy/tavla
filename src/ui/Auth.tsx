@@ -89,7 +89,9 @@ export default function Auth({
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const [nickTaken, setNickTaken] = useState(false)
+  // Takma isim canli durumu: idle (bos/degismedi) | checking | ok (musait) | taken (alinmis)
+  const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken'>('idle')
+  const nickTaken = nickStatus === 'taken' // alinmis -> kirmizi + gonderim engellenir
   const [saved, setSaved] = useState(false) // profil kaydedildi onayi (sayfada kalir)
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
@@ -155,20 +157,22 @@ export default function Auth({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
 
-  // Takma isim musaitlik kontrolu (API, debounce) - kayit/duzenlemede
+  // Takma isim musaitlik kontrolu (API, debounce) — yazdikca canli: yesil/kirmizi
   useEffect(() => {
     const n = nickname.trim()
-    if (!n || n === seed.nickname) {
-      setNickTaken(false)
+    // Bos, degismemis (duzenleme) veya cok kisa -> notr (kontrol etme)
+    if (!n || n === seed.nickname || n.length < 2) {
+      setNickStatus('idle')
       return
     }
+    setNickStatus('checking')
     let cancelled = false
     const timer = setTimeout(async () => {
       try {
         const ok = await api.nicknameAvailable(n)
-        if (!cancelled) setNickTaken(!ok)
+        if (!cancelled) setNickStatus(ok ? 'ok' : 'taken')
       } catch {
-        /* sunucu yoksa kontrol atlanir */
+        if (!cancelled) setNickStatus('idle') // sunucu yoksa notr birak
       }
     }, 400)
     return () => {
@@ -361,12 +365,23 @@ export default function Auth({
       <label>
         {t('reg.nickname')}
         <input
-          className={nickTaken ? 'invalid' : ''}
+          className={nickStatus === 'taken' ? 'invalid' : nickStatus === 'ok' ? 'valid' : ''}
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           autoComplete="username"
+          aria-invalid={nickStatus === 'taken'}
         />
-        {nickTaken && <span className="field-error" role="alert">{t('reg.nickTaken')}</span>}
+        {nickStatus === 'checking' && (
+          <span className="nick-hint checking">{t('reg.nickChecking')}</span>
+        )}
+        {nickStatus === 'ok' && (
+          <span className="nick-hint ok">
+            <Icon name="check" size={12} /> {t('reg.nickFree')}
+          </span>
+        )}
+        {nickStatus === 'taken' && (
+          <span className="field-error" role="alert">{t('reg.nickTaken')}</span>
+        )}
       </label>
       <label>
         {t('reg.email')}
