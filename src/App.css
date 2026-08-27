@@ -1268,14 +1268,55 @@ button[aria-disabled='true'],
 }
 .mh-item {
   flex: none;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-left: 3px solid var(--border);
   border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.mh-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.mh-row .chev-open {
+  transform: rotate(180deg);
+}
+.mh-detail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px 16px;
+  padding: 10px 14px 12px;
+  border-top: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--card-bg) 70%, var(--bg));
+}
+.mh-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.mh-stat-k {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.mh-stat-v {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.mh-stat-v.good {
+  color: var(--success-fg, #4caf7d);
+}
+.mh-stat-v.bad {
+  color: var(--tv-brick, #c9563f);
 }
 .mh-item.win {
   border-left-color: var(--success-fg, #4caf7d);

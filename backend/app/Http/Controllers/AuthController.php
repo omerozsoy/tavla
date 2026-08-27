@@ -248,6 +248,9 @@ class AuthController extends Controller
             'opponent_rating' => ['required', 'integer', 'min:100', 'max:4000'],
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
+            'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
+            'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
+            'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
         ]);
         $user = $request->user();
 
@@ -297,6 +300,9 @@ class AuthController extends Controller
             'match_length'    => $data['match_length'] ?? null,
             'pr'              => $data['pr'] ?? null,
             'coins_after'     => $user->coins ?? 0,
+            'luck'            => $data['luck'] ?? null,
+            'score_self'      => $data['score_self'] ?? null,
+            'score_opp'       => $data['score_opp'] ?? null,
         ]);
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
@@ -454,7 +460,7 @@ class AuthController extends Controller
         $matches = \App\Models\MatchResult::where('user_id', $me->id)
             ->orderByDesc('id')
             ->limit(30)
-            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'])
+            ->get(['won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'created_at'])
             ->map(fn ($m) => [
                 'won' => (bool) $m->won,
                 'opponent_rating' => $m->opponent_rating,
@@ -464,6 +470,9 @@ class AuthController extends Controller
                 'match_length' => $m->match_length,
                 'pr' => $m->pr,
                 'coins_after' => $m->coins_after,
+                'luck' => $m->luck,
+                'score_self' => $m->score_self,
+                'score_opp' => $m->score_opp,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
 

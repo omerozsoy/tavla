@@ -25,6 +25,7 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<MyMatch[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [openIdx, setOpenIdx] = useState<number | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -62,42 +63,80 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
           <div className="admin-empty">{t('mh.empty')}</div>
         ) : (
           <div className="mh-list">
-            {rows.map((m, i) => (
-              <div key={i} className={`mh-item ${m.won ? 'win' : 'loss'}`}>
-                <span className={`mh-badge ${m.won ? 'win' : 'loss'}`}>
-                  {m.won ? t('mh.win') : t('mh.loss')}
-                </span>
-                <div className="mh-main">
-                  <div className="mh-line1">
-                    <span className="mh-len">
-                      {m.match_length && m.match_length > 0
-                        ? t('mh.ptMatch', { n: m.match_length })
-                        : t('mh.moneyGame')}
+            {rows.map((m, i) => {
+              const open = openIdx === i
+              const hasScore = m.score_self != null && m.score_opp != null
+              return (
+                <div key={i} className={`mh-item ${m.won ? 'win' : 'loss'} ${open ? 'open' : ''}`}>
+                  <button className="mh-row" onClick={() => setOpenIdx(open ? null : i)}>
+                    <span className={`mh-badge ${m.won ? 'win' : 'loss'}`}>
+                      {m.won ? t('mh.win') : t('mh.loss')}
                     </span>
-                    <span className="mh-date">{fmtDate(m.created_at)}</span>
-                  </div>
-                  <div className="mh-line2">
-                    <span className="mh-rating">
-                      <Icon name="star" size={13} /> {m.rating_before} → {m.rating_after}
-                      <b className={m.delta >= 0 ? 'good' : 'bad'}>
-                        {' '}
-                        {m.delta >= 0 ? '+' : ''}
-                        {m.delta}
-                      </b>
-                    </span>
-                    <span className="mh-vs">{t('mh.vs', { r: m.opponent_rating })}</span>
-                    {m.pr != null && (
-                      <span className={`mh-pr ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
-                    )}
-                    {m.coins_after != null && (
-                      <span className="mh-coins">
-                        <Icon name="coin" size={13} /> {m.coins_after}
-                      </span>
-                    )}
-                  </div>
+                    <div className="mh-main">
+                      <div className="mh-line1">
+                        <span className="mh-len">
+                          {hasScore && <b>{m.score_self}–{m.score_opp} · </b>}
+                          {m.match_length && m.match_length > 0
+                            ? t('mh.ptMatch', { n: m.match_length })
+                            : t('mh.moneyGame')}
+                        </span>
+                        <span className="mh-date">{fmtDate(m.created_at)}</span>
+                      </div>
+                      <div className="mh-line2">
+                        <span className="mh-rating">
+                          <Icon name="star" size={13} /> {m.rating_before} → {m.rating_after}
+                          <b className={m.delta >= 0 ? 'good' : 'bad'}>
+                            {' '}
+                            {m.delta >= 0 ? '+' : ''}
+                            {m.delta}
+                          </b>
+                        </span>
+                        <span className="mh-vs">{t('mh.vs', { r: m.opponent_rating })}</span>
+                        {m.pr != null && (
+                          <span className={`mh-pr ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
+                        )}
+                      </div>
+                    </div>
+                    <Icon name="chevron" size={16} className={open ? 'chev-open' : ''} />
+                  </button>
+                  {open && (
+                    <div className="mh-detail">
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dScore')}</span>
+                        <span className="mh-stat-v">{hasScore ? `${m.score_self}–${m.score_opp}` : '—'}</span>
+                      </div>
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dPr')}</span>
+                        <span className={`mh-stat-v ${m.pr != null ? prCls(m.pr) : ''}`}>
+                          {m.pr != null ? m.pr.toFixed(1) : '—'}
+                        </span>
+                      </div>
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dLuck')}</span>
+                        <span className={`mh-stat-v ${m.luck != null ? (m.luck >= 0 ? 'good' : 'bad') : ''}`}>
+                          {m.luck != null ? `${m.luck >= 0 ? '+' : ''}${Math.round(m.luck * 100)}` : '—'}
+                        </span>
+                      </div>
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.dRating')}</span>
+                        <span className="mh-stat-v">
+                          {m.rating_before} → {m.rating_after}{' '}
+                          <b className={m.delta >= 0 ? 'good' : 'bad'}>
+                            ({m.delta >= 0 ? '+' : ''}{m.delta})
+                          </b>
+                        </span>
+                      </div>
+                      {m.coins_after != null && (
+                        <div className="mh-stat">
+                          <span className="mh-stat-k">{t('mr.coins')}</span>
+                          <span className="mh-stat-v">{m.coins_after}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
