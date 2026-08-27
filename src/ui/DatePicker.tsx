@@ -134,14 +134,14 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
       {open && (
         <div className="dp-pop">
           <div className="dp-head">
-            <button type="button" className="dp-nav" onClick={prevMonth} aria-label="Önceki ay">
+            <button type="button" className="dp-nav" onClick={prevMonth} aria-label={t('dp.prevMonth')}>
               ‹
             </button>
             <div className="dp-selects">
               <select
                 value={view.m}
                 onChange={(e) => setView((v) => ({ ...v, m: +e.target.value }))}
-                aria-label="Ay"
+                aria-label={t('dp.month')}
               >
                 {monthNames.map((name, i) => (
                   <option key={i} value={i}>
@@ -152,7 +152,7 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
               <select
                 value={view.y}
                 onChange={(e) => setView((v) => ({ ...v, y: +e.target.value }))}
-                aria-label="Yıl"
+                aria-label={t('dp.year')}
               >
                 {years.map((y) => (
                   <option key={y} value={y}>
@@ -161,7 +161,7 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
                 ))}
               </select>
             </div>
-            <button type="button" className="dp-nav" onClick={nextMonth} aria-label="Sonraki ay">
+            <button type="button" className="dp-nav" onClick={nextMonth} aria-label={t('dp.nextMonth')}>
               ›
             </button>
           </div>

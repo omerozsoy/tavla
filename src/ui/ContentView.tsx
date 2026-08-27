@@ -149,7 +149,7 @@ export default function ContentView({
 
   return (
     <>
-    <div className="register-overlay modal page">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div
         className={`register-card content-card${
           (type === 'news' && !newsItem) || type === 'magazine' ? ' content-card-wide' : ''
@@ -355,6 +355,7 @@ function NewsDetail({
   backLabel: string
   onOpenImage: (index: number) => void
 }) {
+  const { t } = useT()
   const gallery = (item.gallery ?? []).filter(Boolean)
   return (
     <article className="news-detail">
@@ -388,7 +389,7 @@ function NewsDetail({
               key={i}
               className="news-gallery-thumb"
               onClick={() => onOpenImage(i + 1)}
-              aria-label={`Görsel ${i + 2}`}
+              aria-label={t('content.image', { n: i + 2 })}
             >
               <img src={g} alt="" loading="lazy" />
             </button>
@@ -438,7 +439,7 @@ function Lightbox({
             e.stopPropagation()
             go(-1)
           }}
-          aria-label="Önceki"
+          aria-label={t('content.prev')}
         >
           <span className="lightbox-chev left">
             <Icon name="chevron" size={26} />

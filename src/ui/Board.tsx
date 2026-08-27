@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { memo, type ReactNode } from 'react'
 import type { GameState, Player } from '../engine/types'
 import { TavlaTvLogo } from './TavlaTvLogo'
+import { useT } from '../i18n'
 
 // Ucgen index dizilimleri (index = ucgen numarasi - 1)
 // normal = beyazin bakisi (kendi evi sag-alt). flipped = siyahin bakisi (180 cevrilmis).
@@ -153,7 +154,7 @@ function Point({
   )
 }
 
-export default function Board({
+function Board({
   state,
   selectableFroms,
   targets,
@@ -171,6 +172,7 @@ export default function Board({
   showPip = true,
   watermark,
 }: BoardProps) {
+  const { t } = useT()
   const L = flip ? LAYOUT.flipped : LAYOUT.normal
 
   const renderPoint = (index: number, top: boolean) => (
@@ -253,7 +255,7 @@ export default function Board({
               />
             ))}
           </div>
-          <div className={`cube owner-${cube.owner ?? 'center'}`} title="Küp">
+          <div className={`cube owner-${cube.owner ?? 'center'}`} title={t('board.cube')}>
             {cube.value === 1 ? 64 : cube.value}
           </div>
           <div className="bar-checkers bottom">
@@ -325,3 +327,7 @@ export default function Board({
     </div>
   )
 }
+
+// React.memo: ust bileşen ayni prop'larla yeniden render olursa Board atlanir.
+// Tam fayda icin App.tsx handler'lari useCallback'e alinmali (App bolme faziyla).
+export default memo(Board)

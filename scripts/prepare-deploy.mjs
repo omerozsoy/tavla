@@ -33,3 +33,20 @@ for (const item of [
 }
 
 console.log('✓ Hazir. backend/ klasorunu Plesk\'e yukleyip document root = backend/public yap.')
+
+// SIK HATA: derlenmis cikti backend/public'e kopyalanir ama COMMIT edilmezse canli
+// site sessizce eski kalir (deploy.sh frontend build ETMEZ). Degisiklikleri goster +
+// commit hatirlat ki bu tuzak fark edilsin.
+try {
+  const changed = execSync('git status --short backend/public', { encoding: 'utf8' }).trim()
+  if (changed) {
+    console.log('\n⚠ backend/public altinda commit BEKLEYEN degisiklikler var:')
+    console.log(changed)
+    console.log('\n→ Canliya almak icin: git add backend/public && git commit && git push')
+    console.log('  (Plesk git pull + deploy.sh calisacak. Commit unutulursa site DEGISMEZ.)')
+  } else {
+    console.log('\nℹ backend/public degismedi (yeni derleme oncekiyle ayni ya da zaten commit\'li).')
+  }
+} catch {
+  // git yoksa/uygun degilse sessiz gec — kopyalama zaten tamamlandi.
+}

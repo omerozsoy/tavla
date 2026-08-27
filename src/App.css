@@ -9651,3 +9651,33 @@ select:-webkit-autofill {
 .friends-add {
   max-width: 620px;
 }
+
+/* Global hata siniri (ErrorBoundary) — tek render hatasinda beyaz ekran yerine
+   dostane bir kart + yenile butonu. Tema token'lari kullanir. */
+.error-boundary {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4, 16px);
+  background: var(--tv-bg, #1a1410);
+  z-index: var(--z-toast, 9999);
+}
+.error-boundary-card {
+  max-width: 440px;
+  text-align: center;
+  background: var(--tv-surface, #241c16);
+  border: 1px solid var(--tv-border, rgba(255, 255, 255, 0.1));
+  border-radius: var(--radius-xl, 14px);
+  padding: var(--space-6, 24px);
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.4));
+}
+.error-boundary-card h1 {
+  font-size: 1.4rem;
+  margin: 0 0 8px;
+}
+.error-boundary-sub {
+  opacity: 0.7;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}

@@ -1,4 +1,5 @@
 // Basit SVG grafikler (bagimlilik yok): cizgi + cubuk.
+import { useT } from '../i18n'
 
 export function LineChart({
   data,
@@ -9,6 +10,7 @@ export function LineChart({
   color?: string
   height?: number
 }) {
+  const { t } = useT()
   if (data.length < 2) return <div className="chart-empty">—</div>
   const w = 300
   const min = Math.min(...data)
@@ -28,7 +30,7 @@ export function LineChart({
         width="100%"
         height={height}
         role="img"
-        aria-label={`En düşük ${min}, en yüksek ${max}, son ${last}`}
+        aria-label={t('charts.axisSummary', { min, max, last })}
       >
         {/* Ust/alt eksen kilavuz cizgileri (skill: axis-labels, gridline-subtle) */}
         <line x1="0" y1={y(max).toFixed(1)} x2={w} y2={y(max).toFixed(1)} className="lc-grid" vectorEffect="non-scaling-stroke" />
@@ -65,6 +67,7 @@ export function BarChart({
   threshold?: number // kazanma% icin 50 (ustunde yesil)
   invert?: boolean // PR gibi dusuk=iyi metrikler icin (esik altinda yesil)
 }) {
+  const { t } = useT()
   const vals = items.map((i) => i.value ?? 0)
   const max = Math.max(1, ...vals)
   // Esik cizgisi konumu (deger uzayindan yuzdeye) — sadece olcek icindeyse goster
@@ -83,7 +86,7 @@ export function BarChart({
                 <div
                   className="bar-thresh"
                   style={{ bottom: `${threshPct}%` }}
-                  title={`Eşik: ${threshold}${suffix}`}
+                  title={t('charts.threshold', { v: `${threshold}${suffix}` })}
                   aria-hidden="true"
                 />
               )}

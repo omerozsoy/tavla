@@ -62,7 +62,8 @@ class RoomController extends Controller
                 ->where('created_at', '<', now()->subMinutes(10))
                 ->delete();
         } catch (\Throwable $e) {
-            // temizlik best-effort; hata olsa da akisi bozma
+            // temizlik best-effort; hata olsa da akisi bozma ama sessizce yutma -> logla
+            \Illuminate\Support\Facades\Log::warning('room.cleanupStale failed', ['err' => $e->getMessage()]);
         }
     }
 
@@ -76,7 +77,8 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
             'stake' => ['nullable', 'integer', 'min:0', 'max:1000000000'],
-            'user_id' => ['nullable', 'integer'],
+            // NOT: user_id ISTEMCIDEN alinmaz (guvenlik). Sanctum token'indan gelir; asagida
+            // $authUser->id kullanilir. Bu yuzden burada validate/kabul EDILMEZ (olu parametre kaldirildi).
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
             'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
             'targets' => ['nullable', 'array'],
@@ -120,37 +122,40 @@ class RoomController extends Controller
 
         // Ayni bahis/kategorili bekleyen adaylar; min puan filtresi (tek yonlu).
         // Uzunluk KESISIMI olan ilk (en eski) rakip secilir -> coklu secim = kolay eslesme.
-        $q = Room::where('status', 'mm_waiting')
-            ->where('stake', $stake)
-            ->where('bet_pct', $betPct)
-            ->where('p1_token', '!=', $data['token'])
-            ->whereNull('p2_token');
-        if ($minRating > 0) {
-            $q->where('p1_rating', '>=', $minRating);
-        }
-        $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
-
-        $opponent = null;
-        $agreed = null;
-        foreach ($candidates as $cand) {
-            $candTargets = is_array($cand->targets) ? $cand->targets : [1];
-            $common = array_values(array_intersect($candTargets, $targets));
-            if (! empty($common)) {
-                $opponent = $cand;
-                $agreed = max($common); // ortak uzunluklardan en uzunu
-                break;
+        // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
+        // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
+        // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
+        $opponent = DB::transaction(function () use ($data, $stake, $betPct, $minRating, $targets, $userId) {
+            $q = Room::where('status', 'mm_waiting')
+                ->where('stake', $stake)
+                ->where('bet_pct', $betPct)
+                ->where('p1_token', '!=', $data['token'])
+                ->whereNull('p2_token');
+            if ($minRating > 0) {
+                $q->where('p1_rating', '>=', $minRating);
             }
-        }
+            $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
+
+            foreach ($candidates as $cand) {
+                $candTargets = is_array($cand->targets) ? $cand->targets : [1];
+                $common = array_values(array_intersect($candTargets, $targets));
+                if (! empty($common)) {
+                    $cand->p2_token = $data['token'];
+                    $cand->p2_user_id = $userId;
+                    $cand->p2_name = $data['name'];
+                    $cand->p2_rating = $data['rating'] ?? null;
+                    $cand->p2_avatar = $data['avatar'] ?? null;
+                    $cand->target = max($common); // ortak uzunluklardan en uzunu
+                    $cand->status = 'playing';
+                    $cand->save();
+                    return $cand;
+                }
+            }
+
+            return null;
+        });
 
         if ($opponent) {
-            $opponent->p2_token = $data['token'];
-            $opponent->p2_user_id = $userId;
-            $opponent->p2_name = $data['name'];
-            $opponent->p2_rating = $data['rating'] ?? null;
-            $opponent->p2_avatar = $data['avatar'] ?? null;
-            $opponent->target = $agreed; // anlasilan uzunluk (iki oyuncu da bunu kullanir)
-            $opponent->status = 'playing';
-            $opponent->save();
             return response()->json(['room' => $opponent->toClient(), 'slot' => 'p2', 'matched' => true]);
         }
 
@@ -174,10 +179,11 @@ class RoomController extends Controller
     }
 
     // Bahisli online mac sonucu: coin transferi (oda basina bir kez, atomik).
-    // GUVENLIK: istemcinin 'won' beyanina KORU KORUNE guvenilmez. Kazanan;
-    //   (1) sunucudaki senkron mac durumundan (yetkili), ya da
-    //   (2) iki oyuncunun birbirini tutan beyanindan belirlenir.
-    // Tek tarafli/celiskili beyanla, durum da dogrulamıyorsa coin tasinmaz.
+    // GUVENLIK: istemcinin 'won' beyanina KORU KORUNE guvenilmez. Online oyunda
+    // sunucu hamleleri dogrulamiyor ve 'state'i iki oyuncu da yazabildigi icin
+    // (bkz. update()), state TEK BASINA sahte olabilir -> forge ile coin calinamaz.
+    // Bu yuzden coin YALNIZCA iki oyuncunun birbirini tutan beyaninda (biri 'won'
+    // digeri 'lost') tasinir. Tek tarafli/celiskili beyanda odeme yapilmaz (pending).
     public function settle(Request $request, string $code)
     {
         $data = $request->validate([
@@ -270,55 +276,19 @@ class RoomController extends Controller
         ]);
     }
 
-    // Kazanan slot'u ('p1'|'p2') yetkili sekilde belirle, yoksa null.
-    // Oncelik: iki tarafli mutabakat > celiskide yetkili durum > tek taraf + durum dogrulamasi.
+    // Kazanan slot'u ('p1'|'p2') belirle, yoksa null.
+    // Yalnizca KARSILIKLI MUTABAKAT guvenli: biri 'won' digeri 'lost' bildirmeli.
+    // state client-yazilabilir oldugu icin hakem olarak KULLANILMAZ (forge korumasi).
+    // Celiskili (ikisi de 'won') veya tek tarafli beyanda null -> odeme pending kalir.
     private function resolveWinnerSlot(Room $room): ?string
     {
         $r1 = $room->p1_result;
         $r2 = $room->p2_result;
-        $stateWinner = $this->winnerFromState($room); // 'p1'|'p2'|null
 
-        // Mutabakat: biri 'won' digeri 'lost' -> net kazanan
         if ($r1 === 'won' && $r2 === 'lost') {
             return 'p1';
         }
         if ($r2 === 'won' && $r1 === 'lost') {
-            return 'p2';
-        }
-        // Ikisi de bildirdi ama celiskili (ikisi de 'won' vb.) -> yetkili mac durumu hakem
-        if ($r1 !== null && $r2 !== null) {
-            return $stateWinner;
-        }
-        // Tek taraf bildirdi -> yalnizca yetkili durum bu beyani DOGRULARSA ode
-        $reporter = $r1 !== null ? 'p1' : ($r2 !== null ? 'p2' : null);
-        if ($reporter === null || $stateWinner === null) {
-            return null;
-        }
-        $claimWinner = $room->{$reporter.'_result'} === 'won'
-            ? $reporter
-            : ($reporter === 'p1' ? 'p2' : 'p1');
-
-        return $stateWinner === $claimWinner ? $stateWinner : null;
-    }
-
-    // Senkronlanan mac durumundan kazanan slot (p1=beyaz, p2=siyah). Karar yoksa null.
-    private function winnerFromState(Room $room): ?string
-    {
-        $state = $room->state;
-        $match = is_array($state) ? ($state['match'] ?? null) : null;
-        if (! is_array($match) || ! isset($match['target'], $match['score'])) {
-            return null;
-        }
-        $target = (int) $match['target'];
-        $w = (int) ($match['score']['white'] ?? 0);
-        $b = (int) ($match['score']['black'] ?? 0);
-        if ($target <= 0) {
-            return null;
-        }
-        if ($w >= $target && $w > $b) {
-            return 'p1';
-        }
-        if ($b >= $target && $b > $w) {
             return 'p2';
         }
 

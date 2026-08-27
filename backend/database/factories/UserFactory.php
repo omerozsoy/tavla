@@ -24,8 +24,12 @@ class UserFactory extends Factory
      */
     public function definition(): array
     {
+        // NOT: users semasinda 'name' yok -> first_name/last_name/country/nickname.
         return [
-            'name' => fake()->name(),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'country' => '',
+            'nickname' => fake()->unique()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),

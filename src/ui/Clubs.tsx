@@ -156,7 +156,7 @@ export default function Clubs({ onClose }: Props) {
   )
 
   return (
-    <div className="register-overlay modal page">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card clubs-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
@@ -280,7 +280,7 @@ export default function Clubs({ onClose }: Props) {
 
       {/* Baska kulup detayi (lig tablosu) */}
       {view && (
-        <div className="register-overlay modal">
+        <div className="register-overlay modal" role="dialog" aria-modal="true">
           <div className="register-card clubs-card" onClick={(e) => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setView(null)} aria-label={t('common.close')}>
               <Icon name="x" size={16} />

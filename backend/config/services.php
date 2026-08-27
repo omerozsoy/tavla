@@ -44,6 +44,8 @@ return [
     ],
 
     // Yonetici e-postalari (virgulle ayrilabilir). Bu hesaplar admin sayilir.
-    'admin_emails' => array_filter(array_map('trim', explode(',', env('ADMIN_EMAILS', 'omerozsoy@gmail.com')))),
+    // GUVENLIK: kaynak koda gomulu e-posta YOK. Uretimde .env'de ADMIN_EMAILS
+    // tanimlanmalidir (bkz. .env.example), aksi halde config-admin listesi bostur.
+    'admin_emails' => array_filter(array_map('trim', explode(',', (string) env('ADMIN_EMAILS', '')))),
 
 ];

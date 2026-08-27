@@ -25,7 +25,8 @@ Route::middleware('throttle:20,1')->group(function () {
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
-Route::get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
+// Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli
+Route::middleware('throttle:30,1')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
@@ -34,17 +35,22 @@ Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
-// Multiplayer odalari (misafir dostu, token bazli)
-Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
-Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
-Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
-Route::post('/rooms', [RoomController::class, 'create']);
-Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
-Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
-Route::post('/rooms/{code}/chat', [RoomController::class, 'chat']);
-Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
-Route::get('/rooms/{code}', [RoomController::class, 'show']);
-Route::put('/rooms/{code}', [RoomController::class, 'update']);
+// Multiplayer odalari (misafir dostu, token bazli).
+// Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
+// 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
+// genisligi tuketimi) durdurur. Sohbet spam'i icin ayrica daha siki 40/dk.
+Route::middleware('throttle:240,1')->group(function () {
+    Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
+    Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
+    Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
+    Route::post('/rooms', [RoomController::class, 'create']);
+    Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
+    Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
+    Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
+    Route::get('/rooms/{code}', [RoomController::class, 'show']);
+    Route::put('/rooms/{code}', [RoomController::class, 'update']);
+});
+Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {
@@ -56,7 +62,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/analytics', [AuthController::class, 'analytics']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
-    Route::post('/rating/report', [AuthController::class, 'reportRating']);
+    // reportRating istemci beyanina dayali (online oyunda sunucu-otoriteli mac yok).
+    // Suistimal (rating/coin farm) hizini kesmek icin siki throttle. Mesru bir mac
+    // en az birkac dakika surer -> 12/dk fazlasiyla yeterli.
+    Route::middleware('throttle:12,1')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
@@ -84,15 +93,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tournaments/{tournament}/finish', [TournamentController::class, 'finish']);
     Route::delete('/tournaments/{tournament}', [TournamentController::class, 'destroy']);
 
-    // Yonetim (admin e-postasi gerektirir; kontrol controller'da)
-    Route::get('/admin/users', [AdminController::class, 'users']);
-    Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
-    Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
-    // Icerik yonetimi (hizmet/blog/haber/etkinlik/kulup)
-    Route::get('/admin/contents', [ContentController::class, 'adminIndex']);
-    Route::post('/admin/contents', [ContentController::class, 'store']);
-    Route::put('/admin/contents/{content}', [ContentController::class, 'update']);
-    Route::delete('/admin/contents/{content}', [ContentController::class, 'destroy']);
+    // Yonetim: 'admin' middleware ile route katmaninda korunur (savunma-derinligi;
+    // controller'larda da is_admin kontrolu ayrica durur -> biri unutulursa acik kalmaz).
+    Route::middleware('admin')->group(function () {
+        Route::get('/admin/users', [AdminController::class, 'users']);
+        Route::patch('/admin/users/{user}', [AdminController::class, 'updateUser']);
+        Route::get('/admin/users/{user}/matches', [AdminController::class, 'userMatches']);
+        // Icerik yonetimi (hizmet/blog/haber/etkinlik/kulup)
+        Route::get('/admin/contents', [ContentController::class, 'adminIndex']);
+        Route::post('/admin/contents', [ContentController::class, 'store']);
+        Route::put('/admin/contents/{content}', [ContentController::class, 'update']);
+        Route::delete('/admin/contents/{content}', [ContentController::class, 'destroy']);
+    });
 
     Route::get('/shop', [ShopController::class, 'index']);
     Route::post('/shop/buy', [ShopController::class, 'buy']);
@@ -103,6 +115,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/blunders', [BlunderController::class, 'store']);
 
     Route::get('/game', [GameController::class, 'show']);
-    Route::put('/game', [GameController::class, 'save']);
+    Route::middleware('throttle:60,1')->put('/game', [GameController::class, 'save']);
     Route::delete('/game', [GameController::class, 'clear']);
 });
