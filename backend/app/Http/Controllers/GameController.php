@@ -22,12 +22,12 @@ class GameController extends Controller
         ]);
         // Kaba boyut tavani: serialize edilmis JSON ~256KB'i asmasin.
         if (! empty($data['game']) && strlen(json_encode($data['game'])) > 262144) {
-            return response()->json(['message' => 'Oyun durumu çok büyük.'], 422);
+            return $this->fail('Oyun durumu çok büyük.', 422);
         }
         $user = $request->user();
         $user->game_state = $data['game'] ?? null;
         $user->save();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Kaydi sil
@@ -36,6 +36,6 @@ class GameController extends Controller
         $user = $request->user();
         $user->game_state = null;
         $user->save();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 }

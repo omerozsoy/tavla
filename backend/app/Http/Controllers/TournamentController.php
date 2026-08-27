@@ -29,7 +29,7 @@ class TournamentController extends Controller
     {
         // Yalnizca yonetici turnuva olusturabilir
         if (! $request->user()->is_admin) {
-            return response()->json(['message' => 'Yalnızca yönetici turnuva oluşturabilir.'], 403);
+            return $this->fail('Yalnızca yönetici turnuva oluşturabilir.', 403);
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
@@ -91,7 +91,7 @@ class TournamentController extends Controller
         });
 
         if (isset($out['err'])) {
-            return response()->json(['message' => $out['err']], $out['code']);
+            return $this->fail($out['err'], $out['code']);
         }
         $t = $tournament->fresh();
         // Sabit boyut dolduysa otomatik basla (sinirsizda admin elle baslatir)
@@ -114,7 +114,7 @@ class TournamentController extends Controller
             'winner_id' => ['required', 'integer'],
         ]);
         if ($tournament->status !== 'running') {
-            return response()->json(['message' => 'Turnuva aktif değil.'], 422);
+            return $this->fail('Turnuva aktif değil.', 422);
         }
         $me = $request->user()->id;
 
@@ -209,7 +209,7 @@ class TournamentController extends Controller
         });
 
         if (isset($out['err'])) {
-            return response()->json(['message' => $out['err']], $out['code']);
+            return $this->fail($out['err'], $out['code']);
         }
         return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
@@ -219,7 +219,7 @@ class TournamentController extends Controller
     {
         $data = $request->validate(['match' => ['required', 'string', 'max:16']]);
         if ($tournament->status !== 'running') {
-            return response()->json(['message' => 'Turnuva aktif değil.'], 422);
+            return $this->fail('Turnuva aktif değil.', 422);
         }
         $me = $request->user()->id;
         $bracket = $tournament->bracket;
@@ -230,10 +230,10 @@ class TournamentController extends Controller
                 }
                 $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
                 if (! in_array($me, $ids, true)) {
-                    return response()->json(['message' => 'Bu maçta değilsin.'], 403);
+                    return $this->fail('Bu maçta değilsin.', 403);
                 }
                 if (! empty($m['winner'])) {
-                    return response()->json(['message' => 'Maç bitti.'], 422);
+                    return $this->fail('Maç bitti.', 422);
                 }
                 if (empty($m['room'])) {
                     // Benzersiz kod uret
@@ -251,14 +251,14 @@ class TournamentController extends Controller
                 return response()->json(['code' => $bracket[$ri][$mi]['room']]);
             }
         }
-        return response()->json(['message' => 'Maç bulunamadı.'], 404);
+        return $this->fail('Maç bulunamadı.', 404);
     }
 
     // Turnuvayi bitir (yalnizca yonetici)
     public function finish(Request $request, Tournament $tournament)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+            return $this->fail('Yalnızca yönetici.', 403);
         }
         $tournament->status = 'finished';
         $tournament->save();
@@ -269,13 +269,13 @@ class TournamentController extends Controller
     public function start(Request $request, Tournament $tournament)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+            return $this->fail('Yalnızca yönetici.', 403);
         }
         if ($tournament->status !== 'open') {
-            return response()->json(['message' => 'Turnuva zaten başladı.'], 422);
+            return $this->fail('Turnuva zaten başladı.', 422);
         }
         if (count($tournament->players ?? []) < 2) {
-            return response()->json(['message' => 'En az 2 oyuncu gerekli.'], 422);
+            return $this->fail('En az 2 oyuncu gerekli.', 422);
         }
         $this->startBracket($tournament);
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
@@ -285,10 +285,10 @@ class TournamentController extends Controller
     public function destroy(Request $request, Tournament $tournament)
     {
         if (! $request->user()?->is_admin) {
-            return response()->json(['message' => 'Yalnızca yönetici.'], 403);
+            return $this->fail('Yalnızca yönetici.', 403);
         }
         $tournament->delete();
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     /* ---------- yardimcilar ---------- */

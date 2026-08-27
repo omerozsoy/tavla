@@ -32,7 +32,7 @@ class ClubController extends Controller
     {
         $me = $request->user();
         if (ClubMember::where('user_id', $me->id)->exists()) {
-            return response()->json(['message' => 'Zaten bir kulüptesin. Önce ayrıl.'], 422);
+            return $this->fail('Zaten bir kulüptesin. Önce ayrıl.', 422);
         }
         $data = $request->validate([
             'name' => ['required', 'string', 'max:60'],
@@ -63,7 +63,7 @@ class ClubController extends Controller
     {
         $me = $request->user();
         if (ClubMember::where('user_id', $me->id)->exists()) {
-            return response()->json(['message' => 'Zaten bir kulüptesin. Önce ayrıl.'], 422);
+            return $this->fail('Zaten bir kulüptesin. Önce ayrıl.', 422);
         }
         DB::transaction(function () use ($club, $me) {
             ClubMember::create([
@@ -82,7 +82,7 @@ class ClubController extends Controller
         $me = $request->user();
         $mem = ClubMember::where('user_id', $me->id)->first();
         if (! $mem) {
-            return response()->json(['message' => 'Bir kulüpte değilsin.'], 422);
+            return $this->fail('Bir kulüpte değilsin.', 422);
         }
         $club = Club::find($mem->club_id);
         DB::transaction(function () use ($mem, $club, $me) {
@@ -102,7 +102,7 @@ class ClubController extends Controller
                 }
             }
         });
-        return response()->json(['ok' => true]);
+        return $this->ok();
     }
 
     // Benim kulubum (yoksa null)
