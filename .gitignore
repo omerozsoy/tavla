@@ -19,6 +19,9 @@ dist-ssr
 .chrome-cdp
 .shots
 
+# Rive cerceve preview GIF'leri (dev-only, riv_render_gif ciktilari)
+src/assets/rive/avatar-frames/previews/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
