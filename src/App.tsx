@@ -59,6 +59,8 @@ import {
   type TournNotice as TournNoticeT,
   showRoom,
   updateRoom,
+  myActiveRooms,
+  type ActiveRoom,
   sendChat,
   reportRating,
   resendVerification,
@@ -583,6 +585,7 @@ export default function App() {
   const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
   const [rulesOpen, setRulesOpen] = useState(false) // nasil oynanir rehberi
   const [spectate, setSpectate] = useState<{ code: string; p1: string; p2: string } | null>(null)
+  const [activeRooms, setActiveRooms] = useState<ActiveRoom[]>([]) // devam eden online maclarim
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
@@ -2643,6 +2646,58 @@ export default function App() {
     setHome(true)
   }
 
+  // Devam eden online maca GERI DON: odayi kur; poll (room.code'a bagli) sunucudaki
+  // guncel state'i applyOnlineState ile geri yukler ve senkronu acar.
+  function rejoinRoom(r: ActiveRoom) {
+    const tgt = r.target ?? 1
+    onlineTargetRef.current = tgt
+    matchTargetSyncedRef.current = true
+    appliedVersionRef.current = -1 // poll guncel state'i uygulasin
+    syncEnabledRef.current = false // poll apply edince acilir (echo yok)
+    setMode('online')
+    fairRef.current = new FairDice()
+    setMatch(newMatch(tgt))
+    setClock(freshMatchClock(tgt))
+    setStarter('white')
+    setTurnsPlayed(0)
+    setTurnStart(freshBoard('white'))
+    setPlayed([])
+    setSelectedFrom(null)
+    setCubePending(null)
+    setGameEnd(null)
+    setBotAnim(null)
+    setOpening(null)
+    setOppStarted(true)
+    setChat([])
+    closeAllPages()
+    setRoom({
+      code: r.code,
+      slot: r.slot,
+      oppName: r.opp_name ?? '',
+      oppRating: r.opp_rating ?? null,
+      oppAvatar: r.opp_avatar ?? null,
+      oppFrame: null,
+      status: 'playing',
+    })
+    setHome(false)
+  }
+
+  // Lobide: giris yapan kullanicinin devam eden online maclarini cek (geri donme banner'i)
+  useEffect(() => {
+    if (!user || !home) {
+      setActiveRooms([])
+      return
+    }
+    let alive = true
+    myActiveRooms()
+      .then((rs) => alive && setActiveRooms(rs))
+      .catch(() => alive && setActiveRooms([]))
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, home])
+
   // Online sohbet: mesaj gonder (sunucu guncel listeyi doner)
   async function handleSendChat(text: string) {
     if (!room) return
@@ -3681,6 +3736,24 @@ export default function App() {
               <div className="page-host">{menuPages}</div>
             ) : (
             <>
+            {activeRooms.length > 0 && (
+              <div className="resume-match-bar">
+                {activeRooms.map((r) => (
+                  <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
+                    <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
+                    <span className="rm-opp">
+                      vs {r.opp_name || t('mp.title')}
+                      {r.score && (
+                        <b className="rm-score">
+                          {' '}{r.score.white}–{r.score.black}
+                        </b>
+                      )}
+                    </span>
+                    <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <section className="lobby-hero">
               <div className="hero-copy">
                 <span className="hero-kicker">

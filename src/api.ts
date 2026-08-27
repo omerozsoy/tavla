@@ -841,6 +841,21 @@ export async function liveMatches(): Promise<LiveMatch[]> {
   return data.matches
 }
 
+// Devam eden (playing) online maclarim -> geri donebilmek icin
+export interface ActiveRoom {
+  code: string
+  slot: 'p1' | 'p2'
+  opp_name: string | null
+  opp_rating: number | null
+  opp_avatar: string | null
+  target: number | null
+  score: { white: number; black: number } | null
+}
+export async function myActiveRooms(): Promise<ActiveRoom[]> {
+  const data = await req<{ rooms: ActiveRoom[] }>('/me/active-rooms')
+  return data.rooms
+}
+
 // Oyun sonucu -> Elo puani guncelle (rakip puanina gore). Guncel puani doner.
 export async function reportRating(
   won: boolean,

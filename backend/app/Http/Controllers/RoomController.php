@@ -352,6 +352,39 @@ class RoomController extends Controller
         return response()->json(['matches' => $list]);
     }
 
+    // Giris yapan kullanicinin DEVAM EDEN (playing) online maclari -> geri donebilsin.
+    public function myActiveRooms(Request $request)
+    {
+        $me = $request->user();
+        if (! $me) {
+            return response()->json(['rooms' => []]);
+        }
+        $rooms = Room::where('status', 'playing')
+            ->where(function ($q) use ($me) {
+                $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
+            })
+            ->where('updated_at', '>', now()->subHours(6)) // cok eski/terk edilmis maclari eleme
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get(['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'target', 'state']);
+
+        $list = $rooms->map(function ($r) use ($me) {
+            $mine = ((int) $r->p1_user_id === (int) $me->id) ? 'p1' : 'p2';
+            $score = $r->state['match']['score'] ?? null;
+            return [
+                'code' => $r->code,
+                'slot' => $mine,
+                'opp_name' => $mine === 'p1' ? $r->p2_name : $r->p1_name,
+                'opp_rating' => $mine === 'p1' ? $r->p2_rating : $r->p1_rating,
+                'opp_avatar' => $mine === 'p1' ? $r->p2_avatar : $r->p1_avatar,
+                'target' => $r->target,
+                'score' => $score,
+            ];
+        });
+
+        return response()->json(['rooms' => $list]);
+    }
+
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)
     public function matchmakingCancel(Request $request)
     {
