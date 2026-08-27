@@ -363,7 +363,8 @@ class RoomController extends Controller
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
-            ->where('updated_at', '>', now()->subHours(6)) // cok eski/terk edilmis maclari eleme
+            // Yalnizca GERCEKTEN canli maclar: son 4 dk icinde guncellenmis (terk/timeout eleme)
+            ->where('updated_at', '>', now()->subMinutes(4))
             ->orderByDesc('updated_at')
             ->limit(10)
             ->get(['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'target', 'state']);
@@ -380,7 +381,16 @@ class RoomController extends Controller
                 'target' => $r->target,
                 'score' => $score,
             ];
-        });
+        })->filter(function ($m) {
+            // Hedefe ulasilmis (mac bitmis) odalari listeleme -> "devam eden" degil
+            $s = $m['score'];
+            $t = (int) ($m['target'] ?? 0);
+            if (! $s || $t <= 0) {
+                return true;
+            }
+            $mx = max((int) ($s['white'] ?? 0), (int) ($s['black'] ?? 0));
+            return $mx < $t;
+        })->values();
 
         return response()->json(['rooms' => $list]);
     }
