@@ -49,6 +49,8 @@ export default function PositionAnalyzer({
   const [moveRanked, setMoveRanked] = useState<RankedMove[] | null>(null)
   const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
   const [busy, setBusy] = useState(false)
+  const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
+  const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
 
@@ -62,7 +64,15 @@ export default function PositionAnalyzer({
     bar.black + off.black + pts.reduce((s, v) => s + (v < 0 ? -v : 0), 0)
   const atLimit = (color: Player) => (color === 'white' ? whiteCount : blackCount) >= MAX_CHECKERS
 
+  // 15 tas limitine ulasinca kibar, gecici uyari goster (2.6sn sonra kaybolur)
+  function warnLimit() {
+    setLimitMsg(true)
+    if (limitTimer.current) clearTimeout(limitTimer.current)
+    limitTimer.current = setTimeout(() => setLimitMsg(false), 2600)
+  }
+
   function editPoint(idx: number) {
+    if (editMode === 'add' && atLimit(placeColor)) return warnLimit() // 15 pul siniri
     setResult(null)
     setPts((p) => {
       const n = p.slice()
@@ -70,10 +80,8 @@ export default function PositionAnalyzer({
       if (editMode === 'remove') {
         n[idx] = cur > 0 ? cur - 1 : cur < 0 ? cur + 1 : 0
       } else if (placeColor === 'white') {
-        if (atLimit('white')) return p // 15 pul siniri asilmaz
         n[idx] = cur >= 0 ? cur + 1 : 1
       } else {
-        if (atLimit('black')) return p
         n[idx] = cur <= 0 ? cur - 1 : -1
       }
       return n
@@ -81,11 +89,11 @@ export default function PositionAnalyzer({
   }
 
   function editBar() {
+    if (editMode === 'add' && atLimit(placeColor)) return warnLimit() // 15 pul siniri
     setResult(null)
     setBar((b) => {
       const key = placeColor
       if (editMode === 'remove') return { ...b, [key]: Math.max(0, b[key] - 1) }
-      if (atLimit(placeColor)) return b // 15 pul siniri asilmaz
       return { ...b, [key]: b[key] + 1 }
     })
   }
@@ -307,6 +315,11 @@ export default function PositionAnalyzer({
           onClickCapture={onBoardClickCapture}
           onDragStartCapture={(e) => e.preventDefault()}
         >
+          {limitMsg && (
+            <div className="pa-limit-toast" role="alert">
+              <Icon name="alert" size={15} /> {t('pa.limitWarn')}
+            </div>
+          )}
           <Board
             state={state}
             selectableFroms={allFroms}
