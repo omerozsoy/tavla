@@ -2066,14 +2066,18 @@ export default function App() {
     }
   }, [animOn])
 
-  // Otomatik zar: acikken insanin sirasi gelince zar otomatik atilir (kucuk gecikme)
+  // Otomatik zar: insanin sirasi gelince zar otomatik atilir (kucuk gecikme).
+  // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip
+  // kupu tutuyorsa veya ilk el) beklemenin anlami yok -> autoRoll kapali olsa
+  // bile otomatik at. Kup karari verilebilecekse yalnizca autoRoll acikken at.
   useEffect(() => {
-    if (!autoRoll) return
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
+    const canOfferCube = turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
+    if (!autoRoll && canOfferCube) return
     const id = window.setTimeout(() => doRoll(), 500)
     return () => window.clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart])
+  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
 
   // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
   const [portraitMobile, setPortraitMobile] = useState(false)
@@ -3251,6 +3255,7 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
+    onFrames: () => goPage(() => setFrameAnimOpen(true)), // menuden Cerceveler -> animasyon demo (public)
     onMembership: () => setMemOpen(true),
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
