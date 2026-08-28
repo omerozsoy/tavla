@@ -3937,6 +3937,9 @@ export default function App() {
           log={matchLog}
           pr={prOf(prHumanColor)}
           humanColor={prHumanColor}
+          matchLength={match.target}
+          whiteName={whiteName}
+          blackName={blackName}
           onClose={() => setResultView(null)}
         />
       )}

@@ -5,6 +5,8 @@ import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
+import { initialState, cloneState, gameOutcome, opponent } from '../engine/board'
+import { applyStep } from '../engine/moves'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -33,6 +35,9 @@ interface Props {
   log: LogEntry[]
   pr: number | null
   humanColor?: Player // istatistik yalnizca insanin hamlelerini saysin (bot haric)
+  matchLength?: number // .mat basligi icin mac hedefi ( or. "3 point match")
+  whiteName?: string // .mat oyuncu adlari
+  blackName?: string
   onClose: () => void
 }
 
@@ -50,7 +55,16 @@ function winPct(probs?: number[]): number | null {
   return Math.round((probs[0] + probs[1] + probs[2]) * 100)
 }
 
-export default function MatchReport({ mode, log, pr, humanColor, onClose }: Props) {
+export default function MatchReport({
+  mode,
+  log,
+  pr,
+  humanColor,
+  matchLength = 1,
+  whiteName = 'White',
+  blackName = 'Black',
+  onClose,
+}: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Analiz kapsami: varsayilan yalnizca kullanicinin hamleleri, istege gore iki taraf.
@@ -113,41 +127,112 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
     setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
-  // Maci okunabilir metin olarak disa aktar (kocluk/paylasim icin)
-  function exportMatch() {
-    const lines: string[] = []
-    lines.push('TavlaTv — Mac Raporu / Match Report')
-    if (pr != null) lines.push(`PR: ${pr.toFixed(2)}`)
-    lines.push(
-      `${t('rep.decisions')}: ${statLog.length}  ` +
-        `(${counts.good}/${counts.ok}/${counts.bad}/${counts.blunder})`,
-    )
-    lines.push('')
-    lines.push('# Hamleler / Moves')
-    ordered.forEach(({ e }, n) => {
-      const who = e.player === 'white' ? 'W' : 'B'
-      const dice = e.dice && e.dice.length >= 2 ? `${e.dice[0]}-${e.dice[1]}` : '--'
-      const lossStr = e.loss >= 0.005 ? `  (-${e.loss.toFixed(3)})` : ''
-      const bestStr = e.best && e.best !== e.notation ? `  [${t('rep.best')}: ${e.best}]` : ''
-      lines.push(`${n + 1}. [${who}] ${dice}: ${e.notation}${bestStr}${lossStr}`)
-    })
-    if (cubeLog.length > 0) {
-      lines.push('')
-      lines.push(`# ${t('cube.decisions')}`)
-      cubeLog.forEach((e) => {
-        const verdict = e.cube!.correct
-          ? t('cube.correct')
-          : `${t('cube.wrong')} -> ${recLabel(e.cube!.recommended)}`
-        lines.push(
-          `- ${t(`cube.chose.${e.cube!.chosen}`)} (${t('cube.win')} ${e.cube!.win.toFixed(0)}%) — ${verdict}`,
-        )
-      })
+  // Maci standart .mat (Jellyfish / GNU Backgammon) formatinda disa aktar.
+  // Oyunlar acilis dizilimi tespitiyle bolunur; her hamle "zar: notasyon" satirina
+  // (beyaz sol / siyah sag sutun) yazilir; insanin kup kararlari (Doubles/Takes/Drops)
+  // ve oyun sonuclari (Wins N points) eklenir. Notasyon zaten her oyuncunun kendi
+  // perspektifinde (moveNotation) -> .mat ile uyumlu. GNU BG/XG ile analize acilabilir.
+  function exportMat() {
+    const COLW = 34 // sol sutun genisligi (hizalama)
+    const INIT = initialState().points
+    // Acilis dizilimi mi? (yeni oyunun ilk hamlesi: taslar baslangicta, bar/off bos)
+    const isOpening = (e: LogEntry): boolean => {
+      const p = e.pos
+      if (!p || e.cube) return false
+      if (p.bar.white || p.bar.black || p.off.white || p.off.black) return false
+      return p.points.length === 24 && p.points.every((v, i) => v === INIT[i])
     }
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
+    // seq'e gore sirala (async bot kayitlari dogru yere otursun) + oyunlara bol
+    const seqAll = log.map((e, i) => ({ e, i })).sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
+    const games: LogEntry[][] = []
+    for (const { e } of seqAll) {
+      if (isOpening(e) || games.length === 0) games.push([])
+      games[games.length - 1].push(e)
+    }
+
+    // Bir oyunun sonucu: kup drop'ta teklifi kabul etmeyen kaybeder; yoksa son hamleyi
+    // kendi pos'una uygulayip gammon/backgammon carpanini gercek tahtadan hesapla.
+    const outcomeOf = (game: LogEntry[]): { winner: Player; points: number } | null => {
+      let cube = 1
+      let dropWinner: Player | null = null
+      let last: LogEntry | undefined
+      for (const e of game) {
+        if (e.cube) {
+          if (e.cube.chosen === 'drop') dropWinner = e.player ? opponent(e.player) : null
+          else if (e.cube.chosen === 'double' || e.cube.chosen === 'take') cube *= 2
+        } else if (e.player) {
+          last = e
+        }
+      }
+      if (dropWinner) return { winner: dropWinner, points: cube }
+      if (!last?.player || !last.pos) return null
+      const s = cloneState(last.pos)
+      for (const st of last.playedSteps ?? last.steps ?? []) applyStep(s, st, last.player)
+      const oc = gameOutcome(s)
+      return oc ? { winner: oc.winner, points: cube * oc.multiplier } : null
+    }
+
+    const out: string[] = []
+    if (pr != null) out.push(`; PR ${pr.toFixed(2)}`)
+    out.push(`${matchLength} point match`)
+
+    let sw = 0
+    let sb = 0
+    games.forEach((game, gi) => {
+      out.push('')
+      out.push(` Game ${gi + 1}`)
+      out.push(` ${`${whiteName} : ${sw}`.padEnd(COLW + 4)}${blackName} : ${sb}`)
+
+      // Sutunlu satirlar: sol=beyaz, sag=siyah. .mat'te hamle numarasi beyaz hamlesinde
+      // artar; siyah acilisi kazandiginda sol sutun bos kalir (tur sirasi korunur).
+      const rows: { w?: string; b?: string }[] = []
+      let cube = 1
+      for (const e of game) {
+        if (!e.player) continue
+        let text: string
+        if (e.cube) {
+          if (e.cube.chosen === 'double') {
+            cube *= 2
+            text = `Doubles => ${cube}`
+          } else if (e.cube.chosen === 'take') {
+            cube *= 2
+            text = 'Takes'
+          } else if (e.cube.chosen === 'drop') {
+            text = 'Drops'
+          } else {
+            continue // 'no-double' vb. -> kup eylemi yok
+          }
+        } else {
+          const d = e.dice && e.dice.length >= 2 ? `${e.dice[0]}${e.dice[1]}` : '  '
+          text = `${d}: ${e.notation || 'pass'}`
+        }
+        if (e.player === 'white') {
+          rows.push({ w: text })
+        } else {
+          const last = rows[rows.length - 1]
+          if (last && last.w !== undefined && last.b === undefined) last.b = text
+          else rows.push({ b: text })
+        }
+      }
+      rows.forEach((r, idx) => {
+        const left = (r.w ?? '').padEnd(COLW)
+        out.push(`${String(idx + 1).padStart(3)}) ${left}${r.b ?? ''}`.trimEnd())
+      })
+
+      const oc = outcomeOf(game)
+      if (oc) {
+        const winTxt = `Wins ${oc.points} point${oc.points === 1 ? '' : 's'}`
+        out.push(oc.winner === 'white' ? `      ${winTxt}` : `      ${''.padEnd(COLW)}${winTxt}`)
+        if (oc.winner === 'white') sw += oc.points
+        else sb += oc.points
+      }
+    })
+
+    const blob = new Blob([out.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = 'tavlatv-mac.txt'
+    a.download = 'tavlatv-mac.mat'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -361,7 +446,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
           </div>
         )}
         {log.length > 0 && (
-          <button className="menu-btn rep-export rep-export-bottom" onClick={exportMatch}>
+          <button className="menu-btn rep-export rep-export-bottom" onClick={exportMat}>
             <Icon name="install" size={14} /> {t('rep.export')}
           </button>
         )}
