@@ -169,7 +169,6 @@ export default function Shop({
   const [rarity, setRarity] = useState<FrameRarity | 'all'>('all')
   const [colorIdx, setColorIdx] = useState(0)
   const [ownedOnly, setOwnedOnly] = useState(false)
-  const [query, setQuery] = useState('')
 
   async function daily() {
     setBusy('daily')
@@ -201,16 +200,14 @@ export default function Shop({
     }
   }
 
-  const q = query.trim().toLocaleLowerCase('tr')
   const shown = useMemo(
     () =>
       ANIMATIONS.filter(
         (a) =>
           (rarity === 'all' || a.rarity === rarity) &&
-          (!ownedOnly || a.items.some((it) => unlocks.includes('frame.' + it.id))) &&
-          (!q || a.name.toLocaleLowerCase('tr').includes(q)),
+          (!ownedOnly || a.items.some((it) => unlocks.includes('frame.' + it.id))),
       ),
-    [rarity, ownedOnly, q, unlocks],
+    [rarity, ownedOnly, unlocks],
   )
 
   const labels = {
@@ -237,7 +234,7 @@ export default function Shop({
           <Icon name="shop" size={20} /> {t('shop.title')}
         </h2>
 
-        {/* Sticky kontrol bari: bakiye + odul + arama + filtreler */}
+        {/* Sticky kontrol bari: bakiye + odul + filtreler */}
         <div className="shop-controls">
           <div className="shop-controls-row">
             <div className="shop-coins">
@@ -252,16 +249,6 @@ export default function Shop({
               <Icon name="gift" size={16} />{' '}
               {rewardReady ? t('shop.daily') : <span className="sd-count tnum">{fmtLeft(rewardSecs)}</span>}
             </button>
-            <label className="shop-search">
-              <Icon name="search" size={15} />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder={t('shop.search')}
-                aria-label={t('shop.search')}
-              />
-            </label>
           </div>
           <div className="shop-controls-row">
             <div className="shop-chips" role="group" aria-label={t('shop.rarity')}>
