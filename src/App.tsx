@@ -196,7 +196,7 @@ interface RoomState {
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
 }
 const BOT_PLAYER: Player = 'black'
-const TARGETS = [1, 3, 5, 7, 9, 11, 13, 15, 21, 25] // Galaxy: 1-25 puanlik maclar
+const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
 
 // Board renk temalari — boardThemes.ts'e cikarildi (God-component kucultme, #10)
 import {
