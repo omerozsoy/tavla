@@ -356,6 +356,63 @@
 .sf-m-fireflies .sf-spark-3 { top: 70%; left: 30%; animation-delay: 2s; }
 @keyframes sf-firefly { 0%,100%{transform:translate(0,0);opacity:.15} 50%{transform:translate(6px,-8px);opacity:1} }
 
+/* ============ PREMIUM ek katmanlar: Efsanevi (.sf-lux) + Mitik (.sf-myth) ============
+   Temel animasyonun UZERINE binen katmanlar; her cerceveyi daha gosterisli yapar.
+   sf-rotate / sf-sparkle keyframe'leri yeniden kullanilir. reduced-motion'da durur. */
+
+/* Guclu nabizli hale — tum Efsanevi/Mitik cerceveler */
+.sf-lux-halo {
+  position: absolute; inset: -7px; border-radius: 50%; z-index: 0; pointer-events: none;
+  box-shadow: 0 0 16px 3px var(--sf-glow), 0 0 30px 7px var(--sf-glow);
+  opacity: .55; animation: sf-lux-halo 2.6s ease-in-out infinite;
+}
+@keyframes sf-lux-halo { 0%,100%{opacity:.4;transform:scale(1)} 50%{opacity:.9;transform:scale(1.05)} }
+
+/* Halka uzerinde donen parlak isik supurmesi */
+.sf-lux-ring {
+  position: absolute; inset: 0; border-radius: 50%; padding: var(--sf-ring-w);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude; z-index: 3; pointer-events: none;
+  background: conic-gradient(from 0deg, transparent 0 250deg, rgba(255,255,255,.55) 320deg, #fff 340deg, transparent 358deg);
+  animation: sf-rotate 3.8s linear infinite;
+}
+
+/* Mitik: daha guclu hale + cift sicak supurme, daha hizli */
+.sf-myth .sf-lux-halo {
+  inset: -9px;
+  box-shadow: 0 0 22px 5px var(--sf-glow), 0 0 44px 12px var(--sf-glow);
+  animation-duration: 2s;
+}
+.sf-myth .sf-lux-ring {
+  background: conic-gradient(from 0deg,
+    transparent 0 150deg, rgba(255,233,168,.75) 188deg, #fff 205deg, rgba(255,233,168,.75) 222deg,
+    transparent 250deg 338deg, #fff 352deg, transparent 360deg);
+  animation-duration: 2.6s;
+}
+
+/* Mitik: yorungede donen 2 parlak nokta */
+.sf-myth-orbit {
+  position: absolute; inset: -2px; border-radius: 50%; z-index: 4; pointer-events: none;
+  animation: sf-rotate 5s linear infinite;
+}
+.sf-orb {
+  position: absolute; left: 50%; top: -3px; margin-left: -3px;
+  width: 6px; height: 6px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #ffe9a8 55%, transparent 72%);
+  box-shadow: 0 0 7px 2px rgba(255,233,168,.8);
+}
+.sf-orb-2 { top: auto; bottom: -3px; }
+
+/* Mitik: parildayan kivilcimlar */
+.sf-myth-spark {
+  position: absolute; width: 9px; height: 9px; z-index: 4; pointer-events: none;
+  background: radial-gradient(circle, #fff 0%, rgba(255,233,168,.65) 45%, transparent 70%);
+  opacity: 0; transform: scale(.4);
+}
+.sf-mspk-1 { top: 7%; left: 20%; animation: sf-sparkle 2.4s ease-in-out infinite; }
+.sf-mspk-2 { top: 32%; right: 5%; animation: sf-sparkle 2.4s ease-in-out .8s infinite; }
+.sf-mspk-3 { bottom: 10%; left: 58%; animation: sf-sparkle 2.4s ease-in-out 1.6s infinite; }
+
 @media (prefers-reduced-motion: reduce) {
   .sf *, .sf::before, .sf::after { animation: none !important; }
 }

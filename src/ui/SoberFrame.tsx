@@ -32,7 +32,7 @@ export type SoberMotion =
   | 'neonPulse' | 'glowSpread' | 'pulseHalo' | 'sonar'
   | 'rain' | 'fireflies' | 'flash'
 
-export type SoberRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
+export type SoberRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
 
 export interface SoberFrameProps {
   rarity?: SoberRarity
@@ -69,10 +69,28 @@ export default function SoberFrame({
       : {}),
   } as CSSProperties
   const multiSpark = SPARK_MULTI.has(motion)
+  // Efsanevi/Mitik: temel animasyonun uzerine premium katmanlar (daha gosterisli).
+  const lux = rarity === 'legendary' || rarity === 'mythic'
+  const myth = rarity === 'mythic'
   return (
-    <span className={`sf ${accent ? '' : 'sf-r-' + rarity} sf-m-${motion} ${className}`.trim()} style={style} aria-hidden="true">
+    <span
+      className={`sf ${accent ? '' : 'sf-r-' + rarity} sf-m-${motion} ${lux ? 'sf-lux' : ''} ${myth ? 'sf-myth' : ''} ${className}`.trim()}
+      style={style}
+      aria-hidden="true"
+    >
+      {lux && <span className="sf-lux-halo" />}
       <span className="sf-glow" />
       <span className="sf-ring" />
+      {lux && <span className="sf-lux-ring" />}
+      {myth && (
+        <span className="sf-myth-orbit">
+          <i className="sf-orb sf-orb-1" />
+          <i className="sf-orb sf-orb-2" />
+        </span>
+      )}
+      {myth && <span className="sf-myth-spark sf-mspk-1" />}
+      {myth && <span className="sf-myth-spark sf-mspk-2" />}
+      {myth && <span className="sf-myth-spark sf-mspk-3" />}
       {SWEEP.has(motion) && <span className="sf-sweep" />}
       {SVG.has(motion) && (
         <svg className="sf-svg" viewBox="0 0 100 100">

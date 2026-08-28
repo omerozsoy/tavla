@@ -33,6 +33,7 @@ export default function AvatarFrame({
   if (def && size >= 24) {
     return (
       <SoberFrame
+        rarity={def.rarity}
         accent={def.accent}
         motion={animated ? def.motion : 'static'}
         size={size}
