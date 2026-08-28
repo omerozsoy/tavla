@@ -20,6 +20,7 @@ export function HomeDashboard(p: {
   coins: number
   wins: number
   games: number
+  daily?: { ready: boolean; countdown: string; onClaim: () => void }
   onStats?: () => void
   onHistory?: () => void
   onBlunders?: () => void
@@ -62,6 +63,36 @@ export function HomeDashboard(p: {
           </div>
         ))}
       </div>
+      {p.daily && (
+        <button
+          type="button"
+          className={`dash-daily ${p.daily.ready ? 'ready' : ''}`}
+          onClick={p.daily.ready ? p.daily.onClaim : undefined}
+          disabled={!p.daily.ready}
+        >
+          <span className="dd-icon" aria-hidden="true">
+            <Icon name="gift" size={20} />
+          </span>
+          <span className="dd-text">
+            <span className="dd-title">{t('home.dash.daily')}</span>
+            <span className="dd-sub">
+              {p.daily.ready ? (
+                t('home.dash.dailyReady')
+              ) : (
+                <>
+                  {t('reward.in')} ·{' '}
+                  <span className="tnum">{p.daily.countdown}</span>
+                </>
+              )}
+            </span>
+          </span>
+          {p.daily.ready && (
+            <span className="dd-cta">
+              {t('home.dash.claim')} <Icon name="chevron" size={15} />
+            </span>
+          )}
+        </button>
+      )}
       {actions.length > 0 && (
         <div className="dash-actions">
           <span className="dash-actions-label">{t('home.dash.quick')}</span>

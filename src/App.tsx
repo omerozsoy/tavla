@@ -1,7 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
-// 3D hero zar sahnesi three.js/cannon-es icerir -> ayri chunk (ana paketi sismesin).
-const HeroDice3D = lazy(() => import('./ui/dice3d/HeroDice3D'))
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
@@ -3640,9 +3638,6 @@ export default function App() {
                     />
                   ))}
                 </div>
-                <Suspense fallback={<div className="hero-dice3d" />}>
-                  <HeroDice3D className="hero-dice3d" />
-                </Suspense>
               </div>
             </section>
             {user && (
@@ -3651,6 +3646,11 @@ export default function App() {
                 coins={user.coins ?? 0}
                 wins={user.wins ?? 0}
                 games={user.games_played ?? 0}
+                daily={{
+                  ready: rewardReady,
+                  countdown: fmtCountdown(rewardSecs),
+                  onClaim: handleDaily,
+                }}
                 onStats={menuProps.onMyStats}
                 onHistory={menuProps.onMatchHistory}
                 onBlunders={menuProps.onBlunders}
