@@ -99,3 +99,26 @@
 .ca-barbtn:hover:not(:disabled) { border-color: rgba(140, 160, 210, 0.55); }
 .ca-barbtn:disabled { opacity: 0.4; cursor: default; }
 .ca-barclear { border-color: rgba(220, 120, 120, 0.35); }
+
+/* ---- SATIR duzeni: her animasyon 1 satir + 5 renk ---- */
+.ca-collabels { display: flex; align-items: center; gap: 12px; margin: 8px 0 6px; }
+.ca-colspace { flex: 0 0 210px; width: 210px; }
+.ca-collabel { flex: 0 0 auto; text-align: center; font-size: 11px; font-weight: 700; opacity: 0.72; }
+.ca-rows { display: flex; flex-direction: column; gap: 6px; }
+.ca-row {
+  display: flex; align-items: center; gap: 12px; padding: 6px 8px; border-radius: 12px;
+  transition: background 0.14s ease, box-shadow 0.14s ease;
+}
+.ca-row:hover { background: rgba(255, 255, 255, 0.03); }
+.ca-row.sel { background: rgba(183, 110, 121, 0.14); box-shadow: inset 0 0 0 1.5px #b76e79; }
+.ca-rowsel { flex: 0 0 30px; width: 30px; display: grid; place-items: center; background: transparent; border: 0; cursor: pointer; padding: 0; }
+.ca-row.sel .ca-tickbox { color: #2a1418; background: linear-gradient(135deg, #b76e79, #e7bcb0); border-color: transparent; }
+.ca-rowname { flex: 0 0 168px; width: 168px; display: flex; flex-direction: column; gap: 1px; }
+.ca-rn { font-size: 13px; font-weight: 600; }
+.ca-rk { font-size: 10.5px; opacity: 0.5; font-family: ui-monospace, monospace; }
+.ca-rowframes { display: flex; gap: 12px; }
+.ca-rowframe { flex: 0 0 auto; display: grid; place-items: center; }
+@media (max-width: 760px) {
+  .ca-colspace { flex-basis: 120px; width: 120px; }
+  .ca-rowname { flex-basis: 100px; width: 100px; }
+}

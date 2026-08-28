@@ -5,10 +5,8 @@ import SoberFrame, { type SoberMotion } from './SoberFrame'
 import demoAvatar from '../assets/demo-avatar.jpg'
 import './CerceveAnim.css'
 
-// Animasyon katalogu (/cerceve-anim): TEK renk (Rose Gold) ile yapilabilir TUM animasyonlar,
-// adlariyla + toplam sayi. Her animasyon bir kez. Merkez seffaf, halka donmez (donme grubu haric).
-const ROSE = '#B76E79' // rose gold
-
+// Animasyon katalogu (/cerceve-anim). CATALOG yalnizca ad-haritasi (NAME_BY_KEY) icin tutulur;
+// sayfa artik KEYS listesindeki animasyonlari her biri 1 satir + 5 renk olarak gosterir.
 const CATALOG: { group: string; items: [SoberMotion, string][] }[] = [
   { group: 'Glow / Işık', items: [
     ['breathe', 'Nefes'], ['glowPulse', 'Glow Nabız'], ['flicker', 'Titreme'], ['heartbeat', 'Kalp Atışı'],
@@ -62,12 +60,24 @@ const CATALOG: { group: string; items: [SoberMotion, string][] }[] = [
   ] },
 ]
 
-const TOTAL = CATALOG.reduce((n, g) => n + g.items.length, 0)
 const NAME_BY_KEY: Record<string, string> = Object.fromEntries(
   CATALOG.flatMap((g) => g.items.map(([k, n]) => [k, n])),
 )
 const LS_KEY = 'cerceve-anim-favs'
-const SIZES = [80, 104, 128] as const
+const SIZES = [52, 64, 80] as const
+
+// Kullanicinin sectigi 44 animasyon (bu sirayla, her biri 1 satir).
+const KEYS: SoberMotion[] = [
+  'glowPulse', 'heartbeat', 'pulse', 'pulseFast', 'floatSide', 'levitate', 'bounce', 'jelly', 'gelatine',
+  'heartScale', 'vibrate', 'pop', 'tada', 'circleMove', 'wobble', 'rock', 'pendulum', 'swing', 'expand',
+  'sway', 'seesaw', 'flip3d', 'hueCycle', 'rainbow', 'bright', 'invert', 'shineOnce', 'sweep', 'sweepFast',
+  'dualSweep', 'glint', 'gradSpin', 'conicRainbow', 'rain', 'sparkleBurst', 'comet', 'dualOrbit',
+  'auraPulse', 'ripple', 'radar', 'dualRipple', 'neonPulse', 'pulseHalo', 'sonar',
+]
+// Her satirin yaninda gosterilecek 5 renk
+const COLORS5: [string, string][] = [
+  ['Rose Gold', '#B76E79'], ['Safir', '#2563EB'], ['Zümrüt', '#059669'], ['Altın', '#B8862B'], ['Menekşe', '#8B5CF6'],
+]
 
 export default function CerceveAnim({ onClose }: { onClose: () => void }) {
   useEscape(onClose)
@@ -118,12 +128,11 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="ca-head">
-          <h2>Rose Gold — Tüm Animasyonlar</h2>
-          <div className="ca-count">{TOTAL} farklı animasyon</div>
+          <h2>Seçili Animasyonlar × 5 Renk</h2>
+          <div className="ca-count">{KEYS.length} animasyon · 5 renk</div>
           <p>
-            Tek renk (Rose Gold) ile yapılabilir tüm animasyonlar, adlarıyla. İnce halka · merkez şeffaf
-            (yüz kapanmaz) · yalnız “Dönme / Sweep / Yörünge” gruplarında dönen öğe var. Beğendiğini yaz
-            (animasyon adı), gerçek çerçeveye uygularım.
+            Her satırda bir animasyon; yanında 5 renk (Rose Gold · Safir · Zümrüt · Altın · Menekşe).
+            Beğendiğini soldaki kutucukla işaretle → üstteki çubuktan <b>Kopyala</b>.
           </p>
           <div className="ca-seg">
             {SIZES.map((s) => (
@@ -155,33 +164,38 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {CATALOG.map((g) => (
-          <section key={g.group} className="ca-sec">
-            <h3>{g.group} · {g.items.length}</h3>
-            <div className="ca-grid">
-              {g.items.map(([motion, name]) => (
-                <button
-                  key={motion}
-                  type="button"
-                  className={`ca-cell ${sel.has(motion) ? 'sel' : ''}`}
-                  onClick={() => toggle(motion)}
-                  aria-pressed={sel.has(motion)}
-                  title="Beğendiysen tıkla → işaretle"
-                >
-                  <div className="ca-stage" style={{ height: size + 12 }}>
-                    <SoberFrame accent={ROSE} motion={motion} size={size} src={demoAvatar} />
+        <div className="ca-collabels">
+          <span className="ca-colspace" />
+          {COLORS5.map(([cn, hex]) => (
+            <span key={hex} className="ca-collabel" style={{ width: size + 12 }}>{cn}</span>
+          ))}
+        </div>
+        <div className="ca-rows">
+          {KEYS.map((motion) => (
+            <div key={motion} className={`ca-row ${sel.has(motion) ? 'sel' : ''}`}>
+              <button
+                type="button"
+                className="ca-rowsel"
+                onClick={() => toggle(motion)}
+                aria-pressed={sel.has(motion)}
+                title="Beğendiysen işaretle"
+              >
+                <span className="ca-tickbox">✓</span>
+              </button>
+              <div className="ca-rowname">
+                <span className="ca-rn">{NAME_BY_KEY[motion] || motion}</span>
+                <span className="ca-rk">{motion}</span>
+              </div>
+              <div className="ca-rowframes">
+                {COLORS5.map(([, hex]) => (
+                  <div key={hex} className="ca-rowframe" style={{ width: size + 12 }}>
+                    <SoberFrame accent={hex} motion={motion} size={size} src={demoAvatar} />
                   </div>
-                  <div className="ca-name">{name}</div>
-                  <div className="ca-note">{motion}</div>
-                  <span className="ca-tick" aria-hidden="true">
-                    <span className="ca-tickbox">✓</span>
-                    {sel.has(motion) ? 'Seçildi' : 'Seç'}
-                  </span>
-                </button>
-              ))}
+                ))}
+              </div>
             </div>
-          </section>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
