@@ -29,8 +29,9 @@ export default function AvatarFrame({
   const def = frame ? FRAME_BY_ID[frame] : undefined
   const initial = name.trim().charAt(0).toUpperCase() || '?'
 
-  // Cerceveli + yeterli boyut -> SoberFrame (halka + animasyon)
-  if (def && size >= 32) {
+  // Cerceveli -> SoberFrame (halka + animasyon). Esik dusuk: hesap bari (28) + listeler (30)
+  // dahil TUM site genelinde takili cerceve gorunsun.
+  if (def && size >= 24) {
     return (
       <SoberFrame
         accent={def.accent}
