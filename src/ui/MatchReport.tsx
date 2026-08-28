@@ -53,10 +53,14 @@ function winPct(probs?: number[]): number | null {
 export default function MatchReport({ mode, log, pr, humanColor, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // Analiz kapsami: varsayilan yalnizca kullanicinin hamleleri, istege gore iki taraf.
+  // humanColor yoksa (bot-vs-bot/izleyici) kapsam ayrimi anlamsiz -> hep 'all'.
+  const [scope, setScope] = useState<'mine' | 'all'>(humanColor ? 'mine' : 'all')
+  const inScope = (e: LogEntry) => scope === 'all' || !humanColor || e.player === humanColor
   // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
   const mistakes = log
     .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube && e.loss >= 0.02)
+    .filter(({ e }) => !e.cube && e.loss >= 0.02 && inScope(e))
   const firstAnalyzable = log.findIndex((e) => e.pos && !e.cube)
   const firstMistake = mistakes.find(({ e }) => e.pos)?.i ?? (firstAnalyzable >= 0 ? firstAnalyzable : 0)
   const [worstFirst, setWorstFirst] = useState(mistakes.length > 0) // varsayilan: sadece hatalar
@@ -86,7 +90,7 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
   // Sira: seq'e gore (async bot kayitlari dogru yere otursun); yoksa dizideki sira
   const ordered = log
     .map((e, i) => ({ e, i }))
-    .filter(({ e }) => !e.cube)
+    .filter(({ e }) => !e.cube && inScope(e))
     .sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
   const rows = worstFirst ? mistakes.slice().sort((a, b) => b.e.loss - a.e.loss) : ordered
 
@@ -232,6 +236,22 @@ export default function MatchReport({ mode, log, pr, humanColor, onClose }: Prop
           <div className="analysis-layout">
             {/* Sol: hamle listesi */}
             <div className="analysis-list">
+              {humanColor && (
+                <div className="rep-filter">
+                  <button
+                    className={scope === 'mine' ? 'menu-btn active' : 'menu-btn'}
+                    onClick={() => setScope('mine')}
+                  >
+                    {t('rep.scopeMine')}
+                  </button>
+                  <button
+                    className={scope === 'all' ? 'menu-btn active' : 'menu-btn'}
+                    onClick={() => setScope('all')}
+                  >
+                    {t('rep.scopeAll')}
+                  </button>
+                </div>
+              )}
               <div className="rep-filter">
                 <button
                   className={worstFirst ? 'menu-btn' : 'menu-btn active'}

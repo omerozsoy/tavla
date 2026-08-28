@@ -23,21 +23,31 @@ const BOT_Y = H - (R + 3)
 const ARROW = '#f0a500' // onceki #ffd54a'dan daha koyu/doygun altin
 const ARROW_EDGE = '#2a1206' // koyu casing/kontur
 
-// Nokta index'i (0-23) -> {col 0-11, row}
-const LAYOUT: Record<number, { col: number; row: 'top' | 'bottom' }> = {}
-;[12, 13, 14, 15, 16, 17].forEach((i, k) => (LAYOUT[i] = { col: k, row: 'top' })) // 13-18
-;[18, 19, 20, 21, 22, 23].forEach((i, k) => (LAYOUT[i] = { col: 6 + k, row: 'top' })) // 19-24
-;[11, 10, 9, 8, 7, 6].forEach((i, k) => (LAYOUT[i] = { col: k, row: 'bottom' })) // 12-7
-;[5, 4, 3, 2, 1, 0].forEach((i, k) => (LAYOUT[i] = { col: 6 + k, row: 'bottom' })) // 6-1
+// Nokta index'i (0-23) -> {col 0-11, row}. Ana tahta (Board.tsx) ile AYNI yonlendirme:
+// normal = beyaz altta; flipped = siyah altta. Bu bir DIKEY AYNA (ust<->alt yer degistirir,
+// sol-sag korunur), 180 donus DEGIL. Eski surum tum SVG'yi rotate(180) ile ceviriyordu;
+// bu, ana tahtayla ters dusuyor ve siyah oyuncuya hamle yonunu ters gosteriyordu.
+type Cell = { col: number; row: 'top' | 'bottom' }
+function buildLayout(TL: number[], TR: number[], BL: number[], BR: number[]): Record<number, Cell> {
+  const m: Record<number, Cell> = {}
+  TL.forEach((i, k) => (m[i] = { col: k, row: 'top' }))
+  TR.forEach((i, k) => (m[i] = { col: 6 + k, row: 'top' }))
+  BL.forEach((i, k) => (m[i] = { col: k, row: 'bottom' }))
+  BR.forEach((i, k) => (m[i] = { col: 6 + k, row: 'bottom' }))
+  return m
+}
+// Board.tsx LAYOUT.normal / LAYOUT.flipped ile birebir ayni dizilim.
+const LAYOUT_NORMAL = buildLayout([12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23], [11, 10, 9, 8, 7, 6], [5, 4, 3, 2, 1, 0]) // prettier-ignore
+const LAYOUT_FLIP = buildLayout([11, 10, 9, 8, 7, 6], [5, 4, 3, 2, 1, 0], [12, 13, 14, 15, 16, 17], [18, 19, 20, 21, 22, 23]) // prettier-ignore
 
 function colX(col: number): number {
   return col < 6 ? COL_W * (col + 0.5) : HALF_W + BAR_W + COL_W * (col - 6 + 0.5)
 }
 
-function anchor(p: number | 'bar' | 'off'): { x: number; y: number } {
+function anchor(p: number | 'bar' | 'off', L: Record<number, Cell>): { x: number; y: number } {
   if (p === 'bar') return { x: HALF_W + BAR_W / 2, y: H / 2 }
   if (p === 'off') return { x: USABLE_W + OFF_W / 2, y: H / 2 }
-  const l = LAYOUT[p]
+  const l = L[p]
   return { x: colX(l.col), y: l.row === 'top' ? TOP_Y : BOT_Y }
 }
 
@@ -52,12 +62,14 @@ export default function MiniBoard({
   steps: Step[]
   player: Player
   dice?: number[]
-  flip?: boolean // true: siyah oyuncunun bakisi (180 cevrilir; SEN altta)
+  flip?: boolean // true: siyah oyuncunun bakisi (SEN altta) — dikey ayna, Board.tsx ile ayni
 }) {
+  // Board.tsx ile ayni yonlendirme: 180 donus yerine dikey-ayna layout secimi
+  const L = flip ? LAYOUT_FLIP : LAYOUT_NORMAL
   // Ucgenler
   const tris = []
   for (let idx = 0; idx < 24; idx++) {
-    const l = LAYOUT[idx]
+    const l = L[idx]
     const cx = colX(l.col)
     // Gercek tahta gibi iki renk ucgen (tema uyumlu; onceki soluk beyaz gorunmuyordu)
     const shade = idx % 2 === 0 ? 'var(--tri-a)' : 'var(--tri-b)'
@@ -91,7 +103,7 @@ export default function MiniBoard({
     if (v === 0) continue
     const n = Math.abs(v)
     const white = v > 0
-    const l = LAYOUT[idx]
+    const l = L[idx]
     const x = colX(l.col)
     const baseY = l.row === 'top' ? TOP_Y : BOT_Y
     const dir = l.row === 'top' ? 1 : -1
@@ -110,7 +122,6 @@ export default function MiniBoard({
               fontWeight="700"
               textAnchor="middle"
               fill={white ? 'var(--tv-ink)' : '#fff'}
-              transform={flip ? `rotate(180 ${x} ${cy})` : undefined}
             >
               {n}
             </text>
@@ -119,20 +130,22 @@ export default function MiniBoard({
       )
     }
   }
-  // Bar pullari
+  // Bar pullari — alttaki oyuncu asagida cikar; flip'te beyaz/siyah yer degistirir
+  const whiteBarY = flip ? H / 2 - (R + 3) : H / 2 + R + 3
+  const blackBarY = flip ? H / 2 + R + 3 : H / 2 - (R + 3)
   if (state.bar.white > 0)
     discs.push(
-      <circle key="bw" cx={HALF_W + BAR_W / 2} cy={H / 2 + R + 3} r={R * 0.9} fill="var(--cream)" stroke="#0007" />,
+      <circle key="bw" cx={HALF_W + BAR_W / 2} cy={whiteBarY} r={R * 0.9} fill="var(--cream)" stroke="#0007" />,
     )
   if (state.bar.black > 0)
     discs.push(
-      <circle key="bb" cx={HALF_W + BAR_W / 2} cy={H / 2 - (R + 3)} r={R * 0.9} fill="var(--navy)" stroke="#0007" />,
+      <circle key="bb" cx={HALF_W + BAR_W / 2} cy={blackBarY} r={R * 0.9} fill="var(--navy)" stroke="#0007" />,
     )
 
   // Oklar (hamle adimlari)
   const arrows = steps.map((st, i) => {
-    const from = anchor(st.from)
-    const to = anchor(st.to)
+    const from = anchor(st.from, L)
+    const to = anchor(st.to, L)
     return (
       <g key={`a${i}`}>
         {/* koyu casing (govde kenarligi) */}
@@ -165,7 +178,6 @@ export default function MiniBoard({
           fontWeight="800"
           textAnchor="middle"
           fill={ARROW_EDGE}
-          transform={flip ? `rotate(180 ${from.x} ${from.y})` : undefined}
         >
           {i + 1}
         </text>
@@ -222,9 +234,9 @@ export default function MiniBoard({
           />
         </marker>
       </defs>
-      {/* flip: tum icerik 180 cevrilir (zar yuzleri 180-simetrik; iki metin yerinde
-          karsi-rotasyonla dik tutulur) -> siyah oyuncu (SEN) altta gorunur */}
-      <g transform={flip ? `rotate(180 ${W / 2} ${H / 2})` : undefined}>
+      {/* flip: 180 donus DEGIL — layout dikey-ayna ile secildi (Board.tsx ile ayni).
+          Boylece siyah oyuncu (SEN) altta gorunur ve hamle yonu ana tahtayla tutarli. */}
+      <g>
         <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
         {/* orta bar */}
         <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="var(--bar)" />
