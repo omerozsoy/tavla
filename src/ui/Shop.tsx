@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
@@ -10,7 +10,6 @@ import {
   FRAME_GROUP_LABEL,
   framePrice,
   type FrameGroup,
-  type FrameRarity,
   type AvatarFrameDef,
 } from './avatarFrames'
 
@@ -123,9 +122,6 @@ export default function Shop({
   const [busy, setBusy] = useState<string | null>(null)
   const [dailyMsg, setDailyMsg] = useState('')
   const [buyErr, setBuyErr] = useState('')
-  // Filtreler
-  const [rarity, setRarity] = useState<FrameRarity | 'all'>('all')
-  const [ownedOnly, setOwnedOnly] = useState(false)
 
   async function daily() {
     setBusy('daily')
@@ -157,16 +153,6 @@ export default function Shop({
     }
   }
 
-  const shown = useMemo(
-    () =>
-      AVATAR_FRAMES.filter(
-        (f) =>
-          (rarity === 'all' || f.rarity === rarity) &&
-          (!ownedOnly || unlocks.includes('frame.' + f.id)),
-      ),
-    [rarity, ownedOnly, unlocks],
-  )
-
   const labels = {
     equip: t('shop.equip'),
     equipped: t('shop.equipped'),
@@ -174,14 +160,6 @@ export default function Shop({
     need: (n: number) => t('shop.need', { n }),
     buyAria: (nm: string, price: number) => `${nm} — ${fmtCoin(price)} coin ile al`,
   }
-  const RARITY_CHIPS: { key: FrameRarity | 'all'; label: string }[] = [
-    { key: 'all', label: t('shop.all') },
-    { key: 'common', label: t('rarity.common') },
-    { key: 'rare', label: t('rarity.rare') },
-    { key: 'epic', label: t('rarity.epic') },
-    { key: 'legendary', label: t('rarity.legendary') },
-    { key: 'mythic', label: t('rarity.mythic') },
-  ]
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -193,7 +171,7 @@ export default function Shop({
           <Icon name="shop" size={20} /> {t('shop.title')}
         </h2>
 
-        {/* Sticky kontrol bari: bakiye + odul + filtreler */}
+        {/* Sticky kontrol bari: bakiye + odul */}
         <div className="shop-controls">
           <div className="shop-controls-row">
             <div className="shop-coins">
@@ -207,27 +185,6 @@ export default function Shop({
             >
               <Icon name="gift" size={16} />{' '}
               {rewardReady ? t('shop.daily') : <span className="sd-count tnum">{fmtLeft(rewardSecs)}</span>}
-            </button>
-          </div>
-          <div className="shop-controls-row">
-            <div className="shop-chips" role="group" aria-label={t('shop.rarity')}>
-              {RARITY_CHIPS.map((c) => (
-                <button
-                  key={c.key}
-                  className={`shop-chip ${rarity === c.key ? 'on' : ''}`}
-                  onClick={() => setRarity(c.key)}
-                  aria-pressed={rarity === c.key}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
-            <button
-              className={`shop-chip ${ownedOnly ? 'on' : ''}`}
-              onClick={() => setOwnedOnly((v) => !v)}
-              aria-pressed={ownedOnly}
-            >
-              {t('shop.ownedOnly')}
             </button>
           </div>
         </div>
@@ -257,7 +214,7 @@ export default function Shop({
         </div>
 
         {FRAME_GROUP_ORDER.map((group) => {
-          const frames = shown.filter((f) => f.group === group)
+          const frames = AVATAR_FRAMES.filter((f) => f.group === group)
           if (frames.length === 0) return null
           return (
             <div
@@ -290,8 +247,6 @@ export default function Shop({
             </div>
           )
         })}
-
-        {shown.length === 0 && <div className="shop-empty">{t('shop.noResult')}</div>}
 
         <p className="shop-note">{t('shop.note')}</p>
       </div>
