@@ -39,3 +39,9 @@ shop-test.png
 
 # ornek .mat dis-aktarim ciktisi (gnubg testi icin uretilir)
 ornek-*.mat
+
+# gecici magaza gorsel-kontrol harness'i (kalici degil) + ekran goruntuleri
+shop-preview.html
+shop-shot.mjs
+src/shop-preview.tsx
+shot-*.png
