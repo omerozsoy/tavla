@@ -22,6 +22,10 @@
               @if($u->is_admin)<span class="tag">admin</span>@endif
               @if($u->banned_at)<span class="tag">yasaklı</span>@endif
               @if($u->plan_active !== 'free')<span class="tag">{{ $u->plan_active }}</span>@endif
+              <div class="muted" style="font-size:11px;margin-top:3px;line-height:1.5">
+                Kayıt: {{ $u->created_at?->format('d.m.Y') ?? '—' }}<br>
+                Son giriş: {{ $u->last_login_at?->format('d.m.Y H:i') ?? 'hiç' }}
+              </div>
             </td>
             <td class="muted">
               {{ $u->email }}<br>

@@ -38,31 +38,34 @@ class AppServiceProvider extends ServiceProvider
             return "{$base}/?action=reset&token={$token}&email={$email}";
         });
 
-        // E-posta dogrulama e-postasi: Turkce + TavlaTv
+        // E-posta dogrulama e-postasi: markali HTML sablon (logo + terracotta)
         VerifyEmail::toMailUsing(function ($notifiable, string $url) {
             return (new MailMessage)
-                ->subject('TavlaTv — E-posta Adresini Doğrula')
-                ->greeting('Merhaba!')
-                ->line('TavlaTv hesabını etkinleştirmek için e-posta adresini doğrula. Aşağıdaki butona tıkla.')
-                ->action('E-posta Adresini Doğrula', $url)
-                ->line('Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.')
-                ->salutation("Sevgiler,\nTavlaTv");
+                ->subject('TavlaTV — E-posta Adresini Doğrula')
+                ->view('emails.message', [
+                    'heading' => 'Merhaba!',
+                    'intro' => 'TavlaTV hesabını etkinleştirmek için e-posta adresini doğrula. Aşağıdaki butona tıkla.',
+                    'buttonText' => 'E-posta Adresini Doğrula',
+                    'url' => $url,
+                    'outro' => 'Bir hesap oluşturmadıysan bu e-postayı yok sayabilirsin.',
+                ]);
         });
 
-        // Sifre sifirlama e-postasi: Turkce + TavlaTv
+        // Sifre sifirlama e-postasi: markali HTML sablon
         ResetPassword::toMailUsing(function ($notifiable, string $token) {
             $base = rtrim((string) config('app.frontend_url', 'https://tavlai.com'), '/');
             $email = urlencode($notifiable->getEmailForPasswordReset());
             $url = "{$base}/?action=reset&token={$token}&email={$email}";
 
             return (new MailMessage)
-                ->subject('TavlaTv — Şifre Sıfırlama')
-                ->greeting('Merhaba!')
-                ->line('TavlaTv hesabın için şifre sıfırlama isteği aldık.')
-                ->action('Şifreyi Sıfırla', $url)
-                ->line('Bu bağlantı bir süre sonra geçersiz olur.')
-                ->line('Bu isteği sen yapmadıysan herhangi bir şey yapmana gerek yok.')
-                ->salutation("Sevgiler,\nTavlaTv");
+                ->subject('TavlaTV — Şifre Sıfırlama')
+                ->view('emails.message', [
+                    'heading' => 'Merhaba!',
+                    'intro' => 'TavlaTV hesabın için şifre sıfırlama isteği aldık. Aşağıdaki butona tıklayarak yeni şifreni belirle.',
+                    'buttonText' => 'Şifreyi Sıfırla',
+                    'url' => $url,
+                    'outro' => 'Bu bağlantı bir süre sonra geçersiz olur. Bu isteği sen yapmadıysan herhangi bir şey yapmana gerek yok.',
+                ]);
         });
     }
 }

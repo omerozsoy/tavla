@@ -85,6 +85,9 @@ class AuthController extends Controller
             ]);
         }
 
+        $user->last_login_at = now();
+        $user->save();
+
         $token = $user->createToken('web')->plainTextToken;
 
         return response()->json(['user' => $user, 'token' => $token]);
@@ -154,12 +157,20 @@ class AuthController extends Controller
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
             ]);
-            $user->markEmailAsVerified(); // Google e-postasi zaten dogrulanmis (fillable disi, guvenli)
+        }
+
+        // Google e-postasi zaten dogrulanmis: HEM yeni HEM mevcut kullanicide garantiye al
+        // (eski hesaplar Google'a baglaninca "e-postani dogrula" uyarisi almasin).
+        if (! $user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified(); // fillable disi, guvenli
         }
 
         if ($user->isBanned()) {
             return $this->fail('Bu hesap askıya alınmış.', 403);
         }
+
+        $user->last_login_at = now();
+        $user->save();
 
         $token = $user->createToken('google')->plainTextToken;
 
