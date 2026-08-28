@@ -1,10 +1,10 @@
 import type { CSSProperties } from 'react'
-import PremiumFrame, { frameVisual } from './PremiumFrame'
-import { FRAME_RARITY_COLOR } from './avatarFrames'
+import SoberFrame from './SoberFrame'
+import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
 
-// Avatar + (varsa) premium SVG cerceve. Cerceve tanimliysa ve boyut yeterliyse
-// PremiumFrame (cok katmanli SVG) cizilir; kucuk/cercevesiz durumda sade dairesel
-// avatar (cerceveliyse ince rarity halkasi) gosterilir.
+// Avatar + (varsa) sade cerceve. Cerceve tanimliysa ve boyut yeterliyse SoberFrame (CSS halka +
+// secili animasyon) cizilir; kucuk/cercevesiz durumda sade dairesel avatar (cerceveliyse ince
+// rarity halkasi). Eski PremiumFrame (24 tema) kaldirildi.
 interface Props {
   src?: string | null
   frame?: string | null
@@ -25,26 +25,25 @@ export default function AvatarFrame({
   className = '',
   animated = true,
 }: Props) {
-  const visual = frameVisual(frame)
+  const def = frame ? FRAME_BY_ID[frame] : undefined
   const initial = name.trim().charAt(0).toUpperCase() || '?'
 
-  // Cerceveli + yeterli boyut -> premium SVG cerceve
-  if (visual && size >= 40) {
+  // Cerceveli + yeterli boyut -> SoberFrame (halka + animasyon)
+  if (def && size >= 32) {
     return (
-      <PremiumFrame
-        rarity={visual.rarity}
-        theme={visual.theme}
-        src={src}
-        name={name}
+      <SoberFrame
+        accent={def.accent}
+        motion={animated ? def.motion : 'static'}
         size={size}
-        animated={animated}
-        className={className}
+        src={src ?? undefined}
+        initial={initial}
+        className={`avf-sober ${className}`.trim()}
       />
     )
   }
 
   // Kucuk / cercevesiz -> sade dairesel avatar (cerceveliyse ince rarity halkasi)
-  const ring = visual ? FRAME_RARITY_COLOR[visual.rarity] : undefined
+  const ring = def ? FRAME_RARITY_COLOR[def.rarity] : undefined
   return (
     <span
       className={`avf-simple ${className}`.trim()}

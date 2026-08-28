@@ -2,6 +2,8 @@
 // [data-frame="slug"] ile. Burada yalnizca meta: id/slug, ad, nadirlik ve galeri grubu.
 // Nadirlik yukseldikce gorsel karmasiklik + animasyon kalitesi artar.
 
+import type { SoberMotion } from './SoberFrame'
+
 export type FrameRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
 export type FrameGroup = 'rare' | 'epic' | 'legendary' | 'mythic' | 'prestige' | 'tavla' | 'achievement'
 
@@ -10,6 +12,10 @@ export interface AvatarFrameDef {
   name: string
   rarity: FrameRarity // renk aksani (gri yok; en dusuk rare)
   group: FrameGroup // galeri gruplamasi
+  /** SoberFrame animasyon anahtari (AvatarFrame -> SoberFrame ile cizer) */
+  motion: SoberMotion
+  /** halka rengi (hex) */
+  accent: string
   /** Magazadan satin alinamaz; basari/turnuva ile kazanilir */
   earned?: boolean
 }
@@ -47,38 +53,15 @@ export const FRAME_GROUP_ORDER: FrameGroup[] = [
   'rare', 'epic', 'legendary', 'mythic', 'prestige', 'tavla', 'achievement',
 ]
 
+// Yeni sade cerceve seti: SoberFrame (CSS halka) + tek renk Safir; animasyona gore ayrisir.
+// Eski 24 cerceve + PremiumFrame sistemi kaldirildi (kullanicinin secimi).
+const SAPPHIRE = '#2563EB'
 export const AVATAR_FRAMES: AvatarFrameDef[] = [
-  // --- Nadir ---
-  { id: 'neon-pulse', name: 'Neon Pulse', rarity: 'rare', group: 'rare' },
-  // --- Epik ---
-  { id: 'purple-vortex', name: 'Purple Vortex', rarity: 'epic', group: 'epic' },
-  { id: 'ice-crown', name: 'Ice Crown', rarity: 'epic', group: 'epic' },
-  { id: 'electric', name: 'Electric', rarity: 'epic', group: 'epic' },
-  { id: 'cyberpunk', name: 'Cyberpunk', rarity: 'epic', group: 'epic' },
-  // --- Efsanevi ---
-  { id: 'royal-gold', name: 'Royal Gold', rarity: 'legendary', group: 'legendary' },
-  { id: 'inferno', name: 'Inferno', rarity: 'legendary', group: 'legendary' },
-  { id: 'diamond', name: 'Diamond', rarity: 'legendary', group: 'legendary' },
-  { id: 'emerald', name: 'Emerald', rarity: 'legendary', group: 'legendary' },
-  { id: 'ruby', name: 'Ruby', rarity: 'legendary', group: 'legendary' },
-  // --- Mitik ---
-  { id: 'black-hole', name: 'Black Hole', rarity: 'mythic', group: 'mythic' },
-  { id: 'galaxy', name: 'Galaxy', rarity: 'mythic', group: 'mythic' },
-  { id: 'phoenix', name: 'Phoenix', rarity: 'mythic', group: 'mythic' },
-  { id: 'dragon', name: 'Dragon', rarity: 'mythic', group: 'mythic' },
-  { id: 'thunder-god', name: 'Thunder God', rarity: 'mythic', group: 'mythic' },
-  // --- Prestij / Ozel ---
-  { id: 'vip', name: 'VIP', rarity: 'legendary', group: 'prestige' },
-  { id: 'champion', name: 'Champion', rarity: 'legendary', group: 'prestige', earned: true },
-  { id: 'grandmaster', name: 'Grandmaster', rarity: 'mythic', group: 'prestige' },
-  // --- Tavlaya Ozel ---
-  { id: 'dice-master', name: 'Dice Master', rarity: 'epic', group: 'tavla' },
-  { id: 'backgammon-king', name: 'Backgammon King', rarity: 'legendary', group: 'tavla' },
-  // --- Basari (kazanilir) ---
-  { id: 'tournament-champion', name: 'Tournament Champion', rarity: 'mythic', group: 'achievement', earned: true },
-  { id: 'top-100', name: 'Top 100', rarity: 'legendary', group: 'achievement', earned: true },
-  { id: '1000-wins', name: '1000 Wins', rarity: 'legendary', group: 'achievement', earned: true },
-  { id: 'season-champion', name: 'Season Champion', rarity: 'mythic', group: 'achievement', earned: true },
+  { id: 'sapphire-pulse', name: 'Sapphire Pulse', rarity: 'rare', group: 'rare', motion: 'pulse', accent: SAPPHIRE },
+  { id: 'sapphire-heartbeat', name: 'Sapphire Heartbeat', rarity: 'rare', group: 'rare', motion: 'heartbeat', accent: SAPPHIRE },
+  { id: 'sapphire-glow', name: 'Sapphire Glow', rarity: 'epic', group: 'epic', motion: 'glowPulse', accent: SAPPHIRE },
+  { id: 'sapphire-pendulum', name: 'Sapphire Pendulum', rarity: 'epic', group: 'epic', motion: 'pendulum', accent: SAPPHIRE },
+  { id: 'sapphire-neon', name: 'Sapphire Neon', rarity: 'legendary', group: 'legendary', motion: 'neonPulse', accent: SAPPHIRE },
 ]
 
 export const FRAME_BY_ID: Record<string, AvatarFrameDef> = Object.fromEntries(
