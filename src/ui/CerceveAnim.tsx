@@ -168,11 +168,14 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
                   title="Beğendiysen tıkla → işaretle"
                 >
                   <div className="ca-stage" style={{ height: size + 12 }}>
-                    <span className="ca-tick" aria-hidden="true">✓</span>
                     <SoberFrame accent={ROSE} motion={motion} size={size} />
                   </div>
                   <div className="ca-name">{name}</div>
                   <div className="ca-note">{motion}</div>
+                  <span className="ca-tick" aria-hidden="true">
+                    <span className="ca-tickbox">✓</span>
+                    {sel.has(motion) ? 'Seçildi' : 'Seç'}
+                  </span>
                 </button>
               ))}
             </div>
