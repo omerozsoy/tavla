@@ -8,7 +8,7 @@ class MatchResult extends Model
 {
     protected $fillable = [
         'user_id', 'won', 'opponent_rating', 'opponent_name', 'opponent_pr', 'rating_before', 'rating_after', 'delta',
-        'match_length', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'log',
+        'match_length', 'match_type', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'log',
     ];
 
     protected $casts = [

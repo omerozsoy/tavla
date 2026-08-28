@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { myStats, myMatches, myAnalytics, type MyStats, type MyMatch, type Analytics } from '../api'
+import {
+  myStats, myMatches, myAnalytics, performanceStats,
+  type MyStats, type MyMatch, type Analytics, type PerformanceStats, type MedianFilter,
+} from '../api'
 import AvatarFrame from './AvatarFrame'
 import { DivisionChip, BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
@@ -15,13 +18,21 @@ interface Props {
   onClose: () => void
 }
 
+// Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
+const MED_ORDER = ['coin', '1', '3', '5', '7'] as const
+const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
+
 export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
-  const { t } = useT()
+  const { t, lang } = useT()
   useEscape(onClose)
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
   const [matches, setMatches] = useState<MyMatch[] | null>(null)
   const [an, setAn] = useState<Analytics | null>(null)
+  // Performans istatistikleri (Medyan Hata Orani + WXP). Filtre degisince median yeniden ceker.
+  const [perf, setPerf] = useState<PerformanceStats | null>(null)
+  const [perfErr, setPerfErr] = useState(false)
+  const [medFilter, setMedFilter] = useState<MedianFilter>('all')
 
   useEffect(() => {
     let alive = true
@@ -38,8 +49,28 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
       alive = false
     }
   }, [])
+
+  // Medyan Hata Orani + WXP: filtre degistikce median yeniden hesaplanir (cache'li endpoint).
+  useEffect(() => {
+    let alive = true
+    performanceStats(medFilter)
+      .then((p) => {
+        if (alive) {
+          setPerf(p)
+          setPerfErr(false)
+        }
+      })
+      .catch(() => alive && setPerfErr(true))
+    return () => {
+      alive = false
+    }
+  }, [medFilter])
+
   // Maç uzunlugu etiketi: 1 -> "Jeton", digerleri -> "NS"
   const lenLabel = (n: number) => (n === 1 ? t('an.jeton') : `${n}S`)
+  // Kategori etiketi (i18n): coin -> "Jeton", digerleri -> "NS"
+  const catLabel = (k: string) => (k === 'coin' ? t('an.jeton') : `${k}S`)
+  const fmtNum = (n: number) => n.toLocaleString(lang)
 
   const u = data?.user
   const games = u?.games_played ?? 0
@@ -135,6 +166,90 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
 
             <BadgeList ids={u?.badges} />
 
+            {/* ===== Performans kartlari: Medyan Hata Orani + WXP ===== */}
+            <div className="perf-cards">
+              {/* Medyan Hata Orani */}
+              <div className="perf-card">
+                <div className="perf-card-head">
+                  <span className="perf-card-title">
+                    <Icon name="alert" size={16} /> {t('med.title')}
+                  </span>
+                  <span className="perf-card-sub">{t('med.lowGood')}</span>
+                </div>
+                <div className="perf-filters" role="tablist" aria-label={t('med.title')}>
+                  {MED_FILTERS.map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      role="tab"
+                      aria-selected={medFilter === f}
+                      className={`perf-filter${medFilter === f ? ' active' : ''}`}
+                      onClick={() => setMedFilter(f)}
+                    >
+                      {t(`med.filter.${f}`)}
+                    </button>
+                  ))}
+                </div>
+                {perfErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !perf ? (
+                  <div aria-busy="true">
+                    <Skeleton w="100%" h={90} r={8} />
+                  </div>
+                ) : (
+                  <BarChart
+                    invert
+                    threshold={8}
+                    items={MED_ORDER.map((k) => {
+                      const c = perf.median_error_rate.categories[k]
+                      const n = c?.sample_count ?? 0
+                      return {
+                        label: catLabel(k),
+                        value: c?.median_pr ?? null,
+                        sub: n > 0 ? t('med.matches', { n }) : undefined,
+                      }
+                    })}
+                  />
+                )}
+              </div>
+
+              {/* WXP — Kazanma Deneyim Puanlari */}
+              <div className="perf-card wxp-card">
+                <div className="perf-card-head">
+                  <span className="perf-card-title">
+                    <Icon name="star" size={16} /> {t('wxp.title')}
+                  </span>
+                </div>
+                {perfErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !perf ? (
+                  <div aria-busy="true">
+                    <Skeleton w={120} h={40} r={8} style={{ display: 'block', margin: '4px auto' }} />
+                    <Skeleton w="100%" h={54} r={8} style={{ display: 'block', marginTop: 12 }} />
+                  </div>
+                ) : (
+                  <>
+                    <div className="wxp-total">{fmtNum(perf.wxp.total)}</div>
+                    <div className="wxp-boxes">
+                      <div className="wxp-box">
+                        <strong className="good">{fmtNum(perf.wxp.wins)}</strong>
+                        <span>{t('wxp.g')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong className="bad">{fmtNum(perf.wxp.losses)}</strong>
+                        <span>{t('wxp.m')}</span>
+                      </div>
+                      <div className="wxp-box">
+                        <strong>{perf.wxp.total_matches > 0 ? `%${Math.round(perf.wxp.win_rate)}` : '–'}</strong>
+                        <span>{t('wxp.winRate')}</span>
+                      </div>
+                    </div>
+                    <div className="wxp-legend">{t('wxp.legend')}</div>
+                  </>
+                )}
+              </div>
+            </div>
+
             {/* Analiz grafikleri */}
             {an && (
               <div className="an-charts">
@@ -154,10 +269,6 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                     <LineChart data={an.coins_history} color="#e6b422" />
                   </div>
                 )}
-                <div className="an-wxp">
-                  <span className="an-wxp-lbl">{t('an.wxp')}</span>
-                  <span className="an-wxp-val">{an.wxp}</span>
-                </div>
                 {an.by_length.length > 0 && (
                   <div className="an-chart">
                     <div className="an-chart-head">
@@ -171,21 +282,6 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                       }))}
                       suffix="%"
                       threshold={50}
-                    />
-                  </div>
-                )}
-                {an.by_length.some((b) => b.avg_pr != null) && (
-                  <div className="an-chart">
-                    <div className="an-chart-head">
-                      <Icon name="alert" size={14} /> {t('an.prByLen')}
-                    </div>
-                    <BarChart
-                      items={an.by_length.map((b) => ({
-                        label: lenLabel(b.length),
-                        value: b.avg_pr,
-                      }))}
-                      threshold={8}
-                      invert
                     />
                   </div>
                 )}
