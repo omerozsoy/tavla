@@ -21,13 +21,20 @@ function mulberry32(seed: number) {
 
 // Motorla GERCEK (legal) tek oyunluk mac uret: her tur zar at, legal tam hamlelerden
 // birini sec, uygula; biri tum taslarini toplayana kadar. Kayitlar MoveLogEntry seklinde.
-function playRealGame(seed: number): MoveLogEntry[] {
+function playRealGame(
+  seed: number,
+  cube?: { atSeq: number; response: 'take' | 'drop' },
+): MoveLogEntry[] {
   const rng = mulberry32(seed)
   const roll = (): number[] => {
     const a = 1 + Math.floor(rng() * 6)
     const b = 1 + Math.floor(rng() * 6)
     return a === b ? [a, a, a, a] : [a, b]
   }
+  const cubeEntry = (player: Player, chosen: 'double' | 'take' | 'drop', pos: GameState, seq: number): MoveLogEntry => ({
+    notation: '', best: '', loss: 0, player, pos, seq,
+    cube: { win: 0, equity: 0, recommended: chosen, chosen, correct: true },
+  })
   const entries: MoveLogEntry[] = []
   let s: GameState = initialState() // turn = white
   let mover: Player = 'white'
@@ -36,6 +43,12 @@ function playRealGame(seed: number): MoveLogEntry[] {
     const dice = roll()
     s = { ...cloneState(s), turn: mover, dice, diceUsed: dice.map(() => false) }
     const before = cloneState(s)
+    // Kup enjeksiyonu: beyaz tur basinda katlar, siyah cevaplar (test icin iki tarafli kayit).
+    if (cube && mover === 'white' && seq === cube.atSeq) {
+      entries.push(cubeEntry('white', 'double', before, seq))
+      entries.push(cubeEntry('black', cube.response, before, seq))
+      if (cube.response === 'drop') break // siyah pas -> beyaz kazanir, oyun biter
+    }
     const terminals = maximalTerminals(s)
     let played: Step[] = []
     let after = cloneState(s)
@@ -121,5 +134,52 @@ describe('buildMat — gercek maci .mat olarak uret + dogrula', () => {
     const oc = gameOutcome(replay)
     expect(oc).not.toBeNull()
     expect(oc!.winner).toBe(mover) // son hamleyi oynayan kazanir (tas topladi)
+  })
+
+  it('kup: cift tarafli double+take ayni satirda, deger 2->4 ilerler', () => {
+    const init = initialState()
+    const mid = cloneState(init)
+    mid.points[23] = 1 // acilis dizilimi olmasin (isOpening false)
+    const c = (player: Player, chosen: 'double' | 'take' | 'drop'): MoveLogEntry => ({
+      notation: '', best: '', loss: 0, player, pos: mid, seq: 1,
+      cube: { win: 0, equity: 0, recommended: chosen, chosen, correct: true },
+    })
+    const log: MoveLogEntry[] = [
+      { notation: '8/5 6/5', best: '', loss: 0, player: 'white', pos: init, dice: [3, 1], playedSteps: [], seq: 0 },
+      c('white', 'double'), c('black', 'take'), // cube -> 2
+      c('black', 'double'), c('white', 'take'), // cube -> 4
+    ]
+    const mat = buildMat(log, { matchLength: 7, whiteName: 'W', blackName: 'B' })
+    expect(mat).toMatch(/Doubles => 2\s+Takes/) // beyaz teklif + siyah kabul ayni satir
+    expect(mat).toContain('Doubles => 4') // yeniden katlama dogru degeri gosterir
+  })
+
+  it('kup drop: teklif eden kazanir, puan mac uzunluguna kirpilir', () => {
+    const init = initialState()
+    const mid = cloneState(init)
+    mid.points[23] = 1
+    const log: MoveLogEntry[] = [
+      { notation: '8/5 6/5', best: '', loss: 0, player: 'white', pos: init, dice: [3, 1], playedSteps: [], seq: 0 },
+      { notation: '', best: '', loss: 0, player: 'white', pos: mid, seq: 1, cube: { win: 0, equity: 0, recommended: 'double', chosen: 'double', correct: true } },
+      { notation: '', best: '', loss: 0, player: 'black', pos: mid, seq: 1, cube: { win: 0, equity: 0, recommended: 'drop', chosen: 'drop', correct: true } },
+    ]
+    const mat = buildMat(log, { matchLength: 1, whiteName: 'W', blackName: 'B' })
+    expect(mat).toContain('Drops')
+    expect(mat).toMatch(/ {6}Wins 1 point/) // beyaz (sol sutun) kazanir, 1 puana kirpili
+  })
+
+  it('kup take: gercek oyuna double+take enjekte edilir, notasyon+kup tutarli', () => {
+    const log = playRealGame(777, { atSeq: 6, response: 'take' })
+    const mat = buildMat(log, { matchLength: 5, whiteName: 'Omer', blackName: 'GnuBot' })
+    expect(mat).toMatch(/Doubles => 2\s+Takes/)
+    // GNU Backgammon 1.08 ile import edildi: "Cube: 2", 0 hata (bkz. mat-export-gnubg hafiza).
+    for (const e of log) {
+      if (!e.player || !e.pos) continue
+      const viaNotation = cloneState(e.pos)
+      for (const st of parseNotation(e.notation, e.player)) applyStep(viaNotation, st, e.player)
+      const viaSteps = cloneState(e.pos)
+      for (const st of e.playedSteps ?? []) applyStep(viaSteps, st, e.player)
+      expect(boardKey(viaNotation)).toBe(boardKey(viaSteps))
+    }
   })
 })

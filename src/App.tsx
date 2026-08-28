@@ -1098,10 +1098,30 @@ export default function App() {
     ])
   }
 
+  // Rakip/bot kup eylemini (analiz verisi olmadan) .mat icin logla. Insanin karari
+  // logCubeDecision ile (tavsiye/dogruluk dahil) loglanir; bu yalnizca eylem + oyuncu.
+  // Online'da rakibin karari kendi istemcisinde loglanip senkronla gelir -> burada sadece
+  // pvb (bot) ve yerel pvp'de karsi taraf icin cagrilir (cift loglama olmaz).
+  function logCubeAction(chosen: 'double' | 'take' | 'drop', player: Player) {
+    setMatchLog((log) => [
+      ...log,
+      {
+        notation: '',
+        best: '',
+        loss: 0,
+        player,
+        pos: turnStart,
+        seq: turnsPlayed,
+        cube: { win: 0, equity: 0, recommended: chosen, chosen, correct: true },
+      },
+    ])
+  }
+
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
     const humanColor: Player = online ? myColor : 'white'
     if (player === humanColor) logCubeDecision('double')
+    else logCubeAction('double', player)
     setCubePending(player)
     setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
   }
@@ -1111,6 +1131,7 @@ export default function App() {
     const taker = opponent(doubler)
     const humanColor: Player = online ? myColor : 'white'
     if (taker === humanColor) logCubeDecision('take')
+    else logCubeAction('take', taker)
     setMatch((m) => ({ ...m, cube: { value: m.cube.value * 2, owner: taker } }))
     setCubePending(null)
     setMessage(t('msg.took', { name: pName(taker), doubler: pName(doubler) }))
@@ -1120,6 +1141,7 @@ export default function App() {
     const doubler = cubePending
     const humanColor: Player = online ? myColor : 'white'
     if (opponent(doubler) === humanColor) logCubeDecision('drop')
+    else logCubeAction('drop', opponent(doubler))
     const points = match.cube.value
     setMatch((m) => scoreGame(m, doubler, points))
     setGameEnd({ winner: doubler, points, mult: 1, dropped: true })
@@ -1174,6 +1196,7 @@ export default function App() {
             const probs = await neuralRef.current.evalPosition(turnStart, BOT_PLAYER)
             const w = probs[0] + probs[1] + probs[2]
             if (!cancelled && w >= 0.7 && w <= 0.97) {
+              logCubeAction('double', BOT_PLAYER) // botun kup teklifini .mat icin logla
               setCubePending(BOT_PLAYER)
               setMessage(t('msg.doubledAsk', { value: match.cube.value * 2 }))
               return
