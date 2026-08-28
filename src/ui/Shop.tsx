@@ -10,7 +10,21 @@ import {
   FRAME_GROUP_LABEL,
   framePrice,
   type FrameGroup,
+  type AvatarFrameDef,
 } from './avatarFrames'
+
+// Rarity grubu icindeki cerceveleri animasyona gore alt-grupla (her animasyonun 5 rengi bir arada).
+// AVATAR_FRAMES zaten animasyon sirasinda (her anim'in 5 rengi ardisik) -> ardisik ayni motion'u birlestir.
+function groupByMotion(items: AvatarFrameDef[]): { motion: string; name: string; items: AvatarFrameDef[] }[] {
+  const out: { motion: string; name: string; items: AvatarFrameDef[] }[] = []
+  for (const f of items) {
+    const name = f.name.split(' · ')[0]
+    const last = out[out.length - 1]
+    if (last && last.motion === f.motion) last.items.push(f)
+    else out.push({ motion: f.motion, name, items: [f] })
+  }
+  return out
+}
 
 // Galeri ile ayni grup renkleri
 const GROUP_COLOR: Record<FrameGroup, string> = {
@@ -149,50 +163,56 @@ export default function Shop({
               <div className="rarity-title">
                 <span className="rarity-dot" /> {t(FRAME_GROUP_LABEL[group])}
               </div>
-              <div className="shop-grid">
-                {items.map((f) => {
-                  const sid = 'frame.' + f.id
-                  const owned = owns(sid)
-                  const equipped = currentFrame === f.id
-                  const price = framePrice(f)
-                  return (
-                    <div
-                      key={f.id}
-                      className="shop-item"
-                      style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
-                    >
-                      <AvatarFrame src={avatar} frame={f.id} size={88} name={name} />
-                      <div className="shop-name">{f.name}</div>
-                      {owned ? (
-                        <button
-                          className={`shop-btn ${equipped ? 'active' : ''}`}
-                          disabled={equipped}
-                          onClick={() => equip(f.id)}
+              {groupByMotion(items).map((sub) => (
+                <div className="anim-group" key={sub.motion}>
+                  <div className="anim-title">{sub.name}</div>
+                  <div className="shop-grid">
+                    {sub.items.map((f) => {
+                      const sid = 'frame.' + f.id
+                      const owned = owns(sid)
+                      const equipped = currentFrame === f.id
+                      const price = framePrice(f)
+                      const colorName = f.name.split(' · ')[1] ?? f.name
+                      return (
+                        <div
+                          key={f.id}
+                          className="shop-item"
+                          style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
                         >
-                          {equipped ? t('shop.equipped') : t('shop.equip')}
-                        </button>
-                      ) : price != null ? (
-                        <>
-                          <button
-                            className={`shop-btn buy${coins < price ? ' cant' : ''}`}
-                            disabled={busy === sid || coins < price}
-                            onClick={() => buy(sid)}
-                          >
-                            <Icon name="coin" size={14} /> {price}
-                          </button>
-                          {coins < price && (
-                            <div className="shop-need">{t('shop.need', { n: price - coins })}</div>
+                          <AvatarFrame src={avatar} frame={f.id} size={88} name={name} />
+                          <div className="shop-name">{colorName}</div>
+                          {owned ? (
+                            <button
+                              className={`shop-btn ${equipped ? 'active' : ''}`}
+                              disabled={equipped}
+                              onClick={() => equip(f.id)}
+                            >
+                              {equipped ? t('shop.equipped') : t('shop.equip')}
+                            </button>
+                          ) : price != null ? (
+                            <>
+                              <button
+                                className={`shop-btn buy${coins < price ? ' cant' : ''}`}
+                                disabled={busy === sid || coins < price}
+                                onClick={() => buy(sid)}
+                              >
+                                <Icon name="coin" size={14} /> {price}
+                              </button>
+                              {coins < price && (
+                                <div className="shop-need">{t('shop.need', { n: price - coins })}</div>
+                              )}
+                            </>
+                          ) : (
+                            <span className="shop-earn">
+                              <Icon name="trophy" size={12} /> {t('frames.earned')}
+                            </span>
                           )}
-                        </>
-                      ) : (
-                        <span className="shop-earn">
-                          <Icon name="trophy" size={12} /> {t('frames.earned')}
-                        </span>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
           )
         })}
