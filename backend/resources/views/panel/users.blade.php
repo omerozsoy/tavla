@@ -23,7 +23,14 @@
               @if($u->banned_at)<span class="tag">yasaklı</span>@endif
               @if($u->plan_active !== 'free')<span class="tag">{{ $u->plan_active }}</span>@endif
             </td>
-            <td class="muted">{{ $u->email }}</td>
+            <td class="muted">
+              {{ $u->email }}<br>
+              @if($u->email_verified_at)
+                <span class="tag" style="background:#1f8a4c;color:#fff" title="Doğrulandı: {{ $u->email_verified_at->format('d.m.Y H:i') }}">✓ doğrulandı</span>
+              @else
+                <span class="tag" style="background:#c0392b;color:#fff">✗ doğrulanmadı</span>
+              @endif
+            </td>
             <td>
               <div class="tag" style="margin-bottom:4px" title="Mevcut ünvan (rating'e göre)">
                 {{ \App\Http\Controllers\PanelController::levelLabel((int)($u->rating ?? 1500)) }}
@@ -60,6 +67,10 @@
               <form method="post" action="/panel/users/{{ $u->id }}">
                 @csrf<input type="hidden" name="action" value="admin">
                 <button class="btn sm ghost">{{ $u->is_admin ? 'Yetkiyi Al' : 'Yönetici Yap' }}</button>
+              </form>
+              <form method="post" action="/panel/users/{{ $u->id }}">
+                @csrf<input type="hidden" name="action" value="verify">
+                <button class="btn sm ghost">{{ $u->email_verified_at ? 'Doğrulamayı Kaldır' : 'E-postayı Doğrula' }}</button>
               </form>
               <form method="post" action="/panel/users/{{ $u->id }}" class="inline">
                 @csrf<input type="hidden" name="action" value="plan">

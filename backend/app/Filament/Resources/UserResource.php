@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class UserResource extends Resource
 {
@@ -72,6 +73,9 @@ class UserResource extends Resource
                 Forms\Components\DateTimePicker::make('plan_until')->label('Plan bitişi'),
                 Forms\Components\Toggle::make('is_admin')->label('Yönetici'),
                 Forms\Components\DateTimePicker::make('banned_at')->label('Yasak tarihi (boş = aktif)'),
+                Forms\Components\DateTimePicker::make('email_verified_at')
+                    ->label('E-posta doğrulama (boş = doğrulanmadı)')
+                    ->helperText('Doldurulursa doğrulanmış sayılır; temizlenirse doğrulama kalkar'),
             ]),
         ]);
     }
@@ -84,6 +88,12 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('nickname')->label('Takma ad')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('email')->label('E-posta')->searchable()->toggleable(),
+                Tables\Columns\IconColumn::make('email_verified')->label('E-posta ✓')
+                    ->boolean()->trueColor('success')->falseColor('danger')
+                    ->getStateUsing(fn ($record) => $record->email_verified_at !== null)
+                    ->tooltip(fn ($record) => $record->email_verified_at
+                        ? 'Doğrulandı: '.$record->email_verified_at->format('d.m.Y H:i')
+                        : 'Doğrulanmadı'),
                 Tables\Columns\TextColumn::make('rating')->label('Puan')->sortable(),
                 Tables\Columns\TextColumn::make('rating')->label('Ünvan')
                     ->formatStateUsing(fn ($state) => PanelController::levelLabel((int) ($state ?: 1500)))
@@ -106,9 +116,25 @@ class UserResource extends Resource
                     'free' => 'Ücretsiz', 'star' => 'Premium',
                 ]),
                 Tables\Filters\TernaryFilter::make('is_admin')->label('Yönetici'),
+                Tables\Filters\TernaryFilter::make('email_verified')->label('E-posta doğrulama')
+                    ->placeholder('Hepsi')->trueLabel('Doğrulanmış')->falseLabel('Doğrulanmamış')
+                    ->queries(
+                        true: fn (Builder $q) => $q->whereNotNull('email_verified_at'),
+                        false: fn (Builder $q) => $q->whereNull('email_verified_at'),
+                        blank: fn (Builder $q) => $q,
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\Action::make('verifyEmail')
+                    ->label(fn ($record) => $record->email_verified_at ? 'Doğrulamayı Kaldır' : 'E-postayı Doğrula')
+                    ->icon('heroicon-m-envelope')
+                    ->color(fn ($record) => $record->email_verified_at ? 'gray' : 'success')
+                    ->requiresConfirmation()
+                    ->action(function ($record) {
+                        $record->email_verified_at = $record->email_verified_at ? null : now();
+                        $record->save();
+                    }),
                 Tables\Actions\Action::make('ban')
                     ->label(fn ($record) => $record->banned_at ? 'Yasağı Kaldır' : 'Yasakla')
                     ->icon('heroicon-m-no-symbol')
