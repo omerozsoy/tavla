@@ -391,34 +391,11 @@ class AuthController extends Controller
 
     // Kazanilan avatar cerceveleri: 1000 galibiyet + top-100 (rating siralamasi).
     // unlocks'a 'frame.<id>' ekler (magaza ile ayni mekanizma) + bildirim gonderir.
+    // Kazanilan avatar cerceveleri KALDIRILDI (eski frame sistemi temizlendi). No-op birakildi
+    // ki cagiranlar kirilmasin ve orphan 'frame.*' unlock uretilmesin.
     private function awardFrames(User $user): void
     {
-        $unlocks = $user->unlocks ?? [];
-        $grant = [];
-        if (($user->wins ?? 0) >= 1000 && ! in_array('frame.1000-wins', $unlocks, true)) {
-            $grant['frame.1000-wins'] = ['1000 Galibiyet', 'trophy'];
-        }
-        if (! in_array('frame.top-100', $unlocks, true)) {
-            // Anlamli olmasi icin en az 100 aktif oyuncu; rating siralamasi ilk 100 ise ver
-            $active = User::where('games_played', '>', 0)->count();
-            if ($active >= 100) {
-                $rank = User::where('rating', '>', ($user->rating ?? 1500))->count() + 1;
-                if ($rank <= 100) {
-                    $grant['frame.top-100'] = ['Top 100', 'crown'];
-                }
-            }
-        }
-        if (empty($grant)) {
-            return;
-        }
-        foreach (array_keys($grant) as $fid) {
-            $unlocks[] = $fid;
-        }
-        $user->unlocks = array_values(array_unique($unlocks));
-        $user->save();
-        foreach ($grant as [$label, $icon]) {
-            \App\Models\Notification::notify($user->id, "Yeni çerçeve: {$label}", null, $icon);
-        }
+        unset($user);
     }
 
     // Liderlik tablosu: rating'e gore en iyi oyuncular (halka acik)

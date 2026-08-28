@@ -21,6 +21,12 @@
   object-fit: cover;
   z-index: 1;
 }
+.sf-ini {
+  display: grid; place-items: center;
+  background: radial-gradient(60% 55% at 50% 38%, #3b4a6b, #0d1120);
+  color: #c9d4e8; font-weight: 700; font-family: system-ui, sans-serif;
+  font-size: calc(var(--sf-size, 104px) * 0.4);
+}
 .sf-ring {
   position: absolute;
   inset: 0;

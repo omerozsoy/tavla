@@ -40,17 +40,14 @@ export interface SoberFrameProps {
   motion?: SoberMotion
   size?: number
   src?: string | null
+  /** foto yoksa merkeze yazilacak bas harf */
+  initial?: string
+  className?: string
 }
 
 const SWEEP = new Set<SoberMotion>(['sweep', 'sweepRev', 'sweepFast', 'dualSweep', 'trace', 'pulseSweep', 'glint', 'loading'])
 const SPARK_MULTI = new Set<SoberMotion>(['twinkle', 'sparkleBurst', 'rain', 'fireflies'])
 const SVG = new Set<SoberMotion>(['drawRing', 'dashSpin', 'dashFlow'])
-
-const AVA =
-  'data:image/svg+xml;utf8,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><defs><radialGradient id="g" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="#3b4a6b"/><stop offset="1" stop-color="#0d1120"/></radialGradient></defs><rect width="100" height="100" fill="url(#g)"/><circle cx="50" cy="40" r="17" fill="#c9d4e8"/><path d="M21 90c0-18 14-28 29-28s29 10 29 28z" fill="#c9d4e8"/></svg>`,
-  )
 
 export default function SoberFrame({
   rarity = 'rare',
@@ -58,6 +55,8 @@ export default function SoberFrame({
   motion = 'static',
   size = 104,
   src,
+  initial = '',
+  className = '',
 }: SoberFrameProps) {
   const style = {
     ['--sf-size']: `${size}px`,
@@ -71,7 +70,7 @@ export default function SoberFrame({
   } as CSSProperties
   const multiSpark = SPARK_MULTI.has(motion)
   return (
-    <span className={`sf ${accent ? '' : 'sf-r-' + rarity} sf-m-${motion}`} style={style} aria-hidden="true">
+    <span className={`sf ${accent ? '' : 'sf-r-' + rarity} sf-m-${motion} ${className}`.trim()} style={style} aria-hidden="true">
       <span className="sf-glow" />
       <span className="sf-ring" />
       {SWEEP.has(motion) && <span className="sf-sweep" />}
@@ -83,7 +82,11 @@ export default function SoberFrame({
       {(motion === 'sparkle' || multiSpark) && <span className="sf-spark sf-spark-1" />}
       {multiSpark && <span className="sf-spark sf-spark-2" />}
       {multiSpark && <span className="sf-spark sf-spark-3" />}
-      <img className="sf-avatar" src={src || AVA} alt="" draggable={false} />
+      {src ? (
+        <img className="sf-avatar" src={src} alt="" draggable={false} />
+      ) : (
+        <span className="sf-avatar sf-ini">{initial}</span>
+      )}
     </span>
   )
 }
