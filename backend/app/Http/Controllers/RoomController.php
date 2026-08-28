@@ -225,6 +225,12 @@ class RoomController extends Controller
         $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;
         $loserId = $winnerSlot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
 
+        // Kazanan belli -> mac bitti: odayi 'finished' isaretle (Canli Maclar'da gorunmesin;
+        // client status gonderemese bile guvenlik agi).
+        if ($room->status !== 'finished') {
+            Room::where('code', $code)->update(['status' => 'finished']);
+        }
+
         // ATOMIK: "settled" iddiasi + coin transferi TEK transaction, kullanicilar kilitli.
         // Ayni oyuncunun es zamanli birden fazla oda cozumunde net coin uretimi/kaybi engellenir.
         $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake) {

@@ -1779,7 +1779,9 @@ export default function App() {
         // Analiz hamleleri: yuk boyutunu sinirla (son 80 hamle senkronlanir)
         moves: matchLog.slice(-80),
       }
-      updateRoom(roomCode, snap)
+      // Mac bittiyse odayi 'finished' isaretle -> Canli Maclar'da gorunmesin (bug: bitmis
+      // mac status='playing' kalip 3dk listede duruyordu).
+      updateRoom(roomCode, snap, matchOver ? 'finished' : undefined)
         .then((r) => {
           appliedVersionRef.current = r.version
         })
