@@ -11,26 +11,48 @@ class ShopController extends Controller
 {
     // Satin alinabilir kozmetikler ve coin fiyatlari (sunucu otoritesi).
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
-    private const CATALOG = [
-        // Premium tahta temalari
+    // Premium tahta temalari
+    private const THEMES = [
         'theme.gold' => 500,
         'theme.neon' => 800,
         'theme.ocean' => 300,
         'theme.sunset' => 600,
-        // Avatar cerceveleri (yeni sade Safir seti; eski tum frame.* kaldirildi).
-        // Fiyatlar frontend avatarFrames.ts FRAME_RARITY_PRICE ile birebir (rare 500 / epic 1000 / legendary 2000).
-        'frame.sapphire-pulse' => 500,
-        'frame.sapphire-heartbeat' => 500,
-        'frame.sapphire-glow' => 1000,
-        'frame.sapphire-pendulum' => 1000,
-        'frame.sapphire-neon' => 2000,
     ];
+
+    // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile birebir, 42 adet).
+    private const FRAME_MOTIONS = [
+        'pulse' => 'rare', 'heartbeat' => 'rare', 'glowPulse' => 'rare', 'pulseFast' => 'rare', 'levitate' => 'rare',
+        'bounce' => 'rare', 'jelly' => 'rare', 'gelatine' => 'rare', 'heartScale' => 'rare', 'vibrate' => 'rare',
+        'pop' => 'rare', 'sway' => 'rare', 'wobble' => 'rare', 'rock' => 'rare',
+        'tada' => 'epic', 'circleMove' => 'epic', 'pendulum' => 'epic', 'swing' => 'epic', 'expand' => 'epic',
+        'seesaw' => 'epic', 'sweep' => 'epic', 'sweepFast' => 'epic', 'glint' => 'epic', 'bright' => 'epic',
+        'shineOnce' => 'epic', 'gradSpin' => 'epic', 'ripple' => 'epic', 'radar' => 'epic', 'auraPulse' => 'epic',
+        'flip3d' => 'legendary', 'hueCycle' => 'legendary', 'rainbow' => 'legendary', 'invert' => 'legendary',
+        'dualSweep' => 'legendary', 'conicRainbow' => 'legendary', 'rain' => 'legendary', 'sparkleBurst' => 'legendary',
+        'dualOrbit' => 'legendary', 'dualRipple' => 'legendary', 'neonPulse' => 'legendary', 'pulseHalo' => 'legendary', 'sonar' => 'legendary',
+    ];
+
+    private const FRAME_COLORS = ['rose', 'sapphire', 'emerald', 'gold', 'amethyst'];
+    private const RARITY_PRICE = ['rare' => 500, 'epic' => 1000, 'legendary' => 2000];
+
+    // Tam katalog: temalar + 42 animasyon x 5 renk = 210 cerceve (id: 'frame.<motion>-<color>').
+    private function catalog(): array
+    {
+        $c = self::THEMES;
+        foreach (self::FRAME_MOTIONS as $motion => $rarity) {
+            foreach (self::FRAME_COLORS as $ck) {
+                $c["frame.$motion-$ck"] = self::RARITY_PRICE[$rarity];
+            }
+        }
+
+        return $c;
+    }
 
     public function index(Request $request)
     {
         $u = $request->user();
         return response()->json([
-            'catalog' => self::CATALOG,
+            'catalog' => $this->catalog(),
             'unlocks' => $u->unlocks ?? [],
             'avatar_frame' => $u->avatar_frame,
             'coins' => $u->coins ?? 0,
@@ -41,10 +63,11 @@ class ShopController extends Controller
     {
         $data = $request->validate(['id' => ['required', 'string', 'max:40']]);
         $id = $data['id'];
-        if (! array_key_exists($id, self::CATALOG)) {
+        $catalog = $this->catalog();
+        if (! array_key_exists($id, $catalog)) {
             return $this->fail('Ürün bulunamadı.', 404);
         }
-        $price = self::CATALOG[$id];
+        $price = $catalog[$id];
 
         // ATOMIK: satir kilidi ile oku-kontrol-yaz (cift satin alma / eksi bakiye yaris korumasi)
         $r = DB::transaction(function () use ($request, $id, $price) {

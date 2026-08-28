@@ -53,16 +53,74 @@ export const FRAME_GROUP_ORDER: FrameGroup[] = [
   'rare', 'epic', 'legendary', 'mythic', 'prestige', 'tavla', 'achievement',
 ]
 
-// Yeni sade cerceve seti: SoberFrame (CSS halka) + tek renk Safir; animasyona gore ayrisir.
-// Eski 24 cerceve + PremiumFrame sistemi kaldirildi (kullanicinin secimi).
-const SAPPHIRE = '#2563EB'
-export const AVATAR_FRAMES: AvatarFrameDef[] = [
-  { id: 'sapphire-pulse', name: 'Sapphire Pulse', rarity: 'rare', group: 'rare', motion: 'pulse', accent: SAPPHIRE },
-  { id: 'sapphire-heartbeat', name: 'Sapphire Heartbeat', rarity: 'rare', group: 'rare', motion: 'heartbeat', accent: SAPPHIRE },
-  { id: 'sapphire-glow', name: 'Sapphire Glow', rarity: 'epic', group: 'epic', motion: 'glowPulse', accent: SAPPHIRE },
-  { id: 'sapphire-pendulum', name: 'Sapphire Pendulum', rarity: 'epic', group: 'epic', motion: 'pendulum', accent: SAPPHIRE },
-  { id: 'sapphire-neon', name: 'Sapphire Neon', rarity: 'legendary', group: 'legendary', motion: 'neonPulse', accent: SAPPHIRE },
+// Sade SoberFrame cerceveleri: 42 animasyon x 5 renk = 210 cerceve (generate).
+// Eski 24 cerceve + PremiumFrame sistemi kaldirildi.
+type AnimDef = { motion: SoberMotion; name: string; rarity: FrameRarity }
+const ANIMS: AnimDef[] = [
+  // --- Nadir (500) ---
+  { motion: 'pulse', name: 'Nabız', rarity: 'rare' },
+  { motion: 'heartbeat', name: 'Kalp Atışı', rarity: 'rare' },
+  { motion: 'glowPulse', name: 'Glow Nabız', rarity: 'rare' },
+  { motion: 'pulseFast', name: 'Hızlı Nabız', rarity: 'rare' },
+  { motion: 'levitate', name: 'Havalanma', rarity: 'rare' },
+  { motion: 'bounce', name: 'Zıplama', rarity: 'rare' },
+  { motion: 'jelly', name: 'Jöle', rarity: 'rare' },
+  { motion: 'gelatine', name: 'Jelatin', rarity: 'rare' },
+  { motion: 'heartScale', name: 'Kalp Ölçek', rarity: 'rare' },
+  { motion: 'vibrate', name: 'Titreşim', rarity: 'rare' },
+  { motion: 'pop', name: 'Pop', rarity: 'rare' },
+  { motion: 'sway', name: 'Sallanma', rarity: 'rare' },
+  { motion: 'wobble', name: 'Yalpa', rarity: 'rare' },
+  { motion: 'rock', name: 'Beşik', rarity: 'rare' },
+  // --- Epik (1000) ---
+  { motion: 'tada', name: 'Tada', rarity: 'epic' },
+  { motion: 'circleMove', name: 'Daire Gezinme', rarity: 'epic' },
+  { motion: 'pendulum', name: 'Sarkaç', rarity: 'epic' },
+  { motion: 'swing', name: 'Salınım', rarity: 'epic' },
+  { motion: 'expand', name: 'Genişleme', rarity: 'epic' },
+  { motion: 'seesaw', name: 'Tahterevalli', rarity: 'epic' },
+  { motion: 'sweep', name: 'Işık Turu', rarity: 'epic' },
+  { motion: 'sweepFast', name: 'Hızlı Tur', rarity: 'epic' },
+  { motion: 'glint', name: 'Işıltı', rarity: 'epic' },
+  { motion: 'bright', name: 'Parlaklık', rarity: 'epic' },
+  { motion: 'shineOnce', name: 'Parlama', rarity: 'epic' },
+  { motion: 'gradSpin', name: 'Dönen Gradient', rarity: 'epic' },
+  { motion: 'ripple', name: 'Dalga', rarity: 'epic' },
+  { motion: 'radar', name: 'Radar', rarity: 'epic' },
+  { motion: 'auraPulse', name: 'Aura Nabız', rarity: 'epic' },
+  // --- Efsanevi (2000) ---
+  { motion: 'flip3d', name: '3D Çevirme', rarity: 'legendary' },
+  { motion: 'hueCycle', name: 'Renk Döngüsü', rarity: 'legendary' },
+  { motion: 'rainbow', name: 'Gökkuşağı', rarity: 'legendary' },
+  { motion: 'invert', name: 'Ters', rarity: 'legendary' },
+  { motion: 'dualSweep', name: 'Çift Tur', rarity: 'legendary' },
+  { motion: 'conicRainbow', name: 'Konik Gökkuşağı', rarity: 'legendary' },
+  { motion: 'rain', name: 'Parıltı Yağmuru', rarity: 'legendary' },
+  { motion: 'sparkleBurst', name: 'Parıltı Patlaması', rarity: 'legendary' },
+  { motion: 'dualOrbit', name: 'Çift Yörünge', rarity: 'legendary' },
+  { motion: 'dualRipple', name: 'Çift Dalga', rarity: 'legendary' },
+  { motion: 'neonPulse', name: 'Neon Nabız', rarity: 'legendary' },
+  { motion: 'pulseHalo', name: 'Hale Nabız', rarity: 'legendary' },
+  { motion: 'sonar', name: 'Sonar', rarity: 'legendary' },
 ]
+// 5 renk (id anahtari + gorunen ad + hex). Backend id'leri ile birebir ayni: 'frame.<motion>-<key>'.
+export const FRAME_COLORS: { key: string; name: string; hex: string }[] = [
+  { key: 'rose', name: 'Rose', hex: '#B76E79' },
+  { key: 'sapphire', name: 'Safir', hex: '#2563EB' },
+  { key: 'emerald', name: 'Zümrüt', hex: '#059669' },
+  { key: 'gold', name: 'Altın', hex: '#B8862B' },
+  { key: 'amethyst', name: 'Menekşe', hex: '#8B5CF6' },
+]
+export const AVATAR_FRAMES: AvatarFrameDef[] = ANIMS.flatMap((a) =>
+  FRAME_COLORS.map((c) => ({
+    id: `${a.motion}-${c.key}`,
+    name: `${a.name} · ${c.name}`,
+    rarity: a.rarity,
+    group: a.rarity as FrameGroup,
+    motion: a.motion,
+    accent: c.hex,
+  })),
+)
 
 export const FRAME_BY_ID: Record<string, AvatarFrameDef> = Object.fromEntries(
   AVATAR_FRAMES.map((f) => [f.id, f]),
