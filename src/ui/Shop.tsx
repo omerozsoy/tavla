@@ -12,18 +12,10 @@ import {
   type FrameGroup,
   type AvatarFrameDef,
 } from './avatarFrames'
+import { RARITY_COLORS } from './rarityColors'
 
-// 5 kademe grup rengi (rarity ile birebir; galeri ile ayni dil)
-const GROUP_COLOR: Record<FrameGroup, string> = {
-  common: '#9CA3AF',
-  rare: '#3B82F6',
-  epic: '#A855F7',
-  legendary: '#F59E0B',
-  mythic: '#EF4444',
-  prestige: '#EAB308',
-  tavla: '#14B8A6',
-  achievement: '#F5D06F',
-}
+// 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
+const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
 
 interface Props {
   coins: number
