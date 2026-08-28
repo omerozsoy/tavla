@@ -2,14 +2,6 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 // 3D hero zar sahnesi three.js/cannon-es icerir -> ayri chunk (ana paketi sismesin).
 const HeroDice3D = lazy(() => import('./ui/dice3d/HeroDice3D'))
-// Avatar cerceve prototip demosu: yalnizca gizli /cerceve-demo URL'iyle acilir (menude
-// link yok). Ana bundle'i sismemesi icin lazy yuklenir (#27).
-const FrameDemo = lazy(() => import('./ui/FrameDemo'))
-// Rive avatar cerceve laboratuvari: gizli /cerceve-lab URL'i. Gercek .riv dosyalari +
-// @rive-app runtime iceren agir bir agac -> lazy chunk (ana bundle sismesin).
-const CerceveLab = lazy(() => import('./ui/CerceveLab'))
-// Cerceve galerisi: 50+ canli cesit (Klasik premium + Rive). Gizli /cerceve-galeri, lazy.
-const CerceveGaleri = lazy(() => import('./ui/CerceveGaleri'))
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
@@ -385,9 +377,6 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
-  const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
-  const [frameLabOpen, setFrameLabOpen] = useState(false) // Rive cerceve laboratuvari (/cerceve-lab)
-  const [frameGaleriOpen, setFrameGaleriOpen] = useState(false) // Cerceve galerisi 50+ (/cerceve-galeri)
   const [frameAnimOpen, setFrameAnimOpen] = useState(false) // Animasyon secim demosu (/cerceve-anim)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
@@ -427,12 +416,6 @@ export default function App() {
               ? 'hata-gunlugu'
               : matchHistOpen
                 ? 'mac-analizleri'
-              : frameDemoOpen
-                ? 'cerceve-demo'
-              : frameLabOpen
-                ? 'cerceve-lab'
-              : frameGaleriOpen
-                ? 'cerceve-galeri'
               : frameAnimOpen
                 ? 'cerceve-anim'
               : gamePreviewOpen
@@ -507,15 +490,6 @@ export default function App() {
           break
         case 'mac-analizleri':
           setMatchHistOpen(true)
-          break
-        case 'cerceve-demo':
-          setFrameDemoOpen(true)
-          break
-        case 'cerceve-lab':
-          setFrameLabOpen(true)
-          break
-        case 'cerceve-galeri':
-          setFrameGaleriOpen(true)
           break
         case 'cerceve-anim':
           setFrameAnimOpen(true)
@@ -3208,9 +3182,6 @@ export default function App() {
     setFriendsOpen(false)
     setBlunderOpen(false)
     setMatchHistOpen(false)
-    setFrameDemoOpen(false)
-    setFrameLabOpen(false)
-    setFrameGaleriOpen(false)
     setFrameAnimOpen(false)
     setGamePreviewOpen(false)
     setFairOpen(false)
@@ -3331,9 +3302,6 @@ export default function App() {
     friendsOpen ||
     blunderOpen ||
     matchHistOpen ||
-    frameDemoOpen ||
-    frameLabOpen ||
-    frameGaleriOpen ||
     frameAnimOpen ||
     gamePreviewOpen ||
     fairOpen ||
@@ -3414,21 +3382,6 @@ export default function App() {
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
       {matchHistOpen && user && <MatchAnalytics onClose={() => setMatchHistOpen(false)} />}
-      {frameDemoOpen && (
-        <Suspense fallback={null}>
-          <FrameDemo onClose={() => setFrameDemoOpen(false)} />
-        </Suspense>
-      )}
-      {frameLabOpen && (
-        <Suspense fallback={null}>
-          <CerceveLab onClose={() => setFrameLabOpen(false)} />
-        </Suspense>
-      )}
-      {frameGaleriOpen && (
-        <Suspense fallback={null}>
-          <CerceveGaleri onClose={() => setFrameGaleriOpen(false)} />
-        </Suspense>
-      )}
       {frameAnimOpen && (
         <Suspense fallback={null}>
           <CerceveAnim onClose={() => setFrameAnimOpen(false)} />
