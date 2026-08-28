@@ -30,6 +30,9 @@ export interface BoardTheme {
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
 export const BOARD_THEMES: BoardTheme[] = [
+  // Standart — site marka renkleri (Royal Navy): deep navy zemin, gold + muted-navy
+  // noktalar, ivory acik pul + near-black koyu pul, gold kup. Yeni uyenin VARSAYILANI.
+  { id: 'standart', name: 'Standart', panel: '#0f1b2b', a: '#c2a15f', b: '#2a3d59', checker: '#0a1220', light: '#f0e8d8', frame: '#080c12', cubeBg: '#c2a15f', cubeText: '#14243a', d1Bg: '#f0e8d8', d1Pip: '#14243a', d2Bg: '#22344e', d2Pip: '#f0e8d8' },
   { id: 'tavla', name: 'Latte', panel: '#e6e9ef', a: '#dd7878', b: '#ccd0da', checker: '#4c4f69' },
   // Varsayilan premium mavi tavla (Galaxy tarzi turnuva paleti). Tum renkler burada
   // merkezidir; App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar'a yansir.
@@ -122,7 +125,7 @@ export const RARITY_THEMES: BoardTheme[] = [
 // sadece BOARD_THEMES + PREMIUM_THEMES icin. Tanimsiz kalan 'common' varsayilir.
 export const THEME_RARITY: Record<string, NonNullable<BoardTheme['rarity']>> = {
   // BOARD_THEMES — Common (sade / editor paletleri)
-  tavla: 'common', moon: 'common', pluto: 'common', nord: 'common', gruvbox: 'common',
+  standart: 'common', tavla: 'common', moon: 'common', pluto: 'common', nord: 'common', gruvbox: 'common',
   solarized: 'common', mocha: 'common', monokai: 'common', everforest: 'common', ayu: 'common',
   onedark: 'common', palenight: 'common', oceanic: 'common', gruvlight: 'common', sollight: 'common', dawn: 'common',
   // BOARD_THEMES — Rare (zengin tonal + populer paletler)
