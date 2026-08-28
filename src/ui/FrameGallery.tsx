@@ -20,6 +20,7 @@ interface Props {
 
 // Galeri grup renkleri (rarity dili + ozel gruplar)
 const GROUP_COLOR: Record<FrameGroup, string> = {
+  common: '#9CA3AF',
   rare: '#3B82F6',
   epic: '#A855F7',
   legendary: '#F59E0B',
