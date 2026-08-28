@@ -1,8 +1,50 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow } from '../api'
 import AvatarFrame from './AvatarFrame'
+
+// ---- Ozellik vitrini (yalniz misafirlere): urunun ne sundugunu tanitir ----
+const FEATURES: { icon: IconName; key: string }[] = [
+  { icon: 'robot', key: 'ai' },
+  { icon: 'users', key: 'online' },
+  { icon: 'medal', key: 'tourn' },
+  { icon: 'chart', key: 'rating' },
+  { icon: 'star', key: 'themes' },
+  { icon: 'graduation', key: 'learn' },
+]
+
+export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
+  const { t } = useT()
+  return (
+    <section className="home-features" aria-labelledby="home-features-title">
+      <header className="home-features-head">
+        <span className="hf-kicker">{t('home.feat.kicker')}</span>
+        <h2 id="home-features-title" className="hf-title">
+          {t('home.feat.title')}
+        </h2>
+      </header>
+      <div className="hf-grid">
+        {FEATURES.map((f) => (
+          <div className="hf-card" key={f.key}>
+            <span className="hf-icon" aria-hidden="true">
+              <Icon name={f.icon} size={22} />
+            </span>
+            <h3 className="hf-card-title">{t(`home.feat.${f.key}.t`)}</h3>
+            <p className="hf-card-desc">{t(`home.feat.${f.key}.d`)}</p>
+          </div>
+        ))}
+      </div>
+      <div className="home-finalcta">
+        <h2 className="hfc-title">{t('home.finalCta.title')}</h2>
+        <p className="hfc-sub">{t('home.finalCta.sub')}</p>
+        <button className="galaxy-btn hfc-btn" onClick={onPlay}>
+          <Icon name="dice" size={18} /> {t('home.finalCta.button')}
+        </button>
+      </div>
+    </section>
+  )
+}
 
 function Avatar({ url, name }: { url?: string | null; name: string }) {
   return url ? (
