@@ -7735,6 +7735,130 @@ html.fs-active .account-bar {
   padding: 8px 4px 2px;
 }
 /* ---- Profil analiz grafikleri ---- */
+/* ===== Performans kartlari: Medyan Hata Orani + WXP (Royal Navy) ===== */
+.perf-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+@media (max-width: 640px) {
+  .perf-cards {
+    grid-template-columns: 1fr; /* mobil: alt alta */
+  }
+}
+.perf-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.perf-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.perf-card-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--tv-font-display);
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.perf-card-title svg {
+  color: var(--accent);
+}
+.perf-card-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+/* Filtre sekmeleri: Tumu/7G/30G/90G/1Y */
+.perf-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.perf-filter {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.perf-filter:hover {
+  color: var(--text);
+  border-color: var(--rn-line);
+}
+.perf-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent); /* gold zemin -> deep navy metin */
+}
+.perf-filter:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+/* WXP karti */
+.wxp-total {
+  font-family: var(--tv-font-mono);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accent);
+  text-align: center;
+  padding: 4px 0 2px;
+}
+.wxp-boxes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.wxp-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--rn-navy-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 6px;
+}
+.wxp-box strong {
+  font-family: var(--tv-font-mono);
+  font-size: 1.15rem;
+  color: var(--text);
+}
+.wxp-box strong.good {
+  color: var(--success-fg);
+}
+.wxp-box strong.bad {
+  color: var(--danger-fg);
+}
+.wxp-box span {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.wxp-legend {
+  font-size: 0.74rem;
+  color: var(--muted);
+  line-height: 1.5;
+  text-align: center;
+  margin-top: auto;
+}
+
 .an-charts {
   display: flex;
   flex-direction: column;

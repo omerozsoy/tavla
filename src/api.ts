@@ -876,6 +876,7 @@ export async function reportRating(
   opponentPr?: number | null,
   log?: string | null,
   ranked = true,
+  matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -883,6 +884,7 @@ export async function reportRating(
       won,
       opponent_rating: opponentRating,
       match_length: matchLength ?? null,
+      match_type: matchType,
       pr: pr ?? null,
       luck: luck ?? null,
       score_self: scoreSelf ?? null,
@@ -893,6 +895,30 @@ export async function reportRating(
       ranked,
     }),
   })
+}
+
+// Profil performans istatistikleri: Medyan Hata Orani (kategori bazli) + WXP/G/M/Kaz%.
+export type MedianFilter = 'all' | '7d' | '30d' | '90d' | '1y'
+export interface MedianCategory {
+  label: string
+  median_pr: number | null
+  sample_count: number
+}
+export interface PerformanceStats {
+  median_error_rate: {
+    filter: MedianFilter
+    categories: Record<string, MedianCategory> // coin,1,3,5,7
+  }
+  wxp: {
+    total: number
+    wins: number
+    losses: number
+    total_matches: number
+    win_rate: number
+  }
+}
+export async function performanceStats(period: MedianFilter = 'all'): Promise<PerformanceStats> {
+  return req<PerformanceStats>(`/me/performance-stats?period=${period}`)
 }
 
 // Bir macin tam analiz log'u (JSON string; { hc, log } yapisi). Yoksa null.

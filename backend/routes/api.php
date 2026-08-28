@@ -61,6 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
     Route::get('/me/active-rooms', [RoomController::class, 'myActiveRooms']); // devam eden online maclar
     Route::get('/me/analytics', [AuthController::class, 'analytics']);
+    Route::get('/me/performance-stats', [AuthController::class, 'performanceStats']); // Medyan Hata Orani + WXP
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating istemci beyanina dayali (online oyunda sunucu-otoriteli mac yok).

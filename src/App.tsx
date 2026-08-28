@@ -1624,6 +1624,8 @@ export default function App() {
       room?.oppName ?? null,
       prOf(opponent(myColor)),
       JSON.stringify({ hc: myColor, log: matchLog.slice(-250) }),
+      true, // ranked: online her zaman puanli
+      stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
     )
       .then((r) => {
         setRatingChange({ before, after: r.rating })

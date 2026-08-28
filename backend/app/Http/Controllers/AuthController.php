@@ -263,6 +263,7 @@ class AuthController extends Controller
             'opponent_name'   => ['nullable', 'string', 'max:40'],
             'opponent_pr'     => ['nullable', 'numeric', 'min:0', 'max:200'],
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
+            'match_type'      => ['nullable', 'in:coin,match'], // Jeton (coin) vs N-puanlik mac
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -338,7 +339,24 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
         }
-        \App\Models\MatchResult::create($mr);
+        // Oyun turu: Jeton (coin) mi N-puanlik mac mi (Median "Jeton" kategorisi + WXP).
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'match_type')) {
+            $mr['match_type'] = $data['match_type'] ?? \App\Support\StatsConfig::MATCH_TYPE_MATCH;
+        }
+        $result = \App\Models\MatchResult::create($mr);
+
+        // WXP odullendir (kazanan + desteklenen tur/uzunluk). Idempotent + transaction-safe.
+        // Ayri, bagimsiz domain akisi: WXP source of truth ledger'dir (rating'den bagimsiz).
+        try {
+            app(\App\Services\WxpService::class)->awardForMatchResult($result);
+        } catch (\Throwable $e) {
+            // WXP verilemezse mac kaydi yine de gecerli; sessizce veri kaybetme -> logla.
+            \Illuminate\Support\Facades\Log::warning('WXP award failed', [
+                'match_result_id' => $result->id, 'user_id' => $user->id,
+            ]);
+        }
+        // Yeni mac -> median cache'ini (tum filtreler) gecersiz kil.
+        app(\App\Services\PlayerStatisticsService::class)->invalidate($user->id);
 
         return response()->json(['rating' => $newRating, 'user' => $user]);
     }
@@ -574,6 +592,18 @@ class AuthController extends Controller
             'wins' => $me->wins ?? 0,
             'losses' => $me->losses ?? 0,
         ]);
+    }
+
+    // Profil performans istatistikleri (tek endpoint): Medyan Hata Orani + WXP/G/M/Kaz%.
+    // period: all|7d|30d|90d|1y (median tarih filtresi). Yalnizca kendi (/me) verisi.
+    public function performanceStats(Request $request)
+    {
+        $me = $request->user();
+        $period = (string) $request->query('period', 'all');
+
+        $stats = app(\App\Services\PlayerStatisticsService::class)->performanceStats($me, $period);
+
+        return response()->json($stats);
     }
 
     // Sifremi unuttum -> sifirlama linki e-postala
