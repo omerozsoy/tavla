@@ -20,6 +20,31 @@
    tema documentElement'te data-theme ile yonetilir, varsayilan 'dark'). */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+/* -----------------------------------------------------------------------------
+   MINIMAL UA RESET — preflight ATLANDIGI icin sarttir.
+   Preflight olmadan native <button>/<input> "2px outset" kenarlik + appearance:auto
+   ile render olur ve shadcn utility'lerini gorsel olarak bozar (or. ghost butonda
+   kalin cerceve). Bu reset YALNIZ shadcn primitiflerini ([data-slot]) hedefler;
+   App.css'e / oyun tahtasina DOKUNMAZ. @layer base -> utilities daima ustte kalir,
+   yani bg-primary/border-* utility'leri bu resetleri ezer (dogru cascade).
+   -------------------------------------------------------------------------- */
+@layer base {
+  [data-slot='button'] {
+    -webkit-appearance: none;
+    appearance: none;
+    border: 0 solid var(--sc-border);
+    background-color: transparent;
+    font: inherit;
+    letter-spacing: inherit;
+  }
+  [data-slot='input'],
+  [data-slot='textarea'],
+  [data-slot='select-trigger'] {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
+
 @theme inline {
   --color-background: var(--sc-background);
   --color-foreground: var(--sc-foreground);

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 // hover/focus/disabled davranisini paylasir; SADECE `variant` rengi degisir.
 // Varyantlar (marka spesifikasyonu): primary | secondary | outline | ghost | destructive
 const buttonVariants = cva(
-  "inline-flex shrink-0 items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -23,12 +23,12 @@ const buttonVariants = cva(
           "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/50",
       },
       size: {
-        default: "h-9 px-4 py-2 has-[>svg]:px-3",
-        sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-        lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
-        icon: "size-9",
-        "icon-sm": "size-8",
-        "icon-lg": "size-10",
+        default: "h-10 px-4 py-2 has-[>svg]:px-3.5",
+        sm: "h-9 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
+        lg: "h-11 rounded-md px-6 has-[>svg]:px-5",
+        icon: "size-10",
+        "icon-sm": "size-9",
+        "icon-lg": "size-11",
       },
     },
     defaultVariants: {
