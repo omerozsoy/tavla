@@ -62,11 +62,52 @@ const CATALOG: { group: string; items: [SoberMotion, string][] }[] = [
 ]
 
 const TOTAL = CATALOG.reduce((n, g) => n + g.items.length, 0)
+const NAME_BY_KEY: Record<string, string> = Object.fromEntries(
+  CATALOG.flatMap((g) => g.items.map(([k, n]) => [k, n])),
+)
+const LS_KEY = 'cerceve-anim-favs'
 const SIZES = [80, 104, 128] as const
 
 export default function CerceveAnim({ onClose }: { onClose: () => void }) {
   useEscape(onClose)
   const [size, setSize] = useState<number>(104)
+  const [sel, setSel] = useState<Set<string>>(() => {
+    try {
+      return new Set(JSON.parse(localStorage.getItem(LS_KEY) || '[]'))
+    } catch {
+      return new Set()
+    }
+  })
+  const [copied, setCopied] = useState(false)
+  const persist = (s: Set<string>) => {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify([...s]))
+    } catch {
+      /* yok say */
+    }
+  }
+  const toggle = (key: string) =>
+    setSel((s) => {
+      const n = new Set(s)
+      if (n.has(key)) n.delete(key)
+      else n.add(key)
+      persist(n)
+      return n
+    })
+  const clearAll = () => {
+    setSel(new Set())
+    persist(new Set())
+  }
+  const copyList = () => {
+    const text = [...sel].map((k) => `${NAME_BY_KEY[k] || k} (${k})`).join(', ')
+    try {
+      navigator.clipboard?.writeText(text)
+    } catch {
+      /* yok say */
+    }
+    setCopied(true)
+    setTimeout(() => setCopied(false), 1500)
+  }
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -92,18 +133,47 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
+        <div className="ca-bar">
+          <span className="ca-barcount">{sel.size} seçili</span>
+          <div className="ca-chips">
+            {sel.size === 0 ? (
+              <span className="ca-empty">Beğendiğin kareye tıkla → işaretlensin. Seçtiklerin burada listelenir.</span>
+            ) : (
+              [...sel].map((k) => (
+                <button key={k} type="button" className="ca-chip" onClick={() => toggle(k)} title="Kaldır">
+                  {NAME_BY_KEY[k] || k} ✕
+                </button>
+              ))
+            )}
+          </div>
+          <button type="button" className="ca-barbtn" onClick={copyList} disabled={sel.size === 0}>
+            {copied ? '✓ Kopyalandı' : 'Kopyala'}
+          </button>
+          <button type="button" className="ca-barbtn ca-barclear" onClick={clearAll} disabled={sel.size === 0}>
+            Temizle
+          </button>
+        </div>
+
         {CATALOG.map((g) => (
           <section key={g.group} className="ca-sec">
             <h3>{g.group} · {g.items.length}</h3>
             <div className="ca-grid">
               {g.items.map(([motion, name]) => (
-                <div key={motion} className="ca-cell">
+                <button
+                  key={motion}
+                  type="button"
+                  className={`ca-cell ${sel.has(motion) ? 'sel' : ''}`}
+                  onClick={() => toggle(motion)}
+                  aria-pressed={sel.has(motion)}
+                  title="Beğendiysen tıkla → işaretle"
+                >
                   <div className="ca-stage" style={{ height: size + 12 }}>
+                    <span className="ca-tick" aria-hidden="true">✓</span>
                     <SoberFrame accent={ROSE} motion={motion} size={size} />
                   </div>
                   <div className="ca-name">{name}</div>
                   <div className="ca-note">{motion}</div>
-                </div>
+                </button>
               ))}
             </div>
           </section>
