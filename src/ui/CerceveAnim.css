@@ -50,7 +50,48 @@
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 18px; justify-items: center;
 }
-.ca-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
-.ca-stage { display: grid; place-items: center; }
+.ca-cell {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;
+  border: 0; background: transparent; color: inherit; font: inherit; cursor: pointer;
+  padding: 10px 6px; border-radius: 14px; transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+.ca-cell:hover { background: rgba(255, 255, 255, 0.04); }
+.ca-cell.sel { background: rgba(183, 110, 121, 0.16); box-shadow: inset 0 0 0 1.5px #b76e79; }
+.ca-stage { position: relative; display: grid; place-items: center; }
 .ca-name { font-size: 12px; font-weight: 600; opacity: 0.92; text-align: center; }
 .ca-note { font-size: 11px; opacity: 0.5; text-align: center; font-family: ui-monospace, monospace; }
+
+/* isaretleme tik'i */
+.ca-tick {
+  position: absolute; top: 2px; right: 8px; z-index: 6;
+  width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+  font-size: 12px; font-weight: 700; line-height: 1;
+  color: transparent; background: rgba(0, 0, 0, 0.3); border: 2px solid rgba(255, 255, 255, 0.35);
+}
+.ca-cell.sel .ca-tick {
+  color: #2a1418; background: linear-gradient(135deg, #b76e79, #e7bcb0); border-color: transparent;
+}
+
+/* sabit secim cubugu */
+.ca-bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 8px; padding: 10px 12px; border-radius: 12px;
+  background: rgba(15, 18, 30, 0.94); backdrop-filter: blur(6px);
+  border: 1px solid rgba(140, 160, 210, 0.18);
+}
+.ca-barcount { font-weight: 700; font-size: 13px; white-space: nowrap; }
+.ca-chips { display: flex; gap: 6px; flex: 1; overflow-x: auto; padding: 2px 0; min-width: 120px; }
+.ca-empty { font-size: 12px; opacity: 0.6; white-space: nowrap; }
+.ca-chip {
+  border: 1px solid rgba(183, 110, 121, 0.5); background: rgba(183, 110, 121, 0.18); color: #f3d9dd;
+  font: inherit; font-size: 12px; padding: 4px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.ca-chip:hover { background: rgba(183, 110, 121, 0.32); }
+.ca-barbtn {
+  border: 1px solid rgba(140, 160, 210, 0.3); background: rgba(130, 150, 210, 0.12); color: inherit;
+  font: inherit; font-size: 12.5px; padding: 6px 14px; border-radius: 9px; cursor: pointer; white-space: nowrap;
+}
+.ca-barbtn:hover:not(:disabled) { border-color: rgba(140, 160, 210, 0.55); }
+.ca-barbtn:disabled { opacity: 0.4; cursor: default; }
+.ca-barclear { border-color: rgba(220, 120, 120, 0.35); }
