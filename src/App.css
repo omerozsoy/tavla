@@ -8253,6 +8253,188 @@ html.fs-active .account-bar {
   font-size: 0.78rem;
   margin-top: 12px;
 }
+
+/* === Magaza: kontrol bari (sticky) + animasyon kartlari === */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+/* Sticky: 210 cerceve icinde kayarken bakiye + filtreler ekranda kalir */
+.shop-controls {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 0 10px;
+  margin: 2px 0 8px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
+}
+.shop-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.shop-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1 1 150px;
+  min-width: 130px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  color: var(--muted);
+}
+.shop-search input {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  width: 100%;
+  outline: none;
+}
+.shop-chips {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.shop-chip {
+  padding: 5px 12px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.shop-chip.on {
+  border-color: color-mix(in srgb, var(--tv-gold) 60%, transparent);
+  background: color-mix(in srgb, var(--tv-gold) 16%, transparent);
+  color: var(--text);
+}
+.shop-colorchips {
+  gap: 8px;
+}
+.shop-colorchip {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.shop-colorchip.on {
+  border-color: var(--card-bg);
+  box-shadow: 0 0 0 2px var(--text);
+}
+/* Odak gorunurlugu (erisilebilirlik: focus-states) */
+.shop-chip:focus-visible,
+.shop-colorchip:focus-visible,
+.shop-sw:focus-visible,
+.shop-btn:focus-visible {
+  outline: 2px solid var(--tv-gold);
+  outline-offset: 2px;
+}
+.shop-search:focus-within {
+  border-color: color-mix(in srgb, var(--tv-gold) 60%, transparent);
+}
+
+/* Animasyon kartlari: 1 kart = 1 animasyon + N renk swatch */
+.shop-grid-top {
+  margin-bottom: 6px;
+}
+.shop-anim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.shop-anim {
+  text-align: center;
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--rarity-color, var(--border));
+  border-radius: var(--radius-lg);
+  padding: 10px 7px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.shop-anim-preview {
+  display: flex;
+  justify-content: center;
+  min-height: 82px;
+  align-items: center;
+}
+.shop-anim-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.shop-swatches {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 1px 0 2px;
+}
+.shop-sw {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.shop-sw.on {
+  border-color: var(--card-bg);
+  box-shadow: 0 0 0 2px var(--text);
+}
+.shop-sw.eq {
+  box-shadow: 0 0 0 2px #4fb477;
+}
+.shop-sw .sw-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.6);
+}
+.shop-earn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--tv-gold);
+}
+.shop-empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 24px 0;
+  font-weight: 600;
+}
+@media (max-width: 480px) {
+  .shop-anim-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .stats-coins {
   font-size: 0.9rem;
   color: var(--tv-gold);
