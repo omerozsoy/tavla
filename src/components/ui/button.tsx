@@ -18,14 +18,20 @@ const buttonVariants = cva(
       // font) DOKUNMAZ. Global hover dili: primary koyulasir · secondary/outline GOLD'a
       // doner · ghost hafif secondary dolgu · destructive koyu kirmizi. hover:bg-accent YOK.
       variant: {
+        // primary: gold -> gold-dark (koyulasir), ivory metin. Gold'da acilmaz.
         default:
-          "border-primary bg-primary text-primary-foreground hover:border-primary/90 hover:bg-primary/90",
+          "border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover hover:text-ivory",
+        // secondary: hover ROYAL NAVY (gold DEGIL) -> primary(gold) ile net ayrisir.
+        // Kenar border-border (#293a50) kalir -> navy kartlarda buton sinir belli olur.
         secondary:
-          "border-border bg-secondary text-secondary-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground",
+          "border-border bg-secondary text-secondary-foreground hover:bg-navy hover:text-ivory",
+        // outline: hover ROYAL NAVY dolgu (gold degil)
         outline:
-          "border-border bg-transparent text-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground",
+          "border-border bg-transparent text-foreground hover:bg-navy hover:text-ivory",
+        // ghost: hover MUTED NAVY (subtle), gold yok
         ghost:
-          "border-border bg-transparent text-foreground hover:border-primary/60 hover:bg-secondary hover:text-secondary-foreground",
+          "border-border bg-transparent text-foreground hover:bg-navy-muted hover:text-ivory",
+        // destructive: kirmizi -> koyu kirmizi (navy/gold'a donmez)
         destructive:
           "border-destructive bg-destructive text-destructive-foreground hover:border-destructive/90 hover:bg-destructive/90",
       },
