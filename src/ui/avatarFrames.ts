@@ -108,24 +108,16 @@ const ANIMS: AnimDef[] = [
   { motion: 'neonPulse', name: 'Neon Nabız', rarity: 'mythic' },
   { motion: 'sonar', name: 'Sonar', rarity: 'mythic' },
 ]
-// 5 renk (id anahtari + gorunen ad + hex). Backend id'leri ile birebir ayni: 'frame.<motion>-<key>'.
-export const FRAME_COLORS: { key: string; name: string; hex: string }[] = [
-  { key: 'rose', name: 'Rose', hex: '#B76E79' },
-  { key: 'sapphire', name: 'Safir', hex: '#2563EB' },
-  { key: 'emerald', name: 'Zümrüt', hex: '#059669' },
-  { key: 'gold', name: 'Altın', hex: '#B8862B' },
-  { key: 'amethyst', name: 'Menekşe', hex: '#8B5CF6' },
-]
-export const AVATAR_FRAMES: AvatarFrameDef[] = ANIMS.flatMap((a) =>
-  FRAME_COLORS.map((c) => ({
-    id: `${a.motion}-${c.key}`,
-    name: `${a.name} · ${c.name}`,
-    rarity: a.rarity,
-    group: a.rarity as FrameGroup,
-    motion: a.motion,
-    accent: c.hex,
-  })),
-)
+// Her animasyon TEK cerceve; halka rengi grubun rarity rengi (renk secenegi yok).
+// Backend id'leri ile birebir ayni: 'frame.<motion>'.
+export const AVATAR_FRAMES: AvatarFrameDef[] = ANIMS.map((a) => ({
+  id: a.motion,
+  name: a.name,
+  rarity: a.rarity,
+  group: a.rarity as FrameGroup,
+  motion: a.motion,
+  accent: FRAME_RARITY_COLOR[a.rarity],
+}))
 
 export const FRAME_BY_ID: Record<string, AvatarFrameDef> = Object.fromEntries(
   AVATAR_FRAMES.map((f) => [f.id, f]),

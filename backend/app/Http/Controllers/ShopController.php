@@ -39,17 +39,14 @@ class ShopController extends Controller
         'dualOrbit' => 'mythic', 'dualRipple' => 'mythic', 'neonPulse' => 'mythic', 'sonar' => 'mythic',
     ];
 
-    private const FRAME_COLORS = ['rose', 'sapphire', 'emerald', 'gold', 'amethyst'];
     private const RARITY_PRICE = ['common' => 250, 'rare' => 500, 'epic' => 1000, 'legendary' => 2000, 'mythic' => 4000];
 
-    // Tam katalog: temalar + 42 animasyon x 5 renk = 210 cerceve (id: 'frame.<motion>-<color>').
+    // Tam katalog: temalar + 42 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
     {
         $c = self::THEMES;
         foreach (self::FRAME_MOTIONS as $motion => $rarity) {
-            foreach (self::FRAME_COLORS as $ck) {
-                $c["frame.$motion-$ck"] = self::RARITY_PRICE[$rarity];
-            }
+            $c["frame.$motion"] = self::RARITY_PRICE[$rarity];
         }
 
         return $c;
