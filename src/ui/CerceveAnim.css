@@ -1,4 +1,14 @@
 /* Cerceve animasyon secim demosu (/cerceve-anim). ca- prefixli. */
+
+/* App.css '.register-overlay.page > *' cocuk arka planini transparent yapiyor (0,2,0) ve koyu
+   bg'i eziyordu -> yazilar acik zeminde kayboluyordu. Daha yuksek specificity ile koyu zemini
+   geri getir (yazilar okunur olsun). */
+.register-overlay.page > .ca-wrap {
+  background: radial-gradient(130% 90% at 50% -10%, #151b30 0%, #0b0f1c 58%, #070a13 100%);
+  max-width: 1180px;
+  border-radius: 18px;
+  margin: 18px auto;
+}
 .ca-wrap {
   position: relative;
   width: min(1180px, 96vw);
