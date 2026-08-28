@@ -320,26 +320,33 @@ export default function App() {
   const [boardTheme, setBoardTheme] = useState<string>(() => {
     try {
       const stored = localStorage.getItem('tavla.board')
-      // Rebrand migration: eski varsayilan tahtalari (blue/walnut) bir kez TavlaTv'ye tasi
+      // Rebrand migration: eski varsayilan tahtalari (blue/walnut) bir kez TavlaTv'ye tasi.
+      // NOT: bos (yeni kullanici) ARTIK burada yakalanmaz -> asagida 'standart' varsayilanina duser.
       if (!localStorage.getItem('tavla.board.rebrand')) {
         localStorage.setItem('tavla.board.rebrand', '1')
-        if (!stored || stored === 'blue' || stored === 'walnut') {
+        if (stored === 'blue' || stored === 'walnut') {
           localStorage.setItem('tavla.board', 'tavla')
           return 'tavla'
         }
       }
-      // v2 migration: varsayilan Galaxy mavi tavlaya gec (eski varsayilan 'tavla' veya bos).
-      // Kullanici bilincli baska tema sectiyse (neptune vb.) dokunulmaz.
+      // v2 migration: yalniz eski varsayilan 'tavla' secmis kullaniciyi Galaxy'ye tasi.
+      // Bilincli baska tema (neptune vb.) veya yeni kullanici (bos) dokunulmaz.
       if (!localStorage.getItem('tavla.board.v2galaxy')) {
         localStorage.setItem('tavla.board.v2galaxy', '1')
-        if (!stored || stored === 'tavla') {
+        if (stored === 'tavla') {
           localStorage.setItem('tavla.board', 'galaxy')
           return 'galaxy'
         }
       }
-      return stored || 'galaxy'
+      // Yeni uye / hic secim yapmamis -> marka renkli 'Standart' board varsayilan gelir.
+      // Mevcut secim (galaxy dahil) korunur.
+      if (!stored) {
+        localStorage.setItem('tavla.board', 'standart')
+        return 'standart'
+      }
+      return stored
     } catch {
-      return 'galaxy'
+      return 'standart'
     }
   })
   const [mode, setMode] = useState<Mode>(saved?.mode ?? 'pvb')
