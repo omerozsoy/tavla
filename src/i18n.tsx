@@ -738,6 +738,9 @@ const TR: Dict = {
   'home.dash.wins': 'Galibiyet',
   'home.dash.games': 'Oyun',
   'home.dash.quick': 'Hızlı erişim',
+  'home.dash.daily': 'Günlük ödül',
+  'home.dash.dailyReady': '500 coin hazır — hemen al!',
+  'home.dash.claim': 'Al',
 }
 
 const EN: Dict = {
@@ -1465,6 +1468,9 @@ const EN: Dict = {
   'home.dash.wins': 'Wins',
   'home.dash.games': 'Games',
   'home.dash.quick': 'Quick access',
+  'home.dash.daily': 'Daily reward',
+  'home.dash.dailyReady': '500 coins ready — claim now!',
+  'home.dash.claim': 'Claim',
 }
 
 // Yeni diller: cekirdek arayuz cevirileri. Cevrilmeyen anahtarlar EN'e duser
@@ -2161,6 +2167,9 @@ const ES: Dict = {
   'home.dash.wins': 'Victorias',
   'home.dash.games': 'Partidas',
   'home.dash.quick': 'Acceso rápido',
+  'home.dash.daily': 'Recompensa diaria',
+  'home.dash.dailyReady': '500 monedas listas — ¡reclama ya!',
+  'home.dash.claim': 'Reclamar',
 }
 
 const DE: Dict = {
@@ -2855,6 +2864,9 @@ const DE: Dict = {
   'home.dash.wins': 'Siege',
   'home.dash.games': 'Spiele',
   'home.dash.quick': 'Schnellzugriff',
+  'home.dash.daily': 'Tägliche Belohnung',
+  'home.dash.dailyReady': '500 Coins bereit — jetzt abholen!',
+  'home.dash.claim': 'Abholen',
 }
 
 const FR: Dict = {
@@ -3549,6 +3561,9 @@ const FR: Dict = {
   'home.dash.wins': 'Victoires',
   'home.dash.games': 'Parties',
   'home.dash.quick': 'Accès rapide',
+  'home.dash.daily': 'Récompense quotidienne',
+  'home.dash.dailyReady': '500 pièces prêtes — réclamez !',
+  'home.dash.claim': 'Réclamer',
 }
 
 const DICT: Record<Lang, Dict> = { tr: TR, en: EN, es: ES, de: DE, fr: FR }
