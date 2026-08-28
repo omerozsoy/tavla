@@ -19,29 +19,44 @@ class ShopController extends Controller
         'theme.sunset' => 600,
     ];
 
-    // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 42 adet).
+    // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 106 adet).
     // 5 kademe: Standart(common) < Nadir(rare) < Epik(epic) < Efsanevi(legendary) < Mitik(mythic).
     private const FRAME_MOTIONS = [
-        // Standart (250)
-        'pulse' => 'common', 'heartbeat' => 'common', 'pulseFast' => 'common', 'heartScale' => 'common',
-        'vibrate' => 'common', 'jelly' => 'common', 'gelatine' => 'common', 'bounce' => 'common', 'pop' => 'common',
-        // Nadir (500)
-        'levitate' => 'rare', 'sway' => 'rare', 'wobble' => 'rare', 'rock' => 'rare', 'glowPulse' => 'rare',
-        'tada' => 'rare', 'circleMove' => 'rare', 'pendulum' => 'rare', 'swing' => 'rare',
-        // Epik (1000)
-        'expand' => 'epic', 'seesaw' => 'epic', 'sweep' => 'epic', 'sweepFast' => 'epic', 'glint' => 'epic',
-        'bright' => 'epic', 'shineOnce' => 'epic', 'gradSpin' => 'epic',
-        // Efsanevi (2000)
-        'ripple' => 'legendary', 'radar' => 'legendary', 'auraPulse' => 'legendary', 'flip3d' => 'legendary',
-        'hueCycle' => 'legendary', 'invert' => 'legendary', 'dualSweep' => 'legendary', 'pulseHalo' => 'legendary',
-        // Mitik (4000)
-        'rainbow' => 'mythic', 'conicRainbow' => 'mythic', 'rain' => 'mythic', 'sparkleBurst' => 'mythic',
-        'dualOrbit' => 'mythic', 'dualRipple' => 'mythic', 'neonPulse' => 'mythic', 'sonar' => 'mythic',
+        // Standart (250) — 26
+        'pulse' => 'common', 'heartbeat' => 'common', 'heartScale' => 'common', 'vibrate' => 'common',
+        'bounce' => 'common', 'pop' => 'common', 'sway' => 'common', 'rock' => 'common', 'pendulum' => 'common',
+        'swing' => 'common', 'static' => 'common', 'hover' => 'common', 'breathe' => 'common', 'fade' => 'common',
+        'float' => 'common', 'nudge' => 'common', 'tilt' => 'common', 'spinSlow' => 'common', 'drift' => 'common',
+        'saturate' => 'common', 'contrast' => 'common', 'grayscale' => 'common', 'sepia' => 'common',
+        'wiggle' => 'common', 'shiver' => 'common', 'floatSide' => 'common',
+        // Nadir (500) — 24
+        'pulseFast' => 'rare', 'jelly' => 'rare', 'gelatine' => 'rare', 'levitate' => 'rare', 'wobble' => 'rare',
+        'circleMove' => 'rare', 'expand' => 'rare', 'seesaw' => 'rare', 'sweep' => 'rare', 'glint' => 'rare',
+        'bright' => 'rare', 'shineOnce' => 'rare', 'ripple' => 'rare', 'flip3d' => 'rare', 'invert' => 'rare',
+        'flicker' => 'rare', 'ember' => 'rare', 'spin' => 'rare', 'sheen' => 'rare', 'blur' => 'rare',
+        'squash' => 'rare', 'rubber' => 'rare', 'headShake' => 'rare', 'throb' => 'rare',
+        // Epik (1000) — 22
+        'glowPulse' => 'epic', 'tada' => 'epic', 'sweepFast' => 'epic', 'gradSpin' => 'epic', 'radar' => 'epic',
+        'auraPulse' => 'epic', 'hueCycle' => 'epic', 'dualSweep' => 'epic', 'pulseHalo' => 'epic', 'sweepRev' => 'epic',
+        'trace' => 'epic', 'gradPulse' => 'epic', 'shimmer' => 'epic', 'sparkle' => 'epic', 'orbit' => 'epic',
+        'twist' => 'epic', 'spinPulse' => 'epic', 'flipX' => 'epic', 'blob' => 'epic', 'hueWobble' => 'epic',
+        'ringPulse' => 'epic', 'skewPulse' => 'epic',
+        // Efsanevi (2000) — 19
+        'rainbow' => 'legendary', 'rain' => 'legendary', 'sparkleBurst' => 'legendary', 'dualOrbit' => 'legendary',
+        'dualRipple' => 'legendary', 'neonPulse' => 'legendary', 'sonar' => 'legendary', 'twinkle' => 'legendary',
+        'comet' => 'legendary', 'aura' => 'legendary', 'barrelRoll' => 'legendary', 'coinFlip' => 'legendary',
+        'tumble' => 'legendary', 'dropGlow' => 'legendary', 'pulseSweep' => 'legendary', 'haloSpin' => 'legendary',
+        'figure8' => 'legendary', 'diagonal' => 'legendary', 'bloom' => 'legendary',
+        // Mitik (4000) — 15
+        'conicRainbow' => 'mythic', 'loading' => 'mythic', 'rising' => 'mythic', 'zoomBlur' => 'mythic',
+        'gyro' => 'mythic', 'spinY3d' => 'mythic', 'spinX3d' => 'mythic', 'drawRing' => 'mythic',
+        'dashSpin' => 'mythic', 'dashFlow' => 'mythic', 'gradWave' => 'mythic', 'duotone' => 'mythic',
+        'glowSpread' => 'mythic', 'fireflies' => 'mythic', 'flash' => 'mythic',
     ];
 
     private const RARITY_PRICE = ['common' => 250, 'rare' => 500, 'epic' => 1000, 'legendary' => 2000, 'mythic' => 4000];
 
-    // Tam katalog: temalar + 42 cerceve (anim basina tek; id: 'frame.<motion>').
+    // Tam katalog: temalar + 106 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
     {
         $c = self::THEMES;
