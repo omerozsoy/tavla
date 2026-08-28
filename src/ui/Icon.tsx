@@ -417,6 +417,9 @@ const PATHS: Record<IconName, { fill?: boolean; body: ReactNode }> = {
   },
 }
 
+// Tum ikon isimleri (PATHS'ten turetildigi icin otomatik senkron; showcase galerisi kullanir)
+export const ICON_NAMES = Object.keys(PATHS) as IconName[]
+
 export function Icon({
   name,
   size = 20,
