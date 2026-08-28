@@ -14,7 +14,7 @@ import {
   type AvatarFrameDef,
 } from './avatarFrames'
 
-// Galeri ile ayni grup renkleri
+// 5 kademe grup rengi (rarity ile birebir; galeri ile ayni dil)
 const GROUP_COLOR: Record<FrameGroup, string> = {
   common: '#9CA3AF',
   rare: '#3B82F6',
@@ -25,24 +25,6 @@ const GROUP_COLOR: Record<FrameGroup, string> = {
   tavla: '#14B8A6',
   achievement: '#F5D06F',
 }
-
-// AVATAR_FRAMES'i animasyona gore grupla: her animasyon = 1 kart + N renk varyanti.
-// (210 kart yerine ~42 kart + 5 renk swatch -> scannability + performans.)
-type AnimGroup = { motion: string; name: string; rarity: FrameRarity; items: AvatarFrameDef[] }
-const ANIMATIONS: AnimGroup[] = (() => {
-  const out: AnimGroup[] = []
-  for (const f of AVATAR_FRAMES) {
-    const last = out[out.length - 1]
-    if (last && last.motion === f.motion) last.items.push(f)
-    else out.push({ motion: f.motion, name: f.name.split(' · ')[0], rarity: f.rarity, items: [f] })
-  }
-  return out
-})()
-// Renk cipleri (ilk animasyonun varyantlarindan: ad + hex, uretim sirasi = renk sirasi)
-const COLOR_CHIPS = (ANIMATIONS[0]?.items ?? []).map((it) => ({
-  name: it.name.split(' · ')[1] ?? '',
-  accent: it.accent,
-}))
 
 interface Props {
   coins: number
@@ -66,10 +48,9 @@ const fmtLeft = (total: number) => {
 }
 const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
 
-// --- Tek animasyon karti: 1 onizleme (secili renk) + 5 renk swatch + al/tak ---
+// --- Tek cerceve karti: onizleme (rarity renkli halka) + ad + al/tak ---
 interface CardProps {
-  anim: AnimGroup
-  colorIdx: number
+  f: AvatarFrameDef
   avatar?: string | null
   name?: string
   currentFrame: string | null
@@ -81,49 +62,25 @@ interface CardProps {
   onEquip: (id: string) => void
   labels: { equip: string; equipped: string; earned: string; need: (n: number) => string; buyAria: (name: string, price: number) => string }
 }
-function AnimCard(p: CardProps) {
-  const [sel, setSel] = useState(Math.min(p.colorIdx, p.anim.items.length - 1))
-  const f = p.anim.items[sel]
-  const sid = 'frame.' + f.id
+function FrameCard(p: CardProps) {
+  const sid = 'frame.' + p.f.id
   const owned = p.owns(sid)
-  const equipped = p.currentFrame === f.id
-  const price = framePrice(f)
-  const colorName = f.name.split(' · ')[1] ?? ''
+  const equipped = p.currentFrame === p.f.id
+  const price = framePrice(p.f)
   return (
     <div className="shop-anim" style={{ ['--rarity-color']: p.groupColor } as CSSProperties}>
       <div className="shop-anim-preview">
         {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
-        <AvatarFrame src={p.avatar} frame={f.id} size={82} name={p.name} animated />
+        <AvatarFrame src={p.avatar} frame={p.f.id} size={82} name={p.name} animated />
       </div>
-      <div className="shop-anim-name" title={p.anim.name}>
-        {p.anim.name}
-      </div>
-      <div className="shop-swatches" role="group" aria-label={p.anim.name + ' renkleri'}>
-        {p.anim.items.map((it, i) => {
-          const o = p.owns('frame.' + it.id)
-          const eq = p.currentFrame === it.id
-          const cn = it.name.split(' · ')[1] ?? ''
-          return (
-            <button
-              key={it.id}
-              type="button"
-              className={`shop-sw ${i === sel ? 'on' : ''} ${eq ? 'eq' : ''} ${o ? 'owned' : ''}`}
-              style={{ background: it.accent }}
-              onClick={() => setSel(i)}
-              aria-label={cn + (eq ? ' (takılı)' : o ? ' (sahip)' : '')}
-              aria-pressed={i === sel}
-              title={cn}
-            >
-              {eq ? <Icon name="check" size={11} /> : o ? <span className="sw-dot" /> : null}
-            </button>
-          )
-        })}
+      <div className="shop-anim-name" title={p.f.name}>
+        {p.f.name}
       </div>
       {owned ? (
         <button
           className={`shop-btn ${equipped ? 'active' : ''}`}
           disabled={equipped}
-          onClick={() => p.onEquip(f.id)}
+          onClick={() => p.onEquip(p.f.id)}
         >
           {equipped ? p.labels.equipped : p.labels.equip}
         </button>
@@ -133,7 +90,7 @@ function AnimCard(p: CardProps) {
             className={`shop-btn buy${p.coins < price ? ' cant' : ''}`}
             disabled={p.busy === sid || p.coins < price}
             onClick={() => p.onBuy(sid)}
-            aria-label={p.labels.buyAria(`${p.anim.name} ${colorName}`, price)}
+            aria-label={p.labels.buyAria(p.f.name, price)}
           >
             <Icon name="coin" size={14} /> <span className="tnum">{fmtCoin(price)}</span>
           </button>
@@ -168,7 +125,6 @@ export default function Shop({
   const [buyErr, setBuyErr] = useState('')
   // Filtreler
   const [rarity, setRarity] = useState<FrameRarity | 'all'>('all')
-  const [colorIdx, setColorIdx] = useState(0)
   const [ownedOnly, setOwnedOnly] = useState(false)
 
   async function daily() {
@@ -203,10 +159,10 @@ export default function Shop({
 
   const shown = useMemo(
     () =>
-      ANIMATIONS.filter(
-        (a) =>
-          (rarity === 'all' || a.rarity === rarity) &&
-          (!ownedOnly || a.items.some((it) => unlocks.includes('frame.' + it.id))),
+      AVATAR_FRAMES.filter(
+        (f) =>
+          (rarity === 'all' || f.rarity === rarity) &&
+          (!ownedOnly || unlocks.includes('frame.' + f.id)),
       ),
     [rarity, ownedOnly, unlocks],
   )
@@ -266,19 +222,6 @@ export default function Shop({
                 </button>
               ))}
             </div>
-            <div className="shop-chips shop-colorchips" role="group" aria-label={t('shop.color')}>
-              {COLOR_CHIPS.map((c, i) => (
-                <button
-                  key={c.accent}
-                  className={`shop-colorchip ${colorIdx === i ? 'on' : ''}`}
-                  style={{ background: c.accent }}
-                  onClick={() => setColorIdx(i)}
-                  aria-pressed={colorIdx === i}
-                  aria-label={c.name}
-                  title={c.name}
-                />
-              ))}
-            </div>
             <button
               className={`shop-chip ${ownedOnly ? 'on' : ''}`}
               onClick={() => setOwnedOnly((v) => !v)}
@@ -314,8 +257,8 @@ export default function Shop({
         </div>
 
         {FRAME_GROUP_ORDER.map((group) => {
-          const anims = shown.filter((a) => (a.rarity as FrameGroup) === group)
-          if (anims.length === 0) return null
+          const frames = shown.filter((f) => f.group === group)
+          if (frames.length === 0) return null
           return (
             <div
               className="rarity-group"
@@ -324,14 +267,13 @@ export default function Shop({
             >
               <div className="rarity-title">
                 <span className="rarity-dot" /> {t(FRAME_GROUP_LABEL[group])}
-                <span className="rarity-count">{anims.length}</span>
+                <span className="rarity-count">{frames.length}</span>
               </div>
               <div className="shop-anim-grid">
-                {anims.map((a) => (
-                  <AnimCard
-                    key={a.motion + '-' + colorIdx}
-                    anim={a}
-                    colorIdx={colorIdx}
+                {frames.map((f) => (
+                  <FrameCard
+                    key={f.id}
+                    f={f}
                     avatar={avatar}
                     name={name}
                     currentFrame={currentFrame}
