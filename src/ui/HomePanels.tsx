@@ -111,7 +111,7 @@ export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
       <div className="home-finalcta">
         <h2 className="hfc-title">{t('home.finalCta.title')}</h2>
         <p className="hfc-sub">{t('home.finalCta.sub')}</p>
-        <Button variant="default" className="hfc-btn" onClick={onPlay}>
+        <Button variant="default" className="mt-5" onClick={onPlay}>
           <Icon name="dice" size={18} /> {t('home.finalCta.button')}
         </Button>
       </div>

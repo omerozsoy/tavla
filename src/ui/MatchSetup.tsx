@@ -231,7 +231,6 @@ export default function MatchSetup({
           </Button>
           <Button
             variant="default"
-            className="setup-start"
             onClick={() =>
               onConfirm({
                 mode,

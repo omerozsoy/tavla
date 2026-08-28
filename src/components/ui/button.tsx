@@ -11,21 +11,23 @@ import { cn } from "@/lib/utils"
 // Native buton gorunumu `appearance-none` + shadcn.css'teki [data-slot] reset (border:0
 // solid -> border-style solid) ile engellenir; base `border` = 1px, variant = border-color.
 const buttonVariants = cva(
-  "inline-flex h-[42px] min-h-[42px] shrink-0 cursor-pointer appearance-none items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 text-sm font-semibold outline-none transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex h-[42px] min-h-[42px] shrink-0 cursor-pointer appearance-none items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 text-sm font-semibold outline-none transition-all duration-150 hover:-translate-y-px active:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
-      // SADECE renk. Fiziksel yapiya (height/padding/radius/border-width/font) DOKUNMAZ.
+      // SADECE renk + hover davranisi. Fiziksel yapiya (height/padding/radius/border-width/
+      // font) DOKUNMAZ. Global hover dili: primary koyulasir · secondary/outline GOLD'a
+      // doner · ghost hafif secondary dolgu · destructive koyu kirmizi. hover:bg-accent YOK.
       variant: {
         default:
-          "border-primary bg-primary text-primary-foreground hover:bg-primary/90",
+          "border-primary bg-primary text-primary-foreground hover:border-primary/90 hover:bg-primary/90",
         secondary:
-          "border-border bg-secondary text-secondary-foreground hover:border-ring/50 hover:bg-accent hover:text-accent-foreground",
+          "border-border bg-secondary text-secondary-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground",
         outline:
-          "border-border bg-transparent text-foreground hover:border-ring/50 hover:bg-accent hover:text-accent-foreground",
+          "border-border bg-transparent text-foreground hover:border-primary hover:bg-primary hover:text-primary-foreground",
         ghost:
-          "border-border bg-transparent text-foreground hover:border-ring/50 hover:bg-accent hover:text-accent-foreground",
+          "border-border bg-transparent text-foreground hover:border-primary/60 hover:bg-secondary hover:text-secondary-foreground",
         destructive:
-          "border-destructive bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "border-destructive bg-destructive text-destructive-foreground hover:border-destructive/90 hover:bg-destructive/90",
       },
       // sm/lg YOK — tum normal aksiyonlar tek boyut. icon = 42x42 (yatay padding'siz kare).
       size: {

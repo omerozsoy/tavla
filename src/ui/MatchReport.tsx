@@ -349,9 +349,11 @@ export default function MatchReport({
           </div>
         )}
         {log.length > 0 && (
-          <Button variant="outline" className="rep-export rep-export-bottom" onClick={exportMat}>
-            <Icon name="install" size={14} /> {t('rep.export')}
-          </Button>
+          <div className="mt-3.5 flex justify-center">
+            <Button variant="outline" onClick={exportMat}>
+              <Icon name="install" size={14} /> {t('rep.export')}
+            </Button>
+          </div>
         )}
       </div>
     </div>

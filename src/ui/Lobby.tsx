@@ -92,7 +92,7 @@ export default function Lobby({
             </div>
           )}
 
-          <Button variant="default" className="mm-cancel" onClick={onCancelMatch}>
+          <Button variant="default" className="w-full" onClick={onCancelMatch}>
             {t('mp.cancel')}
           </Button>
         </div>
@@ -131,7 +131,7 @@ export default function Lobby({
         <h2><Icon name="globe" size={20} /> {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>
 
-        <Button variant="default" className="mm-quick" disabled={busy} onClick={onMatchmake}>
+        <Button variant="default" className="w-full" disabled={busy} onClick={onMatchmake}>
 <Icon name="target" size={18} /> {t('mp.quickMatch')}
         </Button>
         <p className="mm-quick-note">{t('mp.quickMatchNote')}</p>
