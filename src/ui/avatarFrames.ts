@@ -3,6 +3,7 @@
 // Nadirlik yukseldikce gorsel karmasiklik + animasyon kalitesi artar.
 
 import type { SoberMotion } from './SoberFrame'
+import { RARITY_COLORS } from './rarityColors'
 
 export type FrameRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
 export type FrameGroup = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'prestige' | 'tavla' | 'achievement'
@@ -20,14 +21,9 @@ export interface AvatarFrameDef {
   earned?: boolean
 }
 
-// 5 kademe rarity renkleri: Standart gumus, Nadir safir, Epik ametist, Efsanevi altin, Mitik yakut
-export const FRAME_RARITY_COLOR: Record<FrameRarity, string> = {
-  common: '#9CA3AF',
-  rare: '#3B82F6',
-  epic: '#A855F7',
-  legendary: '#F59E0B',
-  mythic: '#EF4444',
-}
+// 5 kademe rarity renkleri -> merkezi rarity paletinden (rarityColors.ts)
+// Standart gumus · Nadir safir · Epik ametist · Efsanevi altin · Mitik yakut (rafine/muted)
+export const FRAME_RARITY_COLOR: Record<FrameRarity, string> = RARITY_COLORS
 
 // Rarity coin fiyatlari (backend ShopController RARITY_PRICE ile birebir ayni olmali)
 export const FRAME_RARITY_PRICE: Record<FrameRarity, number> = {

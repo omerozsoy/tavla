@@ -11,6 +11,7 @@ import {
   FRAME_RARITY_COLOR,
   type FrameGroup,
 } from './avatarFrames'
+import { RARITY_COLORS } from './rarityColors'
 
 interface Props {
   avatar?: string | null
@@ -18,17 +19,8 @@ interface Props {
   onClose: () => void
 }
 
-// Galeri grup renkleri (rarity dili + ozel gruplar)
-const GROUP_COLOR: Record<FrameGroup, string> = {
-  common: '#9CA3AF',
-  rare: '#3B82F6',
-  epic: '#A855F7',
-  legendary: '#F59E0B',
-  mythic: '#EF4444',
-  prestige: '#EAB308',
-  tavla: '#14B8A6',
-  achievement: '#F5D06F',
-}
+// Galeri grup renkleri -> merkezi rarity paletinden (rarityColors.ts)
+const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
 
 const SIZES = [48, 64, 96] as const
 
