@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import SoberFrame, { type SoberMotion } from './SoberFrame'
+import demoAvatar from '../assets/demo-avatar.jpg'
 import './CerceveAnim.css'
 
 // Animasyon katalogu (/cerceve-anim): TEK renk (Rose Gold) ile yapilabilir TUM animasyonlar,
@@ -168,7 +169,7 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
                   title="Beğendiysen tıkla → işaretle"
                 >
                   <div className="ca-stage" style={{ height: size + 12 }}>
-                    <SoberFrame accent={ROSE} motion={motion} size={size} />
+                    <SoberFrame accent={ROSE} motion={motion} size={size} src={demoAvatar} />
                   </div>
                   <div className="ca-name">{name}</div>
                   <div className="ca-note">{motion}</div>
