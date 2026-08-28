@@ -8352,7 +8352,7 @@ html.fs-active .account-bar {
 }
 .shop-anim-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(146px, 1fr));
   gap: 12px;
   margin-bottom: 8px;
 }
@@ -8385,7 +8385,7 @@ html.fs-active .account-bar {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
   margin: 1px 0 2px;
 }
 .shop-sw {
