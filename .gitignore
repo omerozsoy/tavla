@@ -45,3 +45,10 @@ shop-preview.html
 shop-shot.mjs
 src/shop-preview.tsx
 shot-*.png
+
+# gecici UI gorsel-dogrulama harness'i (flat redesign QA, kalici degil)
+scripts/ui-shots.mjs
+scripts/ui-shot-dark.mjs
+scripts/ui-probe.mjs
+scripts/ui-probe2.mjs
+scripts/_shots/

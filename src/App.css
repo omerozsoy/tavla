@@ -27,11 +27,12 @@
   /* success METIN (yuzey uzerine): koyu temada acik yesil okunur */
   --success-fg: #7ee0a0;
 
-  /* Yukseltme (elevation) golge olcekleri — kart/modal tutarliligi */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.14);
-  --shadow-md: 0 3px 10px rgba(0, 0, 0, 0.24);
-  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.36);
-  --shadow-xl: 0 16px 44px rgba(0, 0, 0, 0.46);
+  /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
+     Sadece modal/overlay icin cok hafif bir "scrim golgesi" xl'de birakildi. */
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none;
+  --shadow-xl: 0 0 0 1px var(--border);
 
   /* ---- Bosluk (spacing) olcegi — 4px tabanli grid ---- */
   --space-1: 4px;
@@ -3450,7 +3451,6 @@ button[aria-disabled='true'],
   font-size: 1.15rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35);
   transition:
     filter 0.12s,
     transform 0.06s;
@@ -5190,12 +5190,8 @@ html.fs-active .account-bar {
   overflow: hidden;
   isolation: isolate;
   border: 1px solid var(--border);
-  /* Sicak katmanli zemin: kremden kiremite hafif radial + duz kart tabani */
-  background:
-    radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
-    radial-gradient(100% 120% at 0% 100%, color-mix(in srgb, var(--tv-gold) 12%, transparent), transparent 55%),
-    var(--card-bg);
-  box-shadow: var(--shadow-lg);
+  /* Flat: duz kart zemini, katmanli gradient/golge yok */
+  background: var(--card-bg);
 }
 /* Ince dokulu ust seritte marka vurgusu */
 .lobby-hero::before {
@@ -5203,7 +5199,7 @@ html.fs-active .account-bar {
   position: absolute;
   inset: 0 0 auto 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--accent), var(--tv-gold), var(--accent));
+  background: var(--accent);
   z-index: 1;
 }
 .hero-copy {
@@ -5252,9 +5248,6 @@ html.fs-active .account-bar {
   font-size: 1rem;
   padding: 12px 22px;
   border-radius: var(--radius-pill);
-}
-.hero-btn-primary {
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 .hero-btn-secondary {
   font-weight: var(--fw-bold);
@@ -5308,6 +5301,9 @@ html.fs-active .account-bar {
   .lobby-hero {
     grid-template-columns: 1fr;
     text-align: center;
+    /* Yigin duzende sabit yukseklik CTA'yi kirpiyordu: icerige gore buyusun */
+    min-height: 0;
+    align-items: stretch;
   }
   .hero-kicker {
     margin: 0 auto;
