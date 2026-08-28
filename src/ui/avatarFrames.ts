@@ -4,13 +4,13 @@
 
 import type { SoberMotion } from './SoberFrame'
 
-export type FrameRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
-export type FrameGroup = 'rare' | 'epic' | 'legendary' | 'mythic' | 'prestige' | 'tavla' | 'achievement'
+export type FrameRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
+export type FrameGroup = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'prestige' | 'tavla' | 'achievement'
 
 export interface AvatarFrameDef {
   id: string
   name: string
-  rarity: FrameRarity // renk aksani (gri yok; en dusuk rare)
+  rarity: FrameRarity // 5 kademe: Standart<Nadir<Epik<Efsanevi<Mitik
   group: FrameGroup // galeri gruplamasi
   /** SoberFrame animasyon anahtari (AvatarFrame -> SoberFrame ile cizer) */
   motion: SoberMotion
@@ -20,16 +20,18 @@ export interface AvatarFrameDef {
   earned?: boolean
 }
 
-// Nadirlik renkleri (BoardSettings ile ayni dil): rare mavi, epic mor, legendary altin, mythic kirmizi
+// 5 kademe rarity renkleri: Standart gumus, Nadir safir, Epik ametist, Efsanevi altin, Mitik yakut
 export const FRAME_RARITY_COLOR: Record<FrameRarity, string> = {
+  common: '#9CA3AF',
   rare: '#3B82F6',
   epic: '#A855F7',
   legendary: '#F59E0B',
   mythic: '#EF4444',
 }
 
-// Rarity coin fiyatlari (backend ShopController CATALOG ile birebir ayni olmali)
+// Rarity coin fiyatlari (backend ShopController RARITY_PRICE ile birebir ayni olmali)
 export const FRAME_RARITY_PRICE: Record<FrameRarity, number> = {
+  common: 250,
   rare: 500,
   epic: 1000,
   legendary: 2000,
@@ -41,6 +43,7 @@ export function framePrice(f: AvatarFrameDef): number | undefined {
 }
 
 export const FRAME_GROUP_LABEL: Record<FrameGroup, string> = {
+  common: 'rarity.common',
   rare: 'rarity.rare',
   epic: 'rarity.epic',
   legendary: 'rarity.legendary',
@@ -50,33 +53,34 @@ export const FRAME_GROUP_LABEL: Record<FrameGroup, string> = {
   achievement: 'frames.groupAchievement',
 }
 export const FRAME_GROUP_ORDER: FrameGroup[] = [
-  'rare', 'epic', 'legendary', 'mythic', 'prestige', 'tavla', 'achievement',
+  'common', 'rare', 'epic', 'legendary', 'mythic', 'prestige', 'tavla', 'achievement',
 ]
 
 // Sade SoberFrame cerceveleri: 42 animasyon x 5 renk = 210 cerceve (generate).
 // Eski 24 cerceve + PremiumFrame sistemi kaldirildi.
 type AnimDef = { motion: SoberMotion; name: string; rarity: FrameRarity }
 const ANIMS: AnimDef[] = [
-  // --- Nadir (500) ---
-  { motion: 'pulse', name: 'Nabız', rarity: 'rare' },
-  { motion: 'heartbeat', name: 'Kalp Atışı', rarity: 'rare' },
-  { motion: 'glowPulse', name: 'Glow Nabız', rarity: 'rare' },
-  { motion: 'pulseFast', name: 'Hızlı Nabız', rarity: 'rare' },
+  // --- Standart (250): en sade olcek/nabiz ---
+  { motion: 'pulse', name: 'Nabız', rarity: 'common' },
+  { motion: 'heartbeat', name: 'Kalp Atışı', rarity: 'common' },
+  { motion: 'pulseFast', name: 'Hızlı Nabız', rarity: 'common' },
+  { motion: 'heartScale', name: 'Kalp Ölçek', rarity: 'common' },
+  { motion: 'vibrate', name: 'Titreşim', rarity: 'common' },
+  { motion: 'jelly', name: 'Jöle', rarity: 'common' },
+  { motion: 'gelatine', name: 'Jelatin', rarity: 'common' },
+  { motion: 'bounce', name: 'Zıplama', rarity: 'common' },
+  { motion: 'pop', name: 'Pop', rarity: 'common' },
+  // --- Nadir (500): hafif hareket/salinim ---
   { motion: 'levitate', name: 'Havalanma', rarity: 'rare' },
-  { motion: 'bounce', name: 'Zıplama', rarity: 'rare' },
-  { motion: 'jelly', name: 'Jöle', rarity: 'rare' },
-  { motion: 'gelatine', name: 'Jelatin', rarity: 'rare' },
-  { motion: 'heartScale', name: 'Kalp Ölçek', rarity: 'rare' },
-  { motion: 'vibrate', name: 'Titreşim', rarity: 'rare' },
-  { motion: 'pop', name: 'Pop', rarity: 'rare' },
   { motion: 'sway', name: 'Sallanma', rarity: 'rare' },
   { motion: 'wobble', name: 'Yalpa', rarity: 'rare' },
   { motion: 'rock', name: 'Beşik', rarity: 'rare' },
-  // --- Epik (1000) ---
-  { motion: 'tada', name: 'Tada', rarity: 'epic' },
-  { motion: 'circleMove', name: 'Daire Gezinme', rarity: 'epic' },
-  { motion: 'pendulum', name: 'Sarkaç', rarity: 'epic' },
-  { motion: 'swing', name: 'Salınım', rarity: 'epic' },
+  { motion: 'glowPulse', name: 'Glow Nabız', rarity: 'rare' },
+  { motion: 'tada', name: 'Tada', rarity: 'rare' },
+  { motion: 'circleMove', name: 'Daire Gezinme', rarity: 'rare' },
+  { motion: 'pendulum', name: 'Sarkaç', rarity: 'rare' },
+  { motion: 'swing', name: 'Salınım', rarity: 'rare' },
+  // --- Epik (1000): belirgin isik/sweep ---
   { motion: 'expand', name: 'Genişleme', rarity: 'epic' },
   { motion: 'seesaw', name: 'Tahterevalli', rarity: 'epic' },
   { motion: 'sweep', name: 'Işık Turu', rarity: 'epic' },
@@ -85,23 +89,24 @@ const ANIMS: AnimDef[] = [
   { motion: 'bright', name: 'Parlaklık', rarity: 'epic' },
   { motion: 'shineOnce', name: 'Parlama', rarity: 'epic' },
   { motion: 'gradSpin', name: 'Dönen Gradient', rarity: 'epic' },
-  { motion: 'ripple', name: 'Dalga', rarity: 'epic' },
-  { motion: 'radar', name: 'Radar', rarity: 'epic' },
-  { motion: 'auraPulse', name: 'Aura Nabız', rarity: 'epic' },
-  // --- Efsanevi (2000) ---
+  // --- Efsanevi (2000): cok katmanli/renk/3D ---
+  { motion: 'ripple', name: 'Dalga', rarity: 'legendary' },
+  { motion: 'radar', name: 'Radar', rarity: 'legendary' },
+  { motion: 'auraPulse', name: 'Aura Nabız', rarity: 'legendary' },
   { motion: 'flip3d', name: '3D Çevirme', rarity: 'legendary' },
   { motion: 'hueCycle', name: 'Renk Döngüsü', rarity: 'legendary' },
-  { motion: 'rainbow', name: 'Gökkuşağı', rarity: 'legendary' },
   { motion: 'invert', name: 'Ters', rarity: 'legendary' },
   { motion: 'dualSweep', name: 'Çift Tur', rarity: 'legendary' },
-  { motion: 'conicRainbow', name: 'Konik Gökkuşağı', rarity: 'legendary' },
-  { motion: 'rain', name: 'Parıltı Yağmuru', rarity: 'legendary' },
-  { motion: 'sparkleBurst', name: 'Parıltı Patlaması', rarity: 'legendary' },
-  { motion: 'dualOrbit', name: 'Çift Yörünge', rarity: 'legendary' },
-  { motion: 'dualRipple', name: 'Çift Dalga', rarity: 'legendary' },
-  { motion: 'neonPulse', name: 'Neon Nabız', rarity: 'legendary' },
   { motion: 'pulseHalo', name: 'Hale Nabız', rarity: 'legendary' },
-  { motion: 'sonar', name: 'Sonar', rarity: 'legendary' },
+  // --- Mitik (4000): en gosterisli/gokkusagi/yorunge/partikul ---
+  { motion: 'rainbow', name: 'Gökkuşağı', rarity: 'mythic' },
+  { motion: 'conicRainbow', name: 'Konik Gökkuşağı', rarity: 'mythic' },
+  { motion: 'rain', name: 'Parıltı Yağmuru', rarity: 'mythic' },
+  { motion: 'sparkleBurst', name: 'Parıltı Patlaması', rarity: 'mythic' },
+  { motion: 'dualOrbit', name: 'Çift Yörünge', rarity: 'mythic' },
+  { motion: 'dualRipple', name: 'Çift Dalga', rarity: 'mythic' },
+  { motion: 'neonPulse', name: 'Neon Nabız', rarity: 'mythic' },
+  { motion: 'sonar', name: 'Sonar', rarity: 'mythic' },
 ]
 // 5 renk (id anahtari + gorunen ad + hex). Backend id'leri ile birebir ayni: 'frame.<motion>-<key>'.
 export const FRAME_COLORS: { key: string; name: string; hex: string }[] = [

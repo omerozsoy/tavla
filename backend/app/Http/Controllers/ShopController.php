@@ -19,21 +19,28 @@ class ShopController extends Controller
         'theme.sunset' => 600,
     ];
 
-    // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile birebir, 42 adet).
+    // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 42 adet).
+    // 5 kademe: Standart(common) < Nadir(rare) < Epik(epic) < Efsanevi(legendary) < Mitik(mythic).
     private const FRAME_MOTIONS = [
-        'pulse' => 'rare', 'heartbeat' => 'rare', 'glowPulse' => 'rare', 'pulseFast' => 'rare', 'levitate' => 'rare',
-        'bounce' => 'rare', 'jelly' => 'rare', 'gelatine' => 'rare', 'heartScale' => 'rare', 'vibrate' => 'rare',
-        'pop' => 'rare', 'sway' => 'rare', 'wobble' => 'rare', 'rock' => 'rare',
-        'tada' => 'epic', 'circleMove' => 'epic', 'pendulum' => 'epic', 'swing' => 'epic', 'expand' => 'epic',
-        'seesaw' => 'epic', 'sweep' => 'epic', 'sweepFast' => 'epic', 'glint' => 'epic', 'bright' => 'epic',
-        'shineOnce' => 'epic', 'gradSpin' => 'epic', 'ripple' => 'epic', 'radar' => 'epic', 'auraPulse' => 'epic',
-        'flip3d' => 'legendary', 'hueCycle' => 'legendary', 'rainbow' => 'legendary', 'invert' => 'legendary',
-        'dualSweep' => 'legendary', 'conicRainbow' => 'legendary', 'rain' => 'legendary', 'sparkleBurst' => 'legendary',
-        'dualOrbit' => 'legendary', 'dualRipple' => 'legendary', 'neonPulse' => 'legendary', 'pulseHalo' => 'legendary', 'sonar' => 'legendary',
+        // Standart (250)
+        'pulse' => 'common', 'heartbeat' => 'common', 'pulseFast' => 'common', 'heartScale' => 'common',
+        'vibrate' => 'common', 'jelly' => 'common', 'gelatine' => 'common', 'bounce' => 'common', 'pop' => 'common',
+        // Nadir (500)
+        'levitate' => 'rare', 'sway' => 'rare', 'wobble' => 'rare', 'rock' => 'rare', 'glowPulse' => 'rare',
+        'tada' => 'rare', 'circleMove' => 'rare', 'pendulum' => 'rare', 'swing' => 'rare',
+        // Epik (1000)
+        'expand' => 'epic', 'seesaw' => 'epic', 'sweep' => 'epic', 'sweepFast' => 'epic', 'glint' => 'epic',
+        'bright' => 'epic', 'shineOnce' => 'epic', 'gradSpin' => 'epic',
+        // Efsanevi (2000)
+        'ripple' => 'legendary', 'radar' => 'legendary', 'auraPulse' => 'legendary', 'flip3d' => 'legendary',
+        'hueCycle' => 'legendary', 'invert' => 'legendary', 'dualSweep' => 'legendary', 'pulseHalo' => 'legendary',
+        // Mitik (4000)
+        'rainbow' => 'mythic', 'conicRainbow' => 'mythic', 'rain' => 'mythic', 'sparkleBurst' => 'mythic',
+        'dualOrbit' => 'mythic', 'dualRipple' => 'mythic', 'neonPulse' => 'mythic', 'sonar' => 'mythic',
     ];
 
     private const FRAME_COLORS = ['rose', 'sapphire', 'emerald', 'gold', 'amethyst'];
-    private const RARITY_PRICE = ['rare' => 500, 'epic' => 1000, 'legendary' => 2000];
+    private const RARITY_PRICE = ['common' => 250, 'rare' => 500, 'epic' => 1000, 'legendary' => 2000, 'mythic' => 4000];
 
     // Tam katalog: temalar + 42 animasyon x 5 renk = 210 cerceve (id: 'frame.<motion>-<color>').
     private function catalog(): array
