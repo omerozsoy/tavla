@@ -5055,6 +5055,11 @@ html.fs-active .account-bar {
   gap: 10px;
   margin: 4px 0 2px;
 }
+/* Google ustte varyant: buton -> cizgi (ayirici) -> altinda e-posta/sifre */
+.google-auth-top {
+  margin: 2px 0 4px;
+  gap: 12px;
+}
 .google-btn {
   display: flex;
   justify-content: center;

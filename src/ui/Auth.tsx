@@ -489,9 +489,14 @@ export default function Auth({
             (form onSubmit). Login sifresi AYRI state (loginPw) -> alanlar cakismaz. */}
         {!editing && !forgot && (
           <div className="auth-cols">
-            {/* Sol kolon: Giris yap */}
+            {/* Sol kolon: Giris yap. Sira: Google ile giris (ust) -> cizgi ->
+                e-posta + sifre -> Giris Yap -> Sifremi unuttum. */}
             <div className="auth-col">
               <h3 className="auth-col-title">{t('auth.login')}</h3>
+              <div className="google-auth google-auth-top">
+                <div ref={googleBtnRef} className="google-btn" />
+                <div className="auth-divider">{t('auth.or')}</div>
+              </div>
               <label>
                 {t('auth.loginId')}
                 <input
@@ -538,10 +543,6 @@ export default function Auth({
               >
                 {t('auth.forgot')}
               </button>
-              <div className="google-auth">
-                <div className="auth-divider">{t('auth.or')}</div>
-                <div ref={googleBtnRef} className="google-btn" />
-              </div>
             </div>
 
             {/* Sag kolon: Kayit ol */}
