@@ -3008,6 +3008,11 @@ export default function App() {
   const authProps = {
     onAuthed: (u: ServerUser, isNew?: boolean) => {
       const wasEditing = editProfile
+      // Misafirken bitmis bir mac state'te duruyorsa, giris/kayit sonrasi puan
+      // raporu efekti (user null->dolu) geriye donuk tetiklenip bu maci YENI
+      // hesaba yazmasin. loadServerGame async oldugundan mac hemen sifirlanmaz;
+      // bayragi setUser'dan ONCE kapatiyoruz (applySavedGame sonra dogru ayarlar).
+      if (matchWinner(match)) ratingReportedRef.current = true
       setUser(u)
       setGuestProfile(null)
       setShowAuth(false)
