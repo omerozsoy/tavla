@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import SoberFrame from './SoberFrame'
 import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
+import './AvatarFrame.css' // .avf-simple boyut/stil (fallback avatar) — bu olmadan resimler dev gibi olur
 
 // Avatar + (varsa) sade cerceve. Cerceve tanimliysa ve boyut yeterliyse SoberFrame (CSS halka +
 // secili animasyon) cizilir; kucuk/cercevesiz durumda sade dairesel avatar (cerceveliyse ince
