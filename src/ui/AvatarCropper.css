@@ -1,0 +1,87 @@
+/* Avatar cember kirpici — flat, marka uyumlu */
+.avc-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  backdrop-filter: blur(3px);
+  padding: 16px;
+}
+.avc-panel {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  width: min(340px, 92vw);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+.avc-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.avc-view {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.avc-view:active {
+  cursor: grabbing;
+}
+.avc-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  pointer-events: none;
+}
+/* dairesel rehber: cember disini karart + ince halka */
+.avc-mask {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 9999px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 2px rgba(255, 255, 255, 0.92),
+    inset 0 0 0 4px color-mix(in srgb, var(--accent) 70%, transparent);
+  pointer-events: none;
+}
+.avc-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  color: var(--muted);
+}
+.avc-zoom input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.avc-hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+.avc-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+.avc-actions > * {
+  flex: 1;
+}
+.avc-apply {
+  font-size: 1rem;
+}
