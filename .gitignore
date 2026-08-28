@@ -52,3 +52,12 @@ scripts/ui-shot-dark.mjs
 scripts/ui-probe.mjs
 scripts/ui-probe2.mjs
 scripts/_shots/
+
+# gecici cerceve kurasyon harness'i (kalici degil)
+frame-tiers.html
+src/frame-tiers.tsx
+frame-tiers.json
+
+# gecici cerceve onizleme avatari (kalici degil)
+public/frame-preview-avatar.jpg
+scripts/frame-shot.mjs
