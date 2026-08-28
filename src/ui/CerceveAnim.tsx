@@ -1,37 +1,26 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import SoberFrame, { type SoberMotion, type SoberRarity } from './SoberFrame'
+import SoberFrame, { type SoberMotion } from './SoberFrame'
 import './CerceveAnim.css'
 
-// Animasyon secim demosu (/cerceve-anim): sade-premium cerceve icin ELDEKI TUM sade animasyonlar,
-// her rarity'de, altinda animasyon ismi yazili. Kullanici icinden secer -> nihai PremiumFrame'e uygulanir.
+// Animasyon + renk secim demosu (/cerceve-anim). Her animasyon icin 20 renk (UI/UX Pro Max
+// paletlerinden), altinda renk adi. Animasyonlar bilerek ABARTILI (secim icin net gorunsun).
+// Renkler = UI/UX Pro Max product palette accent/primary tonlari.
+const COLORS: [string, string][] = [
+  ['Antique Gold', '#A16207'], ['Rose Red', '#E11D48'], ['Coral', '#FB7185'], ['Royal Blue', '#2563EB'],
+  ['Indigo', '#6366F1'], ['Periwinkle', '#818CF8'], ['Emerald', '#059669'], ['Burnt Orange', '#EA580C'],
+  ['Amber', '#F59E0B'], ['Gold', '#FBBF24'], ['Violet', '#8B5CF6'], ['Forest', '#15803D'],
+  ['Ochre', '#D97706'], ['Magenta', '#DB2777'], ['Pink', '#F472B6'], ['Teal', '#0891B2'],
+  ['Cyan', '#22D3EE'], ['Orange', '#F97316'], ['Apricot', '#FB923C'], ['Deep Indigo', '#4F46E5'],
+] // 20 renk
 
-const ANIMS: { key: SoberMotion; name: string; note: string }[] = [
-  { key: 'static', name: 'Statik', note: 'hareket yok' },
-  { key: 'hover', name: 'Hover Glow', note: 'üstüne gel' },
-  { key: 'breathe', name: 'Nefes · Breathe', note: 'glow yavaş nefes' },
-  { key: 'pulse', name: 'Nabız · Pulse', note: 'hafif ölçek' },
-  { key: 'sheen', name: 'Işık Kayması · Sheen', note: 'yavaş ışık' },
-  { key: 'shimmer', name: 'Shimmer · Metalik', note: 'hızlı parıltı' },
-  { key: 'sweep', name: 'Işık Turu · Sweep', note: 'parlak nokta döner' },
-  { key: 'sparkle', name: 'Sparkle · Tekil', note: 'seyrek yıldız' },
-  { key: 'twinkle', name: 'Twinkle · Yıldızlar', note: '3 yıldız' },
-  { key: 'aura', name: 'Yumuşak Aura', note: 'dış aura nefesi' },
-  { key: 'glowPulse', name: 'Glow Nabız', note: 'glow yayılır' },
-  { key: 'float', name: 'Süzülme · Float', note: 'hafif yukarı-aşağı' },
-]
-
-const RARITIES: { key: SoberRarity; label: string }[] = [
-  { key: 'rare', label: 'RARE — Steel Blue' },
-  { key: 'epic', label: 'EPIC — Amethyst' },
-  { key: 'legendary', label: 'LEGENDARY — Champagne Gold' },
-  { key: 'mythic', label: 'MYTHIC — Bordeaux' },
-]
-
-const ACCENTS: [string, string][] = [
-  ['Inferno', '#B4542E'], ['Emerald', '#2E7D57'], ['Diamond', '#6FA8C7'], ['Ruby', '#9B2C3A'],
-  ['Galaxy', '#6D5AA6'], ['Sapphire', '#3B6FA0'], ['Amber', '#B8862B'], ['Onyx', '#4A4A55'],
+const SECTIONS: { motion: SoberMotion; title: string }[] = [
+  { motion: 'static', title: 'Statik' },
+  { motion: 'sweep', title: 'Işık Turu · Sweep' },
+  { motion: 'glowPulse', title: 'Glow Nabız' },
+  { motion: 'aura', title: 'Yumuşak Aura' },
+  { motion: 'pulse', title: 'Nabız · Pulse' },
 ]
 
 const SIZES = [80, 104, 128] as const
@@ -48,13 +37,12 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
         </button>
 
         <div className="ca-head">
-          <h2>Çerçeve Animasyon Seçimi</h2>
+          <h2>Çerçeve Animasyon + Renk Seçimi</h2>
           <p>
-            Sade-premium çerçeve için elimdeki <b>tüm animasyonlar</b>, her rarity'de — altında ismi
-            yazılı. İnce halka · merkez şeffaf (yüz kapanmaz) · halka dönmez (yalnız “Sweep”te ışık
-            döner) · neon/particle yok. <b>Not:</b> animasyonlar burada bilerek <b>abartılı</b>
-            gösteriliyor (farkı anla diye) — seçtiğinde gerçek çerçevede çok daha <b>sade</b> olacak.
-            Beğendiğini söyle (rarity + animasyon adı), gerçek PremiumFrame'e uygularım.
+            5 animasyon × 20 renk (UI/UX Pro Max paletleri). İnce halka · merkez şeffaf · halka
+            dönmez (yalnız “Sweep”te ışık döner). Animasyonlar burada <b>bilerek abartılı</b> — net
+            görün diye; seçtiğinde gerçek çerçevede çok daha <b>sade</b> olacak. Beğendiğini yaz
+            (animasyon + renk adı).
           </p>
           <div className="ca-seg">
             {SIZES.map((s) => (
@@ -65,37 +53,22 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        {RARITIES.map((r) => (
-          <section key={r.key} className="ca-sec">
-            <h3>{r.label}</h3>
+        {SECTIONS.map((sec) => (
+          <section key={sec.motion} className="ca-sec">
+            <h3>{sec.title} — 20 Renk</h3>
             <div className="ca-grid">
-              {ANIMS.map((a) => (
-                <div key={a.key} className="ca-cell">
+              {COLORS.map(([name, hex]) => (
+                <div key={sec.motion + hex} className="ca-cell">
                   <div className="ca-stage" style={{ height: size + 12 }}>
-                    <SoberFrame rarity={r.key} motion={a.key} size={size} />
+                    <SoberFrame accent={hex} motion={sec.motion} size={size} />
                   </div>
-                  <div className="ca-name">{a.name}</div>
-                  <div className="ca-note">{a.note}</div>
+                  <div className="ca-name">{name}</div>
+                  <div className="ca-note">{hex}</div>
                 </div>
               ))}
             </div>
           </section>
         ))}
-
-        <section className="ca-sec">
-          <h3>“24 farklı ama sade” — mat aksan örnekleri (Nefes animasyonu ile)</h3>
-          <div className="ca-grid">
-            {ACCENTS.map(([name, c]) => (
-              <div key={name} className="ca-cell">
-                <div className="ca-stage" style={{ height: size + 12 }}>
-                  <SoberFrame accent={c} motion="breathe" size={size} />
-                </div>
-                <div className="ca-name">{name}</div>
-                <div className="ca-note">mat aksan</div>
-              </div>
-            ))}
-          </div>
-        </section>
       </div>
     </div>
   )
