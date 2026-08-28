@@ -18,10 +18,11 @@
 type Tone = 'auto' | 'light' | 'dark' | 'brick' | 'mono'
 
 const POINT: Record<Exclude<Tone, 'auto'>, { up: string; down: string; text: string; downOpacity?: number }> = {
-  light: { up: '#A83A2B', down: '#1C1A17', text: '#1C1A17' },
-  dark: { up: '#C9563F', down: '#F4EFE6', text: '#F4EFE6' },
-  brick: { up: '#F4EFE6', down: '#1C1A17', text: '#F4EFE6' },
-  mono: { up: '#1C1A17', down: '#1C1A17', text: '#1C1A17', downOpacity: 0.35 },
+  // Royal Navy marka: gold aksan ucgen + ivory/navy harfler
+  light: { up: '#927540', down: '#14243A', text: '#14243A' },
+  dark: { up: '#C2A15F', down: '#F0E8D8', text: '#F0E8D8' },
+  brick: { up: '#F0E8D8', down: '#14243A', text: '#F0E8D8' }, // gold zemin uzerinde
+  mono: { up: '#14243A', down: '#14243A', text: '#14243A', downOpacity: 0.35 },
 }
 
 const CAP = 0.71 // Outfit 700 kapak yuksekligi / em
@@ -97,7 +98,7 @@ export function TavlaTvLogo({
 export function TavlaTvMark({
   size = 40,
   radius = '50%',
-  background = '#A83A2B',
+  background = '#14243A',
 }: {
   size?: number
   radius?: number | string
@@ -137,8 +138,8 @@ export function TavlaTvMark({
         gap: Math.max(1, Math.round(size * 0.03)),
       }}
     >
-      {tri('up', '#F4EFE6')}
-      {!single && tri('down', '#1C1A17')}
+      {tri('up', '#C2A15F')}
+      {!single && tri('down', '#F0E8D8')}
     </span>
   )
 }

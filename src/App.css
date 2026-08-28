@@ -591,7 +591,7 @@ button[aria-disabled='true'],
 .dp-day.selected {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: var(--fw-bold);
 }
 .dp-day:disabled {
@@ -645,7 +645,7 @@ button[aria-disabled='true'],
   line-height: 1;
 }
 .ptr-circle.ready {
-  color: var(--tv-white);
+  color: var(--on-accent);
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -697,7 +697,7 @@ button[aria-disabled='true'],
 .brand-badge {
   align-self: flex-start;
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 800;
   font-size: 1.15rem;
   letter-spacing: 2px;
@@ -1206,7 +1206,7 @@ button[aria-disabled='true'],
 .setup-tile.active {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 700;
 }
 .setup-tile .bet-pct {
@@ -1250,7 +1250,7 @@ button[aria-disabled='true'],
 .target-chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 /* Mac kurulum alt aksiyonlari: tek belirgin CTA + net ikincil dugme */
@@ -1797,7 +1797,7 @@ button[aria-disabled='true'],
   padding: 0 7px;
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-size: 0.74rem;
   font-weight: 600;
 }
@@ -2434,7 +2434,7 @@ button[aria-disabled='true'],
 .menu-btn.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 600;
 }
 .menu-targets {
@@ -2498,7 +2498,7 @@ button[aria-disabled='true'],
 .chip.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 600;
 }
 .sep {
@@ -3378,7 +3378,7 @@ button[aria-disabled='true'],
   padding: 2px 10px;
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 800;
   font-size: 0.82rem;
 }
@@ -3465,7 +3465,7 @@ button[aria-disabled='true'],
 }
 .galaxy-btn {
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-md);
   padding: 12px 26px;
@@ -4641,7 +4641,7 @@ html.fs-active .account-bar {
   opacity: 1;
   background: var(--accent);
   border-color: transparent;
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 /* Kutular arasi ince ayirici cizgi/ikon */
 .clock-delay {
@@ -4752,7 +4752,7 @@ html.fs-active .account-bar {
   padding: 3px 10px;
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-size: 0.86rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -4823,7 +4823,7 @@ html.fs-active .account-bar {
 .account-btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 .account-btn.icon {
   padding: 6px 10px;
@@ -5465,7 +5465,7 @@ html.fs-active .account-bar {
 .rank-tabs button.active {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 .rank-row {
   display: grid;
@@ -5750,7 +5750,7 @@ html.fs-active .account-bar {
 .menu-btn.lobby-new {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 700;
   font-size: 1rem;
   padding: 12px;
@@ -5833,7 +5833,7 @@ html.fs-active .account-bar {
 .home-btn.primary {
   background: var(--accent);
   border-color: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 .home-btn-ico {
   font-size: 1.8rem;
@@ -6516,7 +6516,7 @@ html.fs-active .account-bar {
 .mode-choice.active {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
@@ -7386,7 +7386,7 @@ html.fs-active .account-bar {
 }
 .mem-toggle button.active {
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
 }
 .mem-err {
   text-align: center;
@@ -7423,7 +7423,7 @@ html.fs-active .account-bar {
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-size: 0.68rem;
   font-weight: 800;
   padding: 3px 10px;
@@ -8961,7 +8961,7 @@ html.fs-active .account-bar {
 .level-chip.active {
   border-color: var(--accent);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   font-weight: 700;
 }
 .setup-row {
@@ -8999,7 +8999,7 @@ html.fs-active .account-bar {
 }
 .setup-toggle.on .setup-switch {
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   border-color: var(--accent);
 }
 
@@ -9024,7 +9024,7 @@ html.fs-active .account-bar {
   justify-content: space-between;
   padding: 10px 12px;
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   border: none;
   cursor: pointer;
   font-weight: 600;
@@ -9058,7 +9058,7 @@ html.fs-active .account-bar {
 .chat-msg.mine {
   align-self: flex-end;
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   border-bottom-right-radius: 3px;
 }
 .chat-msg.theirs {
@@ -9099,7 +9099,7 @@ html.fs-active .account-bar {
   border: none;
   border-radius: var(--radius-md);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   cursor: pointer;
   font-size: 13px;
   font-weight: 600;
@@ -9216,7 +9216,7 @@ html.fs-active .account-bar {
   padding: 2px 7px;
   border-radius: var(--radius-pill);
   background: var(--accent);
-  color: var(--tv-white);
+  color: var(--on-accent);
   letter-spacing: 0.06em;
 }
 .club-desc {
