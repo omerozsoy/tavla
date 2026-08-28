@@ -16,6 +16,7 @@ import {
 
 // Galeri ile ayni grup renkleri
 const GROUP_COLOR: Record<FrameGroup, string> = {
+  common: '#9CA3AF',
   rare: '#3B82F6',
   epic: '#A855F7',
   legendary: '#F59E0B',
@@ -219,9 +220,11 @@ export default function Shop({
   }
   const RARITY_CHIPS: { key: FrameRarity | 'all'; label: string }[] = [
     { key: 'all', label: t('shop.all') },
+    { key: 'common', label: t('rarity.common') },
     { key: 'rare', label: t('rarity.rare') },
     { key: 'epic', label: t('rarity.epic') },
     { key: 'legendary', label: t('rarity.legendary') },
+    { key: 'mythic', label: t('rarity.mythic') },
   ]
 
   return (
