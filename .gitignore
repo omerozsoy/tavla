@@ -38,4 +38,4 @@ shop-test.png
 *.shot.png
 
 # ornek .mat dis-aktarim ciktisi (gnubg testi icin uretilir)
-ornek-mac.mat
+ornek-*.mat

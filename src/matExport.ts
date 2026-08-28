@@ -45,8 +45,10 @@ export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
     let last: MoveLogEntry | undefined
     for (const e of game) {
       if (e.cube) {
+        // Kup yalnizca KABUL edilince (take) katlanir. Teklif (double) + kabul (take)
+        // ayri satirlar oldugundan ikisinde de katlarsak x4 olurdu -> sadece take.
         if (e.cube.chosen === 'drop') dropWinner = e.player ? opponent(e.player) : null
-        else if (e.cube.chosen === 'double' || e.cube.chosen === 'take') cube *= 2
+        else if (e.cube.chosen === 'take') cube *= 2
       } else if (e.player) {
         last = e
       }
@@ -78,8 +80,7 @@ export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
       let text: string
       if (e.cube) {
         if (e.cube.chosen === 'double') {
-          cube *= 2
-          text = `Doubles => ${cube}`
+          text = `Doubles => ${cube * 2}` // teklif edilen deger; cube kabul (take) ile guncellenir
         } else if (e.cube.chosen === 'take') {
           cube *= 2
           text = 'Takes'
