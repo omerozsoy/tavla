@@ -32,7 +32,6 @@ export interface SideMenuProps {
   onAdmin?: () => void
   onCalendar?: () => void
   onClubs?: () => void
-  onFrames?: () => void
   onServices?: () => void
   onBlog?: () => void
   onNews?: () => void
@@ -139,13 +138,8 @@ export default function SideMenu(p: SideMenuProps) {
       )}
 
       {/* Bilgi / icerik sayfalari (herkese acik) */}
-      {!p.inGame && (p.onCalendar || p.onClubs || p.onFrames || p.onServices || p.onBlog || p.onNews) && (
+      {!p.inGame && (p.onCalendar || p.onClubs || p.onServices || p.onBlog || p.onNews) && (
         <div className="menu-group">
-          {p.onFrames && (
-            <button className="menu-btn" onClick={p.onFrames}>
-              <Icon name="star" /> {t('frames.title')}
-            </button>
-          )}
           {p.onCalendar && (
             <button className="menu-btn" onClick={p.onCalendar}>
               <Icon name="calendar" /> {t('menu.calendar')}
