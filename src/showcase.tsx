@@ -13,7 +13,7 @@ import { createRoot } from 'react-dom/client'
 import './App.css'
 import { LangProvider } from './i18n'
 import { ToastProvider, useToast } from './ui/Toast'
-import { Icon } from './ui/Icon'
+import { Icon, ICON_NAMES } from './ui/Icon'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import AvatarFrame from './ui/AvatarFrame'
 import { DivisionChip, BadgeList } from './ui/Badges'
@@ -75,6 +75,7 @@ const SECTIONS = [
   ['game', '10 · Game Components'],
   ['profile', '11 · Profile Components'],
   ['tokens', '12 · Spacing · Radius · Shadow'],
+  ['icons', '13 · Icons'],
 ]
 
 // ---- Kucuk yardimcilar (SADECE showcase duzeni; component kopyasi DEGIL) ----
@@ -646,6 +647,35 @@ function Showcase() {
           </Item>
         </Section>
 
+        {/* 13 ICONS — tum ikon seti (Icon.tsx / Lucide tarzi inline SVG) */}
+        <section id="icons" className="sc-section">
+          <h2 className="sc-section-title">13 · Icons — {ICON_NAMES.length} adet</h2>
+          <p className="sc-note" style={{ marginTop: 0 }}>
+            Tek ikon seti: <code>src/ui/Icon.tsx</code> — Lucide tarzı inline SVG, stroke 1.75,{' '}
+            <code>currentColor</code>. Kullanım: <code>&lt;Icon name="…" size={'{20}'} /&gt;</code>.
+            Bir ikona tıkla → kullanım kodu panoya kopyalanır.
+          </p>
+          <div className="sc-icons-grid">
+            {ICON_NAMES.map((n) => (
+              <button
+                key={n}
+                type="button"
+                className="sc-icon-cell"
+                title={`<Icon name="${n}" />  ·  kopyalamak için tıkla`}
+                onClick={() => {
+                  navigator.clipboard
+                    ?.writeText(`<Icon name="${n}" size={20} />`)
+                    .then(() => toast.show(`Kopyalandı: <Icon name="${n}" />`, 'success'))
+                    .catch(() => toast.show('Kopyalanamadı', 'error'))
+                }}
+              >
+                <Icon name={n} size={22} />
+                <code className="sc-icon-name">{n}</code>
+              </button>
+            ))}
+          </div>
+        </section>
+
         <footer className="sc-footer">
           TavlaTV Design System · Royal Navy · Gerçek componentler — dev/admin harness (production'a dahil değil).
         </footer>
@@ -762,6 +792,14 @@ const SC_CSS = `
 .sc-modal p{color:var(--muted);margin:0;line-height:1.55}
 .sc-modal-x{position:absolute;top:12px;right:12px;background:transparent;border:none;color:var(--muted);cursor:pointer}
 .sc-footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);color:var(--muted);font-size:12.5px;text-align:center}
+/* icons gallery */
+.sc-icons-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.sc-icon-cell{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;
+  background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius-md);
+  color:var(--text);cursor:pointer;transition:border-color .15s,transform .15s,color .15s}
+.sc-icon-cell:hover{border-color:var(--gold);color:var(--gold);transform:translateY(-2px)}
+.sc-icon-name{font-family:var(--tv-font-mono);font-size:11px;color:var(--muted);word-break:break-word;text-align:center}
+.sc-icon-cell:hover .sc-icon-name{color:var(--text)}
 `
 
 createRoot(document.getElementById('root')!).render(
