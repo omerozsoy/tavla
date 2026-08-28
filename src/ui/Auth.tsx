@@ -8,33 +8,18 @@ import DatePicker from './DatePicker'
 import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
+import AvatarCropper from './AvatarCropper'
 
 function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
-// Secilen resmi kucult (max kenar) ve JPEG data URL dondur
-function resizeImage(file: File, max = 160): Promise<string> {
+// Dosyayi tam cozunurluklu data URL olarak oku (kirpici icin)
+function fileToDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onerror = reject
-    reader.onload = () => {
-      const img = new Image()
-      img.onerror = reject
-      img.onload = () => {
-        const scale = Math.min(1, max / Math.max(img.width, img.height))
-        const w = Math.max(1, Math.round(img.width * scale))
-        const h = Math.max(1, Math.round(img.height * scale))
-        const canvas = document.createElement('canvas')
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return reject(new Error('canvas'))
-        ctx.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL('image/jpeg', 0.82))
-      }
-      img.src = reader.result as string
-    }
+    reader.onload = () => resolve(reader.result as string)
     reader.readAsDataURL(file)
   })
 }
@@ -83,6 +68,7 @@ export default function Auth({
   const [nickname, setNickname] = useState(seed.nickname)
   const [email, setEmail] = useState(seed.email)
   const [avatar, setAvatar] = useState<string | undefined>(seed.avatar)
+  const [cropSrc, setCropSrc] = useState<string | null>(null) // cember kirpici acik kaynagi
   const [birthDate, setBirthDate] = useState(seed.birthDate ?? '')
   const [loginId, setLoginId] = useState('')
   const [loginPw, setLoginPw] = useState('') // giris sifresi (kayit sifresinden AYRI: yan yana)
@@ -306,16 +292,32 @@ export default function Auth({
             style={{ display: 'none' }}
             onChange={(e) => {
               const f = e.target.files?.[0]
-              if (f) resizeImage(f).then(setAvatar).catch(() => {})
+              if (f) fileToDataURL(f).then(setCropSrc).catch(() => {})
+              e.target.value = '' // ayni dosya tekrar secilebilsin
             }}
           />
         </label>
+        {avatar && (
+          <button type="button" className="menu-btn" onClick={() => setCropSrc(avatar)}>
+            {t('crop.reposition')}
+          </button>
+        )}
         {avatar && (
           <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
             {t('reg.photoRemove')}
           </button>
         )}
       </div>
+      {cropSrc && (
+        <AvatarCropper
+          src={cropSrc}
+          onApply={(d) => {
+            setAvatar(d)
+            setCropSrc(null)
+          }}
+          onCancel={() => setCropSrc(null)}
+        />
+      )}
     </div>
   )
 
