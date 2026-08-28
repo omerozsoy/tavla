@@ -1,0 +1,99 @@
+/* =============================================================================
+   shadcn/ui + Tailwind v4 katmani — TavlaTV Royal Navy tasarim sistemine baglandi.
+
+   GUVENLIK NOTLARI (mevcut 10k satirlik App.css'i BOZMAMAK icin):
+   1) PREFLIGHT (Tailwind reset) ATLANDI — theme + utilities import edilir, base/reset
+      edilmez. Boylece mevcut eleman stilleri ve oyun tahtasi resetlenmez.
+   2) Token'lar `--sc-*` ad alaninda — App.css'teki `--accent`/`--muted`/`--border`
+      degiskenleriyle CAKISMAZ. `@theme inline` ile Tailwind utility'lerine baglanir,
+      degerler inline gomulur (yani `:root`'a `--color-*`/`--radius-*` YAZILMAZ, App.css
+      olcekleri ezilmez).
+   3) shadcn'in global `* { border }` base kurali KULLANILMADI (tum app'e dokunmasin).
+   ========================================================================== */
+
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+@import 'tw-animate-css';
+
+/* shadcn bilesenlerindeki `dark:` varyanti app temasina baglanir (.dark sinifi YOK;
+   tema documentElement'te data-theme ile yonetilir, varsayilan 'dark'). */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --color-background: var(--sc-background);
+  --color-foreground: var(--sc-foreground);
+  --color-card: var(--sc-card);
+  --color-card-foreground: var(--sc-card-foreground);
+  --color-popover: var(--sc-popover);
+  --color-popover-foreground: var(--sc-popover-foreground);
+  --color-primary: var(--sc-primary);
+  --color-primary-foreground: var(--sc-primary-foreground);
+  --color-secondary: var(--sc-secondary);
+  --color-secondary-foreground: var(--sc-secondary-foreground);
+  --color-muted: var(--sc-muted);
+  --color-muted-foreground: var(--sc-muted-foreground);
+  --color-accent: var(--sc-accent);
+  --color-accent-foreground: var(--sc-accent-foreground);
+  --color-destructive: var(--sc-destructive);
+  --color-destructive-foreground: var(--sc-destructive-foreground);
+  --color-border: var(--sc-border);
+  --color-input: var(--sc-input);
+  --color-ring: var(--sc-ring);
+
+  /* Yaricap olcegi App.css ile BIREBIR ayni -> rounded-* mevcut sistemle tutarli */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+
+  --font-sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ---- Royal Navy -> shadcn semantic token esleme (varsayilan: dark chrome) ---- */
+:root {
+  --sc-background: #080c12; /* rn-bg */
+  --sc-foreground: #f0e8d8; /* ivory */
+  --sc-card: #14243a; /* rn-navy */
+  --sc-card-foreground: #f0e8d8;
+  --sc-popover: #14243a;
+  --sc-popover-foreground: #f0e8d8;
+  /* primary = luxury gold; uzerine KOYU metin (beyaz-on-gold kontrast dusuk) */
+  --sc-primary: #c2a15f; /* gold */
+  --sc-primary-foreground: #14243a; /* koyu navy */
+  --sc-secondary: #1b2e49; /* navy-muted yuzey */
+  --sc-secondary-foreground: #f0e8d8;
+  --sc-muted: #1b2e49;
+  --sc-muted-foreground: #9da7b3; /* rn-muted */
+  --sc-accent: #1b2e49; /* hover yuzeyi */
+  --sc-accent-foreground: #f0e8d8;
+  --sc-destructive: #9e3b3b; /* muted koyu kirmizi */
+  --sc-destructive-foreground: #f0e8d8;
+  --sc-border: #293a50; /* rn-line */
+  --sc-input: #293a50;
+  --sc-ring: #c2a15f; /* gold odak halkasi */
+}
+
+/* ---- Acik tema (opt-in): parsomen ivory + antique gold ---- */
+:root[data-theme='light'] {
+  --sc-background: #efe9dc;
+  --sc-foreground: #14243a;
+  --sc-card: #fbf8f1;
+  --sc-card-foreground: #14243a;
+  --sc-popover: #fbf8f1;
+  --sc-popover-foreground: #14243a;
+  --sc-primary: #927540; /* gold-dark (acik zeminde kontrast) */
+  --sc-primary-foreground: #ffffff;
+  --sc-secondary: #ece4d3;
+  --sc-secondary-foreground: #14243a;
+  --sc-muted: #ece4d3;
+  --sc-muted-foreground: #5a6b80;
+  --sc-accent: #ece4d3;
+  --sc-accent-foreground: #14243a;
+  --sc-destructive: #9e3b3b;
+  --sc-destructive-foreground: #ffffff;
+  --sc-border: #ddd3c1;
+  --sc-input: #ddd3c1;
+  --sc-ring: #927540;
+}

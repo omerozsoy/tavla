@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+// shadcn/ui + Tailwind katmani App.css'ten SONRA yuklenir (utility'ler oncelikli olsun)
+import './shadcn.css'
 import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
