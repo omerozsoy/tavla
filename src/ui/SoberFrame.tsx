@@ -14,6 +14,15 @@ export type SoberMotion =
   | 'sparkle' | 'twinkle' | 'sparkleBurst'
   | 'orbit' | 'comet' | 'dualOrbit'
   | 'aura' | 'auraPulse' | 'ripple' | 'radar' | 'dualRipple'
+  // + genisletme (77'ye)
+  | 'pulseFast' | 'gelatine' | 'vibrate' | 'pop' | 'squash' | 'rubber' | 'headShake' | 'twist' | 'tada'
+  | 'swing' | 'spinPulse' | 'barrelRoll'
+  | 'flipX' | 'coinFlip' | 'tumble'
+  | 'blob'
+  | 'rainbow' | 'hueWobble' | 'grayscale' | 'sepia' | 'dropGlow' | 'shineOnce'
+  | 'pulseSweep' | 'glint' | 'loading'
+  | 'rising'
+  | 'ringPulse' | 'haloSpin'
 
 export type SoberRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
 
@@ -25,7 +34,7 @@ export interface SoberFrameProps {
   src?: string | null
 }
 
-const SWEEP = new Set<SoberMotion>(['sweep', 'sweepRev', 'sweepFast', 'dualSweep', 'trace'])
+const SWEEP = new Set<SoberMotion>(['sweep', 'sweepRev', 'sweepFast', 'dualSweep', 'trace', 'pulseSweep', 'glint', 'loading'])
 const SPARK_MULTI = new Set<SoberMotion>(['twinkle', 'sparkleBurst'])
 
 const AVA =

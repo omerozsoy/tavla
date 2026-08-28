@@ -14,27 +14,38 @@ const CATALOG: { group: string; items: [SoberMotion, string][] }[] = [
     ['fade', 'Solma'], ['ember', 'Köz'], ['hover', 'Hover Glow (üstüne gel)'],
   ] },
   { group: 'Ölçek / Hareket', items: [
-    ['pulse', 'Nabız'], ['float', 'Süzülme'], ['levitate', 'Havalanma'], ['bounce', 'Zıplama'],
-    ['jelly', 'Jöle'], ['heartScale', 'Kalp Ölçek'], ['nudge', 'Dürtme'],
+    ['pulse', 'Nabız'], ['pulseFast', 'Hızlı Nabız'], ['float', 'Süzülme'], ['levitate', 'Havalanma'],
+    ['bounce', 'Zıplama'], ['jelly', 'Jöle'], ['gelatine', 'Jelatin'], ['heartScale', 'Kalp Ölçek'],
+    ['nudge', 'Dürtme'], ['vibrate', 'Titreşim'], ['pop', 'Pop'], ['squash', 'Ezilme'],
+    ['rubber', 'Lastik'], ['headShake', 'Kafa Sallama'], ['twist', 'Bükülme'], ['tada', 'Tada'],
   ] },
   { group: 'Dönme', items: [
-    ['sway', 'Sallanma'], ['wobble', 'Yalpa'], ['tilt', 'Eğilme'], ['rock', 'Beşik'],
-    ['pendulum', 'Sarkaç'], ['spin', 'Dönüş'], ['spinSlow', 'Yavaş Dönüş'], ['flip3d', '3D Çevirme'],
+    ['sway', 'Sallanma'], ['wobble', 'Yalpa'], ['tilt', 'Eğilme'], ['rock', 'Beşik'], ['pendulum', 'Sarkaç'],
+    ['swing', 'Salınım (Bell)'], ['spin', 'Dönüş'], ['spinSlow', 'Yavaş Dönüş'], ['spinPulse', 'Dönen Nabız'],
+    ['barrelRoll', 'Takla'],
   ] },
+  { group: '3D', items: [
+    ['flip3d', '3D Y Çevirme'], ['flipX', '3D X Çevirme'], ['coinFlip', 'Yazı-Tura'], ['tumble', 'Yuvarlanma'],
+  ] },
+  { group: 'Şekil / Morph', items: [['blob', 'Blob (Morph)']] },
   { group: 'Halka Işık', items: [['sheen', 'Işık Kayması'], ['shimmer', 'Parıltı'], ['drift', 'Kayma']] },
   { group: 'Filtre', items: [
-    ['hueCycle', 'Renk Döngüsü'], ['saturate', 'Doygunluk'], ['bright', 'Parlaklık'],
-    ['contrast', 'Kontrast'], ['invert', 'Ters (Invert)'], ['blur', 'Bulanıklık'],
+    ['hueCycle', 'Renk Döngüsü'], ['rainbow', 'Gökkuşağı'], ['hueWobble', 'Renk Salınımı'], ['saturate', 'Doygunluk'],
+    ['bright', 'Parlaklık'], ['contrast', 'Kontrast'], ['invert', 'Ters (Invert)'], ['blur', 'Bulanıklık'],
+    ['grayscale', 'Gri Tonlama'], ['sepia', 'Sepya'], ['dropGlow', 'Drop Glow'], ['shineOnce', 'Parlama'],
   ] },
   { group: 'Işık Turu (Sweep)', items: [
-    ['sweep', 'Işık Turu'], ['sweepRev', 'Ters Tur'], ['sweepFast', 'Hızlı Tur'],
-    ['dualSweep', 'Çift Tur'], ['trace', 'İz Sürme'],
+    ['sweep', 'Işık Turu'], ['sweepRev', 'Ters Tur'], ['sweepFast', 'Hızlı Tur'], ['dualSweep', 'Çift Tur'],
+    ['trace', 'İz Sürme'], ['pulseSweep', 'Nabızlı Tur'], ['glint', 'Işıltı (Glint)'], ['loading', 'Yükleniyor'],
   ] },
   { group: 'Gradient Halka', items: [['gradSpin', 'Dönen Gradient'], ['gradPulse', 'Gradient Nabız']] },
-  { group: 'Sparkle', items: [['sparkle', 'Tekil Parıltı'], ['twinkle', 'Yıldızlar'], ['sparkleBurst', 'Parıltı Patlaması']] },
+  { group: 'Sparkle', items: [
+    ['sparkle', 'Tekil Parıltı'], ['twinkle', 'Yıldızlar'], ['sparkleBurst', 'Parıltı Patlaması'], ['rising', 'Yükselen Parıltı'],
+  ] },
   { group: 'Yörünge', items: [['orbit', 'Yörünge'], ['comet', 'Kuyruklu Yıldız'], ['dualOrbit', 'Çift Yörünge']] },
   { group: 'Aura / Dalga', items: [
-    ['aura', 'Yumuşak Aura'], ['auraPulse', 'Aura Nabız'], ['ripple', 'Dalga'], ['radar', 'Radar'], ['dualRipple', 'Çift Dalga'],
+    ['aura', 'Yumuşak Aura'], ['auraPulse', 'Aura Nabız'], ['ripple', 'Dalga'], ['radar', 'Radar'],
+    ['dualRipple', 'Çift Dalga'], ['ringPulse', 'Halka Nabız'], ['haloSpin', 'Dönen Hale'],
   ] },
 ]
 
