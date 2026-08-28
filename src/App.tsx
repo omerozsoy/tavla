@@ -100,7 +100,7 @@ import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
-import { LiveMatchesPanel, RankingPanel, HomeFeatures } from './ui/HomePanels'
+import { LiveMatchesPanel, RankingPanel, HomeFeatures, HomeDashboard } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -3645,6 +3645,18 @@ export default function App() {
                 </Suspense>
               </div>
             </section>
+            {user && (
+              <HomeDashboard
+                rating={user.rating ?? 0}
+                coins={user.coins ?? 0}
+                wins={user.wins ?? 0}
+                games={user.games_played ?? 0}
+                onStats={menuProps.onMyStats}
+                onHistory={menuProps.onMatchHistory}
+                onBlunders={menuProps.onBlunders}
+                onShop={menuProps.onShop}
+              />
+            )}
             <div className="lobby-welcome">
               {hasActiveGame && (
                 <button

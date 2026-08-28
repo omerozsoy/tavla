@@ -734,6 +734,10 @@ const TR: Dict = {
   'home.finalCta.title': 'Zarı atmaya hazır mısın?',
   'home.finalCta.sub': 'Kayıt gerekmez — saniyeler içinde ilk oyununa başla.',
   'home.finalCta.button': 'Hemen oyna',
+  'home.dash.coins': 'Coin',
+  'home.dash.wins': 'Galibiyet',
+  'home.dash.games': 'Oyun',
+  'home.dash.quick': 'Hızlı erişim',
 }
 
 const EN: Dict = {
@@ -1457,6 +1461,10 @@ const EN: Dict = {
   'home.finalCta.title': 'Ready to roll?',
   'home.finalCta.sub': 'No sign-up needed — start your first game in seconds.',
   'home.finalCta.button': 'Play now',
+  'home.dash.coins': 'Coins',
+  'home.dash.wins': 'Wins',
+  'home.dash.games': 'Games',
+  'home.dash.quick': 'Quick access',
 }
 
 // Yeni diller: cekirdek arayuz cevirileri. Cevrilmeyen anahtarlar EN'e duser
@@ -2149,6 +2157,10 @@ const ES: Dict = {
   'home.finalCta.title': '¿Listo para tirar los dados?',
   'home.finalCta.sub': 'Sin registro — empieza tu primera partida en segundos.',
   'home.finalCta.button': 'Jugar ahora',
+  'home.dash.coins': 'Monedas',
+  'home.dash.wins': 'Victorias',
+  'home.dash.games': 'Partidas',
+  'home.dash.quick': 'Acceso rápido',
 }
 
 const DE: Dict = {
@@ -2839,6 +2851,10 @@ const DE: Dict = {
   'home.finalCta.title': 'Bereit zu würfeln?',
   'home.finalCta.sub': 'Keine Anmeldung nötig – starte dein erstes Spiel in Sekunden.',
   'home.finalCta.button': 'Jetzt spielen',
+  'home.dash.coins': 'Coins',
+  'home.dash.wins': 'Siege',
+  'home.dash.games': 'Spiele',
+  'home.dash.quick': 'Schnellzugriff',
 }
 
 const FR: Dict = {
@@ -3529,6 +3545,10 @@ const FR: Dict = {
   'home.finalCta.title': 'Prêt à lancer les dés ?',
   'home.finalCta.sub': 'Sans inscription — lancez votre première partie en quelques secondes.',
   'home.finalCta.button': 'Jouer maintenant',
+  'home.dash.coins': 'Pièces',
+  'home.dash.wins': 'Victoires',
+  'home.dash.games': 'Parties',
+  'home.dash.quick': 'Accès rapide',
 }
 
 const DICT: Record<Lang, Dict> = { tr: TR, en: EN, es: ES, de: DE, fr: FR }

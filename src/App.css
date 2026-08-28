@@ -5533,6 +5533,124 @@ html.fs-active .account-bar {
   gap: 3px;
 }
 
+/* ---- Uye panosu (dashboard): istatistik seridi + hizli erisim ---- */
+.home-dash {
+  width: 100%;
+  max-width: 920px;
+  margin: 10px auto 0;
+  display: grid;
+  gap: 12px;
+}
+.dash-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.dstat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  min-width: 0;
+}
+.dstat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  margin-bottom: 4px;
+}
+.dstat-val {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--tv-font-display);
+  font-weight: var(--fw-black);
+  font-size: clamp(1.35rem, 3.4vw, 1.85rem);
+  line-height: 1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.dstat-sub {
+  font-family: var(--tv-font-ui);
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  color: var(--success-fg);
+}
+.dstat-label {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.dash-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+.dash-actions-label {
+  font-size: var(--fs-2xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  flex: none;
+}
+.dash-actions-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+  min-width: 0;
+}
+.dash-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--btn-bg);
+  color: var(--text);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.dash-action:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.dash-action > svg {
+  color: var(--accent);
+}
+@media (max-width: 720px) {
+  .dash-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .dash-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .dash-action {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
 /* ---- Ozellik vitrini (misafir) + kapanis CTA ---- */
 .home-features {
   width: 100%;

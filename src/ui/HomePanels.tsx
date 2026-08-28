@@ -14,6 +14,70 @@ const FEATURES: { icon: IconName; key: string }[] = [
   { icon: 'graduation', key: 'learn' },
 ]
 
+// ---- Uye panosu (giris yapmis kullaniciya): tek bakista durum + hizli erisim ----
+export function HomeDashboard(p: {
+  rating: number
+  coins: number
+  wins: number
+  games: number
+  onStats?: () => void
+  onHistory?: () => void
+  onBlunders?: () => void
+  onShop?: () => void
+}) {
+  const { t } = useT()
+  const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : null
+  const stats: { icon: IconName; val: number; label: string; sub?: string }[] = [
+    { icon: 'chart', val: p.rating, label: t('lb.rating') },
+    { icon: 'coin', val: p.coins, label: t('home.dash.coins') },
+    {
+      icon: 'trophy',
+      val: p.wins,
+      label: t('home.dash.wins'),
+      sub: winRate === null ? undefined : `%${winRate}`,
+    },
+    { icon: 'dice', val: p.games, label: t('home.dash.games') },
+  ]
+  const allActions: { icon: IconName; label: string; on?: () => void }[] = [
+    { icon: 'chart', label: t('menu.myStats'), on: p.onStats },
+    { icon: 'analyze', label: t('menu.matchHistory'), on: p.onHistory },
+    { icon: 'alert', label: t('menu.blunders'), on: p.onBlunders },
+    { icon: 'shop', label: t('shop.title'), on: p.onShop },
+  ]
+  const actions = allActions.filter((a) => a.on)
+
+  return (
+    <section className="home-dash" aria-label={t('menu.myStats')}>
+      <div className="dash-stats">
+        {stats.map((s) => (
+          <div className="dstat" key={s.label}>
+            <span className="dstat-icon" aria-hidden="true">
+              <Icon name={s.icon} size={18} />
+            </span>
+            <span className="dstat-val">
+              {s.val.toLocaleString()}
+              {s.sub && <span className="dstat-sub">{s.sub}</span>}
+            </span>
+            <span className="dstat-label">{s.label}</span>
+          </div>
+        ))}
+      </div>
+      {actions.length > 0 && (
+        <div className="dash-actions">
+          <span className="dash-actions-label">{t('home.dash.quick')}</span>
+          <div className="dash-actions-row">
+            {actions.map((a) => (
+              <button className="dash-action" key={a.label} onClick={a.on}>
+                <Icon name={a.icon} size={16} /> {a.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
+  )
+}
+
 export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
   const { t } = useT()
   return (
