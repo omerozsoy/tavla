@@ -98,7 +98,7 @@
   --sc-secondary-foreground: #f0e8d8;
   --sc-muted: #1b2e49;
   --sc-muted-foreground: #9da7b3; /* rn-muted */
-  --sc-accent: #1b2e49; /* hover yuzeyi */
+  --sc-accent: #263a56; /* hover yuzeyi — karttan (#14243a) belirgin acik navy */
   --sc-accent-foreground: #f0e8d8;
   --sc-destructive: #c0453e; /* modern semantic red (Royal Navy'ye uyumlu, neon degil) */
   --sc-destructive-foreground: #ffffff;
@@ -121,7 +121,7 @@
   --sc-secondary-foreground: #14243a;
   --sc-muted: #ece4d3;
   --sc-muted-foreground: #5a6b80;
-  --sc-accent: #ece4d3;
+  --sc-accent: #dccdb0; /* hover yuzeyi — parsomen zeminden (#efe9dc) belirgin koyu */
   --sc-accent-foreground: #14243a;
   --sc-destructive: #b23a34; /* acik temada modern semantic red */
   --sc-destructive-foreground: #ffffff;
