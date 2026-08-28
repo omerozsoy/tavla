@@ -10,6 +10,8 @@ const FrameDemo = lazy(() => import('./ui/FrameDemo'))
 const CerceveLab = lazy(() => import('./ui/CerceveLab'))
 // Cerceve galerisi: 50+ canli cesit (Klasik premium + Rive). Gizli /cerceve-galeri, lazy.
 const CerceveGaleri = lazy(() => import('./ui/CerceveGaleri'))
+// Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
+const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
@@ -385,6 +387,7 @@ export default function App() {
   const [frameDemoOpen, setFrameDemoOpen] = useState(false) // avatar cerceve prototip demo
   const [frameLabOpen, setFrameLabOpen] = useState(false) // Rive cerceve laboratuvari (/cerceve-lab)
   const [frameGaleriOpen, setFrameGaleriOpen] = useState(false) // Cerceve galerisi 50+ (/cerceve-galeri)
+  const [frameAnimOpen, setFrameAnimOpen] = useState(false) // Animasyon secim demosu (/cerceve-anim)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
@@ -429,6 +432,8 @@ export default function App() {
                 ? 'cerceve-lab'
               : frameGaleriOpen
                 ? 'cerceve-galeri'
+              : frameAnimOpen
+                ? 'cerceve-anim'
               : gamePreviewOpen
                 ? 'oyun-onizleme'
               : fairOpen
@@ -510,6 +515,9 @@ export default function App() {
           break
         case 'cerceve-galeri':
           setFrameGaleriOpen(true)
+          break
+        case 'cerceve-anim':
+          setFrameAnimOpen(true)
           break
         case 'oyun-onizleme':
           setGamePreviewOpen(true)
@@ -3194,6 +3202,7 @@ export default function App() {
     setFrameDemoOpen(false)
     setFrameLabOpen(false)
     setFrameGaleriOpen(false)
+    setFrameAnimOpen(false)
     setGamePreviewOpen(false)
     setFairOpen(false)
     setLessonsOpen(false)
@@ -3315,6 +3324,7 @@ export default function App() {
     frameDemoOpen ||
     frameLabOpen ||
     frameGaleriOpen ||
+    frameAnimOpen ||
     gamePreviewOpen ||
     fairOpen ||
     lessonsOpen ||
@@ -3407,6 +3417,11 @@ export default function App() {
       {frameGaleriOpen && (
         <Suspense fallback={null}>
           <CerceveGaleri onClose={() => setFrameGaleriOpen(false)} />
+        </Suspense>
+      )}
+      {frameAnimOpen && (
+        <Suspense fallback={null}>
+          <CerceveAnim onClose={() => setFrameAnimOpen(false)} />
         </Suspense>
       )}
       {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}
