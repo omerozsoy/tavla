@@ -3257,7 +3257,6 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
-    onFrames: () => goPage(() => setFrameAnimOpen(true)), // menuden Cerceveler -> animasyon demo (public)
     onMembership: () => setMemOpen(true),
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
