@@ -1,8 +1,7 @@
-/* Cerceve animasyon secim demosu (/cerceve-anim). ca- prefixli. */
+/* Cerceve animasyon katalog sayfasi (/cerceve-anim). ca- prefixli. */
 
-/* App.css '.register-overlay.page > *' cocuk arka planini transparent yapiyor (0,2,0) ve koyu
-   bg'i eziyordu -> yazilar acik zeminde kayboluyordu. Daha yuksek specificity ile koyu zemini
-   geri getir (yazilar okunur olsun). */
+/* App.css '.register-overlay.page > *' cocuk arka planini transparent yapip koyu zemini eziyordu
+   -> yazilar acik zeminde kayboluyordu. Daha yuksek specificity ile koyu zemini geri getir. */
 .register-overlay.page > .ca-wrap {
   background: radial-gradient(130% 90% at 50% -10%, #151b30 0%, #0b0f1c 58%, #070a13 100%);
   max-width: 1180px;
@@ -25,6 +24,10 @@
 .ca-head { text-align: center; max-width: 780px; margin: 0 auto 18px; }
 .ca-head h2 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 30px); }
 .ca-head p { margin: 0 0 14px; font-size: 13px; line-height: 1.55; opacity: 0.78; }
+.ca-count {
+  display: inline-block; margin: 2px 0 10px; padding: 5px 14px; border-radius: 999px;
+  background: linear-gradient(135deg, #b76e79, #e7bcb0); color: #2a1418; font-weight: 700; font-size: 13px;
+}
 .ca-seg {
   display: inline-flex; padding: 3px; border-radius: 10px;
   background: rgba(130, 150, 210, 0.1); border: 1px solid rgba(140, 160, 210, 0.16);
@@ -45,45 +48,9 @@
 }
 .ca-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 16px; justify-items: center;
+  gap: 18px; justify-items: center;
 }
 .ca-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; }
 .ca-stage { display: grid; place-items: center; }
-.ca-name { font-size: 12px; font-weight: 600; opacity: 0.9; text-align: center; }
-.ca-note { font-size: 11px; opacity: 0.55; text-align: center; }
-
-/* ---- DEMO: animasyonlari ABARTILI goster (yalniz bu sayfada, .ca-wrap icine scoped).
-   Amac: farki net anlamak. Nihai PremiumFrame'de degerler cok daha sade olacak. ---- */
-.ca-wrap .sf-m-breathe .sf-glow { animation: ca-breathe 2.2s ease-in-out infinite; }
-@keyframes ca-breathe { 0%, 100% { opacity: 0.12; } 50% { opacity: 1; } }
-
-.ca-wrap .sf-m-pulse { animation: ca-pulse 1.6s ease-in-out infinite; }
-@keyframes ca-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.13); } }
-
-.ca-wrap .sf-m-sheen .sf-ring { background-size: 300% 300%; animation-duration: 3s; }
-.ca-wrap .sf-m-shimmer .sf-ring { background-size: 300% 300%; animation-duration: 1.1s; }
-
-.ca-wrap .sf-sweep { animation-duration: 2.3s; }
-
-.ca-wrap .sf-m-sparkle .sf-spark,
-.ca-wrap .sf-m-twinkle .sf-spark { animation-duration: 2.8s; width: 12px; height: 12px; }
-
-.ca-wrap .sf-m-aura .sf-glow { inset: -12px; animation: ca-aura 2.6s ease-in-out infinite; }
-@keyframes ca-aura { 0%, 100% { opacity: 0.25; transform: scale(1); } 50% { opacity: 0.95; transform: scale(1.14); } }
-
-.ca-wrap .sf-m-glowPulse .sf-glow { animation: ca-glowpulse 1.8s ease-in-out infinite; }
-@keyframes ca-glowpulse {
-  0%, 100% { box-shadow: 0 0 8px 1px var(--sf-glow); opacity: 0.35; }
-  50% { box-shadow: 0 0 30px 9px var(--sf-glow); opacity: 1; }
-}
-
-.ca-wrap .sf-m-float { animation: ca-float 2s ease-in-out infinite; }
-@keyframes ca-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
-
-/* hover glow'u demoda otomatik nabizla goster (hover beklemeden de anlasilsin) */
-.ca-wrap .sf-m-hover .sf-glow { animation: ca-glowpulse 2.4s ease-in-out infinite; }
-
-@media (prefers-reduced-motion: reduce) {
-  .ca-wrap .sf-glow, .ca-wrap .sf-ring, .ca-wrap .sf-sweep, .ca-wrap .sf-spark,
-  .ca-wrap .sf-m-pulse, .ca-wrap .sf-m-float { animation: none !important; }
-}
+.ca-name { font-size: 12px; font-weight: 600; opacity: 0.92; text-align: center; }
+.ca-note { font-size: 11px; opacity: 0.5; text-align: center; font-family: ui-monospace, monospace; }

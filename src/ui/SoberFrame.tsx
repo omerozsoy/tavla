@@ -1,33 +1,32 @@
 import type { CSSProperties } from 'react'
 import './SoberFrame.css'
 
-// Sade-premium avatar cerceve (CSS/SVG, Rive YOK). Ince halka + merkez seffaf (yuz kapanmaz),
-// halka donmez (yalnizca 'sweep' isik efektinde parlak nokta doner). Tek 'motion' prop'u ile
-// hangi sade animasyonun oynayacagi secilir. Nihai PremiumFrame sadelestirmesinin temeli.
+// Sade-premium avatar cerceve (CSS/SVG, Rive YOK) + genis animasyon kutuphanesi.
+// Ince halka + merkez seffaf (yuz kapanmaz). Tek 'motion' prop'u hangi animasyonun oynayacagini secer.
 export type SoberMotion =
-  | 'static'
-  | 'hover'
-  | 'breathe'
-  | 'pulse'
-  | 'sheen'
-  | 'sweep'
-  | 'sparkle'
-  | 'twinkle'
-  | 'aura'
-  | 'shimmer'
-  | 'float'
-  | 'glowPulse'
+  | 'static' | 'hover' | 'breathe' | 'glowPulse' | 'flicker' | 'heartbeat' | 'fade' | 'ember'
+  | 'pulse' | 'float' | 'levitate' | 'bounce' | 'jelly' | 'heartScale' | 'nudge'
+  | 'sway' | 'wobble' | 'tilt' | 'rock' | 'pendulum' | 'spin' | 'spinSlow' | 'flip3d'
+  | 'sheen' | 'shimmer' | 'drift'
+  | 'hueCycle' | 'saturate' | 'bright' | 'contrast' | 'invert' | 'blur'
+  | 'sweep' | 'sweepRev' | 'sweepFast' | 'dualSweep' | 'trace'
+  | 'gradSpin' | 'gradPulse'
+  | 'sparkle' | 'twinkle' | 'sparkleBurst'
+  | 'orbit' | 'comet' | 'dualOrbit'
+  | 'aura' | 'auraPulse' | 'ripple' | 'radar' | 'dualRipple'
 
 export type SoberRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
 
 export interface SoberFrameProps {
   rarity?: SoberRarity
-  /** rarity yerine ozel mat aksan (24 farkli ama sade icin) */
   accent?: string
   motion?: SoberMotion
   size?: number
   src?: string | null
 }
+
+const SWEEP = new Set<SoberMotion>(['sweep', 'sweepRev', 'sweepFast', 'dualSweep', 'trace'])
+const SPARK_MULTI = new Set<SoberMotion>(['twinkle', 'sparkleBurst'])
 
 const AVA =
   'data:image/svg+xml;utf8,' +
@@ -48,12 +47,12 @@ export default function SoberFrame({
       ? { ['--sf-grad']: `linear-gradient(135deg, ${accent}, ${accent}cc)`, ['--sf-glow']: `${accent}99` }
       : {}),
   } as CSSProperties
-  const multiSpark = motion === 'twinkle'
+  const multiSpark = SPARK_MULTI.has(motion)
   return (
     <span className={`sf ${accent ? '' : 'sf-r-' + rarity} sf-m-${motion}`} style={style} aria-hidden="true">
       <span className="sf-glow" />
       <span className="sf-ring" />
-      {motion === 'sweep' && <span className="sf-sweep" />}
+      {SWEEP.has(motion) && <span className="sf-sweep" />}
       {(motion === 'sparkle' || multiSpark) && <span className="sf-spark sf-spark-1" />}
       {multiSpark && <span className="sf-spark sf-spark-2" />}
       {multiSpark && <span className="sf-spark sf-spark-3" />}
