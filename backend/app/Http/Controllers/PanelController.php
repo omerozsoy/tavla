@@ -145,6 +145,10 @@ class PanelController extends Controller
                 $user->is_admin = ! $user->is_admin;
                 $user->save();
             }
+        } elseif ($action === 'verify') {
+            // E-postayi elle dogrula / dogrulamayi kaldir (email_verified_at fillable degil, dogrudan set)
+            $user->email_verified_at = $user->email_verified_at ? null : now();
+            $user->save();
         } elseif ($action === 'plan') {
             $plan = $request->input('plan', 'free');
             $days = max(0, (int) $request->input('days', 30));
