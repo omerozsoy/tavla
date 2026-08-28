@@ -10,9 +10,28 @@ import * as api from '../api'
 import type { ServerUser } from '../api'
 import AvatarCropper from './AvatarCropper'
 import { useToast } from './Toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 
 function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
+}
+
+// Native <select> (uzun ulke listesinde native UX korunur) shadcn Input ile AYNI gorunum.
+// Tek kaynak: Input ile ayni yukseklik/kenar/radius/odak halkasi.
+const FIELD_CLS =
+  'h-9 w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-1 text-base text-foreground shadow-xs outline-none transition-colors focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+
+// Danger Zone metinleri (i18n.tsx paralel WIP tuttugu icin gecici yerel harita;
+// onay sonrasi home.* gibi i18n anahtarlarina tasinacak).
+const DANGER_I18N: Record<string, { zone: string; desc: string }> = {
+  tr: { zone: 'Tehlikeli Bölge', desc: 'Bu işlem geri alınamaz. Hesabın ve tüm verilerin kalıcı olarak silinir.' },
+  en: { zone: 'Danger Zone', desc: 'This action cannot be undone. Your account and all data are permanently deleted.' },
+  es: { zone: 'Zona peligrosa', desc: 'Esta acción no se puede deshacer. Tu cuenta y todos tus datos se eliminan permanentemente.' },
+  de: { zone: 'Gefahrenzone', desc: 'Diese Aktion kann nicht rückgängig gemacht werden. Dein Konto und alle Daten werden dauerhaft gelöscht.' },
+  fr: { zone: 'Zone dangereuse', desc: 'Cette action est irréversible. Votre compte et toutes vos données sont définitivement supprimés.' },
 }
 
 // Dosyayi tam cozunurluklu data URL olarak oku (kirpici icin)
@@ -57,6 +76,7 @@ export default function Auth({
   const { t, lang } = useT()
   const notify = useToast()
   useEscape(onCancel)
+  const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
   const seed = editUser
@@ -276,6 +296,7 @@ export default function Auth({
     : forgot
       ? `${t('brand.name')} — ${t('auth.login')}`
       : t('brand.name')
+  const danger = DANGER_I18N[lang] ?? DANGER_I18N.en
 
   // Profil fotografi blogu (yalnizca profil duzenlemede gorunur; grid disinda ust blok)
   const avatarBlock = (
@@ -283,24 +304,30 @@ export default function Auth({
       <div className="avatar-preview">
         {avatar ? <img src={avatar} alt="" /> : <span><Icon name="camera" size={28} /></span>}
       </div>
-      <div className="avatar-actions">
-        <label className="menu-btn avatar-btn">
-          {t('reg.photoPick')}
-          <input
-            type="file"
-            accept="image/*"
-            style={{ display: 'none' }}
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) fileToDataURL(f).then(setCropSrc).catch(() => {})
-              e.target.value = '' // ayni dosya tekrar secilebilsin
-            }}
-          />
-        </label>
+      <div className="flex flex-wrap gap-2">
+        <input
+          ref={photoInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (f) fileToDataURL(f).then(setCropSrc).catch(() => {})
+            e.target.value = '' // ayni dosya tekrar secilebilsin
+          }}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => photoInputRef.current?.click()}
+        >
+          <Icon name="camera" size={16} /> {t('reg.photoPick')}
+        </Button>
         {avatar && (
-          <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setAvatar(undefined)}>
             {t('reg.photoRemove')}
-          </button>
+          </Button>
         )}
       </div>
       {cropSrc && (
@@ -321,18 +348,23 @@ export default function Auth({
   // tarihi yalnizca profil duzenlemede gosterilir (kayitta sade).
   const profileInputs = (
     <>
-      <label>
-        {t('reg.firstName')}
-        <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
-      </label>
-      <label>
-        {t('reg.lastName')}
-        <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-      </label>
+      <div className="grid gap-1.5">
+        <Label htmlFor="pf-firstName">{t('reg.firstName')}</Label>
+        <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="pf-lastName">{t('reg.lastName')}</Label>
+        <Input id="pf-lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+      </div>
       {editing && (
-        <label>
-          {t('reg.country')}
-          <select value={country} onChange={(e) => setCountry(e.target.value)}>
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-country">{t('reg.country')}</Label>
+          <select
+            id="pf-country"
+            className={FIELD_CLS}
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          >
             <option value="">{t('reg.countryPlaceholder')}</option>
             {country && !COUNTRY_CODES.includes(country) && (
               <option value={country}>{country}</option>
@@ -343,13 +375,18 @@ export default function Auth({
               </option>
             ))}
           </select>
-        </label>
+        </div>
       )}
       {/* Il yalnizca Turkiye icin (diger ulkelerde sehir sorulmaz) */}
       {editing && country === 'TR' && (
-        <label>
-          {t('reg.province')}
-          <select value={province} onChange={(e) => setProvince(e.target.value)}>
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-province">{t('reg.province')}</Label>
+          <select
+            id="pf-province"
+            className={FIELD_CLS}
+            value={province}
+            onChange={(e) => setProvince(e.target.value)}
+          >
             <option value="">{t('reg.provincePlaceholder')}</option>
             {PROVINCES.map((p) => (
               <option key={p} value={p}>
@@ -357,48 +394,49 @@ export default function Auth({
               </option>
             ))}
           </select>
-        </label>
+        </div>
       )}
-      <label>
-        {t('reg.nickname')}
-        <input
-          className={nickStatus === 'taken' ? 'invalid' : nickStatus === 'ok' ? 'valid' : ''}
+      <div className="grid gap-1.5">
+        <Label htmlFor="pf-nickname">{t('reg.nickname')}</Label>
+        <Input
+          id="pf-nickname"
           value={nickname}
           onChange={(e) => setNickname(e.target.value)}
           autoComplete="username"
           aria-invalid={nickStatus === 'taken'}
         />
         {nickStatus === 'checking' && (
-          <span className="nick-hint checking">{t('reg.nickChecking')}</span>
+          <span className="text-xs text-muted-foreground">{t('reg.nickChecking')}</span>
         )}
         {nickStatus === 'ok' && (
-          <span className="nick-hint ok">
+          <span className="inline-flex items-center gap-1 text-xs" style={{ color: 'var(--success-fg)' }}>
             <Icon name="check" size={12} /> {t('reg.nickFree')}
           </span>
         )}
         {nickStatus === 'taken' && (
-          <span className="field-error" role="alert">{t('reg.nickTaken')}</span>
+          <span className="text-xs text-destructive" role="alert">{t('reg.nickTaken')}</span>
         )}
-      </label>
-      <label>
-        {t('reg.email')}
-        <input
+      </div>
+      <div className="grid gap-1.5">
+        <Label htmlFor="pf-email">{t('reg.email')}</Label>
+        <Input
+          id="pf-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           autoComplete="email"
         />
-      </label>
+      </div>
       {editing && (
-        <label>
-          {t('reg.birthDate')}
+        <div className="grid gap-1.5">
+          <Label htmlFor="pf-birthDate">{t('reg.birthDate')}</Label>
           <DatePicker
             value={birthDate}
             onChange={setBirthDate}
             max={new Date().toISOString().slice(0, 10)}
             placeholder="GG.AA.YYYY"
           />
-        </label>
+        </div>
       )}
     </>
   )
@@ -609,17 +647,17 @@ export default function Auth({
 
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
 
-        {/* Editing aksiyonlari (Vazgec + Kaydet); gate submitleri kolon icinde */}
+        {/* Ana aksiyon grubu: [Vazgeç] [Kaydet] birlikte, sag hizali */}
         {editing && (
-          <div className="register-actions">
+          <div className="mt-1 flex flex-wrap justify-end gap-3">
             {onCancel && (
-              <button type="button" className="menu-btn" onClick={onCancel}>
+              <Button type="button" variant="secondary" onClick={onCancel}>
                 {t('reg.cancel')}
-              </button>
+              </Button>
             )}
-            <button type="submit" className="galaxy-btn" disabled={busy || nickTaken}>
+            <Button type="submit" disabled={busy || nickTaken}>
               {t('reg.submitEdit')}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -650,44 +688,53 @@ export default function Auth({
           </div>
         )}
 
-        {/* Hesap aksiyonlari: Cikis Yap ORTADA + belirgin, Hesabi Sil SAG KOSEDE */}
+        {/* Hesap aksiyonlari: Cikis Yap ayri alan; Hesabi Sil Tehlikeli Bolge icinde */}
         {editUser && (onLogout || onDeleteAccount) && (
-          <div className={`profile-foot ${confirmDelete ? 'confirming' : ''}`}>
+          <>
+            <Separator className="my-6" />
             {onLogout && (
-              <button type="button" className="auth-logout" onClick={onLogout}>
-                <Icon name="logout" size={16} /> {t('auth.logout')}
-              </button>
+              <div className="flex justify-center">
+                <Button type="button" variant="outline" onClick={onLogout}>
+                  <Icon name="logout" size={16} /> {t('auth.logout')}
+                </Button>
+              </div>
             )}
             {onDeleteAccount && (
-              <div className="danger-zone">
+              <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+                <h3 className="text-sm font-semibold text-destructive">{danger.zone}</h3>
+                <p className="mt-1 text-sm text-muted-foreground">{danger.desc}</p>
                 {confirmDelete ? (
-                  <>
-                    <div className="danger-warn">{t('account.deleteConfirm')}</div>
-                    <div className="register-actions">
-                      <button
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-foreground">
+                      {t('account.deleteConfirm')}
+                    </span>
+                    <div className="flex gap-3">
+                      <Button
                         type="button"
-                        className="menu-btn"
+                        variant="secondary"
                         onClick={() => setConfirmDelete(false)}
                       >
                         {t('reg.cancel')}
-                      </button>
-                      <button type="button" className="danger-btn" onClick={onDeleteAccount}>
+                      </Button>
+                      <Button type="button" variant="destructive" onClick={onDeleteAccount}>
                         {t('account.deleteYes')}
-                      </button>
+                      </Button>
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="danger-link"
-                    onClick={() => setConfirmDelete(true)}
-                  >
-                    {t('account.delete')}
-                  </button>
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      onClick={() => setConfirmDelete(true)}
+                    >
+                      <Icon name="trash" size={16} /> {t('account.delete')}
+                    </Button>
+                  </div>
                 )}
               </div>
             )}
-          </div>
+          </>
         )}
       </form>
     </div>

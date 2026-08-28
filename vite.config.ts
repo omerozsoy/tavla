@@ -1,10 +1,17 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
+import { fileURLToPath, URL } from 'node:url'
 import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+    },
+  },
   // onnxruntime-web'i esbuild on-paketlemesinden hariç tut: import.meta.url tabanli
   // wasm cozumlemesi bozulmasin (Vite native asset olarak servis etsin).
   optimizeDeps: {
