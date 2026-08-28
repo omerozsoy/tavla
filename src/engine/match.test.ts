@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from './types'
 import { WHITE, BLACK, gameOutcome } from './board'
-import { canDouble, matchWinner, newMatch, scoreGame, setupNextGame } from './match'
+import {
+  canDouble,
+  matchWinner,
+  newMatch,
+  scoreGame,
+  setupNextGame,
+  shouldAutoRoll,
+} from './match'
 
 function emptyBoard(): GameState {
   return {
@@ -97,5 +104,55 @@ describe('Crawford kurali', () => {
   it('Crawford oyununda kup teklif edilemez', () => {
     const m = { ...newMatch(5), isCrawford: true }
     expect(canDouble(m, WHITE, false)).toBe(false)
+  })
+})
+
+describe('otomatik zar (kup secenegi yoksa)', () => {
+  const turnsPlayed = 3 // ilk elden sonra (kup teklifi mumkun olabilir)
+
+  it('1 puanlik oyunda kup yok -> her zaman otomatik atar', () => {
+    const m = newMatch(1)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed, false)).toBe(true)
+  })
+
+  it('olu kup (kup >= hedefe kalan) -> otomatik atar', () => {
+    // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> katlamak maci gecer, olu kup
+    const m = { ...newMatch(3), score: { white: 2, black: 0 } }
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+  })
+
+  it('Crawford oyununda kup yok -> otomatik atar', () => {
+    const m = { ...newMatch(5), isCrawford: true }
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+  })
+
+  it('rakip kupu tutuyorsa teklif edemem -> otomatik atar', () => {
+    const m = { ...newMatch(7), cube: { value: 2, owner: 'black' as const } }
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    // Kup sahibi (siyah) hala teklif edebilir -> beklenir (otomatik atmaz)
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed, false)).toBe(false)
+  })
+
+  it('kup 64 tavanda -> otomatik atar', () => {
+    const m = { ...newMatch(128), cube: { value: 64, owner: null } }
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+  })
+
+  it('ilk elde (turnsPlayed=0) kup yok -> otomatik atar', () => {
+    const m = newMatch(7)
+    expect(shouldAutoRoll(m, WHITE, 0, false)).toBe(true)
+  })
+
+  it('kup teklif edilebilirken autoRoll KAPALI -> beklenir (buton)', () => {
+    const m = newMatch(7)
+    expect(canDouble(m, WHITE, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
+  })
+
+  it('kup teklif edilebilirken autoRoll ACIK -> otomatik atar', () => {
+    const m = newMatch(7)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, true)).toBe(true)
   })
 })

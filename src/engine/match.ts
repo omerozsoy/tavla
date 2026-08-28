@@ -38,6 +38,21 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
   return true
 }
 
+// Sira gelen oyuncu icin zar otomatik atilmali mi?
+// Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip kupu
+// tutuyor veya ilk el) beklemenin anlami yok -> autoRoll ayari kapali olsa bile
+// otomatik at. Kup karari verilebilecekse yalnizca autoRoll acikken otomatik at.
+export function shouldAutoRoll(
+  m: MatchState,
+  turn: Player,
+  turnsPlayed: number,
+  autoRoll: boolean,
+): boolean {
+  if (autoRoll) return true
+  const canOfferCube = turnsPlayed > 0 && canDouble(m, turn, false)
+  return !canOfferCube
+}
+
 // Mac bitti mi? Kazanan doner.
 export function matchWinner(m: MatchState): Player | null {
   if (m.score.white >= m.target) return 'white'
