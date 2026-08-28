@@ -1874,7 +1874,7 @@ button[aria-disabled='true'],
   cursor: default;
   border-radius: var(--radius-md);
   overflow: hidden;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: none; /* flat */
 }
 .videobox-frame iframe {
   position: absolute;
@@ -1925,7 +1925,7 @@ button[aria-disabled='true'],
   object-fit: contain;
   border-radius: var(--radius-sm);
   cursor: default;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+  box-shadow: none; /* flat */
 }
 .lightbox-close {
   position: absolute;
@@ -3325,7 +3325,7 @@ button[aria-disabled='true'],
   max-width: 260px;
   text-align: center;
   color: #eef2ff; /* koyu modal: metin daima acik (site light temada bile) */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  box-shadow: none; /* flat */
 }
 .result-title {
   font-size: 0.95rem;
@@ -4355,7 +4355,7 @@ html.fs-active .account-bar {
   background: linear-gradient(135deg, var(--tv-brick-light), var(--tv-brick));
   color: var(--tv-cream);
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  box-shadow: none; /* flat */
 }
 .game-ham:hover {
   filter: brightness(1.08);
@@ -4768,7 +4768,7 @@ html.fs-active .account-bar {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  box-shadow: none; /* flat */
   z-index: 60;
 }
 .account-name {
@@ -4838,7 +4838,7 @@ html.fs-active .account-bar {
   font-weight: 800;
   font-size: 0.95rem;
   cursor: pointer;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  box-shadow: none; /* flat */
 }
 .hint-fab:hover {
   filter: brightness(1.06);
@@ -4853,7 +4853,7 @@ html.fs-active .account-bar {
   border: 1px solid color-mix(in srgb, #f0b429 55%, var(--border));
   border-radius: var(--radius-xl);
   padding: 12px 14px;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+  box-shadow: none; /* flat */
 }
 .hint-box.learn {
   border-color: color-mix(in srgb, var(--tv-brick) 60%, var(--border));
@@ -6297,7 +6297,7 @@ html.fs-active .account-bar {
   font-size: 0.95rem;
   cursor: pointer;
   backdrop-filter: blur(4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  box-shadow: none; /* flat */
 }
 .setup-board-change:hover {
   background: rgba(18, 20, 30, 0.92);
@@ -8004,7 +8004,7 @@ html.fs-active .account-bar {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+  box-shadow: none; /* flat */
   z-index: 1200;
   overflow: hidden;
 }
@@ -8692,7 +8692,7 @@ html.fs-active .account-bar {
   border: 1px solid color-mix(in srgb, var(--tv-brick-light) 45%, var(--border));
   border-radius: var(--radius-lg);
   padding: 10px 12px;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+  box-shadow: none; /* flat */
 }
 .invite-text {
   flex: 1;
@@ -8869,7 +8869,7 @@ html.fs-active .account-bar {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: none; /* flat */
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -9417,7 +9417,7 @@ html.fs-active .account-bar {
   background: #4a3410;
   color: #ffe6a8;
   border: 1px solid #6b4d18;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: none; /* flat */
   font-size: 0.88rem;
   max-width: 94vw;
 }
@@ -9462,7 +9462,7 @@ html.fs-active .account-bar {
   border-radius: var(--radius-lg);
   font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  box-shadow: none; /* flat */
   max-width: 94vw;
 }
 .verify-toast.ok {
