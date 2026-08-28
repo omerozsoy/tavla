@@ -61,3 +61,11 @@ frame-tiers.json
 # gecici cerceve onizleme avatari (kalici degil)
 public/frame-preview-avatar.jpg
 scripts/frame-shot.mjs
+crop-test.html
+src/crop-test.tsx
+scripts/crop-shot.mjs
+scripts/crop-probe.mjs
+scripts/crop-out.mjs
+public/icon-512.png
+public/email-preview.html
+scripts/email-shot.mjs

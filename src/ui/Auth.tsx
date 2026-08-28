@@ -272,7 +272,7 @@ export default function Auth({
   }
 
   const title = editing
-    ? `${t('brand.name')} — ${t('reg.titleEdit')}`
+    ? t('reg.titleEdit')
     : forgot
       ? `${t('brand.name')} — ${t('auth.login')}`
       : t('brand.name')
@@ -297,11 +297,6 @@ export default function Auth({
             }}
           />
         </label>
-        {avatar && (
-          <button type="button" className="menu-btn" onClick={() => setCropSrc(avatar)}>
-            {t('crop.reposition')}
-          </button>
-        )}
         {avatar && (
           <button type="button" className="menu-btn" onClick={() => setAvatar(undefined)}>
             {t('reg.photoRemove')}

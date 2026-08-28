@@ -109,7 +109,9 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('banned_at')->label('Yasaklı')
                     ->boolean()->trueColor('danger')->falseColor('gray')
                     ->getStateUsing(fn ($record) => $record->banned_at !== null),
-                Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y')->sortable()->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')
+                    ->placeholder('—')->sortable()->toggleable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('plan')->label('Plan')->options([

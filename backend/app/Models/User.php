@@ -97,6 +97,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'trial_used' => 'boolean',
             'birth_date' => 'date:Y-m-d',
             'banned_at' => 'datetime',
+            'last_login_at' => 'datetime',
         ];
     }
 
