@@ -117,6 +117,7 @@ import {
   type MoveLogEntry,
 } from './storage'
 import { useT } from './i18n'
+import { useToast } from './ui/Toast'
 import {
   getToken,
   loadServerGame,
@@ -288,7 +289,7 @@ export default function App() {
     return null
   })
   // E-posta dogrulama sonucu: link'ten ?verified=1/0 geldiyse bildirim goster
-  const [verifyNotice, setVerifyNotice] = useState<'ok' | 'fail' | null>(() => {
+  const [verifyNotice] = useState<'ok' | 'fail' | null>(() => {
     try {
       const v = new URLSearchParams(window.location.search).get('verified')
       if (v === '1') return 'ok'
@@ -632,8 +633,9 @@ export default function App() {
   const luckSigRef = useRef('') // ayni turda sansi iki kez saymayi engelle
   const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kazanan coin transferi
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
-  // Gecici bildirim (ag hatalari icin): para/rating sunucuya islenemezse sessiz kalmasin.
-  const [toast, setToast] = useState<{ msg: string; kind: 'err' | 'ok' } | null>(null)
+  // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
+  // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
+  const notify = useToast()
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
   const [matchLog, setMatchLog] = useState<MoveLogEntry[]>([])
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
@@ -1630,7 +1632,7 @@ export default function App() {
       })
       .catch(() => {
         // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
-        setToast({ msg: t('net.ratingFailed'), kind: 'err' })
+        notify.error(t('net.ratingFailed'))
       })
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
     // Sunucu kazanani yetkili belirler; rakip beyani/durum gec gelirse pending doner,
@@ -1642,10 +1644,10 @@ export default function App() {
           // Mac sonu ekraninda gosterilecek coin transferi (kazanan +, kaybeden -)
           if (r.ok && typeof r.stake === 'number') setCoinDelta(won ? r.stake : -r.stake)
           // ok=false && pending: rakip henuz sonucu bildirmedi -> coin askida (uyar)
-          else if (!r.ok && r.pending) setToast({ msg: t('net.settlePending'), kind: 'err' })
+          else if (!r.ok && r.pending) notify.error(t('net.settlePending'))
         })
         .catch(() => {
-          setToast({ msg: t('net.settleFailed'), kind: 'err' })
+          notify.error(t('net.settleFailed'))
         })
       stakeRef.current = 0
       betPctRef.current = 0
@@ -1886,9 +1888,14 @@ export default function App() {
     installPromptRef.current?.prompt()
   }
 
-  // Dogrulama sonucu okununca URL'den ?verified= parametresini temizle (refresh'te tekrar cikmasin)
+  // Dogrulama sonucu (link'ten ?verified=1/0): birlesik toast olarak goster ve
+  // URL'den parametreyi temizle (refresh'te tekrar cikmasin). Tek sefer tetiklenir.
+  const verifyNotifiedRef = useRef(false)
   useEffect(() => {
-    if (!verifyNotice) return
+    if (!verifyNotice || verifyNotifiedRef.current) return
+    verifyNotifiedRef.current = true
+    if (verifyNotice === 'ok') notify.success(t('verify.ok'))
+    else notify.error(t('verify.fail'))
     try {
       const url = new URL(window.location.href)
       url.searchParams.delete('verified')
@@ -1896,14 +1903,7 @@ export default function App() {
     } catch {
       /* yok */
     }
-  }, [verifyNotice])
-
-  // Gecici bildirim (toast) 5 sn sonra otomatik kapanir
-  useEffect(() => {
-    if (!toast) return
-    const id = window.setTimeout(() => setToast(null), 5000)
-    return () => window.clearTimeout(id)
-  }, [toast])
+  }, [verifyNotice, notify, t])
 
   // E-posta dogrulama linkini tekrar gonder
   async function handleResendVerification() {
@@ -3489,35 +3489,11 @@ export default function App() {
     </>
   )
 
-  // Ortalanmis modallar / yuzen katmanlar (her zaman overlay)
-  // E-posta dogrulama: yalnizca link sonucu bildirimi (toast). Kalici "dogrula" uyarisi
-  // artik her yerde DEGIL; sadece profil (Uye Bilgileri) ekraninda gosterilir.
-  const verifyBanner = (
-    <>
-      {verifyNotice && (
-        <div className={`verify-toast ${verifyNotice}`}>
-          <Icon name={verifyNotice === 'ok' ? 'check' : 'alert'} size={16} />
-          <span>{t(verifyNotice === 'ok' ? 'verify.ok' : 'verify.fail')}</span>
-          <button className="verify-close" onClick={() => setVerifyNotice(null)} aria-label={t('common.close')}>
-            <Icon name="x" size={14} />
-          </button>
-        </div>
-      )}
-      {toast && (
-        <div className={`verify-toast ${toast.kind === 'ok' ? 'ok' : 'fail'}`} role="alert" aria-live="assertive">
-          <Icon name={toast.kind === 'ok' ? 'check' : 'alert'} size={16} />
-          <span>{toast.msg}</span>
-          <button className="verify-close" onClick={() => setToast(null)} aria-label={t('common.close')}>
-            <Icon name="x" size={14} />
-          </button>
-        </div>
-      )}
-    </>
-  )
-
+  // Ortalanmis modallar / yuzen katmanlar (her zaman overlay).
+  // Bildirimler (ag hatasi + e-posta dogrulama sonucu) artik birlesik toast
+  // sisteminden (ToastProvider portal'i) cikar; burada ayrica render edilmez.
   const menuOverlays = (
     <>
-      {verifyBanner}
       {inviteBanner}
       {spectate && (
         <Spectate

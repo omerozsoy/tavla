@@ -9,6 +9,7 @@ import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
 import AvatarCropper from './AvatarCropper'
+import { useToast } from './Toast'
 
 function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
@@ -54,6 +55,7 @@ export default function Auth({
   page,
 }: Props) {
   const { t, lang } = useT()
+  const notify = useToast()
   useEscape(onCancel)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
@@ -78,7 +80,6 @@ export default function Auth({
   // Takma isim canli durumu: idle (bos/degismedi) | checking | ok (musait) | taken (alinmis)
   const [nickStatus, setNickStatus] = useState<'idle' | 'checking' | 'ok' | 'taken'>('idle')
   const nickTaken = nickStatus === 'taken' // alinmis -> kirmizi + gonderim engellenir
-  const [saved, setSaved] = useState(false) // profil kaydedildi onayi (sayfada kalir)
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
   const [startRating] = useState(1400) // baslangic seviyesi: kayitta gizli, sabit 1400 gonderilir
@@ -243,7 +244,6 @@ export default function Auth({
   async function doEdit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    setSaved(false)
     if (!validProfile()) return
     const p: Profile = {
       firstName: firstName.trim(),
@@ -260,7 +260,7 @@ export default function Auth({
       try {
         const user = await api.updateProfile(p)
         onAuthed(user)
-        setSaved(true) // ana sayfaya donmez; sayfada "Kaydedildi" gosterilir
+        notify.success(t('reg.saved')) // birlesik toast; sayfada kalir, ana sayfaya donmez
       } catch {
         setError(t('auth.failed'))
       } finally {
@@ -608,11 +608,6 @@ export default function Auth({
         )}
 
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
-        {saved && (
-          <div className="save-ok" role="status">
-            <Icon name="check" size={15} /> {t('reg.saved')}
-          </div>
-        )}
 
         {/* Editing aksiyonlari (Vazgec + Kaydet); gate submitleri kolon icinde */}
         {editing && (
