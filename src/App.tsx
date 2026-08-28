@@ -36,6 +36,7 @@ import {
   newMatch,
   scoreGame,
   setupNextGame,
+  shouldAutoRoll,
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
@@ -2072,8 +2073,7 @@ export default function App() {
   // bile otomatik at. Kup karari verilebilecekse yalnizca autoRoll acikken at.
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    const canOfferCube = turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
-    if (!autoRoll && canOfferCube) return
+    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, autoRoll)) return
     const id = window.setTimeout(() => doRoll(), 500)
     return () => window.clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
