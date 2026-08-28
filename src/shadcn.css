@@ -45,6 +45,13 @@
   }
 }
 
+/* App.css'in katmansiz `button:focus-visible { outline }` kurali shadcn butonlarina
+   sizmasin -> yalniz shadcn kendi ring'ini gostersin. Unlayered + yuksek ozgulluk
+   ([data-slot]:focus-visible = 0,2,0 > button:focus-visible = 0,1,1). */
+[data-slot='button']:focus-visible {
+  outline: none;
+}
+
 @theme inline {
   --color-background: var(--sc-background);
   --color-foreground: var(--sc-foreground);
@@ -93,8 +100,8 @@
   --sc-muted-foreground: #9da7b3; /* rn-muted */
   --sc-accent: #1b2e49; /* hover yuzeyi */
   --sc-accent-foreground: #f0e8d8;
-  --sc-destructive: #9e3b3b; /* muted koyu kirmizi */
-  --sc-destructive-foreground: #f0e8d8;
+  --sc-destructive: #c0453e; /* modern semantic red (Royal Navy'ye uyumlu, neon degil) */
+  --sc-destructive-foreground: #ffffff;
   --sc-border: #293a50; /* rn-line */
   --sc-input: #293a50;
   --sc-ring: #c2a15f; /* gold odak halkasi */
@@ -116,7 +123,7 @@
   --sc-muted-foreground: #5a6b80;
   --sc-accent: #ece4d3;
   --sc-accent-foreground: #14243a;
-  --sc-destructive: #9e3b3b;
+  --sc-destructive: #b23a34; /* acik temada modern semantic red */
   --sc-destructive-foreground: #ffffff;
   --sc-border: #ddd3c1;
   --sc-input: #ddd3c1;
