@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { Button } from '@/components/ui/button'
 import * as api from '../api'
 
 interface Props {
@@ -49,9 +50,9 @@ export default function ResetPassword({ email, token, onDone }: Props) {
         {done ? (
           <>
             <p className="register-sub">{t('reset.success')}</p>
-            <button type="button" className="galaxy-btn" onClick={onDone}>
+            <Button type="button" variant="default" onClick={onDone}>
               {t('reset.toLogin')}
-            </button>
+            </Button>
           </>
         ) : (
           <>
@@ -88,12 +89,12 @@ export default function ResetPassword({ email, token, onDone }: Props) {
             </label>
             {error && <div className="register-error" role="alert">{error}</div>}
             <div className="register-actions">
-              <button type="button" className="menu-btn" onClick={onDone}>
+              <Button type="button" variant="secondary" onClick={onDone}>
                 {t('reg.cancel')}
-              </button>
-              <button type="submit" className="galaxy-btn" disabled={busy}>
+              </Button>
+              <Button type="submit" variant="default" disabled={busy}>
                 {t('reset.submit')}
-              </button>
+              </Button>
             </div>
           </>
         )}

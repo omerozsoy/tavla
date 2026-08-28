@@ -3,6 +3,7 @@ import './AvatarCropper.css'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
 import { useEscape } from './useEscape'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   /** tam cozunurluklu kaynak resim (data URL) */
@@ -135,12 +136,12 @@ export default function AvatarCropper({ src, size = 256, onApply, onCancel }: Pr
         </div>
         <p className="avc-hint">{t('crop.hint')}</p>
         <div className="avc-actions">
-          <button type="button" className="menu-btn" onClick={onCancel}>
+          <Button type="button" variant="secondary" onClick={onCancel}>
             {t('crop.cancel')}
-          </button>
-          <button type="button" className="galaxy-btn avc-apply" onClick={apply}>
+          </Button>
+          <Button type="button" variant="default" className="avc-apply" onClick={apply}>
             {t('crop.apply')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

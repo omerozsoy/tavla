@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -29,9 +30,15 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="dice" size={20} /> {t('fair.title')}</h2>
         <p className="register-sub">{t('fair.intro')}</p>
 
@@ -72,9 +79,9 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
               onChange={(e) => setVNonce(Math.max(0, Number(e.target.value)))}
             />
           </label>
-          <button className="menu-btn" onClick={doVerify}>
+          <Button variant="outline" onClick={doVerify}>
             {t('fair.verifyBtn')}
-          </button>
+          </Button>
 
           {result && (
             <div className="fair-result">

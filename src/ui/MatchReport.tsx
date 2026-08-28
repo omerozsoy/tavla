@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
@@ -142,9 +143,9 @@ export default function MatchReport({
   return (
     <div className="register-overlay modal report-overlay">
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2>
           {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
           {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
@@ -348,9 +349,9 @@ export default function MatchReport({
           </div>
         )}
         {log.length > 0 && (
-          <button className="menu-btn rep-export rep-export-bottom" onClick={exportMat}>
+          <Button variant="outline" className="rep-export rep-export-bottom" onClick={exportMat}>
             <Icon name="install" size={14} /> {t('rep.export')}
-          </button>
+          </Button>
         )}
       </div>
     </div>

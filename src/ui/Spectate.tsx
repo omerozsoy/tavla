@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
@@ -64,9 +65,9 @@ export default function Spectate({
   return (
     <div className="register-overlay modal spectate-overlay">
       <div className="spectate-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <div className="spectate-head">
           <span className="live-dot" /> <Icon name="eye" size={16} /> {t('live.watching')}
         </div>

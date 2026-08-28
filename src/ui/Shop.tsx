@@ -13,6 +13,7 @@ import {
   type AvatarFrameDef,
 } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
+import { Button } from '@/components/ui/button'
 
 // 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
 const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
@@ -68,23 +69,25 @@ function FrameCard(p: CardProps) {
         {p.f.name}
       </div>
       {owned ? (
-        <button
-          className={`shop-btn ${equipped ? 'active' : ''}`}
+        <Button
+          variant={equipped ? 'secondary' : 'default'}
+          className="w-full"
           disabled={equipped}
           onClick={() => p.onEquip(p.f.id)}
         >
           {equipped ? p.labels.equipped : p.labels.equip}
-        </button>
+        </Button>
       ) : price != null ? (
         <>
-          <button
-            className={`shop-btn buy${p.coins < price ? ' cant' : ''}`}
+          <Button
+            variant="default"
+            className="w-full"
             disabled={p.busy === sid || p.coins < price}
             onClick={() => p.onBuy(sid)}
             aria-label={p.labels.buyAria(p.f.name, price)}
           >
             <Icon name="coin" size={14} /> <span className="tnum">{fmtCoin(price)}</span>
-          </button>
+          </Button>
           {p.coins < price && <div className="shop-need">{p.labels.need(price - p.coins)}</div>}
         </>
       ) : (
@@ -169,7 +172,8 @@ export default function Shop({
             <div className="shop-coins">
               <Icon name="coin" size={16} /> <span className="tnum">{fmtCoin(coins)}</span>
             </div>
-            <button
+            <Button
+              variant="default"
               className={`shop-daily ${rewardReady ? 'ready' : ''}`}
               disabled={busy === 'daily' || !rewardReady}
               onClick={daily}
@@ -177,7 +181,7 @@ export default function Shop({
             >
               <Icon name="gift" size={16} />{' '}
               {rewardReady ? t('shop.daily') : <span className="sd-count tnum">{fmtLeft(rewardSecs)}</span>}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -195,13 +199,14 @@ export default function Shop({
               <AvatarFrame src={avatar} frame={null} size={82} name={name} />
             </div>
             <div className="shop-anim-name">{t('shop.noFrame')}</div>
-            <button
-              className={`shop-btn ${!currentFrame ? 'active' : ''}`}
+            <Button
+              variant={!currentFrame ? 'secondary' : 'default'}
+              className="w-full"
               disabled={!currentFrame}
               onClick={() => equip(null)}
             >
               {!currentFrame ? t('shop.equipped') : t('shop.equip')}
-            </button>
+            </Button>
           </div>
         </div>
 

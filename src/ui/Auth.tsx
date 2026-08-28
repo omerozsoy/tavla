@@ -316,16 +316,11 @@ export default function Auth({
             e.target.value = '' // ayni dosya tekrar secilebilsin
           }}
         />
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => photoInputRef.current?.click()}
-        >
+        <Button type="button" variant="outline" onClick={() => photoInputRef.current?.click()}>
           <Icon name="camera" size={16} /> {t('reg.photoPick')}
         </Button>
         {avatar && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => setAvatar(undefined)}>
+          <Button type="button" variant="ghost" onClick={() => setAvatar(undefined)}>
             {t('reg.photoRemove')}
           </Button>
         )}
@@ -478,16 +473,16 @@ export default function Auth({
             {forgotSent ? (
               <>
                 <p className="register-sub">{t('auth.forgotSent')}</p>
-                <button
+                <Button
                   type="button"
-                  className="menu-btn"
+                  variant="secondary"
                   onClick={() => {
                     setForgot(false)
                     setForgotSent(false)
                   }}
                 >
                   {t('auth.backToLogin')}
-                </button>
+                </Button>
               </>
             ) : (
               <>
@@ -503,16 +498,17 @@ export default function Auth({
                   />
                 </label>
                 <div className="register-actions">
-                  <button type="button" className="menu-btn" onClick={() => setForgot(false)}>
-                    {t('reg.cancel')}
-                  </button>
-                  <button
-                    type="submit"
-                    className="galaxy-btn"
-                    disabled={busy || !loginId.trim()}
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    className="flex-1"
+                    onClick={() => setForgot(false)}
                   >
+                    {t('reg.cancel')}
+                  </Button>
+                  <Button type="submit" className="flex-1" disabled={busy || !loginId.trim()}>
                     {t('auth.forgotSend')}
-                  </button>
+                  </Button>
                 </div>
               </>
             )}
@@ -560,14 +556,14 @@ export default function Auth({
                   </button>
                 </div>
               </label>
-              <button
+              <Button
                 type="button"
-                className="galaxy-btn auth-col-submit"
+                className="w-full"
                 onClick={() => doLogin()}
                 disabled={busy}
               >
                 {t('auth.doLogin')}
-              </button>
+              </Button>
               <button
                 type="button"
                 className="forgot-link"
@@ -604,13 +600,9 @@ export default function Auth({
                   </button>
                 </div>
               </label>
-              <button
-                type="submit"
-                className="galaxy-btn auth-col-submit"
-                disabled={busy || nickTaken}
-              >
+              <Button type="submit" className="w-full" disabled={busy || nickTaken}>
                 {t('reg.submitNew')}
-              </button>
+              </Button>
             </div>
           </div>
         )}
@@ -665,9 +657,9 @@ export default function Auth({
             buton (dikkat cekmez, hizali). Page modunda X yok; ESC de kapatir. */}
         {!editing && !forgot && (
           <div className="auth-foot">
-            <button
+            <Button
               type="button"
-              className="auth-ghost"
+              variant="ghost"
               onClick={() =>
                 onGuest({
                   firstName: '',
@@ -679,11 +671,11 @@ export default function Auth({
               }
             >
               {t('auth.guest')}
-            </button>
+            </Button>
             {onCancel && (
-              <button type="button" className="auth-ghost" onClick={onCancel}>
+              <Button type="button" variant="ghost" onClick={onCancel}>
                 {t('reg.cancel')}
-              </button>
+              </Button>
             )}
           </div>
         )}

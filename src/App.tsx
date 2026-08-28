@@ -116,6 +116,7 @@ import {
 } from './storage'
 import { useT } from './i18n'
 import { useToast } from './ui/Toast'
+import { Button } from '@/components/ui/button'
 import {
   getToken,
   loadServerGame,
@@ -2805,20 +2806,20 @@ export default function App() {
         )}
         <div className="result-actions">
           {matchOver ? (
-            <button className="galaxy-btn" onClick={() => handleNewMatch()}>
+            <Button variant="default" onClick={() => handleNewMatch()}>
               {t('btn.newMatch')}
-            </button>
+            </Button>
           ) : (
-            <button className="galaxy-btn" onClick={nextGame}>
+            <Button variant="default" onClick={nextGame}>
               {t('btn.nextGame')}
-            </button>
+            </Button>
           )}
-          <button
-            className="menu-btn"
+          <Button
+            variant="outline"
             onClick={() => (online ? handleLeaveRoom() : setHome(true))}
           >
             <Icon name="home" /> {t('home.title')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -2836,12 +2837,12 @@ export default function App() {
           </div>
         )}
         <div className="cube-actions">
-          <button className="galaxy-btn" onClick={handleTake}>
+          <Button variant="default" onClick={handleTake}>
             {t('btn.take')}
-          </button>
-          <button className="galaxy-btn" onClick={handleDrop}>
+          </Button>
+          <Button variant="default" onClick={handleDrop}>
             {t('btn.drop')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -2870,13 +2871,13 @@ export default function App() {
 
   // Ana slot (sirasi gelenin): Onayla / Roll / zarlar
   const primary = centerMain ? null : turnComplete ? (
-    <button className="galaxy-btn" onClick={handleConfirm}>
+    <Button variant="default" onClick={handleConfirm}>
       {t('btn.confirm')}
-    </button>
+    </Button>
   ) : showRoll ? (
-    <button className="galaxy-btn" onClick={doRoll}>
+    <Button variant="default" onClick={doRoll}>
       {t('btn.roll')}
-    </button>
+    </Button>
   ) : diceRolled && diceFaces.length > 0 ? (
     <DiceRow
       faces={diceFaces}
@@ -2904,16 +2905,16 @@ export default function App() {
                   {cubeHint.winPct.toFixed(0)}%
                 </div>
               )}
-              <button className="galaxy-btn" onClick={() => handleDouble(turnStart.turn)}>
+              <Button variant="default" onClick={() => handleDouble(turnStart.turn)}>
                 {t('btn.double')}
-              </button>
+              </Button>
             </div>
           )
         : diceRolled && played.length > 0
           ? (
-              <button className="galaxy-btn undo" onClick={handleUndo}>
+              <Button variant="default" onClick={handleUndo}>
                 {t('btn.undo')}
-              </button>
+              </Button>
             )
           : null
 
@@ -3131,9 +3132,9 @@ export default function App() {
           </span>
         ))}
       {user && (
-        <button className="account-btn account-shop" onClick={() => goPage(() => setShopOpen(true))}>
+        <Button variant="outline" onClick={() => goPage(() => setShopOpen(true))}>
           <Icon name="shop" size={15} /> {t('shop.title')}
-        </button>
+        </Button>
       )}
       {user ? (
         <>
@@ -3149,9 +3150,9 @@ export default function App() {
           )}
         </>
       ) : (
-        <button className="account-btn primary" onClick={() => setShowAuth(true)}>
+        <Button variant="default" onClick={() => setShowAuth(true)}>
           {t('account.auth')}
-        </button>
+        </Button>
       )}
       <span className="account-sep" />
       <button
@@ -3290,12 +3291,12 @@ export default function App() {
           <span className="invite-text">
             <Icon name="play" size={16} /> <b>{inv.from}</b> {t('friends.invitedYou')}
           </span>
-          <button className="invite-acc" onClick={() => handleAcceptInvite(inv)}>
+          <Button variant="default" aria-label={t('friends.accept')} onClick={() => handleAcceptInvite(inv)}>
             {t('friends.accept')}
-          </button>
-          <button className="invite-dec" onClick={() => handleDeclineInvite(inv)}>
+          </Button>
+          <Button variant="destructive" aria-label={t('friends.decline')} onClick={() => handleDeclineInvite(inv)}>
             {t('friends.decline')}
-          </button>
+          </Button>
         </div>
       ))}
       {showTournNotices &&
@@ -3305,12 +3306,12 @@ export default function App() {
               <Icon name="medal" size={16} /> <b>{tn.tname}</b>:{' '}
               {t('tourn.yourMatch', { name: tn.oppName })}
             </span>
-            <button
-              className="invite-acc"
+            <Button
+              variant="default"
               onClick={() => handlePlayTournamentMatch(tn.tid, { key: tn.match }, tn.oppId)}
             >
               {t('tourn.play')}
-            </button>
+            </Button>
           </div>
         ))}
     </div>
@@ -3623,12 +3624,12 @@ export default function App() {
                 </h1>
                 <p className="hero-tagline">{t('home.tagline')}</p>
                 <div className="hero-cta">
-                  <button className="galaxy-btn hero-btn-primary" onClick={menuProps.onAiGame}>
+                  <Button variant="default" onClick={menuProps.onAiGame}>
                     <Icon name="robot" size={18} /> {t('home.vsBot')}
-                  </button>
-                  <button className="btn-secondary hero-btn-secondary" onClick={menuProps.onNewGame}>
+                  </Button>
+                  <Button variant="secondary" onClick={menuProps.onNewGame}>
                     <Icon name="users" size={18} /> {t('home.online')}
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className="hero-board" aria-hidden="true">
@@ -3657,12 +3658,13 @@ export default function App() {
             )}
             <div className="lobby-welcome">
               {hasActiveGame && (
-                <button
-                  className="galaxy-btn lobby-resume"
+                <Button
+                  variant="default"
+                  className="w-full"
                   onClick={() => setHome(false)}
                 >
                   <Icon name="live" /> {t('menu.resumeGame')}
-                </button>
+                </Button>
               )}
               {lobbyTourns.length > 0 && (
                 <div className="lobby-tourns">
@@ -3774,9 +3776,9 @@ export default function App() {
               {learnMode ? t('hint.learnTitle') : t('hint.title')}
             </span>
             {!learnMode && (
-              <button className="hint-close" onClick={() => setHintShown(false)} aria-label={t('common.close')}>
+              <Button variant="ghost" size="icon" onClick={() => setHintShown(false)} aria-label={t('common.close')}>
                 <Icon name="x" size={14} />
-              </button>
+              </Button>
             )}
           </div>
           <div className="hint-move">{curBest.notation}</div>
@@ -3788,9 +3790,9 @@ export default function App() {
         </div>
       )}
       {showHintUI && !learnMode && !hintShown && (
-        <button className="hint-fab" onClick={() => setHintShown(true)}>
+        <Button variant="default" className="fixed left-4 bottom-4 z-[55]" aria-label={t('hint.button')} onClick={() => setHintShown(true)}>
           <Icon name="bulb" size={16} /> {t('hint.button')}
-        </button>
+        </Button>
       )}
       <button
         className="game-ham"
@@ -3970,14 +3972,14 @@ export default function App() {
                   <div className="resign-auto">
                     {t(typeKey)} — <b>{t('resign.losePts', { n: pts })}</b>
                   </div>
-                  <button className="galaxy-btn" onClick={handleResign}>
+                  <Button variant="destructive" onClick={handleResign}>
                     <Icon name="flag" /> {t('resign.confirm')}
-                  </button>
+                  </Button>
                 </>
               )
             })()}
-            <button
-              className="menu-btn resign-home"
+            <Button
+              variant="secondary"
               onClick={() => {
                 setResignOpen(false)
                 if (online) handleLeaveRoom()
@@ -3988,10 +3990,10 @@ export default function App() {
               }}
             >
               <Icon name="home" /> {t('resign.toHome')}
-            </button>
-            <button className="menu-btn" onClick={() => setResignOpen(false)}>
+            </Button>
+            <Button variant="secondary" onClick={() => setResignOpen(false)}>
               {t('reg.cancel')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

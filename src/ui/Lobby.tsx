@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { listContents, type Content } from '../api'
 
 interface RoomInfo {
@@ -91,9 +92,9 @@ export default function Lobby({
             </div>
           )}
 
-          <button className="galaxy-btn mm-cancel" onClick={onCancelMatch}>
+          <Button variant="default" className="mm-cancel" onClick={onCancelMatch}>
             {t('mp.cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -107,16 +108,16 @@ export default function Lobby({
           <h2>{t('mp.waiting')}</h2>
           <p className="register-sub">{t('mp.shareCode')}</p>
           <div className="room-code">{room.code}</div>
-          <button
-            className="menu-btn"
+          <Button
+            variant="outline"
             onClick={() => navigator.clipboard?.writeText(room.code).catch(() => {})}
           >
             {t('mp.copy')}
-          </button>
+          </Button>
           <div className="register-actions">
-            <button className="menu-btn" onClick={onLeave}>
+            <Button variant="outline" onClick={onLeave}>
               {t('mp.leave')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -130,16 +131,16 @@ export default function Lobby({
         <h2><Icon name="globe" size={20} /> {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>
 
-        <button className="galaxy-btn mm-quick" disabled={busy} onClick={onMatchmake}>
+        <Button variant="default" className="mm-quick" disabled={busy} onClick={onMatchmake}>
 <Icon name="target" size={18} /> {t('mp.quickMatch')}
-        </button>
+        </Button>
         <p className="mm-quick-note">{t('mp.quickMatchNote')}</p>
 
         <div className="mp-or">— {t('mp.or')} —</div>
 
-        <button className="menu-btn" disabled={busy} onClick={onCreate}>
+        <Button variant="outline" disabled={busy} onClick={onCreate}>
           {t('mp.create')}
-        </button>
+        </Button>
 
         <div className="mp-or">— {t('mp.or')} —</div>
 
@@ -152,13 +153,13 @@ export default function Lobby({
             placeholder="ABX7Z"
           />
         </label>
-        <button
-          className="menu-btn"
+        <Button
+          variant="outline"
           disabled={busy || code.trim().length < 4}
           onClick={() => onJoin(code.trim())}
         >
           {t('mp.join')}
-        </button>
+        </Button>
 
         {error && <div className="register-error">{error}</div>}
 

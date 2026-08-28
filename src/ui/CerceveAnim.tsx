@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { Button } from '@/components/ui/button'
 import SoberFrame, { type SoberMotion } from './SoberFrame'
 import demoAvatar from '../assets/demo-avatar.jpg'
 import './CerceveAnim.css'
@@ -123,9 +124,9 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="ca-wrap" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
-        </button>
+        </Button>
 
         <div className="ca-head">
           <h2>Seçili Animasyonlar × 5 Renk</h2>

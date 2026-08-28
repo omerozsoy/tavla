@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { listContents, type Content } from '../api'
@@ -69,9 +70,15 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card quiz-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2>
           <Icon name="book" size={20} /> {t('quiz.title')}
         </h2>
@@ -86,9 +93,9 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
               {score} / {questions.length}
             </div>
             <p className="register-sub">{t('quiz.done')}</p>
-            <button className="galaxy-btn" onClick={restart}>
+            <Button variant="default" onClick={restart}>
               <Icon name="refresh" /> {t('quiz.again')}
-            </button>
+            </Button>
           </div>
         ) : (
           <div className="quiz-q">
@@ -121,9 +128,9 @@ export default function QuizPlay({ onClose }: { onClose: () => void }) {
                   {picked === q.answer ? t('quiz.correct') : t('quiz.wrong')}
                 </div>
                 {q.explain && <p>{q.explain}</p>}
-                <button className="galaxy-btn" onClick={next}>
+                <Button variant="default" onClick={next}>
                   {t('quiz.next')} →
-                </button>
+                </Button>
               </div>
             )}
           </div>

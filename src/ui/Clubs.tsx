@@ -14,6 +14,7 @@ import {
 } from '../api'
 import AvatarFrame from './AvatarFrame'
 import PublicProfile from './PublicProfile'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   onClose: () => void
@@ -187,9 +188,9 @@ export default function Clubs({ onClose }: Props) {
                   </span>
                 </div>
               </div>
-              <button className="menu-btn danger club-leave" disabled={busy} onClick={doLeave}>
+              <Button variant="destructive" className="club-leave" disabled={busy} onClick={doLeave}>
                 {t('clubs.leave')}
-              </button>
+              </Button>
             </div>
             {leagueTable(mine)}
           </div>
@@ -217,22 +218,22 @@ export default function Clubs({ onClose }: Props) {
                   onChange={(e) => setDesc(e.target.value)}
                 />
                 <div className="club-create-actions">
-                  <button className="btn-secondary" onClick={() => setCreating(false)}>
+                  <Button variant="secondary" onClick={() => setCreating(false)}>
                     {t('setup.cancel')}
-                  </button>
-                  <button
-                    className="galaxy-btn"
+                  </Button>
+                  <Button
+                    variant="default"
                     disabled={busy || !name.trim()}
                     onClick={doCreate}
                   >
                     {t('clubs.create')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ) : (
-              <button className="menu-btn club-create-btn" onClick={() => setCreating(true)}>
+              <Button variant="default" className="club-create-btn" onClick={() => setCreating(true)}>
                 <Icon name="users" size={16} /> {t('clubs.createNew')}
-              </button>
+              </Button>
             )}
 
             {msg && <div className="friends-msg">{msg}</div>}
@@ -263,13 +264,14 @@ export default function Clubs({ onClose }: Props) {
                         </div>
                       </div>
                     </button>
-                    <button
-                      className="menu-btn club-join"
+                    <Button
+                      variant="outline"
+                      className="club-join"
                       disabled={busy}
                       onClick={() => doJoin(c.id)}
                     >
                       {t('clubs.join')}
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -291,13 +293,14 @@ export default function Clubs({ onClose }: Props) {
             </h2>
             {view.description && <div className="club-desc">{view.description}</div>}
             {!mine && (
-              <button
-                className="galaxy-btn club-join-big"
+              <Button
+                variant="default"
+                className="club-join-big"
                 disabled={busy}
                 onClick={() => doJoin(view.id)}
               >
                 <Icon name="check" size={16} /> {t('clubs.join')}
-              </button>
+              </Button>
             )}
             {leagueTable(view)}
           </div>
