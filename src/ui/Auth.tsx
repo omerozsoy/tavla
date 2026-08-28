@@ -325,13 +325,7 @@ export default function Auth({
           <Icon name="camera" size={16} /> {t('reg.photoPick')}
         </Button>
         {avatar && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="text-destructive/80 hover:bg-destructive/10 hover:text-destructive"
-            onClick={() => setAvatar(undefined)}
-          >
+          <Button type="button" variant="ghost" size="sm" onClick={() => setAvatar(undefined)}>
             {t('reg.photoRemove')}
           </Button>
         )}
