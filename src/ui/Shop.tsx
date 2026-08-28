@@ -82,7 +82,6 @@ interface CardProps {
 }
 function AnimCard(p: CardProps) {
   const [sel, setSel] = useState(Math.min(p.colorIdx, p.anim.items.length - 1))
-  const [hover, setHover] = useState(false)
   const f = p.anim.items[sel]
   const sid = 'frame.' + f.id
   const owned = p.owns(sid)
@@ -91,13 +90,9 @@ function AnimCard(p: CardProps) {
   const colorName = f.name.split(' · ')[1] ?? ''
   return (
     <div className="shop-anim" style={{ ['--rarity-color']: p.groupColor } as CSSProperties}>
-      <div
-        className="shop-anim-preview"
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
-        {/* hover/focus'ta animasyon; aksi halde statik (excessive-motion + perf) */}
-        <AvatarFrame src={p.avatar} frame={f.id} size={82} name={p.name} animated={hover} />
+      <div className="shop-anim-preview">
+        {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
+        <AvatarFrame src={p.avatar} frame={f.id} size={82} name={p.name} animated />
       </div>
       <div className="shop-anim-name" title={p.anim.name}>
         {p.anim.name}
