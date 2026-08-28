@@ -3852,16 +3852,6 @@ button[aria-disabled='true'],
   max-width: 180px;
   min-height: 42px;
 }
-/* Kaydedildi onayi (sayfada kalir; ana sayfaya donmez) */
-.save-ok {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 10px;
-  color: var(--success-fg);
-  font-size: 0.9rem;
-  font-weight: 600;
-}
 /* Hesap aksiyon bolumu: ust ayirici; Cikis Yap ORTADA belirgin, Hesabi Sil SAG kose */
 .profile-form .profile-foot {
   position: relative;
@@ -9449,37 +9439,95 @@ html.fs-active .account-bar {
   font-weight: 600;
   color: #b7f0c6;
 }
-.verify-toast {
+/* ==========================================================================
+   BİRLEŞİK BİLDİRİM (toast) — src/ui/Toast.tsx
+   Flat/Swiss: dolu yüzey + 1px kenarlık + sol renk şeridi (türe göre). Gölge YOK.
+   Üst-orta yığınlanır, erişilebilir (aria-live), reduced-motion'a saygılı.
+   Eski dağıtık ".verify-toast" + ".save-ok" desenlerinin yerini alır.
+   ========================================================================== */
+.toastr-viewport {
   position: fixed;
-  left: 50%;
   top: 16px;
+  left: 50%;
   transform: translateX(-50%);
-  z-index: 500;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: max-content;
+  max-width: min(92vw, 420px);
+  pointer-events: none; /* boşluklar alttaki tıklamayı engellemesin */
+}
+.toastr {
+  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 16px;
-  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  background: var(--card-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-lg, 12px);
   font-size: 0.9rem;
   font-weight: 600;
+  line-height: 1.4;
   box-shadow: none; /* flat */
-  max-width: 94vw;
+  animation: toastr-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.verify-toast.ok {
-  background: #1f8a4c;
-  color: var(--tv-white);
+.toastr__icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--accent);
 }
-.verify-toast.fail {
-  background: #c0392b;
-  color: var(--tv-white);
+.toastr__msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-.verify-close {
+.toastr__close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 2px;
   background: transparent;
   border: none;
-  color: inherit;
+  border-radius: 6px;
+  color: var(--muted);
   cursor: pointer;
-  opacity: 0.85;
-  display: inline-flex;
+}
+.toastr__close:hover {
+  color: var(--text);
+}
+.toastr--success {
+  border-left-color: var(--success-fg);
+}
+.toastr--success .toastr__icon {
+  color: var(--success-fg);
+}
+.toastr--error {
+  border-left-color: var(--danger-fg);
+}
+.toastr--error .toastr__icon {
+  color: var(--danger-fg);
+}
+@keyframes toastr-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toastr {
+    animation: none;
+  }
 }
 
 /* ==========================================================================
