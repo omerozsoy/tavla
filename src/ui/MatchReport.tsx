@@ -5,8 +5,7 @@ import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
-import { initialState, cloneState, gameOutcome, opponent } from '../engine/board'
-import { applyStep } from '../engine/moves'
+import { buildMat } from '../matExport'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -128,107 +127,10 @@ export default function MatchReport({
   }
 
   // Maci standart .mat (Jellyfish / GNU Backgammon) formatinda disa aktar.
-  // Oyunlar acilis dizilimi tespitiyle bolunur; her hamle "zar: notasyon" satirina
-  // (beyaz sol / siyah sag sutun) yazilir; insanin kup kararlari (Doubles/Takes/Drops)
-  // ve oyun sonuclari (Wins N points) eklenir. Notasyon zaten her oyuncunun kendi
-  // perspektifinde (moveNotation) -> .mat ile uyumlu. GNU BG/XG ile analize acilabilir.
+  // Uretim mantigi src/matExport.ts'te (UI + testler ayni fonksiyonu kullanir).
   function exportMat() {
-    const COLW = 34 // sol sutun genisligi (hizalama)
-    const INIT = initialState().points
-    // Acilis dizilimi mi? (yeni oyunun ilk hamlesi: taslar baslangicta, bar/off bos)
-    const isOpening = (e: LogEntry): boolean => {
-      const p = e.pos
-      if (!p || e.cube) return false
-      if (p.bar.white || p.bar.black || p.off.white || p.off.black) return false
-      return p.points.length === 24 && p.points.every((v, i) => v === INIT[i])
-    }
-    // seq'e gore sirala (async bot kayitlari dogru yere otursun) + oyunlara bol
-    const seqAll = log.map((e, i) => ({ e, i })).sort((a, b) => (a.e.seq ?? a.i) - (b.e.seq ?? b.i))
-    const games: LogEntry[][] = []
-    for (const { e } of seqAll) {
-      if (isOpening(e) || games.length === 0) games.push([])
-      games[games.length - 1].push(e)
-    }
-
-    // Bir oyunun sonucu: kup drop'ta teklifi kabul etmeyen kaybeder; yoksa son hamleyi
-    // kendi pos'una uygulayip gammon/backgammon carpanini gercek tahtadan hesapla.
-    const outcomeOf = (game: LogEntry[]): { winner: Player; points: number } | null => {
-      let cube = 1
-      let dropWinner: Player | null = null
-      let last: LogEntry | undefined
-      for (const e of game) {
-        if (e.cube) {
-          if (e.cube.chosen === 'drop') dropWinner = e.player ? opponent(e.player) : null
-          else if (e.cube.chosen === 'double' || e.cube.chosen === 'take') cube *= 2
-        } else if (e.player) {
-          last = e
-        }
-      }
-      if (dropWinner) return { winner: dropWinner, points: cube }
-      if (!last?.player || !last.pos) return null
-      const s = cloneState(last.pos)
-      for (const st of last.playedSteps ?? last.steps ?? []) applyStep(s, st, last.player)
-      const oc = gameOutcome(s)
-      return oc ? { winner: oc.winner, points: cube * oc.multiplier } : null
-    }
-
-    const out: string[] = []
-    if (pr != null) out.push(`; PR ${pr.toFixed(2)}`)
-    out.push(`${matchLength} point match`)
-
-    let sw = 0
-    let sb = 0
-    games.forEach((game, gi) => {
-      out.push('')
-      out.push(` Game ${gi + 1}`)
-      out.push(` ${`${whiteName} : ${sw}`.padEnd(COLW + 4)}${blackName} : ${sb}`)
-
-      // Sutunlu satirlar: sol=beyaz, sag=siyah. .mat'te hamle numarasi beyaz hamlesinde
-      // artar; siyah acilisi kazandiginda sol sutun bos kalir (tur sirasi korunur).
-      const rows: { w?: string; b?: string }[] = []
-      let cube = 1
-      for (const e of game) {
-        if (!e.player) continue
-        let text: string
-        if (e.cube) {
-          if (e.cube.chosen === 'double') {
-            cube *= 2
-            text = `Doubles => ${cube}`
-          } else if (e.cube.chosen === 'take') {
-            cube *= 2
-            text = 'Takes'
-          } else if (e.cube.chosen === 'drop') {
-            text = 'Drops'
-          } else {
-            continue // 'no-double' vb. -> kup eylemi yok
-          }
-        } else {
-          const d = e.dice && e.dice.length >= 2 ? `${e.dice[0]}${e.dice[1]}` : '  '
-          text = `${d}: ${e.notation || 'pass'}`
-        }
-        if (e.player === 'white') {
-          rows.push({ w: text })
-        } else {
-          const last = rows[rows.length - 1]
-          if (last && last.w !== undefined && last.b === undefined) last.b = text
-          else rows.push({ b: text })
-        }
-      }
-      rows.forEach((r, idx) => {
-        const left = (r.w ?? '').padEnd(COLW)
-        out.push(`${String(idx + 1).padStart(3)}) ${left}${r.b ?? ''}`.trimEnd())
-      })
-
-      const oc = outcomeOf(game)
-      if (oc) {
-        const winTxt = `Wins ${oc.points} point${oc.points === 1 ? '' : 's'}`
-        out.push(oc.winner === 'white' ? `      ${winTxt}` : `      ${''.padEnd(COLW)}${winTxt}`)
-        if (oc.winner === 'white') sw += oc.points
-        else sb += oc.points
-      }
-    })
-
-    const blob = new Blob([out.join('\n') + '\n'], { type: 'text/plain;charset=utf-8' })
+    const text = buildMat(log, { matchLength, whiteName, blackName })
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

@@ -36,3 +36,6 @@ src/assets/rive/avatar-frames/previews/
 preview-*.png
 shop-test.png
 *.shot.png
+
+# ornek .mat dis-aktarim ciktisi (gnubg testi icin uretilir)
+ornek-mac.mat
