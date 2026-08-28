@@ -3651,10 +3651,6 @@ export default function App() {
                   countdown: fmtCountdown(rewardSecs),
                   onClaim: handleDaily,
                 }}
-                onStats={menuProps.onMyStats}
-                onHistory={menuProps.onMatchHistory}
-                onBlunders={menuProps.onBlunders}
-                onShop={menuProps.onShop}
               />
             )}
             <div className="lobby-welcome">

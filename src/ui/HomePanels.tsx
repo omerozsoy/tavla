@@ -21,10 +21,6 @@ export function HomeDashboard(p: {
   wins: number
   games: number
   daily?: { ready: boolean; countdown: string; onClaim: () => void }
-  onStats?: () => void
-  onHistory?: () => void
-  onBlunders?: () => void
-  onShop?: () => void
 }) {
   const { t } = useT()
   const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : null
@@ -39,13 +35,6 @@ export function HomeDashboard(p: {
     },
     { icon: 'dice', val: p.games, label: t('home.dash.games') },
   ]
-  const allActions: { icon: IconName; label: string; on?: () => void }[] = [
-    { icon: 'chart', label: t('menu.myStats'), on: p.onStats },
-    { icon: 'analyze', label: t('menu.matchHistory'), on: p.onHistory },
-    { icon: 'alert', label: t('menu.blunders'), on: p.onBlunders },
-    { icon: 'shop', label: t('shop.title'), on: p.onShop },
-  ]
-  const actions = allActions.filter((a) => a.on)
 
   return (
     <section className="home-dash" aria-label={t('menu.myStats')}>
@@ -92,18 +81,6 @@ export function HomeDashboard(p: {
             </span>
           )}
         </button>
-      )}
-      {actions.length > 0 && (
-        <div className="dash-actions">
-          <span className="dash-actions-label">{t('home.dash.quick')}</span>
-          <div className="dash-actions-row">
-            {actions.map((a) => (
-              <button className="dash-action" key={a.label} onClick={a.on}>
-                <Icon name={a.icon} size={16} /> {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
       )}
     </section>
   )
