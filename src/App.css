@@ -760,6 +760,28 @@ button[aria-disabled='true'],
   color: var(--rarity-color, var(--text));
   margin-bottom: 10px;
 }
+/* Rarity icinde animasyon alt-grubu (her animasyonun 5 rengi) */
+.anim-group {
+  margin: 6px 0 14px;
+}
+.anim-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  opacity: 0.85;
+  margin: 0 0 8px 2px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.anim-title::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--rarity-color, var(--muted));
+  opacity: 0.7;
+}
 .rarity-title .rarity-dot {
   width: 10px;
   height: 10px;
