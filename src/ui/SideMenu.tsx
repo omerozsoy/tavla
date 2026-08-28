@@ -75,7 +75,7 @@ export default function SideMenu(p: SideMenuProps) {
           </Button>
         )}
         {!p.inGame && (
-          <Button variant="default" className={NAV} onClick={p.onNewGame}>
+          <Button variant="ghost" className={NAV} onClick={p.onNewGame}>
             <Icon name="target" /> {t('menu.match')}
           </Button>
         )}
