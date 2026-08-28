@@ -4,31 +4,41 @@ import { Slot } from "radix-ui"
 
 import { cn } from "@/lib/utils"
 
-// TEK global Button. TUM butonlar ayni yukseklik/radius/tipografi/ikon/padding/
-// hover/focus/disabled davranisini paylasir; SADECE `variant` rengi degisir.
-// Varyantlar (marka spesifikasyonu): primary | secondary | outline | ghost | destructive
+// TEK global Button — "Strong Gaming SaaS (rafine)" tasarim yonu.
+// TUM butonlar ayni: height(44/38/48) · radius(10px) · font-weight 600 · gap 8px ·
+// ikon 16px · 150ms transition · gorunur focus ring · disabled davranisi.
+// SADECE variant rengi/agirligi degisir. Emphasis (primary/destructive) hover'da
+// hafifce yukselir; subtle (secondary/outline/ghost/soft) yuzey tonu degistirir.
 const buttonVariants = cva(
-  "inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-semibold whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "inline-flex shrink-0 cursor-pointer select-none items-center justify-center gap-2 rounded-[10px] text-sm font-semibold whitespace-nowrap outline-none transition-[transform,background-color,border-color,box-shadow,color] duration-150 ease-out focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        primary: "bg-primary text-primary-foreground hover:bg-primary/90",
+        // Ana aksiyon: solid gold + hafif derinlik + taktil kaldirma
+        primary:
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm",
+        // Ikincil: gorunur sinirli dolgu (ghost DEGIL)
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "border border-border bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:border-ring/40",
+        // Utility: net 1px border + hover soft fill
         outline:
-          "border border-border bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
+          "border border-border bg-transparent text-foreground hover:border-ring/40 hover:bg-accent hover:text-accent-foreground",
+        // Dusuk oncelik: muted metin + soft hover yuzeyi
         ghost:
-          "bg-transparent text-foreground hover:bg-accent hover:text-accent-foreground",
+          "bg-transparent text-muted-foreground hover:bg-accent hover:text-foreground",
+        // Orta agirlik: muted dolgu, border yok
+        soft: "bg-muted text-foreground hover:bg-muted/70",
+        // Tehlikeli: modern semantic red, primary ile ayni aile
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90 focus-visible:ring-destructive/50",
+          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:-translate-y-px hover:shadow-md active:translate-y-0 active:shadow-sm",
       },
       size: {
-        default: "h-10 px-4 py-2 has-[>svg]:px-3.5",
-        sm: "h-9 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
-        lg: "h-11 rounded-md px-6 has-[>svg]:px-5",
-        icon: "size-10",
-        "icon-sm": "size-9",
-        "icon-lg": "size-11",
+        default: "h-11 px-5 has-[>svg]:px-4",
+        sm: "h-[38px] gap-1.5 px-4 has-[>svg]:px-3",
+        lg: "h-12 px-6 text-[15px] has-[>svg]:px-5",
+        icon: "size-11",
+        "icon-sm": "size-[38px]",
+        "icon-lg": "size-12",
       },
     },
     defaultVariants: {
