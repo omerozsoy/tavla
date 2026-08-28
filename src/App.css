@@ -1,31 +1,46 @@
 :root {
-  /* ---- TavlaTv marka token'lari (logo yonu 4a: krem/kiremit/ink) ---- */
-  --tv-cream: #f4efe6; /* ana krem zemin */
-  --tv-cream-deep: #efeae1; /* ikincil zemin */
-  --tv-white: #ffffff; /* kart */
-  --tv-line: #ded7ca; /* kenarlik */
-  --tv-ink: #1c1a17; /* metin + koyu hane + koyu zemin */
-  --tv-ink-muted: #5e574c; /* ikincil metin (acik zemin) */
-  --tv-ink-faint: #8a8377; /* etiket / ucuncul */
-  --tv-brick: #a83a2b; /* aksan - acik zeminde */
-  --tv-brick-light: #c9563f; /* aksan - koyu zeminde */
-  --tv-on-dark: #c6bfb2; /* ikincil metin (koyu zemin) */
-  --tv-font-ui: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
-  --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  /* Baslik/display fontu (govde Outfit; basliklar Poppins -> premium, 'AI degil' his) */
-  --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
-  /* Coin/odul altini (tek token) */
-  --tv-gold: #ffd76a;
+  /* ===== ROYAL NAVY — merkezi renk sistemi (private members club) =====
+     Primitive katman: TUM chrome + marka token'lari buradan turetilir; boylece
+     renk tek yerden yonetilir (yuzlerce hardcoded hex yerine). Board/oyun tahtasi
+     KENDI tema sistemini korur (--tri-*, --bar, --navy[tas], --cream[tas], --game-scene). */
+  --rn-bg: #080c12; /* deep background — ana zemin */
+  --rn-navy: #14243a; /* royal navy — header, kart, panel, yuzey */
+  --rn-navy-muted: #1b2e49; /* muted navy — ikincil yuzey / hover */
+  --rn-line: #293a50; /* kenarlik */
+  --gold: #c2a15f; /* luxury (antique) gold — birincil aksan; KONTROLLU kullan */
+  --gold-hover: #d2b36e; /* gold hover */
+  --gold-dark: #927540; /* gold dark — acik zeminde metin/kenar (kontrast) */
+  --ivory: #f0e8d8; /* ivory — ana acik metin + premium acik yuzey */
+  --ivory-soft: #d8d0c2; /* soft ivory — ikincil */
+  --rn-muted: #9da7b3; /* muted text (koyu zeminde) */
 
-  /* Anlamsal durum renkleri (basari/uyari/hata/bilgi) — tablo, rozet, bildirim */
-  --color-success: #2e9e5b;
-  --color-warning: #d98b3a;
-  --color-error: #e0455e; /* danger DOLGU (uzerine beyaz metin) */
-  --color-info: #6b9bcc;
-  /* danger METIN (yuzey uzerine): koyu temada acik pembe okunur */
-  --danger-fg: #ff9db0;
-  /* success METIN (yuzey uzerine): koyu temada acik yesil okunur */
-  --success-fg: #7ee0a0;
+  /* ---- TavlaTV marka token'lari -> Royal Navy'ye eslendi (isimler korunur) ---- */
+  --tv-cream: var(--ivory); /* acik metin/yuzey */
+  --tv-cream-deep: var(--ivory-soft); /* ikincil */
+  --tv-white: #ffffff; /* saf beyaz (nadir; tas/ikon detaylari) */
+  --tv-line: var(--rn-line); /* kenarlik */
+  --tv-ink: var(--rn-bg); /* en koyu zemin */
+  --tv-ink-muted: #4a5568; /* ikincil metin (acik zemin - navy gri) */
+  --tv-ink-faint: #6b7688; /* etiket / ucuncul */
+  --tv-brick: var(--gold-dark); /* eski kiremit aksan -> gold (acik zeminde) */
+  --tv-brick-light: var(--gold); /* eski kiremit aksan -> gold (koyu zeminde) */
+  --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
+  --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
+  --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  /* Display fontu: Playfair Display -> zamansiz/prestij serif basliklar (premium his) */
+  --tv-font-display: 'Playfair Display', 'Poppins', Georgia, 'Times New Roman', serif;
+  /* Coin/odul altini (antique gold ailesi) */
+  --tv-gold: var(--gold-hover);
+
+  /* Anlamsal durum renkleri — Royal Navy'ye uyumlu (muted, parlak degil) */
+  --color-success: #3e8e5f; /* muted emerald */
+  --color-warning: #c79a4b; /* amber (gold ailesi) */
+  --color-error: #9e3b3b; /* klasik koyu kirmizi (parlak degil) */
+  --color-info: #5e7fa8; /* muted navy-blue */
+  /* danger METIN (yuzey uzerine): koyu navy zeminde okunur, muted */
+  --danger-fg: #e39393;
+  /* success METIN (yuzey uzerine): koyu navy zeminde okunur, muted emerald */
+  --success-fg: #7fc79e;
 
   /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
      Sadece modal/overlay icin cok hafif bir "scrim golgesi" xl'de birakildi. */
@@ -76,25 +91,27 @@
   --z-modal: 2500;
   --z-toast: 3000;
 
-  /* ---- Koyu tema (TavlaTv 'dark' varyanti) ---- */
+  /* ---- Royal Navy (varsayilan 'dark' chrome) ----
+     NOT: --tri-*, --bar, --navy(tas), --cream(tas) BOARD renkleridir; board kendi
+     tema sistemini korur, chrome'a karismaz. Sadece site chrome'u Royal Navy olur. */
   color-scheme: dark;
-  --bg: #1c1a17; /* ink dis zemin */
-  --area: #1c1a17;
-  --panel: #2a2620; /* board yari zemini - sicak koyu */
-  --tri-a: #c9563f; /* acik ucgen - kiremit */
-  --tri-b: #33302b; /* koyu ucgen */
-  --bar: #12100e; /* orta bar / cerceve - en koyu */
-  --navy: #100e0c; /* koyu tas */
-  --cream: #f4efe6; /* acik tas - krem */
-  --accent: #c9563f; /* kiremit aksan (koyu zeminde) */
-  --text: #f4efe6; /* krem metin */
-  --muted: #c6bfb2;
-  /* Kurumsal kroma (tema ile degisir) */
-  --card-bg: #24211d;
-  --btn-bg: #2a2622;
-  --btn-border: #3a342d;
-  --border: #33302b;
-  --input-bg: #24211d;
+  --bg: var(--rn-bg); /* deep background — dis zemin */
+  --area: var(--rn-bg);
+  --panel: #2a2620; /* board yari zemini - DOKUNULMADI (board) */
+  --tri-a: #c9563f; /* acik ucgen - kiremit (board) */
+  --tri-b: #33302b; /* koyu ucgen (board) */
+  --bar: #12100e; /* orta bar / cerceve (board) */
+  --navy: #100e0c; /* koyu tas (board) */
+  --cream: #f4efe6; /* acik tas - krem (board) */
+  --accent: var(--gold); /* luxury gold aksan (koyu zeminde) */
+  --text: var(--ivory); /* ivory metin */
+  --muted: var(--rn-muted);
+  /* Kurumsal kroma — Royal Navy yuzeyler */
+  --card-bg: var(--rn-navy);
+  --btn-bg: var(--rn-navy);
+  --btn-border: var(--rn-line);
+  --border: var(--rn-line);
+  --input-bg: #0f1b2b; /* deep navy input */
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
@@ -126,31 +143,32 @@
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 }
 
-/* Acik tema (TavlaTv 'light/cream' varyanti - marka birincil kimligi) */
+/* Acik tema — Royal Navy'nin LUKS ACIK varyanti (ivory/parsomen + navy metin + antique gold).
+   Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas]) yine board temasina ait. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #efeae1; /* krem-deep sayfa zemini */
+  --bg: #efe9dc; /* parsomen ivory sayfa zemini */
   --area: #ffffff;
-  --panel: #efeae1; /* board yari zemini - krem */
-  --tri-a: #c9563f; /* acik ucgen - kiremit */
-  --tri-b: #ded7ca; /* koyu ucgen - sicak ten */
-  --bar: #ded7ca; /* orta bar / cerceve */
-  --navy: #1c1a17; /* koyu tas - ink */
-  --cream: #f4efe6; /* acik tas - krem */
-  --accent: #a83a2b; /* kiremit aksan (acik zeminde) */
-  --text: #1c1a17;
-  --muted: #5e574c;
-  --card-bg: #ffffff;
-  --btn-bg: #f4efe6;
-  --btn-border: #ded7ca;
-  --border: #ded7ca;
-  --input-bg: #f7f4ee;
-  /* Tersiyer metin: acik zeminde #8a8377 kontrasti AA alti (~3.2:1); koyulastir (~4.6:1) */
-  --tv-ink-faint: #6b6458;
-  /* danger METIN: acik temada beyaz/krem yuzeyde koyu kiremit-kirmizi okunur (~7.7:1) */
-  --danger-fg: #c0392b;
-  /* success METIN: acik temada beyaz/krem yuzeyde koyu yesil okunur (~4.6:1) */
-  --success-fg: #1f8a4c;
+  --panel: #efeae1; /* board yari zemini - DOKUNULMADI (board) */
+  --tri-a: #c9563f; /* acik ucgen (board) */
+  --tri-b: #ded7ca; /* koyu ucgen (board) */
+  --bar: #ded7ca; /* orta bar / cerceve (board) */
+  --navy: #1c1a17; /* koyu tas (board) */
+  --cream: #f4efe6; /* acik tas (board) */
+  --accent: var(--gold-dark); /* antique gold aksan (acik zeminde kontrastli) */
+  --text: #14243a; /* royal navy metin */
+  --muted: #5a6b80; /* navy-gri ikincil metin */
+  --card-bg: #fbf8f1; /* sicak ivory-beyaz kart */
+  --btn-bg: #f3ecdd;
+  --btn-border: #ddd3c1;
+  --border: #ddd3c1;
+  --input-bg: #fbf8f1;
+  /* Tersiyer metin: acik ivory zeminde okunur navy-gri */
+  --tv-ink-faint: #6b7688;
+  /* danger METIN: acik zeminde klasik koyu kirmizi (~7:1) */
+  --danger-fg: #9e3b3b;
+  /* success METIN: acik zeminde koyu emerald (~4.6:1) */
+  --success-fg: #1f7a4c;
 }
 
 * {

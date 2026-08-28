@@ -311,10 +311,11 @@ export default function App() {
   const profile: Profile = user ? toProfile(user) : (guestProfile ?? guestDefault)
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     try {
-      // TavlaTv marka birincil kimligi krem/acik tema -> varsayilan 'light'
-      return localStorage.getItem('tavla.theme') === 'dark' ? 'dark' : 'light'
+      // Royal Navy birincil kimlik -> varsayilan 'dark' (luks navy/gold/ivory).
+      // Kullanici acik varyanti sectiyse ('light') ona saygi goster.
+      return localStorage.getItem('tavla.theme') === 'light' ? 'light' : 'dark'
     } catch {
-      return 'light'
+      return 'dark'
     }
   })
   const [boardTheme, setBoardTheme] = useState<string>(() => {
