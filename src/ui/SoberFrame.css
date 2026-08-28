@@ -43,10 +43,10 @@
 }
 
 /* rarity paletleri (accent verilmezse) */
-.sf-r-rare { --sf-grad: linear-gradient(135deg, #5b8fc0, #3b6fa0); --sf-glow: rgba(59,111,160,.55); }
-.sf-r-epic { --sf-grad: linear-gradient(135deg, #8a74c8, #6d5aa6); --sf-glow: rgba(109,90,166,.55); }
-.sf-r-legendary { --sf-grad: linear-gradient(135deg, #e7ce92, #b8862b 55%, #e7ce92); --sf-glow: rgba(184,134,43,.5); }
-.sf-r-mythic { --sf-grad: linear-gradient(135deg, #9b2c3a, #6e1f2a); --sf-glow: rgba(155,44,58,.55); }
+.sf-r-rare { --sf-grad: linear-gradient(135deg, #5b8fc0, #3b6fa0); --sf-glow: rgba(59,111,160,.55); --sf-solid: #4f86c6; }
+.sf-r-epic { --sf-grad: linear-gradient(135deg, #8a74c8, #6d5aa6); --sf-glow: rgba(109,90,166,.55); --sf-solid: #7d68bd; }
+.sf-r-legendary { --sf-grad: linear-gradient(135deg, #e7ce92, #b8862b 55%, #e7ce92); --sf-glow: rgba(184,134,43,.5); --sf-solid: #c79a33; }
+.sf-r-mythic { --sf-grad: linear-gradient(135deg, #9b2c3a, #6e1f2a); --sf-glow: rgba(155,44,58,.55); --sf-solid: #8f2634; }
 
 /* ============================ ANIMASYON KUTUPHANESI ============================ */
 
@@ -263,6 +263,92 @@
   background: conic-gradient(from 0deg, transparent, var(--sf-glow), transparent 60%); filter: blur(6px);
   animation: sf-rotate 4s linear infinite;
 }
+
+/* ============ GENISLETME (105'e) ============ */
+
+/* S) Ek hareket (.sf) */
+.sf-m-throb { animation: sf-throb 2.4s ease-in-out infinite; }
+@keyframes sf-throb { 0%,100%{transform:scale(1)} 50%{transform:scale(1.14)} }
+.sf-m-wiggle { animation: sf-wiggle .6s ease-in-out infinite; }
+@keyframes sf-wiggle { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+.sf-m-shiver { animation: sf-shiver .3s steps(2) infinite; }
+@keyframes sf-shiver { 0%{transform:translate(1px,0)} 50%{transform:translate(-1px,1px)} 100%{transform:translate(1px,-1px)} }
+.sf-m-expand { animation: sf-expand 2.2s ease-in-out infinite; }
+@keyframes sf-expand { 0%,45%,100%{transform:scale(1)} 65%{transform:scale(1.2)} 82%{transform:scale(1)} }
+.sf-m-skewPulse { animation: sf-skew 1.8s ease-in-out infinite; }
+@keyframes sf-skew { 0%,100%{transform:skewX(0)} 50%{transform:skewX(11deg)} }
+.sf-m-floatSide { animation: sf-floatside 2.6s ease-in-out infinite; }
+@keyframes sf-floatside { 0%,100%{transform:translateX(-8px)} 50%{transform:translateX(8px)} }
+.sf-m-circleMove { offset-path: circle(8px at 50% 50%); offset-rotate: 0deg; animation: sf-orbit 3s linear infinite; }
+.sf-m-figure8 { animation: sf-fig8 4s ease-in-out infinite; }
+@keyframes sf-fig8 { 0%,100%{transform:translate(0,0)} 25%{transform:translate(9px,-6px)} 50%{transform:translate(0,0)} 75%{transform:translate(-9px,-6px)} }
+.sf-m-diagonal { animation: sf-diagonal 2.4s ease-in-out infinite; }
+@keyframes sf-diagonal { 0%,100%{transform:translate(-6px,4px)} 50%{transform:translate(6px,-4px)} }
+.sf-m-zoomBlur { animation: sf-zoomblur 2.2s ease-in-out infinite; }
+@keyframes sf-zoomblur { 0%,100%{transform:scale(1);filter:blur(0)} 50%{transform:scale(1.12);filter:blur(1.5px)} }
+.sf-m-flash .sf-glow { animation: sf-flash 2s steps(1) infinite; }
+@keyframes sf-flash { 0%,86%,100%{opacity:.35} 90%{opacity:1} 94%{opacity:.4} }
+
+/* T) Ek 3D (.sf) */
+.sf-m-seesaw { animation: sf-seesaw 2.4s ease-in-out infinite; }
+@keyframes sf-seesaw { 0%,100%{transform:perspective(600px) rotateX(-22deg)} 50%{transform:perspective(600px) rotateX(22deg)} }
+.sf-m-gyro { animation: sf-gyro 5s linear infinite; }
+@keyframes sf-gyro { to{transform:perspective(600px) rotate3d(1,1,1,360deg)} }
+.sf-m-spinY3d { animation: sf-spiny 4s linear infinite; }
+@keyframes sf-spiny { to{transform:perspective(600px) rotateY(360deg)} }
+.sf-m-spinX3d { animation: sf-spinx 4s linear infinite; }
+@keyframes sf-spinx { to{transform:perspective(600px) rotateX(360deg)} }
+
+/* U) SVG stroke (cizilen/marching-ants) */
+.sf-svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 3; overflow: visible; }
+.sf-svg circle { fill: none; stroke: var(--sf-solid, #b76e79); stroke-width: 6; transform-origin: 50% 50%; }
+.sf-m-drawRing .sf-ring { opacity: 0; }
+.sf-m-drawRing .sf-svg circle { stroke-dasharray: 100; animation: sf-draw 2.6s ease-in-out infinite; }
+@keyframes sf-draw { 0%{stroke-dashoffset:100} 55%,100%{stroke-dashoffset:0} }
+.sf-m-dashSpin .sf-ring { opacity: 0; }
+.sf-m-dashSpin .sf-svg circle { stroke-dasharray: 8 6; animation: sf-rotate 3s linear infinite; }
+.sf-m-dashFlow .sf-ring { opacity: 0; }
+.sf-m-dashFlow .sf-svg circle { stroke-dasharray: 6 8; animation: sf-dashflow 1s linear infinite; }
+@keyframes sf-dashflow { to{stroke-dashoffset:-14} }
+
+/* V) Ek gradient / conic (.sf-ring) */
+.sf-m-conicRainbow .sf-ring { background: conic-gradient(from 0deg, #ff5f6d, #ffc371, #47e891, #22d3ee, #6a8cff, #d16bff, #ff5f6d); animation: sf-rotate 3s linear infinite; }
+.sf-m-gradWave .sf-ring { background-size: 200% 200%; animation: sf-gradwave 3s ease-in-out infinite; }
+@keyframes sf-gradwave { 0%,100%{background-position:50% 0%} 50%{background-position:50% 100%} }
+
+/* W) Ek filter (.sf-ring) */
+.sf-m-bloom .sf-ring { animation: sf-bloom 2.2s ease-in-out infinite; }
+@keyframes sf-bloom { 0%,100%{filter:brightness(1) blur(0)} 50%{filter:brightness(1.6) blur(1px)} }
+.sf-m-duotone .sf-ring { animation: sf-duotone 3s ease-in-out infinite; }
+@keyframes sf-duotone { 0%,100%{filter:hue-rotate(0) contrast(1)} 50%{filter:hue-rotate(120deg) contrast(1.5)} }
+
+/* X) Ek aura / glow */
+.sf-m-neonPulse .sf-glow { animation: sf-neon 1.4s ease-in-out infinite; }
+@keyframes sf-neon { 0%,100%{box-shadow:0 0 6px 1px var(--sf-glow);opacity:.5} 50%{box-shadow:0 0 30px 10px var(--sf-glow);opacity:1} }
+.sf-m-glowSpread .sf-glow { animation: sf-spread 2.4s ease-out infinite; }
+@keyframes sf-spread { 0%{box-shadow:0 0 4px 0 var(--sf-glow);opacity:.9} 100%{box-shadow:0 0 26px 12px var(--sf-glow);opacity:0} }
+.sf-m-pulseHalo .sf-glow { inset: -12px; animation: sf-pulsehalo 2s ease-in-out infinite; }
+@keyframes sf-pulsehalo { 0%,100%{transform:scale(1);opacity:.3} 50%{transform:scale(1.18);opacity:.75} }
+.sf-m-sonar::after {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--sf-glow); z-index: 0;
+  animation: sf-radar 2s ease-out infinite;
+}
+.sf-m-sonar::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--sf-glow); z-index: 0;
+  animation: sf-radar 2s ease-out 1s infinite;
+}
+
+/* Y) Parcacik yagmuru / atesbocegi (.sf-spark) */
+.sf-m-rain .sf-spark { top: -6%; animation: sf-rain 1.8s linear infinite; }
+.sf-m-rain .sf-spark-1 { left: 30%; animation-delay: 0s; }
+.sf-m-rain .sf-spark-2 { left: 55%; right: auto; animation-delay: .6s; }
+.sf-m-rain .sf-spark-3 { left: 72%; animation-delay: 1.1s; }
+@keyframes sf-rain { 0%{transform:translateY(0);opacity:0} 15%{opacity:1} 100%{transform:translateY(calc(var(--sf-size,104px) * 1.05));opacity:0} }
+.sf-m-fireflies .sf-spark { animation: sf-firefly 3s ease-in-out infinite; }
+.sf-m-fireflies .sf-spark-1 { top: 20%; left: 20%; animation-delay: 0s; }
+.sf-m-fireflies .sf-spark-2 { top: 60%; left: 70%; right: auto; animation-delay: 1s; }
+.sf-m-fireflies .sf-spark-3 { top: 70%; left: 30%; animation-delay: 2s; }
+@keyframes sf-firefly { 0%,100%{transform:translate(0,0);opacity:.15} 50%{transform:translate(6px,-8px);opacity:1} }
 
 @media (prefers-reduced-motion: reduce) {
   .sf *, .sf::before, .sf::after { animation: none !important; }

@@ -23,6 +23,14 @@ export type SoberMotion =
   | 'pulseSweep' | 'glint' | 'loading'
   | 'rising'
   | 'ringPulse' | 'haloSpin'
+  // + genisletme (105'e)
+  | 'throb' | 'wiggle' | 'shiver' | 'expand' | 'skewPulse' | 'floatSide' | 'circleMove' | 'figure8' | 'diagonal' | 'zoomBlur'
+  | 'seesaw' | 'gyro' | 'spinY3d' | 'spinX3d'
+  | 'drawRing' | 'dashSpin' | 'dashFlow'
+  | 'conicRainbow' | 'gradWave'
+  | 'bloom' | 'duotone'
+  | 'neonPulse' | 'glowSpread' | 'pulseHalo' | 'sonar'
+  | 'rain' | 'fireflies' | 'flash'
 
 export type SoberRarity = 'rare' | 'epic' | 'legendary' | 'mythic'
 
@@ -35,7 +43,8 @@ export interface SoberFrameProps {
 }
 
 const SWEEP = new Set<SoberMotion>(['sweep', 'sweepRev', 'sweepFast', 'dualSweep', 'trace', 'pulseSweep', 'glint', 'loading'])
-const SPARK_MULTI = new Set<SoberMotion>(['twinkle', 'sparkleBurst'])
+const SPARK_MULTI = new Set<SoberMotion>(['twinkle', 'sparkleBurst', 'rain', 'fireflies'])
+const SVG = new Set<SoberMotion>(['drawRing', 'dashSpin', 'dashFlow'])
 
 const AVA =
   'data:image/svg+xml;utf8,' +
@@ -53,7 +62,11 @@ export default function SoberFrame({
   const style = {
     ['--sf-size']: `${size}px`,
     ...(accent
-      ? { ['--sf-grad']: `linear-gradient(135deg, ${accent}, ${accent}cc)`, ['--sf-glow']: `${accent}99` }
+      ? {
+          ['--sf-grad']: `linear-gradient(135deg, ${accent}, ${accent}cc)`,
+          ['--sf-glow']: `${accent}99`,
+          ['--sf-solid']: accent,
+        }
       : {}),
   } as CSSProperties
   const multiSpark = SPARK_MULTI.has(motion)
@@ -62,6 +75,11 @@ export default function SoberFrame({
       <span className="sf-glow" />
       <span className="sf-ring" />
       {SWEEP.has(motion) && <span className="sf-sweep" />}
+      {SVG.has(motion) && (
+        <svg className="sf-svg" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="46" pathLength={100} />
+        </svg>
+      )}
       {(motion === 'sparkle' || multiSpark) && <span className="sf-spark sf-spark-1" />}
       {multiSpark && <span className="sf-spark sf-spark-2" />}
       {multiSpark && <span className="sf-spark sf-spark-3" />}
