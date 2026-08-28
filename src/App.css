@@ -1294,7 +1294,7 @@ button[aria-disabled='true'],
 }
 /* Hata gunlugu (blunder log) */
 .blunder-card {
-  max-width: 560px;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -1461,101 +1461,215 @@ button[aria-disabled='true'],
   align-items: center;
   gap: 3px;
 }
-.blunder-list {
+/* ===== Hata Gunlugu (Blunder Log) — editorial kart grid =====
+   Ic scroll YOK: sayfanin kendi scroll'u kullanilir (nested scroll region,
+   ana scroll deneyimini bozar). Her hata board onizlemesiyle gorunur. */
+
+/* --- Ozet seridi: toplam + siddet dagilimi --- */
+.blunder-summary {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 60vh;
-  overflow-y: auto;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 16px;
+  margin: 2px 0 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
-.blunder-item {
-  flex: none; /* flex kolonda ezilmesin (satirlar ince cizgiye donuyordu) */
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--border);
-  border-radius: var(--radius-xs);
-  overflow: hidden;
-}
-.blunder-item.blunder {
-  border-left-color: var(--tv-brick);
-}
-.blunder-item.bad {
-  border-left-color: var(--color-warning);
-}
-.blunder-item.ok {
-  border-left-color: #c9a83a;
-}
-.blunder-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 13px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  color: inherit;
-  font: inherit;
-}
-.blunder-row > svg {
-  color: var(--muted);
-  transition: transform 0.15s;
-}
-.blunder-board {
-  padding: 14px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-.blunder-hint {
-  font-size: 0.88rem;
-  color: var(--muted);
-}
-.blunder-hint b {
-  color: var(--accent);
-}
-.blunder-band {
-  flex: none;
-  font-size: 0.63rem;
+.bl-sum-total {
+  font-family: var(--tv-font-display);
+  font-size: 1.9rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 7px;
-  border-radius: var(--radius-pill);
-}
-.blunder-band.blunder {
-  background: var(--tv-brick);
-  color: var(--tv-cream);
-}
-.blunder-band.bad {
-  background: var(--color-warning);
-  color: var(--tv-ink);
-}
-.blunder-band.ok {
-  background: #c9a83a;
-  color: var(--tv-ink);
-}
-.blunder-moves {
-  flex: 1;
-  font-size: 0.9rem;
+  line-height: 1;
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
-.blunder-moves .bl-arrow {
+.bl-sum-total em {
+  margin-left: 10px;
+  font-family: var(--tv-font-body, inherit);
+  font-style: normal;
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--muted);
-  margin: 0 2px;
 }
-.blunder-moves b {
-  color: var(--accent);
+.bl-sum-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-left: auto;
 }
-.blunder-loss {
-  flex: none;
-  font-weight: 700;
-  color: var(--tv-brick-light);
+.bl-sum-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.bl-sum-chip i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+.bl-sum-chip.blunder i {
+  background: var(--color-error);
+}
+.bl-sum-chip.bad i {
+  background: var(--color-warning);
+}
+.bl-sum-chip.ok i {
+  background: var(--color-success);
+}
+
+/* --- Kart grid: akan, kaydiran, sarmalayan --- */
+.blunder-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(272px, 1fr));
+  gap: 16px;
+}
+.bl-card {
+  --sev: var(--border);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-top: 3px solid var(--sev);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease;
+}
+.bl-card.blunder {
+  --sev: var(--color-error);
+}
+.bl-card.bad {
+  --sev: var(--color-warning);
+}
+.bl-card.ok {
+  --sev: var(--color-success);
+}
+@media (hover: hover) {
+  .bl-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--sev) 55%, var(--border));
+  }
+}
+
+/* Board onizleme: sabit oran (CLS yok), badge ust koseye biner */
+.bl-card-board {
+  position: relative;
+  aspect-ratio: 300 / 210;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+}
+.bl-card-board .mini-board {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+}
+.bl-card-noboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: var(--muted);
+  opacity: 0.5;
+}
+.bl-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  color: #fff;
+  background: var(--sev);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.bl-badge.ok {
+  color: var(--tv-ink, #14243a);
+}
+
+/* Govde: hamleler + kayip */
+.bl-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 13px 13px;
+}
+.bl-moves {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.94rem;
+  font-variant-numeric: tabular-nums;
+}
+.bl-move {
+  font-weight: 600;
+}
+.bl-move.played {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-error) 60%, transparent);
+  text-decoration-thickness: 1.5px;
+}
+.bl-move-sep {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.bl-move.best {
+  color: var(--accent);
+  font-weight: 700;
+}
+.bl-foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.bl-best-tag {
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.bl-loss {
+  font-family: var(--tv-font-display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  color: var(--sev);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Giris animasyonu — stagger; reduced-motion'da kapali */
+@media (prefers-reduced-motion: no-preference) {
+  .bl-card {
+    animation: blCardIn 0.4s ease both;
+    animation-delay: calc(var(--i, 0) * 28ms);
+  }
+  @keyframes blCardIn {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 /* ==== Icerik sayfalari + yonetim (okunakli, ferah) ==== */

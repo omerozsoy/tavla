@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -8,6 +8,7 @@ import type { GameState, Player, Step } from '../engine/types'
 import { listBlunders, type BlunderEntry } from '../api'
 
 // Equity kaybina gore siddet bandi (MatchReport ile ayni esikler)
+// cls: ok = kucuk hata, bad = hata, blunder = buyuk hata
 function band(loss: number): { cls: string; key: string } {
   if (loss < 0.04) return { cls: 'ok', key: 'rep.minor' }
   if (loss < 0.08) return { cls: 'bad', key: 'rep.error' }
@@ -29,7 +30,6 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
   const [rows, setRows] = useState<BlunderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
-  const [openIdx, setOpenIdx] = useState<number | null>(null)
 
   const load = () => {
     setLoading(true)
@@ -42,6 +42,13 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     load()
   }, [])
+
+  // Siddet dagilimi (ozet seridi icin) — tek geciste say
+  const counts = useMemo(() => {
+    const c = { blunder: 0, bad: 0, ok: 0 }
+    for (const r of rows) c[band(r.loss).cls as keyof typeof c]++
+    return c
+  }, [rows])
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -72,41 +79,81 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
         ) : rows.length === 0 ? (
           <div className="admin-empty">{t('blunder.empty')}</div>
         ) : (
-          <div className="blunder-list">
-            {rows.map((b, i) => {
-              const bd = band(b.loss)
-              const open = openIdx === i
-              const pos = open ? safeParse<GameState>(b.pos) : null
-              const steps = open ? safeParse<Step[]>(b.steps) : null
-              const hasBoard = !!b.pos
-              return (
-                <div key={i} className={`blunder-item ${bd.cls} ${open ? 'open' : ''}`}>
-                  <button
-                    className="blunder-row"
-                    onClick={() => hasBoard && setOpenIdx(open ? null : i)}
-                    style={hasBoard ? undefined : { cursor: 'default' }}
+          <>
+            {/* Editorial ozet seridi: toplam + siddet dagilimi (renk-yalniz degil, sayili) */}
+            <div className="blunder-summary">
+              <span className="bl-sum-total">
+                {rows.length}
+                <em>{t('blunder.title')}</em>
+              </span>
+              <span className="bl-sum-chips">
+                {counts.blunder > 0 && (
+                  <span className="bl-sum-chip blunder">
+                    <i aria-hidden="true" />
+                    {t('rep.blunder')} · {counts.blunder}
+                  </span>
+                )}
+                {counts.bad > 0 && (
+                  <span className="bl-sum-chip bad">
+                    <i aria-hidden="true" />
+                    {t('rep.error')} · {counts.bad}
+                  </span>
+                )}
+                {counts.ok > 0 && (
+                  <span className="bl-sum-chip ok">
+                    <i aria-hidden="true" />
+                    {t('rep.minor')} · {counts.ok}
+                  </span>
+                )}
+              </span>
+            </div>
+
+            {/* Kart grid: tum hatalar board onizlemesiyle gorunur.
+                Ic scroll YOK — sayfanin kendi scroll'u ile asagi akar. */}
+            <div className="blunder-grid">
+              {rows.map((b, i) => {
+                const bd = band(b.loss)
+                const pos = safeParse<GameState>(b.pos)
+                const steps = safeParse<Step[]>(b.steps)
+                return (
+                  <article
+                    key={i}
+                    className={`bl-card ${bd.cls}`}
+                    style={{ '--i': Math.min(i, 12) } as CSSProperties}
                   >
-                    <span className={`blunder-band ${bd.cls}`}>{t(bd.key)}</span>
-                    <span className="blunder-moves">
-                      <b>{b.played}</b> <span className="bl-arrow">→</span> {b.best}
-                    </span>
-                    <span className="blunder-loss">-{b.loss.toFixed(3)}</span>
-                    {hasBoard && (
-                      <Icon name="chevron" size={16} className={open ? 'chev-open' : ''} />
-                    )}
-                  </button>
-                  {open && pos && (
-                    <div className="blunder-board">
-                      <MiniBoard state={pos} steps={steps ?? []} player={(b.player as Player) ?? 'white'} flip={b.player === 'black'} />
-                      <div className="blunder-hint">
-                        {t('blunder.bestWas')}: <b>{b.best}</b>
+                    <div className="bl-card-board">
+                      {pos ? (
+                        <MiniBoard
+                          state={pos}
+                          steps={steps ?? []}
+                          player={(b.player as Player) ?? 'white'}
+                          flip={b.player === 'black'}
+                        />
+                      ) : (
+                        <div className="bl-card-noboard">
+                          <Icon name="alert" size={22} />
+                        </div>
+                      )}
+                      <span className={`bl-badge ${bd.cls}`}>{t(bd.key)}</span>
+                    </div>
+                    <div className="bl-card-body">
+                      <div className="bl-moves">
+                        <span className="bl-move played">{b.played}</span>
+                        <span className="bl-move-sep" aria-hidden="true">
+                          →
+                        </span>
+                        <span className="bl-move best">{b.best}</span>
+                      </div>
+                      <div className="bl-foot">
+                        <span className="bl-best-tag">{t('blunder.bestWas')}</span>
+                        <span className="bl-loss">−{b.loss.toFixed(3)}</span>
                       </div>
                     </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                  </article>
+                )
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>
