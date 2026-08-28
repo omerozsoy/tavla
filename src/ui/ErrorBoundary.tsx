@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   children: ReactNode
@@ -33,9 +34,9 @@ export class ErrorBoundary extends Component<Props, State> {
             <h1>Bir şeyler ters gitti</h1>
             <p>Beklenmeyen bir hata oluştu. Sayfayı yenilemeyi dene.</p>
             <p className="error-boundary-sub">Something went wrong. Please try reloading the page.</p>
-            <button className="galaxy-btn" onClick={this.handleReload}>
+            <Button variant="default" onClick={this.handleReload}>
               Yenile / Reload
-            </button>
+            </Button>
           </div>
         </div>
       )

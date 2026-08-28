@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
@@ -61,9 +62,15 @@ export default function BoardSettings({
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>
 
         {/* Tema (koyu/acik) */}
@@ -164,9 +171,9 @@ export default function BoardSettings({
         </button>
         <p className="setup-note">{t('hint.learnNote')}</p>
 
-        <button className="galaxy-btn bs-save" onClick={onClose}>
+        <Button variant="default" className="bs-save" onClick={onClose}>
           <Icon name="check" size={18} /> {t('settings.save')}
-        </button>
+        </Button>
       </div>
     </div>
   )

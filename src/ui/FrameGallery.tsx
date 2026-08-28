@@ -12,6 +12,7 @@ import {
   type FrameGroup,
 } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   avatar?: string | null
@@ -33,9 +34,9 @@ export default function FrameGallery({ avatar, name, onClose }: Props) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card frame-gallery-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="crown" size={20} /> {t('frames.title')}</h2>
         <p className="setup-note">{t('frames.subtitle')}</p>
 

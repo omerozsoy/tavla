@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 
 // Tek Oyun = money game: her zaman TEK oyun (1 puan). Puan/uzunluk secimi YOK.
@@ -51,9 +52,9 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="setup-split">
         <div className="register-card solo-card">
-          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
-          </button>
+          </Button>
           <h2>
             <Icon name="play" size={20} /> {t('solo.title')}
           </h2>
@@ -109,13 +110,14 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
                 <Icon name="coin" size={14} /> {fmt(sel.stake)}
               </b>
             </span>
-            <button
-              className="galaxy-btn solo-start"
+            <Button
+              variant="default"
+              className="solo-start"
               disabled={selLocked}
               onClick={() => onPick(sel.stake, sel.theme)}
             >
               <Icon name="play" size={18} /> {t('setup.start')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

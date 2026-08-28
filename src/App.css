@@ -1261,7 +1261,7 @@ button[aria-disabled='true'],
   margin-top: 22px;
 }
 /* Vazgec/Basla esit genislik + esit yukseklik */
-.setup-actions > button {
+.setup-actions > button:not([data-slot]) {
   flex: 1 1 0;
   min-width: 0;
   min-height: 50px;
@@ -3807,7 +3807,7 @@ button[aria-disabled='true'],
   margin-top: 8px;
 }
 /* Butonlar esit genislik (Vazgec/Kaydet). .menu-btn width:100% eziyordu. */
-.register-actions > button {
+.register-actions > button:not([data-slot]) {
   flex: 1 1 0;
   min-width: 0;
   min-height: 46px;
@@ -3866,7 +3866,7 @@ button[aria-disabled='true'],
   gap: 12px;
   margin-top: 24px;
 }
-.profile-form .register-actions > button {
+.profile-form .register-actions > button:not([data-slot]) {
   flex: 0 0 auto;
   width: auto;
   min-width: 120px;
@@ -3931,7 +3931,7 @@ button[aria-disabled='true'],
   .profile-form .form-grid {
     grid-template-columns: 1fr;
   }
-  .profile-form .register-actions > button {
+  .profile-form .register-actions > button:not([data-slot]) {
     flex: 1 1 0;
     max-width: none;
   }
@@ -5443,7 +5443,7 @@ html.fs-active .account-bar {
   gap: 6px;
   margin-bottom: 8px;
 }
-.rank-tabs button {
+.rank-tabs button:not([data-slot]) {
   flex: 1;
   padding: 6px 8px;
   border-radius: var(--radius-md);
@@ -7503,7 +7503,7 @@ html.fs-active .account-bar {
   border-radius: var(--radius-pill);
   padding: 3px;
 }
-.mem-toggle button {
+.mem-toggle button:not([data-slot]) {
   padding: 7px 22px;
   border-radius: var(--radius-pill);
   border: none;
@@ -8929,7 +8929,7 @@ html.fs-active .account-bar {
   gap: 4px;
   padding: 4px;
 }
-.tm-actions button {
+.tm-actions button:not([data-slot]) {
   flex: 1;
   font-size: 0.72rem;
   padding: 4px;
@@ -8939,7 +8939,7 @@ html.fs-active .account-bar {
   color: var(--text);
   cursor: pointer;
 }
-.tm-actions button:hover {
+.tm-actions button:not([data-slot]):hover {
   border-color: var(--tv-brick-light);
 }
 
@@ -9346,7 +9346,7 @@ html.fs-active .account-bar {
   outline: none;
   border-color: var(--accent);
 }
-.chat-input button {
+.chat-input button:not([data-slot]) {
   padding: 8px 12px;
   border: none;
   border-radius: var(--radius-md);

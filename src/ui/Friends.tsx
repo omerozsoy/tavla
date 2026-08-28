@@ -10,6 +10,7 @@ import {
   type Friend,
 } from '../api'
 import AvatarFrame from './AvatarFrame'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   onInvite: (userId: number) => void
@@ -87,9 +88,9 @@ export default function Friends({ onInvite, onClose }: Props) {
             placeholder={t('friends.addPlaceholder')}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
-          <button className="menu-btn" disabled={busy || !nick.trim()} onClick={add}>
+          <Button variant="outline" disabled={busy || !nick.trim()} onClick={add}>
             {t('friends.add')}
-          </button>
+          </Button>
         </div>
         {msg && <div className="friends-msg">{msg}</div>}
 
@@ -105,12 +106,12 @@ export default function Friends({ onInvite, onClose }: Props) {
                     {avatar(f)}
                     <span className="friend-name">{f.name}</span>
                     <span className="friend-rating">{f.rating}</span>
-                    <button className="friend-btn ok" onClick={() => doAccept(f.id)} aria-label="Kabul">
+                    <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
                       <Icon name="check" size={16} />
-                    </button>
-                    <button className="friend-btn no" onClick={() => doRemove(f.id)} aria-label="Sil">
+                    </Button>
+                    <Button variant="destructive" size="icon" onClick={() => doRemove(f.id)} aria-label="Sil">
                       <Icon name="x" size={16} />
-                    </button>
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -128,21 +129,25 @@ export default function Friends({ onInvite, onClose }: Props) {
                     <span className="friend-name">{f.name}</span>
                     <span className="friend-rating">{f.rating}</span>
                     {f.online && (
-                      <button
-                        className="friend-btn play"
+                      <Button
+                        variant="default"
+                        size="icon"
                         title={t('friends.invite')}
+                        aria-label={t('friends.invite')}
                         onClick={() => onInvite(f.id)}
                       >
                         <Icon name="play" size={16} />
-                      </button>
+                      </Button>
                     )}
-                    <button
-                      className="friend-btn no"
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       title={t('friends.remove')}
+                      aria-label={t('friends.remove')}
                       onClick={() => doRemove(f.id)}
                     >
                       <Icon name="trash" size={16} />
-                    </button>
+                    </Button>
                   </div>
                 ))
               )}

@@ -10,6 +10,7 @@ import { moveNotation } from '../engine/notation'
 import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
@@ -315,9 +316,9 @@ export default function PositionAnalyzer({
     <div className="analyzer">
       <div className="analyzer-head">
         <h2><Icon name="analyze" size={20} /> {t('pa.title')}</h2>
-        <button className="analyzer-close" onClick={onClose}>
+        <Button variant="secondary" className="analyzer-close" onClick={onClose}>
           <Icon name="x" size={14} /> {t('pa.close')}
-        </button>
+        </Button>
       </div>
 
       <div className="analyzer-body">
@@ -541,8 +542,8 @@ export default function PositionAnalyzer({
 
           <div className="setup-row">
             <div className="menu-targets">
-              <button
-                className="menu-btn"
+              <Button
+                variant="outline"
                 onClick={() => {
                   setPts(initialState().points)
                   setBar({ white: 0, black: 0 })
@@ -551,9 +552,9 @@ export default function PositionAnalyzer({
                 }}
               >
                 {t('pa.standard')}
-              </button>
-              <button
-                className="menu-btn"
+              </Button>
+              <Button
+                variant="outline"
                 onClick={() => {
                   setPts(emptyPoints())
                   setBar({ white: 0, black: 0 })
@@ -562,11 +563,11 @@ export default function PositionAnalyzer({
                 }}
               >
                 {t('pa.clear')}
-              </button>
+              </Button>
             </div>
           </div>
 
-          <button className="galaxy-btn pa-analyze" disabled={busy} onClick={analyze}>
+          <Button variant="default" className="pa-analyze" disabled={busy} onClick={analyze}>
             {busy ? (
               t('an.loading')
             ) : (
@@ -574,7 +575,7 @@ export default function PositionAnalyzer({
                 <Icon name="search" size={16} /> {t('pa.analyze')}
               </>
             )}
-          </button>
+          </Button>
         </div>
 
         <div className="analyzer-results">

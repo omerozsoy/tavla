@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow } from '../api'
 import AvatarFrame from './AvatarFrame'
+import { Button } from '@/components/ui/button'
 
 // ---- Ozellik vitrini (yalniz misafirlere): urunun ne sundugunu tanitir ----
 const FEATURES: { icon: IconName; key: string }[] = [
@@ -110,9 +111,9 @@ export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
       <div className="home-finalcta">
         <h2 className="hfc-title">{t('home.finalCta.title')}</h2>
         <p className="hfc-sub">{t('home.finalCta.sub')}</p>
-        <button className="galaxy-btn hfc-btn" onClick={onPlay}>
+        <Button variant="default" className="hfc-btn" onClick={onPlay}>
           <Icon name="dice" size={18} /> {t('home.finalCta.button')}
-        </button>
+        </Button>
       </div>
     </section>
   )

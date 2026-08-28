@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
@@ -225,11 +226,12 @@ export default function MatchSetup({
         )}
 
         <div className="setup-actions">
-          <button className="btn-secondary" onClick={onCancel}>
+          <Button variant="secondary" onClick={onCancel}>
             {t('setup.cancel')}
-          </button>
-          <button
-            className="galaxy-btn setup-start"
+          </Button>
+          <Button
+            variant="default"
+            className="setup-start"
             onClick={() =>
               onConfirm({
                 mode,
@@ -246,7 +248,7 @@ export default function MatchSetup({
             }
           >
             <Icon name="play" size={18} /> {t('setup.start')}
-          </button>
+          </Button>
         </div>
       </div>
       <div className="setup-preview">

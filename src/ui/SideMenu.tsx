@@ -1,6 +1,7 @@
 import { useT } from '../i18n'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 export interface SideMenuProps {
   loggedIn: boolean
@@ -43,7 +44,10 @@ export interface SideMenuProps {
   onCloseMobile?: () => void
 }
 
-// Ana sayfa ve oyun ekraninda ortak tek menu.
+// Ana sayfa ve oyun ekraninda ortak tek menu. Tum ogeler paylasilan <Button> (nav ->
+// ghost, tam genislik + sola hizali); yalniz variant/renk degisir, fiziksel yapi ayni.
+const NAV = 'w-full justify-start'
+
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
   return (
@@ -66,57 +70,58 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <button className="menu-btn" onClick={p.onSolo}>
+          <Button variant="ghost" className={NAV} onClick={p.onSolo}>
             <Icon name="play" /> {t('menu.solo')}
-          </button>
+          </Button>
         )}
         {!p.inGame && (
-          <button className="menu-btn menu-match" onClick={p.onNewGame}>
+          <Button variant="default" className={NAV} onClick={p.onNewGame}>
             <Icon name="target" /> {t('menu.match')}
-          </button>
+          </Button>
         )}
         {!p.inGame && p.onAiGame && (
-          <button className="menu-btn" onClick={p.onAiGame}>
+          <Button variant="ghost" className={NAV} onClick={p.onAiGame}>
             <Icon name="dice" /> {t('menu.aiGame')}
-          </button>
+          </Button>
         )}
         {p.hasActiveGame && !p.inGame && (
-          <button className="menu-btn menu-active-game" onClick={p.onResume}>
+          <Button variant="secondary" className={NAV} onClick={p.onResume}>
             <Icon name="live" /> {t('menu.activeGames')}
-          </button>
+          </Button>
         )}
       </div>
 
       {p.inGame && (
         <div className="menu-group">
           {p.onToggleAnalysis && (
-            <button
-              className={p.showAnalysis ? 'menu-btn active' : 'menu-btn'}
+            <Button
+              variant={p.showAnalysis ? 'secondary' : 'ghost'}
+              className={NAV}
               onClick={p.onToggleAnalysis}
             >
               {t('menu.analysis')}
-            </button>
+            </Button>
           )}
           {p.canResign && p.onResign && (
-            <button className="menu-btn resign-btn" onClick={p.onResign}>
+            <Button variant="destructive" className={NAV} onClick={p.onResign}>
               <Icon name="flag" /> {t('resign.button')}
-            </button>
+            </Button>
           )}
         </div>
       )}
 
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
-        <button className="menu-btn" onClick={p.onTournaments}>
+        <Button variant="ghost" className={NAV} onClick={p.onTournaments}>
           <Icon name="medal" /> {t('menu.tournaments')}
-        </button>
-        <button className="menu-btn" onClick={p.onLeaderboard}>
+        </Button>
+        <Button variant="ghost" className={NAV} onClick={p.onLeaderboard}>
           <Icon name="trophy" /> {t('menu.leaderboard')}
-        </button>
+        </Button>
         {p.loggedIn && (
-          <button className="menu-btn" onClick={p.onFriends}>
+          <Button variant="ghost" className={NAV} onClick={p.onFriends}>
             <Icon name="users" /> {t('menu.friends')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -125,14 +130,14 @@ export default function SideMenu(p: SideMenuProps) {
       {(p.onMembership || p.loggedIn) && (
         <div className="menu-group">
           {p.onMembership && (
-            <button className="menu-btn menu-upgrade" onClick={p.onMembership}>
+            <Button variant="ghost" className={NAV} onClick={p.onMembership}>
               <Icon name="crown" /> {t('mem.menu')}
-            </button>
+            </Button>
           )}
           {p.loggedIn && (
-            <button className="menu-btn" onClick={p.onMyStats}>
+            <Button variant="ghost" className={NAV} onClick={p.onMyStats}>
               <Icon name="chart" /> {t('menu.myStats')}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -141,29 +146,29 @@ export default function SideMenu(p: SideMenuProps) {
       {!p.inGame && (p.onCalendar || p.onClubs || p.onServices || p.onBlog || p.onNews) && (
         <div className="menu-group">
           {p.onCalendar && (
-            <button className="menu-btn" onClick={p.onCalendar}>
+            <Button variant="ghost" className={NAV} onClick={p.onCalendar}>
               <Icon name="calendar" /> {t('menu.calendar')}
-            </button>
+            </Button>
           )}
           {p.onClubs && (
-            <button className="menu-btn" onClick={p.onClubs}>
+            <Button variant="ghost" className={NAV} onClick={p.onClubs}>
               <Icon name="pin" /> {t('menu.clubs')}
-            </button>
+            </Button>
           )}
           {p.onServices && (
-            <button className="menu-btn" onClick={p.onServices}>
+            <Button variant="ghost" className={NAV} onClick={p.onServices}>
               <Icon name="star" /> {t('menu.services')}
-            </button>
+            </Button>
           )}
           {p.onNews && (
-            <button className="menu-btn" onClick={p.onNews}>
+            <Button variant="ghost" className={NAV} onClick={p.onNews}>
               <Icon name="chat" /> {t('menu.news')}
-            </button>
+            </Button>
           )}
           {p.onMagazine && (
-            <button className="menu-btn" onClick={p.onMagazine}>
+            <Button variant="ghost" className={NAV} onClick={p.onMagazine}>
               <Icon name="play" /> {t('menu.magazine')}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -171,24 +176,23 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Araclar (dogrudan; "Daha fazla" acilir menu yok) */}
       <div className="menu-group">
         <div className="menu-label">{t('menu.tools')}</div>
-        <button className="menu-btn" onClick={p.onAnalyzer}>
+        <Button variant="ghost" className={NAV} onClick={p.onAnalyzer}>
           <Icon name="analyze" /> {t('pa.title')}
-        </button>
+        </Button>
         {p.onBlunders && (
-          <button className="menu-btn" onClick={p.onBlunders}>
+          <Button variant="ghost" className={NAV} onClick={p.onBlunders}>
             <Icon name="alert" /> {t('menu.blunders')}
-          </button>
+          </Button>
         )}
         {p.onMatchHistory && (
-          <button className="menu-btn" onClick={p.onMatchHistory}>
+          <Button variant="ghost" className={NAV} onClick={p.onMatchHistory}>
             <Icon name="analyze" /> {t('menu.matchHistory')}
-          </button>
+          </Button>
         )}
-        <button className="menu-btn" onClick={p.onFairness}>
+        <Button variant="ghost" className={NAV} onClick={p.onFairness}>
           <Icon name="dice" /> {t('fair.title')}
-        </button>
+        </Button>
       </div>
-
     </aside>
   )
 }

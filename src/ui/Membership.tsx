@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
 import { startTrial, subscribe, type ServerUser } from '../api'
+import { Button } from '@/components/ui/button'
 
 export default function Membership({
   current,
@@ -88,15 +89,16 @@ export default function Membership({
                 </ul>
                 <div className="mem-cta">
                   {isCurrent ? (
-                    <button className="mem-btn current" disabled>
+                    <Button variant="secondary" className="w-full" disabled>
                       {t('mem.current')}
-                    </button>
+                    </Button>
                   ) : p.id === 'free' ? (
                     <span className="mem-free-note">—</span>
                   ) : (
                     <>
-                      <button
-                        className="mem-btn buy"
+                      <Button
+                        variant="default"
+                        className="w-full"
                         style={{ background: p.color }}
                         disabled={busy !== null || trialUsed}
                         onClick={() => trial(p.id as 'star' | 'starpro')}
@@ -108,14 +110,15 @@ export default function Membership({
                         ) : (
                           t('mem.tryFree')
                         )}
-                      </button>
-                      <button
-                        className="mem-sub"
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        className="w-full"
                         disabled={busy !== null}
                         onClick={() => pay(p.id as 'star' | 'starpro')}
                       >
                         {t('mem.subscribe')}
-                      </button>
+                      </Button>
                       <div className="mem-price">
                         {t('mem.after', {
                           price: `${price.toLocaleString('tr-TR')} ₺`,

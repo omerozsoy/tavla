@@ -1,6 +1,7 @@
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   onClose: () => void
@@ -380,9 +381,9 @@ export default function Rules({ onClose }: Props) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card rules-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2>
           <Icon name="book" size={20} /> {c.title}
         </h2>

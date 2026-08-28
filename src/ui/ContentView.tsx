@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
+import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
@@ -156,9 +157,9 @@ export default function ContentView({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2>
           <Icon name={head.icon} size={20} /> {t(head.titleKey)}
         </h2>
@@ -168,9 +169,9 @@ export default function ContentView({
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}
-            <button className="menu-btn" onClick={load}>
+            <Button variant="outline" onClick={load}>
               {t('common.retry')}
-            </button>
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="admin-empty">{t('content.empty')}</div>

@@ -5,6 +5,7 @@ import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
 import AvatarFrame from './AvatarFrame'
 import { DivisionChip, BadgeList } from './Badges'
+import { Button } from '@/components/ui/button'
 
 // Herkese acik oyuncu profili karti (liderlik/rakip isminden acilir)
 export default function PublicProfile({ id, onClose }: { id: number; onClose: () => void }) {
@@ -30,9 +31,9 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
   return (
     <div className="register-overlay modal" role="dialog" aria-modal="true">
       <div className="register-card pp-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && !p && <div className="lb-empty">{t('an.loading')}</div>}

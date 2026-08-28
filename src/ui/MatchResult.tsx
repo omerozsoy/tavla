@@ -1,5 +1,6 @@
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 type Side = 'white' | 'black'
 
@@ -176,24 +177,24 @@ export default function MatchResult({
 
         {hasReport && (
           <div className="mr-actions mr-report-actions">
-            <button className="menu-btn" onClick={onAnalysis}>
+            <Button variant="outline" onClick={onAnalysis}>
               <Icon name="search" /> {t('mr.analysis')}
-            </button>
-            <button className="menu-btn" onClick={onStats}>
+            </Button>
+            <Button variant="outline" onClick={onStats}>
               <Icon name="chart" /> {t('mr.stats')}
-            </button>
+            </Button>
           </div>
         )}
         <div className="mr-actions">
-          <button className="galaxy-btn" onClick={onRematch}>
+          <Button variant="default" onClick={onRematch}>
             <Icon name="refresh" /> {t('mr.rematch')}
-          </button>
-          <button className="menu-btn" onClick={onNewMatch}>
+          </Button>
+          <Button variant="outline" onClick={onNewMatch}>
             {t('mr.newMatch')}
-          </button>
-          <button className="menu-btn" onClick={onHome}>
+          </Button>
+          <Button variant="outline" onClick={onHome}>
             <Icon name="home" /> {t('home.title')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

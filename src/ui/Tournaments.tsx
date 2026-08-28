@@ -13,6 +13,7 @@ import {
   type Tournament,
   type TMatch,
 } from '../api'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   myId: number | null
@@ -140,9 +141,9 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
           )}
 
           {canJoin && (
-            <button className="galaxy-btn" disabled={busy} onClick={() => join(active.id)}>
+            <Button variant="default" disabled={busy} onClick={() => join(active.id)}>
               {t('tourn.join')}
-            </button>
+            </Button>
           )}
 
           {champ && (
@@ -161,8 +162,8 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 </div>
               ))}
               {isAdmin && (active.players?.length ?? 0) >= 2 ? (
-                <button
-                  className="galaxy-btn"
+                <Button
+                  variant="default"
                   disabled={busy}
                   onClick={async () => {
                     setBusy(true)
@@ -174,7 +175,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                   }}
                 >
                   <Icon name="play" size={16} /> {t('tourn.start')}
-                </button>
+                </Button>
               ) : (
                 <div className="tourn-wait">{t('tourn.waitFull')}</div>
               )}

@@ -10,6 +10,7 @@ import AvatarFrame from './AvatarFrame'
 import { DivisionChip, BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
 import { Skeleton } from './Skeleton'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   avatar?: string
@@ -81,9 +82,9 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card stats-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}

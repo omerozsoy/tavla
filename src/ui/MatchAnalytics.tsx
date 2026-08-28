@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { myMatches, matchLogById, type MyMatch } from '../api'
@@ -62,9 +63,15 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card mh-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="modal-close"
+          onClick={onClose}
+          aria-label={t('common.close')}
+        >
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2>
           <Icon name="analyze" size={20} /> {t('mh.title')}
         </h2>
@@ -75,9 +82,9 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
         ) : error ? (
           <div className="admin-empty">
             {t('common.loadError')}{' '}
-            <button className="menu-btn" onClick={load}>
+            <Button variant="outline" onClick={load}>
               {t('common.retry')}
-            </button>
+            </Button>
           </div>
         ) : rows.length === 0 ? (
           <div className="admin-empty">{t('mh.empty')}</div>
@@ -171,13 +178,14 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
                         </div>
                       )}
                       {m.has_log && (
-                        <button
-                          className="menu-btn mh-analyze"
+                        <Button
+                          variant="outline"
+                          className="mh-analyze"
                           disabled={reportBusy}
                           onClick={() => openReport(m)}
                         >
                           <Icon name="search" size={15} /> {t('mh.analyze')}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}
