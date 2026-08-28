@@ -52,8 +52,9 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
           <p>
             Sade-premium çerçeve için elimdeki <b>tüm animasyonlar</b>, her rarity'de — altında ismi
             yazılı. İnce halka · merkez şeffaf (yüz kapanmaz) · halka dönmez (yalnız “Sweep”te ışık
-            döner) · neon/particle yok. Beğendiğini söyle (rarity + animasyon adı), gerçek PremiumFrame'e
-            onu uygularım.
+            döner) · neon/particle yok. <b>Not:</b> animasyonlar burada bilerek <b>abartılı</b>
+            gösteriliyor (farkı anla diye) — seçtiğinde gerçek çerçevede çok daha <b>sade</b> olacak.
+            Beğendiğini söyle (rarity + animasyon adı), gerçek PremiumFrame'e uygularım.
           </p>
           <div className="ca-seg">
             {SIZES.map((s) => (
