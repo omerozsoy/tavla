@@ -25,23 +25,25 @@ export function HomeDashboard(p: {
 }) {
   const { t } = useT()
   const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : null
-  const stats: { icon: IconName; val: number; label: string; sub?: string }[] = [
-    { icon: 'chart', val: p.rating, label: t('lb.rating') },
-    { icon: 'coin', val: p.coins, label: t('home.dash.coins') },
+  // Her stat semantik renk kimligi: Puan=navy, Coin=orange, Galibiyet=aqua, Oyun=coral
+  const stats: { icon: IconName; val: number; label: string; sub?: string; tone: string }[] = [
+    { icon: 'chart', val: p.rating, label: t('lb.rating'), tone: 'navy' },
+    { icon: 'coin', val: p.coins, label: t('home.dash.coins'), tone: 'orange' },
     {
       icon: 'trophy',
       val: p.wins,
       label: t('home.dash.wins'),
       sub: winRate === null ? undefined : `%${winRate}`,
+      tone: 'aqua',
     },
-    { icon: 'dice', val: p.games, label: t('home.dash.games') },
+    { icon: 'dice', val: p.games, label: t('home.dash.games'), tone: 'coral' },
   ]
 
   return (
     <section className="home-dash" aria-label={t('menu.myStats')}>
       <div className="dash-stats">
         {stats.map((s) => (
-          <div className="dstat" key={s.label}>
+          <div className={`dstat dstat-${s.tone}`} key={s.label}>
             <span className="dstat-icon" aria-hidden="true">
               <Icon name={s.icon} size={18} />
             </span>
