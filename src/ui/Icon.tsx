@@ -1,66 +1,63 @@
 /**
- * TavlaTv ikon seti — Heroicons (v2, 24 Outline) ile render edilir.
- * `<Icon name="trophy" size={18} />` API'si korunur; sadece kaynak set degisti
- * (eski elle-yazilmis Lucide path'leri -> @heroicons/react/24/outline).
- * currentColor ile temaya uyar; dekoratif -> aria-hidden.
- *
- * NOT: Heroicons'ta birebir karsiligi olmayan birkac ikon en yakin muadille eslendi:
- *   medal->Trophy, dice->Cube, robot->CpuChip, coin->CurrencyDollar,
- *   crown->Sparkles, target->ViewfinderCircle. Istenirse tek tek degistirilebilir.
+ * TavlaTv ikon seti — Phosphor Icons (@phosphor-icons/react) ile render edilir.
+ * `<Icon name="trophy" size={18} />` API'si korunur; her `IconName` bir Phosphor
+ * bilesenine map'lenir (MAP). weight="regular" -> temiz cizgi/outline. currentColor
+ * ile temaya uyar; dekoratif -> aria-hidden. (Phosphor ~9000 ikon; build tree-shake eder.)
  */
 
-import type { ComponentType, SVGProps } from 'react'
+import { type Icon as PhosphorIcon } from '@phosphor-icons/react'
 import {
-  PlayIcon,
-  SignalIcon,
-  ChartBarIcon,
-  TrophyIcon,
-  ShoppingBagIcon,
-  ChartBarSquareIcon,
-  UserGroupIcon,
-  CubeIcon,
-  Cog6ToothIcon,
-  ArrowDownTrayIcon,
-  FlagIcon,
-  SunIcon,
-  MoonIcon,
-  BookOpenIcon,
-  ArrowRightStartOnRectangleIcon,
-  HomeIcon,
-  StarIcon,
-  GiftIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
-  AcademicCapIcon,
-  LightBulbIcon,
-  MagnifyingGlassIcon,
-  ChatBubbleLeftRightIcon,
-  UserIcon,
-  CurrencyDollarIcon,
-  BanknotesIcon,
-  SparklesIcon,
-  TicketIcon,
-  BellIcon,
-  EyeIcon,
-  CheckIcon,
-  XMarkIcon,
-  PencilIcon,
-  ChevronDownIcon,
-  CalendarDaysIcon,
-  MapPinIcon,
-  PhoneIcon,
-  ArrowPathIcon,
-  ViewfinderCircleIcon,
-  GlobeAltIcon,
-  CpuChipIcon,
-  TrashIcon,
-  LockClosedIcon,
-  CameraIcon,
-  Bars3Icon,
-  ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
-  ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline'
+  Play,
+  Broadcast,
+  Trophy,
+  Medal,
+  Storefront,
+  ChartBar,
+  UsersThree,
+  ChartLineUp,
+  DiceFive,
+  GearSix,
+  DownloadSimple,
+  Flag,
+  Sun,
+  Moon,
+  BookOpen,
+  SignOut,
+  House,
+  Star,
+  Gift,
+  SpeakerHigh,
+  SpeakerSlash,
+  GraduationCap,
+  Lightbulb,
+  MagnifyingGlass,
+  ChatCircle,
+  User,
+  Coin,
+  Money,
+  Crown,
+  Ticket,
+  Bell,
+  Eye,
+  Check,
+  X,
+  Pencil,
+  CaretDown,
+  CalendarBlank,
+  MapPin,
+  Phone,
+  ArrowsClockwise,
+  Target,
+  Globe,
+  Robot,
+  Trash,
+  Lock,
+  Camera,
+  List,
+  ArrowsOut,
+  ArrowsIn,
+  Warning,
+} from '@phosphor-icons/react'
 
 export type IconName =
   | 'play'
@@ -114,60 +111,58 @@ export type IconName =
   | 'minimize'
   | 'alert'
 
-type HeroIcon = ComponentType<SVGProps<SVGSVGElement> & { title?: string; titleId?: string }>
-
-// Isim -> Heroicons (24 outline) bileseni. Yorumdaki ~ isaretlileri yaklasik muadil.
-const MAP: Record<IconName, HeroIcon> = {
-  play: PlayIcon,
-  live: SignalIcon,
-  trophy: ChartBarIcon, // liderlik/siralama
-  medal: TrophyIcon, // turnuva (~ madalya)
-  shop: ShoppingBagIcon,
-  chart: ChartBarIcon,
-  users: UserGroupIcon,
-  analyze: ChartBarSquareIcon,
-  dice: CubeIcon, // ~ zar
-  settings: Cog6ToothIcon,
-  install: ArrowDownTrayIcon,
-  flag: FlagIcon,
-  sun: SunIcon,
-  moon: MoonIcon,
-  book: BookOpenIcon,
-  logout: ArrowRightStartOnRectangleIcon,
-  home: HomeIcon,
-  star: StarIcon,
-  gift: GiftIcon,
-  volume: SpeakerWaveIcon,
-  mute: SpeakerXMarkIcon,
-  graduation: AcademicCapIcon,
-  bulb: LightBulbIcon,
-  search: MagnifyingGlassIcon,
-  chat: ChatBubbleLeftRightIcon,
-  user: UserIcon,
-  coin: CurrencyDollarIcon, // ~ coin
-  banknotes: BanknotesIcon, // para/bahis (tek oyun money game)
-  crown: SparklesIcon, // ~ premium/uyelik
-  ticket: TicketIcon,
-  bell: BellIcon,
-  eye: EyeIcon,
-  check: CheckIcon,
-  x: XMarkIcon,
-  pencil: PencilIcon,
-  chevron: ChevronDownIcon,
-  calendar: CalendarDaysIcon,
-  pin: MapPinIcon,
-  phone: PhoneIcon,
-  refresh: ArrowPathIcon,
-  target: ViewfinderCircleIcon, // ~ hedef/mac
-  globe: GlobeAltIcon,
-  robot: CpuChipIcon, // ~ yapay zeka
-  trash: TrashIcon,
-  lock: LockClosedIcon,
-  camera: CameraIcon,
-  menu: Bars3Icon,
-  maximize: ArrowsPointingOutIcon,
-  minimize: ArrowsPointingInIcon,
-  alert: ExclamationTriangleIcon,
+// Isim -> Phosphor bileseni (temiz outline icin weight="regular").
+const MAP: Record<IconName, PhosphorIcon> = {
+  play: Play,
+  live: Broadcast,
+  trophy: Trophy,
+  medal: Medal,
+  shop: Storefront,
+  chart: ChartBar,
+  users: UsersThree,
+  analyze: ChartLineUp,
+  dice: DiceFive,
+  settings: GearSix,
+  install: DownloadSimple,
+  flag: Flag,
+  sun: Sun,
+  moon: Moon,
+  book: BookOpen,
+  logout: SignOut,
+  home: House,
+  star: Star,
+  gift: Gift,
+  volume: SpeakerHigh,
+  mute: SpeakerSlash,
+  graduation: GraduationCap,
+  bulb: Lightbulb,
+  search: MagnifyingGlass,
+  chat: ChatCircle,
+  user: User,
+  coin: Coin,
+  banknotes: Money,
+  crown: Crown,
+  ticket: Ticket,
+  bell: Bell,
+  eye: Eye,
+  check: Check,
+  x: X,
+  pencil: Pencil,
+  chevron: CaretDown,
+  calendar: CalendarBlank,
+  pin: MapPin,
+  phone: Phone,
+  refresh: ArrowsClockwise,
+  target: Target,
+  globe: Globe,
+  robot: Robot,
+  trash: Trash,
+  lock: Lock,
+  camera: Camera,
+  menu: List,
+  maximize: ArrowsOut,
+  minimize: ArrowsIn,
+  alert: Warning,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
@@ -186,10 +181,9 @@ export function Icon({
   return (
     <Cmp
       className={className}
-      width={size}
-      height={size}
+      size={size}
+      weight="regular"
       aria-hidden="true"
-      focusable="false"
       style={{ flex: 'none', display: 'inline-block', verticalAlign: '-0.15em' }}
     />
   )
