@@ -4435,6 +4435,176 @@ html.fs-active .account-bar {
   }
 }
 
+/* ---- Yonetici tahta secici (AI oyununda, sag ust) ---- */
+.admin-board-picker {
+  position: fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  right: calc(12px + env(safe-area-inset-right));
+  z-index: 121;
+}
+.abp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 10px 0 8px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.abp-toggle:hover {
+  background: var(--btn-bg);
+}
+.abp-swatch {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1.5px solid;
+  overflow: hidden;
+  flex: none;
+}
+.abp-swatch > span {
+  flex: 1;
+}
+.abp-cur-name {
+  max-width: 108px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.abp-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 121;
+}
+.abp-panel {
+  position: absolute;
+  top: 46px;
+  right: 0;
+  z-index: 122;
+  width: min(360px, 92vw);
+  max-height: min(72vh, 620px);
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+.abp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 0.86rem;
+  border-bottom: 1px solid var(--border);
+}
+.abp-head > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.abp-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--radius-circle, 50%);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.abp-close:hover {
+  background: var(--btn-bg);
+}
+.abp-scroll {
+  overflow-y: auto;
+  padding: 8px 12px 14px;
+}
+.abp-group {
+  margin-top: 10px;
+}
+.abp-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rarity-color, var(--muted));
+  margin-bottom: 6px;
+}
+.abp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rarity-color, var(--muted));
+}
+.abp-count {
+  opacity: 0.7;
+  font-weight: 600;
+}
+.abp-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.abp-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.08s ease, border-color 0.12s ease;
+}
+.abp-item:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--rarity-color, #888) 55%, transparent);
+}
+.abp-item.active {
+  border-color: var(--rarity-color, var(--accent));
+}
+.abp-item .setup-board {
+  width: 100%;
+}
+.abp-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--rarity-color, var(--accent));
+  color: #fff;
+}
+.abp-name {
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ---- Hamburger (mobil menu dugmesi) ---- */
 .hamburger {
   display: none;
