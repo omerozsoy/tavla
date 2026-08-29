@@ -27,6 +27,8 @@ for (const item of [
   'icon-512.png',
   'assets',
   'models',
+  'checker-demo.html', // animasyon demo (gecici)
+  'dice-demo.html', // animasyon demo (gecici)
 ]) {
   const src = `dist/${item}`
   if (existsSync(src)) cpSync(src, `${dest}/${item}`, { recursive: true })
