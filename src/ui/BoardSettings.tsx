@@ -16,17 +16,17 @@ interface BoardThemeOpt {
   b: string
   checker?: string
   light?: string // acik pul rengi (onizleme gercek tahta ile ayni degeri kullansin)
-  price?: number
+  price?: number // coin fiyati (nadirlik bazli); ucretsiz/kulup -> undefined
   rarity?: Rarity
-  locked?: boolean // plan/premium kilidi (App'te hesaplanir)
+  owned?: boolean // sahip mi (ucretsiz/kulup/satin alinmis)
 }
 
 interface Props {
   boardTheme: string
   setBoardTheme: (id: string) => void
   boardThemes: BoardThemeOpt[]
-  premium?: boolean
-  onUpgrade?: () => void
+  coins?: number // bakiye (satin alma icin yeterlilik)
+  onBuy?: (shopId: string) => void // tahtayi coin ile ac ('theme.<id>')
   theme: 'dark' | 'light'
   setTheme: (t: 'dark' | 'light') => void
   showPip: boolean
@@ -48,7 +48,8 @@ export default function BoardSettings({
   boardTheme,
   setBoardTheme,
   boardThemes,
-  onUpgrade,
+  coins = 0,
+  onBuy,
   theme,
   setTheme,
   showPip,
@@ -183,13 +184,20 @@ export default function BoardSettings({
                 </div>
                 <div className="board-previews board-previews-lg">
                   {items.map((bt) => {
-                    const locked = !!bt.locked
+                    const owned = bt.owned !== false && bt.price == null ? true : !!bt.owned
+                    const price = bt.price
+                    const buyable = !owned && price != null
+                    const affordable = buyable && coins >= price
                     return (
                       <button
                         key={bt.id}
-                        className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${locked ? 'locked' : ''}`}
+                        className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${buyable ? 'locked' : ''}`}
                         style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
-                        onClick={() => (locked ? onUpgrade?.() : setBoardTheme(bt.id))}
+                        disabled={buyable && !affordable}
+                        title={buyable ? `${bt.name} — ${price} coin` : bt.name}
+                        onClick={() =>
+                          owned ? setBoardTheme(bt.id) : affordable ? onBuy?.('theme.' + bt.id) : undefined
+                        }
                       >
                         <SetupBoard
                           panel={bt.panel ?? bt.b}
@@ -203,12 +211,10 @@ export default function BoardSettings({
                             <Icon name="check" size={12} /> {t('shop.selected')}
                           </span>
                         )}
-                        <span className="bp-name">
-                          {locked && <Icon name="crown" size={11} />} {bt.name}
-                        </span>
-                        {locked && (
-                          <span className="bp-lock">
-                            <Icon name="crown" size={16} />
+                        <span className="bp-name">{bt.name}</span>
+                        {buyable && (
+                          <span className="bp-price">
+                            <Icon name="coin" size={12} /> {price.toLocaleString('tr-TR')}
                           </span>
                         )}
                       </button>

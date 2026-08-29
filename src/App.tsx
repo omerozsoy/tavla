@@ -212,10 +212,12 @@ import {
   RARITY_THEMES,
   CLUB_THEMES,
   GALAXY_EXTRA_THEMES,
-  THEME_RARITY,
   ALL_THEMES,
   BOARD_ID_MIGRATE,
   hexLum,
+  boardRarityOf,
+  boardPrice,
+  FREE_BOARDS,
 } from './boardThemes'
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
@@ -2035,6 +2037,8 @@ export default function App() {
     try {
       const r = await buyItem(shopId)
       setUser((u) => (u ? { ...u, coins: r.coins, unlocks: r.unlocks } : u))
+      // Tahta satin alindiysa dogrudan kusan (yeni tahtayi hemen gorsun)
+      if (shopId.startsWith('theme.')) setBoardTheme(shopId.slice('theme.'.length))
     } catch {
       /* yetersiz coin vb. -> sessizce yoksay */
     }
@@ -2069,9 +2073,6 @@ export default function App() {
       setShopOpen(true)
     }
   }
-  const ownedPremiumThemes = PREMIUM_THEMES.filter((th) =>
-    (user?.unlocks ?? []).includes('theme.' + th.id),
-  )
 
   const [muted, setMutedState] = useState(isMuted())
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
@@ -3109,25 +3110,21 @@ export default function App() {
   // Ucretli plan aktif mi (premium ozellik kilidi)
   const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
 
-  // Tahta + oyun ayarlari tema listesi (hem in-game overlay hem Profilim "Ayarlar" sekmesi)
+  // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
+  const boardUnlocks = user?.unlocks ?? []
+  const boardOwned = (id: string) => FREE_BOARDS.has(id) || boardUnlocks.includes('theme.' + id)
   const boardThemeList = [
-    // Ilk 11 BOARD_THEMES ucretsiz; gerisi + rarity koleksiyonu plan kilidiyle acilir.
-    ...BOARD_THEMES.map((tt, i) => ({
+    ...[...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...GALAXY_EXTRA_THEMES].map((tt) => ({
       ...tt,
-      rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
-      locked: !premium && i >= 11,
+      rarity: boardRarityOf(tt),
+      price: boardPrice(tt),
+      owned: boardOwned(tt.id),
     })),
-    ...ownedPremiumThemes.map((tt) => ({
+    ...CLUB_THEMES.map((tt) => ({
       ...tt,
-      rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
-      locked: false,
-    })),
-    ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
-    ...CLUB_THEMES.map((tt) => ({ ...tt, rarity: 'club' as const, locked: false })),
-    ...GALAXY_EXTRA_THEMES.map((tt) => ({
-      ...tt,
-      rarity: tt.rarity ?? 'common',
-      locked: !premium && (tt.rarity ?? 'common') !== 'common',
+      rarity: 'club' as const,
+      price: undefined as number | undefined,
+      owned: true,
     })),
   ]
 
@@ -3143,7 +3140,7 @@ export default function App() {
   ) : null
 
   // Sahip olunan tahtalar (kilitli olmayanlar) + cerceveler (unlocks) — Profil genel bakisi
-  const ownedBoards = boardThemeList.filter((b) => !b.locked)
+  const ownedBoards = boardThemeList.filter((b) => b.owned)
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
 
   // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
@@ -3625,11 +3622,8 @@ export default function App() {
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={boardThemeList}
-          premium={premium}
-          onUpgrade={() => {
-            setBoardSettingsOpen(false)
-            setMemOpen(true)
-          }}
+          coins={user?.coins ?? 0}
+          onBuy={handleBuy}
           theme={theme}
           setTheme={setTheme}
           showPip={showPip}
