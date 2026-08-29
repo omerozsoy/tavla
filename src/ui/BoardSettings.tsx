@@ -92,6 +92,27 @@ export default function BoardSettings({
           </div>
         </div>
 
+        {/* Oyun ayarlari (pip/analiz/ogrenme) — tahta grid'inin USTUNDE, kolay erisim */}
+        <button className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
+          <span>{t('setup.pip')}</span>
+          <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
+        </button>
+        <button
+          className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
+          onClick={() => setShowAnalysis(!showAnalysis)}
+        >
+          <span>{t('setup.analysis')}</span>
+          <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
+        </button>
+        <button
+          className={`setup-toggle ${learnMode ? 'on' : ''}`}
+          onClick={() => setLearnMode(!learnMode)}
+        >
+          <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
+          <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
+        </button>
+        <p className="setup-note">{t('hint.learnNote')}</p>
+
         {/* Tahta secimi: nadirlik gruplari, buyuk + tam pul dizili onizleme, rarity cercevesi */}
         <div className="setup-row">
           <div className="setup-label">{t('menu.board')}</div>
@@ -145,31 +166,6 @@ export default function BoardSettings({
             )
           })}
         </div>
-
-        {/* Pip goster */}
-        <button className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
-          <span>{t('setup.pip')}</span>
-          <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
-        </button>
-
-        {/* Analiz goster */}
-        <button
-          className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
-          onClick={() => setShowAnalysis(!showAnalysis)}
-        >
-          <span>{t('setup.analysis')}</span>
-          <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
-        </button>
-
-        {/* Ogrenme modu */}
-        <button
-          className={`setup-toggle ${learnMode ? 'on' : ''}`}
-          onClick={() => setLearnMode(!learnMode)}
-        >
-          <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
-          <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
-        </button>
-        <p className="setup-note">{t('hint.learnNote')}</p>
 
         <Button variant="default" className="bs-save" onClick={onClose}>
           <Icon name="check" size={18} /> {t('settings.save')}
