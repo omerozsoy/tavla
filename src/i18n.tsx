@@ -758,7 +758,7 @@ const TR: Dict = {
   'home.vsBot': 'Yapay Zekaya Karşı',
   'home.vsBotSub': 'Bota karşı oyna, zorluğu sen seç',
   'home.online': 'Online Oyun',
-  'home.startCta': 'Başla',
+  'home.startCta': 'Hemen Oyna',
   'home.soloNote':
     'Her oyun belirlenen coin değeri üzerinden oynanır ve oyun sonunda sonuç, kazanılan puan kadar coin bakiyene yansır. Katlama küpü kullanıldıkça oyunun coin değeri de aynı oranda artar.',
   'home.matchNote':
@@ -1539,7 +1539,7 @@ const EN: Dict = {
   'home.vsBot': 'Play vs AI',
   'home.vsBotSub': 'Play the bot, pick the difficulty',
   'home.online': 'Online Game',
-  'home.startCta': 'Start',
+  'home.startCta': 'Play Now',
   'home.soloNote':
     'Each game is played for a set coin value; when it ends, the result is credited to your coin balance in proportion to the points you win. As the doubling cube is used, the game’s coin value rises at the same rate.',
   'home.matchNote':
@@ -2275,7 +2275,7 @@ const ES: Dict = {
   'home.vsBot': 'Jugar vs IA',
   'home.vsBotSub': 'Juega contra el bot, elige la dificultad',
   'home.online': 'Juego Online',
-  'home.startCta': 'Jugar',
+  'home.startCta': 'Jugar ahora',
   'home.soloNote':
     'Cada partida se juega por un valor fijo de monedas; al terminar, el resultado se abona a tu saldo de monedas según los puntos que ganes. A medida que se usa el cubo de doblar, el valor en monedas de la partida aumenta en la misma proporción.',
   'home.matchNote':
@@ -3009,7 +3009,7 @@ const DE: Dict = {
   'home.vsBot': 'Gegen die KI',
   'home.vsBotSub': 'Spiele gegen den Bot, wähle die Schwierigkeit',
   'home.online': 'Online-Spiel',
-  'home.startCta': 'Starten',
+  'home.startCta': 'Jetzt spielen',
   'home.soloNote':
     'Jede Partie wird um einen festgelegten Coin-Wert gespielt; am Ende wird das Ergebnis entsprechend den gewonnenen Punkten deinem Coin-Guthaben gutgeschrieben. Mit jedem Einsatz des Dopplerwürfels steigt der Coin-Wert der Partie im gleichen Verhältnis.',
   'home.matchNote':
@@ -3743,7 +3743,7 @@ const FR: Dict = {
   'home.vsBot': 'Jouer contre l’IA',
   'home.vsBotSub': 'Affrontez le bot, choisissez la difficulté',
   'home.online': 'Jeu en ligne',
-  'home.startCta': 'Jouer',
+  'home.startCta': 'Jouer maintenant',
   'home.soloNote':
     'Chaque partie se joue pour une valeur en pièces définie ; à la fin, le résultat est crédité sur ton solde de pièces au prorata des points gagnés. À mesure que le videau est utilisé, la valeur en pièces de la partie augmente d’autant.',
   'home.matchNote':

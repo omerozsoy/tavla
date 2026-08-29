@@ -45,6 +45,7 @@ import {
   X,
   Pencil,
   CaretDown,
+  ArrowRight,
   CalendarBlank,
   MapPin,
   Phone,
@@ -108,6 +109,7 @@ export type IconName =
   | 'x'
   | 'pencil'
   | 'chevron'
+  | 'arrow-right'
   | 'calendar'
   | 'pin'
   | 'phone'
@@ -171,6 +173,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   x: X,
   pencil: Pencil,
   chevron: CaretDown,
+  'arrow-right': ArrowRight,
   calendar: CalendarBlank,
   pin: MapPin,
   phone: Phone,
