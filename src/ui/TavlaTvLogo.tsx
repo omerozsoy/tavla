@@ -18,11 +18,11 @@
 type Tone = 'auto' | 'light' | 'dark' | 'brick' | 'mono'
 
 const POINT: Record<Exclude<Tone, 'auto'>, { up: string; down: string; text: string; downOpacity?: number }> = {
-  // Mediterranean Club: mediterranean blue / terracotta ucgen + ink/ivory harfler
-  light: { up: '#174A67', down: '#172A35', text: '#172A35' }, // acik zemin: blue ucgen + ink harf
-  dark: { up: '#5F9CBB', down: '#F7F3EA', text: '#F7F3EA' }, // koyu zemin: acik blue + ivory
-  brick: { up: '#C86F4A', down: '#F7F3EA', text: '#F7F3EA' }, // primary(blue) zemin uzerinde: terracotta pop + ivory
-  mono: { up: '#172A35', down: '#172A35', text: '#172A35', downOpacity: 0.35 },
+  // Coastal Club: coral ucgen (aksan) + navy/ice harfler
+  light: { up: '#E66F51', down: '#2E3748', text: '#2E3748' }, // acik zemin: coral ucgen + navy harf
+  dark: { up: '#E66F51', down: '#EFF7F9', text: '#EFF7F9' }, // koyu zemin: coral + ice
+  brick: { up: '#E66F51', down: '#EFF7F9', text: '#EFF7F9' }, // primary(navy) zemin uzerinde: coral pop + ice
+  mono: { up: '#2E3748', down: '#2E3748', text: '#2E3748', downOpacity: 0.35 },
 }
 
 const CAP = 0.71 // Outfit 700 kapak yuksekligi / em
@@ -98,7 +98,7 @@ export function TavlaTvLogo({
 export function TavlaTvMark({
   size = 40,
   radius = '50%',
-  background = '#174A67', // Mediterranean Blue zemin
+  background = '#2E3748', // Dark Navy zemin
 }: {
   size?: number
   radius?: number | string
@@ -138,8 +138,8 @@ export function TavlaTvMark({
         gap: Math.max(1, Math.round(size * 0.03)),
       }}
     >
-      {tri('up', '#C86F4A')}
-      {!single && tri('down', '#F7F3EA')}
+      {tri('up', '#E66F51')}
+      {!single && tri('down', '#EFF7F9')}
     </span>
   )
 }
