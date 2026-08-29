@@ -36,6 +36,7 @@ interface Props {
   learnMode: boolean
   setLearnMode: (v: boolean) => void
   onClose: () => void
+  embed?: boolean // Profilim "Ayarlar" sekmesine gomulu render (overlay/kapat/kaydet yok)
 }
 
 // Nadirlik siralamasi + renkleri (kart cercevesi ve baslik). HEX'ler urun spesifikasyonundan.
@@ -56,22 +57,32 @@ export default function BoardSettings({
   learnMode,
   setLearnMode,
   onClose,
+  embed,
 }: Props) {
   const { t } = useT()
-  useEscape(onClose)
+  useEscape(embed ? () => {} : onClose)
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card board-settings-card" onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="modal-close"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          <Icon name="x" size={16} />
-        </Button>
-        <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>
+    <div
+      className={embed ? 'settings-embed' : 'register-overlay modal page'}
+      role={embed ? undefined : 'dialog'}
+      aria-modal={embed ? undefined : true}
+    >
+      <div
+        className={`register-card board-settings-card ${embed ? 'is-embed' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!embed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="modal-close"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <Icon name="x" size={16} />
+          </Button>
+        )}
+        {!embed && <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>}
 
         {/* Tema (koyu/acik) */}
         <div className="setup-row">
@@ -167,9 +178,11 @@ export default function BoardSettings({
           })}
         </div>
 
-        <Button variant="default" className="bs-save" onClick={onClose}>
-          <Icon name="check" size={18} /> {t('settings.save')}
-        </Button>
+        {!embed && (
+          <Button variant="default" className="bs-save" onClick={onClose}>
+            <Icon name="check" size={18} /> {t('settings.save')}
+          </Button>
+        )}
       </div>
     </div>
   )

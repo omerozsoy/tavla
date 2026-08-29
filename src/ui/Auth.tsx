@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
@@ -60,6 +60,9 @@ interface Props {
   onToggleAutoRenew?: (enabled: boolean) => void // otomatik yenileme ac/kapat
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
+  statsExtra?: ReactNode // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik
+  settingsSlot?: ReactNode // Profilim "Ayarlar" sekmesine gomulu ayarlar (BoardSettings)
+  initialTab?: 'info' | 'stats' | 'settings' // acilista secili sekme
 }
 
 export default function Auth({
@@ -77,14 +80,17 @@ export default function Auth({
   onToggleAutoRenew,
   modal,
   page,
+  statsExtra,
+  settingsSlot,
+  initialTab,
 }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
   useEscape(onCancel)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  // Profilim sayfasi sekmeleri (yalniz giris yapan editUser): info (bilgiler) | stats (istatistik)
-  const [profTab, setProfTab] = useState<'info' | 'stats'>('info')
+  // Profilim sayfasi sekmeleri (yalniz giris yapan editUser): info | stats | settings
+  const [profTab, setProfTab] = useState<'info' | 'stats' | 'settings'>(initialTab ?? 'info')
   const editing = !!(editUser || editGuest)
   // Uyelik durumu (yalniz giris yapan editUser icin): tip + bitis tarihi + kalan gun
   const memPlan = editUser?.plan_active ?? 'free'
@@ -650,9 +656,20 @@ export default function Auth({
                 >
                   <Icon name="chart" size={16} /> {t('menu.myStats')}
                 </button>
+                {settingsSlot && (
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={profTab === 'settings'}
+                    className={`prof-tab ${profTab === 'settings' ? 'active' : ''}`}
+                    onClick={() => setProfTab('settings')}
+                  >
+                    <Icon name="settings" size={16} /> {t('menu.settings')}
+                  </button>
+                )}
               </div>
             )}
-            {/* Istatistiklerim sekmesi (ana sayfadan tasindi) */}
+            {/* Istatistiklerim sekmesi: ozet kartlar + (varsa) detayli istatistik */}
             {editUser && profTab === 'stats' && (
               <section className="profile-stats-sec">
                 <StatCards
@@ -661,7 +678,12 @@ export default function Auth({
                   wins={editUser.wins ?? 0}
                   games={editUser.games_played ?? 0}
                 />
+                {statsExtra}
               </section>
+            )}
+            {/* Ayarlar sekmesi (ust bardan tasindi) */}
+            {editUser && profTab === 'settings' && settingsSlot && (
+              <section className="profile-settings-sec">{settingsSlot}</section>
             )}
             {(!editUser || profTab === 'info') && (
               <>

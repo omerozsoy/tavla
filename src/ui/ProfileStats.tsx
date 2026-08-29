@@ -17,15 +17,16 @@ interface Props {
   frame?: string | null
   name: string
   onClose: () => void
+  embed?: boolean // Profilim sekmesine gomulu render (overlay/kapat/baslik yok)
 }
 
 // Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
 const MED_ORDER = ['coin', '1', '3', '5', '7'] as const
 const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
 
-export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
+export default function ProfileStats({ avatar, frame, name, onClose, embed }: Props) {
   const { t, lang } = useT()
-  useEscape(onClose)
+  useEscape(embed ? () => {} : onClose)
   const [data, setData] = useState<MyStats | null>(null)
   const [error, setError] = useState(false)
   const [matches, setMatches] = useState<MyMatch[] | null>(null)
@@ -80,12 +81,21 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
   const wr = games > 0 ? Math.round((wins / games) * 100) : 0
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card stats-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>
+    <div
+      className={embed ? 'stats-embed' : 'register-overlay modal page'}
+      role={embed ? undefined : 'dialog'}
+      aria-modal={embed ? undefined : true}
+    >
+      <div
+        className={`register-card stats-card ${embed ? 'is-embed' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!embed && (
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+            <Icon name="x" size={16} />
+          </Button>
+        )}
+        {!embed && <h2><Icon name="chart" size={20} /> {t('stats.title')}</h2>}
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && !data && (
