@@ -3166,7 +3166,7 @@ export default function App() {
         <>
           {user.is_admin && (
             <Button
-              variant="ghost"
+              variant="outline"
               onClick={() =>
                 window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
               }
