@@ -3399,7 +3399,19 @@ export default function App() {
                         ? 'clubs'
                         : lessonsOpen
                           ? 'lessons'
-                          : ''
+                          : memOpen
+                            ? 'membership'
+                            : contentView === 'event'
+                              ? 'calendar'
+                              : contentView === 'club'
+                                ? 'clubs'
+                                : contentView === 'service'
+                                  ? 'services'
+                                  : contentView === 'news'
+                                    ? 'news'
+                                    : contentView === 'magazine'
+                                      ? 'magazine'
+                                      : ''
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
