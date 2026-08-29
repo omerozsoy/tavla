@@ -95,6 +95,7 @@ import NotificationBell from './ui/NotificationBell'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
+import FrameShop from './ui/FrameShop'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
@@ -3519,14 +3520,8 @@ export default function App() {
       {shopOpen && user && (
         <Shop
           coins={user.coins ?? 0}
-          unlocks={user.unlocks ?? []}
-          currentFrame={user.avatar_frame ?? null}
-          avatar={profile.avatar ?? null}
-          name={profile.nickname}
           rewardReady={rewardReady}
           rewardSecs={rewardSecs}
-          onBuy={handleBuy}
-          onEquip={handleEquipFrame}
           onDaily={handleDaily}
           onBuyCoins={(pkgId) => {
             const pkg = COIN_PACKAGES.find((p) => p.id === pkgId)
@@ -3619,12 +3614,24 @@ export default function App() {
           learnMode={learnMode}
           setLearnMode={setLearnMode}
           framesSlot={
-            <FrameGallery
-              embed
-              avatar={profile.avatar ?? null}
-              name={profile.nickname}
-              onClose={() => {}}
-            />
+            user ? (
+              <FrameShop
+                coins={user.coins ?? 0}
+                unlocks={user.unlocks ?? []}
+                currentFrame={user.avatar_frame ?? null}
+                avatar={profile.avatar ?? null}
+                name={profile.nickname}
+                onBuy={handleBuy}
+                onEquip={handleEquipFrame}
+              />
+            ) : (
+              <FrameGallery
+                embed
+                avatar={profile.avatar ?? null}
+                name={profile.nickname}
+                onClose={() => {}}
+              />
+            )
           }
           onClose={() => setBoardSettingsOpen(false)}
         />
