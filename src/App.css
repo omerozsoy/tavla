@@ -5953,9 +5953,10 @@ button.stat-chip:hover {
     transform 200ms var(--ease-out);
 }
 .mode-card-title {
+  font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
   font-size: 1.18rem;
-  font-weight: 800;
-  letter-spacing: -0.015em;
+  font-weight: 700; /* Libre Baskerville yalniz 400/700 yukleniyor; 800 faux-bold olurdu */
+  letter-spacing: -0.005em; /* serif display siki tracking istemez */
 }
 .mode-card-desc {
   font-size: 0.86rem;
