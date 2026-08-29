@@ -166,7 +166,7 @@
   --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
      520px lump = sol menu + panel + saat + bosluklar icin ayrilan yatay alan. */
-  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 44px), calc((100vw - 520px) / 1.3)));
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 44px), calc((100vw - 548px) / 1.3)));
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
@@ -705,7 +705,7 @@ button[aria-disabled='true'],
 
 /* ---- Sol menu ---- */
 .side-menu {
-  width: 172px;
+  width: 200px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -2569,7 +2569,7 @@ button[aria-disabled='true'],
   top: 0;
   right: 0;
   bottom: 0;
-  left: 190px;
+  left: 218px;
   align-items: stretch;
   justify-content: flex-start;
   padding: 0;
