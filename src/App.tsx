@@ -3114,7 +3114,8 @@ export default function App() {
   // Oyun ekraninda mi (cekilme butonu bunun icin)
   const accountBar = (
     <div className="account-bar">
-      {/* 'Pes Et' hesap cubugunda degil, oyun menusunde (game-ham ☰ -> GameMenu) */}
+      {/* Birlesik hesap kimlik pili: avatar+isim + coin + rating tek buyuk pill icinde */}
+      <div className="account-id">
       <button
         type="button"
         className="account-name"
@@ -3124,7 +3125,7 @@ export default function App() {
         <AvatarFrame
           src={profile.avatar}
           frame={user?.avatar_frame}
-          size={28}
+          size={34}
           name={profile.nickname}
           className="account-avf"
         />
@@ -3157,6 +3158,7 @@ export default function App() {
           </span>
         </span>
       )}
+      </div>
       {user && (
         <NotificationBell
           items={notifications}

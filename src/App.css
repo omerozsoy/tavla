@@ -5336,6 +5336,46 @@ button.stat-chip:hover {
 .stat-chip-rating .stat-chip-bar > i {
   background: var(--accent);
 }
+/* ---- Birlesik hesap kimlik pili: avatar+isim + coin + rating tek buyuk pill ---- */
+.account-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 54px;
+  padding: 0 16px 0 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--card-bg);
+}
+/* Isim butonu pil icinde: kendi pil zemini yok, sadece avatar+isim */
+.account-id .account-name {
+  min-height: 0;
+  height: auto;
+  gap: 9px;
+  padding: 4px 8px 4px 4px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+}
+.account-id .account-name:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+/* Ic chip'ler (coin/rating): kendi cerceve/zemini yok; sol bolucu cizgi ile ayrilir */
+.account-id .stat-chip {
+  height: auto;
+  padding: 0 0 0 12px;
+  border: none;
+  border-left: 1px solid var(--border);
+  border-radius: 0;
+  background: none;
+  gap: 7px;
+}
+.account-id button.stat-chip:hover {
+  border-color: var(--border);
+}
+.account-id button.stat-chip:hover .stat-chip-val {
+  color: var(--accent);
+}
 .player-rating {
   margin-top: 2px;
   font-size: 0.8rem;
