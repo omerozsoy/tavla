@@ -3,43 +3,73 @@
      Primitive katman: TUM chrome + marka token'lari buradan turetilir; boylece
      renk tek yerden yonetilir (yuzlerce hardcoded hex yerine). Board/oyun tahtasi
      KENDI tema sistemini korur (--tri-*, --bar, --navy[tas], --cream[tas], --game-scene). */
-  --rn-bg: #080c12; /* deep background — ana zemin */
-  --rn-navy: #14243a; /* royal navy — header, kart, panel, yuzey */
-  --rn-navy-muted: #1b2e49; /* muted navy — ikincil yuzey / hover */
-  --rn-line: #293a50; /* kenarlik */
-  --gold: #c2a15f; /* luxury (antique) gold — birincil aksan; KONTROLLU kullan */
-  --gold-hover: #d2b36e; /* gold hover */
-  --gold-dark: #927540; /* gold dark — acik zeminde metin/kenar (kontrast) */
-  --ivory: #f0e8d8; /* ivory — ana acik metin + premium acik yuzey */
-  --ivory-soft: #d8d0c2; /* soft ivory — ikincil */
-  --rn-muted: #9da7b3; /* muted text (koyu zeminde) */
+  /* ===== MEDITERRANEAN CLUB — merkezi palet =====
+     Akdeniz sahil kulubu / modern members club: acik + sicak + premium.
+     PRIMARY = Mediterranean Blue (marka), ACCENT = Terracotta (kontrollu sicak vurgu),
+     ikincil = Sage. Ana zemin Warm Ivory/Porcelain (acik, ferah). */
+  --med-ivory: #f7f3ea; /* warm ivory — ana zemin */
+  --med-porcelain: #fffcf6; /* porcelain — kart/yuzey */
+  --med-blue: #174a67; /* mediterranean blue — PRIMARY marka */
+  --med-blue-deep: #10364d; /* deep blue — primary hover */
+  --med-terracotta: #c86f4a; /* ACCENT — sicak vurgu (KONTROLLU) */
+  --med-terracotta-dark: #a95638; /* accent hover */
+  --med-sage: #78927d; /* secondary accent */
+  --med-ink: #172a35; /* ink navy — ana metin */
+  --med-slate: #68767c; /* slate — muted metin */
+  --med-sand: #ded6c7; /* sand — border */
+  --med-sand-warm: #eee7da; /* warm sand — soft surface */
+  /* Dark tema zeminleri (Mediterranean koyu varyant) */
+  --med-navy-900: #0e2833; /* deep mediterranean navy — dark zemin */
+  --med-navy-800: #143845; /* dark kart */
+  --med-navy-700: #1d4a5a; /* dark elevated / hover */
+  --med-line-dark: #274a59; /* dark border */
+
+  /* ---- Eski primitive isimleri -> Mediterranean (alias; dogrudan kullanimlar otomatik doner) ---- */
+  --rn-bg: var(--med-navy-900); /* dark zemin */
+  --rn-navy: var(--med-navy-800); /* dark yuzey/kart */
+  --rn-navy-muted: var(--med-navy-700); /* dark elevated */
+  --rn-line: var(--med-line-dark); /* dark kenarlik */
+  --gold: var(--med-blue); /* [eski gold] -> Mediterranean Blue (PRIMARY) */
+  --gold-hover: var(--med-blue-deep); /* -> Deep Blue */
+  --gold-dark: var(--med-blue); /* acik zeminde primary blue */
+  --ivory: var(--med-ivory); /* warm ivory (acik metin, primary uzeri) */
+  --ivory-soft: var(--med-sand-warm); /* warm sand */
+  --rn-muted: #93a3ab; /* muted (dark zeminde) */
+  /* Yeni marka token'lari — component'lerde sicak/ikincil vurgu icin */
+  --terracotta: var(--med-terracotta);
+  --terracotta-hover: var(--med-terracotta-dark);
+  --sage: var(--med-sage);
+  --sand: var(--med-sand);
+  --sand-warm: var(--med-sand-warm);
+  --ink-navy: var(--med-ink);
+  --slate: var(--med-slate);
 
   /* ---- TavlaTV marka token'lari -> Royal Navy'ye eslendi (isimler korunur) ---- */
   --tv-cream: var(--ivory); /* acik metin/yuzey */
   --tv-cream-deep: var(--ivory-soft); /* ikincil */
   --tv-white: #ffffff; /* saf beyaz (nadir; tas/ikon detaylari) */
   --tv-line: var(--rn-line); /* kenarlik */
-  --tv-ink: var(--rn-bg); /* en koyu zemin */
-  --tv-ink-muted: #4a5568; /* ikincil metin (acik zemin - navy gri) */
-  --tv-ink-faint: #6b7688; /* etiket / ucuncul */
-  --tv-brick: var(--gold-dark); /* eski kiremit aksan -> gold (acik zeminde) */
-  --tv-brick-light: var(--gold); /* eski kiremit aksan -> gold (koyu zeminde) */
+  --tv-ink: var(--ink-navy); /* ink navy — en koyu metin */
+  --tv-ink-muted: var(--slate); /* ikincil metin */
+  --tv-ink-faint: #7a868c; /* etiket / ucuncul */
+  --tv-brick: var(--terracotta); /* kiremit = TERRACOTTA (sicak aksan geri geldi) */
+  --tv-brick-light: var(--terracotta); /* terracotta */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
   --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* Display fontu: Playfair Display -> zamansiz/prestij serif basliklar (premium his) */
   --tv-font-display: 'Playfair Display', 'Poppins', Georgia, 'Times New Roman', serif;
-  /* Coin/odul altini (antique gold ailesi) */
-  --tv-gold: var(--gold-hover);
+  /* Coin/odul rengi -> sicak TERRACOTTA (Mediterranean; coin warm accent) */
+  --tv-gold: var(--terracotta);
 
-  /* Anlamsal durum renkleri — Royal Navy'ye uyumlu (muted, parlak degil) */
-  --color-success: #3e8e5f; /* muted emerald */
-  --color-warning: #c79a4b; /* amber (gold ailesi) */
-  --color-error: #9e3b3b; /* klasik koyu kirmizi (parlak degil) */
-  --color-info: #5e7fa8; /* muted navy-blue */
-  /* danger METIN (yuzey uzerine): koyu navy zeminde okunur, muted */
-  --danger-fg: #e39393;
-  /* success METIN (yuzey uzerine): koyu navy zeminde okunur, muted emerald */
+  /* Anlamsal durum renkleri — Mediterranean paletine uyumlu */
+  --color-success: #39765a; /* mediterranean green */
+  --color-warning: #c79a4b; /* amber (terracotta'dan ayri tutulur) */
+  --color-error: #b84d47; /* destructive (Mediterranean) */
+  --color-info: #3f6f8a; /* muted mediterranean blue */
+  /* danger METIN (dark yuzey uzerine) */
+  --danger-fg: #e39a95;
+  /* success METIN (dark yuzey uzerine) */
   --success-fg: #7fc79e;
 
   /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
@@ -91,11 +121,11 @@
   --z-modal: 2500;
   --z-toast: 3000;
 
-  /* ---- Royal Navy (varsayilan 'dark' chrome) ----
+  /* ---- Mediterranean DARK chrome (opt-in; esas tema LIGHT) ----
      NOT: --tri-*, --bar, --navy(tas), --cream(tas) BOARD renkleridir; board kendi
-     tema sistemini korur, chrome'a karismaz. Sadece site chrome'u Royal Navy olur. */
+     tema sistemini korur, chrome'a karismaz. */
   color-scheme: dark;
-  --bg: var(--rn-bg); /* deep background — dis zemin */
+  --bg: var(--rn-bg); /* deep mediterranean navy — dis zemin */
   --area: var(--rn-bg);
   --panel: #2a2620; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen - kiremit (board) */
@@ -103,16 +133,16 @@
   --bar: #12100e; /* orta bar / cerceve (board) */
   --navy: #100e0c; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas - krem (board) */
-  --accent: var(--gold); /* luxury gold aksan (koyu zeminde) */
-  --text: var(--ivory); /* ivory metin */
+  --accent: #5f9cbb; /* dark zeminde okunur mediterranean blue */
+  --text: var(--ivory); /* warm ivory metin */
   --muted: var(--rn-muted);
-  /* Kurumsal kroma — Royal Navy yuzeyler */
+  /* Mediterranean dark yuzeyler */
   --card-bg: var(--rn-navy);
   --btn-bg: var(--rn-navy);
   --btn-border: var(--rn-line);
   --border: var(--rn-line);
-  --input-bg: #0f1b2b; /* deep navy input */
-  --on-accent: var(--rn-bg); /* gold (acik) zemin uzerinde metin -> deep navy (okunur) */
+  --input-bg: #102b38; /* deep mediterranean input */
+  --on-accent: #0e2833; /* acik-blue aksan uzerinde koyu metin */
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
@@ -144,34 +174,34 @@
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 }
 
-/* Acik tema — Royal Navy'nin LUKS ACIK varyanti (ivory/parsomen + navy metin + antique gold).
-   Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas]) yine board temasina ait. */
+/* ===== MEDITERRANEAN CLUB — ESAS (LIGHT) TEMA =====
+   Warm Ivory zemin + Porcelain kart + Ink Navy metin + Mediterranean Blue marka.
+   Ferah, sicak, premium. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
+   board temasina ait — dokunulmaz. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: #efe9dc; /* parsomen ivory sayfa zemini */
-  --area: #ffffff;
+  --bg: var(--med-ivory); /* Warm Ivory sayfa zemini #f7f3ea */
+  --area: var(--med-porcelain); /* Porcelain (saf beyaz kullanilmaz) */
   --panel: #efeae1; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen (board) */
   --tri-b: #ded7ca; /* koyu ucgen (board) */
   --bar: #ded7ca; /* orta bar / cerceve (board) */
   --navy: #1c1a17; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas (board) */
-  --accent: var(--gold-dark); /* antique gold aksan (acik zeminde kontrastli) */
-  --text: #14243a; /* royal navy metin */
-  --muted: #5a6b80; /* navy-gri ikincil metin */
-  --card-bg: #fbf8f1; /* sicak ivory-beyaz kart */
-  --btn-bg: #f3ecdd;
-  --btn-border: #ddd3c1;
-  --border: #ddd3c1;
-  --input-bg: #fbf8f1;
-  /* Acik temada aksan koyu gold (--gold-dark) -> uzerine ivory metin okunur */
-  --on-accent: var(--ivory);
-  /* Tersiyer metin: acik ivory zeminde okunur navy-gri */
-  --tv-ink-faint: #6b7688;
-  /* danger METIN: acik zeminde klasik koyu kirmizi (~7:1) */
-  --danger-fg: #9e3b3b;
-  /* success METIN: acik zeminde koyu emerald (~4.6:1) */
-  --success-fg: #1f7a4c;
+  --accent: var(--med-blue); /* Mediterranean Blue — marka aksani #174a67 */
+  --text: var(--med-ink); /* Ink Navy metin #172a35 */
+  --muted: var(--med-slate); /* Slate ikincil metin #68767c */
+  --card-bg: var(--med-porcelain); /* Porcelain kart #fffcf6 */
+  --btn-bg: var(--med-sand-warm); /* Warm Sand soft yuzey */
+  --btn-border: var(--med-sand); /* Sand */
+  --border: var(--med-sand); /* Sand #ded6c7 */
+  --input-bg: var(--med-porcelain); /* Porcelain input */
+  --on-accent: var(--med-ivory); /* Mediterranean Blue uzeri acik ivory metin */
+  --tv-ink-faint: #7a868c; /* ucuncul metin (Slate ailesi) */
+  /* danger METIN: acik zeminde okunur destructive */
+  --danger-fg: #a5443f;
+  /* success METIN: acik zeminde okunur mediterranean green */
+  --success-fg: #2f6a4a;
 }
 
 * {

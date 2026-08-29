@@ -72,11 +72,17 @@
   --color-border: var(--sc-border);
   --color-input: var(--sc-input);
   --color-ring: var(--sc-ring);
-  /* Buton hover token'lari (Royal Navy paletinden; buton hover dili buradan gelir) */
-  --color-primary-hover: var(--sc-primary-hover); /* gold -> gold-dark */
-  --color-navy: var(--sc-navy); /* royal navy — secondary/outline hover */
-  --color-navy-muted: var(--sc-navy-muted); /* muted navy — ghost hover */
-  --color-ivory: var(--sc-ivory); /* ivory — hover metin/ikon */
+  /* Buton hover token'lari (Mediterranean; buton hover dili buradan gelir) */
+  --color-primary-hover: var(--sc-primary-hover); /* blue -> deep blue */
+  --color-tint: var(--sc-tint); /* cok acik blue tint — secondary/outline hover yuzeyi */
+  --color-on-hover: var(--sc-on-hover); /* deep blue — secondary/outline hover metin */
+  --color-ghost-surface: var(--sc-ghost-hover); /* warm sand — ghost hover yuzeyi */
+  --color-ivory: var(--sc-ivory); /* warm ivory — primary hover metin */
+  /* Marka ekstra: terracotta (ozel CTA) + sage (ikincil) */
+  --color-terracotta: var(--sc-terracotta);
+  --color-terracotta-hover: var(--sc-terracotta-hover);
+  --color-terracotta-foreground: var(--sc-terracotta-foreground);
+  --color-sage: var(--sc-sage);
 
   /* Yaricap olcegi App.css ile BIREBIR ayni -> rounded-* mevcut sistemle tutarli */
   --radius-sm: 6px;
@@ -88,56 +94,70 @@
   --font-sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-/* ---- Royal Navy -> shadcn semantic token esleme (varsayilan: dark chrome) ---- */
+/* ---- Mediterranean -> shadcn semantic token esleme (varsayilan: DARK, opt-in) ---- */
 :root {
-  --sc-background: #080c12; /* rn-bg */
-  --sc-foreground: #f0e8d8; /* ivory */
-  --sc-card: #14243a; /* rn-navy */
-  --sc-card-foreground: #f0e8d8;
-  --sc-popover: #14243a;
-  --sc-popover-foreground: #f0e8d8;
-  /* primary = luxury gold; uzerine KOYU metin (beyaz-on-gold kontrast dusuk) */
-  --sc-primary: #c2a15f; /* gold */
-  --sc-primary-foreground: #14243a; /* koyu navy */
-  --sc-secondary: #1b2e49; /* navy-muted yuzey */
-  --sc-secondary-foreground: #f0e8d8;
-  --sc-muted: #1b2e49;
-  --sc-muted-foreground: #9da7b3; /* rn-muted */
-  --sc-accent: #263a56; /* hover yuzeyi — karttan (#14243a) belirgin acik navy */
-  --sc-accent-foreground: #f0e8d8;
-  --sc-destructive: #c0453e; /* modern semantic red (Royal Navy'ye uyumlu, neon degil) */
-  --sc-destructive-foreground: #ffffff;
-  --sc-border: #293a50; /* rn-line */
-  --sc-input: #293a50;
-  --sc-ring: #c2a15f; /* gold odak halkasi */
-  /* ---- Buton hover paleti (Royal Navy) ---- */
-  --sc-primary-hover: #927540; /* gold-dark: primary hover (koyulasir) */
-  --sc-navy: #14243a; /* royal navy: secondary/outline hover dolgu */
-  --sc-navy-muted: #1b2e49; /* muted navy: ghost hover dolgu */
-  --sc-ivory: #f0e8d8; /* ivory: hover metin (SABIT — iki temada ayni) */
+  --sc-background: #0e2833; /* deep mediterranean navy */
+  --sc-foreground: #ede6d8; /* warm ivory */
+  --sc-card: #143845;
+  --sc-card-foreground: #ede6d8;
+  --sc-popover: #143845;
+  --sc-popover-foreground: #ede6d8;
+  --sc-primary: #3f7ea0; /* dark zeminde okunur mediterranean blue */
+  --sc-primary-foreground: #f7f3ea; /* acik ivory metin */
+  --sc-secondary: #1d4a5a;
+  --sc-secondary-foreground: #ede6d8;
+  --sc-muted: #1d4a5a;
+  --sc-muted-foreground: #93a3ab;
+  --sc-accent: #21506a; /* subtle elevated hover yuzeyi */
+  --sc-accent-foreground: #ede6d8;
+  --sc-destructive: #b84d47; /* Mediterranean destructive */
+  --sc-destructive-foreground: #f7f3ea;
+  --sc-border: #274a59;
+  --sc-input: #274a59;
+  --sc-ring: #5f9cbb; /* mediterranean blue odak halkasi */
+  /* ---- Buton hover paleti (dark) ---- */
+  --sc-primary-hover: #4f92b6; /* dark'ta primary hover ACILIR (okunurluk) */
+  --sc-tint: #21506a; /* secondary/outline hover yuzeyi */
+  --sc-ghost-hover: #1d4a5a; /* ghost hover yuzeyi */
+  --sc-on-hover: #f7f3ea; /* hover metin (dark) */
+  --sc-ivory: #f7f3ea; /* warm ivory: primary hover metin */
+  /* ---- Marka ekstra: terracotta (ozel CTA) + sage ---- */
+  --sc-terracotta: #c86f4a;
+  --sc-terracotta-hover: #a95638;
+  --sc-terracotta-foreground: #f7f3ea;
+  --sc-sage: #78927d;
 }
 
-/* ---- Acik tema (opt-in): parsomen ivory + antique gold ---- */
+/* ===== MEDITERRANEAN CLUB — ESAS (LIGHT) TEMA ===== */
 :root[data-theme='light'] {
-  --sc-background: #efe9dc;
-  /* Acik temada primary rest zaten gold-dark -> hover daha da koyu gold. navy/ivory sabit. */
-  --sc-primary-hover: #7a6234;
-  --sc-foreground: #14243a;
-  --sc-card: #fbf8f1;
-  --sc-card-foreground: #14243a;
-  --sc-popover: #fbf8f1;
-  --sc-popover-foreground: #14243a;
-  --sc-primary: #927540; /* gold-dark (acik zeminde kontrast) */
-  --sc-primary-foreground: #ffffff;
-  --sc-secondary: #ece4d3;
-  --sc-secondary-foreground: #14243a;
-  --sc-muted: #ece4d3;
-  --sc-muted-foreground: #5a6b80;
-  --sc-accent: #dccdb0; /* hover yuzeyi — parsomen zeminden (#efe9dc) belirgin koyu */
-  --sc-accent-foreground: #14243a;
-  --sc-destructive: #b23a34; /* acik temada modern semantic red */
-  --sc-destructive-foreground: #ffffff;
-  --sc-border: #ddd3c1;
-  --sc-input: #ddd3c1;
-  --sc-ring: #927540;
+  --sc-background: #f7f3ea; /* Warm Ivory */
+  --sc-foreground: #172a35; /* Ink Navy */
+  --sc-card: #fffcf6; /* Porcelain */
+  --sc-card-foreground: #172a35;
+  --sc-popover: #fffcf6;
+  --sc-popover-foreground: #172a35;
+  --sc-primary: #174a67; /* Mediterranean Blue */
+  --sc-primary-foreground: #f7f3ea; /* acik ivory metin (saf beyaz degil) */
+  --sc-secondary: #eee7da; /* Warm Sand yuzey */
+  --sc-secondary-foreground: #174a67; /* Mediterranean Blue metin */
+  --sc-muted: #eee7da; /* Warm Sand */
+  --sc-muted-foreground: #68767c; /* Slate */
+  --sc-accent: #e4edf1; /* cok acik blue tint — subtle hover yuzeyi */
+  --sc-accent-foreground: #174a67;
+  --sc-destructive: #b84d47;
+  --sc-destructive-foreground: #f7f3ea;
+  --sc-border: #ded6c7; /* Sand */
+  --sc-input: #ded6c7;
+  --sc-ring: #174a67; /* Mediterranean Blue odak halkasi */
+  /* ---- Buton hover paleti (light) ---- */
+  --sc-primary-hover: #10364d; /* Deep Blue */
+  --sc-tint: #e4edf1; /* secondary/outline hover: cok acik blue tint */
+  --sc-ghost-hover: #eee7da; /* ghost hover: Warm Sand */
+  --sc-on-hover: #10364d; /* secondary/outline hover metin: Deep Blue */
+  --sc-ivory: #f7f3ea; /* primary hover metin: warm ivory */
+  /* ---- Marka ekstra ---- */
+  --sc-terracotta: #c86f4a;
+  --sc-terracotta-hover: #a95638;
+  --sc-terracotta-foreground: #f7f3ea;
+  --sc-sage: #78927d;
 }

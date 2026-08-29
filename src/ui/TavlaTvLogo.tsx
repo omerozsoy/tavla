@@ -18,11 +18,11 @@
 type Tone = 'auto' | 'light' | 'dark' | 'brick' | 'mono'
 
 const POINT: Record<Exclude<Tone, 'auto'>, { up: string; down: string; text: string; downOpacity?: number }> = {
-  // Royal Navy marka: gold aksan ucgen + ivory/navy harfler
-  light: { up: '#927540', down: '#14243A', text: '#14243A' },
-  dark: { up: '#C2A15F', down: '#F0E8D8', text: '#F0E8D8' },
-  brick: { up: '#F0E8D8', down: '#14243A', text: '#F0E8D8' }, // gold zemin uzerinde
-  mono: { up: '#14243A', down: '#14243A', text: '#14243A', downOpacity: 0.35 },
+  // Mediterranean Club: mediterranean blue / terracotta ucgen + ink/ivory harfler
+  light: { up: '#174A67', down: '#172A35', text: '#172A35' }, // acik zemin: blue ucgen + ink harf
+  dark: { up: '#5F9CBB', down: '#F7F3EA', text: '#F7F3EA' }, // koyu zemin: acik blue + ivory
+  brick: { up: '#C86F4A', down: '#F7F3EA', text: '#F7F3EA' }, // primary(blue) zemin uzerinde: terracotta pop + ivory
+  mono: { up: '#172A35', down: '#172A35', text: '#172A35', downOpacity: 0.35 },
 }
 
 const CAP = 0.71 // Outfit 700 kapak yuksekligi / em
@@ -98,7 +98,7 @@ export function TavlaTvLogo({
 export function TavlaTvMark({
   size = 40,
   radius = '50%',
-  background = '#14243A',
+  background = '#174A67', // Mediterranean Blue zemin
 }: {
   size?: number
   radius?: number | string
@@ -138,8 +138,8 @@ export function TavlaTvMark({
         gap: Math.max(1, Math.round(size * 0.03)),
       }}
     >
-      {tri('up', '#C2A15F')}
-      {!single && tri('down', '#F0E8D8')}
+      {tri('up', '#C86F4A')}
+      {!single && tri('down', '#F7F3EA')}
     </span>
   )
 }

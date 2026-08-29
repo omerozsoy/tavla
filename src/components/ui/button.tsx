@@ -18,20 +18,20 @@ const buttonVariants = cva(
       // font) DOKUNMAZ. Global hover dili: primary koyulasir · secondary/outline GOLD'a
       // doner · ghost hafif secondary dolgu · destructive koyu kirmizi. hover:bg-accent YOK.
       variant: {
-        // primary: gold -> gold-dark (koyulasir), ivory metin. Gold'da acilmaz.
+        // primary: Mediterranean Blue -> Deep Blue (koyulasir), acik ivory metin.
         default:
           "border-primary bg-primary text-primary-foreground hover:border-primary-hover hover:bg-primary-hover hover:text-ivory",
-        // secondary: hover ROYAL NAVY (gold DEGIL) -> primary(gold) ile net ayrisir.
-        // Kenar border-border (#293a50) kalir -> navy kartlarda buton sinir belli olur.
+        // secondary: Warm Sand yuzey + blue metin. Hover: cok acik blue tint + blue border
+        // + deep blue metin (primary kadar baskin degil).
         secondary:
-          "border-border bg-secondary text-secondary-foreground hover:bg-navy hover:text-ivory",
-        // outline: hover ROYAL NAVY dolgu (gold degil)
+          "border-border bg-secondary text-secondary-foreground hover:bg-tint hover:border-primary hover:text-on-hover",
+        // outline: transparent + blue metin. Hover: acik blue tinted yuzey + blue border.
         outline:
-          "border-border bg-transparent text-foreground hover:bg-navy hover:text-ivory",
-        // ghost: hover MUTED NAVY (subtle), gold yok
+          "border-border bg-transparent text-foreground hover:bg-tint hover:border-primary hover:text-on-hover",
+        // ghost: transparent + ink metin. Hover: Warm Sand yuzey (blue degil).
         ghost:
-          "border-border bg-transparent text-foreground hover:bg-navy-muted hover:text-ivory",
-        // destructive: kirmizi -> koyu kirmizi (navy/gold'a donmez)
+          "border-border bg-transparent text-foreground hover:bg-ghost-surface hover:text-foreground",
+        // destructive: kirmizi -> koyu kirmizi (terracotta ile karismaz)
         destructive:
           "border-destructive bg-destructive text-destructive-foreground hover:border-destructive/90 hover:bg-destructive/90",
       },
