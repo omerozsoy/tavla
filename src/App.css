@@ -5757,6 +5757,7 @@ html.fs-active .account-bar {
   line-height: 1.5;
   color: var(--muted);
   max-width: 34ch;
+  white-space: pre-line; /* tagline'daki \n -> satir kirilimi */
 }
 .hero-cta {
   display: flex;
