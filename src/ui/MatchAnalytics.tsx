@@ -40,7 +40,10 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
       const raw = await matchLogById(m.id)
       if (!raw) return
       const parsed = JSON.parse(raw) as { hc?: Player; log?: MoveLogEntry[] }
-      setReport({ log: parsed.log ?? [], hc: parsed.hc ?? 'white', pr: m.pr ?? null })
+      const log = parsed.log ?? []
+      // Bos log (online/PvP mac -> hamle analizi tutulmaz): rapor acma, karar yok
+      if (log.length === 0) return
+      setReport({ log, hc: parsed.hc ?? 'white', pr: m.pr ?? null })
     } catch {
       /* yoksay */
     } finally {

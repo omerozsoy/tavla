@@ -502,7 +502,9 @@ class AuthController extends Controller
         }
         $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(30)->select($cols);
         if ($hasLog) {
-            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL) as has_log'));
+            // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
+            // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
+            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND CHAR_LENGTH(log) > 40) as has_log'));
         }
         $matches = $q->get()
             ->map(fn ($m) => [
