@@ -59,7 +59,7 @@
 .ca-cell.sel { background: rgba(183, 110, 121, 0.16); box-shadow: inset 0 0 0 1.5px #b76e79; }
 .ca-stage { position: relative; display: grid; place-items: center; }
 .ca-name { font-size: 12px; font-weight: 600; opacity: 0.92; text-align: center; }
-.ca-note { font-size: 11px; opacity: 0.5; text-align: center; font-family: ui-monospace, monospace; }
+.ca-note { font-size: 11px; opacity: 0.5; text-align: center; font-family: var(--tv-font-mono); }
 
 /* isaretleme tik'i — ANIMASYONUN ALTINDA (uzerinde degil) */
 .ca-tick {
@@ -115,7 +115,7 @@
 .ca-row.sel .ca-tickbox { color: #2a1418; background: linear-gradient(135deg, #b76e79, #e7bcb0); border-color: transparent; }
 .ca-rowname { flex: 0 0 168px; width: 168px; display: flex; flex-direction: column; gap: 1px; }
 .ca-rn { font-size: 13px; font-weight: 600; }
-.ca-rk { font-size: 10.5px; opacity: 0.5; font-family: ui-monospace, monospace; }
+.ca-rk { font-size: 10.5px; opacity: 0.5; font-family: var(--tv-font-mono); }
 .ca-rowframes { display: flex; gap: 12px; }
 .ca-rowframe { flex: 0 0 auto; display: grid; place-items: center; }
 @media (max-width: 760px) {

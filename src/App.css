@@ -65,10 +65,11 @@
   --tv-brick: var(--coral); /* kiremit = brick (sicak aksan) */
   --tv-brick-light: var(--med-terracotta); /* brick (koyu zeminde) */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
-  --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
-  --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  /* Display fontu (ikincil): Libre Baskerville -> zamansiz/editoryal serif basliklar */
-  --tv-font-display: 'Libre Baskerville', 'Playfair Display', Georgia, 'Times New Roman', serif;
+  /* Tek yazi ailesi: Outfit (font pairing yok). Tum tokenlar tek kaynaga baglanir;
+     boylece mevcut var(--tv-font-display/mono) kullanimlari da Outfit'e cozulur. */
+  --tv-font-ui: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --tv-font-mono: var(--tv-font-ui); /* sayisal veriler tabular-nums ile hizali kalir */
+  --tv-font-display: var(--tv-font-ui); /* basliklar da Outfit */
   /* Coin/odul rengi -> amber (terracotta; coin warm tertiary) */
   --tv-gold: var(--orange);
 
@@ -218,8 +219,8 @@
   box-sizing: border-box;
 }
 
-/* Sayisal/aletsel veriler marka mono fontunu (JetBrains Mono) kullanir.
-   tabular-nums ile birlikte rating/PR/equity/coin hizali ve 'profesyonel' durur. */
+/* Sayisal/aletsel veriler: tek aile Outfit; tabular-nums ile rating/PR/equity/coin
+   sabit genislikte hizali kalir (mono font gerekmez). */
 .lb-rating,
 .lb-games,
 .lb-wr,
@@ -261,14 +262,14 @@ select,
 
 body {
   margin: 0;
-  font-family: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--tv-font-ui);
   background: var(--bg);
   color: var(--text);
   overflow: hidden;
 }
 
-/* Basliklar display fontu (Libre Baskerville — serif) + hafif siki harf araligi.
-   Govde Outfit kalir; basliklarda serif/sans kontrasti -> markali, editoryal his. */
+/* Basliklar: govdeyle ayni aile (Outfit). Font pairing yok; ayrim agirlik/olcuyle.
+   Weight standardi: H1/H2 700 · H3/H4 600. Outfit'in dogal karakteri korunur. */
 h1,
 h2,
 h3,
@@ -278,8 +279,21 @@ h4,
 .report-card h2,
 .rules-section h3,
 .content-service h3 {
-  font-family: var(--tv-font-display);
+  font-family: var(--tv-font-ui);
   letter-spacing: -0.01em;
+}
+h1,
+h2,
+.register-card h2,
+.mr-card h2,
+.report-card h2 {
+  font-weight: 700;
+}
+h3,
+h4,
+.rules-section h3,
+.content-service h3 {
+  font-weight: 600;
 }
 /* Baslik ikonlari tutarli boyut (ux: icon-style-consistent) */
 h2 > svg:first-child {
@@ -3927,7 +3941,7 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .move-row .notation {
-  font-family: ui-monospace, Consolas, monospace;
+  font-family: var(--tv-font-mono);
 }
 .move-row .eq {
   text-align: right;
@@ -3955,7 +3969,7 @@ button[aria-disabled='true'],
   background: rgba(255, 255, 255, 0.08);
   padding: 1px 5px;
   border-radius: 3px;
-  font-family: ui-monospace, Consolas, monospace;
+  font-family: var(--tv-font-mono);
 }
 .move-error.good {
   background: rgba(76, 175, 80, 0.15);
@@ -5812,7 +5826,7 @@ button.stat-chip:hover {
 }
 
 /* ============================================================
-   Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Poppins)
+   Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Outfit)
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
 .resume-match-bar {
@@ -5991,7 +6005,7 @@ button.stat-chip:hover {
     transform 200ms var(--ease-out);
 }
 .mode-card-title {
-  font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
+  font-family: var(--tv-font-display); /* = Outfit (tek aile) */
   font-size: 20px;
   font-weight: 400;
   letter-spacing: -0.005em; /* serif display siki tracking istemez */
@@ -6083,7 +6097,7 @@ button.stat-chip:hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
+  font-family: var(--tv-font-display); /* = Outfit (tek aile) */
   font-size: 20px;
   font-weight: 400;
   color: var(--text);
@@ -6104,7 +6118,7 @@ button.stat-chip:hover {
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
-  font-family: 'Outfit', system-ui, sans-serif;
+  font-family: var(--tv-font-ui);
   font-size: 0.72rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -6638,7 +6652,7 @@ button.stat-chip:hover {
   min-width: 0;
 }
 .dd-title {
-  font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
+  font-family: var(--tv-font-display); /* = Outfit (tek aile) */
   font-weight: 400;
   font-size: 20px;
   letter-spacing: -0.005em;
@@ -10628,7 +10642,7 @@ button.stat-chip:hover {
 .fair-code {
   display: block;
   word-break: break-all;
-  font-family: ui-monospace, monospace;
+  font-family: var(--tv-font-mono);
   font-size: 0.78rem;
   background: color-mix(in srgb, var(--text) 6%, transparent);
   border: 1px solid var(--border);
@@ -10663,7 +10677,7 @@ button.stat-chip:hover {
 .fair-verify input {
   width: 100%;
   margin-top: 3px;
-  font-family: ui-monospace, monospace;
+  font-family: var(--tv-font-mono);
   font-size: 0.8rem;
 }
 .fair-result {
