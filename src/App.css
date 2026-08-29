@@ -1115,7 +1115,7 @@ button[aria-disabled='true'],
   min-height: 44px;
 }
 .side-menu [data-slot='button'] svg {
-  color: var(--coral); /* nav ikonlari coral -> siteye enerji */
+  color: var(--med-terracotta-dark); /* nav ikonlari KOYU KIREMIT #a83a2b */
 }
 .side-menu [data-slot='button']:hover {
   background: color-mix(in srgb, var(--sky) 55%, transparent) !important; /* belirgin aqua/light-blue */
@@ -4083,56 +4083,73 @@ button[aria-disabled='true'],
 }
 
 /* ===== Profil duzenleme formu (Uye Bilgileri): genis, 2 kolon, dengeli SaaS ===== */
-/* Uyelik durumu karti (profil sayfasi): tip rozeti + bitis tarihi + kalan gun.
+/* Uyelik durumu karti (profil sayfasi): Premium (solda/buyuk) + uye olma tarihi +
+   bitis + kalan gun + otomatik yenileme durumu + Yenile/iptal butonlari.
    Renkler terracotta token'larindan miras (hardcode yok). */
 .mem-status {
   margin: 0 0 22px;
-  padding: 14px 16px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--card-bg);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 .mem-status-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
-.mem-status-head svg {
+/* "Premium" yazisi: solda, buyuk, display font — one cikar */
+.mem-status-plan {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--tv-font-display, inherit);
+  font-size: var(--fs-2xl);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+}
+.mem-status-plan.is-premium {
   color: var(--accent);
 }
-.mem-status-title {
-  font-weight: var(--fw-semibold);
-  color: var(--text);
+.mem-status-plan.is-free {
+  color: var(--muted);
 }
-.mem-status-badge {
+.mem-status-auto {
   margin-left: auto;
-  padding: 3px 12px;
+  padding: 4px 12px;
   border-radius: var(--radius-pill);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-bold);
-  letter-spacing: 0.02em;
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
 }
-.mem-status-badge.is-premium {
-  background: var(--accent);
-  color: var(--on-accent);
+.mem-status-auto.on {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success);
 }
-.mem-status-badge.is-free {
+.mem-status-auto.off {
   background: color-mix(in srgb, var(--muted) 16%, transparent);
   color: var(--muted);
 }
 .mem-status-detail {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 14px;
+  gap: 4px 16px;
   font-size: var(--fs-sm);
   color: var(--muted);
 }
 .mem-status-days {
   font-weight: var(--fw-semibold);
   color: var(--accent);
+}
+.mem-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 2px;
 }
 
 /* Yalnizca .profile-form (editing modu) etkilenir; login/register dar kartta kalir. */

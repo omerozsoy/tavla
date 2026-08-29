@@ -125,6 +125,12 @@ class PaymentController extends Controller
                     $u = $payment->user;
                     $u->plan = $payment->plan;
                     $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
+                    // Uye olma tarihi yalnizca ILK kez set edilir (yenilemede korunur)
+                    if (! $u->plan_since) {
+                        $u->plan_since = now();
+                    }
+                    // Odeme -> otomatik yenileme yeniden acilir
+                    $u->auto_renew = true;
                     $u->save();
                 }
             } elseif ($payment->status === 'pending') {

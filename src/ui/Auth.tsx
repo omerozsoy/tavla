@@ -55,6 +55,8 @@ interface Props {
   emailUnverified?: boolean // e-posta dogrulanmadi -> profilde uyari
   resendState?: 'idle' | 'sending' | 'sent'
   onResendVerification?: () => void
+  onRenew?: () => void // uyelik kartinda "Uyeligi Yenile" -> odeme modali
+  onToggleAutoRenew?: (enabled: boolean) => void // otomatik yenileme ac/kapat
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
 }
@@ -70,6 +72,8 @@ export default function Auth({
   emailUnverified,
   resendState = 'idle',
   onResendVerification,
+  onRenew,
+  onToggleAutoRenew,
   modal,
   page,
 }: Props) {
@@ -87,6 +91,9 @@ export default function Auth({
     ? Math.max(0, Math.ceil((new Date(memUntil).getTime() - Date.now()) / 86400000))
     : null
   const memUntilFmt = memUntil ? new Date(memUntil).toLocaleDateString() : ''
+  const memSince = editUser?.plan_since ?? null
+  const memSinceFmt = memSince ? new Date(memSince).toLocaleDateString() : ''
+  const memAutoRenew = editUser?.auto_renew ?? false
   const seed = editUser
     ? api.toProfile(editUser)
     : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
@@ -620,18 +627,24 @@ export default function Auth({
         {editing && (
           <>
             {avatarBlock}
-            {/* Uyelik durumu karti: tip + (premium ise) bitis tarihi ve kalan gun */}
+            {/* Uyelik durumu karti: tip (Premium solda/buyuk) + uye olma + bitis + kalan
+                gun + otomatik yenileme durumu + Yenile / Yenilemeyi iptal butonlari */}
             {editUser && (
               <div className="mem-status" data-plan={memPlan}>
                 <div className="mem-status-head">
-                  <Icon name={memPremium ? 'crown' : 'star'} size={18} />
-                  <span className="mem-status-title">{t('mem.status.title')}</span>
-                  <span className={`mem-status-badge ${memPremium ? 'is-premium' : 'is-free'}`}>
+                  <span className={`mem-status-plan ${memPremium ? 'is-premium' : 'is-free'}`}>
+                    <Icon name={memPremium ? 'crown' : 'star'} size={22} />
                     {memPremium ? t('mem.status.premium') : t('mem.status.free')}
                   </span>
+                  {memPremium && (
+                    <span className={`mem-status-auto ${memAutoRenew ? 'on' : 'off'}`}>
+                      {memAutoRenew ? t('mem.status.autoOn') : t('mem.status.autoOff')}
+                    </span>
+                  )}
                 </div>
                 {memPremium && (
                   <div className="mem-status-detail">
+                    {memSince && <span>{t('mem.status.since', { date: memSinceFmt })}</span>}
                     {memUntil ? (
                       <>
                         <span>{t('mem.status.expires', { date: memUntilFmt })}</span>
@@ -643,6 +656,24 @@ export default function Auth({
                       </>
                     ) : (
                       <span>{t('mem.status.lifetime')}</span>
+                    )}
+                  </div>
+                )}
+                {memPremium && (onRenew || onToggleAutoRenew) && (
+                  <div className="mem-status-actions">
+                    {onRenew && (
+                      <Button type="button" variant="default" onClick={onRenew}>
+                        <Icon name="crown" size={16} /> {t('mem.status.renew')}
+                      </Button>
+                    )}
+                    {onToggleAutoRenew && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => onToggleAutoRenew(!memAutoRenew)}
+                      >
+                        {memAutoRenew ? t('mem.status.cancelRenew') : t('mem.status.enableRenew')}
+                      </Button>
                     )}
                   </div>
                 )}

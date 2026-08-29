@@ -88,7 +88,21 @@ export default function Membership({
                   ))}
                 </ul>
                 <div className="mem-cta">
-                  {isCurrent ? (
+                  {isCurrent && p.id !== 'free' ? (
+                    // Aktif (odemeli) plan: "Mevcut plan" yerine yenileme — sure uzatir
+                    <Button
+                      variant="secondary"
+                      className="w-full"
+                      disabled={busy !== null}
+                      onClick={() => pay(p.id as 'star' | 'starpro')}
+                    >
+                      {busy === p.id ? (
+                        <span className="btn-spinner" aria-hidden="true" />
+                      ) : (
+                        t('mem.status.renew')
+                      )}
+                    </Button>
+                  ) : isCurrent ? (
                     <Button variant="secondary" className="w-full" disabled>
                       {t('mem.current')}
                     </Button>

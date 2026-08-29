@@ -125,6 +125,7 @@ import {
   deleteAccount as apiDeleteAccount,
   me as apiMe,
   saveServerGame,
+  setAutoRenew as apiSetAutoRenew,
   toProfile,
   type ServerUser,
 } from './api'
@@ -3078,6 +3079,17 @@ export default function App() {
         setShowAuth(false)
         setHome(true)
       })
+    },
+    // Profil uyelik karti: "Uyeligi Yenile" -> odeme modalini ac (mevcut plan yenilenir)
+    onRenew: () => setMemOpen(true),
+    // "Yenilemeyi iptal et / ac" -> auto_renew degistir, kullaniciyi tazele
+    onToggleAutoRenew: async (enabled: boolean) => {
+      try {
+        const r = await apiSetAutoRenew(enabled)
+        setUser(r.user)
+      } catch {
+        /* sessiz: profil kartinda kritik degil */
+      }
     },
   }
   // Giris/kayit: SAYFA gorunumu (modal degil) — sol menu gorunur kalir, form
