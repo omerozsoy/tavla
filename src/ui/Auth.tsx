@@ -83,6 +83,8 @@ export default function Auth({
   useEscape(onCancel)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  // Profilim sayfasi sekmeleri (yalniz giris yapan editUser): info (bilgiler) | stats (istatistik)
+  const [profTab, setProfTab] = useState<'info' | 'stats'>('info')
   const editing = !!(editUser || editGuest)
   // Uyelik durumu (yalniz giris yapan editUser icin): tip + bitis tarihi + kalan gun
   const memPlan = editUser?.plan_active ?? 'free'
@@ -627,13 +629,32 @@ export default function Auth({
         {/* EDITING: profil duzenleme (tek kolon; DAVRANIS DEGISMEDI) */}
         {editing && (
           <>
-            {avatarBlock}
-            {/* Istatistiklerim bolumu (Profilim sayfasi): ana sayfadan tasindi */}
+            {/* Profilim sekmeleri (yalniz giris yapan kullanici) */}
             {editUser && (
+              <div className="prof-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={profTab === 'info'}
+                  className={`prof-tab ${profTab === 'info' ? 'active' : ''}`}
+                  onClick={() => setProfTab('info')}
+                >
+                  <Icon name="user" size={16} /> {t('prof.tabInfo')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={profTab === 'stats'}
+                  className={`prof-tab ${profTab === 'stats' ? 'active' : ''}`}
+                  onClick={() => setProfTab('stats')}
+                >
+                  <Icon name="chart" size={16} /> {t('menu.myStats')}
+                </button>
+              </div>
+            )}
+            {/* Istatistiklerim sekmesi (ana sayfadan tasindi) */}
+            {editUser && profTab === 'stats' && (
               <section className="profile-stats-sec">
-                <h3 className="profile-sec-title">
-                  <Icon name="chart" size={18} /> {t('menu.myStats')}
-                </h3>
                 <StatCards
                   rating={editUser.rating ?? 0}
                   coins={editUser.coins ?? 0}
@@ -642,6 +663,9 @@ export default function Auth({
                 />
               </section>
             )}
+            {(!editUser || profTab === 'info') && (
+              <>
+            {avatarBlock}
             {/* Uyelik durumu karti: tip (Premium solda/buyuk) + uye olma + bitis + kalan
                 gun + otomatik yenileme durumu + Yenile / Yenilemeyi iptal butonlari */}
             {editUser && (
@@ -717,13 +741,15 @@ export default function Auth({
                 </div>
               </label>
             )}
+              </>
+            )}
           </>
         )}
 
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
 
         {/* Ana aksiyon grubu: [Vazgeç] [Kaydet] birlikte, sag hizali */}
-        {editing && (
+        {editing && (!editUser || profTab === 'info') && (
           <div className="mt-1 flex flex-wrap justify-end gap-3">
             {onCancel && (
               <Button type="button" variant="secondary" onClick={onCancel}>
@@ -764,7 +790,7 @@ export default function Auth({
         )}
 
         {/* Hesap aksiyonlari: Cikis Yap ayri alan; Hesabi Sil Tehlikeli Bolge icinde */}
-        {editUser && (onLogout || onDeleteAccount) && (
+        {editUser && profTab === 'info' && (onLogout || onDeleteAccount) && (
           <>
             <Separator className="my-6" />
             {onLogout && (
