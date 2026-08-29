@@ -3798,7 +3798,7 @@ export default function App() {
                     <span className="mode-card-title">{t('menu.solo')}</span>
                     <span className="mode-card-desc">{t('home.soloNote')}</span>
                     <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
                     </span>
                   </button>
                   <button type="button" className="mode-card" onClick={menuProps.onNewGame}>
@@ -3806,7 +3806,7 @@ export default function App() {
                     <span className="mode-card-title">{t('menu.match')}</span>
                     <span className="mode-card-desc">{t('home.matchNote')}</span>
                     <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
                     </span>
                   </button>
                   <button type="button" className="mode-card" onClick={menuProps.onAiGame}>
@@ -3814,7 +3814,7 @@ export default function App() {
                     <span className="mode-card-title">{t('menu.aiGame')}</span>
                     <span className="mode-card-desc">{t('home.aiNote')}</span>
                     <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
                     </span>
                   </button>
                 </div>
