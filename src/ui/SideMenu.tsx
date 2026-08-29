@@ -135,7 +135,7 @@ export default function SideMenu(p: SideMenuProps) {
       {(p.onMembership || p.loggedIn) && (
         <div className="menu-group">
           {p.onMembership && (
-            <Button variant="ghost" className={NAV} onClick={p.onMembership}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'membership' || undefined} onClick={p.onMembership}>
               <Icon name="star" size={28} /> {t('mem.menu')}
             </Button>
           )}
@@ -151,27 +151,27 @@ export default function SideMenu(p: SideMenuProps) {
       {!p.inGame && (p.onCalendar || p.onClubs || p.onServices || p.onBlog || p.onNews) && (
         <div className="menu-group">
           {p.onCalendar && (
-            <Button variant="ghost" className={NAV} onClick={p.onCalendar}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'calendar' || undefined} onClick={p.onCalendar}>
               <Icon name="calendar-dots" size={28} /> {t('menu.calendar')}
             </Button>
           )}
           {p.onClubs && (
-            <Button variant="ghost" className={NAV} onClick={p.onClubs}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'clubs' || undefined} onClick={p.onClubs}>
               <Icon name="building-office" size={28} /> {t('menu.clubs')}
             </Button>
           )}
           {p.onServices && (
-            <Button variant="ghost" className={NAV} onClick={p.onServices}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'services' || undefined} onClick={p.onServices}>
               <Icon name="briefcase" size={28} /> {t('menu.services')}
             </Button>
           )}
           {p.onNews && (
-            <Button variant="ghost" className={NAV} onClick={p.onNews}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'news' || undefined} onClick={p.onNews}>
               <Icon name="newspaper" size={28} /> {t('menu.news')}
             </Button>
           )}
           {p.onMagazine && (
-            <Button variant="ghost" className={NAV} onClick={p.onMagazine}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'magazine' || undefined} onClick={p.onMagazine}>
               <Icon name="monitor-play" size={28} /> {t('menu.magazine')}
             </Button>
           )}
