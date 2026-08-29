@@ -1,76 +1,86 @@
 :root {
-  /* ===== ROYAL NAVY — merkezi renk sistemi (private members club) =====
-     Primitive katman: TUM chrome + marka token'lari buradan turetilir; boylece
-     renk tek yerden yonetilir (yuzlerce hardcoded hex yerine). Board/oyun tahtasi
-     KENDI tema sistemini korur (--tri-*, --bar, --navy[tas], --cream[tas], --game-scene). */
-  /* ===== MEDITERRANEAN CLUB — merkezi palet =====
-     Akdeniz sahil kulubu / modern members club: acik + sicak + premium.
-     PRIMARY = Mediterranean Blue (marka), ACCENT = Terracotta (kontrollu sicak vurgu),
-     ikincil = Sage. Ana zemin Warm Ivory/Porcelain (acik, ferah). */
-  --med-ivory: #f7f3ea; /* warm ivory — ana zemin */
-  --med-porcelain: #fffcf6; /* porcelain — kart/yuzey */
-  --med-blue: #174a67; /* mediterranean blue — PRIMARY marka */
-  --med-blue-deep: #10364d; /* deep blue — primary hover */
-  --med-terracotta: #c86f4a; /* ACCENT — sicak vurgu (KONTROLLU) */
-  --med-terracotta-dark: #a95638; /* accent hover */
-  --med-sage: #78927d; /* secondary accent */
-  --med-ink: #172a35; /* ink navy — ana metin */
-  --med-slate: #68767c; /* slate — muted metin */
-  --med-sand: #ded6c7; /* sand — border */
-  --med-sand-warm: #eee7da; /* warm sand — soft surface */
-  /* Dark tema zeminleri (Mediterranean koyu varyant) */
-  --med-navy-900: #0e2833; /* deep mediterranean navy — dark zemin */
-  --med-navy-800: #143845; /* dark kart */
-  --med-navy-700: #1d4a5a; /* dark elevated / hover */
-  --med-line-dark: #274a59; /* dark border */
+  /* ===== COASTAL CLUB — merkezi renk sistemi (modern coastal members club) =====
+     Acik + havadar + sicak + sosyal. Kullanici paletine SADIK:
+       Sky #a8d2e0 · Powder #c4e1e5 · Ice #eff7f9 · Cream #f3e8cc
+       Orange #f3a261 · Coral #e66f51 · Navy #2e3748
+     PRIMARY = Dark Navy (yapi/butonlar), ACCENT = Coral (karakter vurgusu),
+     ikincil serin = Sky Blue, sicak tersiyer = Orange. Zemin Ice White (ferah).
+     Primitive isimleri (--med-x) legacy — degerler Coastal. Board/oyun tahtasi
+     KENDI tema sistemini korur (board token'lari: tri, bar, navy-tas, cream-tas, game-scene). */
+  --med-ivory: #eff7f9; /* ice white — ana zemin */
+  --med-porcelain: #fbfdfe; /* near-white — kart/yuzey */
+  --med-blue: #2e3748; /* DARK NAVY — PRIMARY (yapi/buton) [isim legacy] */
+  --med-blue-deep: #232b38; /* navy deep — primary hover */
+  --med-terracotta: #e66f51; /* CORAL — ACCENT (karakter vurgusu) */
+  --med-terracotta-dark: #d25a3d; /* coral deep — accent hover */
+  --med-sage: #a8d2e0; /* SKY BLUE — ikincil serin aksan [isim legacy] */
+  --med-ink: #2e3748; /* dark navy — ana metin */
+  --med-slate: #67757f; /* slate — muted metin */
+  --med-sand: #d8e3e7; /* soft ice — border */
+  --med-sand-warm: #f3e8cc; /* cream — sicak soft yuzey */
+  --med-orange: #f3a261; /* orange — sicak tersiyer (coin/puan) */
+  --med-powder: #c4e1e5; /* powder blue — soft yuzey / tint */
+  --med-ice-soft: #e9f2f4; /* soft ice — ikincil yuzey (secondary buton) */
+  /* Dark tema zeminleri (coastal koyu varyant) */
+  --med-navy-900: #222a36; /* dark zemin */
+  --med-navy-800: #2e3748; /* dark kart */
+  --med-navy-700: #3a4656; /* dark elevated / hover */
+  --med-line-dark: #3e4a5a; /* dark border */
 
-  /* ---- Eski primitive isimleri -> Mediterranean (alias; dogrudan kullanimlar otomatik doner) ---- */
+  /* ---- Eski primitive isimleri -> Coastal (alias; dogrudan kullanimlar otomatik doner) ---- */
   --rn-bg: var(--med-navy-900); /* dark zemin */
   --rn-navy: var(--med-navy-800); /* dark yuzey/kart */
   --rn-navy-muted: var(--med-navy-700); /* dark elevated */
   --rn-line: var(--med-line-dark); /* dark kenarlik */
-  --gold: var(--med-blue); /* [eski gold] -> Mediterranean Blue (PRIMARY) */
-  --gold-hover: var(--med-blue-deep); /* -> Deep Blue */
-  --gold-dark: var(--med-blue); /* acik zeminde primary blue */
-  --ivory: var(--med-ivory); /* warm ivory (acik metin, primary uzeri) */
-  --ivory-soft: var(--med-sand-warm); /* warm sand */
-  --rn-muted: #93a3ab; /* muted (dark zeminde) */
-  /* Yeni marka token'lari — component'lerde sicak/ikincil vurgu icin */
-  --terracotta: var(--med-terracotta);
+  --gold: var(--med-terracotta); /* [eski gold] -> Coral (marka aksani) */
+  --gold-hover: var(--med-terracotta-dark); /* -> Coral deep */
+  --gold-dark: var(--med-terracotta); /* acik zeminde coral aksan */
+  --ivory: var(--med-ivory); /* ice white (acik metin, koyu/primary uzeri) */
+  --ivory-soft: var(--med-ice-soft);
+  --rn-muted: #98a4ae; /* muted (dark zeminde) */
+  /* Coastal marka token'lari — component'lerde vurgu icin */
+  --terracotta: var(--med-terracotta); /* = coral */
   --terracotta-hover: var(--med-terracotta-dark);
-  --sage: var(--med-sage);
+  --sage: var(--med-sage); /* ikincil aksan = sky blue */
   --sand: var(--med-sand);
-  --sand-warm: var(--med-sand-warm);
+  --sand-warm: var(--med-sand-warm); /* cream */
   --ink-navy: var(--med-ink);
   --slate: var(--med-slate);
+  --coral: var(--med-terracotta); /* sicak ACCENT (kontrollu) */
+  --coral-hover: var(--med-terracotta-dark);
+  --sky: var(--med-sage); /* ikincil serin aksan / info / dekor */
+  --powder: var(--med-powder); /* soft blue yuzey / tint */
+  --orange: var(--med-orange); /* sicak tersiyer (coin) */
+  --cream: var(--med-sand-warm); /* sicak soft yuzey */
+  --navy-brand: var(--med-blue); /* primary navy (dogrudan kullanim) */
 
-  /* ---- TavlaTV marka token'lari -> Royal Navy'ye eslendi (isimler korunur) ---- */
+  /* ---- TavlaTV marka token'lari (isimler korunur) ---- */
   --tv-cream: var(--ivory); /* acik metin/yuzey */
   --tv-cream-deep: var(--ivory-soft); /* ikincil */
   --tv-white: #ffffff; /* saf beyaz (nadir; tas/ikon detaylari) */
   --tv-line: var(--rn-line); /* kenarlik */
-  --tv-ink: var(--ink-navy); /* ink navy — en koyu metin */
+  --tv-ink: var(--ink-navy); /* dark navy — en koyu metin */
   --tv-ink-muted: var(--slate); /* ikincil metin */
-  --tv-ink-faint: #7a868c; /* etiket / ucuncul */
-  --tv-brick: var(--terracotta); /* kiremit = TERRACOTTA (sicak aksan geri geldi) */
-  --tv-brick-light: var(--terracotta); /* terracotta */
+  --tv-ink-faint: #8b96a0; /* etiket / ucuncul */
+  --tv-brick: var(--coral); /* kiremit = CORAL (sicak aksan) */
+  --tv-brick-light: var(--coral); /* coral */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
   --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* Display fontu: Playfair Display -> zamansiz/prestij serif basliklar (premium his) */
   --tv-font-display: 'Playfair Display', 'Poppins', Georgia, 'Times New Roman', serif;
-  /* Coin/odul rengi -> sicak TERRACOTTA (Mediterranean; coin warm accent) */
-  --tv-gold: var(--terracotta);
+  /* Coin/odul rengi -> ORANGE (Coastal; coin warm tertiary) */
+  --tv-gold: var(--orange);
 
-  /* Anlamsal durum renkleri — Mediterranean paletine uyumlu */
-  --color-success: #39765a; /* mediterranean green */
-  --color-warning: #c79a4b; /* amber (terracotta'dan ayri tutulur) */
-  --color-error: #b84d47; /* destructive (Mediterranean) */
-  --color-info: #3f6f8a; /* muted mediterranean blue */
+  /* Anlamsal durum renkleri — Coastal paletine uyumlu */
+  --color-success: #3e8e6e; /* coastal green (palette disi; semantik zorunlu) */
+  --color-warning: var(--orange); /* uyari = orange (palette) */
+  --color-error: #c6453b; /* destructive red (coral'dan AYRI, daha kirmizi) */
+  --color-info: #4e86a0; /* deeper sky (info metin kontrasti) */
   /* danger METIN (dark yuzey uzerine) */
-  --danger-fg: #e39a95;
+  --danger-fg: #ef9a8f;
   /* success METIN (dark yuzey uzerine) */
-  --success-fg: #7fc79e;
+  --success-fg: #86c9a8;
 
   /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
      Sadece modal/overlay icin cok hafif bir "scrim golgesi" xl'de birakildi. */
@@ -121,11 +131,11 @@
   --z-modal: 2500;
   --z-toast: 3000;
 
-  /* ---- Mediterranean DARK chrome (opt-in; esas tema LIGHT) ----
+  /* ---- Coastal DARK chrome (opt-in; esas tema LIGHT) ----
      NOT: --tri-*, --bar, --navy(tas), --cream(tas) BOARD renkleridir; board kendi
      tema sistemini korur, chrome'a karismaz. */
   color-scheme: dark;
-  --bg: var(--rn-bg); /* deep mediterranean navy — dis zemin */
+  --bg: var(--rn-bg); /* deep navy — dis zemin */
   --area: var(--rn-bg);
   --panel: #2a2620; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen - kiremit (board) */
@@ -133,16 +143,16 @@
   --bar: #12100e; /* orta bar / cerceve (board) */
   --navy: #100e0c; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas - krem (board) */
-  --accent: #5f9cbb; /* dark zeminde okunur mediterranean blue */
-  --text: var(--ivory); /* warm ivory metin */
+  --accent: var(--coral); /* dark zeminde coral pop (karakter) */
+  --text: var(--ivory); /* ice white metin */
   --muted: var(--rn-muted);
-  /* Mediterranean dark yuzeyler */
+  /* Coastal dark yuzeyler */
   --card-bg: var(--rn-navy);
   --btn-bg: var(--rn-navy);
   --btn-border: var(--rn-line);
   --border: var(--rn-line);
-  --input-bg: #102b38; /* deep mediterranean input */
-  --on-accent: #0e2833; /* acik-blue aksan uzerinde koyu metin */
+  --input-bg: #1b222c; /* deep navy input */
+  --on-accent: #fbfdfe; /* coral aksan uzerinde acik metin */
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
@@ -174,34 +184,34 @@
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 }
 
-/* ===== MEDITERRANEAN CLUB — ESAS (LIGHT) TEMA =====
-   Warm Ivory zemin + Porcelain kart + Ink Navy metin + Mediterranean Blue marka.
-   Ferah, sicak, premium. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
+/* ===== COASTAL CLUB — ESAS (LIGHT) TEMA =====
+   Ice White zemin + near-white kart + Dark Navy metin + Coral marka aksani.
+   Ferah, havadar, sicak, sosyal. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
    board temasina ait — dokunulmaz. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: var(--med-ivory); /* Warm Ivory sayfa zemini #f7f3ea */
-  --area: var(--med-porcelain); /* Porcelain (saf beyaz kullanilmaz) */
+  --bg: var(--med-ivory); /* Ice White sayfa zemini #eff7f9 */
+  --area: var(--med-porcelain); /* near-white (saf beyaz kullanilmaz) */
   --panel: #efeae1; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen (board) */
   --tri-b: #ded7ca; /* koyu ucgen (board) */
   --bar: #ded7ca; /* orta bar / cerceve (board) */
   --navy: #1c1a17; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas (board) */
-  --accent: var(--med-blue); /* Mediterranean Blue — marka aksani #174a67 */
-  --text: var(--med-ink); /* Ink Navy metin #172a35 */
-  --muted: var(--med-slate); /* Slate ikincil metin #68767c */
-  --card-bg: var(--med-porcelain); /* Porcelain kart #fffcf6 */
-  --btn-bg: var(--med-sand-warm); /* Warm Sand soft yuzey */
-  --btn-border: var(--med-sand); /* Sand */
-  --border: var(--med-sand); /* Sand #ded6c7 */
-  --input-bg: var(--med-porcelain); /* Porcelain input */
-  --on-accent: var(--med-ivory); /* Mediterranean Blue uzeri acik ivory metin */
-  --tv-ink-faint: #7a868c; /* ucuncul metin (Slate ailesi) */
+  --accent: var(--med-terracotta); /* Coral — marka aksani #e66f51 */
+  --text: var(--med-ink); /* Dark Navy metin #2e3748 */
+  --muted: var(--med-slate); /* Slate ikincil metin #67757f */
+  --card-bg: var(--med-porcelain); /* near-white kart #fbfdfe */
+  --btn-bg: var(--med-ice-soft); /* soft ice secondary yuzey #e9f2f4 */
+  --btn-border: var(--med-sand); /* soft ice border */
+  --border: var(--med-sand); /* soft ice border #d8e3e7 */
+  --input-bg: var(--med-porcelain); /* near-white input */
+  --on-accent: var(--med-ivory); /* Coral uzeri acik ice metin */
+  --tv-ink-faint: #8b96a0; /* ucuncul metin (Slate ailesi) */
   /* danger METIN: acik zeminde okunur destructive */
-  --danger-fg: #a5443f;
-  /* success METIN: acik zeminde okunur mediterranean green */
-  --success-fg: #2f6a4a;
+  --danger-fg: #b8443a;
+  /* success METIN: acik zeminde okunur coastal green */
+  --success-fg: #2f7a5e;
 }
 
 * {
@@ -3690,8 +3700,9 @@ button[aria-disabled='true'],
   border: 2px solid var(--tv-brick-light);
 }
 .galaxy-btn {
-  background: var(--accent);
-  color: var(--on-accent);
+  /* Coastal: primary CTA = Dark Navy (accent=coral degil; navy primary tutarliligi) */
+  background: var(--navy-brand);
+  color: var(--ivory);
   border: none;
   border-radius: var(--radius-md);
   padding: 12px 26px;

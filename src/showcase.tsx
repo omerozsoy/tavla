@@ -1,5 +1,5 @@
 // ============================================================================
-// TavlaTV — Design System Showcase (Mediterranean Club)
+// TavlaTV — Design System Showcase (Coastal Club)
 // DEV/ADMIN harness'i. Ayri Vite entry (showcase.html) -> production build'ine
 // DAHIL DEGIL (frame-tiers gibi). Ana uygulamaya DOKUNMAZ.
 // AMAC: projede GERCEKTEN kullanilan tum UI parcalarini (gercek App.css siniflari
@@ -21,32 +21,33 @@ import DatePicker from './ui/DatePicker'
 import { RARITY_COLORS, type RarityKey } from './ui/rarityColors'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
 
-// ---- Mediterranean Club token tablolari (Colors / Typography / Spacing / Radius) ----
+// ---- Coastal Club token tablolari (Colors / Typography / Spacing / Radius) ----
 const COLORS: { name: string; token: string; hex: string; use: string }[] = [
-  { name: 'Warm Ivory', token: '--med-ivory', hex: '#F7F3EA', use: 'Ana sayfa zemini' },
-  { name: 'Porcelain', token: '--med-porcelain', hex: '#FFFCF6', use: 'Kart / yüzey' },
-  { name: 'Mediterranean Blue', token: '--med-blue', hex: '#174A67', use: 'PRIMARY / marka aksanı' },
-  { name: 'Deep Blue', token: '--med-blue-deep', hex: '#10364D', use: 'Primary hover' },
-  { name: 'Terracotta', token: '--terracotta', hex: '#C86F4A', use: 'ACCENT — kontrollü sıcak vurgu' },
-  { name: 'Dark Terracotta', token: '--terracotta-hover', hex: '#A95638', use: 'Accent hover' },
-  { name: 'Sage', token: '--sage', hex: '#78927D', use: 'İkincil aksan / soft state' },
-  { name: 'Ink Navy', token: '--ink-navy', hex: '#172A35', use: 'Ana metin' },
-  { name: 'Slate', token: '--slate', hex: '#68767C', use: 'İkincil / muted metin' },
-  { name: 'Sand', token: '--med-sand', hex: '#DED6C7', use: 'Kenarlık' },
-  { name: 'Warm Sand', token: '--med-sand-warm', hex: '#EEE7DA', use: 'Soft yüzey' },
-  { name: 'Success', token: '--color-success', hex: '#39765A', use: 'Başarı / online' },
-  { name: 'Warning', token: '--color-warning', hex: '#C79A4B', use: 'Uyarı (amber)' },
-  { name: 'Destructive', token: '--color-error', hex: '#B84D47', use: 'Hata / tehlike' },
-  { name: 'Info', token: '--color-info', hex: '#3F6F8A', use: 'Bilgi (muted blue)' },
+  { name: 'Ice White', token: '--med-ivory', hex: '#EFF7F9', use: 'Ana sayfa zemini' },
+  { name: 'Near-white', token: '--med-porcelain', hex: '#FBFDFE', use: 'Kart / yüzey' },
+  { name: 'Dark Navy', token: '--navy-brand', hex: '#2E3748', use: 'PRIMARY (buton/yapı) + metin' },
+  { name: 'Navy Deep', token: '--med-blue-deep', hex: '#232B38', use: 'Primary hover' },
+  { name: 'Coral', token: '--coral', hex: '#E66F51', use: 'ACCENT — kontrollü sıcak vurgu' },
+  { name: 'Coral Deep', token: '--coral-hover', hex: '#D25A3D', use: 'Accent hover' },
+  { name: 'Sky Blue', token: '--sky', hex: '#A8D2E0', use: 'İkincil serin aksan / info / dekor' },
+  { name: 'Powder Blue', token: '--powder', hex: '#C4E1E5', use: 'Soft yüzey / tint' },
+  { name: 'Orange', token: '--orange', hex: '#F3A261', use: 'Sıcak tersiyer (coin/puan)' },
+  { name: 'Cream', token: '--cream', hex: '#F3E8CC', use: 'Sıcak soft yüzey' },
+  { name: 'Slate', token: '--slate', hex: '#67757F', use: 'İkincil / muted metin' },
+  { name: 'Sand (soft ice)', token: '--med-sand', hex: '#D8E3E7', use: 'Kenarlık' },
+  { name: 'Success', token: '--color-success', hex: '#3E8E6E', use: 'Başarı / online' },
+  { name: 'Warning', token: '--color-warning', hex: '#F3A261', use: 'Uyarı (orange)' },
+  { name: 'Destructive', token: '--color-error', hex: '#C6453B', use: 'Hata / tehlike' },
+  { name: 'Info', token: '--color-info', hex: '#4E86A0', use: 'Bilgi (deeper sky)' },
 ]
 const CHROME_TOKENS: { token: string; use: string }[] = [
-  { token: '--bg', use: 'Sayfa zemini (Warm Ivory)' },
-  { token: '--card-bg', use: 'Kart / panel (Porcelain)' },
-  { token: '--accent', use: 'Aksan (Mediterranean Blue)' },
-  { token: '--on-accent', use: 'Blue zemin üzeri metin (ivory)' },
-  { token: '--text', use: 'Ana metin (Ink Navy)' },
+  { token: '--bg', use: 'Sayfa zemini (Ice White)' },
+  { token: '--card-bg', use: 'Kart / panel (near-white)' },
+  { token: '--accent', use: 'Aksan (Coral)' },
+  { token: '--on-accent', use: 'Coral zemin üzeri metin (ice)' },
+  { token: '--text', use: 'Ana metin (Dark Navy)' },
   { token: '--muted', use: 'İkincil metin (Slate)' },
-  { token: '--border', use: 'Kenarlık (Sand)' },
+  { token: '--border', use: 'Kenarlık (soft ice)' },
   { token: '--input-bg', use: 'Form input zemini' },
 ]
 const TYPO: { label: string; cls: string; note: string }[] = [
@@ -119,7 +120,7 @@ function Showcase() {
       <header className="sc-topbar">
         <div className="sc-brand">
           <TavlaTvLogo size={22} />
-          <span className="sc-brand-sub">Design System · Mediterranean Club</span>
+          <span className="sc-brand-sub">Design System · Coastal Club</span>
         </div>
         <nav className="sc-nav">
           {SECTIONS.map(([id, label]) => (
@@ -132,14 +133,14 @@ function Showcase() {
         <div className="sc-hero">
           <h1 className="sc-hero-title">UI Component Showcase</h1>
           <p className="sc-hero-sub">
-            Projede <strong>gerçekten kullanılan</strong> componentler ve Mediterranean Club token'ları.
+            Projede <strong>gerçekten kullanılan</strong> componentler ve Coastal Club token'ları.
             Her parça gerçek App.css sınıfı ya da gerçek React component'idir — kopya değil.
             Etiketlerdeki <code>className</code> / <code>&lt;Component/&gt;</code> birebir kullanılabilir.
           </p>
         </div>
 
         {/* 01 COLORS */}
-        <Section id="colors" title="01 · Colors — Mediterranean Club">
+        <Section id="colors" title="01 · Colors — Coastal Club">
           <div className="sc-swatches">
             {COLORS.map((c) => (
               <div key={c.token} className="sc-swatch">
@@ -678,7 +679,7 @@ function Showcase() {
         </section>
 
         <footer className="sc-footer">
-          TavlaTV Design System · Mediterranean Club · Gerçek componentler — dev/admin harness (production'a dahil değil).
+          TavlaTV Design System · Coastal Club · Gerçek componentler — dev/admin harness (production'a dahil değil).
         </footer>
       </main>
 
@@ -687,7 +688,7 @@ function Showcase() {
         <div className="sc-overlay" onClick={() => setModal(null)}>
           <div className="sc-modal" onClick={(e) => e.stopPropagation()}>
             <button className="sc-modal-x" onClick={() => setModal(null)} aria-label="Kapat"><Icon name="x" size={16} /></button>
-            {modal === 'basic' && (<><h3>Bilgi</h3><p>Bu temel bir modal örneğidir. Porcelain yüzey + ince Mediterranean detay.</p><button className="galaxy-btn" onClick={() => setModal(null)}>Tamam</button></>)}
+            {modal === 'basic' && (<><h3>Bilgi</h3><p>Bu temel bir modal örneğidir. Porcelain yüzey + ince Coastal detay.</p><button className="galaxy-btn" onClick={() => setModal(null)}>Tamam</button></>)}
             {modal === 'confirm' && (<><h3>Emin misin?</h3><p>Bu işlemi onaylıyor musun?</p><div style={{ display: 'flex', gap: 8 }}><button className="galaxy-btn" onClick={() => setModal(null)}>Onayla</button><button className="btn-secondary" onClick={() => setModal(null)}>Vazgeç</button></div></>)}
             {modal === 'danger' && (<><h3 style={{ color: 'var(--danger-fg)' }}>Hesabı sil</h3><p>Bu işlem geri alınamaz.</p><div style={{ display: 'flex', gap: 8 }}><button className="danger-btn" onClick={() => setModal(null)}>Evet, sil</button><button className="btn-secondary" onClick={() => setModal(null)}>Vazgeç</button></div></>)}
             {modal === 'premium' && (<><h3><Icon name="crown" size={18} /> Premium</h3><p>Reklamsız oyun, sınırsız analiz ve özel çerçeveler.</p><button className="galaxy-btn" onClick={() => setModal(null)}>Yükselt</button></>)}
