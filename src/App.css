@@ -5699,32 +5699,13 @@ html.fs-active .account-bar {
   color: var(--accent);
 }
 
+/* Normal container: sabit yukseklik/overflow/grid YOK -> icerik (uzun aciklamalar
+   dahil) tam akar, kirpilmaz. Alt taraftaki dashboard ile ayni genislikte hizali. */
 .lobby-hero {
   width: 100%;
   max-width: 920px;
-  min-height: 340px; /* sabit yukseklik: icerik degisince ziplamaz */
-  margin: 8px auto 4px;
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  align-items: center;
-  gap: clamp(16px, 4vw, 48px);
-  padding: clamp(20px, 3vw, 34px) clamp(20px, 3vw, 38px);
-  border-radius: var(--radius-xl);
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  border: 1px solid var(--border);
-  /* Flat: duz kart zemini, katmanli gradient/golge yok */
-  background: var(--card-bg);
-}
-/* Ince dokulu ust seritte marka vurgusu */
-.lobby-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: var(--accent);
-  z-index: 1;
+  margin: 8px auto 12px;
+  padding: 4px 2px 4px;
 }
 .hero-copy {
   min-width: 0;
@@ -5766,10 +5747,11 @@ html.fs-active .account-bar {
   gap: 10px;
   margin-top: 22px;
 }
-/* Her satir: buton solda (esit genislik) + kisa aciklama sagda */
+/* Her satir: buton solda (esit genislik) + aciklama sagda; uzun metinde buton
+   metnin ustune hizalanir (ortada asili kalmaz) */
 .hero-cta-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 .hero-cta-row > [data-slot='button'] {
@@ -5847,25 +5829,13 @@ html.fs-active .account-bar {
   background: linear-gradient(var(--navy-brand), color-mix(in srgb, var(--navy-brand) 58%, transparent));
 }
 @media (max-width: 720px) {
-  .lobby-hero {
-    grid-template-columns: 1fr;
-    text-align: center;
-    /* Yigin duzende sabit yukseklik CTA'yi kirpiyordu: icerige gore buyusun */
-    min-height: 0;
-    align-items: stretch;
+  .hero-cta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
   }
-  .hero-kicker {
-    margin: 0 auto;
-  }
-  .hero-tagline {
-    margin-inline: auto;
-  }
-  .hero-cta {
-    justify-content: center;
-  }
-  .hero-board {
-    min-height: 200px;
-    order: -1;
+  .hero-cta-row > [data-slot='button'] {
+    width: 100%;
   }
 }
 

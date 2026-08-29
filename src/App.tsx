@@ -3738,17 +3738,6 @@ export default function App() {
                   </div>
                 </div>
               </div>
-              <div className="hero-board" aria-hidden="true">
-                <div className="hero-points">
-                  {Array.from({ length: 12 }).map((_, i) => {
-                    // Navy + Coral agirlikli; 2 noktada Orange accent (kontrollu)
-                    const tone = i === 3 || i === 8 ? 'c' : i % 2 ? 'a' : 'b'
-                    return (
-                      <span key={i} className={`hero-point ${i % 2 ? 'down' : 'up'} ${tone}`} />
-                    )
-                  })}
-                </div>
-              </div>
             </section>
             {user && (
               <HomeDashboard
