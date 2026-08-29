@@ -3184,16 +3184,18 @@ export default function App() {
       <Button
         variant="ghost"
         size="icon"
+        className="[&_svg]:size-[28px]!"
         title={t('menu.settings')}
         aria-label={t('menu.settings')}
         onClick={() => goPage(() => setBoardSettingsOpen(true))}
       >
-        <Icon name="settings" size={18} />
+        <Icon name="settings" size={28} />
       </Button>
       <LangMenu />
       <Button
         variant="ghost"
         size="icon"
+        className="[&_svg]:size-[28px]!"
         aria-label={muted ? t('menu.soundOn') : t('menu.soundOff')}
         title={muted ? t('menu.soundOn') : t('menu.soundOff')}
         onClick={() => {
@@ -3203,7 +3205,7 @@ export default function App() {
           if (!nv) Sound.move()
         }}
       >
-        {muted ? <Icon name="mute" size={18} /> : <Icon name="volume" size={18} />}
+        {muted ? <Icon name="mute" size={28} /> : <Icon name="volume" size={28} />}
       </Button>
     </div>
   )
@@ -3674,9 +3676,11 @@ export default function App() {
             )}
             <section className="lobby-hero">
               <div className="hero-copy">
-                <span className="hero-kicker">
-                  <Icon name="dice" size={15} /> {t('home.heroKicker')}
-                </span>
+                {!user && (
+                  <span className="hero-kicker">
+                    <Icon name="dice" size={15} /> {t('home.heroKicker')}
+                  </span>
+                )}
                 <h1 className="hero-title">
                   {user ? t('home.hello', { name: profile.nickname }) : t('home.heroTitle')}
                 </h1>
