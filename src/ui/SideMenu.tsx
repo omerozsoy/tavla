@@ -46,7 +46,10 @@ export interface SideMenuProps {
 
 // Ana sayfa ve oyun ekraninda ortak tek menu. Tum ogeler paylasilan <Button> (nav ->
 // ghost, tam genislik + sola hizali); yalniz variant/renk degisir, fiziksel yapi ayni.
-const NAV = 'w-full justify-start'
+// Not: shadcn Button base'i [&_svg:not([class*='size-'])]:size-4 ile buton icindeki
+// ikonlari 16px'e SABITLER (Icon'un size prop'unu ezer). Menu ikonlarini buyutmek icin
+// svg boyutunu !important ile burada override ediyoruz — tek nokta, tum menu ikonlari.
+const NAV = "w-full justify-start [&_svg]:size-[28px]!"
 
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
@@ -71,22 +74,22 @@ export default function SideMenu(p: SideMenuProps) {
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
           <Button variant="ghost" className={NAV} onClick={p.onSolo}>
-            <Icon name="coins" size={30} /> {t('menu.solo')}
+            <Icon name="coins" size={28} /> {t('menu.solo')}
           </Button>
         )}
         {!p.inGame && (
           <Button variant="ghost" className={NAV} onClick={p.onNewGame}>
-            <Icon name="ranking" size={30} /> {t('menu.match')}
+            <Icon name="ranking" size={28} /> {t('menu.match')}
           </Button>
         )}
         {!p.inGame && p.onAiGame && (
           <Button variant="ghost" className={NAV} onClick={p.onAiGame}>
-            <Icon name="robot" size={30} /> {t('menu.aiGame')}
+            <Icon name="robot" size={28} /> {t('menu.aiGame')}
           </Button>
         )}
         {p.hasActiveGame && !p.inGame && (
           <Button variant="secondary" className={NAV} onClick={p.onResume}>
-            <Icon name="live" size={30} /> {t('menu.activeGames')}
+            <Icon name="live" size={28} /> {t('menu.activeGames')}
           </Button>
         )}
       </div>
@@ -104,7 +107,7 @@ export default function SideMenu(p: SideMenuProps) {
           )}
           {p.canResign && p.onResign && (
             <Button variant="destructive" className={NAV} onClick={p.onResign}>
-              <Icon name="flag" size={30} /> {t('resign.button')}
+              <Icon name="flag" size={28} /> {t('resign.button')}
             </Button>
           )}
         </div>
@@ -113,14 +116,14 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
         <Button variant="ghost" className={NAV} onClick={p.onTournaments}>
-          <Icon name="ranking" size={30} /> {t('menu.tournaments')}
+          <Icon name="ranking" size={28} /> {t('menu.tournaments')}
         </Button>
         <Button variant="ghost" className={NAV} onClick={p.onLeaderboard}>
-          <Icon name="trophy" size={30} /> {t('menu.leaderboard')}
+          <Icon name="trophy" size={28} /> {t('menu.leaderboard')}
         </Button>
         {p.loggedIn && (
           <Button variant="ghost" className={NAV} onClick={p.onFriends}>
-            <Icon name="users" size={30} /> {t('menu.friends')}
+            <Icon name="users" size={28} /> {t('menu.friends')}
           </Button>
         )}
       </div>
@@ -131,12 +134,12 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onMembership && (
             <Button variant="ghost" className={NAV} onClick={p.onMembership}>
-              <Icon name="crown" size={30} /> {t('mem.menu')}
+              <Icon name="crown" size={28} /> {t('mem.menu')}
             </Button>
           )}
           {p.loggedIn && (
             <Button variant="ghost" className={NAV} onClick={p.onMyStats}>
-              <Icon name="chart" size={30} /> {t('menu.myStats')}
+              <Icon name="chart" size={28} /> {t('menu.myStats')}
             </Button>
           )}
         </div>
@@ -147,27 +150,27 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onCalendar && (
             <Button variant="ghost" className={NAV} onClick={p.onCalendar}>
-              <Icon name="calendar" size={30} /> {t('menu.calendar')}
+              <Icon name="calendar" size={28} /> {t('menu.calendar')}
             </Button>
           )}
           {p.onClubs && (
             <Button variant="ghost" className={NAV} onClick={p.onClubs}>
-              <Icon name="pin" size={30} /> {t('menu.clubs')}
+              <Icon name="pin" size={28} /> {t('menu.clubs')}
             </Button>
           )}
           {p.onServices && (
             <Button variant="ghost" className={NAV} onClick={p.onServices}>
-              <Icon name="star" size={30} /> {t('menu.services')}
+              <Icon name="star" size={28} /> {t('menu.services')}
             </Button>
           )}
           {p.onNews && (
             <Button variant="ghost" className={NAV} onClick={p.onNews}>
-              <Icon name="chat" size={30} /> {t('menu.news')}
+              <Icon name="chat" size={28} /> {t('menu.news')}
             </Button>
           )}
           {p.onMagazine && (
             <Button variant="ghost" className={NAV} onClick={p.onMagazine}>
-              <Icon name="play" size={30} /> {t('menu.magazine')}
+              <Icon name="play" size={28} /> {t('menu.magazine')}
             </Button>
           )}
         </div>
@@ -177,20 +180,20 @@ export default function SideMenu(p: SideMenuProps) {
       <div className="menu-group">
         <div className="menu-label">{t('menu.tools')}</div>
         <Button variant="ghost" className={NAV} onClick={p.onAnalyzer}>
-          <Icon name="analyze" size={30} /> {t('pa.title')}
+          <Icon name="analyze" size={28} /> {t('pa.title')}
         </Button>
         {p.onBlunders && (
           <Button variant="ghost" className={NAV} onClick={p.onBlunders}>
-            <Icon name="alert" size={30} /> {t('menu.blunders')}
+            <Icon name="alert" size={28} /> {t('menu.blunders')}
           </Button>
         )}
         {p.onMatchHistory && (
           <Button variant="ghost" className={NAV} onClick={p.onMatchHistory}>
-            <Icon name="analyze" size={30} /> {t('menu.matchHistory')}
+            <Icon name="analyze" size={28} /> {t('menu.matchHistory')}
           </Button>
         )}
         <Button variant="ghost" className={NAV} onClick={p.onFairness}>
-          <Icon name="dice" size={30} /> {t('fair.title')}
+          <Icon name="dice" size={28} /> {t('fair.title')}
         </Button>
       </div>
     </aside>
