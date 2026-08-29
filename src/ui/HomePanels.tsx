@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
-import { liveMatches, leaderboard, type LiveMatch, type LeaderRow } from '../api'
+import { liveMatches, leaderboard, type LiveMatch, type LeaderRow, type Tournament } from '../api'
 import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
 
@@ -266,6 +266,56 @@ export function RankingPanel({
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ---- Turnuvalar (tam genislik panel; icinde cok turnuva) ----
+export function TournamentsPanel({
+  tourns,
+  onOpen,
+}: {
+  tourns: Tournament[]
+  onOpen: () => void
+}) {
+  const { t } = useT()
+  if (tourns.length === 0) return null
+  return (
+    <div className="home-panel tourn-panel">
+      <div className="home-panel-head">
+        <Icon name="medal" size={18} /> {t('menu.tournaments')}
+        <span className="panel-count">{tourns.length}</span>
+      </div>
+      <div className="tourn-list">
+        {tourns.map((tr) => {
+          const full = tr.count >= tr.size
+          const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
+          return (
+            <button key={tr.id} className="tourn-row" onClick={onOpen}>
+              <span className="tr-main">
+                <span className="tr-name">{tr.name}</span>
+                <span className="tr-meta">
+                  <span className={`tr-status tr-status-${tr.status}`}>
+                    {t(`tourn.status.${tr.status}`)}
+                  </span>
+                  <span className="tr-count" data-full={full || undefined}>
+                    <Icon name="users" size={12} /> {tr.count}/{tr.size}
+                  </span>
+                  {!!tr.prize_coins && (
+                    <span className="tr-prize">
+                      <Icon name="coin" size={12} /> {tr.prize_coins}
+                    </span>
+                  )}
+                </span>
+                <span className="tr-bar" aria-hidden="true">
+                  <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
+                </span>
+              </span>
+              <Icon name="arrow-right" size={15} className="tr-go" />
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }
