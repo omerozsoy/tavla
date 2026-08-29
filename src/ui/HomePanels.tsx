@@ -290,6 +290,9 @@ export function TournamentsPanel({
         {tourns.map((tr) => {
           const full = tr.count >= tr.size
           const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
+          // 1.lik odulu: prizes tablosu varsa ilk sira, yoksa prize_coins (eski)
+          const topPrize = tr.prizes && tr.prizes.length > 0 ? tr.prizes[0].coins : tr.prize_coins ?? 0
+          const prizeCount = tr.prizes?.length ?? 0
           return (
             <button key={tr.id} className="tourn-row" onClick={onOpen}>
               <span className="tr-main">
@@ -301,9 +304,10 @@ export function TournamentsPanel({
                   <span className="tr-count" data-full={full || undefined}>
                     <Icon name="users" size={12} /> {tr.count}/{tr.size}
                   </span>
-                  {!!tr.prize_coins && (
+                  {!!topPrize && (
                     <span className="tr-prize">
-                      <Icon name="coin" size={12} /> {tr.prize_coins}
+                      <Icon name="coin" size={12} /> {topPrize}
+                      {prizeCount > 1 && <span className="tr-prize-more"> +{prizeCount - 1}</span>}
                     </span>
                   )}
                 </span>

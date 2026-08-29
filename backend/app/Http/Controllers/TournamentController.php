@@ -36,6 +36,9 @@ class TournamentController extends Controller
             'size' => ['required', 'integer', 'in:0,4,8,16,32,64,128,256'], // 0 = sinirsiz
             'prize_coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prize_desc' => ['nullable', 'string', 'max:120'],
+            'prizes' => ['nullable', 'array', 'max:64'],
+            'prizes.*.coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
+            'prizes.*.desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
         ]);
         $t = Tournament::create([
@@ -45,6 +48,7 @@ class TournamentController extends Controller
             'creator_id' => $request->user()->id,
             'prize_coins' => $data['prize_coins'] ?? 0,
             'prize_desc' => $data['prize_desc'] ?? null,
+            'prizes' => $data['prizes'] ?? null,
             'entry_fee' => $data['entry_fee'] ?? 0,
             'players' => [],
         ]);
@@ -167,15 +171,12 @@ class TournamentController extends Controller
                 // Final bitti -> sampiyon
                 $t->champion_id = $winnerId;
                 $t->status = 'finished';
-                // Odul coin'i sampiyona bir kez ode (kilit altinda check-then-set guvenli)
-                if (! $t->prize_paid && ($t->prize_coins ?? 0) > 0) {
-                    User::where('id', $winnerId)->update([
-                        'coins' => DB::raw('COALESCE(coins,0) + '.(int) $t->prize_coins),
-                    ]);
+                // Odulleri bir kez ode (kilit altinda check-then-set yaris-guvenli).
+                if (! $t->prize_paid) {
+                    $this->payPrizes($t, $bracket, $winnerId);
                     $t->prize_paid = true;
                 }
                 // Kazanilan avatar cerceveleri KALDIRILDI (eski frame sistemi temizlendi).
-                // Turnuva coin odulu yukarida odenir; frame grant'i artik yok.
             }
 
             $t->bracket = $bracket;
@@ -318,6 +319,81 @@ class TournamentController extends Controller
         return null;
     }
 
+    // Odul dagitimi: siralamaya gore coin ode. prizes tablosu (index=sira-1) varsa
+    // her siraya kendi coin'ini ver + giris ucreti havuzunu (prize_coins) sampiyona ekle.
+    // prizes yoksa eski davranis: tek sampiyon odulu (prize_coins).
+    private function payPrizes(Tournament $t, array $bracket, int $winnerId): void
+    {
+        $prizes = is_array($t->prizes) ? $t->prizes : [];
+        $pool = (int) ($t->prize_coins ?? 0); // giris ucretleri burada birikir
+
+        if (! empty($prizes)) {
+            $standings = $this->standingsFromBracket($bracket);
+            foreach ($prizes as $i => $pr) {
+                $coins = (int) ($pr['coins'] ?? 0);
+                if ($coins > 0 && isset($standings[$i])) {
+                    User::where('id', $standings[$i])->update([
+                        'coins' => DB::raw('COALESCE(coins,0) + '.$coins),
+                    ]);
+                }
+            }
+            // Giris ucreti havuzu -> 1.lige (sampiyon)
+            if ($pool > 0) {
+                $first = $standings[0] ?? $winnerId;
+                User::where('id', $first)->update([
+                    'coins' => DB::raw('COALESCE(coins,0) + '.$pool),
+                ]);
+            }
+            return;
+        }
+
+        // Eski akis: prizes tablosu yoksa tum havuz sampiyona
+        if ($pool > 0) {
+            User::where('id', $winnerId)->update([
+                'coins' => DB::raw('COALESCE(coins,0) + '.$pool),
+            ]);
+        }
+    }
+
+    // Bracket'ten nihai siralamayi (oyuncu id'leri, 1.den sonuncuya) cikar.
+    // 1. = final kazanani; sonra son turdan ilk tura dogru her turun KAYBEDENLERI
+    // eklenir (gec turda elenen daha ustte). Ayni turdakiler rating'e gore siralanir.
+    private function standingsFromBracket(array $bracket): array
+    {
+        if (empty($bracket)) {
+            return [];
+        }
+        $lastRound = $bracket[count($bracket) - 1];
+        $final = $lastRound[0] ?? null;
+        $championId = isset($final['winner']) ? (int) $final['winner'] : null;
+
+        $standings = [];
+        if ($championId) {
+            $standings[] = $championId;
+        }
+        for ($ri = count($bracket) - 1; $ri >= 0; $ri--) {
+            $losers = [];
+            foreach ($bracket[$ri] as $m) {
+                $w = $m['winner'] ?? null;
+                $p1 = $m['p1'] ?? null;
+                $p2 = $m['p2'] ?? null;
+                // Bye/yarim mac: iki gercek oyuncu yoksa kaybeden yok
+                if (! $w || ! isset($p1['id'], $p2['id'])) {
+                    continue;
+                }
+                $loser = ((int) $p1['id'] === (int) $w) ? $p2 : $p1;
+                if (isset($loser['id'])) {
+                    $losers[] = $loser;
+                }
+            }
+            usort($losers, fn ($a, $b) => ($b['rating'] ?? 0) <=> ($a['rating'] ?? 0));
+            foreach ($losers as $l) {
+                $standings[] = (int) $l['id'];
+            }
+        }
+        return array_values(array_unique($standings));
+    }
+
     private function addPlayer(Tournament $t, $user): void
     {
         $players = $t->players ?? [];
@@ -404,6 +480,7 @@ class TournamentController extends Controller
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'prize_coins' => $t->prize_coins ?? 0,
             'prize_desc' => $t->prize_desc,
+            'prizes' => is_array($t->prizes) ? array_values($t->prizes) : [],
             'entry_fee' => $t->entry_fee ?? 0,
         ];
     }

@@ -65,15 +65,50 @@ class TournamentResource extends Resource
                     ->preload()
                     ->nullable(),
                 Forms\Components\TextInput::make('prize_coins')
+                    ->label('Ödül havuzu (coin)')
+                    ->helperText('Giriş ücretleri burada birikir; turnuva bitince 1.’liğe eklenir. Elle de ekleyebilirsin.')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->default(0),
-                Forms\Components\TextInput::make('prize_desc'),
+
+                // ---- Sıralamaya göre ödül tablosu (kaç kişiye + her sıraya ayrı ödül) ----
+                Forms\Components\Repeater::make('prizes')
+                    ->label('Ödül tablosu (sıraya göre)')
+                    ->helperText('Her satır bir sıralamadır: 1. satır = 1.’lik, 2. satır = 2.’lik … Kaç kişiye ödül vereceğini satır sayısıyla belirlersin; sürükleyerek sırayı değiştirebilirsin. Turnuva bitince coin otomatik dağıtılır (1.=şampiyon, 2.=finalist, aynı turda elenenler rating’e göre).')
+                    ->schema([
+                        Forms\Components\TextInput::make('coins')
+                            ->label('Coin')
+                            ->numeric()
+                            ->minValue(0)
+                            ->default(0)
+                            ->required(),
+                        Forms\Components\TextInput::make('desc')
+                            ->label('Açıklama (opsiyonel)')
+                            ->placeholder('ör. Star üyelik 1 ay')
+                            ->maxLength(120),
+                    ])
+                    ->columns(2)
+                    ->reorderable()
+                    ->cloneable()
+                    ->defaultItems(0)
+                    ->addActionLabel('Sıra ekle')
+                    ->itemLabel(fn (array $state): ?string => isset($state['coins']) ? ($state['coins'].' coin') : null)
+                    ->columnSpanFull(),
+
+                Forms\Components\TextInput::make('prize_desc')
+                    ->label('Genel ödül notu (opsiyonel)')
+                    ->maxLength(120)
+                    ->columnSpanFull(),
                 Forms\Components\Toggle::make('prize_paid')
-                    ->required(),
+                    ->label('Ödül ödendi')
+                    ->helperText('Turnuva bitince otomatik işaretlenir. Açıkken ödül tekrar ödenmez.'),
                 Forms\Components\TextInput::make('entry_fee')
+                    ->label('Giriş ücreti (coin)')
+                    ->helperText('0 = ücretsiz. Toplanan ücretler ödül havuzuna eklenir.')
                     ->required()
                     ->numeric()
+                    ->minValue(0)
                     ->default(0),
             ]);
     }
