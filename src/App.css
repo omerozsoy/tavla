@@ -8870,23 +8870,27 @@ html.fs-active .account-bar {
   font-size: 0.9rem;
 }
 /* ---- Ust bar altin butonlari: shadcn <Button variant="outline"> uzerine SADECE renk.
-   Geometri (42px yukseklik, rounded-md, 1px border, px-4, gap) Button base'inden gelir;
-   burada yalnizca altin renk kimligi + coin/odul semantigi ezilir (App.css utilities'i ezer). */
+   Geometri (42px yukseklik, 1px border, px-4, gap) Button base'inden gelir. */
+/* Coin: rating pili (.account-rating) ile AYNI format -> DOLU pill, sadece renk ALTIN
+   (brick yerine). Koyu ink metin+ikon (altin uzerinde okunur). */
 .btn-coin {
-  border-color: color-mix(in srgb, var(--tv-gold) 55%, var(--border));
-  background: color-mix(in srgb, var(--tv-gold) 18%, var(--card-bg));
-  color: var(--text);
-  font-weight: 800;
+  border-color: #e6b422;
+  background: #e6b422;
+  color: #1c1a17;
+  font-weight: 900;
+  letter-spacing: 0.01em;
   font-variant-numeric: tabular-nums;
+  border-radius: var(--radius-pill);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 .btn-coin:hover {
-  border-color: var(--tv-gold);
-  background: color-mix(in srgb, var(--tv-gold) 26%, var(--card-bg));
-  color: var(--text);
+  border-color: #d4a017;
+  background: #d4a017;
+  color: #1c1a17;
 }
-/* Coin ikonu ORANGE (odul semantik); sayi okunur (koyu) metin -> kontrast */
 .btn-coin > svg {
-  color: var(--orange);
+  color: #1c1a17;
 }
 /* Gunluk odul (hazir): altin + nabiz animasyonu */
 .btn-reward {
