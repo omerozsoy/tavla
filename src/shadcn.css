@@ -91,7 +91,7 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  --font-sans: 'Space Grotesk', 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Outfit', 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 /* ---- Terracotta -> shadcn semantic token esleme (varsayilan: DARK, opt-in) ---- */
