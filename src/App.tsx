@@ -3713,10 +3713,7 @@ export default function App() {
                     <Icon name="dice" size={15} /> {t('home.heroKicker')}
                   </span>
                 )}
-                <h1 className="hero-title">
-                  {user ? t('home.hello', { name: profile.nickname }) : t('home.heroTitle')}
-                </h1>
-                <p className="hero-tagline">{t('home.tagline')}</p>
+                {!user && <h1 className="hero-title">{t('home.heroTitle')}</h1>}
                 <div className="hero-cta">
                   <div className="hero-cta-row">
                     <Button variant="default" onClick={menuProps.onSolo}>
