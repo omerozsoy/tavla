@@ -538,12 +538,7 @@ export default function App() {
           setContentView('club')
           break
         case 'tahta-ayarlari':
-          if (user) {
-            setProfileTab('settings')
-            setEditProfile(true)
-          } else {
-            setBoardSettingsOpen(true)
-          }
+          setBoardSettingsOpen(true)
           break
         case 'bulmaca':
           setQuizOpen(true)
@@ -3127,27 +3122,6 @@ export default function App() {
     })),
   ]
 
-  // Profilim "Ayarlar" sekmesine gomulu ayarlar (eski ust-bar dislisi)
-  const settingsContent = user ? (
-    <BoardSettings
-      embed
-      boardTheme={boardTheme}
-      setBoardTheme={setBoardTheme}
-      boardThemes={boardThemeList}
-      premium={premium}
-      onUpgrade={() => setMemOpen(true)}
-      theme={theme}
-      setTheme={setTheme}
-      showPip={showPip}
-      setShowPip={setShowPip}
-      showAnalysis={showAnalysis}
-      setShowAnalysis={setShowAnalysis}
-      learnMode={learnMode}
-      setLearnMode={setLearnMode}
-      onClose={() => {}}
-    />
-  ) : null
-
   // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik sayfasi
   const statsContent = user ? (
     <ProfileStats
@@ -3172,7 +3146,6 @@ export default function App() {
       onResendVerification={handleResendVerification}
       initialTab={profileTab}
       statsExtra={statsContent}
-      settingsSlot={settingsContent}
       {...authProps}
     />
   ) : null
@@ -3280,8 +3253,17 @@ export default function App() {
           {t('account.auth')}
         </Button>
       )}
-      {/* Ayarlar dislisi ust bardan kaldirildi -> Profilim "Ayarlar" sekmesine tasindi */}
       <span className="account-sep" />
+      <Button
+        variant="ghost"
+        size="icon"
+        className="[&_svg]:size-[24px]!"
+        title={t('menu.settings')}
+        aria-label={t('menu.settings')}
+        onClick={() => goPage(() => setBoardSettingsOpen(true))}
+      >
+        <Icon name="settings" size={24} />
+      </Button>
       <LangMenu />
       <Button
         variant="ghost"
@@ -3394,13 +3376,7 @@ export default function App() {
     onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
-    onBoardSettings: () =>
-      user
-        ? goPage(() => {
-            setProfileTab('settings')
-            setEditProfile(true)
-          })
-        : goPage(() => setBoardSettingsOpen(true)),
+    onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () =>

@@ -5351,7 +5351,7 @@ button.stat-chip:hover {
 .account-id .account-name {
   min-height: 0;
   height: auto;
-  gap: 9px;
+  gap: 13px;
   padding: 4px 8px 4px 4px;
   font-size: 0.98rem;
   font-weight: 700;
