@@ -12,6 +12,7 @@ import {
   Trophy,
   Medal,
   Ranking,
+  Coins,
   Storefront,
   ChartBar,
   UsersThree,
@@ -66,6 +67,7 @@ export type IconName =
   | 'trophy'
   | 'medal'
   | 'ranking'
+  | 'coins'
   | 'shop'
   | 'chart'
   | 'users'
@@ -120,6 +122,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   trophy: Trophy,
   medal: Medal,
   ranking: Ranking,
+  coins: Coins,
   shop: Storefront,
   chart: ChartBar,
   users: UsersThree,
