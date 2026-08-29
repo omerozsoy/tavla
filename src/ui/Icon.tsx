@@ -59,6 +59,14 @@ import {
   ArrowsOut,
   ArrowsIn,
   Warning,
+  CalendarDots,
+  BuildingOffice,
+  Newspaper,
+  Briefcase,
+  MonitorPlay,
+  WarningCircle,
+  ChartLine,
+  ShieldCheck,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -114,6 +122,14 @@ export type IconName =
   | 'maximize'
   | 'minimize'
   | 'alert'
+  | 'calendar-dots'
+  | 'building-office'
+  | 'newspaper'
+  | 'briefcase'
+  | 'monitor-play'
+  | 'warning-circle'
+  | 'chart-line'
+  | 'shield-check'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -169,6 +185,14 @@ const MAP: Record<IconName, PhosphorIcon> = {
   maximize: ArrowsOut,
   minimize: ArrowsIn,
   alert: Warning,
+  'calendar-dots': CalendarDots,
+  'building-office': BuildingOffice,
+  newspaper: Newspaper,
+  briefcase: Briefcase,
+  'monitor-play': MonitorPlay,
+  'warning-circle': WarningCircle,
+  'chart-line': ChartLine,
+  'shield-check': ShieldCheck,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)

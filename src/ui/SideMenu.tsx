@@ -118,10 +118,10 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
         <Button variant="ghost" className={NAV} data-active={p.active === 'tournaments' || undefined} onClick={p.onTournaments}>
-          <Icon name="ranking" size={28} /> {t('menu.tournaments')}
+          <Icon name="trophy" size={28} /> {t('menu.tournaments')}
         </Button>
         <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} onClick={p.onLeaderboard}>
-          <Icon name="trophy" size={28} /> {t('menu.leaderboard')}
+          <Icon name="crown" size={28} /> {t('menu.leaderboard')}
         </Button>
         {p.loggedIn && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'friends' || undefined} onClick={p.onFriends}>
@@ -136,7 +136,7 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onMembership && (
             <Button variant="ghost" className={NAV} onClick={p.onMembership}>
-              <Icon name="crown" size={28} /> {t('mem.menu')}
+              <Icon name="star" size={28} /> {t('mem.menu')}
             </Button>
           )}
           {p.loggedIn && (
@@ -152,27 +152,27 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onCalendar && (
             <Button variant="ghost" className={NAV} onClick={p.onCalendar}>
-              <Icon name="calendar" size={28} /> {t('menu.calendar')}
+              <Icon name="calendar-dots" size={28} /> {t('menu.calendar')}
             </Button>
           )}
           {p.onClubs && (
             <Button variant="ghost" className={NAV} onClick={p.onClubs}>
-              <Icon name="pin" size={28} /> {t('menu.clubs')}
+              <Icon name="building-office" size={28} /> {t('menu.clubs')}
             </Button>
           )}
           {p.onServices && (
             <Button variant="ghost" className={NAV} onClick={p.onServices}>
-              <Icon name="star" size={28} /> {t('menu.services')}
+              <Icon name="briefcase" size={28} /> {t('menu.services')}
             </Button>
           )}
           {p.onNews && (
             <Button variant="ghost" className={NAV} onClick={p.onNews}>
-              <Icon name="chat" size={28} /> {t('menu.news')}
+              <Icon name="newspaper" size={28} /> {t('menu.news')}
             </Button>
           )}
           {p.onMagazine && (
             <Button variant="ghost" className={NAV} onClick={p.onMagazine}>
-              <Icon name="play" size={28} /> {t('menu.magazine')}
+              <Icon name="monitor-play" size={28} /> {t('menu.magazine')}
             </Button>
           )}
         </div>
@@ -182,20 +182,20 @@ export default function SideMenu(p: SideMenuProps) {
       <div className="menu-group">
         <div className="menu-label">{t('menu.tools')}</div>
         <Button variant="ghost" className={NAV} data-active={p.active === 'analyzer' || undefined} onClick={p.onAnalyzer}>
-          <Icon name="analyze" size={28} /> {t('pa.title')}
+          <Icon name="search" size={28} /> {t('pa.title')}
         </Button>
         {p.onBlunders && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'blunders' || undefined} onClick={p.onBlunders}>
-            <Icon name="alert" size={28} /> {t('menu.blunders')}
+            <Icon name="warning-circle" size={28} /> {t('menu.blunders')}
           </Button>
         )}
         {p.onMatchHistory && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'matchHistory' || undefined} onClick={p.onMatchHistory}>
-            <Icon name="analyze" size={28} /> {t('menu.matchHistory')}
+            <Icon name="chart-line" size={28} /> {t('menu.matchHistory')}
           </Button>
         )}
         <Button variant="ghost" className={NAV} data-active={p.active === 'fairness' || undefined} onClick={p.onFairness}>
-          <Icon name="dice" size={28} /> {t('fair.title')}
+          <Icon name="shield-check" size={28} /> {t('fair.title')}
         </Button>
       </div>
     </aside>
