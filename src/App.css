@@ -65,7 +65,7 @@
   --tv-brick: var(--coral); /* kiremit = brick (sicak aksan) */
   --tv-brick-light: var(--med-terracotta); /* brick (koyu zeminde) */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
-  --tv-font-ui: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
+  --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
   /* Display fontu: Poppins -> sicak/editoryal basliklar (terracotta yon) */
   --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
