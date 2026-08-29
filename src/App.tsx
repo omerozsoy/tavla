@@ -3147,14 +3147,14 @@ export default function App() {
       {user ? (
         <>
           {user.is_admin && (
-            <button
-              className="account-btn account-admin"
+            <Button
+              variant="ghost"
               onClick={() =>
                 window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
               }
             >
               <Icon name="crown" size={14} /> {t('menu.admin')}
-            </button>
+            </Button>
           )}
         </>
       ) : (
@@ -3163,17 +3163,20 @@ export default function App() {
         </Button>
       )}
       <span className="account-sep" />
-      <button
-        className="account-btn icon"
+      <Button
+        variant="ghost"
+        size="icon"
         title={t('menu.settings')}
         aria-label={t('menu.settings')}
         onClick={() => goPage(() => setBoardSettingsOpen(true))}
       >
         <Icon name="settings" size={18} />
-      </button>
+      </Button>
       <LangMenu />
-      <button
-        className="account-btn icon"
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label={muted ? t('menu.soundOn') : t('menu.soundOff')}
         title={muted ? t('menu.soundOn') : t('menu.soundOff')}
         onClick={() => {
           const nv = !muted
@@ -3183,7 +3186,7 @@ export default function App() {
         }}
       >
         {muted ? <Icon name="mute" size={18} /> : <Icon name="volume" size={18} />}
-      </button>
+      </Button>
     </div>
   )
 

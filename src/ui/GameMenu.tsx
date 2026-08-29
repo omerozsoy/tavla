@@ -1,5 +1,6 @@
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 interface Row {
   label: string
@@ -48,30 +49,30 @@ export default function GameMenu(p: Props) {
       <div className={`game-menu ${p.open ? 'open' : ''}`}>
         <div className="gm-rows">
           {rows.map((r) => (
-            <button key={r.label} className="gm-row" onClick={r.toggle}>
+            <Button key={r.label} variant="ghost" className="w-full justify-between" onClick={r.toggle}>
               <span className="gm-label">{r.label}</span>
               <span className={`gm-state ${r.on ? 'on' : 'off'}`}>
                 {r.on ? t('setup.on') : t('setup.off')}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
         {(p.onTournaments || (p.loggedIn && (p.onFriends || p.onShop))) && (
           <div className="gm-nav">
             {p.onTournaments && (
-              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onTournaments!() }}>
+              <Button variant="ghost" className="w-full justify-start" onClick={() => { p.onClose(); p.onTournaments!() }}>
                 <Icon name="medal" size={18} /> {t('menu.tournaments')}
-              </button>
+              </Button>
             )}
             {p.loggedIn && p.onFriends && (
-              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onFriends!() }}>
+              <Button variant="ghost" className="w-full justify-start" onClick={() => { p.onClose(); p.onFriends!() }}>
                 <Icon name="users" size={18} /> {t('menu.friends')}
-              </button>
+              </Button>
             )}
             {p.loggedIn && p.onShop && (
-              <button className="gm-nav-btn" onClick={() => { p.onClose(); p.onShop!() }}>
+              <Button variant="ghost" className="w-full justify-start" onClick={() => { p.onClose(); p.onShop!() }}>
                 <Icon name="shop" size={18} /> {t('shop.title')}
-              </button>
+              </Button>
             )}
           </div>
         )}

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 // Ozel tarih secici: elle yazilabilir (GG.AA.YYYY) + ay/yil acilir listeli takvim.
 // Ay/gun adlari uygulama diline gore (Intl), hafta PAZARTESI baslar. Deger ISO (YYYY-MM-DD).
@@ -134,9 +135,9 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
       {open && (
         <div className="dp-pop">
           <div className="dp-head">
-            <button type="button" className="dp-nav" onClick={prevMonth} aria-label={t('dp.prevMonth')}>
+            <Button type="button" variant="ghost" size="icon" onClick={prevMonth} aria-label={t('dp.prevMonth')}>
               ‹
-            </button>
+            </Button>
             <div className="dp-selects">
               <select
                 value={view.m}
@@ -161,9 +162,9 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
                 ))}
               </select>
             </div>
-            <button type="button" className="dp-nav" onClick={nextMonth} aria-label={t('dp.nextMonth')}>
+            <Button type="button" variant="ghost" size="icon" onClick={nextMonth} aria-label={t('dp.nextMonth')}>
               ›
-            </button>
+            </Button>
           </div>
           <div className="dp-weekdays">
             {weekdays.map((w, i) => (
@@ -189,9 +190,9 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
             })}
           </div>
           <div className="dp-actions">
-            <button
+            <Button
               type="button"
-              className="dp-link"
+              variant="ghost"
               onClick={() => {
                 onChange('')
                 setText('')
@@ -199,16 +200,16 @@ export default function DatePicker({ value, onChange, max, placeholder }: Props)
               }}
             >
               {t('date.clear')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
-              className="dp-link"
+              variant="ghost"
               onClick={() => {
                 if (!maxDate || today <= maxDate) pick(today)
               }}
             >
               {t('date.today')}
-            </button>
+            </Button>
           </div>
         </div>
       )}

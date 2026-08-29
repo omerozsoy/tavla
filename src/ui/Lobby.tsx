@@ -163,9 +163,9 @@ export default function Lobby({
 
         {error && <div className="register-error">{error}</div>}
 
-        <button type="button" className="guest-link" onClick={onLeave}>
+        <Button variant="ghost" type="button" className="guest-link" onClick={onLeave}>
           {t('mp.back')}
-        </button>
+        </Button>
       </div>
     </div>
   )

@@ -354,30 +354,30 @@ export default function PositionAnalyzer({
           <div className="setup-row">
             <div className="setup-label">{t('pa.place')}</div>
             <div className="menu-targets">
-              <button
-                className={placeColor === 'white' && editMode === 'add' ? 'menu-btn active' : 'menu-btn'}
+              <Button
+                variant={placeColor === 'white' && editMode === 'add' ? 'secondary' : 'ghost'}
                 onClick={() => {
                   setPlaceColor('white')
                   setEditMode('add')
                 }}
               >
                 <Swatch color="white" /> {t('pa.white')}
-              </button>
-              <button
-                className={placeColor === 'black' && editMode === 'add' ? 'menu-btn active' : 'menu-btn'}
+              </Button>
+              <Button
+                variant={placeColor === 'black' && editMode === 'add' ? 'secondary' : 'ghost'}
                 onClick={() => {
                   setPlaceColor('black')
                   setEditMode('add')
                 }}
               >
                 <Swatch color="black" /> {t('pa.black')}
-              </button>
-              <button
-                className={editMode === 'remove' ? 'menu-btn active' : 'menu-btn'}
+              </Button>
+              <Button
+                variant={editMode === 'remove' ? 'secondary' : 'ghost'}
                 onClick={() => setEditMode('remove')}
               >
                 ➖ {t('pa.remove')}
-              </button>
+              </Button>
             </div>
             <div className="pa-count">
               <span className={whiteCount >= MAX_CHECKERS ? 'full' : ''}>
@@ -392,24 +392,24 @@ export default function PositionAnalyzer({
           <div className="setup-row">
             <div className="setup-label">{t('pa.turn')}</div>
             <div className="menu-targets">
-              <button
-                className={turn === 'white' ? 'menu-btn active' : 'menu-btn'}
+              <Button
+                variant={turn === 'white' ? 'secondary' : 'ghost'}
                 onClick={() => {
                   setTurn('white')
                   setResult(null)
                 }}
               >
                 <Swatch color="white" /> {t('pa.white')}
-              </button>
-              <button
-                className={turn === 'black' ? 'menu-btn active' : 'menu-btn'}
+              </Button>
+              <Button
+                variant={turn === 'black' ? 'secondary' : 'ghost'}
                 onClick={() => {
                   setTurn('black')
                   setResult(null)
                 }}
               >
                 <Swatch color="black" /> {t('pa.black')}
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -417,13 +417,13 @@ export default function PositionAnalyzer({
             <div className="setup-label">{t('pa.cube')}</div>
             <div className="menu-targets">
               {[1, 2, 4, 8, 16, 32, 64].map((v) => (
-                <button
+                <Button
                   key={v}
-                  className={cube.value === v ? 'menu-btn active' : 'menu-btn'}
+                  variant={cube.value === v ? 'secondary' : 'ghost'}
                   onClick={() => setCube((c) => ({ ...c, value: v }))}
                 >
                   {v}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -431,24 +431,26 @@ export default function PositionAnalyzer({
           <div className="setup-row">
             <div className="setup-label">{t('pa.cubeOwner')}</div>
             <div className="menu-targets">
-              <button
-                className={cube.owner === 'white' ? 'menu-btn active' : 'menu-btn'}
+              <Button
+                size="icon"
+                variant={cube.owner === 'white' ? 'secondary' : 'ghost'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'white' }))}
               >
                 <Swatch color="white" />
-              </button>
-              <button
-                className={cube.owner === null ? 'menu-btn active' : 'menu-btn'}
+              </Button>
+              <Button
+                variant={cube.owner === null ? 'secondary' : 'ghost'}
                 onClick={() => setCube((c) => ({ ...c, owner: null }))}
               >
                 {t('pa.center')}
-              </button>
-              <button
-                className={cube.owner === 'black' ? 'menu-btn active' : 'menu-btn'}
+              </Button>
+              <Button
+                size="icon"
+                variant={cube.owner === 'black' ? 'secondary' : 'ghost'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'black' }))}
               >
                 <Swatch color="black" />
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -456,13 +458,13 @@ export default function PositionAnalyzer({
             <div className="setup-label">{t('pa.match')}</div>
             <div className="menu-targets">
               {[0, 1, 3, 5, 7, 9, 11, 13, 15, 21].map((n) => (
-                <button
+                <Button
                   key={n}
-                  className={matchLen === n ? 'menu-btn active' : 'menu-btn'}
+                  variant={matchLen === n ? 'secondary' : 'ghost'}
                   onClick={() => setMatchLen(n)}
                 >
                   {n === 0 ? t('pa.money') : n}
-                </button>
+                </Button>
               ))}
             </div>
             {matchLen > 0 && (
@@ -494,8 +496,8 @@ export default function PositionAnalyzer({
           <div className="setup-row">
             <div className="setup-label">{t('pa.dice')}</div>
             <div className="menu-targets pa-dice">
-              <button
-                className={d1 === 0 && d2 === 0 ? 'menu-btn active' : 'menu-btn'}
+              <Button
+                variant={d1 === 0 && d2 === 0 ? 'secondary' : 'ghost'}
                 onClick={() => {
                   setD1(0)
                   setD2(0)
@@ -503,7 +505,7 @@ export default function PositionAnalyzer({
                 }}
               >
                 {t('pa.noDice')}
-              </button>
+              </Button>
               <select value={d1} onChange={(e) => setD1(Number(e.target.value))}>
                 {[0, 1, 2, 3, 4, 5, 6].map((n) => (
                   <option key={n} value={n}>
@@ -524,18 +526,19 @@ export default function PositionAnalyzer({
           <div className="setup-row">
             <div className="setup-label">{t('pa.depth')}</div>
             <div className="menu-targets">
-              <button
-                className={ply === 1 ? 'menu-btn active' : 'menu-btn'}
+              <Button
+                variant={ply === 1 ? 'secondary' : 'ghost'}
                 onClick={() => setPly(1)}
               >
                 {t('pa.ply1')}
-              </button>
-              <button
-                className={`${ply === 2 ? 'menu-btn active' : 'menu-btn'} ${premium ? '' : 'locked'}`}
+              </Button>
+              <Button
+                variant={ply === 2 ? 'secondary' : 'ghost'}
+                className={premium ? undefined : 'locked'}
                 onClick={() => (premium ? setPly(2) : onUpgrade?.())}
               >
                 {!premium && <Icon name="crown" size={13} />} {t('pa.ply2')}
-              </button>
+              </Button>
             </div>
             <div className="pa-depth-note">{ply === 2 ? t('pa.ply2Note') : t('pa.ply1Note')}</div>
           </div>

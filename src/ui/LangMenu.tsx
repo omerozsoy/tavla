@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { LANGS, useT } from '../i18n'
 import { Flag } from './Flag'
+import { Button } from '@/components/ui/button'
 
 // Bayrakli dil secici (native select SVG gosteremedigi icin ozel dropdown).
 export default function LangMenu() {
@@ -26,29 +27,31 @@ export default function LangMenu() {
 
   return (
     <div className="lang-menu" ref={ref}>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
-        className="account-btn icon lang-btn"
         onClick={() => setOpen((o) => !o)}
         title={current.label}
         aria-label={current.label}
       >
         <Flag code={current.code} size={20} />
-      </button>
+      </Button>
       {open && (
         <div className="lang-pop">
           {LANGS.map((l) => (
-            <button
+            <Button
               key={l.code}
+              variant={l.code === lang ? 'secondary' : 'ghost'}
               type="button"
-              className={`lang-opt ${l.code === lang ? 'active' : ''}`}
+              className="w-full justify-start"
               onClick={() => {
                 setLang(l.code)
                 setOpen(false)
               }}
             >
               <Flag code={l.code} size={20} /> <span>{l.label}</span>
-            </button>
+            </Button>
           ))}
         </div>
       )}

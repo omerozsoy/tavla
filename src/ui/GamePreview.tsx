@@ -3,6 +3,7 @@ import Board from './Board'
 import Sidebar from './Sidebar'
 import ClockStack from './ClockStack'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { initialState } from '../engine/game'
 import { pipCount } from '../engine/evaluate'
 
@@ -40,22 +41,25 @@ export default function GamePreview({ onClose }: { onClose: () => void }) {
   }
   return (
     <div className="app game-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
-      <button
-        className="fs-toggle"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setFrame((f) => (f ? null : 'galaxy'))}
         title="Cerceve ac/kapa"
-        style={{ left: 'auto', right: '10px' }}
+        style={{ position: 'fixed', top: '10px', left: 'auto', right: '10px', zIndex: 120 }}
       >
         <Icon name="star" size={16} />
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         className="force-landscape-exit"
         onClick={onClose}
         aria-label="Kapat"
         title="Kapat"
       >
         <Icon name="x" size={16} />
-      </button>
+      </Button>
       <main className="main game-scene">
         <div className="game-area">
           <Sidebar top={top} bottom={bottom} />

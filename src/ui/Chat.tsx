@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
 import type { ChatMsg, Slot } from '../api'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   messages: ChatMsg[]
@@ -78,14 +79,16 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
           )}
 
           <div className="chat-input">
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
-              className="emoji-toggle"
+              className="shrink-0"
               onClick={() => setEmojiOpen((v) => !v)}
               title="Emoji"
             >
               😊
-            </button>
+            </Button>
             {canText ? (
               <>
                 <input
@@ -97,12 +100,12 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                     if (e.key === 'Enter') submit()
                   }}
                 />
-                <button onClick={submit}>{t('chat.send')}</button>
+                <Button variant="default" className="shrink-0" onClick={submit}>{t('chat.send')}</Button>
               </>
             ) : (
-              <button className="chat-premium" onClick={onUpgrade}>
+              <Button variant="secondary" className="flex-1" onClick={onUpgrade}>
                 <Icon name="crown" size={14} /> {t('chat.premium')}
-              </button>
+              </Button>
             )}
           </div>
         </>

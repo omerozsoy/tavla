@@ -443,9 +443,9 @@ export default function Auth({
         onSubmit={!editing && forgot ? doForgot : editing ? doEdit : doRegister}
       >
         {modal && onCancel && (
-          <button type="button" className="modal-close" onClick={onCancel} aria-label={t('common.close')}>
+          <Button type="button" variant="ghost" size="icon" className="modal-close" onClick={onCancel} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
-          </button>
+          </Button>
         )}
         <h2>{title}</h2>
         {editUser && emailUnverified && (
@@ -455,14 +455,14 @@ export default function Auth({
             {resendState === 'sent' ? (
               <span className="verify-sent">{t('verify.sent')}</span>
             ) : (
-              <button
+              <Button
                 type="button"
-                className="verify-resend"
+                variant="ghost"
                 disabled={resendState === 'sending'}
                 onClick={onResendVerification}
               >
                 {t('verify.resend')}
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -564,16 +564,17 @@ export default function Auth({
               >
                 {t('auth.doLogin')}
               </Button>
-              <button
+              <Button
                 type="button"
-                className="forgot-link"
+                variant="ghost"
+                className="self-end"
                 onClick={() => {
                   setForgot(true)
                   setError('')
                 }}
               >
                 {t('auth.forgot')}
-              </button>
+              </Button>
             </div>
 
             {/* Sag kolon: Kayit ol */}

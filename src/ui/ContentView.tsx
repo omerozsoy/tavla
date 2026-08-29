@@ -329,9 +329,9 @@ function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => voi
   const { t } = useT()
   return (
     <div className="videobox" onClick={onClose}>
-      <button className="videobox-close" onClick={onClose} aria-label={t('common.close')}>
+      <Button variant="ghost" size="icon" className="videobox-close" onClick={onClose} aria-label={t('common.close')}>
         <Icon name="x" size={22} />
-      </button>
+      </Button>
       <div className="videobox-frame" onClick={(e) => e.stopPropagation()}>
         <iframe
           src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
@@ -360,12 +360,12 @@ function NewsDetail({
   const gallery = (item.gallery ?? []).filter(Boolean)
   return (
     <article className="news-detail">
-      <button className="news-back" onClick={onBack}>
+      <Button variant="secondary" className="news-back" onClick={onBack}>
         <span className="news-back-chev">
           <Icon name="chevron" size={16} />
         </span>{' '}
         {backLabel}
-      </button>
+      </Button>
       <h3 className="news-detail-title">{item.title}</h3>
       <div className="news-detail-date">
         <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
@@ -430,11 +430,13 @@ function Lightbox({
 
   return (
     <div className="lightbox" onClick={onClose}>
-      <button className="lightbox-close" onClick={onClose} aria-label={t('common.close')}>
+      <Button variant="ghost" size="icon" className="lightbox-close" onClick={onClose} aria-label={t('common.close')}>
         <Icon name="x" size={22} />
-      </button>
+      </Button>
       {many && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           className="lightbox-nav prev"
           onClick={(e) => {
             e.stopPropagation()
@@ -445,7 +447,7 @@ function Lightbox({
           <span className="lightbox-chev left">
             <Icon name="chevron" size={26} />
           </span>
-        </button>
+        </Button>
       )}
       <img
         className="lightbox-img"
@@ -454,7 +456,9 @@ function Lightbox({
         onClick={(e) => e.stopPropagation()}
       />
       {many && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           className="lightbox-nav next"
           onClick={(e) => {
             e.stopPropagation()
@@ -465,7 +469,7 @@ function Lightbox({
           <span className="lightbox-chev right">
             <Icon name="chevron" size={26} />
           </span>
-        </button>
+        </Button>
       )}
       {many && (
         <div className="lightbox-count">

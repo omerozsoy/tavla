@@ -137,9 +137,9 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
           </p>
           <div className="ca-seg">
             {SIZES.map((s) => (
-              <button key={s} className={`ca-segbtn ${size === s ? 'on' : ''}`} onClick={() => setSize(s)}>
+              <Button key={s} variant={size === s ? 'secondary' : 'ghost'} onClick={() => setSize(s)}>
                 {s}px
-              </button>
+              </Button>
             ))}
           </div>
         </div>
@@ -157,12 +157,12 @@ export default function CerceveAnim({ onClose }: { onClose: () => void }) {
               ))
             )}
           </div>
-          <button type="button" className="ca-barbtn" onClick={copyList} disabled={sel.size === 0}>
+          <Button type="button" variant="default" onClick={copyList} disabled={sel.size === 0}>
             {copied ? '✓ Kopyalandı' : 'Kopyala'}
-          </button>
-          <button type="button" className="ca-barbtn ca-barclear" onClick={clearAll} disabled={sel.size === 0}>
+          </Button>
+          <Button type="button" variant="destructive" onClick={clearAll} disabled={sel.size === 0}>
             Temizle
-          </button>
+          </Button>
         </div>
 
         <div className="ca-collabels">

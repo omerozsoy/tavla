@@ -54,18 +54,18 @@ export default function Membership({
   return (
     <div className="register-overlay modal mem-overlay">
       <div className="mem-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button type="button" variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2 className="mem-title">{t('mem.title')}</h2>
 
         <div className="mem-toggle">
-          <button className={yearly ? 'active' : ''} onClick={() => setYearly(true)}>
+          <Button type="button" variant={yearly ? 'secondary' : 'ghost'} onClick={() => setYearly(true)}>
             {t('mem.yearly')}
-          </button>
-          <button className={!yearly ? 'active' : ''} onClick={() => setYearly(false)}>
+          </Button>
+          <Button type="button" variant={!yearly ? 'secondary' : 'ghost'} onClick={() => setYearly(false)}>
             {t('mem.monthly')}
-          </button>
+          </Button>
         </div>
 
         {err && <div className="register-error mem-err">{err}</div>}
@@ -99,7 +99,6 @@ export default function Membership({
                       <Button
                         variant="default"
                         className="w-full"
-                        style={{ background: p.color }}
                         disabled={busy !== null || trialUsed}
                         onClick={() => trial(p.id as 'star' | 'starpro')}
                       >

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, type LeaderRow } from '../api'
@@ -61,20 +62,20 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card leaderboard-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="trophy" size={20} /> {t('lb.title')}</h2>
         <div className="rep-filter">
-          <button className={by === 'rating' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('rating')}>
-<Icon name="star" size={16} /> {t('lb.rating')}
-          </button>
-          <button className={by === 'coins' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('coins')}>
-<Icon name="coin" size={16} /> {t('lb.byCoins')}
-          </button>
-          <button className={by === 'league' ? 'menu-btn active' : 'menu-btn'} onClick={() => setBy('league')}>
+          <Button variant={by === 'rating' ? 'secondary' : 'ghost'} onClick={() => setBy('rating')}>
+            <Icon name="star" size={16} /> {t('lb.rating')}
+          </Button>
+          <Button variant={by === 'coins' ? 'secondary' : 'ghost'} onClick={() => setBy('coins')}>
+            <Icon name="coin" size={16} /> {t('lb.byCoins')}
+          </Button>
+          <Button variant={by === 'league' ? 'secondary' : 'ghost'} onClick={() => setBy('league')}>
             <Icon name="medal" size={16} /> {t('lb.league')}
-          </button>
+          </Button>
         </div>
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}

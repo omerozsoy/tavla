@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -138,9 +139,14 @@ export default function SetupBoard({
         {die(W * 0.72, H / 2, 3, a)}
       </svg>
       {onChangeBoard && (
-        <button type="button" className="setup-board-change" onClick={onChangeBoard}>
+        <Button
+          type="button"
+          variant="outline"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          onClick={onChangeBoard}
+        >
           <Icon name="refresh" size={17} /> {changeLabel}
-        </button>
+        </Button>
       )}
     </div>
   )

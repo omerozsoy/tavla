@@ -535,7 +535,7 @@ button[aria-disabled='true'],
   color: var(--text);
   text-transform: capitalize;
 }
-.dp-nav {
+.dp-nav:not([data-slot]) {
   width: 32px;
   height: 32px;
   border: 1px solid var(--btn-border);
@@ -546,7 +546,7 @@ button[aria-disabled='true'],
   line-height: 1;
   cursor: pointer;
 }
-.dp-nav:hover {
+.dp-nav:not([data-slot]):hover {
   border-color: var(--accent);
   color: var(--accent);
 }
@@ -605,7 +605,7 @@ button[aria-disabled='true'],
   padding-top: 8px;
   border-top: 1px solid var(--border);
 }
-.dp-link {
+.dp-link:not([data-slot]) {
   background: none;
   border: none;
   color: var(--accent);
@@ -615,7 +615,7 @@ button[aria-disabled='true'],
   padding: 4px 6px;
   border-radius: var(--radius-sm);
 }
-.dp-link:hover {
+.dp-link:not([data-slot]):hover {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
@@ -1803,11 +1803,13 @@ button[aria-disabled='true'],
   margin: 0 auto;
 }
 .news-back {
+  margin-bottom: 18px;
+}
+.news-back:not([data-slot]) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   padding: 6px 12px 6px 8px;
-  margin-bottom: 18px;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -1816,7 +1818,7 @@ button[aria-disabled='true'],
   color: var(--muted);
   transition: color 0.15s ease, border-color 0.15s ease;
 }
-.news-back:hover {
+.news-back:not([data-slot]):hover {
   color: var(--text);
   border-color: var(--accent);
 }
@@ -2022,6 +2024,8 @@ button[aria-disabled='true'],
   position: absolute;
   top: 16px;
   right: 18px;
+}
+.videobox-close:not([data-slot]) {
   width: 40px;
   height: 40px;
   display: flex;
@@ -2033,7 +2037,7 @@ button[aria-disabled='true'],
   color: var(--tv-white);
   cursor: pointer;
 }
-.videobox-close:hover {
+.videobox-close:not([data-slot]):hover {
   background: rgba(255, 255, 255, 0.25);
 }
 /* Lightbox: tam ekran gorsel gosterici */
@@ -2066,6 +2070,8 @@ button[aria-disabled='true'],
   position: absolute;
   top: 16px;
   right: 18px;
+}
+.lightbox-close:not([data-slot]) {
   width: 40px;
   height: 40px;
   display: flex;
@@ -2077,13 +2083,15 @@ button[aria-disabled='true'],
   color: var(--tv-white);
   cursor: pointer;
 }
-.lightbox-close:hover {
+.lightbox-close:not([data-slot]):hover {
   background: rgba(255, 255, 255, 0.25);
 }
 .lightbox-nav {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+}
+.lightbox-nav:not([data-slot]) {
   width: 48px;
   height: 48px;
   display: flex;
@@ -2095,7 +2103,7 @@ button[aria-disabled='true'],
   color: var(--tv-white);
   cursor: pointer;
 }
-.lightbox-nav:hover {
+.lightbox-nav:not([data-slot]):hover {
   background: rgba(255, 255, 255, 0.25);
 }
 .lightbox-nav.prev {
@@ -3795,6 +3803,8 @@ button[aria-disabled='true'],
   position: absolute;
   top: 10px;
   right: 12px;
+}
+.modal-close:not([data-slot]) {
   width: 30px;
   height: 30px;
   display: flex;
@@ -3809,7 +3819,7 @@ button[aria-disabled='true'],
   line-height: 1;
 }
 /* Gorsel 30px kalir; dokunma hedefi 44px'e genisler (ux: Touch Target, kose butonu -> komsu cakismasi yok) */
-.modal-close::before {
+.modal-close:not([data-slot])::before {
   content: '';
   position: absolute;
   top: 50%;
@@ -3818,7 +3828,7 @@ button[aria-disabled='true'],
   height: 44px;
   transform: translate(-50%, -50%);
 }
-.modal-close:hover {
+.modal-close:not([data-slot]):hover {
   background: var(--border);
 }
 .register-card {
@@ -4060,14 +4070,16 @@ button[aria-disabled='true'],
   text-align: center;
 }
 .guest-link {
+  margin-top: 6px;
+  align-self: center;
+}
+.guest-link:not([data-slot]) {
   background: none;
   border: none;
   color: var(--muted);
   cursor: pointer;
   font-size: 0.85rem;
   text-decoration: underline;
-  margin-top: 6px;
-  align-self: center;
 }
 .mp-or {
   text-align: center;
@@ -5318,7 +5330,7 @@ html.fs-active .account-bar {
   text-align: center;
 }
 
-.forgot-link {
+.forgot-link:not([data-slot]) {
   background: none;
   border: none;
   color: var(--accent);
@@ -8481,13 +8493,15 @@ html.fs-active .account-bar {
   overflow-y: auto;
 }
 .tourn-back {
+  margin-bottom: 4px;
+}
+.tourn-back:not([data-slot]) {
   background: none;
   border: none;
   color: var(--muted);
   cursor: pointer;
   font-size: 0.85rem;
   padding: 0;
-  margin-bottom: 4px;
 }
 .tourn-meta {
   color: var(--muted);
@@ -9196,6 +9210,8 @@ html.fs-active .account-bar {
 .tm-play {
   width: calc(100% - 8px);
   margin: 4px;
+}
+.tm-play:not([data-slot]) {
   padding: 6px;
   border: none;
   border-radius: var(--radius-sm);
@@ -9205,7 +9221,7 @@ html.fs-active .account-bar {
   font-size: 0.78rem;
   cursor: pointer;
 }
-.tm-play:hover {
+.tm-play:not([data-slot]):hover {
   filter: brightness(1.08);
 }
 .tm-actions {
@@ -9245,7 +9261,7 @@ html.fs-active .account-bar {
   border-radius: var(--radius-lg);
   overflow: hidden;
 }
-.lesson-q {
+.lesson-q:not([data-slot]) {
   width: 100%;
   display: flex;
   justify-content: space-between;
@@ -9260,7 +9276,7 @@ html.fs-active .account-bar {
   font-size: 0.98rem;
   text-align: left;
 }
-.lesson-item.open .lesson-q {
+.lesson-item.open .lesson-q:not([data-slot]) {
   background: color-mix(in srgb, var(--tv-brick-light) 14%, transparent);
 }
 .lesson-caret {
@@ -10110,7 +10126,7 @@ html.fs-active .account-bar {
   margin: 4px 0 12px;
   box-shadow: none;
 }
-.verify-resend {
+.verify-resend:not([data-slot]) {
   background: #e6b422;
   color: #3a2a06;
   border: none;
@@ -10120,7 +10136,7 @@ html.fs-active .account-bar {
   cursor: pointer;
   font-size: 0.85rem;
 }
-.verify-resend:disabled {
+.verify-resend:not([data-slot]):disabled {
   opacity: 0.6;
   cursor: default;
 }
