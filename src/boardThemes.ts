@@ -206,17 +206,19 @@ export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary'
   legendary: 4000,
   mythic: 5000,
 }
-// Ucretsiz (her zaman sahip): varsayilan 3 board. Kulup temalari da ucretsiz (rarity 'club').
-export const FREE_BOARDS = new Set<string>(['standart', 'tavla', 'galaxy'])
+// Ucretsiz (her zaman sahip): SADECE 'standart'. Diger tum tahtalar (tavla/galaxy/kulup dahil) coin ile alinir.
+export const FREE_BOARDS = new Set<string>(['standart'])
+// Kulup temasi fiyati (nadirlik ladder'inda degil; sabit).
+export const CLUB_BOARD_PRICE = 1000
 // Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
 export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
   return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
 }
-// Coin fiyati: ucretsiz/kulup -> undefined; degilse nadirlik fiyati.
+// Coin fiyati: 'standart' ucretsiz -> undefined; kulup -> sabit; digerleri nadirlik fiyati.
 export function boardPrice(t: BoardTheme): number | undefined {
   if (FREE_BOARDS.has(t.id)) return undefined
   const r = boardRarityOf(t)
-  if (r === 'club') return undefined
+  if (r === 'club') return CLUB_BOARD_PRICE
   return BOARD_RARITY_PRICE[r]
 }
 
