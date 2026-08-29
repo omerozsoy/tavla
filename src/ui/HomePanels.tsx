@@ -215,12 +215,12 @@ export function RankingPanel({
         <Icon name="trophy" size={17} /> {t('lb.title')}
       </div>
       <div className="rank-tabs">
-        <button className={by === 'rating' ? 'active' : ''} onClick={() => setBy('rating')}>
+        <Button variant={by === 'rating' ? 'secondary' : 'ghost'} onClick={() => setBy('rating')}>
           {t('lb.rating')}
-        </button>
-        <button className={by === 'coins' ? 'active' : ''} onClick={() => setBy('coins')}>
+        </Button>
+        <Button variant={by === 'coins' ? 'secondary' : 'ghost'} onClick={() => setBy('coins')}>
           {t('lb.byCoins')}
-        </button>
+        </Button>
       </div>
       {rows === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>

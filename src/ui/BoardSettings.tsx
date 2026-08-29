@@ -77,18 +77,18 @@ export default function BoardSettings({
         <div className="setup-row">
           <div className="setup-label">{t('menu.theme')}</div>
           <div className="menu-targets">
-            <button
-              className={theme === 'dark' ? 'menu-btn active' : 'menu-btn'}
+            <Button
+              variant={theme === 'dark' ? 'secondary' : 'ghost'}
               onClick={() => setTheme('dark')}
             >
               <Icon name="moon" size={16} /> {t('theme.dark')}
-            </button>
-            <button
-              className={theme === 'light' ? 'menu-btn active' : 'menu-btn'}
+            </Button>
+            <Button
+              variant={theme === 'light' ? 'secondary' : 'ghost'}
               onClick={() => setTheme('light')}
             >
               <Icon name="sun" size={16} /> {t('theme.light')}
-            </button>
+            </Button>
           </div>
         </div>
 

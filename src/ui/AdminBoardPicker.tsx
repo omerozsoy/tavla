@@ -3,6 +3,7 @@ import { ALL_THEMES } from '../boardThemes'
 import { RARITY_COLORS } from './rarityColors'
 import SetupBoard from './SetupBoard'
 import { Icon } from './Icon'
+import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club'

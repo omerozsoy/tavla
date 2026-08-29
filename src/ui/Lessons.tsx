@@ -323,10 +323,14 @@ export default function Lessons({ onClose }: Props) {
         <div className="lessons-list">
           {c.sections.map((s, i) => (
             <div key={i} className={`lesson-item ${open === i ? 'open' : ''}`}>
-              <button className="lesson-q" onClick={() => setOpen(open === i ? -1 : i)}>
+              <Button
+                variant="ghost"
+                className="lesson-q w-full justify-between"
+                onClick={() => setOpen(open === i ? -1 : i)}
+              >
                 <span>{s.q}</span>
                 <span className="lesson-caret">{open === i ? '−' : '+'}</span>
-              </button>
+              </Button>
               {open === i && (
                 <div className="lesson-a">
                   {s.a.map((p, j) => (

@@ -111,12 +111,12 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     return (
       <div className="register-overlay modal page" role="dialog" aria-modal="true">
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
-          <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
-          </button>
-          <button className="tourn-back" onClick={() => setActive(null)}>
+          </Button>
+          <Button variant="secondary" onClick={() => setActive(null)}>
             ← {t('tourn.back')}
-          </button>
+          </Button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
           <div className="tourn-meta">
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
@@ -198,26 +198,28 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                         </div>
                         {playable && (
                           <>
-                            <button
+                            <Button
+                              variant="default"
                               className="tm-play"
                               onClick={() =>
                                 onPlayMatch(active.id, m, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
                               }
                             >
                               <Icon name="play" size={16} /> {t('tourn.play')}
-                            </button>
+                            </Button>
                             <div className="tm-actions">
-                              <button disabled={busy} onClick={() => report(m.key, myId!)}>
+                              <Button variant="outline" disabled={busy} onClick={() => report(m.key, myId!)}>
                                 {t('tourn.iWon')}
-                              </button>
-                              <button
+                              </Button>
+                              <Button
+                                variant="outline"
                                 disabled={busy}
                                 onClick={() =>
                                   report(m.key, m.p1?.id === myId ? m.p2!.id : m.p1!.id)
                                 }
                               >
                                 {t('tourn.iLost')}
-                              </button>
+                              </Button>
                             </div>
                           </>
                         )}
@@ -237,9 +239,9 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
-        </button>
+        </Button>
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
         {loading ? (
@@ -266,25 +268,27 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 {isAdmin && (
                   <div className="tourn-admin-actions">
                     {tr.status !== 'finished' && (
-                      <button
-                        className="tourn-admin-btn"
+                      <Button
+                        variant="outline"
+                        size="icon"
                         disabled={busy}
                         onClick={() => doFinish(tr.id)}
                         title={t('admin.finishTournament')}
                         aria-label={t('admin.finishTournament')}
                       >
                         <Icon name="check" size={15} />
-                      </button>
+                      </Button>
                     )}
-                    <button
-                      className="tourn-admin-btn danger"
+                    <Button
+                      variant="destructive"
+                      size="icon"
                       disabled={busy}
                       onClick={() => doDelete(tr.id)}
                       title={t('admin.delTournament')}
                       aria-label={t('admin.delTournament')}
                     >
                       <Icon name="trash" size={15} />
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>

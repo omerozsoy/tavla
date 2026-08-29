@@ -231,7 +231,7 @@ export default function Clubs({ onClose }: Props) {
                 </div>
               </div>
             ) : (
-              <Button variant="default" className="club-create-btn" onClick={() => setCreating(true)}>
+              <Button variant="default" onClick={() => setCreating(true)}>
                 <Icon name="users" size={16} /> {t('clubs.createNew')}
               </Button>
             )}

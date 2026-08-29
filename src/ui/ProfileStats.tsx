@@ -179,16 +179,16 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                 </div>
                 <div className="perf-filters" role="tablist" aria-label={t('med.title')}>
                   {MED_FILTERS.map((f) => (
-                    <button
+                    <Button
                       key={f}
                       type="button"
                       role="tab"
                       aria-selected={medFilter === f}
-                      className={`perf-filter${medFilter === f ? ' active' : ''}`}
+                      variant={medFilter === f ? 'secondary' : 'ghost'}
                       onClick={() => setMedFilter(f)}
                     >
                       {t(`med.filter.${f}`)}
-                    </button>
+                    </Button>
                   ))}
                 </div>
                 {perfErr ? (

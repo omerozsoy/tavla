@@ -226,33 +226,33 @@ export default function MatchReport({
             <div className="analysis-list">
               {humanColor && (
                 <div className="rep-filter">
-                  <button
-                    className={scope === 'mine' ? 'menu-btn active' : 'menu-btn'}
+                  <Button
+                    variant={scope === 'mine' ? 'secondary' : 'ghost'}
                     onClick={() => setScope('mine')}
                   >
                     {t('rep.scopeMine')}
-                  </button>
-                  <button
-                    className={scope === 'all' ? 'menu-btn active' : 'menu-btn'}
+                  </Button>
+                  <Button
+                    variant={scope === 'all' ? 'secondary' : 'ghost'}
                     onClick={() => setScope('all')}
                   >
                     {t('rep.scopeAll')}
-                  </button>
+                  </Button>
                 </div>
               )}
               <div className="rep-filter">
-                <button
-                  className={worstFirst ? 'menu-btn' : 'menu-btn active'}
+                <Button
+                  variant={worstFirst ? 'ghost' : 'secondary'}
                   onClick={() => setWorstFirst(false)}
                 >
                   {t('rep.byOrder')}
-                </button>
-                <button
-                  className={worstFirst ? 'menu-btn active' : 'menu-btn'}
+                </Button>
+                <Button
+                  variant={worstFirst ? 'secondary' : 'ghost'}
                   onClick={() => setWorstFirst(true)}
                 >
                   {t('rep.byWorst', { n: mistakes.length })}
-                </button>
+                </Button>
               </div>
               <div className="analysis-rows">
                 {rows.map(({ e, i }, idx) => {

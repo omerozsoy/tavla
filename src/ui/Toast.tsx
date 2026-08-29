@@ -15,6 +15,7 @@ import {
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
+import { Button } from '@/components/ui/button'
 
 export type ToastKind = 'success' | 'error' | 'info'
 
@@ -159,14 +160,16 @@ function ToastViewport({
             <Icon name={ICON[it.kind]} size={18} />
           </span>
           <span className="toastr__msg">{it.msg}</span>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
-            className="toastr__close"
+            className="shrink-0"
             onClick={() => onDismiss(it.id)}
             aria-label={t('common.close')}
           >
             <Icon name="x" size={15} />
-          </button>
+          </Button>
         </div>
       ))}
     </div>,

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import type { AppNotification } from '../api'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   items: AppNotification[]
@@ -54,15 +55,17 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
 
   return (
     <div className="notif" ref={ref}>
-      <button
-        className="account-btn icon notif-btn"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative"
         onClick={toggle}
         title={t('notif.title')}
         aria-label={t('notif.title')}
       >
         <Icon name="bell" size={18} />
         {unread > 0 && <span className="notif-badge">{unread > 9 ? '9+' : unread}</span>}
-      </button>
+      </Button>
       {open && (
         <div className="notif-panel">
           <div className="notif-head">{t('notif.title')}</div>
