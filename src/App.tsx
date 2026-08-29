@@ -3718,11 +3718,14 @@ export default function App() {
                 </h1>
                 <p className="hero-tagline">{t('home.tagline')}</p>
                 <div className="hero-cta">
-                  <Button variant="default" onClick={menuProps.onAiGame}>
-                    <Icon name="robot" size={18} /> {t('home.vsBot')}
+                  <Button variant="default" onClick={menuProps.onSolo}>
+                    <Icon name="coins" size={18} /> {t('menu.solo')}
                   </Button>
                   <Button variant="secondary" onClick={menuProps.onNewGame}>
-                    <Icon name="users" size={18} /> {t('home.online')}
+                    <Icon name="ranking" size={18} /> {t('menu.match')}
+                  </Button>
+                  <Button variant="secondary" onClick={menuProps.onAiGame}>
+                    <Icon name="robot" size={18} /> {t('menu.aiGame')}
                   </Button>
                 </div>
               </div>
