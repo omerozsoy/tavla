@@ -276,6 +276,7 @@ export default function App() {
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
+  const [profileTab, setProfileTab] = useState<'info' | 'stats' | 'settings'>('info') // Profilim acilis sekmesi
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
   const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
@@ -490,7 +491,8 @@ export default function App() {
           setFrameGalleryOpen(true)
           break
         case 'istatistiklerim':
-          setStatsOpen(true)
+          setProfileTab('stats')
+          setEditProfile(true)
           break
         case 'arkadaslar':
           setFriendsOpen(true)
@@ -536,7 +538,12 @@ export default function App() {
           setContentView('club')
           break
         case 'tahta-ayarlari':
-          setBoardSettingsOpen(true)
+          if (user) {
+            setProfileTab('settings')
+            setEditProfile(true)
+          } else {
+            setBoardSettingsOpen(true)
+          }
           break
         case 'bulmaca':
           setQuizOpen(true)
@@ -3095,10 +3102,67 @@ export default function App() {
   // Giris/kayit: SAYFA gorunumu (modal degil) — sol menu gorunur kalir, form
   // menunun sagindaki alanda ortalanmis kart olarak acilir. Cikis: Vazgec / Misafir.
   const authModal = showAuth ? <Auth key="auth" page {...authProps} /> : null
+  // Ucretli plan aktif mi (premium ozellik kilidi)
+  const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+
+  // Tahta + oyun ayarlari tema listesi (hem in-game overlay hem Profilim "Ayarlar" sekmesi)
+  const boardThemeList = [
+    // Ilk 11 BOARD_THEMES ucretsiz; gerisi + rarity koleksiyonu plan kilidiyle acilir.
+    ...BOARD_THEMES.map((tt, i) => ({
+      ...tt,
+      rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
+      locked: !premium && i >= 11,
+    })),
+    ...ownedPremiumThemes.map((tt) => ({
+      ...tt,
+      rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
+      locked: false,
+    })),
+    ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
+    ...CLUB_THEMES.map((tt) => ({ ...tt, rarity: 'club' as const, locked: false })),
+    ...GALAXY_EXTRA_THEMES.map((tt) => ({
+      ...tt,
+      rarity: tt.rarity ?? 'common',
+      locked: !premium && (tt.rarity ?? 'common') !== 'common',
+    })),
+  ]
+
+  // Profilim "Ayarlar" sekmesine gomulu ayarlar (eski ust-bar dislisi)
+  const settingsContent = user ? (
+    <BoardSettings
+      embed
+      boardTheme={boardTheme}
+      setBoardTheme={setBoardTheme}
+      boardThemes={boardThemeList}
+      premium={premium}
+      onUpgrade={() => setMemOpen(true)}
+      theme={theme}
+      setTheme={setTheme}
+      showPip={showPip}
+      setShowPip={setShowPip}
+      showAnalysis={showAnalysis}
+      setShowAnalysis={setShowAnalysis}
+      learnMode={learnMode}
+      setLearnMode={setLearnMode}
+      onClose={() => {}}
+    />
+  ) : null
+
+  // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik sayfasi
+  const statsContent = user ? (
+    <ProfileStats
+      embed
+      name={profile.nickname || profile.firstName}
+      avatar={profile.avatar}
+      frame={user.avatar_frame}
+      onClose={() => {}}
+    />
+  ) : null
+
   // Profil duzenleme sayfasi (normal sayfa, modal degil; sol menu gorunur)
   const editProfilePage = editProfile ? (
     <Auth
-      key={user ? `edit-${user.id}` : 'edit-guest'}
+      key={user ? `edit-${user.id}-${profileTab}` : 'edit-guest'}
       page
       editUser={user}
       editGuest={!user ? guestProfile : null}
@@ -3106,6 +3170,9 @@ export default function App() {
       emailUnverified={!!user && !user.email_verified_at}
       resendState={resendState}
       onResendVerification={handleResendVerification}
+      initialTab={profileTab}
+      statsExtra={statsContent}
+      settingsSlot={settingsContent}
       {...authProps}
     />
   ) : null
@@ -3119,7 +3186,12 @@ export default function App() {
       <button
         type="button"
         className="account-name"
-        onClick={() => goPage(() => setEditProfile(true))}
+        onClick={() =>
+          goPage(() => {
+            setProfileTab('info')
+            setEditProfile(true)
+          })
+        }
         title={t('menu.editProfile')}
       >
         <AvatarFrame
@@ -3208,17 +3280,8 @@ export default function App() {
           {t('account.auth')}
         </Button>
       )}
+      {/* Ayarlar dislisi ust bardan kaldirildi -> Profilim "Ayarlar" sekmesine tasindi */}
       <span className="account-sep" />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="[&_svg]:size-[24px]!"
-        title={t('menu.settings')}
-        aria-label={t('menu.settings')}
-        onClick={() => goPage(() => setBoardSettingsOpen(true))}
-      >
-        <Icon name="settings" size={24} />
-      </Button>
       <LangMenu />
       <Button
         variant="ghost"
@@ -3254,9 +3317,6 @@ export default function App() {
 
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
-
-  // Ucretli plan aktif mi (premium ozellik kilidi)
-  const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
 
   // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir)
   function closeAllPages() {
@@ -3320,7 +3380,13 @@ export default function App() {
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
     onMembership: premium ? undefined : () => setMemOpen(true),
-    onMyStats: () => goPage(() => setStatsOpen(true)),
+    onMyStats: () =>
+      user
+        ? goPage(() => {
+            setProfileTab('stats')
+            setEditProfile(true)
+          })
+        : setShowAuth(true),
     onFriends: () => goPage(() => setFriendsOpen(true)),
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
     // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
@@ -3328,7 +3394,13 @@ export default function App() {
     onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
-    onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
+    onBoardSettings: () =>
+      user
+        ? goPage(() => {
+            setProfileTab('settings')
+            setEditProfile(true)
+          })
+        : goPage(() => setBoardSettingsOpen(true)),
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () =>
@@ -3455,14 +3527,7 @@ export default function App() {
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
-      {statsOpen && user && (
-        <ProfileStats
-          name={profile.nickname || profile.firstName}
-          avatar={profile.avatar}
-          frame={user.avatar_frame}
-          onClose={() => setStatsOpen(false)}
-        />
-      )}
+      {/* Istatistiklerim ayri sayfa DEGIL -> Profilim "Istatistiklerim" sekmesine gomulu */}
       {fairOpen && (
         <FairnessModal
           commitment={fairRef.current.commitment}
@@ -3552,29 +3617,7 @@ export default function App() {
         <BoardSettings
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
-          boardThemes={[
-            // Rarity + kilit durumu ile birlesik liste (BoardSettings rarity'ye gore gruplar).
-            // Ilk 11 BOARD_THEMES ucretsiz; gerisi + rarity koleksiyonu plan kilidiyle acilir.
-            ...BOARD_THEMES.map((tt, i) => ({
-              ...tt,
-              rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
-              locked: !premium && i >= 11,
-            })),
-            ...ownedPremiumThemes.map((tt) => ({
-              ...tt,
-              rarity: tt.rarity ?? THEME_RARITY[tt.id] ?? 'common',
-              locked: false,
-            })),
-            ...RARITY_THEMES.map((tt) => ({ ...tt, rarity: tt.rarity ?? 'common', locked: !premium })),
-            // Kulup temalari: herkese acik (ucretsiz), en ustte 'Kulupler' grubunda
-            ...CLUB_THEMES.map((tt) => ({ ...tt, rarity: 'club' as const, locked: false })),
-            // Galaksi ek koleksiyonu: rarity gruplarina dagilir; common ucretsiz, ustu plan kilidi
-            ...GALAXY_EXTRA_THEMES.map((tt) => ({
-              ...tt,
-              rarity: tt.rarity ?? 'common',
-              locked: !premium && (tt.rarity ?? 'common') !== 'common',
-            })),
-          ]}
+          boardThemes={boardThemeList}
           premium={premium}
           onUpgrade={() => {
             setBoardSettingsOpen(false)

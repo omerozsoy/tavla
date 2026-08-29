@@ -16,37 +16,37 @@ const FEATURES: { icon: IconName; key: string }[] = [
 ]
 
 // ---- Uye panosu (giris yapmis kullaniciya): tek bakista durum + hizli erisim ----
-// 4 hizli stat karti (Puan/Coin/Galibiyet/Oyun) — hem ana pano hem Profilim sayfasi kullanir
+// 3 hizli stat karti: Puan · Coin · Performans (kazanma % buyuk + Mac/Galibiyet)
 export function StatCards(p: { rating: number; coins: number; wins: number; games: number }) {
   const { t } = useT()
-  const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : null
-  // Her stat semantik renk kimligi: Puan=navy, Coin=orange, Galibiyet=aqua, Oyun=coral
-  const stats: { icon: IconName; val: number; label: string; sub?: string; tone: string }[] = [
-    { icon: 'chart', val: p.rating, label: t('lb.rating'), tone: 'navy' },
-    { icon: 'coin', val: p.coins, label: t('home.dash.coins'), tone: 'orange' },
-    {
-      icon: 'trophy',
-      val: p.wins,
-      label: t('home.dash.wins'),
-      sub: winRate === null ? undefined : `%${winRate}`,
-      tone: 'aqua',
-    },
-    { icon: 'dice', val: p.games, label: t('home.dash.games'), tone: 'coral' },
-  ]
+  const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : 0
   return (
-    <div className="dash-stats">
-      {stats.map((s) => (
-        <div className={`dstat dstat-${s.tone}`} key={s.label}>
-          <span className="dstat-icon" aria-hidden="true">
-            <Icon name={s.icon} size={18} />
-          </span>
-          <span className="dstat-val">
-            {s.val.toLocaleString()}
-            {s.sub && <span className="dstat-sub">{s.sub}</span>}
-          </span>
-          <span className="dstat-label">{s.label}</span>
-        </div>
-      ))}
+    <div className="dash-stats dash-stats-3">
+      <div className="dstat dstat-navy">
+        <span className="dstat-icon" aria-hidden="true">
+          <Icon name="chart" size={18} />
+        </span>
+        <span className="dstat-val">{p.rating.toLocaleString()}</span>
+        <span className="dstat-label">{t('lb.rating')}</span>
+      </div>
+      <div className="dstat dstat-orange">
+        <span className="dstat-icon" aria-hidden="true">
+          <Icon name="coin" size={18} />
+        </span>
+        <span className="dstat-val">{p.coins.toLocaleString()}</span>
+        <span className="dstat-label">{t('home.dash.coins')}</span>
+      </div>
+      {/* Birlesik performans karti: kazanma yuzdesi buyuk + altta Mac/Galibiyet */}
+      <div className="dstat dstat-aqua">
+        <span className="dstat-icon" aria-hidden="true">
+          <Icon name="trophy" size={18} />
+        </span>
+        <span className="dstat-val dstat-pct">%{winRate}</span>
+        <span className="dstat-label">
+          {p.games.toLocaleString()} {t('home.dash.games')} · {p.wins.toLocaleString()}{' '}
+          {t('home.dash.wins')}
+        </span>
+      </div>
     </div>
   )
 }

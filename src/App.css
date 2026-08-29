@@ -6235,6 +6235,20 @@ button.stat-chip:hover {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* 3 kartli duzen (Puan · Coin · Performans) */
+.dash-stats-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+/* Birlesik performans karti: kazanma yuzdesi buyuk + yesil (galibiyet vurgusu) */
+.dstat-pct {
+  font-size: clamp(1.8rem, 4.4vw, 2.4rem);
+  color: var(--color-success);
+}
+@media (max-width: 640px) {
+  .dash-stats-3 {
+    grid-template-columns: 1fr;
+  }
+}
 /* Gunluk odul karti */
 .dash-daily {
   display: flex;
@@ -6361,8 +6375,29 @@ button.stat-chip:hover {
 .prof-tab > svg {
   color: currentColor;
 }
-.profile-stats-sec {
+.profile-stats-sec,
+.profile-settings-sec {
   margin: 2px 0 6px;
+}
+/* Profilim sekmesine gomulu ProfileStats/BoardSettings: overlay + kart chrome'u notralize */
+.stats-embed,
+.settings-embed {
+  width: 100%;
+}
+.register-card.is-embed {
+  max-width: none;
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+/* Gomulu istatistik ozet kartlari (StatCards) ile detay arasinda ayrim */
+.profile-stats-sec .stats-embed {
+  margin-top: 16px;
 }
 @media (prefers-reduced-motion: reduce) {
   .prof-tab:active {

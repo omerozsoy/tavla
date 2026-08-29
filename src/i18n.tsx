@@ -773,7 +773,7 @@ const TR: Dict = {
   'home.finalCta.button': 'Hemen oyna',
   'home.dash.coins': 'Coin',
   'home.dash.wins': 'Galibiyet',
-  'home.dash.games': 'Oyun',
+  'home.dash.games': 'Maç',
   'home.dash.daily': 'Günlük ödül',
   'home.dash.dailyReady': '500 coin hazır — hemen al!',
   'home.dash.claim': 'Al',
