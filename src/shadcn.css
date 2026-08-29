@@ -91,73 +91,73 @@
   --radius-xl: 16px;
   --radius-2xl: 20px;
 
-  --font-sans: 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-sans: 'Space Grotesk', 'Outfit', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
-/* ---- Coastal -> shadcn semantic token esleme (varsayilan: DARK, opt-in) ---- */
+/* ---- Terracotta -> shadcn semantic token esleme (varsayilan: DARK, opt-in) ---- */
 :root {
-  --sc-background: #222a36; /* deep navy */
-  --sc-foreground: #eff7f9; /* ice white */
-  --sc-card: #2e3748;
-  --sc-card-foreground: #eff7f9;
-  --sc-popover: #2e3748;
-  --sc-popover-foreground: #eff7f9;
-  --sc-primary: #46586e; /* dark zeminde okunur navy (acilmis) */
-  --sc-primary-foreground: #eff7f9; /* ice metin */
-  --sc-secondary: #37424f;
-  --sc-secondary-foreground: #eff7f9;
-  --sc-muted: #37424f;
-  --sc-muted-foreground: #98a4ae;
-  --sc-accent: #3a4656; /* subtle elevated hover yuzeyi */
-  --sc-accent-foreground: #eff7f9;
-  --sc-destructive: #c6453b; /* destructive red (coral'dan ayri) */
-  --sc-destructive-foreground: #eff7f9;
-  --sc-border: #3e4a5a;
-  --sc-input: #3e4a5a;
-  --sc-ring: #a8d2e0; /* sky odak halkasi (dark) */
+  --sc-background: #1c1a17; /* ink */
+  --sc-foreground: #f4efe6; /* krem */
+  --sc-card: #24211d;
+  --sc-card-foreground: #f4efe6;
+  --sc-popover: #24211d;
+  --sc-popover-foreground: #f4efe6;
+  --sc-primary: #c9563f; /* brick — dark zeminde okunur primary CTA */
+  --sc-primary-foreground: #f8f1e7; /* sicak ivory metin */
+  --sc-secondary: #2a2622;
+  --sc-secondary-foreground: #f4efe6;
+  --sc-muted: #2a2622;
+  --sc-muted-foreground: #c6bfb2;
+  --sc-accent: #33302b; /* subtle elevated hover yuzeyi */
+  --sc-accent-foreground: #f4efe6;
+  --sc-destructive: #e0455e; /* destructive red (brick'ten ayri) */
+  --sc-destructive-foreground: #f4efe6;
+  --sc-border: #33302b;
+  --sc-input: #33302b;
+  --sc-ring: #c9563f; /* brick odak halkasi (dark) */
   /* ---- Buton hover paleti (dark) ---- */
-  --sc-primary-hover: #566a82; /* dark'ta primary hover ACILIR */
-  --sc-tint: #3a4656; /* secondary/outline hover yuzeyi */
-  --sc-ghost-hover: #37424f; /* ghost hover yuzeyi */
-  --sc-on-hover: #eff7f9; /* hover metin (dark) */
-  --sc-ivory: #eff7f9; /* ice: primary hover metin */
-  /* ---- Marka ekstra: coral (ozel CTA) + sky ---- */
-  --sc-terracotta: #e66f51;
-  --sc-terracotta-hover: #d25a3d;
+  --sc-primary-hover: #d9694f; /* dark'ta brick primary hover ACILIR */
+  --sc-tint: #33302b; /* secondary/outline hover yuzeyi */
+  --sc-ghost-hover: #2a2622; /* ghost hover yuzeyi */
+  --sc-on-hover: #f4efe6; /* hover metin (dark) */
+  --sc-ivory: #f8f1e7; /* sicak ivory: primary hover metin */
+  /* ---- Marka ekstra: brick (ozel CTA) + amber ---- */
+  --sc-terracotta: #c9563f;
+  --sc-terracotta-hover: #d9694f;
   --sc-terracotta-foreground: #fff7f3;
-  --sc-sage: #a8d2e0;
+  --sc-sage: #d99a3f;
 }
 
-/* ===== COASTAL CLUB — ESAS (LIGHT) TEMA ===== */
+/* ===== TERRACOTTA (KREM/KIREMIT) — ESAS (LIGHT) TEMA ===== */
 :root[data-theme='light'] {
-  --sc-background: #eff7f9; /* Ice White */
-  --sc-foreground: #2e3748; /* Dark Navy */
-  --sc-card: #fbfdfe; /* near-white */
-  --sc-card-foreground: #2e3748;
-  --sc-popover: #fbfdfe;
-  --sc-popover-foreground: #2e3748;
-  --sc-primary: #2e3748; /* Dark Navy — primary buton */
-  --sc-primary-foreground: #eff7f9; /* ice metin (saf beyaz degil) */
-  --sc-secondary: #e9f2f4; /* soft ice yuzey */
-  --sc-secondary-foreground: #2e3748; /* navy metin */
-  --sc-muted: #e9f2f4; /* soft ice */
-  --sc-muted-foreground: #67757f; /* Slate */
-  --sc-accent: #e1eef1; /* soft ice — subtle hover yuzeyi */
-  --sc-accent-foreground: #2e3748;
-  --sc-destructive: #c6453b;
-  --sc-destructive-foreground: #eff7f9;
-  --sc-border: #d8e3e7; /* soft ice border */
-  --sc-input: #d8e3e7;
-  --sc-ring: #2e3748; /* Navy odak halkasi */
+  --sc-background: #efeae1; /* Krem-deep */
+  --sc-foreground: #1c1a17; /* Ink */
+  --sc-card: #ffffff; /* beyaz */
+  --sc-card-foreground: #1c1a17;
+  --sc-popover: #ffffff;
+  --sc-popover-foreground: #1c1a17;
+  --sc-primary: #a83a2b; /* Kiremit (brick) — primary CTA (acik zeminde okunur) */
+  --sc-primary-foreground: #f8f1e7; /* sicak ivory metin */
+  --sc-secondary: #f4efe6; /* krem yuzey */
+  --sc-secondary-foreground: #1c1a17; /* ink metin */
+  --sc-muted: #f4efe6; /* krem */
+  --sc-muted-foreground: #5e574c; /* ink-muted */
+  --sc-accent: #efe7d9; /* soft krem — subtle hover yuzeyi */
+  --sc-accent-foreground: #1c1a17;
+  --sc-destructive: #e0455e;
+  --sc-destructive-foreground: #f8f1e7;
+  --sc-border: #ded7ca; /* kiremit-line border */
+  --sc-input: #ded7ca;
+  --sc-ring: #a83a2b; /* Brick odak halkasi */
   /* ---- Buton hover paleti (light) ---- */
-  --sc-primary-hover: #232b38; /* Navy deep */
-  --sc-tint: #e1eef1; /* secondary/outline hover: soft ice */
-  --sc-ghost-hover: #e9f2f4; /* ghost hover: soft ice */
-  --sc-on-hover: #232b38; /* secondary/outline hover metin: Navy deep */
-  --sc-ivory: #eff7f9; /* primary hover metin: ice */
-  /* ---- Marka ekstra: coral (ozel CTA) + sky ---- */
-  --sc-terracotta: #e66f51;
-  --sc-terracotta-hover: #d25a3d;
+  --sc-primary-hover: #8f3124; /* Brick deep */
+  --sc-tint: #efe7d9; /* secondary/outline hover: soft krem */
+  --sc-ghost-hover: #f4efe6; /* ghost hover: krem */
+  --sc-on-hover: #8f3124; /* secondary/outline hover metin: Brick deep */
+  --sc-ivory: #f8f1e7; /* primary hover metin: sicak ivory */
+  /* ---- Marka ekstra: brick (ozel CTA) + amber ---- */
+  --sc-terracotta: #c9563f;
+  --sc-terracotta-hover: #a83a2b;
   --sc-terracotta-foreground: #fff7f3;
-  --sc-sage: #a8d2e0;
+  --sc-sage: #d99a3f;
 }

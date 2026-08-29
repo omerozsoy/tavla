@@ -1,31 +1,31 @@
 :root {
-  /* ===== COASTAL CLUB — merkezi renk sistemi (modern coastal members club) =====
-     Acik + havadar + sicak + sosyal. Kullanici paletine SADIK:
-       Sky #a8d2e0 · Powder #c4e1e5 · Ice #eff7f9 · Cream #f3e8cc
-       Orange #f3a261 · Coral #e66f51 · Navy #2e3748
-     PRIMARY = Dark Navy (yapi/butonlar), ACCENT = Coral (karakter vurgusu),
-     ikincil serin = Sky Blue, sicak tersiyer = Orange. Zemin Ice White (ferah).
-     Primitive isimleri (--med-x) legacy — degerler Coastal. Board/oyun tahtasi
-     KENDI tema sistemini korur (board token'lari: tri, bar, navy-tas, cream-tas, game-scene). */
-  --med-ivory: #eff7f9; /* ice white — ana zemin */
-  --med-porcelain: #fbfdfe; /* near-white — kart/yuzey */
-  --med-blue: #2e3748; /* DARK NAVY — PRIMARY (yapi/buton) [isim legacy] */
-  --med-blue-deep: #232b38; /* navy deep — primary hover */
-  --med-terracotta: #e66f51; /* CORAL — ACCENT (karakter vurgusu) */
-  --med-terracotta-dark: #d25a3d; /* coral deep — accent hover */
-  --med-sage: #a8d2e0; /* SKY BLUE — ikincil serin aksan [isim legacy] */
-  --med-ink: #2e3748; /* dark navy — ana metin */
-  --med-slate: #67757f; /* slate — muted metin */
-  --med-sand: #d8e3e7; /* soft ice — border */
-  --med-sand-warm: #f3e8cc; /* cream — sicak soft yuzey */
-  --med-orange: #f3a261; /* orange — sicak tersiyer (coin/puan) */
-  --med-powder: #c4e1e5; /* powder blue — soft yuzey / tint */
-  --med-ice-soft: #e9f2f4; /* soft ice — ikincil yuzey (secondary buton) */
-  /* Dark tema zeminleri (coastal koyu varyant) */
-  --med-navy-900: #222a36; /* dark zemin */
-  --med-navy-800: #2e3748; /* dark kart */
-  --med-navy-700: #3a4656; /* dark elevated / hover */
-  --med-line-dark: #3e4a5a; /* dark border */
+  /* ===== TERRACOTTA (KREM/KIREMIT) — merkezi renk sistemi =====
+     Sicak + zamansiz + editoryal. Kullanici paletine SADIK:
+       Krem #f4efe6 · Krem-deep #efeae1 · Kiremit(brick) #c9563f/#a83a2b
+       Ink #1c1a17 · Line #ded7ca · Amber #d98b3a · Gold #ffd76a
+     PRIMARY/yapisal = Ink (koyu), ACCENT = Kiremit (brick), sicak tersiyer = Amber.
+     Zemin Krem (sicak). Primitive isimleri (--med-x) legacy — degerler TERRACOTTA.
+     Board/oyun tahtasi KENDI tema sistemini korur (board token'lari: tri, bar,
+     navy-tas, cream-tas, game-scene — zaten terracotta, dokunulmadi). */
+  --med-ivory: #f4efe6; /* krem — ana acik zemin / koyu uzeri acik metin */
+  --med-porcelain: #ffffff; /* saf beyaz — kart/yuzey */
+  --med-blue: #1c1a17; /* INK — PRIMARY/yapisal koyu [isim legacy] */
+  --med-blue-deep: #100e0c; /* ink deep — primary hover */
+  --med-terracotta: #c9563f; /* KIREMIT (brick) — ACCENT (karakter vurgusu) */
+  --med-terracotta-dark: #a83a2b; /* brick deep — acik zeminde accent + hover */
+  --med-sage: #d99a3f; /* sicak amber-gold — ikincil aksan [isim legacy] */
+  --med-ink: #1c1a17; /* ink — ana metin */
+  --med-slate: #5e574c; /* ink-muted — ikincil metin */
+  --med-sand: #ded7ca; /* kiremit-line — border */
+  --med-sand-warm: #f4efe6; /* krem — sicak soft yuzey */
+  --med-orange: #d98b3a; /* amber — sicak tersiyer (coin/puan) */
+  --med-powder: #efe7d9; /* soft krem — tint yuzey */
+  --med-ice-soft: #efeae1; /* krem-deep — ikincil yuzey (secondary buton) */
+  /* Dark tema zeminleri (terracotta koyu varyant) */
+  --med-navy-900: #1c1a17; /* ink dark zemin */
+  --med-navy-800: #24211d; /* dark kart */
+  --med-navy-700: #33302b; /* dark elevated / hover */
+  --med-line-dark: #33302b; /* dark border */
 
   /* ---- Eski primitive isimleri -> Coastal (alias; dogrudan kullanimlar otomatik doner) ---- */
   --rn-bg: var(--med-navy-900); /* dark zemin */
@@ -37,7 +37,7 @@
   --gold-dark: var(--med-terracotta); /* acik zeminde coral aksan */
   --ivory: var(--med-ivory); /* ice white (acik metin, koyu/primary uzeri) */
   --ivory-soft: var(--med-ice-soft);
-  --rn-muted: #98a4ae; /* muted (dark zeminde) */
+  --rn-muted: #c6bfb2; /* muted (dark zeminde) — sicak krem-gri */
   /* Coastal marka token'lari — component'lerde vurgu icin */
   --terracotta: var(--med-terracotta); /* = coral */
   --terracotta-hover: var(--med-terracotta-dark);
@@ -61,26 +61,26 @@
   --tv-line: var(--rn-line); /* kenarlik */
   --tv-ink: var(--ink-navy); /* dark navy — en koyu metin */
   --tv-ink-muted: var(--slate); /* ikincil metin */
-  --tv-ink-faint: #8b96a0; /* etiket / ucuncul */
-  --tv-brick: var(--coral); /* kiremit = CORAL (sicak aksan) */
-  --tv-brick-light: var(--coral); /* coral */
+  --tv-ink-faint: #8a8377; /* etiket / ucuncul — sicak krem-gri */
+  --tv-brick: var(--coral); /* kiremit = brick (sicak aksan) */
+  --tv-brick-light: var(--med-terracotta); /* brick (koyu zeminde) */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
-  --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
+  --tv-font-ui: 'Space Grotesk', 'Outfit', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  /* Display fontu: Playfair Display -> zamansiz/prestij serif basliklar (premium his) */
-  --tv-font-display: 'Playfair Display', 'Poppins', Georgia, 'Times New Roman', serif;
-  /* Coin/odul rengi -> ORANGE (Coastal; coin warm tertiary) */
+  /* Display fontu: Poppins -> sicak/editoryal basliklar (terracotta yon) */
+  --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
+  /* Coin/odul rengi -> amber (terracotta; coin warm tertiary) */
   --tv-gold: var(--orange);
 
-  /* Anlamsal durum renkleri — Coastal paletine uyumlu */
-  --color-success: #3e8e6e; /* coastal green (palette disi; semantik zorunlu) */
-  --color-warning: var(--orange); /* uyari = orange (palette) */
-  --color-error: #c6453b; /* destructive red (coral'dan AYRI, daha kirmizi) */
-  --color-info: #4e86a0; /* deeper sky (info metin kontrasti) */
+  /* Anlamsal durum renkleri — Terracotta paletine uyumlu */
+  --color-success: #2e9e5b; /* terracotta green (palette disi; semantik zorunlu) */
+  --color-warning: var(--orange); /* uyari = amber (palette) */
+  --color-error: #e0455e; /* destructive red (brick'ten AYRI, daha pembe-kirmizi) */
+  --color-info: #6b9bcc; /* muted blue (info metin kontrasti) */
   /* danger METIN (dark yuzey uzerine) */
-  --danger-fg: #ef9a8f;
+  --danger-fg: #ff9db0;
   /* success METIN (dark yuzey uzerine) */
-  --success-fg: #86c9a8;
+  --success-fg: #7ee0a0;
 
   /* Flat yon: elevation golgeleri kaldirildi; ayrimi 1px border + boslugu tasir.
      Sadece modal/overlay icin cok hafif bir "scrim golgesi" xl'de birakildi. */
@@ -151,8 +151,8 @@
   --btn-bg: var(--rn-navy);
   --btn-border: var(--rn-line);
   --border: var(--rn-line);
-  --input-bg: #1b222c; /* deep navy input */
-  --on-accent: #fbfdfe; /* coral aksan uzerinde acik metin */
+  --input-bg: #24211d; /* ink input */
+  --on-accent: #f8f1e7; /* brick aksan uzerinde sicak ivory metin */
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
   --header-h: 56px;
@@ -184,33 +184,33 @@
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 }
 
-/* ===== COASTAL CLUB — ESAS (LIGHT) TEMA =====
-   Ice White zemin + near-white kart + Dark Navy metin + Coral marka aksani.
-   Ferah, havadar, sicak, sosyal. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
+/* ===== TERRACOTTA (KREM/KIREMIT) — ESAS (LIGHT) TEMA =====
+   Krem zemin + beyaz kart + Ink metin + Kiremit (brick) marka aksani.
+   Sicak, zamansiz, editoryal. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
    board temasina ait — dokunulmaz. */
 :root[data-theme='light'] {
   color-scheme: light;
-  --bg: var(--med-ivory); /* Ice White sayfa zemini #eff7f9 */
-  --area: var(--med-porcelain); /* near-white (saf beyaz kullanilmaz) */
+  --bg: var(--med-ice-soft); /* Krem-deep sayfa zemini #efeae1 */
+  --area: var(--med-porcelain); /* saf beyaz yuzey */
   --panel: #efeae1; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen (board) */
   --tri-b: #ded7ca; /* koyu ucgen (board) */
   --bar: #ded7ca; /* orta bar / cerceve (board) */
   --navy: #1c1a17; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas (board) */
-  --accent: var(--med-terracotta); /* Coral — marka aksani #e66f51 */
-  --text: var(--med-ink); /* Dark Navy metin #2e3748 */
-  --muted: var(--med-slate); /* Slate ikincil metin #67757f */
-  --card-bg: var(--med-porcelain); /* near-white kart #fbfdfe */
-  --btn-bg: var(--med-ice-soft); /* soft ice secondary yuzey #e9f2f4 */
-  --btn-border: var(--med-sand); /* soft ice border */
-  --border: var(--med-sand); /* soft ice border #d8e3e7 */
-  --input-bg: var(--med-porcelain); /* near-white input */
-  --on-accent: var(--med-ivory); /* Coral uzeri acik ice metin */
-  --tv-ink-faint: #8b96a0; /* ucuncul metin (Slate ailesi) */
+  --accent: var(--med-terracotta-dark); /* Kiremit (brick) — acik zeminde okunur #a83a2b */
+  --text: var(--med-ink); /* Ink metin #1c1a17 */
+  --muted: var(--med-slate); /* ink-muted ikincil metin #5e574c */
+  --card-bg: var(--med-porcelain); /* beyaz kart #ffffff */
+  --btn-bg: var(--med-sand-warm); /* krem secondary yuzey #f4efe6 */
+  --btn-border: var(--med-sand); /* kiremit-line border */
+  --border: var(--med-sand); /* kiremit-line border #ded7ca */
+  --input-bg: var(--med-porcelain); /* beyaz input */
+  --on-accent: var(--med-ivory); /* brick uzeri acik krem metin */
+  --tv-ink-faint: #8a8377; /* ucuncul metin (ink-faint ailesi) */
   /* danger METIN: acik zeminde okunur destructive */
   --danger-fg: #b8443a;
-  /* success METIN: acik zeminde okunur coastal green */
+  /* success METIN: acik zeminde okunur terracotta green */
   --success-fg: #2f7a5e;
 }
 
@@ -5226,7 +5226,7 @@ html.fs-active .account-bar {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-height: 36px;
+  min-height: 42px;
   color: var(--text);
   font-weight: 700;
   font-size: 0.9rem;
@@ -5246,8 +5246,8 @@ html.fs-active .account-bar {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  /* Dokunma hedefi: WCAG AA tabani 24px karsilanir; 36px konforlu (bar wrap ettigi icin tasma yok) */
-  min-height: 36px;
+  /* Ust bar tek boy: shadcn Button (42px) ile hizali kalsin */
+  min-height: 42px;
   padding: 6px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -8801,6 +8801,7 @@ html.fs-active .account-bar {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  min-height: 42px;
   border: 1px solid color-mix(in srgb, var(--tv-gold) 55%, var(--border));
   background: color-mix(in srgb, var(--tv-gold) 18%, var(--card-bg));
   color: var(--text);
@@ -8834,6 +8835,7 @@ html.fs-active .account-bar {
   white-space: nowrap;
 }
 .account-reward.count {
+  min-height: 42px;
   padding: 6px 10px;
   border-radius: var(--radius-pill);
   background: var(--bg);

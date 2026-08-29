@@ -21,24 +21,24 @@ import DatePicker from './ui/DatePicker'
 import { RARITY_COLORS, type RarityKey } from './ui/rarityColors'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
 
-// ---- Coastal Club token tablolari (Colors / Typography / Spacing / Radius) ----
+// ---- Terracotta (krem/kiremit) token tablolari (Colors / Typography / Spacing / Radius) ----
 const COLORS: { name: string; token: string; hex: string; use: string }[] = [
-  { name: 'Ice White', token: '--med-ivory', hex: '#EFF7F9', use: 'Ana sayfa zemini' },
-  { name: 'Near-white', token: '--med-porcelain', hex: '#FBFDFE', use: 'Kart / yüzey' },
-  { name: 'Dark Navy', token: '--navy-brand', hex: '#2E3748', use: 'PRIMARY (buton/yapı) + metin' },
-  { name: 'Navy Deep', token: '--med-blue-deep', hex: '#232B38', use: 'Primary hover' },
-  { name: 'Coral', token: '--coral', hex: '#E66F51', use: 'ACCENT — kontrollü sıcak vurgu' },
-  { name: 'Coral Deep', token: '--coral-hover', hex: '#D25A3D', use: 'Accent hover' },
-  { name: 'Sky Blue', token: '--sky', hex: '#A8D2E0', use: 'İkincil serin aksan / info / dekor' },
-  { name: 'Powder Blue', token: '--powder', hex: '#C4E1E5', use: 'Soft yüzey / tint' },
-  { name: 'Orange', token: '--orange', hex: '#F3A261', use: 'Sıcak tersiyer (coin/puan)' },
-  { name: 'Cream', token: '--cream', hex: '#F3E8CC', use: 'Sıcak soft yüzey' },
-  { name: 'Slate', token: '--slate', hex: '#67757F', use: 'İkincil / muted metin' },
-  { name: 'Sand (soft ice)', token: '--med-sand', hex: '#D8E3E7', use: 'Kenarlık' },
-  { name: 'Success', token: '--color-success', hex: '#3E8E6E', use: 'Başarı / online' },
-  { name: 'Warning', token: '--color-warning', hex: '#F3A261', use: 'Uyarı (orange)' },
-  { name: 'Destructive', token: '--color-error', hex: '#C6453B', use: 'Hata / tehlike' },
-  { name: 'Info', token: '--color-info', hex: '#4E86A0', use: 'Bilgi (deeper sky)' },
+  { name: 'Krem', token: '--med-ivory', hex: '#F4EFE6', use: 'Ana sayfa zemini / koyu üzeri açık metin' },
+  { name: 'Beyaz', token: '--med-porcelain', hex: '#FFFFFF', use: 'Kart / yüzey' },
+  { name: 'Ink', token: '--navy-brand', hex: '#1C1A17', use: 'PRIMARY/yapısal koyu + metin' },
+  { name: 'Ink Deep', token: '--med-blue-deep', hex: '#100E0C', use: 'Primary hover' },
+  { name: 'Kiremit (brick)', token: '--coral', hex: '#C9563F', use: 'ACCENT — sıcak vurgu' },
+  { name: 'Brick Deep', token: '--coral-hover', hex: '#A83A2B', use: 'Açık zeminde accent + hover' },
+  { name: 'Amber-gold', token: '--sky', hex: '#D99A3F', use: 'İkincil sıcak aksan / dekor' },
+  { name: 'Soft Krem', token: '--powder', hex: '#EFE7D9', use: 'Soft yüzey / tint' },
+  { name: 'Amber', token: '--orange', hex: '#D98B3A', use: 'Sıcak tersiyer (coin/puan)' },
+  { name: 'Krem (warm)', token: '--cream', hex: '#F4EFE6', use: 'Sıcak soft yüzey' },
+  { name: 'Ink Muted', token: '--slate', hex: '#5E574C', use: 'İkincil / muted metin' },
+  { name: 'Line', token: '--med-sand', hex: '#DED7CA', use: 'Kenarlık' },
+  { name: 'Success', token: '--color-success', hex: '#2E9E5B', use: 'Başarı / online' },
+  { name: 'Warning', token: '--color-warning', hex: '#D98B3A', use: 'Uyarı (amber)' },
+  { name: 'Destructive', token: '--color-error', hex: '#E0455E', use: 'Hata / tehlike' },
+  { name: 'Info', token: '--color-info', hex: '#6B9BCC', use: 'Bilgi (muted blue)' },
 ]
 const CHROME_TOKENS: { token: string; use: string }[] = [
   { token: '--bg', use: 'Sayfa zemini (Ice White)' },
