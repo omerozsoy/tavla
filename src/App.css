@@ -6274,6 +6274,23 @@ button.stat-chip:hover {
   }
 }
 
+/* Profilim sayfasi: "Istatistiklerim" bolumu */
+.profile-stats-sec {
+  margin: 2px 0 6px;
+}
+.profile-sec-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.profile-sec-title > svg {
+  color: var(--accent);
+}
+
 /* ---- Ozellik vitrini (misafir) + kapanis CTA ---- */
 .home-features {
   width: 100%;

@@ -9,6 +9,7 @@ import { useT } from '../i18n'
 import * as api from '../api'
 import type { ServerUser } from '../api'
 import AvatarCropper from './AvatarCropper'
+import { StatCards } from './HomePanels'
 import { useToast } from './Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -627,6 +628,20 @@ export default function Auth({
         {editing && (
           <>
             {avatarBlock}
+            {/* Istatistiklerim bolumu (Profilim sayfasi): ana sayfadan tasindi */}
+            {editUser && (
+              <section className="profile-stats-sec">
+                <h3 className="profile-sec-title">
+                  <Icon name="chart" size={18} /> {t('menu.myStats')}
+                </h3>
+                <StatCards
+                  rating={editUser.rating ?? 0}
+                  coins={editUser.coins ?? 0}
+                  wins={editUser.wins ?? 0}
+                  games={editUser.games_played ?? 0}
+                />
+              </section>
+            )}
             {/* Uyelik durumu karti: tip (Premium solda/buyuk) + uye olma + bitis + kalan
                 gun + otomatik yenileme durumu + Yenile / Yenilemeyi iptal butonlari */}
             {editUser && (
