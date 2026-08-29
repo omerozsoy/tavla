@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Taş Oynama Animasyonu — 3 stil yan yana</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --card: #ffffff;
+        --ink: #1c1a17;
+        --muted: #5e574c;
+        --line: #ded7ca;
+        --brick: #c9563f;
+        --panel: #0f1b2b;
+        --frame: #080c12;
+        --tri-a: #c2a15f;
+        --tri-b: #2a3d59;
+        --navy: #0a1220;
+        --cream: #f0e8d8;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Outfit', system-ui, sans-serif;
+        padding: 24px 16px 40px;
+      }
+      h1 { font-size: 1.5rem; margin: 0 0 4px; text-align: center; }
+      .sub { color: var(--muted); font-size: 0.92rem; margin: 0 0 24px; text-align: center; }
+      .grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: center;
+        align-items: flex-start;
+        max-width: 1180px;
+        margin: 0 auto;
+      }
+      .cell {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 14px;
+        width: min(360px, 92vw);
+      }
+      .cell h2 { font-size: 1.05rem; margin: 0 0 2px; }
+      .cell .d { color: var(--muted); font-size: 0.82rem; margin: 0 0 12px; min-height: 32px; }
+      .badge {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 22px; height: 22px; border-radius: 999px;
+        background: var(--brick); color: #fff; font-weight: 800; font-size: 0.8rem;
+        margin-right: 6px; vertical-align: middle;
+      }
+
+      /* ---- BOARD ---- */
+      .board {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 2 / 1.15;
+        background: var(--panel);
+        border: 8px solid var(--frame);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .row { flex: 1; display: flex; }
+      .quad { flex: 1; display: flex; }
+      .bar { width: 26px; flex: none; background: var(--frame); }
+      .point { position: relative; flex: 1; display: flex; flex-direction: column; align-items: center; }
+      .tri { position: absolute; left: 8%; width: 84%; height: 88%; }
+      .row.top .tri { top: 0; clip-path: polygon(50% 100%, 100% 0, 0 0); }
+      .row.bottom .tri { bottom: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+      .tri.a { background: var(--tri-a); }
+      .tri.b { background: var(--tri-b); }
+      .stack { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1px; z-index: 1; }
+      .row.top .stack { top: 4px; }
+      .row.bottom .stack { bottom: 4px; }
+      .chk {
+        width: var(--csz, 24px); height: var(--csz, 24px); border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+      }
+      .chk.navy { background: radial-gradient(circle at 38% 32%, #33465f, var(--navy) 62%); }
+      .chk.cream { background: radial-gradient(circle at 38% 32%, #ffffff, var(--cream) 66%); }
+      .mover { position: absolute; left: 0; top: 0; z-index: 5; }
+      .ghost {
+        position: absolute; z-index: 3; border-radius: 50%;
+        outline: 2px dashed color-mix(in srgb, var(--cream) 60%, transparent);
+        outline-offset: -3px; opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Taş Oynama Animasyonu</h1>
+    <p class="sub">Üç stil aynı anda oynuyor. Beğendiğinin numarasını (1/2/3) söyle — gerçek oyuna onu bağlayayım.</p>
+
+    <div class="grid">
+      <div class="cell">
+        <h2><span class="badge">1</span>Kayma</h2>
+        <p class="d">Düz çizgi, keskin ease-out. Sade &amp; hızlı; tempolu oyunda ideal.</p>
+        <div class="board" data-style="slide"></div>
+      </div>
+      <div class="cell">
+        <h2><span class="badge">2</span>Yay</h2>
+        <p class="d">Taşı kaldırıp parabolle hedefin üzerinden geçirir. Fiziksel his.</p>
+        <div class="board" data-style="arc"></div>
+      </div>
+      <div class="cell">
+        <h2><span class="badge">3</span>Kaldır-Bırak</h2>
+        <p class="d">Kalkar (gölge büyür), kayar, yaylanarak oturur. En dokunsal/premium.</p>
+        <div class="board" data-style="lift"></div>
+      </div>
+    </div>
+
+    <script>
+      const STACKS = { 0: ['navy', 5], 4: ['cream', 3], 6: ['cream', 5], 11: ['navy', 2], 12: ['cream', 5], 16: ['navy', 3], 18: ['navy', 5], 23: ['cream', 2] }
+      const SRC = 0
+      const DST = 18
+      const el = (t, c) => { const e = document.createElement(t); if (c) e.className = c; return e }
+
+      function makeBoard(board, style) {
+        let mover, ghost, sx = 0, sy = 0, dx = 0, dy = 0, size = 24
+
+        function build() {
+          board.innerHTML = ''
+          const rows = [
+            { cls: 'top', pts: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+            { cls: 'bottom', pts: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23] },
+          ]
+          for (const r of rows) {
+            const row = el('div', 'row ' + r.cls)
+            const q1 = el('div', 'quad'), q2 = el('div', 'quad')
+            r.pts.forEach((pi, k) => {
+              const p = el('div', 'point'); p.dataset.pi = pi
+              p.appendChild(el('span', 'tri ' + (k % 2 ? 'a' : 'b')))
+              const st = el('div', 'stack')
+              const s = STACKS[pi]
+              if (s) { const n = pi === SRC ? s[1] - 1 : s[1]; for (let i = 0; i < n; i++) st.appendChild(el('span', 'chk ' + s[0])) }
+              p.appendChild(st)
+              ;(k < 6 ? q1 : q2).appendChild(p)
+            })
+            row.appendChild(q1); row.appendChild(el('div', 'bar')); row.appendChild(q2)
+            board.appendChild(row)
+          }
+          mover = el('span', 'mover'); mover.appendChild(el('span', 'chk navy')); board.appendChild(mover)
+          ghost = el('span', 'ghost'); board.appendChild(ghost)
+          layout()
+        }
+
+        const pointEl = (pi) => board.querySelector(`.point[data-pi="${pi}"]`)
+
+        function layout() {
+          const p0 = pointEl(0)
+          size = Math.max(16, Math.round((p0 ? p0.offsetWidth : 30) * 0.7))
+          board.querySelectorAll('.chk').forEach((c) => { c.style.width = size + 'px'; c.style.height = size + 'px' })
+          ghost.style.width = size + 'px'; ghost.style.height = size + 'px'
+          const brc = board.getBoundingClientRect()
+          const srcRect = pointEl(SRC).getBoundingClientRect()
+          const dstRect = pointEl(DST).getBoundingClientRect()
+          const srcCount = STACKS[SRC] ? STACKS[SRC][1] - 1 : 0
+          const dstCount = STACKS[DST] ? STACKS[DST][1] : 0
+          const isTopSrc = SRC < 12, isTopDst = DST < 12
+          sx = srcRect.left - brc.left + srcRect.width / 2 - size / 2
+          sy = isTopSrc ? srcRect.top - brc.top + 4 + srcCount * (size + 1) : srcRect.bottom - brc.top - 4 - (srcCount + 1) * (size + 1)
+          const tx = dstRect.left - brc.left + dstRect.width / 2 - size / 2
+          const ty = isTopDst ? dstRect.top - brc.top + 4 + dstCount * (size + 1) : dstRect.bottom - brc.top - 4 - (dstCount + 1) * (size + 1)
+          dx = tx - sx; dy = ty - sy
+          ghost.style.left = tx + 'px'; ghost.style.top = ty + 'px'
+          mover.style.transform = `translate(${sx}px, ${sy}px)`
+        }
+
+        function frames() {
+          const A = `translate(${sx}px, ${sy}px)`
+          const B = `translate(${sx + dx}px, ${sy + dy}px)`
+          if (style === 'slide') return { k: [{ transform: A }, { transform: B }], o: { duration: 440, easing: 'cubic-bezier(0.22,1,0.36,1)' } }
+          if (style === 'arc') {
+            const M = `translate(${sx + dx / 2}px, ${sy + dy / 2 - 48}px) scale(1.07)`
+            return { k: [{ transform: A, offset: 0 }, { transform: M, offset: 0.5 }, { transform: B, offset: 1 }], o: { duration: 600, easing: 'cubic-bezier(0.45,0,0.3,1)' } }
+          }
+          const sh0 = 'drop-shadow(0 2px 4px rgba(0,0,0,.5))', sh1 = 'drop-shadow(0 14px 14px rgba(0,0,0,.4))'
+          return { k: [
+            { transform: `translate(${sx}px, ${sy}px) scale(1)`, filter: sh0, offset: 0 },
+            { transform: `translate(${sx}px, ${sy - 14}px) scale(1.16)`, filter: sh1, offset: 0.2 },
+            { transform: `translate(${sx + dx}px, ${sy + dy - 14}px) scale(1.16)`, filter: sh1, offset: 0.78 },
+            { transform: `translate(${sx + dx}px, ${sy + dy + 4}px) scale(0.97)`, filter: sh0, offset: 0.9 },
+            { transform: `translate(${sx + dx}px, ${sy + dy}px) scale(1)`, filter: sh0, offset: 1 },
+          ], o: { duration: 640, easing: 'cubic-bezier(0.22,1,0.36,1)' } }
+        }
+
+        let timer = null
+        function play() {
+          clearTimeout(timer)
+          mover.getAnimations().forEach((a) => a.cancel())
+          layout()
+          const { k, o } = frames()
+          const anim = mover.animate(k, { ...o, fill: 'forwards' })
+          anim.onfinish = () => { timer = setTimeout(play, 900) }
+        }
+
+        build()
+        return { play, layout, cancel: () => { clearTimeout(timer); mover.getAnimations().forEach((a) => a.cancel()) } }
+      }
+
+      const boards = [...document.querySelectorAll('.board')].map((b) => makeBoard(b, b.dataset.style))
+      window.addEventListener('resize', () => boards.forEach((b) => { b.cancel(); b.layout() }))
+      window.addEventListener('load', () => setTimeout(() => boards.forEach((b) => b.play()), 200))
+      // Sekme goze gelince tekrar baslat (arka planda WAAPI durabilir)
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) boards.forEach((b) => b.play()) })
+    </script>
+  </body>
+</html>
