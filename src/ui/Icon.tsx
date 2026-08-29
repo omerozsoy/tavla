@@ -37,6 +37,7 @@ import {
   ChatBubbleLeftRightIcon,
   UserIcon,
   CurrencyDollarIcon,
+  BanknotesIcon,
   SparklesIcon,
   TicketIcon,
   BellIcon,
@@ -89,6 +90,7 @@ export type IconName =
   | 'chat'
   | 'user'
   | 'coin'
+  | 'banknotes'
   | 'crown'
   | 'ticket'
   | 'bell'
@@ -143,6 +145,7 @@ const MAP: Record<IconName, HeroIcon> = {
   chat: ChatBubbleLeftRightIcon,
   user: UserIcon,
   coin: CurrencyDollarIcon, // ~ coin
+  banknotes: BanknotesIcon, // para/bahis (tek oyun money game)
   crown: SparklesIcon, // ~ premium/uyelik
   ticket: TicketIcon,
   bell: BellIcon,
