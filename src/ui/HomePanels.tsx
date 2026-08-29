@@ -98,9 +98,9 @@ export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
         </h2>
       </header>
       <div className="hf-grid">
-        {FEATURES.map((f) => (
+        {FEATURES.map((f, i) => (
           <div className="hf-card" key={f.key}>
-            <span className="hf-icon" aria-hidden="true">
+            <span className={`hf-icon hf-icon-${['navy', 'coral', 'orange'][i % 3]}`} aria-hidden="true">
               <Icon name={f.icon} size={22} />
             </span>
             <h3 className="hf-card-title">{t(`home.feat.${f.key}.t`)}</h3>
