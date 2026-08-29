@@ -493,6 +493,8 @@ export interface Tournament {
   count: number
   prize_coins?: number
   prize_desc?: string | null
+  /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */
+  prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
   players?: TPlayer[]
   bracket?: TMatch[][]

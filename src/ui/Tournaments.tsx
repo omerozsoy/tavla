@@ -122,22 +122,47 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
             {active.count}/{active.size}
           </div>
-          {(!!active.prize_coins || active.prize_desc || !!active.entry_fee) && (
-            <div className="tourn-prize">
-              <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}:{' '}
-              {!!active.prize_coins && (
-                <b>
-                  <Icon name="coin" size={14} /> {active.prize_coins} coin
-                </b>
-              )}
-              {active.prize_desc && <span> {active.prize_desc}</span>}
+          {active.prizes && active.prizes.length > 0 ? (
+            <div className="tourn-prizes">
+              <div className="tp-head">
+                <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}
+              </div>
+              <ol className="tp-list">
+                {active.prizes.map((pr, i) => (
+                  <li key={i} className="tp-row">
+                    <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
+                    <span className="tp-coins">
+                      <Icon name="coin" size={14} /> {pr.coins}
+                    </span>
+                    {pr.desc && <span className="tp-desc">{pr.desc}</span>}
+                  </li>
+                ))}
+              </ol>
+              {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
               {!!active.entry_fee && (
-                <span className="tourn-fee">
-                  {' '}
-                  · <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
-                </span>
+                <div className="tourn-fee">
+                  <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
+                </div>
               )}
             </div>
+          ) : (
+            (!!active.prize_coins || active.prize_desc || !!active.entry_fee) && (
+              <div className="tourn-prize">
+                <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}:{' '}
+                {!!active.prize_coins && (
+                  <b>
+                    <Icon name="coin" size={14} /> {active.prize_coins} coin
+                  </b>
+                )}
+                {active.prize_desc && <span> {active.prize_desc}</span>}
+                {!!active.entry_fee && (
+                  <span className="tourn-fee">
+                    {' '}
+                    · <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
+                  </span>
+                )}
+              </div>
+            )
           )}
 
           {canJoin && (
