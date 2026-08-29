@@ -80,12 +80,12 @@ export default function SideMenu(p: SideMenuProps) {
           </Button>
         )}
         {!p.inGame && (
-          <Button variant="ghost" className={NAV} onClick={p.onNewGame}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'match' || undefined} onClick={p.onNewGame}>
             <Icon name="ranking" size={28} /> {t('menu.match')}
           </Button>
         )}
         {!p.inGame && p.onAiGame && (
-          <Button variant="ghost" className={NAV} onClick={p.onAiGame}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'aiGame' || undefined} onClick={p.onAiGame}>
             <Icon name="robot" size={28} /> {t('menu.aiGame')}
           </Button>
         )}
