@@ -42,6 +42,8 @@ export interface SideMenuProps {
   onResign?: () => void
   mobileOpen?: boolean
   onCloseMobile?: () => void
+  /** Acik olan sayfanin anahtari -> ilgili nav item navy highlight (data-active) */
+  active?: string
 }
 
 // Ana sayfa ve oyun ekraninda ortak tek menu. Tum ogeler paylasilan <Button> (nav ->
@@ -73,7 +75,7 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <Button variant="ghost" className={NAV} onClick={p.onSolo}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'solo' || undefined} onClick={p.onSolo}>
             <Icon name="coins" size={28} /> {t('menu.solo')}
           </Button>
         )}
@@ -115,14 +117,14 @@ export default function SideMenu(p: SideMenuProps) {
 
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
-        <Button variant="ghost" className={NAV} onClick={p.onTournaments}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'tournaments' || undefined} onClick={p.onTournaments}>
           <Icon name="ranking" size={28} /> {t('menu.tournaments')}
         </Button>
-        <Button variant="ghost" className={NAV} onClick={p.onLeaderboard}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} onClick={p.onLeaderboard}>
           <Icon name="trophy" size={28} /> {t('menu.leaderboard')}
         </Button>
         {p.loggedIn && (
-          <Button variant="ghost" className={NAV} onClick={p.onFriends}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'friends' || undefined} onClick={p.onFriends}>
             <Icon name="users" size={28} /> {t('menu.friends')}
           </Button>
         )}
@@ -138,7 +140,7 @@ export default function SideMenu(p: SideMenuProps) {
             </Button>
           )}
           {p.loggedIn && (
-            <Button variant="ghost" className={NAV} onClick={p.onMyStats}>
+            <Button variant="ghost" className={NAV} data-active={p.active === 'stats' || undefined} onClick={p.onMyStats}>
               <Icon name="chart" size={28} /> {t('menu.myStats')}
             </Button>
           )}
@@ -179,20 +181,20 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Araclar (dogrudan; "Daha fazla" acilir menu yok) */}
       <div className="menu-group">
         <div className="menu-label">{t('menu.tools')}</div>
-        <Button variant="ghost" className={NAV} onClick={p.onAnalyzer}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'analyzer' || undefined} onClick={p.onAnalyzer}>
           <Icon name="analyze" size={28} /> {t('pa.title')}
         </Button>
         {p.onBlunders && (
-          <Button variant="ghost" className={NAV} onClick={p.onBlunders}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'blunders' || undefined} onClick={p.onBlunders}>
             <Icon name="alert" size={28} /> {t('menu.blunders')}
           </Button>
         )}
         {p.onMatchHistory && (
-          <Button variant="ghost" className={NAV} onClick={p.onMatchHistory}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'matchHistory' || undefined} onClick={p.onMatchHistory}>
             <Icon name="analyze" size={28} /> {t('menu.matchHistory')}
           </Button>
         )}
-        <Button variant="ghost" className={NAV} onClick={p.onFairness}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'fairness' || undefined} onClick={p.onFairness}>
           <Icon name="dice" size={28} /> {t('fair.title')}
         </Button>
       </div>

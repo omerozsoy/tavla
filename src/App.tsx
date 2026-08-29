@@ -3370,6 +3370,33 @@ export default function App() {
     analyzerOpen ||
     editProfile
 
+  // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
+  const activeKey = leaderboardOpen
+    ? 'leaderboard'
+    : tournOpen
+      ? 'tournaments'
+      : shopOpen
+        ? 'shop'
+        : statsOpen
+          ? 'stats'
+          : friendsOpen
+            ? 'friends'
+            : blunderOpen
+              ? 'blunders'
+              : matchHistOpen
+                ? 'matchHistory'
+                : fairOpen
+                  ? 'fairness'
+                  : soloOpen
+                    ? 'solo'
+                    : analyzerOpen
+                      ? 'analyzer'
+                      : clubsOpen
+                        ? 'clubs'
+                        : lessonsOpen
+                          ? 'lessons'
+                          : ''
+
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
     <>
@@ -3558,6 +3585,7 @@ export default function App() {
           <SideMenu
             inGame={false}
             {...menuProps}
+            active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
           />
@@ -3617,6 +3645,7 @@ export default function App() {
           <SideMenu
             inGame={false}
             {...menuProps}
+            active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
           />
