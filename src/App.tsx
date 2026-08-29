@@ -3714,25 +3714,22 @@ export default function App() {
                   </span>
                 )}
                 {!user && <h1 className="hero-title">{t('home.heroTitle')}</h1>}
-                <div className="hero-cta">
-                  <div className="hero-cta-row">
-                    <Button variant="secondary" onClick={menuProps.onSolo}>
-                      <Icon name="coins" size={18} /> {t('menu.solo')}
-                    </Button>
-                    <span className="hero-cta-note">{t('home.soloNote')}</span>
-                  </div>
-                  <div className="hero-cta-row">
-                    <Button variant="secondary" onClick={menuProps.onNewGame}>
-                      <Icon name="ranking" size={18} /> {t('menu.match')}
-                    </Button>
-                    <span className="hero-cta-note">{t('home.matchNote')}</span>
-                  </div>
-                  <div className="hero-cta-row">
-                    <Button variant="secondary" onClick={menuProps.onAiGame}>
-                      <Icon name="robot" size={18} /> {t('menu.aiGame')}
-                    </Button>
-                    <span className="hero-cta-note">{t('home.aiNote')}</span>
-                  </div>
+                <div className="mode-grid">
+                  <button type="button" className="mode-card" onClick={menuProps.onSolo}>
+                    <span className="mode-card-ic"><Icon name="coins" size={24} /></span>
+                    <span className="mode-card-title">{t('menu.solo')}</span>
+                    <span className="mode-card-desc">{t('home.soloNote')}</span>
+                  </button>
+                  <button type="button" className="mode-card" onClick={menuProps.onNewGame}>
+                    <span className="mode-card-ic"><Icon name="ranking" size={24} /></span>
+                    <span className="mode-card-title">{t('menu.match')}</span>
+                    <span className="mode-card-desc">{t('home.matchNote')}</span>
+                  </button>
+                  <button type="button" className="mode-card" onClick={menuProps.onAiGame}>
+                    <span className="mode-card-ic"><Icon name="robot" size={24} /></span>
+                    <span className="mode-card-title">{t('menu.aiGame')}</span>
+                    <span className="mode-card-desc">{t('home.aiNote')}</span>
+                  </button>
                 </div>
               </div>
             </section>
