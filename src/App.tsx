@@ -3751,6 +3751,7 @@ export default function App() {
                 coins={user.coins ?? 0}
                 wins={user.wins ?? 0}
                 games={user.games_played ?? 0}
+                showStats={false}
                 daily={{
                   ready: rewardReady,
                   countdown: fmtCountdown(rewardSecs),

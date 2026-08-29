@@ -16,13 +16,8 @@ const FEATURES: { icon: IconName; key: string }[] = [
 ]
 
 // ---- Uye panosu (giris yapmis kullaniciya): tek bakista durum + hizli erisim ----
-export function HomeDashboard(p: {
-  rating: number
-  coins: number
-  wins: number
-  games: number
-  daily?: { ready: boolean; countdown: string; onClaim: () => void }
-}) {
+// 4 hizli stat karti (Puan/Coin/Galibiyet/Oyun) — hem ana pano hem Profilim sayfasi kullanir
+export function StatCards(p: { rating: number; coins: number; wins: number; games: number }) {
   const { t } = useT()
   const winRate = p.games > 0 ? Math.round((p.wins / p.games) * 100) : null
   // Her stat semantik renk kimligi: Puan=navy, Coin=orange, Galibiyet=aqua, Oyun=coral
@@ -38,23 +33,38 @@ export function HomeDashboard(p: {
     },
     { icon: 'dice', val: p.games, label: t('home.dash.games'), tone: 'coral' },
   ]
+  return (
+    <div className="dash-stats">
+      {stats.map((s) => (
+        <div className={`dstat dstat-${s.tone}`} key={s.label}>
+          <span className="dstat-icon" aria-hidden="true">
+            <Icon name={s.icon} size={18} />
+          </span>
+          <span className="dstat-val">
+            {s.val.toLocaleString()}
+            {s.sub && <span className="dstat-sub">{s.sub}</span>}
+          </span>
+          <span className="dstat-label">{s.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
+export function HomeDashboard(p: {
+  rating: number
+  coins: number
+  wins: number
+  games: number
+  daily?: { ready: boolean; countdown: string; onClaim: () => void }
+  showStats?: boolean
+}) {
+  const { t } = useT()
   return (
     <section className="home-dash" aria-label={t('menu.myStats')}>
-      <div className="dash-stats">
-        {stats.map((s) => (
-          <div className={`dstat dstat-${s.tone}`} key={s.label}>
-            <span className="dstat-icon" aria-hidden="true">
-              <Icon name={s.icon} size={18} />
-            </span>
-            <span className="dstat-val">
-              {s.val.toLocaleString()}
-              {s.sub && <span className="dstat-sub">{s.sub}</span>}
-            </span>
-            <span className="dstat-label">{s.label}</span>
-          </div>
-        ))}
-      </div>
+      {p.showStats !== false && (
+        <StatCards rating={p.rating} coins={p.coins} wins={p.wins} games={p.games} />
+      )}
       {p.daily && (
         <button
           type="button"
