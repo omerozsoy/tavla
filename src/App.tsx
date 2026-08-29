@@ -3794,19 +3794,28 @@ export default function App() {
                 {!user && <h1 className="hero-title">{t('home.heroTitle')}</h1>}
                 <div className="mode-grid">
                   <button type="button" className="mode-card" onClick={menuProps.onSolo}>
-                    <span className="mode-card-ic"><Icon name="coins" size={24} /></span>
+                    <span className="mode-card-ic"><Icon name="coins" size={26} /></span>
                     <span className="mode-card-title">{t('menu.solo')}</span>
                     <span className="mode-card-desc">{t('home.soloNote')}</span>
+                    <span className="mode-card-cta">
+                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                    </span>
                   </button>
                   <button type="button" className="mode-card" onClick={menuProps.onNewGame}>
-                    <span className="mode-card-ic"><Icon name="ranking" size={24} /></span>
+                    <span className="mode-card-ic"><Icon name="ranking" size={26} /></span>
                     <span className="mode-card-title">{t('menu.match')}</span>
                     <span className="mode-card-desc">{t('home.matchNote')}</span>
+                    <span className="mode-card-cta">
+                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                    </span>
                   </button>
                   <button type="button" className="mode-card" onClick={menuProps.onAiGame}>
-                    <span className="mode-card-ic"><Icon name="robot" size={24} /></span>
+                    <span className="mode-card-ic"><Icon name="robot" size={26} /></span>
                     <span className="mode-card-title">{t('menu.aiGame')}</span>
                     <span className="mode-card-desc">{t('home.aiNote')}</span>
+                    <span className="mode-card-cta">
+                      {t('home.startCta')} <Icon name="chevron" size={15} />
+                    </span>
                   </button>
                 </div>
               </div>

@@ -5904,6 +5904,7 @@ button.stat-chip:hover {
   transition:
     border-color 200ms var(--ease-out),
     background 200ms var(--ease-out),
+    box-shadow 200ms var(--ease-out),
     transform 200ms var(--ease-out);
   /* Nazik stagger giris (mount'ta) */
   animation: mode-card-in 440ms var(--ease-out) both;
@@ -5940,54 +5941,56 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
+  /* Ince ic halka: rozete derinlik/kimlik verir */
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
   transition:
     background 200ms var(--ease-out),
     transform 200ms var(--ease-out);
 }
 .mode-card-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  font-size: 1.18rem;
+  font-weight: 800;
+  letter-spacing: -0.015em;
 }
 .mode-card-desc {
   font-size: 0.86rem;
   line-height: 1.5;
   color: var(--muted);
 }
-/* Sag ust kose oku: tiklanabilirlik ipucu (hover'da kayar) */
-.mode-card::after {
-  content: '';
-  position: absolute;
-  top: 22px;
-  right: 18px;
-  width: 8px;
-  height: 8px;
-  border-top: 2px solid var(--border);
-  border-right: 2px solid var(--border);
-  transform: rotate(45deg);
-  transition:
-    border-color 200ms var(--ease-out),
-    transform 200ms var(--ease-out);
+/* Alt CTA: "Basla ->" — kart yuksekligini doldurur (margin-top:auto), altta hizali */
+.mode-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: auto;
+  padding-top: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.mode-card-cta > svg {
+  transition: transform 200ms var(--ease-out);
 }
 /* Hover efektleri yalniz gercek isaretleyicili cihazlarda (dokunmatikte yapiskan hover yok) */
 @media (hover: hover) and (pointer: fine) {
   .mode-card:hover {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+    /* Hafif aksan-tonlu derinlik golgesi (flat chrome'da olcumlu) */
+    box-shadow: 0 12px 28px -16px color-mix(in srgb, var(--accent) 55%, transparent);
   }
   .mode-card:hover .mode-card-ic {
-    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
     transform: scale(1.06);
   }
-  .mode-card:hover::after {
-    border-color: var(--accent);
-    transform: rotate(45deg) translate(2px, -2px);
+  .mode-card:hover .mode-card-cta > svg {
+    transform: translateX(3px);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -5996,7 +5999,8 @@ button.stat-chip:hover {
   }
   .mode-card:hover,
   .mode-card:active,
-  .mode-card:hover .mode-card-ic {
+  .mode-card:hover .mode-card-ic,
+  .mode-card:hover .mode-card-cta > svg {
     transform: none;
   }
 }
