@@ -51,7 +51,7 @@ const CHROME_TOKENS: { token: string; use: string }[] = [
   { token: '--input-bg', use: 'Form input zemini' },
 ]
 const TYPO: { label: string; cls: string; note: string }[] = [
-  { label: 'Display · Playfair Display 800', cls: 'sc-t-display', note: '--tv-font-display · clamp' },
+  { label: 'Display · Outfit 800', cls: 'sc-t-display', note: '--tv-font-display · clamp' },
   { label: 'H1 · başlık (serif)', cls: 'sc-t-h1', note: 'h1 · --fs-3xl 2.25rem' },
   { label: 'H2 · bölüm başlığı', cls: 'sc-t-h2', note: 'h2 · --fs-2xl 1.75rem' },
   { label: 'H3 · alt başlık', cls: 'sc-t-h3', note: 'h3 · --fs-xl 1.375rem' },
@@ -60,7 +60,7 @@ const TYPO: { label: string; cls: string; note: string }[] = [
   { label: 'Small · ikincil metin', cls: 'sc-t-small', note: '--fs-sm 0.875rem' },
   { label: 'Caption · etiket / açıklama', cls: 'sc-t-caption', note: '--fs-xs 0.8rem · muted' },
   { label: 'BUTON METNİ', cls: 'sc-t-btn', note: '--fw-semibold 600' },
-  { label: '1487 · 2.35 PR', cls: 'sc-t-num', note: 'Numeric · JetBrains Mono (tabular)' },
+  { label: '1487 · 2.35 PR', cls: 'sc-t-num', note: 'Numeric · Outfit (tabular-nums)' },
 ]
 const SPACE = ['--space-1', '--space-2', '--space-3', '--space-4', '--space-5', '--space-6', '--space-8', '--space-10']
 const RADII = ['--radius-xs', '--radius-sm', '--radius-md', '--radius-lg', '--radius-xl', '--radius-pill']
