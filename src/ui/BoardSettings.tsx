@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -36,7 +36,8 @@ interface Props {
   learnMode: boolean
   setLearnMode: (v: boolean) => void
   onClose: () => void
-  embed?: boolean // Profilim "Ayarlar" sekmesine gomulu render (overlay/kapat/kaydet yok)
+  embed?: boolean // gomulu render (overlay/kapat/kaydet yok)
+  framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi icerigi (FrameGallery embed)
 }
 
 // Nadirlik siralamasi + renkleri (kart cercevesi ve baslik). HEX'ler urun spesifikasyonundan.
@@ -58,9 +59,12 @@ export default function BoardSettings({
   setLearnMode,
   onClose,
   embed,
+  framesSlot,
 }: Props) {
   const { t } = useT()
   useEscape(embed ? () => {} : onClose)
+  // Ayarlar sekmeleri: genel (tema/pip/analiz/ogrenme) | tahta rengi | avatar cercevesi
+  const [tab, setTab] = useState<'general' | 'board' | 'frame'>('general')
   return (
     <div
       className={embed ? 'settings-embed' : 'register-overlay modal page'}
@@ -84,6 +88,41 @@ export default function BoardSettings({
         )}
         {!embed && <h2><Icon name="settings" size={20} /> {t('menu.settings')}</h2>}
 
+        {/* Ayarlar sekmeleri (UI/UX Pro Max segmented control) */}
+        <div className="prof-tabs bs-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'general'}
+            className={`prof-tab ${tab === 'general' ? 'active' : ''}`}
+            onClick={() => setTab('general')}
+          >
+            <Icon name="settings" size={16} /> {t('settings.tabGeneral')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'board'}
+            className={`prof-tab ${tab === 'board' ? 'active' : ''}`}
+            onClick={() => setTab('board')}
+          >
+            <Icon name="dice" size={16} /> {t('settings.tabBoard')}
+          </button>
+          {framesSlot && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'frame'}
+              className={`prof-tab ${tab === 'frame' ? 'active' : ''}`}
+              onClick={() => setTab('frame')}
+            >
+              <Icon name="crown" size={16} /> {t('settings.tabFrame')}
+            </button>
+          )}
+        </div>
+
+        {tab === 'general' && (
+          <>
         {/* Tema (koyu/acik) */}
         <div className="setup-row">
           <div className="setup-label">{t('menu.theme')}</div>
@@ -123,8 +162,11 @@ export default function BoardSettings({
           <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
         </button>
         <p className="setup-note">{t('hint.learnNote')}</p>
+          </>
+        )}
 
-        {/* Tahta secimi: nadirlik gruplari, buyuk + tam pul dizili onizleme, rarity cercevesi */}
+        {/* Tahta Rengi sekmesi: nadirlik gruplari, buyuk + tam pul dizili onizleme */}
+        {tab === 'board' && (
         <div className="setup-row">
           <div className="setup-label">{t('menu.board')}</div>
           {RARITY_ORDER.map((tier) => {
@@ -177,6 +219,10 @@ export default function BoardSettings({
             )
           })}
         </div>
+        )}
+
+        {/* Avatar Cercevesi sekmesi (FrameGallery embed) */}
+        {tab === 'frame' && framesSlot}
 
         {!embed && (
           <Button variant="default" className="bs-save" onClick={onClose}>

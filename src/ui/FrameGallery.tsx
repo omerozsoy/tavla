@@ -18,6 +18,7 @@ interface Props {
   avatar?: string | null
   name?: string
   onClose: () => void
+  embed?: boolean // Ayarlar "Avatar Cercevesi" sekmesine gomulu render
 }
 
 // Galeri grup renkleri -> merkezi rarity paletinden (rarityColors.ts)
@@ -25,19 +26,28 @@ const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
 
 const SIZES = [48, 64, 96] as const
 
-export default function FrameGallery({ avatar, name, onClose }: Props) {
+export default function FrameGallery({ avatar, name, onClose, embed }: Props) {
   const { t } = useT()
-  useEscape(onClose)
+  useEscape(embed ? () => {} : onClose)
   const [size, setSize] = useState<number>(96)
   const [animated, setAnimated] = useState(true)
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card frame-gallery-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <h2><Icon name="crown" size={20} /> {t('frames.title')}</h2>
+    <div
+      className={embed ? 'frames-embed' : 'register-overlay modal page'}
+      role={embed ? undefined : 'dialog'}
+      aria-modal={embed ? undefined : true}
+    >
+      <div
+        className={`register-card frame-gallery-card ${embed ? 'is-embed' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {!embed && (
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+            <Icon name="x" size={16} />
+          </Button>
+        )}
+        {!embed && <h2><Icon name="crown" size={20} /> {t('frames.title')}</h2>}
         <p className="setup-note">{t('frames.subtitle')}</p>
 
         {/* Vitrin araclari: boyut + animasyon */}

@@ -6379,10 +6379,16 @@ button.stat-chip:hover {
 .profile-settings-sec {
   margin: 2px 0 6px;
 }
-/* Profilim sekmesine gomulu ProfileStats/BoardSettings: overlay + kart chrome'u notralize */
+/* Gomulu ProfileStats/BoardSettings/FrameGallery: overlay + kart chrome'u notralize */
 .stats-embed,
-.settings-embed {
+.settings-embed,
+.frames-embed {
   width: 100%;
+}
+/* Ayarlar sekme cubugu: dar modalda tasmasin -> sar */
+.bs-tabs {
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 .register-card.is-embed {
   max-width: none;
