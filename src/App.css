@@ -5879,6 +5879,8 @@ button.stat-chip:hover {
 }
 /* ---- Oyun modu secici: 3 tiklanabilir kart (hicbiri onceden secili degil) ---- */
 .mode-grid {
+  /* Emil: guclu ozel ease-out egrisi (yerlesik ease'ler cok zayif) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 14px;
@@ -5898,22 +5900,41 @@ button.stat-chip:hover {
   color: var(--text);
   font-family: inherit;
   cursor: pointer;
+  /* Yalnizca gerekli ozellikler + guclu ease-out; transform ve renk ayni ritimde */
   transition:
-    border-color 180ms ease,
-    background 180ms ease,
-    transform 180ms ease;
+    border-color 200ms var(--ease-out),
+    background 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
+  /* Nazik stagger giris (mount'ta) */
+  animation: mode-card-in 440ms var(--ease-out) both;
 }
-.mode-card:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
-  transform: translateY(-2px);
+.mode-card:nth-child(1) {
+  animation-delay: 40ms;
+}
+.mode-card:nth-child(2) {
+  animation-delay: 100ms;
+}
+.mode-card:nth-child(3) {
+  animation-delay: 160ms;
+}
+@keyframes mode-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .mode-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
+/* Emil: basisa aninda tepki — kart "dinliyor" hissi (subtle scale) */
 .mode-card:active {
-  transform: translateY(0);
+  transform: scale(0.985);
+  transition-duration: 120ms;
 }
 .mode-card-ic {
   display: inline-flex;
@@ -5924,10 +5945,9 @@ button.stat-chip:hover {
   border-radius: 12px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
-  transition: background 180ms ease;
-}
-.mode-card:hover .mode-card-ic {
-  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  transition:
+    background 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
 }
 .mode-card-title {
   font-size: 1.05rem;
@@ -5939,7 +5959,7 @@ button.stat-chip:hover {
   line-height: 1.5;
   color: var(--muted);
 }
-/* Sag ust kose oku: tiklanabilirlik ipucu (hover'da belirginlesir) */
+/* Sag ust kose oku: tiklanabilirlik ipucu (hover'da kayar) */
 .mode-card::after {
   content: '';
   position: absolute;
@@ -5951,16 +5971,32 @@ button.stat-chip:hover {
   border-right: 2px solid var(--border);
   transform: rotate(45deg);
   transition:
-    border-color 180ms ease,
-    transform 180ms ease;
+    border-color 200ms var(--ease-out),
+    transform 200ms var(--ease-out);
 }
-.mode-card:hover::after {
-  border-color: var(--accent);
-  transform: rotate(45deg) translate(2px, -2px);
+/* Hover efektleri yalniz gercek isaretleyicili cihazlarda (dokunmatikte yapiskan hover yok) */
+@media (hover: hover) and (pointer: fine) {
+  .mode-card:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+    transform: translateY(-2px);
+  }
+  .mode-card:hover .mode-card-ic {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    transform: scale(1.06);
+  }
+  .mode-card:hover::after {
+    border-color: var(--accent);
+    transform: rotate(45deg) translate(2px, -2px);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mode-card,
-  .mode-card:hover {
+  .mode-card {
+    animation: none;
+  }
+  .mode-card:hover,
+  .mode-card:active,
+  .mode-card:hover .mode-card-ic {
     transform: none;
   }
 }
