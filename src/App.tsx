@@ -3129,12 +3129,22 @@ export default function App() {
           className="account-avf"
         />
         {profile.nickname}
-        {user?.rating != null && (
-          <span className="account-rating">
-            <Icon name="star" size={15} /> {user.rating}
-          </span>
-        )}
       </button>
+      {user && (
+        <Button
+          variant="outline"
+          className="btn-coin"
+          onClick={() => goPage(() => setShopOpen(true))}
+          title={t('shop.title')}
+        >
+          <Icon name="coin" size={16} /> {user.coins ?? 0}
+        </Button>
+      )}
+      {user?.rating != null && (
+        <span className="account-rating">
+          <Icon name="star" size={15} /> {user.rating}
+        </span>
+      )}
       {user && (
         <NotificationBell
           items={notifications}
@@ -3145,16 +3155,6 @@ export default function App() {
             markNotificationsRead().catch(() => {})
           }}
         />
-      )}
-      {user && (
-        <Button
-          variant="outline"
-          className="btn-coin"
-          onClick={() => goPage(() => setShopOpen(true))}
-          title={t('shop.title')}
-        >
-          <Icon name="coin" size={16} /> {user.coins ?? 0}
-        </Button>
       )}
       {user &&
         (rewardReady ? (
