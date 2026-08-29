@@ -96,6 +96,8 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import FrameShop from './ui/FrameShop'
+import ProfileOverview from './ui/ProfileOverview'
+import { AVATAR_FRAMES } from './ui/avatarFrames'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
@@ -279,6 +281,7 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
   const [profileTab, setProfileTab] = useState<'info' | 'stats' | 'settings'>('info') // Profilim acilis sekmesi
+  const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
   const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
@@ -412,7 +415,7 @@ export default function App() {
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
   const currentSlug = editProfile
-    ? 'profil-duzenle'
+    ? 'profil'
     : leaderboardOpen
     ? 'lider-tablosu'
     : tournOpen
@@ -494,6 +497,7 @@ export default function App() {
           break
         case 'istatistiklerim':
           setProfileTab('stats')
+          setProfileEditMode(true)
           setEditProfile(true)
           break
         case 'arkadaslar':
@@ -561,7 +565,9 @@ export default function App() {
         case 'yapay-zeka':
           setSetup('pvb')
           break
-        case 'profil-duzenle':
+        case 'profil':
+        case 'profil-duzenle': // eski slug -> geriye donuk uyum
+          setProfileEditMode(false)
           setEditProfile(true)
           break
         default:
@@ -3136,21 +3142,38 @@ export default function App() {
     />
   ) : null
 
-  // Profil duzenleme sayfasi (normal sayfa, modal degil; sol menu gorunur)
+  // Sahip olunan tahtalar (kilitli olmayanlar) + cerceveler (unlocks) — Profil genel bakisi
+  const ownedBoards = boardThemeList.filter((b) => !b.locked)
+  const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
+
+  // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
   const editProfilePage = editProfile ? (
-    <Auth
-      key={user ? `edit-${user.id}-${profileTab}` : 'edit-guest'}
-      page
-      editUser={user}
-      editGuest={!user ? guestProfile : null}
-      onLogout={handleLogout}
-      emailUnverified={!!user && !user.email_verified_at}
-      resendState={resendState}
-      onResendVerification={handleResendVerification}
-      initialTab={profileTab}
-      statsExtra={statsContent}
-      {...authProps}
-    />
+    user && !profileEditMode ? (
+      <ProfileOverview
+        user={user}
+        avatar={profile.avatar ?? null}
+        boardTheme={boardTheme}
+        ownedBoards={ownedBoards}
+        ownedFrames={ownedFrames}
+        onEdit={() => setProfileEditMode(true)}
+        onClose={() => setEditProfile(false)}
+      />
+    ) : (
+      <Auth
+        key={user ? `edit-${user.id}-${profileTab}` : 'edit-guest'}
+        page
+        editUser={user}
+        editGuest={!user ? guestProfile : null}
+        onLogout={handleLogout}
+        emailUnverified={!!user && !user.email_verified_at}
+        resendState={resendState}
+        onResendVerification={handleResendVerification}
+        initialTab={profileTab}
+        statsExtra={statsContent}
+        {...authProps}
+        onCancel={() => (user ? setProfileEditMode(false) : setEditProfile(false))}
+      />
+    )
   ) : null
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
@@ -3165,6 +3188,7 @@ export default function App() {
         onClick={() =>
           goPage(() => {
             setProfileTab('info')
+            setProfileEditMode(false)
             setEditProfile(true)
           })
         }
@@ -3369,6 +3393,7 @@ export default function App() {
       user
         ? goPage(() => {
             setProfileTab('stats')
+            setProfileEditMode(true)
             setEditProfile(true)
           })
         : setShowAuth(true),
