@@ -58,12 +58,12 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
       <Button
         variant="ghost"
         size="icon"
-        className="relative [&_svg]:size-[28px]!"
+        className="relative [&_svg]:size-[24px]!"
         onClick={toggle}
         title={t('notif.title')}
         aria-label={t('notif.title')}
       >
-        <Icon name="bell" size={28} />
+        <Icon name="bell" size={24} />
         {unread > 0 && <span className="notif-badge">{unread > 9 ? '9+' : unread}</span>}
       </Button>
       {open && (

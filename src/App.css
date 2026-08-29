@@ -67,8 +67,8 @@
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
   --tv-font-ui: 'Outfit', 'Space Grotesk', system-ui, sans-serif;
   --tv-font-mono: 'JetBrains Mono', ui-monospace, monospace;
-  /* Display fontu: Poppins -> sicak/editoryal basliklar (terracotta yon) */
-  --tv-font-display: 'Poppins', 'Space Grotesk', system-ui, sans-serif;
+  /* Display fontu (ikincil): Libre Baskerville -> zamansiz/editoryal serif basliklar */
+  --tv-font-display: 'Libre Baskerville', 'Playfair Display', Georgia, 'Times New Roman', serif;
   /* Coin/odul rengi -> amber (terracotta; coin warm tertiary) */
   --tv-gold: var(--orange);
 
@@ -267,8 +267,8 @@ body {
   overflow: hidden;
 }
 
-/* Basliklar display fontu (Poppins) + hafif siki harf araligi.
-   Govde Outfit kalir; basliklarda net display/gövde kontrasti -> markali, elle yapilmis his. */
+/* Basliklar display fontu (Libre Baskerville — serif) + hafif siki harf araligi.
+   Govde Outfit kalir; basliklarda serif/sans kontrasti -> markali, editoryal his. */
 h1,
 h2,
 h3,
