@@ -71,22 +71,22 @@ export default function SideMenu(p: SideMenuProps) {
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
           <Button variant="ghost" className={NAV} onClick={p.onSolo}>
-            <Icon name="coin" /> {t('menu.solo')}
+            <Icon name="coin" size={24} /> {t('menu.solo')}
           </Button>
         )}
         {!p.inGame && (
           <Button variant="ghost" className={NAV} onClick={p.onNewGame}>
-            <Icon name="target" /> {t('menu.match')}
+            <Icon name="chart" size={24} /> {t('menu.match')}
           </Button>
         )}
         {!p.inGame && p.onAiGame && (
           <Button variant="ghost" className={NAV} onClick={p.onAiGame}>
-            <Icon name="robot" /> {t('menu.aiGame')}
+            <Icon name="robot" size={24} /> {t('menu.aiGame')}
           </Button>
         )}
         {p.hasActiveGame && !p.inGame && (
           <Button variant="secondary" className={NAV} onClick={p.onResume}>
-            <Icon name="live" /> {t('menu.activeGames')}
+            <Icon name="live" size={24} /> {t('menu.activeGames')}
           </Button>
         )}
       </div>
@@ -104,7 +104,7 @@ export default function SideMenu(p: SideMenuProps) {
           )}
           {p.canResign && p.onResign && (
             <Button variant="destructive" className={NAV} onClick={p.onResign}>
-              <Icon name="flag" /> {t('resign.button')}
+              <Icon name="flag" size={24} /> {t('resign.button')}
             </Button>
           )}
         </div>
@@ -113,14 +113,14 @@ export default function SideMenu(p: SideMenuProps) {
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
         <Button variant="ghost" className={NAV} onClick={p.onTournaments}>
-          <Icon name="medal" /> {t('menu.tournaments')}
+          <Icon name="ranking" size={24} /> {t('menu.tournaments')}
         </Button>
         <Button variant="ghost" className={NAV} onClick={p.onLeaderboard}>
-          <Icon name="trophy" /> {t('menu.leaderboard')}
+          <Icon name="trophy" size={24} /> {t('menu.leaderboard')}
         </Button>
         {p.loggedIn && (
           <Button variant="ghost" className={NAV} onClick={p.onFriends}>
-            <Icon name="users" /> {t('menu.friends')}
+            <Icon name="users" size={24} /> {t('menu.friends')}
           </Button>
         )}
       </div>
@@ -131,12 +131,12 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onMembership && (
             <Button variant="ghost" className={NAV} onClick={p.onMembership}>
-              <Icon name="crown" /> {t('mem.menu')}
+              <Icon name="crown" size={24} /> {t('mem.menu')}
             </Button>
           )}
           {p.loggedIn && (
             <Button variant="ghost" className={NAV} onClick={p.onMyStats}>
-              <Icon name="chart" /> {t('menu.myStats')}
+              <Icon name="chart" size={24} /> {t('menu.myStats')}
             </Button>
           )}
         </div>
@@ -147,27 +147,27 @@ export default function SideMenu(p: SideMenuProps) {
         <div className="menu-group">
           {p.onCalendar && (
             <Button variant="ghost" className={NAV} onClick={p.onCalendar}>
-              <Icon name="calendar" /> {t('menu.calendar')}
+              <Icon name="calendar" size={24} /> {t('menu.calendar')}
             </Button>
           )}
           {p.onClubs && (
             <Button variant="ghost" className={NAV} onClick={p.onClubs}>
-              <Icon name="pin" /> {t('menu.clubs')}
+              <Icon name="pin" size={24} /> {t('menu.clubs')}
             </Button>
           )}
           {p.onServices && (
             <Button variant="ghost" className={NAV} onClick={p.onServices}>
-              <Icon name="star" /> {t('menu.services')}
+              <Icon name="star" size={24} /> {t('menu.services')}
             </Button>
           )}
           {p.onNews && (
             <Button variant="ghost" className={NAV} onClick={p.onNews}>
-              <Icon name="chat" /> {t('menu.news')}
+              <Icon name="chat" size={24} /> {t('menu.news')}
             </Button>
           )}
           {p.onMagazine && (
             <Button variant="ghost" className={NAV} onClick={p.onMagazine}>
-              <Icon name="play" /> {t('menu.magazine')}
+              <Icon name="play" size={24} /> {t('menu.magazine')}
             </Button>
           )}
         </div>
@@ -177,20 +177,20 @@ export default function SideMenu(p: SideMenuProps) {
       <div className="menu-group">
         <div className="menu-label">{t('menu.tools')}</div>
         <Button variant="ghost" className={NAV} onClick={p.onAnalyzer}>
-          <Icon name="analyze" /> {t('pa.title')}
+          <Icon name="analyze" size={24} /> {t('pa.title')}
         </Button>
         {p.onBlunders && (
           <Button variant="ghost" className={NAV} onClick={p.onBlunders}>
-            <Icon name="alert" /> {t('menu.blunders')}
+            <Icon name="alert" size={24} /> {t('menu.blunders')}
           </Button>
         )}
         {p.onMatchHistory && (
           <Button variant="ghost" className={NAV} onClick={p.onMatchHistory}>
-            <Icon name="analyze" /> {t('menu.matchHistory')}
+            <Icon name="analyze" size={24} /> {t('menu.matchHistory')}
           </Button>
         )}
         <Button variant="ghost" className={NAV} onClick={p.onFairness}>
-          <Icon name="dice" /> {t('fair.title')}
+          <Icon name="dice" size={24} /> {t('fair.title')}
         </Button>
       </div>
     </aside>
