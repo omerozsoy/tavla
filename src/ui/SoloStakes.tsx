@@ -60,7 +60,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
           </h2>
           <p className="register-sub">{t('solo.sub')}</p>
           <div className="solo-balance">
-            <Icon name="coin" size={15} /> {fmt(coins)}
+            <Icon name="banknotes" size={15} /> {fmt(coins)}
           </div>
 
           <div className="solo-grid">
@@ -93,7 +93,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
                     )}
                   </span>
                   <span className="solo-stake">
-                    <Icon name="coin" size={14} /> {fmt(lv.stake)}
+                    <Icon name="banknotes" size={14} /> {fmt(lv.stake)}
                   </span>
                 </button>
               )
@@ -107,7 +107,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
             <span className="solo-preview-info">
               {t('solo.level', { n: sel.level })} ·{' '}
               <b>
-                <Icon name="coin" size={14} /> {fmt(sel.stake)}
+                <Icon name="banknotes" size={14} /> {fmt(sel.stake)}
               </b>
             </span>
             <Button
