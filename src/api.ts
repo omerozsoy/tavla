@@ -496,6 +496,10 @@ export interface Tournament {
   /** Siralamaya gore odul tablosu: index 0 = 1.lik. Turnuva bitince otomatik odenir. */
   prizes?: { coins: number; desc?: string | null }[]
   entry_fee?: number
+  /** Son katilim tarihi (ISO); bu andan 1dk sonra otomatik baslar. */
+  register_until?: string | null
+  /** Otomatik baslama zamani (ISO) = register_until + 1dk. Geri sayim bunu kullanir. */
+  starts_at?: string | null
   players?: TPlayer[]
   bracket?: TMatch[][]
   champion_id?: number | null

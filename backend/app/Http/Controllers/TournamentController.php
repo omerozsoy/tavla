@@ -12,6 +12,7 @@ class TournamentController extends Controller
     // Acik + devam eden turnuvalar
     public function index()
     {
+        $this->autoStartDue(); // son katilim tarihi + 1dk gecenleri baslat
         $list = Tournament::whereIn('status', ['open', 'running'])
             ->orderByDesc('created_at')
             ->limit(30)
@@ -22,7 +23,8 @@ class TournamentController extends Controller
 
     public function show(Tournament $tournament)
     {
-        return response()->json(['tournament' => $this->full($tournament)]);
+        $this->autoStartDue(); // acilan turnuva zamani gectiyse burada da baslasin
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
     public function create(Request $request)
@@ -40,11 +42,13 @@ class TournamentController extends Controller
             'prizes.*.coins' => ['nullable', 'integer', 'min:0', 'max:1000000'],
             'prizes.*.desc' => ['nullable', 'string', 'max:120'],
             'entry_fee' => ['nullable', 'integer', 'min:0', 'max:100000'],
+            'register_until' => ['nullable', 'date'],
         ]);
         $t = Tournament::create([
             'name' => $data['name'],
             'size' => $data['size'],
             'status' => 'open',
+            'register_until' => $data['register_until'] ?? null,
             'creator_id' => $request->user()->id,
             'prize_coins' => $data['prize_coins'] ?? 0,
             'prize_desc' => $data['prize_desc'] ?? null,
@@ -470,6 +474,36 @@ class TournamentController extends Controller
         $t->save();
     }
 
+    // Son katilim tarihi + 1dk gecen ACIK turnuvalari otomatik baslat (>=2 oyuncu).
+    // Cron gerektirmez: liste/detay her cekildiginde tembel calisir. Kilit altinda
+    // status yeniden okunur -> es zamanli iki istek ayni turnuvayi iki kez baslatamaz.
+    private function autoStartDue(): void
+    {
+        $ids = Tournament::where('status', 'open')
+            ->whereNotNull('register_until')
+            ->where('register_until', '<=', now()->subSeconds(60)) // register_until + 60sn <= simdi
+            ->pluck('id');
+        foreach ($ids as $id) {
+            DB::transaction(function () use ($id) {
+                $t = Tournament::lockForUpdate()->find($id);
+                if (! $t || $t->status !== 'open') {
+                    return;
+                }
+                $players = array_filter($t->players ?? [], fn ($p) => $p !== null);
+                if (count($players) >= 2) {
+                    $this->startBracket($t);
+                }
+                // <2 oyuncu: baslatma; acik kalir (yonetici karar verir/siler)
+            });
+        }
+    }
+
+    // register_until Carbon'unu ISO'ya cevir; baslama zamani = +60sn.
+    private function startsAt(Tournament $t): ?string
+    {
+        return $t->register_until ? $t->register_until->copy()->addSeconds(60)->toIso8601String() : null;
+    }
+
     private function summary(Tournament $t): array
     {
         return [
@@ -482,6 +516,8 @@ class TournamentController extends Controller
             'prize_desc' => $t->prize_desc,
             'prizes' => is_array($t->prizes) ? array_values($t->prizes) : [],
             'entry_fee' => $t->entry_fee ?? 0,
+            'register_until' => $t->register_until?->toIso8601String(),
+            'starts_at' => $this->startsAt($t),
         ];
     }
 

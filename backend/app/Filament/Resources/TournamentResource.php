@@ -48,6 +48,12 @@ class TournamentResource extends Resource
                         'finished' => 'Bitti',
                     ])
                     ->default('open'),
+                Forms\Components\DateTimePicker::make('register_until')
+                    ->label('Son katılım tarihi')
+                    ->helperText('Bu tarih-saatten 1 dakika sonra turnuva otomatik başlar (en az 2 oyuncu varsa). Boş bırakırsan otomatik başlama olmaz.')
+                    ->seconds(false)
+                    ->native(false)
+                    ->nullable(),
                 Forms\Components\Select::make('creator_id')
                     ->label('Oluşturan')
                     ->relationship('creator', 'nickname')
@@ -124,6 +130,11 @@ class TournamentResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('register_until')
+                    ->label('Son katılım')
+                    ->dateTime('d.m.Y H:i')
+                    ->placeholder('—')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('creator.nickname')
                     ->label('Oluşturan')
                     ->placeholder('—')
