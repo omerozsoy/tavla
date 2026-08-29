@@ -1111,7 +1111,7 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'] {
   border-color: transparent !important;
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--fw-regular); /* sol menu: regular (400) */
   min-height: 44px;
 }
 .side-menu [data-slot='button'] svg {

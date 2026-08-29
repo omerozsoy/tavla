@@ -3411,7 +3411,11 @@ export default function App() {
                                     ? 'news'
                                     : contentView === 'magazine'
                                       ? 'magazine'
-                                      : ''
+                                      : setup === 'online'
+                                        ? 'match'
+                                        : setup === 'pvb'
+                                          ? 'aiGame'
+                                          : ''
 
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
