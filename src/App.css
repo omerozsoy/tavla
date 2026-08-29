@@ -5816,7 +5816,7 @@ html.fs-active .account-bar {
   width: 9px;
   height: 9px;
   border-radius: var(--radius-circle);
-  background: var(--color-error);
+  background: var(--coral); /* LIVE = coral (enerji, canlilik) */
   animation: coin-pulse 1.6s ease-in-out infinite;
 }
 .live-list,
@@ -6003,6 +6003,39 @@ html.fs-active .account-bar {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   margin-bottom: 4px;
 }
+/* Stat karti semantik renk kimligi (kart WHITE kalir; sadece ikon + ince ust serit).
+   Puan=Navy · Coin=Orange · Galibiyet=Success(yesil) · Oyun=Coral */
+.dstat {
+  border-top-width: 3px;
+}
+.dstat-navy {
+  border-top-color: var(--navy-brand);
+}
+.dstat-navy .dstat-icon {
+  color: var(--navy-brand);
+  background: color-mix(in srgb, var(--navy-brand) 14%, transparent);
+}
+.dstat-orange {
+  border-top-color: var(--orange);
+}
+.dstat-orange .dstat-icon {
+  color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 20%, transparent);
+}
+.dstat-aqua {
+  border-top-color: var(--color-success);
+}
+.dstat-aqua .dstat-icon {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+}
+.dstat-coral {
+  border-top-color: var(--coral);
+}
+.dstat-coral .dstat-icon {
+  color: var(--coral);
+  background: color-mix(in srgb, var(--coral) 16%, transparent);
+}
 .dstat-val {
   display: flex;
   align-items: baseline;
@@ -6059,8 +6092,9 @@ html.fs-active .account-bar {
   height: 42px;
   flex: none;
   border-radius: var(--radius-lg);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  /* Gunluk odul = ORANGE (odul/achievement semantik) */
+  color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 16%, transparent);
 }
 .dash-daily.ready .dd-icon {
   animation: coin-pulse 1.8s ease-in-out infinite;
@@ -7830,10 +7864,12 @@ html.fs-active .account-bar {
 }
 .lb-row.top .lb-rank {
   font-size: 1.1rem;
+  color: var(--orange); /* podium (ilk 3) = ORANGE (odul/ranking) */
 }
 .lb-row.mine {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
-  outline: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  /* Secili/kendi satirin = light AQUA (sky) */
+  background: color-mix(in srgb, var(--sky) 42%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--sky) 80%, transparent);
 }
 .lb-rank {
   text-align: center;
@@ -8775,9 +8811,9 @@ html.fs-active .account-bar {
   padding: 5px 11px;
   cursor: pointer;
 }
-/* Coin ikonu altin; sayi okunur (koyu) metin -> kontrast */
+/* Coin ikonu ORANGE (odul semantik); sayi okunur (koyu) metin -> kontrast */
 .account-coins-btn > svg {
-  color: #c8961e;
+  color: var(--orange);
 }
 .account-coins-btn:hover {
   background: color-mix(in srgb, var(--tv-gold) 20%, transparent);
