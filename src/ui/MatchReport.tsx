@@ -141,7 +141,7 @@ export default function MatchReport({
   }
 
   return (
-    <div className="register-overlay modal report-overlay">
+    <div className="register-overlay modal report-overlay" onClick={onClose}>
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
