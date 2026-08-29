@@ -745,8 +745,10 @@ const TR: Dict = {
   'home.online': 'Online Oyun',
   'home.soloNote':
     'Her oyun belirlenen coin değeri üzerinden oynanır ve oyun sonunda sonuç, kazanılan puan kadar coin bakiyene yansır. Katlama küpü kullanıldıkça oyunun coin değeri de aynı oranda artar.',
-  'home.matchNote': 'Gerçek rakibe karşı seri maç.',
-  'home.aiNote': 'Yapay zekaya karşı kendini dene.',
+  'home.matchNote':
+    '1, 3, 5, 7, 9 veya 11 puanlık maçlarda rakibinle karşılaş; maç uzadıkça şansın etkisi azalır, ustalık daha çok öne çıkar. Sonuç rating puanını etkilerken performansına göre coin kazanabilir veya kaybedebilirsin.',
+  'home.aiNote':
+    'Seviyeni seç ve yapay zekâya karşı kendini test et. Farklı zorluk seviyelerinde pratik yap, stratejini geliştir ve oyununu bir üst seviyeye taşı.',
   'home.onlineSub': 'Arkadaşınla oda kurup oyna',
   'home.twoPlayer': 'İki Kişi',
   'home.twoPlayerSub': 'Aynı cihazda karşılıklı',
@@ -1508,8 +1510,10 @@ const EN: Dict = {
   'home.online': 'Online Game',
   'home.soloNote':
     'Each game is played for a set coin value; when it ends, the result is credited to your coin balance in proportion to the points you win. As the doubling cube is used, the game’s coin value rises at the same rate.',
-  'home.matchNote': 'Series match against a real rival.',
-  'home.aiNote': 'Test yourself against the AI.',
+  'home.matchNote':
+    'Face your opponent in matches of 1, 3, 5, 7, 9 or 11 points; the longer the match, the less luck matters and the more skill stands out. The result affects your rating, and depending on your performance you can win or lose coins.',
+  'home.aiNote':
+    'Choose your level and test yourself against the AI. Practice at different difficulties, sharpen your strategy and take your game to the next level.',
   'home.onlineSub': 'Create a room and play a friend',
   'home.twoPlayer': 'Two Players',
   'home.twoPlayerSub': 'Pass-and-play on one device',
@@ -2226,8 +2230,10 @@ const ES: Dict = {
   'home.online': 'Juego Online',
   'home.soloNote':
     'Cada partida se juega por un valor fijo de monedas; al terminar, el resultado se abona a tu saldo de monedas según los puntos que ganes. A medida que se usa el cubo de doblar, el valor en monedas de la partida aumenta en la misma proporción.',
-  'home.matchNote': 'Partida por series contra un rival real.',
-  'home.aiNote': 'Ponte a prueba contra la IA.',
+  'home.matchNote':
+    'Enfréntate a tu rival en partidas a 1, 3, 5, 7, 9 u 11 puntos; cuanto más larga es la partida, menos influye la suerte y más destaca la habilidad. El resultado afecta a tu rating y, según tu rendimiento, puedes ganar o perder monedas.',
+  'home.aiNote':
+    'Elige tu nivel y ponte a prueba contra la IA. Practica en diferentes dificultades, mejora tu estrategia y lleva tu juego al siguiente nivel.',
   'home.onlineSub': 'Crea una sala y juega con un amigo',
   'home.twoPlayer': 'Dos Jugadores',
   'home.twoPlayerSub': 'Pasa y juega en un solo dispositivo',
@@ -2942,8 +2948,10 @@ const DE: Dict = {
   'home.online': 'Online-Spiel',
   'home.soloNote':
     'Jede Partie wird um einen festgelegten Coin-Wert gespielt; am Ende wird das Ergebnis entsprechend den gewonnenen Punkten deinem Coin-Guthaben gutgeschrieben. Mit jedem Einsatz des Dopplerwürfels steigt der Coin-Wert der Partie im gleichen Verhältnis.',
-  'home.matchNote': 'Satz-Match gegen einen echten Gegner.',
-  'home.aiNote': 'Miss dich mit der KI.',
+  'home.matchNote':
+    'Tritt in Matches über 1, 3, 5, 7, 9 oder 11 Punkte gegen deinen Gegner an; je länger das Match, desto weniger zählt Glück und desto mehr das Können. Das Ergebnis beeinflusst dein Rating, und je nach Leistung kannst du Coins gewinnen oder verlieren.',
+  'home.aiNote':
+    'Wähle dein Level und stell dich der KI. Übe in verschiedenen Schwierigkeitsgraden, verfeinere deine Strategie und bring dein Spiel auf die nächste Stufe.',
   'home.onlineSub': 'Erstelle einen Raum und spiele gegen einen Freund',
   'home.twoPlayer': 'Zwei Spieler',
   'home.twoPlayerSub': 'Abwechselnd an einem Gerät spielen',
@@ -3658,8 +3666,10 @@ const FR: Dict = {
   'home.online': 'Jeu en ligne',
   'home.soloNote':
     'Chaque partie se joue pour une valeur en pièces définie ; à la fin, le résultat est crédité sur ton solde de pièces au prorata des points gagnés. À mesure que le videau est utilisé, la valeur en pièces de la partie augmente d’autant.',
-  'home.matchNote': 'Match en série contre un vrai adversaire.',
-  'home.aiNote': 'Mesure-toi à l’IA.',
+  'home.matchNote':
+    'Affronte ton adversaire dans des matchs en 1, 3, 5, 7, 9 ou 11 points ; plus le match est long, moins la chance compte et plus l’habileté ressort. Le résultat influe sur ton classement et, selon ta performance, tu peux gagner ou perdre des pièces.',
+  'home.aiNote':
+    'Choisis ton niveau et mesure-toi à l’IA. Entraîne-toi à différentes difficultés, affine ta stratégie et fais passer ton jeu au niveau supérieur.',
   'home.onlineSub': 'Créez un salon et jouez contre un ami',
   'home.twoPlayer': 'Deux joueurs',
   'home.twoPlayerSub': 'Jeu à tour de rôle sur un seul appareil',
