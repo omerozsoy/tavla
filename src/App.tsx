@@ -104,6 +104,7 @@ import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
 import type { PlanId } from './plans'
+import { COIN_PACKAGES } from './coinPackages'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import {
@@ -3527,6 +3528,15 @@ export default function App() {
           onBuy={handleBuy}
           onEquip={handleEquipFrame}
           onDaily={handleDaily}
+          onBuyCoins={(pkgId) => {
+            const pkg = COIN_PACKAGES.find((p) => p.id === pkgId)
+            // TODO: gercek odeme akisi (Garanti) coin paketi icin baglanacak
+            notify.show(t('shop.coinSoon', { pkg: pkg?.name ?? '' }), 'info')
+          }}
+          onMembership={() => {
+            setShopOpen(false)
+            setMemOpen(true)
+          }}
           onClose={() => setShopOpen(false)}
         />
       )}
