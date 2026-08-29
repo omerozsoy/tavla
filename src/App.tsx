@@ -102,7 +102,7 @@ import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
-import { LiveMatchesPanel, RankingPanel, HomeFeatures, HomeDashboard } from './ui/HomePanels'
+import { LiveMatchesPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -3858,8 +3858,8 @@ export default function App() {
                 }}
               />
             )}
-            <div className="lobby-welcome">
-              {hasActiveGame && (
+            {hasActiveGame && (
+              <div className="lobby-welcome">
                 <Button
                   variant="default"
                   className="w-full"
@@ -3867,34 +3867,10 @@ export default function App() {
                 >
                   <Icon name="live" /> {t('menu.resumeGame')}
                 </Button>
-              )}
-              {lobbyTourns.length > 0 && (
-                <div className="lobby-tourns">
-                  <div className="lobby-tourns-head">
-                    <Icon name="medal" size={16} /> {t('menu.tournaments')}
-                  </div>
-                  {lobbyTourns.slice(0, 5).map((tr) => (
-                    <button
-                      key={tr.id}
-                      className="lobby-tourn-row"
-                      onClick={() => setTournOpen(true)}
-                    >
-                      <span className="lt-name">{tr.name}</span>
-                      <span className="lt-meta">
-                        {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
-                        {!!tr.prize_coins && (
-                          <>
-                            {' '}
-                            · <Icon name="coin" size={12} /> {tr.prize_coins}
-                          </>
-                        )}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+              </div>
+            )}
             <div className="home-panels">
+              <TournamentsPanel tourns={lobbyTourns} onOpen={() => setTournOpen(true)} />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
               />

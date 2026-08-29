@@ -6054,6 +6054,27 @@ button.stat-chip:hover {
 .home-panel-head > svg {
   color: var(--accent);
 }
+/* Baslik sagindaki adet rozeti (or. turnuva sayisi) — tabular sans, serif basliktan ayri */
+.panel-count {
+  margin-left: auto;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Turnuvalar: iki kolonu da kaplayan tam genislik panel */
+.tourn-panel {
+  grid-column: 1 / -1;
+}
 .home-panel-empty {
   color: var(--muted);
   font-size: 0.9rem;
@@ -6088,9 +6109,19 @@ button.stat-chip:hover {
   color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out);
 }
-.live-row:hover {
-  border-color: var(--accent);
+/* Press geri bildirimi: individual `scale` -> giris animasyonunun transform'uyla cakismaz */
+.live-row:active {
+  scale: 0.985;
+}
+@media (hover: hover) and (pointer: fine) {
+  .live-row:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--btn-bg));
+  }
 }
 .lm-side {
   display: flex;
@@ -6164,9 +6195,18 @@ button.stat-chip:hover {
   color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out);
 }
-.rank-row:hover {
-  border-color: var(--accent);
+.rank-row:active {
+  scale: 0.985;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rank-row:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
 }
 .rank-row.mine {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
@@ -6216,6 +6256,197 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   gap: 3px;
+}
+
+/* ---- Turnuvalar listesi (tam genislik panel icinde) ---- */
+.tourn-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+@media (min-width: 640px) {
+  /* Genis ekranda cok turnuva icin iki kolon */
+  .tourn-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    max-height: 460px;
+  }
+}
+.tourn-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-lg);
+  background: var(--btn-bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out);
+}
+.tourn-row:active {
+  scale: 0.99;
+}
+@media (hover: hover) and (pointer: fine) {
+  .tourn-row:hover {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--btn-bg));
+  }
+  .tourn-row:hover .tr-go {
+    color: var(--accent);
+    transform: translateX(2px);
+  }
+}
+.tr-main {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  flex: 1;
+}
+.tr-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tr-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.76rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tr-count,
+.tr-prize {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.tr-count[data-full] {
+  color: var(--coral);
+  font-weight: 700;
+}
+.tr-prize {
+  color: var(--tv-gold, var(--accent));
+  font-weight: 600;
+}
+.tr-prize > svg {
+  color: var(--tv-gold, var(--accent));
+}
+/* Durum rozeti: open=yesil (katilima acik) · running=coral (canli) · finished=notr */
+.tr-status {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.tr-status-open {
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 15%, transparent);
+  color: var(--tv-green, #3f9e6a);
+}
+.tr-status-running {
+  background: color-mix(in srgb, var(--coral) 15%, transparent);
+  color: var(--coral);
+}
+.tr-status-finished {
+  background: color-mix(in srgb, var(--muted) 15%, transparent);
+  color: var(--muted);
+}
+/* Doluluk cubugu: count/size orani */
+.tr-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  overflow: hidden;
+}
+.tr-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+  transition: width 320ms var(--ease-out);
+}
+.tr-go {
+  flex: none;
+  color: var(--muted);
+  transition:
+    color 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+/* Panel satirlari icin ince kademeli giris (opacity + translateY);
+   press geri bildirimi individual `scale` kullandigi icin cakisma yok. */
+@keyframes panel-row-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.live-row,
+.rank-row,
+.tourn-row {
+  animation: panel-row-in 300ms var(--ease-out) both;
+}
+.live-row:nth-child(1),
+.rank-row:nth-child(1),
+.tourn-row:nth-child(1) {
+  animation-delay: 0ms;
+}
+.live-row:nth-child(2),
+.rank-row:nth-child(2),
+.tourn-row:nth-child(2) {
+  animation-delay: 35ms;
+}
+.live-row:nth-child(3),
+.rank-row:nth-child(3),
+.tourn-row:nth-child(3) {
+  animation-delay: 70ms;
+}
+.live-row:nth-child(4),
+.rank-row:nth-child(4),
+.tourn-row:nth-child(4) {
+  animation-delay: 105ms;
+}
+.live-row:nth-child(5),
+.rank-row:nth-child(5),
+.tourn-row:nth-child(5) {
+  animation-delay: 140ms;
+}
+.live-row:nth-child(n + 6),
+.rank-row:nth-child(n + 6),
+.tourn-row:nth-child(n + 6) {
+  animation-delay: 175ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-row,
+  .rank-row,
+  .tourn-row {
+    animation: none;
+  }
+  .live-row:active,
+  .rank-row:active,
+  .tourn-row:active {
+    scale: 1;
+  }
+  .tr-bar-fill {
+    transition: none;
+  }
 }
 
 /* ---- Uye panosu (dashboard): istatistik seridi + hizli erisim ---- */
