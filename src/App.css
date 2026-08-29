@@ -5270,6 +5270,72 @@ html.fs-active .account-bar {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+/* ---- Ust bar stat chip: ikon + deger + mini ilerleme cubugu (oyun HUD stili) ---- */
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 42px;
+  padding: 0 14px 0 11px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+}
+button.stat-chip {
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+button.stat-chip:hover {
+  border-color: var(--accent);
+}
+.stat-chip-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.stat-chip-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 58px;
+}
+.stat-chip-val {
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.stat-chip-bar {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+}
+.stat-chip-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  transition: width 400ms ease;
+}
+/* Coin = altin */
+.stat-chip-coin .stat-chip-ic {
+  color: #e6b422;
+}
+.stat-chip-coin .stat-chip-bar > i {
+  background: #e6b422;
+}
+/* Rating = brick (marka aksani) */
+.stat-chip-rating .stat-chip-ic {
+  color: var(--accent);
+}
+.stat-chip-rating .stat-chip-bar > i {
+  background: var(--accent);
+}
 .player-rating {
   margin-top: 2px;
   font-size: 0.8rem;

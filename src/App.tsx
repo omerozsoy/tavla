@@ -3131,18 +3131,30 @@ export default function App() {
         {profile.nickname}
       </button>
       {user && (
-        <Button
-          variant="outline"
-          className="btn-coin"
+        <button
+          type="button"
+          className="stat-chip stat-chip-coin"
           onClick={() => goPage(() => setShopOpen(true))}
           title={t('shop.title')}
         >
-          <Icon name="coin" size={16} /> {user.coins ?? 0}
-        </Button>
+          <span className="stat-chip-ic"><Icon name="coin" size={18} /></span>
+          <span className="stat-chip-body">
+            <span className="stat-chip-val">{(user.coins ?? 0).toLocaleString('tr-TR')}</span>
+            <span className="stat-chip-bar" aria-hidden="true">
+              <i style={{ width: `${((user.coins ?? 0) % 1000) / 10}%` }} />
+            </span>
+          </span>
+        </button>
       )}
       {user?.rating != null && (
-        <span className="account-rating">
-          <Icon name="star" size={15} /> {user.rating}
+        <span className="stat-chip stat-chip-rating">
+          <span className="stat-chip-ic"><Icon name="star" size={18} /></span>
+          <span className="stat-chip-body">
+            <span className="stat-chip-val">{user.rating.toLocaleString('tr-TR')}</span>
+            <span className="stat-chip-bar" aria-hidden="true">
+              <i style={{ width: `${user.rating % 100}%` }} />
+            </span>
+          </span>
         </span>
       )}
       {user && (
