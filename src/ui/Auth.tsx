@@ -79,6 +79,14 @@ export default function Auth({
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const editing = !!(editUser || editGuest)
+  // Uyelik durumu (yalniz giris yapan editUser icin): tip + bitis tarihi + kalan gun
+  const memPlan = editUser?.plan_active ?? 'free'
+  const memPremium = memPlan === 'star' || memPlan === 'starpro'
+  const memUntil = editUser?.plan_until ?? null
+  const memDaysLeft = memUntil
+    ? Math.max(0, Math.ceil((new Date(memUntil).getTime() - Date.now()) / 86400000))
+    : null
+  const memUntilFmt = memUntil ? new Date(memUntil).toLocaleDateString() : ''
   const seed = editUser
     ? api.toProfile(editUser)
     : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
@@ -612,6 +620,34 @@ export default function Auth({
         {editing && (
           <>
             {avatarBlock}
+            {/* Uyelik durumu karti: tip + (premium ise) bitis tarihi ve kalan gun */}
+            {editUser && (
+              <div className="mem-status" data-plan={memPlan}>
+                <div className="mem-status-head">
+                  <Icon name={memPremium ? 'crown' : 'star'} size={18} />
+                  <span className="mem-status-title">{t('mem.status.title')}</span>
+                  <span className={`mem-status-badge ${memPremium ? 'is-premium' : 'is-free'}`}>
+                    {memPremium ? t('mem.status.premium') : t('mem.status.free')}
+                  </span>
+                </div>
+                {memPremium && (
+                  <div className="mem-status-detail">
+                    {memUntil ? (
+                      <>
+                        <span>{t('mem.status.expires', { date: memUntilFmt })}</span>
+                        {memDaysLeft != null && (
+                          <span className="mem-status-days">
+                            {t('mem.status.daysLeft', { days: memDaysLeft })}
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span>{t('mem.status.lifetime')}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
             <div className="form-grid">{profileInputs}</div>
             {!editUser && (
               <label>
