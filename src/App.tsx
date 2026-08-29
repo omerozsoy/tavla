@@ -452,7 +452,7 @@ export default function App() {
                             : contentView === 'club'
                               ? 'kulup-rehberi'
                               : boardSettingsOpen
-                              ? 'tahta-ayarlari'
+                              ? 'ayarlar'
                               : quizOpen
                                 ? 'bulmaca'
                                 : clubsOpen
@@ -537,7 +537,8 @@ export default function App() {
         case 'kulup-rehberi':
           setContentView('club')
           break
-        case 'tahta-ayarlari':
+        case 'ayarlar':
+        case 'tahta-ayarlari': // eski slug -> geriye donuk uyum
           setBoardSettingsOpen(true)
           break
         case 'bulmaca':
