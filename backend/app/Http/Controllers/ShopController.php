@@ -12,8 +12,8 @@ class ShopController extends Controller
     // Satin alinabilir kozmetikler ve coin fiyatlari (sunucu otoritesi).
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
 
-    // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE ile BIREBIR).
-    private const BOARD_PRICE = ['common' => 1000, 'rare' => 2000, 'epic' => 3000, 'legendary' => 4000, 'mythic' => 5000];
+    // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE + CLUB_BOARD_PRICE ile BIREBIR).
+    private const BOARD_PRICE = ['common' => 1000, 'rare' => 2000, 'epic' => 3000, 'legendary' => 4000, 'mythic' => 5000, 'club' => 1000];
 
     // Satin alinabilir tahta id -> nadirlik. Kaynak: src/boardThemes.ts (senkron tut).
     // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
@@ -46,6 +46,8 @@ class ShopController extends Controller
         'vega' => 'legendary', 'quantum' => 'legendary', 'singularity' => 'legendary',
         // mythic (5000)
         'neon' => 'mythic', 'cyber' => 'mythic', 'inferno' => 'mythic',
+        // club (1000)
+        'fenerbahce' => 'club', 'galatasaray' => 'club', 'besiktas' => 'club', 'trabzonspor' => 'club',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).

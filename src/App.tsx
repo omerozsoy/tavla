@@ -3123,8 +3123,8 @@ export default function App() {
     ...CLUB_THEMES.map((tt) => ({
       ...tt,
       rarity: 'club' as const,
-      price: undefined as number | undefined,
-      owned: true,
+      price: boardPrice(tt),
+      owned: boardOwned(tt.id),
     })),
   ]
 
