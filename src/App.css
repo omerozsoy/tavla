@@ -1524,6 +1524,80 @@ button[aria-disabled='true'],
   background: var(--color-success);
 }
 
+/* --- Mac grubu: ayni macin hatalari tek baslik altinda --- */
+.bl-group {
+  margin-bottom: 26px;
+}
+.bl-group-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--border);
+}
+.bl-opp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--tv-font-display);
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.bl-opp.muted {
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 500;
+  font-style: italic;
+  color: var(--muted);
+}
+.bl-score {
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.bl-score-sep {
+  color: var(--muted);
+  margin: 0 2px;
+}
+.bl-result {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid;
+}
+.bl-result.won {
+  color: var(--color-success);
+  border-color: color-mix(in srgb, var(--color-success) 50%, transparent);
+  background: color-mix(in srgb, var(--color-success) 12%, transparent);
+}
+.bl-result.lost {
+  color: var(--color-error);
+  border-color: color-mix(in srgb, var(--color-error) 50%, transparent);
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+}
+.bl-date {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.bl-group-count {
+  margin-left: auto;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  background: var(--rn-navy-muted, var(--panel));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  padding: 2px 9px;
+}
+
 /* --- Kart grid: akan, kaydiran, sarmalayan --- */
 .blunder-grid {
   display: grid;

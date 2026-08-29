@@ -24,8 +24,36 @@ function safeParse<T>(s?: string | null): T | null {
   }
 }
 
+// Gorece tarih ("2 gun once") — dile duyarli, ekstra i18n anahtari gerektirmez.
+function relDate(iso: string | undefined, lang: string): string {
+  if (!iso) return ''
+  const then = new Date(iso).getTime()
+  if (Number.isNaN(then)) return ''
+  const diff = Math.round((then - Date.now()) / 1000) // negatif = gecmis
+  const abs = Math.abs(diff)
+  const rtf = new Intl.RelativeTimeFormat(lang, { numeric: 'auto' })
+  if (abs < 60) return rtf.format(Math.round(diff), 'second')
+  if (abs < 3600) return rtf.format(Math.round(diff / 60), 'minute')
+  if (abs < 86400) return rtf.format(Math.round(diff / 3600), 'hour')
+  if (abs < 2592000) return rtf.format(Math.round(diff / 86400), 'day')
+  if (abs < 31536000) return rtf.format(Math.round(diff / 2592000), 'month')
+  return rtf.format(Math.round(diff / 31536000), 'year')
+}
+
+type Group = {
+  key: string
+  hasCtx: boolean
+  opp: string | null
+  aiLevel: number | null
+  scoreMe: number | null
+  scoreOpp: number | null
+  won: boolean | null
+  createdAt?: string
+  items: (BlunderEntry & { _idx: number })[]
+}
+
 export default function BlunderLog({ onClose }: { onClose: () => void }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<BlunderEntry[]>([])
   const [loading, setLoading] = useState(true)
@@ -49,6 +77,82 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
     for (const r of rows) c[band(r.loss).cls as keyof typeof c]++
     return c
   }, [rows])
+
+  // Maca gore grupla: ayni mac = ayni rakip/skor + ayni kayit ani (dakika kovasi).
+  // Baglami olmayan (eski) kayitlar tek "noContext" grubunda toplanir.
+  const groups = useMemo<Group[]>(() => {
+    const map = new Map<string, Group>()
+    rows.forEach((b, idx) => {
+      const hasCtx = b.opp != null || b.ai_level != null || b.score_me != null
+      const key = hasCtx
+        ? `${b.opp ?? 'ai' + b.ai_level}|${b.score_me}-${b.score_opp}|${(b.created_at ?? '').slice(0, 16)}`
+        : 'none'
+      let g = map.get(key)
+      if (!g) {
+        g = {
+          key,
+          hasCtx,
+          opp: b.opp ?? null,
+          aiLevel: b.ai_level ?? null,
+          scoreMe: b.score_me ?? null,
+          scoreOpp: b.score_opp ?? null,
+          won: b.won ?? null,
+          createdAt: b.created_at,
+          items: [],
+        }
+        map.set(key, g)
+      }
+      g.items.push({ ...b, _idx: idx })
+    })
+    // En yeni mac ustte; baglamsiz (eski) grup en sona
+    return [...map.values()].sort((a, b) => {
+      if (a.key === 'none') return 1
+      if (b.key === 'none') return -1
+      return (b.createdAt ?? '').localeCompare(a.createdAt ?? '')
+    })
+  }, [rows])
+
+  const renderCard = (b: BlunderEntry & { _idx: number }) => {
+    const bd = band(b.loss)
+    const pos = safeParse<GameState>(b.pos)
+    const steps = safeParse<Step[]>(b.steps)
+    return (
+      <article
+        key={b._idx}
+        className={`bl-card ${bd.cls}`}
+        style={{ '--i': Math.min(b._idx, 12) } as CSSProperties}
+      >
+        <div className="bl-card-board">
+          {pos ? (
+            <MiniBoard
+              state={pos}
+              steps={steps ?? []}
+              player={(b.player as Player) ?? 'white'}
+              flip={b.player === 'black'}
+            />
+          ) : (
+            <div className="bl-card-noboard">
+              <Icon name="alert" size={22} />
+            </div>
+          )}
+          <span className={`bl-badge ${bd.cls}`}>{t(bd.key)}</span>
+        </div>
+        <div className="bl-card-body">
+          <div className="bl-moves">
+            <span className="bl-move played">{b.played}</span>
+            <span className="bl-move-sep" aria-hidden="true">
+              →
+            </span>
+            <span className="bl-move best">{b.best}</span>
+          </div>
+          <div className="bl-foot">
+            <span className="bl-best-tag">{t('blunder.bestWas')}</span>
+            <span className="bl-loss">−{b.loss.toFixed(3)}</span>
+          </div>
+        </div>
+      </article>
+    )
+  }
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -108,51 +212,43 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
               </span>
             </div>
 
-            {/* Kart grid: tum hatalar board onizlemesiyle gorunur.
-                Ic scroll YOK — sayfanin kendi scroll'u ile asagi akar. */}
-            <div className="blunder-grid">
-              {rows.map((b, i) => {
-                const bd = band(b.loss)
-                const pos = safeParse<GameState>(b.pos)
-                const steps = safeParse<Step[]>(b.steps)
-                return (
-                  <article
-                    key={i}
-                    className={`bl-card ${bd.cls}`}
-                    style={{ '--i': Math.min(i, 12) } as CSSProperties}
-                  >
-                    <div className="bl-card-board">
-                      {pos ? (
-                        <MiniBoard
-                          state={pos}
-                          steps={steps ?? []}
-                          player={(b.player as Player) ?? 'white'}
-                          flip={b.player === 'black'}
-                        />
-                      ) : (
-                        <div className="bl-card-noboard">
-                          <Icon name="alert" size={22} />
-                        </div>
-                      )}
-                      <span className={`bl-badge ${bd.cls}`}>{t(bd.key)}</span>
-                    </div>
-                    <div className="bl-card-body">
-                      <div className="bl-moves">
-                        <span className="bl-move played">{b.played}</span>
-                        <span className="bl-move-sep" aria-hidden="true">
-                          →
+            {/* Maca gore gruplu liste. Ic scroll YOK — sayfa kendi akar. */}
+            {groups.map((g) => (
+              <section className="bl-group" key={g.key}>
+                <header className="bl-group-head">
+                  {g.hasCtx ? (
+                    <>
+                      <span className="bl-opp">
+                        {g.opp != null ? (
+                          g.opp
+                        ) : (
+                          <>
+                            <Icon name="robot" size={15} /> {t('blunder.ai')} · Sv.{g.aiLevel}
+                          </>
+                        )}
+                      </span>
+                      {g.scoreMe != null && (
+                        <span className="bl-score">
+                          {g.scoreMe}
+                          <span className="bl-score-sep">–</span>
+                          {g.scoreOpp}
                         </span>
-                        <span className="bl-move best">{b.best}</span>
-                      </div>
-                      <div className="bl-foot">
-                        <span className="bl-best-tag">{t('blunder.bestWas')}</span>
-                        <span className="bl-loss">−{b.loss.toFixed(3)}</span>
-                      </div>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
+                      )}
+                      {g.won != null && (
+                        <span className={`bl-result ${g.won ? 'won' : 'lost'}`}>
+                          {t(g.won ? 'blunder.won' : 'blunder.lost')}
+                        </span>
+                      )}
+                      {g.createdAt && <span className="bl-date">{relDate(g.createdAt, lang)}</span>}
+                    </>
+                  ) : (
+                    <span className="bl-opp muted">{t('blunder.noContext')}</span>
+                  )}
+                  <span className="bl-group-count">{g.items.length}</span>
+                </header>
+                <div className="blunder-grid">{g.items.map(renderCard)}</div>
+              </section>
+            ))}
           </>
         )}
       </div>

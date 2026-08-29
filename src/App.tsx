@@ -1671,6 +1671,14 @@ export default function App() {
     }
     // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca kendi hamlelerim)
     if (user) {
+      // Mac baglami: hangi mac / kiminle / kac kac (online rakip = insan)
+      const ctx = {
+        opp: room?.oppName ?? null,
+        ai_level: null,
+        score_me: match.score[myColor],
+        score_opp: match.score[opponent(myColor)],
+        won,
+      }
       const bl = matchLog
         .filter((e) => e.loss >= 0.08 && e.player === myColor)
         .sort((a, b) => b.loss - a.loss)
@@ -1682,6 +1690,7 @@ export default function App() {
         pos: e.pos ? JSON.stringify(e.pos) : undefined,
         steps: e.steps ? JSON.stringify(e.steps) : undefined,
         player: e.player,
+        ...ctx,
       }))
       saveBlunders(bl).catch(() => {})
     }
@@ -1721,6 +1730,14 @@ export default function App() {
         .catch(() => {})
     }
     // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
+    // Mac baglami: rakip = AI (zorluk), skor, sonuc (insan beyaz)
+    const ctx = {
+      opp: null,
+      ai_level: difficulty,
+      score_me: match.score.white,
+      score_opp: match.score.black,
+      won: mW === 'white',
+    }
     const bl = matchLog
       .filter((e) => e.loss >= 0.08 && e.player === 'white')
       .sort((a, b) => b.loss - a.loss)
@@ -1732,6 +1749,7 @@ export default function App() {
         pos: e.pos ? JSON.stringify(e.pos) : undefined,
         steps: e.steps ? JSON.stringify(e.steps) : undefined,
         player: e.player,
+        ...ctx,
       }))
     saveBlunders(bl).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps

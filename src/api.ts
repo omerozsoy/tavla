@@ -600,6 +600,12 @@ export interface BlunderEntry {
   pos?: string | null // JSON: hamle oncesi GameState
   steps?: string | null // JSON: en iyi hamlenin Step[]
   player?: string | null
+  // Mac baglami (hangi mac / kiminle / kac kac) — eski kayitlarda null
+  opp?: string | null // insan rakip adi (AI ise null)
+  ai_level?: number | null // AI zorluk 1..10 (insan ise null)
+  score_me?: number | null
+  score_opp?: number | null
+  won?: boolean | null
   created_at?: string
 }
 export async function listBlunders(): Promise<BlunderEntry[]> {
@@ -614,6 +620,11 @@ export async function saveBlunders(
     pos?: string
     steps?: string
     player?: string
+    opp?: string | null
+    ai_level?: number | null
+    score_me?: number | null
+    score_opp?: number | null
+    won?: boolean | null
   }[],
 ): Promise<void> {
   if (items.length === 0) return
