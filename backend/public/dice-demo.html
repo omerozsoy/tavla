@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Zar Animasyonu — emil-design-eng demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Libre+Baskerville:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --card: #ffffff;
+        --ink: #1c1a17;
+        --muted: #5e574c;
+        --line: #ded7ca;
+        --brick: #c9563f;
+        --brick-dark: #a83a2b;
+        --cream: #f0e8d8;
+        --navy: #14243a;
+        --die: 68px;
+        /* emil: guclu ozel ease-out egrisi */
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Outfit', system-ui, sans-serif;
+      }
+      .wrap {
+        width: min(560px, 92vw);
+        text-align: center;
+      }
+      h1 {
+        font-family: 'Libre Baskerville', Georgia, serif;
+        font-size: 1.6rem;
+        margin: 0 0 4px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 0.92rem;
+        margin: 0 0 26px;
+      }
+      .stage {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 180px;
+        padding: 40px 20px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: var(--card);
+      }
+      /* ---- ZAR ---- */
+      .board-dice {
+        display: flex;
+        gap: 18px;
+      }
+      .die-face {
+        position: relative;
+        width: var(--die);
+        height: var(--die);
+        border-radius: 18%;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+        transform-origin: 50% 60%; /* alt-merkezden savrulma -> yer cekimi hissi */
+        /* Tumble + overshoot ile yerine oturur; hareket bulanikligi hizi anlatir,
+           hafif salinimla yerlesir. both -> stagger'da flash yok. */
+        animation: die-roll-in 480ms var(--ease-out) both;
+      }
+      .die-face.white {
+        background: var(--cream);
+      }
+      .die-face.black {
+        background: var(--navy);
+      }
+      /* Iki zar (cift zarda dort) ard arda dussun: kucuk stagger daha dogal */
+      .die-face:nth-child(2) {
+        animation-delay: 70ms;
+      }
+      .die-face:nth-child(3) {
+        animation-delay: 140ms;
+      }
+      .die-face:nth-child(4) {
+        animation-delay: 210ms;
+      }
+      .pip-dot {
+        position: absolute;
+        width: 17%;
+        height: 17%;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .die-face.white .pip-dot {
+        background: #18181b;
+      }
+      .die-face.black .pip-dot {
+        background: #f2f3f7;
+      }
+      @keyframes die-roll-in {
+        0% {
+          transform: rotate(-200deg) scale(0.55);
+          opacity: 0;
+          filter: blur(3px);
+        }
+        45% {
+          transform: rotate(14deg) scale(1.12);
+          opacity: 1;
+          filter: blur(0);
+        }
+        70% {
+          transform: rotate(-4deg) scale(0.97);
+        }
+        100% {
+          transform: rotate(0) scale(1);
+          filter: blur(0);
+        }
+      }
+      /* Yavas-cekim (emil: animasyonu yavaslatarak zamanlamayi denetle) */
+      .slowmo .die-face {
+        animation-duration: 1600ms;
+      }
+      .slowmo .die-face:nth-child(2) {
+        animation-delay: 240ms;
+      }
+      .slowmo .die-face:nth-child(3) {
+        animation-delay: 480ms;
+      }
+      .slowmo .die-face:nth-child(4) {
+        animation-delay: 720ms;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .die-face {
+          animation: die-fade-in 200ms ease both;
+        }
+        .die-face:nth-child(n) {
+          animation-delay: 0ms;
+        }
+      }
+      @keyframes die-fade-in {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      /* ---- Kontroller ---- */
+      .controls {
+        margin-top: 26px;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      button {
+        font-family: inherit;
+        font-size: 0.95rem;
+        font-weight: 600;
+        padding: 11px 20px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        background: var(--card);
+        color: var(--ink);
+        cursor: pointer;
+        transition:
+          transform 120ms var(--ease-out),
+          border-color 150ms var(--ease-out),
+          background 150ms var(--ease-out);
+      }
+      button:hover {
+        border-color: var(--brick);
+      }
+      button:active {
+        transform: scale(0.96);
+      }
+      .roll {
+        background: var(--brick);
+        border-color: var(--brick);
+        color: #fff;
+      }
+      .roll:hover {
+        background: var(--brick-dark);
+        border-color: var(--brick-dark);
+      }
+      .toggle.on {
+        background: color-mix(in srgb, var(--brick) 12%, #fff);
+        border-color: var(--brick);
+        color: var(--brick-dark);
+      }
+      .hint {
+        margin-top: 18px;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Zar Animasyonu</h1>
+      <p class="sub">emil-design-eng · tumble + overshoot + hareket bulanıklığı + stagger</p>
+
+      <div class="stage">
+        <div class="board-dice" id="dice"></div>
+      </div>
+
+      <div class="controls">
+        <button class="roll" id="roll">🎲 Zar At</button>
+        <button class="toggle" id="dbl">Çift Zar</button>
+        <button class="toggle" id="slow">Yavaş Çekim</button>
+        <button class="toggle" id="color">Koyu Zar</button>
+      </div>
+      <p class="hint">Emil'in önerisi: animasyonu <b>yavaş çekimde</b> izleyip zamanlamayı hisset.</p>
+    </div>
+
+    <script>
+      const PIP = {
+        1: [[50, 50]],
+        2: [[30, 30], [70, 70]],
+        3: [[30, 30], [50, 50], [70, 70]],
+        4: [[30, 30], [70, 30], [30, 70], [70, 70]],
+        5: [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]],
+        6: [[30, 28], [70, 28], [30, 50], [70, 50], [30, 72], [70, 72]],
+      }
+      const dice = document.getElementById('dice')
+      let doubles = false
+      let dark = false
+
+      function die(value) {
+        const d = document.createElement('div')
+        d.className = 'die-face ' + (dark ? 'black' : 'white')
+        for (const [x, y] of PIP[value]) {
+          const p = document.createElement('span')
+          p.className = 'pip-dot'
+          p.style.left = x + '%'
+          p.style.top = y + '%'
+          d.appendChild(p)
+        }
+        return d
+      }
+      const rnd = () => 1 + Math.floor(Math.random() * 6)
+
+      function roll() {
+        dice.innerHTML = '' // remount -> animasyon bastan oynar
+        if (doubles) {
+          const v = rnd()
+          for (let i = 0; i < 4; i++) dice.appendChild(die(v))
+        } else {
+          dice.appendChild(die(rnd()))
+          dice.appendChild(die(rnd()))
+        }
+      }
+
+      document.getElementById('roll').addEventListener('click', roll)
+      document.getElementById('dbl').addEventListener('click', (e) => {
+        doubles = !doubles
+        e.currentTarget.classList.toggle('on', doubles)
+        roll()
+      })
+      document.getElementById('slow').addEventListener('click', (e) => {
+        document.body.classList.toggle('slowmo')
+        e.currentTarget.classList.toggle('on', document.body.classList.contains('slowmo'))
+        roll()
+      })
+      document.getElementById('color').addEventListener('click', (e) => {
+        dark = !dark
+        e.currentTarget.classList.toggle('on', dark)
+        roll()
+      })
+
+      roll() // ilk yukleme
+    </script>
+  </body>
+</html>
