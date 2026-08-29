@@ -3291,7 +3291,9 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
-    onMembership: () => setMemOpen(true),
+    // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
+    // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
+    onMembership: premium ? undefined : () => setMemOpen(true),
     onMyStats: () => goPage(() => setStatsOpen(true)),
     onFriends: () => goPage(() => setFriendsOpen(true)),
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),

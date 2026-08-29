@@ -4083,6 +4083,58 @@ button[aria-disabled='true'],
 }
 
 /* ===== Profil duzenleme formu (Uye Bilgileri): genis, 2 kolon, dengeli SaaS ===== */
+/* Uyelik durumu karti (profil sayfasi): tip rozeti + bitis tarihi + kalan gun.
+   Renkler terracotta token'larindan miras (hardcode yok). */
+.mem-status {
+  margin: 0 0 22px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mem-status-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.mem-status-head svg {
+  color: var(--accent);
+}
+.mem-status-title {
+  font-weight: var(--fw-semibold);
+  color: var(--text);
+}
+.mem-status-badge {
+  margin-left: auto;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.02em;
+}
+.mem-status-badge.is-premium {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.mem-status-badge.is-free {
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  color: var(--muted);
+}
+.mem-status-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.mem-status-days {
+  font-weight: var(--fw-semibold);
+  color: var(--accent);
+}
+
 /* Yalnizca .profile-form (editing modu) etkilenir; login/register dar kartta kalir. */
 .register-card.profile-form {
   max-width: 960px;
