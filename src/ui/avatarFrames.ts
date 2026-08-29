@@ -117,13 +117,12 @@ const ANIMS: AnimDef[] = [
   { motion: 'pulseSweep', name: 'Nabızlı Tur', rarity: 'legendary' },
   { motion: 'haloSpin', name: 'Hale Dönüşü', rarity: 'legendary' },
   { motion: 'glowSpread', name: 'Işık Yayılımı', rarity: 'legendary' },
-  // ===== Mitik (4000) — 6 =====
+  // ===== Mitik (4000) — 5 =====
   { motion: 'vibrate', name: 'Titreşim', rarity: 'mythic' },
   { motion: 'pop', name: 'Pop', rarity: 'mythic' },
   { motion: 'tada', name: 'Tada', rarity: 'mythic' },
   { motion: 'loading', name: 'Yükleniyor', rarity: 'mythic' },
   { motion: 'rising', name: 'Yükseliş', rarity: 'mythic' },
-  { motion: 'gradWave', name: 'Gradient Dalga', rarity: 'mythic' },
 ]
 // Her animasyon TEK cerceve; halka rengi grubun rarity rengi (renk secenegi yok).
 // Backend id'leri ile birebir ayni: 'frame.<motion>'.

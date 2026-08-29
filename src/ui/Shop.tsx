@@ -13,6 +13,7 @@ import {
   type AvatarFrameDef,
 } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
+import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
 
 // 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
@@ -29,6 +30,8 @@ interface Props {
   onBuy: (shopId: string) => Promise<void>
   onEquip: (frameId: string | null) => Promise<void>
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
+  onBuyCoins?: (pkgId: string) => void // gercek para ile jeton paketi al
+  onMembership?: () => void // Star Uyelik kartindan uyelik ekranini ac
   onClose: () => void
 }
 
@@ -110,6 +113,8 @@ export default function Shop({
   onBuy,
   onEquip,
   onDaily,
+  onBuyCoins,
+  onMembership,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -190,6 +195,44 @@ export default function Shop({
           <div className="shop-buy-err" role="alert">
             <Icon name="alert" size={15} /> {buyErr}
           </div>
+        )}
+
+        {/* --- Coin satin al: gercek para ile jeton paketleri (vitrin) --- */}
+        {onBuyCoins && (
+          <section className="coin-store" aria-label={t('shop.buyCoins')}>
+            <h3 className="coin-store-title">
+              <Icon name="coin" size={18} /> {t('shop.buyCoins')}
+            </h3>
+            <div className="coin-grid">
+              {COIN_PACKAGES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  className={`coin-pkg coin-pkg-${p.tone}`}
+                  onClick={() => onBuyCoins(p.id)}
+                >
+                  {p.popular && <span className="coin-pkg-badge">{t('shop.popular')}</span>}
+                  <span className="coin-pkg-ic" aria-hidden="true">
+                    <Icon name="coin" size={26} />
+                  </span>
+                  <span className="coin-pkg-info">
+                    <span className="coin-pkg-name">{p.name}</span>
+                    <span className="coin-pkg-gc">{fmtCoin(p.gc)} GC</span>
+                    <span className="coin-pkg-price">${p.price.toFixed(2)}</span>
+                  </span>
+                </button>
+              ))}
+              {onMembership && (
+                <button type="button" className="coin-pkg coin-pkg-mem" onClick={onMembership}>
+                  <span className="coin-mem-plan">{t('shop.memTitle')}</span>
+                  <span className="coin-mem-trial">{t('shop.memTrial')}</span>
+                  <span className="coin-mem-cta">
+                    {t('shop.memCta')} <Icon name="chevron" size={14} />
+                  </span>
+                </button>
+              )}
+            </div>
+          </section>
         )}
 
         {/* Cercevesiz */}

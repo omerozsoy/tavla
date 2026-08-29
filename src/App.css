@@ -9428,6 +9428,133 @@ button.stat-chip:hover {
   font-size: 0.78rem;
   margin-top: 12px;
 }
+/* ---- Magaza: Coin satin al vitrini (gercek para ile jeton paketleri) ---- */
+.coin-store {
+  margin: 4px 0 20px;
+}
+.coin-store-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.coin-store-title > svg {
+  color: #e6b422;
+}
+.coin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.coin-pkg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-bg);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+.coin-pkg:hover {
+  border-color: #e6b422;
+  transform: translateY(-2px);
+}
+.coin-pkg:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.coin-pkg-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  color: #e6b422;
+  background: color-mix(in srgb, #e6b422 15%, transparent);
+}
+.coin-pkg-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.coin-pkg-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.coin-pkg-gc {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #d4a017;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.coin-pkg-price {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.coin-pkg-badge {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  padding: 3px 10px;
+  border-top-left-radius: 10px;
+  background: #d33a2c;
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+/* Star Uyelik karti */
+.coin-pkg-mem {
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 5px;
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+}
+.coin-mem-plan {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.coin-mem-trial {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.coin-mem-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin-pkg:hover {
+    transform: none;
+  }
+}
 
 /* === Magaza: kontrol bari (sticky) + animasyon kartlari === */
 .tnum {
