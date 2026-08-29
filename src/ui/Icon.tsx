@@ -68,6 +68,7 @@ import {
   WarningCircle,
   ChartLine,
   ShieldCheck,
+  Clock,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -132,6 +133,7 @@ export type IconName =
   | 'warning-circle'
   | 'chart-line'
   | 'shield-check'
+  | 'clock'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -196,6 +198,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'warning-circle': WarningCircle,
   'chart-line': ChartLine,
   'shield-check': ShieldCheck,
+  clock: Clock,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)

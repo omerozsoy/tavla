@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
@@ -18,6 +18,43 @@ interface Props {
   isAdmin: boolean
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
+}
+
+// Baslamaya kalan sureyi canli gosterir (her saniye). Sure bitince onExpire (bir kez).
+function Countdown({ target, onExpire }: { target: string; onExpire?: () => void }) {
+  const { t } = useT()
+  const [now, setNow] = useState(() => Date.now())
+  const fired = useRef(false)
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const ms = new Date(target).getTime() - now
+  useEffect(() => {
+    if (ms <= 0 && !fired.current) {
+      fired.current = true
+      onExpire?.()
+    }
+  }, [ms, onExpire])
+  if (ms <= 0) {
+    return (
+      <span className="tcard-cd starting">
+        <Icon name="clock" size={12} /> {t('tourn.starting')}
+      </span>
+    )
+  }
+  const s = Math.floor(ms / 1000)
+  const d = Math.floor(s / 86400)
+  const h = Math.floor((s % 86400) / 3600)
+  const m = Math.floor((s % 3600) / 60)
+  const sec = s % 60
+  const p2 = (n: number) => String(n).padStart(2, '0')
+  const txt = d > 0 ? `${d}g ${p2(h)}:${p2(m)}` : h > 0 ? `${h}:${p2(m)}:${p2(sec)}` : `${m}:${p2(sec)}`
+  return (
+    <span className="tcard-cd">
+      <Icon name="clock" size={12} /> {txt}
+    </span>
+  )
 }
 
 export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Props) {
@@ -93,6 +130,26 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
             {active.count}/{active.size}
           </div>
+          {active.status === 'open' && active.starts_at && (
+            <div className="tourn-countdown">
+              <span className="tc-lbl">
+                <Icon name="clock" size={15} /> {t('tourn.startsIn')}
+              </span>
+              <Countdown target={active.starts_at} onExpire={() => open(active.id)} />
+              {active.register_until && (
+                <span className="tc-until">
+                  {t('tourn.registerUntil')}:{' '}
+                  {new Date(active.register_until).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
+              )}
+            </div>
+          )}
           {active.prizes && active.prizes.length > 0 ? (
             <div className="tourn-prizes">
               <div className="tp-head">
@@ -259,8 +316,13 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                 <button key={tr.id} className="tcard" onClick={() => open(tr.id)}>
                   <div className="tcard-top">
                     <span className="tcard-name">{tr.name}</span>
-                    <span className={`tcard-status tcard-status-${tr.status}`}>
-                      {t(`tourn.status.${tr.status}`)}
+                    <span className="tcard-badges">
+                      {tr.status === 'open' && tr.starts_at && (
+                        <Countdown target={tr.starts_at} onExpire={refreshList} />
+                      )}
+                      <span className={`tcard-status tcard-status-${tr.status}`}>
+                        {t(`tourn.status.${tr.status}`)}
+                      </span>
                     </span>
                   </div>
                   <div className="tcard-stats">

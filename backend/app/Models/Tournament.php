@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Tournament extends Model
 {
     protected $fillable = [
-        'name', 'size', 'status', 'creator_id', 'players', 'bracket', 'champion_id',
+        'name', 'size', 'status', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
     ];
 
@@ -16,6 +16,7 @@ class Tournament extends Model
         'players' => 'array',
         'bracket' => 'array',
         'prizes' => 'array',
+        'register_until' => 'datetime',
     ];
 
     // Turnuvayi olusturan kullanici (admin panelde isimle secilir/gosterilir)
