@@ -3608,6 +3608,14 @@ export default function App() {
           setShowAnalysis={setShowAnalysis}
           learnMode={learnMode}
           setLearnMode={setLearnMode}
+          framesSlot={
+            <FrameGallery
+              embed
+              avatar={profile.avatar ?? null}
+              name={profile.nickname}
+              onClose={() => {}}
+            />
+          }
           onClose={() => setBoardSettingsOpen(false)}
         />
       )}
