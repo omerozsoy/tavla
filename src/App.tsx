@@ -72,6 +72,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
+import AdminBoardPicker from './ui/AdminBoardPicker'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
 import { Icon } from './ui/Icon'
@@ -3775,6 +3776,10 @@ export default function App() {
       >
         <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
       </button>
+      {/* Yonetici test araci: AI'ya karsi oyunda tum tahtalari canli dene (sag ust) */}
+      {user?.is_admin && mode === 'pvb' && (
+        <AdminBoardPicker boardTheme={boardTheme} setBoardTheme={setBoardTheme} />
+      )}
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
           <div className="hint-head">
