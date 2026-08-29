@@ -5398,6 +5398,15 @@ button.stat-chip:hover {
 .account-id button.stat-chip:hover .stat-chip-val {
   color: var(--accent);
 }
+/* Ust bar: TUM yazilar regular (400) — kalin degil (isim, coin/rating, odul, butonlar) */
+.account-bar,
+.account-bar [data-slot='button'],
+.account-id .account-name,
+.account-bar .stat-chip-val,
+.account-bar .btn-reward,
+.account-bar .reward-count {
+  font-weight: 400;
+}
 .player-rating {
   margin-top: 2px;
   font-size: 0.8rem;
