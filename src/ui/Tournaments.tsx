@@ -290,32 +290,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                     {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
                   </span>
                 </button>
-                {isAdmin && (
-                  <div className="tourn-admin-actions">
-                    {tr.status !== 'finished' && (
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        disabled={busy}
-                        onClick={() => doFinish(tr.id)}
-                        title={t('admin.finishTournament')}
-                        aria-label={t('admin.finishTournament')}
-                      >
-                        <Icon name="check" size={15} />
-                      </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      disabled={busy}
-                      onClick={() => doDelete(tr.id)}
-                      title={t('admin.delTournament')}
-                      aria-label={t('admin.delTournament')}
-                    >
-                      <Icon name="trash" size={15} />
-                    </Button>
-                  </div>
-                )}
+                {/* Admin bitir/sil butonlari kaldirildi -> turnuva yonetimi Filament admin panelinde */}
               </div>
             ))}
           </div>
