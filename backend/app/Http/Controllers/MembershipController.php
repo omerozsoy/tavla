@@ -21,6 +21,23 @@ class MembershipController extends Controller
         $u->plan = $data['plan'];
         $u->plan_until = now()->addDays(7);
         $u->trial_used = true;
+        if (! $u->plan_since) {
+            $u->plan_since = now();
+        }
+        $u->auto_renew = true;
+        $u->save();
+
+        return response()->json(['user' => $u]);
+    }
+
+    // Otomatik yenilemeyi ac/kapat. Kapaliysa plan_until'da biter, tekrar tahsilat olmaz.
+    public function autoRenew(Request $request)
+    {
+        $data = $request->validate([
+            'enabled' => ['required', 'boolean'],
+        ]);
+        $u = $request->user();
+        $u->auto_renew = $data['enabled'];
         $u->save();
 
         return response()->json(['user' => $u]);

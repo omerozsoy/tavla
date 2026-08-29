@@ -42,6 +42,8 @@ export interface ServerUser {
   plan?: string
   plan_active?: 'free' | 'star' | 'starpro'
   plan_until?: string | null
+  plan_since?: string | null
+  auto_renew?: boolean
   trial_used?: boolean
   wins?: number
   losses?: number
@@ -360,6 +362,11 @@ export async function myAnalytics(): Promise<Analytics> {
 // 7 gunluk ucretsiz deneme baslat
 export async function startTrial(plan: 'star' | 'starpro'): Promise<{ user: ServerUser }> {
   return req('/membership/trial', { method: 'POST', body: JSON.stringify({ plan }) })
+}
+
+// Otomatik yenilemeyi ac/kapat (kapaliysa plan_until'da biter, tekrar tahsilat olmaz)
+export async function setAutoRenew(enabled: boolean): Promise<{ user: ServerUser }> {
+  return req('/membership/auto-renew', { method: 'POST', body: JSON.stringify({ enabled }) })
 }
 
 // Abonelik odemesi baslat (Garanti 3D). Kart sayfasi URL'si doner.

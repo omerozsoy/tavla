@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('throttle:12,1')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
+    Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
     Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
 
     Route::get('/friends', [FriendController::class, 'index']);
