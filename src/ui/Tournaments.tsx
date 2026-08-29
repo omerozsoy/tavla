@@ -7,9 +7,7 @@ import {
   showTournament,
   joinTournament,
   reportTournament,
-  finishTournament,
   startTournament,
-  deleteTournament,
   type Tournament,
   type TMatch,
 } from '../api'
@@ -52,33 +50,6 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
     }
   }
 
-  async function doFinish(id: number) {
-    if (busy) return
-    setBusy(true)
-    try {
-      await finishTournament(id)
-      await refreshList()
-      if (active?.id === id) setActive(await showTournament(id))
-    } catch {
-      /* yoksay */
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  async function doDelete(id: number) {
-    if (busy || !confirm(t('admin.confirmDelTourn'))) return
-    setBusy(true)
-    try {
-      await deleteTournament(id)
-      if (active?.id === id) setActive(null)
-      await refreshList()
-    } catch {
-      /* yoksay */
-    } finally {
-      setBusy(false)
-    }
-  }
 
 
   async function join(id: number) {
