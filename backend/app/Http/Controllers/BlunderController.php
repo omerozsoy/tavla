@@ -13,7 +13,7 @@ class BlunderController extends Controller
         $rows = Blunder::where('user_id', $request->user()->id)
             ->orderByDesc('loss')
             ->limit(60)
-            ->get(['loss', 'played', 'best', 'pos', 'steps', 'player', 'created_at']);
+            ->get(['loss', 'played', 'best', 'pos', 'steps', 'player', 'opp', 'ai_level', 'score_me', 'score_opp', 'won', 'created_at']);
 
         return response()->json(['blunders' => $rows]);
     }
@@ -29,6 +29,11 @@ class BlunderController extends Controller
             'items.*.pos' => ['nullable', 'string', 'max:4000'],
             'items.*.steps' => ['nullable', 'string', 'max:2000'],
             'items.*.player' => ['nullable', 'string', 'in:white,black'],
+            'items.*.opp' => ['nullable', 'string', 'max:64'],
+            'items.*.ai_level' => ['nullable', 'integer', 'min:1', 'max:10'],
+            'items.*.score_me' => ['nullable', 'integer', 'min:0', 'max:64'],
+            'items.*.score_opp' => ['nullable', 'integer', 'min:0', 'max:64'],
+            'items.*.won' => ['nullable', 'boolean'],
         ]);
 
         $userId = $request->user()->id;
@@ -41,6 +46,11 @@ class BlunderController extends Controller
                 'pos' => $it['pos'] ?? null,
                 'steps' => $it['steps'] ?? null,
                 'player' => $it['player'] ?? null,
+                'opp' => $it['opp'] ?? null,
+                'ai_level' => $it['ai_level'] ?? null,
+                'score_me' => $it['score_me'] ?? null,
+                'score_opp' => $it['score_opp'] ?? null,
+                'won' => $it['won'] ?? null,
             ]);
         }
 

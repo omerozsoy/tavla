@@ -181,10 +181,10 @@ export default function ProfileStats({ avatar, frame, name, onClose }: Props) {
                   {MED_FILTERS.map((f) => (
                     <Button
                       key={f}
+                      variant={medFilter === f ? 'secondary' : 'ghost'}
                       type="button"
                       role="tab"
                       aria-selected={medFilter === f}
-                      variant={medFilter === f ? 'secondary' : 'ghost'}
                       onClick={() => setMedFilter(f)}
                     >
                       {t(`med.filter.${f}`)}
