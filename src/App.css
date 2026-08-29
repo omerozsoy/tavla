@@ -9555,6 +9555,23 @@ button.stat-chip:hover {
     transform: none;
   }
 }
+/* Ayarlar "Avatar Cercevesi" sekmesi: bakiye rozeti (cerceve alirken gorunur) */
+.frame-shop-bal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, #e6b422 12%, var(--card-bg));
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.frame-shop-bal > svg {
+  color: #e6b422;
+}
 
 /* === Magaza: kontrol bari (sticky) + animasyon kartlari === */
 .tnum {

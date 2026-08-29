@@ -1,34 +1,14 @@
 import { useState } from 'react'
-import type { CSSProperties } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import AvatarFrame from './AvatarFrame'
-import {
-  AVATAR_FRAMES,
-  FRAME_GROUP_ORDER,
-  FRAME_GROUP_LABEL,
-  framePrice,
-  type FrameGroup,
-  type AvatarFrameDef,
-} from './avatarFrames'
-import { RARITY_COLORS } from './rarityColors'
 import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
 
-// 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
-const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
-
 interface Props {
   coins: number
-  unlocks: string[]
-  currentFrame: string | null
-  avatar?: string | null
-  name?: string
   rewardReady?: boolean
   rewardSecs?: number
-  onBuy: (shopId: string) => Promise<void>
-  onEquip: (frameId: string | null) => Promise<void>
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onBuyCoins?: (pkgId: string) => void // gercek para ile jeton paketi al
   onMembership?: () => void // Star Uyelik kartindan uyelik ekranini ac
@@ -43,75 +23,11 @@ const fmtLeft = (total: number) => {
 }
 const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
 
-// --- Tek cerceve karti: onizleme (rarity renkli halka) + ad + al/tak ---
-interface CardProps {
-  f: AvatarFrameDef
-  avatar?: string | null
-  name?: string
-  currentFrame: string | null
-  owns: (sid: string) => boolean
-  coins: number
-  busy: string | null
-  groupColor: string
-  onBuy: (sid: string) => void
-  onEquip: (id: string) => void
-  labels: { equip: string; equipped: string; earned: string; need: (n: number) => string; buyAria: (name: string, price: number) => string }
-}
-function FrameCard(p: CardProps) {
-  const sid = 'frame.' + p.f.id
-  const owned = p.owns(sid)
-  const equipped = p.currentFrame === p.f.id
-  const price = framePrice(p.f)
-  return (
-    <div className="shop-anim" style={{ ['--rarity-color']: p.groupColor } as CSSProperties}>
-      <div className="shop-anim-preview">
-        {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
-        <AvatarFrame src={p.avatar} frame={p.f.id} size={82} name={p.name} animated />
-      </div>
-      <div className="shop-anim-name" title={p.f.name}>
-        {p.f.name}
-      </div>
-      {owned ? (
-        <Button
-          variant={equipped ? 'secondary' : 'default'}
-          className="w-full"
-          disabled={equipped}
-          onClick={() => p.onEquip(p.f.id)}
-        >
-          {equipped ? p.labels.equipped : p.labels.equip}
-        </Button>
-      ) : price != null ? (
-        <>
-          <Button
-            variant="default"
-            className="w-full"
-            disabled={p.busy === sid || p.coins < price}
-            onClick={() => p.onBuy(sid)}
-            aria-label={p.labels.buyAria(p.f.name, price)}
-          >
-            <Icon name="coin" size={14} /> <span className="tnum">{fmtCoin(price)}</span>
-          </Button>
-          {p.coins < price && <div className="shop-need">{p.labels.need(price - p.coins)}</div>}
-        </>
-      ) : (
-        <span className="shop-earn">
-          <Icon name="trophy" size={12} /> {p.labels.earned}
-        </span>
-      )}
-    </div>
-  )
-}
-
+// Magaza: coin (jeton) satin alma vitrini + gunluk odul. (Cerceveler artik Ayarlar'da.)
 export default function Shop({
   coins,
-  unlocks,
-  currentFrame,
-  avatar,
-  name,
   rewardReady = false,
   rewardSecs = 0,
-  onBuy,
-  onEquip,
   onDaily,
   onBuyCoins,
   onMembership,
@@ -121,7 +37,6 @@ export default function Shop({
   useEscape(onClose)
   const [busy, setBusy] = useState<string | null>(null)
   const [dailyMsg, setDailyMsg] = useState('')
-  const [buyErr, setBuyErr] = useState('')
 
   async function daily() {
     setBusy('daily')
@@ -131,34 +46,6 @@ export default function Shop({
     } finally {
       setBusy(null)
     }
-  }
-  const owns = (shopId: string) => unlocks.includes(shopId)
-  async function buy(shopId: string) {
-    setBusy(shopId)
-    setBuyErr('')
-    try {
-      await onBuy(shopId)
-    } catch {
-      setBuyErr(t('shop.buyErr'))
-    } finally {
-      setBusy(null)
-    }
-  }
-  async function equip(id: string | null) {
-    setBusy('frame.' + (id ?? 'none'))
-    try {
-      await onEquip(id)
-    } finally {
-      setBusy(null)
-    }
-  }
-
-  const labels = {
-    equip: t('shop.equip'),
-    equipped: t('shop.equipped'),
-    earned: t('frames.earned'),
-    need: (n: number) => t('shop.need', { n }),
-    buyAria: (nm: string, price: number) => `${nm} — ${fmtCoin(price)} coin ile al`,
   }
 
   return (
@@ -171,7 +58,7 @@ export default function Shop({
           <Icon name="shop" size={20} /> {t('shop.title')}
         </h2>
 
-        {/* Sticky kontrol bari: bakiye + odul */}
+        {/* Sticky kontrol bari: bakiye + gunluk odul */}
         <div className="shop-controls">
           <div className="shop-controls-row">
             <div className="shop-coins">
@@ -191,104 +78,42 @@ export default function Shop({
         </div>
 
         {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}
-        {buyErr && (
-          <div className="shop-buy-err" role="alert">
-            <Icon name="alert" size={15} /> {buyErr}
-          </div>
-        )}
 
         {/* --- Coin satin al: gercek para ile jeton paketleri (vitrin) --- */}
-        {onBuyCoins && (
-          <section className="coin-store" aria-label={t('shop.buyCoins')}>
-            <h3 className="coin-store-title">
-              <Icon name="coin" size={18} /> {t('shop.buyCoins')}
-            </h3>
-            <div className="coin-grid">
-              {COIN_PACKAGES.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  className={`coin-pkg coin-pkg-${p.tone}`}
-                  onClick={() => onBuyCoins(p.id)}
-                >
-                  {p.popular && <span className="coin-pkg-badge">{t('shop.popular')}</span>}
-                  <span className="coin-pkg-ic" aria-hidden="true">
-                    <Icon name="coin" size={26} />
-                  </span>
-                  <span className="coin-pkg-info">
-                    <span className="coin-pkg-name">{p.name}</span>
-                    <span className="coin-pkg-gc">{fmtCoin(p.gc)} GC</span>
-                    <span className="coin-pkg-price">${p.price.toFixed(2)}</span>
-                  </span>
-                </button>
-              ))}
-              {onMembership && (
-                <button type="button" className="coin-pkg coin-pkg-mem" onClick={onMembership}>
-                  <span className="coin-mem-plan">{t('shop.memTitle')}</span>
-                  <span className="coin-mem-trial">{t('shop.memTrial')}</span>
-                  <span className="coin-mem-cta">
-                    {t('shop.memCta')} <Icon name="chevron" size={14} />
-                  </span>
-                </button>
-              )}
-            </div>
-          </section>
-        )}
-
-        {/* Cercevesiz */}
-        <div className="shop-grid shop-grid-top">
-          <div className="shop-anim">
-            <div className="shop-anim-preview">
-              <AvatarFrame src={avatar} frame={null} size={82} name={name} />
-            </div>
-            <div className="shop-anim-name">{t('shop.noFrame')}</div>
-            <Button
-              variant={!currentFrame ? 'secondary' : 'default'}
-              className="w-full"
-              disabled={!currentFrame}
-              onClick={() => equip(null)}
-            >
-              {!currentFrame ? t('shop.equipped') : t('shop.equip')}
-            </Button>
+        <section className="coin-store" aria-label={t('shop.buyCoins')}>
+          <h3 className="coin-store-title">
+            <Icon name="coin" size={18} /> {t('shop.buyCoins')}
+          </h3>
+          <div className="coin-grid">
+            {COIN_PACKAGES.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={`coin-pkg coin-pkg-${p.tone}`}
+                onClick={() => onBuyCoins?.(p.id)}
+              >
+                {p.popular && <span className="coin-pkg-badge">{t('shop.popular')}</span>}
+                <span className="coin-pkg-ic" aria-hidden="true">
+                  <Icon name="coin" size={26} />
+                </span>
+                <span className="coin-pkg-info">
+                  <span className="coin-pkg-name">{p.name}</span>
+                  <span className="coin-pkg-gc">{fmtCoin(p.gc)} GC</span>
+                  <span className="coin-pkg-price">${p.price.toFixed(2)}</span>
+                </span>
+              </button>
+            ))}
+            {onMembership && (
+              <button type="button" className="coin-pkg coin-pkg-mem" onClick={onMembership}>
+                <span className="coin-mem-plan">{t('shop.memTitle')}</span>
+                <span className="coin-mem-trial">{t('shop.memTrial')}</span>
+                <span className="coin-mem-cta">
+                  {t('shop.memCta')} <Icon name="chevron" size={14} />
+                </span>
+              </button>
+            )}
           </div>
-        </div>
-
-        {FRAME_GROUP_ORDER.map((group) => {
-          const frames = AVATAR_FRAMES.filter((f) => f.group === group)
-          if (frames.length === 0) return null
-          return (
-            <div
-              className="rarity-group"
-              key={group}
-              style={{ ['--rarity-color']: GROUP_COLOR[group] } as CSSProperties}
-            >
-              <div className="rarity-title">
-                <span className="rarity-dot" /> {t(FRAME_GROUP_LABEL[group])}
-                <span className="rarity-count">{frames.length}</span>
-              </div>
-              <div className="shop-anim-grid">
-                {frames.map((f) => (
-                  <FrameCard
-                    key={f.id}
-                    f={f}
-                    avatar={avatar}
-                    name={name}
-                    currentFrame={currentFrame}
-                    owns={owns}
-                    coins={coins}
-                    busy={busy}
-                    groupColor={GROUP_COLOR[group]}
-                    onBuy={buy}
-                    onEquip={equip}
-                    labels={labels}
-                  />
-                ))}
-              </div>
-            </div>
-          )
-        })}
-
-        <p className="shop-note">{t('shop.note')}</p>
+        </section>
       </div>
     </div>
   )
