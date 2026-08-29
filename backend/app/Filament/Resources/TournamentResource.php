@@ -39,16 +39,31 @@ class TournamentResource extends Resource
                     ->required()
                     ->numeric()
                     ->default(8),
-                Forms\Components\TextInput::make('status')
-                    ->required(),
-                Forms\Components\TextInput::make('creator_id')
-                    ->numeric(),
+                Forms\Components\Select::make('status')
+                    ->label('Durum')
+                    ->required()
+                    ->options([
+                        'open' => 'Kayıt açık',
+                        'running' => 'Devam ediyor',
+                        'finished' => 'Bitti',
+                    ])
+                    ->default('open'),
+                Forms\Components\Select::make('creator_id')
+                    ->label('Oluşturan')
+                    ->relationship('creator', 'nickname')
+                    ->searchable()
+                    ->preload()
+                    ->default(fn () => auth()->id()),
                 Forms\Components\Textarea::make('players')
                     ->columnSpanFull(),
                 Forms\Components\Textarea::make('bracket')
                     ->columnSpanFull(),
-                Forms\Components\TextInput::make('champion_id')
-                    ->numeric(),
+                Forms\Components\Select::make('champion_id')
+                    ->label('Şampiyon')
+                    ->relationship('champion', 'nickname')
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
                 Forms\Components\TextInput::make('prize_coins')
                     ->required()
                     ->numeric()
@@ -74,11 +89,15 @@ class TournamentResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('creator_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('creator.nickname')
+                    ->label('Oluşturan')
+                    ->placeholder('—')
+                    ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('champion_id')
-                    ->numeric()
+                Tables\Columns\TextColumn::make('champion.nickname')
+                    ->label('Şampiyon')
+                    ->placeholder('—')
+                    ->searchable()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
