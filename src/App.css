@@ -5955,7 +5955,7 @@ button.stat-chip:hover {
 .mode-card-title {
   font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
   font-size: 1.18rem;
-  font-weight: 700; /* Libre Baskerville yalniz 400/700 yukleniyor; 800 faux-bold olurdu */
+  font-weight: 400;
   letter-spacing: -0.005em; /* serif display siki tracking istemez */
 }
 .mode-card-desc {
@@ -6045,7 +6045,8 @@ button.stat-chip:hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-weight: 800;
+  font-family: var(--tv-font-display); /* Libre Baskerville -> Playfair -> Georgia -> serif */
+  font-weight: 400;
   color: var(--text);
   margin-bottom: 12px;
 }
