@@ -3716,7 +3716,7 @@ export default function App() {
                 {!user && <h1 className="hero-title">{t('home.heroTitle')}</h1>}
                 <div className="hero-cta">
                   <div className="hero-cta-row">
-                    <Button variant="default" onClick={menuProps.onSolo}>
+                    <Button variant="secondary" onClick={menuProps.onSolo}>
                       <Icon name="coins" size={18} /> {t('menu.solo')}
                     </Button>
                     <span className="hero-cta-note">{t('home.soloNote')}</span>
