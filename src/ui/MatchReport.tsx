@@ -143,13 +143,15 @@ export default function MatchReport({
   return (
     <div className="register-overlay modal report-overlay" onClick={onClose}>
       <div className="report-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <h2>
-          {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
-          {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
-        </h2>
+        <div className="report-head">
+          <h2>
+            {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
+            {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
+          </h2>
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+            <Icon name="x" size={18} />
+          </Button>
+        </div>
 
         {log.length === 0 ? (
           <p className="register-sub">{t('rep.empty')}</p>
@@ -311,7 +313,9 @@ export default function MatchReport({
                           <span className="an-rank">{ci + 1}</span>
                           <span className="an-cmove">{c.notation}</span>
                           <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
-                            {ci === 0 ? `+${c.equity.toFixed(3)}` : diff.toFixed(3)}
+                            {ci === 0
+                              ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`
+                              : diff.toFixed(3)}
                           </span>
                           <span className="an-tags">
                             {ci === 0 && (
