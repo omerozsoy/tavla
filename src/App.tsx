@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
@@ -72,6 +72,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
+import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import AdminBoardPicker from './ui/AdminBoardPicker'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
@@ -2130,6 +2131,25 @@ export default function App() {
       /* yok */
     }
   }, [animOn])
+  // Tas hareket animasyonu stili (kapali/kayma/yay/kaldir-birak) — kullanici secer
+  const [moveStyle, setMoveStyle] = useState<MoveStyle>(() => {
+    try {
+      const v = localStorage.getItem('tavla.move')
+      return v === 'off' || v === 'slide' || v === 'arc' || v === 'lift' ? v : 'slide'
+    } catch {
+      return 'slide'
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('tavla.move', moveStyle)
+    } catch {
+      /* yok */
+    }
+  }, [moveStyle])
+  // FLIP: playSteps state'i guncellemeden ONCE kaynak dikdortgenini buraya yazar;
+  // render sonrasi useLayoutEffect hedef tasi kaynaktan ucurur.
+  const pendingFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
 
   // Otomatik zar: insanin sirasi gelince zar otomatik atilir (kucuk gecikme).
   // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip
@@ -2667,9 +2687,33 @@ export default function App() {
 
   // Bir step dizisini oyna. Tur otomatik BITMEZ (Onayla gerekir).
   function playSteps(seq: Step[]) {
+    // Tas hareket animasyonu: state guncellenmeden ONCE kaynak konumunu yakala.
+    // Birlesik hamlede (seq>1) tek ucus: ilk adimin kaynagi -> son adimin hedefi.
+    if (
+      moveStyle !== 'off' &&
+      animOn &&
+      seq.length > 0 &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      const r = sourceRect(seq[0].from)
+      if (r) pendingFlightRef.current = { to: seq[seq.length - 1].to, srcRect: r }
+    }
     setPlayed([...played, ...seq])
     setSelectedFrom(null)
   }
+
+  // Hamle uygulandiktan (render) sonra hedef tasi kaynaktan ucur.
+  useLayoutEffect(() => {
+    const f = pendingFlightRef.current
+    if (!f || moveStyle === 'off') {
+      pendingFlightRef.current = null
+      return
+    }
+    pendingFlightRef.current = null
+    const el = destEl(f.to)
+    if (el) flyChecker(el, f.srcRect, moveStyle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [played])
 
   // TEK TIK: kaynaga tiklayinca oyna.
   // Oncelik: toplama (bear-off) varsa topla; yoksa aktif zar.
@@ -3656,6 +3700,8 @@ export default function App() {
           setShowAnalysis={setShowAnalysis}
           learnMode={learnMode}
           setLearnMode={setLearnMode}
+          moveStyle={moveStyle}
+          setMoveStyle={setMoveStyle}
           framesSlot={
             user ? (
               <FrameShop
