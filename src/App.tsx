@@ -3718,15 +3718,24 @@ export default function App() {
                 </h1>
                 <p className="hero-tagline">{t('home.tagline')}</p>
                 <div className="hero-cta">
-                  <Button variant="default" onClick={menuProps.onSolo}>
-                    <Icon name="coins" size={18} /> {t('menu.solo')}
-                  </Button>
-                  <Button variant="secondary" onClick={menuProps.onNewGame}>
-                    <Icon name="ranking" size={18} /> {t('menu.match')}
-                  </Button>
-                  <Button variant="secondary" onClick={menuProps.onAiGame}>
-                    <Icon name="robot" size={18} /> {t('menu.aiGame')}
-                  </Button>
+                  <div className="hero-cta-row">
+                    <Button variant="default" onClick={menuProps.onSolo}>
+                      <Icon name="coins" size={18} /> {t('menu.solo')}
+                    </Button>
+                    <span className="hero-cta-note">{t('home.soloNote')}</span>
+                  </div>
+                  <div className="hero-cta-row">
+                    <Button variant="secondary" onClick={menuProps.onNewGame}>
+                      <Icon name="ranking" size={18} /> {t('menu.match')}
+                    </Button>
+                    <span className="hero-cta-note">{t('home.matchNote')}</span>
+                  </div>
+                  <div className="hero-cta-row">
+                    <Button variant="secondary" onClick={menuProps.onAiGame}>
+                      <Icon name="robot" size={18} /> {t('menu.aiGame')}
+                    </Button>
+                    <span className="hero-cta-note">{t('home.aiNote')}</span>
+                  </div>
                 </div>
               </div>
               <div className="hero-board" aria-hidden="true">
