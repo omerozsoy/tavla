@@ -3487,20 +3487,58 @@ button[aria-disabled='true'],
   height: var(--dice-size);
   border-radius: 18%;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
-  /* Yeni atista donerek belirir */
-  animation: die-roll 0.45s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transform-origin: 50% 60%; /* alt-merkezden savrulma -> yer cekimi hissi */
+  /* Yeni atista tumble + overshoot ile yerine oturur (emil: guclu ease-out, hareket
+     bulanikligi hizi anlatir, hafif salinimla yerlesir). AYRI isim: eski 'die-roll'
+     (.die-face.rolling onizlemesi) ile cakismasin -> giris animasyonu artik gercekten oynar.
+     `both` -> stagger'da flash yok. Yavas/elegant sure (kullanici tercihi). */
+  animation: die-roll-in 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
-@keyframes die-roll {
+/* Iki zar (cift zarda dort) ard arda dussun: stagger daha dogal */
+.die-face:nth-child(2) {
+  animation-delay: 130ms;
+}
+.die-face:nth-child(3) {
+  animation-delay: 260ms;
+}
+.die-face:nth-child(4) {
+  animation-delay: 390ms;
+}
+@keyframes die-roll-in {
   0% {
-    transform: rotate(-220deg) scale(0.5);
+    transform: rotate(-200deg) scale(0.55);
     opacity: 0;
+    filter: blur(3px);
   }
-  55% {
-    transform: rotate(12deg) scale(1.12);
+  45% {
+    transform: rotate(14deg) scale(1.12);
     opacity: 1;
+    filter: blur(0);
+  }
+  70% {
+    transform: rotate(-4deg) scale(0.97);
   }
   100% {
     transform: rotate(0) scale(1);
+    filter: blur(0);
+  }
+}
+/* Reduced-motion: savrulma/donme yok -> yalniz yumusak belirme */
+@media (prefers-reduced-motion: reduce) {
+  .die-face {
+    animation: die-fade-in 200ms ease both;
+  }
+  .die-face:nth-child(2),
+  .die-face:nth-child(3),
+  .die-face:nth-child(4) {
+    animation-delay: 0ms;
+  }
+}
+@keyframes die-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
     opacity: 1;
   }
 }
