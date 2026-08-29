@@ -5775,59 +5775,6 @@ html.fs-active .account-bar {
     font-size: 0.82rem;
   }
 }
-.hero-btn-primary,
-.hero-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1rem;
-  padding: 12px 22px;
-  border-radius: var(--radius-pill);
-}
-.hero-btn-secondary {
-  font-weight: var(--fw-bold);
-}
-
-/* Hero gorseli: stilize tavla ceyregi (ucgen noktalar) + iki zar */
-.hero-board {
-  position: relative;
-  align-self: stretch;
-  min-height: 240px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-}
-.hero-points {
-  position: absolute;
-  inset: auto 0 0 0;
-  height: 100%;
-  display: flex;
-  gap: 2px;
-  opacity: 1;
-}
-.hero-point {
-  flex: 1;
-  align-self: stretch;
-}
-.hero-point.up {
-  clip-path: polygon(50% 8%, 100% 100%, 0 100%);
-}
-.hero-point.down {
-  clip-path: polygon(0 0, 100% 0, 50% 92%);
-}
-/* Hero ucgen yelpazesi: NAVY + CORAL agirlikli, birkac ORANGE accent (canli, guclu) */
-.hero-point.a {
-  background: linear-gradient(var(--coral), color-mix(in srgb, var(--coral) 62%, transparent));
-}
-.hero-point.b {
-  background: linear-gradient(var(--navy-brand), color-mix(in srgb, var(--navy-brand) 60%, transparent));
-}
-.hero-point.c {
-  background: linear-gradient(var(--orange), color-mix(in srgb, var(--orange) 62%, transparent));
-}
-:root[data-theme='light'] .hero-point.b {
-  background: linear-gradient(var(--navy-brand), color-mix(in srgb, var(--navy-brand) 58%, transparent));
-}
 @media (max-width: 720px) {
   .hero-cta-row {
     flex-direction: column;
