@@ -3135,25 +3135,27 @@ export default function App() {
         />
       )}
       {user && (
-        <button
-          className="account-coins-btn"
+        <Button
+          variant="outline"
+          className="btn-coin"
           onClick={() => goPage(() => setShopOpen(true))}
           title={t('shop.title')}
         >
           <Icon name="coin" size={16} /> {user.coins ?? 0}
-        </button>
+        </Button>
       )}
       {user &&
         (rewardReady ? (
-          <button
-            className="account-btn account-reward ready"
+          <Button
+            variant="outline"
+            className="btn-reward"
             onClick={handleCoinClick}
             title={t('reward.claim')}
           >
             <Icon name="gift" size={15} /> 500
-          </button>
+          </Button>
         ) : (
-          <span className="account-reward count" title={t('reward.in')}>
+          <span className="reward-count" title={t('reward.in')}>
             <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
           </span>
         ))}

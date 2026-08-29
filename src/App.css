@@ -8801,61 +8801,62 @@ html.fs-active .account-bar {
   font-weight: 700;
   font-size: 0.85rem;
 }
-.account-coins-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 42px;
-  border: 1px solid color-mix(in srgb, var(--tv-gold) 55%, var(--border));
-  background: color-mix(in srgb, var(--tv-gold) 18%, var(--card-bg));
-  color: var(--text);
-  font-weight: 800;
-  font-size: 0.85rem;
-  font-variant-numeric: tabular-nums;
-  border-radius: var(--radius-pill);
-  padding: 5px 11px;
-  cursor: pointer;
-}
-/* Coin ikonu ORANGE (odul semantik); sayi okunur (koyu) metin -> kontrast */
-.account-coins-btn > svg {
-  color: var(--orange);
-}
-.account-coins-btn:hover {
-  background: color-mix(in srgb, var(--tv-gold) 20%, transparent);
-}
-.account-coins-btn.ready {
-  border-color: var(--tv-gold);
-  animation: coin-pulse 1.4s ease-in-out infinite;
-}
 .coin-gift {
   font-size: 0.9rem;
 }
-/* Gunluk odul: hazir -> tiklanabilir; degil -> geri sayim */
-.account-reward {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* ---- Ust bar altin butonlari: shadcn <Button variant="outline"> uzerine SADECE renk.
+   Geometri (42px yukseklik, rounded-md, 1px border, px-4, gap) Button base'inden gelir;
+   burada yalnizca altin renk kimligi + coin/odul semantigi ezilir (App.css utilities'i ezer). */
+.btn-coin {
+  border-color: color-mix(in srgb, var(--tv-gold) 55%, var(--border));
+  background: color-mix(in srgb, var(--tv-gold) 18%, var(--card-bg));
+  color: var(--text);
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
-.account-reward.count {
-  min-height: 42px;
-  padding: 6px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--bg);
-  border: 1px solid var(--border);
-  color: var(--muted);
-  font-size: 0.8rem;
+.btn-coin:hover {
+  border-color: var(--tv-gold);
+  background: color-mix(in srgb, var(--tv-gold) 26%, var(--card-bg));
+  color: var(--text);
 }
-.account-reward.count > svg {
-  color: var(--accent);
+/* Coin ikonu ORANGE (odul semantik); sayi okunur (koyu) metin -> kontrast */
+.btn-coin > svg {
+  color: var(--orange);
 }
-.account-reward.ready {
-  background: color-mix(in srgb, #e6b422 24%, var(--card-bg));
+/* Gunluk odul (hazir): altin + nabiz animasyonu */
+.btn-reward {
   border-color: #e6b422;
+  background: color-mix(in srgb, #e6b422 24%, var(--card-bg));
   color: var(--text);
   font-weight: 800;
   animation: coin-pulse 1.6s ease-in-out infinite;
+}
+.btn-reward:hover {
+  border-color: #e6b422;
+  background: color-mix(in srgb, #e6b422 34%, var(--card-bg));
+  color: var(--text);
+}
+.btn-reward > svg {
+  color: var(--orange);
+}
+/* Gunluk odul geri sayimi (buton DEGIL — pasif durum); buton boyuyla hizali */
+.reward-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.reward-count > svg {
+  color: var(--accent);
 }
 @keyframes coin-pulse {
   0%,
