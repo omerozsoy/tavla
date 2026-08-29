@@ -37,8 +37,8 @@ export const PLANS: Plan[] = [
     id: 'star',
     nameKey: 'plan.star',
     color: '#a06bd4',
-    yearly: 2000, // TL/yil
-    monthly: 200, // TL/ay
+    yearly: 499.9, // TL/yil
+    monthly: 49.9, // TL/ay
     features: [
       { key: 'feat.analysis4ply', on: true },
       { key: 'feat.bonus800', on: true },
