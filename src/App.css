@@ -790,6 +790,28 @@ button[aria-disabled='true'],
   font-weight: 700;
   color: var(--text);
 }
+/* Tahta coin fiyati rozeti (satin alinabilir tahta) */
+.bp-price {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, #e6b422 20%, rgba(0, 0, 0, 0.55));
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.bp-price > svg {
+  color: #e6b422;
+}
+.board-prev:disabled {
+  cursor: not-allowed;
+}
 .board-prev.locked .bp-svg {
   opacity: 0.42;
 }

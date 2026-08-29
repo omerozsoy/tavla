@@ -198,6 +198,28 @@ export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
 ]
 export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...GALAXY_EXTRA_THEMES]
 
+// Tahta nadirlik -> coin fiyati (backend ShopController BOARD_RARITY ile BIREBIR).
+export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary' | 'mythic', number> = {
+  common: 1000,
+  rare: 2000,
+  epic: 3000,
+  legendary: 4000,
+  mythic: 5000,
+}
+// Ucretsiz (her zaman sahip): varsayilan 3 board. Kulup temalari da ucretsiz (rarity 'club').
+export const FREE_BOARDS = new Set<string>(['standart', 'tavla', 'galaxy'])
+// Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
+export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
+  return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
+}
+// Coin fiyati: ucretsiz/kulup -> undefined; degilse nadirlik fiyati.
+export function boardPrice(t: BoardTheme): number | undefined {
+  if (FREE_BOARDS.has(t.id)) return undefined
+  const r = boardRarityOf(t)
+  if (r === 'club') return undefined
+  return BOARD_RARITY_PRICE[r]
+}
+
 // Rename gecisi: eski board id'leri -> yeni Galaksi koleksiyonu id'leri.
 // Eski temada olan kullanicilar otomatik yeni karsiligina tasinir.
 export const BOARD_ID_MIGRATE: Record<string, string> = {

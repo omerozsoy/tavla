@@ -11,12 +11,41 @@ class ShopController extends Controller
 {
     // Satin alinabilir kozmetikler ve coin fiyatlari (sunucu otoritesi).
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
-    // Premium tahta temalari
-    private const THEMES = [
-        'theme.gold' => 500,
-        'theme.neon' => 800,
-        'theme.ocean' => 300,
-        'theme.sunset' => 600,
+
+    // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE ile BIREBIR).
+    private const BOARD_PRICE = ['common' => 1000, 'rare' => 2000, 'epic' => 3000, 'legendary' => 4000, 'mythic' => 5000];
+
+    // Satin alinabilir tahta id -> nadirlik. Kaynak: src/boardThemes.ts (senkron tut).
+    // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
+    private const BOARD_RARITY = [
+        // common (1000)
+        'pumpkin' => 'common', 'marrakesh' => 'common', 'bosphorus' => 'common', 'manhattan' => 'common',
+        'redplanet' => 'common', 'glacier' => 'common', 'atlantis' => 'common', 'amethyst' => 'common',
+        'radioactive' => 'common', 'gaia' => 'common', 'lunar' => 'common', 'monaco' => 'common',
+        'violetstorm' => 'common', 'blueorbit' => 'common', 'nord' => 'common', 'gruvbox' => 'common',
+        'solarized' => 'common', 'mocha' => 'common', 'monokai' => 'common', 'everforest' => 'common',
+        'ayu' => 'common', 'onedark' => 'common', 'palenight' => 'common', 'oceanic' => 'common',
+        'gruvlight' => 'common', 'sollight' => 'common', 'dawn' => 'common', 'sahara' => 'common',
+        'emerald' => 'common', 'arctic' => 'common', 'coral' => 'common', 'jade' => 'common',
+        'ocean2' => 'common', 'lagoon' => 'common', 'lavender' => 'common', 'bazaar' => 'common', 'miami' => 'common',
+        // rare (2000)
+        'frostfall' => 'rare', 'worldmasters' => 'rare', 'retroclub' => 'rare', 'crimsonash' => 'rare',
+        'ion' => 'rare', 'dracula' => 'rare', 'tokyonight' => 'rare', 'rosepine' => 'rare',
+        'nightowl' => 'rare', 'horizon' => 'rare', 'ruby' => 'rare', 'royal' => 'rare',
+        'cherry' => 'rare', 'copper' => 'rare', 'midnight' => 'rare', 'gold2' => 'rare',
+        'gamma' => 'rare', 'cosmos' => 'rare', 'titan' => 'rare', 'jupiter' => 'rare',
+        'helix' => 'rare', 'solaris' => 'rare', 'orion' => 'rare', 'kepler' => 'rare',
+        // epic (3000)
+        'reddwarf' => 'epic', 'eclipse' => 'epic', 'synthwave' => 'epic', 'ocean' => 'epic',
+        'volcano' => 'epic', 'tokyo' => 'epic', 'aurora2' => 'epic', 'imperial' => 'epic',
+        'andromeda' => 'epic', 'orbit' => 'epic', 'cassio' => 'epic', 'quasar' => 'epic',
+        'polaris' => 'epic', 'apollo' => 'epic', 'aurora' => 'epic',
+        // legendary (4000)
+        'gold' => 'legendary', 'sunset' => 'legendary', 'obsidian' => 'legendary', 'samurai' => 'legendary',
+        'blackdiamond' => 'legendary', 'gutenberg' => 'legendary', 'krypton' => 'legendary', 'infinity' => 'legendary',
+        'vega' => 'legendary', 'quantum' => 'legendary', 'singularity' => 'legendary',
+        // mythic (5000)
+        'neon' => 'mythic', 'cyber' => 'mythic', 'inferno' => 'mythic',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).
@@ -48,10 +77,13 @@ class ShopController extends Controller
 
     private const RARITY_PRICE = ['common' => 250, 'rare' => 500, 'epic' => 1000, 'legendary' => 2000, 'mythic' => 4000];
 
-    // Tam katalog: temalar + 62 cerceve (anim basina tek; id: 'frame.<motion>').
+    // Tam katalog: tahtalar (nadirlik fiyati) + 62 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
     {
-        $c = self::THEMES;
+        $c = [];
+        foreach (self::BOARD_RARITY as $id => $rarity) {
+            $c["theme.$id"] = self::BOARD_PRICE[$rarity];
+        }
         foreach (self::FRAME_MOTIONS as $motion => $rarity) {
             $c["frame.$motion"] = self::RARITY_PRICE[$rarity];
         }
