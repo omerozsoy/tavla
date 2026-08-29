@@ -660,6 +660,11 @@ export default function App() {
   const notify = useToast()
   // Mac gunlugu (insanin kararlari): rapor/istatistik icin
   const [matchLog, setMatchLog] = useState<MoveLogEntry[]>([])
+  // En guncel log (mac-sonu kaydi async analizler bittikten sonra bunu okur)
+  const matchLogRef = useRef<MoveLogEntry[]>([])
+  matchLogRef.current = matchLog
+  // Bekleyen (async) hamle analizi sayaci: online mac-sonu kaydi bunlar bitene kadar bekler
+  const pendingAnalysisRef = useRef(0)
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
@@ -1022,10 +1027,15 @@ export default function App() {
     ) {
       record(pre)
     } else {
+      // Async analiz: mac-sonu kaydi bunun bitmesini bekleyebilsin diye say
+      pendingAnalysisRef.current++
       neuralRef.current
         .analyzeMoves(before)
         .then(record)
         .catch(() => {})
+        .finally(() => {
+          pendingAnalysisRef.current = Math.max(0, pendingAnalysisRef.current - 1)
+        })
     }
   }
 
@@ -1627,6 +1637,13 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, online, myColor])
 
+  // Online analiz: oyun basinda sinir agini ONCEDEN yukle -> recordPR ilk hamleden
+  // itibaren hazir (aksi halde tembel yukleme yavas kalir, ilk hamleler kaydedilmez).
+  useEffect(() => {
+    if (online && room?.status === 'playing') void neuralRef.current.ready().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.status])
+
   // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
   useEffect(() => {
     if (!online || !user || ratingReportedRef.current) return
@@ -1636,28 +1653,35 @@ export default function App() {
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
     const before = user.rating ?? 1500
-    reportRating(
-      won,
-      oppRating,
-      match.target,
-      prOf(myColor),
-      prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
-      match.score[myColor],
-      match.score[opponent(myColor)],
-      room?.oppName ?? null,
-      prOf(opponent(myColor)),
-      JSON.stringify({ hc: myColor, log: matchLog.slice(-250) }),
-      true, // ranked: online her zaman puanli
-      stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
-    )
-      .then((r) => {
-        setRatingChange({ before, after: r.rating })
-        setUser((u) => (u ? { ...u, rating: r.rating } : u))
-      })
-      .catch(() => {
-        // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
-        notify.error(t('net.ratingFailed'))
-      })
+    // Bekleyen (async) hamle analizleri bitene kadar bekle (max ~1.5s) -> online analiz
+    // log'u TAM kaydolsun (son hamleler kaybolmasin). Sonra en guncel log ile bildir.
+    void (async () => {
+      for (let i = 0; i < 15 && pendingAnalysisRef.current > 0; i++) {
+        await new Promise((res) => setTimeout(res, 100))
+      }
+      reportRating(
+        won,
+        oppRating,
+        match.target,
+        prOf(myColor),
+        prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
+        match.score[myColor],
+        match.score[opponent(myColor)],
+        room?.oppName ?? null,
+        prOf(opponent(myColor)),
+        JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
+        true, // ranked: online her zaman puanli
+        stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
+      )
+        .then((r) => {
+          setRatingChange({ before, after: r.rating })
+          setUser((u) => (u ? { ...u, rating: r.rating } : u))
+        })
+        .catch(() => {
+          // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
+          notify.error(t('net.ratingFailed'))
+        })
+    })()
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
     // Sunucu kazanani yetkili belirler; rakip beyani/durum gec gelirse pending doner,
     // settleRoomConfirmed birkac kez deneyip guncel bakiyeyi getirir.
