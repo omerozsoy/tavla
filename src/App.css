@@ -1105,6 +1105,35 @@ button[aria-disabled='true'],
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   border-color: transparent;
 }
+/* Sol menu shadcn nav butonlari (guncel): TEMIZ navigation — kutu/border yok,
+   coral ikon (canlilik), belirgin aqua hover, AKTIF sayfa = guclu navy.
+   Boylece her item ayni soluk gri kutu gibi gorunmez; aktif sayfa ilk bakista bellidir. */
+.side-menu [data-slot='button'] {
+  border-color: transparent !important;
+  color: var(--text);
+  font-weight: 600;
+  min-height: 44px;
+}
+.side-menu [data-slot='button'] svg {
+  color: var(--coral); /* nav ikonlari coral -> siteye enerji */
+}
+.side-menu [data-slot='button']:hover {
+  background: color-mix(in srgb, var(--sky) 55%, transparent) !important; /* belirgin aqua/light-blue */
+  color: var(--navy-brand) !important;
+  border-color: transparent !important;
+}
+.side-menu [data-slot='button'][data-active='true'] {
+  background: var(--navy-brand) !important; /* AKTIF = navy dolgu */
+  color: #fff !important;
+  border-color: var(--navy-brand) !important;
+}
+.side-menu [data-slot='button'][data-active='true'] svg,
+.side-menu [data-slot='button'][data-active='true']:hover {
+  color: #fff !important;
+}
+.side-menu [data-slot='button'][data-active='true']:hover {
+  background: var(--med-blue-deep) !important; /* aktif hover: daha koyu navy */
+}
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
   margin-top: auto;
@@ -5690,7 +5719,7 @@ html.fs-active .account-bar {
   height: 100%;
   display: flex;
   gap: 2px;
-  opacity: 0.9;
+  opacity: 1;
 }
 .hero-point {
   flex: 1;
@@ -5702,14 +5731,18 @@ html.fs-active .account-bar {
 .hero-point.down {
   clip-path: polygon(0 0, 100% 0, 50% 92%);
 }
+/* Hero ucgen yelpazesi: NAVY + CORAL agirlikli, birkac ORANGE accent (canli, guclu) */
 .hero-point.a {
-  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 55%, transparent));
+  background: linear-gradient(var(--coral), color-mix(in srgb, var(--coral) 62%, transparent));
 }
 .hero-point.b {
-  background: linear-gradient(color-mix(in srgb, var(--tv-ink) 42%, transparent), transparent);
+  background: linear-gradient(var(--navy-brand), color-mix(in srgb, var(--navy-brand) 60%, transparent));
+}
+.hero-point.c {
+  background: linear-gradient(var(--orange), color-mix(in srgb, var(--orange) 62%, transparent));
 }
 :root[data-theme='light'] .hero-point.b {
-  background: linear-gradient(color-mix(in srgb, var(--tv-ink) 24%, transparent), transparent);
+  background: linear-gradient(var(--navy-brand), color-mix(in srgb, var(--navy-brand) 58%, transparent));
 }
 @media (max-width: 720px) {
   .lobby-hero {
@@ -6125,6 +6158,19 @@ html.fs-active .account-bar {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   margin-bottom: 14px;
+}
+/* Feature ikon container'lari: semantik renk kimligi (navy/coral/orange) — canli, dogurgan */
+.hf-icon-navy {
+  color: var(--navy-brand);
+  background: color-mix(in srgb, var(--navy-brand) 14%, transparent);
+}
+.hf-icon-coral {
+  color: var(--coral);
+  background: color-mix(in srgb, var(--coral) 16%, transparent);
+}
+.hf-icon-orange {
+  color: var(--orange);
+  background: color-mix(in srgb, var(--orange) 18%, transparent);
 }
 .hf-card-title {
   font-size: var(--fs-lg);
