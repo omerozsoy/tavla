@@ -246,24 +246,71 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
           <div className="lb-empty">{t('tourn.empty')}</div>
         ) : (
           <div className="tourn-list">
-            {list.map((tr) => (
-              <div key={tr.id} className="tourn-litem-wrap">
-                <button className="tourn-litem" onClick={() => open(tr.id)}>
-                  <span className="tourn-lname">
-                    {tr.name}
-                    {!!tr.prize_coins && (
-                      <span className="tourn-prize-badge">
-                        <Icon name="coin" size={13} /> {tr.prize_coins}
+            {list.map((tr) => {
+              const full = tr.count >= tr.size
+              const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
+              // Odul havuzu: prizes tablosu varsa toplami, yoksa prize_coins
+              const pool =
+                tr.prizes && tr.prizes.length > 0
+                  ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0)
+                  : tr.prize_coins ?? 0
+              const prizeCount = tr.prizes?.length ?? 0
+              return (
+                <button key={tr.id} className="tcard" onClick={() => open(tr.id)}>
+                  <div className="tcard-top">
+                    <span className="tcard-name">{tr.name}</span>
+                    <span className={`tcard-status tcard-status-${tr.status}`}>
+                      {t(`tourn.status.${tr.status}`)}
+                    </span>
+                  </div>
+                  <div className="tcard-stats">
+                    <div className="tcard-stat">
+                      <span className="tcard-ic gold" aria-hidden="true">
+                        <Icon name="medal" size={17} />
                       </span>
-                    )}
-                  </span>
-                  <span className="tourn-lmeta">
-                    {t(`tourn.status.${tr.status}`)} · {tr.count}/{tr.size}
+                      <span className="tcard-sb">
+                        <span className="tcard-val">
+                          {pool.toLocaleString('tr-TR')} <small>coin</small>
+                        </span>
+                        <span className="tcard-lbl">
+                          {t('tourn.prizePool')}
+                          {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
+                        </span>
+                      </span>
+                    </div>
+                    <div className="tcard-stat">
+                      <span className="tcard-ic brick" aria-hidden="true">
+                        <Icon name="ticket" size={17} />
+                      </span>
+                      <span className="tcard-sb">
+                        <span className="tcard-val">
+                          {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+                        </span>
+                        <span className="tcard-lbl">{t('tourn.entryFee')}</span>
+                      </span>
+                    </div>
+                    <div className="tcard-stat">
+                      <span className="tcard-ic navy" aria-hidden="true">
+                        <Icon name="users" size={17} />
+                      </span>
+                      <span className="tcard-sb">
+                        <span className="tcard-val" data-full={full || undefined}>
+                          {tr.count}
+                          <small>/{tr.size}</small>
+                        </span>
+                        <span className="tcard-lbl">{t('tourn.players')}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <div className="tcard-bar" aria-hidden="true">
+                    <span style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="tcard-cta">
+                    {t('tourn.details')} <Icon name="arrow-right" size={15} />
                   </span>
                 </button>
-                {/* Admin bitir/sil butonlari kaldirildi -> turnuva yonetimi Filament admin panelinde */}
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
