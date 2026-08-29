@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Taş Oynama Animasyonu — gerçek board · 3 seçenek</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Libre+Baskerville:wght@700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe6;
+        --card: #ffffff;
+        --ink: #1c1a17;
+        --muted: #5e574c;
+        --line: #ded7ca;
+        --brick: #c9563f;
+        --brick-dark: #a83a2b;
+        /* Standart tema (navy) board renkleri */
+        --panel: #0f1b2b;
+        --frame: #080c12;
+        --tri-a: #c2a15f; /* acik ucgen */
+        --tri-b: #2a3d59; /* koyu ucgen */
+        --navy: #0a1220; /* koyu tas */
+        --cream: #f0e8d8; /* acik tas */
+        --bar: #0a1220;
+        --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+        --dur: 1; /* yavas-cekim carpani */
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 18px;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: 'Outfit', system-ui, sans-serif;
+        padding: 24px;
+      }
+      h1 {
+        font-family: 'Libre Baskerville', Georgia, serif;
+        font-size: 1.5rem;
+        margin: 0;
+        text-align: center;
+      }
+      .sub { color: var(--muted); font-size: 0.9rem; margin: 0; text-align: center; }
+
+      /* ---- BOARD ---- */
+      .board {
+        position: relative;
+        width: min(760px, 96vw);
+        aspect-ratio: 2 / 1.15;
+        background: var(--panel);
+        border: 10px solid var(--frame);
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 18px 50px -20px rgba(0, 0, 0, 0.5);
+      }
+      .row { flex: 1; display: flex; }
+      .quad { flex: 1; display: flex; }
+      .bar { width: 34px; flex: none; background: var(--frame); }
+      .point {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .tri {
+        position: absolute;
+        left: 8%;
+        width: 84%;
+        height: 88%;
+      }
+      .row.top .tri { top: 0; clip-path: polygon(50% 100%, 100% 0, 0 0); }
+      .row.bottom .tri { bottom: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+      .tri.a { background: var(--tri-a); }
+      .tri.b { background: var(--tri-b); }
+      /* pul yigini */
+      .stack { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1px; z-index: 1; }
+      .row.top .stack { top: 4px; }
+      .row.bottom .stack { bottom: 4px; }
+      .chk {
+        width: var(--csz, 30px);
+        height: var(--csz, 30px);
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.45), inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+      }
+      .chk.navy { background: radial-gradient(circle at 38% 32%, #33465f, var(--navy) 62%); }
+      .chk.cream { background: radial-gradient(circle at 38% 32%, #ffffff, var(--cream) 66%); }
+
+      /* Hareket eden tas (mutlak, board uzerinde) */
+      .mover {
+        position: absolute;
+        left: 0;
+        top: 0;
+        z-index: 5;
+        transform: translate(var(--sx, 0), var(--sy, 0));
+      }
+      /* Hedef isaretci (nereye gidecek) */
+      .ghost {
+        position: absolute;
+        z-index: 3;
+        border-radius: 50%;
+        outline: 2px dashed color-mix(in srgb, var(--cream) 60%, transparent);
+        outline-offset: -3px;
+        opacity: 0.5;
+      }
+
+      /* --- ANIMASYONLAR (2B: --dx yatay, --dy dikey) --- */
+      .play .mover.slide { animation: ck-slide calc(440ms * var(--dur)) var(--ease-out) forwards; }
+      @keyframes ck-slide {
+        to { transform: translate(calc(var(--sx) + var(--dx)), calc(var(--sy) + var(--dy))); }
+      }
+      .play .mover.arc { animation: ck-arc calc(600ms * var(--dur)) cubic-bezier(0.45, 0, 0.3, 1) forwards; }
+      @keyframes ck-arc {
+        0% { transform: translate(var(--sx), var(--sy)); }
+        50% { transform: translate(calc(var(--sx) + var(--dx) / 2), calc(var(--sy) + var(--dy) / 2 - 64px)) scale(1.07); }
+        100% { transform: translate(calc(var(--sx) + var(--dx)), calc(var(--sy) + var(--dy))); }
+      }
+      .play .mover.lift { animation: ck-lift calc(640ms * var(--dur)) var(--ease-out) forwards; }
+      @keyframes ck-lift {
+        0% { transform: translate(var(--sx), var(--sy)) scale(1); filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+        20% { transform: translate(var(--sx), calc(var(--sy) - 16px)) scale(1.16); filter: drop-shadow(0 16px 16px rgba(0,0,0,.4)); }
+        78% { transform: translate(calc(var(--sx) + var(--dx)), calc(var(--sy) + var(--dy) - 16px)) scale(1.16); filter: drop-shadow(0 16px 16px rgba(0,0,0,.4)); }
+        90% { transform: translate(calc(var(--sx) + var(--dx)), calc(var(--sy) + var(--dy) + 4px)) scale(0.97); filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+        100% { transform: translate(calc(var(--sx) + var(--dx)), calc(var(--sy) + var(--dy))) scale(1); filter: drop-shadow(0 2px 4px rgba(0,0,0,.5)); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .play .mover.slide, .play .mover.arc, .play .mover.lift {
+          animation: ck-slide calc(240ms * var(--dur)) ease forwards;
+        }
+      }
+
+      /* ---- kontroller ---- */
+      .controls { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+      button {
+        font-family: inherit; font-size: 0.92rem; font-weight: 600;
+        padding: 10px 18px; border-radius: 999px;
+        border: 1px solid var(--line); background: var(--card); color: var(--ink);
+        cursor: pointer;
+        transition: transform 120ms var(--ease-out), border-color 150ms var(--ease-out), background 150ms var(--ease-out);
+      }
+      button:hover { border-color: var(--brick); }
+      button:active { transform: scale(0.96); }
+      button.sel { background: var(--brick); border-color: var(--brick); color: #fff; }
+      .play-btn { background: var(--brick); border-color: var(--brick); color: #fff; font-weight: 800; }
+      .play-btn:hover { background: var(--brick-dark); border-color: var(--brick-dark); }
+      .toggle.on { background: color-mix(in srgb, var(--brick) 12%, #fff); border-color: var(--brick); color: var(--brick-dark); }
+      .cap { font-size: 0.8rem; color: var(--muted); text-align: center; max-width: 640px; }
+      .cap b { color: var(--ink); }
+    </style>
+  </head>
+  <body>
+    <h1>Taş Oynama Animasyonu — gerçek board</h1>
+    <p class="sub">Bir stili seç, taş kaynaktan hedefe o animasyonla gitsin. Beğendiğini bana söyle (1/2/3).</p>
+
+    <div class="board" id="board"></div>
+
+    <div class="controls">
+      <button class="play-btn" id="play">▶ Oynat</button>
+      <button class="style-btn sel" data-style="slide">1 · Kayma</button>
+      <button class="style-btn" data-style="arc">2 · Yay</button>
+      <button class="style-btn" data-style="lift">3 · Kaldır-Bırak</button>
+      <button class="toggle" id="slow">Yavaş Çekim</button>
+    </div>
+    <p class="cap" id="cap"><b>1 · Kayma:</b> Düz çizgi, keskin ease-out. Sade & hızlı.</p>
+
+    <script>
+      const board = document.getElementById('board')
+      // Baslangica yakin bir dizilim: {point: [renk, adet]}. 0-11 ust satir (sol->sag), 12-23 alt.
+      const STACKS = {
+        0: ['navy', 5], 4: ['cream', 3], 6: ['cream', 5], 11: ['navy', 2],
+        12: ['cream', 5], 16: ['navy', 3], 18: ['navy', 5], 23: ['cream', 2],
+      }
+      const SRC = 0   // kaynak nokta (ust-sol, 5 navy) -> en ustteki tas hareket eder
+      const DST = 18  // hedef nokta (alt, navy yigin) -> uzerine oturur
+
+      let mover, ghost
+      let sx = 0, sy = 0, dx = 0, dy = 0, size = 30
+      let style = 'slide', durMult = 1
+
+      function el(t, c) { const e = document.createElement(t); if (c) e.className = c; return e }
+      function pointEl(pi) { return board.querySelector(`.point[data-pi="${pi}"]`) }
+
+      function build() {
+        board.innerHTML = ''
+        const rows = [
+          { cls: 'top', pts: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+          { cls: 'bottom', pts: [12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23] },
+        ]
+        for (const r of rows) {
+          const row = el('div', 'row ' + r.cls)
+          const q1 = el('div', 'quad'), q2 = el('div', 'quad')
+          r.pts.forEach((pi, k) => {
+            const p = el('div', 'point')
+            p.dataset.pi = pi
+            p.appendChild(el('span', 'tri ' + (k % 2 ? 'a' : 'b')))
+            const st = el('div', 'stack')
+            const s = STACKS[pi]
+            if (s) {
+              const n = pi === SRC ? s[1] - 1 : s[1] // kaynakta en ust tas mover
+              for (let i = 0; i < n; i++) st.appendChild(el('span', 'chk ' + s[0]))
+            }
+            p.appendChild(st)
+            ;(k < 6 ? q1 : q2).appendChild(p)
+          })
+          row.appendChild(q1)
+          row.appendChild(el('div', 'bar'))
+          row.appendChild(q2)
+          board.appendChild(row)
+        }
+        mover = el('span', 'mover')
+        mover.appendChild(el('span', 'chk navy'))
+        board.appendChild(mover)
+        ghost = el('span', 'ghost')
+        board.appendChild(ghost)
+        layout()
+      }
+
+      function layout() {
+        const p0 = pointEl(0)
+        size = Math.max(20, Math.round((p0 ? p0.offsetWidth : 44) * 0.7))
+        document.querySelectorAll('.chk').forEach((c) => { c.style.width = size + 'px'; c.style.height = size + 'px' })
+        ghost.style.width = size + 'px'; ghost.style.height = size + 'px'
+
+        const brc = board.getBoundingClientRect()
+        const srcRect = pointEl(SRC).getBoundingClientRect()
+        const dstRect = pointEl(DST).getBoundingClientRect()
+        const srcCount = STACKS[SRC] ? STACKS[SRC][1] - 1 : 0
+        const dstCount = STACKS[DST] ? STACKS[DST][1] : 0
+        const isTopSrc = SRC < 12, isTopDst = DST < 12
+        sx = srcRect.left - brc.left + srcRect.width / 2 - size / 2
+        sy = isTopSrc
+          ? srcRect.top - brc.top + 4 + srcCount * (size + 1)
+          : srcRect.bottom - brc.top - 4 - (srcCount + 1) * (size + 1)
+        const tx = dstRect.left - brc.left + dstRect.width / 2 - size / 2
+        const ty = isTopDst
+          ? dstRect.top - brc.top + 4 + dstCount * (size + 1)
+          : dstRect.bottom - brc.top - 4 - (dstCount + 1) * (size + 1)
+        dx = tx - sx; dy = ty - sy
+        ghost.style.left = tx + 'px'; ghost.style.top = ty + 'px'
+        mover.style.transform = `translate(${sx}px, ${sy}px)` // baslangic (kaynak)
+      }
+
+      // Web Animations API keyframe'leri (piksel sabit -> kesin oynar, reduced-motion'a takilmaz)
+      function frames() {
+        const A = `translate(${sx}px, ${sy}px)`
+        const B = `translate(${sx + dx}px, ${sy + dy}px)`
+        if (style === 'slide') {
+          return { k: [{ transform: A }, { transform: B }], o: { duration: 440 * durMult, easing: 'cubic-bezier(0.22,1,0.36,1)' } }
+        }
+        if (style === 'arc') {
+          const M = `translate(${sx + dx / 2}px, ${sy + dy / 2 - 64}px) scale(1.07)`
+          return { k: [{ transform: A, offset: 0 }, { transform: M, offset: 0.5 }, { transform: B, offset: 1 }], o: { duration: 600 * durMult, easing: 'cubic-bezier(0.45,0,0.3,1)' } }
+        }
+        // lift: kalk (golge buyu) -> kay -> yaylanarak otur
+        const sh0 = 'drop-shadow(0 2px 4px rgba(0,0,0,.5))'
+        const sh1 = 'drop-shadow(0 16px 16px rgba(0,0,0,.4))'
+        return {
+          k: [
+            { transform: `translate(${sx}px, ${sy}px) scale(1)`, filter: sh0, offset: 0 },
+            { transform: `translate(${sx}px, ${sy - 16}px) scale(1.16)`, filter: sh1, offset: 0.2 },
+            { transform: `translate(${sx + dx}px, ${sy + dy - 16}px) scale(1.16)`, filter: sh1, offset: 0.78 },
+            { transform: `translate(${sx + dx}px, ${sy + dy + 4}px) scale(0.97)`, filter: sh0, offset: 0.9 },
+            { transform: `translate(${sx + dx}px, ${sy + dy}px) scale(1)`, filter: sh0, offset: 1 },
+          ],
+          o: { duration: 640 * durMult, easing: 'cubic-bezier(0.22,1,0.36,1)' },
+        }
+      }
+
+      let loopTimer = null
+      function play() {
+        clearTimeout(loopTimer)
+        mover.getAnimations().forEach((a) => a.cancel())
+        layout()
+        const { k, o } = frames()
+        const anim = mover.animate(k, { ...o, fill: 'forwards' })
+        // Surekli dongu: bitince kisa bekle, basa don, tekrar oyna (kacirman imkansiz)
+        anim.onfinish = () => {
+          loopTimer = setTimeout(play, 900)
+        }
+      }
+
+      const CAPS = {
+        slide: '<b>1 · Kayma:</b> Düz çizgi, keskin ease-out. Sade & hızlı.',
+        arc: '<b>2 · Yay:</b> Kaldırıp parabolle üzerinden geçirir. Fiziksel his.',
+        lift: '<b>3 · Kaldır-Bırak:</b> Kalkar (gölge büyür), kayar, yaylanarak oturur. Dokunsal.',
+      }
+      document.querySelectorAll('.style-btn').forEach((b) => {
+        b.addEventListener('click', () => {
+          style = b.dataset.style
+          document.querySelectorAll('.style-btn').forEach((x) => x.classList.remove('sel'))
+          b.classList.add('sel')
+          document.getElementById('cap').innerHTML = CAPS[style]
+          play()
+        })
+      })
+      document.getElementById('play').addEventListener('click', play)
+      document.getElementById('slow').addEventListener('click', (e) => {
+        durMult = durMult === 1 ? 2.6 : 1
+        e.currentTarget.classList.toggle('on', durMult !== 1)
+        play()
+      })
+      window.addEventListener('resize', () => { mover.getAnimations().forEach((a) => a.cancel()); layout() })
+      window.addEventListener('load', () => { build(); setTimeout(play, 200) })
+    </script>
+  </body>
+</html>
