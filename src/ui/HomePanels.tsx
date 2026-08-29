@@ -297,25 +297,30 @@ export function TournamentsPanel({
             <button key={tr.id} className="tourn-row" onClick={onOpen}>
               <span className="tr-main">
                 <span className="tr-name">{tr.name}</span>
-                <span className="tr-meta">
+                <span className="tr-chips">
                   <span className={`tr-status tr-status-${tr.status}`}>
                     {t(`tourn.status.${tr.status}`)}
                   </span>
-                  <span className="tr-count" data-full={full || undefined}>
-                    <Icon name="users" size={12} /> {tr.count}/{tr.size}
-                  </span>
                   {!!topPrize && (
-                    <span className="tr-prize">
-                      <Icon name="coin" size={12} /> {topPrize}
-                      {prizeCount > 1 && <span className="tr-prize-more"> +{prizeCount - 1}</span>}
+                    <span className="tr-prize" title={t('tourn.prizePool')}>
+                      <Icon name="coin" size={13} /> {topPrize.toLocaleString('tr-TR')}
+                      {prizeCount > 1 && <span className="tr-prize-more">+{prizeCount - 1}</span>}
                     </span>
                   )}
                 </span>
+              </span>
+              {/* SAG: kac kisi katilmis (buyuk) + etiket + doluluk cubugu */}
+              <span className="tr-side">
+                <span className="tr-count" data-full={full || undefined}>
+                  <b>{tr.count}</b>
+                  <span className="tr-count-sep">/{tr.size}</span>
+                </span>
+                <span className="tr-count-lbl">{t('tourn.players')}</span>
                 <span className="tr-bar" aria-hidden="true">
                   <span className="tr-bar-fill" style={{ width: `${pct}%` }} />
                 </span>
               </span>
-              <Icon name="arrow-right" size={15} className="tr-go" />
+              <Icon name="arrow-right" size={16} className="tr-go" />
             </button>
           )
         })}
