@@ -3198,18 +3198,18 @@ export default function App() {
       <Button
         variant="ghost"
         size="icon"
-        className="[&_svg]:size-[28px]!"
+        className="[&_svg]:size-[24px]!"
         title={t('menu.settings')}
         aria-label={t('menu.settings')}
         onClick={() => goPage(() => setBoardSettingsOpen(true))}
       >
-        <Icon name="settings" size={28} />
+        <Icon name="settings" size={24} />
       </Button>
       <LangMenu />
       <Button
         variant="ghost"
         size="icon"
-        className="[&_svg]:size-[28px]!"
+        className="[&_svg]:size-[24px]!"
         aria-label={muted ? t('menu.soundOn') : t('menu.soundOff')}
         title={muted ? t('menu.soundOn') : t('menu.soundOff')}
         onClick={() => {
@@ -3219,7 +3219,7 @@ export default function App() {
           if (!nv) Sound.move()
         }}
       >
-        {muted ? <Icon name="mute" size={28} /> : <Icon name="volume" size={28} />}
+        {muted ? <Icon name="mute" size={24} /> : <Icon name="volume" size={24} />}
       </Button>
     </div>
   )

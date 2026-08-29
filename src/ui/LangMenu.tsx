@@ -31,12 +31,12 @@ export default function LangMenu() {
         variant="ghost"
         size="icon"
         type="button"
-        className="[&_svg]:w-[28px]! [&_svg]:h-[20px]!"
+        className="[&_svg]:w-[24px]! [&_svg]:h-[17px]!"
         onClick={() => setOpen((o) => !o)}
         title={current.label}
         aria-label={current.label}
       >
-        <Flag code={current.code} size={28} />
+        <Flag code={current.code} size={24} />
       </Button>
       {open && (
         <div className="lang-pop">
