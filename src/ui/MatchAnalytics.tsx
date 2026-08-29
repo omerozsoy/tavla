@@ -64,7 +64,7 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
   }, [])
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+    <div className="register-overlay modal page" role="dialog" aria-modal="true" onClick={onClose}>
       <div className="register-card mh-card" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="ghost"
