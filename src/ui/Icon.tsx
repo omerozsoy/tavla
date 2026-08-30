@@ -69,6 +69,18 @@ import {
   ChartLine,
   ShieldCheck,
   Clock,
+  LockKey,
+  LockKeyOpen,
+  Fingerprint,
+  Package,
+  Tag,
+  Code,
+  Copy,
+  DiceOne,
+  DiceTwo,
+  DiceThree,
+  DiceFour,
+  DiceSix,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -134,6 +146,19 @@ export type IconName =
   | 'chart-line'
   | 'shield-check'
   | 'clock'
+  | 'lock-key'
+  | 'lock-open'
+  | 'fingerprint'
+  | 'package'
+  | 'tag'
+  | 'code'
+  | 'copy'
+  | 'die-1'
+  | 'die-2'
+  | 'die-3'
+  | 'die-4'
+  | 'die-5'
+  | 'die-6'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -199,6 +224,19 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'chart-line': ChartLine,
   'shield-check': ShieldCheck,
   clock: Clock,
+  'lock-key': LockKey,
+  'lock-open': LockKeyOpen,
+  fingerprint: Fingerprint,
+  package: Package,
+  tag: Tag,
+  code: Code,
+  copy: Copy,
+  'die-1': DiceOne,
+  'die-2': DiceTwo,
+  'die-3': DiceThree,
+  'die-4': DiceFour,
+  'die-5': DiceFive,
+  'die-6': DiceSix,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
