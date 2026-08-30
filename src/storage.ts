@@ -67,6 +67,10 @@ export interface SavedGame {
   // Analiz hamleleri (online): her istemci kendi hamlelerini gonderir, karsi taraf
   // rakip renkli olanlari alir -> analiz ekraninda iki tarafin hamleleri gorunur.
   moves?: MoveLogEntry[]
+  // Kayit aninda kullanici OYUN gorunumunde miydi? refresh'te ana sayfadan oyuna
+  // ZORLA sokmamak icin (aktif oyun "Devam Et" ile erisilebilir kalir). undefined
+  // (eski kayit) -> ana sayfada kal.
+  inGame?: boolean
 }
 
 export function loadProfile(): Profile | null {
