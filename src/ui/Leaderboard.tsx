@@ -38,7 +38,6 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
 
   const renderRow = (r: LeaderRow) => {
-    const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
     const mine = currentName && r.name === currentName
     return (
       <div
@@ -53,8 +52,14 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           {/* Lig unvani her tabda yazili (Puan sekmesinde tam ad, digerlerinde kompakt) */}
           <DivisionChip rating={r.rating} size={by === 'rating' ? 'md' : 'sm'} />
         </span>
-        <span className="lb-games">{r.games}</span>
-        <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
+        <span className="lb-games">
+          {r.games} <small>{t('lb.gamesUnit')}</small>
+        </span>
+        <span className="lb-wl">
+          <b className="lb-win">{r.wins}</b>
+          <span className="lb-slash">/</span>
+          <span className="lb-loss">{r.losses}</span>
+        </span>
         <span className="lb-rating">
           {by === 'coins' ? (r.coins ?? 0) : by === 'wxp' ? (r.wxp ?? 0) : r.rating}
         </span>
@@ -88,7 +93,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-rank">#</span>
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
-              <span className="lb-wr">{t('lb.winRate')}</span>
+              <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
@@ -101,8 +106,8 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                     <Skeleton w={22} h={22} r="50%" />
                     <Skeleton w={90 + ((i * 17) % 50)} h={12} />
                   </span>
-                  <span className="lb-games"><Skeleton w={24} h={12} /></span>
-                  <span className="lb-wr"><Skeleton w={30} h={12} /></span>
+                  <span className="lb-games"><Skeleton w={36} h={12} /></span>
+                  <span className="lb-wl"><Skeleton w={40} h={12} /></span>
                   <span className="lb-rating"><Skeleton w={36} h={12} /></span>
                 </div>
               ))}
@@ -119,7 +124,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-rank">#</span>
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
-              <span className="lb-wr">{t('lb.winRate')}</span>
+              <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>

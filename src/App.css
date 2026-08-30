@@ -225,7 +225,7 @@
    sabit genislikte hizali kalir (mono font gerekmez). */
 .lb-rating,
 .lb-games,
-.lb-wr,
+.lb-wl,
 .rep-pr,
 .rep-pr b,
 .mr-score,
@@ -8979,7 +8979,8 @@ button.stat-chip:hover {
 .lb-head,
 .lb-row {
   display: grid;
-  grid-template-columns: 40px 1fr 56px 72px 64px;
+  /* # | oyuncu | Maç | G/M | deger */
+  grid-template-columns: 40px 1fr 72px 78px 64px;
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
@@ -9055,10 +9056,32 @@ button.stat-chip:hover {
   font-weight: 700;
 }
 .lb-games,
-.lb-wr {
+.lb-wl {
   text-align: center;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+.lb-games > small {
+  font-size: 0.72rem;
+  opacity: 0.75;
+}
+/* Kazanilan / kaybedilen: galibiyet yesil, maglubiyet kirmizi, ayrac soluk */
+.lb-wl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-weight: 700;
+}
+.lb-wl .lb-win {
+  color: var(--tv-green, #3f9e6a);
+}
+.lb-wl .lb-loss {
+  color: var(--danger-fg, #e0455e);
+}
+.lb-wl .lb-slash {
+  color: var(--muted);
+  font-weight: 400;
 }
 .lb-rating {
   text-align: right;
