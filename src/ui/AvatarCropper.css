@@ -82,6 +82,5 @@
 .avc-actions > * {
   flex: 1;
 }
-.avc-apply {
-  font-size: 1rem;
-}
+/* .avc-apply font-size override kaldirildi: global <Button> standart 14px kullansin
+   (tutarlilik — "ayni dugmeler"). Sinif JSX'te layout hook'u olarak kalir. */
