@@ -826,11 +826,11 @@ const TR: Dict = {
   'home.online': 'Online Oyun',
   'home.startCta': 'Hemen Oyna',
   'home.soloNote':
-    'Her oyun belirlenen coin değeri üzerinden oynanır ve oyun sonunda sonuç, kazanılan puan kadar coin bakiyene yansır. Katlama küpü kullanıldıkça oyunun coin değeri de aynı oranda artar.',
+    'Tek oyun oyna, sonucuna göre coin kazan veya kaybet. Katlama küpü kullanıldıkça coin değeri artar.',
   'home.matchNote':
-    '1, 3, 5, 7, 9 veya 11 puanlık maçlarda rakibinle karşılaş; maç uzadıkça şansın etkisi azalır, ustalık daha çok öne çıkar. Sonuç rating puanını etkilerken performansına göre coin kazanabilir veya kaybedebilirsin.',
+    '1, 3, 5, 7, 9 veya 11 puanlık maçlarda rakibinle karşılaş. Uzun maçlarda ustalığını göster.',
   'home.aiNote':
-    'Seviyeni seç ve yapay zekâya karşı kendini test et. Farklı zorluk seviyelerinde pratik yap, stratejini geliştir ve oyununu bir üst seviyeye taşı.',
+    'Seviyeni seç, yapay zekâya karşı oyna. Pratik yap, stratejini geliştir ve kendini test et.',
   'home.onlineSub': 'Arkadaşınla oda kurup oyna',
   'home.twoPlayer': 'İki Kişi',
   'home.twoPlayerSub': 'Aynı cihazda karşılıklı',
@@ -1673,11 +1673,11 @@ const EN: Dict = {
   'home.online': 'Online Game',
   'home.startCta': 'Play Now',
   'home.soloNote':
-    'Each game is played for a set coin value; when it ends, the result is credited to your coin balance in proportion to the points you win. As the doubling cube is used, the game’s coin value rises at the same rate.',
+    'Play a single game and win or lose coins based on the result. As the doubling cube is used, the coin value rises.',
   'home.matchNote':
-    'Face your opponent in matches of 1, 3, 5, 7, 9 or 11 points; the longer the match, the less luck matters and the more skill stands out. The result affects your rating, and depending on your performance you can win or lose coins.',
+    'Face your opponent in matches of 1, 3, 5, 7, 9 or 11 points. Show your skill in long matches.',
   'home.aiNote':
-    'Choose your level and test yourself against the AI. Practice at different difficulties, sharpen your strategy and take your game to the next level.',
+    'Choose your level and play against the AI. Practice, sharpen your strategy and test yourself.',
   'home.onlineSub': 'Create a room and play a friend',
   'home.twoPlayer': 'Two Players',
   'home.twoPlayerSub': 'Pass-and-play on one device',
@@ -2475,11 +2475,11 @@ const ES: Dict = {
   'home.online': 'Juego Online',
   'home.startCta': 'Jugar ahora',
   'home.soloNote':
-    'Cada partida se juega por un valor fijo de monedas; al terminar, el resultado se abona a tu saldo de monedas según los puntos que ganes. A medida que se usa el cubo de doblar, el valor en monedas de la partida aumenta en la misma proporción.',
+    'Juega una partida única y gana o pierde monedas según el resultado. A medida que se usa el cubo de doblar, el valor en monedas aumenta.',
   'home.matchNote':
-    'Enfréntate a tu rival en partidas a 1, 3, 5, 7, 9 u 11 puntos; cuanto más larga es la partida, menos influye la suerte y más destaca la habilidad. El resultado afecta a tu rating y, según tu rendimiento, puedes ganar o perder monedas.',
+    'Enfréntate a tu rival en partidas a 1, 3, 5, 7, 9 u 11 puntos. Demuestra tu habilidad en partidas largas.',
   'home.aiNote':
-    'Elige tu nivel y ponte a prueba contra la IA. Practica en diferentes dificultades, mejora tu estrategia y lleva tu juego al siguiente nivel.',
+    'Elige tu nivel y juega contra la IA. Practica, mejora tu estrategia y ponte a prueba.',
   'home.onlineSub': 'Crea una sala y juega con un amigo',
   'home.twoPlayer': 'Dos Jugadores',
   'home.twoPlayerSub': 'Pasa y juega en un solo dispositivo',
@@ -3275,11 +3275,11 @@ const DE: Dict = {
   'home.online': 'Online-Spiel',
   'home.startCta': 'Jetzt spielen',
   'home.soloNote':
-    'Jede Partie wird um einen festgelegten Coin-Wert gespielt; am Ende wird das Ergebnis entsprechend den gewonnenen Punkten deinem Coin-Guthaben gutgeschrieben. Mit jedem Einsatz des Dopplerwürfels steigt der Coin-Wert der Partie im gleichen Verhältnis.',
+    'Spiele eine Einzelpartie und gewinne oder verliere Coins je nach Ergebnis. Mit jedem Einsatz des Dopplerwürfels steigt der Coin-Wert.',
   'home.matchNote':
-    'Tritt in Matches über 1, 3, 5, 7, 9 oder 11 Punkte gegen deinen Gegner an; je länger das Match, desto weniger zählt Glück und desto mehr das Können. Das Ergebnis beeinflusst dein Rating, und je nach Leistung kannst du Coins gewinnen oder verlieren.',
+    'Tritt in Matches über 1, 3, 5, 7, 9 oder 11 Punkte gegen deinen Gegner an. Zeig dein Können in langen Matches.',
   'home.aiNote':
-    'Wähle dein Level und stell dich der KI. Übe in verschiedenen Schwierigkeitsgraden, verfeinere deine Strategie und bring dein Spiel auf die nächste Stufe.',
+    'Wähle dein Level und spiele gegen die KI. Übe, verfeinere deine Strategie und stell dich auf die Probe.',
   'home.onlineSub': 'Erstelle einen Raum und spiele gegen einen Freund',
   'home.twoPlayer': 'Zwei Spieler',
   'home.twoPlayerSub': 'Abwechselnd an einem Gerät spielen',
@@ -4075,11 +4075,11 @@ const FR: Dict = {
   'home.online': 'Jeu en ligne',
   'home.startCta': 'Jouer maintenant',
   'home.soloNote':
-    'Chaque partie se joue pour une valeur en pièces définie ; à la fin, le résultat est crédité sur ton solde de pièces au prorata des points gagnés. À mesure que le videau est utilisé, la valeur en pièces de la partie augmente d’autant.',
+    'Joue une partie unique et gagne ou perds des pièces selon le résultat. À mesure que le videau est utilisé, la valeur en pièces augmente.',
   'home.matchNote':
-    'Affronte ton adversaire dans des matchs en 1, 3, 5, 7, 9 ou 11 points ; plus le match est long, moins la chance compte et plus l’habileté ressort. Le résultat influe sur ton classement et, selon ta performance, tu peux gagner ou perdre des pièces.',
+    'Affronte ton adversaire dans des matchs en 1, 3, 5, 7, 9 ou 11 points. Montre ton talent dans les longs matchs.',
   'home.aiNote':
-    'Choisis ton niveau et mesure-toi à l’IA. Entraîne-toi à différentes difficultés, affine ta stratégie et fais passer ton jeu au niveau supérieur.',
+    'Choisis ton niveau et joue contre l’IA. Entraîne-toi, affine ta stratégie et mesure-toi.',
   'home.onlineSub': 'Créez un salon et jouez contre un ami',
   'home.twoPlayer': 'Deux joueurs',
   'home.twoPlayerSub': 'Jeu à tour de rôle sur un seul appareil',
