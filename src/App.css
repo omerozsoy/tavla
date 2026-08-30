@@ -8356,10 +8356,11 @@ button.stat-chip:hover {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Board USTTE (stacked duzen). Yukseklik-sinirli: 48vh + kapsanan icerik genisligine
-     (1080px) sigacak sekilde. Boylece board asla kontrol/sonuc paneline TASMAZ
-     (eski 3-kolon squeeze'de board kolonu asip etiketleri kesiyordu). */
-  --board-h: max(300px, min(48vh, calc((min(100vw, 1080px) - 56px) / 1.42)));
+  /* Yan yana duzen: board | kontrol(300) | sonuc(320). KRITIK: icerik konteyneri
+     page-host'ta 1400px'e CAPLI + solda 218px sidebar var. Board genisligini GERCEK
+     konteyner genisligine gore hesapla: min(100vw - sidebar, 1400) - paneller(760).
+     Eskiden 100vw (1900) kullaniliyordu -> board buyuyup kontrolleri ortuyordu. */
+  --board-h: max(300px, min(56vh, calc((min(calc(100vw - 218px), 1400px) - 760px) / 1.45)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -8436,22 +8437,18 @@ button.stat-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-/* Stacked duzen (Emil, sağlam): board USTTE ortali, altinda kontrol + sonuc yan yana.
-   Board hicbir zaman panellere tasmaz. Icerik ortalanip capli -> genis ekranda dagilmaz. */
+/* Yan yana 3 kolon: board (esnek) | kontrol (300) | sonuc (320). Board kendi
+   kolonuna sigacak sekilde --board-h ile boyutlandirilir (konteyner-capli hesap). */
 .analyzer-body {
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
-  grid-template-areas:
-    'board board'
-    'controls results';
+  grid-template-columns: minmax(0, 1fr) 300px 320px;
+  grid-template-areas: 'board controls results';
   gap: 18px;
   align-items: start;
-  max-width: 1080px;
-  margin-inline: auto;
 }
 .analyzer-board {
   grid-area: board;
-  justify-self: center;
+  justify-self: start;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
 }
@@ -9007,10 +9004,28 @@ button.stat-chip:hover {
 /* 3-sutun (board|kontrol|sonuc) yalniz GENIS ekranda; daha darda board USTTE
    tam genislik + altta controls/results 2-sutun. Esik 1400: altinda 300px'lik
    min board 300+320 panelleriyle ayni satira SIGMIYOR (tasip ortuyordu). */
-/* Dar/mobil: board ustte tam genislik + kontrol/sonuc alt alta (yan yana sigmaz) */
+/* <=1400: board (kontrol+sonuc) ile YAN YANA sigmaz -> board USTTE tam genislik,
+   altinda kontrol + sonuc yan yana. Icerik 1080px capli + ortali. */
+@media (max-width: 1400px) {
+  .analyzer {
+    --board-h: max(280px, min(52vh, calc((min(calc(100vw - 218px), 1400px) - 44px) / 1.42)));
+  }
+  .analyzer-body {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas:
+      'board board'
+      'controls results';
+    max-width: 1080px;
+    margin-inline: auto;
+  }
+  .analyzer-board {
+    justify-self: center;
+  }
+}
+/* Mobil (<=900: sol menu drawer'a doner, icerik tam genislik): hepsi alt alta */
 @media (max-width: 900px) {
   .analyzer {
-    --board-h: max(260px, min(46vh, calc((100vw - 36px) / 1.42)));
+    --board-h: max(240px, min(48vh, calc((100vw - 34px) / 1.42)));
   }
   .analyzer-body {
     grid-template-columns: 1fr;
