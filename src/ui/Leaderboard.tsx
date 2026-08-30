@@ -67,9 +67,11 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
         <span className="lb-name">
           <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
-          {r.name}
-          {/* Lig unvani her tabda yazili (Puan sekmesinde tam ad, digerlerinde kompakt) */}
-          <DivisionChip rating={r.rating} size={by === 'rating' ? 'md' : 'sm'} />
+          <span className="lb-name-col">
+            <span className="lb-name-main">{r.name}</span>
+            {/* Lig unvani adin ALTINDA, ince/kibar (altbaslik) */}
+            <DivisionChip rating={r.rating} size={by === 'rating' ? 'md' : 'sm'} />
+          </span>
         </span>
         <span className="lb-games">
           {r.games} <small>{t('lb.gamesUnit')}</small>
