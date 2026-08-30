@@ -47,8 +47,10 @@ function frames(dx: number, dy: number, style: Exclude<MoveStyle, 'off'>): {
   k: Keyframe[]
   o: KeyframeAnimationOptions
 } {
-  const A = `translate(${dx}px, ${dy}px)`
-  const Z = 'translate(0px, 0px)'
+  // Tum keyframe'lerde AYNI transform fonksiyon listesi (translate+scale) -> WAAPI
+  // parcali/atlamali gecis yapmaz (sondaki kirpismayi onler).
+  const A = `translate(${dx}px, ${dy}px) scale(1)`
+  const Z = 'translate(0px, 0px) scale(1)'
   if (style === 'arc') {
     // Orta nokta: iki ucun ortalamasindan 56px yukarida -> her zaman yukari kavis
     const mid = `translate(${dx / 2}px, ${dy / 2 - 56}px) scale(1.07)`
@@ -66,7 +68,7 @@ function frames(dx: number, dy: number, style: Exclude<MoveStyle, 'off'>): {
         { transform: `translate(${dx}px, ${dy - 14}px) scale(1.14)`, filter: s1, offset: 0.2 },
         { transform: `translate(0px, -14px) scale(1.14)`, filter: s1, offset: 0.78 },
         { transform: `translate(0px, 4px) scale(0.97)`, filter: s0, offset: 0.9 },
-        { transform: `translate(0px, 0px) scale(1)`, filter: s0, offset: 1 },
+        { transform: `translate(0px, 0px) scale(1)`, filter: 'none', offset: 1 },
       ],
       o: { duration: 600, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     }
@@ -88,22 +90,22 @@ export function flyChecker(el: HTMLElement, srcRect: DOMRect, style: Exclude<Mov
   const dy = srcRect.top - dr.top
   if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return
   const { k, o } = frames(dx, dy, style)
-  const prevAnim = el.style.animation
-  el.style.animation = 'none' // checker-place dusme efektini bu tas icin iptal
-  el.style.transform = `translate(${dx}px, ${dy}px)` // flash'i engelle (paint oncesi baslangic)
+  // checker-place (dusme) efektini bu tas icin KALICI kapat: uygulanan inline 'none'
+  // geri acilirsa CSS animasyonu yeniden tetiklenir -> sonda kirpisma olurdu. Geri acmiyoruz.
+  el.style.animation = 'none'
+  // fill:'forwards' -> son frame'de tutar. Son frame dogal konumla ayni (translate 0,
+  // scale 1, filtre yok) oldugu icin bitiste snap/kirpisma olmaz. Layout-effect paint'ten
+  // once calistigindan animate() ilk frame'i (kaynak) hemen uygular; ayri inline transform
+  // gerekmez (flash yok).
+  // fill:'both' -> baslamadan once ilk frame (kaynak) dolu (start flash yok),
+  // bittikten sonra son frame tutulur. Son frame dogal konumla ozdes oldugu icin
+  // cancel ile birakinca snap/kirpisma olmaz.
   const anim = el.animate(k, { ...o, fill: 'both' })
-  const cleanup = () => {
-    el.style.transform = ''
-    el.style.animation = prevAnim
+  anim.onfinish = () => {
     try {
       anim.cancel()
     } catch {
       /* yoksay */
     }
-  }
-  anim.onfinish = cleanup
-  anim.oncancel = () => {
-    el.style.transform = ''
-    el.style.animation = prevAnim
   }
 }
