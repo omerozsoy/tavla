@@ -78,6 +78,7 @@ import SideMenu from './ui/SideMenu'
 import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
+import RankInfo from './ui/RankInfo'
 import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
@@ -390,6 +391,7 @@ export default function App() {
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
+  const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
@@ -3491,6 +3493,7 @@ export default function App() {
       else setHome(true)
     },
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
+    onRanks: () => goPage(() => setRanksOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
@@ -3562,6 +3565,7 @@ export default function App() {
   // Menuden acilan sayfa acik mi (ana sayfada icerik alanina AKIS ICINDE gomulur)
   const anyPageOpen =
     leaderboardOpen ||
+    ranksOpen ||
     tournOpen ||
     shopOpen ||
     frameGalleryOpen ||
@@ -3583,7 +3587,9 @@ export default function App() {
     editProfile
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
-  const activeKey = leaderboardOpen
+  const activeKey = ranksOpen
+    ? 'ranks'
+    : leaderboardOpen
     ? 'leaderboard'
     : tournOpen
       ? 'tournaments'
@@ -3634,6 +3640,9 @@ export default function App() {
       )}
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
+      )}
+      {ranksOpen && (
+        <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />
       )}
       {/* Istatistiklerim ayri sayfa DEGIL -> Profilim "Istatistiklerim" sekmesine gomulu */}
       {fairOpen && (
