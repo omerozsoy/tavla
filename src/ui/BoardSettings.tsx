@@ -170,7 +170,6 @@ export default function BoardSettings({
           <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
           <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
         </button>
-        <p className="setup-note">{t('hint.learnNote')}</p>
           </>
         )}
 
