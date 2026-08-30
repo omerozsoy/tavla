@@ -11991,28 +11991,19 @@ button.stat-chip:hover {
 }
 
 /* Adil zar modali */
+/* ================= Adil Zar — Emil sadelestirme (sade/ferah/premium, flat) =================
+   Bilgi hiyerarsisi: 1) neden guvenli (infografik) 2) benzetme 3) ana mesaj
+   4) teknik detay (accordion) 5) dogrulama araci. Renkler tema token'larindan. */
 .fair-card {
-  width: min(500px, 94vw);
   text-align: left;
 }
-.fair-field {
-  margin: 8px 0;
-}
-.fair-field label {
-  display: block;
-  color: var(--muted);
-  font-size: 0.78rem;
-  margin-bottom: 2px;
-}
-.fair-code {
-  display: block;
-  word-break: break-all;
-  font-family: var(--tv-font-mono);
-  font-size: 0.78rem;
-  background: color-mix(in srgb, var(--text) 6%, transparent);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 6px 8px;
+/* Sayfa modunda icerik cok genislemesin -> okunur + ferah (Emil) */
+.fair-card > h2,
+.fair-info,
+.fair-tech,
+.fair-verify {
+  max-width: 880px;
+  margin-inline: auto;
 }
 .fair-hidden {
   color: var(--muted);
@@ -12022,40 +12013,429 @@ button.stat-chip:hover {
 .fair-rolls {
   color: var(--muted);
   font-size: 0.82rem;
-  margin: 6px 0 4px;
+  margin: 8px 0 2px;
+  font-variant-numeric: tabular-nums;
 }
+
+/* ---- Infografik basligi ---- */
+.fair-info {
+  margin: 6px auto 8px;
+}
+.fair-info-head {
+  text-align: center;
+  margin-bottom: 26px;
+}
+.fair-info-ic {
+  display: inline-grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 15px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  margin-bottom: 12px;
+}
+.fair-info-head h3 {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.fair-info-head p {
+  margin: 0 auto;
+  max-width: 520px;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ---- 4 adimli akis ---- */
+.fair-steps {
+  list-style: none;
+  margin: 0 0 22px;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+.fair-step {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 20px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-bg);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .fair-step:hover {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    transform: translateY(-1px);
+  }
+}
+/* adimlari birbirine baglayan ince cizgi (yatay) */
+.fair-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  right: -18px;
+  width: 18px;
+  height: 2px;
+  background: var(--border);
+}
+.fair-step-num {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.fair-step-ic {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.fair-step-title {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 2px;
+}
+.fair-step-desc {
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+.fair-step-sub {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 82%, var(--text));
+}
+.fair-step-proof code {
+  display: inline-block;
+  font-family: var(--tv-font-mono);
+  font-size: 0.74rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3px 8px;
+}
+.fair-step-dice {
+  display: inline-flex;
+  gap: 6px;
+  color: var(--accent);
+}
+.fair-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--tv-green, #3f9e6a);
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 13%, transparent);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+/* ---- Mühürlü kutu benzetmesi ---- */
+.fair-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--text) 3%, var(--card-bg));
+  padding: 18px 18px 6px;
+  margin-bottom: 22px;
+}
+.fair-box-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 14px;
+}
+.fair-box-title > svg {
+  color: var(--accent);
+}
+.fair-box-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.fair-box-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+.fair-box-ic {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.fair-box-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 12px;
+  margin: 0 -18px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.fair-box-result > svg {
+  color: var(--tv-green, #3f9e6a);
+}
+
+/* ---- Ana mesaj (callout) ---- */
+.fair-callout {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius-xl, 16px);
+  background: color-mix(in srgb, var(--accent) 7%, var(--card-bg));
+}
+.fair-callout-ic {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 14px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.fair-callout-title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.fair-callout-sub {
+  margin-top: 3px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+/* ---- Teknik detaylar (accordion) ---- */
+.fair-tech {
+  margin: 20px auto 0;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+.fair-tech-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-inline: -10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+.fair-tech-toggle:hover {
+  color: var(--text);
+}
+.fair-tech-chev {
+  transition: transform 200ms ease;
+}
+.fair-tech.open .fair-tech-chev {
+  transform: rotate(180deg);
+}
+.fair-tech-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fair-trow {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fair-trow-label {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.fair-trow-val {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.fair-trow-val > code {
+  flex: 1;
+  min-width: 0;
+  word-break: break-all;
+  font-family: var(--tv-font-mono);
+  font-size: 0.76rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  padding: 7px 9px;
+}
+.fair-copy {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 8px);
+  background: var(--card-bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+.fair-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.fair-copied-note {
+  align-self: flex-start;
+  font-size: 0.76rem;
+  color: var(--tv-green, #3f9e6a);
+  font-weight: 600;
+}
+
+/* ---- Dogrulama araci ---- */
 .fair-verify {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 22px;
+  padding-top: 20px;
   border-top: 1px solid var(--border);
 }
 .fair-verify h3 {
-  margin: 0 0 8px;
-  font-size: 1rem;
+  margin: 0 0 4px;
+  font-size: 1.15rem;
+  font-weight: 700;
 }
-.fair-verify label {
-  display: block;
-  font-size: 0.8rem;
+.fair-verify-sub {
+  margin: 0 0 16px;
   color: var(--muted);
-  margin-bottom: 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
-.fair-verify input {
-  width: 100%;
-  margin-top: 3px;
+.fair-vlabel {
+  display: block;
+  margin-bottom: 12px;
+}
+.fair-vlabel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.fair-vlabel-main {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.fair-vlabel-tech {
+  font-size: 0.72rem;
+  color: var(--muted);
   font-family: var(--tv-font-mono);
-  font-size: 0.8rem;
 }
-.fair-result {
-  margin-top: 10px;
-  font-size: 0.95rem;
+.fair-vlabel input {
+  width: 100%;
+  font-family: var(--tv-font-mono);
+  font-size: 0.82rem;
 }
-.fair-ok {
-  color: var(--success-fg);
+.fair-verify-cta {
+  margin-top: 4px;
+}
+/* Sonuc state: ok = yesil, bad = destructive; ikisi de sakin (baginan degil) */
+.fair-vresult {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-bg);
+}
+.fair-vresult.ok {
+  border-color: color-mix(in srgb, var(--tv-green, #3f9e6a) 40%, var(--border));
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 7%, var(--card-bg));
+}
+.fair-vresult.bad {
+  border-color: color-mix(in srgb, var(--danger-fg, #e0455e) 38%, var(--border));
+  background: color-mix(in srgb, var(--danger-fg, #e0455e) 6%, var(--card-bg));
+}
+.fair-vresult-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
   font-weight: 700;
 }
-.fair-bad {
-  color: var(--danger-fg);
-  font-weight: 700;
+.fair-vresult.ok .fair-vresult-head {
+  color: var(--tv-green, #3f9e6a);
+}
+.fair-vresult.bad .fair-vresult-head {
+  color: var(--danger-fg, #e0455e);
+}
+.fair-vresult-desc {
+  margin: 6px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.fair-vdice {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--text);
+}
+
+/* ---- Responsive: mobilde adimlar/kutu alt alta, dikey baglayici ---- */
+@media (max-width: 720px) {
+  .fair-steps {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .fair-step:not(:last-child)::after {
+    top: auto;
+    bottom: -22px;
+    right: auto;
+    left: 36px;
+    width: 2px;
+    height: 22px;
+  }
+  .fair-box-steps {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .fair-callout {
+    flex-direction: column;
+    text-align: center;
+  }
+  .fair-info-head h3 {
+    font-size: 1.3rem;
+  }
 }
 .board-swatches.big .swatch {
   width: 100%;
