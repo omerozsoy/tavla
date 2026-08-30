@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, wxpBreakdown, type LeaderRow, type WxpBreakdown } from '../api'
-import AvatarFrame from './AvatarFrame'
+import PlayerIdentity from './PlayerIdentity'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
-import { DivisionChip } from './Badges'
 
 interface Props {
   currentName?: string
@@ -66,12 +65,14 @@ export default function Leaderboard({ currentName, onClose }: Props) {
       >
         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
         <span className="lb-name">
-          <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
-          <span className="lb-name-col">
-            <span className="lb-name-main">{r.name}</span>
-            {/* Lig unvani adin ALTINDA, ince/kibar (altbaslik) */}
-            <DivisionChip rating={r.rating} size={by === 'rating' ? 'md' : 'sm'} />
-          </span>
+          <PlayerIdentity
+            name={r.name}
+            rating={r.rating}
+            avatar={r.avatar}
+            frame={r.frame}
+            size={30}
+            rankSize={by === 'rating' ? 'md' : 'sm'}
+          />
         </span>
         <span className="lb-games">
           {r.games} <small>{t('lb.gamesUnit')}</small>

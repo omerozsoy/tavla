@@ -2,8 +2,20 @@ import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow, type Tournament } from '../api'
-import AvatarFrame from './AvatarFrame'
+import PlayerIdentity from './PlayerIdentity'
 import { Button } from '@/components/ui/button'
+
+// Canli mac tipi: Arkadaslik (puansiz) | Puan Maci (N-puan) | Tek Mac (1 oyun)
+type LiveCat = 'single' | 'match' | 'friendly'
+function liveCat(m: LiveMatch): LiveCat {
+  if (m.mode === 'friendly') return 'friendly'
+  return (m.target ?? 1) > 1 ? 'match' : 'single'
+}
+const LIVE_CAT_KEY: Record<LiveCat, string> = {
+  single: 'live.catSingle',
+  match: 'live.catPoint',
+  friendly: 'live.catFriendly',
+}
 
 // ---- Ozellik vitrini (yalniz misafirlere): urunun ne sundugunu tanitir ----
 const FEATURES: { icon: IconName; key: string }[] = [
@@ -147,6 +159,7 @@ export function LiveMatchesPanel({
 }) {
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
+  const [tab, setTab] = useState<'all' | 'single' | 'match' | 'friendly'>('all')
 
   useEffect(() => {
     let alive = true
@@ -162,26 +175,42 @@ export function LiveMatchesPanel({
     }
   }, [])
 
+  const shown = matches?.filter((m) => tab === 'all' || liveCat(m) === tab) ?? null
+
   return (
     <div className="home-panel live-panel">
       <div className="home-panel-head">
         <span className="live-dot" />
         <Icon name="live" size={17} /> {t('live.title')}
       </div>
-      {matches === null ? (
+      <div className="rank-tabs">
+        <Button variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
+          {t('live.catAll')}
+        </Button>
+        <Button variant={tab === 'single' ? 'default' : 'ghost'} aria-pressed={tab === 'single'} onClick={() => setTab('single')}>
+          {t('live.catSingle')}
+        </Button>
+        <Button variant={tab === 'match' ? 'default' : 'ghost'} aria-pressed={tab === 'match'} onClick={() => setTab('match')}>
+          {t('live.catPoint')}
+        </Button>
+        <Button variant={tab === 'friendly' ? 'default' : 'ghost'} aria-pressed={tab === 'friendly'} onClick={() => setTab('friendly')}>
+          {t('live.catFriendly')}
+        </Button>
+      </div>
+      {shown === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
-      ) : matches.length === 0 ? (
+      ) : shown.length === 0 ? (
         <div className="home-panel-empty">{t('live.empty')}</div>
       ) : (
         <div className="live-list">
-          {matches.map((m) => (
+          {shown.map((m) => (
             <button
               key={m.code}
               className="live-row"
               onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
             >
-              <span className={`lm-type lm-type-${m.mode ?? 'ranked'}`}>
-                {m.mode === 'friendly' ? t('live.friendly') : t('live.matchGame')}
+              <span className={`lm-type lm-type-${liveCat(m)}`}>
+                {t(LIVE_CAT_KEY[liveCat(m)])}
               </span>
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
@@ -210,7 +239,7 @@ export function RankingPanel({
   onProfile: (id: number) => void
 }) {
   const { t } = useT()
-  const [by, setBy] = useState<'rating' | 'coins'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
 
   useEffect(() => {
@@ -230,11 +259,14 @@ export function RankingPanel({
         <Icon name="trophy" size={17} /> {t('lb.title')}
       </div>
       <div className="rank-tabs">
-        <Button variant={by === 'rating' ? 'secondary' : 'ghost'} onClick={() => setBy('rating')}>
+        <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
           {t('lb.rating')}
         </Button>
-        <Button variant={by === 'coins' ? 'secondary' : 'ghost'} onClick={() => setBy('coins')}>
+        <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
           {t('lb.byCoins')}
+        </Button>
+        <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
+          {t('lb.byWxp')}
         </Button>
       </div>
       {rows === null ? (
@@ -253,14 +285,15 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
-                {r.name}
+                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="sm" />
               </span>
               <span className="rank-val">
                 {by === 'coins' ? (
                   <>
                     <Icon name="coin" size={12} /> {r.coins ?? 0}
                   </>
+                ) : by === 'wxp' ? (
+                  r.wxp ?? 0
                 ) : (
                   r.rating
                 )}

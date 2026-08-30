@@ -6,8 +6,8 @@ import {
   myStats, myMatches, myAnalytics, performanceStats,
   type MyStats, type MyMatch, type Analytics, type PerformanceStats, type MedianFilter,
 } from '../api'
-import AvatarFrame from './AvatarFrame'
-import { DivisionChip, BadgeList } from './Badges'
+import PlayerIdentity from './PlayerIdentity'
+import { BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
 import { Skeleton } from './Skeleton'
 import { Button } from '@/components/ui/button'
@@ -128,20 +128,13 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
         {data && (
           <>
             <div className="stats-head">
-              <AvatarFrame src={avatar} frame={frame} size={60} name={name} />
-              <div className="stats-id">
-                <div className="stats-name">{name}</div>
-                <div className="stats-rank">
-                  {t('stats.rank', { r: data.rank, n: data.total })}
-                </div>
-              </div>
+              <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} size={60} />
               <div className="stats-rating">
                 {u?.rating ?? 1500}
                 <div className="stats-coins"><Icon name="coin" size={14} /> {u?.coins ?? 0}</div>
               </div>
             </div>
-
-            <DivisionChip rating={u?.rating ?? 1500} />
+            <div className="stats-rank">{t('stats.rank', { r: data.rank, n: data.total })}</div>
 
             <div className="stats-grid">
               <div className="stats-box">
