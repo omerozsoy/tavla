@@ -1,20 +1,21 @@
-// Magaza coin (jeton) paketleri — gercek para ile satin alma.
-// tone: rarityColors ile ayni kademe renk kimligi (ikon halkasi + vurgu).
+// Magaza coin paketleri — gercek para (TL) ile satin alma.
+// Fiyatlandirma: coin basi kademeli iskonto (buyuk paket = ucuz coin).
 export interface CoinPackage {
   id: string
-  name: string // urun adi (marka; ceviri yok)
-  gc: number // verilen jeton (Game Coin)
-  price: number // USD
-  tone: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic'
-  popular?: boolean // "EN POPULER" rozeti
+  name: string // TR marka adi (ceviri yok)
+  gc: number // verilen coin
+  price: number // TL
+  discount: number // avantaj yuzdesi (coin basi indirim); 0 = yok
+  popular?: boolean // "EN POPULER" (Kasa)
 }
 
+// coin basi = price / gc  → Baslangic 1,00 · Kese 0,95 · Sandik 0,90 · Hazine 0,85
+//                           · Kasa 0,80 · Servet 0,75 TL
 export const COIN_PACKAGES: CoinPackage[] = [
-  { id: 'pile', name: 'Pile of Coins', gc: 500, price: 0.99, tone: 'common' },
-  { id: 'capsule', name: 'Capsule of Coins', gc: 5000, price: 4.99, tone: 'common' },
-  { id: 'comet', name: 'Comet of Coins', gc: 15000, price: 9.99, tone: 'rare' },
-  { id: 'planet', name: 'Planet of Coins', gc: 50000, price: 19.99, tone: 'rare', popular: true },
-  { id: 'galaxy', name: 'Galaxy of Coins', gc: 200000, price: 49.99, tone: 'epic', popular: true },
-  { id: 'supernova', name: 'Coin Supernova', gc: 450000, price: 99.99, tone: 'legendary' },
-  { id: 'universe', name: 'Universe of Coins', gc: 1250000, price: 249.99, tone: 'mythic' },
+  { id: 'baslangic', name: 'Başlangıç', gc: 100, price: 100, discount: 0 },
+  { id: 'kese', name: 'Kese', gc: 500, price: 475, discount: 5 },
+  { id: 'sandik', name: 'Sandık', gc: 1000, price: 900, discount: 10 },
+  { id: 'hazine', name: 'Hazine', gc: 2500, price: 2125, discount: 15 },
+  { id: 'kasa', name: 'Kasa', gc: 5000, price: 4000, discount: 20, popular: true },
+  { id: 'servet', name: 'Servet', gc: 10000, price: 7500, discount: 25 },
 ]

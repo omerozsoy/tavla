@@ -22,6 +22,9 @@ interface Props {
   toggleSound: () => void
   animOn: boolean
   toggleAnim: () => void
+  /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
+      Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
+  canAnalyze?: boolean
   canResign: boolean
   loggedIn?: boolean
   onTournaments?: () => void
@@ -38,8 +41,13 @@ export default function GameMenu(p: Props) {
   const rows: Row[] = [
     { label: t('gm.autoRoll'), on: p.autoRoll, toggle: () => p.setAutoRoll(!p.autoRoll) },
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
-    { label: t('setup.analysis'), on: p.showAnalysis, toggle: () => p.setShowAnalysis(!p.showAnalysis) },
-    { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
+    // Analiz + Öğrenme Modu YALNIZCA yapay zekaya karşı oyunda (hile önlemi)
+    ...(p.canAnalyze
+      ? [
+          { label: t('setup.analysis'), on: p.showAnalysis, toggle: () => p.setShowAnalysis(!p.showAnalysis) },
+          { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
+        ]
+      : []),
     { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
   ]
