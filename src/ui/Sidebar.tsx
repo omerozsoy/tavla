@@ -40,20 +40,24 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
       <div className="player-sub">{p.sub}</div>
       {p.rating != null && (
         <div className="player-rating">
-          <Icon name="star" size={13} /> {p.rating}
+          <Icon name="star" size={15} /> {p.rating}
         </div>
       )}
-      <div className="score-badge">
-        <Icon name="medal" size={13} /> {p.score} / {p.target}
-      </div>
     </div>
   )
 }
 
 export default function Sidebar({ top, bottom }: SidebarProps) {
+  // Tek ORTAK skor (iki ayrı kesir yerine): top – bottom, hedef bir kez.
   return (
     <div className="sidebar">
       <PlayerCard p={top} />
+      <div className="sidebar-score" title={`${top.score} – ${bottom.score} · ${top.target} puan`}>
+        <span className="ss-num">{top.score}</span>
+        <span className="ss-sep">–</span>
+        <span className="ss-num">{bottom.score}</span>
+        <span className="ss-target">/{top.target}</span>
+      </div>
       <PlayerCard p={bottom} />
     </div>
   )

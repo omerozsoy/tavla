@@ -255,7 +255,14 @@ function Board({
               />
             ))}
           </div>
-          <div className={`cube owner-${cube.owner ?? 'center'}`} title={t('board.cube')}>
+          {/* Küp GÖRSEL tarafı flip'e göre: sahibi görsel üstteyse üstte, alttaysa altta
+              (owner renk sabit değil; online'da tahta çevrilince sahip alta gelir). */}
+          <div
+            className={`cube cube-${
+              cube.owner == null ? 'center' : cube.owner === topBarPlayer ? 'top' : 'bottom'
+            }`}
+            title={t('board.cube')}
+          >
             {cube.value === 1 ? 64 : cube.value}
           </div>
           <div className="bar-checkers bottom">

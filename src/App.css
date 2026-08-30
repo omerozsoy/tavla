@@ -3276,14 +3276,54 @@ button[aria-disabled='true'],
   }
 }
 .player-name {
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 500; /* bold DEGIL, biraz buyuk */
+  font-size: 1.05rem;
   line-height: 1.2;
+  letter-spacing: -0.005em;
 }
 .player-sub {
   color: var(--muted);
   font-size: 0.72rem;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
+}
+.player-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.98rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.player-rating > svg {
+  color: var(--tv-gold);
+}
+/* Tek ortak maç skoru (iki kartın arasında, ortada) */
+.sidebar-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 7px;
+  padding: 6px 0;
+}
+.ss-num {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: #f2f5ff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.ss-sep {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: rgba(220, 230, 255, 0.45);
+}
+.ss-target {
+  align-self: flex-end;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(220, 230, 255, 0.5);
+  font-variant-numeric: tabular-nums;
 }
 .score-badge {
   color: var(--tv-gold);
@@ -3878,6 +3918,19 @@ button[aria-disabled='true'],
 .cube.owner-white {
   bottom: calc(var(--checker) * 0.9);
 } /* beyaz (alt) */
+/* Flip-duyarlı GÖRSEL konum (ana oyun tahtası): sahibi görsel üst/alt'a göre. */
+.cube.cube-center {
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+.cube.cube-top {
+  top: calc(var(--checker) * 0.9);
+  border: 2px solid var(--tv-brick-light);
+}
+.cube.cube-bottom {
+  bottom: calc(var(--checker) * 0.9);
+  border: 2px solid var(--tv-brick-light);
+}
 
 /* ---- Zarlar (tahta uzeri) ---- */
 .board-dice {
