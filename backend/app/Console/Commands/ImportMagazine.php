@@ -180,7 +180,8 @@ class ImportMagazine extends Command
             $out[] = [
                 'title' => mb_substr($title, 0, 200),
                 'video_id' => $vid,
-                'organizer' => (string) ($row['organizer'] ?? ''),
+                // Seri bos ise frontend 'Videolar' grubuna dusuruyor -> seriyi de oyle yaz (bos kalmasin)
+                'organizer' => trim((string) ($row['organizer'] ?? '')) ?: 'Videolar',
                 'image' => isset($row['image']) && $row['image'] !== '' ? (string) $row['image'] : "https://i.ytimg.com/vi/{$vid}/hqdefault.jpg",
                 'event_at' => isset($row['event_at']) && $row['event_at'] !== '' ? (string) $row['event_at'] : null,
                 'sort' => isset($row['sort']) ? (int) $row['sort'] : $i,

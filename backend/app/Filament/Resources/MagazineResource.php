@@ -41,7 +41,8 @@ class MagazineResource extends Resource
     {
         return $form->schema([
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
-            Forms\Components\TextInput::make('organizer')->label('Seri / Bölüm'),
+            Forms\Components\TextInput::make('organizer')->label('Seri / Bölüm')
+                ->default('Videolar')->helperText('Boş bırakılırsa video "Videolar" başlığı altında görünür.'),
             Forms\Components\TextInput::make('video_id')->label('YouTube Video ID')
                 ->helperText('Örn. dQw4w9WgXcQ (izleme bağlantısındaki v= değeri)')->required(),
             Forms\Components\TextInput::make('image')->label('Kapak URL')->maxLength(500)->columnSpanFull(),

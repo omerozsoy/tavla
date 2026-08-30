@@ -184,16 +184,16 @@ export function LiveMatchesPanel({
         <Icon name="live" size={17} /> {t('live.title')}
       </div>
       <div className="rank-tabs">
-        <Button variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
+        <Button type="button" variant={tab === 'all' ? 'default' : 'ghost'} aria-pressed={tab === 'all'} onClick={() => setTab('all')}>
           {t('live.catAll')}
         </Button>
-        <Button variant={tab === 'single' ? 'default' : 'ghost'} aria-pressed={tab === 'single'} onClick={() => setTab('single')}>
+        <Button type="button" variant={tab === 'single' ? 'default' : 'ghost'} aria-pressed={tab === 'single'} onClick={() => setTab('single')}>
           {t('live.catSingle')}
         </Button>
-        <Button variant={tab === 'match' ? 'default' : 'ghost'} aria-pressed={tab === 'match'} onClick={() => setTab('match')}>
+        <Button type="button" variant={tab === 'match' ? 'default' : 'ghost'} aria-pressed={tab === 'match'} onClick={() => setTab('match')}>
           {t('live.catPoint')}
         </Button>
-        <Button variant={tab === 'friendly' ? 'default' : 'ghost'} aria-pressed={tab === 'friendly'} onClick={() => setTab('friendly')}>
+        <Button type="button" variant={tab === 'friendly' ? 'default' : 'ghost'} aria-pressed={tab === 'friendly'} onClick={() => setTab('friendly')}>
           {t('live.catFriendly')}
         </Button>
       </div>
@@ -244,7 +244,8 @@ export function RankingPanel({
 
   useEffect(() => {
     let alive = true
-    setRows(null)
+    // NOT: setRows(null) YOK -> tab degisince liste cokup sayfa kisalmaz (scroll yukari
+    // atlamasin). Eski satirlar yeni veri gelene kadar durur; ilk yuklemede zaten null.
     leaderboard(15, by)
       .then((r) => alive && setRows(r))
       .catch(() => alive && setRows([]))
@@ -259,13 +260,13 @@ export function RankingPanel({
         <Icon name="trophy" size={17} /> {t('lb.title')}
       </div>
       <div className="rank-tabs">
-        <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
+        <Button type="button" variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
           {t('lb.rating')}
         </Button>
-        <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
+        <Button type="button" variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
           {t('lb.byCoins')}
         </Button>
-        <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
+        <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
           {t('lb.byWxp')}
         </Button>
       </div>
