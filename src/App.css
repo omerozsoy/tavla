@@ -5801,7 +5801,7 @@ button.stat-chip:hover {
 .account-bar [data-slot='button'],
 .account-id .account-name,
 .account-bar .stat-chip-val,
-.account-bar .btn-reward,
+.account-bar .btn-reward:not([data-slot]),
 .account-bar .reward-count {
   font-weight: 400;
 }
@@ -10272,19 +10272,22 @@ button.stat-chip:hover {
   color: #1c1a17;
 }
 /* Gunluk odul (hazir): altin + nabiz animasyonu */
-.btn-reward {
+/* Legacy altin+nabiz gorunum yalniz native <button>'a; global <Button> (data-slot)
+   kullanildiginda STANDART buton kazanir (kullanici direktifi: "tek bir farkli
+   dugme bile"). Kod tabani kalibi: :not([data-slot]) guard. */
+.btn-reward:not([data-slot]) {
   border-color: #e6b422;
   background: color-mix(in srgb, #e6b422 24%, var(--card-bg));
   color: var(--text);
   font-weight: 800;
   animation: coin-pulse 1.6s ease-in-out infinite;
 }
-.btn-reward:hover {
+.btn-reward:not([data-slot]):hover {
   border-color: #e6b422;
   background: color-mix(in srgb, #e6b422 34%, var(--card-bg));
   color: var(--text);
 }
-.btn-reward > svg {
+.btn-reward:not([data-slot]) > svg {
   color: var(--orange);
 }
 /* Gunluk odul geri sayimi (buton DEGIL — pasif durum); buton boyuyla hizali */
