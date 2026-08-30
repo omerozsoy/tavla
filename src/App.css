@@ -5761,8 +5761,9 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 54px;
-  padding: 0 16px 0 7px;
+  /* Sag ikon grubuyla ayni yukseklik (44px); rakamlar kucultulmez */
+  height: 44px;
+  padding: 0 16px 0 6px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
   background: var(--card-bg);
@@ -10295,7 +10296,7 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md, 8px);
