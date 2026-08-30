@@ -41,6 +41,7 @@ class RoomController extends Controller
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'waiting',
+            'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
             'version' => 0,
         ]);
 
@@ -172,6 +173,7 @@ class RoomController extends Controller
             'bet_pct' => $betPct,
             'targets' => $targets,
             'target' => count($targets) === 1 ? $targets[0] : null,
+            'mode' => 'ranked', // hizli eslesme -> Mac Oyunu
             'version' => 0,
         ]);
 
@@ -311,7 +313,7 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
-            ->get(['code', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct']);
+            ->get(['code', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode']);
 
         $list = $rooms->map(fn ($r) => [
             'code' => $r->code,
@@ -323,6 +325,9 @@ class RoomController extends Controller
             'p2_avatar' => $r->p2_avatar,
             'stake' => (int) $r->stake,
             'bet_pct' => (int) $r->bet_pct,
+            'target' => $r->target !== null ? (int) $r->target : null,
+            // Etiket icin tip: eski (null) kayitlar 'ranked' varsayilir (cogu online mac hizli eslesme)
+            'mode' => $r->mode ?: 'ranked',
         ]);
 
         return response()->json(['matches' => $list]);

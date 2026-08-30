@@ -932,6 +932,8 @@ export interface LiveMatch {
   p2_avatar?: string | null
   stake: number
   bet_pct: number
+  target?: number | null
+  mode?: 'ranked' | 'friendly'
 }
 export async function liveMatches(): Promise<LiveMatch[]> {
   const data = await req<{ matches: LiveMatch[] }>('/live-matches')
