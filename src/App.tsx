@@ -412,6 +412,9 @@ export default function App() {
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
   const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
+  // Arkadaslik (davet kodu) maci mi? true -> NE puan NE coin (dostluk). Davet=friendly,
+  // eslesme havuzu/solo=ranked. Mac-sonu raporu + coin settle bunu okur.
+  const friendlyRef = useRef(false)
   const minRatingRef = useRef(0) // Mac Oyunu: rakip min puan filtresi
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
@@ -1729,7 +1732,7 @@ export default function App() {
         room?.oppName ?? null,
         prRef(opponent(myColor)),
         JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
-        true, // ranked: online her zaman puanli
+        !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
         stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
       )
         .then((r) => {
@@ -1744,7 +1747,7 @@ export default function App() {
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
     // Sunucu kazanani yetkili belirler; rakip beyani/durum gec gelirse pending doner,
     // settleRoomConfirmed birkac kez deneyip guncel bakiyeyi getirir.
-    if ((stakeRef.current > 0 || betPctRef.current > 0) && room?.code) {
+    if (!friendlyRef.current && (stakeRef.current > 0 || betPctRef.current > 0) && room?.code) {
       settleRoomConfirmed(room.code, won)
         .then((r) => {
           if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
@@ -2322,6 +2325,9 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
+      friendlyRef.current = true // davet ile kurulan oda = arkadaslik maci (puan/coin YOK)
+      stakeRef.current = 0
+      betPctRef.current = 0
       const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
@@ -2381,6 +2387,7 @@ export default function App() {
   async function handleMatchmake() {
     setRoomBusy(true)
     setRoomError('')
+    friendlyRef.current = false // eslesme havuzu / Tek Oyun = puanli/coinli (dostluk degil)
     try {
       const res = await matchmake(
         profile?.nickname ?? t('auth.guestNick'),
@@ -2466,6 +2473,9 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
+      friendlyRef.current = true // koda katilma = arkadaslik maci (puan/coin YOK)
+      stakeRef.current = 0
+      betPctRef.current = 0
       const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
