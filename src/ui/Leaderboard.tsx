@@ -20,14 +20,14 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
-  const [by, setBy] = useState<'rating' | 'coins' | 'league'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'league'>('rating')
   const [profileId, setProfileId] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
     setRows(null)
     setError(false)
-    leaderboard(100, by === 'coins' ? 'coins' : 'rating')
+    leaderboard(100, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
@@ -54,7 +54,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         </span>
         <span className="lb-games">{r.games}</span>
         <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
-        <span className="lb-rating">{by === 'coins' ? (r.coins ?? 0) : r.rating}</span>
+        <span className="lb-rating">
+          {by === 'coins' ? (r.coins ?? 0) : by === 'wxp' ? (r.wxp ?? 0) : r.rating}
+        </span>
       </div>
     )
   }
@@ -73,6 +75,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           <Button variant={by === 'coins' ? 'secondary' : 'ghost'} onClick={() => setBy('coins')}>
             <Icon name="coin" size={16} /> {t('lb.byCoins')}
           </Button>
+          <Button variant={by === 'wxp' ? 'secondary' : 'ghost'} onClick={() => setBy('wxp')}>
+            <Icon name="trophy" size={16} /> {t('lb.byWxp')}
+          </Button>
           <Button variant={by === 'league' ? 'secondary' : 'ghost'} onClick={() => setBy('league')}>
             <Icon name="medal" size={16} /> {t('lb.league')}
           </Button>
@@ -86,7 +91,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-rating">{by === 'coins' ? <Icon name="coin" size={14} /> : t('lb.rating')}</span>
+              <span className="lb-rating">
+                {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
+              </span>
             </div>
             <div className="lb-body">
               {Array.from({ length: 8 }).map((_, i) => (
@@ -115,7 +122,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-rating">{by === 'coins' ? <Icon name="coin" size={14} /> : t('lb.rating')}</span>
+              <span className="lb-rating">
+                {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
+              </span>
             </div>
             <div className="lb-body">
               {by === 'league'

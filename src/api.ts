@@ -235,6 +235,7 @@ export interface LeaderRow {
   country?: string | null
   rating: number
   coins?: number
+  wxp?: number
   wins: number
   losses: number
   games: number
@@ -256,7 +257,7 @@ export async function selectFrame(id: string | null): Promise<{ avatar_frame: st
   return req('/shop/frame', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
 }
 
-export async function leaderboard(limit = 100, by: 'rating' | 'coins' = 'rating'): Promise<LeaderRow[]> {
+export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 'rating'): Promise<LeaderRow[]> {
   const data = await req<{ players: LeaderRow[] }>(`/leaderboard?limit=${limit}&by=${by}`)
   return data.players
 }

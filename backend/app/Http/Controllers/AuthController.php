@@ -442,11 +442,13 @@ class AuthController extends Controller
     public function leaderboard(Request $request)
     {
         $limit = min(100, max(1, (int) $request->query('limit', 100)));
-        $byCoins = $request->query('by') === 'coins';
-        $users = User::orderByDesc($byCoins ? 'coins' : 'rating')
+        // Siralama kriteri: rating (varsayilan) | coins | wxp (cached users.total_wxp)
+        $by = $request->query('by');
+        $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
+        $users = User::orderByDesc($sortCol)
             ->orderByDesc('wins')
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'wins', 'losses', 'games_played']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played']);
 
         $rows = $users->values()->map(function ($u, $i) {
             return [
@@ -458,6 +460,7 @@ class AuthController extends Controller
                 'country' => $u->country,
                 'rating'  => $u->rating ?? 1500,
                 'coins'   => $u->coins ?? 0,
+                'wxp'     => $u->total_wxp ?? 0,
                 'wins'    => $u->wins ?? 0,
                 'losses'  => $u->losses ?? 0,
                 'games'   => $u->games_played ?? 0,
