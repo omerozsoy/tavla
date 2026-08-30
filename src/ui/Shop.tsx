@@ -22,6 +22,7 @@ const fmtLeft = (total: number) => {
   return `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
 const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
+const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
 // Magaza: coin (jeton) satin alma vitrini + gunluk odul. (Cerceveler artik Ayarlar'da.)
 export default function Shop({
@@ -85,26 +86,45 @@ export default function Shop({
             <Icon name="coin" size={18} /> {t('shop.buyCoins')}
           </h3>
           <div className="coin-grid">
-            {COIN_PACKAGES.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                className={`coin-pkg coin-pkg-${p.tone}`}
-                onClick={() => onBuyCoins?.(p.id)}
-              >
-                {p.popular && <span className="coin-pkg-badge">{t('shop.popular')}</span>}
-                <span className="coin-pkg-ic" aria-hidden="true">
-                  <Icon name="coin" size={26} />
-                </span>
-                <span className="coin-pkg-info">
-                  <span className="coin-pkg-name">{p.name}</span>
-                  <span className="coin-pkg-gc">{fmtCoin(p.gc)} GC</span>
-                  <span className="coin-pkg-price">${p.price.toFixed(2)}</span>
-                </span>
-              </button>
-            ))}
+            {COIN_PACKAGES.map((p) => {
+              const per = (p.price / p.gc).toLocaleString('tr-TR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  className="coin-card"
+                  data-popular={p.popular || undefined}
+                  onClick={() => onBuyCoins?.(p.id)}
+                >
+                  {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
+                  <span className="coin-card-name">{p.name}</span>
+                  <span className="coin-card-amount">
+                    <Icon name="coin" size={20} />
+                    <b>{fmtCoin(p.gc)}</b>
+                    <span className="coin-card-unit">coin</span>
+                  </span>
+                  <span className="coin-card-price">{fmtTL(p.price)}</span>
+                  <span className="coin-card-meta">
+                    <span className="coin-card-per">
+                      {t('shop.perCoin')} {per} ₺
+                    </span>
+                    {p.discount > 0 && (
+                      <span className="coin-card-save">
+                        %{p.discount} {t('shop.advantage')}
+                      </span>
+                    )}
+                  </span>
+                  <span className="coin-card-cta">
+                    {t('shop.buy')} <Icon name="arrow-right" size={14} />
+                  </span>
+                </button>
+              )
+            })}
             {onMembership && (
-              <button type="button" className="coin-pkg coin-pkg-mem" onClick={onMembership}>
+              <button type="button" className="coin-card coin-card-mem" onClick={onMembership}>
                 <span className="coin-mem-plan">{t('shop.memTitle')}</span>
                 <span className="coin-mem-trial">{t('shop.memTrial')}</span>
                 <span className="coin-mem-cta">

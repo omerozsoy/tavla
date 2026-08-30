@@ -11246,93 +11246,143 @@ button.stat-chip:hover {
 }
 .coin-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+  gap: 14px;
 }
-.coin-pkg {
+/* Emil-sade coin karti: dikey, temiz hiyerarsi (isim -> miktar -> fiyat -> coin basi
+   + avantaj -> CTA). Flat; sadece popüler kart ince accent alir. */
+.coin-card {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  gap: 9px;
   text-align: left;
-  padding: 14px 16px;
+  padding: 18px 18px 15px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg, 14px);
+  border-radius: var(--radius-xl, 16px);
   background: var(--card-bg);
   color: var(--text);
   font-family: inherit;
   cursor: pointer;
-  overflow: hidden;
   transition:
     border-color 160ms ease,
-    transform 160ms ease;
+    transform 160ms ease,
+    background-color 160ms ease;
 }
-.coin-pkg:hover {
-  border-color: #e6b422;
-  transform: translateY(-2px);
-}
-.coin-pkg:focus-visible {
+.coin-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-.coin-pkg-ic {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  color: #e6b422;
-  background: color-mix(in srgb, #e6b422 15%, transparent);
+@media (hover: hover) {
+  .coin-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--text) 22%, transparent);
+  }
+  .coin-card:hover .coin-card-cta {
+    color: var(--accent);
+  }
+  .coin-card:hover .coin-card-cta > svg {
+    transform: translateX(2px);
+  }
 }
-.coin-pkg-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
+/* Popüler (Kasa): ince accent border + çok hafif tint */
+.coin-card[data-popular] {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
 }
-.coin-pkg-name {
-  font-size: 0.9rem;
+.coin-card-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.coin-card-name {
+  font-size: 0.72rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
 }
-.coin-pkg-gc {
-  font-size: 1.15rem;
-  font-weight: 900;
-  color: #d4a017;
-  letter-spacing: 0.01em;
+.coin-card-amount {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text);
+}
+.coin-card-amount > svg {
+  color: #e6b422;
+  flex: none;
+}
+.coin-card-amount b {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
 }
-.coin-pkg-price {
+.coin-card-unit {
   font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+  align-self: flex-end;
+  margin-bottom: 4px;
+}
+.coin-card-price {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.coin-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.coin-card-per {
+  font-size: 0.75rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-.coin-pkg-badge {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  padding: 3px 10px;
-  border-top-left-radius: 10px;
-  background: #d33a2c;
-  color: #fff;
-  font-size: 0.62rem;
-  font-weight: 800;
-  letter-spacing: 0.04em;
+.coin-card-save {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 13%, transparent);
+  font-variant-numeric: tabular-nums;
 }
-/* Star Uyelik karti */
-.coin-pkg-mem {
-  flex-direction: column;
-  align-items: flex-start;
+.coin-card-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--muted);
+  transition: color 160ms ease;
+}
+.coin-card-cta > svg {
+  transition: transform 160ms ease;
+}
+/* Star Üyelik kartı (aynı grid, dikey ortalı) */
+.coin-card-mem {
   justify-content: center;
-  gap: 5px;
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, var(--card-bg));
+  gap: 6px;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
 }
 .coin-mem-plan {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--accent);
 }
@@ -11351,7 +11401,7 @@ button.stat-chip:hover {
   color: var(--accent);
 }
 @media (prefers-reduced-motion: reduce) {
-  .coin-pkg:hover {
+  .coin-card:hover {
     transform: none;
   }
 }

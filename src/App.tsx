@@ -1083,7 +1083,9 @@ export default function App() {
   function computeMoveError(finalPlayed: Step[]): MoveError | null {
     // Hata tespiti icin TUM turun siralamasini kullan (tur basinda hesaplanan)
     const turnRanked = turnRankedRef.current
-    if (!showAnalysis || !turnRanked || turnRanked.length === 0) return null
+    // Analiz paneli SADECE yapay zekaya karşı (pvb). Tek Oyun/Maç Oyunu/pvp'de asla
+    // gösterme — hile önlemi (PR/istatistik hesabı arka planda yine calisir).
+    if (!showAnalysis || mode !== 'pvb' || !turnRanked || turnRanked.length === 0) return null
     const resultKey = boardKey(applyPlayed(turnStart, finalPlayed))
     const pl = turnRanked.find((r) => r.move.resultKey === resultKey)
     if (!pl) return null
@@ -3253,7 +3255,9 @@ export default function App() {
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
 
   // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
-  const editProfilePage = editProfile ? (
+  // GARANTI: Ayarlar (boardSettingsOpen) acikken profil RENDER EDILMEZ -> ust uste
+  // binme imkansiz; Ayarlar kapaninca editProfile hala acikse profile geri donulur.
+  const editProfilePage = editProfile && !boardSettingsOpen ? (
     user && !profileEditMode ? (
       <ProfileOverview
         user={user}
@@ -3758,6 +3762,7 @@ export default function App() {
           setShowAnalysis={setShowAnalysis}
           learnMode={learnMode}
           setLearnMode={setLearnMode}
+          canAnalyze={mode === 'pvb'}
           framesSlot={
             user ? (
               <FrameShop
@@ -4102,6 +4107,7 @@ export default function App() {
         }}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
+        canAnalyze={mode === 'pvb'}
         canResign={!matchOver && (mode === 'pvb' || online)}
         loggedIn={!!user}
         onTournaments={online && !matchOver ? undefined : menuProps.onTournaments}
