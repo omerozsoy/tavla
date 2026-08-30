@@ -8356,14 +8356,10 @@ button.stat-chip:hover {
 }
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
-  /* Tahta: cozunurluk yuksekliginden ~50px kucuk; iki panele (kontrol 300 + sonuc 320
-     + bosluklar) VE sol menu (190px offset, .register-overlay.page left:190) yer
-     birakacak sekilde genislige de sigar. Aksi halde board saga tasip panellerle
-     ic ice giriyordu (100vw kullanip 190px sidebar'i saymiyordu). */
-  /* GENISLIK: container max-width 1400px'te durdugu icin 100vw CAP'lenir (min 1560);
-     aksi halde genis ekranda board buyumeye devam edip kontrol panelini ORTUYORDU.
-     Divisor 1.4 board en-boy oranina gore kolona (board|300|320) sigacak sekilde. */
-  --board-h: max(320px, min(calc(100vh - var(--header-h) - 130px), calc((min(100vw, 1590px) - 890px) / 1.4)));
+  /* Board USTTE (stacked duzen). Yukseklik-sinirli: 48vh + kapsanan icerik genisligine
+     (1080px) sigacak sekilde. Boylece board asla kontrol/sonuc paneline TASMAZ
+     (eski 3-kolon squeeze'de board kolonu asip etiketleri kesiyordu). */
+  --board-h: max(300px, min(48vh, calc((min(100vw, 1080px) - 56px) / 1.42)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -8412,7 +8408,10 @@ button.stat-chip:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  gap: 12px;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto 14px;
 }
 .analyzer-head h2 {
   margin: 0;
@@ -8437,17 +8436,22 @@ button.stat-chip:hover {
   border-color: var(--accent);
   color: var(--accent);
 }
-/* 3 kolon: board (esnek) | kontrol (300) | sonuc (320). Grid -> sonuc her zaman
-   en sagda, flex-wrap kaymasi olmaz. */
+/* Stacked duzen (Emil, sağlam): board USTTE ortali, altinda kontrol + sonuc yan yana.
+   Board hicbir zaman panellere tasmaz. Icerik ortalanip capli -> genis ekranda dagilmaz. */
 .analyzer-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px 320px;
-  grid-template-areas: 'board controls results';
-  gap: 16px;
+  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-areas:
+    'board board'
+    'controls results';
+  gap: 18px;
   align-items: start;
+  max-width: 1080px;
+  margin-inline: auto;
 }
 .analyzer-board {
   grid-area: board;
+  justify-self: center;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
 }
@@ -8495,11 +8499,15 @@ button.stat-chip:hover {
 .pa-placeholder {
   color: var(--muted);
   font-size: 0.85rem;
-  line-height: 1.4;
+  line-height: 1.5;
   background: var(--card-bg);
   border: 1px dashed var(--border);
   border-radius: var(--radius-lg);
-  padding: 18px 14px;
+  padding: 40px 20px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
 }
 .pa-hint {
@@ -8999,19 +9007,11 @@ button.stat-chip:hover {
 /* 3-sutun (board|kontrol|sonuc) yalniz GENIS ekranda; daha darda board USTTE
    tam genislik + altta controls/results 2-sutun. Esik 1400: altinda 300px'lik
    min board 300+320 panelleriyle ayni satira SIGMIYOR (tasip ortuyordu). */
-@media (max-width: 1400px) {
+/* Dar/mobil: board ustte tam genislik + kontrol/sonuc alt alta (yan yana sigmaz) */
+@media (max-width: 900px) {
   .analyzer {
-    --board-h: max(280px, min(calc(100vh - var(--header-h) - 210px), calc((100vw - 40px) / 1.35)));
+    --board-h: max(260px, min(46vh, calc((100vw - 36px) / 1.42)));
   }
-  .analyzer-body {
-    grid-template-columns: 1fr 1fr;
-    grid-template-areas:
-      'board board'
-      'controls results';
-  }
-}
-/* Mobil: hepsi alt alta */
-@media (max-width: 720px) {
   .analyzer-body {
     grid-template-columns: 1fr;
     grid-template-areas:
