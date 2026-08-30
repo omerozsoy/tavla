@@ -3424,6 +3424,7 @@ export default function App() {
   // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
   function closeMenuPages() {
     setLeaderboardOpen(false)
+    setRanksOpen(false)
     setTournOpen(false)
     setShopOpen(false)
     setFrameGalleryOpen(false)
