@@ -263,15 +263,15 @@ export default function MiniBoard({
             strokeLinejoin="round"
           />
         </marker>
-        {/* Yuvarlak kose: tum board icerigi yuvarlatilmis dikdortgene kirpilir */}
+        {/* Kare kose: board icerigi duz dikdortgene kirpilir (yuvarlatma yok) */}
         <clipPath id="mbClip">
-          <rect x="0" y="0" width={W} height={H} rx="12" />
+          <rect x="0" y="0" width={W} height={H} rx="0" />
         </clipPath>
       </defs>
       {/* flip: 180 donus DEGIL — layout dikey-ayna ile secildi (Board.tsx ile ayni).
           Boylece siyah oyuncu (SEN) altta gorunur ve hamle yonu ana tahtayla tutarli. */}
       <g clipPath="url(#mbClip)">
-        <rect x="0" y="0" width={W} height={H} rx="12" fill="var(--panel)" />
+        <rect x="0" y="0" width={W} height={H} rx="0" fill="var(--panel)" />
         {/* orta bar (numara seritleri disinda) */}
         <rect x={HALF_W} y={NUM_H} width={BAR_W} height={H - 2 * NUM_H} fill="var(--bar)" />
         {/* bear-off */}
