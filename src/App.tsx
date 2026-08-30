@@ -4150,11 +4150,6 @@ export default function App() {
               ? null
               : message}
         </span>
-        {prValue != null && (
-          <span className="pr-chip" title={t('pr.title')}>
-            PR {prValue.toFixed(1)}
-          </span>
-        )}
       </div>
       </main>
 
