@@ -8,7 +8,6 @@ import AvatarFrame from './AvatarFrame'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
 import { DivisionChip } from './Badges'
-import { MAIN_DIVISIONS, mainDivisionOf } from '../badges'
 
 interface Props {
   currentName?: string
@@ -20,14 +19,15 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'league'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
   const [profileId, setProfileId] = useState<number | null>(null)
 
   useEffect(() => {
     let alive = true
     setRows(null)
     setError(false)
-    leaderboard(100, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
+    // Her tab: top 30 oyuncu
+    leaderboard(30, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
@@ -46,11 +46,12 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
         onClick={() => r.id && setProfileId(r.id)}
       >
-        <span className="lb-rank">{by === 'league' ? '' : medal(r.rank) || r.rank}</span>
+        <span className="lb-rank">{medal(r.rank) || r.rank}</span>
         <span className="lb-name">
           <AvatarFrame src={r.avatar} frame={r.frame} size={30} name={r.name} animated={false} />
           {r.name}
-          {by !== 'league' && <DivisionChip rating={r.rating} size="sm" />}
+          {/* Lig unvani her tabda yazili (Puan sekmesinde tam ad, digerlerinde kompakt) */}
+          <DivisionChip rating={r.rating} size={by === 'rating' ? 'md' : 'sm'} />
         </span>
         <span className="lb-games">{r.games}</span>
         <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
@@ -77,9 +78,6 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           </Button>
           <Button variant={by === 'wxp' ? 'secondary' : 'ghost'} onClick={() => setBy('wxp')}>
             <Icon name="trophy" size={16} /> {t('lb.byWxp')}
-          </Button>
-          <Button variant={by === 'league' ? 'secondary' : 'ghost'} onClick={() => setBy('league')}>
-            <Icon name="medal" size={16} /> {t('lb.league')}
           </Button>
         </div>
 
@@ -126,24 +124,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
             </div>
-            <div className="lb-body">
-              {by === 'league'
-                ? MAIN_DIVISIONS.slice()
-                    .reverse()
-                    .map((d) => {
-                      const inDiv = rows.filter((r) => mainDivisionOf(r.rating).key === d.key)
-                      if (inDiv.length === 0) return null
-                      return (
-                        <div key={d.key}>
-                          <div className="lb-div-head" style={{ color: d.color }}>
-                            <Icon name={d.icon} size={15} /> {t(d.key)} · {inDiv.length}
-                          </div>
-                          {inDiv.map(renderRow)}
-                        </div>
-                      )
-                    })
-                : rows.map(renderRow)}
-            </div>
+            <div className="lb-body">{rows.map(renderRow)}</div>
           </div>
         )}
       </div>
