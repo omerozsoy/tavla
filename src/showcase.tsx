@@ -17,6 +17,8 @@ import { Icon, ICON_NAMES } from './ui/Icon'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import AvatarFrame from './ui/AvatarFrame'
 import { DivisionChip, BadgeList } from './ui/Badges'
+import { RankBadge } from './ui/RankBadge'
+import { RANKS } from './ranks'
 import DatePicker from './ui/DatePicker'
 import { RARITY_COLORS, type RarityKey } from './ui/rarityColors'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
@@ -78,6 +80,7 @@ const SECTIONS = [
   ['profile', '11 · Profile Components'],
   ['tokens', '12 · Spacing · Radius · Shadow'],
   ['icons', '13 · Icons'],
+  ['ranks', '14 · Player Ranks'],
 ]
 
 // ---- Kucuk yardimcilar (SADECE showcase duzeni; component kopyasi DEGIL) ----
@@ -676,6 +679,49 @@ function Showcase() {
               </button>
             ))}
           </div>
+        </section>
+
+        {/* 14 PLAYER RANKS — 20 kademe, aile aile. compact/standard/featured */}
+        <section id="ranks" className="sc-section">
+          <h2 className="sc-section-title">14 · Player Ranks — {RANKS.length} kademe</h2>
+          <p className="sc-note" style={{ marginTop: 0 }}>
+            Rütbe sistemi: <code>src/ranks.ts</code> (tek konfig) + <code>&lt;RankBadge/&gt;</code>.
+            İkonlar SADECE Phosphor. Renkler <code>--rank-*</code> token'ları. Rütbe yükseldikçe
+            kontrast/weight kontrollü artar. Kullanım:{' '}
+            <code>&lt;RankBadge rating={'{1550}'} variant="standard" /&gt;</code>.
+          </p>
+          <div className="sc-rank-list">
+            <div className="sc-rank-head">
+              <span>Eşik</span>
+              <span>Phosphor ikon</span>
+              <span>Compact</span>
+              <span>Standard</span>
+              <span>Featured</span>
+            </div>
+            {RANKS.map((r) => (
+              <div className="sc-rank-row" key={r.divKey} data-family={r.family}>
+                <span className="sc-rank-th">{r.min}+</span>
+                <code className="sc-rank-icon">
+                  {r.iconName}
+                  <span className="sc-rank-weight">{r.weight}</span>
+                </code>
+                <span className="sc-rank-cell">
+                  <RankBadge rank={r.family} level={r.code} variant="compact" />
+                </span>
+                <span className="sc-rank-cell">
+                  <RankBadge rank={r.family} level={r.code} variant="standard" />
+                </span>
+                <span className="sc-rank-cell">
+                  <RankBadge rank={r.family} level={r.code} variant="featured" />
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="sc-note">
+            Not: Grandmaster <strong>G0</strong> için brief'te istenen <code>LaurelWreath</code>{' '}
+            Phosphor pakedinde yok → en yakın semantik <code>Certificate</code> (tevcih edilmiş onur)
+            kullanıldı. Zirve <strong>S1</strong> yalnızca featured'da çok hafif statik highlight alır.
+          </p>
         </section>
 
         <footer className="sc-footer">
