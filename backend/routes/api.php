@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlunderController;
 use App\Http\Controllers\ClubController;
 use App\Http\Controllers\ContentController;
+use App\Http\Controllers\ErrorJournalController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\GameController;
 use App\Http\Controllers\MembershipController;
@@ -116,6 +117,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/blunders', [BlunderController::class, 'index']);
     Route::post('/blunders', [BlunderController::class, 'store']);
+
+    // Hata Gunlugu: gunun/donemin ozeti + kategori kirilimi + son hatalar (decision_analyses'ten).
+    Route::get('/me/error-journal', [ErrorJournalController::class, 'index']);
 
     Route::get('/game', [GameController::class, 'show']);
     Route::middleware('throttle:60,1')->put('/game', [GameController::class, 'save']);

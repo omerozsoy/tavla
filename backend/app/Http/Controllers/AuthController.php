@@ -358,6 +358,17 @@ class AuthController extends Controller
         // Yeni mac -> median cache'ini (tum filtreler) gecersiz kil.
         app(\App\Services\PlayerStatisticsService::class)->invalidate($user->id);
 
+        // Hata Gunlugu: bu macin log'unu karar-karar analiz et (siniflandirma+pip).
+        // Motor CALISMAZ; log'daki hazir equity/loss kullanilir. Hata olursa mac
+        // kaydi yine gecerli -> sessizce yutma, logla.
+        try {
+            app(\App\Services\ErrorJournalService::class)->analyzeMatch($result);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Error journal analyze failed', [
+                'match_result_id' => $result->id, 'user_id' => $user->id, 'err' => $e->getMessage(),
+            ]);
+        }
+
         return response()->json(['rating' => $newRating, 'user' => $user]);
     }
 

@@ -16,12 +16,14 @@ return new class extends Migration
             $table->timestamp('plan_since')->nullable()->after('plan_until');
         });
 
-        // Mevcut ucretli uyeler: plan_since = en erken 'paid' odeme tarihi (varsa)
+        // Mevcut ucretli uyeler: plan_since = en erken 'paid' odeme tarihi (varsa).
+        // Not: alias'siz yazildi -> sqlite (test) + MySQL (prod) ikisinde de calisir.
+        // (sqlite "UPDATE users u SET ..." alias sozdizimini kabul etmez.)
         DB::statement(
-            "UPDATE users u SET plan_since = (
+            "UPDATE users SET plan_since = (
                 SELECT MIN(p.created_at) FROM payments p
-                WHERE p.user_id = u.id AND p.status = 'paid'
-            ) WHERE u.plan <> 'free' AND u.plan_since IS NULL"
+                WHERE p.user_id = users.id AND p.status = 'paid'
+            ) WHERE plan <> 'free' AND plan_since IS NULL"
         );
     }
 
