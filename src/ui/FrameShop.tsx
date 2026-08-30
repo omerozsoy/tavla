@@ -58,6 +58,7 @@ function FrameCard(p: CardProps) {
       </div>
       {owned ? (
         <Button
+          type="button"
           variant={equipped ? 'secondary' : 'default'}
           className="w-full"
           disabled={equipped}
@@ -68,6 +69,7 @@ function FrameCard(p: CardProps) {
       ) : price != null ? (
         <>
           <Button
+            type="button"
             variant="default"
             className="w-full"
             disabled={p.busy === sid || p.coins < price}
@@ -141,6 +143,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
           </div>
           <div className="shop-anim-name">{t('shop.noFrame')}</div>
           <Button
+            type="button"
             variant={!currentFrame ? 'secondary' : 'default'}
             className="w-full"
             disabled={!currentFrame}
