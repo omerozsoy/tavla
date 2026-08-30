@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom'
 import MiniBoard from './MiniBoard'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -28,9 +29,9 @@ export default function ErrorDetail({
         ? t('rep.error')
         : t('rep.blunder')
 
-  return (
+  return createPortal(
     <div className="ej-detail-overlay" role="dialog" aria-modal="true" onClick={onClose}>
-      <aside className="ej-detail" onClick={(e) => e.stopPropagation()}>
+      <div className="ej-detail" onClick={(e) => e.stopPropagation()}>
         <Button
           variant="ghost"
           size="icon"
@@ -101,16 +102,8 @@ export default function ErrorDetail({
           </div>
         )}
 
-        {entry.tags && entry.tags.length > 0 && (
-          <div className="ej-tags">
-            {entry.tags.map((tag) => (
-              <span key={tag} className="ej-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-      </aside>
-    </div>
+      </div>
+    </div>,
+    document.body,
   )
 }
