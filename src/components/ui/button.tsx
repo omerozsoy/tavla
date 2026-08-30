@@ -11,7 +11,11 @@ import { cn } from "@/lib/utils"
 // Native buton gorunumu `appearance-none` + shadcn.css'teki [data-slot] reset (border:0
 // solid -> border-style solid) ile engellenir; base `border` = 1px, variant = border-color.
 const buttonVariants = cva(
-  "inline-flex h-[42px] min-h-[42px] shrink-0 cursor-pointer appearance-none items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 text-sm font-semibold outline-none transition-all duration-150 hover:-translate-y-px active:translate-y-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  // Gecis: `transition-all` DEGIL — yalniz degisen ozellikler (renk/border/golge/transform),
+  // guclu ozel ease-out (App.css --ease-out ile ayni egri). Press geri bildirimi: hover lift'i
+  // iptal et + hafif scale(0.97) ("dinliyor" hissi). Hareket reduced-motion'da notrlenir,
+  // renk gecisleri korunur.
+  "inline-flex h-[42px] min-h-[42px] shrink-0 cursor-pointer appearance-none items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 text-sm font-semibold outline-none transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-px active:translate-y-0 active:scale-[0.97] motion-reduce:hover:translate-y-0 motion-reduce:active:scale-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       // SADECE renk + hover davranisi. Fiziksel yapiya (height/padding/radius/border-width/
