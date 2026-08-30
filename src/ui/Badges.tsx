@@ -1,17 +1,13 @@
 import { useT } from '../i18n'
 import { Icon } from './Icon'
-import { BADGE_MAP, divisionOf } from '../badges'
+import { BADGE_MAP } from '../badges'
+import { RankBadge } from './RankBadge'
 
-// Rating'e gore lig/division rozeti (ikon + ad, renk)
+// Rating'e gore rutbe rozeti. Yeni RankBadge tasarim sistemine koprudur; mevcut
+// cagri yerleri (Leaderboard/PublicProfile/ProfileStats) degismeden yeni gorunumu alir.
+// size 'sm' -> compact ([icon] M2), 'md' -> standard ([icon] Master M2).
 export function DivisionChip({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
-  const { t } = useT()
-  const d = divisionOf(rating)
-  return (
-    <span className={`division-chip ${size}`} style={{ color: d.color }} title={t(d.key)}>
-      <Icon name={d.icon} size={size === 'sm' ? 13 : 15} />
-      {size !== 'sm' && <span className="dc-name">{t(d.key)}</span>}
-    </span>
-  )
+  return <RankBadge rating={rating} variant={size === 'sm' ? 'compact' : 'standard'} size={size} />
 }
 
 // Kazanilmis rozetler listesi (bos ise mesaj)

@@ -185,6 +185,55 @@
   --game-scene: #06090f; /* sahne dibi */
   --game-scene-glow: #0b1230; /* board arkasi hafif mavi hale */
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
+
+  /* ====== OYUNCU RÜTBE (RANK) TOKEN'LARI — DARK (esas) ======
+     Her aile icin foreground + accent (temayla degisen ANCHOR'lar); background /
+     border / icon bunlardan color-mix ile TÜRETİLİR (DRY; light'ta sadece
+     foreground+accent override edilir, digerleri otomatik doner). Terracotta
+     paletiyle uyumlu; dusuk aileler notr/sicak, ust aileler premium.
+     YASAK: neon, rainbow, kalin golge, gradient — sadece hue + kontrast. */
+  --rank-rookie-foreground: #b3ab9c;            --rank-rookie-accent: #c8c1b4;
+  --rank-novice-foreground: #a2b3a6;            --rank-novice-accent: #b9c6bb;
+  --rank-beginner-foreground: #c4a483;          --rank-beginner-accent: #d6bb9d;
+  --rank-developing-foreground: #d8a55f;        --rank-developing-accent: #e6bb7e;
+  --rank-intermediate-foreground: #8ea9c7;      --rank-intermediate-accent: #a9c0d8;
+  --rank-advanced-foreground: #92a3f1;          --rank-advanced-accent: #aab8f6;
+  --rank-master-foreground: #b797f3;            --rank-master-accent: #c9b1f7;
+  --rank-grandmaster-foreground: #dab265;       --rank-grandmaster-accent: #e7c98c;
+  --rank-super-grandmaster-foreground: #e37a61; --rank-super-grandmaster-accent: #e8bf6d;
+}
+
+/* Türetilen rank token'ları (icon/background/border) — TEK yerde tanımlı; her iki
+   temada da geçerli (foreground temaya göre değişince otomatik takip eder). */
+:root,
+:root[data-theme='light'] {
+  --rank-rookie-icon: var(--rank-rookie-foreground);
+  --rank-rookie-background: color-mix(in srgb, var(--rank-rookie-foreground) 12%, transparent);
+  --rank-rookie-border: color-mix(in srgb, var(--rank-rookie-foreground) 26%, transparent);
+  --rank-novice-icon: var(--rank-novice-foreground);
+  --rank-novice-background: color-mix(in srgb, var(--rank-novice-foreground) 12%, transparent);
+  --rank-novice-border: color-mix(in srgb, var(--rank-novice-foreground) 26%, transparent);
+  --rank-beginner-icon: var(--rank-beginner-foreground);
+  --rank-beginner-background: color-mix(in srgb, var(--rank-beginner-foreground) 12%, transparent);
+  --rank-beginner-border: color-mix(in srgb, var(--rank-beginner-foreground) 26%, transparent);
+  --rank-developing-icon: var(--rank-developing-foreground);
+  --rank-developing-background: color-mix(in srgb, var(--rank-developing-foreground) 12%, transparent);
+  --rank-developing-border: color-mix(in srgb, var(--rank-developing-foreground) 26%, transparent);
+  --rank-intermediate-icon: var(--rank-intermediate-foreground);
+  --rank-intermediate-background: color-mix(in srgb, var(--rank-intermediate-foreground) 12%, transparent);
+  --rank-intermediate-border: color-mix(in srgb, var(--rank-intermediate-foreground) 26%, transparent);
+  --rank-advanced-icon: var(--rank-advanced-foreground);
+  --rank-advanced-background: color-mix(in srgb, var(--rank-advanced-foreground) 12%, transparent);
+  --rank-advanced-border: color-mix(in srgb, var(--rank-advanced-foreground) 26%, transparent);
+  --rank-master-icon: var(--rank-master-foreground);
+  --rank-master-background: color-mix(in srgb, var(--rank-master-foreground) 12%, transparent);
+  --rank-master-border: color-mix(in srgb, var(--rank-master-foreground) 26%, transparent);
+  --rank-grandmaster-icon: var(--rank-grandmaster-foreground);
+  --rank-grandmaster-background: color-mix(in srgb, var(--rank-grandmaster-foreground) 12%, transparent);
+  --rank-grandmaster-border: color-mix(in srgb, var(--rank-grandmaster-foreground) 26%, transparent);
+  --rank-super-grandmaster-icon: var(--rank-super-grandmaster-foreground);
+  --rank-super-grandmaster-background: color-mix(in srgb, var(--rank-super-grandmaster-foreground) 13%, transparent);
+  --rank-super-grandmaster-border: color-mix(in srgb, var(--rank-super-grandmaster-foreground) 30%, transparent);
 }
 
 /* ===== TERRACOTTA (KREM/KIREMIT) — ESAS (LIGHT) TEMA =====
@@ -215,6 +264,19 @@
   --danger-fg: #b8443a;
   /* success METIN: acik zeminde okunur terracotta green */
   --success-fg: #2f7a5e;
+
+  /* ---- Rank ANCHOR'ları — LIGHT (krem/beyaz yüzey için koyulaştırılmış) ----
+     Yalnızca foreground+accent override; background/border/icon türetilmiş
+     token'lardan otomatik gelir. */
+  --rank-rookie-foreground: #7c7568;            --rank-rookie-accent: #6a6458;
+  --rank-novice-foreground: #6c8478;            --rank-novice-accent: #5c7365;
+  --rank-beginner-foreground: #9a6f4c;          --rank-beginner-accent: #855d3d;
+  --rank-developing-foreground: #b3792c;        --rank-developing-accent: #9a6620;
+  --rank-intermediate-foreground: #4d6e97;      --rank-intermediate-accent: #3d5c82;
+  --rank-advanced-foreground: #3f5bd0;          --rank-advanced-accent: #3147b0;
+  --rank-master-foreground: #6b4fc2;            --rank-master-accent: #573ba6;
+  --rank-grandmaster-foreground: #a5772a;       --rank-grandmaster-accent: #8c631d;
+  --rank-super-grandmaster-foreground: #b0402e; --rank-super-grandmaster-accent: #8f6a1c;
 }
 
 * {
@@ -9193,22 +9255,224 @@ button.stat-chip:hover {
 }
 
 /* ---- Lig/division + rozetler ---- */
-.division-chip {
+/* ============================ RANK BADGE ============================
+   Oyuncu rütbe rozeti. Tek tasarım ailesi; renk data-family ile --rank-*
+   token'larından, kontrast data-tier ile gelir. Flat: golge yok, gradient yok. */
+.rank-badge {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-weight: 800;
-  font-size: 0.85rem;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px 0 6px;
+  border-radius: 11px;
+  border: 1px solid var(--_border);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: var(--tv-font-ui);
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+  /* renk kancaları — data-family ile doldurulur */
+  --_fg: var(--muted);
+  --_accent: var(--muted);
+  --_bg: color-mix(in srgb, var(--muted) 10%, transparent);
+  --_border: color-mix(in srgb, var(--muted) 22%, transparent);
 }
-.division-chip.md {
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, currentColor 12%, transparent);
-  margin: 6px 0 2px;
+
+/* Aile → renk token'ları */
+.rank-badge[data-family='rookie']      { --_fg: var(--rank-rookie-foreground);            --_accent: var(--rank-rookie-accent);            --_bg: var(--rank-rookie-background);            --_border: var(--rank-rookie-border); }
+.rank-badge[data-family='novice']      { --_fg: var(--rank-novice-foreground);            --_accent: var(--rank-novice-accent);            --_bg: var(--rank-novice-background);            --_border: var(--rank-novice-border); }
+.rank-badge[data-family='beginner']    { --_fg: var(--rank-beginner-foreground);          --_accent: var(--rank-beginner-accent);          --_bg: var(--rank-beginner-background);          --_border: var(--rank-beginner-border); }
+.rank-badge[data-family='developing']  { --_fg: var(--rank-developing-foreground);        --_accent: var(--rank-developing-accent);        --_bg: var(--rank-developing-background);        --_border: var(--rank-developing-border); }
+.rank-badge[data-family='intermediate']{ --_fg: var(--rank-intermediate-foreground);      --_accent: var(--rank-intermediate-accent);      --_bg: var(--rank-intermediate-background);      --_border: var(--rank-intermediate-border); }
+.rank-badge[data-family='advanced']    { --_fg: var(--rank-advanced-foreground);          --_accent: var(--rank-advanced-accent);          --_bg: var(--rank-advanced-background);          --_border: var(--rank-advanced-border); }
+.rank-badge[data-family='master']      { --_fg: var(--rank-master-foreground);            --_accent: var(--rank-master-accent);            --_bg: var(--rank-master-background);            --_border: var(--rank-master-border); }
+.rank-badge[data-family='grandmaster'] { --_fg: var(--rank-grandmaster-foreground);       --_accent: var(--rank-grandmaster-accent);       --_bg: var(--rank-grandmaster-background);       --_border: var(--rank-grandmaster-border); }
+.rank-badge[data-family='superGrandmaster'] { --_fg: var(--rank-super-grandmaster-foreground); --_accent: var(--rank-super-grandmaster-accent); --_bg: var(--rank-super-grandmaster-background); --_border: var(--rank-super-grandmaster-border); }
+
+/* Aile içi kontrast: tier 3 (giriş) hafif · tier 1 (en güçlü) belirgin */
+.rank-badge[data-tier='3'] {
+  --_bg: color-mix(in srgb, var(--_fg) 8%, transparent);
+  --_border: color-mix(in srgb, var(--_fg) 18%, transparent);
 }
-.division-chip.sm {
+.rank-badge[data-tier='1'] {
+  --_bg: color-mix(in srgb, var(--_fg) 15%, transparent);
+  --_border: color-mix(in srgb, var(--_fg) 34%, transparent);
+}
+
+/* İkon konteyneri — çok hafif ayrı yüzey (24-28px) */
+.rank-badge__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
   flex: none;
+  border-radius: 8px;
+  color: var(--_fg);
+  background: color-mix(in srgb, var(--_fg) 12%, transparent);
 }
+.rank-badge[data-tier='1'] .rank-badge__icon,
+.rank-badge[data-special] .rank-badge__icon {
+  color: var(--_accent);
+  background: color-mix(in srgb, var(--_accent) 16%, transparent);
+}
+
+/* Metin bloğu */
+.rank-badge__text {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+.rank-badge__name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.005em;
+}
+.rank-badge__row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.rank-badge__code {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--_fg);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+.rank-badge__req {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Varyant: COMPACT ([icon] M2) ---- */
+.rank-badge[data-variant='compact'] {
+  height: 26px;
+  padding: 0 9px 0 4px;
+  gap: 6px;
+  border-radius: 9px;
+}
+.rank-badge[data-variant='compact'] .rank-badge__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+}
+.rank-badge[data-variant='compact'] .rank-badge__code {
+  font-size: 0.78rem;
+}
+
+/* ---- Varyant: STANDARD (satır: Master · M2) ---- */
+.rank-badge[data-variant='standard'] .rank-badge__text {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+}
+
+/* ---- Varyant: FEATURED (büyük ikon + ad + kod + eşik) ---- */
+.rank-badge[data-variant='featured'] {
+  height: auto;
+  padding: 10px 16px 10px 10px;
+  gap: 12px;
+  border-radius: 14px;
+}
+.rank-badge[data-variant='featured'] .rank-badge__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+}
+.rank-badge[data-variant='featured'] .rank-badge__name {
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+.rank-badge[data-variant='featured'] .rank-badge__code {
+  font-size: 0.9rem;
+}
+
+/* Zirve (Super Grandmaster S1) — SADECE featured'da çok hafif statik highlight */
+.rank-badge[data-apex][data-variant='featured'] {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--_accent) 34%, transparent),
+    0 0 0 3px color-mix(in srgb, var(--_accent) 8%, transparent);
+}
+
+/* Micro-interaction: çok hafif hover (scale yok) */
+@media (hover: hover) {
+  .rank-badge:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--_fg) 42%, transparent);
+    background: color-mix(in srgb, var(--_fg) 17%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rank-badge { transition: none; }
+  .rank-badge:hover { transform: none; }
+}
+
+/* ---- Showcase: Player Ranks tablosu (SADECE showcase düzeni) ---- */
+.sc-rank-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--card-bg);
+}
+.sc-rank-head,
+.sc-rank-row {
+  display: grid;
+  grid-template-columns: 64px 168px 1fr 1fr 1.4fr;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 16px;
+}
+.sc-rank-head {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  border-bottom: 1px solid var(--border);
+}
+.sc-rank-row + .sc-rank-row {
+  border-top: 1px solid var(--border);
+}
+.sc-rank-th {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.sc-rank-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.78rem;
+  color: var(--text);
+}
+.sc-rank-weight {
+  font-size: 0.66rem;
+  color: var(--muted);
+}
+.sc-rank-cell {
+  display: inline-flex;
+  align-items: center;
+}
+@media (max-width: 720px) {
+  .sc-rank-head { display: none; }
+  .sc-rank-row {
+    grid-template-columns: 1fr 1fr;
+    row-gap: 10px;
+  }
+  .sc-rank-row .sc-rank-cell:last-child { grid-column: 1 / -1; }
+}
+
 .badge-section {
   margin-top: 16px;
 }
