@@ -4148,9 +4148,14 @@ button[aria-disabled='true'],
 /* ---- Durum ---- */
 .status {
   text-align: center;
-  min-height: 22px;
-  margin-top: 6px;
+  /* Bos durumda (pvb, mesaj yok) yer kaplamasin -> board dikey tasip scrollbar
+     cikarmasin. Icerik (online mesaj/crawford) oldugunda kendiliginden buyur. */
+  min-height: 0;
+  margin-top: 0;
   color: var(--muted);
+}
+.status:not(:empty) {
+  margin-top: 6px;
 }
 .status .win {
   color: #ffd54a;
