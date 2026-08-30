@@ -3,8 +3,8 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
-import AvatarFrame from './AvatarFrame'
-import { DivisionChip, BadgeList } from './Badges'
+import PlayerIdentity from './PlayerIdentity'
+import { BadgeList } from './Badges'
 
 // Herkese acik oyuncu profili karti (liderlik/rakip isminden acilir)
 export default function PublicProfile({ id, onClose }: { id: number; onClose: () => void }) {
@@ -36,11 +36,15 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
         {p && (
           <>
             <div className="pp-head">
-              <AvatarFrame src={p.avatar} frame={p.frame} size={64} name={p.name} animated={true} />
-              <div className="pp-id">
-                <div className="pp-name">{p.name}</div>
-                <div className="pp-rank">{t('stats.rank', { r: p.rank, n: '' }).replace('/ ', '')}</div>
-              </div>
+              <PlayerIdentity
+                lg
+                name={p.name}
+                rating={p.rating}
+                avatar={p.avatar}
+                frame={p.frame}
+                size={64}
+                animated
+              />
               <div className="pp-rating">
                 {p.rating}
                 <div className="pp-coins">
@@ -48,8 +52,7 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
                 </div>
               </div>
             </div>
-
-            <DivisionChip rating={p.rating} />
+            <div className="pp-rank">{t('stats.rank', { r: p.rank, n: '' }).replace('/ ', '')}</div>
 
             <div className="pp-grid">
               <div className="pp-box">
