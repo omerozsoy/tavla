@@ -67,10 +67,11 @@ export default function MatchReport({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  // Analiz kapsami: varsayilan yalnizca kullanicinin hamleleri, istege gore iki taraf.
-  // humanColor yoksa (bot-vs-bot/izleyici) kapsam ayrimi anlamsiz -> hep 'all'.
-  const [scope, setScope] = useState<'mine' | 'all'>(humanColor ? 'mine' : 'all')
-  const inScope = (e: LogEntry) => scope === 'all' || !humanColor || e.player === humanColor
+  // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri.
+  // humanColor yoksa (bot-vs-bot/izleyici) ayrim anlamsiz -> hepsi gosterilir (toggle gizli).
+  const [scope, setScope] = useState<'mine' | 'opp'>('mine')
+  const inScope = (e: LogEntry) =>
+    !humanColor || (scope === 'mine' ? e.player === humanColor : e.player !== humanColor)
   // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
   const mistakes = log
     .map((e, i) => ({ e, i }))
@@ -235,10 +236,10 @@ export default function MatchReport({
                     {t('rep.scopeMine')}
                   </Button>
                   <Button
-                    variant={scope === 'all' ? 'secondary' : 'ghost'}
-                    onClick={() => setScope('all')}
+                    variant={scope === 'opp' ? 'secondary' : 'ghost'}
+                    onClick={() => setScope('opp')}
                   >
-                    {t('rep.scopeAll')}
+                    {t('rep.scopeOpp')}
                   </Button>
                 </div>
               )}
@@ -323,7 +324,9 @@ export default function MatchReport({
                                 <Icon name="star" size={13} />
                               </span>
                             )}
-                            {isPlayed && <Icon name="check" size={13} />}
+                            {isPlayed && (
+                              <span className="an-you-tag">{t('rep.yourMove')}</span>
+                            )}
                           </span>
                         </button>
                       )
