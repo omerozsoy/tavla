@@ -9094,12 +9094,44 @@ button.stat-chip:hover {
 .lb-name {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   min-width: 0;
+  font-weight: 600;
+}
+/* Ad ustte, ruthe adin ALTINDA ince altbaslik olarak */
+.lb-name-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.lb-name-main {
+  color: var(--text);
   font-weight: 600;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Altbaslik rozeti: kucuk + ince/kibar; renk yalniz hafif ikon aksani */
+.lb-name .rank-badge {
+  gap: 4px;
+}
+.lb-name .rank-badge__name {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.lb-name .rank-badge__code {
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.lb-name .rank-badge[data-variant='standard'] .rank-badge__text {
+  gap: 5px;
+}
+.lb-name .rank-badge__icon > svg {
+  width: 13px;
+  height: 13px;
 }
 .lb-avatar {
   width: 26px;
