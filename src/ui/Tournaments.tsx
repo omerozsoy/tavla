@@ -7,7 +7,6 @@ import {
   showTournament,
   joinTournament,
   reportTournament,
-  startTournament,
   type Tournament,
   type TMatch,
 } from '../api'
@@ -15,7 +14,6 @@ import { Button } from '@/components/ui/button'
 
 interface Props {
   myId: number | null
-  isAdmin: boolean
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
 }
@@ -57,7 +55,7 @@ function Countdown({ target, onExpire }: { target: string; onExpire?: () => void
   )
 }
 
-export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [list, setList] = useState<Tournament[]>([])
@@ -214,24 +212,7 @@ export default function Tournaments({ myId, isAdmin, onPlayMatch, onClose }: Pro
                   <b>{p.rating}</b>
                 </div>
               ))}
-              {isAdmin && (active.players?.length ?? 0) >= 2 ? (
-                <Button
-                  variant="default"
-                  disabled={busy}
-                  onClick={async () => {
-                    setBusy(true)
-                    try {
-                      setActive(await startTournament(active.id))
-                    } finally {
-                      setBusy(false)
-                    }
-                  }}
-                >
-                  <Icon name="play" size={16} /> {t('tourn.start')}
-                </Button>
-              ) : (
-                <div className="tourn-wait">{t('tourn.waitFull')}</div>
-              )}
+              <div className="tourn-wait">{t('tourn.waitFull')}</div>
             </div>
           ) : (
             <div className="tourn-bracket">
