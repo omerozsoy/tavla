@@ -136,3 +136,51 @@ export function rankByFamily(family: RankFamily, code?: string | null): RankTier
 export function rankByDivKey(key: string): RankTier | undefined {
   return BY_DIVKEY[key]
 }
+
+/** Bir kademenin bir üstü (yoksa undefined → zirve). */
+export function nextRank(tier: RankTier): RankTier | undefined {
+  const i = RANKS.findIndex((r) => r.divKey === tier.divKey)
+  return i >= 0 ? RANKS[i + 1] : undefined
+}
+
+/** Kademenin RANKS içindeki sırası (0-tabanlı). */
+export function rankIndex(tier: RankTier): number {
+  return RANKS.findIndex((r) => r.divKey === tier.divKey)
+}
+
+// ---- Görsel aileler (progression gruplaması) ----
+// 6 grup: entry (Rookie/Novice/Beginner/Developing tek çatı) + 5 alt-seviyeli aile.
+export type RankGroup =
+  | 'entry'
+  | 'intermediate'
+  | 'advanced'
+  | 'master'
+  | 'grandmaster'
+  | 'superGrandmaster'
+
+const ENTRY_FAMILIES: RankFamily[] = ['rookie', 'novice', 'beginner', 'developing']
+
+/** Aile → görsel grup. */
+export function groupOf(family: RankFamily): RankGroup {
+  return ENTRY_FAMILIES.includes(family) ? 'entry' : (family as RankGroup)
+}
+
+/** Grup → i18n etiket anahtarı (entry için 'div.entry', diğerleri aile adı). */
+export function groupLabelKey(group: RankGroup): string {
+  return group === 'entry' ? 'div.entry' : `div.${group}`
+}
+
+export interface RankGroupBlock {
+  group: RankGroup
+  labelKey: string
+  ranks: RankTier[]
+}
+
+// RANKS'ı sıralı gruplara böler (progression bileşeni bunu render eder).
+export const RANK_GROUPS: RankGroupBlock[] = RANKS.reduce<RankGroupBlock[]>((acc, r) => {
+  const g = groupOf(r.family)
+  const last = acc[acc.length - 1]
+  if (last && last.group === g) last.ranks.push(r)
+  else acc.push({ group: g, labelKey: groupLabelKey(g), ranks: [r] })
+  return acc
+}, [])

@@ -18,6 +18,7 @@ import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import AvatarFrame from './ui/AvatarFrame'
 import { DivisionChip, BadgeList } from './ui/Badges'
 import { RankBadge } from './ui/RankBadge'
+import { RankProgression } from './ui/RankProgression'
 import { RANKS } from './ranks'
 import DatePicker from './ui/DatePicker'
 import { RARITY_COLORS, type RarityKey } from './ui/rarityColors'
@@ -81,6 +82,7 @@ const SECTIONS = [
   ['tokens', '12 · Spacing · Radius · Shadow'],
   ['icons', '13 · Icons'],
   ['ranks', '14 · Player Ranks'],
+  ['rankprog', '15 · Rank Progression'],
 ]
 
 // ---- Kucuk yardimcilar (SADECE showcase duzeni; component kopyasi DEGIL) ----
@@ -722,6 +724,46 @@ function Showcase() {
             Phosphor pakedinde yok → en yakın semantik <code>Certificate</code> (tevcih edilmiş onur)
             kullanıldı. Zirve <strong>S1</strong> yalnızca featured'da çok hafif statik highlight alır.
           </p>
+        </section>
+
+        {/* 15 RANK PROGRESSION — dikey yolculuk infografiği */}
+        <section id="rankprog" className="sc-section">
+          <h2 className="sc-section-title">15 · Rank Progression</h2>
+          <p className="sc-note" style={{ marginTop: 0 }}>
+            <code>&lt;RankProgression currentRating={'{1550}'} /&gt;</code> — dikey yolculuk;
+            özet kart (mevcut → sonraki + kalan puan) + ölçülen omurga dolgusu +
+            completed/current/upcoming. Config <code>src/ranks.ts</code>, stil{' '}
+            <code>src/ui/RankProgression.css</code>. Kart yüzeyine yerleşir.
+          </p>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: 20,
+              alignItems: 'start',
+            }}
+          >
+            {[
+              { cap: 'currentRating = 1550 · Master M2', node: <RankProgression currentRating={1550} /> },
+              { cap: 'currentRating = 1712 · Super Grandmaster S3', node: <RankProgression currentRating={1712} /> },
+              { cap: 'compact · state yok (referans merdiven)', node: <RankProgression compact /> },
+            ].map((d) => (
+              <div
+                key={d.cap}
+                style={{
+                  background: 'var(--card-bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: 20,
+                }}
+              >
+                <span style={{ display: 'block', marginBottom: 14, fontSize: '0.72rem', fontWeight: 600, color: 'var(--muted)' }}>
+                  {d.cap}
+                </span>
+                {d.node}
+              </div>
+            ))}
+          </div>
         </section>
 
         <footer className="sc-footer">
