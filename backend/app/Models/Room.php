@@ -26,6 +26,7 @@ class Room extends Model
         'bet_pct',
         'target',
         'targets',
+        'mode',
         'settled',
         'p1_result',
         'p2_result',

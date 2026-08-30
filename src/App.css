@@ -6498,7 +6498,8 @@ button.stat-chip:hover {
 }
 .live-row {
   display: grid;
-  grid-template-columns: 1fr auto 1fr auto;
+  /* tip rozeti | p1 | vs | p2 | izle */
+  grid-template-columns: auto 1fr auto 1fr auto;
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
@@ -6521,6 +6522,25 @@ button.stat-chip:hover {
     border-color: var(--accent);
     background: color-mix(in srgb, var(--accent) 6%, var(--btn-bg));
   }
+}
+/* Canli mac tip rozeti: Mac Oyunu (ranked) vs Dostluk (friendly) */
+.lm-type {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.lm-type-ranked {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.lm-type-friendly {
+  color: var(--tv-green, #3f9e6a);
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 14%, transparent);
 }
 .lm-side {
   display: flex;

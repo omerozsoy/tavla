@@ -180,6 +180,9 @@ export function LiveMatchesPanel({
               className="live-row"
               onClick={() => onSpectate(m.code, m.p1_name, m.p2_name)}
             >
+              <span className={`lm-type lm-type-${m.mode ?? 'ranked'}`}>
+                {m.mode === 'friendly' ? t('live.friendly') : t('live.matchGame')}
+              </span>
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>
