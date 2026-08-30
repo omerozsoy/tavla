@@ -667,6 +667,10 @@ export default function App() {
     white: { loss: number; decisions: number }
     black: { loss: number; decisions: number }
   }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+  // PR'in EN GUNCEL degeri: mac-sonu raporu (async recordPR'lar report closure'undan
+  // SONRA bittigi icin) stale prStats yerine bu ref'ten okur -> kendi PR'im null dusmez.
+  const prStatsRef = useRef(prStats)
+  prStatsRef.current = prStats
   // Sans (luck): oyuncu-basi birikmis equity sansi (zarlarin sanslilik toplami)
   const [prLuck, setPrLuck] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
   const luckSigRef = useRef('') // ayni turda sansi iki kez saymayi engelle
@@ -1704,19 +1708,26 @@ export default function App() {
     // Bekleyen (async) hamle analizleri bitene kadar bekle (max ~1.5s) -> online analiz
     // log'u TAM kaydolsun (son hamleler kaybolmasin). Sonra en guncel log ile bildir.
     void (async () => {
-      for (let i = 0; i < 15 && pendingAnalysisRef.current > 0; i++) {
+      for (let i = 0; i < 30 && pendingAnalysisRef.current > 0; i++) {
         await new Promise((res) => setTimeout(res, 100))
+      }
+      // Son setPrStats'lerin flush olması için kısa bekleme; sonra EN GUNCEL prStatsRef'ten
+      // oku (rapor closure'undaki stale prStats degil) -> kendi PR'im "—" dusmesin.
+      await new Promise((res) => setTimeout(res, 200))
+      const prRef = (c: Player): number | null => {
+        const s = prStatsRef.current[c]
+        return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
       reportRating(
         won,
         oppRating,
         match.target,
-        prOf(myColor),
+        prRef(myColor),
         prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
         match.score[myColor],
         match.score[opponent(myColor)],
         room?.oppName ?? null,
-        prOf(opponent(myColor)),
+        prRef(opponent(myColor)),
         JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
         true, // ranked: online her zaman puanli
         stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
@@ -4225,7 +4236,17 @@ export default function App() {
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
           oppRating={mode === 'pvb' ? 900 + difficulty * 100 : (room?.oppRating ?? null)}
-          onRematch={() => (online ? handleMatchmake() : handleNewMatch(match.target, mode))}
+          onRematch={() => {
+            if (online) {
+              // Havuza OTOMATIK atma yok: odadan cik, Mac Oyunu kurulumuna don ->
+              // oyuncu ne oynayacagini KENDISI secsin (eslesme / arkadas daveti).
+              handleLeaveRoom()
+              setHome(false)
+              setSetup('online')
+            } else {
+              handleNewMatch(match.target, mode)
+            }
+          }}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
           hasReport={matchLog.length > 0}
