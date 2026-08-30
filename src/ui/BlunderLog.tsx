@@ -52,9 +52,18 @@ type Group = {
   items: (BlunderEntry & { _idx: number })[]
 }
 
-export default function BlunderLog({ onClose }: { onClose: () => void }) {
+export default function BlunderLog({
+  onClose,
+  embedded = false,
+}: {
+  onClose: () => void
+  embedded?: boolean // true: overlay/baslik yok — Hata Gunlugu "Tum hatalar" sekmesinin govdesi
+}) {
   const { t, lang } = useT()
-  useEscape(onClose)
+  // Embedded modda Escape'i ebeveyn (ErrorJournal) yonetir.
+  useEscape(() => {
+    if (!embedded) onClose()
+  })
   const [rows, setRows] = useState<BlunderEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
@@ -154,24 +163,27 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
     )
   }
 
-  return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card blunder-card" onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="modal-close"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          <Icon name="x" size={16} />
-        </Button>
-        <h2>
-          <Icon name="alert" size={20} /> {t('blunder.title')}
-        </h2>
-        <p className="register-sub">{t('blunder.sub')}</p>
+  const content = (
+    <>
+      {!embedded && (
+        <>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="modal-close"
+            onClick={onClose}
+            aria-label={t('common.close')}
+          >
+            <Icon name="x" size={16} />
+          </Button>
+          <h2>
+            <Icon name="alert" size={20} /> {t('blunder.title')}
+          </h2>
+          <p className="register-sub">{t('blunder.sub')}</p>
+        </>
+      )}
 
-        {loading ? (
+      {loading ? (
           <div className="admin-empty">{t('admin.loading')}</div>
         ) : error ? (
           <div className="admin-empty">
@@ -251,6 +263,14 @@ export default function BlunderLog({ onClose }: { onClose: () => void }) {
             ))}
           </>
         )}
+    </>
+  )
+
+  if (embedded) return <div className="bl-embedded">{content}</div>
+  return (
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card blunder-card" onClick={(e) => e.stopPropagation()}>
+        {content}
       </div>
     </div>
   )

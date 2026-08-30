@@ -84,7 +84,7 @@ import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import SoloStakes from './ui/SoloStakes'
-import BlunderLog from './ui/BlunderLog'
+import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
 import GamePreview from './ui/GamePreview'
 import ContentView from './ui/ContentView'
@@ -3670,7 +3670,7 @@ export default function App() {
           onClose={() => setSoloOpen(false)}
         />
       )}
-      {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
+      {blunderOpen && user && <ErrorJournal onClose={() => setBlunderOpen(false)} />}
       {matchHistOpen && user && (
         <MatchAnalytics
           myName={profile.nickname}

@@ -1,5 +1,6 @@
 // Laravel API istemcisi (token tabanli auth)
 import type { Profile } from './storage'
+import type { GameState, Step } from './engine/types'
 import { normalizeCountry } from './countries'
 
 const API_URL =
@@ -646,6 +647,70 @@ export async function saveBlunders(
 export async function finishTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/finish`, { method: 'POST' })
   return d.tournament
+}
+
+// ---- Hata Gunlugu (Error Journal) ----
+// Backend sunucu-taraflı analiz (17 kategori sınıflandırma + günlük toplama).
+// Frontend equity/PR/classification TEKRAR HESAPLAMAZ; bu ciktiyi gosterir.
+export type EJSeverity = 'inaccuracy' | 'mistake' | 'blunder'
+export type EJPeriod = 'today' | 'yesterday' | '7d' | '30d' | 'all'
+export interface EJCategoryStat {
+  category: string
+  decisions: number
+  errors: number
+  errorRate: number // 0..1
+  equityLoss: number
+}
+export interface EJSummary {
+  gamesAnalyzed: number
+  decisionsAnalyzed: number
+  totalErrors: number
+  inaccuracies: number
+  mistakes: number
+  blunders: number
+  totalEquityLoss: number
+  averageEquityLoss: number
+  categories: EJCategoryStat[]
+}
+export interface EJEntry {
+  id: string
+  matchId: string
+  playedAt: string | null
+  moveNumber: number
+  category: string
+  tags: string[]
+  severity: EJSeverity
+  equityLoss: number
+  playedMove: string | null
+  bestMove: string | null
+  playedEquity: number | null
+  bestEquity: number | null
+  dice: [number, number] | null
+  player: string | null
+  myPip: number | null
+  opponentPip: number | null
+  position: GameState | null
+  bestSteps: Step[]
+  playedSteps: Step[]
+  alternatives: { notation: string; equity: number }[]
+}
+export interface EJResponse {
+  period: string
+  from: string | null
+  to: string | null
+  summary: EJSummary
+  entries: EJEntry[]
+  categoryOrder: string[]
+  insights: { topWeakness: EJCategoryStat | null; biggestLoss: EJCategoryStat | null }
+}
+export async function errorJournal(
+  period: EJPeriod = 'today',
+  category?: string | null,
+  limit = 50,
+): Promise<EJResponse> {
+  const p = new URLSearchParams({ period, limit: String(limit) })
+  if (category) p.set('category', category)
+  return req<EJResponse>(`/me/error-journal?${p.toString()}`)
 }
 export async function startTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/start`, { method: 'POST' })
