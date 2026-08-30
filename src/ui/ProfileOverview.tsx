@@ -32,6 +32,7 @@ interface Props {
   ownedBoards: BoardOpt[]
   ownedFrames: AvatarFrameDef[]
   onEdit: () => void
+  onLogout?: () => void
   onClose: () => void
 }
 
@@ -55,6 +56,7 @@ export default function ProfileOverview({
   ownedBoards,
   ownedFrames,
   onEdit,
+  onLogout,
   onClose,
 }: Props) {
   const { t, lang } = useT()
@@ -115,9 +117,16 @@ export default function ProfileOverview({
                   </>
                 )}
               </div>
-              <Button variant="secondary" className="prof-ov-edit" onClick={onEdit}>
-                <Icon name="settings" size={16} /> {t('prof.editBtn')}
-              </Button>
+              <div className="prof-ov-actions">
+                <Button variant="secondary" className="prof-ov-edit" onClick={onEdit}>
+                  <Icon name="settings" size={16} /> {t('prof.editBtn')}
+                </Button>
+                {onLogout && (
+                  <Button variant="ghost" className="prof-ov-logout" onClick={onLogout}>
+                    <Icon name="logout" size={16} /> {t('auth.logout')}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
           {equipped && (

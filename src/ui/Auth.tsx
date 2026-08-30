@@ -52,7 +52,6 @@ interface Props {
   onGuest: (profile: Profile) => void
   onCancel?: () => void
   onDeleteAccount?: () => void // profil duzenlemede hesabi sil
-  onLogout?: () => void // profil duzenlemede cikis yap
   emailUnverified?: boolean // e-posta dogrulanmadi -> profilde uyari
   resendState?: 'idle' | 'sending' | 'sent'
   onResendVerification?: () => void
@@ -72,7 +71,6 @@ export default function Auth({
   onGuest,
   onCancel,
   onDeleteAccount,
-  onLogout,
   emailUnverified,
   resendState = 'idle',
   onResendVerification,
@@ -811,17 +809,11 @@ export default function Auth({
           </div>
         )}
 
-        {/* Hesap aksiyonlari: Cikis Yap ayri alan; Hesabi Sil Tehlikeli Bolge icinde */}
-        {editUser && profTab === 'info' && (onLogout || onDeleteAccount) && (
+        {/* Hesap aksiyonlari: Cikis Yap profil ust basligina tasindi (ProfileOverview);
+            burada yalniz Hesabi Sil (Tehlikeli Bolge). */}
+        {editUser && profTab === 'info' && onDeleteAccount && (
           <>
             <Separator className="my-6" />
-            {onLogout && (
-              <div className="flex justify-center">
-                <Button type="button" variant="outline" onClick={onLogout}>
-                  <Icon name="logout" size={16} /> {t('auth.logout')}
-                </Button>
-              </div>
-            )}
             {onDeleteAccount && (
               <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
                 <h3 className="text-sm font-semibold text-destructive">{danger.zone}</h3>

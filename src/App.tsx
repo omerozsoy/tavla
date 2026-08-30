@@ -3262,6 +3262,7 @@ export default function App() {
         ownedBoards={ownedBoards}
         ownedFrames={ownedFrames}
         onEdit={() => setProfileEditMode(true)}
+        onLogout={handleLogout}
         onClose={() => setEditProfile(false)}
       />
     ) : (
@@ -3270,7 +3271,6 @@ export default function App() {
         page
         editUser={user}
         editGuest={!user ? guestProfile : null}
-        onLogout={handleLogout}
         emailUnverified={!!user && !user.email_verified_at}
         resendState={resendState}
         onResendVerification={handleResendVerification}
@@ -3423,6 +3423,10 @@ export default function App() {
   // Menuden acilan TUM sayfa overlaylerini kapat (setup HARIC). Ayni anda page-host
   // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
   function closeMenuPages() {
+    // Tam-ekran overlay'ler: menu/logo navigasyonu bunlari da KAPATMALI yoksa ustte
+    // kalip sayfayi kilitler (auth/uyelik). Bkz [[menu-sayfa-kayit]].
+    setShowAuth(false)
+    setMemOpen(false)
     setLeaderboardOpen(false)
     setRanksOpen(false)
     setTournOpen(false)
