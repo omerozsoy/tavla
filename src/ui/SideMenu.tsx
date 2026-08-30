@@ -15,6 +15,7 @@ export interface SideMenuProps {
   onAiGame?: () => void
   onResume: () => void
   onLeaderboard: () => void
+  onRanks?: () => void
   onTournaments: () => void
   onShop: () => void
   onMembership?: () => void
@@ -121,6 +122,11 @@ export default function SideMenu(p: SideMenuProps) {
         <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} onClick={p.onLeaderboard}>
           <Icon name="crown" size={24} /> {t('menu.leaderboard')}
         </Button>
+        {p.onRanks && (
+          <Button variant="ghost" className={NAV} data-active={p.active === 'ranks' || undefined} onClick={p.onRanks}>
+            <Icon name="medal" size={24} /> {t('menu.ranks')}
+          </Button>
+        )}
         {p.loggedIn && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'friends' || undefined} onClick={p.onFriends}>
             <Icon name="users" size={24} /> {t('menu.friends')}
