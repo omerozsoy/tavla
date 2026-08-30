@@ -6854,6 +6854,86 @@ button.stat-chip:hover {
   color: var(--muted);
   font-weight: 700;
 }
+/* Canli geri sayim sayaci (open turnuva) — "Baslamasina 2g 04:12" */
+.tr-cd-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.tr-cd-lbl {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+.tr-cd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.tr-cd > svg {
+  color: currentColor;
+}
+.tr-cd.starting {
+  color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 14%, transparent);
+  border-color: color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+/* Tarih + odul kirilimi meta satiri */
+.tr-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+}
+.tr-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tr-date > svg {
+  color: var(--muted);
+}
+.tr-prizes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px 9px;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.tr-prizes > svg {
+  color: #e6b422;
+  flex: none;
+}
+.tr-prize-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  font-weight: 700;
+}
+.tr-prize-item + .tr-prize-item {
+  padding-left: 9px;
+  border-left: 1px solid var(--border);
+}
+.tr-prize-rank {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.72rem;
+}
 /* SAG blok: kac kisi katilmis (buyuk) + "Katilimci" etiketi + doluluk cubugu */
 .tr-side {
   flex: none;

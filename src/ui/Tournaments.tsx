@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { Countdown } from './Countdown'
 import PlayerIdentity from './PlayerIdentity'
 import {
   listTournaments,
@@ -19,42 +20,6 @@ interface Props {
   onClose: () => void
 }
 
-// Baslamaya kalan sureyi canli gosterir (her saniye). Sure bitince onExpire (bir kez).
-function Countdown({ target, onExpire }: { target: string; onExpire?: () => void }) {
-  const { t } = useT()
-  const [now, setNow] = useState(() => Date.now())
-  const fired = useRef(false)
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000)
-    return () => clearInterval(id)
-  }, [])
-  const ms = new Date(target).getTime() - now
-  useEffect(() => {
-    if (ms <= 0 && !fired.current) {
-      fired.current = true
-      onExpire?.()
-    }
-  }, [ms, onExpire])
-  if (ms <= 0) {
-    return (
-      <span className="tcard-cd starting">
-        <Icon name="clock" size={12} /> {t('tourn.starting')}
-      </span>
-    )
-  }
-  const s = Math.floor(ms / 1000)
-  const d = Math.floor(s / 86400)
-  const h = Math.floor((s % 86400) / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  const sec = s % 60
-  const p2 = (n: number) => String(n).padStart(2, '0')
-  const txt = d > 0 ? `${d}g ${p2(h)}:${p2(m)}` : h > 0 ? `${h}:${p2(m)}:${p2(sec)}` : `${m}:${p2(sec)}`
-  return (
-    <span className="tcard-cd">
-      <Icon name="clock" size={12} /> {txt}
-    </span>
-  )
-}
 
 export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
   const { t } = useT()
