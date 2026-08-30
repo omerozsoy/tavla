@@ -8328,6 +8328,11 @@ button.stat-chip:hover {
 }
 .analyzer-close {
   flex: none;
+}
+/* Legacy gorunum yalniz native <button>'a uygulanir; global <Button> (data-slot)
+   kullanildiginda STANDART buton kazanir (tutarlilik). Kod tabani kalibi:
+   .modal-close / .news-back / .guest-link ile ayni :not([data-slot]) guard'i. */
+.analyzer-close:not([data-slot]) {
   padding: 8px 16px;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill);
@@ -8337,7 +8342,7 @@ button.stat-chip:hover {
   font-weight: 700;
   font-size: 0.9rem;
 }
-.analyzer-close:hover {
+.analyzer-close:not([data-slot]):hover {
   border-color: var(--accent);
   color: var(--accent);
 }
