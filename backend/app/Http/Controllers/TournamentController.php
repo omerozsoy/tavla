@@ -514,7 +514,12 @@ class TournamentController extends Controller
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
             'prize_coins' => $t->prize_coins ?? 0,
             'prize_desc' => $t->prize_desc,
-            'prizes' => is_array($t->prizes) ? array_values($t->prizes) : [],
+            // coins int'e zorlanir: JSON'da string kalirsa frontend toplama '+' ile
+            // birbirine yapisip "0500025000..." gibi bozuk gosterir.
+            'prizes' => collect(is_array($t->prizes) ? $t->prizes : [])
+                ->map(fn ($p) => ['coins' => (int) ($p['coins'] ?? 0), 'desc' => $p['desc'] ?? null])
+                ->values()
+                ->all(),
             'entry_fee' => $t->entry_fee ?? 0,
             'register_until' => $t->register_until?->toIso8601String(),
             'starts_at' => $this->startsAt($t),
