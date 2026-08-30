@@ -223,9 +223,9 @@ import {
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 900 // zar atmadan once
-const BOT_MOVE_DELAY = 600 // dusunme (ilk tas oynanmadan once)
-const BOT_STEP_DELAY = 650 // her tas arasi
-const BOT_END_DELAY = 450 // son tastan sonra sira gecmeden once
+const BOT_MOVE_DELAY = 750 // dusunme (ilk tas oynanmadan once)
+const BOT_STEP_DELAY = 950 // her tas arasi (izleyenler tek tek gorebilsin diye yavas)
+const BOT_END_DELAY = 750 // son tastan sonra sira gecmeden once (son konum gorulsun)
 
 interface BotAnim {
   steps: Step[]
@@ -373,6 +373,7 @@ export default function App() {
   const cubeHintRef = useRef<CubeHint | null>(null) // karar aninda loglamak icin
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
+  const [botDance, setBotDance] = useState(false) // bot "hamle yok" -> popup 2sn gorunur, sonra gecer
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
   const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
@@ -1246,7 +1247,8 @@ export default function App() {
       timer = window.setTimeout(async () => {
         const moves = generateMoves(turnStart)
         if (hasNoMove(moves)) {
-          if (!cancelled) commitTurn([])
+          // Bot "hamle yok": hemen gecme -> popup 2sn gorunsun (botDance effect gecer)
+          if (!cancelled) setBotDance(true)
           return
         }
         let move: Move
@@ -1274,6 +1276,18 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBotTurn, gameEnd, matchOver, cubePending, botAnim, opening, diceRolled, played, turnStart, engine, match, turnsPlayed])
+
+  // ---- Bot "hamle yok" -> popup 2sn goster, sonra sirayi gec ----
+  useEffect(() => {
+    if (!botDance) return
+    setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
+    const timer = window.setTimeout(() => {
+      setBotDance(false)
+      commitTurn([])
+    }, 2000)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [botDance])
 
   // ---- Bot hamlesini tas tas oynat ----
   useEffect(() => {
@@ -1480,7 +1494,7 @@ export default function App() {
     // Tur basi + hic hamle yok -> otomatik "hamle yok" deyip gec
     if (played.length === 0 && hasNoMove(moves)) {
       setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
-      const timer = window.setTimeout(() => commitTurn([]), 1600)
+      const timer = window.setTimeout(() => commitTurn([]), 2000) // "hamle yok" 2sn ekranda kalsin
       return () => window.clearTimeout(timer)
     }
     // Tur basi + tek tam hamle -> komple oyna (otomatik onayli, mevcut davranis)
@@ -2796,7 +2810,8 @@ export default function App() {
   }
 
   // ---- Overlay icerikleri ----
-  const noMove = interactive && diceRolled && hasNoMove(generateMoves(turnStart))
+  // "hamle yok" popup: insan sirasinda VEYA bot dans ederken (izleyenler gorsun) goster
+  const noMove = (interactive || botDance) && diceRolled && hasNoMove(generateMoves(turnStart))
   const showRoll = interactive && !diceRolled
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
@@ -3656,7 +3671,13 @@ export default function App() {
         />
       )}
       {blunderOpen && user && <BlunderLog onClose={() => setBlunderOpen(false)} />}
-      {matchHistOpen && user && <MatchAnalytics onClose={() => setMatchHistOpen(false)} />}
+      {matchHistOpen && user && (
+        <MatchAnalytics
+          myName={profile.nickname}
+          myAvatar={profile.avatar ?? null}
+          onClose={() => setMatchHistOpen(false)}
+        />
+      )}
       {frameAnimOpen && (
         <Suspense fallback={null}>
           <CerceveAnim onClose={() => setFrameAnimOpen(false)} />

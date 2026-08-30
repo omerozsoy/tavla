@@ -4074,14 +4074,20 @@ button[aria-disabled='true'],
   font-weight: 700;
   color: #ffd54a;
 }
+/* Koyu modal kutusu -> alt yazi ACIK ton olmali (var(--muted) koyu kaliyordu, okunmuyordu) */
 .result-box .err-detail {
   font-size: 0.85rem;
-  color: var(--muted);
+  color: rgba(238, 242, 255, 0.72);
   margin-top: 4px;
+  line-height: 1.45;
 }
 .result-box.no-moves .result-title {
   color: #ffd54a;
   font-size: 1.4rem;
+}
+.result-box.no-moves .err-detail {
+  color: rgba(238, 242, 255, 0.82);
+  font-size: 0.9rem;
 }
 .nm-dice {
   justify-content: center;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -23,7 +23,19 @@ function fmtDate(iso?: string | null): string {
   return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
-export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
+// Isimden monogram (ilk harf, buyuk). Bos ise '?'.
+function initial(name?: string | null): string {
+  const c = (name ?? '').trim().charAt(0)
+  return c ? c.toUpperCase() : '?'
+}
+
+interface Props {
+  onClose: () => void
+  myName?: string
+  myAvatar?: string | null
+}
+
+export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
@@ -96,43 +108,85 @@ export default function MatchAnalytics({ onClose }: { onClose: () => void }) {
             {rows.map((m, i) => {
               const open = openIdx === i
               const hasScore = m.score_self != null && m.score_opp != null
+              const selfWon = hasScore ? m.score_self! > m.score_opp! : m.won
+              const oppWon = hasScore ? m.score_opp! > m.score_self! : !m.won
+              const oppName = m.opponent_name || t('mh.opponentFb')
+              const meName = myName || t('mh.you')
               return (
-                <div key={i} className={`mh-item ${m.won ? 'win' : 'loss'} ${open ? 'open' : ''}`}>
-                  <button className="mh-row" onClick={() => setOpenIdx(open ? null : i)}>
-                    <span className={`mh-badge ${m.won ? 'win' : 'loss'}`}>
-                      {m.won ? t('mh.win') : t('mh.loss')}
-                    </span>
-                    <div className="mh-main">
-                      <div className="mh-line1">
-                        <span className="mh-len">
-                          {hasScore && <b>{m.score_self}–{m.score_opp} · </b>}
+                <div
+                  key={i}
+                  className={`mh-item ${m.won ? 'win' : 'loss'} ${open ? 'open' : ''}`}
+                  style={{ ['--i']: i } as CSSProperties}
+                >
+                  <button
+                    type="button"
+                    className="mh-row"
+                    onClick={() => setOpenIdx(open ? null : i)}
+                    aria-expanded={open}
+                  >
+                    {/* Skorbord: rakip | skor | ben — en onemli bilgi hemen gorunur */}
+                    <div className="mh-board">
+                      {/* Rakip (sol) */}
+                      <div className={`mh-team mh-opp ${oppWon ? 'won' : ''}`}>
+                        <span className="mh-ava" aria-hidden="true">{initial(oppName)}</span>
+                        <span className="mh-info">
+                          <span className="mh-nm">{oppName}</span>
+                          <span className="mh-tags">
+                            {m.opponent_pr != null && (
+                              <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
+                            )}
+                            <span className="mh-elo">{m.opponent_rating}</span>
+                          </span>
+                        </span>
+                      </div>
+
+                      {/* Skor (orta) */}
+                      <div className="mh-vs">
+                        {hasScore ? (
+                          <span className="mh-score">
+                            <b className={oppWon ? 'w' : ''}>{m.score_opp}</b>
+                            <i>–</i>
+                            <b className={selfWon ? 'w' : ''}>{m.score_self}</b>
+                          </span>
+                        ) : (
+                          <span className="mh-score mh-score-vs">VS</span>
+                        )}
+                        <span className="mh-fmt">
                           {m.match_length && m.match_length > 0
                             ? t('mh.ptMatch', { n: m.match_length })
                             : t('mh.moneyGame')}
                         </span>
-                        <span className="mh-date">{fmtDate(m.created_at)}</span>
                       </div>
-                      <div className="mh-line2">
-                        <span className="mh-rating">
-                          <Icon name="star" size={13} /> {m.rating_before} → {m.rating_after}
-                          <b className={m.delta >= 0 ? 'good' : 'bad'}>
-                            {' '}
-                            {m.delta >= 0 ? '+' : ''}
-                            {m.delta}
-                          </b>
-                        </span>
-                        <span className="mh-vs">
-                          vs <b>{m.opponent_name || `#${m.opponent_rating}`}</b> ({m.opponent_rating})
-                        </span>
-                        {m.pr != null && (
-                          <span className={`mh-pr ${prCls(m.pr)}`}>
-                            PR {m.pr.toFixed(1)}
-                            {m.opponent_pr != null && <> / {m.opponent_pr.toFixed(1)}</>}
+
+                      {/* Ben (sag) */}
+                      <div className={`mh-team mh-me ${selfWon ? 'won' : ''}`}>
+                        <span className="mh-info">
+                          <span className="mh-nm">{meName}</span>
+                          <span className="mh-tags">
+                            {m.pr != null && (
+                              <span className={`mh-prc ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
+                            )}
+                            <span className="mh-elo">{m.rating_after}</span>
                           </span>
-                        )}
+                        </span>
+                        <span className="mh-ava mh-ava-me" aria-hidden="true">
+                          {myAvatar ? <img src={myAvatar} alt="" /> : initial(meName)}
+                        </span>
                       </div>
                     </div>
-                    <Icon name="chevron" size={16} className={open ? 'chev-open' : ''} />
+
+                    {/* Alt serit: sonuc · tarih · rating degisimi · genislet */}
+                    <div className="mh-foot">
+                      <span className={`mh-out ${m.won ? 'win' : 'loss'}`}>
+                        {m.won ? t('mh.win') : t('mh.loss')}
+                      </span>
+                      <span className="mh-date">{fmtDate(m.created_at)}</span>
+                      <span className={`mh-delta ${m.delta >= 0 ? 'good' : 'bad'}`}>
+                        <Icon name="star" size={12} /> {m.rating_after}
+                        <b>{' '}{m.delta >= 0 ? '+' : ''}{m.delta}</b>
+                      </span>
+                      <Icon name="chevron" size={16} className={`mh-chev ${open ? 'chev-open' : ''}`} />
+                    </div>
                   </button>
                   {open && (
                     <div className="mh-detail">
