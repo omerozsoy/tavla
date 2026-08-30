@@ -9096,15 +9096,35 @@ button.stat-chip:hover {
   display: flex;
   align-items: center;
   gap: 7px;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
   font-weight: 700;
   font-size: 0.95rem;
   color: var(--text);
+  text-align: left;
 }
-.wxp-bd-head > svg {
+.wxp-bd-head > svg:first-child {
   color: var(--accent);
+  flex: none;
+}
+.wxp-bd-title {
+  flex: 1;
+}
+/* Chevron: kapali asagi, acik yukari (180 donus) */
+.wxp-bd-chev {
+  flex: none;
+  color: var(--muted);
+  transition: transform 200ms var(--ease-out, ease);
+}
+.wxp-bd.open .wxp-bd-chev {
+  transform: rotate(180deg);
 }
 .wxp-bd-desc {
-  margin: 6px 0 10px;
+  margin: 8px 0 10px;
   font-size: 0.82rem;
   line-height: 1.5;
   color: var(--muted);

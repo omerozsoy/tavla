@@ -3306,7 +3306,7 @@ export default function App() {
         <AvatarFrame
           src={profile.avatar}
           frame={user?.avatar_frame}
-          size={34}
+          size={28}
           name={profile.nickname}
           className="account-avf"
         />

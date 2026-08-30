@@ -22,6 +22,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
   const [profileId, setProfileId] = useState<number | null>(null)
   const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
+  const [wxpOpen, setWxpOpen] = useState(false) // "WXP nasil hesaplanir?" varsayilan kapali
 
   useEffect(() => {
     let alive = true
@@ -106,12 +107,21 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         </div>
 
         {by === 'wxp' && (
-          <div className="wxp-bd">
-            <div className="wxp-bd-head">
-              <Icon name="trophy" size={15} /> {t('wxpbd.title')}
-            </div>
-            <p className="wxp-bd-desc">{t('wxpbd.desc')}</p>
-            {wxpInfo && (
+          <div className={`wxp-bd ${wxpOpen ? 'open' : ''}`}>
+            <button
+              type="button"
+              className="wxp-bd-head"
+              onClick={() => setWxpOpen((o) => !o)}
+              aria-expanded={wxpOpen}
+            >
+              <Icon name="trophy" size={15} />
+              <span className="wxp-bd-title">{t('wxpbd.title')}</span>
+              <Icon name="chevron" size={16} className="wxp-bd-chev" />
+            </button>
+            {wxpOpen && (
+              <>
+                <p className="wxp-bd-desc">{t('wxpbd.desc')}</p>
+                {wxpInfo && (
               <div className="wxp-bd-grid">
                 <div className="wxp-bd-row wxp-bd-hrow">
                   <span className="wxp-bd-cat">{t('wxpbd.category')}</span>
@@ -133,6 +143,8 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                   <span className="wxp-bd-sum">{wxpInfo.total}</span>
                 </div>
               </div>
+                )}
+              </>
             )}
           </div>
         )}
