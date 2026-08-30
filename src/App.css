@@ -2616,6 +2616,11 @@ button[aria-disabled='true'],
   overflow-y: auto;
   z-index: 50;
 }
+/* Oyun ekraninda SOL menu yoktur -> 218px bosluk koyu oyun zeminini gosteriyordu.
+   Oyun-view icindeki menu sayfasi tam genisligi kaplasin (siyah serit kalmasin). */
+.game-view .register-overlay.page {
+  left: 0;
+}
 /* NOT: sadece sayfanin KENDI karti; sayfa icinde acilan nested modal overlay'ler
    (.register-overlay) bu kurali MIRAS ALMASIN -> yoksa scrim 1400px'e sikisir +
    sag tarafta gri bosluk olur (bkz [[modal-backdrop-kapat-tuzagi]]). */
