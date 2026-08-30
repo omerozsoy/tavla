@@ -166,8 +166,10 @@
   --player-panel-w: clamp(150px, 12.5vw, 188px); /* dar oyuncu paneli */
   --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
-     520px lump = sol menu + panel + saat + bosluklar icin ayrilan yatay alan. */
-  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 44px), calc((100vw - 548px) / 1.3)));
+     Dikey pay: header + ust/alt point-numarasi seritleri (24+24+gap ~54px) + app
+     padding -> ~78px (yoksa board 100dvh'yi ~26px asip sagda dikey scrollbar cikar).
+     548px lump = sol menu + panel + saat + bosluklar icin ayrilan yatay alan. */
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 86px), calc((100vw - 548px) / 1.3)));
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
@@ -1419,15 +1421,20 @@ button[aria-disabled='true'],
   overflow: visible;
 }
 .mh-card .mh-row {
+  width: 100%;
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
   grid-template-columns: none;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  padding: 12px 14px;
   font-size: inherit;
   background: none;
   border: none;
   color: inherit;
+  cursor: pointer;
+  text-align: left;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 }
 .mh-item {
   flex: none;
@@ -1565,6 +1572,266 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 3px;
+}
+
+/* ===== Mac Analizleri — SKORBORD satiri (emil) =====
+   En onemli bilgi hemen gorunur: rakip (PR) — skor — ben (PR). 3 kolon skorbord
+   ustte, altta ince serit (sonuc · tarih · rating degisimi · genislet). */
+.mh-card .mh-item {
+  transition:
+    transform 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    border-color 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
+    box-shadow 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+  animation: mh-in 360ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)) both;
+  animation-delay: calc(var(--i, 0) * 40ms);
+}
+@keyframes mh-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .mh-card .mh-item:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--tv-brick, #c9563f) 42%, var(--border));
+    box-shadow: 0 8px 20px -12px color-mix(in srgb, var(--tv-brick, #c9563f) 55%, transparent);
+  }
+}
+.mh-card .mh-row:active {
+  transform: scale(0.997);
+}
+.mh-card .mh-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tv-brick, #c9563f) 55%, transparent);
+  border-radius: var(--radius-sm);
+}
+
+/* --- Skorbord (rakip | skor | ben) --- */
+.mh-card .mh-board {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+}
+.mh-card .mh-team {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.mh-card .mh-me {
+  justify-content: flex-end;
+}
+.mh-card .mh-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.mh-card .mh-me .mh-info {
+  align-items: flex-end;
+  text-align: right;
+}
+.mh-card .mh-nm {
+  font-family: var(--tv-font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mh-card .mh-tags {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.mh-card .mh-me .mh-tags {
+  justify-content: flex-end;
+}
+.mh-card .mh-prc {
+  font-weight: 800;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.mh-card .mh-prc.good {
+  color: var(--success-fg, #4caf7d);
+  background: color-mix(in srgb, var(--success-fg, #4caf7d) 14%, transparent);
+  border-color: color-mix(in srgb, var(--success-fg, #4caf7d) 30%, transparent);
+}
+.mh-card .mh-prc.ok {
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  border-color: var(--border);
+}
+.mh-card .mh-prc.bad {
+  color: var(--tv-brick, #c9563f);
+  background: color-mix(in srgb, var(--tv-brick, #c9563f) 12%, transparent);
+  border-color: color-mix(in srgb, var(--tv-brick, #c9563f) 28%, transparent);
+}
+.mh-card .mh-elo {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.mh-card .mh-ava {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--tv-font-display);
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text);
+  background: color-mix(in srgb, var(--muted) 16%, transparent);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.mh-card .mh-ava img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mh-card .mh-team.won .mh-ava {
+  border-color: color-mix(in srgb, var(--gold, #e6b422) 55%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold, #e6b422) 20%, transparent);
+}
+/* --- Orta: skor --- */
+.mh-card .mh-vs {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: none;
+  padding: 0 6px;
+}
+.mh-card .mh-score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--tv-font-display);
+  font-weight: 800;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.mh-card .mh-score i {
+  font-style: normal;
+  color: var(--border);
+  font-weight: 600;
+}
+.mh-card .mh-score b {
+  color: var(--muted);
+  transition: color 160ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.mh-card .mh-score b.w {
+  color: var(--text);
+}
+.mh-card .mh-score-vs {
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.mh-card .mh-fmt {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+/* --- Alt serit --- */
+.mh-card .mh-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+.mh-card .mh-out {
+  flex: none;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  color: #fff;
+}
+.mh-card .mh-out.win {
+  background: var(--success-fg, #4caf7d);
+}
+.mh-card .mh-out.loss {
+  background: var(--tv-brick, #c9563f);
+}
+.mh-card .mh-foot .mh-date {
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.mh-card .mh-delta {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.mh-card .mh-delta b {
+  font-weight: 800;
+}
+.mh-card .mh-delta.good b {
+  color: var(--success-fg, #4caf7d);
+}
+.mh-card .mh-delta.bad b {
+  color: var(--tv-brick, #c9563f);
+}
+.mh-card .mh-chev {
+  flex: none;
+  color: var(--muted);
+  transition: transform 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+.mh-card .mh-chev.chev-open {
+  transform: rotate(180deg);
+}
+@media (max-width: 560px) {
+  .mh-card .mh-ava {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+  }
+  .mh-card .mh-nm {
+    font-size: 0.9rem;
+  }
+  .mh-card .mh-score {
+    font-size: 1.25rem;
+  }
+  .mh-card .mh-team {
+    gap: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mh-card .mh-item,
+  .mh-card .mh-chev,
+  .mh-card .mh-score b {
+    animation: none;
+    transition: none;
+  }
+  .mh-card .mh-item:hover {
+    transform: none;
+  }
 }
 /* ===== Hata Gunlugu (Blunder Log) — editorial kart grid =====
    Ic scroll YOK: sayfanin kendi scroll'u kullanilir (nested scroll region,
@@ -3186,16 +3453,29 @@ button[aria-disabled='true'],
 /* Duz renk + ince kenar + hafif kontak golgesi. Gradient/glow/kalin ring yok.
    Kenar tanimi, pul ile ayni tonda zemin olan temalarda (kulup boardlari)
    taslarin okunmasina yardim eder. */
+/* Cift-ton halka: ic kenar + ZIT dis hairline (0 0 0 1px) -> tas hangi zeminde
+   olursa olsun (mor/altin/koyu bar) net okunur. Renk degismez, sadece kontur. */
 .checker.white {
   background: var(--cream);
-  border: 2px solid rgba(0, 0, 0, 0.22);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  border: 2px solid rgba(0, 0, 0, 0.32);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 1px 3px rgba(0, 0, 0, 0.32);
 }
 .checker.black {
   background: var(--navy);
-  /* Koyu pullar ust-uste dizilince / ayni tonda zeminde ayrisim icin acik hairline */
-  border: 2px solid rgba(255, 255, 255, 0.22);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  /* Acik ic hairline + koyu dis halka: koyu/mor zeminde belirgin ayrisim */
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Kirik tas (bar'daki vurulmus tas) en koyu alanda (orta bar) durur -> zor
+   secilir. Ekstra kalin/belirgin halka ile net ayristir (renk degismez). */
+.bar-checkers .checker.black {
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.bar-checkers .checker.white {
+  border-color: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.34), 0 2px 4px rgba(0, 0, 0, 0.45);
 }
 
 /* Kulup (takim) boardlari: pullar zeminle ayni tonda kalabiliyordu -> ince GUMUS/
