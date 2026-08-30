@@ -71,6 +71,9 @@ export default function BoardSettings({
   useEscape(embed ? () => {} : onClose)
   // Ayarlar sekmeleri: genel (tema/pip/analiz/ogrenme) | tahta rengi | avatar cercevesi
   const [tab, setTab] = useState<'general' | 'board' | 'frame'>('general')
+  // Ayarlar zaten anlik uygulanip localStorage'a yazilir; "Kaydet" sayfayi KAPATMAZ
+  // (eskiden onClose -> ana sayfaya atiyordu). Sadece kisa "Kaydedildi" onayi gosterir.
+  const [saved, setSaved] = useState(false)
   return (
     <div
       className={embed ? 'settings-embed' : 'register-overlay modal page'}
@@ -264,8 +267,16 @@ export default function BoardSettings({
         {tab === 'frame' && framesSlot}
 
         {!embed && (
-          <Button type="button" variant="default" className="bs-save" onClick={onClose}>
-            <Icon name="check" size={18} /> {t('settings.save')}
+          <Button
+            type="button"
+            variant="default"
+            className="bs-save"
+            onClick={() => {
+              setSaved(true)
+              window.setTimeout(() => setSaved(false), 1600)
+            }}
+          >
+            <Icon name="check" size={18} /> {saved ? t('settings.saved') : t('settings.save')}
           </Button>
         )}
       </div>
