@@ -14,8 +14,9 @@ const COL_W = HALF_W / 6
 const R = COL_W * 0.43 // tas yaricapi (cap ~= sutunun %86'si)
 const STEP = R * 1.95 // istif adimi (ust uste binme yok)
 const TRI_H = COL_W * 3.4 // kisa+genis ucgen
-const TOP_Y = R + 3 // taslar board kenarina daha yakin otursun (havada durmasin)
-const BOT_Y = H - (R + 3)
+const NUM_H = 12 // ust/alt hane-numarasi (1-24) seridi
+const TOP_Y = NUM_H + R + 3 // taslar numara seridinin altina otursun (havada durmasin)
+const BOT_Y = H - NUM_H - (R + 3)
 
 // Ok renkleri: parlak cekirdek + koyu casing (kenarlik). Casing sayesinde
 // ok HANGI tema/board olursa olsun (sicak kiremit ya da koyu galaxy) gorunur;
@@ -77,7 +78,7 @@ export default function MiniBoard({
       tris.push(
         <polygon
           key={idx}
-          points={`${cx - COL_W / 2 + 1},0 ${cx + COL_W / 2 - 1},0 ${cx},${TRI_H}`}
+          points={`${cx - COL_W / 2 + 1},${NUM_H} ${cx + COL_W / 2 - 1},${NUM_H} ${cx},${NUM_H + TRI_H}`}
           fill={shade}
           opacity="0.7"
         />,
@@ -86,7 +87,7 @@ export default function MiniBoard({
       tris.push(
         <polygon
           key={idx}
-          points={`${cx - COL_W / 2 + 1},${H} ${cx + COL_W / 2 - 1},${H} ${cx},${H - TRI_H}`}
+          points={`${cx - COL_W / 2 + 1},${H - NUM_H} ${cx + COL_W / 2 - 1},${H - NUM_H} ${cx},${H - NUM_H - TRI_H}`}
           fill={shade}
           opacity="0.7"
         />,
@@ -211,6 +212,29 @@ export default function MiniBoard({
         })()
       : null
 
+  // Hane numaralari (1-24) — hamle notasyonuyla AYNI: oyuncu perspektifi
+  // (white: idx+1, black: 24-idx; bkz engine/notation.ts locName). Ust/alt kenar
+  // seritlerinde, oyun alaninin disinda; boylece taslarla cakismaz.
+  const nums = []
+  for (let idx = 0; idx < 24; idx++) {
+    const l = L[idx]
+    const num = player === 'white' ? idx + 1 : 24 - idx
+    const y = l.row === 'top' ? NUM_H - 3.5 : H - NUM_H + 8.5
+    nums.push(
+      <text
+        key={`n${idx}`}
+        x={colX(l.col)}
+        y={y}
+        fontSize={8.5}
+        fontWeight={600}
+        textAnchor="middle"
+        fill="var(--mini-num, rgba(255,255,255,0.6))"
+      >
+        {num}
+      </text>,
+    )
+  }
+
   return (
     <svg className="mini-board" viewBox={`0 0 ${W} ${H}`} width="100%">
       <defs>
@@ -233,20 +257,26 @@ export default function MiniBoard({
             strokeLinejoin="round"
           />
         </marker>
+        {/* Yuvarlak kose: tum board icerigi yuvarlatilmis dikdortgene kirpilir */}
+        <clipPath id="mbClip">
+          <rect x="0" y="0" width={W} height={H} rx="12" />
+        </clipPath>
       </defs>
       {/* flip: 180 donus DEGIL — layout dikey-ayna ile secildi (Board.tsx ile ayni).
           Boylece siyah oyuncu (SEN) altta gorunur ve hamle yonu ana tahtayla tutarli. */}
-      <g>
-        <rect x="0" y="0" width={W} height={H} rx="8" fill="var(--panel)" />
-        {/* orta bar */}
-        <rect x={HALF_W} y="0" width={BAR_W} height={H} fill="var(--bar)" />
+      <g clipPath="url(#mbClip)">
+        <rect x="0" y="0" width={W} height={H} rx="12" fill="var(--panel)" />
+        {/* orta bar (numara seritleri disinda) */}
+        <rect x={HALF_W} y={NUM_H} width={BAR_W} height={H - 2 * NUM_H} fill="var(--bar)" />
         {/* bear-off */}
-        <rect x={USABLE_W} y="0" width={OFF_W} height={H} fill="var(--bar)" />
+        <rect x={USABLE_W} y={NUM_H} width={OFF_W} height={H - 2 * NUM_H} fill="var(--bar)" />
         {tris}
         {discs}
         {dieEls}
         {arrows}
       </g>
+      {/* hane numaralari — kirpma DISINDA, ust/alt kenar seritlerinde */}
+      {nums}
     </svg>
   )
 }

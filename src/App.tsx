@@ -3210,6 +3210,16 @@ export default function App() {
   // Ucretli plan aktif mi (premium ozellik kilidi)
   const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
 
+  // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
+  // kullaniciyi uyelik ekranina yonlendir (menu zaten gate'li; bu URL bypass'ini kapatir).
+  // premium user'dan senkron turedigi icin premium kullanici deep-link'te engellenmez.
+  useEffect(() => {
+    if (blunderOpen && user && !premium) {
+      setBlunderOpen(false)
+      setMemOpen(true)
+    }
+  }, [blunderOpen, user, premium])
+
   // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
   const boardUnlocks = user?.unlocks ?? []
   const boardOwned = (id: string) => FREE_BOARDS.has(id) || boardUnlocks.includes('theme.' + id)
@@ -3670,7 +3680,7 @@ export default function App() {
           onClose={() => setSoloOpen(false)}
         />
       )}
-      {blunderOpen && user && <ErrorJournal onClose={() => setBlunderOpen(false)} />}
+      {blunderOpen && user && premium && <ErrorJournal onClose={() => setBlunderOpen(false)} />}
       {matchHistOpen && user && (
         <MatchAnalytics
           myName={profile.nickname}
