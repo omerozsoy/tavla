@@ -11422,9 +11422,16 @@ button.stat-chip:hover {
   border-radius: 50%;
   background: var(--muted);
 }
-.prof-ov-edit {
+.prof-ov-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   align-self: flex-start;
   margin-top: 6px;
+}
+.prof-ov-edit {
+  align-self: flex-start;
 }
 .prof-ov-board {
   display: flex;
