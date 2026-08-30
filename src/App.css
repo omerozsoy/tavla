@@ -11695,12 +11695,16 @@ button.stat-chip:hover {
 }
 .tourn-prow {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  padding: 5px 2px;
+  gap: 10px;
+  padding: 8px 2px;
   border-bottom: 1px solid var(--border);
 }
 .tourn-prow b {
+  flex: none;
   color: var(--success-fg);
+  font-variant-numeric: tabular-nums;
 }
 .tourn-wait {
   color: var(--muted);

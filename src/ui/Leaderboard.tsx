@@ -71,7 +71,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             avatar={r.avatar}
             frame={r.frame}
             size={30}
-            rankSize={by === 'rating' ? 'md' : 'sm'}
+            rankSize="md"
           />
         </span>
         <span className="lb-games">
