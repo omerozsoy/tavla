@@ -1013,6 +1013,21 @@ export async function performanceStats(period: MedianFilter = 'all'): Promise<Pe
   return req<PerformanceStats>(`/me/performance-stats?period=${period}`)
 }
 
+// WXP kategori kirilimi (yalniz kendi): coin/1/3/5/7 -> kazanilan mac + mac basina WXP + toplam.
+export interface WxpBreakdownCat {
+  key: string // 'coin' | '1' | '3' | '5' | '7'
+  wins: number
+  per: number // mac basina WXP
+  wxp: number // kategori toplam WXP
+}
+export interface WxpBreakdown {
+  total: number
+  categories: WxpBreakdownCat[]
+}
+export async function wxpBreakdown(): Promise<WxpBreakdown> {
+  return req<WxpBreakdown>('/me/wxp-breakdown')
+}
+
 // Bir macin tam analiz log'u (JSON string; { hc, log } yapisi). Yoksa null.
 export async function matchLogById(id: number): Promise<string | null> {
   const data = await req<{ log: string | null }>(`/me/matches/${id}/log`)

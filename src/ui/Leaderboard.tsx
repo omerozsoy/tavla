@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { leaderboard, type LeaderRow } from '../api'
+import { leaderboard, wxpBreakdown, type LeaderRow, type WxpBreakdown } from '../api'
 import AvatarFrame from './AvatarFrame'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
@@ -21,6 +21,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const [error, setError] = useState(false)
   const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
   const [profileId, setProfileId] = useState<number | null>(null)
+  const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -35,9 +36,26 @@ export default function Leaderboard({ currentName, onClose }: Props) {
     }
   }, [by])
 
+  // WXP sekmesi: kendi WXP kirilimini getir (yalniz giris yapmis kullanici)
+  useEffect(() => {
+    if (by !== 'wxp' || !currentName) {
+      setWxpInfo(null)
+      return
+    }
+    let alive = true
+    wxpBreakdown()
+      .then((w) => alive && setWxpInfo(w))
+      .catch(() => alive && setWxpInfo(null))
+    return () => {
+      alive = false
+    }
+  }, [by, currentName])
+
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
+  const wxpCatLabel = (key: string) => (key === 'coin' ? t('wxpbd.coin') : `${key} ${t('wxpbd.point')}`)
 
   const renderRow = (r: LeaderRow) => {
+    const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
     const mine = currentName && r.name === currentName
     return (
       <div
@@ -60,6 +78,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           <span className="lb-slash">/</span>
           <span className="lb-loss">{r.losses}</span>
         </span>
+        <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
         <span className="lb-rating">
           {by === 'coins' ? (r.coins ?? 0) : by === 'wxp' ? (r.wxp ?? 0) : r.rating}
         </span>
@@ -75,16 +94,48 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         </Button>
         <h2><Icon name="trophy" size={20} /> {t('lb.title')}</h2>
         <div className="rep-filter">
-          <Button variant={by === 'rating' ? 'secondary' : 'ghost'} onClick={() => setBy('rating')}>
+          <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}
           </Button>
-          <Button variant={by === 'coins' ? 'secondary' : 'ghost'} onClick={() => setBy('coins')}>
+          <Button variant={by === 'coins' ? 'default' : 'ghost'} aria-pressed={by === 'coins'} onClick={() => setBy('coins')}>
             <Icon name="coin" size={16} /> {t('lb.byCoins')}
           </Button>
-          <Button variant={by === 'wxp' ? 'secondary' : 'ghost'} onClick={() => setBy('wxp')}>
+          <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
             <Icon name="trophy" size={16} /> {t('lb.byWxp')}
           </Button>
         </div>
+
+        {by === 'wxp' && (
+          <div className="wxp-bd">
+            <div className="wxp-bd-head">
+              <Icon name="trophy" size={15} /> {t('wxpbd.title')}
+            </div>
+            <p className="wxp-bd-desc">{t('wxpbd.desc')}</p>
+            {wxpInfo && (
+              <div className="wxp-bd-grid">
+                <div className="wxp-bd-row wxp-bd-hrow">
+                  <span className="wxp-bd-cat">{t('wxpbd.category')}</span>
+                  <span className="wxp-bd-calc">{t('wxpbd.calc')}</span>
+                  <span className="wxp-bd-sum">WXP</span>
+                </div>
+                {wxpInfo.categories.map((c) => (
+                  <div key={c.key} className={`wxp-bd-row ${c.wins === 0 ? 'zero' : ''}`}>
+                    <span className="wxp-bd-cat">{wxpCatLabel(c.key)}</span>
+                    <span className="wxp-bd-calc">
+                      {c.wins} <em>{t('wxpbd.wins')}</em> × {c.per}
+                    </span>
+                    <span className="wxp-bd-sum">{c.wxp}</span>
+                  </div>
+                ))}
+                <div className="wxp-bd-row wxp-bd-total">
+                  <span className="wxp-bd-cat">{t('wxpbd.total')}</span>
+                  <span className="wxp-bd-calc" />
+                  <span className="wxp-bd-sum">{wxpInfo.total}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
         {!error && rows === null && (
@@ -94,6 +145,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
+              <span className="lb-wr">{t('lb.winRate')}</span>
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
@@ -108,6 +160,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                   </span>
                   <span className="lb-games"><Skeleton w={36} h={12} /></span>
                   <span className="lb-wl"><Skeleton w={40} h={12} /></span>
+                  <span className="lb-wr"><Skeleton w={28} h={12} /></span>
                   <span className="lb-rating"><Skeleton w={36} h={12} /></span>
                 </div>
               ))}
@@ -125,6 +178,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-name">{t('lb.player')}</span>
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
+              <span className="lb-wr">{t('lb.winRate')}</span>
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>

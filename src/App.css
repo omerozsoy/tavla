@@ -8979,8 +8979,8 @@ button.stat-chip:hover {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu | Maç | G/M | deger */
-  grid-template-columns: 40px 1fr 72px 78px 64px;
+  /* # | oyuncu | Maç | G/M | % | deger */
+  grid-template-columns: 38px 1fr 66px 74px 48px 62px;
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
@@ -9056,7 +9056,8 @@ button.stat-chip:hover {
   font-weight: 700;
 }
 .lb-games,
-.lb-wl {
+.lb-wl,
+.lb-wr {
   text-align: center;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -9082,6 +9083,87 @@ button.stat-chip:hover {
 .lb-wl .lb-slash {
   color: var(--muted);
   font-weight: 400;
+}
+/* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
+.wxp-bd {
+  margin: 4px 0 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card-bg));
+}
+.wxp-bd-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.wxp-bd-head > svg {
+  color: var(--accent);
+}
+.wxp-bd-desc {
+  margin: 6px 0 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.wxp-bd-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.wxp-bd-row {
+  display: grid;
+  grid-template-columns: 1fr auto 56px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm, 6px);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+}
+.wxp-bd-row:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.wxp-bd-hrow {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  font-weight: 700;
+  background: none !important;
+}
+.wxp-bd-cat {
+  font-weight: 600;
+  color: var(--text);
+}
+.wxp-bd-calc {
+  color: var(--muted);
+  text-align: right;
+}
+.wxp-bd-calc > em {
+  font-style: normal;
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+.wxp-bd-sum {
+  text-align: right;
+  font-weight: 800;
+  color: var(--accent);
+}
+.wxp-bd-row.zero {
+  opacity: 0.5;
+}
+.wxp-bd-total {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  font-weight: 800;
+}
+.wxp-bd-total .wxp-bd-sum {
+  font-size: 1rem;
 }
 .lb-rating {
   text-align: right;

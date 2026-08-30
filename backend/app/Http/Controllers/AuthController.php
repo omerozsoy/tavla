@@ -610,6 +610,44 @@ class AuthController extends Controller
         ]);
     }
 
+    // WXP kirilimi (yalniz kendi): ledger'dan kategori bazli WXP nasil olustu.
+    // Kural: coin galibiyeti +1; N-puanlik mac galibiyeti +N (desteklenen: 1,3,5,7).
+    // Her kategori: kazanilan mac sayisi (wins), mac basina WXP (per), toplam WXP (wxp).
+    public function wxpBreakdown(Request $request)
+    {
+        $me = $request->user();
+        $txs = \App\Models\UserWxpTransaction::where('user_id', $me->id)
+            ->where('source', \App\Services\WxpService::SOURCE_MATCH_WIN)
+            ->get(['amount', 'metadata']);
+
+        // Sabit kategori sirasi: coin, 1, 3, 5, 7 (hepsi gorunur; 0 olsa da)
+        $cats = ['coin' => ['wins' => 0, 'wxp' => 0, 'per' => \App\Support\StatsConfig::WXP_COIN]];
+        foreach (\App\Support\StatsConfig::WXP_SUPPORTED_LENGTHS as $L) {
+            $cats[(string) $L] = ['wins' => 0, 'wxp' => 0, 'per' => $L];
+        }
+
+        foreach ($txs as $tx) {
+            $m = $tx->metadata ?? [];
+            $type = $m['match_type'] ?? \App\Support\StatsConfig::MATCH_TYPE_MATCH;
+            $key = \App\Support\StatsConfig::categoryKey($type, $m['match_length'] ?? null);
+            if ($key === null || ! isset($cats[$key])) {
+                continue;
+            }
+            $cats[$key]['wins']++;
+            $cats[$key]['wxp'] += (int) $tx->amount;
+        }
+
+        $categories = [];
+        foreach ($cats as $key => $c) {
+            $categories[] = ['key' => $key, 'wins' => $c['wins'], 'per' => $c['per'], 'wxp' => $c['wxp']];
+        }
+
+        return response()->json([
+            'total' => (int) array_sum(array_column($categories, 'wxp')),
+            'categories' => $categories,
+        ]);
+    }
+
     // Profil performans istatistikleri (tek endpoint): Medyan Hata Orani + WXP/G/M/Kaz%.
     // period: all|7d|30d|90d|1y (median tarih filtresi). Yalnizca kendi (/me) verisi.
     public function performanceStats(Request $request)
