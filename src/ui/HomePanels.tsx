@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow, type Tournament } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
 
 // Canli mac tipi: Arkadaslik (puansiz) | Puan Maci (N-puan) | Tek Mac (1 oyun)
@@ -315,7 +316,7 @@ export function TournamentsPanel({
   tourns: Tournament[]
   onOpen: () => void
 }) {
-  const { t } = useT()
+  const { t, lang } = useT()
   if (tourns.length === 0) return null
   return (
     <div className="home-panel tourn-panel">
@@ -327,9 +328,24 @@ export function TournamentsPanel({
         {tourns.map((tr) => {
           const full = tr.count >= tr.size
           const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
-          // 1.lik odulu: prizes tablosu varsa ilk sira, yoksa prize_coins (eski)
-          const topPrize = tr.prizes && tr.prizes.length > 0 ? tr.prizes[0].coins : tr.prize_coins ?? 0
-          const prizeCount = tr.prizes?.length ?? 0
+          // Odul tablosu: prizes varsa ilk 3 sira (1./2./3.), yoksa eski prize_coins
+          const prizeList =
+            tr.prizes && tr.prizes.length > 0
+              ? tr.prizes.slice(0, 3)
+              : tr.prize_coins
+                ? [{ coins: tr.prize_coins }]
+                : []
+          const moreP = (tr.prizes?.length ?? 0) - prizeList.length
+          // Tarih: baslama zamani (yoksa gizli). Dile gore biciml.
+          const dateText = tr.starts_at
+            ? new Date(tr.starts_at).toLocaleString(lang === 'tr' ? 'tr-TR' : lang, {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : null
           return (
             <button key={tr.id} className="tourn-row" onClick={onOpen}>
               <span className="tr-main">
@@ -338,13 +354,36 @@ export function TournamentsPanel({
                   <span className={`tr-status tr-status-${tr.status}`}>
                     {t(`tourn.status.${tr.status}`)}
                   </span>
-                  {!!topPrize && (
-                    <span className="tr-prize" title={t('tourn.prizePool')}>
-                      <Icon name="coin" size={13} /> {topPrize.toLocaleString('tr-TR')}
-                      {prizeCount > 1 && <span className="tr-prize-more">+{prizeCount - 1}</span>}
+                  {/* Guzel canli sayac (open + baslama zamani varsa) */}
+                  {tr.status === 'open' && tr.starts_at && (
+                    <span className="tr-cd-wrap">
+                      <span className="tr-cd-lbl">{t('tourn.startsIn')}</span>
+                      <Countdown target={tr.starts_at} className="tr-cd" />
                     </span>
                   )}
                 </span>
+                {/* Tarih + odul kirilimi */}
+                {(dateText || prizeList.length > 0) && (
+                  <span className="tr-meta">
+                    {dateText && (
+                      <span className="tr-date">
+                        <Icon name="calendar" size={13} /> {dateText}
+                      </span>
+                    )}
+                    {prizeList.length > 0 && (
+                      <span className="tr-prizes" title={t('tourn.prizePool')}>
+                        <Icon name="trophy" size={13} />
+                        {prizeList.map((p, i) => (
+                          <span key={i} className="tr-prize-item">
+                            <b className="tr-prize-rank">{i + 1}.</b>{' '}
+                            {p.coins.toLocaleString('tr-TR')}
+                          </span>
+                        ))}
+                        {moreP > 0 && <span className="tr-prize-more">+{moreP}</span>}
+                      </span>
+                    )}
+                  </span>
+                )}
               </span>
               {/* SAG: kac kisi katilmis (buyuk) + etiket + doluluk cubugu */}
               <span className="tr-side">
