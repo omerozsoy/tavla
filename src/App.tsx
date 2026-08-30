@@ -477,6 +477,18 @@ export default function App() {
                                         ? 'yapay-zeka'
                                         : ''
 
+  // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
+  // kullaniciyi uyelik ekranina yonlendir (menu zaten gate'li; bu URL bypass'ini kapatir).
+  // NOT: bu hook ust hook bolgesinde (erken-return'lerden ONCE) durmali — sabit sira;
+  // premium'u user'dan inline turetir ki gec tanimlanan `premium` const'una baglanmasin.
+  useEffect(() => {
+    const isPrem = user?.plan_active === 'star' || user?.plan_active === 'starpro'
+    if (blunderOpen && user && !isPrem) {
+      setBlunderOpen(false)
+      setMemOpen(true)
+    }
+  }, [blunderOpen, user])
+
   // URL yolu -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
   // Temiz path kullanilir (SEO): /yapay-zeka  (hash # yok)
   useEffect(() => {
@@ -3209,16 +3221,6 @@ export default function App() {
   const authModal = showAuth ? <Auth key="auth" page {...authProps} /> : null
   // Ucretli plan aktif mi (premium ozellik kilidi)
   const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
-
-  // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
-  // kullaniciyi uyelik ekranina yonlendir (menu zaten gate'li; bu URL bypass'ini kapatir).
-  // premium user'dan senkron turedigi icin premium kullanici deep-link'te engellenmez.
-  useEffect(() => {
-    if (blunderOpen && user && !premium) {
-      setBlunderOpen(false)
-      setMemOpen(true)
-    }
-  }, [blunderOpen, user, premium])
 
   // Tahta tema listesi: nadirlik bazli COIN fiyati + sahiplik (unlocks). Ucretsiz: standart/tavla/galaxy + kulup.
   const boardUnlocks = user?.unlocks ?? []
