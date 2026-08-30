@@ -73,7 +73,6 @@ import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
-import AdminBoardPicker from './ui/AdminBoardPicker'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
 import { Icon } from './ui/Icon'
@@ -222,10 +221,10 @@ import {
 } from './boardThemes'
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
-const BOT_ROLL_DELAY = 900 // zar atmadan once
-const BOT_MOVE_DELAY = 750 // dusunme (ilk tas oynanmadan once)
-const BOT_STEP_DELAY = 950 // her tas arasi (izleyenler tek tek gorebilsin diye yavas)
-const BOT_END_DELAY = 750 // son tastan sonra sira gecmeden once (son konum gorulsun)
+const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
+const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar okunabilsin)
+const BOT_STEP_DELAY = 1050 // her tas arasi (bear-off/toplama dahil tek tek izlenebilsin)
+const BOT_END_DELAY = 1200 // son tastan sonra sira gecmeden once (~1sn ara: sira aniden gecmesin)
 
 interface BotAnim {
   steps: Step[]
@@ -374,6 +373,8 @@ export default function App() {
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [botDance, setBotDance] = useState(false) // bot "hamle yok" -> popup 2sn gorunur, sonra gecer
+  // "Hamle yok" merkezi banner (pvb'de status mesaji gizli -> rakip/ben gele atinca gorunur)
+  const [noMoveFlash, setNoMoveFlash] = useState<string | null>(null)
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
   const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
@@ -1280,11 +1281,14 @@ export default function App() {
   // ---- Bot "hamle yok" -> popup 2sn goster, sonra sirayi gec ----
   useEffect(() => {
     if (!botDance) return
-    setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
+    const name = pName(turnStart.turn)
+    setMessage(t('msg.noMovePass', { name }))
+    setNoMoveFlash(name) // pvb'de status gizli -> merkezi banner ile goster
     const timer = window.setTimeout(() => {
+      setNoMoveFlash(null)
       setBotDance(false)
       commitTurn([])
-    }, 2000)
+    }, 2100)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [botDance])
@@ -1493,8 +1497,13 @@ export default function App() {
     const moves = generateMoves(cur)
     // Tur basi + hic hamle yok -> otomatik "hamle yok" deyip gec
     if (played.length === 0 && hasNoMove(moves)) {
-      setMessage(t('msg.noMovePass', { name: pName(turnStart.turn) }))
-      const timer = window.setTimeout(() => commitTurn([]), 2000) // "hamle yok" 2sn ekranda kalsin
+      const name = pName(turnStart.turn)
+      setMessage(t('msg.noMovePass', { name }))
+      setNoMoveFlash(name) // pvb'de status gizli -> merkezi banner ile goster
+      const timer = window.setTimeout(() => {
+        setNoMoveFlash(null)
+        commitTurn([])
+      }, 2100) // "hamle yok" ~2sn ekranda kalsin
       return () => window.clearTimeout(timer)
     }
     // Tur basi + tek tam hamle -> komple oyna (otomatik onayli, mevcut davranis)
@@ -1512,7 +1521,7 @@ export default function App() {
     const onlyStep = moves.map((m) => m.steps[0]).find(Boolean)
     if (firstKeys.size === 1 && onlyStep) {
       setMessage(t('msg.forcedAuto'))
-      const timer = window.setTimeout(() => playSteps([onlyStep]), 900)
+      const timer = window.setTimeout(() => playSteps([onlyStep]), 1250)
       return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3342,20 +3351,7 @@ export default function App() {
           <Icon name="shop" size={15} /> {t('shop.title')}
         </Button>
       )}
-      {user ? (
-        <>
-          {user.is_admin && (
-            <Button
-              variant="outline"
-              onClick={() =>
-                window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank')
-              }
-            >
-              <Icon name="crown" size={14} /> {t('menu.admin')}
-            </Button>
-          )}
-        </>
-      ) : (
+      {!user && (
         <Button variant="default" onClick={() => setShowAuth(true)}>
           {t('account.auth')}
         </Button>
@@ -3494,9 +3490,6 @@ export default function App() {
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: openSettings,
     onInstall: handleInstall,
-    isAdmin: !!user?.is_admin,
-    onAdmin: () =>
-      window.open('/admin/enter?token=' + encodeURIComponent(getToken() ?? ''), '_blank'),
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
 
@@ -3658,7 +3651,6 @@ export default function App() {
       {tournOpen && (
         <Tournaments
           myId={user?.id ?? null}
-          isAdmin={!!user?.is_admin}
           onPlayMatch={handlePlayTournamentMatch}
           onClose={() => setTournOpen(false)}
         />
@@ -4022,10 +4014,6 @@ export default function App() {
       >
         <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
       </button>
-      {/* Yonetici test araci: AI'ya karsi oyunda tum tahtalari canli dene (sag ust) */}
-      {user?.is_admin && mode === 'pvb' && (
-        <AdminBoardPicker boardTheme={boardTheme} setBoardTheme={setBoardTheme} />
-      )}
       {showHintUI && (learnMode || hintShown) && curBest && (
         <div className={`hint-box ${learnMode ? 'learn' : ''}`}>
           <div className="hint-head">
@@ -4131,6 +4119,12 @@ export default function App() {
             lastError={lastError}
             boardState={analysisBoard}
           />
+        )}
+        {noMoveFlash && (
+          <div className="board-nomove" role="status" aria-live="polite">
+            <Icon name="warning-circle" size={18} />
+            {t('msg.noMovePass', { name: noMoveFlash })}
+          </div>
         )}
       </div>
 
