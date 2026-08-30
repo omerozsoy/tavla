@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import PlayerIdentity from './PlayerIdentity'
 import {
   listTournaments,
   showTournament,
@@ -208,7 +209,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
               <h3>{t('tourn.players')}</h3>
               {active.players?.map((p) => (
                 <div key={p.id} className="tourn-prow">
-                  <span>{p.name}</span>
+                  <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" />
                   <b>{p.rating}</b>
                 </div>
               ))}

@@ -285,7 +285,7 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="sm" />
+                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" />
               </span>
               <span className="rank-val">
                 {by === 'coins' ? (
