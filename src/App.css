@@ -9415,6 +9415,54 @@ button.stat-chip:hover {
   .rank-badge:hover { transform: none; }
 }
 
+/* ---- Emil sadelestirme: satir-ici rozet (standard + compact) ----
+   Liderlik/liste baglaminda dolu renkli pill "cok" duruyordu. Restraint:
+   pill zemini/kenarligi + ikon kare yuzeyi KALDIRILDI. Renk yalniz ikon + kod
+   aksani; ad sakin (--text, 500). Hiyerarsi tipografi+tek aksanla kurulur. */
+.rank-badge[data-variant='standard'],
+.rank-badge[data-variant='compact'] {
+  height: auto;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+  gap: 5px;
+}
+.rank-badge[data-variant='standard'] .rank-badge__icon,
+.rank-badge[data-variant='compact'] .rank-badge__icon,
+.rank-badge[data-variant='standard'][data-tier='1'] .rank-badge__icon,
+.rank-badge[data-variant='compact'][data-tier='1'] .rank-badge__icon,
+.rank-badge[data-variant='standard'][data-special] .rank-badge__icon,
+.rank-badge[data-variant='compact'][data-special] .rank-badge__icon {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  color: var(--_fg);
+}
+.rank-badge[data-variant='standard'][data-tier='1'] .rank-badge__icon,
+.rank-badge[data-variant='standard'][data-special] .rank-badge__icon {
+  color: var(--_accent);
+}
+.rank-badge[data-variant='standard'] .rank-badge__name {
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.rank-badge[data-variant='standard'] .rank-badge__code,
+.rank-badge[data-variant='compact'] .rank-badge__code {
+  color: var(--_fg);
+  font-weight: 600;
+}
+/* Satir-ici rozet hover'da loud zemin ekleMEsin (satirin kendi hover'i var) */
+@media (hover: hover) {
+  .rank-badge[data-variant='standard']:hover,
+  .rank-badge[data-variant='compact']:hover {
+    transform: none;
+    background: none;
+    border-color: transparent;
+  }
+}
+
 /* ---- Showcase: Player Ranks tablosu (SADECE showcase düzeni) ---- */
 .sc-rank-list {
   display: flex;
