@@ -171,14 +171,20 @@ export default function MiniBoard({
           strokeLinecap="round"
           markerEnd="url(#mbArrow)"
         />
-        <circle cx={from.x} cy={from.y} r={R * 0.9} fill={ARROW} stroke={ARROW_EDGE} strokeWidth={1.2} />
+        {/* kucuk altin rozet: altindaki beyaz pul gorunur kalsin diye disk ufaltildi;
+            numara koyu konturlu altin -> hem beyaz pul hem koyu zemin uzerinde okunur */}
+        <circle cx={from.x} cy={from.y} r={R * 0.42} fill={ARROW_EDGE} opacity={0.55} />
         <text
           x={from.x}
-          y={from.y + R * 0.36}
-          fontSize={R * 1.15}
-          fontWeight="800"
+          y={from.y + R * 0.3}
+          fontSize={R * 0.86}
+          fontWeight="900"
           textAnchor="middle"
-          fill={ARROW_EDGE}
+          fill={ARROW}
+          stroke={ARROW_EDGE}
+          strokeWidth={R * 0.09}
+          paintOrder="stroke"
+          style={{ strokeLinejoin: 'round' }}
         >
           {i + 1}
         </text>
