@@ -152,23 +152,21 @@ export default function BoardSettings({
         <div className="setup-row">
           <div className="setup-label">{t('settings.moveAnim')}</div>
           <div className="menu-targets move-anim-opts">
-            <Button
-              variant={moveStyle === 'off' ? 'secondary' : 'ghost'}
-              onClick={() => setMoveStyle('off')}
-            >
-              {t('settings.move.off')}
-            </Button>
-            {MOVE_STYLES.map((m) => (
+            {(['off', ...MOVE_STYLES] as MoveStyle[]).map((m) => (
               <Button
                 key={m}
                 variant={moveStyle === m ? 'secondary' : 'ghost'}
+                className={moveStyle === m ? 'move-opt-active' : ''}
+                aria-pressed={moveStyle === m}
                 onClick={() => setMoveStyle(m)}
               >
-                {t('settings.move.' + m)}
+                {moveStyle === m && <Icon name="check" size={14} />} {t('settings.move.' + m)}
               </Button>
             ))}
           </div>
-          <p className="setup-note">{t('settings.moveNote')}</p>
+          <p className="setup-note">
+            <b>{t('settings.moveCurrent')}: {t('settings.move.' + moveStyle)}</b> · {t('settings.moveNote')}
+          </p>
         </div>
 
         {/* Oyun ayarlari (pip/analiz/ogrenme) — tahta grid'inin USTUNDE, kolay erisim */}

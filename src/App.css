@@ -2743,6 +2743,11 @@ button[aria-disabled='true'],
   grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
   gap: 5px;
 }
+/* Tas hareketi secici: aktif secim tartismasiz belli (aksan halka) */
+.move-anim-opts .move-opt-active {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
 .menu-targets .menu-btn {
   text-align: center;
   padding: 8px 0;
