@@ -83,6 +83,7 @@ export default function BoardSettings({
       >
         {!embed && (
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             className="modal-close"
@@ -134,12 +135,14 @@ export default function BoardSettings({
           <div className="setup-label">{t('menu.theme')}</div>
           <div className="menu-targets">
             <Button
+              type="button"
               variant={theme === 'dark' ? 'secondary' : 'ghost'}
               onClick={() => setTheme('dark')}
             >
               <Icon name="moon" size={16} /> {t('theme.dark')}
             </Button>
             <Button
+              type="button"
               variant={theme === 'light' ? 'secondary' : 'ghost'}
               onClick={() => setTheme('light')}
             >
@@ -155,6 +158,7 @@ export default function BoardSettings({
             {(['off', ...MOVE_STYLES] as MoveStyle[]).map((m) => (
               <Button
                 key={m}
+                type="button"
                 variant={moveStyle === m ? 'secondary' : 'ghost'}
                 className={moveStyle === m ? 'move-opt-active' : ''}
                 aria-pressed={moveStyle === m}
@@ -170,11 +174,12 @@ export default function BoardSettings({
         </div>
 
         {/* Oyun ayarlari (pip/analiz/ogrenme) — tahta grid'inin USTUNDE, kolay erisim */}
-        <button className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
+        <button type="button" className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
           <span>{t('setup.pip')}</span>
           <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
         </button>
         <button
+          type="button"
           className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
           onClick={() => setShowAnalysis(!showAnalysis)}
         >
@@ -182,6 +187,7 @@ export default function BoardSettings({
           <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
         </button>
         <button
+          type="button"
           className={`setup-toggle ${learnMode ? 'on' : ''}`}
           onClick={() => setLearnMode(!learnMode)}
         >
@@ -217,6 +223,7 @@ export default function BoardSettings({
                     return (
                       <button
                         key={bt.id}
+                        type="button"
                         className={`board-prev ${boardTheme === bt.id ? 'active' : ''} ${buyable ? 'locked' : ''}`}
                         style={{ ['--rarity-color']: RARITY_COLOR[tier] } as CSSProperties}
                         disabled={buyable && !affordable}
@@ -257,7 +264,7 @@ export default function BoardSettings({
         {tab === 'frame' && framesSlot}
 
         {!embed && (
-          <Button variant="default" className="bs-save" onClick={onClose}>
+          <Button type="button" variant="default" className="bs-save" onClick={onClose}>
             <Icon name="check" size={18} /> {t('settings.save')}
           </Button>
         )}

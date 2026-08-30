@@ -3352,7 +3352,7 @@ export default function App() {
         className="[&_svg]:size-[24px]!"
         title={t('menu.settings')}
         aria-label={t('menu.settings')}
-        onClick={() => goPage(() => setBoardSettingsOpen(true))}
+        onClick={() => openSettings()}
       >
         <Icon name="settings" size={24} />
       </Button>
@@ -3424,6 +3424,14 @@ export default function App() {
     closeAllPages()
     open()
   }
+  // Ayarlar TAM-EKRAN overlay (register-overlay modal) -> alttaki baglami (home/kurulum/
+  // acik sayfa) KAPATMAYA gerek yok. goPage'in closeAllPages'i cagirilsaydi kurulum ekrani
+  // (setup) silinir, kaydedip kapatinca geri donecek yer kalmaz -> ANA SAYFAYA duserdi.
+  // closeAllPages CAGIRMADAN ac: kapaninca acildigi yere (kurulum/sayfa) geri doner.
+  const openSettings = () => {
+    if (!home && !setup && hasActiveGame) return // aktif oyunu bolme (goPage ile ayni koruma)
+    setBoardSettingsOpen(true)
+  }
 
   // Ortak menu callback'leri (ana sayfa + oyun ekrani ayni menu)
   const menuProps = {
@@ -3469,7 +3477,7 @@ export default function App() {
     onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
-    onBoardSettings: () => goPage(() => setBoardSettingsOpen(true)),
+    onBoardSettings: openSettings,
     onInstall: handleInstall,
     isAdmin: !!user?.is_admin,
     onAdmin: () =>
@@ -3972,7 +3980,8 @@ export default function App() {
   return (
     <div className="app game-view">
       {accountBar}
-      {inFinalCountdown && (
+      {/* Menu sayfasi (turnuvalar vb.) acikken oyunun geri sayim overlay'i arkadan sizmasin */}
+      {inFinalCountdown && !anyPageOpen && (
         <div className="final-countdown" aria-live="assertive">
           <div className="fc-num">{activeBank}</div>
           <div className="fc-label">{t('clock.finalWarn')}</div>
