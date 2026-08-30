@@ -25,7 +25,7 @@ export interface RankProgressionProps {
 }
 
 export function RankProgression({ currentRating, compact = false, className }: RankProgressionProps) {
-  const { t } = useT()
+  const { t, lang } = useT()
   const trackRef = useRef<HTMLDivElement>(null)
   const currentRef = useRef<HTMLLIElement>(null)
   const [fill, setFill] = useState(0)
@@ -96,7 +96,10 @@ export function RankProgression({ currentRating, compact = false, className }: R
                 {t(current.familyKey)}
                 {current.code && <b className="rank-prog__sum-code">{current.code}</b>}
               </span>
-              <span className="rank-prog__sum-meta">{current.min}+</span>
+              {/* Eşik değil, kullanıcının GERÇEK güncel puanı (başlıktaki gibi) */}
+              <span className="rank-prog__sum-meta">
+                {(currentRating as number).toLocaleString(lang === 'tr' ? 'tr-TR' : undefined)}
+              </span>
             </div>
             <div className="rank-prog__sum-side rank-prog__sum-side--next">
               {next ? (
