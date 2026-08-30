@@ -101,13 +101,9 @@ class TournamentController extends Controller
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
         }
-        $t = $tournament->fresh();
-        // Sabit boyut dolduysa otomatik basla (sinirsizda admin elle baslatir)
-        if ($t->size > 0 && count($t->players) >= $t->size) {
-            $this->startBracket($t);
-            $t = $t->fresh();
-        }
-        return response()->json(['tournament' => $this->full($t)]);
+        // Turnuva DOLUNCA baslamaz; yalnizca son katilim tarihi + 1dk gecince
+        // (autoStartDue) ya da admin panelden elle baslatilir.
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
     // Bir macin sonucunu bildir. GUVENLIK: istemcinin winner_id beyanina KORU KORUNE
