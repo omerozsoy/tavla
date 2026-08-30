@@ -2616,7 +2616,10 @@ button[aria-disabled='true'],
   overflow-y: auto;
   z-index: 50;
 }
-.register-overlay.page > * {
+/* NOT: sadece sayfanin KENDI karti; sayfa icinde acilan nested modal overlay'ler
+   (.register-overlay) bu kurali MIRAS ALMASIN -> yoksa scrim 1400px'e sikisir +
+   sag tarafta gri bosluk olur (bkz [[modal-backdrop-kapat-tuzagi]]). */
+.register-overlay.page > *:not(.register-overlay) {
   width: 100%;
   max-width: 1400px;
   /* sola dayali (ortalanmaz) */
@@ -2630,7 +2633,7 @@ button[aria-disabled='true'],
   /* ust padding hesap barini gecer */
   padding: 78px clamp(16px, 3vw, 48px) 56px;
 }
-.register-overlay.page > * > h2 {
+.register-overlay.page > *:not(.register-overlay) > h2 {
   font-size: 1.9rem;
   font-weight: 700;
   text-align: left;
@@ -2643,7 +2646,7 @@ button[aria-disabled='true'],
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 /* Sayfa gorunumu: X kapatma dugmesi yok - menuden baska ogeye tiklayarak gecilir */
-.register-overlay.page .modal-close {
+.register-overlay.page > *:not(.register-overlay) .modal-close {
   display: none;
 }
 /* Mobil / dar ekran: sol menu drawer'a doner -> sayfa tam ekran */
@@ -2660,7 +2663,7 @@ button[aria-disabled='true'],
     z-index: 200;
   }
   /* Mobilde menu drawer oldugundan X geri gelir (sayfayi kapatmak icin) */
-  .register-overlay.page .modal-close {
+  .register-overlay.page > *:not(.register-overlay) .modal-close {
     display: flex;
     position: fixed;
     top: 10px;
@@ -2690,7 +2693,7 @@ button[aria-disabled='true'],
   overflow: visible;
   background: transparent;
 }
-.page-host .register-overlay.page > * {
+.page-host .register-overlay.page > *:not(.register-overlay) {
   /* ust padding sabit hesap barini gecer; sola dayali + genis */
   padding: 78px clamp(16px, 3vw, 44px) 56px;
   min-height: 0;
@@ -2698,19 +2701,19 @@ button[aria-disabled='true'],
   margin: 0;
 }
 @media (max-width: 900px) {
-  .page-host .register-overlay.page > * {
+  .page-host .register-overlay.page > *:not(.register-overlay) {
     padding: 60px 14px 40px;
   }
 }
-.page-host .register-overlay.page .modal-close {
+.page-host .register-overlay.page > *:not(.register-overlay) .modal-close {
   display: none;
 }
 /* Pozisyon Analizi sayfa gorunumunde: kendi 'Kapat' dugmesi gizli (menuden gecilir) */
-.register-overlay.page .analyzer-close {
+.register-overlay.page > *:not(.register-overlay) .analyzer-close {
   display: none;
 }
 @media (max-width: 900px) {
-  .register-overlay.page .analyzer-close {
+  .register-overlay.page > *:not(.register-overlay) .analyzer-close {
     display: inline-flex;
     position: fixed;
     top: 10px;
