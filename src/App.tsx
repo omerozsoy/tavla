@@ -687,8 +687,9 @@ export default function App() {
   useEffect(() => {
     if (!hydratedRef.current) return // ilk restore bitene kadar localStorage'i EZME (kritik)
     // pr/luck da kaydedilir -> refresh/resume'da PR/Sans/Seviye kaybolmaz
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck })
-  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck])
+    // inGame: kayit aninda oyun gorunumunde miydik -> refresh'te ana sayfadan oyuna zorla sokma
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, inGame: !home })
+  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, home])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
@@ -712,9 +713,16 @@ export default function App() {
     if (g.luck) setPrLuck(g.luck)
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
-    // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse HOME'da kalma -> oyunu goster
-    // (AI macinda sayfa refresh'inde oyun kaybolmasin). Online oda tabanli, haric.
-    if (g.mode !== 'online' && !matchWinner(g.match) && (g.turnsPlayed > 0 || !!g.gameEnd)) {
+    // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse: SADECE kayit aninda kullanici
+    // oyun gorunumundeyse (inGame) oyuna don. Ana sayfadayken (inGame=false) veya eski
+    // kayitta (undefined) HOME'da kal -> aktif oyun "Devam Et" cubuguyla erisilir.
+    // (Boylece refresh, terk edilmis eski AI oyununa ZORLA sokmaz; oyun da kaybolmaz.)
+    if (
+      g.inGame === true &&
+      g.mode !== 'online' &&
+      !matchWinner(g.match) &&
+      (g.turnsPlayed > 0 || !!g.gameEnd)
+    ) {
       setHome(false)
     }
   }
