@@ -168,6 +168,23 @@ class TournamentResource extends Resource
                 //
             ])
             ->actions([
+                Tables\Actions\Action::make('start')
+                    ->label('Başlat')
+                    ->icon('heroicon-o-play')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Turnuvayı başlat')
+                    ->modalDescription('Eşleşme ağacı oluşturulup turnuva başlatılacak. Bu işlem geri alınamaz.')
+                    // Yalnizca kayit acik ve en az 2 oyuncu varken gorunur
+                    ->visible(fn (Tournament $record): bool => $record->status === 'open'
+                        && count(array_filter($record->players ?? [], fn ($p) => $p !== null)) >= 2)
+                    ->action(function (Tournament $record): void {
+                        $record->startBracket();
+                        \Filament\Notifications\Notification::make()
+                            ->title('Turnuva başlatıldı')
+                            ->success()
+                            ->send();
+                    }),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

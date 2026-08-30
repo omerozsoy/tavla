@@ -29,8 +29,6 @@ export interface SideMenuProps {
   onFairness: () => void
   onBoardSettings: () => void
   onInstall: () => void
-  isAdmin?: boolean
-  onAdmin?: () => void
   onCalendar?: () => void
   onClubs?: () => void
   onServices?: () => void
