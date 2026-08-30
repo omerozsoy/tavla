@@ -5,7 +5,6 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
-import { MOVE_STYLES, type MoveStyle } from './moveAnim'
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club'
 
@@ -36,8 +35,6 @@ interface Props {
   setShowAnalysis: (v: boolean) => void
   learnMode: boolean
   setLearnMode: (v: boolean) => void
-  moveStyle: MoveStyle
-  setMoveStyle: (v: MoveStyle) => void
   onClose: () => void
   embed?: boolean // gomulu render (overlay/kapat/kaydet yok)
   framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi icerigi (FrameGallery embed)
@@ -61,8 +58,6 @@ export default function BoardSettings({
   setShowAnalysis,
   learnMode,
   setLearnMode,
-  moveStyle,
-  setMoveStyle,
   onClose,
   embed,
   framesSlot,
@@ -152,28 +147,6 @@ export default function BoardSettings({
               <Icon name="sun" size={16} /> {t('theme.light')}
             </Button>
           </div>
-        </div>
-
-        {/* Tas hareket animasyonu (kapali/kayma/yay/kaldir-birak) */}
-        <div className="setup-row">
-          <div className="setup-label">{t('settings.moveAnim')}</div>
-          <div className="menu-targets move-anim-opts">
-            {(['off', ...MOVE_STYLES] as MoveStyle[]).map((m) => (
-              <Button
-                key={m}
-                type="button"
-                variant={moveStyle === m ? 'secondary' : 'ghost'}
-                className={moveStyle === m ? 'move-opt-active' : ''}
-                aria-pressed={moveStyle === m}
-                onClick={() => setMoveStyle(m)}
-              >
-                {moveStyle === m && <Icon name="check" size={14} />} {t('settings.move.' + m)}
-              </Button>
-            ))}
-          </div>
-          <p className="setup-note">
-            <b>{t('settings.moveCurrent')}: {t('settings.move.' + moveStyle)}</b> · {t('settings.moveNote')}
-          </p>
         </div>
 
         {/* Oyun ayarlari (pip/analiz/ogrenme) — tahta grid'inin USTUNDE, kolay erisim */}

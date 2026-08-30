@@ -2175,7 +2175,9 @@ export default function App() {
     }
   }, [animOn])
   // Tas hareket animasyonu stili (kapali/kayma/yay/kaldir-birak) — kullanici secer
-  const [moveStyle, setMoveStyle] = useState<MoveStyle>(() => {
+  // Tas hareket stili: Ayarlar'dan secici KALDIRILDI; mevcut localStorage degeri (varsa)
+  // korunur, yoksa 'slide'. Artik degismedigi icin setter yok.
+  const [moveStyle] = useState<MoveStyle>(() => {
     try {
       const v = localStorage.getItem('tavla.move')
       return v === 'off' || v === 'slide' || v === 'arc' || v === 'lift' ? v : 'slide'
@@ -2183,13 +2185,6 @@ export default function App() {
       return 'slide'
     }
   })
-  useEffect(() => {
-    try {
-      localStorage.setItem('tavla.move', moveStyle)
-    } catch {
-      /* yok */
-    }
-  }, [moveStyle])
   // FLIP: playSteps state'i guncellemeden ONCE kaynak dikdortgenini buraya yazar;
   // render sonrasi useLayoutEffect hedef tasi kaynaktan ucurur.
   const pendingFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
@@ -3423,8 +3418,9 @@ export default function App() {
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
 
-  // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir)
-  function closeAllPages() {
+  // Menuden acilan TUM sayfa overlaylerini kapat (setup HARIC). Ayni anda page-host
+  // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
+  function closeMenuPages() {
     setLeaderboardOpen(false)
     setTournOpen(false)
     setShopOpen(false)
@@ -3446,6 +3442,10 @@ export default function App() {
     setRulesOpen(false)
     setAnalyzerOpen(false)
     setEditProfile(false)
+  }
+  // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir) + kurulum ekrani
+  function closeAllPages() {
+    closeMenuPages()
     setSetup(null)
   }
   const goPage = (open: () => void) => {
@@ -3461,6 +3461,9 @@ export default function App() {
   // closeAllPages CAGIRMADAN ac: kapaninca acildigi yere (kurulum/sayfa) geri doner.
   const openSettings = () => {
     if (!home && !setup && hasActiveGame) return // aktif oyunu bolme (goPage ile ayni koruma)
+    // Diger menu sayfalarini (Magaza, Liderlik vb.) KAPAT ki page-host icinde yigilmasin;
+    // setup KORUNUR (remount olmasin) -> Ayarlar kapaninca kurulum/sayfa yerinde kalir.
+    closeMenuPages()
     setBoardSettingsOpen(true)
   }
 
@@ -3741,8 +3744,6 @@ export default function App() {
           setShowAnalysis={setShowAnalysis}
           learnMode={learnMode}
           setLearnMode={setLearnMode}
-          moveStyle={moveStyle}
-          setMoveStyle={setMoveStyle}
           framesSlot={
             user ? (
               <FrameShop

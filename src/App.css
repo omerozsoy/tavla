@@ -3080,11 +3080,6 @@ button[aria-disabled='true'],
   grid-template-columns: repeat(auto-fit, minmax(46px, 1fr));
   gap: 5px;
 }
-/* Tas hareketi secici: aktif secim tartismasiz belli (aksan halka) */
-.move-anim-opts .move-opt-active {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
 .menu-targets .menu-btn {
   text-align: center;
   padding: 8px 0;
@@ -12115,6 +12110,30 @@ button.stat-chip:hover {
   background: var(--accent);
   color: var(--on-accent);
   border-color: var(--accent);
+}
+
+/* ---- Emil sadelestirme: Ayarlar Genel tab — sakin/kompakt kontroller ----
+   "Dev gibi" tam genislik/44px butonlar yerine olculu segmented + ince toggle. */
+.board-settings-card .setup-row {
+  margin: 2px 0 14px;
+}
+.board-settings-card .menu-targets {
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  max-width: 300px;
+}
+.board-settings-card .menu-targets [data-slot='button'] {
+  height: 38px;
+  font-size: 0.86rem;
+}
+.board-settings-card .setup-toggle {
+  padding: 10px 13px;
+  margin-bottom: 8px;
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.86rem;
+}
+.board-settings-card .setup-note {
+  font-size: 0.78rem;
 }
 
 /* ---- Online sohbet (sag-alt) ---- */
