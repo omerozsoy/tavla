@@ -3997,8 +3997,11 @@ export default function App() {
     )
   }
 
-  // Online mod: oyun baslamadiysa lobi (oda olustur/katil/bekle)
-  if (mode === 'online' && (!room || room.status !== 'playing')) {
+  // Online mod: oyun baslamadiysa lobi (oda olustur/katil/bekle).
+  // ÖNEMLİ: Maç BİTTİYSE (matchOver) lobiye DÜŞME — oda 'finished' olsa bile oyun
+  // görünümünü koru ki MatchResult (sonuç + Analiz + Rövanş) gösterilebilsin. Aksi
+  // halde maç biter bitmez oyuncular arama/lobi sayfasına atılır (kritik bug).
+  if (mode === 'online' && !matchOver && (!room || room.status !== 'playing')) {
     return (
       <>
         {accountBar}
@@ -4151,7 +4154,7 @@ export default function App() {
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
         />
-        {showAnalysis && (
+        {showAnalysis && mode === 'pvb' && (
           <AnalysisPanel
             loading={analysisLoading}
             currentProbs={currentProbs}
