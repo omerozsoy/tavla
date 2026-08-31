@@ -494,7 +494,7 @@ export default function App() {
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
-                                        ? 'yapay-zeka'
+                                        ? 'yz-ile-oyna'
                                         : ''
 
   // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
@@ -510,7 +510,7 @@ export default function App() {
   }, [blunderOpen, user])
 
   // URL yolu -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
-  // Temiz path kullanilir (SEO): /yapay-zeka  (hash # yok)
+  // Temiz path kullanilir (SEO): /yz-ile-oyna  (hash # yok; eski /yapay-zeka alias)
   useEffect(() => {
     const applyFromPath = () => {
       const slug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
@@ -605,7 +605,8 @@ export default function App() {
         case 'yeni-oyun':
           setSetup('online')
           break
-        case 'yapay-zeka':
+        case 'yz-ile-oyna':
+        case 'yapay-zeka': // eski slug -> geriye donuk uyum
           setSetup('pvb')
           break
         case 'profil':

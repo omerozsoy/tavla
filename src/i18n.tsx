@@ -281,7 +281,7 @@ const TR: Dict = {
   'quiz.wrong': 'Yanlış',
   'quiz.next': 'Sonraki',
   'menu.match': 'Maç Oyunu',
-  'menu.aiGame': 'AI ile Oyna',
+  'menu.aiGame': 'YZ ile Oyna',
   'solo.title': 'Tek Oyun',
   'solo.sub': 'Bir bahis seç, aynı tutarı seçen rakiple eşleş. Kazanan bahsi alır.',
   'solo.level': 'Seviye {n}',
