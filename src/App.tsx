@@ -428,6 +428,8 @@ export default function App() {
     ? 'profil'
     : leaderboardOpen
     ? 'lider-tablosu'
+    : ranksOpen
+    ? 'rutbeler'
     : tournOpen
       ? 'turnuvalar'
       : shopOpen
@@ -507,6 +509,9 @@ export default function App() {
       switch (root) {
         case 'lider-tablosu':
           setLeaderboardOpen(true)
+          break
+        case 'rutbeler':
+          setRanksOpen(true)
           break
         case 'turnuvalar':
           setTournOpen(true)

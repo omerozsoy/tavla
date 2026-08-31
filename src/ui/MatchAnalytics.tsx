@@ -88,7 +88,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name="analyze" size={20} /> {t('mh.title')}
+          <Icon name="chart-line" size={20} /> {t('mh.title')}
         </h2>
         <p className="register-sub">{t('mh.sub')}</p>
 

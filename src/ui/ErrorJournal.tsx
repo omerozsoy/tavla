@@ -77,7 +77,7 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name="chart-line" size={20} /> {t('errorJournal.title')}
+          <Icon name="warning-circle" size={20} /> {t('errorJournal.title')}
         </h2>
         <p className="register-sub">{t('errorJournal.sub')}</p>
 

@@ -27,10 +27,16 @@
 }
 .rank-prog__title {
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text);
+}
+.rank-prog__title > svg {
+  color: var(--accent);
 }
 .rank-prog--compact .rank-prog__title {
   font-size: 1.2rem;

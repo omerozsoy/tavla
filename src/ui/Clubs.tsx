@@ -163,7 +163,7 @@ export default function Clubs({ onClose }: Props) {
           <Icon name="x" size={16} />
         </button>
         <h2>
-          <Icon name="users" size={20} /> {t('clubs.title')}
+          <Icon name="building-office" size={20} /> {t('clubs.title')}
         </h2>
 
         {loading ? (

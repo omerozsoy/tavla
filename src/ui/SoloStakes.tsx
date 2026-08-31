@@ -56,7 +56,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
             <Icon name="x" size={16} />
           </Button>
           <h2>
-            <Icon name="play" size={20} /> {t('solo.title')}
+            <Icon name="coins" size={20} /> {t('solo.title')}
           </h2>
           <p className="register-sub">{t('solo.sub')}</p>
           <div className="solo-balance">

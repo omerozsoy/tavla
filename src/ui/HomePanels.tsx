@@ -262,7 +262,6 @@ export function RankingPanel({
       {onOpen ? (
         <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('lb.title')}>
           <Icon name="trophy" size={17} /> {t('lb.title')}
-          <Icon name="arrow-right" size={15} className="hph-go hph-go--end" />
         </button>
       ) : (
         <div className="home-panel-head">
@@ -332,7 +331,6 @@ export function TournamentsPanel({
       <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.tournaments')}>
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
         <span className="panel-count">{tourns.length}</span>
-        <Icon name="arrow-right" size={15} className="hph-go" />
       </button>
       <div className="tourn-list">
         {tourns.map((tr) => {
