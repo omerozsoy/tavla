@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\User;
+use App\Services\MatchClock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -31,6 +32,7 @@ class RoomController extends Controller
             'name' => ['required', 'string', 'max:40'],
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
+            'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
         ]);
 
         $room = Room::create([
@@ -42,6 +44,7 @@ class RoomController extends Controller
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'waiting',
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
+            'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
             'version' => 0,
         ]);
 
@@ -84,10 +87,13 @@ class RoomController extends Controller
             'bet_pct' => ['nullable', 'integer', 'in:0,10,30,50,100'],
             'targets' => ['nullable', 'array'],
             'targets.*' => ['integer', 'in:1,3,5,7,9,11'],
+            'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
+        // Server-otoriter saat AYNI tempoyu gerektirir -> eslesme tempoyu da sart kosar.
+        $timeControl = MatchClock::normalizeMode($data['time_control'] ?? null);
         // GUVENLIK: user_id ISTEMCIYE guvenilerek alinmaz. Dogrulanmis Sanctum token'indan
         // gelir (route auth middleware'i disinda olsa da bearer token gonderiliyor).
         // Aksi halde saldirgan baskasinin user_id'siyle bahis odasina girip settle'da onun
@@ -116,6 +122,7 @@ class RoomController extends Controller
             ->where('p1_token', $data['token'])
             ->where('stake', $stake)
             ->where('bet_pct', $betPct)
+            ->where('time_control', $timeControl)
             ->first();
         if ($mine) {
             return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
@@ -126,10 +133,11 @@ class RoomController extends Controller
         // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
-        $opponent = DB::transaction(function () use ($data, $stake, $betPct, $minRating, $targets, $userId) {
+        $opponent = DB::transaction(function () use ($data, $stake, $betPct, $minRating, $targets, $userId, $timeControl) {
             $q = Room::where('status', 'mm_waiting')
                 ->where('stake', $stake)
                 ->where('bet_pct', $betPct)
+                ->where('time_control', $timeControl) // yalnizca ayni tempo
                 ->where('p1_token', '!=', $data['token'])
                 ->whereNull('p2_token');
             if ($minRating > 0) {
@@ -174,6 +182,7 @@ class RoomController extends Controller
             'targets' => $targets,
             'target' => count($targets) === 1 ? $targets[0] : null,
             'mode' => 'ranked', // hizli eslesme -> Mac Oyunu
+            'time_control' => $timeControl,
             'version' => 0,
         ]);
 
@@ -431,6 +440,7 @@ class RoomController extends Controller
             'name' => ['required', 'string', 'max:40'],
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
+            'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
         ]);
         $code = strtoupper($code);
 
@@ -443,6 +453,7 @@ class RoomController extends Controller
                 'p1_rating' => $data['rating'] ?? null,
                 'p1_avatar' => $data['avatar'] ?? null,
                 'status' => 'waiting',
+                'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
                 'version' => 0,
             ],
         );
@@ -472,11 +483,28 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
+        // Poll aninda saati ilerlet + kayip (TIMEOUT/AFK_TIMEOUT) kosulunu uygula.
+        // (state degismeden; kayip olursa applyClockEnd version'i artirir.)
+        $this->tickClock($room);
+
         $since = (int) $request->query('since', -1);
-        if ($since >= 0 && $room->version <= $since) {
-            return response()->noContent(); // degismedi
+        $unchanged = $since >= 0 && $room->version <= $since;
+        $clock = $this->clockView($room);
+        $clockRunning = $clock && ! empty($clock['running']);
+
+        // Degismediyse VE saat calismiyorsa 204. Saat calisiyorsa (sira/AFK geri sayimi
+        // akiyor) her poll'de guncel saat gonderilmeli -> 204 verme, ama buyuk state
+        // blob'unu tekrar gondermemek icin state=null (client yalniz clock okur).
+        if ($unchanged && ! $clockRunning) {
+            return response()->noContent();
         }
-        return response()->json(['room' => $room->toClient()]);
+        $payload = $room->toClient();
+        if ($unchanged) {
+            $payload['state'] = null;
+        }
+        $payload['clock'] = $clock;
+
+        return response()->json(['room' => $payload]);
     }
 
     // Oyun durumunu guncelle (hamle). Sadece odadaki oyuncular.
@@ -492,7 +520,8 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        if ($this->slotOf($room, $data['token']) === null) {
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
             return $this->fail('Bu odada değilsin.', 403);
         }
 
@@ -501,9 +530,132 @@ class RoomController extends Controller
         if (! empty($data['status'])) {
             $room->status = $data['status'];
         }
+
+        // ---- Sunucu-otoriter saat + AFK ----
+        $now = microtime(true);
+        $clock = is_array($room->clock) ? $room->clock : [];
+        if (empty($clock)) {
+            // Ilk gercek guncelleme: state.match.target biliniyorsa saati kur.
+            $target = (int) ($data['state']['match']['target'] ?? $room->target ?? 0);
+            if ($target > 0) {
+                $clock = MatchClock::init($room->time_control, $target, $now);
+            }
+        }
+        if (! empty($clock)) {
+            // $slot = istegi yapanin slotu -> sira DEVRINI yalniz sira sahibi tetikleyebilir.
+            $clock = MatchClock::onUpdate($clock, $data['state'], $slot, $now);
+            if (! empty($clock['end'])) {
+                $this->applyClockEnd($room, $clock);
+            } else {
+                $this->tagNormalEnd($room, $data['state']);
+            }
+            $room->clock = $clock;
+        } else {
+            $this->tagNormalEnd($room, $data['state']);
+        }
+
         $room->save();
 
-        return response()->json(['version' => $room->version, 'status' => $room->status]);
+        return response()->json([
+            'version' => $room->version,
+            'status' => $room->status,
+            'clock' => $this->clockView($room),
+        ]);
+    }
+
+    // Saati poll aninda ilerlet: kayip kosulu olustuysa maci sonlandir (idempotent).
+    private function tickClock(Room $room): void
+    {
+        $clock = $room->clock;
+        if (! is_array($clock) || empty($clock) || ! empty($clock['end'])) {
+            return;
+        }
+        $ticked = MatchClock::tick($clock, microtime(true));
+        if (! empty($ticked['end'])) {
+            $this->applyClockEnd($room, $ticked);
+            $room->clock = $ticked;
+            $room->save();
+        }
+    }
+
+    // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
+    private function clockView(Room $room): ?array
+    {
+        $clock = $room->clock;
+        if (! is_array($clock) || empty($clock)) {
+            return null;
+        }
+
+        return MatchClock::clientView($clock, microtime(true));
+    }
+
+    // Saat kaybini (TIMEOUT/AFK_TIMEOUT) mac sonucuna yansit: forfeit + karsilikli sonuc + end_reason.
+    // Saat sahiplik-korumali oldugu icin sunucunun belirledigi kazanan guvenlidir (forge-korumasi).
+    private function applyClockEnd(Room $room, array $clock): void
+    {
+        $end = $clock['end'];
+        $winnerSlot = $end['winner']; // 'p1'|'p2'
+        $reason = $end['reason'];     // TIMEOUT|AFK_TIMEOUT
+        $winnerColor = $winnerSlot === 'p1' ? 'white' : 'black';
+
+        $state = is_array($room->state) ? $room->state : [];
+        if (empty($state['gameEnd'])) {
+            $match = is_array($state['match'] ?? null) ? $state['match'] : [];
+            $target = (int) ($room->target ?? ($match['target'] ?? 1));
+            $score = is_array($match['score'] ?? null) ? $match['score'] : ['white' => 0, 'black' => 0];
+            $cubeVal = (int) ($match['cube']['value'] ?? 1);
+            // Forfeit: kazanan hedefe ulassin (mac-basi kayip; mevcut lokal timeout ile ayni mantik).
+            $score[$winnerColor] = max($target, (int) ($score[$winnerColor] ?? 0) + max(1, $cubeVal));
+            if (! empty($match)) {
+                $match['score'] = $score;
+                $state['match'] = $match;
+            }
+            $state['gameEnd'] = [
+                'winner' => $winnerColor,
+                'points' => $cubeVal,
+                'mult' => 1,
+                'dropped' => false,
+                'timeout' => true,
+            ];
+            $room->state = $state;
+            $room->version = $room->version + 1;
+        }
+        if ($room->p1_result === null) {
+            $room->p1_result = $winnerSlot === 'p1' ? 'won' : 'lost';
+        }
+        if ($room->p2_result === null) {
+            $room->p2_result = $winnerSlot === 'p2' ? 'won' : 'lost';
+        }
+        $room->status = 'finished';
+        if ($room->end_reason === null) {
+            $room->end_reason = $reason;
+        }
+    }
+
+    // Normal galibiyet/terk icin end_reason etiketle (yalnizca mac gercekten bittiyse).
+    private function tagNormalEnd(Room $room, array $state): void
+    {
+        if ($room->end_reason !== null) {
+            return;
+        }
+        $ge = $state['gameEnd'] ?? null;
+        if (! is_array($ge)) {
+            return;
+        }
+        $target = (int) ($room->target ?? ($state['match']['target'] ?? 0));
+        $score = $state['match']['score'] ?? null;
+        $decided = $target > 0 && is_array($score)
+            && max((int) ($score['white'] ?? 0), (int) ($score['black'] ?? 0)) >= $target;
+        if (! $decided) {
+            return; // tek oyun bitti ama mac suruyor
+        }
+        if (! empty($ge['resigned'])) {
+            $room->end_reason = 'RESIGN';
+        } elseif (! empty($ge['timeout'])) {
+            $room->end_reason = 'TIMEOUT';
+        } else {
+            $room->end_reason = 'NORMAL_WIN';
+        }
     }
 
     // Sohbet mesaji gonder (odadaki oyuncular). Son 50 mesaj tutulur.

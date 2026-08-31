@@ -831,6 +831,18 @@ export interface ChatMsg {
   text: string
   id: string
 }
+// Sunucu-otoriter saat goruntusu (poll/update ile doner). white/black = kalan ana sure (sn),
+// delay = aktif oyuncunun kalan hamle gecikmesi, active = sirasi gelen renk, afk = AFK
+// kaybina kalan saniye (yalniz son 15sn'de dolu; degilse null), loss = saat kaybi.
+export interface RoomClock {
+  white: number
+  black: number
+  delay: number
+  active: 'white' | 'black' | null
+  afk: number | null
+  running: boolean
+  loss: { winner: 'white' | 'black'; reason: string } | null
+}
 export interface RoomView {
   code: string
   p1_name: string
@@ -846,16 +858,18 @@ export interface RoomView {
   version: number
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   target?: number | null
+  clock?: RoomClock | null
 }
 
 export async function createRoom(
   name: string,
   rating?: number,
   avatar?: string,
+  timeControl?: string,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null }),
   })
 }
 
@@ -864,10 +878,11 @@ export async function joinRoom(
   name: string,
   rating?: number,
   avatar?: string,
+  timeControl?: string,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req(`/rooms/${encodeURIComponent(code)}/join`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null }),
   })
 }
 
@@ -877,10 +892,11 @@ export async function enterRoom(
   name: string,
   rating?: number,
   avatar?: string,
+  timeControl?: string,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req(`/rooms/${encodeURIComponent(code)}/enter`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null }),
   })
 }
 
@@ -894,6 +910,7 @@ export async function matchmake(
   minRating?: number,
   betPct?: number,
   targets?: number[],
+  timeControl?: string,
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -907,6 +924,7 @@ export async function matchmake(
       min_rating: minRating ?? 0,
       bet_pct: betPct ?? 0,
       targets: targets ?? [1],
+      time_control: timeControl ?? null,
     }),
   })
 }
@@ -1102,7 +1120,7 @@ export async function updateRoom(
   code: string,
   state: unknown,
   status?: 'playing' | 'finished',
-): Promise<{ version: number; status: string }> {
+): Promise<{ version: number; status: string; clock?: RoomClock | null }> {
   return req(`/rooms/${encodeURIComponent(code)}`, {
     method: 'PUT',
     body: JSON.stringify({ token: playerToken(), state, status }),
