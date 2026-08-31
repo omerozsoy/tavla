@@ -11662,6 +11662,22 @@ button.stat-chip:hover {
   align-items: center;
   gap: 7px;
 }
+.tcard-venue {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--text-muted, var(--med-slate));
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tcard-venue svg {
+  flex: 0 0 auto;
+  color: var(--accent, currentColor);
+}
 .tcard-status {
   flex: none;
   padding: 3px 11px;
