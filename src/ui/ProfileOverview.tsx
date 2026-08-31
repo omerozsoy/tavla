@@ -65,7 +65,8 @@ export default function ProfileOverview({
   onClose,
 }: Props) {
   const { t, lang } = useT()
-  const [tab, setTab] = useState<'frames' | 'boards' | 'stats'>('frames')
+  // Profil açılışında İstatistikler sekmesi varsayılan seçili
+  const [tab, setTab] = useState<'frames' | 'boards' | 'stats'>('stats')
   useEscape(onClose)
 
   const rating = user.rating ?? 0
