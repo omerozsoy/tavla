@@ -1244,9 +1244,9 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button']:hover::before {
   content: '';
   position: absolute;
-  inset: -3px -10px -3px 0;
+  inset: -4px -12px -4px 0;
   z-index: -1;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 44%, 100% 56%, 0 100%);
   pointer-events: none;
   /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
@@ -1269,9 +1269,9 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
   position: absolute;
-  inset: -3px -10px -3px 0;
+  inset: -4px -12px -4px 0;
   z-index: -1;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 44%, 100% 56%, 0 100%);
   pointer-events: none;
   transform-origin: left center;
   background: color-mix(in srgb, var(--accent) 82%, #000);
