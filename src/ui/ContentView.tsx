@@ -4,6 +4,7 @@ import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
+import TurkeyMap, { normProvince } from './TurkeyMap'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -149,6 +150,18 @@ export default function ContentView({
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0], 'tr'))
   }, [items, type])
+
+  // Harita için il-başına kulüp sayısı (normalize anahtar). Seçili il (harita/filtre).
+  const clubCounts = useMemo(() => {
+    const m: Record<string, number> = {}
+    if (clubGroups)
+      for (const [prov, list] of clubGroups) {
+        const k = normProvince(prov)
+        m[k] = (m[k] ?? 0) + list.length
+      }
+    return m
+  }, [clubGroups])
+  const [selProvince, setSelProvince] = useState<string | null>(null)
 
   // Bilgi sayfasi "Hizmetler" sekmesi: overlay/kart/baslik olmadan yalniz liste.
   if (embed) {
@@ -322,7 +335,25 @@ export default function ContentView({
           </div>
         ) : type === 'club' && clubGroups ? (
           <div className="content-clubs">
-            {clubGroups.map(([prov, list]) => (
+            <TurkeyMap
+              clubCounts={clubCounts}
+              selected={selProvince}
+              onSelect={setSelProvince}
+              countLabel={(n) => t('clubs.count', { n })}
+            />
+            {selProvince && (
+              <div className="club-filter-bar">
+                <span className="club-filter-cur">
+                  <Icon name="pin" size={14} /> {selProvince}
+                </span>
+                <Button variant="ghost" className="club-filter-clear" onClick={() => setSelProvince(null)}>
+                  <Icon name="x" size={14} /> {t('clubs.showAll')}
+                </Button>
+              </div>
+            )}
+            {clubGroups
+              .filter(([prov]) => !selProvince || normProvince(prov) === normProvince(selProvince))
+              .map(([prov, list]) => (
               <div key={prov} className="club-province">
                 <div className="club-province-title">
                   <Icon name="pin" size={14} /> {prov}
