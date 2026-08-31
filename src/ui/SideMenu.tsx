@@ -75,17 +75,17 @@ export default function SideMenu(p: SideMenuProps) {
 
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
-          <Button variant="ghost" className={NAV} data-active={p.active === 'solo' || undefined} onClick={p.onSolo}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'solo' || undefined} data-variant="1" onClick={p.onSolo}>
             <Icon name="coins" size={24} /> {t('menu.solo')}
           </Button>
         )}
         {!p.inGame && (
-          <Button variant="ghost" className={NAV} data-active={p.active === 'match' || undefined} onClick={p.onNewGame}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'match' || undefined} data-variant="2" onClick={p.onNewGame}>
             <Icon name="ranking" size={24} /> {t('menu.match')}
           </Button>
         )}
         {!p.inGame && p.onAiGame && (
-          <Button variant="ghost" className={NAV} data-active={p.active === 'aiGame' || undefined} onClick={p.onAiGame}>
+          <Button variant="ghost" className={NAV} data-active={p.active === 'aiGame' || undefined} data-variant="3" onClick={p.onAiGame}>
             <Icon name="robot" size={24} /> {t('menu.aiGame')}
           </Button>
         )}
@@ -117,10 +117,10 @@ export default function SideMenu(p: SideMenuProps) {
 
       {/* Rekabet + sosyal (en cok kullanilanlar ust sirada) */}
       <div className="menu-group">
-        <Button variant="ghost" className={NAV} data-active={p.active === 'tournaments' || undefined} onClick={p.onTournaments}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'tournaments' || undefined} data-variant="4" onClick={p.onTournaments}>
           <Icon name="trophy" size={24} /> {t('menu.tournaments')}
         </Button>
-        <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} onClick={p.onLeaderboard}>
+        <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} data-variant="5" onClick={p.onLeaderboard}>
           <Icon name="crown" size={24} /> {t('menu.leaderboard')}
         </Button>
         {/* Rütbeler → "Bilgi" sayfası sekmesine taşındı */}
