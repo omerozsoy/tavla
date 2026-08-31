@@ -270,9 +270,19 @@ class AuthController extends Controller
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
             'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
             'ranked'          => ['nullable', 'boolean'],
+            'room_code'       => ['nullable', 'string', 'max:20'], // online oda (friendly denetimi)
         ]);
         $user = $request->user();
         $ranked = $data['ranked'] ?? true; // null/eksik -> puanli (geriye uyum)
+
+        // YETKILI KURAL: oda 'friendly' (davet kodu maci) ise KESINLIKLE puansiz — istemci
+        // ranked=true gonderse veya refresh/rejoin ile bayrak kaybolsa bile oda mode'u belirler.
+        if (! empty($data['room_code'])) {
+            $room = \App\Models\Room::where('code', $data['room_code'])->first();
+            if ($room && $room->mode === 'friendly') {
+                $ranked = false;
+            }
+        }
 
         $ra = $user->rating ?? 1500;
         $rb = $data['opponent_rating'];

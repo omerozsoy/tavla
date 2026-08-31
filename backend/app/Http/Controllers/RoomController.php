@@ -198,7 +198,8 @@ class RoomController extends Controller
         }
         $stake = (int) $room->stake;
         $betPct = (int) $room->bet_pct;
-        if (($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
+        // Arkadaslik (davet) odasi = coin transferi YOK (yetkili; stake zaten 0 ama kesinlestir).
+        if ($room->mode === 'friendly' || ($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return response()->json(['ok' => false]);
         }
         $callerIsP1 = $room->p1_token === $data['token'];
