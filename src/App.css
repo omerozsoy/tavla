@@ -6211,6 +6211,9 @@ button.stat-chip:hover {
   --radius-md: 0;
   --radius-lg: 0;
   --radius-xl: 0;
+  /* Pill/rozet de kare (istek: "pill rozetleri de koseli yap").
+     Daire avatar/nokta --radius-circle ile korunur. */
+  --radius-pill: 0;
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
   grid-template-areas:
@@ -9131,6 +9134,47 @@ button.stat-chip:hover {
 }
 .solo-start {
   flex: none;
+}
+
+/* ============================================================
+   DUZ KOSE (kare) — ana sayfa + kurulum overlay'i.
+   Butonlar Tailwind 'rounded-md' kullanir (token degil) -> acikca sifirla.
+   Solo overlay .app.lobby DISINDA (fixed modal) -> burada acikca kareler.
+   Daire avatar/nokta (--radius-circle / 50%) KORUNUR.
+   ============================================================ */
+.app.lobby [data-slot='button'],
+.solo-card,
+.solo-card [data-slot='button'],
+.setup-preview,
+.setup-board,
+.setup-board-svg,
+.setup-board-change,
+.setup-split [data-slot='button'],
+.solo-tile,
+.solo-board,
+.solo-lvl,
+.solo-stake,
+.solo-balance,
+.solo-preview-bar {
+  border-radius: 0 !important;
+}
+/* Home panel/turnuva rozetleri sabit 999px kullaniyor (token disi) -> kare. */
+.app.lobby :where(
+  .panel-count,
+  .tr-status,
+  .tr-status-running,
+  .tr-status-finished,
+  .tr-prize,
+  .tr-cd,
+  .tr-cd-lbl,
+  .tr-count,
+  .tr-bar,
+  .tr-bar > *,
+  .tcard-status,
+  .tcard-bar,
+  .tcard-bar > *
+) {
+  border-radius: 0 !important;
 }
 @media (max-width: 900px) {
   .setup-split {
