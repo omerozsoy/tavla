@@ -2981,16 +2981,33 @@ button[aria-disabled='true'],
   padding: 78px clamp(16px, 3vw, 48px) 56px;
 }
 .register-overlay.page > *:not(.register-overlay) > h2 {
-  font-size: 1.9rem;
-  font-weight: 700;
+  font-size: 1.7rem;
+  font-weight: 600; /* bold degil — tek tip sayfa basligi */
+  letter-spacing: -0.01em;
   text-align: left;
   justify-content: flex-start;
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 22px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  margin: 0 0 20px;
+  padding-bottom: 0;
+  border-bottom: none; /* sade — tum sayfalarda ayni (cizgisiz) */
+}
+/* Tum alt sayfalar TEK TIP baslik: nested basliklar (Rutbeler/Analiz) da standarda uysun */
+.register-overlay.page .rank-prog__title,
+.register-overlay.page .analyzer-head h2 {
+  font-size: 1.7rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+/* Analiz basligini sola daya (1080 ortalama kaldirildi) -> board ile ayni sol hiza */
+.register-overlay.page .analyzer-head {
+  max-width: none;
+  margin: 0 0 18px;
+}
+/* Rutbeler icerigi de sola dayali (RankInfo artik ortalamiyor) */
+.register-overlay.page .rank-info-card .rank-prog {
+  max-width: 620px;
 }
 /* Sayfa gorunumu: X kapatma dugmesi yok - menuden baska ogeye tiklayarak gecilir */
 .register-overlay.page > *:not(.register-overlay) .modal-close {
@@ -4538,7 +4555,7 @@ button[aria-disabled='true'],
 .register-card h2 {
   margin: 0;
   font-size: 1.35rem;
-  font-weight: 700;
+  font-weight: 600; /* bold degil */
   line-height: 1.25;
 }
 .register-sub {

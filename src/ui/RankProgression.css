@@ -31,7 +31,7 @@
   align-items: center;
   gap: 8px;
   font-size: 1.45rem;
-  font-weight: 700;
+  font-weight: 600; /* bold degil */
   letter-spacing: -0.01em;
   color: var(--text);
 }
