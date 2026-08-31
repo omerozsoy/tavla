@@ -201,8 +201,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
 
             <BadgeList ids={u?.badges} />
 
-            {/* ===== İstatistik panosu (dashboard düzeni) ===== */}
-            <div className="stats-dash">
+            {/* ===== Üst satır: 3 grafik (Bakiye · Puan · Medyan) ===== */}
+            <div className="stats-dash stats-dash-3">
               {/* Bakiye — coin geçmişi */}
               <div className="sd-card">
                 <div className="sd-head">
@@ -239,8 +239,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                 )}
               </div>
 
-              {/* Medyan Hata Oranı */}
-              <div className="sd-card sd-card-wide">
+              {/* Medyan Hata Oranı — bar chart */}
+              <div className="sd-card">
                 <div className="sd-head">
                   <span className="sd-ic"><Icon name="alert" size={18} /></span>
                   <div className="sd-head-txt">
@@ -284,6 +284,10 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   />
                 )}
               </div>
+            </div>
+
+            {/* ===== Alt satır: WXP + Toplam Kaz.% + Zar Ortalamaları ===== */}
+            <div className="stats-dash">
 
               {/* WXP — Kazanma Deneyim Puanlari */}
               <div className="sd-card wxp-card">

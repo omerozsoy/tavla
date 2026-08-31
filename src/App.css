@@ -10095,7 +10095,16 @@ button.stat-chip:hover {
   margin-top: 18px;
 }
 .stats-dash .sd-card-wide {
-  grid-column: 1 / -1; /* Medyan tam satır: barlara nefes */
+  grid-column: 1 / -1; /* tam satır: barlara nefes (Zar) */
+}
+/* Üst satır: 3 grafik yan yana (Bakiye · Puan · Medyan) */
+.stats-dash-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+@media (max-width: 860px) {
+  .stats-dash-3 {
+    grid-template-columns: 1fr; /* dar ekranda alt alta */
+  }
 }
 @media (max-width: 640px) {
   .stats-dash {
