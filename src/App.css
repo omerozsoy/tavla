@@ -1226,6 +1226,7 @@ button[aria-disabled='true'],
   min-height: 44px;
   border-radius: 10px;
   position: relative;
+  isolation: isolate; /* stacking context -> ::before hane z-index:-1 içerikte KALIR */
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
@@ -1244,7 +1245,8 @@ button[aria-disabled='true'],
   content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  z-index: -1;
+  clip-path: polygon(0 3%, 88% 50%, 0 97%);
   pointer-events: none;
   /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
@@ -1268,7 +1270,8 @@ button[aria-disabled='true'],
   content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 0, 100% 42%, 100% 58%, 0 100%);
+  z-index: -1;
+  clip-path: polygon(0 3%, 88% 50%, 0 97%);
   pointer-events: none;
   transform-origin: left center;
   background: color-mix(in srgb, var(--accent) 82%, #000);
