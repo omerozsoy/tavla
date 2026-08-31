@@ -43,7 +43,9 @@ export function Countdown({
   const m = Math.floor((s % 3600) / 60)
   const sec = s % 60
   const p2 = (n: number) => String(n).padStart(2, '0')
-  const txt = d > 0 ? `${d}g ${p2(h)}:${p2(m)}` : h > 0 ? `${h}:${p2(m)}:${p2(sec)}` : `${m}:${p2(sec)}`
+  // Gün varsa "4g 13:45:20"; gün 0 ise sadece "13:45:20" (saat:dakika:saniye)
+  const hms = `${p2(h)}:${p2(m)}:${p2(sec)}`
+  const txt = d > 0 ? `${d}g ${hms}` : hms
   return (
     <span className={className}>
       <Icon name="clock" size={12} /> {txt}
