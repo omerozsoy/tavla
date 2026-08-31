@@ -1,5 +1,4 @@
 import { useT } from '../i18n'
-import { TavlaTvLogo } from './TavlaTvLogo'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 
@@ -61,16 +60,6 @@ export default function SideMenu(p: SideMenuProps) {
         if (p.onCloseMobile && (e.target as HTMLElement).closest('button')) p.onCloseMobile()
       }}
     >
-      <button
-        type="button"
-        className="brand brand-link"
-        onClick={p.onHome}
-        title={t('home.title')}
-        aria-label={t('brand.name')}
-      >
-        <TavlaTvLogo size={32} />
-      </button>
-
       <div className="menu-group">
         {!p.inGame && p.onSolo && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'solo' || undefined} onClick={p.onSolo}>
