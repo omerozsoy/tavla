@@ -31,12 +31,13 @@ interface Props {
   countLabel: (n: number) => string // "3 kulüp" gibi (i18n)
 }
 
-// Hover balonu durumu: hangi il + kulüpleri + imleç konumu (container'a göre)
+// Hover balonu durumu: hangi il + kulüpleri + konum (container'a göre) + hangi yöne açılacağı
 interface Balloon {
   name: string
   clubs: string[]
   x: number
   y: number
+  side: 'left' | 'right' // ilin sağına mı soluna mı açılsın (sayfa dışına taşmasın)
 }
 
 export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, countLabel }: Props) {
@@ -100,23 +101,29 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
         parts.push(x)
       }
     })
-    // Balonu parçaların BİRLEŞİK bounding box'ının üst-ortasına sabitle (container'a göre)
+    // Balonu ilin YANINA aç (üste açınca sayfa dışına taşıyordu). Birleşik bbox'a göre:
     const cr = root.getBoundingClientRect()
     let left = Infinity
     let top = Infinity
     let right = -Infinity
+    let bottom = -Infinity
     parts.forEach((x) => {
       const b = x.getBoundingClientRect()
       left = Math.min(left, b.left)
       top = Math.min(top, b.top)
       right = Math.max(right, b.right)
+      bottom = Math.max(bottom, b.bottom)
     })
+    // İl haritanın sağ kısmındaysa sola aç, değilse sağa aç (taşmayı önle)
+    const centerX = (left + right) / 2 - cr.left
+    const side: 'left' | 'right' = centerX > cr.width * 0.6 ? 'left' : 'right'
     const display = (g.getAttribute('data-iladi') ?? '').replace(/\s*\(.*?\)\s*/g, '').trim()
     setBalloon({
       name: display,
       clubs: clubNames[key] ?? [],
-      x: (left + right) / 2 - cr.left,
-      y: top - cr.top,
+      x: (side === 'right' ? right : left) - cr.left, // yan kenar
+      y: (top + bottom) / 2 - cr.top, // dikey orta
+      side,
     })
   }
   function onLeave() {
@@ -136,7 +143,10 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
       {/* eslint-disable-next-line react/no-danger */}
       <div className="turkey-map-svg" dangerouslySetInnerHTML={{ __html: svg }} />
       {balloon && (
-        <div className="tm-balloon" style={{ left: balloon.x, top: balloon.y }}>
+        <div
+          className={`tm-balloon tm-balloon-${balloon.side}`}
+          style={{ left: balloon.x, top: balloon.y }}
+        >
           <div className="tm-balloon-head">
             {balloon.name} · {countLabel(balloon.clubs.length)}
           </div>
