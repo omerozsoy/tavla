@@ -1260,13 +1260,13 @@ button[aria-disabled='true'],
   pointer-events: none;
   transition: background-color 0.15s ease;
 }
-/* Üst hane: sol geniş kenar → sağ uç (üst yarı) */
+/* Üst hane: sola dayalı → SAĞA bakan uç (üst yarı) */
 .side-menu [data-slot='button'][data-active='true']::before {
   clip-path: polygon(0 4%, 100% 24%, 0 44%);
 }
-/* Alt hane: sol geniş kenar → sağ uç (alt yarı) — üst hanenin yatay aynası */
+/* Alt hane: sağa dayalı → SOLA bakan uç (alt yarı) — tahtadaki gibi alternatif */
 .side-menu [data-slot='button'][data-active='true']::after {
-  clip-path: polygon(0 56%, 100% 76%, 0 96%);
+  clip-path: polygon(100% 56%, 0 76%, 100% 96%);
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
@@ -2921,9 +2921,9 @@ button[aria-disabled='true'],
   stroke-width: 0.6px;
   transition: fill 0.14s ease;
 }
-/* Kulübü olan iller: accent + tıklanabilir */
+/* Kulübü olan iller: belirgin koyu accent + tıklanabilir */
 .turkey-map [data-iladi].has-clubs path {
-  fill: color-mix(in srgb, var(--accent) 42%, transparent);
+  fill: color-mix(in srgb, var(--accent) 72%, transparent);
   cursor: pointer;
 }
 /* Yapışkan hover (.hovered) — :hover il sınırlarında titriyordu (bkz TurkeyMap.tsx) */
