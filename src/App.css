@@ -6538,8 +6538,10 @@ button.stat-chip:hover {
   justify-content: flex-start;
   align-items: stretch;
   overflow-y: auto;
-  /* Ust hesap bari (fixed, ~54px) ile cakismasin: ust bosluk bar yuksekligini kapsar */
-  padding: calc(var(--header-h) + 12px) clamp(12px, 3vw, 40px) 40px;
+  /* Sabit (fixed) hesap bari lobi icerigiyle CAKISMASIN: ust bosluk barin tam
+     yuksekligini kapsar (giris yapmis kullanicida bar daha uzun -> +32px). Banner
+     bu boslugun altindan baslar (artik barin altina girmez). */
+  padding: calc(var(--header-h) + 32px) clamp(12px, 3vw, 40px) 40px;
 }
 
 /* ============================================================
@@ -6550,9 +6552,9 @@ button.stat-chip:hover {
    editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
-  /* Yatayda lobby-main padding'ini iptal edip kenarlara daya; ustte 12px fazla
-     boslugu kaldirip sabit hesap barinin hemen altina otur (header-h korunur). */
-  margin: -12px calc(-1 * clamp(12px, 3vw, 40px)) 22px;
+  /* Yatayda lobby-main padding'ini iptal edip kenarlara daya. Ustte NEGATIF marj YOK:
+     banner sabit hesap barinin ALTINDAN baslar (bar artik banner'in ustune binmez). */
+  margin: 0 calc(-1 * clamp(12px, 3vw, 40px)) 22px;
   overflow: hidden;
   background: var(--sand);
   /* KRITIK: .lobby-main bir flex-column; overflow:hidden olan bu ogenin flex
