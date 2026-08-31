@@ -8858,6 +8858,66 @@ button.stat-chip:hover {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ===== Kurulum: hizli "Tahtayi Degistir" secim modali (tam sayfa DEGIL) ===== */
+.board-picker-card {
+  width: 100%;
+  max-width: 860px;
+  max-height: 86vh;
+  overflow-y: auto;
+  text-align: left;
+}
+.board-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+.board-picker-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+.board-picker-item:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.board-picker-item.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.board-picker-item .setup-board {
+  max-width: none;
+}
+.board-picker-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: var(--fw-semibold);
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.board-picker-item.selected .board-picker-name {
+  color: var(--accent);
+}
+.board-picker-foot {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+@media (max-width: 560px) {
+  .board-picker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .setup-modes {
   display: flex;
   gap: 8px;
