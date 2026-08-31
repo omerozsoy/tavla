@@ -143,11 +143,7 @@ export default function SideMenu(p: SideMenuProps) {
               <Icon name="star" size={24} /> {t('mem.menu')}
             </Button>
           )}
-          {p.loggedIn && (
-            <Button variant="ghost" className={NAV} data-active={p.active === 'stats' || undefined} onClick={p.onMyStats}>
-              <Icon name="chart" size={24} /> {t('menu.myStats')}
-            </Button>
-          )}
+          {/* İstatistiklerim menüden KALDIRILDI → Profilim içinde "İstatistikler" sekmesi */}
         </div>
       )}
 

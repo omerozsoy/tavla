@@ -1,7 +1,8 @@
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
+import ProfileStats from './ProfileStats'
 import AvatarFrame from './AvatarFrame'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
@@ -60,6 +61,7 @@ export default function ProfileOverview({
   onClose,
 }: Props) {
   const { t, lang } = useT()
+  const [tab, setTab] = useState<'frames' | 'boards' | 'stats'>('frames')
   useEscape(onClose)
 
   const rating = user.rating ?? 0
@@ -176,12 +178,39 @@ export default function ProfileOverview({
           </div>
         </div>
 
-        {/* --- Koleksiyonlar --- */}
-        <div className="prof-ov-cols">
+        {/* --- Sekmeler: Çerçeveler · Tahta Renkleri · İstatistikler --- */}
+        <div className="prof-ov-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'frames'}
+            className={tab === 'frames' ? 'active' : ''}
+            onClick={() => setTab('frames')}
+          >
+            {t('prof.avatars')} <span className="prof-ov-count">{ownedFrames.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'boards'}
+            className={tab === 'boards' ? 'active' : ''}
+            onClick={() => setTab('boards')}
+          >
+            {t('menu.board')} <span className="prof-ov-count">{ownedBoards.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'stats'}
+            className={tab === 'stats' ? 'active' : ''}
+            onClick={() => setTab('stats')}
+          >
+            {t('stats.title')}
+          </button>
+        </div>
+
+        {tab === 'frames' && (
           <section className="prof-ov-col">
-            <h3 className="prof-ov-col-title">
-              {t('prof.avatars')} <span className="prof-ov-count">{ownedFrames.length}</span>
-            </h3>
             {ownedFrames.length === 0 ? (
               <p className="prof-ov-empty">{t('prof.noAvatars')}</p>
             ) : (
@@ -199,11 +228,10 @@ export default function ProfileOverview({
               </div>
             )}
           </section>
+        )}
 
+        {tab === 'boards' && (
           <section className="prof-ov-col">
-            <h3 className="prof-ov-col-title">
-              {t('menu.board')} <span className="prof-ov-count">{ownedBoards.length}</span>
-            </h3>
             <div className="prof-ov-grid prof-ov-grid-board">
               {ownedBoards.map((b) => (
                 <div
@@ -225,7 +253,19 @@ export default function ProfileOverview({
               ))}
             </div>
           </section>
-        </div>
+        )}
+
+        {tab === 'stats' && (
+          <div className="prof-ov-stats-tab">
+            <ProfileStats
+              embed
+              avatar={avatar ?? undefined}
+              frame={user.avatar_frame}
+              name={fullName}
+              onClose={() => {}}
+            />
+          </div>
+        )}
       </div>
     </div>
   )

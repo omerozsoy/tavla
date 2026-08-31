@@ -11773,6 +11773,45 @@ button.stat-chip:hover {
   display: grid;
   gap: 18px;
 }
+/* Profil alt sekmeler: Çerçeveler · Tahta Renkleri · İstatistikler (Emil underline) */
+.prof-ov-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+.prof-ov-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  padding: 9px 14px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.94rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+.prof-ov-tabs > button:hover {
+  color: var(--text);
+}
+.prof-ov-tabs > button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.prof-ov-tabs > button.active .prof-ov-count {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+.prof-ov-stats-tab {
+  margin-top: 2px;
+}
 .prof-ov-col-title {
   display: flex;
   align-items: center;
