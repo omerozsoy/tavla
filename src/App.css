@@ -166,7 +166,7 @@
      Zincir: board-h -> checker -> col (point) -> bar/tray/dice/cube.
      Iliski: CHECKER = POINT WIDTH * 0.877 (0.86-0.90 araligi).
      Board ekranin ana kahramanidir: viewport yuksekliginin ~%89'unu kaplar. */
-  --player-panel-w: clamp(150px, 12.5vw, 188px); /* dar oyuncu paneli */
+  --player-panel-w: clamp(200px, 16vw, 250px); /* oyuncu paneli (buyutuldu) */
   --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
      Dikey pay: header + ust/alt point-numarasi seritleri (24+24+gap ~54px) + app
@@ -181,7 +181,7 @@
   --tri-h: calc(var(--board-h) * 0.35); /* KISA + genis taban ucgen (guclu geometri) */
   --point-h: var(--tri-h);
   --dice-size: calc(var(--checker) * 0.82);
-  --cube-size: clamp(48px, calc(var(--checker) * 1), 64px); /* buyutulmus kup */
+  --cube-size: clamp(62px, calc(var(--checker) * 1.28), 84px); /* buyutulmus kup */
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -3434,14 +3434,14 @@ button[aria-disabled='true'],
   width: 100%;
 }
 .avatar {
-  width: 64px;
-  height: 64px;
+  width: 104px;
+  height: 104px;
   border-radius: var(--radius-circle);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 30px;
-  margin: 0 auto 6px;
+  font-size: 46px;
+  margin: 0 auto 10px;
   border: 2px solid rgba(255, 255, 255, 0.14);
   background: color-mix(in srgb, var(--game-scene) 60%, #223066);
   color: #eef2ff;
@@ -3477,20 +3477,20 @@ button[aria-disabled='true'],
 }
 .player-name {
   font-weight: 400; /* bold DEGIL, biraz buyuk */
-  font-size: 1.05rem;
+  font-size: 1.32rem;
   line-height: 1.2;
   letter-spacing: -0.005em;
 }
 .player-sub {
   color: var(--muted);
-  font-size: 0.72rem;
-  margin-bottom: 4px;
+  font-size: 0.86rem;
+  margin-bottom: 5px;
 }
 .player-rating {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 0.98rem;
+  font-size: 1.12rem;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
@@ -3506,14 +3506,14 @@ button[aria-disabled='true'],
   padding: 6px 0;
 }
 .ss-num {
-  font-size: 1.7rem;
+  font-size: 2.3rem;
   font-weight: 400;
   color: #f2f5ff;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 .ss-sep {
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   font-weight: 400;
   color: rgba(220, 230, 255, 0.45);
 }
@@ -4320,6 +4320,19 @@ button[aria-disabled='true'],
 .center-overlay.main {
   left: 50%;
   transform: translate(-50%, -50%);
+}
+/* Oyun-içi merkez aksiyon butonları (Onayla / Geri / Roll / Double) — BÜYÜK
+   (yalnız oyun tahtasına özel; shadcn Button 42px sabitini burada ezer) */
+.center-overlay [data-slot='button'] {
+  height: 54px;
+  min-height: 54px;
+  padding: 0 26px;
+  font-size: 1.14rem;
+  border-radius: var(--radius-lg);
+}
+.center-overlay [data-slot='button'] svg {
+  width: 20px !important;
+  height: 20px !important;
 }
 /* Merkez HUD modali (#11): kompakt, premium game-HUD; dev popup DEGIL */
 .result-box {
@@ -5858,26 +5871,26 @@ html.fs-active .account-bar {
 }
 /* Toplanan pul kutusu (Galaxy: saat kolonunda, saatin ust/altinda beyaz kutu) */
 .clock-off {
-  min-width: 44px;
-  padding: 7px 10px;
+  min-width: 60px;
+  padding: 11px 14px;
   border-radius: var(--radius-md);
   background: var(--cream, #f4efe6);
   color: #14110c;
   font-weight: 400;
-  font-size: 1.15rem;
+  font-size: 1.55rem;
   line-height: 1;
   text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 /* Kompakt scoreboard (#5): pasif kutular sade koyu cip; aktif olan aksanla belirir */
 .clock-reserve {
-  min-width: 44px;
-  padding: 6px 9px;
+  min-width: 60px;
+  padding: 10px 13px;
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #eaf0ff;
-  font-size: 0.95rem;
+  font-size: 1.28rem;
   font-weight: 400;
   text-align: center;
   opacity: 0.55;
@@ -5892,7 +5905,7 @@ html.fs-active .account-bar {
 /* Kutular arasi ince ayirici cizgi/ikon */
 .clock-delay {
   color: rgba(226, 234, 255, 0.4);
-  font-size: 0.72rem;
+  font-size: 0.9rem;
   line-height: 1;
   display: flex;
   align-items: center;

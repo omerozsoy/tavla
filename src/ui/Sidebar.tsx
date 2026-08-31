@@ -27,7 +27,7 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
         <AvatarFrame
           src={p.avatarUrl}
           frame={p.frame}
-          size={72}
+          size={104}
           name={p.name}
           className={`pc-avf ${p.active ? 'active' : ''}`}
         />
