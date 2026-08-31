@@ -5834,6 +5834,10 @@ html.fs-active .account-bar {
     gap: 6px;
     padding: 6px 12px;
   }
+  /* Sabit hamburger (sol-ust, 44px) logonun ustune binmesin -> logoyu saga it. */
+  .ab-brand {
+    margin-left: 46px;
+  }
   .account-name {
     font-size: 0.78rem;
     max-width: 84px;
@@ -6819,10 +6823,14 @@ button.stat-chip:hover {
     width: 22px;
     background: var(--med-ink);
   }
-  /* Mobilde oklar biraz kuculsun */
+  /* Mobilde oklar daha kucuk */
   .bs-arrow {
-    width: 38px;
-    height: 38px;
+    width: 30px;
+    height: 30px;
+  }
+  .bs-arrow svg {
+    width: 16px;
+    height: 16px;
   }
 }
 
