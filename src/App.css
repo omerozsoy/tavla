@@ -6432,6 +6432,28 @@ button.stat-chip:hover {
 .bs-slide:hover:not(:disabled) .bs-cta {
   opacity: 0.86;
 }
+/* Koyu panel rengi secildiginde metni acik yap (okunabilirlik) */
+.bs-panel[data-dark] {
+  color: #fff;
+}
+.bs-panel[data-dark] .bs-kicker,
+.bs-panel[data-dark] .bs-sub {
+  color: rgba(255, 255, 255, 0.82);
+}
+.bs-panel[data-dark] .bs-meta,
+.bs-panel[data-dark] .bs-title {
+  color: #fff;
+}
+.bs-panel[data-dark] .bs-cta {
+  background: #fff;
+  color: #111;
+}
+.bs-panel[data-dark] .bs-dots span {
+  background: rgba(255, 255, 255, 0.4);
+}
+.bs-panel[data-dark] .bs-dots span.active {
+  background: #fff;
+}
 /* Noktalar: sol panel altinda (Christie's gibi) */
 .bs-panel .bs-dots {
   display: flex;
@@ -10653,6 +10675,52 @@ button.stat-chip:hover {
 .info-list li svg {
   color: var(--accent);
   flex-shrink: 0;
+}
+/* Özellik listesi (Hakkında) — 2 kolon; başlık+açıklama (bold değil, renk/boyut ayrımı) */
+.info-features {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 13px 22px;
+}
+@media (max-width: 720px) {
+  .info-features {
+    grid-template-columns: 1fr;
+  }
+}
+.info-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.info-feat-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.info-feat-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.info-feat-t {
+  color: var(--text);
+  font-size: 0.94rem;
+}
+.info-feat-d {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
 }
 .an-wxp {
   display: flex;

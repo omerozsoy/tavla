@@ -56,11 +56,18 @@ export default function Info({ onClose, currentRating, fair }: Props) {
           <div className="info-body">
             <p>{t('info.intro')}</p>
             <h3>{t('info.featuresTitle')}</h3>
-            <ul className="info-list">
-              <li><Icon name="robot" size={18} /> {t('info.f1')}</li>
-              <li><Icon name="ranking" size={18} /> {t('info.f2')}</li>
-              <li><Icon name="chart-line" size={18} /> {t('info.f3')}</li>
-              <li><Icon name="shield-check" size={18} /> {t('info.f4')}</li>
+            <ul className="info-features">
+              {Array.from({ length: 20 }, (_, i) => i + 1).map((n) => (
+                <li key={n} className="info-feature">
+                  <span className="info-feat-ic" aria-hidden="true">
+                    <Icon name="check" size={14} />
+                  </span>
+                  <span className="info-feat-txt">
+                    <span className="info-feat-t">{t(`info.feat.${n}.t`)}</span>
+                    <span className="info-feat-d">{t(`info.feat.${n}.d`)}</span>
+                  </span>
+                </li>
+              ))}
             </ul>
             <h3>{t('info.contactTitle')}</h3>
             <p>{t('info.contact')}</p>
