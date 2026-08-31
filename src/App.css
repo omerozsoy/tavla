@@ -2892,8 +2892,8 @@ button[aria-disabled='true'],
 /* Hover balonu: o ildeki kulüpleri ince liste hâlinde gösterir (imleci takip eder) */
 .tm-balloon {
   position: absolute;
-  /* left/top = ilin üst-ortası; balonu ortalayıp ilin üstüne 8px boşlukla otur */
-  transform: translate(-50%, calc(-100% - 8px));
+  /* left/top = ilin yan kenarı + dikey ortası. Balon YANA açılır (üste açınca
+     kuzey illerde sayfa dışına taşıyordu). Sağ kısımdaki iller sola açılır. */
   z-index: 5;
   pointer-events: none; /* imleçle etkileşmesin -> hover titremesin */
   max-width: 240px;
@@ -2926,6 +2926,13 @@ button[aria-disabled='true'],
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Yön: ilin sağına aç (varsayılan) / sağ kenardaki iller sola aç */
+.tm-balloon-right {
+  transform: translate(12px, -50%);
+}
+.tm-balloon-left {
+  transform: translate(calc(-100% - 12px), -50%);
+}
 .turkey-map svg {
   width: 100%;
   height: auto;
@@ -2939,14 +2946,14 @@ button[aria-disabled='true'],
   stroke-width: 0.6px;
   transition: fill 0.14s ease;
 }
-/* Kulübü olan iller: belirgin koyu accent + tıklanabilir */
+/* Kulübü olan iller: SOLID accent -> net fark edilir + tıklanabilir */
 .turkey-map [data-iladi].has-clubs path {
-  fill: color-mix(in srgb, var(--accent) 72%, transparent);
+  fill: var(--accent);
   cursor: pointer;
 }
 /* Yapışkan hover (.hovered) — :hover il sınırlarında titriyordu (bkz TurkeyMap.tsx) */
 .turkey-map [data-iladi].has-clubs.hovered path {
-  fill: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 78%, #000); /* hover: daha koyu */
 }
 .turkey-map [data-iladi].selected path {
   fill: var(--accent);
