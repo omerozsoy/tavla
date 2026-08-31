@@ -24,15 +24,25 @@ export function normProvince(s: string): string {
 
 interface Props {
   clubCounts: Record<string, number> // normProvince(il) -> kulüp sayısı
+  clubNames: Record<string, string[]> // normProvince(il) -> kulüp adları (balon listesi)
   selected: string | null // seçili il (ham ad) veya null
   onSelect: (province: string | null) => void
   countLabel: (n: number) => string // "3 kulüp" gibi (i18n)
 }
 
-export default function TurkeyMap({ clubCounts, selected, onSelect, countLabel }: Props) {
+// Hover balonu durumu: hangi il + kulüpleri + imleç konumu (container'a göre)
+interface Balloon {
+  name: string
+  clubs: string[]
+  x: number
+  y: number
+}
+
+export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, countLabel }: Props) {
   const ref = useRef<HTMLDivElement>(null)
   const [svg, setSvg] = useState('')
   const [err, setErr] = useState(false)
+  const [balloon, setBalloon] = useState<Balloon | null>(null)
 
   useEffect(() => {
     let alive = true
@@ -45,25 +55,20 @@ export default function TurkeyMap({ clubCounts, selected, onSelect, countLabel }
     }
   }, [])
 
-  // SVG yüklenince: vurgulama + seçili + tooltip (title). clubCounts/selected değişince tazele.
+  // SVG yüklenince: vurgulama + seçili. clubCounts/selected değişince tazele.
+  // (Native <title> tooltip kaldırıldı -> yerine imleci takip eden özel balon; ayrıca
+  //  effect artık countLabel'a bağlı değil -> mousemove'da gereksiz re-run olmaz.)
   useEffect(() => {
     const el = ref.current
     if (!el || !svg) return
     const selNorm = selected ? normProvince(selected) : null
     el.querySelectorAll<SVGGElement>('[data-iladi]').forEach((g) => {
-      const name = g.getAttribute('data-iladi') ?? ''
-      const key = normProvince(name)
+      const key = normProvince(g.getAttribute('data-iladi') ?? '')
       const count = clubCounts[key] ?? 0
       g.classList.toggle('has-clubs', count > 0)
       g.classList.toggle('selected', selNorm !== null && selNorm === key)
-      let title = g.querySelector('title') as SVGTitleElement | null
-      if (!title) {
-        title = document.createElementNS('http://www.w3.org/2000/svg', 'title')
-        g.appendChild(title)
-      }
-      title.textContent = count > 0 ? `${name} — ${countLabel(count)}` : name
     })
-  }, [svg, clubCounts, selected, countLabel])
+  }, [svg, clubCounts, selected])
 
   function onClick(e: MouseEvent) {
     const g = (e.target as Element).closest('[data-iladi]')
@@ -74,33 +79,61 @@ export default function TurkeyMap({ clubCounts, selected, onSelect, countLabel }
     onSelect(selected && normProvince(selected) === key ? null : name) // tekrar tıkla → temizle
   }
 
+  // İmleç konumunu container'a göre hesapla (balon yerleşimi için)
+  function localXY(e: MouseEvent): { x: number; y: number } {
+    const r = ref.current?.getBoundingClientRect()
+    return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) }
+  }
+
   // Yapışkan hover: :hover kullanılmıyor çünkü il sınırlarında/aralarında minik fare
-  // oynamasında sürekli açılıp kapanıp titriyordu. Vurguyu yalnızca YENİ bir kulüp iline
-  // girince değiştiririz; boşluk/sınırda kaybolmaz (mouseleave'de tümü temizlenir).
+  // oynamasında sürekli açılıp kapanıp titriyordu. Vurguyu (+balonu) yalnızca YENİ bir
+  // kulüp iline girince değiştiririz; boşluk/sınırda kaybolmaz (mouseleave'de temizlenir).
   function onOver(e: MouseEvent) {
     const g = (e.target as Element).closest('[data-iladi]')
     if (!g) return
-    const key = normProvince(g.getAttribute('data-iladi') ?? '')
-    if ((clubCounts[key] ?? 0) === 0) return // sadece kulübü olan iller vurgulanır
+    const name = g.getAttribute('data-iladi') ?? ''
+    const key = normProvince(name)
+    if ((clubCounts[key] ?? 0) === 0) return // sadece kulübü olan iller
     const root = ref.current
     if (!root) return
     root.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
     g.classList.add('hovered')
+    const { x, y } = localXY(e)
+    setBalloon({ name, clubs: clubNames[key] ?? [], x, y })
+  }
+  function onMove(e: MouseEvent) {
+    // Balon açıkken imleci takip etsin (içeriği değiştirmeden, sadece konum)
+    setBalloon((b) => (b ? { ...b, ...localXY(e) } : b))
   }
   function onLeave() {
     ref.current?.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
+    setBalloon(null)
   }
 
   if (err) return null
   return (
-    // eslint-disable-next-line react/no-danger
     <div
       className="turkey-map"
       ref={ref}
       onClick={onClick}
       onMouseOver={onOver}
+      onMouseMove={onMove}
       onMouseLeave={onLeave}
-      dangerouslySetInnerHTML={{ __html: svg }}
-    />
+    >
+      {/* eslint-disable-next-line react/no-danger */}
+      <div className="turkey-map-svg" dangerouslySetInnerHTML={{ __html: svg }} />
+      {balloon && (
+        <div className="tm-balloon" style={{ left: balloon.x, top: balloon.y }}>
+          <div className="tm-balloon-head">
+            {balloon.name} · {countLabel(balloon.clubs.length)}
+          </div>
+          <ul className="tm-balloon-list">
+            {balloon.clubs.map((c, i) => (
+              <li key={i}>{c}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
   )
 }
