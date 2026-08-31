@@ -786,7 +786,7 @@ button[aria-disabled='true'],
 
 /* ---- Sol menu ---- */
 .side-menu {
-  width: 200px;
+  width: 224px;
   flex: none;
   display: flex;
   flex-direction: column;
@@ -3112,7 +3112,7 @@ button[aria-disabled='true'],
   top: 0;
   right: 0;
   bottom: 0;
-  left: 218px;
+  left: 242px;
   align-items: stretch;
   justify-content: flex-start;
   padding: 0;
@@ -3123,7 +3123,7 @@ button[aria-disabled='true'],
   overflow-y: auto;
   z-index: 50;
 }
-/* Oyun ekraninda SOL menu yoktur -> 218px bosluk koyu oyun zeminini gosteriyordu.
+/* Oyun ekraninda SOL menu yoktur -> 242px bosluk koyu oyun zeminini gosteriyordu.
    Oyun-view icindeki menu sayfasi tam genisligi kaplasin (siyah serit kalmasin). */
 .game-view .register-overlay.page {
   left: 0;
@@ -8960,10 +8960,10 @@ button.stat-chip:hover {
 /* ---- Pozisyon analiz modulu ---- */
 .analyzer {
   /* Yan yana duzen: board | kontrol(300) | sonuc(320). KRITIK: icerik konteyneri
-     page-host'ta 1400px'e CAPLI + solda 218px sidebar var. Board genisligini GERCEK
+     page-host'ta 1400px'e CAPLI + solda 242px sidebar var. Board genisligini GERCEK
      konteyner genisligine gore hesapla: min(100vw - sidebar, 1400) - paneller(760).
      Eskiden 100vw (1900) kullaniliyordu -> board buyuyup kontrolleri ortuyordu. */
-  --board-h: max(300px, min(56vh, calc((min(calc(100vw - 218px), 1400px) - 760px) / 1.45)));
+  --board-h: max(300px, min(56vh, calc((min(calc(100vw - 242px), 1400px) - 760px) / 1.45)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
   --bar-w: calc(var(--checker) * 0.85);
@@ -9611,7 +9611,7 @@ button.stat-chip:hover {
    altinda kontrol + sonuc yan yana. Icerik 1080px capli + ortali. */
 @media (max-width: 1400px) {
   .analyzer {
-    --board-h: max(280px, min(52vh, calc((min(calc(100vw - 218px), 1400px) - 44px) / 1.42)));
+    --board-h: max(280px, min(52vh, calc((min(calc(100vw - 242px), 1400px) - 44px) / 1.42)));
   }
   .analyzer-body {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
