@@ -22,6 +22,7 @@ for (const item of [
   'robots.txt',
   'sitemap.xml',
   'manifest.webmanifest',
+  'turkiye.svg', // kulüp rehberi haritası (statik)
   'sw.js',
   'icon-192.png',
   'icon-512.png',

@@ -161,6 +161,8 @@ export function LiveMatchesPanel({
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
   const [tab, setTab] = useState<'all' | 'single' | 'match' | 'friendly'>('all')
+  const [showAll, setShowAll] = useState(false) // 10'ar göster; "Tümü" ile hepsi
+  const LIVE_LIMIT = 10
 
   useEffect(() => {
     let alive = true
@@ -177,6 +179,10 @@ export function LiveMatchesPanel({
   }, [])
 
   const shown = matches?.filter((m) => tab === 'all' || liveCat(m) === tab) ?? null
+  // Sekme degisince tekrar 10'a don
+  useEffect(() => {
+    setShowAll(false)
+  }, [tab])
 
   return (
     <div className="home-panel live-panel">
@@ -203,8 +209,9 @@ export function LiveMatchesPanel({
       ) : shown.length === 0 ? (
         <div className="home-panel-empty">{t('live.empty')}</div>
       ) : (
+        <>
         <div className="live-list">
-          {shown.map((m) => (
+          {(showAll ? shown : shown.slice(0, LIVE_LIMIT)).map((m) => (
             <button
               key={m.code}
               className="live-row"
@@ -226,6 +233,12 @@ export function LiveMatchesPanel({
             </button>
           ))}
         </div>
+        {!showAll && shown.length > LIVE_LIMIT && (
+          <Button variant="ghost" className="live-more" onClick={() => setShowAll(true)}>
+            {t('live.showAll', { n: shown.length })}
+          </Button>
+        )}
+        </>
       )}
     </div>
   )
