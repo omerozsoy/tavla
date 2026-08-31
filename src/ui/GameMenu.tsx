@@ -41,12 +41,9 @@ export default function GameMenu(p: Props) {
   const rows: Row[] = [
     { label: t('gm.autoRoll'), on: p.autoRoll, toggle: () => p.setAutoRoll(!p.autoRoll) },
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
-    // Analiz + Öğrenme Modu YALNIZCA yapay zekaya karşı oyunda (hile önlemi)
+    // Canlı "Analizi göster" KALDIRILDI (maç sonu analizi yeterli). Öğrenme Modu SADECE pvb.
     ...(p.canAnalyze
-      ? [
-          { label: t('setup.analysis'), on: p.showAnalysis, toggle: () => p.setShowAnalysis(!p.showAnalysis) },
-          { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
-        ]
+      ? [{ label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) }]
       : []),
     { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },

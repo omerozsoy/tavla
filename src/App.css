@@ -6563,6 +6563,33 @@ button.stat-chip:hover {
 .home-panel-head > svg {
   color: var(--accent);
 }
+/* Başlık link'i: Liderlik/Turnuvalar başlığı → ilgili sayfa (native button reset) */
+.home-panel-head.hph-link {
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: color 0.16s ease;
+}
+.home-panel-head.hph-link:hover {
+  color: var(--accent);
+}
+.home-panel-head .hph-go {
+  color: var(--muted);
+  margin-left: 6px;
+  transition:
+    transform 0.16s ease,
+    color 0.16s ease;
+}
+.home-panel-head .hph-go--end {
+  margin-left: auto;
+}
+.home-panel-head.hph-link:hover .hph-go {
+  color: var(--accent);
+  transform: translateX(2px);
+}
 /* Baslik sagindaki adet rozeti (or. turnuva sayisi) — tabular sans, serif basliktan ayri */
 .panel-count {
   margin-left: auto;

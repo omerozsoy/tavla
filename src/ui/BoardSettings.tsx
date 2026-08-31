@@ -31,11 +31,9 @@ interface Props {
   setTheme: (t: 'dark' | 'light') => void
   showPip: boolean
   setShowPip: (v: boolean) => void
-  showAnalysis: boolean
-  setShowAnalysis: (v: boolean) => void
   learnMode: boolean
   setLearnMode: (v: boolean) => void
-  /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı oyunda gösterilir (hile önlemi). */
+  /** Öğrenme Modu SADECE yapay zekaya karşı oyunda gösterilir (hile önlemi). */
   canAnalyze?: boolean
   onClose: () => void
   embed?: boolean // gomulu render (overlay/kapat/kaydet yok)
@@ -56,8 +54,6 @@ export default function BoardSettings({
   setTheme,
   showPip,
   setShowPip,
-  showAnalysis,
-  setShowAnalysis,
   learnMode,
   setLearnMode,
   canAnalyze = false,
@@ -157,26 +153,17 @@ export default function BoardSettings({
           <span>{t('setup.pip')}</span>
           <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
         </button>
-        {/* Analiz + Öğrenme Modu YALNIZCA yapay zekaya karşı oyunda (hile önlemi) */}
+        {/* Canlı "Analizi göster" KALDIRILDI — maç sonu analizi (Maç Analizleri) zaten var.
+            Öğrenme Modu YALNIZCA yapay zekaya karşı oyunda (hile önlemi). */}
         {canAnalyze && (
-          <>
-            <button
-              type="button"
-              className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
-              onClick={() => setShowAnalysis(!showAnalysis)}
-            >
-              <span>{t('setup.analysis')}</span>
-              <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
-            </button>
-            <button
-              type="button"
-              className={`setup-toggle ${learnMode ? 'on' : ''}`}
-              onClick={() => setLearnMode(!learnMode)}
-            >
-              <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
-              <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
-            </button>
-          </>
+          <button
+            type="button"
+            className={`setup-toggle ${learnMode ? 'on' : ''}`}
+            onClick={() => setLearnMode(!learnMode)}
+          >
+            <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
+            <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
+          </button>
         )}
           </>
         )}

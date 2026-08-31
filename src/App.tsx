@@ -3780,8 +3780,6 @@ export default function App() {
           setTheme={setTheme}
           showPip={showPip}
           setShowPip={setShowPip}
-          showAnalysis={showAnalysis}
-          setShowAnalysis={setShowAnalysis}
           learnMode={learnMode}
           setLearnMode={setLearnMode}
           canAnalyze={mode === 'pvb'}
@@ -3999,13 +3997,14 @@ export default function App() {
               </div>
             )}
             <div className="home-panels">
-              <TournamentsPanel tourns={lobbyTourns} onOpen={() => setTournOpen(true)} />
+              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
               />
               <RankingPanel
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
+                onOpen={menuProps.onLeaderboard}
               />
             </div>
             {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
