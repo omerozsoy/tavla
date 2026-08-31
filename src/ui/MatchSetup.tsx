@@ -101,7 +101,7 @@ export default function MatchSetup({
         <h2>
           {mode === 'online' ? (
             <>
-              <Icon name="globe" size={20} /> {t('menu.match')}
+              <Icon name="ranking" size={20} /> {t('menu.match')}
             </>
           ) : (
             <>

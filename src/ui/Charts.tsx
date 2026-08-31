@@ -1,54 +1,118 @@
 // Basit SVG grafikler (bagimlilik yok): cizgi + cubuk.
+import { useEffect, useId, useRef, useState } from 'react'
 import { useT } from '../i18n'
+
+// Monotone cubic (d3.curveMonotoneX mantigi): overshoot YOK -> temiz, yumusak egri.
+function monotonePath(pts: { x: number; y: number }[]): string {
+  const n = pts.length
+  if (n < 2) return ''
+  if (n === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`
+  const dx: number[] = []
+  const slope: number[] = []
+  for (let i = 0; i < n - 1; i++) {
+    dx[i] = pts[i + 1].x - pts[i].x
+    slope[i] = (pts[i + 1].y - pts[i].y) / (dx[i] || 1)
+  }
+  const tan: number[] = [slope[0]]
+  for (let i = 1; i < n - 1; i++) {
+    if (slope[i - 1] * slope[i] <= 0) {
+      tan[i] = 0
+    } else {
+      const w1 = 2 * dx[i] + dx[i - 1]
+      const w2 = dx[i] + 2 * dx[i - 1]
+      tan[i] = (w1 + w2) / (w1 / slope[i - 1] + w2 / slope[i])
+    }
+  }
+  tan[n - 1] = slope[n - 2]
+  let d = `M ${pts[0].x} ${pts[0].y}`
+  for (let i = 0; i < n - 1; i++) {
+    const c1x = pts[i].x + dx[i] / 3
+    const c1y = pts[i].y + (tan[i] * dx[i]) / 3
+    const c2x = pts[i + 1].x - dx[i] / 3
+    const c2y = pts[i + 1].y - (tan[i + 1] * dx[i]) / 3
+    d += ` C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${pts[i + 1].x.toFixed(2)} ${pts[i + 1].y.toFixed(2)}`
+  }
+  return d
+}
+
+const fmtAxis = (n: number) => n.toLocaleString('tr-TR')
 
 export function LineChart({
   data,
   color = 'var(--accent)',
-  height = 60,
+  height = 88,
 }: {
   data: number[]
   color?: string
   height?: number
 }) {
   const { t } = useT()
+  const ref = useRef<HTMLDivElement>(null)
+  const [w, setW] = useState(320)
+  const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver((entries) => {
+      const cw = entries[0]?.contentRect.width
+      if (cw && cw > 0) setW(Math.round(cw))
+    })
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   if (data.length < 2) return <div className="chart-empty">—</div>
-  const w = 300
+
+  const padT = 12
+  const padB = 14
+  const padR = 12
   const min = Math.min(...data)
   const max = Math.max(...data)
-  const span = Math.max(1, max - min)
-  const step = w / (data.length - 1)
-  const y = (v: number) => height - 4 - ((v - min) / span) * (height - 8)
-  const pts = data.map((v, i) => `${(i * step).toFixed(1)},${y(v).toFixed(1)}`)
-  const area = `0,${height} ${pts.join(' ')} ${w},${height}`
+  const span = Math.max(1e-9, max - min)
+  const innerW = Math.max(1, w - padR)
+  const step = innerW / (data.length - 1)
+  const Y = (v: number) => padT + (1 - (v - min) / span) * (height - padT - padB)
+  const pts = data.map((v, i) => ({ x: i * step, y: Y(v) }))
+  const line = monotonePath(pts)
+  const first = pts[0]
+  const lastP = pts[pts.length - 1]
+  const area = `${line} L ${lastP.x.toFixed(2)} ${height} L ${first.x.toFixed(2)} ${height} Z`
   const last = data[data.length - 1]
+
   return (
-    <div className="line-chart-wrap">
+    <div className="line-chart-wrap" ref={ref}>
       <svg
         className="line-chart"
-        viewBox={`0 0 ${w} ${height}`}
-        preserveAspectRatio="none"
-        width="100%"
+        width={w}
         height={height}
+        viewBox={`0 0 ${w} ${height}`}
         role="img"
         aria-label={t('charts.axisSummary', { min, max, last })}
       >
-        {/* Ust/alt eksen kilavuz cizgileri (skill: axis-labels, gridline-subtle) */}
-        <line x1="0" y1={y(max).toFixed(1)} x2={w} y2={y(max).toFixed(1)} className="lc-grid" vectorEffect="non-scaling-stroke" />
-        <line x1="0" y1={y(min).toFixed(1)} x2={w} y2={y(min).toFixed(1)} className="lc-grid" vectorEffect="non-scaling-stroke" />
-        <polygon points={area} fill={color} opacity="0.12" />
-        <polyline
-          points={pts.join(' ')}
+        <defs>
+          <linearGradient id={`lcg-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.20" />
+            <stop offset="70%" stopColor={color} stopOpacity="0.04" />
+            <stop offset="100%" stopColor={color} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill={`url(#lcg-${uid})`} />
+        <path
+          d={line}
           fill="none"
           stroke={color}
-          strokeWidth="2"
+          strokeWidth="2.25"
           strokeLinejoin="round"
           strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
         />
+        {/* Uc nokta: yumusak halka + dolu nokta */}
+        <circle cx={lastP.x} cy={lastP.y} r="6" fill={color} opacity="0.15" />
+        <circle cx={lastP.x} cy={lastP.y} r="3.1" fill={color} stroke="var(--card-bg)" strokeWidth="1.6" />
       </svg>
-      {/* Y-ekseni deger etiketleri (min/max) — non-uniform SVG'yi bozmadan HTML overlay */}
-      <span className="lc-axis lc-max">{max}</span>
-      <span className="lc-axis lc-min">{min}</span>
+      {/* Y-ekseni deger etiketleri (min/max) */}
+      <span className="lc-axis lc-max">{fmtAxis(max)}</span>
+      <span className="lc-axis lc-min">{fmtAxis(min)}</span>
     </div>
   )
 }

@@ -31,7 +31,6 @@ export default function Shop({
   rewardSecs = 0,
   onDaily,
   onBuyCoins,
-  onMembership,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -123,15 +122,6 @@ export default function Shop({
                 </button>
               )
             })}
-            {onMembership && (
-              <button type="button" className="coin-card coin-card-mem" onClick={onMembership}>
-                <span className="coin-mem-plan">{t('shop.memTitle')}</span>
-                <span className="coin-mem-trial">{t('shop.memTrial')}</span>
-                <span className="coin-mem-cta">
-                  {t('shop.memCta')} <Icon name="chevron" size={14} />
-                </span>
-              </button>
-            )}
           </div>
         </section>
       </div>
