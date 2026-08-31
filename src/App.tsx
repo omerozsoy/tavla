@@ -636,8 +636,6 @@ export default function App() {
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
-  const installPromptRef = useRef<{ prompt: () => void } | null>(null)
-  const [canInstall, setCanInstall] = useState(false) // PWA yuklenebilir mi
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
@@ -2009,29 +2007,6 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.code])
-
-  // PWA: yukleme istemini yakala (tarayici destekliyorsa)
-  useEffect(() => {
-    const onPrompt = (e: Event) => {
-      e.preventDefault()
-      installPromptRef.current = e as unknown as { prompt: () => void }
-      setCanInstall(true)
-    }
-    const onInstalled = () => {
-      installPromptRef.current = null
-      setCanInstall(false)
-    }
-    window.addEventListener('beforeinstallprompt', onPrompt)
-    window.addEventListener('appinstalled', onInstalled)
-    return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt)
-      window.removeEventListener('appinstalled', onInstalled)
-    }
-  }, [])
-
-  function handleInstall() {
-    installPromptRef.current?.prompt()
-  }
 
   // Dogrulama sonucu (link'ten ?verified=1/0): birlesik toast olarak goster ve
   // URL'den parametreyi temizle (refresh'te tekrar cikmasin). Tek sefer tetiklenir.
@@ -3524,7 +3499,6 @@ export default function App() {
   // Ortak menu callback'leri (ana sayfa + oyun ekrani ayni menu)
   const menuProps = {
     loggedIn: !!user,
-    canInstall,
     hasActiveGame,
     onNewGame: () => {
       closeAllPages()
@@ -3574,7 +3548,6 @@ export default function App() {
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
     onBoardSettings: openSettings,
-    onInstall: handleInstall,
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
 
