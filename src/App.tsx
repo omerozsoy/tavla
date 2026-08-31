@@ -84,6 +84,7 @@ import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
+import TournamentAds from './ui/TournamentAds'
 import SoloStakes from './ui/SoloStakes'
 import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
@@ -399,6 +400,7 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
+  const [tournInitialId, setTournInitialId] = useState<number | null>(null) // reklamdan acilan turnuva detayi
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
@@ -3471,6 +3473,7 @@ export default function App() {
     setRanksOpen(false)
     setInfoOpen(false)
     setTournOpen(false)
+    setTournInitialId(null)
     setShopOpen(false)
     setFrameGalleryOpen(false)
     setStatsOpen(false)
@@ -3542,6 +3545,12 @@ export default function App() {
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
+    // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac
+    onTournamentAd: (id: number) =>
+      goPage(() => {
+        setTournInitialId(id)
+        setTournOpen(true)
+      }),
     onShop: () => goPage(() => setShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
@@ -3746,7 +3755,11 @@ export default function App() {
         <Tournaments
           myId={user?.id ?? null}
           onPlayMatch={handlePlayTournamentMatch}
-          onClose={() => setTournOpen(false)}
+          initialId={tournInitialId}
+          onClose={() => {
+            setTournOpen(false)
+            setTournInitialId(null)
+          }}
         />
       )}
       {soloOpen && (
@@ -3948,6 +3961,7 @@ export default function App() {
               <div className="page-host">{menuPages}</div>
             ) : (
             <>
+            <TournamentAds onOpen={menuProps.onTournamentAd} />
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
                 {activeRooms.map((r) => (

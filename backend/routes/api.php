@@ -12,6 +12,7 @@ use App\Http\Controllers\MembershipController;
 use App\Http\Controllers\PresenceController;
 use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\TournamentAdController;
 use App\Http\Controllers\TournamentController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,7 @@ Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
+Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
