@@ -1297,6 +1297,75 @@ button[aria-disabled='true'],
     animation: none;
   }
 }
+
+/* ===== VARYANT ÖNİZLEME (GEÇİCİ — biri seçilince silinecek) =====
+   1=Tek Oyun 2=Maç Oyunu 3=AI ile Oyna 4=Turnuvalar 5=Liderlik */
+.side-menu [data-slot='button'][data-variant] {
+  color: var(--accent) !important;
+}
+.side-menu [data-slot='button'][data-variant] svg {
+  color: var(--accent) !important;
+}
+.side-menu [data-slot='button'][data-variant]::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+/* 1 — gradient-fade tek üçgen (mevcut) */
+.side-menu [data-variant='1']::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 26%, transparent),
+    color-mix(in srgb, var(--accent) 9%, transparent) 55%,
+    transparent
+  );
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+/* 2 — düz tint üçgen + 2px sol accent omurga (border hissi) */
+.side-menu [data-slot='button'][data-variant='2'] {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.side-menu [data-variant='2']::before {
+  background: color-mix(in srgb, var(--accent) 17%, transparent);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+/* 3 — outline hane (yalnız çizgi; iç boşluk menü paneli rengi) */
+.side-menu [data-variant='3']::before {
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.side-menu [data-variant='3']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg) 90%, #000);
+  clip-path: polygon(2px 5px, calc(100% - 9px) 50%, 2px calc(100% - 5px));
+  pointer-events: none;
+}
+/* 4 — kısa/keskin uç (%82) + gradient */
+.side-menu [data-variant='4']::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 28%, transparent),
+    color-mix(in srgb, var(--accent) 8%, transparent) 62%,
+    transparent 82%
+  );
+  clip-path: polygon(0 8%, 82% 50%, 0 92%);
+}
+/* 5 — iki hane (üst sağa, alt sola bakan uç) */
+.side-menu [data-variant='5']::before {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  clip-path: polygon(0 4%, 100% 24%, 0 44%);
+}
+.side-menu [data-variant='5']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  clip-path: polygon(100% 56%, 0 76%, 100% 96%);
+  pointer-events: none;
+}
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
   margin-top: auto;
