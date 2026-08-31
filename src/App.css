@@ -5349,8 +5349,8 @@ html.fs-active .account-bar {
 /* Tam ekran ac/kapa butonu (oyun ekrani sol ust) */
 .fs-toggle {
   position: fixed;
-  top: calc(10px + env(safe-area-inset-top));
-  left: calc(12px + env(safe-area-inset-left));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  right: calc(12px + env(safe-area-inset-right));
   z-index: 120;
   width: 38px;
   height: 38px;
