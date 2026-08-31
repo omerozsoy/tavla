@@ -7,7 +7,6 @@ export interface SideMenuProps {
   loggedIn: boolean
   inGame: boolean
   hasActiveGame: boolean
-  canInstall: boolean
   showAnalysis?: boolean
   canResign?: boolean
   onNewGame: () => void
@@ -30,7 +29,6 @@ export interface SideMenuProps {
   onRules?: () => void
   onFairness: () => void
   onBoardSettings: () => void
-  onInstall: () => void
   onCalendar?: () => void
   onClubs?: () => void
   onServices?: () => void
@@ -196,14 +194,6 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
-      {/* PWA yukleme — yalniz tarayici beforeinstallprompt verdiginde gorunur */}
-      {p.canInstall && (
-        <div className="menu-group">
-          <Button variant="ghost" className={`${NAV} menu-install`} onClick={p.onInstall}>
-            <Icon name="install" size={24} /> {t('menu.install')}
-          </Button>
-        </div>
-      )}
     </aside>
   )
 }
