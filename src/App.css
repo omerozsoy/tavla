@@ -10663,8 +10663,9 @@ button.stat-chip:hover {
 @media (hover: hover) and (pointer: fine) {
   .tcard:hover {
     border-color: var(--accent);
-    box-shadow: 0 12px 28px -18px color-mix(in srgb, var(--accent) 55%, transparent);
-    transform: translateY(-2px);
+    /* translateY YOK: transform + 1px border, üst border'ı anti-alias'layıp
+       kaybediyordu ("hover'da üst border yok"). Kalkma hissini gölge veriyor. */
+    box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
   }
   .tcard:hover .tcard-cta > svg {
     transform: translateX(3px);
