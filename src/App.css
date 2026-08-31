@@ -2864,7 +2864,8 @@ button[aria-disabled='true'],
   fill: color-mix(in srgb, var(--accent) 42%, transparent);
   cursor: pointer;
 }
-.turkey-map [data-iladi].has-clubs:hover path {
+/* Yapışkan hover (.hovered) — :hover il sınırlarında titriyordu (bkz TurkeyMap.tsx) */
+.turkey-map [data-iladi].has-clubs.hovered path {
   fill: var(--accent);
 }
 .turkey-map [data-iladi].selected path {

@@ -74,9 +74,33 @@ export default function TurkeyMap({ clubCounts, selected, onSelect, countLabel }
     onSelect(selected && normProvince(selected) === key ? null : name) // tekrar tıkla → temizle
   }
 
+  // Yapışkan hover: :hover kullanılmıyor çünkü il sınırlarında/aralarında minik fare
+  // oynamasında sürekli açılıp kapanıp titriyordu. Vurguyu yalnızca YENİ bir kulüp iline
+  // girince değiştiririz; boşluk/sınırda kaybolmaz (mouseleave'de tümü temizlenir).
+  function onOver(e: MouseEvent) {
+    const g = (e.target as Element).closest('[data-iladi]')
+    if (!g) return
+    const key = normProvince(g.getAttribute('data-iladi') ?? '')
+    if ((clubCounts[key] ?? 0) === 0) return // sadece kulübü olan iller vurgulanır
+    const root = ref.current
+    if (!root) return
+    root.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
+    g.classList.add('hovered')
+  }
+  function onLeave() {
+    ref.current?.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
+  }
+
   if (err) return null
   return (
     // eslint-disable-next-line react/no-danger
-    <div className="turkey-map" ref={ref} onClick={onClick} dangerouslySetInnerHTML={{ __html: svg }} />
+    <div
+      className="turkey-map"
+      ref={ref}
+      onClick={onClick}
+      onMouseOver={onOver}
+      onMouseLeave={onLeave}
+      dangerouslySetInnerHTML={{ __html: svg }}
+    />
   )
 }
