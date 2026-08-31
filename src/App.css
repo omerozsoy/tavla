@@ -1260,13 +1260,13 @@ button[aria-disabled='true'],
   pointer-events: none;
   transition: background-color 0.15s ease;
 }
-/* Üst hane: sol geniş kenar → sağ üst uç */
+/* Üst hane: sol geniş kenar → sağ uç (üst yarı) */
 .side-menu [data-slot='button'][data-active='true']::before {
-  clip-path: polygon(0 0, 100% 44%, 0 50%);
+  clip-path: polygon(0 4%, 100% 24%, 0 44%);
 }
-/* Alt hane: sol uç → sağ geniş kenar */
+/* Alt hane: sol geniş kenar → sağ uç (alt yarı) — üst hanenin yatay aynası */
 .side-menu [data-slot='button'][data-active='true']::after {
-  clip-path: polygon(0 50%, 100% 56%, 100% 100%);
+  clip-path: polygon(0 56%, 100% 76%, 0 96%);
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
