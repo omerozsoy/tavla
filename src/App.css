@@ -10580,6 +10580,40 @@ button.stat-chip:hover {
 .tourn-confirm-actions > * {
   flex: 1;
 }
+/* Detay: sade geri linki (dev buton yerine) + kompakt aksiyon satırı */
+.tourn-back-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.14s ease;
+}
+.tourn-back-link:hover {
+  color: var(--accent);
+}
+.tourn-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 4px 0 6px;
+}
+.tourn-join-fee {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  padding-left: 8px;
+  border-left: 1px solid color-mix(in srgb, var(--on-accent) 40%, transparent);
+  font-variant-numeric: tabular-nums;
+}
 .tourn-list {
   display: flex;
   flex-direction: column;
