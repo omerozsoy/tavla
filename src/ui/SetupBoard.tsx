@@ -128,8 +128,8 @@ export default function SetupBoard({
   return (
     <div className="setup-board">
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="setup-board-svg">
-        <rect x="0" y="0" width={W} height={H} rx="16" fill={panel} />
-        <rect x="0" y="0" width={W} height={H} rx="16" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" />
+        <rect x="0" y="0" width={W} height={H} rx="0" fill={panel} />
+        <rect x="0" y="0" width={W} height={H} rx="0" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" />
         {/* orta bar */}
         <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
         {tris}
