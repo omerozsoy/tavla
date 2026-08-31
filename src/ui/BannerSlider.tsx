@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type TouchEvent } from 'react'
 import { listTournamentAds, type TournamentAd } from '../api'
 import { Icon } from './Icon'
 
@@ -39,6 +39,7 @@ export default function BannerSlider({ onOpen }: Props) {
   const [banners, setBanners] = useState<TournamentAd[]>([])
   const [i, setI] = useState(0)
   const timer = useRef<number | null>(null)
+  const touchX = useRef<number | null>(null)
 
   useEffect(() => {
     listTournamentAds()
@@ -66,8 +67,25 @@ export default function BannerSlider({ onOpen }: Props) {
   const go = (n: number) => setI((n + banners.length) % banners.length)
   const multi = banners.length > 1
 
+  // Parmakla gezinme (mobil): yatay kaydirma esigi 40px
+  const onTouchStart = (e: TouchEvent) => {
+    touchX.current = e.touches[0].clientX
+  }
+  const onTouchEnd = (e: TouchEvent) => {
+    if (touchX.current == null) return
+    const dx = e.changedTouches[0].clientX - touchX.current
+    touchX.current = null
+    if (Math.abs(dx) < 40) return
+    go(dx < 0 ? i + 1 : i - 1)
+  }
+
   return (
-    <div className="banner-slider" data-count={banners.length}>
+    <div
+      className="banner-slider"
+      data-count={banners.length}
+      onTouchStart={multi ? onTouchStart : undefined}
+      onTouchEnd={multi ? onTouchEnd : undefined}
+    >
       <div className="bs-track" style={{ transform: `translateX(-${i * 100}%)` }}>
         {banners.map((b) => {
           const hasText = !!(b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta)
@@ -125,6 +143,43 @@ export default function BannerSlider({ onOpen }: Props) {
       {/* Yazisiz (ciplak gorsel) bannerlarda noktalar ortada altta */}
       {multi && !banners.some((b) => b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta) && (
         <div className="bs-dots bs-dots-float">
+          {banners.map((_, d) => (
+            <button
+              key={d}
+              type="button"
+              className={d === i ? 'active' : ''}
+              onClick={() => go(d)}
+              aria-label={`Banner ${d + 1}`}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Sag-sol beyaz gezinme oklari (birden fazla banner) */}
+      {multi && (
+        <>
+          <button
+            type="button"
+            className="bs-arrow bs-arrow-prev"
+            onClick={() => go(i - 1)}
+            aria-label="Önceki banner"
+          >
+            <Icon name="caret-left" size={22} />
+          </button>
+          <button
+            type="button"
+            className="bs-arrow bs-arrow-next"
+            onClick={() => go(i + 1)}
+            aria-label="Sonraki banner"
+          >
+            <Icon name="caret-right" size={22} />
+          </button>
+        </>
+      )}
+
+      {/* Mobilde her zaman altta noktalar (parmakla gezinme gostergesi) */}
+      {multi && (
+        <div className="bs-dots bs-dots-mobile">
           {banners.map((_, d) => (
             <button
               key={d}
