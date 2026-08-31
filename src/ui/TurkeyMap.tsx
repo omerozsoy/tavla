@@ -5,7 +5,7 @@
  * tıklayınca o il seçilir (liste filtrelenir), tekrar tıklayınca kalkar.
  */
 
-import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type MouseEvent } from 'react'
 
 // Türkçe karakter-duyarlı normalize (eşleştirme için): İ/ı/ş/ğ/ü/ö/ç → i/s/g/u/o/c
 export function normProvince(s: string): string {
@@ -131,6 +131,15 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
     setBalloon(null)
   }
 
+  // SVG'yi sabit tut: svg değişmedikçe AYNI React elementi -> React bu alt-ağacı
+  // yeniden yazmaz. Aksi halde her render'da innerHTML yeniden set edilip effect'in
+  // eklediği has-clubs/hovered class'ları siliniyordu (harita renksiz kalıyordu).
+  const svgMarkup = useMemo(
+    // eslint-disable-next-line react/no-danger
+    () => <div className="turkey-map-svg" dangerouslySetInnerHTML={{ __html: svg }} />,
+    [svg],
+  )
+
   if (err) return null
   return (
     <div
@@ -140,8 +149,7 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
       onMouseOver={onOver}
       onMouseLeave={onLeave}
     >
-      {/* eslint-disable-next-line react/no-danger */}
-      <div className="turkey-map-svg" dangerouslySetInnerHTML={{ __html: svg }} />
+      {svgMarkup}
       {balloon && (
         <div
           className={`tm-balloon tm-balloon-${balloon.side}`}
