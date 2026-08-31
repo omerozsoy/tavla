@@ -32,10 +32,38 @@ class PlayerStatisticsService
         return [
             'median_error_rate' => [
                 'filter' => $period,
-                'categories' => $this->medianCached($user->id, $period),
+                'categories' => $this->safeMedian($user->id, $period),
             ],
             'wxp' => $this->wxpBlock($user),
         ];
+    }
+
+    /**
+     * Median hesabi WXP'yi ASLA dusurmemeli (bagimsiz domain'ler). Median sorgusu
+     * patlarsa (or. eksik migration/kolon) bos kategori dondur; WXP + endpoint calisir.
+     */
+    private function safeMedian(int $userId, string $period): array
+    {
+        try {
+            return $this->medianCached($userId, $period);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('median stats failed', [
+                'user_id' => $userId, 'err' => $e->getMessage(),
+            ]);
+
+            return $this->emptyCategories();
+        }
+    }
+
+    /** Tum kategoriler bos (median null, sample 0) — median hesaplanamadiginda fallback. */
+    private function emptyCategories(): array
+    {
+        $out = [];
+        foreach (StatsConfig::CATEGORIES as $key => $label) {
+            $out[$key] = ['label' => $label, 'median_pr' => null, 'sample_count' => 0];
+        }
+
+        return $out;
     }
 
     /** Median kategori sonucu — profil sik acildigi icin cache'li (database store). */
