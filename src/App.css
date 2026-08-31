@@ -159,7 +159,7 @@
   --on-accent: #f8f1e7; /* brick aksan uzerinde sicak ivory metin */
 
   /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
-  --header-h: 56px;
+  --header-h: 64px;
 
   /* ====== OYUN GEOMETRI SISTEMI (tek merkez) ======
      Tum olculer birbirinden turetilir; hicbir bilesen magic-number kullanmaz.
@@ -6209,7 +6209,8 @@ button.stat-chip:hover {
     'menu main';
   align-items: start;
   column-gap: 22px;
-  row-gap: 0;
+  /* Ust bar ile menu/icerik arasinda net bosluk (icerik bara "binmesin"). */
+  row-gap: 18px;
   height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
@@ -6248,7 +6249,7 @@ button.stat-chip:hover {
   flex-wrap: wrap;
   gap: 12px;
   margin: 0;
-  padding: 8px clamp(14px, 3vw, 40px);
+  padding: 12px clamp(14px, 3vw, 40px);
   background: var(--card-bg);
   border: none;
   border-bottom: 1px solid var(--border);
