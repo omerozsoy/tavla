@@ -32,13 +32,24 @@ export const SOLO_LEVELS: SoloLevel[] = [
   { level: 12, stake: 1000000, theme: 'neon', panel: '#2a2a4a', a: '#18e0c0', b: '#7a1fb0' },
 ]
 
+interface BoardColors {
+  panel: string
+  a: string
+  b: string
+  checker: string
+}
+
 interface Props {
   coins: number
-  onPick: (stake: number, theme: string) => void
+  /** Oyuncunun SECILI (gercek) tahta temasi — onizleme + oyunda kullanilir. */
+  board: BoardColors
+  onPick: (stake: number) => void
+  /** Tahtayi Degistir -> BoardSettings acar (oyuncu kendi tahtasini secer). */
+  onChangeBoard: () => void
   onClose: () => void
 }
 
-export default function SoloStakes({ coins, onPick, onClose }: Props) {
+export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const fmt = (n: number) => n.toLocaleString('tr-TR')
@@ -102,7 +113,16 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
         </div>
 
         <div className="setup-preview">
-          <SetupBoard panel={sel.panel} a={sel.a} b={sel.b} checker={sel.b} />
+          {/* Onizleme oyuncunun GERCEK tahtasini gosterir + ortada "Tahtayi Degistir".
+              Seviye yalnizca bahsi belirler; tahta artik seviyeye kilitli degil. */}
+          <SetupBoard
+            panel={board.panel}
+            a={board.a}
+            b={board.b}
+            checker={board.checker}
+            onChangeBoard={onChangeBoard}
+            changeLabel={t('setup.changeBoard')}
+          />
           <div className="solo-preview-bar">
             <span className="solo-preview-info">
               {t('solo.level', { n: sel.level })} ·{' '}
@@ -114,7 +134,7 @@ export default function SoloStakes({ coins, onPick, onClose }: Props) {
               variant="default"
               className="solo-start"
               disabled={selLocked}
-              onClick={() => onPick(sel.stake, sel.theme)}
+              onClick={() => onPick(sel.stake)}
             >
               <Icon name="play" size={18} /> {t('setup.start')}
             </Button>

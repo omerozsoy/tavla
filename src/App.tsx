@@ -2384,11 +2384,12 @@ export default function App() {
   }
 
   // Tek Oyun: bahis + tema sec -> ayni bahisli online eslesmeye gir (tek oyun)
-  function startSoloStake(stake: number, theme: string, target = 1) {
+  function startSoloStake(stake: number, target = 1) {
     stakeRef.current = stake
     betPctRef.current = 0 // Tek Oyun sabit bahis (pct degil)
     minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
-    setBoardTheme(theme)
+    // Tahta ARTIK seviyeye kilitli degil: oyuncunun secili boardTheme'i korunur
+    // (Tahtayi Degistir ile kendisi secer).
     setSoloOpen(false)
     mmOriginRef.current = 'solo' // iptalde Tek Oyun ekranina don
     onlineTargetRef.current = target // secilen puan hedefi (1 = tek oyun)
@@ -3765,6 +3766,11 @@ export default function App() {
       {soloOpen && (
         <SoloStakes
           coins={user?.coins ?? 0}
+          board={(() => {
+            const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+            return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
+          })()}
+          onChangeBoard={() => setBoardSettingsOpen(true)}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
         />
