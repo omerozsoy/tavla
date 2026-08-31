@@ -3034,6 +3034,11 @@ button[aria-disabled='true'],
   max-width: 1400px;
   margin: 0;
 }
+/* Sayfa-host'ta scroll YOK (max-height:none) → overflow:auto gereksiz ve ilk kartın
+   üst border'ını 1px kırpabiliyor; görünür yap. */
+.page-host .register-overlay.page > .tourn-card {
+  overflow: visible;
+}
 @media (max-width: 900px) {
   .page-host .register-overlay.page > *:not(.register-overlay) {
     padding: 60px 14px 40px;
@@ -6980,6 +6985,14 @@ button.stat-chip:hover {
   font-size: 0.8rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+}
+.tr-prize-desc {
+  color: var(--muted);
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 220px;
 }
 .tr-prizes > svg {
   color: #e6b422;

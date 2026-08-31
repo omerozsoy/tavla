@@ -344,6 +344,8 @@ export function TournamentsPanel({
                 ? [{ coins: tr.prize_coins }]
                 : []
           const moreP = (tr.prizes?.length ?? 0) - prizeList.length
+          // Kısa ödül açıklaması (ilk ödül desc'i veya genel not) — CSS ile ellipsize
+          const prizeDesc = ((tr.prizes?.[0]?.desc ?? tr.prize_desc) ?? '').trim()
           // Tarih: baslama zamani (yoksa gizli). Dile gore biciml.
           const dateText = tr.starts_at
             ? new Date(tr.starts_at).toLocaleString(lang === 'tr' ? 'tr-TR' : lang, {
@@ -390,6 +392,7 @@ export function TournamentsPanel({
                         {moreP > 0 && <span className="tr-prize-more">+{moreP}</span>}
                       </span>
                     )}
+                    {prizeDesc && <span className="tr-prize-desc">{prizeDesc}</span>}
                   </span>
                 )}
               </span>
