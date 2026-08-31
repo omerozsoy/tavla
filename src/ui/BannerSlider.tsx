@@ -12,6 +12,20 @@ function srcOf(img: string): string {
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
 
+// Secilen panel renginin acik mi koyu mu oldugu -> metin rengini otomatik ayarla (okunabilirlik).
+function isLightColor(hex?: string | null): boolean {
+  if (!hex) return true // varsayilan krem = acik
+  const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return true
+  const n = parseInt(m[1], 16)
+  const r = (n >> 16) & 255
+  const g = (n >> 8) & 255
+  const b = n & 255
+  // algilanan parlaklik (0..255)
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b
+  return lum > 150
+}
+
 const ROTATE_MS = 6000
 
 /**
@@ -67,7 +81,11 @@ export default function BannerSlider({ onOpen }: Props) {
               aria-label={b.title || b.tournament_name || 'Banner'}
             >
               {hasText && (
-                <span className="bs-panel">
+                <span
+                  className="bs-panel"
+                  data-dark={b.panel_color && !isLightColor(b.panel_color) ? '' : undefined}
+                  style={b.panel_color ? { background: b.panel_color } : undefined}
+                >
                   {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
                   {b.title && <span className="bs-title">{b.title}</span>}
                   {b.subtitle && <span className="bs-sub">{b.subtitle}</span>}

@@ -522,6 +522,8 @@ export interface TournamentAd {
   subtitle?: string | null
   meta?: string | null
   cta?: string | null
+  /** Sol panel arka plan rengi (#rrggbb). Boşsa varsayılan krem. */
+  panel_color?: string | null
   tournament_id: number | null
   tournament_name: string | null
 }

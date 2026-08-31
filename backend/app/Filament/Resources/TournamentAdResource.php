@@ -69,6 +69,14 @@ class TournamentAdResource extends Resource
                         ->maxLength(120)->placeholder('ör. 1–3 Kasım 2026 · Kıbrıs')
                         ->helperText('Butonun üstünde küçük satır (takvim ikonuyla).')
                         ->columnSpanFull(),
+                    Forms\Components\ColorPicker::make('panel_color')->label('Sol panel rengi')
+                        ->helperText('Boş = varsayılan krem. İstersen aşağıdaki resim renklerinden birine tıkla.')
+                        ->live(),
+                    Forms\Components\ViewField::make('palette')
+                        ->label('Resimden baskın renkler')
+                        ->view('filament.palette-swatches')
+                        ->dehydrated(false)
+                        ->columnSpanFull(),
                 ])
                 ->columns(2)
                 ->columnSpanFull(),

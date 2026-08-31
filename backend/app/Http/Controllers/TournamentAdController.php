@@ -24,6 +24,7 @@ class TournamentAdController extends Controller
                 'subtitle' => $ad->subtitle,
                 'meta' => $ad->meta,
                 'cta' => $ad->cta,
+                'panel_color' => $ad->panel_color,
                 'tournament_id' => $ad->tournament_id,
                 'tournament_name' => $ad->tournament?->name,
             ]);
