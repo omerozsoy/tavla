@@ -490,6 +490,8 @@ export interface TMatch {
 export interface Tournament {
   id: number
   name: string
+  /** Duzenlenme yeri / otel adi (fiziksel mekan). */
+  venue?: string | null
   size: number
   status: 'open' | 'running' | 'finished'
   count: number
