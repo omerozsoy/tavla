@@ -100,9 +100,9 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
           <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
           </Button>
-          <Button variant="secondary" onClick={() => setActive(null)}>
-            ← {t('tourn.back')}
-          </Button>
+          <button type="button" className="tourn-back-link" onClick={() => setActive(null)}>
+            <span aria-hidden="true">←</span> {t('tourn.back')}
+          </button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
           <div className="tourn-meta">
             {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
@@ -171,15 +171,24 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
             )
           )}
 
-          {canJoin && (
-            <Button variant="default" disabled={busy} onClick={() => setConfirm('join')}>
-              {t('tourn.join')}
-            </Button>
-          )}
-          {joined && active.status === 'open' && (
-            <Button variant="destructive" disabled={busy} onClick={() => setConfirm('leave')}>
-              <Icon name="x" size={16} /> {t('tourn.leave')}
-            </Button>
+          {(canJoin || (joined && active.status === 'open')) && (
+            <div className="tourn-actions">
+              {canJoin && (
+                <Button variant="default" disabled={busy} onClick={() => setConfirm('join')}>
+                  {t('tourn.join')}
+                  {!!active.entry_fee && (
+                    <span className="tourn-join-fee">
+                      <Icon name="coin" size={14} /> {active.entry_fee.toLocaleString('tr-TR')}
+                    </span>
+                  )}
+                </Button>
+              )}
+              {joined && active.status === 'open' && (
+                <Button variant="destructive" disabled={busy} onClick={() => setConfirm('leave')}>
+                  <Icon name="x" size={16} /> {t('tourn.leave')}
+                </Button>
+              )}
+            </div>
           )}
 
           {champ && (
