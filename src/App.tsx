@@ -4142,14 +4142,7 @@ export default function App() {
           <Icon name="bulb" size={16} /> {t('hint.button')}
         </Button>
       )}
-      <button
-        className="game-ham"
-        onClick={() => setGameMenuOpen((v) => !v)}
-        aria-label={t('gm.title')}
-        title={t('gm.title')}
-      >
-        <Icon name="menu" size={30} />
-      </button>
+      {/* Hamburger butonu .game-area içinde board'un sağ kenarına taşındı (aşağı) */}
       <GameMenu
         open={gameMenuOpen}
         showPip={showPip}
@@ -4229,6 +4222,15 @@ export default function App() {
             {t('msg.noMovePass', { name: noMoveFlash })}
           </div>
         )}
+        {/* Oyun menüsü hamburger — board'un sağ kenarına bitişik (flex öğesi) */}
+        <button
+          className="game-ham"
+          onClick={() => setGameMenuOpen((v) => !v)}
+          aria-label={t('gm.title')}
+          title={t('gm.title')}
+        >
+          <Icon name="menu" size={30} />
+        </button>
       </div>
 
       <div className="status">
