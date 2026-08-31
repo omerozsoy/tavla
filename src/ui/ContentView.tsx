@@ -161,6 +161,16 @@ export default function ContentView({
       }
     return m
   }, [clubGroups])
+  // Harita balonu için il-başına kulüp adları (normalize anahtar)
+  const clubNames = useMemo(() => {
+    const m: Record<string, string[]> = {}
+    if (clubGroups)
+      for (const [prov, list] of clubGroups) {
+        const k = normProvince(prov)
+        ;(m[k] ||= []).push(...list.map((c) => c.title))
+      }
+    return m
+  }, [clubGroups])
   const [selProvince, setSelProvince] = useState<string | null>(null)
 
   // Bilgi sayfasi "Hizmetler" sekmesi: overlay/kart/baslik olmadan yalniz liste.
@@ -337,6 +347,7 @@ export default function ContentView({
           <div className="content-clubs">
             <TurkeyMap
               clubCounts={clubCounts}
+              clubNames={clubNames}
               selected={selProvince}
               onSelect={setSelProvince}
               countLabel={(n) => t('clubs.count', { n })}
