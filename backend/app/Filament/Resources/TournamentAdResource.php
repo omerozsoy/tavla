@@ -38,7 +38,7 @@ class TournamentAdResource extends Resource
             Forms\Components\FileUpload::make('image')->label('Banner görseli')
                 ->image()->disk('uploads')->directory('banner')->visibility('public')
                 ->imageEditor()->maxSize(5120)
-                ->helperText('Tam genişlikte hero olarak gösterilir; geniş, yüksek çözünürlüklü görsel önerilir (örn. 2000×760). En fazla 5 MB.')
+                ->helperText('Sol panelde yazı varsa görsel SAĞ yarıda; yoksa tam genişlikte gösterilir. Dikey ortaya önemli öğe koy (kırpılabilir). Yüksek çözünürlük önerilir. En fazla 5 MB.')
                 ->required()
                 ->columnSpanFull(),
             Forms\Components\Select::make('tournament_id')
@@ -49,20 +49,25 @@ class TournamentAdResource extends Resource
                 ->helperText('Banner’a tıklayınca bu turnuvanın detay sayfası açılır.')
                 ->required(),
 
-            // Görselin ÜSTÜNE bindirilen metin (Christie's tarzı). Tümü boş bırakılırsa
-            // görsel çıplak gösterilir (yazı görselin içinde hazır demektir).
-            Forms\Components\Fieldset::make('Görsel üstü yazı (opsiyonel)')
+            // Christie's tarzı split hero: SOL panelde bu yazılar, SAĞDA görsel gösterilir.
+            // Tümü boş bırakılırsa panel çıkmaz, görsel tam genişlikte çıplak gösterilir.
+            Forms\Components\Fieldset::make('Sol panel yazıları (opsiyonel — Christie’s tarzı)')
                 ->schema([
                     Forms\Components\TextInput::make('kicker')->label('Üst etiket')
-                        ->maxLength(80)->placeholder('ör. TURNUVA')
+                        ->maxLength(80)->placeholder('ör. ÖNE ÇIKAN TURNUVA')
                         ->helperText('Küçük, büyük harf gösterilir.'),
                     Forms\Components\TextInput::make('cta')->label('Buton yazısı')
                         ->maxLength(60)->placeholder('ör. Keşfet'),
                     Forms\Components\TextInput::make('title')->label('Başlık')
                         ->maxLength(160)->placeholder('ör. 5. Grand Pasha Open')
+                        ->helperText('Büyük serif başlık.')
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('subtitle')->label('Alt metin')
-                        ->maxLength(240)->placeholder('ör. 1–3 Kasım 2026 · Kıbrıs')
+                        ->maxLength(240)->placeholder('ör. Kıbrıs’ın en büyük backgammon turnuvası')
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('meta')->label('Meta (tarih · yer)')
+                        ->maxLength(120)->placeholder('ör. 1–3 Kasım 2026 · Kıbrıs')
+                        ->helperText('Butonun üstünde küçük satır (takvim ikonuyla).')
                         ->columnSpanFull(),
                 ])
                 ->columns(2)
