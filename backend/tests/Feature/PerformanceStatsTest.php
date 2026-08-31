@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\DecisionAnalysis;
 use App\Models\MatchResult;
 use App\Models\User;
 use App\Models\UserWxpTransaction;
@@ -39,6 +40,25 @@ class PerformanceStatsTest extends TestCase
         }
 
         return $mr;
+    }
+
+    /** Bir maca per-karar analiz satiri ekle (equity_loss = per-karar hata). */
+    private function da(User $u, MatchResult $mr, int $moveIndex, float $loss, bool $opponent = false, int $daysAgo = 0): void
+    {
+        DecisionAnalysis::create([
+            'user_id' => $u->id,
+            'match_result_id' => $mr->id,
+            'move_index' => $moveIndex,
+            'played_at' => now()->subDays($daysAgo),
+            'player' => $opponent ? 'black' : 'white',
+            'is_opponent' => $opponent,
+            'decision_type' => 'checker',
+            'dice' => '6-3',
+            'equity_loss' => $loss,
+            'severity' => $loss >= 0.02 ? 'mistake' : null,
+            'primary_category' => 'middle_game',
+            'analysis_version' => 2,
+        ]);
     }
 
     // ==================== MEDIAN ====================
@@ -186,17 +206,29 @@ class PerformanceStatsTest extends TestCase
         $u = $this->makeUser();
         $wxp = app(WxpService::class);
         // 2 galibiyet (WXP 1+7=8) + 1 maglubiyet -> win_rate 66.67 (kesirli; JSON int/float belirsizligi yok)
-        $wxp->awardForMatchResult($this->mr($u, true, 1, 'match', 6.38));
-        $wxp->awardForMatchResult($this->mr($u, true, 7, 'match', 16.47));
-        $this->mr($u, false, 5, 'match', 15.93); // kayip ama pr median '5'e girer
+        $m1 = $this->mr($u, true, 1, 'match', 6.38);
+        $wxp->awardForMatchResult($m1);
+        $m7 = $this->mr($u, true, 7, 'match', 16.47);
+        $wxp->awardForMatchResult($m7);
+        $m5 = $this->mr($u, false, 5, 'match', 15.93);
+
+        // Medyan artik PER-KARAR (decision_analyses.equity_loss * 500). Ayni beklenen
+        // degerleri uretecek per-karar hatalar:
+        $this->da($u, $m1, 0, 0.01276);            // *500 = 6.38 (tek karar -> medyan 6.38)
+        $this->da($u, $m7, 0, 0.03294);            // *500 = 16.47
+        $this->da($u, $m5, 0, 0.03);               // *500 = 15.0  \ cift karar medyani
+        $this->da($u, $m5, 1, 0.03372);            // *500 = 16.86 / -> (15.0+16.86)/2 = 15.93
+        $this->da($u, $m5, 2, 0.90, opponent: true); // RAKIP karari -> medyana GIRMEZ
 
         Sanctum::actingAs($u->fresh()); // cached total_wxp DB'de guncellendi -> taze oku
         $res = $this->getJson('/api/me/performance-stats?period=all');
         $res->assertOk()
             ->assertJsonPath('median_error_rate.filter', 'all')
             ->assertJsonPath('median_error_rate.categories.1.median_pr', 6.38)
+            ->assertJsonPath('median_error_rate.categories.1.sample_count', 1)
             ->assertJsonPath('median_error_rate.categories.7.median_pr', 16.47)
             ->assertJsonPath('median_error_rate.categories.5.median_pr', 15.93)
+            ->assertJsonPath('median_error_rate.categories.5.sample_count', 2) // rakip haric
             ->assertJsonPath('median_error_rate.categories.3.median_pr', null)
             ->assertJsonPath('median_error_rate.categories.coin.median_pr', null)
             ->assertJsonPath('wxp.total', 8)
@@ -204,6 +236,35 @@ class PerformanceStatsTest extends TestCase
             ->assertJsonPath('wxp.losses', 1)
             ->assertJsonPath('wxp.total_matches', 3)
             ->assertJsonPath('wxp.win_rate', 66.67);
+    }
+
+    // Per-karar medyan: kategori bagimsizligi + rakip/forced haric + tarih filtresi.
+    public function test_per_decision_median_source_and_filters(): void
+    {
+        $u = $this->makeUser();
+        $svc = app(MedianPerformanceService::class);
+
+        // 5S maci: 3 kendi karari [0.02,0.04,0.06]*500 = [10,20,30] -> medyan 20
+        $m5 = $this->mr($u, true, 5, 'match', null);
+        $this->da($u, $m5, 0, 0.02);
+        $this->da($u, $m5, 1, 0.04);
+        $this->da($u, $m5, 2, 0.06);
+        $this->da($u, $m5, 3, 0.99, opponent: true); // rakip -> haric
+
+        // 1S maci (eski): tarih filtresi disinda kalmali
+        $mOld = $this->mr($u, true, 1, 'match', null, 200);
+        $this->da($u, $mOld, 0, 0.02, false, 200);
+
+        $all = $svc->perDecisionCategoriesFor($u->id, 'all');
+        $this->assertSame(20.0, $all['5']['median_pr']);
+        $this->assertSame(3, $all['5']['sample_count']);   // rakip karisMADI
+        $this->assertSame(1, $all['1']['sample_count']);
+        $this->assertNull($all['3']['median_pr']);         // veri yok -> null
+
+        // 7 gun: eski 1S karari duser, 5S kalir
+        $recent = $svc->perDecisionCategoriesFor($u->id, '7d');
+        $this->assertSame(3, $recent['5']['sample_count']);
+        $this->assertSame(0, $recent['1']['sample_count']);
     }
 
     public function test_endpoint_requires_auth(): void

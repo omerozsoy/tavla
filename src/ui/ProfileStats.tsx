@@ -278,7 +278,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                       return {
                         label: catLabel(k),
                         value: c?.median_pr ?? null,
-                        sub: n > 0 ? t('med.matches', { n }) : undefined,
+                        sub: n > 0 ? t('med.decisions', { n }) : undefined,
                       }
                     })}
                   />
