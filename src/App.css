@@ -6502,13 +6502,40 @@ button.stat-chip:hover {
   margin: 2px 2px;
 }
 @media (max-width: 720px) {
-  /* Bar yine TAM GENISLIK ust cubuk (base top:0/left:0/right:0) -> repositioning YOK. */
+  /* Bar TAM GENISLIK; kontroller SAGA SIGSIN (tasma/wrap yok) -> kompaktla. */
   .account-bar {
     min-height: 48px;
-    padding: max(4px, env(safe-area-inset-top)) 10px 4px 12px;
+    gap: 4px;
+    padding: max(4px, env(safe-area-inset-top)) 8px 4px 10px;
+    flex-wrap: nowrap;
   }
   .account-name {
     display: none;
+  }
+  /* Ayrac gizle (yer kazanir) */
+  .account-bar .account-sep {
+    display: none;
+  }
+  /* Ikon butonlari (ayarlar/ses) + dil menusu: 42 -> 34; ikon 24 -> 20 */
+  .account-bar [data-slot='button'] {
+    height: 34px !important;
+    min-width: 34px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .account-bar [data-slot='button'] svg,
+  .account-bar .lang-menu button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+  .account-bar .lang-menu button {
+    height: 34px !important;
+    min-width: 34px !important;
+    padding: 0 5px !important;
+  }
+  /* Kompakt logo + hamburger'a yer (biraz daha dar) */
+  .ab-brand {
+    margin-left: 42px;
   }
 }
 
