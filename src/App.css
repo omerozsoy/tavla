@@ -8750,13 +8750,18 @@ button.stat-chip:hover {
   text-align: left;
 }
 
-/* ===== Kurulum split: sol ayarlar/grid | sag board onizleme ===== */
+/* ===== Kurulum split: sol ayarlar/grid | sag board onizleme =====
+   Onizleme kolonu board'u KUCUMSER (1fr yerine sabit genislik) -> board genis
+   bos bir kolonun ortasinda asili kalmaz; secenklerin hemen yaninda oturur.
+   Butun blok max-width ile kompakt + sola dayali (sagdaki bos alan azalir). */
 .setup-split {
   display: grid;
-  grid-template-columns: minmax(300px, 400px) minmax(0, 1fr);
-  gap: clamp(16px, 3vw, 32px);
+  grid-template-columns: minmax(300px, 380px) minmax(420px, 560px);
+  gap: clamp(16px, 2.5vw, 36px);
   align-items: start;
+  justify-content: start;
   width: 100%;
+  max-width: 1000px;
 }
 .setup-split > .setup-card,
 .setup-split > .solo-card {
