@@ -6326,49 +6326,86 @@ button.stat-chip:hover {
    Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Outfit)
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
-/* Ana sayfa turnuva reklam seridi: yan yana en fazla 3 gorsel (panelden yonetilir) */
-.tourn-ads {
+/* Ana sayfa banner slider'i: tam genislikte donen carousel (panelden yonetilir) */
+.banner-slider {
+  position: relative;
   width: 100%;
   max-width: 920px;
   margin: 0 auto 14px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.tourn-ads[data-count='1'] {
-  grid-template-columns: 1fr;
-}
-.tourn-ads[data-count='2'] {
-  grid-template-columns: repeat(2, 1fr);
-}
-.tourn-ad {
-  padding: 0;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--card-bg);
+}
+.bs-track {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+.bs-slide {
+  flex: 0 0 100%;
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease;
 }
-.tourn-ad:hover:not(:disabled) {
-  transform: translateY(-2px);
-  border-color: var(--accent);
-}
-.tourn-ad:disabled {
+.bs-slide:disabled {
   cursor: default;
 }
-.tourn-ad img {
+.bs-slide img {
   display: block;
   width: 100%;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 1200 / 360;
   object-fit: cover;
 }
-@media (max-width: 640px) {
-  .tourn-ads,
-  .tourn-ads[data-count='2'],
-  .tourn-ads[data-count='3'] {
-    grid-template-columns: 1fr;
-  }
+.bs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.bs-arrow:hover {
+  background: rgba(0, 0, 0, 0.65);
+}
+.bs-prev {
+  left: 10px;
+}
+.bs-next {
+  right: 10px;
+}
+.bs-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.bs-dots button {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: width 0.2s ease, background 0.2s ease;
+}
+.bs-dots button.active {
+  width: 20px;
+  background: #fff;
 }
 
 .resume-match-bar {

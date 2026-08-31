@@ -6,15 +6,15 @@ use App\Models\TournamentAd;
 
 class TournamentAdController extends Controller
 {
-    // Herkese acik: ana sayfada gosterilecek yayindaki reklamlar (en fazla 3, siraya gore).
-    // Her reklam turnuva id + adiyla doner; tiklaninca o turnuvanin detayi acilir.
+    // Herkese acik: ana sayfa slider'inda donen yayindaki bannerlar (siraya gore).
+    // Her banner turnuva id + adiyla doner; tiklaninca o turnuvanin detayi acilir.
     public function index()
     {
         $ads = TournamentAd::where('published', true)
             ->whereNotNull('image')
             ->orderBy('sort')
             ->orderBy('id')
-            ->limit(3)
+            ->limit(10)
             ->get()
             ->map(fn (TournamentAd $ad) => [
                 'id' => $ad->id,
