@@ -6545,7 +6545,7 @@ button.stat-chip:hover {
 }
 .bs-title {
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
-  font-weight: 500;
+  font-weight: 400;
   font-size: clamp(1.8rem, 3vw, 3.1rem);
   line-height: 1.06;
   color: var(--med-ink);
