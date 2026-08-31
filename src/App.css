@@ -795,7 +795,7 @@ button[aria-disabled='true'],
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
-  border-radius: var(--radius-xl);
+  border-radius: 0; /* Duz kose (ana sayfa) */
   padding: 12px 10px;
 }
 .side-menu .brand {
@@ -6202,6 +6202,15 @@ button.stat-chip:hover {
    dikey kayar -> band STICKY DEGIL, icerikle birlikte yukari kayar ve KAYBOLUR.
    Yan menu sticky (band kayinca en ustte kalir, erisilebilir). */
 .app.lobby {
+  /* Ana sayfa (lobi) DUZ KOSELI: tum kapsayici/kart/panel/menu koseleri kare.
+     Kose yaricap token'lari 0'a cekilir -> token kullanan her sey duzlesir.
+     Daireler (avatar/nokta = --radius-circle) ve pill'ler (--radius-pill)
+     kasitli sekiller olarak korunur ("yuvarlak kose" = dikdortgen kosesi). */
+  --radius-xs: 0;
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
   grid-template-areas:
@@ -7099,7 +7108,7 @@ button.stat-chip:hover {
   justify-content: center;
   width: 54px;
   height: 54px;
-  border-radius: 15px;
+  border-radius: 0; /* Ana sayfa duz kose */
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
   /* Ince ic halka: rozete derinlik/kimlik verir */
