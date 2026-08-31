@@ -16,6 +16,7 @@ export interface SideMenuProps {
   onResume: () => void
   onLeaderboard: () => void
   onRanks?: () => void
+  onInfo?: () => void
   onTournaments: () => void
   onShop: () => void
   onMembership?: () => void
@@ -176,9 +177,8 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
-      {/* Araclar (dogrudan; "Daha fazla" acilir menu yok) */}
+      {/* Araclar (dogrudan; "Daha fazla" acilir menu yok — baslik etiketi kaldirildi) */}
       <div className="menu-group">
-        <div className="menu-label">{t('menu.tools')}</div>
         <Button variant="ghost" className={NAV} data-active={p.active === 'analyzer' || undefined} onClick={p.onAnalyzer}>
           <Icon name="search" size={24} /> {t('pa.title')}
         </Button>
@@ -196,6 +196,15 @@ export default function SideMenu(p: SideMenuProps) {
           <Icon name="shield-check" size={24} /> {t('fair.title')}
         </Button>
       </div>
+
+      {/* Bilgi — en altta */}
+      {p.onInfo && (
+        <div className="menu-group">
+          <Button variant="ghost" className={NAV} data-active={p.active === 'info' || undefined} onClick={p.onInfo}>
+            <Icon name="info" size={24} /> {t('menu.info')}
+          </Button>
+        </div>
+      )}
     </aside>
   )
 }

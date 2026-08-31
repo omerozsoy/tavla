@@ -33,6 +33,7 @@ import {
   GraduationCap,
   Lightbulb,
   MagnifyingGlass,
+  Info,
   ChatCircle,
   User,
   Coin,
@@ -144,6 +145,7 @@ export type IconName =
   | 'monitor-play'
   | 'warning-circle'
   | 'chart-line'
+  | 'info'
   | 'shield-check'
   | 'clock'
   | 'lock-key'
@@ -222,6 +224,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'monitor-play': MonitorPlay,
   'warning-circle': WarningCircle,
   'chart-line': ChartLine,
+  info: Info,
   'shield-check': ShieldCheck,
   clock: Clock,
   'lock-key': LockKey,
