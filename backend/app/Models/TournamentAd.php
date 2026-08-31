@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 // Ana sayfa turnuva reklam gorseli -> bir turnuvaya baglanir (tiklaninca detaya gider).
 class TournamentAd extends Model
 {
-    protected $fillable = ['tournament_id', 'image', 'sort', 'published'];
+    protected $fillable = ['tournament_id', 'image', 'kicker', 'title', 'subtitle', 'cta', 'sort', 'published'];
 
     protected $casts = [
         'published' => 'boolean',

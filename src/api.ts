@@ -516,6 +516,11 @@ export async function listTournaments(): Promise<Tournament[]> {
 export interface TournamentAd {
   id: number
   image: string
+  /** Görsel üstüne bindirilen editoryal metin (opsiyonel; boşsa çıplak görsel). */
+  kicker?: string | null
+  title?: string | null
+  subtitle?: string | null
+  cta?: string | null
   tournament_id: number | null
   tournament_name: string | null
 }

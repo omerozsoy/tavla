@@ -11,11 +11,13 @@ function srcOf(img: string): string {
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
 
-const ROTATE_MS = 5000
+const ROTATE_MS = 6000
 
 /**
- * Ana sayfanin en ustunde tam genislikte donen banner slider'i (carousel).
- * Panelden (Banner) yonetilir; her banner bir turnuvaya baglidir, tiklaninca detay acilir.
+ * Ana sayfanin en ustunde tam genislikte (edge-to-edge) hero banner slider'i —
+ * Christie's tarzi: buyuk gorsel + sol-alta editoryal metin bindirmesi (kicker/baslik/
+ * alt metin/CTA) + gradient scrim. Panelden (Banner) yonetilir; her banner bir turnuvaya
+ * baglidir, tiklaninca detay acilir. Metin alanlari bossa gorsel ciplak gosterilir.
  */
 export default function BannerSlider({ onOpen }: Props) {
   const [banners, setBanners] = useState<TournamentAd[]>([])
@@ -50,18 +52,36 @@ export default function BannerSlider({ onOpen }: Props) {
   return (
     <div className="banner-slider" data-count={banners.length}>
       <div className="bs-track" style={{ transform: `translateX(-${i * 100}%)` }}>
-        {banners.map((b) => (
-          <button
-            key={b.id}
-            type="button"
-            className="bs-slide"
-            onClick={() => b.tournament_id != null && onOpen(b.tournament_id)}
-            disabled={b.tournament_id == null}
-            title={b.tournament_name ?? undefined}
-          >
-            <img src={srcOf(b.image)} alt={b.tournament_name ?? ''} loading="lazy" />
-          </button>
-        ))}
+        {banners.map((b) => {
+          const hasText = !!(b.kicker || b.title || b.subtitle || b.cta)
+          return (
+            <button
+              key={b.id}
+              type="button"
+              className="bs-slide"
+              onClick={() => b.tournament_id != null && onOpen(b.tournament_id)}
+              disabled={b.tournament_id == null}
+              aria-label={b.title || b.tournament_name || 'Banner'}
+            >
+              <img src={srcOf(b.image)} alt={b.title || b.tournament_name || ''} loading="lazy" />
+              {hasText && (
+                <>
+                  <span className="bs-scrim" aria-hidden="true" />
+                  <span className="bs-content">
+                    {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
+                    {b.title && <span className="bs-title">{b.title}</span>}
+                    {b.subtitle && <span className="bs-sub">{b.subtitle}</span>}
+                    {b.cta && (
+                      <span className="bs-cta">
+                        {b.cta} <span aria-hidden="true">→</span>
+                      </span>
+                    )}
+                  </span>
+                </>
+              )}
+            </button>
+          )
+        })}
       </div>
 
       {banners.length > 1 && (
