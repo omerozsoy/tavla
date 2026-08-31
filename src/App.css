@@ -10453,6 +10453,41 @@ button.stat-chip:hover {
   text-align: center;
   padding: 12px;
 }
+/* Bilgi sayfasi */
+.info-card .info-body {
+  max-width: 720px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  line-height: 1.65;
+}
+.info-body h3 {
+  margin: 10px 0 0;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+.info-body p {
+  margin: 0;
+  color: var(--muted);
+}
+.info-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.info-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+}
+.info-list li svg {
+  color: var(--accent);
+  flex-shrink: 0;
+}
 .an-wxp {
   display: flex;
   align-items: baseline;

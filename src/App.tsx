@@ -93,6 +93,7 @@ import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
 import Rules from './ui/Rules'
 import NotificationBell from './ui/NotificationBell'
+import Info from './ui/Info'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
@@ -392,6 +393,7 @@ export default function App() {
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
+  const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
@@ -426,6 +428,8 @@ export default function App() {
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
   const currentSlug = editProfile
     ? 'profil'
+    : infoOpen
+    ? 'bilgi'
     : leaderboardOpen
     ? 'lider-tablosu'
     : ranksOpen
@@ -512,6 +516,9 @@ export default function App() {
           break
         case 'rutbeler':
           setRanksOpen(true)
+          break
+        case 'bilgi':
+          setInfoOpen(true)
           break
         case 'turnuvalar':
           setTournOpen(true)
@@ -3462,6 +3469,7 @@ export default function App() {
     setMemOpen(false)
     setLeaderboardOpen(false)
     setRanksOpen(false)
+    setInfoOpen(false)
     setTournOpen(false)
     setShopOpen(false)
     setFrameGalleryOpen(false)
@@ -3532,6 +3540,7 @@ export default function App() {
     },
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onRanks: () => goPage(() => setRanksOpen(true)),
+    onInfo: () => goPage(() => setInfoOpen(true)),
     onTournaments: () => goPage(() => setTournOpen(true)),
     onShop: () => goPage(() => setShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
@@ -3604,6 +3613,7 @@ export default function App() {
   const anyPageOpen =
     leaderboardOpen ||
     ranksOpen ||
+    infoOpen ||
     tournOpen ||
     shopOpen ||
     frameGalleryOpen ||
@@ -3625,7 +3635,9 @@ export default function App() {
     editProfile
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
-  const activeKey = ranksOpen
+  const activeKey = infoOpen
+    ? 'info'
+    : ranksOpen
     ? 'ranks'
     : leaderboardOpen
     ? 'leaderboard'
@@ -3679,6 +3691,7 @@ export default function App() {
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
+      {infoOpen && <Info onClose={() => setInfoOpen(false)} />}
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />
       )}
