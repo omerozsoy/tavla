@@ -30,9 +30,9 @@ export interface BoardTheme {
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
 export const BOARD_THEMES: BoardTheme[] = [
-  // Standart — site marka renkleri (Royal Navy): deep navy zemin, gold + muted-navy
-  // noktalar, ivory acik pul + near-black koyu pul, gold kup. Yeni uyenin VARSAYILANI.
-  { id: 'standart', name: 'Standart', panel: '#0f1b2b', a: '#c2a15f', b: '#2a3d59', checker: '#0a1220', light: '#f0e8d8', frame: '#080c12', cubeBg: '#c2a15f', cubeText: '#14243a', d1Bg: '#f0e8d8', d1Pip: '#14243a', d2Bg: '#22344e', d2Pip: '#f0e8d8' },
+  // Standart — site TEMA renkleri (Terracotta): sicak sand zemin, kiremit (brick) +
+  // krem noktalar, espresso koyu pul + krem acik pul, kiremit kup/zar. Varsayilan.
+  { id: 'standart', name: 'Standart', panel: '#d8c6ac', a: '#a83a2b', b: '#f2ead9', checker: '#241a12', light: '#f7f1e6', frame: '#3a2a1c', cubeBg: '#a83a2b', cubeText: '#f7f1e6', d1Bg: '#f7f1e6', d1Pip: '#241a12', d2Bg: '#a83a2b', d2Pip: '#f7f1e6' },
   { id: 'tavla', name: 'Latte', panel: '#e6e9ef', a: '#dd7878', b: '#ccd0da', checker: '#4c4f69' },
   // Varsayilan premium mavi tavla (Galaxy tarzi turnuva paleti). Tum renkler burada
   // merkezidir; App.css --panel/--tri-a/--tri-b/--navy/--cream/--bar'a yansir.
