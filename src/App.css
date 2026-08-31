@@ -6495,6 +6495,10 @@ button.stat-chip:hover {
   margin: -12px calc(-1 * clamp(12px, 3vw, 40px)) 22px;
   overflow: hidden;
   background: var(--sand);
+  /* KRITIK: .lobby-main bir flex-column; overflow:hidden olan bu ogenin flex
+     otomatik min boyutu 0'a duser -> sayfa uzayinca banner 0 yukseklige SIKISIR
+     ve track kirpilir (gorunmez olur). flex-shrink:0 ile sabit tutulur. */
+  flex-shrink: 0;
 }
 .bs-track {
   display: flex;
