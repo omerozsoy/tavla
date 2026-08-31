@@ -5340,22 +5340,10 @@ html.fs-active .account-bar {
   display: none;
 }
 
-/* Oyun ekraninda hesap bari KOMPAKT: yalnizca ad + rating gorunur; uzerine gelince
-   tum menu (bildirim/coin/magaza/ayar/dil/ses...) acilir. */
+/* Oyun ekraninda ust hesap bari GIZLI: sag ustte "garip nokta" gibi duruyordu.
+   Oyun-ici kontroller sag-orta hamburger (GameMenu); oyuncu bilgisi yan panellerde. */
 .game-view .account-bar {
-  gap: 8px;
-  padding: 6px 12px;
-  transition: padding 0.15s;
-}
-.game-view .account-bar > *:not(.account-name) {
   display: none;
-}
-.game-view .account-bar:hover {
-  gap: 12px;
-  padding: 9px 18px;
-}
-.game-view .account-bar:hover > *:not(.account-name) {
-  display: inline-flex;
 }
 
 /* Tam ekran ac/kapa butonu (oyun ekrani sol ust) */
