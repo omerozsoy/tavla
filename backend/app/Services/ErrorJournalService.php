@@ -56,9 +56,12 @@ class ErrorJournalService
                     continue; // cube karari -> v1 disi
                 }
                 $player = $e['player'] ?? null;
-                if ($player === null || ($hc !== null && $player !== $hc)) {
-                    continue; // sadece kullanicinin kararlari
+                if ($player === null) {
+                    continue;
                 }
+                // Rakip (pvb'de bot) karari da saklanir: Zar Ortalamalari Sen/Rakip kirilimi.
+                // Hata Gunlugu bu satirlari HARIC tutar (bkz. scoped()).
+                $isOpponent = $hc !== null && $player !== $hc;
                 $pos = $e['pos'] ?? null;
                 if (! is_array($pos) || ! isset($pos['points'])) {
                     continue;
@@ -82,6 +85,7 @@ class ErrorJournalService
                     'move_index' => $i,
                     'played_at' => $playedAt,
                     'player' => $player,
+                    'is_opponent' => $isOpponent,
                     'decision_type' => 'checker',
                     'dice' => $this->diceStr($e['dice'] ?? null),
                     'played' => isset($e['notation']) ? mb_substr((string) $e['notation'], 0, 40) : null,
@@ -179,10 +183,12 @@ class ErrorJournalService
 
     // --- yardimcilar ---------------------------------------------------------
 
-    /** user + tarih araligi ile filtrelenmis checker-karari sorgusu. */
+    /** user + tarih araligi ile filtrelenmis checker-karari sorgusu (RAKIP haric). */
     private function scoped(int $userId, ?Carbon $from, ?Carbon $to)
     {
-        $q = DecisionAnalysis::where('user_id', $userId)->where('decision_type', 'checker');
+        $q = DecisionAnalysis::where('user_id', $userId)
+            ->where('decision_type', 'checker')
+            ->where('is_opponent', false); // Hata Gunlugu yalniz kullanicinin kararlari
         if ($from) {
             $q->where('played_at', '>=', $from);
         }

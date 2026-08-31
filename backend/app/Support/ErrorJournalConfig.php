@@ -24,7 +24,8 @@ final class ErrorJournalConfig
     public const ERROR_MIN = self::PERFECT_MAX; // hata sayilmasi icin alt sinir
 
     // Analiz surumu: siniflandirma mantigi degisirse artir -> backfill yeniden isler.
-    public const ANALYSIS_VERSION = 1;
+    // v2: rakip (is_opponent) kararlari da saklanir (Zar Ortalamalari Sen/Rakip).
+    public const ANALYSIS_VERSION = 2;
 
     // --- 17 kategori id'leri -------------------------------------------------
     public const CAT_OPENING = 'opening';
