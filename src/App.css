@@ -1261,7 +1261,7 @@ button[aria-disabled='true'],
   color: var(--accent) !important;
   font-weight: 400;
   border-color: transparent !important;
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: none;
 }
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
