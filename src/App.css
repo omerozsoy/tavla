@@ -1226,9 +1226,9 @@ button[aria-disabled='true'],
   color: var(--accent); /* marka aksanı (light: kiremit · dark: coral) — okunur */
   transition: color 0.15s ease;
 }
-/* Hover: çok sade yüzey tinti (temaya göre; bağırmaz) */
+/* Hover: belirgin ama nötr yüzey tinti (aktif accent'ten ayrışsın) */
 .side-menu [data-slot='button']:hover {
-  background: color-mix(in srgb, var(--text) 8%, transparent) !important;
+  background: color-mix(in srgb, var(--text) 14%, transparent) !important;
   color: var(--text) !important;
   border-color: transparent !important;
 }
