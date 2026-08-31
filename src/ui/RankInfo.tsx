@@ -31,9 +31,7 @@ export default function RankInfo({ currentRating, onClose }: Props) {
         >
           <Icon name="x" size={16} />
         </Button>
-        <div style={{ display: 'flex', justifyContent: 'center' }}>
-          <RankProgression currentRating={currentRating} />
-        </div>
+        <RankProgression currentRating={currentRating} />
       </div>
     </div>
   )
