@@ -1246,7 +1246,7 @@ button[aria-disabled='true'],
   position: absolute;
   inset: 0;
   z-index: -1;
-  clip-path: polygon(0 4%, 70% 4%, 88% 50%, 70% 96%, 0 96%);
+  clip-path: polygon(0 0, 96% 50%, 0 100%);
   pointer-events: none;
   /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
@@ -1271,7 +1271,7 @@ button[aria-disabled='true'],
   position: absolute;
   inset: 0;
   z-index: -1;
-  clip-path: polygon(0 4%, 70% 4%, 88% 50%, 70% 96%, 0 96%);
+  clip-path: polygon(0 0, 96% 50%, 0 100%);
   pointer-events: none;
   transform-origin: left center;
   background: color-mix(in srgb, var(--accent) 82%, #000);
@@ -2951,14 +2951,14 @@ button[aria-disabled='true'],
   stroke-width: 0.6px;
   transition: fill 0.14s ease;
 }
-/* Kulübü olan iller: SOLID accent -> net fark edilir + tıklanabilir */
+/* Kulübü olan iller: accent'in 2 ton açığı -> fark edilir ama yumuşak + tıklanabilir */
 .turkey-map [data-iladi].has-clubs path {
-  fill: var(--accent);
+  fill: color-mix(in srgb, var(--accent) 62%, #fff);
   cursor: pointer;
 }
 /* Yapışkan hover (.hovered) — :hover il sınırlarında titriyordu (bkz TurkeyMap.tsx) */
 .turkey-map [data-iladi].has-clubs.hovered path {
-  fill: color-mix(in srgb, var(--accent) 78%, #000); /* hover: daha koyu */
+  fill: var(--accent); /* hover: tam accent (belirginleşir) */
 }
 .turkey-map [data-iladi].selected path {
   fill: var(--accent);
