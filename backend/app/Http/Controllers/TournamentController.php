@@ -106,6 +106,48 @@ class TournamentController extends Controller
         return response()->json(['tournament' => $this->full($tournament->fresh())]);
     }
 
+    // Turnuvadan CIK (yalniz kayit acikken). Giris ucreti IADE edilir (havuzdan dus).
+    public function leave(Request $request, Tournament $tournament)
+    {
+        $me = $request->user();
+        $out = DB::transaction(function () use ($tournament, $me) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t) {
+                return ['err' => 'Turnuva bulunamadı.', 'code' => 404];
+            }
+            if ($t->status !== 'open') {
+                return ['err' => 'Turnuva başladı, çıkılamaz.', 'code' => 422];
+            }
+            $players = $t->players ?? [];
+            $idx = null;
+            foreach ($players as $i => $p) {
+                if (($p['id'] ?? null) === $me->id) {
+                    $idx = $i;
+                    break;
+                }
+            }
+            if ($idx === null) {
+                return ['ok' => true]; // zaten katilimci degil -> idempotent
+            }
+            // Giris ucreti iadesi: havuzdan dus + kullaniciya geri ver
+            $fee = (int) ($t->entry_fee ?? 0);
+            if ($fee > 0) {
+                $u = User::lockForUpdate()->find($me->id);
+                $u->coins = ($u->coins ?? 0) + $fee;
+                $u->save();
+                $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
+            }
+            array_splice($players, $idx, 1);
+            $t->players = array_values($players);
+            $t->save();
+            return ['ok' => true];
+        });
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+        return response()->json(['tournament' => $this->full($tournament->fresh())]);
+    }
+
     // Bir macin sonucunu bildir. GUVENLIK: istemcinin winner_id beyanina KORU KORUNE
     // guvenilmez (kaybeden kendini kazanan ilan edip odul coin'ini + ust turu calabilir).
     // Kazanan oncelikle macin oynandigi ODANIN YETKILI mac durumundan belirlenir; yetkili

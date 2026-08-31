@@ -8,6 +8,7 @@ import {
   listTournaments,
   showTournament,
   joinTournament,
+  leaveTournament,
   reportTournament,
   type Tournament,
   type TMatch,
@@ -28,6 +29,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
   const [active, setActive] = useState<Tournament | null>(null)
   const [loading, setLoading] = useState(true)
   const [busy, setBusy] = useState(false)
+  const [confirm, setConfirm] = useState<null | 'join' | 'leave'>(null) // katıl/çık onay dialogu
 
   async function refreshList() {
     try {
@@ -60,6 +62,18 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
       refreshList()
     } finally {
       setBusy(false)
+      setConfirm(null)
+    }
+  }
+
+  async function leave(id: number) {
+    setBusy(true)
+    try {
+      setActive(await leaveTournament(id))
+      refreshList()
+    } finally {
+      setBusy(false)
+      setConfirm(null)
     }
   }
 
@@ -158,8 +172,13 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
           )}
 
           {canJoin && (
-            <Button variant="default" disabled={busy} onClick={() => join(active.id)}>
+            <Button variant="default" disabled={busy} onClick={() => setConfirm('join')}>
               {t('tourn.join')}
+            </Button>
+          )}
+          {joined && active.status === 'open' && (
+            <Button variant="destructive" disabled={busy} onClick={() => setConfirm('leave')}>
+              <Icon name="x" size={16} /> {t('tourn.leave')}
             </Button>
           )}
 
@@ -231,6 +250,42 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
             </div>
           )}
         </div>
+        {confirm && active && (
+          <div className="register-overlay modal" role="dialog" aria-modal="true">
+            <div className="register-card tourn-confirm" onClick={(e) => e.stopPropagation()}>
+              {confirm === 'join' ? (
+                <>
+                  <h3>{t('tourn.joinTitle')}</h3>
+                  <p className="tourn-confirm-desc">{t('tourn.joinDesc')}</p>
+                  <div className="tourn-confirm-amt">
+                    <Icon name="coin" size={22} /> {(active.entry_fee ?? 0).toLocaleString('tr-TR')} GC
+                  </div>
+                  <div className="tourn-confirm-actions">
+                    <Button variant="secondary" onClick={() => setConfirm(null)}>
+                      {t('reg.cancel')}
+                    </Button>
+                    <Button variant="default" disabled={busy} onClick={() => join(active.id)}>
+                      {t('tourn.join')}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3>{t('tourn.leaveTitle')}</h3>
+                  <p className="tourn-confirm-desc">{t('tourn.leaveDesc')}</p>
+                  <div className="tourn-confirm-actions">
+                    <Button variant="secondary" onClick={() => setConfirm(null)}>
+                      {t('reg.cancel')}
+                    </Button>
+                    <Button variant="destructive" disabled={busy} onClick={() => leave(active.id)}>
+                      {t('tourn.leave')}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     )
   }

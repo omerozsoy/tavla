@@ -747,6 +747,10 @@ export async function joinTournament(id: number): Promise<Tournament> {
   const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/join`, { method: 'POST' })
   return d.tournament
 }
+export async function leaveTournament(id: number): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/leave`, { method: 'POST' })
+  return d.tournament
+}
 export async function reportTournament(
   id: number,
   matchKey: string,
