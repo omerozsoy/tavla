@@ -1249,19 +1249,24 @@ button[aria-disabled='true'],
   border-color: transparent !important;
   box-shadow: none;
 }
-.side-menu [data-slot='button'][data-active='true']::before {
+/* İKİ TAVLA HANESI: üst hane (::before) + alt hane (::after), aralarında köşegen
+   beyaz boşluk (tavla tahtası gibi). */
+.side-menu [data-slot='button'][data-active='true']::before,
+.side-menu [data-slot='button'][data-active='true']::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 28%, transparent),
-    color-mix(in srgb, var(--accent) 4%, transparent) 78%,
-    transparent
-  );
-  /* Tavla dilimi: geniş sol kenar → sağda sivri uç */
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
   pointer-events: none;
+  transition: background-color 0.15s ease;
+}
+/* Üst hane: sol geniş kenar → sağ üst uç */
+.side-menu [data-slot='button'][data-active='true']::before {
+  clip-path: polygon(0 0, 100% 44%, 0 50%);
+}
+/* Alt hane: sol uç → sağ geniş kenar */
+.side-menu [data-slot='button'][data-active='true']::after {
+  clip-path: polygon(0 50%, 100% 56%, 100% 100%);
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
@@ -1270,13 +1275,9 @@ button[aria-disabled='true'],
   background: transparent !important;
   color: var(--accent) !important;
 }
-.side-menu [data-slot='button'][data-active='true']:hover::before {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 36%, transparent),
-    color-mix(in srgb, var(--accent) 6%, transparent) 78%,
-    transparent
-  );
+.side-menu [data-slot='button'][data-active='true']:hover::before,
+.side-menu [data-slot='button'][data-active='true']:hover::after {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
@@ -2873,7 +2874,8 @@ button[aria-disabled='true'],
 /* Hover balonu: o ildeki kulüpleri ince liste hâlinde gösterir (imleci takip eder) */
 .tm-balloon {
   position: absolute;
-  transform: translate(14px, 14px);
+  /* left/top = ilin üst-ortası; balonu ortalayıp ilin üstüne 8px boşlukla otur */
+  transform: translate(-50%, calc(-100% - 8px));
   z-index: 5;
   pointer-events: none; /* imleçle etkileşmesin -> hover titremesin */
   max-width: 240px;
