@@ -122,6 +122,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
               </span>
             )}
           </div>
+          {active.venue && (
+            <div className="tourn-venue">
+              <Icon name="pin" size={15} /> {active.venue}
+            </div>
+          )}
           {active.status === 'open' && active.starts_at && (
             <div className="tourn-countdown">
               <span className="tc-lbl">

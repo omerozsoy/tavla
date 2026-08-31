@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Tournament extends Model
 {
     protected $fillable = [
-        'name', 'size', 'status', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
+        'name', 'venue', 'size', 'status', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
     ];
 

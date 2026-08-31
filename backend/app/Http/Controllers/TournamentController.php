@@ -496,6 +496,7 @@ class TournamentController extends Controller
         return [
             'id' => $t->id,
             'name' => $t->name,
+            'venue' => $t->venue,
             'size' => $t->size,
             'status' => $t->status,
             'count' => count(array_filter($t->players ?? [], fn ($p) => $p !== null)),
