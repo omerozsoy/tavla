@@ -1234,37 +1234,46 @@ button[aria-disabled='true'],
   color: var(--accent); /* marka aksanı (light: kiremit · dark: coral) — okunur */
   transition: color 0.15s ease;
 }
-/* Hover: belirgin ama nötr yüzey tinti (aktif accent'ten ayrışsın) */
+/* HOVER = tavla hanesi (accent gradient üçgen; soldan geniş → sağa incelen uç) */
 .side-menu [data-slot='button']:hover {
-  background: color-mix(in srgb, var(--text) 14%, transparent) !important;
-  color: var(--text) !important;
-  border-color: transparent !important;
-}
-/* Aktif sayfa: "TAVLA DİLİMİ" indikatörü — pill yerine sola dayalı, sağa daralan
-   üçgen (tavla point). ::before clip-path ile; accent gradient soldan güçlü. */
-.side-menu [data-slot='button'][data-active='true'] {
   background: transparent !important;
   color: var(--accent) !important;
-  font-weight: 400;
   border-color: transparent !important;
-  box-shadow: none;
 }
-/* TEK TAVLA HANESI (Emil): sola dayalı geniş kenar → sağa incelen uç. Sert dolgu
-   yerine ucu eriten gradient (tip'e doğru saydam) + aktifken soldan grow-in. */
-.side-menu [data-slot='button'][data-active='true']::before {
+.side-menu [data-slot='button']:hover::before {
   content: '';
   position: absolute;
   inset: 0;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  pointer-events: none;
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--accent) 26%, transparent) 0%,
     color-mix(in srgb, var(--accent) 9%, transparent) 55%,
     transparent 100%
   );
+}
+/* SEÇİLİ/AKTİF = aynı hane ama GRİ ton (variant 1'in gri hâli) + soldan grow-in */
+.side-menu [data-slot='button'][data-active='true'] {
+  background: transparent !important;
+  color: var(--text) !important;
+  font-weight: 400;
+  border-color: transparent !important;
+  box-shadow: none;
+}
+.side-menu [data-slot='button'][data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   pointer-events: none;
   transform-origin: left center;
-  transition: background 0.15s ease;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text) 24%, transparent) 0%,
+    color-mix(in srgb, var(--text) 8%, transparent) 55%,
+    transparent 100%
+  );
   animation: menuPointIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes menuPointIn {
@@ -1280,15 +1289,15 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
 }
+/* Aktif öğeyi hover'lasan bile GRİ kalsın (accent'e dönmesin) */
 .side-menu [data-slot='button'][data-active='true']:hover {
-  background: transparent !important;
-  color: var(--accent) !important;
+  color: var(--text) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover::before {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 34%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 12%, transparent) 55%,
+    color-mix(in srgb, var(--text) 30%, transparent) 0%,
+    color-mix(in srgb, var(--text) 10%, transparent) 55%,
     transparent 100%
   );
 }
@@ -1296,75 +1305,6 @@ button[aria-disabled='true'],
   .side-menu [data-slot='button'][data-active='true']::before {
     animation: none;
   }
-}
-
-/* ===== VARYANT ÖNİZLEME (GEÇİCİ — biri seçilince silinecek) =====
-   1=Tek Oyun 2=Maç Oyunu 3=AI ile Oyna 4=Turnuvalar 5=Liderlik */
-.side-menu [data-slot='button'][data-variant] {
-  color: var(--accent) !important;
-}
-.side-menu [data-slot='button'][data-variant] svg {
-  color: var(--accent) !important;
-}
-.side-menu [data-slot='button'][data-variant]::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-/* 1 — gradient-fade tek üçgen (mevcut) */
-.side-menu [data-variant='1']::before {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 26%, transparent),
-    color-mix(in srgb, var(--accent) 9%, transparent) 55%,
-    transparent
-  );
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-/* 2 — düz tint üçgen + 2px sol accent omurga (border hissi) */
-.side-menu [data-slot='button'][data-variant='2'] {
-  box-shadow: inset 2px 0 0 var(--accent);
-}
-.side-menu [data-variant='2']::before {
-  background: color-mix(in srgb, var(--accent) 17%, transparent);
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-/* 3 — outline hane (yalnız çizgi; iç boşluk menü paneli rengi) */
-.side-menu [data-variant='3']::before {
-  background: var(--accent);
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
-}
-.side-menu [data-variant='3']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--bg) 90%, #000);
-  clip-path: polygon(2px 5px, calc(100% - 9px) 50%, 2px calc(100% - 5px));
-  pointer-events: none;
-}
-/* 4 — kısa/keskin uç (%82) + gradient */
-.side-menu [data-variant='4']::before {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 28%, transparent),
-    color-mix(in srgb, var(--accent) 8%, transparent) 62%,
-    transparent 82%
-  );
-  clip-path: polygon(0 8%, 82% 50%, 0 92%);
-}
-/* 5 — iki hane (üst sağa, alt sola bakan uç) */
-.side-menu [data-variant='5']::before {
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
-  clip-path: polygon(0 4%, 100% 24%, 0 44%);
-}
-.side-menu [data-variant='5']::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--accent) 20%, transparent);
-  clip-path: polygon(100% 56%, 0 76%, 100% 96%);
-  pointer-events: none;
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
