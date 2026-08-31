@@ -6549,14 +6549,17 @@ button.stat-chip:hover {
   color: var(--med-ink);
   text-align: left;
 }
-/* Duzenleyen (organizator) logosu: sol panelde baslik ustunde kucuk */
+/* Duzenleyen (organizator) logosu: panelin fiziksel EN USTUNE sabit (icerik
+   ortalanmis olsa da logo tepede kalir; panel padding'iyle hizali). */
 .bs-logo {
+  position: absolute;
+  top: clamp(28px, 4vw, 64px);
+  left: clamp(28px, 4vw, 64px);
   display: block;
   height: clamp(36px, 4.5vw, 56px);
   width: auto;
   max-width: 200px;
   object-fit: contain;
-  margin-bottom: 2px;
 }
 .bs-kicker {
   font-size: 0.74rem;
