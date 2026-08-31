@@ -8,7 +8,7 @@ import ErrorDetail from './ErrorDetail'
 import { errorJournal, type EJEntry, type EJPeriod, type EJResponse, type EJSeverity } from '../api'
 
 const SEV_CLS: Record<EJSeverity, string> = { inaccuracy: 'ok', mistake: 'bad', blunder: 'blunder' }
-const PERIODS: EJPeriod[] = ['today', 'yesterday', '7d', '30d', 'all']
+const PERIODS: EJPeriod[] = ['today', '3d', '7d', '30d', 'all']
 
 // Hata Gunlugu ana ekrani (brief §28-34). Backend'in verdigi analizi gosterir;
 // equity/errorRate/classification TEKRAR HESAPLANMAZ.
@@ -17,7 +17,7 @@ export default function ErrorJournal({ onClose }: { onClose: () => void }) {
   useEscape(onClose)
 
   const [tab, setTab] = useState<'summary' | 'all'>('summary')
-  const [period, setPeriod] = useState<EJPeriod>('today')
+  const [period, setPeriod] = useState<EJPeriod>('7d')
   const [category, setCategory] = useState<string | null>(null)
   const [data, setData] = useState<EJResponse | null>(null)
   const [loading, setLoading] = useState(true)

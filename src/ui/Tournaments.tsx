@@ -19,10 +19,12 @@ interface Props {
   myId: number | null
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
+  /** Verilirse acilista dogrudan bu turnuvanin detayi gosterilir (ana sayfa reklamindan). */
+  initialId?: number | null
 }
 
 
-export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [list, setList] = useState<Tournament[]>([])
@@ -42,6 +44,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
   }
   useEffect(() => {
     refreshList()
+    // Reklamdan gelindiyse dogrudan o turnuvanin detayini ac
+    if (initialId != null) open(initialId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

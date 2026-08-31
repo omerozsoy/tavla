@@ -1170,6 +1170,11 @@ button[aria-disabled='true'],
   flex-direction: column;
   gap: 4px;
 }
+/* Bos grup (tum ogeleri kosullu-gizli) flex child olarak kalip fazladan bosluk
+   yaratmasin -> tamamen gizle. (Silinen menu ogelerinden kalan bosluk fix'i.) */
+.menu-group:empty {
+  display: none;
+}
 .menu-label {
   color: color-mix(in srgb, var(--muted) 85%, transparent);
   font-size: 0.68rem;
