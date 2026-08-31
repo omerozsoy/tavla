@@ -1240,20 +1240,43 @@ button[aria-disabled='true'],
   color: var(--text) !important;
   border-color: transparent !important;
 }
-/* Aktif sayfa: accent-tint yüzey + accent metin/ikon + sol accent çubuk (Emil indikatör) */
+/* Aktif sayfa: "TAVLA DİLİMİ" indikatörü — pill yerine sola dayalı, sağa daralan
+   üçgen (tavla point). ::before clip-path ile; accent gradient soldan güçlü. */
 .side-menu [data-slot='button'][data-active='true'] {
-  background: color-mix(in srgb, var(--accent) 13%, transparent) !important;
+  background: transparent !important;
   color: var(--accent) !important;
   font-weight: 400;
   border-color: transparent !important;
-  box-shadow: inset 3px 0 0 var(--accent);
+  box-shadow: none;
+}
+.side-menu [data-slot='button'][data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 28%, transparent),
+    color-mix(in srgb, var(--accent) 4%, transparent) 78%,
+    transparent
+  );
+  /* Tavla dilimi: geniş sol kenar → sağda sivri uç */
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  pointer-events: none;
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover {
-  background: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  background: transparent !important;
   color: var(--accent) !important;
+}
+.side-menu [data-slot='button'][data-active='true']:hover::before {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 36%, transparent),
+    color-mix(in srgb, var(--accent) 6%, transparent) 78%,
+    transparent
+  );
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
