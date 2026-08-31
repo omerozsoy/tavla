@@ -1253,10 +1253,11 @@ button[aria-disabled='true'],
     transparent 100%
   );
 }
-/* SEÇİLİ/AKTİF = aynı hane ama GRİ ton (variant 1'in gri hâli) + soldan grow-in */
+/* SEÇİLİ/AKTİF = aynı hane ama DAHA KOYU KİREMİT (accent'in koyusu) + grow-in */
 .side-menu [data-slot='button'][data-active='true'] {
+  --accent-deep: color-mix(in srgb, var(--accent) 68%, #000);
   background: transparent !important;
-  color: var(--text) !important;
+  color: var(--accent-deep) !important;
   font-weight: 400;
   border-color: transparent !important;
   box-shadow: none;
@@ -1270,8 +1271,8 @@ button[aria-disabled='true'],
   transform-origin: left center;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--text) 24%, transparent) 0%,
-    color-mix(in srgb, var(--text) 8%, transparent) 55%,
+    color-mix(in srgb, var(--accent-deep) 42%, transparent) 0%,
+    color-mix(in srgb, var(--accent-deep) 15%, transparent) 55%,
     transparent 100%
   );
   animation: menuPointIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
@@ -1287,17 +1288,17 @@ button[aria-disabled='true'],
   }
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
-  color: var(--accent) !important;
+  color: var(--accent-deep) !important;
 }
-/* Aktif öğeyi hover'lasan bile GRİ kalsın (accent'e dönmesin) */
+/* Aktif öğeyi hover'lasan bile KOYU KİREMİT kalsın (açık accent'e dönmesin) */
 .side-menu [data-slot='button'][data-active='true']:hover {
-  color: var(--text) !important;
+  color: var(--accent-deep) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover::before {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--text) 30%, transparent) 0%,
-    color-mix(in srgb, var(--text) 10%, transparent) 55%,
+    color-mix(in srgb, var(--accent-deep) 50%, transparent) 0%,
+    color-mix(in srgb, var(--accent-deep) 18%, transparent) 55%,
     transparent 100%
   );
 }
