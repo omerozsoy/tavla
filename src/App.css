@@ -1271,10 +1271,11 @@ button[aria-disabled='true'],
   transform-origin: left center;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent-deep) 42%, transparent) 0%,
-    color-mix(in srgb, var(--accent-deep) 15%, transparent) 55%,
+    color-mix(in srgb, #fff 88%, transparent) 0%,
+    color-mix(in srgb, #fff 30%, transparent) 58%,
     transparent 100%
   );
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
   animation: menuPointIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes menuPointIn {
@@ -1297,8 +1298,8 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true']:hover::before {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent-deep) 50%, transparent) 0%,
-    color-mix(in srgb, var(--accent-deep) 18%, transparent) 55%,
+    color-mix(in srgb, #fff 96%, transparent) 0%,
+    color-mix(in srgb, #fff 36%, transparent) 58%,
     transparent 100%
   );
 }
