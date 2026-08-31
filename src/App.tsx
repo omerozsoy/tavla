@@ -72,6 +72,7 @@ import {
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
 import BoardSettings from './ui/BoardSettings'
+import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu from './ui/SideMenu'
@@ -391,6 +392,7 @@ export default function App() {
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
+  const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
@@ -3770,7 +3772,7 @@ export default function App() {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
             return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
           })()}
-          onChangeBoard={() => setBoardSettingsOpen(true)}
+          onChangeBoard={() => setBoardPickerOpen(true)}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
         />
@@ -3865,6 +3867,18 @@ export default function App() {
   const menuOverlays = (
     <>
       {inviteBanner}
+      {boardPickerOpen && (
+        <BoardPickerModal
+          current={boardTheme}
+          boards={ownedBoards}
+          onSelect={setBoardTheme}
+          onMore={() => {
+            setBoardPickerOpen(false)
+            setBoardSettingsOpen(true)
+          }}
+          onClose={() => setBoardPickerOpen(false)}
+        />
+      )}
       {spectate && (
         <Spectate
           code={spectate.code}
@@ -3913,7 +3927,7 @@ export default function App() {
                   const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
                   return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
                 })()}
-                onChangeBoard={() => setBoardSettingsOpen(true)}
+                onChangeBoard={() => setBoardPickerOpen(true)}
                 onConfirm={applyMatchSetup}
                 onCancel={() => {
                   setSetup(null)
