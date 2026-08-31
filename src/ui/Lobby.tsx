@@ -128,7 +128,7 @@ export default function Lobby({
   return (
     <div className="register-overlay">
       <div className="register-card">
-        <h2><Icon name="globe" size={20} /> {t('mp.title')}</h2>
+        <h2><Icon name="ranking" size={20} /> {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>
 
         <Button variant="default" className="w-full" disabled={busy} onClick={onMatchmake}>

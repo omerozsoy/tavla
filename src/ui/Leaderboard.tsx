@@ -96,7 +96,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2><Icon name="trophy" size={20} /> {t('lb.title')}</h2>
+        <h2><Icon name="crown" size={20} /> {t('lb.title')}</h2>
         <div className="rep-filter">
           <Button variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
             <Icon name="star" size={16} /> {t('lb.rating')}

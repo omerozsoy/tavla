@@ -13,6 +13,7 @@
 
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
+import { Icon } from './Icon'
 import { RANK_GROUPS, rankOf, nextRank, rankIndex, type RankTier } from '../ranks'
 import './RankProgression.css'
 
@@ -79,7 +80,9 @@ export function RankProgression({ currentRating, compact = false, className }: R
       aria-label={t('rank.progTitle')}
     >
       <header className="rank-prog__head">
-        <h2 className="rank-prog__title">{t('rank.progTitle')}</h2>
+        <h2 className="rank-prog__title">
+          <Icon name="medal" size={20} /> {t('rank.progTitle')}
+        </h2>
         <p className="rank-prog__sub">{t('rank.progSub')}</p>
       </header>
 

@@ -76,7 +76,7 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name="dice" size={20} /> {t('fair.title')}
+          <Icon name="shield-check" size={20} /> {t('fair.title')}
         </h2>
 
         {/* ==================== INFOGRAFİK ==================== */}

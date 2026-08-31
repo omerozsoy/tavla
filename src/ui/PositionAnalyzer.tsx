@@ -315,7 +315,7 @@ export default function PositionAnalyzer({
   return (
     <div className="analyzer">
       <div className="analyzer-head">
-        <h2><Icon name="analyze" size={20} /> {t('pa.title')}</h2>
+        <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
         <Button variant="secondary" className="analyzer-close" onClick={onClose}>
           <Icon name="x" size={14} /> {t('pa.close')}
         </Button>
