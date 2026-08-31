@@ -10086,6 +10086,95 @@ button.stat-chip:hover {
     grid-template-columns: 1fr; /* mobil: alt alta */
   }
 }
+
+/* ===== İstatistik panosu (dashboard) — image 33 düzeni ===== */
+.stats-dash {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 18px;
+}
+.stats-dash .sd-card-wide {
+  grid-column: 1 / -1; /* Medyan tam satır: barlara nefes */
+}
+@media (max-width: 640px) {
+  .stats-dash {
+    grid-template-columns: 1fr;
+  }
+}
+.sd-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.sd-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.sd-ic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.sd-ic.gold {
+  background: color-mix(in srgb, #e6b422 16%, transparent);
+  color: #d9a417;
+}
+.sd-head-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sd-title {
+  font-family: var(--tv-font-display);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.01em;
+}
+.sd-val {
+  font-family: var(--tv-font-mono);
+  font-size: 1.42rem;
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--text);
+}
+.sd-val.gold {
+  color: #d9a417;
+}
+.sd-sub {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+.sd-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  color: var(--muted);
+  font-size: 1.2rem;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  border: 1px dashed var(--border);
+}
+.sd-card.wxp-card .wxp-total {
+  margin-top: -2px;
+}
+
 .perf-card {
   background: var(--card-bg);
   border: 1px solid var(--border);

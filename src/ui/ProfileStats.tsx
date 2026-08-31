@@ -175,15 +175,52 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
 
             <BadgeList ids={u?.badges} />
 
-            {/* ===== Performans kartlari: Medyan Hata Orani + WXP ===== */}
-            <div className="perf-cards">
-              {/* Medyan Hata Orani */}
-              <div className="perf-card">
-                <div className="perf-card-head">
-                  <span className="perf-card-title">
-                    <Icon name="alert" size={16} /> {t('med.title')}
-                  </span>
-                  <span className="perf-card-sub">{t('med.lowGood')}</span>
+            {/* ===== İstatistik panosu (dashboard düzeni) ===== */}
+            <div className="stats-dash">
+              {/* Bakiye — coin geçmişi */}
+              <div className="sd-card">
+                <div className="sd-head">
+                  <span className="sd-ic gold"><Icon name="coin" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('an.balanceGraph')}</div>
+                    <div className="sd-val gold">{fmtNum(u?.coins ?? 0)} GC</div>
+                  </div>
+                </div>
+                {an && an.coins_history.length >= 2 ? (
+                  <LineChart data={an.coins_history} color="#e6b422" />
+                ) : !an ? (
+                  <Skeleton w="100%" h={80} r={8} />
+                ) : (
+                  <div className="sd-empty">–</div>
+                )}
+              </div>
+
+              {/* Puan — rating geçmişi */}
+              <div className="sd-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="chart" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('lb.rating')}</div>
+                    <div className="sd-val">{u?.rating ?? 1500} GR</div>
+                  </div>
+                </div>
+                {an && an.rating_history.length >= 2 ? (
+                  <LineChart data={an.rating_history} />
+                ) : !an ? (
+                  <Skeleton w="100%" h={80} r={8} />
+                ) : (
+                  <div className="sd-empty">–</div>
+                )}
+              </div>
+
+              {/* Medyan Hata Oranı */}
+              <div className="sd-card sd-card-wide">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="alert" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('med.title')}</div>
+                    <div className="sd-sub">{t('med.lowGood')}</div>
+                  </div>
                 </div>
                 <div className="perf-filters" role="tablist" aria-label={t('med.title')}>
                   {MED_FILTERS.map((f) => (
@@ -223,11 +260,12 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
               </div>
 
               {/* WXP — Kazanma Deneyim Puanlari */}
-              <div className="perf-card wxp-card">
-                <div className="perf-card-head">
-                  <span className="perf-card-title">
-                    <Icon name="star" size={16} /> {t('wxp.title')}
-                  </span>
+              <div className="sd-card wxp-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="star" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('wxp.title')}</div>
+                  </div>
                 </div>
                 {perfErr ? (
                   <div className="lb-empty small">{t('lb.error')}</div>
@@ -257,45 +295,28 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   </>
                 )}
               </div>
-            </div>
 
-            {/* Analiz grafikleri */}
-            {an && (
-              <div className="an-charts">
-                {an.rating_history.length >= 2 && (
-                  <div className="an-chart">
-                    <div className="an-chart-head">
-                      <Icon name="chart" size={14} /> {t('an.ratingGraph')}
+              {/* Toplam Kazanma % — maç uzunluğuna göre */}
+              {an && an.by_length.length > 0 && (
+                <div className="sd-card">
+                  <div className="sd-head">
+                    <span className="sd-ic"><Icon name="trophy" size={18} /></span>
+                    <div className="sd-head-txt">
+                      <div className="sd-title">{t('an.winByLen')}</div>
                     </div>
-                    <LineChart data={an.rating_history} />
                   </div>
-                )}
-                {an.coins_history.length >= 2 && (
-                  <div className="an-chart">
-                    <div className="an-chart-head">
-                      <Icon name="coin" size={14} /> {t('an.balanceGraph')}
-                    </div>
-                    <LineChart data={an.coins_history} color="#e6b422" />
-                  </div>
-                )}
-                {an.by_length.length > 0 && (
-                  <div className="an-chart">
-                    <div className="an-chart-head">
-                      <Icon name="chart" size={14} /> {t('an.winByLen')}
-                    </div>
-                    <BarChart
-                      items={an.by_length.map((b) => ({
-                        label: lenLabel(b.length),
-                        value: b.win_pct,
-                        sub: `${b.wins}/${b.games}`,
-                      }))}
-                      suffix="%"
-                      threshold={50}
-                    />
-                  </div>
-                )}
-              </div>
-            )}
+                  <BarChart
+                    items={an.by_length.map((b) => ({
+                      label: lenLabel(b.length),
+                      value: b.win_pct,
+                      sub: `${b.wins}/${b.games}`,
+                    }))}
+                    suffix="%"
+                    threshold={50}
+                  />
+                </div>
+              )}
+            </div>
 
             {/* Son maclar (mac gecmisi) */}
             <div className="mh-head">{t('stats.recent')}</div>
