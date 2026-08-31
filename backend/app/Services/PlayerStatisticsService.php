@@ -44,7 +44,7 @@ class PlayerStatisticsService
         return Cache::remember(
             self::medianCacheKey($userId, $period),
             now()->addHours(6),
-            fn () => $this->median->categoriesFor($userId, $period),
+            fn () => $this->median->perDecisionCategoriesFor($userId, $period),
         );
     }
 
@@ -80,6 +80,8 @@ class PlayerStatisticsService
 
     private static function medianCacheKey(int $userId, string $period): string
     {
-        return "player:{$userId}:median-pr:{$period}";
+        // v2: per-karar medyan (decision_analyses). Anahtar degisti -> eski mean-tabanli
+        // cache otomatik gecersiz.
+        return "player:{$userId}:median-pr2:{$period}";
     }
 }
