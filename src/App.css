@@ -1249,24 +1249,15 @@ button[aria-disabled='true'],
   border-color: transparent !important;
   box-shadow: none;
 }
-/* İKİ TAVLA HANESI: üst hane (::before) + alt hane (::after), aralarında köşegen
-   beyaz boşluk (tavla tahtası gibi). */
-.side-menu [data-slot='button'][data-active='true']::before,
-.side-menu [data-slot='button'][data-active='true']::after {
+/* TEK TAVLA HANESI: sola dayalı geniş kenar → sağa doğru incelen uç. */
+.side-menu [data-slot='button'][data-active='true']::before {
   content: '';
   position: absolute;
   inset: 0;
   background: color-mix(in srgb, var(--accent) 20%, transparent);
   pointer-events: none;
   transition: background-color 0.15s ease;
-}
-/* Üst hane: sola dayalı → SAĞA bakan uç (üst yarı) */
-.side-menu [data-slot='button'][data-active='true']::before {
-  clip-path: polygon(0 4%, 100% 24%, 0 44%);
-}
-/* Alt hane: sağa dayalı → SOLA bakan uç (alt yarı) — tahtadaki gibi alternatif */
-.side-menu [data-slot='button'][data-active='true']::after {
-  clip-path: polygon(100% 56%, 0 76%, 100% 96%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: var(--accent) !important;
@@ -1275,8 +1266,7 @@ button[aria-disabled='true'],
   background: transparent !important;
   color: var(--accent) !important;
 }
-.side-menu [data-slot='button'][data-active='true']:hover::before,
-.side-menu [data-slot='button'][data-active='true']:hover::after {
+.side-menu [data-slot='button'][data-active='true']:hover::before {
   background: color-mix(in srgb, var(--accent) 28%, transparent);
 }
 /* Ayarlar grubunu menunun en altina sabitle */
