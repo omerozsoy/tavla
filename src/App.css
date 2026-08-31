@@ -6292,6 +6292,21 @@ button.stat-chip:hover {
   border-bottom: 1px solid var(--border);
   box-shadow: none; /* flat */
 }
+/* Desktop: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
+   2. satira SARIP band'i uzatiyor / icerige biniyordu. nowrap ile yukseklik SABIT;
+   tasarsa yatay kaydirilir. (Bu kural base .account-bar'dan SONRA gelmeli ki
+   kaynak-sirasi kazansin — media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni. */
+@media (min-width: 901px) {
+  .account-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .account-bar::-webkit-scrollbar {
+    display: none;
+  }
+}
 /* Logo sola, hesap kontrolleri saga (auto margin bosluğu doldurur). */
 .ab-brand {
   margin-right: auto;

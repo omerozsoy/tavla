@@ -101,11 +101,11 @@ export default function MatchSetup({
         <h2>
           {mode === 'online' ? (
             <>
-              <Icon name="ranking" size={20} /> {t('menu.match')}
+              <Icon name="ranking" size={24} /> {t('menu.match')}
             </>
           ) : (
             <>
-              <Icon name="robot" size={20} /> {t('home.vsBot')}
+              <Icon name="robot" size={24} /> {t('menu.aiGame')}
             </>
           )}
         </h2>
