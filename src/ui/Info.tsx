@@ -1,5 +1,5 @@
 /**
- * Info — menüden açılan "Bilgi" sayfası. Sekmeler: Hakkında · Rütbeler · Adil Zar.
+ * Info — menüden açılan "Bilgi" sayfası. Sekmeler: Hakkında · Hizmetler · Rütbeler · Adil Zar.
  * Rütbeler (RankProgression) ve Adil Zar (FairnessModal embed) buraya taşındı;
  * ayrı menü öğeleri kaldırıldı. Standart sayfa kalıbı + useEscape.
  */
@@ -41,14 +41,14 @@ export default function Info({ onClose, currentRating, fair }: Props) {
           <button type="button" role="tab" aria-selected={tab === 'about'} className={tab === 'about' ? 'active' : ''} onClick={() => setTab('about')}>
             {t('info.tab.about')}
           </button>
+          <button type="button" role="tab" aria-selected={tab === 'services'} className={tab === 'services' ? 'active' : ''} onClick={() => setTab('services')}>
+            {t('menu.services')}
+          </button>
           <button type="button" role="tab" aria-selected={tab === 'ranks'} className={tab === 'ranks' ? 'active' : ''} onClick={() => setTab('ranks')}>
             {t('menu.ranks')}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'fair'} className={tab === 'fair' ? 'active' : ''} onClick={() => setTab('fair')}>
             {t('fair.title')}
-          </button>
-          <button type="button" role="tab" aria-selected={tab === 'services'} className={tab === 'services' ? 'active' : ''} onClick={() => setTab('services')}>
-            {t('menu.services')}
           </button>
         </div>
 
