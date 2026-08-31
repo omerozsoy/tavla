@@ -150,7 +150,8 @@ export default function ProfileOverview({
           )}
         </div>
 
-        {/* --- Stat kartlari --- */}
+        {/* --- Stat kartlari (İstatistikler sekmesinde gizli: dashboard zaten kapsıyor) --- */}
+        {tab !== 'stats' && (
         <div className="prof-ov-stats">
           <div className="prof-ov-stat">
             <span className="pos-lbl"><Icon name="chart" size={15} /> {t('lb.rating')}</span>
@@ -177,6 +178,7 @@ export default function ProfileOverview({
             </span>
           </div>
         </div>
+        )}
 
         {/* --- Sekmeler: Çerçeveler · Tahta Renkleri · İstatistikler --- */}
         <div className="prof-ov-tabs" role="tablist">
