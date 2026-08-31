@@ -11,21 +11,21 @@ use Filament\Tables;
 use Filament\Tables\Table;
 
 /**
- * Ana sayfanin en ustunde YAN YANA gosterilen (en fazla 3) turnuva reklam gorselleri.
- * Her gorsel bir turnuvaya baglanir; ziyaretci tiklayinca o turnuvanin detayina gider.
- * Tablo 'sort' ile surukle-birak siralanir; ilk 3 yayindaki kayit ana sayfada cikar.
+ * Ana sayfanin en ustunde SLIDER (carousel) olarak donen banner gorselleri.
+ * Her banner bir turnuvaya baglanir; ziyaretci tiklayinca o turnuvanin detayina gider.
+ * Tablo 'sort' ile surukle-birak siralanir; yayindaki bannerlar sirayla doner.
  */
 class TournamentAdResource extends Resource
 {
     protected static ?string $model = TournamentAd::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-megaphone';
+    protected static ?string $navigationIcon = 'heroicon-o-photo';
 
-    protected static ?string $navigationLabel = 'Turnuva Reklam';
+    protected static ?string $navigationLabel = 'Banner';
 
-    protected static ?string $modelLabel = 'turnuva reklamı';
+    protected static ?string $modelLabel = 'banner';
 
-    protected static ?string $pluralModelLabel = 'Turnuva Reklam';
+    protected static ?string $pluralModelLabel = 'Bannerlar';
 
     protected static ?string $navigationGroup = 'Oyun';
 
@@ -34,11 +34,11 @@ class TournamentAdResource extends Resource
     public static function form(Form $form): Form
     {
         return $form->schema([
-            // Gorsel: bilgisayardan resim sec (public/uploads/turnuva-reklam altina yuklenir)
-            Forms\Components\FileUpload::make('image')->label('Reklam görseli')
-                ->image()->disk('uploads')->directory('turnuva-reklam')->visibility('public')
+            // Banner gorseli: bilgisayardan resim sec (public/uploads/banner altina yuklenir)
+            Forms\Components\FileUpload::make('image')->label('Banner görseli')
+                ->image()->disk('uploads')->directory('banner')->visibility('public')
                 ->imageEditor()->maxSize(5120)
-                ->helperText('Yan yana 3 görsel gösterilir; benzer en–boy oranı (örn. 16:9) önerilir. En fazla 5 MB.')
+                ->helperText('Geniş banner önerilir (örn. 1200×360 ≈ 10:3). Slider tam genişlikte döner. En fazla 5 MB.')
                 ->required()
                 ->columnSpanFull(),
             Forms\Components\Select::make('tournament_id')
@@ -46,12 +46,12 @@ class TournamentAdResource extends Resource
                 ->relationship('tournament', 'name')
                 ->searchable()
                 ->preload()
-                ->helperText('Görsele tıklayınca bu turnuvanın detay sayfası açılır.')
+                ->helperText('Banner’a tıklayınca bu turnuvanın detay sayfası açılır.')
                 ->required(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0)
-                ->helperText('Küçük sayı solda. Listede sürükleyerek de sıralayabilirsin.'),
+                ->helperText('Küçük sayı önce gösterilir. Listede sürükleyerek de sıralayabilirsin.'),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true)
-                ->helperText('Yalnızca yayındaki ilk 3 reklam ana sayfada görünür.'),
+                ->helperText('Yalnızca yayındaki bannerlar slider’da döner.'),
         ]);
     }
 

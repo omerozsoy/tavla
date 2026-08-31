@@ -84,7 +84,7 @@ import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
-import TournamentAds from './ui/TournamentAds'
+import BannerSlider from './ui/BannerSlider'
 import SoloStakes from './ui/SoloStakes'
 import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
@@ -3961,7 +3961,7 @@ export default function App() {
               <div className="page-host">{menuPages}</div>
             ) : (
             <>
-            <TournamentAds onOpen={menuProps.onTournamentAd} />
+            <BannerSlider onOpen={menuProps.onTournamentAd} />
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
                 {activeRooms.map((r) => (
