@@ -195,6 +195,15 @@ export default function SideMenu(p: SideMenuProps) {
           </Button>
         </div>
       )}
+
+      {/* PWA yukleme — yalniz tarayici beforeinstallprompt verdiginde gorunur */}
+      {p.canInstall && (
+        <div className="menu-group">
+          <Button variant="ghost" className={`${NAV} menu-install`} onClick={p.onInstall}>
+            <Icon name="install" size={24} /> {t('menu.install')}
+          </Button>
+        </div>
+      )}
     </aside>
   )
 }
