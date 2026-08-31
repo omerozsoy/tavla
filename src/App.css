@@ -1244,9 +1244,9 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button']:hover::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -3px -10px -3px 0;
   z-index: -1;
-  clip-path: polygon(0 0, 96% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
   pointer-events: none;
   /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
@@ -1269,9 +1269,9 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
   position: absolute;
-  inset: 0;
+  inset: -3px -10px -3px 0;
   z-index: -1;
-  clip-path: polygon(0 0, 96% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
   pointer-events: none;
   transform-origin: left center;
   background: color-mix(in srgb, var(--accent) 82%, #000);
@@ -2930,6 +2930,17 @@ button[aria-disabled='true'],
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* İsmin başında küçük nokta bullet */
+.tm-balloon-list li::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
 }
 /* Yön: ilin sağına aç (varsayılan) / sağ kenardaki iller sola aç */
 .tm-balloon-right {
