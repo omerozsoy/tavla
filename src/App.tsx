@@ -269,10 +269,14 @@ type CubeHint =
 //  son asama da biterse sirasi gelen oyuncu oyunu kaybeder.
 // Saat: hamle suresi (delay) + rezerv (over). Backgammon Galaxy tarzi 3 preset.
 type TimeControl = 'casual' | 'normal' | 'speed'
+// over = PUAN BASINA ana sure (sn); freshMatchClock bunu mac uzunluguyla carpar.
+// Rahat 3dk/puan, Normal 1dk/puan, Hizli 0.4dk/puan (=24sn). Delay = hamle basina gecikme.
+// NOT: online'da sunucu (App\Services\MatchClock) ayni degerlerle OTORITERdir; bu presetler
+// pvb (bota karsi) icin ve online'da sunucu saati gelene kadar ilk gosterim icindir.
 const CLOCK_PRESETS: Record<TimeControl, { move: number; over: number }> = {
-  casual: { move: 15, over: 180 }, // Casual: 15sn/hamle + 3dk rezerv
-  normal: { move: 10, over: 60 }, // Normal: 10sn/hamle + 1dk rezerv
-  speed: { move: 8, over: 20 }, // Speed: 8sn/hamle + 20sn rezerv
+  casual: { move: 15, over: 180 }, // Rahat: 15sn/hamle + 3dk/puan
+  normal: { move: 10, over: 60 }, // Normal: 10sn/hamle + 1dk/puan
+  speed: { move: 8, over: 24 }, // Hizli: 8sn/hamle + 0.4dk/puan (24sn)
 }
 const FINAL_STAGE = 30 // son asama uyari esigi (sn)
 const MOVE_DELAY = CLOCK_PRESETS.normal.move // varsayilan/fallback
@@ -652,6 +656,9 @@ export default function App() {
     white: OVER_TOTAL,
     black: OVER_TOTAL,
   })
+  // AFK (sunucu-otoriter): kayba kalan saniye (yalniz son 15sn'de dolu) + sirasi gelen renk.
+  const [afkLeft, setAfkLeft] = useState<number | null>(null)
+  const [srvActive, setSrvActive] = useState<Player | null>(null)
   // Mac basi taze saat: rezerv bankasi = puan-basi sure x mac uzunlugu (her oyuncuya)
   const freshMatchClock = (target: number) => {
     const bank = clockRef.current.over * Math.max(1, target)
@@ -1692,8 +1699,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clockOn, gameEnd, matchOver, opening, cubePending, gameWon, turnStart.turn, online, onlineReady])
 
-  // Ek sure bitti -> sirasi gelen oyuncu oyunu kaybeder
+  // AFK geri sayimi (sunucu-otoriter): son 15sn'de saniye saniye akit (poll her ~1.2sn
+  // duzeltir). Yalniz online'da; gercek kayip sunucuda ilan edilir.
   useEffect(() => {
+    if (!online || afkLeft == null) return
+    const id = window.setInterval(() => setAfkLeft((a) => (a == null ? a : Math.max(0, a - 1))), 1000)
+    return () => window.clearInterval(id)
+  }, [online, afkLeft == null])
+
+  // Ek sure bitti -> sirasi gelen oyuncu oyunu kaybeder.
+  // ONLINE: karar SUNUCUDA verilir (state.gameEnd olarak gelir) -> burada lokal karar YOK
+  // (aksi halde latency/drift ile haksiz kayip olur). Yalniz pvb (bota karsi) lokal calisir.
+  useEffect(() => {
+    if (online) return
     if (!clockOn || gameEnd || matchOver) return
     const who = turnStart.turn
     const bank = who === 'white' ? clock.white : clock.black
@@ -1994,6 +2012,15 @@ export default function App() {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
           applyOnlineState(rv.state as SavedGame) // lastSyncRef'i kendi ayarlar (echo yok)
+        }
+        // Sunucu-otoriter saat: her poll'de (state degismese de) guncel saat + AFK.
+        // Kayip (timeout/AFK) sunucu tarafinda ilan edilir ve state.gameEnd olarak gelir
+        // (applyOnlineState onu uygular) -> lokal timeout karari online'da devre disi.
+        const sc = rv.clock
+        if (sc) {
+          setClock({ delay: sc.delay, white: sc.white, black: sc.black })
+          setSrvActive(sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null)
+          setAfkLeft(sc.afk)
         }
       } catch {
         /* gecici */
@@ -2320,7 +2347,7 @@ export default function App() {
       friendlyRef.current = true // davet ile kurulan oda = arkadaslik maci (puan/coin YOK)
       stakeRef.current = 0
       betPctRef.current = 0
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -2391,6 +2418,7 @@ export default function App() {
         minRatingRef.current,
         betPctRef.current,
         targetsRef.current,
+        timeControl,
       )
       // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
       matchTargetSyncedRef.current = res.room.target != null
@@ -2469,7 +2497,7 @@ export default function App() {
       friendlyRef.current = true // koda katilma = arkadaslik maci (puan/coin YOK)
       stakeRef.current = 0
       betPctRef.current = 0
-      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -2513,7 +2541,7 @@ export default function App() {
     setRoomError('')
     try {
       const code = await tournamentMatchRoom(tid, m.key)
-      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       tournMatchRef.current = { tid, matchKey: m.key, oppId }
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
@@ -2564,7 +2592,7 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     try {
-      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       tournMatchRef.current = null
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
@@ -4220,6 +4248,13 @@ export default function App() {
           <div className="board-nomove" role="status" aria-live="polite">
             <Icon name="warning-circle" size={18} />
             {t('msg.noMovePass', { name: noMoveFlash })}
+          </div>
+        )}
+        {/* AFK son-15sn uyarisi (sunucu-otoriter): yalniz sirasi gelen YEREL oyuncuya */}
+        {online && afkLeft != null && srvActive === myColor && !gameEnd && !matchOver && (
+          <div className="afk-warn" role="alert" aria-live="assertive">
+            <Icon name="warning-circle" size={22} />
+            <span>{t('afk.warn', { n: afkLeft })}</span>
           </div>
         )}
         {/* Oyun menüsü hamburger — board'un sağ kenarına bitişik (flex öğesi) */}

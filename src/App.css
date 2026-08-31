@@ -3401,6 +3401,46 @@ button[aria-disabled='true'],
   }
 }
 
+/* AFK son-15sn uyarisi (sunucu-otoriter): belirgin, pulsing kirmizi banner. */
+.afk-warn {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 28px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-error, #e0455e) 94%, #000);
+  color: #fff;
+  font-weight: 600;
+  font-size: clamp(1rem, 2.4vw, 1.3rem);
+  letter-spacing: 0.01em;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: afk-pulse 1s ease-in-out infinite;
+}
+.afk-warn svg {
+  flex: none;
+}
+@keyframes afk-pulse {
+  0%,
+  100% {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 0 rgba(224, 69, 94, 0.5);
+  }
+  50% {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 0 12px rgba(224, 69, 94, 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .afk-warn {
+    animation: none;
+  }
+}
+
 /* ---- Koyu oyun sahnesi (#12): site light temada bile oyun alani koyu kalir ---- */
 .main.game-scene {
   background:

@@ -27,6 +27,9 @@ class Room extends Model
         'target',
         'targets',
         'mode',
+        'time_control',
+        'clock',
+        'end_reason',
         'settled',
         'p1_result',
         'p2_result',
@@ -38,6 +41,7 @@ class Room extends Model
             'state' => 'array',
             'messages' => 'array',
             'targets' => 'array',
+            'clock' => 'array',
         ];
     }
 
