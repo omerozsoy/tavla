@@ -84,7 +84,11 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         </span>
         <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
         <span className="lb-rating">
-          {by === 'coins' ? (r.coins ?? 0) : by === 'wxp' ? (r.wxp ?? 0) : r.rating}
+          {by === 'coins'
+            ? (r.coins ?? 0).toLocaleString('tr-TR')
+            : by === 'wxp'
+              ? (r.wxp ?? 0).toLocaleString('tr-TR')
+              : r.rating}
         </span>
       </div>
     )
