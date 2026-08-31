@@ -26,6 +26,13 @@ $PHP artisan filament:assets || echo "UYARI: filament:assets atlandi"
 # (Plesk > Databases > Export, ya da mysqldump). set -e sayesinde migrate patlarsa
 # script burada durur; ama yarim uygulanan migration'i GERI ALMAK elle yapilir.
 $PHP artisan migrate --force
+
+# Istatistik verisi (idempotent; islenmisleri atlar -> ilk deploy'dan sonra ucuz):
+#  - error-journal:backfill -> decision_analyses (Medyan Hata Orani per-karar + Zar Ortalamalari)
+#  - stats:backfill-wxp      -> gecmis maclardan WXP toplamlari
+$PHP artisan error-journal:backfill || echo "UYARI: error-journal:backfill atlandi."
+$PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
+
 $PHP artisan optimize:clear
 
 # Haberleri commit'li JSON'dan ice aktar (offline; sunucudan internet gerekmez).
