@@ -1254,11 +1254,12 @@ button[aria-disabled='true'],
     transparent 100%
   );
 }
-/* SEÇİLİ/AKTİF = aynı accent hane ama DAHA YOĞUN + 2px keskin sol omurga (ray).
-   Renk değişmez (accent) -> hem açık (kiremit) hem koyu (coral) temada tutarlı. */
+/* SEÇİLİ/AKTİF = DOLU KOYU accent hane + BEYAZ yazı/ikon. Küt uç (0 0,100% 42-58%,
+   0 100%) -> orta bant tüm genişlikte dolu, beyaz yazı okunur. accent+siyah karışım
+   her iki temada beyazı taşıyacak kadar koyu. */
 .side-menu [data-slot='button'][data-active='true'] {
   background: transparent !important;
-  color: var(--accent) !important;
+  color: #fff !important;
   font-weight: 400;
   border-color: transparent !important;
   box-shadow: none;
@@ -1267,15 +1268,10 @@ button[aria-disabled='true'],
   content: '';
   position: absolute;
   inset: 0;
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+  clip-path: polygon(0 0, 100% 42%, 100% 58%, 0 100%);
   pointer-events: none;
   transform-origin: left center;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 40%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 13%, transparent) 55%,
-    transparent 100%
-  );
+  background: color-mix(in srgb, var(--accent) 82%, #000);
   animation: menuPointIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes menuPointIn {
@@ -1289,19 +1285,14 @@ button[aria-disabled='true'],
   }
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
-  color: var(--accent) !important;
+  color: #fff !important;
 }
-/* Aktif öğeyi hover'lasan hane biraz daha dolar (yine accent) */
+/* Aktif öğeyi hover'lasan hane biraz daha koyulaşır, yazı beyaz kalır */
 .side-menu [data-slot='button'][data-active='true']:hover {
-  color: var(--accent) !important;
+  color: #fff !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover::before {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--accent) 48%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 16%, transparent) 55%,
-    transparent 100%
-  );
+  background: color-mix(in srgb, var(--accent) 74%, #000);
 }
 @media (prefers-reduced-motion: reduce) {
   .side-menu [data-slot='button'][data-active='true']::before {
