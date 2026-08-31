@@ -520,6 +520,7 @@ export interface TournamentAd {
   kicker?: string | null
   title?: string | null
   subtitle?: string | null
+  meta?: string | null
   cta?: string | null
   tournament_id: number | null
   tournament_name: string | null

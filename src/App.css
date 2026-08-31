@@ -6329,22 +6329,21 @@ button.stat-chip:hover {
    Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Outfit)
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
-/* Ana sayfa hero banner slider'i — Christie's tarzi: tam genislik (edge-to-edge),
-   buyuk gorsel + sol-alta editoryal metin bindirmesi + gradient scrim. */
+/* Ana sayfa hero banner slider'i — Christie's SPLIT layout: SOL duz sicak panelde
+   editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
   /* Yatayda lobby-main padding'ini iptal edip kenarlara daya; ustte 12px fazla
      boslugu kaldirip sabit hesap barinin hemen altina otur (header-h korunur). */
   margin: -12px calc(-1 * clamp(12px, 3vw, 40px)) 22px;
   overflow: hidden;
-  background: var(--rn-navy, #12212e);
+  background: var(--sand);
 }
 .bs-track {
   display: flex;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .bs-slide {
-  position: relative;
   flex: 0 0 100%;
   display: block;
   padding: 0;
@@ -6355,126 +6354,136 @@ button.stat-chip:hover {
 .bs-slide:disabled {
   cursor: default;
 }
-.bs-slide img {
+/* Yazili banner: sol panel + sag gorsel */
+.bs-slide.has-text {
+  display: grid;
+  grid-template-columns: minmax(300px, 40%) 1fr;
+  min-height: clamp(400px, 52vh, 580px);
+}
+.bs-media {
+  display: block;
+  overflow: hidden;
+}
+.bs-media img {
   display: block;
   width: 100%;
-  height: clamp(320px, 34vw, 500px);
+  height: 100%;
   object-fit: cover;
 }
-/* Okunabilirlik: sol-alttan yukselen koyulastirma */
-.bs-scrim {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.62) 0%,
-    rgba(0, 0, 0, 0.28) 34%,
-    rgba(0, 0, 0, 0) 62%
-  );
-  pointer-events: none;
+/* Yazisiz (ciplak) banner: gorsel tam genislik */
+.bs-slide:not(.has-text) .bs-media img {
+  height: clamp(300px, 30vw, 460px);
 }
-.bs-content {
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  max-width: min(620px, 82%);
-  padding: clamp(20px, 4vw, 48px);
+
+/* Sol metin paneli (duz sicak zemin, koyu ink metin) */
+.bs-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 10px;
+  justify-content: center;
+  gap: 14px;
+  padding: clamp(28px, 4vw, 64px);
+  background: var(--sand);
+  color: var(--med-ink);
   text-align: left;
-  color: #fff;
 }
 .bs-kicker {
   font-size: 0.74rem;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.2em;
   text-transform: uppercase;
-  opacity: 0.9;
+  color: var(--med-slate);
 }
 .bs-title {
   font-family: Georgia, 'Times New Roman', serif;
-  font-size: clamp(1.7rem, 3.4vw, 3rem);
-  line-height: 1.08;
-  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3vw, 3.1rem);
+  line-height: 1.06;
+  color: var(--med-ink);
 }
 .bs-sub {
-  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
-  opacity: 0.92;
-  max-width: 46ch;
+  font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+  line-height: 1.5;
+  color: var(--med-slate);
+  max-width: 42ch;
 }
-.bs-cta {
-  margin-top: 6px;
+.bs-meta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 22px;
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(2px);
-  font-size: 0.95rem;
-  transition: background 0.15s ease, color 0.15s ease;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  color: var(--med-ink);
+}
+.bs-cta {
+  margin-top: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 26px;
+  border-radius: 2px; /* Christie's: keskin dikdortgen */
+  background: var(--med-ink);
+  color: var(--sand);
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 .bs-slide:hover:not(:disabled) .bs-cta {
-  background: #fff;
-  color: #111;
+  opacity: 0.86;
 }
-.bs-arrow {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  border: 0;
-  border-radius: var(--radius-pill);
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
-  font-size: 26px;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.bs-arrow:hover {
-  background: rgba(0, 0, 0, 0.65);
-}
-.bs-prev {
-  left: 14px;
-}
-.bs-next {
-  right: 14px;
-}
-.bs-dots {
-  position: absolute;
-  right: clamp(20px, 4vw, 48px);
-  bottom: 18px;
+/* Noktalar: sol panel altinda (Christie's gibi) */
+.bs-panel .bs-dots {
   display: flex;
-  gap: 6px;
+  gap: 10px;
+  margin-top: 10px;
 }
-.bs-dots button {
-  width: 9px;
-  height: 9px;
+.bs-dots span,
+.bs-dots.bs-dots-float button {
+  width: 8px;
+  height: 8px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.5);
+  background: color-mix(in srgb, var(--med-ink) 30%, transparent);
   cursor: pointer;
   transition: width 0.2s ease, background 0.2s ease;
+  display: inline-block;
 }
-.bs-dots button.active {
-  width: 24px;
+.bs-dots span.active {
+  width: 22px;
+  background: var(--med-ink);
+}
+/* Yazisiz bannerlar icin ortada yuzen noktalar (gorsel uzeri) */
+.bs-dots-float {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 16px;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.bs-dots.bs-dots-float button {
+  background: rgba(255, 255, 255, 0.55);
+}
+.bs-dots.bs-dots-float button.active {
+  width: 22px;
   background: #fff;
 }
-@media (max-width: 640px) {
-  .bs-slide img {
-    height: clamp(360px, 76vw, 460px);
+
+@media (max-width: 720px) {
+  /* Mobil: gorsel ustte, panel altta (dikey yigin) */
+  .bs-slide.has-text {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    min-height: 0;
   }
-  .bs-dots {
-    left: 0;
-    right: 0;
-    justify-content: center;
+  .bs-slide.has-text .bs-media {
+    order: -1;
+  }
+  .bs-slide.has-text .bs-media img {
+    height: clamp(180px, 46vw, 260px);
   }
 }
 

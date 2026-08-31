@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { listTournamentAds, type TournamentAd } from '../api'
+import { Icon } from './Icon'
 
 interface Props {
   /** Banner'a tiklaninca bagli turnuvanin detayini ac. */
@@ -14,10 +15,11 @@ function srcOf(img: string): string {
 const ROTATE_MS = 6000
 
 /**
- * Ana sayfanin en ustunde tam genislikte (edge-to-edge) hero banner slider'i —
- * Christie's tarzi: buyuk gorsel + sol-alta editoryal metin bindirmesi (kicker/baslik/
- * alt metin/CTA) + gradient scrim. Panelden (Banner) yonetilir; her banner bir turnuvaya
- * baglidir, tiklaninca detay acilir. Metin alanlari bossa gorsel ciplak gosterilir.
+ * Ana sayfa hero banner slider'i — Christie's tarzi SPLIT layout:
+ * SOL panelde (duz sicak zemin) editoryal metin (kicker + serif baslik + alt metin +
+ * meta + koyu dikdortgen CTA + noktalar), SAGDA gorsel. Panelden (Banner) yonetilir;
+ * her banner bir turnuvaya baglidir, tiklaninca detay acilir.
+ * Metin alanlari TAMAMEN bossa panel cikmaz -> gorsel tam genislikte cikplak gosterilir.
  */
 export default function BannerSlider({ onOpen }: Props) {
   const [banners, setBanners] = useState<TournamentAd[]>([])
@@ -48,72 +50,72 @@ export default function BannerSlider({ onOpen }: Props) {
   if (banners.length === 0) return null
 
   const go = (n: number) => setI((n + banners.length) % banners.length)
+  const multi = banners.length > 1
 
   return (
     <div className="banner-slider" data-count={banners.length}>
       <div className="bs-track" style={{ transform: `translateX(-${i * 100}%)` }}>
         {banners.map((b) => {
-          const hasText = !!(b.kicker || b.title || b.subtitle || b.cta)
+          const hasText = !!(b.kicker || b.title || b.subtitle || b.meta || b.cta)
           return (
             <button
               key={b.id}
               type="button"
-              className="bs-slide"
+              className={`bs-slide${hasText ? ' has-text' : ''}`}
               onClick={() => b.tournament_id != null && onOpen(b.tournament_id)}
               disabled={b.tournament_id == null}
               aria-label={b.title || b.tournament_name || 'Banner'}
             >
-              <img src={srcOf(b.image)} alt={b.title || b.tournament_name || ''} loading="lazy" />
               {hasText && (
-                <>
-                  <span className="bs-scrim" aria-hidden="true" />
-                  <span className="bs-content">
-                    {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
-                    {b.title && <span className="bs-title">{b.title}</span>}
-                    {b.subtitle && <span className="bs-sub">{b.subtitle}</span>}
-                    {b.cta && (
-                      <span className="bs-cta">
-                        {b.cta} <span aria-hidden="true">→</span>
-                      </span>
-                    )}
-                  </span>
-                </>
+                <span className="bs-panel">
+                  {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
+                  {b.title && <span className="bs-title">{b.title}</span>}
+                  {b.subtitle && <span className="bs-sub">{b.subtitle}</span>}
+                  {b.meta && (
+                    <span className="bs-meta">
+                      <Icon name="calendar" size={15} /> {b.meta}
+                    </span>
+                  )}
+                  {b.cta && <span className="bs-cta">{b.cta}</span>}
+                  {/* Noktalar sol panelin altinda (Christie's gibi) */}
+                  {multi && (
+                    <span className="bs-dots" onClick={(e) => e.stopPropagation()}>
+                      {banners.map((_, d) => (
+                        <span
+                          key={d}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Banner ${d + 1}`}
+                          className={d === i ? 'active' : ''}
+                          onClick={() => go(d)}
+                          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && go(d)}
+                        />
+                      ))}
+                    </span>
+                  )}
+                </span>
               )}
+              <span className="bs-media">
+                <img src={srcOf(b.image)} alt={b.title || b.tournament_name || ''} loading="lazy" />
+              </span>
             </button>
           )
         })}
       </div>
 
-      {banners.length > 1 && (
-        <>
-          <button
-            type="button"
-            className="bs-arrow bs-prev"
-            onClick={() => go(i - 1)}
-            aria-label="Önceki banner"
-          >
-            ‹
-          </button>
-          <button
-            type="button"
-            className="bs-arrow bs-next"
-            onClick={() => go(i + 1)}
-            aria-label="Sonraki banner"
-          >
-            ›
-          </button>
-          <div className="bs-dots">
-            {banners.map((_, d) => (
-              <button
-                key={d}
-                type="button"
-                className={d === i ? 'active' : ''}
-                onClick={() => go(d)}
-                aria-label={`Banner ${d + 1}`}
-              />
-            ))}
-          </div>
-        </>
+      {/* Yazisiz (ciplak gorsel) bannerlarda noktalar ortada altta */}
+      {multi && !banners.some((b) => b.kicker || b.title || b.subtitle || b.meta || b.cta) && (
+        <div className="bs-dots bs-dots-float">
+          {banners.map((_, d) => (
+            <button
+              key={d}
+              type="button"
+              className={d === i ? 'active' : ''}
+              onClick={() => go(d)}
+              aria-label={`Banner ${d + 1}`}
+            />
+          ))}
+        </div>
       )}
     </div>
   )
