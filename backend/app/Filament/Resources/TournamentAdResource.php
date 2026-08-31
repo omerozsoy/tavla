@@ -41,6 +41,12 @@ class TournamentAdResource extends Resource
                 ->helperText('Sol panelde yazı varsa görsel SAĞ yarıda; yoksa tam genişlikte gösterilir. Dikey ortaya önemli öğe koy (kırpılabilir). Yüksek çözünürlük önerilir. En fazla 5 MB.')
                 ->required()
                 ->columnSpanFull(),
+            // Düzenleyen (organizatör) logosu: sol panelde başlığın üstünde küçük gösterilir.
+            Forms\Components\FileUpload::make('logo')->label('Düzenleyen logosu')
+                ->image()->disk('uploads')->directory('banner/logo')->visibility('public')
+                ->maxSize(2048)
+                ->helperText('Opsiyonel. Sol panelde başlığın üstünde küçük gösterilir. Şeffaf PNG önerilir. En fazla 2 MB.')
+                ->columnSpanFull(),
             Forms\Components\Select::make('tournament_id')
                 ->label('Bağlı turnuva')
                 ->relationship('tournament', 'name')

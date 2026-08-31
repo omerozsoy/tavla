@@ -6549,6 +6549,15 @@ button.stat-chip:hover {
   color: var(--med-ink);
   text-align: left;
 }
+/* Duzenleyen (organizator) logosu: sol panelde baslik ustunde kucuk */
+.bs-logo {
+  display: block;
+  height: clamp(36px, 4.5vw, 56px);
+  width: auto;
+  max-width: 200px;
+  object-fit: contain;
+  margin-bottom: 2px;
+}
 .bs-kicker {
   font-size: 0.74rem;
   letter-spacing: 0.2em;

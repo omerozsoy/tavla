@@ -516,6 +516,8 @@ export async function listTournaments(): Promise<Tournament[]> {
 export interface TournamentAd {
   id: number
   image: string
+  /** Düzenleyen (organizatör) logosu — sol panelde başlığın üstünde. Opsiyonel. */
+  logo?: string | null
   /** Görsel üstüne bindirilen editoryal metin (opsiyonel; boşsa çıplak görsel). */
   kicker?: string | null
   title?: string | null
