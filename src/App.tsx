@@ -32,6 +32,7 @@ import {
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
+import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import DiceRow, { Die } from './ui/Dice'
 import Auth from './ui/Auth'
 import Lobby from './ui/Lobby'
@@ -3334,6 +3335,22 @@ export default function App() {
   // Oyun ekraninda mi (cekilme butonu bunun icin)
   const accountBar = (
     <div className="account-bar">
+      {/* Sol: TavlaTV logosu (ana sayfaya doner). Sag: hesap kontrolleri. */}
+      <button
+        type="button"
+        className="ab-brand"
+        onClick={() => menuProps.onHome()}
+        title={t('home.title')}
+        aria-label={t('brand.name')}
+      >
+        {/* Genis ekranda wordmark; mobilde kompakt sembol (yer acar) */}
+        <span className="ab-logo-full">
+          <TavlaTvLogo size={30} />
+        </span>
+        <span className="ab-logo-mark">
+          <TavlaTvMark size={34} />
+        </span>
+      </button>
       {/* Birlesik hesap kimlik pili: avatar+isim + coin + rating tek buyuk pill icinde */}
       <div className="account-id">
       <button
@@ -3907,9 +3924,9 @@ export default function App() {
   if (setup) {
     return (
       <>
-        {accountBar}
         {mobileNav}
         <div className="app lobby">
+          {accountBar}
           <SideMenu
             inGame={false}
             {...menuProps}
@@ -3951,7 +3968,6 @@ export default function App() {
   if (home) {
     return (
       <>
-        {accountBar}
         {mobileNav}
         {ptrDist > 0 && (
           <div
@@ -3970,6 +3986,7 @@ export default function App() {
           </div>
         )}
         <div className="app lobby">
+          {accountBar}
           <SideMenu
             inGame={false}
             {...menuProps}
