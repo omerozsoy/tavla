@@ -10955,10 +10955,10 @@ button.stat-chip:hover {
 }
 .tp-row {
   display: grid;
-  grid-template-columns: 28px auto 1fr;
+  grid-template-columns: 28px 1fr auto;
   align-items: center;
   gap: 8px;
-  padding: 5px 8px;
+  padding: 6px 10px;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 4%, transparent);
   font-size: 0.9rem;
@@ -10983,7 +10983,8 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-weight: 700;
+  justify-self: end;
+  font-weight: 800;
   color: var(--tv-gold);
   font-variant-numeric: tabular-nums;
 }

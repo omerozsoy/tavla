@@ -137,10 +137,10 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
                 {active.prizes.map((pr, i) => (
                   <li key={i} className="tp-row">
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
+                    <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Icon name="coin" size={14} /> {pr.coins}
+                      <Icon name="coin" size={14} /> {pr.coins.toLocaleString('tr-TR')}
                     </span>
-                    {pr.desc && <span className="tp-desc">{pr.desc}</span>}
                   </li>
                 ))}
               </ol>
