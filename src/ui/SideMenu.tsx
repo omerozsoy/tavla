@@ -134,16 +134,14 @@ export default function SideMenu(p: SideMenuProps) {
         )}
       </div>
 
-      {/* Hesap. Uyelik (premium) uye OLMAYANA da gorunur -> tiklayinca uyelik ekrani.
-          Istatistiklerim ise yalniz giris yapana (misafirin istatistigi yok). */}
-      {(p.onMembership || p.loggedIn) && (
+      {/* Hesap. Uyelik (premium) uye OLMAYANA gorunur. İstatistiklerim KALDIRILDI
+          (Profilim > İstatistikler sekmesi) -> grup yalniz Uyelik varsa render edilir
+          (yoksa BOS .menu-group kalip fazladan bosluk yaratiyordu). */}
+      {p.onMembership && (
         <div className="menu-group">
-          {p.onMembership && (
-            <Button variant="ghost" className={NAV} data-active={p.active === 'membership' || undefined} onClick={p.onMembership}>
-              <Icon name="star" size={24} /> {t('mem.menu')}
-            </Button>
-          )}
-          {/* İstatistiklerim menüden KALDIRILDI → Profilim içinde "İstatistikler" sekmesi */}
+          <Button variant="ghost" className={NAV} data-active={p.active === 'membership' || undefined} onClick={p.onMembership}>
+            <Icon name="star" size={24} /> {t('mem.menu')}
+          </Button>
         </div>
       )}
 

@@ -31,7 +31,7 @@
   align-items: center;
   gap: 8px;
   font-size: 1.45rem;
-  font-weight: 600; /* bold degil */
+  font-weight: 400; /* bold degil */
   letter-spacing: -0.01em;
   color: var(--text);
 }
@@ -73,20 +73,20 @@
 }
 .rank-prog__sum-label {
   font-size: 0.68rem;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
 }
 .rank-prog__sum-rank {
   font-size: 1.02rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text);
   line-height: 1.2;
 }
 .rank-prog__sum-code {
   color: var(--_accent, var(--text));
-  font-weight: 700;
+  font-weight: 400;
 }
 .rank-prog__sum-sep {
   margin: 0 5px;
@@ -152,7 +152,7 @@
   display: block;
   margin: 0 0 6px calc(var(--marker) + 2px);
   font-size: 0.66rem;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: color-mix(in srgb, var(--muted) 88%, transparent);
@@ -248,28 +248,28 @@
 }
 .rank-prog__name {
   font-size: 0.96rem;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text);
   letter-spacing: -0.005em;
 }
 /* Üst ailelerde tipografi güveni kontrollü artar */
 .rank-prog__row[data-family='grandmaster'] .rank-prog__name,
 .rank-prog__row[data-family='superGrandmaster'] .rank-prog__name {
-  font-weight: 700;
+  font-weight: 400;
 }
 .rank-prog__row[data-apex] .rank-prog__name {
   font-size: 1rem;
 }
 .rank-prog__code {
   font-size: 0.86rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--_fg);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
 }
 .rank-prog__rating {
   font-size: 0.76rem;
-  font-weight: 500;
+  font-weight: 400;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
@@ -277,7 +277,7 @@
 /* Etiketler (Current / Highest) */
 .rank-prog__tag {
   font-size: 0.62rem;
-  font-weight: 700;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   padding: 2px 7px;

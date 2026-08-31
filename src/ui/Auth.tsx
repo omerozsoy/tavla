@@ -816,11 +816,11 @@ export default function Auth({
             <Separator className="my-6" />
             {onDeleteAccount && (
               <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-                <h3 className="text-sm font-semibold text-destructive">{danger.zone}</h3>
+                <h3 className="text-sm font-normal text-destructive">{danger.zone}</h3>
                 <p className="mt-1 text-sm text-muted-foreground">{danger.desc}</p>
                 {confirmDelete ? (
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-foreground">
+                    <span className="text-sm font-normal text-foreground">
                       {t('account.deleteConfirm')}
                     </span>
                     <div className="flex gap-3">
