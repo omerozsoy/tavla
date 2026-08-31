@@ -56,12 +56,14 @@ export default function ContentView({
   slug = null,
   onOpenDetail,
   onCloseDetail,
+  embed = false,
 }: {
   type: ContentType
   onClose: () => void
   slug?: string | null
   onOpenDetail?: (slug: string) => void
   onCloseDetail?: () => void
+  embed?: boolean // Bilgi sayfasi sekmesine gomulu (overlay/kart/kapat/baslik yok)
 }) {
   const { t } = useT()
   const [items, setItems] = useState<Content[]>([])
@@ -147,6 +149,37 @@ export default function ContentView({
     }
     return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0], 'tr'))
   }, [items, type])
+
+  // Bilgi sayfasi "Hizmetler" sekmesi: overlay/kart/baslik olmadan yalniz liste.
+  if (embed) {
+    return (
+      <div className="content-embed">
+        {loading ? (
+          <div className="admin-empty">{t('admin.loading')}</div>
+        ) : error ? (
+          <div className="admin-empty">
+            {t('common.loadError')}{' '}
+            <Button variant="outline" onClick={load}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="admin-empty">{t('content.empty')}</div>
+        ) : (
+          <div className="content-services">
+            {items.map((s) => (
+              <section key={s.id} className="content-service">
+                <h3>{s.title}</h3>
+                {paras(s.body).map((p, i) => (
+                  <p key={i}>{p}</p>
+                ))}
+              </section>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <>

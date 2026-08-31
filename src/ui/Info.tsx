@@ -11,6 +11,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { RankProgression } from './RankProgression'
 import FairnessModal from './FairnessModal'
+import ContentView from './ContentView'
 
 interface Props {
   onClose: () => void
@@ -18,7 +19,7 @@ interface Props {
   fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-type Tab = 'about' | 'ranks' | 'fair'
+type Tab = 'about' | 'ranks' | 'fair' | 'services'
 
 export default function Info({ onClose, currentRating, fair }: Props) {
   const { t } = useT()
@@ -45,6 +46,9 @@ export default function Info({ onClose, currentRating, fair }: Props) {
           </button>
           <button type="button" role="tab" aria-selected={tab === 'fair'} className={tab === 'fair' ? 'active' : ''} onClick={() => setTab('fair')}>
             {t('fair.title')}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'services'} className={tab === 'services' ? 'active' : ''} onClick={() => setTab('services')}>
+            {t('menu.services')}
           </button>
         </div>
 
@@ -79,6 +83,12 @@ export default function Info({ onClose, currentRating, fair }: Props) {
               rolls={fair.rolls}
               onClose={() => {}}
             />
+          </div>
+        )}
+
+        {tab === 'services' && (
+          <div className="info-tab-pane">
+            <ContentView type="service" embed onClose={() => {}} />
           </div>
         )}
       </div>

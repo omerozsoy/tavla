@@ -155,11 +155,7 @@ export default function SideMenu(p: SideMenuProps) {
               <Icon name="building-office" size={24} /> {t('menu.clubs')}
             </Button>
           )}
-          {p.onServices && (
-            <Button variant="ghost" className={NAV} data-active={p.active === 'services' || undefined} onClick={p.onServices}>
-              <Icon name="briefcase" size={24} /> {t('menu.services')}
-            </Button>
-          )}
+          {/* Hizmetler → "Bilgi" sayfası sekmesine taşındı */}
           {p.onNews && (
             <Button variant="ghost" className={NAV} data-active={p.active === 'news' || undefined} onClick={p.onNews}>
               <Icon name="newspaper" size={24} /> {t('menu.news')}
