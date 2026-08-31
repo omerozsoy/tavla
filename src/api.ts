@@ -969,6 +969,7 @@ export async function reportRating(
   log?: string | null,
   ranked = true,
   matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
+  roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
 ): Promise<{ rating: number }> {
   return req('/rating/report', {
     method: 'POST',
@@ -985,6 +986,7 @@ export async function reportRating(
       opponent_pr: opponentPr ?? null,
       log: log ?? null,
       ranked,
+      room_code: roomCode ?? null,
     }),
   })
 }

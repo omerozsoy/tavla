@@ -1734,6 +1734,7 @@ export default function App() {
         JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
         !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
         stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
+        room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
