@@ -1246,7 +1246,7 @@ button[aria-disabled='true'],
   position: absolute;
   inset: 0;
   z-index: -1;
-  clip-path: polygon(0 3%, 88% 50%, 0 97%);
+  clip-path: polygon(0 4%, 70% 4%, 88% 50%, 70% 96%, 0 96%);
   pointer-events: none;
   /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
@@ -1271,7 +1271,7 @@ button[aria-disabled='true'],
   position: absolute;
   inset: 0;
   z-index: -1;
-  clip-path: polygon(0 3%, 88% 50%, 0 97%);
+  clip-path: polygon(0 4%, 70% 4%, 88% 50%, 70% 96%, 0 96%);
   pointer-events: none;
   transform-origin: left center;
   background: color-mix(in srgb, var(--accent) 82%, #000);
