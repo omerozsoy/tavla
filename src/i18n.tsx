@@ -104,6 +104,7 @@ const TR: Dict = {
   'menu.tools': 'Araçlar',
   'menu.info': 'Bilgi',
   'info.title': 'Bilgi',
+  'info.tab.about': 'Hakkında',
   'info.intro':
     'TavlaTV, tarayıcıda oynanan modern bir tavla platformudur. Yapay zekaya karşı antrenman yapabilir, gerçek rakiplerle eşleşebilir, turnuvalara katılabilir ve her maçının analizini görebilirsin.',
   'info.featuresTitle': 'Öne çıkanlar',
@@ -180,6 +181,7 @@ const TR: Dict = {
   'errorJournal.periodLabel': 'Dönem',
   'errorJournal.period.today': 'Bugün',
   'errorJournal.period.yesterday': 'Dün',
+  'errorJournal.period.3d': '3 Gün',
   'errorJournal.period.7d': '7 Gün',
   'errorJournal.period.30d': '30 Gün',
   'errorJournal.period.all': 'Tümü',
@@ -1051,6 +1053,7 @@ const EN: Dict = {
   'menu.tools': 'Tools',
   'menu.info': 'Info',
   'info.title': 'Info',
+  'info.tab.about': 'About',
   'info.intro':
     'TavlaTV is a modern browser-based backgammon platform. Train against AI, get matched with real opponents, join tournaments, and review the analysis of every match.',
   'info.featuresTitle': 'Highlights',
@@ -1127,6 +1130,7 @@ const EN: Dict = {
   'errorJournal.periodLabel': 'Period',
   'errorJournal.period.today': 'Today',
   'errorJournal.period.yesterday': 'Yesterday',
+  'errorJournal.period.3d': '3 Days',
   'errorJournal.period.7d': '7 Days',
   'errorJournal.period.30d': '30 Days',
   'errorJournal.period.all': 'All',

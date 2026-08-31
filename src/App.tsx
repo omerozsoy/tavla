@@ -3691,7 +3691,18 @@ export default function App() {
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
-      {infoOpen && <Info onClose={() => setInfoOpen(false)} />}
+      {infoOpen && (
+        <Info
+          onClose={() => setInfoOpen(false)}
+          currentRating={user?.rating ?? undefined}
+          fair={{
+            commitment: fairRef.current.commitment,
+            clientSeed: fairRef.current.clientSeed,
+            serverSeed: matchWinner(match) ? fairRef.current.serverSeed : undefined,
+            rolls: fairRef.current.nonce,
+          }}
+        />
+      )}
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />
       )}

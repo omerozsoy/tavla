@@ -55,6 +55,7 @@ class ErrorJournalController extends Controller
         return match ($period) {
             'all' => [null, null],
             'yesterday' => [$now->copy()->subDay()->startOfDay(), $now->copy()->subDay()->endOfDay()],
+            '3d' => [$now->copy()->subDays(3)->startOfDay(), $now],
             '7d' => [$now->copy()->subDays(7)->startOfDay(), $now],
             '30d' => [$now->copy()->subDays(30)->startOfDay(), $now],
             'custom' => [

@@ -512,6 +512,18 @@ export async function listTournaments(): Promise<Tournament[]> {
   return d.tournaments
 }
 
+/** Ana sayfa turnuva reklam gorseli (panelden, en fazla 3). Tiklaninca turnuva detayi acilir. */
+export interface TournamentAd {
+  id: number
+  image: string
+  tournament_id: number | null
+  tournament_name: string | null
+}
+export async function listTournamentAds(): Promise<TournamentAd[]> {
+  const d = await req<{ ads: TournamentAd[] }>('/tournament-ads')
+  return d.ads
+}
+
 // ---- Yonetim paneli (admin) ----
 export interface AdminUser {
   id: number
@@ -654,7 +666,7 @@ export async function finishTournament(id: number): Promise<Tournament> {
 // Backend sunucu-taraflı analiz (17 kategori sınıflandırma + günlük toplama).
 // Frontend equity/PR/classification TEKRAR HESAPLAMAZ; bu ciktiyi gosterir.
 export type EJSeverity = 'inaccuracy' | 'mistake' | 'blunder'
-export type EJPeriod = 'today' | 'yesterday' | '7d' | '30d' | 'all'
+export type EJPeriod = 'today' | '3d' | '7d' | '30d' | 'all'
 export interface EJCategoryStat {
   category: string
   decisions: number
@@ -705,7 +717,7 @@ export interface EJResponse {
   insights: { topWeakness: EJCategoryStat | null; biggestLoss: EJCategoryStat | null }
 }
 export async function errorJournal(
-  period: EJPeriod = 'today',
+  period: EJPeriod = '7d',
   category?: string | null,
   limit = 50,
 ): Promise<EJResponse> {

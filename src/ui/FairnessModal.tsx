@@ -11,6 +11,7 @@ interface Props {
   serverSeed?: string // yalnizca mac bittiginde ifsa edilir
   rolls: number
   onClose: () => void
+  embed?: boolean // Bilgi sayfasi sekmesine gomulu (overlay/kart/kapat/baslik yok)
 }
 
 // Infografik 4 adimi (Phosphor ikon + i18n anahtar koku). DOKUNMA: dogrulama mantigi ayri.
@@ -27,9 +28,9 @@ function dieIcon(v: number): IconName {
   return ('die-' + n) as IconName
 }
 
-export default function FairnessModal({ commitment, clientSeed, serverSeed, rolls, onClose }: Props) {
+export default function FairnessModal({ commitment, clientSeed, serverSeed, rolls, onClose, embed }: Props) {
   const { t } = useT()
-  useEscape(onClose)
+  useEscape(embed ? () => {} : onClose)
   const [vServer, setVServer] = useState(serverSeed ?? '')
   const [vClient, setVClient] = useState(clientSeed)
   const [vNonce, setVNonce] = useState(0)
@@ -63,22 +64,8 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
     { key: 'serverSeed', label: t('fair.serverSeed'), value: serverSeed ?? '', hidden: !serverSeed },
   ]
 
-  return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="modal-close"
-          onClick={onClose}
-          aria-label={t('common.close')}
-        >
-          <Icon name="x" size={16} />
-        </Button>
-        <h2>
-          <Icon name="shield-check" size={20} /> {t('fair.title')}
-        </h2>
-
+  const body = (
+    <>
         {/* ==================== INFOGRAFİK ==================== */}
         <section className="fair-info" aria-label={t('fair.howTitle')}>
           <div className="fair-info-head">
@@ -256,6 +243,21 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
             </div>
           )}
         </section>
+    </>
+  )
+
+  if (embed) return <div className="fair-embed">{body}</div>
+
+  return (
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card fair-card" onClick={(e) => e.stopPropagation()}>
+        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={16} />
+        </Button>
+        <h2>
+          <Icon name="shield-check" size={20} /> {t('fair.title')}
+        </h2>
+        {body}
       </div>
     </div>
   )

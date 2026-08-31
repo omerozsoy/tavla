@@ -123,11 +123,7 @@ export default function SideMenu(p: SideMenuProps) {
         <Button variant="ghost" className={NAV} data-active={p.active === 'leaderboard' || undefined} onClick={p.onLeaderboard}>
           <Icon name="crown" size={24} /> {t('menu.leaderboard')}
         </Button>
-        {p.onRanks && (
-          <Button variant="ghost" className={NAV} data-active={p.active === 'ranks' || undefined} onClick={p.onRanks}>
-            <Icon name="medal" size={24} /> {t('menu.ranks')}
-          </Button>
-        )}
+        {/* Rütbeler → "Bilgi" sayfası sekmesine taşındı */}
         {p.loggedIn && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'friends' || undefined} onClick={p.onFriends}>
             <Icon name="users" size={24} /> {t('menu.friends')}
@@ -192,9 +188,7 @@ export default function SideMenu(p: SideMenuProps) {
             <Icon name="chart-line" size={24} /> {t('menu.matchHistory')}
           </Button>
         )}
-        <Button variant="ghost" className={NAV} data-active={p.active === 'fairness' || undefined} onClick={p.onFairness}>
-          <Icon name="shield-check" size={24} /> {t('fair.title')}
-        </Button>
+        {/* Adil Zar → "Bilgi" sayfası sekmesine taşındı */}
       </div>
 
       {/* Bilgi — en altta */}
