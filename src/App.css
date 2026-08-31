@@ -5578,10 +5578,8 @@ html.fs-active .account-bar {
 
 /* ---- Oyun-ici menu (Galaxy tarzi, sagda) ---- */
 .game-ham {
-  position: fixed;
-  right: calc(12px + env(safe-area-inset-right));
-  top: 50%;
-  transform: translateY(-50%);
+  flex: none;
+  align-self: center;
   z-index: 90;
   display: flex;
   align-items: center;
@@ -5594,6 +5592,15 @@ html.fs-active .account-bar {
   color: var(--tv-cream);
   cursor: pointer;
   box-shadow: none; /* flat */
+}
+/* Mobilde (game-area kolon olabilir) hamburger board altına yığılmasın -> fixed */
+@media (max-width: 900px) {
+  .game-ham {
+    position: fixed;
+    right: calc(8px + env(safe-area-inset-right));
+    top: 50%;
+    transform: translateY(-50%);
+  }
 }
 .game-ham:hover {
   filter: brightness(1.08);
