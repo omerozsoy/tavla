@@ -100,6 +100,9 @@
   --space-8: 32px;
   --space-10: 40px;
 
+  /* Ana sayfa (lobi) icerik kolonu genisligi — tum lobi bolumleri bunu kullanir */
+  --lobby-w: 1120px;
+
   /* ---- Kose yaricapi (radius) olcegi ---- */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -6326,22 +6329,22 @@ button.stat-chip:hover {
    Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Outfit)
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
-/* Ana sayfa banner slider'i: tam genislikte donen carousel (panelden yonetilir) */
+/* Ana sayfa hero banner slider'i — Christie's tarzi: tam genislik (edge-to-edge),
+   buyuk gorsel + sol-alta editoryal metin bindirmesi + gradient scrim. */
 .banner-slider {
   position: relative;
-  width: 100%;
-  max-width: 920px;
-  margin: 0 auto 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  /* Yatayda lobby-main padding'ini iptal edip kenarlara daya; ustte 12px fazla
+     boslugu kaldirip sabit hesap barinin hemen altina otur (header-h korunur). */
+  margin: -12px calc(-1 * clamp(12px, 3vw, 40px)) 22px;
   overflow: hidden;
-  background: var(--card-bg);
+  background: var(--rn-navy, #12212e);
 }
 .bs-track {
   display: flex;
-  transition: transform 0.5s ease;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .bs-slide {
+  position: relative;
   flex: 0 0 100%;
   display: block;
   padding: 0;
@@ -6355,22 +6358,81 @@ button.stat-chip:hover {
 .bs-slide img {
   display: block;
   width: 100%;
-  aspect-ratio: 1200 / 360;
+  height: clamp(320px, 34vw, 500px);
   object-fit: cover;
+}
+/* Okunabilirlik: sol-alttan yukselen koyulastirma */
+.bs-scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.62) 0%,
+    rgba(0, 0, 0, 0.28) 34%,
+    rgba(0, 0, 0, 0) 62%
+  );
+  pointer-events: none;
+}
+.bs-content {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  max-width: min(620px, 82%);
+  padding: clamp(20px, 4vw, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  color: #fff;
+}
+.bs-kicker {
+  font-size: 0.74rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+.bs-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.7rem, 3.4vw, 3rem);
+  line-height: 1.08;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+.bs-sub {
+  font-size: clamp(0.9rem, 1.3vw, 1.1rem);
+  opacity: 0.92;
+  max-width: 46ch;
+}
+.bs-cta {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(2px);
+  font-size: 0.95rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.bs-slide:hover:not(:disabled) .bs-cta {
+  background: #fff;
+  color: #111;
 }
 .bs-arrow {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 0;
   border-radius: var(--radius-pill);
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.4);
   color: #fff;
-  font-size: 22px;
+  font-size: 26px;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -6379,38 +6441,46 @@ button.stat-chip:hover {
   background: rgba(0, 0, 0, 0.65);
 }
 .bs-prev {
-  left: 10px;
+  left: 14px;
 }
 .bs-next {
-  right: 10px;
+  right: 14px;
 }
 .bs-dots {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 10px;
+  right: clamp(20px, 4vw, 48px);
+  bottom: 18px;
   display: flex;
-  justify-content: center;
   gap: 6px;
 }
 .bs-dots button {
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   transition: width 0.2s ease, background 0.2s ease;
 }
 .bs-dots button.active {
-  width: 20px;
+  width: 24px;
   background: #fff;
+}
+@media (max-width: 640px) {
+  .bs-slide img {
+    height: clamp(360px, 76vw, 460px);
+  }
+  .bs-dots {
+    left: 0;
+    right: 0;
+    justify-content: center;
+  }
 }
 
 .resume-match-bar {
   width: 100%;
-  max-width: 920px;
+  max-width: var(--lobby-w);
   margin: 0 auto 10px;
   display: flex;
   flex-direction: column;
@@ -6471,7 +6541,7 @@ button.stat-chip:hover {
    dahil) tam akar, kirpilmaz. Alt taraftaki dashboard ile ayni genislikte hizali. */
 .lobby-hero {
   width: 100%;
-  max-width: 920px;
+  max-width: var(--lobby-w);
   margin: 8px auto 12px;
   padding: 4px 2px 4px;
 }
@@ -6657,7 +6727,7 @@ button.stat-chip:hover {
   grid-template-columns: 1fr 1fr;
   gap: 16px;
   width: 100%;
-  max-width: 920px;
+  max-width: var(--lobby-w);
   margin: 10px auto 0;
 }
 @media (max-width: 720px) {
@@ -7256,7 +7326,7 @@ button.stat-chip:hover {
 /* ---- Uye panosu (dashboard): istatistik seridi + hizli erisim ---- */
 .home-dash {
   width: 100%;
-  max-width: 920px;
+  max-width: var(--lobby-w);
   margin: 10px auto 0;
   display: grid;
   gap: 12px;
@@ -7535,7 +7605,7 @@ button.stat-chip:hover {
 /* ---- Ozellik vitrini (misafir) + kapanis CTA ---- */
 .home-features {
   width: 100%;
-  max-width: 920px;
+  max-width: var(--lobby-w);
   margin: 40px auto 8px;
 }
 .home-features-head {

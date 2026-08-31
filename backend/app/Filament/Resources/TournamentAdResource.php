@@ -38,7 +38,7 @@ class TournamentAdResource extends Resource
             Forms\Components\FileUpload::make('image')->label('Banner görseli')
                 ->image()->disk('uploads')->directory('banner')->visibility('public')
                 ->imageEditor()->maxSize(5120)
-                ->helperText('Geniş banner önerilir (örn. 1200×360 ≈ 10:3). Slider tam genişlikte döner. En fazla 5 MB.')
+                ->helperText('Tam genişlikte hero olarak gösterilir; geniş, yüksek çözünürlüklü görsel önerilir (örn. 2000×760). En fazla 5 MB.')
                 ->required()
                 ->columnSpanFull(),
             Forms\Components\Select::make('tournament_id')
@@ -48,6 +48,25 @@ class TournamentAdResource extends Resource
                 ->preload()
                 ->helperText('Banner’a tıklayınca bu turnuvanın detay sayfası açılır.')
                 ->required(),
+
+            // Görselin ÜSTÜNE bindirilen metin (Christie's tarzı). Tümü boş bırakılırsa
+            // görsel çıplak gösterilir (yazı görselin içinde hazır demektir).
+            Forms\Components\Fieldset::make('Görsel üstü yazı (opsiyonel)')
+                ->schema([
+                    Forms\Components\TextInput::make('kicker')->label('Üst etiket')
+                        ->maxLength(80)->placeholder('ör. TURNUVA')
+                        ->helperText('Küçük, büyük harf gösterilir.'),
+                    Forms\Components\TextInput::make('cta')->label('Buton yazısı')
+                        ->maxLength(60)->placeholder('ör. Keşfet'),
+                    Forms\Components\TextInput::make('title')->label('Başlık')
+                        ->maxLength(160)->placeholder('ör. 5. Grand Pasha Open')
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('subtitle')->label('Alt metin')
+                        ->maxLength(240)->placeholder('ör. 1–3 Kasım 2026 · Kıbrıs')
+                        ->columnSpanFull(),
+                ])
+                ->columns(2)
+                ->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0)
                 ->helperText('Küçük sayı önce gösterilir. Listede sürükleyerek de sıralayabilirsin.'),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true)
@@ -63,6 +82,8 @@ class TournamentAdResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable(),
                 Tables\Columns\ImageColumn::make('image')->label('Görsel')->disk('uploads'),
+                Tables\Columns\TextColumn::make('title')->label('Başlık')
+                    ->placeholder('—')->limit(40)->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('tournament.name')->label('Turnuva')
                     ->placeholder('—')->searchable()->sortable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
