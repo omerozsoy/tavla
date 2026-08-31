@@ -1171,11 +1171,12 @@ button[aria-disabled='true'],
   gap: 4px;
 }
 .menu-label {
-  color: var(--muted);
-  font-size: 0.72rem;
+  color: color-mix(in srgb, var(--muted) 85%, transparent);
+  font-size: 0.68rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 2px;
+  letter-spacing: 0.08em;
+  margin: 8px 0 4px 12px;
 }
 .menu-btn {
   width: 100%;
@@ -1208,31 +1209,43 @@ button[aria-disabled='true'],
 /* Sol menu shadcn nav butonlari (guncel): TEMIZ navigation — kutu/border yok,
    coral ikon (canlilik), belirgin aqua hover, AKTIF sayfa = guclu navy.
    Boylece her item ayni soluk gri kutu gibi gorunmez; aktif sayfa ilk bakista bellidir. */
+/* EMIL sol menü: sade, marka-uyumlu (Terracotta). İkon glyph'leri DEĞİŞMEDİ;
+   yalnız hover/aktif/renk kohezyonu yenilendi. Bağıran aqua/navy kaldırıldı. */
 .side-menu [data-slot='button'] {
   border-color: transparent !important;
   color: var(--text);
-  font-weight: 400; /* sol menu: regular */
+  font-weight: 500;
   min-height: 44px;
+  border-radius: 10px;
+  position: relative;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 .side-menu [data-slot='button'] svg {
-  color: var(--med-terracotta-dark); /* nav ikonlari KOYU KIREMIT #a83a2b */
+  color: var(--accent); /* marka aksanı (light: kiremit · dark: coral) — okunur */
+  transition: color 0.15s ease;
 }
+/* Hover: çok sade yüzey tinti (temaya göre; bağırmaz) */
 .side-menu [data-slot='button']:hover {
-  background: color-mix(in srgb, var(--sky) 55%, transparent) !important; /* belirgin aqua/light-blue */
-  color: var(--navy-brand) !important;
+  background: color-mix(in srgb, var(--text) 8%, transparent) !important;
+  color: var(--text) !important;
   border-color: transparent !important;
 }
+/* Aktif sayfa: accent-tint yüzey + accent metin/ikon + sol accent çubuk (Emil indikatör) */
 .side-menu [data-slot='button'][data-active='true'] {
-  background: var(--navy-brand) !important; /* AKTIF = navy dolgu */
-  color: #fff !important;
-  border-color: var(--navy-brand) !important;
+  background: color-mix(in srgb, var(--accent) 13%, transparent) !important;
+  color: var(--accent) !important;
+  font-weight: 600;
+  border-color: transparent !important;
+  box-shadow: inset 3px 0 0 var(--accent);
 }
-.side-menu [data-slot='button'][data-active='true'] svg,
-.side-menu [data-slot='button'][data-active='true']:hover {
-  color: #fff !important;
+.side-menu [data-slot='button'][data-active='true'] svg {
+  color: var(--accent) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover {
-  background: var(--med-blue-deep) !important; /* aktif hover: daha koyu navy */
+  background: color-mix(in srgb, var(--accent) 18%, transparent) !important;
+  color: var(--accent) !important;
 }
 /* Ayarlar grubunu menunun en altina sabitle */
 .menu-bottom {
@@ -10626,6 +10639,29 @@ button.stat-chip:hover {
   padding-left: 8px;
   border-left: 1px solid color-mix(in srgb, var(--on-accent) 40%, transparent);
   font-variant-numeric: tabular-nums;
+}
+/* Detay başlık chip satırı (durum + katılımcı + ücret) */
+.td-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 2px 0 6px;
+}
+.td-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.td-chip > svg {
+  color: var(--muted);
 }
 .tourn-list {
   display: flex;

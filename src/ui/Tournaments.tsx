@@ -104,9 +104,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose }: Props) {
             <span aria-hidden="true">←</span> {t('tourn.back')}
           </button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
-          <div className="tourn-meta">
-            {t('tourn.size', { n: active.size })} · {t(`tourn.status.${active.status}`)} ·{' '}
-            {active.count}/{active.size}
+          <div className="td-chips">
+            <span className={`tr-status tr-status-${active.status}`}>
+              {t(`tourn.status.${active.status}`)}
+            </span>
+            <span className="td-chip">
+              <Icon name="users" size={13} /> {active.count}/{active.size}
+            </span>
+            {!!active.entry_fee && (
+              <span className="td-chip">
+                <Icon name="ticket" size={13} /> {t('tourn.entryFee')}:{' '}
+                {active.entry_fee.toLocaleString('tr-TR')}
+              </span>
+            )}
           </div>
           {active.status === 'open' && active.starts_at && (
             <div className="tourn-countdown">
