@@ -1246,21 +1246,22 @@ button[aria-disabled='true'],
   inset: 0;
   clip-path: polygon(0 0, 100% 50%, 0 100%);
   pointer-events: none;
+  /* Hover = YUMUŞAK accent hane (önizleme) */
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, var(--accent) 26%, transparent) 0%,
-    color-mix(in srgb, var(--accent) 9%, transparent) 55%,
+    color-mix(in srgb, var(--accent) 18%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 6%, transparent) 55%,
     transparent 100%
   );
 }
-/* SEÇİLİ/AKTİF = aynı hane ama DAHA KOYU KİREMİT (accent'in koyusu) + grow-in */
+/* SEÇİLİ/AKTİF = aynı accent hane ama DAHA YOĞUN + 2px keskin sol omurga (ray).
+   Renk değişmez (accent) -> hem açık (kiremit) hem koyu (coral) temada tutarlı. */
 .side-menu [data-slot='button'][data-active='true'] {
-  --accent-deep: color-mix(in srgb, var(--accent) 68%, #000);
   background: transparent !important;
-  color: var(--accent-deep) !important;
+  color: var(--accent) !important;
   font-weight: 400;
   border-color: transparent !important;
-  box-shadow: none;
+  box-shadow: inset 2px 0 0 var(--accent);
 }
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
@@ -1271,11 +1272,10 @@ button[aria-disabled='true'],
   transform-origin: left center;
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, #fff 88%, transparent) 0%,
-    color-mix(in srgb, #fff 30%, transparent) 58%,
+    color-mix(in srgb, var(--accent) 40%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 13%, transparent) 55%,
     transparent 100%
   );
-  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.12));
   animation: menuPointIn 0.22s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes menuPointIn {
@@ -1289,17 +1289,17 @@ button[aria-disabled='true'],
   }
 }
 .side-menu [data-slot='button'][data-active='true'] svg {
-  color: var(--accent-deep) !important;
+  color: var(--accent) !important;
 }
-/* Aktif öğeyi hover'lasan bile KOYU KİREMİT kalsın (açık accent'e dönmesin) */
+/* Aktif öğeyi hover'lasan hane biraz daha dolar (yine accent) */
 .side-menu [data-slot='button'][data-active='true']:hover {
-  color: var(--accent-deep) !important;
+  color: var(--accent) !important;
 }
 .side-menu [data-slot='button'][data-active='true']:hover::before {
   background: linear-gradient(
     90deg,
-    color-mix(in srgb, #fff 96%, transparent) 0%,
-    color-mix(in srgb, #fff 36%, transparent) 58%,
+    color-mix(in srgb, var(--accent) 48%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 16%, transparent) 55%,
     transparent 100%
   );
 }
