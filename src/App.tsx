@@ -3294,6 +3294,8 @@ export default function App() {
         ownedFrames={ownedFrames}
         onEdit={() => setProfileEditMode(true)}
         onLogout={handleLogout}
+        onSelectBoard={setBoardTheme}
+        onSelectFrame={handleEquipFrame}
         onClose={() => setEditProfile(false)}
       />
     ) : (

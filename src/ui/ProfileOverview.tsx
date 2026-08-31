@@ -34,6 +34,8 @@ interface Props {
   ownedFrames: AvatarFrameDef[]
   onEdit: () => void
   onLogout?: () => void
+  onSelectBoard?: (id: string) => void // profilden tahta rengi değiştir
+  onSelectFrame?: (id: string | null) => void // profilden avatar çerçevesi değiştir
   onClose: () => void
 }
 
@@ -58,6 +60,8 @@ export default function ProfileOverview({
   ownedFrames,
   onEdit,
   onLogout,
+  onSelectBoard,
+  onSelectFrame,
   onClose,
 }: Props) {
   const { t, lang } = useT()
@@ -218,14 +222,21 @@ export default function ProfileOverview({
             ) : (
               <div className="prof-ov-grid">
                 {ownedFrames.map((f) => (
-                  <div
+                  <button
+                    type="button"
                     className={`prof-ov-item ${user.avatar_frame === f.id ? 'active' : ''}`}
                     key={f.id}
                     style={{ ['--rarity-color']: RARITY_COLORS[f.rarity] } as CSSProperties}
+                    onClick={() => onSelectFrame?.(f.id)}
+                    aria-pressed={user.avatar_frame === f.id}
+                    title={f.name}
                   >
+                    {user.avatar_frame === f.id && (
+                      <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
+                    )}
                     <AvatarFrame src={avatar} frame={f.id} size={62} name={fullName} animated />
                     <span className="prof-ov-item-name">{f.name}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -236,11 +247,18 @@ export default function ProfileOverview({
           <section className="prof-ov-col">
             <div className="prof-ov-grid prof-ov-grid-board">
               {ownedBoards.map((b) => (
-                <div
+                <button
+                  type="button"
                   className={`prof-ov-item ${boardTheme === b.id ? 'active' : ''}`}
                   key={b.id}
                   style={boardVars(b)}
+                  onClick={() => onSelectBoard?.(b.id)}
+                  aria-pressed={boardTheme === b.id}
+                  title={b.name}
                 >
+                  {boardTheme === b.id && (
+                    <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
+                  )}
                   <div className="prof-ov-item-board">
                     <SetupBoard
                       panel={b.panel ?? b.b}
@@ -251,7 +269,7 @@ export default function ProfileOverview({
                     />
                   </div>
                   <span className="prof-ov-item-name">{b.name}</span>
-                </div>
+                </button>
               ))}
             </div>
           </section>

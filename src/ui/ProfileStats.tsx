@@ -127,14 +127,19 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
 
         {data && (
           <>
-            <div className="stats-head">
-              <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} size={60} />
-              <div className="stats-rating">
-                {u?.rating ?? 1500}
-                <div className="stats-coins"><Icon name="coin" size={14} /> {u?.coins ?? 0}</div>
-              </div>
-            </div>
-            <div className="stats-rank">{t('stats.rank', { r: data.rank, n: data.total })}</div>
+            {/* Embed'de (Profilim sekmesi) üst kimlik başlığı GİZLİ — profil zaten gösteriyor */}
+            {!embed && (
+              <>
+                <div className="stats-head">
+                  <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} size={60} />
+                  <div className="stats-rating">
+                    {u?.rating ?? 1500}
+                    <div className="stats-coins"><Icon name="coin" size={14} /> {u?.coins ?? 0}</div>
+                  </div>
+                </div>
+                <div className="stats-rank">{t('stats.rank', { r: data.rank, n: data.total })}</div>
+              </>
+            )}
 
             <div className="stats-grid">
               <div className="stats-box">

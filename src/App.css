@@ -11844,6 +11844,7 @@ button.stat-chip:hover {
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 .prof-ov-item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -11852,10 +11853,43 @@ button.stat-chip:hover {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--card-bg);
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.14s ease,
+    transform 0.14s ease,
+    box-shadow 0.14s ease;
+}
+@media (hover: hover) {
+  .prof-ov-item:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  }
 }
 .prof-ov-item.active {
-  border-color: var(--rarity-color, var(--accent));
-  box-shadow: inset 0 0 0 1px var(--rarity-color, var(--accent));
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+/* Seçili rozeti (sağ üst) — hangisi kuşanılı belli */
+.prof-ov-sel {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px 2px 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.prof-ov-sel > svg {
+  color: var(--on-accent);
 }
 .prof-ov-item-board {
   width: 100%;
