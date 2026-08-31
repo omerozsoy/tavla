@@ -46,6 +46,8 @@ import {
   X,
   Pencil,
   CaretDown,
+  CaretLeft,
+  CaretRight,
   ArrowRight,
   CalendarBlank,
   MapPin,
@@ -123,6 +125,8 @@ export type IconName =
   | 'x'
   | 'pencil'
   | 'chevron'
+  | 'caret-left'
+  | 'caret-right'
   | 'arrow-right'
   | 'calendar'
   | 'pin'
@@ -202,6 +206,8 @@ const MAP: Record<IconName, PhosphorIcon> = {
   x: X,
   pencil: Pencil,
   chevron: CaretDown,
+  'caret-left': CaretLeft,
+  'caret-right': CaretRight,
   'arrow-right': ArrowRight,
   calendar: CalendarBlank,
   pin: MapPin,
