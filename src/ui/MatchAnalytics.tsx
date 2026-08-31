@@ -3,10 +3,26 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { myMatches, matchLogById, type MyMatch } from '../api'
+import { myMatches, matchLogById, type MyMatch, type EJPeriod } from '../api'
 import MatchReport from './MatchReport'
 import type { MoveLogEntry } from '../storage'
 import type { Player } from '../engine/types'
+
+// Donem filtresi (Hata Gunlugu ile ayni): Bugun/3g/7g/30g/Tumu. Varsayilan 7g.
+const PERIODS: EJPeriod[] = ['today', '3d', '7d', '30d', 'all']
+function inPeriod(iso: string | null | undefined, p: EJPeriod): boolean {
+  if (p === 'all') return true
+  if (!iso) return false
+  const d = new Date(iso).getTime()
+  if (isNaN(d)) return false
+  if (p === 'today') {
+    const s = new Date()
+    s.setHours(0, 0, 0, 0)
+    return d >= s.getTime()
+  }
+  const days = p === '3d' ? 3 : p === '7d' ? 7 : 30
+  return d >= Date.now() - days * 86400000
+}
 
 // PR bandi (dusuk = iyi). MatchReport ile ayni ruh: kaba renk sinifi.
 function prCls(pr: number | null | undefined): string {
@@ -44,6 +60,8 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
+  const [period, setPeriod] = useState<EJPeriod>('7d')
+  const filtered = rows.filter((m) => inPeriod(m.created_at, period))
 
   // Bir macin tam analizini (log) cek -> MatchReport ac
   async function openReport(m: MyMatch) {
@@ -104,8 +122,29 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
         ) : rows.length === 0 ? (
           <div className="admin-empty">{t('mh.empty')}</div>
         ) : (
+          <>
+          <div className="ej-periods" role="tablist" aria-label={t('errorJournal.periodLabel')}>
+            {PERIODS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                role="tab"
+                aria-selected={period === p}
+                className={`ej-period ${period === p ? 'active' : ''}`}
+                onClick={() => {
+                  setPeriod(p)
+                  setOpenIdx(null)
+                }}
+              >
+                {t(`errorJournal.period.${p}`)}
+              </button>
+            ))}
+          </div>
+          {filtered.length === 0 ? (
+            <div className="admin-empty">{t('mh.emptyPeriod')}</div>
+          ) : (
           <div className="mh-list">
-            {rows.map((m, i) => {
+            {filtered.map((m, i) => {
               const open = openIdx === i
               const hasScore = m.score_self != null && m.score_opp != null
               const selfWon = hasScore ? m.score_self! > m.score_opp! : m.won
@@ -250,6 +289,8 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
               )
             })}
           </div>
+          )}
+          </>
         )}
       </div>
       {report && (
