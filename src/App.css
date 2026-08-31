@@ -5828,11 +5828,14 @@ html.fs-active .account-bar {
   .side-menu.open {
     transform: translateX(0);
   }
+  /* Mobil: bar yine TAM GENISLIK (base top:0/left:0/right:0) -> yalniz olcegi kucult. */
   .account-bar {
-    top: 6px;
-    right: 8px;
-    gap: 5px;
-    padding: 4px 7px;
+    min-height: 48px;
+    gap: 6px;
+    padding: max(4px, env(safe-area-inset-top)) 10px 4px 12px;
+  }
+  .app.lobby {
+    padding-top: calc(48px + 6px + env(safe-area-inset-top));
   }
   .account-name {
     font-size: 0.78rem;
@@ -5844,9 +5847,12 @@ html.fs-active .account-bar {
     padding: 5px 8px;
     font-size: 0.74rem;
   }
-  .lobby-main,
+  /* Oyun ekrani (.main) barsiz -> kendi ust boslugu; lobi-main bar offset'i .app.lobby'de. */
   .main {
     padding-top: 52px;
+  }
+  .lobby-main {
+    padding-top: 10px;
   }
 }
 /* Yatay mobil: board'a maksimum yer */
@@ -6183,23 +6189,35 @@ button.stat-chip:hover {
   color: var(--accent);
 }
 
-/* ---- Sag ust hesap bari ---- */
+/* ---- Ust hesap bari: TAM GENISLIK sabit ust cubuk (top:0, edge-to-edge) ---- */
+/* Icerik (sol menu + main) .app.lobby padding-top ile barin ALTINDAN baslar. Oyun
+   ekraninda bar gizli (.game-view .account-bar) -> orada offset gerekmez. */
 .account-bar {
   position: fixed;
-  top: calc(10px + env(safe-area-inset-top));
-  right: calc(16px + env(safe-area-inset-right));
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: var(--header-h);
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   justify-content: flex-end;
-  max-width: calc(100vw - 32px);
   gap: 12px;
-  padding: 9px 18px;
+  padding: max(6px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 6px
+    clamp(14px, 3vw, 40px);
   background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
   box-shadow: none; /* flat */
   z-index: 60;
+}
+/* Full-width bar sol menu markasini ortmesin: lobi/kurulum/icerik goruntulerinde
+   .app icerigini bar yuksekligi kadar asagi it. */
+.app.lobby {
+  padding-top: calc(var(--header-h) + 8px + env(safe-area-inset-top));
 }
 .account-name {
   display: inline-flex;
@@ -6408,10 +6426,10 @@ button.stat-chip:hover {
   margin: 2px 2px;
 }
 @media (max-width: 720px) {
+  /* Bar yine TAM GENISLIK ust cubuk (base top:0/left:0/right:0) -> repositioning YOK. */
   .account-bar {
-    top: 6px;
-    right: 8px;
-    padding: 4px 8px;
+    min-height: 48px;
+    padding: max(4px, env(safe-area-inset-top)) 10px 4px 12px;
   }
   .account-name {
     display: none;
@@ -6538,10 +6556,8 @@ button.stat-chip:hover {
   justify-content: flex-start;
   align-items: stretch;
   overflow-y: auto;
-  /* Sabit (fixed) hesap bari lobi icerigiyle CAKISMASIN: ust bosluk barin tam
-     yuksekligini kapsar (giris yapmis kullanicida bar daha uzun -> +32px). Banner
-     bu boslugun altindan baslar (artik barin altina girmez). */
-  padding: calc(var(--header-h) + 32px) clamp(12px, 3vw, 40px) 40px;
+  /* Bar offset'i artik .app.lobby padding-top'ta -> burada yalniz banner oncesi kucuk gap. */
+  padding: 12px clamp(12px, 3vw, 40px) 40px;
 }
 
 /* ============================================================
