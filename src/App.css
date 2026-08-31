@@ -5804,6 +5804,13 @@ html.fs-active .account-bar {
     padding: 4px 5px;
     gap: 6px;
   }
+  /* Yan menu drawer (fixed) -> grid tek kolon: band + icerik (menu kolonu yer kaplamaz). */
+  .app.lobby {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'bar'
+      'main';
+  }
   .hamburger {
     display: flex;
     align-items: center;
@@ -6190,9 +6197,41 @@ button.stat-chip:hover {
   color: var(--accent);
 }
 
-/* ---- Ust band: SOL logo + SAG hesap kontrolleri ---- */
-/* STICKY DEGIL: .lobby-main (kaydirma konteyneri) icinde AKIS ogesi -> sayfa kayinca
-   icerikle birlikte yukari kayar ve kaybolur. Full-width main icerik genisligi kadar. */
+/* ---- Lobi kabuk: EN UST tam-genislik band + altinda [yan menu | icerik] ---- */
+/* .app.lobby bir GRID: band iki kolonu kapsar (en sola kadar, en tepede). Konteyner
+   dikey kayar -> band STICKY DEGIL, icerikle birlikte yukari kayar ve KAYBOLUR.
+   Yan menu sticky (band kayinca en ustte kalir, erisilebilir). */
+.app.lobby {
+  display: grid;
+  grid-template-columns: 224px minmax(0, 1fr);
+  grid-template-areas:
+    'bar bar'
+    'menu main';
+  align-items: start;
+  column-gap: 22px;
+  row-gap: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+}
+.app.lobby > .account-bar {
+  grid-area: bar;
+}
+.app.lobby > .side-menu {
+  grid-area: menu;
+  position: sticky;
+  top: 0;
+  align-self: start;
+  max-height: 100dvh;
+  overflow-y: auto;
+}
+.app.lobby > .main {
+  grid-area: main;
+  overflow: visible; /* ic kaydirma YOK -> tum kabuk kayar, band kaybolur */
+}
+
+/* ---- Ust band: SOL logo + SAG hesap kontrolleri (grid 'bar' alani, tam genislik) ---- */
 .account-bar {
   position: static;
   width: 100%;
@@ -6202,8 +6241,7 @@ button.stat-chip:hover {
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  /* Yatayda lobby-main padding'ini iptal edip banner gibi kenarlara daya (edge-to-edge). */
-  margin: 0 calc(-1 * clamp(12px, 3vw, 40px)) 10px;
+  margin: 0;
   padding: 8px clamp(14px, 3vw, 40px);
   background: var(--card-bg);
   border: none;
@@ -6223,6 +6261,14 @@ button.stat-chip:hover {
 }
 .ab-brand:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ab-logo-full {
+  display: inline-flex;
+  align-items: center;
+}
+.ab-logo-mark {
+  display: none;
+  align-items: center;
 }
 .account-name {
   display: inline-flex;
@@ -6653,8 +6699,8 @@ button.stat-chip:hover {
 .bs-title {
   font-family: 'Lora', Georgia, 'Times New Roman', serif;
   font-weight: 400;
-  font-size: clamp(1.8rem, 3vw, 3.1rem);
-  line-height: 1.06;
+  font-size: clamp(1.4rem, 2.2vw, 2.3rem);
+  line-height: 1.1;
   color: var(--med-ink);
 }
 .bs-sub {
