@@ -19,6 +19,7 @@ class TournamentAdController extends Controller
             ->map(fn (TournamentAd $ad) => [
                 'id' => $ad->id,
                 'image' => $ad->image,
+                'logo' => $ad->logo,
                 'kicker' => $ad->kicker,
                 'title' => $ad->title,
                 'subtitle' => $ad->subtitle,

@@ -70,7 +70,7 @@ export default function BannerSlider({ onOpen }: Props) {
     <div className="banner-slider" data-count={banners.length}>
       <div className="bs-track" style={{ transform: `translateX(-${i * 100}%)` }}>
         {banners.map((b) => {
-          const hasText = !!(b.kicker || b.title || b.subtitle || b.meta || b.cta)
+          const hasText = !!(b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta)
           return (
             <button
               key={b.id}
@@ -86,6 +86,7 @@ export default function BannerSlider({ onOpen }: Props) {
                   data-dark={b.panel_color && !isLightColor(b.panel_color) ? '' : undefined}
                   style={b.panel_color ? { background: b.panel_color } : undefined}
                 >
+                  {b.logo && <img className="bs-logo" src={srcOf(b.logo)} alt="" loading="lazy" />}
                   {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
                   {b.title && <span className="bs-title">{b.title}</span>}
                   {b.subtitle && <span className="bs-sub">{b.subtitle}</span>}
@@ -122,7 +123,7 @@ export default function BannerSlider({ onOpen }: Props) {
       </div>
 
       {/* Yazisiz (ciplak gorsel) bannerlarda noktalar ortada altta */}
-      {multi && !banners.some((b) => b.kicker || b.title || b.subtitle || b.meta || b.cta) && (
+      {multi && !banners.some((b) => b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta) && (
         <div className="bs-dots bs-dots-float">
           {banners.map((_, d) => (
             <button
