@@ -355,6 +355,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
                       </span>
                     </span>
                   </div>
+                  {tr.venue && (
+                    <div className="tcard-venue">
+                      <Icon name="pin" size={13} /> {tr.venue}
+                    </div>
+                  )}
                   <div className="tcard-stats">
                     <div className="tcard-stat">
                       <span className="tcard-ic gold" aria-hidden="true">
