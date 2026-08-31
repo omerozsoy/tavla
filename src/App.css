@@ -3145,7 +3145,13 @@ button[aria-disabled='true'],
   /* ust padding hesap barini gecer */
   padding: 78px clamp(16px, 3vw, 48px) 56px;
 }
-.register-overlay.page > *:not(.register-overlay) > h2 {
+/* STANDART SAYFA BASLIGI — tum menu sayfalarinda AYNI (ikon + baslik).
+   Setup/solo iki-kolon oldugu icin baslik torun (setup-card/solo-card icinde);
+   onlari da acikca dahil ediyoruz ki Tek Oyun / Mac Oyunu / Yapay Zeka da
+   ayni tek tip basligi kullansin. */
+.register-overlay.page > *:not(.register-overlay) > h2,
+.register-overlay.page .setup-card > h2,
+.register-overlay.page .solo-card > h2 {
   font-size: 1.7rem;
   font-weight: 400; /* bold degil — tek tip sayfa basligi */
   letter-spacing: -0.01em;
@@ -3157,6 +3163,25 @@ button[aria-disabled='true'],
   margin: 0 0 20px;
   padding-bottom: 0;
   border-bottom: none; /* sade — tum sayfalarda ayni (cizgisiz) */
+}
+/* Baslik ikonu = sol menu ikon boyutu (24px). Inline size prop'unu ez. */
+.register-overlay.page > *:not(.register-overlay) > h2 > svg,
+.register-overlay.page .setup-card > h2 > svg,
+.register-overlay.page .solo-card > h2 > svg {
+  width: 24px;
+  height: 24px;
+  flex: none;
+}
+/* Setup/solo kartlari sayfa icinde CERCEVESIZ olsun (diger sayfalar gibi) ->
+   baslik ust bara ayni uzaklikta oturur; her sayfa ayni yerde acilir. */
+.register-overlay.page .setup-card,
+.register-overlay.page .solo-card {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+  max-width: none;
 }
 /* Tum alt sayfalar TEK TIP baslik: nested basliklar (Rutbeler/Analiz) da standarda uysun */
 .register-overlay.page .rank-prog__title,
