@@ -235,9 +235,11 @@ export function LiveMatchesPanel({
 export function RankingPanel({
   currentName,
   onProfile,
+  onOpen,
 }: {
   currentName?: string
   onProfile: (id: number) => void
+  onOpen?: () => void // baslik -> Liderlik Tablosu sayfasi (/lider-tablosu)
 }) {
   const { t } = useT()
   const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
@@ -257,9 +259,16 @@ export function RankingPanel({
 
   return (
     <div className="home-panel rank-panel">
-      <div className="home-panel-head">
-        <Icon name="trophy" size={17} /> {t('lb.title')}
-      </div>
+      {onOpen ? (
+        <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('lb.title')}>
+          <Icon name="trophy" size={17} /> {t('lb.title')}
+          <Icon name="arrow-right" size={15} className="hph-go hph-go--end" />
+        </button>
+      ) : (
+        <div className="home-panel-head">
+          <Icon name="trophy" size={17} /> {t('lb.title')}
+        </div>
+      )}
       <div className="rank-tabs">
         <Button type="button" variant={by === 'rating' ? 'default' : 'ghost'} aria-pressed={by === 'rating'} onClick={() => setBy('rating')}>
           {t('lb.rating')}
@@ -320,10 +329,11 @@ export function TournamentsPanel({
   if (tourns.length === 0) return null
   return (
     <div className="home-panel tourn-panel">
-      <div className="home-panel-head">
+      <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.tournaments')}>
         <Icon name="medal" size={18} /> {t('menu.tournaments')}
         <span className="panel-count">{tourns.length}</span>
-      </div>
+        <Icon name="arrow-right" size={15} className="hph-go" />
+      </button>
       <div className="tourn-list">
         {tourns.map((tr) => {
           const full = tr.count >= tr.size

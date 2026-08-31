@@ -88,7 +88,6 @@ export default function MatchSetup({
       cur.includes(n) ? (cur.length > 1 ? cur.filter((x) => x !== n) : cur) : [...cur, n].sort((a, b) => a - b),
     )
   }
-  const [showAnalysis, setShowAnalysis] = useState(initial.showAnalysis)
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
   const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
@@ -214,16 +213,8 @@ export default function MatchSetup({
           </>
         )}
 
-        {/* Bota karsi: her mac PUANLI + pip ACIK (zorunlu). Yalnizca Analiz opsiyonel. */}
-        {mode === 'pvb' && (
-          <button
-            className={`setup-toggle ${showAnalysis ? 'on' : ''}`}
-            onClick={() => setShowAnalysis((v) => !v)}
-          >
-            <span>{t('setup.analysis')}</span>
-            <span className="setup-switch">{showAnalysis ? t('setup.on') : t('setup.off')}</span>
-          </button>
-        )}
+        {/* Bota karsi: her mac PUANLI + pip ACIK. Canli "Analizi goster" KALDIRILDI
+            (mac sonu analizi yeterli). */}
 
         <div className="setup-actions">
           <Button variant="secondary" onClick={onCancel}>
@@ -237,7 +228,7 @@ export default function MatchSetup({
                 target: mode === 'online' ? Math.max(...accepted) : accepted[0],
                 targets: accepted,
                 showPip: mode === 'pvb' ? true : initial.showPip,
-                showAnalysis,
+                showAnalysis: false, // canli analiz kaldirildi
                 timeControl,
                 ranked: true,
                 difficulty: mode === 'pvb' ? difficulty : undefined,
