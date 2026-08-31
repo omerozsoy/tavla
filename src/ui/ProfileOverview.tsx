@@ -185,8 +185,17 @@ export default function ProfileOverview({
         </div>
         )}
 
-        {/* --- Sekmeler: Çerçeveler · Tahta Renkleri · İstatistikler --- */}
+        {/* --- Sekmeler: İstatistikler · Avatarlar · Tahta Tasarımı --- */}
         <div className="prof-ov-tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'stats'}
+            className={tab === 'stats' ? 'active' : ''}
+            onClick={() => setTab('stats')}
+          >
+            {t('stats.title')}
+          </button>
           <button
             type="button"
             role="tab"
@@ -204,15 +213,6 @@ export default function ProfileOverview({
             onClick={() => setTab('boards')}
           >
             {t('menu.board')} <span className="prof-ov-count">{ownedBoards.length}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'stats'}
-            className={tab === 'stats' ? 'active' : ''}
-            onClick={() => setTab('stats')}
-          >
-            {t('stats.title')}
           </button>
         </div>
 

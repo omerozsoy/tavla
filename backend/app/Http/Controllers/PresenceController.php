@@ -100,7 +100,7 @@ class PresenceController extends Controller
         ]);
     }
 
-    // Bildirimleri okundu isaretle (hepsi veya verilen id'ler)
+    // Bildirimleri okununca SIL (hepsi veya verilen id'ler). Okundu -> kalici degil.
     public function readNotifications(Request $request)
     {
         $me = $request->user();
@@ -108,11 +108,11 @@ class PresenceController extends Controller
             'ids' => ['nullable', 'array'],
             'ids.*' => ['integer'],
         ]);
-        $q = \App\Models\Notification::where('user_id', $me->id)->where('read', false);
+        $q = \App\Models\Notification::where('user_id', $me->id);
         if (! empty($data['ids'])) {
             $q->whereIn('id', $data['ids']);
         }
-        $q->update(['read' => true]);
+        $q->delete();
 
         return $this->ok();
     }
