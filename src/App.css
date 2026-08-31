@@ -791,6 +791,7 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-x: hidden;
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
