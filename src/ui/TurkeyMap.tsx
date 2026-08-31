@@ -10,6 +10,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 // Türkçe karakter-duyarlı normalize (eşleştirme için): İ/ı/ş/ğ/ü/ö/ç → i/s/g/u/o/c
 export function normProvince(s: string): string {
   return s
+    .replace(/\s*\(.*?\)\s*/g, '') // "İstanbul (Asya)" / "(Avrupa)" -> "İstanbul" (SVG İstanbul'u ikiye böler)
     .replace(/İ/g, 'i')
     .replace(/I/g, 'i')
     .replace(/ı/g, 'i')
@@ -79,31 +80,44 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
     onSelect(selected && normProvince(selected) === key ? null : name) // tekrar tıkla → temizle
   }
 
-  // İmleç konumunu container'a göre hesapla (balon yerleşimi için)
-  function localXY(e: MouseEvent): { x: number; y: number } {
-    const r = ref.current?.getBoundingClientRect()
-    return { x: e.clientX - (r?.left ?? 0), y: e.clientY - (r?.top ?? 0) }
-  }
-
   // Yapışkan hover: :hover kullanılmıyor çünkü il sınırlarında/aralarında minik fare
   // oynamasında sürekli açılıp kapanıp titriyordu. Vurguyu (+balonu) yalnızca YENİ bir
   // kulüp iline girince değiştiririz; boşluk/sınırda kaybolmaz (mouseleave'de temizlenir).
+  // Balon imleci takip ETMEZ -> ilin üst-ortasında sabit durur.
   function onOver(e: MouseEvent) {
     const g = (e.target as Element).closest('[data-iladi]')
     if (!g) return
-    const name = g.getAttribute('data-iladi') ?? ''
-    const key = normProvince(name)
+    const key = normProvince(g.getAttribute('data-iladi') ?? '')
     if ((clubCounts[key] ?? 0) === 0) return // sadece kulübü olan iller
     const root = ref.current
     if (!root) return
     root.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
-    g.classList.add('hovered')
-    const { x, y } = localXY(e)
-    setBalloon({ name, clubs: clubNames[key] ?? [], x, y })
-  }
-  function onMove(e: MouseEvent) {
-    // Balon açıkken imleci takip etsin (içeriği değiştirmeden, sadece konum)
-    setBalloon((b) => (b ? { ...b, ...localXY(e) } : b))
+    // Aynı ile ait TÜM parçaları birlikte vurgula (İstanbul: Asya + Avrupa)
+    const parts: Element[] = []
+    root.querySelectorAll('[data-iladi]').forEach((x) => {
+      if (normProvince(x.getAttribute('data-iladi') ?? '') === key) {
+        x.classList.add('hovered')
+        parts.push(x)
+      }
+    })
+    // Balonu parçaların BİRLEŞİK bounding box'ının üst-ortasına sabitle (container'a göre)
+    const cr = root.getBoundingClientRect()
+    let left = Infinity
+    let top = Infinity
+    let right = -Infinity
+    parts.forEach((x) => {
+      const b = x.getBoundingClientRect()
+      left = Math.min(left, b.left)
+      top = Math.min(top, b.top)
+      right = Math.max(right, b.right)
+    })
+    const display = (g.getAttribute('data-iladi') ?? '').replace(/\s*\(.*?\)\s*/g, '').trim()
+    setBalloon({
+      name: display,
+      clubs: clubNames[key] ?? [],
+      x: (left + right) / 2 - cr.left,
+      y: top - cr.top,
+    })
   }
   function onLeave() {
     ref.current?.querySelectorAll('[data-iladi].hovered').forEach((x) => x.classList.remove('hovered'))
@@ -117,7 +131,6 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
       ref={ref}
       onClick={onClick}
       onMouseOver={onOver}
-      onMouseMove={onMove}
       onMouseLeave={onLeave}
     >
       {/* eslint-disable-next-line react/no-danger */}
