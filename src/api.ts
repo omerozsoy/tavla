@@ -1034,6 +1034,29 @@ export async function wxpBreakdown(): Promise<WxpBreakdown> {
   return req<WxpBreakdown>('/me/wxp-breakdown')
 }
 
+// Zar Ortalamalari: zar-basina Sen/Rakip kirilimi (decision_analyses).
+export type DicePhase = 'all' | 'opening' | 'contact' | 'race'
+export interface DiceRoll {
+  dice: string // "6-3" (kanonik: buyuk-kucuk)
+  n: number // kac kez oynandi
+  avgError: number // ortalama equity kaybi (dusuk=iyi)
+  avgPip: number | null // ortalama pip
+  winRate: number // % (bu tarafin perspektifi)
+}
+export interface DiceSide {
+  sample: number
+  openingWinRate: number | null // Acilis Kazanma % (faz filtresinden bagimsiz)
+  rolls: DiceRoll[]
+}
+export interface DiceStats {
+  phase: DicePhase
+  self: DiceSide
+  opponent: DiceSide
+}
+export async function diceStats(phase: DicePhase = 'all'): Promise<DiceStats> {
+  return req<DiceStats>(`/me/dice-stats?phase=${phase}`)
+}
+
 // Bir macin tam analiz log'u (JSON string; { hc, log } yapisi). Yoksa null.
 export async function matchLogById(id: number): Promise<string | null> {
   const data = await req<{ log: string | null }>(`/me/matches/${id}/log`)

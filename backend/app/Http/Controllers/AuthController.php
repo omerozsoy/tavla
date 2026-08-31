@@ -373,6 +373,8 @@ class AuthController extends Controller
         // kaydi yine gecerli -> sessizce yutma, logla.
         try {
             app(\App\Services\ErrorJournalService::class)->analyzeMatch($result);
+            // Zar Ortalamalari cache'i (tum fazlar) yeni analizle gecersiz.
+            app(\App\Services\DiceStatisticsService::class)->invalidate($user->id);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::warning('Error journal analyze failed', [
                 'match_result_id' => $result->id, 'user_id' => $user->id, 'err' => $e->getMessage(),
@@ -666,6 +668,17 @@ class AuthController extends Controller
         $period = (string) $request->query('period', 'all');
 
         $stats = app(\App\Services\PlayerStatisticsService::class)->performanceStats($me, $period);
+
+        return response()->json($stats);
+    }
+
+    // Zar Ortalamalari: zar-basina Sen/Rakip kirilimi (decision_analyses)
+    public function diceStats(Request $request)
+    {
+        $me = $request->user();
+        $phase = (string) $request->query('phase', 'all');
+
+        $stats = app(\App\Services\DiceStatisticsService::class)->diceStats($me, $phase);
 
         return response()->json($stats);
     }

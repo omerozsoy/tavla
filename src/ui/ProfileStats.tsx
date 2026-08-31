@@ -3,8 +3,9 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import {
-  myStats, myMatches, myAnalytics, performanceStats,
+  myStats, myMatches, myAnalytics, performanceStats, diceStats,
   type MyStats, type MyMatch, type Analytics, type PerformanceStats, type MedianFilter,
+  type DiceStats, type DicePhase,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { BadgeList } from './Badges'
@@ -23,6 +24,8 @@ interface Props {
 // Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
 const MED_ORDER = ['coin', '1', '3', '5', '7'] as const
 const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
+// Zar Ortalamalari faz sekmeleri: Tumu / Acilis / Temas / Temas Yok
+const DICE_PHASES: DicePhase[] = ['all', 'opening', 'contact', 'race']
 
 export default function ProfileStats({ avatar, frame, name, onClose, embed }: Props) {
   const { t, lang } = useT()
@@ -35,6 +38,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
   const [perf, setPerf] = useState<PerformanceStats | null>(null)
   const [perfErr, setPerfErr] = useState(false)
   const [medFilter, setMedFilter] = useState<MedianFilter>('all')
+  // Zar Ortalamalari: faz (Tumu/Acilis/Temas/Temas Yok) + taraf (Sen/Rakip)
+  const [dice, setDice] = useState<DiceStats | null>(null)
+  const [diceErr, setDiceErr] = useState(false)
+  const [dicePhase, setDicePhase] = useState<DicePhase>('all')
+  const [diceSide, setDiceSide] = useState<'self' | 'opponent'>('self')
 
   useEffect(() => {
     let alive = true
@@ -68,6 +76,22 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
     }
   }, [medFilter])
 
+  // Zar Ortalamalari: faz degisince yeniden ceker (cache'li endpoint).
+  useEffect(() => {
+    let alive = true
+    diceStats(dicePhase)
+      .then((d) => {
+        if (alive) {
+          setDice(d)
+          setDiceErr(false)
+        }
+      })
+      .catch(() => alive && setDiceErr(true))
+    return () => {
+      alive = false
+    }
+  }, [dicePhase])
+
   // Maç uzunlugu etiketi: 1 -> "Jeton", digerleri -> "NS"
   const lenLabel = (n: number) => (n === 1 ? t('an.jeton') : `${n}S`)
   // Kategori etiketi (i18n): coin -> "Jeton", digerleri -> "NS"
@@ -79,6 +103,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
   const wins = u?.wins ?? 0
   const losses = u?.losses ?? 0
   const wr = games > 0 ? Math.round((wins / games) * 100) : 0
+  // Zar panelinde secili taraf (Sen/Rakip)
+  const dSide = dice ? (diceSide === 'self' ? dice.self : dice.opponent) : null
 
   return (
     <div
@@ -316,6 +342,80 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   />
                 </div>
               )}
+
+              {/* Zar Ortalamaları — zar-başına Sen/Rakip kırılımı */}
+              <div className="sd-card sd-card-wide dice-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="dice" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('dice.title')}</div>
+                    <div className="sd-sub">{t('dice.sub')}</div>
+                  </div>
+                  {dSide?.openingWinRate != null && (
+                    <span className="dice-opening">
+                      {t('dice.openingWin')} <strong>%{dSide.openingWinRate}</strong>
+                    </span>
+                  )}
+                </div>
+
+                <div className="dice-controls">
+                  <div className="perf-filters" role="tablist" aria-label={t('dice.title')}>
+                    {DICE_PHASES.map((p) => (
+                      <Button
+                        key={p}
+                        variant={dicePhase === p ? 'secondary' : 'ghost'}
+                        type="button"
+                        role="tab"
+                        aria-selected={dicePhase === p}
+                        onClick={() => setDicePhase(p)}
+                      >
+                        {t(`dice.phase.${p}`)}
+                      </Button>
+                    ))}
+                  </div>
+                  <div className="dice-side" role="tablist" aria-label={t('dice.side')}>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={diceSide === 'self'}
+                      className={diceSide === 'self' ? 'active' : ''}
+                      onClick={() => setDiceSide('self')}
+                    >
+                      {t('dice.self')}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={diceSide === 'opponent'}
+                      className={diceSide === 'opponent' ? 'active' : ''}
+                      onClick={() => setDiceSide('opponent')}
+                    >
+                      {t('dice.opponent')}
+                    </button>
+                  </div>
+                </div>
+
+                {diceErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !dice || !dSide ? (
+                  <Skeleton w="100%" h={110} r={8} />
+                ) : dSide.rolls.length === 0 ? (
+                  <div className="lb-empty small">{t('dice.empty')}</div>
+                ) : (
+                  <div className="dice-grid">
+                    {dSide.rolls.map((r) => (
+                      <div key={r.dice} className="dice-roll">
+                        <span className="dice-roll-face">{r.dice.replace('-', ' · ')}</span>
+                        <span className="dice-roll-win">%{r.winRate}</span>
+                        <span className="dice-roll-meta">
+                          {t('dice.plays', { n: r.n })}
+                          {r.avgError > 0 ? ` · ${t('dice.err')} ${r.avgError.toFixed(3)}` : ''}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Son maclar (mac gecmisi) */}

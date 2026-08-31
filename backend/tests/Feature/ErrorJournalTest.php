@@ -72,16 +72,18 @@ class ErrorJournalTest extends TestCase
         ]);
     }
 
-    public function test_analyze_persists_only_user_checker_decisions(): void
+    public function test_analyze_persists_both_sides_checker_decisions(): void
     {
         $u = $this->user();
         $mr = $this->match($u);
         $n = app(ErrorJournalService::class)->analyzeMatch($mr);
 
-        // white checker kararlari: 0,2,3 = 3 (siyah + cube atlanir)
-        $this->assertSame(3, $n);
-        $this->assertSame(3, DecisionAnalysis::where('match_result_id', $mr->id)->count());
-        $this->assertSame(2, DecisionAnalysis::whereNotNull('severity')->count()); // blunder + mistake
+        // checker kararlari: white 0,2,3 + black 1 = 4 (cube 4 atlanir).
+        // Rakip (black) kararlari da saklanir (Zar Ortalamalari); cube haric.
+        $this->assertSame(4, $n);
+        $this->assertSame(4, DecisionAnalysis::where('match_result_id', $mr->id)->count());
+        $this->assertSame(3, DecisionAnalysis::where('match_result_id', $mr->id)->where('is_opponent', false)->count());
+        $this->assertSame(1, DecisionAnalysis::where('match_result_id', $mr->id)->where('is_opponent', true)->count());
         $this->assertNotNull($mr->fresh()->analyzed_at);
     }
 
@@ -92,7 +94,7 @@ class ErrorJournalTest extends TestCase
         $svc = app(ErrorJournalService::class);
         $svc->analyzeMatch($mr);
         $svc->analyzeMatch($mr, true); // force -> yeniden uret, duplicate YOK
-        $this->assertSame(3, DecisionAnalysis::where('match_result_id', $mr->id)->count());
+        $this->assertSame(4, DecisionAnalysis::where('match_result_id', $mr->id)->count());
     }
 
     public function test_summary_counts_and_error_rate(): void
@@ -139,6 +141,6 @@ class ErrorJournalTest extends TestCase
         $u = $this->user();
         $this->match($u); // analiz edilmemis
         $this->artisan('error-journal:backfill')->assertSuccessful();
-        $this->assertSame(3, DecisionAnalysis::where('user_id', $u->id)->count());
+        $this->assertSame(4, DecisionAnalysis::where('user_id', $u->id)->count()); // 3 sen + 1 rakip
     }
 }

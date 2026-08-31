@@ -14,7 +14,7 @@ class DecisionAnalysis extends Model
 {
     protected $fillable = [
         'user_id', 'match_result_id', 'move_index', 'played_at',
-        'player', 'decision_type', 'dice',
+        'player', 'is_opponent', 'decision_type', 'dice',
         'played', 'best', 'played_equity', 'best_equity', 'equity_loss',
         'severity', 'primary_category', 'category_tags',
         'my_pip', 'opp_pip',
@@ -24,6 +24,7 @@ class DecisionAnalysis extends Model
 
     protected $casts = [
         'played_at' => 'datetime',
+        'is_opponent' => 'boolean',
         'played_equity' => 'float',
         'best_equity' => 'float',
         'equity_loss' => 'float',
