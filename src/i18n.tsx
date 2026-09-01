@@ -972,7 +972,7 @@ const TR: Dict = {
   'common.close': 'Kapat',
   'toast.region': 'Bildirimler',
   'home.hello': 'Hoş geldin, {name}!',
-  'home.vsBot': 'Yapay Zekaya Karşı',
+  'home.vsBot': 'Yapay Zeka ile Oyna',
   'home.vsBotSub': 'Bota karşı oyna, zorluğu sen seç',
   'home.online': 'Online Oyun',
   'home.startCta': 'Hemen Oyna',

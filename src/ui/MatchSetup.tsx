@@ -105,7 +105,8 @@ export default function MatchSetup({
             </>
           ) : (
             <>
-              <Icon name="robot" size={24} /> {t('menu.aiGame')}
+              {/* Sayfa basligi menuden farkli: menu "YZ ile Oyna", sayfa "Yapay Zeka ile Oyna" */}
+              <Icon name="robot" size={24} /> {t('home.vsBot')}
             </>
           )}
         </h2>

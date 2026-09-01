@@ -3254,8 +3254,8 @@ button[aria-disabled='true'],
 .page-host .register-overlay.page > *:not(.register-overlay) {
   /* Sayfa-host'ta sayfa STATIC (grid 'main' satirinda akar) -> zaten hesap
      barinin ALTINDA basliyor. 78px ust padding barI ikinci kez gecerdi ->
-     baslik cok asagi kayardi. Sadece kucuk nefes bosluğu birak. */
-  padding: 8px clamp(16px, 3vw, 44px) 56px;
+     baslik cok asagi kayardi. Kucuk nefes bosluğu birak. */
+  padding: 22px clamp(16px, 3vw, 44px) 56px;
   min-height: 0;
   max-width: 1400px;
   margin: 0;
@@ -3267,7 +3267,7 @@ button[aria-disabled='true'],
 }
 @media (max-width: 900px) {
   .page-host .register-overlay.page > *:not(.register-overlay) {
-    padding: 8px 14px 40px;
+    padding: 16px 14px 40px;
   }
 }
 .page-host .register-overlay.page > *:not(.register-overlay) .modal-close {
@@ -6738,7 +6738,7 @@ button.stat-chip:hover {
   position: relative;
   /* TUM slaytlar icin TEK sabit yukseklik. Yazili/yazisiz banner ve farkli metin
      uzunlugu fark etmez -> slider hep ayni boyda, gecislerde ziplama olmaz. */
-  --bs-h: clamp(400px, 52vh, 580px);
+  --bs-h: clamp(460px, 62vh, 680px);
   /* Yatayda lobby-main padding'ini iptal edip kenarlara daya. Ustte NEGATIF marj YOK:
      banner sabit hesap barinin ALTINDAN baslar (bar artik banner'in ustune binmez). */
   margin: 0 calc(-1 * clamp(12px, 3vw, 40px)) 22px;
@@ -6960,7 +6960,7 @@ button.stat-chip:hover {
 @media (max-width: 720px) {
   /* Mobilde de SABIT yukseklik (daha kisa). Gorsel ustte sabit, panel kalani doldurur. */
   .banner-slider {
-    --bs-h: clamp(400px, 96vw, 500px);
+    --bs-h: clamp(460px, 104vw, 580px);
   }
   /* Mobil: gorsel ustte, panel altta (dikey yigin); satirlar auto 1fr -> toplam --bs-h */
   .bs-slide.has-text {
