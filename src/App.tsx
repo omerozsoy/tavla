@@ -1568,7 +1568,9 @@ export default function App() {
   // karsilastiysa: take/drop tavsiyesi. Sinir agiyla pozisyonu 1-ply degerlendirir.
   useEffect(() => {
     const humanColor: Player = online ? myColor : 'white'
+    // Kup danismani SADECE bota karsi (pvb): online/pvp'de gostermek hile olur.
     const onRollCanDouble =
+      mode === 'pvb' &&
       interactive &&
       !diceRolled &&
       !gameWon &&
@@ -1577,6 +1579,7 @@ export default function App() {
       turnStart.turn === humanColor &&
       canDouble(match, humanColor, false)
     const facingDouble =
+      mode === 'pvb' &&
       cubePending !== null &&
       cubePending !== humanColor &&
       opponent(cubePending) === humanColor
@@ -1601,7 +1604,7 @@ export default function App() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [interactive, diceRolled, gameWon, turnsPlayed, cubePending, turnStart, match, online, myColor])
+  }, [mode, interactive, diceRolled, gameWon, turnsPlayed, cubePending, turnStart, match, online, myColor])
 
   // Ogrenme modu tercihini sakla
   useEffect(() => {
@@ -2971,7 +2974,9 @@ export default function App() {
   // Kup teklifine yanit: pvp (ayni ekran), bota karsi, veya online'da rakip teklif ettiyse
   const humanRespond =
     cubePending !== null &&
-    (mode === 'pvp' || cubePending === BOT_PLAYER || (online && cubePending !== myColor))
+    (mode === 'pvp' ||
+      (mode === 'pvb' && cubePending === BOT_PLAYER) ||
+      (online && cubePending !== myColor))
   // Online'da kendi teklifim: rakibin yanitini bekliyorum
   const cubeWaiting = online && cubePending === myColor
   const canSwapDice =
