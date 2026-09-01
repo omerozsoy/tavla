@@ -43,6 +43,7 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
                 avatar={p.avatar}
                 frame={p.frame}
                 country={p.country}
+                flagInline
                 size={64}
                 animated
               />
