@@ -27,7 +27,6 @@ export interface SideMenuProps {
   onLessons: () => void
   onRules?: () => void
   onFairness: () => void
-  onBoardSettings: () => void
   onCalendar?: () => void
   onClubs?: () => void
   onServices?: () => void
