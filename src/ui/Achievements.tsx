@@ -118,7 +118,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
 
   const body = (
     <>
-      {!embed && (
+      {loggedIn && (
         <div className="ach-summary">
           <div className="ach-sum-total">
             <Icon name="medal" size={22} />
@@ -238,7 +238,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
               <span>{t('ach.earnedBy', { pct: String(sel.rarityPct) })}</span>
             </div>
 
-            {!embed && sel.unlocked && (
+            {loggedIn && sel.unlocked && (
               <Button
                 variant={featured.includes(sel.slug) ? 'secondary' : 'outline'}
                 onClick={() => toggleFeatured(sel.slug)}

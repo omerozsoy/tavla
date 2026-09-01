@@ -1,0 +1,30 @@
+/* Profil > Avatarlar/Tahta grid'lerinin sonundaki "Magazaya git" CTA karti.
+   Ayri dosya: App.css'teki paralel WIP'e dokunmadan izole. prof-ov-item ile ayni kutu. */
+
+.prof-ov-item.prof-ov-more {
+  border-style: dashed;
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--muted);
+  justify-content: center;
+  gap: 10px;
+  min-height: 96px;
+}
+.prof-ov-item.prof-ov-more:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.prof-ov-more-ic {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.prof-ov-item.prof-ov-more .prof-ov-item-name {
+  color: inherit;
+  font-weight: 600;
+}

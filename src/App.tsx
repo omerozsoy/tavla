@@ -3428,6 +3428,13 @@ export default function App() {
           setEditProfile(false)
           goPage(() => setAchOpen(true))
         }}
+        onOpenShop={(shopTab) => {
+          setEditProfile(false)
+          goPage(() => {
+            setShopTab(shopTab)
+            setShopOpen(true)
+          })
+        }}
       />
     ) : (
       <Auth
