@@ -48,16 +48,10 @@ function PlayerCard({ p }: { p: PlayerInfo }) {
 }
 
 export default function Sidebar({ top, bottom }: SidebarProps) {
-  // Tek ORTAK skor (iki ayrı kesir yerine): top – bottom, hedef bir kez.
+  // Skor artik saatin ust/alt kutularinda gosteriliyor (her oyuncu kendi tarafinda).
   return (
     <div className="sidebar">
       <PlayerCard p={top} />
-      <div className="sidebar-score" title={`${top.score} – ${bottom.score} · ${top.target} puan`}>
-        <span className="ss-num">{top.score}</span>
-        <span className="ss-sep">–</span>
-        <span className="ss-num">{bottom.score}</span>
-        <span className="ss-target">/{top.target}</span>
-      </div>
       <PlayerCard p={bottom} />
     </div>
   )

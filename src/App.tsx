@@ -4333,8 +4333,8 @@ export default function App() {
             white={clock.white}
             black={clock.black}
             final={FINAL_STAGE}
-            topOff={working.off.black}
-            bottomOff={working.off.white}
+            topScore={match.score.black}
+            bottomScore={match.score.white}
           />
         )}
         <Board
