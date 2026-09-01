@@ -408,20 +408,22 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   <div className="lb-empty small">{t('dice.empty')}</div>
                 ) : (
                   <div className="dice-grid">
-                    {dSide.rolls.map((r) => (
-                      <div key={r.dice} className="dice-roll">
-                        <span className="dice-roll-face">
-                          {r.dice.split('-').map((d, di) => (
-                            <DiceFace key={di} n={Number(d)} size={26} />
-                          ))}
-                        </span>
-                        <span className="dice-roll-win">%{r.winRate}</span>
-                        <span className="dice-roll-meta">
-                          {t('dice.plays', { n: r.n })}
-                          {r.avgError > 0 ? ` · ${t('dice.err')} ${r.avgError.toFixed(3)}` : ''}
-                        </span>
-                      </div>
-                    ))}
+                    {[...dSide.rolls]
+                      .sort((a, b) => diceOrder(a.dice) - diceOrder(b.dice))
+                      .map((r) => {
+                        // Zar yuzlerini kucukten buyuge diz (or. "6-1" -> 1,6)
+                        const faces = r.dice.split('-').map(Number).sort((a, b) => a - b)
+                        return (
+                          <div key={r.dice} className="dice-roll">
+                            <span className="dice-roll-face">
+                              {faces.map((d, di) => (
+                                <DiceFace key={di} n={d} size={26} />
+                              ))}
+                            </span>
+                            <span className="dice-roll-win">%{r.winRate}</span>
+                          </div>
+                        )
+                      })}
                   </div>
                 )}
               </div>
@@ -460,4 +462,14 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
 function fmtDate(iso?: string | null): string {
   if (!iso) return ''
   return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
+}
+
+// Zar dizilim sirasi: once cift-olmayanlar kanonik artan (1-2,1-3,...,5-6),
+// sonra ciftler (1-1,...,6-6). Anahtar "hi-lo" ya da "lo-hi" olabilir -> normalize.
+function diceOrder(key: string): number {
+  const [a, b] = key.split('-').map(Number)
+  const lo = Math.min(a, b)
+  const hi = Math.max(a, b)
+  const isDouble = a === b
+  return (isDouble ? 1000 : 0) + lo * 10 + hi
 }
