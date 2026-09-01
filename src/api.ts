@@ -350,7 +350,9 @@ export interface ByLength {
 }
 export interface Analytics {
   rating_history: number[]
+  rating_dates?: string[] // rating_history ile hizali gun (YYYY-MM-DD)
   coins_history: number[]
+  coins_dates?: string[] // coins_history ile hizali gun (YYYY-MM-DD)
   by_length: ByLength[]
   wxp: number
   games: number
