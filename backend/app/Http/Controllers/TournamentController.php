@@ -97,12 +97,24 @@ class TournamentController extends Controller
                 $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
                 $t->save();
             }
-            $this->addPlayer($t, $me); // kilit altinda, idempotent
-            return ['ok' => true];
+            $added = $this->addPlayer($t, $me); // kilit altinda, idempotent
+            if ($added) {
+                \App\Models\UserStat::forUser($me->id)->increment('tournaments_played');
+            }
+            return ['ok' => true, 'added' => $added];
         });
 
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
+        }
+        // Basarim: turnuvaya katilim rozetleri (asla akisi kirmaz).
+        if (! empty($out['added'])) {
+            try {
+                $me->unsetRelation('stat');
+                app(\App\Services\Achievements\AchievementService::class)->evaluate($me);
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Tournament join achievement failed', ['user_id' => $me->id, 'err' => $e->getMessage()]);
+            }
         }
         // Turnuva DOLUNCA baslamaz; yalnizca son katilim tarihi + 1dk gecince
         // (autoStartDue) ya da admin panelden elle baslatilir.
@@ -231,6 +243,23 @@ class TournamentController extends Controller
 
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
+        }
+        // Basarim: turnuva bitti ve sampiyon belli -> galibiyet rozetleri (idempotent).
+        // tournaments_won sayaci champion_id sayimindan yeniden kurulur (cift-artis olmaz).
+        $t = $out['t'];
+        if ($t->status === 'finished' && $t->champion_id) {
+            try {
+                $champ = User::find($t->champion_id);
+                if ($champ) {
+                    $stat = \App\Models\UserStat::forUser($champ->id);
+                    $stat->tournaments_won = Tournament::where('champion_id', $champ->id)->where('status', 'finished')->count();
+                    $stat->save();
+                    $champ->unsetRelation('stat');
+                    app(\App\Services\Achievements\AchievementService::class)->evaluate($champ);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('Tournament champion achievement failed', ['tournament_id' => $t->id, 'err' => $e->getMessage()]);
+            }
         }
         return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
@@ -439,12 +468,12 @@ class TournamentController extends Controller
         return array_values(array_unique($standings));
     }
 
-    private function addPlayer(Tournament $t, $user): void
+    private function addPlayer(Tournament $t, $user): bool
     {
         $players = $t->players ?? [];
         foreach ($players as $p) {
             if (($p['id'] ?? null) === $user->id) {
-                return; // zaten kayitli
+                return false; // zaten kayitli
             }
         }
         $players[] = [
@@ -455,6 +484,7 @@ class TournamentController extends Controller
         ];
         $t->players = $players;
         $t->save();
+        return true;
     }
 
     // Rating'e gore seed'leyip 1. tur eslesmelerini uret (bye'lar otomatik ilerler).

@@ -93,6 +93,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'game_state' => 'array',
             'unlocks' => 'array',
             'badges' => 'array',
+            'featured_badges' => 'array',
             'plan_until' => 'datetime',
             'plan_since' => 'datetime',
             'trial_used' => 'boolean',
@@ -124,5 +125,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     public function isBanned(): bool
     {
         return $this->banned_at !== null;
+    }
+
+    // ---- Basarim (achievement) sistemi iliskileri ----
+
+    public function stat(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(UserStat::class);
+    }
+
+    public function achievements(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserAchievement::class);
     }
 }

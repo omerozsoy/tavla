@@ -127,6 +127,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Hata Gunlugu: gunun/donemin ozeti + kategori kirilimi + son hatalar (decision_analyses'ten).
     Route::get('/me/error-journal', [ErrorJournalController::class, 'index']);
 
+    // Basarimlar (achievements): katalog+progress, sergilenen rozet, gorulmemis unlock'lar.
+    Route::get('/me/achievements', [\App\Http\Controllers\AchievementController::class, 'index']);
+    Route::post('/me/achievements/featured', [\App\Http\Controllers\AchievementController::class, 'setFeatured']);
+    Route::get('/me/achievements/unseen', [\App\Http\Controllers\AchievementController::class, 'unseen']);
+
     Route::get('/game', [GameController::class, 'show']);
     Route::middleware('throttle:60,1')->put('/game', [GameController::class, 'save']);
     Route::delete('/game', [GameController::class, 'clear']);
