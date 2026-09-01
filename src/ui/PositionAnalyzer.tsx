@@ -349,9 +349,7 @@ export default function PositionAnalyzer({
     <div className="analyzer" ref={analyzerRef} style={{ overscrollBehavior: 'contain' }}>
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
-        <Button variant="secondary" className="analyzer-close" onClick={onClose}>
-          <Icon name="x" size={14} /> {t('pa.close')}
-        </Button>
+        {/* Kapat dugmesi kaldirildi (kullanici istegi): cikis hamburger menu / ESC ile. */}
       </div>
 
       <div className="analyzer-body">
