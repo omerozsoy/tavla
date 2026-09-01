@@ -3342,10 +3342,10 @@ export default function App() {
       >
         {/* Genis ekranda wordmark; mobilde kompakt sembol (yer acar) */}
         <span className="ab-logo-full">
-          <TavlaTvLogo size={30} />
+          <TavlaTvLogo size={38} />
         </span>
         <span className="ab-logo-mark">
-          <TavlaTvMark size={34} />
+          <TavlaTvMark size={40} />
         </span>
       </button>
       {/* Birlesik hesap kimlik pili: avatar+isim + coin + rating tek buyuk pill icinde */}
