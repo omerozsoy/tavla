@@ -3252,8 +3252,10 @@ button[aria-disabled='true'],
   background: transparent;
 }
 .page-host .register-overlay.page > *:not(.register-overlay) {
-  /* ust padding sabit hesap barini gecer; sola dayali + genis */
-  padding: 78px clamp(16px, 3vw, 44px) 56px;
+  /* Sayfa-host'ta sayfa STATIC (grid 'main' satirinda akar) -> zaten hesap
+     barinin ALTINDA basliyor. 78px ust padding barI ikinci kez gecerdi ->
+     baslik cok asagi kayardi. Sadece kucuk nefes bosluğu birak. */
+  padding: 8px clamp(16px, 3vw, 44px) 56px;
   min-height: 0;
   max-width: 1400px;
   margin: 0;
@@ -3265,7 +3267,7 @@ button[aria-disabled='true'],
 }
 @media (max-width: 900px) {
   .page-host .register-overlay.page > *:not(.register-overlay) {
-    padding: 60px 14px 40px;
+    padding: 8px 14px 40px;
   }
 }
 .page-host .register-overlay.page > *:not(.register-overlay) .modal-close {
