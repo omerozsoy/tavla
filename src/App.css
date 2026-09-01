@@ -11750,6 +11750,13 @@ button.stat-chip:hover {
   flex-direction: column;
   gap: 12px;
 }
+/* Turnuvalar TAM SAYFA (menuden acilan .register-overlay.page): liste sayfayla
+   birlikte aksin, IC SCROLL YOK. (.tourn-list ayni zamanda ana sayfa panelinde
+   kullaniliyor; orada max-height:460+overflow ile sinirli kalir — burada ez.) */
+.register-overlay.page .tourn-list {
+  max-height: none;
+  overflow: visible;
+}
 /* ---- Emil turnuva karti: ad+durum · odul/ucret/katilimci · doluluk · detay ---- */
 .tcard {
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
