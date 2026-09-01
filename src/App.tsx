@@ -445,7 +445,7 @@ export default function App() {
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
-  const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/turnuvalar/isim-{id})
+  const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/online-turnuvalar/isim-{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
@@ -484,8 +484,8 @@ export default function App() {
     ? 'rutbeler'
     : tournOpen
       ? tournDetailId != null
-        ? 'turnuvalar/' + (tournDetailSlug || tournDetailId)
-        : 'turnuvalar'
+        ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
+        : 'online-turnuvalar'
       : shopOpen
         ? 'magaza'
         : frameGalleryOpen
@@ -568,9 +568,10 @@ export default function App() {
         case 'bilgi':
           setInfoOpen(true)
           break
-        case 'turnuvalar': {
+        case 'online-turnuvalar':
+        case 'turnuvalar': { // eski slug -> geriye donuk uyum
           setTournOpen(true)
-          // /turnuvalar/{isim-slug}-{id} veya eski /turnuvalar/{id}: son '-' parcasi id
+          // /online-turnuvalar/{isim-slug}-{id} veya eski /online-turnuvalar/{id}: son '-' parcasi id
           const s1 = seg[1] || ''
           const last = s1.split('-').pop() || ''
           const tid = /^\d+$/.test(last) ? parseInt(last, 10) : null
