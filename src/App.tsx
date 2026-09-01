@@ -110,7 +110,7 @@ import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
-import { LiveMatchesPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel } from './ui/HomePanels'
+import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -4143,6 +4143,10 @@ export default function App() {
               <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+              />
+              <OnlinePlayersPanel
+                currentName={profile.nickname}
+                onProfile={(id) => setHomeProfileId(id)}
               />
               <RankingPanel
                 currentName={profile.nickname}
