@@ -1,4 +1,5 @@
 import AvatarFrame from './AvatarFrame'
+import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 
 /**
@@ -12,6 +13,7 @@ export default function PlayerIdentity({
   rating,
   avatar,
   frame,
+  country,
   size = 30,
   rankSize = 'md',
   animated = false,
@@ -22,15 +24,21 @@ export default function PlayerIdentity({
   rating?: number | null
   avatar?: string | null
   frame?: string | null
+  country?: string | null
   size?: number
   rankSize?: 'sm' | 'md'
   animated?: boolean
   lg?: boolean
   className?: string
 }) {
+  // Bayrak boyutu avatara oranli (mini-avatar rozeti); kucuk avatarda bile okunur kalsin.
+  const flagSize = Math.max(13, Math.round(size * 0.42))
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
-      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
+      <span className="player-id-avatar">
+        <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
+        {country && <CountryFlag code={country} size={flagSize} className="player-id-flag" />}
+      </span>
       <span className="player-id-col">
         <span className="player-id-name">{name}</span>
         {rating != null && <DivisionChip rating={rating} size={rankSize} />}

@@ -10106,6 +10106,21 @@ button.stat-chip:hover {
   min-width: 0;
   text-align: left;
 }
+/* Avatar sarmali: bayrak rozetini avatarin kosesine konumlamak icin relative. */
+.player-id-avatar {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+/* Ulke bayragi: avatarin sag-alt kosesinde mini rozet (avatar gibi yuvarlak),
+   zeminden ayirmak icin ince beyaz halka. */
+.player-id-flag {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  box-shadow: 0 0 0 1.5px var(--card-bg, #fff), 0 1px 2px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+}
 .player-id-col {
   display: flex;
   flex-direction: column;

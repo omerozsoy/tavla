@@ -70,6 +70,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             rating={r.rating}
             avatar={r.avatar}
             frame={r.frame}
+            country={r.country}
             size={30}
             rankSize="md"
           />
