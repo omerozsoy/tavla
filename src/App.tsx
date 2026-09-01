@@ -410,6 +410,7 @@ export default function App() {
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
+  const [matchHistInitialId, setMatchHistInitialId] = useState<number | null>(null) // acilista otomatik acilacak mac
   const [frameAnimOpen, setFrameAnimOpen] = useState(false) // Animasyon secim demosu (/cerceve-anim)
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
@@ -3323,7 +3324,8 @@ export default function App() {
         notifications={notifications}
         onDeleteNotification={handleDeleteNotification}
         onDeleteAllNotifications={handleDeleteAllNotifications}
-        onOpenMatchHistory={() => {
+        onOpenMatchHistory={(matchId) => {
+          setMatchHistInitialId(matchId ?? null)
           setEditProfile(false)
           setMatchHistOpen(true)
         }}
@@ -3815,7 +3817,11 @@ export default function App() {
         <MatchAnalytics
           myName={profile.nickname}
           myAvatar={profile.avatar ?? null}
-          onClose={() => setMatchHistOpen(false)}
+          initialMatchId={matchHistInitialId ?? undefined}
+          onClose={() => {
+            setMatchHistOpen(false)
+            setMatchHistInitialId(null)
+          }}
         />
       )}
       {frameAnimOpen && (

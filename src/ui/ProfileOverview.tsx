@@ -48,7 +48,7 @@ interface Props {
   notifications?: AppNotification[]
   onDeleteNotification?: (id: number) => void
   onDeleteAllNotifications?: () => void
-  onOpenMatchHistory?: () => void // istatistik sekmesi -> Mac Analizleri sayfasi
+  onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
 }
 
 function ageFrom(birth?: string | null): number | null {

@@ -4961,9 +4961,22 @@ button[aria-disabled='true'],
 }
 .mem-status-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap; /* dar (3'lu grid) sutunda alt alta sarmasin */
+  gap: 8px;
   margin-top: 2px;
+}
+/* Premium kart butonlari: kompakt -> dar sutuna tek satirda sigar */
+.mem-status-actions button {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  min-width: 0; /* gerekirse hafif kuculsun (tasma yerine) */
+}
+.mem-status-actions button svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Yalnizca .profile-form (editing modu) etkilenir; login/register dar kartta kalir. */
@@ -11448,6 +11461,19 @@ button.stat-chip:hover {
   background: var(--card-bg);
   border: 1px solid var(--border);
   font-size: 0.86rem;
+}
+/* Tiklanabilir mac satiri (profil istatistik) -> Mac Analizleri'nde o maci acar */
+.mh-row-link {
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.mh-row-link:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
 }
 .mh-res {
   font-weight: 400;
