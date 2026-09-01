@@ -298,6 +298,9 @@ export function OnlinePlayersPanel({
                   <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
                     <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" />
                   </button>
+                  <span className="rank-flag">
+                    <CountryFlag code={p.country} size={16} rounded={false} />
+                  </span>
                   <span className="rank-val">{p.rating}</span>
                   {!self && (onInvite || onAddFriend) && (
                     <span className="online-actions">
