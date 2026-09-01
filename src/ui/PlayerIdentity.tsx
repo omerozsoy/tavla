@@ -14,6 +14,7 @@ export default function PlayerIdentity({
   avatar,
   frame,
   country,
+  flagInline = false,
   size = 30,
   rankSize = 'md',
   animated = false,
@@ -25,28 +26,30 @@ export default function PlayerIdentity({
   avatar?: string | null
   frame?: string | null
   country?: string | null
+  /** true: ulke bayragini ismin YANINDA (satir-ici, dikdortgen) goster. Avatar
+   *  uzerine rozet KONMAZ. Profil basliklarinda kullanilir. */
+  flagInline?: boolean
   size?: number
   rankSize?: 'sm' | 'md'
   animated?: boolean
   lg?: boolean
   className?: string
 }) {
-  // Bayrak boyutu avatara oranli (mini-avatar rozeti); kucuk avatarda bile okunur kalsin.
-  const flagSize = Math.max(17, Math.round(size * 0.58))
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
-      <span className="player-id-avatar">
-        <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
-        {country && (
-          <CountryFlag
-            code={country}
-            size={flagSize}
-            className={`player-id-flag${frame ? ' framed' : ''}`}
-          />
-        )}
-      </span>
+      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
       <span className="player-id-col">
-        <span className="player-id-name">{name}</span>
+        <span className="player-id-name">
+          <span className="player-id-name-text">{name}</span>
+          {flagInline && country && (
+            <CountryFlag
+              code={country}
+              size={lg ? 20 : 15}
+              rounded={false}
+              className="player-id-name-flag"
+            />
+          )}
+        </span>
         {rating != null && <DivisionChip rating={rating} size={rankSize} />}
       </span>
     </span>
