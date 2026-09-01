@@ -1025,7 +1025,8 @@ export async function reportRating(
   ranked = true,
   matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
-): Promise<{ rating: number }> {
+  extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
+): Promise<{ rating: number; achievements?: UnlockedAchievement[] }> {
   return req('/rating/report', {
     method: 'POST',
     body: JSON.stringify({
@@ -1042,8 +1043,81 @@ export async function reportRating(
       log: log ?? null,
       ranked,
       room_code: roomCode ?? null,
+      // Basarim sinyalleri (opsiyonel): mars/katmerli mars sayisi, en dusuk kazanma %,
+      // oyun-ici olaylar (prime6/comeback/closeout). Yoksa ilgili rozet tetiklenmez.
+      gammons: extra?.gammons ?? 0,
+      backgammons: extra?.backgammons ?? 0,
+      min_win_prob: extra?.min_win_prob ?? null,
+      ach_flags: extra?.ach_flags ?? [],
     }),
   })
+}
+
+// ==================== BASARIMLAR (ACHIEVEMENTS) ====================
+export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'diamond' | null
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'
+
+export interface UnlockedAchievement {
+  slug: string
+  name: string
+  desc: string
+  icon: string
+  tier: AchievementTier
+  rarity: AchievementRarity
+  rewardCoin: number
+}
+
+export interface AchievementItem {
+  slug: string
+  category: string
+  name: string
+  desc: string
+  icon: string
+  tier: AchievementTier
+  rarity: AchievementRarity
+  rarityPct: number
+  rewardCoin: number
+  hidden: boolean
+  unlocked: boolean
+  unlockedAt: string | null
+  progress: number
+  target: number
+  progressPct: number
+}
+
+export interface FeaturedBadge {
+  slug: string
+  name: string
+  icon: string
+  tier: AchievementTier
+  rarity: AchievementRarity
+}
+
+export interface AchievementCatalog {
+  total: number
+  unlockedCount: number
+  featured: string[]
+  items: AchievementItem[]
+}
+
+// Giris yapan kullanicinin tam katalogu (progress + rarity + unlock durumu).
+export async function fetchAchievements(): Promise<AchievementCatalog> {
+  return req('/me/achievements')
+}
+
+// Halka acik katalog (Bilgi > Rozetler / misafir). Gizli rozetler '???'.
+export async function fetchPublicAchievements(): Promise<{ total: number; items: AchievementItem[] }> {
+  return req('/achievements')
+}
+
+// Sergilenen (max 3) rozetleri kaydet. Yalniz kazanilmislar kabul edilir.
+export async function setFeaturedBadges(slugs: string[]): Promise<{ featured: FeaturedBadge[] }> {
+  return req('/me/achievements/featured', { method: 'POST', body: JSON.stringify({ slugs }) })
+}
+
+// Henuz animasyon gosterilmemis unlock'lar (doner + backend'de "goruldu" isaretler).
+export async function fetchUnseenAchievements(): Promise<{ items: UnlockedAchievement[] }> {
+  return req('/me/achievements/unseen')
 }
 
 // Profil performans istatistikleri: Medyan Hata Orani (kategori bazli) + WXP/G/M/Kaz%.

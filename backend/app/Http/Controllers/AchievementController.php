@@ -22,6 +22,35 @@ class AchievementController extends Controller
         return response()->json($this->svc->catalogFor($request->user()));
     }
 
+    /**
+     * Halka acik katalog (Bilgi > Rozetler sekmesi / misafir). Kullanici progress'i YOK.
+     * Gizli rozetler maskeli ('???') doner — sart aciklanmaz.
+     */
+    public function publicCatalog()
+    {
+        $rarity = $this->svc->rarityRatios();
+        $totalUsers = max(1, (int) ($rarity['__users'] ?? 1));
+
+        $items = [];
+        foreach (AchievementCatalog::all() as $def) {
+            $hidden = (bool) ($def['hidden'] ?? false);
+            $ratio = (int) ($rarity[$def['slug']] ?? 0) / $totalUsers;
+            $items[] = [
+                'slug' => $def['slug'],
+                'category' => $def['category'],
+                'name' => $hidden ? '???' : $def['name'],
+                'desc' => $hidden ? '???' : $def['desc'],
+                'icon' => $hidden ? 'lock-key' : $def['icon'],
+                'tier' => $def['tier'],
+                'rarity' => AchievementCatalog::rarityForRatio($ratio),
+                'rarityPct' => round($ratio * 100, $ratio < 0.01 ? 2 : 1),
+                'rewardCoin' => (int) ($def['reward_coin'] ?? 0),
+                'hidden' => $hidden,
+            ];
+        }
+        return response()->json(['total' => count($items), 'items' => $items]);
+    }
+
     /** Sergilenen rozetler: en fazla 3, yalnizca KAZANILMIS slug'lar kabul edilir. */
     public function setFeatured(Request $request)
     {

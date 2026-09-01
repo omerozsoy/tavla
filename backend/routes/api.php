@@ -30,6 +30,7 @@ Route::middleware('throttle:20,1')->group(function () {
 // Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli
 Route::middleware('throttle:30,1')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
+Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);

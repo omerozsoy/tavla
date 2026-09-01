@@ -1,0 +1,509 @@
+/* Basarim/Rozet sistemi stilleri — mevcut Terracotta tasarim token'lari (App.css) uzerine.
+   Ayri dosya: App.css'teki paralel WIP'e dokunmadan izole. Duz (flat) cizgi; yalniz
+   Legendary/Mythic'te olcerli glow. Tam responsive. */
+
+:root {
+  --tier-bronze: #b3763f;
+  --tier-silver: #b9bdc6;
+  --tier-gold: #e0b23f;
+  --tier-diamond: #57c8d6;
+  --rar-common: #8a8377;
+  --rar-uncommon: #4a9e6f;
+  --rar-rare: #3f74c9;
+  --rar-epic: #7b6fd4;
+  --rar-legendary: #d99a3f;
+  --rar-mythic: #c9563f;
+}
+
+/* ---- Sayfa kabuk ---- */
+.ach-card-wrap {
+  width: min(920px, 94vw);
+}
+.ach-embed {
+  margin-top: 4px;
+}
+
+/* ---- Ozet basligi ---- */
+.ach-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  margin-bottom: 14px;
+}
+.ach-sum-total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+}
+.ach-sum-total > svg {
+  color: var(--accent);
+}
+.ach-sum-num {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.ach-sum-den {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.ach-sum-lbl {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.ach-sum-rarity {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.ach-rchip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  opacity: 0.95;
+}
+
+/* ---- Kategori filtreleri ---- */
+.ach-cats {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+  scrollbar-width: thin;
+}
+.ach-cat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.ach-cat:hover {
+  color: var(--text);
+}
+.ach-cat.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* ---- Grid + kart ---- */
+.ach-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 10px;
+}
+.ach-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.12s ease, border-color 0.15s ease;
+}
+.ach-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.ach-card.locked {
+  opacity: 0.55;
+  filter: grayscale(0.85);
+}
+.ach-card.locked:hover {
+  opacity: 0.8;
+  filter: grayscale(0.4);
+}
+.ach-ic {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.ach-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.15;
+}
+.ach-tier {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.ach-fstar {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: var(--tier-gold);
+}
+
+/* Kademe renkleri: ikon halkasi + tier etiketi */
+.ach-card.tier-bronze .ach-ic { color: var(--tier-bronze); border-color: color-mix(in srgb, var(--tier-bronze) 45%, transparent); background: color-mix(in srgb, var(--tier-bronze) 12%, transparent); }
+.ach-card.tier-silver .ach-ic { color: var(--tier-silver); border-color: color-mix(in srgb, var(--tier-silver) 45%, transparent); background: color-mix(in srgb, var(--tier-silver) 12%, transparent); }
+.ach-card.tier-gold .ach-ic { color: var(--tier-gold); border-color: color-mix(in srgb, var(--tier-gold) 45%, transparent); background: color-mix(in srgb, var(--tier-gold) 12%, transparent); }
+.ach-card.tier-diamond .ach-ic { color: var(--tier-diamond); border-color: color-mix(in srgb, var(--tier-diamond) 48%, transparent); background: color-mix(in srgb, var(--tier-diamond) 12%, transparent); }
+.tier-bronze .ach-tier { color: var(--tier-bronze); }
+.tier-silver .ach-tier { color: var(--tier-silver); }
+.tier-gold .ach-tier { color: var(--tier-gold); }
+.tier-diamond .ach-tier { color: var(--tier-diamond); }
+
+/* Legendary/Mythic: olcerli glow (yalniz unlocked) */
+.ach-card.unlocked.rarity-legendary { border-color: color-mix(in srgb, var(--rar-legendary) 55%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rar-legendary) 30%, transparent), 0 0 18px -6px var(--rar-legendary); }
+.ach-card.unlocked.rarity-mythic { border-color: color-mix(in srgb, var(--rar-mythic) 60%, var(--border)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rar-mythic) 35%, transparent), 0 0 22px -5px var(--rar-mythic); }
+
+/* Progress bar (kart + detay) */
+.ach-bar {
+  width: 100%;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+  display: block;
+}
+.ach-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.4s ease;
+}
+
+.ach-loading,
+.ach-empty {
+  padding: 28px 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+/* ---- Detay modal ---- */
+.ach-detail-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  background: rgba(16, 14, 12, 0.62);
+  padding: 20px;
+}
+.ach-detail {
+  width: min(360px, 92vw);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl, 16px);
+  padding: 22px 20px;
+  text-align: center;
+  color: var(--text);
+}
+.ach-detail-ic {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 10px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.ach-detail.tier-bronze .ach-detail-ic { color: var(--tier-bronze); border-color: color-mix(in srgb, var(--tier-bronze) 45%, transparent); }
+.ach-detail.tier-silver .ach-detail-ic { color: var(--tier-silver); }
+.ach-detail.tier-gold .ach-detail-ic { color: var(--tier-gold); }
+.ach-detail.tier-diamond .ach-detail-ic { color: var(--tier-diamond); }
+.ach-detail h3 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.ach-detail-tags {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ach-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+}
+.ach-tag.tier-bronze { color: var(--tier-bronze); }
+.ach-tag.tier-silver { color: var(--tier-silver); }
+.ach-tag.tier-gold { color: var(--tier-gold); }
+.ach-tag.tier-diamond { color: var(--tier-diamond); }
+.ach-tag.reward { color: var(--tier-gold); }
+.ach-tag.rarity-common { color: var(--rar-common); }
+.ach-tag.rarity-uncommon { color: var(--rar-uncommon); }
+.ach-tag.rarity-rare { color: var(--rar-rare); }
+.ach-tag.rarity-epic { color: var(--rar-epic); }
+.ach-tag.rarity-legendary { color: var(--rar-legendary); }
+.ach-tag.rarity-mythic { color: var(--rar-mythic); }
+.ach-rchip.rarity-common { color: var(--rar-common); }
+.ach-rchip.rarity-uncommon { color: var(--rar-uncommon); }
+.ach-rchip.rarity-rare { color: var(--rar-rare); }
+.ach-rchip.rarity-epic { color: var(--rar-epic); }
+.ach-rchip.rarity-legendary { color: var(--rar-legendary); }
+.ach-rchip.rarity-mythic { color: var(--rar-mythic); }
+.ach-detail-desc {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+.ach-detail-prog {
+  margin: 0 0 12px;
+}
+.ach-detail-progtxt {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.ach-detail-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.ach-detail-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+}
+.ach-feature-btn {
+  width: 100%;
+}
+
+/* Profil > Istatistikler girisi */
+.stats-ach-entry {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-bg);
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 600;
+  transition: border-color 0.15s, background 0.15s;
+}
+.stats-ach-entry:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.stats-ach-entry-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.stats-ach-entry-l > svg {
+  color: var(--accent);
+}
+.stats-ach-entry-r {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ach-howto-intro {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0 0 12px;
+  line-height: 1.45;
+}
+
+/* ---- Unlock banner (mac sonu) ---- */
+.ach-unlock-wrap {
+  position: fixed;
+  top: 16px;
+  left: 0;
+  right: 0;
+  z-index: 1400;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  padding: 0 12px;
+}
+.ach-unlock {
+  position: relative;
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: min(420px, 96vw);
+  padding: 14px 16px;
+  background: var(--card-bg);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: var(--radius-lg, 12px);
+  color: var(--text);
+  overflow: hidden;
+}
+.ach-unlock.entering {
+  animation: achSlideIn 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ach-unlock.leaving {
+  animation: achSlideOut 0.45s ease forwards;
+}
+@keyframes achSlideIn {
+  from { transform: translateY(-24px) scale(0.96); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes achSlideOut {
+  to { transform: translateY(-18px); opacity: 0; }
+}
+.ach-unlock-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120px 60px at 22px 50%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%);
+  pointer-events: none;
+}
+.ach-unlock.rarity-legendary { border-color: color-mix(in srgb, var(--rar-legendary) 55%, var(--border)); }
+.ach-unlock.rarity-legendary .ach-unlock-glow { background: radial-gradient(130px 64px at 24px 50%, color-mix(in srgb, var(--rar-legendary) 30%, transparent), transparent 72%); }
+.ach-unlock.rarity-mythic { border-color: color-mix(in srgb, var(--rar-mythic) 60%, var(--border)); }
+.ach-unlock.rarity-mythic .ach-unlock-glow { background: radial-gradient(140px 68px at 24px 50%, color-mix(in srgb, var(--rar-mythic) 34%, transparent), transparent 72%); }
+.ach-unlock-ic {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.ach-unlock.tier-bronze .ach-unlock-ic { color: var(--tier-bronze); }
+.ach-unlock.tier-silver .ach-unlock-ic { color: var(--tier-silver); }
+.ach-unlock.tier-gold .ach-unlock-ic { color: var(--tier-gold); }
+.ach-unlock.tier-diamond .ach-unlock-ic { color: var(--tier-diamond); }
+.ach-unlock-txt {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.ach-unlock-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+.ach-unlock-name {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-top: 1px;
+}
+.ach-unlock-desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.ach-unlock-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 3px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--tier-gold);
+}
+.ach-unlock-actions {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.ach-unlock-view {
+  border: 1px solid var(--accent);
+  background: transparent;
+  color: var(--accent);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ach-unlock-view:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.ach-unlock-x {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+  line-height: 0;
+}
+.ach-unlock-count {
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 0.66rem;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .ach-grid {
+    grid-template-columns: repeat(auto-fill, minmax(102px, 1fr));
+  }
+  .ach-summary {
+    justify-content: center;
+  }
+}

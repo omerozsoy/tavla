@@ -21,6 +21,7 @@ interface Props {
   onClose: () => void
   embed?: boolean // Profilim sekmesine gomulu render (overlay/kapat/baslik yok)
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
+  onOpenAchievements?: () => void // Basarimlar galerisi
 }
 
 // Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
@@ -29,7 +30,7 @@ const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
 // Zar Ortalamalari faz sekmeleri: Tumu / Acilis / Temas / Temas Yok
 const DICE_PHASES: DicePhase[] = ['all', 'opening', 'contact', 'race']
 
-export default function ProfileStats({ avatar, frame, name, onClose, embed, onOpenMatchHistory }: Props) {
+export default function ProfileStats({ avatar, frame, name, onClose, embed, onOpenMatchHistory, onOpenAchievements }: Props) {
   const { t, lang } = useT()
   useEscape(embed ? () => {} : onClose)
   const [data, setData] = useState<MyStats | null>(null)
@@ -202,6 +203,18 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
             )}
 
             <BadgeList ids={u?.badges} />
+
+            {/* Basarimlar galerisine giris (tam rozet sistemi) */}
+            {onOpenAchievements && (
+              <button type="button" className="stats-ach-entry" onClick={onOpenAchievements}>
+                <span className="stats-ach-entry-l">
+                  <Icon name="medal" size={18} /> {t('ach.title')}
+                </span>
+                <span className="stats-ach-entry-r">
+                  {t('ach.viewAll')} <Icon name="arrow-right" size={14} />
+                </span>
+              </button>
+            )}
 
             {/* ===== Üst satır: 3 grafik (Bakiye · Puan · Medyan) ===== */}
             <div className="stats-dash stats-dash-3">

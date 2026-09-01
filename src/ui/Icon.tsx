@@ -27,6 +27,7 @@ import {
   SignOut,
   House,
   Star,
+  Flame,
   Gift,
   SpeakerHigh,
   SpeakerSlash,
@@ -165,6 +166,7 @@ export type IconName =
   | 'die-4'
   | 'die-5'
   | 'die-6'
+  | 'flame'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -179,6 +181,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   users: UsersThree,
   analyze: ChartLineUp,
   dice: DiceFive,
+  flame: Flame,
   settings: GearSix,
   install: DownloadSimple,
   flag: Flag,
