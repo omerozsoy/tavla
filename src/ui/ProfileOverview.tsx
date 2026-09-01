@@ -1,17 +1,23 @@
 import { useState, type CSSProperties } from 'react'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import ProfileStats from './ProfileStats'
 import AvatarFrame from './AvatarFrame'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
+import MembershipCard from './MembershipCard'
 import { Button } from '@/components/ui/button'
 import { divisionOf, MAIN_DIVISIONS } from '../badges'
 import { countryName } from '../countries'
 import { framePrice, type AvatarFrameDef } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
-import type { ServerUser } from '../api'
+import type { ServerUser, AppNotification } from '../api'
+
+// Bildirim ikon adi -> gecerli Icon adi (bilinmeyen -> bell)
+const NOTIF_ICON: Record<string, IconName> = {
+  bell: 'bell', crown: 'crown', medal: 'medal', star: 'star', trophy: 'trophy', coin: 'coin',
+}
 
 // Sahip olunan tahta/cerceve icin gevsek tip (App'ten gelir)
 interface BoardOpt {
@@ -37,6 +43,12 @@ interface Props {
   onSelectBoard?: (id: string) => void // profilden tahta rengi değiştir
   onSelectFrame?: (id: string | null) => void // profilden avatar çerçevesi değiştir
   onClose: () => void
+  // Uyelik karti (baslikin altinda) + Bildirimler sekmesi
+  onRenew?: () => void
+  onToggleAutoRenew?: (enabled: boolean) => void
+  notifications?: AppNotification[]
+  onDeleteNotification?: (id: number) => void
+  onDeleteAllNotifications?: () => void
 }
 
 const fmt = (n: number) => n.toLocaleString('tr-TR')
@@ -63,10 +75,16 @@ export default function ProfileOverview({
   onSelectBoard,
   onSelectFrame,
   onClose,
+  onRenew,
+  onToggleAutoRenew,
+  notifications,
+  onDeleteNotification,
+  onDeleteAllNotifications,
 }: Props) {
   const { t, lang } = useT()
   // Profil açılışında İstatistikler sekmesi varsayılan seçili
-  const [tab, setTab] = useState<'frames' | 'boards' | 'stats'>('stats')
+  const [tab, setTab] = useState<'frames' | 'boards' | 'stats' | 'notifs'>('stats')
+  const unread = (notifications ?? []).filter((n) => !n.read).length
   useEscape(onClose)
 
   const rating = user.rating ?? 0
@@ -155,6 +173,9 @@ export default function ProfileOverview({
           )}
         </div>
 
+        {/* --- Uyelik karti (Premium): baslikin hemen altinda --- */}
+        <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
+
         {/* --- Stat kartlari (İstatistikler sekmesinde gizli: dashboard zaten kapsıyor) --- */}
         {tab !== 'stats' && (
         <div className="prof-ov-stats">
@@ -213,6 +234,16 @@ export default function ProfileOverview({
             onClick={() => setTab('boards')}
           >
             {t('menu.board')} <span className="prof-ov-count">{ownedBoards.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'notifs'}
+            className={tab === 'notifs' ? 'active' : ''}
+            onClick={() => setTab('notifs')}
+          >
+            {t('notif.title')}
+            {unread > 0 && <span className="prof-ov-count prof-ov-count-alert">{unread}</span>}
           </button>
         </div>
 
@@ -286,6 +317,44 @@ export default function ProfileOverview({
               onClose={() => {}}
             />
           </div>
+        )}
+
+        {tab === 'notifs' && (
+          <section className="prof-ov-col profile-notifs">
+            {(notifications?.length ?? 0) === 0 ? (
+              <p className="prof-ov-empty">{t('notif.empty')}</p>
+            ) : (
+              <>
+                <div className="pn-bar">
+                  <button type="button" className="pn-clear" onClick={onDeleteAllNotifications}>
+                    <Icon name="trash" size={15} /> {t('notif.clearAll')}
+                  </button>
+                </div>
+                <ul className="pn-list">
+                  {notifications!.map((n) => (
+                    <li key={n.id} className={`pn-item ${n.read ? '' : 'unread'}`}>
+                      <span className="pn-ic">
+                        <Icon name={NOTIF_ICON[n.icon ?? 'bell'] ?? 'bell'} size={18} />
+                      </span>
+                      <span className="pn-txt">
+                        <span className="pn-t">{n.title}</span>
+                        {n.body && <span className="pn-b">{n.body}</span>}
+                      </span>
+                      <button
+                        type="button"
+                        className="pn-del"
+                        onClick={() => onDeleteNotification?.(n.id)}
+                        title={t('notif.delete')}
+                        aria-label={t('notif.delete')}
+                      >
+                        <Icon name="x" size={16} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </section>
         )}
       </div>
     </div>
