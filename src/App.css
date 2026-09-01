@@ -11433,10 +11433,115 @@ button.stat-chip:hover {
   flex-direction: column;
   gap: 4px;
 }
-/* "Tum mac analizleri ->" — son 10 macin altinda, Mac Analizleri sayfasina gider */
-.mh-more {
+/* ===== Profil istatistik: Son Maclar (zengin, tiklanabilir) — psm-* ===== */
+.psm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.psm-row {
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.psm-row:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+}
+.psm-res {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+.psm-res.win {
+  background: color-mix(in srgb, var(--color-success) 16%, transparent);
+  color: var(--color-success);
+}
+.psm-res.loss {
+  background: color-mix(in srgb, var(--tv-brick) 14%, transparent);
+  color: var(--tv-brick);
+}
+.psm-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.psm-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.psm-opp {
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.psm-elo {
+  font-size: 0.74rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.psm-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.psm-score {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+  color: var(--text);
+}
+.psm-pr {
+  font-variant-numeric: tabular-nums;
+}
+.psm-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+.psm-delta {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.psm-delta.up {
+  color: var(--color-success);
+}
+.psm-delta.down {
+  color: var(--tv-brick);
+}
+.psm-date {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.psm-more {
   align-self: center;
-  margin-top: 10px;
+  margin-top: 12px;
   padding: 8px 16px;
   background: none;
   border: 1px solid var(--border);
@@ -11447,7 +11552,7 @@ button.stat-chip:hover {
   cursor: pointer;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-.mh-more:hover {
+.psm-more:hover {
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   border-color: var(--accent);
 }
@@ -11461,19 +11566,6 @@ button.stat-chip:hover {
   background: var(--card-bg);
   border: 1px solid var(--border);
   font-size: 0.86rem;
-}
-/* Tiklanabilir mac satiri (profil istatistik) -> Mac Analizleri'nde o maci acar */
-.mh-row-link {
-  width: 100%;
-  text-align: left;
-  font-family: inherit;
-  color: inherit;
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease;
-}
-.mh-row-link:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
 }
 .mh-res {
   font-weight: 400;
