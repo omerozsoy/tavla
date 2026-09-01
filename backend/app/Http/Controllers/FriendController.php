@@ -42,10 +42,18 @@ class FriendController extends Controller
     // Nick ile arkadaslik istegi gonder
     public function request(Request $request)
     {
-        $data = $request->validate(['nickname' => ['required', 'string', 'max:40']]);
+        $data = $request->validate([
+            'nickname' => ['nullable', 'string', 'max:40'],
+            'user_id'  => ['nullable', 'integer'],
+        ]);
         $me = $request->user();
 
-        $target = User::whereRaw('LOWER(nickname) = ?', [strtolower($data['nickname'])])->first();
+        // Once id ile (cevrimici oyuncu paneli gibi), yoksa nickname ile bul.
+        $target = ! empty($data['user_id'])
+            ? User::find($data['user_id'])
+            : (! empty($data['nickname'])
+                ? User::whereRaw('LOWER(nickname) = ?', [strtolower($data['nickname'])])->first()
+                : null);
         if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
         }

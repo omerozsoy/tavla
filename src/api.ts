@@ -475,6 +475,11 @@ export async function requestFriend(nickname: string): Promise<{ status: string 
   return req('/friends/request', { method: 'POST', body: JSON.stringify({ nickname }) })
 }
 
+// Id ile arkadaslik istegi (cevrimici oyuncu paneli gibi nickname olmayan yerler)
+export async function requestFriendById(userId: number): Promise<{ status: string }> {
+  return req('/friends/request', { method: 'POST', body: JSON.stringify({ user_id: userId }) })
+}
+
 export async function acceptFriend(userId: number): Promise<void> {
   await req(`/friends/${userId}/accept`, { method: 'POST' })
 }

@@ -249,9 +249,13 @@ export function LiveMatchesPanel({
 export function OnlinePlayersPanel({
   currentName,
   onProfile,
+  onInvite,
+  onAddFriend,
 }: {
   currentName?: string
   onProfile: (id: number) => void
+  onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
+  onAddFriend?: (id: number) => void // arkadas ol
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
@@ -286,19 +290,46 @@ export function OnlinePlayersPanel({
       ) : (
         <>
           <div className="rank-list">
-            {(showAll ? players : players.slice(0, LIMIT)).map((p) => (
-              <button
-                key={p.id}
-                className={`rank-row online-row ${currentName && p.name === currentName ? 'mine' : ''}`}
-                onClick={() => onProfile(p.id)}
-              >
-                <span className="online-pdot" title={t('online.title')} />
-                <span className="rank-name">
-                  <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" />
-                </span>
-                <span className="rank-val">{p.rating}</span>
-              </button>
-            ))}
+            {(showAll ? players : players.slice(0, LIMIT)).map((p) => {
+              const self = !!currentName && p.name === currentName
+              return (
+                <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
+                  <span className="online-pdot" title={t('online.title')} />
+                  <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
+                    <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" />
+                  </button>
+                  <span className="rank-val">{p.rating}</span>
+                  {!self && (onInvite || onAddFriend) && (
+                    <span className="online-actions">
+                      {onInvite && (
+                        <Button
+                          variant="default"
+                          size="icon"
+                          className="online-act"
+                          title={t('online.invite')}
+                          aria-label={t('online.invite')}
+                          onClick={() => onInvite(p.id)}
+                        >
+                          <Icon name="play" size={15} />
+                        </Button>
+                      )}
+                      {onAddFriend && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="online-act"
+                          title={t('online.addFriend')}
+                          aria-label={t('online.addFriend')}
+                          onClick={() => onAddFriend(p.id)}
+                        >
+                          <Icon name="user-plus" size={15} />
+                        </Button>
+                      )}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
           {!showAll && players.length > LIMIT && (
             <Button variant="ghost" className="live-more" onClick={() => setShowAll(true)}>
