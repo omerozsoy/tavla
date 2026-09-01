@@ -2,7 +2,7 @@
 // Strateji: gezinme (HTML) -> network-first (bayat paket servis etmez, deploy guvenli).
 // Ayni-kaynak GET varliklar (hash'li js/css, wasm, onnx) -> stale-while-revalidate
 // (cevrimdisi calisir, arka planda guncellenir). API istekleri ASLA cache'lenmez.
-const CACHE = 'tavla-cache-v4'
+const CACHE = 'tavla-cache-v5'
 
 self.addEventListener('install', () => {
   self.skipWaiting()
