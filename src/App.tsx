@@ -3419,8 +3419,10 @@ export default function App() {
           items={notifications}
           unread={unreadNotif}
           onOpen={() => {
+            // Okundu = sil (sunucu da siler). Rozet + listeyi hemen bosalt ki tekrar
+            // acinca kaybolsun. Panel acik oldugu oturumda kendi anlik-goruntusunu gosterir.
             setUnreadNotif(0)
-            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+            setNotifications([])
             markNotificationsRead().catch(() => {})
           }}
         />
