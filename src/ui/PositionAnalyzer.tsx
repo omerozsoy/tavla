@@ -43,8 +43,10 @@ export default function PositionAnalyzer({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  // iOS Safari "asagi cek-yenile" (pull-to-refresh) analiz sayfasini kazara yenileyip
-  // dizilimi standarda donduruyordu. Analiz acikken sayfa overscroll'unu kapat; kapaninca geri al.
+  const analyzerRef = useRef<HTMLDivElement>(null)
+  // iOS (Safari VE Chrome — ikisi de WebKit) "cek-yenile" (pull-to-refresh) analiz sayfasini
+  // kazara yenileyip dizilimi standarda donduruyordu. overscroll-behavior iOS'ta bazen yetmez;
+  // KESIN cozum: en usteyken parmak ASAGI hareket ederse touchmove'u engelle (refresh tetiklenmez).
   useEffect(() => {
     const de = document.documentElement
     const b = document.body
@@ -52,9 +54,26 @@ export default function PositionAnalyzer({
     const prevB = b.style.overscrollBehaviorY
     de.style.overscrollBehaviorY = 'none'
     b.style.overscrollBehaviorY = 'none'
+
+    let startY = 0
+    const onStart = (e: TouchEvent) => {
+      startY = e.touches[0]?.clientY ?? 0
+    }
+    const onMove = (e: TouchEvent) => {
+      if (e.touches.length !== 1) return
+      const atTop = (analyzerRef.current?.scrollTop ?? 0) <= 0 && window.scrollY <= 0
+      const pullingDown = (e.touches[0]?.clientY ?? 0) > startY
+      // En usteyiz + parmak asagi (icerik zaten kaydirilamaz) -> yalniz refresh'i iptal et.
+      if (atTop && pullingDown && e.cancelable) e.preventDefault()
+    }
+    document.addEventListener('touchstart', onStart, { passive: true })
+    document.addEventListener('touchmove', onMove, { passive: false })
+
     return () => {
       de.style.overscrollBehaviorY = prevDe
       b.style.overscrollBehaviorY = prevB
+      document.removeEventListener('touchstart', onStart)
+      document.removeEventListener('touchmove', onMove)
     }
   }, [])
   const [pts, setPts] = useState<number[]>(() => initialState().points)
@@ -327,7 +346,7 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
-    <div className="analyzer" style={{ overscrollBehavior: 'contain' }}>
+    <div className="analyzer" ref={analyzerRef} style={{ overscrollBehavior: 'contain' }}>
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
         <Button variant="secondary" className="analyzer-close" onClick={onClose}>
