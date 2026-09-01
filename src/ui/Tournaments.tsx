@@ -138,7 +138,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           </Button>
           <Button
             type="button"
-            variant="outline"
+            variant="default"
             className="tourn-back-btn"
             onClick={() => onOpenDetail?.(null)}
           >
