@@ -6180,10 +6180,10 @@ button.stat-chip:hover {
   gap: 6px;
   /* Sag ikon grubuyla ayni yukseklik (44px); rakamlar kucultulmez */
   height: 44px;
-  padding: 0 16px 0 6px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--card-bg);
+  padding: 0 10px 0 4px;
+  /* Border + pil zemini KALDIRILDI (kullanici istegi) -> isim/coin/rating cerceve­siz. */
+  border: none;
+  background: transparent;
 }
 /* Isim butonu pil icinde: kendi pil zemini yok, sadece avatar+isim */
 .account-id .account-name {

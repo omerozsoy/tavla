@@ -2,23 +2,14 @@
 // Kullanici etkilesiminden sonra AudioContext olusturulur (tarayici kurali).
 
 let ctx: AudioContext | null = null
-let muted = false
-try {
-  muted = localStorage.getItem('tavla.muted') === '1'
-} catch {
-  /* yok */
-}
+// Ses site genelinde KALDIRILDI -> her zaman sessiz. ac() null döner, tüm efektler no-op.
+const muted = true
 
 export function isMuted(): boolean {
-  return muted
+  return true
 }
-export function setMuted(v: boolean) {
-  muted = v
-  try {
-    localStorage.setItem('tavla.muted', v ? '1' : '0')
-  } catch {
-    /* yok */
-  }
+export function setMuted(_v: boolean): void {
+  /* ses kaldirildi; aç/kapa yok */
 }
 
 function ac(): AudioContext | null {
