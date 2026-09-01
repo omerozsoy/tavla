@@ -258,7 +258,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
   if (embed) return <div className="info-tab-pane ach-embed">{body}</div>
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+    <div className="register-overlay modal" role="dialog" aria-modal="true">
       <div className="register-card ach-card-wrap" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />

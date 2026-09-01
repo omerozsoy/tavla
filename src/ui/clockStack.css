@@ -3,55 +3,55 @@
    Ayri dosya: App.css'teki paralel WIP'e dokunmadan izole. .clock-off (beyaz skor kutusu)
    App.css'ten miras alinir; amber grup ve ic kutular burada. */
 
-/* Buyuk skor kutulari (App.css .clock-off temelinin uzerine buyutme) */
+/* Buyuk beyaz SKOR kutulari (App.css .clock-off temeli uzerine buyutme) — hep beyaz kalir */
 .clock-stack .clock-off {
-  font-size: 2rem;
+  font-size: 2.4rem;
   font-weight: 800;
-  min-width: 96px;
-  padding: 14px 10px;
-  border-radius: 12px;
+  min-width: 112px;
+  padding: 18px 12px;
+  border-radius: 14px;
 }
 
+/* Amber grup -> board temasina uyar: kup ile ayni renk/kontrast (--cube-bg/--cube-text).
+   Tema yoksa amber fallback. Skor kutulari beyaz kalir; burasi temaya boyanir. */
 .clock-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px;
-  border-radius: 14px;
-  background: #9c7c34; /* amber/altin */
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.18);
-  min-width: 96px;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 16px;
+  min-width: 112px;
+  background: var(--cube-bg, #9c7c34);
+  color: var(--cube-text, #fff);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15);
 }
 
 /* Oyuncu rezerv bankasi (her zaman gorunur: 06:22 / 06:54) */
 .clock-bank {
   text-align: center;
   font-weight: 800;
-  font-size: 1.3rem;
-  color: #fff;
-  padding: 6px 12px;
+  font-size: 1.7rem;
+  color: inherit; /* --cube-text */
+  padding: 7px 14px;
   letter-spacing: 0.02em;
-  border-radius: 8px;
-  transition: color 0.15s, background 0.15s;
+  border-radius: 9px;
+  transition: background 0.15s;
 }
 .clock-bank.active {
-  background: rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--cube-text, #fff) 16%, transparent);
 }
 .clock-bank.low {
-  color: #ffbfae; /* banka son asamada -> uyari rengi */
+  color: #ff6b57; /* banka son asamada -> uyari (koyu/acik zeminde okunur) */
 }
 
 /* Ortadaki hamle suresi (sirasi gelen oyuncu; iki taraf icin ortak) */
 .clock-move {
   text-align: center;
   font-weight: 800;
-  font-size: 1.5rem;
-  color: #fff;
-  padding: 8px 0;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.24);
-  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.32);
-}
-.clock-move.on {
-  color: #fff;
+  font-size: 2rem;
+  color: inherit;
+  padding: 9px 0;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--cube-text, #000) 14%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cube-text, #000) 22%, transparent);
 }
