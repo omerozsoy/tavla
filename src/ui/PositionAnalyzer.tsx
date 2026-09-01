@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
@@ -43,39 +43,10 @@ export default function PositionAnalyzer({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const analyzerRef = useRef<HTMLDivElement>(null)
-  // iOS (Safari VE Chrome — ikisi de WebKit) "cek-yenile" (pull-to-refresh) analiz sayfasini
-  // kazara yenileyip dizilimi standarda donduruyordu. overscroll-behavior iOS'ta bazen yetmez;
-  // KESIN cozum: en usteyken parmak ASAGI hareket ederse touchmove'u engelle (refresh tetiklenmez).
-  useEffect(() => {
-    const de = document.documentElement
-    const b = document.body
-    const prevDe = de.style.overscrollBehaviorY
-    const prevB = b.style.overscrollBehaviorY
-    de.style.overscrollBehaviorY = 'none'
-    b.style.overscrollBehaviorY = 'none'
-
-    let startY = 0
-    const onStart = (e: TouchEvent) => {
-      startY = e.touches[0]?.clientY ?? 0
-    }
-    const onMove = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return
-      const atTop = (analyzerRef.current?.scrollTop ?? 0) <= 0 && window.scrollY <= 0
-      const pullingDown = (e.touches[0]?.clientY ?? 0) > startY
-      // En usteyiz + parmak asagi (icerik zaten kaydirilamaz) -> yalniz refresh'i iptal et.
-      if (atTop && pullingDown && e.cancelable) e.preventDefault()
-    }
-    document.addEventListener('touchstart', onStart, { passive: true })
-    document.addEventListener('touchmove', onMove, { passive: false })
-
-    return () => {
-      de.style.overscrollBehaviorY = prevDe
-      b.style.overscrollBehaviorY = prevB
-      document.removeEventListener('touchstart', onStart)
-      document.removeEventListener('touchmove', onMove)
-    }
-  }, [])
+  // NOT: Eski touchmove pull-to-refresh guard'i KALDIRILDI — .analyzer gercek scroller
+  // olmadigi durumda 'atTop'u hep dogru sanip YUKARI kaydirmayi engelliyordu (alta inince
+  // yukari cikilamiyordu). Pull-to-refresh korumasi zaten App.css'te .register-overlay.page
+  // uzerinde overscroll-behavior-y: contain ile saglaniyor.
   const [pts, setPts] = useState<number[]>(() => initialState().points)
   const [bar, setBar] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
   const [off, setOff] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
@@ -346,7 +317,7 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
-    <div className="analyzer" ref={analyzerRef} style={{ overscrollBehavior: 'contain' }}>
+    <div className="analyzer" style={{ overscrollBehavior: 'contain' }}>
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
         {/* Kapat dugmesi kaldirildi (kullanici istegi): cikis hamburger menu / ESC ile. */}
