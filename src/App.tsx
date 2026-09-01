@@ -533,6 +533,10 @@ export default function App() {
                                     ? 'nasil-oynanir'
                                     : analyzerOpen
                                       ? 'pozisyon-analizi'
+                                      : achOpen
+                                        ? 'basarimlar'
+                                      : friendSetupOpen
+                                        ? 'arkadasinla-oyna'
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
@@ -651,6 +655,12 @@ export default function App() {
           break
         case 'pozisyon-analizi':
           setAnalyzerOpen(true)
+          break
+        case 'basarimlar':
+          setAchOpen(true)
+          break
+        case 'arkadasinla-oyna':
+          setFriendSetupOpen(true)
           break
         case 'yeni-oyun':
           setSetup('online')
@@ -3794,6 +3804,8 @@ export default function App() {
                     ? 'solo'
                     : analyzerOpen
                       ? 'analyzer'
+                      : friendSetupOpen
+                        ? 'playFriend'
                       : clubsOpen
                         ? 'clubs'
                         : lessonsOpen
