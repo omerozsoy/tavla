@@ -8,9 +8,8 @@ import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
 import MembershipCard from './MembershipCard'
 import { Button } from '@/components/ui/button'
-import { divisionOf, MAIN_DIVISIONS } from '../badges'
 import { countryName } from '../countries'
-import { framePrice, type AvatarFrameDef } from './avatarFrames'
+import { type AvatarFrameDef } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
 import type { ServerUser, AppNotification } from '../api'
 
@@ -52,8 +51,6 @@ interface Props {
   onOpenMatchHistory?: () => void // istatistik sekmesi -> Mac Analizleri sayfasi
 }
 
-const fmt = (n: number) => n.toLocaleString('tr-TR')
-
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
   const d = new Date(birth)
@@ -89,26 +86,10 @@ export default function ProfileOverview({
   const unread = (notifications ?? []).filter((n) => !n.read).length
   useEscape(onClose)
 
-  const rating = user.rating ?? 0
-  const coins = user.coins ?? 0
-  const wins = user.wins ?? 0
-  const games = user.games_played ?? 0
-  const winRate = games > 0 ? Math.round((wins / games) * 100) : 0
   const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.nickname
   const age = ageFrom(user.birth_date)
   const cc = (user.country || '').toLowerCase()
   const country = user.country ? countryName(user.country, lang) : ''
-
-  // Puan ilerleme: mevcut ana kademe icinde sonraki kademeye ilerleme
-  const div = divisionOf(rating)
-  const idx = MAIN_DIVISIONS.findIndex((d) => d.key === div.key)
-  const curMin = MAIN_DIVISIONS[idx]?.min ?? 0
-  const nextMin = MAIN_DIVISIONS[idx + 1]?.min ?? curMin + 100
-  const ratingPct = Math.max(0, Math.min(100, Math.round(((rating - curMin) / (nextMin - curMin)) * 100)))
-
-  // Koleksiyon degeri: sahip olunan cerceve + odemeli tahta fiyatlari toplami
-  const framesValue = ownedFrames.reduce((s, f) => s + (framePrice(f) ?? 0), 0)
-  const boardsValue = ownedBoards.reduce((s, b) => s + (b.price ?? 0), 0)
 
   const equipped = ownedBoards.find((b) => b.id === boardTheme) ?? ownedBoards[0]
 
@@ -156,6 +137,8 @@ export default function ProfileOverview({
               </div>
             </div>
           </div>
+          {/* Premium karti: profil ile tahta arasinda (3'lu ust satir) */}
+          <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
           {equipped && (
             <div className="prof-ov-board">
               <div className="prof-ov-board-prev" style={boardVars(equipped)}>
@@ -174,39 +157,6 @@ export default function ProfileOverview({
             </div>
           )}
         </div>
-
-        {/* --- Uyelik karti (Premium): baslikin hemen altinda --- */}
-        <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
-
-        {/* --- Stat kartlari (İstatistikler sekmesinde gizli: dashboard zaten kapsıyor) --- */}
-        {tab !== 'stats' && (
-        <div className="prof-ov-stats">
-          <div className="prof-ov-stat">
-            <span className="pos-lbl"><Icon name="chart" size={15} /> {t('lb.rating')}</span>
-            <span className="pos-val pos-navy">{fmt(rating)} GR</span>
-            <span className="pos-bar"><i style={{ width: `${ratingPct}%` }} /></span>
-            <span className="pos-sub">{t(div.key)}</span>
-          </div>
-          <div className="prof-ov-stat">
-            <span className="pos-lbl"><Icon name="coin" size={15} /> {t('home.dash.coins')}</span>
-            <span className="pos-val pos-gold">{fmt(coins)} GC</span>
-          </div>
-          <div className="prof-ov-stat">
-            <span className="pos-lbl"><Icon name="trophy" size={15} /> {t('home.dash.wins')}</span>
-            <span className="pos-val pos-green">%{winRate}</span>
-            <span className="pos-sub">
-              {fmt(games)} {t('home.dash.games')} · {fmt(wins)} {t('home.dash.wins')}
-            </span>
-          </div>
-          <div className="prof-ov-stat">
-            <span className="pos-lbl"><Icon name="star" size={15} /> {t('prof.collection')}</span>
-            <span className="pos-val">{fmt(framesValue + boardsValue)} GC</span>
-            <span className="pos-sub">
-              {ownedBoards.length} {t('menu.board')} · {ownedFrames.length} {t('prof.avatars')}
-            </span>
-          </div>
-        </div>
-        )}
 
         {/* --- Sekmeler: İstatistikler · Avatarlar · Tahta Tasarımı --- */}
         <div className="prof-ov-tabs" role="tablist">
