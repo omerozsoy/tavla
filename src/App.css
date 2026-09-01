@@ -12765,6 +12765,12 @@ button.stat-chip:hover {
   margin: 0;
   height: 100%;
 }
+/* Orta/dar ekranda 3 kolon sikismasin -> alt alta */
+@media (max-width: 980px) {
+  .prof-ov-top {
+    grid-template-columns: 1fr;
+  }
+}
 .prof-ov-id {
   display: flex;
   align-items: center;
