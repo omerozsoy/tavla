@@ -27,14 +27,6 @@ interface Props {
   boardThemes: BoardThemeOpt[]
   coins?: number // bakiye (satin alma icin yeterlilik)
   onBuy?: (shopId: string) => void // tahtayi coin ile ac ('theme.<id>')
-  theme: 'dark' | 'light'
-  setTheme: (t: 'dark' | 'light') => void
-  showPip: boolean
-  setShowPip: (v: boolean) => void
-  learnMode: boolean
-  setLearnMode: (v: boolean) => void
-  /** Öğrenme Modu SADECE yapay zekaya karşı oyunda gösterilir (hile önlemi). */
-  canAnalyze?: boolean
   onClose: () => void
   embed?: boolean // gomulu render (overlay/kapat/kaydet yok)
   framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi icerigi (FrameGallery embed)
@@ -50,21 +42,15 @@ export default function BoardSettings({
   boardThemes,
   coins = 0,
   onBuy,
-  theme,
-  setTheme,
-  showPip,
-  setShowPip,
-  learnMode,
-  setLearnMode,
-  canAnalyze = false,
   onClose,
   embed,
   framesSlot,
 }: Props) {
   const { t } = useT()
   useEscape(embed ? () => {} : onClose)
-  // Ayarlar sekmeleri: genel (tema/pip/analiz/ogrenme) | tahta rengi | avatar cercevesi
-  const [tab, setTab] = useState<'general' | 'board' | 'frame'>('general')
+  // Ayarlar sekmeleri: tahta rengi | avatar cercevesi (Genel Ayarlar kaldirildi;
+  // tema secimi artik sag ust barda)
+  const [tab, setTab] = useState<'board' | 'frame'>('board')
   // Ayarlar zaten anlik uygulanip localStorage'a yazilir; "Kaydet" sayfayi KAPATMAZ
   // (eskiden onClose -> ana sayfaya atiyordu). Sadece kisa "Kaydedildi" onayi gosterir.
   const [saved, setSaved] = useState(false)
@@ -97,15 +83,6 @@ export default function BoardSettings({
           <button
             type="button"
             role="tab"
-            aria-selected={tab === 'general'}
-            className={`prof-tab ${tab === 'general' ? 'active' : ''}`}
-            onClick={() => setTab('general')}
-          >
-            <Icon name="settings" size={16} /> {t('settings.tabGeneral')}
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={tab === 'board'}
             className={`prof-tab ${tab === 'board' ? 'active' : ''}`}
             onClick={() => setTab('board')}
@@ -124,49 +101,6 @@ export default function BoardSettings({
             </button>
           )}
         </div>
-
-        {tab === 'general' && (
-          <>
-        {/* Tema (koyu/acik) */}
-        <div className="setup-row">
-          <div className="setup-label">{t('menu.theme')}</div>
-          <div className="menu-targets">
-            <Button
-              type="button"
-              variant={theme === 'dark' ? 'secondary' : 'ghost'}
-              onClick={() => setTheme('dark')}
-            >
-              <Icon name="moon" size={16} /> {t('theme.dark')}
-            </Button>
-            <Button
-              type="button"
-              variant={theme === 'light' ? 'secondary' : 'ghost'}
-              onClick={() => setTheme('light')}
-            >
-              <Icon name="sun" size={16} /> {t('theme.light')}
-            </Button>
-          </div>
-        </div>
-
-        {/* Oyun ayarlari (pip/analiz/ogrenme) — tahta grid'inin USTUNDE, kolay erisim */}
-        <button type="button" className={`setup-toggle ${showPip ? 'on' : ''}`} onClick={() => setShowPip(!showPip)}>
-          <span>{t('setup.pip')}</span>
-          <span className="setup-switch">{showPip ? t('setup.on') : t('setup.off')}</span>
-        </button>
-        {/* Canlı "Analizi göster" KALDIRILDI — maç sonu analizi (Maç Analizleri) zaten var.
-            Öğrenme Modu YALNIZCA yapay zekaya karşı oyunda (hile önlemi). */}
-        {canAnalyze && (
-          <button
-            type="button"
-            className={`setup-toggle ${learnMode ? 'on' : ''}`}
-            onClick={() => setLearnMode(!learnMode)}
-          >
-            <span><Icon name="graduation" size={16} /> {t('hint.learnMode')}</span>
-            <span className="setup-switch">{learnMode ? t('setup.on') : t('setup.off')}</span>
-          </button>
-        )}
-          </>
-        )}
 
         {/* Tahta Rengi sekmesi: nadirlik gruplari, buyuk + tam pul dizili onizleme */}
         {tab === 'board' && (

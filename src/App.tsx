@@ -3450,6 +3450,16 @@ export default function App() {
       >
         <Icon name="settings" size={24} />
       </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="[&_svg]:size-[24px]!"
+        title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+        aria-label={t('menu.theme')}
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+      >
+        {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
+      </Button>
       <LangMenu />
       <Button
         variant="ghost"
@@ -3847,13 +3857,6 @@ export default function App() {
           boardThemes={boardThemeList}
           coins={user?.coins ?? 0}
           onBuy={handleBuy}
-          theme={theme}
-          setTheme={setTheme}
-          showPip={showPip}
-          setShowPip={setShowPip}
-          learnMode={learnMode}
-          setLearnMode={setLearnMode}
-          canAnalyze={mode === 'pvb'}
           framesSlot={
             user ? (
               <FrameShop
