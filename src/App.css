@@ -9336,7 +9336,7 @@ button.stat-chip:hover {
   --board-h: max(300px, min(56vh, calc((min(calc(100vw - 254px), 1400px) - 760px) / 1.45)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
-  --bar-w: calc(var(--checker) * 0.85);
+  --bar-w: var(--checker); /* orta bar genisligi = pul capi */
   --bearoff-w: calc(var(--checker) * 1);
   --tri-h: calc(var(--board-h) * 0.44);
   min-height: 100vh;
