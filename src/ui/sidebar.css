@@ -6,25 +6,29 @@
 .sidebar-meta {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px 8px;
-  margin: 6px 0;
+  gap: 8px;
+  padding: 16px 8px;
+  margin: 8px 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
   text-align: center;
 }
 .sm-row {
-  font-size: 0.95rem;
-  letter-spacing: 0.03em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.15;
 }
 .sm-lbl {
-  color: var(--muted);
+  color: var(--text);
+  opacity: 0.75;
   font-weight: 700;
-  margin-right: 6px;
+  font-size: 0.95rem;
 }
 .sm-val {
   color: var(--text);
   font-weight: 800;
+  font-size: 1.5rem;
 }
 
 /* Alt oyuncu kartinda sirayi ters cevir (rating ustte, isim altta) DOM ile saglanir;
