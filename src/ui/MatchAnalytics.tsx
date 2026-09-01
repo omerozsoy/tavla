@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -49,9 +49,10 @@ interface Props {
   onClose: () => void
   myName?: string
   myAvatar?: string | null
+  initialMatchId?: number // verilirse acilista bu mac bulunup genisletilir (profilden tiklama)
 }
 
-export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
+export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatchId }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
@@ -60,7 +61,8 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
-  const [period, setPeriod] = useState<EJPeriod>('7d')
+  // Belirli bir mac aciliyorsa donem filtresi 'Tumu' olsun (mac 7g disinda olabilir).
+  const [period, setPeriod] = useState<EJPeriod>(initialMatchId != null ? 'all' : '7d')
   const filtered = rows.filter((m) => inPeriod(m.created_at, period))
 
   // Bir macin tam analizini (log) cek -> MatchReport ac
@@ -92,6 +94,19 @@ export default function MatchAnalytics({ onClose, myName, myAvatar }: Props) {
   useEffect(() => {
     load()
   }, [])
+
+  // Profilden bir mac id'siyle gelindiyse: rows yuklenince o maci bul, genislet, ortala.
+  const didAutoOpen = useRef(false)
+  useEffect(() => {
+    if (initialMatchId == null || rows.length === 0 || didAutoOpen.current) return
+    const idx = rows.findIndex((m) => m.id === initialMatchId)
+    if (idx < 0) return
+    didAutoOpen.current = true
+    setOpenIdx(idx)
+    requestAnimationFrame(() => {
+      document.querySelector('.mh-card .mh-item.open')?.scrollIntoView({ block: 'center' })
+    })
+  }, [rows, initialMatchId])
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">

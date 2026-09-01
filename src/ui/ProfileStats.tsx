@@ -20,7 +20,7 @@ interface Props {
   name: string
   onClose: () => void
   embed?: boolean // Profilim sekmesine gomulu render (overlay/kapat/baslik yok)
-  onOpenMatchHistory?: () => void // "Tum mac analizleri" -> /mac-analizleri sayfasi
+  onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
 }
 
 // Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
@@ -439,9 +439,15 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
             ) : (
               <>
                 <div className="mh-list">
-                  {/* Sadece son 10 mac; fazlasi icin Mac Analizleri sayfasi */}
+                  {/* Sadece son 10 mac; satira tiklayinca o macin analizi (Mac Analizleri sayfasi) */}
                   {matches.slice(0, 10).map((m, i) => (
-                    <div key={i} className="mh-row">
+                    <button
+                      key={i}
+                      type="button"
+                      className="mh-row mh-row-link"
+                      onClick={() => onOpenMatchHistory?.(m.id)}
+                      title={t('stats.moreMatches')}
+                    >
                       <span className={`mh-res ${m.won ? 'win' : 'loss'}`}>
                         {m.won ? t('stats.win') : t('stats.loss')}
                       </span>
@@ -451,11 +457,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                         {m.delta}
                       </span>
                       <span className="mh-date">{fmtDate(m.created_at)}</span>
-                    </div>
+                    </button>
                   ))}
                 </div>
                 {onOpenMatchHistory && (
-                  <button type="button" className="mh-more" onClick={onOpenMatchHistory}>
+                  <button type="button" className="mh-more" onClick={() => onOpenMatchHistory?.()}>
                     {t('stats.moreMatches')}
                   </button>
                 )}
