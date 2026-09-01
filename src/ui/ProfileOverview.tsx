@@ -3,7 +3,9 @@ import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import ProfileStats from './ProfileStats'
+import Achievements from './Achievements'
 import AvatarFrame from './AvatarFrame'
+import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
 import MembershipCard from './MembershipCard'
@@ -50,6 +52,7 @@ interface Props {
   onDeleteAllNotifications?: () => void
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
+  onOpenShop?: (tab: 'frame' | 'board') => void // Magaza (avatar/tahta sekmesi)
 }
 
 function ageFrom(birth?: string | null): number | null {
@@ -81,10 +84,11 @@ export default function ProfileOverview({
   onDeleteAllNotifications,
   onOpenMatchHistory,
   onOpenAchievements,
+  onOpenShop,
 }: Props) {
   const { t, lang } = useT()
   // Profil açılışında İstatistikler sekmesi varsayılan seçili
-  const [tab, setTab] = useState<'frames' | 'boards' | 'stats' | 'notifs'>('stats')
+  const [tab, setTab] = useState<'frames' | 'boards' | 'stats' | 'notifs' | 'badges'>('stats')
   const unread = (notifications ?? []).filter((n) => !n.read).length
   useEscape(onClose)
 
@@ -192,6 +196,15 @@ export default function ProfileOverview({
           <button
             type="button"
             role="tab"
+            aria-selected={tab === 'badges'}
+            className={tab === 'badges' ? 'active' : ''}
+            onClick={() => setTab('badges')}
+          >
+            {t('ach.title')}
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={tab === 'notifs'}
             className={tab === 'notifs' ? 'active' : ''}
             onClick={() => setTab('notifs')}
@@ -203,29 +216,32 @@ export default function ProfileOverview({
 
         {tab === 'frames' && (
           <section className="prof-ov-col">
-            {ownedFrames.length === 0 ? (
-              <p className="prof-ov-empty">{t('prof.noAvatars')}</p>
-            ) : (
-              <div className="prof-ov-grid">
-                {ownedFrames.map((f) => (
-                  <button
-                    type="button"
-                    className={`prof-ov-item ${user.avatar_frame === f.id ? 'active' : ''}`}
-                    key={f.id}
-                    style={{ ['--rarity-color']: RARITY_COLORS[f.rarity] } as CSSProperties}
-                    onClick={() => onSelectFrame?.(f.id)}
-                    aria-pressed={user.avatar_frame === f.id}
-                    title={f.name}
-                  >
-                    {user.avatar_frame === f.id && (
-                      <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
-                    )}
-                    <AvatarFrame src={avatar} frame={f.id} size={62} name={fullName} animated />
-                    <span className="prof-ov-item-name">{f.name}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {ownedFrames.length === 0 && <p className="prof-ov-empty">{t('prof.noAvatars')}</p>}
+            <div className="prof-ov-grid">
+              {ownedFrames.map((f) => (
+                <button
+                  type="button"
+                  className={`prof-ov-item ${user.avatar_frame === f.id ? 'active' : ''}`}
+                  key={f.id}
+                  style={{ ['--rarity-color']: RARITY_COLORS[f.rarity] } as CSSProperties}
+                  onClick={() => onSelectFrame?.(f.id)}
+                  aria-pressed={user.avatar_frame === f.id}
+                  title={f.name}
+                >
+                  {user.avatar_frame === f.id && (
+                    <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
+                  )}
+                  <AvatarFrame src={avatar} frame={f.id} size={62} name={fullName} animated />
+                  <span className="prof-ov-item-name">{f.name}</span>
+                </button>
+              ))}
+              {onOpenShop && (
+                <button type="button" className="prof-ov-item prof-ov-more" onClick={() => onOpenShop('frame')}>
+                  <span className="prof-ov-more-ic"><Icon name="shop" size={24} /></span>
+                  <span className="prof-ov-item-name">{t('prof.moreAvatars')}</span>
+                </button>
+              )}
+            </div>
           </section>
         )}
 
@@ -257,7 +273,19 @@ export default function ProfileOverview({
                   <span className="prof-ov-item-name">{b.name}</span>
                 </button>
               ))}
+              {onOpenShop && (
+                <button type="button" className="prof-ov-item prof-ov-more" onClick={() => onOpenShop('board')}>
+                  <span className="prof-ov-more-ic"><Icon name="shop" size={24} /></span>
+                  <span className="prof-ov-item-name">{t('prof.moreBoards')}</span>
+                </button>
+              )}
             </div>
+          </section>
+        )}
+
+        {tab === 'badges' && (
+          <section className="prof-ov-col">
+            <Achievements embed loggedIn />
           </section>
         )}
 
