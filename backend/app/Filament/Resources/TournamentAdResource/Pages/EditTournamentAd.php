@@ -16,4 +16,12 @@ class EditTournamentAd extends EditRecord
             Actions\DeleteAction::make(),
         ];
     }
+
+    // Kaydettikten sonra: model saved() kancasi yeni gorselden baskin renk paletini
+    // yeniden cikardi (updateQuietly). Formdaki renk swatch'lari eski kalmasin diye
+    // 'palette' alanini kayittan tazele -> yeni resmin renkleri aninda gorunur.
+    protected function afterSave(): void
+    {
+        $this->refreshFormData(['palette']);
+    }
 }
