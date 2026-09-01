@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import { normalizeCountry } from '../countries'
 
 // SVG bayraklar (emoji bayraklar Windows'ta render olmadigindan). 5 dil.
@@ -65,41 +66,53 @@ export function Flag({ code, size = 20 }: { code: string; size?: number }) {
 
 // Ulke bayragi (200+ ulke): ISO 3166-1 alpha-2 kodundan flagcdn SVG'si (or. 'TR' -> tr.svg).
 // Yukaridaki 5-dil Flag'inin aksine tum ulkeleri kapsar. Emoji bayrak Windows'ta
-// gorunmedigi icin gorsel; yuvarlak kirpilir -> mini-avatar gorunumu. Kod yok/gecersizse
-// hicbir sey render etmez (graceful).
+// gorunmedigi icin gorsel. rounded=true: yuvarlak kirpilmis (mini-avatar rozeti).
+// rounded=false: dogal en-boy oranli normal bayrak (yukseklik=size, genislik otomatik).
+// Kod yok/gecersizse hicbir sey render etmez (graceful).
 export function CountryFlag({
   code,
   size = 16,
   className = '',
   title,
+  rounded = true,
 }: {
   code?: string | null
   size?: number
   className?: string
   title?: string
+  rounded?: boolean
 }) {
   // Kayitli deger kod ('TR') veya eski isim ('Türkiye') olabilir -> koda normalize et.
   const c = normalizeCountry(code).trim().toLowerCase()
   if (c.length !== 2) return null
   const label = title ?? c.toUpperCase()
-  return (
-    <img
-      src={`https://flagcdn.com/${c}.svg`}
-      alt={label}
-      title={label}
-      width={size}
-      height={size}
-      loading="lazy"
-      draggable={false}
-      className={className}
-      style={{
+  const style: CSSProperties = rounded
+    ? {
         width: size,
         height: size,
         borderRadius: '50%',
         objectFit: 'cover',
         display: 'block',
         flex: '0 0 auto',
-      }}
+      }
+    : {
+        height: size,
+        width: 'auto',
+        borderRadius: 2,
+        display: 'block',
+        flex: '0 0 auto',
+        boxShadow: '0 0 0 1px rgba(0, 0, 0, 0.12)',
+      }
+  return (
+    <img
+      src={`https://flagcdn.com/${c}.svg`}
+      alt={label}
+      title={label}
+      height={size}
+      loading="lazy"
+      draggable={false}
+      className={className}
+      style={style}
     />
   )
 }

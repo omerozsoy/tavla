@@ -7452,7 +7452,7 @@ button.stat-chip:hover {
 }
 .rank-row {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 26px 1fr auto auto;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -10040,11 +10040,19 @@ button.stat-chip:hover {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu | Maç | G/M | % | deger */
-  grid-template-columns: 38px 1fr 66px 74px 48px 62px;
+  /* # | oyuncu | Maç | G/M | % | bayrak | deger */
+  grid-template-columns: 38px 1fr 66px 74px 48px auto 62px;
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
+}
+/* Bayrak hucresi: ulkesi olmayan oyuncuda ic bayrak null olsa da span grid
+   hucresini korur -> puan kolonu satirlar arasi kaymaz. */
+.lb-flag,
+.rank-flag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .lb-head {
   color: var(--muted);

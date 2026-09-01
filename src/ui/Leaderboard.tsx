@@ -5,6 +5,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { leaderboard, wxpBreakdown, type LeaderRow, type WxpBreakdown } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
 import { Skeleton } from './Skeleton'
 
@@ -70,7 +71,6 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             rating={r.rating}
             avatar={r.avatar}
             frame={r.frame}
-            country={r.country}
             size={30}
             rankSize="md"
           />
@@ -84,6 +84,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           <span className="lb-loss">{r.losses}</span>
         </span>
         <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
+        <span className="lb-flag">
+          <CountryFlag code={r.country} size={16} rounded={false} />
+        </span>
         <span className="lb-rating">
           {by === 'coins'
             ? (r.coins ?? 0).toLocaleString('tr-TR')
