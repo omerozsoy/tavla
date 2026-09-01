@@ -405,7 +405,8 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
-  const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (URL: /turnuvalar/{id})
+  const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
+  const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/turnuvalar/isim-{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
@@ -443,7 +444,7 @@ export default function App() {
     ? 'rutbeler'
     : tournOpen
       ? tournDetailId != null
-        ? 'turnuvalar/' + tournDetailId
+        ? 'turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'turnuvalar'
       : shopOpen
         ? 'magaza'
@@ -527,11 +528,16 @@ export default function App() {
         case 'bilgi':
           setInfoOpen(true)
           break
-        case 'turnuvalar':
+        case 'turnuvalar': {
           setTournOpen(true)
-          // /turnuvalar/{id} -> dogrudan o turnuvanin detayini ac
-          setTournDetailId(seg[1] && /^\d+$/.test(seg[1]) ? parseInt(seg[1], 10) : null)
+          // /turnuvalar/{isim-slug}-{id} veya eski /turnuvalar/{id}: son '-' parcasi id
+          const s1 = seg[1] || ''
+          const last = s1.split('-').pop() || ''
+          const tid = /^\d+$/.test(last) ? parseInt(last, 10) : null
+          setTournDetailId(tid)
+          setTournDetailSlug(tid != null ? s1 : null)
           break
+        }
         case 'magaza':
           setShopOpen(true)
           break
@@ -3486,6 +3492,7 @@ export default function App() {
     setInfoOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
+    setTournDetailSlug(null)
     setShopOpen(false)
     setFrameGalleryOpen(false)
     setStatsOpen(false)
@@ -3546,12 +3553,14 @@ export default function App() {
     onTournaments: () =>
       goPage(() => {
         setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
+        setTournDetailSlug(null)
         setTournOpen(true)
       }),
-    // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac
+    // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac (slug detay yuklenince yukselir)
     onTournamentAd: (id: number) =>
       goPage(() => {
         setTournDetailId(id)
+        setTournDetailSlug(String(id))
         setTournOpen(true)
       }),
     onShop: () => goPage(() => setShopOpen(true)),
@@ -3774,10 +3783,14 @@ export default function App() {
           myId={user?.id ?? null}
           onPlayMatch={handlePlayTournamentMatch}
           detailId={tournDetailId}
-          onOpenDetail={setTournDetailId}
+          onOpenDetail={(id, slug) => {
+            setTournDetailId(id)
+            setTournDetailSlug(id != null ? slug ?? String(id) : null)
+          }}
           onClose={() => {
             setTournOpen(false)
             setTournDetailId(null)
+            setTournDetailSlug(null)
           }}
         />
       )}
