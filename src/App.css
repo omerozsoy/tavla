@@ -5655,10 +5655,10 @@ html.fs-active .account-bar {
   display: none;
   position: fixed;
   top: 8px;
-  left: 8px;
+  right: 8px;
   z-index: 110;
   top: calc(8px + env(safe-area-inset-top));
-  left: calc(8px + env(safe-area-inset-left));
+  right: calc(8px + env(safe-area-inset-right));
   width: 44px;
   height: 44px;
   display: none;
@@ -5890,11 +5890,12 @@ html.fs-active .account-bar {
   .account-bar {
     min-height: 48px;
     gap: 6px;
-    padding: 6px 12px;
+    /* Sag: sabit hamburger (44px) icin pay birak -> band ogeleri altina girmesin. */
+    padding: 6px 52px 6px 12px;
   }
-  /* Sabit hamburger (sol-ust, 44px) logonun ustune binmesin -> logoyu saga it. */
+  /* Hamburger artik SAGDA -> logo en solda gorunsun (bosluk yok). */
   .ab-brand {
-    margin-left: 46px;
+    margin-left: 0;
   }
   .account-name {
     font-size: 0.78rem;
@@ -6387,7 +6388,7 @@ button.stat-chip:hover {
     display: inline-flex;
   }
   .ab-brand {
-    margin-left: 46px; /* sabit hamburger (sol-ust) logoyu ortmesin */
+    margin-left: 0; /* hamburger sagda -> logo solda gorunur */
   }
 }
 .account-name {
