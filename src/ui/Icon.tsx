@@ -16,6 +16,7 @@ import {
   Storefront,
   ChartBar,
   UsersThree,
+  UserPlus,
   ChartLineUp,
   DiceFive,
   GearSix,
@@ -97,6 +98,7 @@ export type IconName =
   | 'shop'
   | 'chart'
   | 'users'
+  | 'user-plus'
   | 'analyze'
   | 'dice'
   | 'settings'
@@ -179,6 +181,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   shop: Storefront,
   chart: ChartBar,
   users: UsersThree,
+  'user-plus': UserPlus,
   analyze: ChartLineUp,
   dice: DiceFive,
   flame: Flame,

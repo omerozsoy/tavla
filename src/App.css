@@ -7340,8 +7340,31 @@ button.stat-chip:hover {
   text-align: center;
 }
 .online-row {
-  /* nokta | oyuncu | rating */
-  grid-template-columns: 14px 1fr auto;
+  /* nokta | oyuncu | rating | aksiyonlar */
+  grid-template-columns: 14px 1fr auto auto;
+}
+/* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
+.online-id {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.online-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Kompakt aksiyon butonu (42px yerine 32px) — satir yuksekligini sismesin. */
+.online-act.online-act {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
 }
 .online-pdot {
   width: 8px;
