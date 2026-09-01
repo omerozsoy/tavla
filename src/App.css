@@ -6322,7 +6322,7 @@ button.stat-chip:hover {
 /* Logo sola, hesap kontrolleri saga (auto margin bosluğu doldurur). */
 .ab-brand {
   margin-right: auto;
-  margin-left: -6px; /* logoyu sola biraz daha yaklastir (mobilde 46px override edilir) */
+  margin-left: -14px; /* logoyu sola daha da yaklastir (mobilde 46px override edilir) */
   display: inline-flex;
   align-items: center;
   background: none;
