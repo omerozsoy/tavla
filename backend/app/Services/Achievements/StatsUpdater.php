@@ -174,6 +174,10 @@ final class StatsUpdater
             if ($minWp <= (float) $this->thr('howcome_wp', 15.0)) {
                 $ctx->set('flag_howcome');
             }
+            // Eve Donus: dusuk kazanma ihtimalinden maci cevirdi (min WP payload/log'dan).
+            if ($minWp <= (float) $this->thr('comeback_wp', 20.0)) {
+                $ctx->set('flag_comeback');
+            }
         }
 
         // ---- Rakip / rating bazli ----

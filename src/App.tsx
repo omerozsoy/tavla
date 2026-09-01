@@ -178,6 +178,24 @@ function freshBoard(turn: Player): GameState {
   return s
 }
 
+// Basarim sinyali: bir pozisyonda oyuncunun kurdugu yapiyi tespit et.
+//  prime6  = 6 ardisik nokta, her birinde >=2 tas ("Kapici")
+//  closeout= tum ev bolgesi (6 nokta) kapali VE rakip barda tas tutuyor ("Cikabilirsen Cik")
+function achBoardFeats(pos: GameState, player: Player): { prime6: boolean; closeout: boolean } {
+  const pts = pos.points
+  const cnt = (i: number) => (player === 'white' ? Math.max(0, pts[i]) : Math.max(0, -pts[i]))
+  let prime6 = false
+  for (let i = 0; i <= 18 && !prime6; i++) {
+    let ok = true
+    for (let k = 0; k < 6; k++) if (cnt(i + k) < 2) { ok = false; break }
+    if (ok) prime6 = true
+  }
+  const home = player === 'white' ? [0, 1, 2, 3, 4, 5] : [18, 19, 20, 21, 22, 23]
+  const opp: Player = player === 'white' ? 'black' : 'white'
+  const closeout = home.every((i) => cnt(i) >= 2) && (pos.bar?.[opp] ?? 0) > 0
+  return { prime6, closeout }
+}
+
 type Mode = 'pvp' | 'pvb' | 'online'
 type Difficulty = number // 1..10 AI seviyesi
 
@@ -738,6 +756,35 @@ export default function App() {
   // En guncel log (mac-sonu kaydi async analizler bittikten sonra bunu okur)
   const matchLogRef = useRef<MoveLogEntry[]>([])
   matchLogRef.current = matchLog
+  // Basarim sinyalleri (mac boyunca birikir; reportRating'te okunur + sifirlanir).
+  // Bunlar log'da guvenilir olmadigi icin frontend'den payload ile gonderilir.
+  const achGammonRef = useRef(0) // bu macta insanin mars (gammon) galibiyeti
+  const achBgRef = useRef(0) // katmerli mars (backgammon) galibiyeti
+  const achMinWpRef = useRef(101) // insanin gordugu en dusuk kazanma % (101 = yok)
+  const achPrime6Ref = useRef(false)
+  const achCloseoutRef = useRef(false)
+  const resetAchSignals = () => {
+    achGammonRef.current = 0
+    achBgRef.current = 0
+    achMinWpRef.current = 101
+    achPrime6Ref.current = false
+    achCloseoutRef.current = false
+  }
+  // reportRating payload'i icin sinyalleri topla + sifirla (bir sonraki mac temiz baslar).
+  const buildAchExtra = () => {
+    const minWp = achMinWpRef.current <= 100 ? achMinWpRef.current : null
+    const flags: string[] = []
+    if (achPrime6Ref.current) flags.push('prime6')
+    if (achCloseoutRef.current) flags.push('closeout')
+    const extra = {
+      gammons: achGammonRef.current,
+      backgammons: achBgRef.current,
+      min_win_prob: minWp,
+      ach_flags: flags,
+    }
+    resetAchSignals()
+    return extra
+  }
   // Bekleyen (async) hamle analizi sayaci: online mac-sonu kaydi bunlar bitene kadar bekler
   const pendingAnalysisRef = useRef(0)
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
@@ -1077,6 +1124,12 @@ export default function App() {
           .catch(() => {})
       }
       if (mover !== humanColor) return
+      // Basarim: insanin gordugu en dusuk kazanma % (oynanan hamle sonrasi) + kurdugu yapi.
+      const wp = (pl.probs?.[0] ?? 1) * 100
+      if (wp < achMinWpRef.current) achMinWpRef.current = wp
+      const feats = achBoardFeats(applyPlayed(before, steps), humanColor)
+      if (feats.prime6) achPrime6Ref.current = true
+      if (feats.closeout) achCloseoutRef.current = true
       // Her hamle icin tam analiz verisi: konum, zar, siralı adaylar (equity), kazanma%
       const cands = ranks.slice(0, 5).map((r) => ({
         notation: moveNotation(r.move, mover),
@@ -1783,6 +1836,7 @@ export default function App() {
         const s = prStatsRef.current[c]
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
+      const achExtra = buildAchExtra()
       reportRating(
         won,
         oppRating,
@@ -1797,6 +1851,7 @@ export default function App() {
         !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
         stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
         room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
+        achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
@@ -1886,6 +1941,9 @@ export default function App() {
         prOf('black'),
         JSON.stringify({ hc: 'white', log: matchLog.slice(-250) }),
         rankedMatch,
+        'match', // match_type (pvb her zaman N-puanlik)
+        null, // room_code yok
+        buildAchExtra(), // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
       )
         .then((r) => {
           setRatingChange({ before, after: r.rating })
@@ -2112,8 +2170,14 @@ export default function App() {
     if (soundedEndRef.current) return
     soundedEndRef.current = true
     const humanColor: Player = mode === 'online' && room?.slot === 'p2' ? 'black' : 'white'
-    if (gameEnd.winner === humanColor) Sound.win()
-    else Sound.lose()
+    if (gameEnd.winner === humanColor) {
+      Sound.win()
+      // Basarim: bu oyunu insan mars/katmerli marsla mi kazandi (kup drop'u haric).
+      if (!gameEnd.dropped) {
+        if (gameEnd.mult === 3) achBgRef.current += 1
+        else if (gameEnd.mult === 2) achGammonRef.current += 1
+      }
+    } else Sound.lose()
   }, [gameEnd, mode, room])
   // Ses: kup teklifi
   useEffect(() => {

@@ -217,4 +217,39 @@ class AchievementTest extends TestCase
         $this->assertSame(3, (int) UserStat::forUser($u->id)->best_win_streak);
         $this->assertSame(2, (int) UserStat::forUser($u->id)->current_win_streak);
     }
+
+    // ==================== MAÇ SİNYALLERİ (payload) ====================
+    public function test_match_signals_gammon_winprob_and_board_flags(): void
+    {
+        $u = $this->makeUser('sig');
+        $mr = MatchResult::create([
+            'user_id' => $u->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 7, 'match_type' => 'match', 'luck' => 0,
+        ]);
+        $ctx = app(StatsUpdater::class)->updateForMatch($u->fresh(), $mr, [
+            'gammons' => 1, 'backgammons' => 1, 'min_win_prob' => 1.5,
+            'flags' => ['prime6', 'closeout'],
+        ]);
+
+        $stat = UserStat::forUser($u->id);
+        $this->assertSame(1, (int) $stat->total_gammons);
+        $this->assertSame(1, (int) $stat->total_backgammons);
+        $this->assertTrue($ctx->has('flag_backgammon_win'));
+        $this->assertTrue($ctx->has('flag_prime6'));
+        $this->assertTrue($ctx->has('flag_closeout'));
+        // min WP 1.5 (kazandi) -> anka + improbable + howcome + comeback
+        $this->assertTrue($ctx->has('flag_anka'));
+        $this->assertTrue($ctx->has('flag_improbable'));
+        $this->assertTrue($ctx->has('flag_comeback'));
+
+        $slugs = array_column(app(AchievementService::class)->evaluate($u->fresh(), $ctx), 'slug');
+        $this->assertContains('gammon_1', $slugs);       // İlk mars
+        $this->assertContains('backgammon_1', $slugs);   // İlk katmerli mars
+        $this->assertContains('tavla_katmerli_win', $slugs);
+        $this->assertContains('tavla_prime6', $slugs);
+        $this->assertContains('tavla_closeout', $slugs);
+        $this->assertContains('tavla_comeback', $slugs);
+        $this->assertContains('hidden_anka', $slugs);
+    }
 }
