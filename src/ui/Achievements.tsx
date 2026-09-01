@@ -48,7 +48,7 @@ interface Props {
 
 export default function Achievements({ onClose, embed = false, loggedIn = true }: Props) {
   const { t } = useT()
-  const { notify } = useToast()
+  const notify = useToast()
   const [items, setItems] = useState<AchievementItem[] | null>(null)
   const [featured, setFeatured] = useState<string[]>([])
   const [cat, setCat] = useState('all')
@@ -100,7 +100,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
     if (isOn) next = featured.filter((s) => s !== slug)
     else {
       if (featured.length >= 3) {
-        notify.show(t('ach.featureMax'), 'warning')
+        notify.show(t('ach.featureMax'), 'info')
         return
       }
       next = [...featured, slug]
