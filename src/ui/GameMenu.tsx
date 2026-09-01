@@ -18,8 +18,6 @@ interface Props {
   setLearnMode: (v: boolean) => void
   autoRoll: boolean
   setAutoRoll: (v: boolean) => void
-  soundOn: boolean
-  toggleSound: () => void
   animOn: boolean
   toggleAnim: () => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
@@ -45,7 +43,6 @@ export default function GameMenu(p: Props) {
     ...(p.canAnalyze
       ? [{ label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) }]
       : []),
-    { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
   ]
   return (

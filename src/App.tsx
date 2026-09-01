@@ -18,7 +18,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
-import { Sound, isMuted, setMuted } from './sound'
+import { Sound } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -2179,7 +2179,6 @@ export default function App() {
     }
   }
 
-  const [muted, setMutedState] = useState(isMuted())
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
   const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
   const [autoRoll, setAutoRoll] = useState<boolean>(() => {
@@ -3399,17 +3398,7 @@ export default function App() {
         </span>
       )}
       </div>
-      {user && (
-        <NotificationBell
-          items={notifications}
-          unread={unreadNotif}
-          onOpen={() => {
-            setUnreadNotif(0)
-            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
-            markNotificationsRead().catch(() => {})
-          }}
-        />
-      )}
+      {/* Ödül bildirimin (bell) SOLUNDA */}
       {user &&
         (rewardReady ? (
           <Button
@@ -3425,6 +3414,17 @@ export default function App() {
             <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
           </span>
         ))}
+      {user && (
+        <NotificationBell
+          items={notifications}
+          unread={unreadNotif}
+          onOpen={() => {
+            setUnreadNotif(0)
+            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+            markNotificationsRead().catch(() => {})
+          }}
+        />
+      )}
       {user && (
         <Button variant="outline" onClick={() => goPage(() => setShopOpen(true))}>
           <Icon name="shop" size={15} /> {t('shop.title')}
@@ -3447,21 +3447,6 @@ export default function App() {
         {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
       </Button>
       <LangMenu />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="[&_svg]:size-[24px]!"
-        aria-label={muted ? t('menu.soundOn') : t('menu.soundOff')}
-        title={muted ? t('menu.soundOn') : t('menu.soundOff')}
-        onClick={() => {
-          const nv = !muted
-          setMuted(nv)
-          setMutedState(nv)
-          if (!nv) Sound.move()
-        }}
-      >
-        {muted ? <Icon name="mute" size={24} /> : <Icon name="volume" size={24} />}
-      </Button>
     </div>
   )
 
@@ -4169,13 +4154,6 @@ export default function App() {
         setLearnMode={setLearnMode}
         autoRoll={autoRoll}
         setAutoRoll={setAutoRoll}
-        soundOn={!muted}
-        toggleSound={() => {
-          const nv = !muted
-          setMuted(nv)
-          setMutedState(nv)
-          if (!nv) Sound.move()
-        }}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
         canAnalyze={mode === 'pvb'}
