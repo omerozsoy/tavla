@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type CSSProperties, type TouchEvent } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { listTournamentAds, type TournamentAd } from '../api'
 import { Icon } from './Icon'
 
@@ -28,24 +28,24 @@ function isLightColor(hex?: string | null): boolean {
 
 const ROTATE_MS = 6000 // otomatik gecis araligi (editoryal metin okunacak kadar)
 const DURATION = 560 // kayma animasyonu suresi (ms)
+const SWIPE_MIN = 40 // yon degistirmek icin gereken min surukleme (px)
 
 /**
  * Ana sayfa hero banner slider'i — Christie's tarzi SPLIT layout:
  * SOL panelde (duz sicak zemin) editoryal metin (kicker + serif baslik + alt metin +
- * meta + koyu dikdortgen CTA + noktalar), SAGDA gorsel. Panelden (Banner) yonetilir.
+ * meta + koyu dikdortgen CTA), SAGDA gorsel. Noktalar slider'in ALTINDA. Panelden
+ * (Banner) yonetilir.
  *
  * Kayma motoru = CodePen "Responsive Image Slider" (dfitzy) sistemi, jQuery yerine
- * React ile: HER gecis TEK ADIMLIK yonlu kayma. Sonraki -> yeni slayt SAGDAN girer,
- * mevcut SOLA cikar; onceki -> tam tersi. Uzak bir noktaya tiklanınca aradaki
- * slaytlarin uzerinden supurmez; dogrudan tek kayisla gelir.
+ * React ile: HER gecis TEK ADIMLIK yonlu kayma. Mouse veya parmakla suruklenebilir.
  */
 export default function BannerSlider({ onOpen }: Props) {
   const [banners, setBanners] = useState<TournamentAd[]>([])
   const [current, setCurrent] = useState(0)
   // Devam eden gecis: hedef indeks + yon (1=ileri/sagdan, -1=geri/soldan) + faz.
-  // 'enter' = slaytlar baslangic konumuna (gecissiz) yerlesir; 'run' = son konuma animasyon.
   const [anim, setAnim] = useState<{ to: number; dir: 1 | -1; phase: 'enter' | 'run' } | null>(null)
-  const touchX = useRef<number | null>(null)
+  const dragX = useRef<number | null>(null) // surukleme baslangic X'i (mouse/touch)
+  const draggedRef = useRef(false) // esigi asan surukleme oldu mu -> tiklamayi bastir
   const reducedRef = useRef(false)
 
   useEffect(() => {
@@ -102,16 +102,21 @@ export default function BannerSlider({ onOpen }: Props) {
 
   if (banners.length === 0) return null
 
-  // Parmakla gezinme (mobil): yatay kaydirma esigi 40px
-  const onTouchStart = (e: TouchEvent) => {
-    touchX.current = e.touches[0].clientX
+  // Mouse + parmak surukleme (Pointer Events tek elden yonetir).
+  const onPointerDown = (e: PointerEvent) => {
+    if (!multi) return
+    dragX.current = e.clientX
+    draggedRef.current = false
   }
-  const onTouchEnd = (e: TouchEvent) => {
-    if (touchX.current == null) return
-    const dx = e.changedTouches[0].clientX - touchX.current
-    touchX.current = null
-    if (Math.abs(dx) < 40) return
-    dx < 0 ? next() : prev()
+  const onPointerMove = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    if (Math.abs(e.clientX - dragX.current) > 8) draggedRef.current = true
+  }
+  const onPointerUp = (e: PointerEvent) => {
+    if (dragX.current == null) return
+    const dx = e.clientX - dragX.current
+    dragX.current = null
+    if (Math.abs(dx) >= SWIPE_MIN) (dx < 0 ? next : prev)()
   }
 
   // Bir slaytin translateX konumu (yuzde) + gecis. role: mevcut mu, giren mi.
@@ -125,7 +130,7 @@ export default function BannerSlider({ onOpen }: Props) {
     return { transform: `translateX(${x}%)`, transition }
   }
 
-  // Tek bir slaytin ic yapisi (tasarim ayni: sol panel + sag gorsel). role -> konum stili.
+  // Tek bir slaytin ic yapisi (sol panel + sag gorsel). role -> konum stili.
   const renderSlide = (b: TournamentAd, role: 'current' | 'incoming') => {
     const hasText = !!(b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta)
     return (
@@ -134,7 +139,13 @@ export default function BannerSlider({ onOpen }: Props) {
         type="button"
         className={`bs-slide${hasText ? ' has-text' : ''}${role === 'incoming' ? ' is-incoming' : ''}`}
         style={transformFor(role)}
-        onClick={() => !animating && b.tournament_id != null && onOpen(b.tournament_id)}
+        onClick={() => {
+          if (draggedRef.current) {
+            draggedRef.current = false
+            return // surukleme oldu -> tiklamayi yut
+          }
+          if (!animating && b.tournament_id != null) onOpen(b.tournament_id)
+        }}
         disabled={b.tournament_id == null}
         aria-label={b.title || b.tournament_name || 'Banner'}
         aria-hidden={role === 'incoming' ? true : undefined}
@@ -157,39 +168,23 @@ export default function BannerSlider({ onOpen }: Props) {
               </span>
             )}
             {b.cta && <span className="bs-cta">{b.cta}</span>}
-            {/* Noktalar sol panelin altinda (Christie's gibi) */}
-            {multi && (
-              <span className="bs-dots" onClick={(e) => e.stopPropagation()}>
-                {banners.map((_, d) => (
-                  <span
-                    key={d}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Banner ${d + 1}`}
-                    className={d === current ? 'active' : ''}
-                    onClick={() => goTo(d)}
-                    onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && goTo(d)}
-                  />
-                ))}
-              </span>
-            )}
           </span>
         )}
         <span className="bs-media">
-          <img src={srcOf(b.image)} alt={b.title || b.tournament_name || ''} loading="lazy" />
+          <img src={srcOf(b.image)} alt={b.title || b.tournament_name || ''} loading="lazy" draggable={false} />
         </span>
       </button>
     )
   }
 
-  const noneHaveText = !banners.some((b) => b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta)
-
   return (
     <div
       className="banner-slider"
       data-count={banners.length}
-      onTouchStart={multi ? onTouchStart : undefined}
-      onTouchEnd={multi ? onTouchEnd : undefined}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={() => (dragX.current = null)}
     >
       {/* Gorus penceresi: mevcut slayt akista (yuksekligi verir), giren slayt ustune mutlak biner */}
       <div className="bs-viewer">
@@ -197,36 +192,21 @@ export default function BannerSlider({ onOpen }: Props) {
         {anim && renderSlide(banners[anim.to], 'incoming')}
       </div>
 
-      {/* Yazisiz (ciplak gorsel) bannerlarda noktalar ortada altta */}
-      {multi && noneHaveText && (
-        <div className="bs-dots bs-dots-float">
-          {banners.map((_, d) => (
-            <button
-              key={d}
-              type="button"
-              className={d === current ? 'active' : ''}
-              onClick={() => goTo(d)}
-              aria-label={`Banner ${d + 1}`}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* Sag-sol beyaz gezinme oklari (birden fazla banner) */}
+      {/* Sag-sol beyaz oklar (halkasiz) */}
       {multi && (
         <>
           <button type="button" className="bs-arrow bs-arrow-prev" onClick={prev} aria-label="Önceki banner">
-            <Icon name="caret-left" size={22} />
+            <Icon name="caret-left" size={34} />
           </button>
           <button type="button" className="bs-arrow bs-arrow-next" onClick={next} aria-label="Sonraki banner">
-            <Icon name="caret-right" size={22} />
+            <Icon name="caret-right" size={34} />
           </button>
         </>
       )}
 
-      {/* Mobilde her zaman altta noktalar (parmakla gezinme gostergesi) */}
+      {/* Noktalar: slider'in ALTINDA (ortali) */}
       {multi && (
-        <div className="bs-dots bs-dots-mobile">
+        <div className="bs-dots bs-dots-below">
           {banners.map((_, d) => (
             <button
               key={d}

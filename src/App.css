@@ -6739,6 +6739,10 @@ button.stat-chip:hover {
    editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
+  /* Mouse/parmak surukleme: yatay kaydirmayi biz yonetiriz (dikey scroll serbest),
+     surukleme sirasinda metin secilmesin. */
+  touch-action: pan-y;
+  user-select: none;
   /* TUM slaytlar icin TEK sabit yukseklik. Yazili/yazisiz banner ve farkli metin
      uzunlugu fark etmez -> slider hep ayni boyda, gecislerde ziplama olmaz. */
   --bs-h: clamp(460px, 62vh, 680px);
@@ -6879,20 +6883,14 @@ button.stat-chip:hover {
   background: #fff;
   color: #111;
 }
-.bs-panel[data-dark] .bs-dots span {
-  background: rgba(255, 255, 255, 0.4);
-}
-.bs-panel[data-dark] .bs-dots span.active {
-  background: #fff;
-}
-/* Noktalar: sol panel altinda (Christie's gibi) */
-.bs-panel .bs-dots {
+/* Noktalar: slider'in ALTINDA, ortali (sand zemin uzerinde koyu noktalar) */
+.bs-dots-below {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0 4px;
 }
-.bs-dots span,
-.bs-dots.bs-dots-float button {
+.bs-dots-below button {
   width: 8px;
   height: 8px;
   padding: 0;
@@ -6901,63 +6899,43 @@ button.stat-chip:hover {
   background: color-mix(in srgb, var(--med-ink) 30%, transparent);
   cursor: pointer;
   transition: width 0.2s ease, background 0.2s ease;
-  display: inline-block;
 }
-.bs-dots span.active {
+.bs-dots-below button.active {
   width: 22px;
   background: var(--med-ink);
 }
-/* Yazisiz bannerlar icin ortada yuzen noktalar (gorsel uzeri) */
-.bs-dots-float {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 16px;
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-}
-.bs-dots.bs-dots-float button {
-  background: rgba(255, 255, 255, 0.55);
-}
-.bs-dots.bs-dots-float button.active {
-  width: 22px;
-  background: #fff;
-}
 
-/* Sag-sol beyaz gezinme oklari (gorsel uzerine biner) */
+/* Sag-sol oklar: HALKASIZ, beyaz, buyuk (gorsel uzerine biner) */
 .bs-arrow {
   position: absolute;
-  top: 50%;
+  top: calc(var(--bs-h) / 2); /* okları GORSEL merkezine hizala (alttaki noktalar sayilmaz) */
   transform: translateY(-50%);
   z-index: 3;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 56px;
+  height: 56px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
-  background: rgba(255, 255, 255, 0.9);
-  color: #111;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
+  background: none;
+  color: #fff;
   cursor: pointer;
-  transition: background 0.15s ease, opacity 0.15s ease;
+  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55));
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.bs-arrow svg {
+  width: 34px;
+  height: 34px;
 }
 .bs-arrow:hover {
-  background: #fff;
+  transform: translateY(-50%) scale(1.08);
 }
 .bs-arrow-prev {
   left: clamp(10px, 2vw, 20px);
 }
 .bs-arrow-next {
   right: clamp(10px, 2vw, 20px);
-}
-
-/* Mobilde altta ortalanmis nokta gostergesi (parmakla gezinme) — masaustunde gizli */
-.bs-dots.bs-dots-mobile {
-  display: none;
 }
 
 @media (max-width: 720px) {
@@ -6977,39 +6955,14 @@ button.stat-chip:hover {
   .bs-slide.has-text .bs-media img {
     height: clamp(180px, 46vw, 260px);
   }
-  /* Mobilde panel-ici ve yuzen noktalar yerine altta tek satir goster */
-  .bs-panel .bs-dots,
-  .bs-dots.bs-dots-float {
-    display: none;
-  }
-  .bs-dots.bs-dots-mobile {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 12px 0 4px;
-  }
-  .bs-dots.bs-dots-mobile button {
-    width: 8px;
-    height: 8px;
-    padding: 0;
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: color-mix(in srgb, var(--med-ink) 30%, transparent);
-    cursor: pointer;
-    transition: width 0.2s ease, background 0.2s ease;
-  }
-  .bs-dots.bs-dots-mobile button.active {
-    width: 22px;
-    background: var(--med-ink);
-  }
-  /* Mobilde oklar daha kucuk */
+  /* Mobilde oklar biraz daha kucuk (yine halkasiz beyaz) */
   .bs-arrow {
-    width: 30px;
-    height: 30px;
+    width: 46px;
+    height: 46px;
   }
   .bs-arrow svg {
-    width: 16px;
-    height: 16px;
+    width: 26px;
+    height: 26px;
   }
 }
 
@@ -15736,4 +15689,88 @@ select:-webkit-autofill {
   .ej-err:active {
     transform: none;
   }
+}
+
+/* Profilim > Bildirimler sekmesi: liste + tek/toplu sil */
+.profile-notifs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pn-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+.pn-clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-error);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.pn-clear:hover {
+  background: color-mix(in srgb, var(--color-error) 10%, transparent);
+}
+.pn-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pn-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+.pn-item.unread {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.pn-ic {
+  flex: none;
+  color: var(--accent);
+  display: inline-flex;
+}
+.pn-txt {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pn-t {
+  font-weight: 500;
+  color: var(--text);
+}
+.pn-b {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.pn-del {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+.pn-del:hover {
+  background: color-mix(in srgb, var(--color-error) 12%, transparent);
+  color: var(--color-error);
 }
