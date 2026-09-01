@@ -6322,6 +6322,7 @@ button.stat-chip:hover {
 /* Logo sola, hesap kontrolleri saga (auto margin bosluğu doldurur). */
 .ab-brand {
   margin-right: auto;
+  margin-left: -6px; /* logoyu sola biraz daha yaklastir (mobilde 46px override edilir) */
   display: inline-flex;
   align-items: center;
   background: none;
@@ -6330,8 +6331,10 @@ button.stat-chip:hover {
   cursor: pointer;
   border-radius: var(--radius-md);
 }
-.ab-brand:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+/* Logo uzerine gelince hover efekti YOK (istenmedi). Olasi global buton-hover'i da ez. */
+.ab-brand:hover,
+.ab-brand:focus-visible {
+  background: none;
 }
 .ab-logo-full {
   display: inline-flex;
