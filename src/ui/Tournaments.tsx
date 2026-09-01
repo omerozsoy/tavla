@@ -366,6 +366,86 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
     )
   }
 
+  // Aktif (open/running) ile BİTEN (finished) turnuvalari ayir: biten "Geçmiş"te.
+  const activeList = list.filter((tr) => tr.status !== 'finished')
+  const pastList = list.filter((tr) => tr.status === 'finished')
+
+  // Tek turnuva karti (aktif + gecmis listelerinde ortak render)
+  const renderCard = (tr: Tournament) => {
+    const full = tr.count >= tr.size
+    const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
+    const pool =
+      tr.prizes && tr.prizes.length > 0
+        ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0)
+        : tr.prize_coins ?? 0
+    const prizeCount = tr.prizes?.length ?? 0
+    return (
+      <button key={tr.id} className={`tcard tcard-${tr.status}`} onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
+        <div className="tcard-top">
+          <span className="tcard-name">{tr.name}</span>
+          <span className="tcard-badges">
+            {tr.status === 'open' && tr.starts_at && (
+              <Countdown target={tr.starts_at} onExpire={refreshList} />
+            )}
+            <span className={`tcard-status tcard-status-${tr.status}`}>
+              {t(`tourn.status.${tr.status}`)}
+            </span>
+          </span>
+        </div>
+        {tr.venue && (
+          <div className="tcard-venue">
+            <Icon name="pin" size={13} /> {tr.venue}
+          </div>
+        )}
+        <div className="tcard-stats">
+          <div className="tcard-stat">
+            <span className="tcard-ic gold" aria-hidden="true">
+              <Icon name="medal" size={17} />
+            </span>
+            <span className="tcard-sb">
+              <span className="tcard-val">
+                {pool.toLocaleString('tr-TR')} <small>coin</small>
+              </span>
+              <span className="tcard-lbl">
+                {t('tourn.prizePool')}
+                {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
+              </span>
+            </span>
+          </div>
+          <div className="tcard-stat">
+            <span className="tcard-ic brick" aria-hidden="true">
+              <Icon name="ticket" size={17} />
+            </span>
+            <span className="tcard-sb">
+              <span className="tcard-val">
+                {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+              </span>
+              {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
+            </span>
+          </div>
+          <div className="tcard-stat">
+            <span className="tcard-ic navy" aria-hidden="true">
+              <Icon name="users" size={17} />
+            </span>
+            <span className="tcard-sb">
+              <span className="tcard-val" data-full={full || undefined}>
+                {tr.count}
+                <small>/{tr.size}</small>
+              </span>
+              <span className="tcard-lbl">{t('tourn.players')}</span>
+            </span>
+          </div>
+        </div>
+        <div className="tcard-bar" aria-hidden="true">
+          <span style={{ width: `${pct}%` }} />
+        </div>
+        <span className="tcard-cta">
+          {t('tourn.details')} <Icon name="arrow-right" size={15} />
+        </span>
+      </button>
+    )
+  }
+
   // ---- Liste + olustur ----
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -380,84 +460,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         ) : list.length === 0 ? (
           <div className="lb-empty">{t('tourn.empty')}</div>
         ) : (
-          <div className="tourn-list">
-            {list.map((tr) => {
-              const full = tr.count >= tr.size
-              const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
-              // Odul havuzu: prizes tablosu varsa toplami, yoksa prize_coins
-              const pool =
-                tr.prizes && tr.prizes.length > 0
-                  ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0)
-                  : tr.prize_coins ?? 0
-              const prizeCount = tr.prizes?.length ?? 0
-              return (
-                <button key={tr.id} className={`tcard tcard-${tr.status}`} onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
-                  <div className="tcard-top">
-                    <span className="tcard-name">{tr.name}</span>
-                    <span className="tcard-badges">
-                      {tr.status === 'open' && tr.starts_at && (
-                        <Countdown target={tr.starts_at} onExpire={refreshList} />
-                      )}
-                      <span className={`tcard-status tcard-status-${tr.status}`}>
-                        {t(`tourn.status.${tr.status}`)}
-                      </span>
-                    </span>
-                  </div>
-                  {tr.venue && (
-                    <div className="tcard-venue">
-                      <Icon name="pin" size={13} /> {tr.venue}
-                    </div>
-                  )}
-                  <div className="tcard-stats">
-                    <div className="tcard-stat">
-                      <span className="tcard-ic gold" aria-hidden="true">
-                        <Icon name="medal" size={17} />
-                      </span>
-                      <span className="tcard-sb">
-                        <span className="tcard-val">
-                          {pool.toLocaleString('tr-TR')} <small>coin</small>
-                        </span>
-                        <span className="tcard-lbl">
-                          {t('tourn.prizePool')}
-                          {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
-                        </span>
-                      </span>
-                    </div>
-                    <div className="tcard-stat">
-                      <span className="tcard-ic brick" aria-hidden="true">
-                        <Icon name="ticket" size={17} />
-                      </span>
-                      <span className="tcard-sb">
-                        <span className="tcard-val">
-                          {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
-                        </span>
-                        {/* Ucretsizse "Giris Ucreti" alt etiketini yazma */}
-                        {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
-                      </span>
-                    </div>
-                    <div className="tcard-stat">
-                      <span className="tcard-ic navy" aria-hidden="true">
-                        <Icon name="users" size={17} />
-                      </span>
-                      <span className="tcard-sb">
-                        <span className="tcard-val" data-full={full || undefined}>
-                          {tr.count}
-                          <small>/{tr.size}</small>
-                        </span>
-                        <span className="tcard-lbl">{t('tourn.players')}</span>
-                      </span>
-                    </div>
-                  </div>
-                  <div className="tcard-bar" aria-hidden="true">
-                    <span style={{ width: `${pct}%` }} />
-                  </div>
-                  <span className="tcard-cta">
-                    {t('tourn.details')} <Icon name="arrow-right" size={15} />
-                  </span>
-                </button>
-              )
-            })}
-          </div>
+          <>
+            {activeList.length > 0 ? (
+              <div className="tourn-list">{activeList.map(renderCard)}</div>
+            ) : (
+              <div className="lb-empty">{t('tourn.empty')}</div>
+            )}
+            {/* Biten turnuvalar: sayfanin sonunda "Geçmiş" basligi altinda */}
+            {pastList.length > 0 && (
+              <div className="tourn-past">
+                <h3 className="tourn-past-title">{t('tourn.past')}</h3>
+                <div className="tourn-list">{pastList.map(renderCard)}</div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

@@ -16004,3 +16004,26 @@ select:-webkit-autofill {
 .tcard.tcard-finished {
   border-left-color: var(--muted);
 }
+
+/* Turnuvalar: biten turnuvalar "Geçmiş" başlığı altında (sayfa sonu) */
+.tourn-past { margin-top: 22px; }
+.tourn-past-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tourn-past-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border, rgba(0,0,0,.1));
+}
+/* Biten kartlar gorsel olarak geri planda: hafif soluk, hover'da netlesir */
+.tourn-past .tcard { opacity: .78; }
+.tourn-past .tcard:hover { opacity: 1; }

@@ -13,9 +13,12 @@ class TournamentController extends Controller
     public function index()
     {
         $this->autoStartDue(); // son katilim tarihi + 1dk gecenleri baslat
-        $list = Tournament::whereIn('status', ['open', 'running'])
+        // Aktif (open/running) + BİTEN (finished) turnuvalar; biten GİZLENMEZ, frontend'de
+        // "Geçmiş" başlığı altında gösterilir. Aktifler önce, biten sonra (her biri yeni->eski).
+        $list = Tournament::whereIn('status', ['open', 'running', 'finished'])
+            ->orderByRaw("CASE WHEN status = 'finished' THEN 1 ELSE 0 END")
             ->orderByDesc('created_at')
-            ->limit(30)
+            ->limit(60)
             ->get()
             ->map(fn ($t) => $this->summary($t));
         return response()->json(['tournaments' => $list]);
