@@ -54,6 +54,7 @@ import {
   claimDaily,
   ping,
   markNotificationsRead,
+  deleteNotifications,
   inviteFriend,
   respondInvite,
   type GameInvite as GameInviteT,
@@ -290,7 +291,7 @@ export default function App() {
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
-  const [profileTab, setProfileTab] = useState<'info' | 'stats' | 'settings'>('info') // Profilim acilis sekmesi
+  const [profileTab, setProfileTab] = useState<'info' | 'stats' | 'settings' | 'notifications'>('info') // Profilim acilis sekmesi
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -3295,6 +3296,17 @@ export default function App() {
   const ownedBoards = boardThemeList.filter((b) => b.owned)
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
 
+  // Bildirim sil (Profilim > Bildirimler): tek (id) veya toplu (id yok). Optimistik.
+  function handleDeleteNotification(id: number) {
+    setNotifications((ns) => ns.filter((n) => n.id !== id))
+    deleteNotifications([id]).catch(() => {})
+  }
+  function handleDeleteAllNotifications() {
+    setNotifications([])
+    setUnreadNotif(0)
+    deleteNotifications().catch(() => {})
+  }
+
   // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
   const editProfilePage = editProfile ? (
     user && !profileEditMode ? (
@@ -3321,6 +3333,9 @@ export default function App() {
         onResendVerification={handleResendVerification}
         initialTab={profileTab}
         statsExtra={statsContent}
+        notifications={notifications}
+        onDeleteNotification={handleDeleteNotification}
+        onDeleteAllNotifications={handleDeleteAllNotifications}
         {...authProps}
         onCancel={() => (user ? setProfileEditMode(false) : setEditProfile(false))}
       />
@@ -3419,10 +3434,10 @@ export default function App() {
           items={notifications}
           unread={unreadNotif}
           onOpen={() => {
-            // Okundu = sil (sunucu da siler). Rozet + listeyi hemen bosalt ki tekrar
-            // acinca kaybolsun. Panel acik oldugu oturumda kendi anlik-goruntusunu gosterir.
+            // Okundu = SADECE okundu isaretle (silme YOK). Rozet 0'a duser; bildirimler
+            // kalir -> kullanici Profilim > Bildirimler sekmesinde gorup silebilir.
             setUnreadNotif(0)
-            setNotifications([])
+            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
             markNotificationsRead().catch(() => {})
           }}
         />

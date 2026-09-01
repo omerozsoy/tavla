@@ -35,9 +35,6 @@ function timeAgo(iso: string | null | undefined, t: (k: string, p?: Record<strin
 export default function NotificationBell({ items, unread, onOpen }: Props) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
-  // Acilinca listenin anlik goruntusu: okununca (App listeyi bosaltir) panel yine
-  // bu oturumda gorunur; kapatip acinca yeni (bos) liste gelir -> "okununca gider".
-  const [shown, setShown] = useState<AppNotification[]>([])
   // Panel position:fixed -> ust bar overflow (nowrap/scroll) paneli KIRPMAZ; sayfanin
   // altinda kalmaz. Konum, can butonunun ekran koordinatindan hesaplanir.
   const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
@@ -56,12 +53,11 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
   function toggle() {
     const next = !open
     if (next) {
-      setShown(items) // acilis aninda mevcut listeyi dondur
       if (ref.current) {
         const r = ref.current.getBoundingClientRect()
         setPos({ top: Math.round(r.bottom + 8), right: Math.round(Math.max(8, window.innerWidth - r.right)) })
       }
-      if (unread > 0) onOpen() // acinca okundu say (App: rozet 0 + listeyi bosalt + sunucuda sil)
+      if (unread > 0) onOpen() // acinca okundu isaretle (silme yok; liste kalir)
     }
     setOpen(next)
   }
@@ -82,11 +78,11 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
       {open && (
         <div className="notif-panel" style={{ position: 'fixed', top: pos.top, right: pos.right }}>
           <div className="notif-head">{t('notif.title')}</div>
-          {shown.length === 0 ? (
+          {items.length === 0 ? (
             <div className="notif-empty">{t('notif.empty')}</div>
           ) : (
             <ul className="notif-list">
-              {shown.map((n) => (
+              {items.map((n) => (
                 <li key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
                   <span className="notif-ic">
                     <Icon name={ICONS[n.icon ?? 'bell'] ?? 'bell'} size={16} />
