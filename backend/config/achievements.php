@@ -258,6 +258,7 @@ return [
         'anka_wp' => 2.0,          // flag_anka
         'improbable_wp' => 5.0,    // flag_improbable
         'howcome_wp' => 15.0,      // flag_howcome
+        'comeback_wp' => 20.0,     // flag_comeback (Eve Donus)
         'night_start' => 2, 'night_end' => 5,     // gece baykusu saat araligi [start,end)
         'morning_start' => 6, 'morning_end' => 8,  // gunaydin araligi
         'nemesis_beats' => 10,     // ayni rakibi bu kadar yen
