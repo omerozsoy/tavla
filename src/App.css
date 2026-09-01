@@ -6899,18 +6899,18 @@ button.stat-chip:hover {
   padding: 12px 0 4px;
 }
 .bs-dots-below button {
-  width: 8px;
-  height: 8px;
+  width: 14px;
+  height: 14px;
   padding: 0;
   border: 0;
-  border-radius: var(--radius-pill);
+  border-radius: 50%; /* YUVARLAK — lobi'de --radius-pill:0 oldugu icin acikca daire */
   background: color-mix(in srgb, var(--med-ink) 30%, transparent);
   cursor: pointer;
-  transition: width 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
 }
 .bs-dots-below button.active {
-  width: 22px;
   background: var(--med-ink);
+  transform: scale(1.3); /* aktif nokta daha iri, yuvarlak kalir */
 }
 
 /* Sag-sol oklar: HALKASIZ, beyaz, buyuk (gorsel uzerine biner) */
