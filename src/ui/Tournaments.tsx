@@ -391,7 +391,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   : tr.prize_coins ?? 0
               const prizeCount = tr.prizes?.length ?? 0
               return (
-                <button key={tr.id} className="tcard" onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
+                <button key={tr.id} className={`tcard tcard-${tr.status}`} onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
                   <div className="tcard-top">
                     <span className="tcard-name">{tr.name}</span>
                     <span className="tcard-badges">

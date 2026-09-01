@@ -15992,3 +15992,14 @@ select:-webkit-autofill {
 .tcard {
   border-left: 3px solid var(--accent);
 }
+
+/* Turnuva kartı sol şeridi DURUMA göre: açık=kiremit, canlı(running)=yeşil, bitti=gri */
+.tcard.tcard-open {
+  border-left-color: var(--accent);
+}
+.tcard.tcard-running {
+  border-left-color: var(--tv-green, #3f9e6a);
+}
+.tcard.tcard-finished {
+  border-left-color: var(--muted);
+}
