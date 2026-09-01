@@ -8619,7 +8619,7 @@ button.stat-chip:hover {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  margin-top: 8px; /* sticky baslik ile icerik arasi nefes */
+  margin-top: 20px; /* sticky baslik ile icerik arasi belirgin nefes */
 }
 .analysis-list {
   flex: 0 0 300px;
