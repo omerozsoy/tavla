@@ -80,7 +80,8 @@ import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
-import { PAGES, MENU_GROUP_ORDER } from './pages'
+import Footer, { type FooterItem } from './ui/Footer'
+import { PAGES, MENU_GROUP_ORDER, PAGE_BY_KEY } from './pages'
 import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
@@ -3739,6 +3740,19 @@ export default function App() {
     matchHistory: menuProps.onMatchHistory,
     info: menuProps.onInfo,
   }
+  // Footer kolonlari — merkezi kayittan (pages.ts). Handler/gate menu ile ayni mantik.
+  const footerColumns = [
+    { titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
+    { titleKey: 'foot.community', keys: ['tournaments', 'leaderboard', 'friends', 'calendar', 'clubs'] },
+    { titleKey: 'foot.content', keys: ['news', 'magazine'] },
+  ].map((col) => ({
+    titleKey: col.titleKey,
+    items: col.keys
+      .map((k) => PAGE_BY_KEY[k])
+      .filter((pg) => pg && !!pageHandlers[pg.key] && (pg.gate !== 'user' || !!user))
+      .map((pg): FooterItem => ({ key: pg.key, labelKey: pg.labelKey, onClick: pageHandlers[pg.key]! })),
+  }))
+
   const menuGroups = MENU_GROUP_ORDER.map((group) => ({
     group,
     items: PAGES.filter(
@@ -4267,6 +4281,7 @@ export default function App() {
               />
             </div>
             {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
+            <Footer columns={footerColumns} />
             </>
             )}
           </main>
