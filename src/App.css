@@ -15986,3 +15986,9 @@ select:-webkit-autofill {
   text-align: left;
   justify-content: flex-start;
 }
+
+/* Turnuvalar (.tcard) kartlarina da SOL KENAR VURGU ŞERİDİ (çentik) — Turnuva Takvimi
+   (.event-row) ile tutarli: 1px uniform kenar + 3px kiremit sol şerit. */
+.tcard {
+  border-left: 3px solid var(--accent);
+}
