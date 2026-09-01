@@ -32,12 +32,18 @@ export default function PlayerIdentity({
   className?: string
 }) {
   // Bayrak boyutu avatara oranli (mini-avatar rozeti); kucuk avatarda bile okunur kalsin.
-  const flagSize = Math.max(16, Math.round(size * 0.52))
+  const flagSize = Math.max(17, Math.round(size * 0.58))
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
       <span className="player-id-avatar">
         <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
-        {country && <CountryFlag code={country} size={flagSize} className="player-id-flag" />}
+        {country && (
+          <CountryFlag
+            code={country}
+            size={flagSize}
+            className={`player-id-flag${frame ? ' framed' : ''}`}
+          />
+        )}
       </span>
       <span className="player-id-col">
         <span className="player-id-name">{name}</span>
