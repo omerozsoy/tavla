@@ -2815,6 +2815,14 @@ export default function App() {
     if (stepsFrom.length === 0) return
     const offStep = stepsFrom.find((s) => s.to === 'off')
     if (offStep) {
+      // Toplama esnasinda bu tastan birden fazla oynama varyasyonu varsa
+      // (or. buyuk zarla topla VS kucuk zarla tahta ici ilerlet) otomatik
+      // toplama; yesil hedefleri goster ve secimi kullaniciya birak.
+      const variations = reachableFromChecker(turnStart, played, from)
+      if (variations.size > 1) {
+        setSelectedFrom(from)
+        return
+      }
       playSteps([offStep])
       return
     }
