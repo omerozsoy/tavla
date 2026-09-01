@@ -214,7 +214,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   </div>
                 </div>
                 {an && an.coins_history.length >= 2 ? (
-                  <LineChart data={an.coins_history} color="#e6b422" />
+                  <LineChart data={an.coins_history} dates={an.coins_dates} color="#e6b422" />
                 ) : !an ? (
                   <Skeleton w="100%" h={80} r={8} />
                 ) : (
@@ -232,7 +232,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   </div>
                 </div>
                 {an && an.rating_history.length >= 2 ? (
-                  <LineChart data={an.rating_history} />
+                  <LineChart data={an.rating_history} dates={an.rating_dates} />
                 ) : !an ? (
                   <Skeleton w="100%" h={80} r={8} />
                 ) : (
@@ -412,7 +412,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                       <div key={r.dice} className="dice-roll">
                         <span className="dice-roll-face">
                           {r.dice.split('-').map((d, di) => (
-                            <DiceFace key={di} n={Number(d)} size={22} />
+                            <DiceFace key={di} n={Number(d)} size={26} />
                           ))}
                         </span>
                         <span className="dice-roll-win">%{r.winRate}</span>

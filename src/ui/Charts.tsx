@@ -39,10 +39,12 @@ const fmtAxis = (n: number) => n.toLocaleString('tr-TR')
 
 export function LineChart({
   data,
+  dates,
   color = 'var(--accent)',
   height = 88,
 }: {
   data: number[]
+  dates?: string[] // data ile hizali gun (YYYY-MM-DD) — X ekseninde gosterilir
   color?: string
   height?: number
 }) {
@@ -68,21 +70,36 @@ export function LineChart({
   if (data.length < 2) return <div className="chart-empty">—</div>
 
   const H = boxH ?? height // olculmus yukseklik (yoksa prop)
+  const hasDates = !!(dates && dates.length === data.length)
+  // Eksen etiketlerine yer: solda Y degerleri, altta tarih
   const padT = 12
-  const padB = 14
-  const padR = 12
+  const padB = hasDates ? 26 : 14
+  const padL = 46
+  const padR = 14
   const min = Math.min(...data)
   const max = Math.max(...data)
   const span = Math.max(1e-9, max - min)
-  const innerW = Math.max(1, w - padR)
-  const step = innerW / (data.length - 1)
-  const Y = (v: number) => padT + (1 - (v - min) / span) * (H - padT - padB)
-  const pts = data.map((v, i) => ({ x: i * step, y: Y(v) }))
+  const plotW = Math.max(1, w - padL - padR)
+  const plotH = Math.max(1, H - padT - padB)
+  const baseY = padT + plotH
+  const X = (i: number) => padL + (plotW * i) / (data.length - 1)
+  const Y = (v: number) => padT + (1 - (v - min) / span) * plotH
+  const pts = data.map((v, i) => ({ x: X(i), y: Y(v) }))
   const line = monotonePath(pts)
   const first = pts[0]
   const lastP = pts[pts.length - 1]
-  const area = `${line} L ${lastP.x.toFixed(2)} ${H} L ${first.x.toFixed(2)} ${H} Z`
+  const area = `${line} L ${lastP.x.toFixed(2)} ${baseY} L ${first.x.toFixed(2)} ${baseY} Z`
   const last = data[data.length - 1]
+
+  // Y ekseni: min..max arasi 4 aralik = 5 deger (ara baremler)
+  const Y_TICKS = 4
+  const yVals = Array.from({ length: Y_TICKS + 1 }, (_, k) => min + (span * k) / Y_TICKS)
+  // X ekseni: en fazla 5 tarih etiketi (esit araliklarla)
+  const xCount = hasDates ? Math.min(5, data.length) : 0
+  const xIdx =
+    xCount > 1
+      ? Array.from({ length: xCount }, (_, k) => Math.round(((data.length - 1) * k) / (xCount - 1)))
+      : []
 
   return (
     <div className="line-chart-wrap" ref={ref}>
@@ -91,7 +108,6 @@ export function LineChart({
         width={w}
         height={H}
         viewBox={`0 0 ${w} ${H}`}
-        preserveAspectRatio="none"
         role="img"
         aria-label={t('charts.axisSummary', { min, max, last })}
       >
@@ -102,6 +118,18 @@ export function LineChart({
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
+        {/* Y baremleri: yatay gridline + sol deger etiketi */}
+        {yVals.map((v, k) => {
+          const y = Y(v)
+          return (
+            <g key={k}>
+              <line className="lc-grid" x1={padL} y1={y} x2={w - padR} y2={y} />
+              <text className="lc-tick lc-tick-y" x={padL - 6} y={y} dominantBaseline="middle" textAnchor="end">
+                {fmtAxis(Math.round(v))}
+              </text>
+            </g>
+          )
+        })}
         <path d={area} fill={`url(#lcg-${uid})`} />
         <path
           d={line}
@@ -114,12 +142,29 @@ export function LineChart({
         {/* Uc nokta: yumusak halka + dolu nokta */}
         <circle cx={lastP.x} cy={lastP.y} r="6" fill={color} opacity="0.15" />
         <circle cx={lastP.x} cy={lastP.y} r="3.1" fill={color} stroke="var(--card-bg)" strokeWidth="1.6" />
+        {/* X ekseni: gun/tarih etiketleri */}
+        {xIdx.map((i, k) => (
+          <text
+            key={k}
+            className="lc-tick lc-tick-x"
+            x={X(i)}
+            y={H - 8}
+            textAnchor={k === 0 ? 'start' : k === xIdx.length - 1 ? 'end' : 'middle'}
+          >
+            {fmtDay(dates![i])}
+          </text>
+        ))}
       </svg>
-      {/* Y-ekseni deger etiketleri (min/max) */}
-      <span className="lc-axis lc-max">{fmtAxis(max)}</span>
-      <span className="lc-axis lc-min">{fmtAxis(min)}</span>
     </div>
   )
+}
+
+// 'YYYY-MM-DD' -> 'gg.aa' (kisa gun.ay); gecersizse bos
+function fmtDay(iso?: string): string {
+  if (!iso) return ''
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso)
+  if (!m) return ''
+  return `${m[3]}.${m[2]}`
 }
 
 // Cubuk grafik: her oge {label, value, sub?, good?} — good=true yesil, false kirmizi/notr

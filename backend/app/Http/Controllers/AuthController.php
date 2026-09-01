@@ -573,11 +573,14 @@ class AuthController extends Controller
         $me = $request->user();
         $rows = \App\Models\MatchResult::where('user_id', $me->id)
             ->orderBy('id')
-            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr']);
+            ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'created_at']);
 
         $ratingHistory = $rows->map(fn ($r) => (int) $r->rating_after)->values();
-        $coinsHistory = $rows->filter(fn ($r) => $r->coins_after !== null)
-            ->map(fn ($r) => (int) $r->coins_after)->values();
+        $ratingDates = $rows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
+        // Coin gecmisi: null olmayanlar (tarihleriyle hizali)
+        $coinsRows = $rows->filter(fn ($r) => $r->coins_after !== null)->values();
+        $coinsHistory = $coinsRows->map(fn ($r) => (int) $r->coins_after)->values();
+        $coinsDates = $coinsRows->map(fn ($r) => optional($r->created_at)?->toDateString())->values();
 
         // Maç uzunluguna gore grupla (kazanma% + ortalama PR)
         $byLen = [];
@@ -613,7 +616,9 @@ class AuthController extends Controller
 
         return response()->json([
             'rating_history' => $ratingHistory,
+            'rating_dates' => $ratingDates,
             'coins_history' => $coinsHistory,
+            'coins_dates' => $coinsDates,
             'by_length' => $byLength,
             'wxp' => $wxp,
             'games' => $me->games_played ?? 0,
