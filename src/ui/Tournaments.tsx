@@ -15,14 +15,30 @@ import {
 } from '../api'
 import { Button } from '@/components/ui/button'
 
+// SEO-dostu URL: /turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
+// (applyFromPath son '-' parcasini id olarak alir). Eski /turnuvalar/{id} de calisir.
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/ı/g, 'i').replace(/ğ/g, 'g').replace(/ü/g, 'u')
+    .replace(/ş/g, 's').replace(/ö/g, 'o').replace(/ç/g, 'c')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+export function tournUrlSlug(t: { id: number; name: string }): string {
+  const s = slugify(t.name || '')
+  return s ? `${s}-${t.id}` : String(t.id)
+}
+
 interface Props {
   myId: number | null
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
   /** Acik turnuva detayi (URL: /turnuvalar/{id}). null -> liste. Ust bilesen (App) kontrol eder. */
   detailId?: number | null
-  /** Detay ac/kapat -> App URL'i gunceller (/turnuvalar/{id} <-> /turnuvalar). */
-  onOpenDetail?: (id: number | null) => void
+  /** Detay ac/kapat -> App URL'i gunceller. slug verilirse SEO-dostu URL (/turnuvalar/isim-{id}). */
+  onOpenDetail?: (id: number | null, slug?: string) => void
 }
 
 
@@ -66,6 +82,12 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
       ok = false
     }
   }, [detailId])
+
+  // Detay yuklendiginde URL'i SEO-dostu slug'a yukselt (banner/eski-id ile acildiysa da).
+  useEffect(() => {
+    if (active) onOpenDetail?.(active.id, tournUrlSlug(active))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active?.id])
 
 
 
@@ -114,9 +136,14 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
           </Button>
-          <button type="button" className="tourn-back-link" onClick={() => onOpenDetail?.(null)}>
-            <span aria-hidden="true">←</span> {t('tourn.back')}
-          </button>
+          <Button
+            type="button"
+            variant="outline"
+            className="tourn-back-btn"
+            onClick={() => onOpenDetail?.(null)}
+          >
+            <Icon name="caret-left" size={16} /> {t('tourn.back')}
+          </Button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
           <div className="td-chips">
             <span className={`tr-status tr-status-${active.status}`}>
@@ -229,18 +256,26 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             </div>
           )}
 
-          {active.status === 'open' ? (
-            <div className="tourn-players">
-              <h3>{t('tourn.players')}</h3>
-              {active.players?.map((p) => (
+          {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
+          <div className="tourn-players">
+            <h3>
+              <Icon name="users" size={16} /> {t('tourn.players')}{' '}
+              <span className="tourn-players-count">{active.count}/{active.size}</span>
+            </h3>
+            {active.players && active.players.length > 0 ? (
+              active.players.map((p) => (
                 <div key={p.id} className="tourn-prow">
                   <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" />
                   <b>{p.rating}</b>
                 </div>
-              ))}
-              <div className="tourn-wait">{t('tourn.waitFull')}</div>
-            </div>
-          ) : (
+              ))
+            ) : (
+              <div className="tourn-wait">{t('tourn.noPlayers')}</div>
+            )}
+            {active.status === 'open' && <div className="tourn-wait">{t('tourn.waitFull')}</div>}
+          </div>
+
+          {active.status !== 'open' && (
             <div className="tourn-bracket">
               {active.bracket?.map((round, ri) => (
                 <div key={ri} className="tourn-round">
@@ -356,7 +391,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   : tr.prize_coins ?? 0
               const prizeCount = tr.prizes?.length ?? 0
               return (
-                <button key={tr.id} className="tcard" onClick={() => onOpenDetail?.(tr.id)}>
+                <button key={tr.id} className="tcard" onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
                   <div className="tcard-top">
                     <span className="tcard-name">{tr.name}</span>
                     <span className="tcard-badges">
