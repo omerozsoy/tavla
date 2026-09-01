@@ -10,6 +10,7 @@ import {
 import PlayerIdentity from './PlayerIdentity'
 import { BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
+import { DiceFace } from './DiceFace'
 import { Skeleton } from './Skeleton'
 import { Button } from '@/components/ui/button'
 
@@ -409,7 +410,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
                   <div className="dice-grid">
                     {dSide.rolls.map((r) => (
                       <div key={r.dice} className="dice-roll">
-                        <span className="dice-roll-face">{r.dice.replace('-', ' · ')}</span>
+                        <span className="dice-roll-face">
+                          {r.dice.split('-').map((d, di) => (
+                            <DiceFace key={di} n={Number(d)} size={22} />
+                          ))}
+                        </span>
                         <span className="dice-roll-win">%{r.winRate}</span>
                         <span className="dice-roll-meta">
                           {t('dice.plays', { n: r.n })}
