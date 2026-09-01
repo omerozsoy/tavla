@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
@@ -43,6 +43,20 @@ export default function PositionAnalyzer({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  // iOS Safari "asagi cek-yenile" (pull-to-refresh) analiz sayfasini kazara yenileyip
+  // dizilimi standarda donduruyordu. Analiz acikken sayfa overscroll'unu kapat; kapaninca geri al.
+  useEffect(() => {
+    const de = document.documentElement
+    const b = document.body
+    const prevDe = de.style.overscrollBehaviorY
+    const prevB = b.style.overscrollBehaviorY
+    de.style.overscrollBehaviorY = 'none'
+    b.style.overscrollBehaviorY = 'none'
+    return () => {
+      de.style.overscrollBehaviorY = prevDe
+      b.style.overscrollBehaviorY = prevB
+    }
+  }, [])
   const [pts, setPts] = useState<number[]>(() => initialState().points)
   const [bar, setBar] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
   const [off, setOff] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
@@ -313,7 +327,7 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
-    <div className="analyzer">
+    <div className="analyzer" style={{ overscrollBehavior: 'contain' }}>
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
         <Button variant="secondary" className="analyzer-close" onClick={onClose}>
