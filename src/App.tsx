@@ -79,7 +79,8 @@ import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
-import SideMenu from './ui/SideMenu'
+import SideMenu, { type NavItem } from './ui/SideMenu'
+import { PAGES, MENU_GROUP_ORDER } from './pages'
 import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
@@ -3296,11 +3297,11 @@ export default function App() {
     )
   }
 
-  // Auth kontrolu bitene kadar bekle
+  // Auth kontrolu bitene kadar bekle (uygulama aciliyor -> "Yukleniyor", analiz DEGIL)
   if (!authChecked) {
     return (
       <div className="register-overlay">
-        <div className="register-card">{t('an.loading')}</div>
+        <div className="register-card">{t('common.loading')}</div>
       </div>
     )
   }
@@ -3717,6 +3718,46 @@ export default function App() {
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
 
+  // Sol menu ogeleri MERKEZI SAYFA KAYDINDAN (pages.ts) turetilir. Handler'lar menuProps'tan
+  // eslenir; gorunurluk: inMenu + handler tanimli mi ( or. premium'da onMembership undefined)
+  // + gate ('user' -> giris). hideInGame filtresini SideMenu kendi inGame'ine gore uygular.
+  const pageHandlers: Record<string, (() => void) | undefined> = {
+    solo: menuProps.onSolo,
+    match: menuProps.onNewGame,
+    aiGame: menuProps.onAiGame,
+    playFriend: menuProps.onPlayFriend,
+    tournaments: menuProps.onTournaments,
+    leaderboard: menuProps.onLeaderboard,
+    friends: menuProps.onFriends,
+    membership: menuProps.onMembership,
+    calendar: menuProps.onCalendar,
+    clubs: menuProps.onClubs,
+    news: menuProps.onNews,
+    magazine: menuProps.onMagazine,
+    analyzer: menuProps.onAnalyzer,
+    blunders: menuProps.onBlunders,
+    matchHistory: menuProps.onMatchHistory,
+    info: menuProps.onInfo,
+  }
+  const menuGroups = MENU_GROUP_ORDER.map((group) => ({
+    group,
+    items: PAGES.filter(
+      (pg) =>
+        pg.group === group &&
+        pg.inMenu !== false &&
+        !!pageHandlers[pg.key] &&
+        (pg.gate !== 'user' || !!user),
+    ).map(
+      (pg): NavItem => ({
+        key: pg.key,
+        labelKey: pg.labelKey,
+        icon: pg.icon,
+        onClick: pageHandlers[pg.key]!,
+        hideInGame: pg.hideInGame,
+      }),
+    ),
+  }))
+
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0
   const inviteBanner = (invites.length > 0 || showTournNotices) && (
@@ -4070,7 +4111,9 @@ export default function App() {
           {accountBar}
           <SideMenu
             inGame={false}
-            {...menuProps}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            onResume={menuProps.onResume}
             active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
@@ -4114,7 +4157,9 @@ export default function App() {
           {accountBar}
           <SideMenu
             inGame={false}
-            {...menuProps}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            onResume={menuProps.onResume}
             active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}

@@ -18,6 +18,7 @@ export interface PageDef {
   group: MenuGroup
   gate?: 'user' | 'premium' // menude gorunurluk kosulu (yoksa herkese)
   hideInGame?: boolean // oyun ekraninda menude gizle
+  inMenu?: boolean // false ise sol menude gorunmez (yalnizca routable). Varsayilan true.
 }
 
 // Sira = menude gorunum sirasi. Grup basliklari CSS'te .menu-group ile ayrilir.
@@ -44,7 +45,7 @@ export const PAGES: PageDef[] = [
 
   // --- Araclar ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
-  { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools' },
+  { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools', inMenu: false },
   { key: 'blunders', slug: 'hata-gunlugu', labelKey: 'menu.blunders', icon: 'warning-circle', group: 'tools' },
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },
 
