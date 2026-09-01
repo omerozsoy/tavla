@@ -2901,8 +2901,8 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
-    const offStep = stepsFrom.find((s) => s.to === 'off')
-    if (offStep) {
+    const offSteps = stepsFrom.filter((s) => s.to === 'off')
+    if (offSteps.length > 0) {
       // Toplama esnasinda bu tastan birden fazla oynama varyasyonu varsa
       // (or. buyuk zarla topla VS kucuk zarla tahta ici ilerlet) otomatik
       // toplama; yesil hedefleri goster ve secimi kullaniciya birak.
@@ -2911,6 +2911,9 @@ export default function App() {
         setSelectedFrom(from)
         return
       }
+      // Sadece toplama mumkun ama birden fazla zarla olabiliyorsa: en kucuk
+      // yeterli zari harca, buyuk zar saklansin (toplarken sira zorunlulugu yok).
+      const offStep = offSteps.reduce((a, b) => (b.die < a.die ? b : a))
       playSteps([offStep])
       return
     }
