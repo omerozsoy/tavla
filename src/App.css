@@ -12754,9 +12754,16 @@ button.stat-chip:hover {
 }
 .prof-ov-top {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  /* 3'lu ust satir: profil | Premium | Tavla Tasarimlari */
+  grid-template-columns: 1.2fr 1fr 1fr;
   gap: 14px;
   margin: 6px 0 14px;
+  align-items: stretch;
+}
+/* Premium karti grid icinde: alt marj yok, sutunu doldur */
+.prof-ov-top .mem-status {
+  margin: 0;
+  height: 100%;
 }
 .prof-ov-id {
   display: flex;
@@ -15846,4 +15853,12 @@ select:-webkit-autofill {
   min-width: 18px;
   padding: 1px 6px;
   text-align: center;
+}
+
+/* Emil profil formu: etiketler SOLA dayali (ortali DEGIL) — temiz, okunur */
+.profile-form .form-grid [data-slot='label'] {
+  display: block;
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
 }
