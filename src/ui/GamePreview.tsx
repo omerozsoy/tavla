@@ -63,7 +63,7 @@ export default function GamePreview({ onClose }: { onClose: () => void }) {
       <main className="main game-scene">
         <div className="game-area">
           <Sidebar top={top} bottom={bottom} />
-          <ClockStack active="white" delay={12} white={60} black={60} final={30} topOff={0} bottomOff={0} />
+          <ClockStack active="white" delay={12} white={60} black={60} final={30} topScore={0} bottomScore={0} />
           <Board
             state={state}
             selectableFroms={new Set()}
