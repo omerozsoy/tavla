@@ -381,7 +381,32 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['rating' => $newRating, 'user' => $user]);
+        // Basarim (achievement) motoru — ayri, bagimsiz akis. Sayaclari gunceller + hak
+        // edilen rozetleri acar. Analiz sonrasi calisir (log parse edilmis olur). Asla
+        // mac akisini kirmaz: hata olursa sessizce yut + logla. Yeni acilanlar UI'a doner.
+        $unlocked = [];
+        try {
+            $extra = [
+                'gammons' => (int) $request->input('gammons', 0),
+                'backgammons' => (int) $request->input('backgammons', 0),
+                'min_win_prob' => $request->input('min_win_prob'),
+                'flags' => (array) $request->input('ach_flags', []),
+            ];
+            $ctx = app(\App\Services\Achievements\StatsUpdater::class)->updateForMatch($user, $result, $extra);
+            $user->unsetRelation('stat');
+            $newAch = app(\App\Services\Achievements\AchievementService::class)->evaluate($user, $ctx);
+            $unlocked = array_map(fn ($d) => [
+                'slug' => $d['slug'], 'name' => $d['name'], 'desc' => $d['desc'],
+                'icon' => $d['icon'], 'tier' => $d['tier'], 'rarity' => $d['rarity'],
+                'rewardCoin' => (int) ($d['reward_coin'] ?? 0),
+            ], $newAch);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Achievement evaluate failed', [
+                'match_result_id' => $result->id, 'user_id' => $user->id, 'err' => $e->getMessage(),
+            ]);
+        }
+
+        return response()->json(['rating' => $newRating, 'user' => $user, 'achievements' => $unlocked]);
     }
 
     // Rozet tanimlari (id => [ad, ikon]) — frontend ile ayni id'ler
@@ -506,6 +531,7 @@ class AuthController extends Controller
             'rank' => $rank,
             'form' => $form,
             'badges' => $user->badges ?? [],
+            'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),
         ]);
     }
 
