@@ -20,15 +20,15 @@
   line-height: 1.15;
 }
 .sm-lbl {
-  color: var(--text);
-  opacity: 0.75;
+  color: #cfc9bd; /* acik warm-gri: koyu sidebar'da net okunur */
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 1rem;
 }
 .sm-val {
-  color: var(--text);
+  color: #ffffff; /* parlak beyaz: "1" net gorunur */
   font-weight: 800;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
+  line-height: 1.1;
 }
 
 /* Alt oyuncu kartinda sirayi ters cevir (rating ustte, isim altta) DOM ile saglanir;
