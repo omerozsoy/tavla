@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -71,12 +72,15 @@ class FriendController extends Controller
             })
             ->first();
 
+        $meName = $me->nickname ?: $me->first_name ?: 'Bir oyuncu';
+
         if ($existing) {
-            // Karsi taraf zaten bana istek gonderdiyse -> kabul et
+            // Karsi taraf zaten bana istek gonderdiyse -> kabul et (karsilikli)
             if ($existing->status === 'pending' && $existing->user_id === $target->id) {
                 DB::table('friendships')->where('id', $existing->id)->update([
                     'status' => 'accepted', 'updated_at' => now(),
                 ]);
+                Notification::notify($target->id, "{$meName} arkadaşlık isteğini kabul etti", null, 'users');
                 return response()->json(['status' => 'accepted']);
             }
             return response()->json(['status' => $existing->status]);
@@ -90,18 +94,28 @@ class FriendController extends Controller
             'updated_at' => now(),
         ]);
 
+        // Isteği alan kullaniciyi bildirimle uyar (can + toast frontend'de).
+        Notification::notify($target->id, "{$meName} sana arkadaşlık isteği gönderdi", null, 'user-plus');
+
         return response()->json(['status' => 'pending']);
     }
 
     // Gelen istegi kabul et (istegi gonderen = $userId)
     public function accept(Request $request, int $userId)
     {
-        $me = $request->user()->id;
+        $meUser = $request->user();
+        $me = $meUser->id;
         $updated = DB::table('friendships')
             ->where('user_id', $userId)
             ->where('friend_id', $me)
             ->where('status', 'pending')
             ->update(['status' => 'accepted', 'updated_at' => now()]);
+
+        // Isteği gonderen kullaniciyi "kabul edildi" diye uyar.
+        if ($updated > 0) {
+            $meName = $meUser->nickname ?: $meUser->first_name ?: 'Bir oyuncu';
+            Notification::notify($userId, "{$meName} arkadaşlık isteğini kabul etti", null, 'users');
+        }
 
         return response()->json(['ok' => $updated > 0]);
     }

@@ -690,6 +690,8 @@ export default function App() {
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
+  const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
+  const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
@@ -2207,6 +2209,8 @@ export default function App() {
       setTournNotices([])
       setNotifications([])
       setUnreadNotif(0)
+      seenNotifRef.current.clear()
+      notifPrimedRef.current = false
       return
     }
     let cancelled = false
@@ -2218,7 +2222,16 @@ export default function App() {
             setTournNotices(r.tournament_matches ?? [])
             setRewardReady(!!r.reward_ready)
             setRewardSecs(r.reward_seconds ?? 0)
-            setNotifications(r.notifications ?? [])
+            const notifs = r.notifications ?? []
+            // Yeni (daha once gorulmemis) bildirimleri toast ile aktif uyar.
+            // Ilk ping'te (primed=false) eski okunmamislari toast'lama, sadece kaydet.
+            const fresh = notifs.filter((n) => !seenNotifRef.current.has(n.id))
+            notifs.forEach((n) => seenNotifRef.current.add(n.id))
+            if (notifPrimedRef.current && fresh.length > 0) {
+              notify.info(fresh[0].title) // notifs newest-first -> fresh[0] en yeni
+            }
+            notifPrimedRef.current = true
+            setNotifications(notifs)
             setUnreadNotif(r.unread ?? 0)
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
