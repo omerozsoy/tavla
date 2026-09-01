@@ -49,14 +49,17 @@ export function LineChart({
   const { t } = useT()
   const ref = useRef<HTMLDivElement>(null)
   const [w, setW] = useState(320)
+  // Yukseklik de OLCULUR: grafik kutuyu (sd-card) doldursun (prop = baslangic/yedek).
+  const [boxH, setBoxH] = useState<number | null>(null)
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
 
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const ro = new ResizeObserver((entries) => {
-      const cw = entries[0]?.contentRect.width
-      if (cw && cw > 0) setW(Math.round(cw))
+      const r = entries[0]?.contentRect
+      if (r?.width && r.width > 0) setW(Math.round(r.width))
+      if (r?.height && r.height > 0) setBoxH(Math.round(r.height))
     })
     ro.observe(el)
     return () => ro.disconnect()
@@ -64,6 +67,7 @@ export function LineChart({
 
   if (data.length < 2) return <div className="chart-empty">—</div>
 
+  const H = boxH ?? height // olculmus yukseklik (yoksa prop)
   const padT = 12
   const padB = 14
   const padR = 12
@@ -72,12 +76,12 @@ export function LineChart({
   const span = Math.max(1e-9, max - min)
   const innerW = Math.max(1, w - padR)
   const step = innerW / (data.length - 1)
-  const Y = (v: number) => padT + (1 - (v - min) / span) * (height - padT - padB)
+  const Y = (v: number) => padT + (1 - (v - min) / span) * (H - padT - padB)
   const pts = data.map((v, i) => ({ x: i * step, y: Y(v) }))
   const line = monotonePath(pts)
   const first = pts[0]
   const lastP = pts[pts.length - 1]
-  const area = `${line} L ${lastP.x.toFixed(2)} ${height} L ${first.x.toFixed(2)} ${height} Z`
+  const area = `${line} L ${lastP.x.toFixed(2)} ${H} L ${first.x.toFixed(2)} ${H} Z`
   const last = data[data.length - 1]
 
   return (
@@ -85,8 +89,9 @@ export function LineChart({
       <svg
         className="line-chart"
         width={w}
-        height={height}
-        viewBox={`0 0 ${w} ${height}`}
+        height={H}
+        viewBox={`0 0 ${w} ${H}`}
+        preserveAspectRatio="none"
         role="img"
         aria-label={t('charts.axisSummary', { min, max, last })}
       >
