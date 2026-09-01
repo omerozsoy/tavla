@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Icon, type IconName } from './Icon'
+import { useEffect, useRef, useState } from 'react'
+import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
 import { countryOptions, COUNTRY_CODES } from '../countries'
@@ -7,9 +7,8 @@ import { PROVINCES } from '../provinces'
 import DatePicker from './DatePicker'
 import { useT } from '../i18n'
 import * as api from '../api'
-import type { ServerUser, AppNotification } from '../api'
+import type { ServerUser } from '../api'
 import AvatarCropper from './AvatarCropper'
-import { StatCards } from './HomePanels'
 import { useToast } from './Toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -55,26 +54,8 @@ interface Props {
   emailUnverified?: boolean // e-posta dogrulanmadi -> profilde uyari
   resendState?: 'idle' | 'sending' | 'sent'
   onResendVerification?: () => void
-  onRenew?: () => void // uyelik kartinda "Uyeligi Yenile" -> odeme modali
-  onToggleAutoRenew?: (enabled: boolean) => void // otomatik yenileme ac/kapat
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
-  statsExtra?: ReactNode // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik
-  settingsSlot?: ReactNode // Profilim "Ayarlar" sekmesine gomulu ayarlar (BoardSettings)
-  initialTab?: 'info' | 'stats' | 'settings' | 'notifications' // acilista secili sekme
-  notifications?: AppNotification[] // Profilim "Bildirimler" sekmesi
-  onDeleteNotification?: (id: number) => void // tek bildirim sil
-  onDeleteAllNotifications?: () => void // hepsini sil
-}
-
-// Bildirim ikon adi -> gecerli Icon adina esle (bilinmeyen -> bell)
-const NOTIF_ICON: Record<string, IconName> = {
-  bell: 'bell',
-  crown: 'crown',
-  medal: 'medal',
-  star: 'star',
-  trophy: 'trophy',
-  coin: 'coin',
 }
 
 export default function Auth({
@@ -87,36 +68,16 @@ export default function Auth({
   emailUnverified,
   resendState = 'idle',
   onResendVerification,
-  onRenew,
-  onToggleAutoRenew,
   modal,
   page,
-  statsExtra,
-  settingsSlot,
-  initialTab,
-  notifications,
-  onDeleteNotification,
-  onDeleteAllNotifications,
 }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
   useEscape(onCancel)
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
-  // Profilim sayfasi sekmeleri (yalniz giris yapan editUser): info | stats | settings
-  const [profTab, setProfTab] = useState<'info' | 'stats' | 'settings' | 'notifications'>(initialTab ?? 'info')
+  // Profil DUZENLEME = sadece form; sekme yok (istatistik/bildirim/üyelik ana sayfada).
   const editing = !!(editUser || editGuest)
-  // Uyelik durumu (yalniz giris yapan editUser icin): tip + bitis tarihi + kalan gun
-  const memPlan = editUser?.plan_active ?? 'free'
-  const memPremium = memPlan === 'star' || memPlan === 'starpro'
-  const memUntil = editUser?.plan_until ?? null
-  const memDaysLeft = memUntil
-    ? Math.max(0, Math.ceil((new Date(memUntil).getTime() - Date.now()) / 86400000))
-    : null
-  const memUntilFmt = memUntil ? new Date(memUntil).toLocaleDateString() : ''
-  const memSince = editUser?.plan_since ?? null
-  const memSinceFmt = memSince ? new Date(memSince).toLocaleDateString() : ''
-  const memAutoRenew = editUser?.auto_renew ?? false
   const seed = editUser
     ? api.toProfile(editUser)
     : editGuest || { firstName: '', lastName: '', country: '', province: '', nickname: '', email: '' }
@@ -649,158 +610,11 @@ export default function Auth({
         {/* EDITING: profil duzenleme (tek kolon; DAVRANIS DEGISMEDI) */}
         {editing && (
           <>
-            {/* Profilim sekmeleri (yalniz giris yapan kullanici) */}
-            {editUser && (
-              <div className="prof-tabs" role="tablist">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={profTab === 'info'}
-                  className={`prof-tab ${profTab === 'info' ? 'active' : ''}`}
-                  onClick={() => setProfTab('info')}
-                >
-                  <Icon name="user" size={16} /> {t('prof.tabInfo')}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={profTab === 'stats'}
-                  className={`prof-tab ${profTab === 'stats' ? 'active' : ''}`}
-                  onClick={() => setProfTab('stats')}
-                >
-                  <Icon name="chart" size={16} /> {t('menu.myStats')}
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={profTab === 'notifications'}
-                  className={`prof-tab ${profTab === 'notifications' ? 'active' : ''}`}
-                  onClick={() => setProfTab('notifications')}
-                >
-                  <Icon name="bell" size={16} /> {t('notif.title')}
-                </button>
-                {settingsSlot && (
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={profTab === 'settings'}
-                    className={`prof-tab ${profTab === 'settings' ? 'active' : ''}`}
-                    onClick={() => setProfTab('settings')}
-                  >
-                    <Icon name="settings" size={16} /> {t('menu.settings')}
-                  </button>
-                )}
-              </div>
-            )}
-            {/* Istatistiklerim sekmesi: ozet kartlar + (varsa) detayli istatistik */}
-            {editUser && profTab === 'stats' && (
-              <section className="profile-stats-sec">
-                <StatCards
-                  rating={editUser.rating ?? 0}
-                  coins={editUser.coins ?? 0}
-                  wins={editUser.wins ?? 0}
-                  games={editUser.games_played ?? 0}
-                />
-                {statsExtra}
-              </section>
-            )}
-            {/* Ayarlar sekmesi (ust bardan tasindi) */}
-            {editUser && profTab === 'settings' && settingsSlot && (
-              <section className="profile-settings-sec">{settingsSlot}</section>
-            )}
-            {/* Bildirimler sekmesi: liste + tek tek / topluca sil */}
-            {editUser && profTab === 'notifications' && (
-              <section className="profile-notifs">
-                {(notifications?.length ?? 0) === 0 ? (
-                  <div className="notif-empty">{t('notif.empty')}</div>
-                ) : (
-                  <>
-                    <div className="pn-bar">
-                      <button type="button" className="pn-clear" onClick={onDeleteAllNotifications}>
-                        <Icon name="trash" size={15} /> {t('notif.clearAll')}
-                      </button>
-                    </div>
-                    <ul className="pn-list">
-                      {notifications!.map((n) => (
-                        <li key={n.id} className={`pn-item ${n.read ? '' : 'unread'}`}>
-                          <span className="pn-ic">
-                            <Icon name={NOTIF_ICON[n.icon ?? 'bell'] ?? 'bell'} size={18} />
-                          </span>
-                          <span className="pn-txt">
-                            <span className="pn-t">{n.title}</span>
-                            {n.body && <span className="pn-b">{n.body}</span>}
-                          </span>
-                          <button
-                            type="button"
-                            className="pn-del"
-                            onClick={() => onDeleteNotification?.(n.id)}
-                            title={t('notif.delete')}
-                            aria-label={t('notif.delete')}
-                          >
-                            <Icon name="x" size={16} />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </section>
-            )}
-            {(!editUser || profTab === 'info') && (
+            {/* Profil DUZENLEME = SADECE form. İstatistikler/Bildirimler/Üyelik profil ANA
+                sayfasina (ProfileOverview) tasindi; burada yalniz duzenleme kalir. */}
+            {editing && (
               <>
             {avatarBlock}
-            {/* Uyelik durumu karti: tip (Premium solda/buyuk) + uye olma + bitis + kalan
-                gun + otomatik yenileme durumu + Yenile / Yenilemeyi iptal butonlari */}
-            {editUser && (
-              <div className="mem-status" data-plan={memPlan}>
-                <div className="mem-status-head">
-                  <span className={`mem-status-plan ${memPremium ? 'is-premium' : 'is-free'}`}>
-                    <Icon name={memPremium ? 'crown' : 'star'} size={22} />
-                    {memPremium ? t('mem.status.premium') : t('mem.status.free')}
-                  </span>
-                  {memPremium && (
-                    <span className={`mem-status-auto ${memAutoRenew ? 'on' : 'off'}`}>
-                      {memAutoRenew ? t('mem.status.autoOn') : t('mem.status.autoOff')}
-                    </span>
-                  )}
-                </div>
-                {memPremium && (
-                  <div className="mem-status-detail">
-                    {memSince && <span>{t('mem.status.since', { date: memSinceFmt })}</span>}
-                    {memUntil ? (
-                      <>
-                        <span>{t('mem.status.expires', { date: memUntilFmt })}</span>
-                        {memDaysLeft != null && (
-                          <span className="mem-status-days">
-                            {t('mem.status.daysLeft', { days: memDaysLeft })}
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      <span>{t('mem.status.lifetime')}</span>
-                    )}
-                  </div>
-                )}
-                {memPremium && (onRenew || onToggleAutoRenew) && (
-                  <div className="mem-status-actions">
-                    {onRenew && (
-                      <Button type="button" variant="default" onClick={onRenew}>
-                        <Icon name="crown" size={16} /> {t('mem.status.renew')}
-                      </Button>
-                    )}
-                    {onToggleAutoRenew && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => onToggleAutoRenew(!memAutoRenew)}
-                      >
-                        {memAutoRenew ? t('mem.status.cancelRenew') : t('mem.status.enableRenew')}
-                      </Button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
             <div className="form-grid">{profileInputs}</div>
             {!editUser && (
               <label>
@@ -832,7 +646,7 @@ export default function Auth({
         {!forgot && error && <div className="register-error" role="alert">{error}</div>}
 
         {/* Ana aksiyon grubu: [Vazgeç] [Kaydet] birlikte, sag hizali */}
-        {editing && (!editUser || profTab === 'info') && (
+        {editing && (
           <div className="mt-1 flex flex-wrap justify-end gap-3">
             {onCancel && (
               <Button type="button" variant="secondary" onClick={onCancel}>
@@ -874,7 +688,7 @@ export default function Auth({
 
         {/* Hesap aksiyonlari: Cikis Yap profil ust basligina tasindi (ProfileOverview);
             burada yalniz Hesabi Sil (Tehlikeli Bolge). */}
-        {editUser && profTab === 'info' && onDeleteAccount && (
+        {editUser && onDeleteAccount && (
           <>
             <Separator className="my-6" />
             {onDeleteAccount && (
