@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/ping', [PresenceController::class, 'ping']);
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
+    Route::post('/notifications/delete', [PresenceController::class, 'deleteNotifications']);
     Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);
     Route::post('/invites/{inviteId}/respond', [PresenceController::class, 'respond']);
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
 import { countryOptions, COUNTRY_CODES } from '../countries'
@@ -7,7 +7,7 @@ import { PROVINCES } from '../provinces'
 import DatePicker from './DatePicker'
 import { useT } from '../i18n'
 import * as api from '../api'
-import type { ServerUser } from '../api'
+import type { ServerUser, AppNotification } from '../api'
 import AvatarCropper from './AvatarCropper'
 import { StatCards } from './HomePanels'
 import { useToast } from './Toast'
@@ -61,7 +61,20 @@ interface Props {
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
   statsExtra?: ReactNode // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik
   settingsSlot?: ReactNode // Profilim "Ayarlar" sekmesine gomulu ayarlar (BoardSettings)
-  initialTab?: 'info' | 'stats' | 'settings' // acilista secili sekme
+  initialTab?: 'info' | 'stats' | 'settings' | 'notifications' // acilista secili sekme
+  notifications?: AppNotification[] // Profilim "Bildirimler" sekmesi
+  onDeleteNotification?: (id: number) => void // tek bildirim sil
+  onDeleteAllNotifications?: () => void // hepsini sil
+}
+
+// Bildirim ikon adi -> gecerli Icon adina esle (bilinmeyen -> bell)
+const NOTIF_ICON: Record<string, IconName> = {
+  bell: 'bell',
+  crown: 'crown',
+  medal: 'medal',
+  star: 'star',
+  trophy: 'trophy',
+  coin: 'coin',
 }
 
 export default function Auth({
@@ -81,6 +94,9 @@ export default function Auth({
   statsExtra,
   settingsSlot,
   initialTab,
+  notifications,
+  onDeleteNotification,
+  onDeleteAllNotifications,
 }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
@@ -88,7 +104,7 @@ export default function Auth({
   const photoInputRef = useRef<HTMLInputElement>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   // Profilim sayfasi sekmeleri (yalniz giris yapan editUser): info | stats | settings
-  const [profTab, setProfTab] = useState<'info' | 'stats' | 'settings'>(initialTab ?? 'info')
+  const [profTab, setProfTab] = useState<'info' | 'stats' | 'settings' | 'notifications'>(initialTab ?? 'info')
   const editing = !!(editUser || editGuest)
   // Uyelik durumu (yalniz giris yapan editUser icin): tip + bitis tarihi + kalan gun
   const memPlan = editUser?.plan_active ?? 'free'
@@ -654,6 +670,15 @@ export default function Auth({
                 >
                   <Icon name="chart" size={16} /> {t('menu.myStats')}
                 </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={profTab === 'notifications'}
+                  className={`prof-tab ${profTab === 'notifications' ? 'active' : ''}`}
+                  onClick={() => setProfTab('notifications')}
+                >
+                  <Icon name="bell" size={16} /> {t('notif.title')}
+                </button>
                 {settingsSlot && (
                   <button
                     type="button"
@@ -682,6 +707,44 @@ export default function Auth({
             {/* Ayarlar sekmesi (ust bardan tasindi) */}
             {editUser && profTab === 'settings' && settingsSlot && (
               <section className="profile-settings-sec">{settingsSlot}</section>
+            )}
+            {/* Bildirimler sekmesi: liste + tek tek / topluca sil */}
+            {editUser && profTab === 'notifications' && (
+              <section className="profile-notifs">
+                {(notifications?.length ?? 0) === 0 ? (
+                  <div className="notif-empty">{t('notif.empty')}</div>
+                ) : (
+                  <>
+                    <div className="pn-bar">
+                      <button type="button" className="pn-clear" onClick={onDeleteAllNotifications}>
+                        <Icon name="trash" size={15} /> {t('notif.clearAll')}
+                      </button>
+                    </div>
+                    <ul className="pn-list">
+                      {notifications!.map((n) => (
+                        <li key={n.id} className={`pn-item ${n.read ? '' : 'unread'}`}>
+                          <span className="pn-ic">
+                            <Icon name={NOTIF_ICON[n.icon ?? 'bell'] ?? 'bell'} size={18} />
+                          </span>
+                          <span className="pn-txt">
+                            <span className="pn-t">{n.title}</span>
+                            {n.body && <span className="pn-b">{n.body}</span>}
+                          </span>
+                          <button
+                            type="button"
+                            className="pn-del"
+                            onClick={() => onDeleteNotification?.(n.id)}
+                            title={t('notif.delete')}
+                            aria-label={t('notif.delete')}
+                          >
+                            <Icon name="x" size={16} />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </section>
             )}
             {(!editUser || profTab === 'info') && (
               <>

@@ -100,8 +100,26 @@ class PresenceController extends Controller
         ]);
     }
 
-    // Bildirimleri okununca SIL (hepsi veya verilen id'ler). Okundu -> kalici degil.
+    // Bildirimleri OKUNDU isaretle (hepsi veya verilen id'ler). Silinmez -> kullanici
+    // profilinde gormeye devam eder; rozet (unread) 0'a duser. Silme ayri (deleteNotifications).
     public function readNotifications(Request $request)
+    {
+        $me = $request->user();
+        $data = $request->validate([
+            'ids' => ['nullable', 'array'],
+            'ids.*' => ['integer'],
+        ]);
+        $q = \App\Models\Notification::where('user_id', $me->id)->where('read', false);
+        if (! empty($data['ids'])) {
+            $q->whereIn('id', $data['ids']);
+        }
+        $q->update(['read' => true]);
+
+        return $this->ok();
+    }
+
+    // Bildirimleri SIL (tek tek: ids verilir; toplu: ids bos -> hepsi). Profil ekranindan.
+    public function deleteNotifications(Request $request)
     {
         $me = $request->user();
         $data = $request->validate([

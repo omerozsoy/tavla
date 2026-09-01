@@ -455,6 +455,13 @@ export async function markNotificationsRead(ids?: number[]): Promise<void> {
     body: JSON.stringify(ids ? { ids } : {}),
   })
 }
+// Bildirimleri sil (ids verilirse tek/seçili; verilmezse hepsi). Profil ekranından.
+export async function deleteNotifications(ids?: number[]): Promise<void> {
+  await req('/notifications/delete', {
+    method: 'POST',
+    body: JSON.stringify(ids ? { ids } : {}),
+  })
+}
 export async function inviteFriend(userId: number): Promise<{ code: string }> {
   return req(`/friends/${userId}/invite`, { method: 'POST' })
 }
