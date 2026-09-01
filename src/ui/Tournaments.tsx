@@ -15,8 +15,8 @@ import {
 } from '../api'
 import { Button } from '@/components/ui/button'
 
-// SEO-dostu URL: /turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
-// (applyFromPath son '-' parcasini id olarak alir). Eski /turnuvalar/{id} de calisir.
+// SEO-dostu URL: /online-turnuvalar/{isim-slug}-{id}. Id sonda kalir -> derin link cozumu
+// (applyFromPath son '-' parcasini id olarak alir). Eski /turnuvalar/... de calisir.
 function slugify(s: string): string {
   return s
     .toLowerCase()
@@ -35,9 +35,9 @@ interface Props {
   myId: number | null
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
-  /** Acik turnuva detayi (URL: /turnuvalar/{id}). null -> liste. Ust bilesen (App) kontrol eder. */
+  /** Acik turnuva detayi (URL: /online-turnuvalar/{id}). null -> liste. Ust bilesen (App) kontrol eder. */
   detailId?: number | null
-  /** Detay ac/kapat -> App URL'i gunceller. slug verilirse SEO-dostu URL (/turnuvalar/isim-{id}). */
+  /** Detay ac/kapat -> App URL'i gunceller. slug verilirse SEO-dostu URL (/online-turnuvalar/isim-{id}). */
   onOpenDetail?: (id: number | null, slug?: string) => void
 }
 
@@ -66,7 +66,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   }, [])
 
   // Detay App/URL tarafindan KONTROL edilir: detailId degisince o turnuvayi getir
-  // (null -> liste). Boylece /turnuvalar/{id} derin linki + geri/ileri tusu calisir.
+  // (null -> liste). Boylece /online-turnuvalar/{id} derin linki + geri/ileri tusu calisir.
   useEffect(() => {
     if (detailId == null) {
       setActive(null)
