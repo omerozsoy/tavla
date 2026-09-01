@@ -47,6 +47,7 @@ Route::middleware('throttle:240,1')->group(function () {
     Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
     Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
+    Route::get('/online-players', [RoomController::class, 'onlinePlayers']); // cevrimici oyuncular
     Route::post('/rooms', [RoomController::class, 'create']);
     Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
     Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);

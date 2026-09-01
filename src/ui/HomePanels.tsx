@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
-import { liveMatches, leaderboard, type LiveMatch, type LeaderRow, type Tournament } from '../api'
+import { liveMatches, leaderboard, onlinePlayers, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -239,6 +239,72 @@ export function LiveMatchesPanel({
             {t('live.showAll', { n: shown.length })}
           </Button>
         )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ---- Cevrimici oyuncular ----
+export function OnlinePlayersPanel({
+  currentName,
+  onProfile,
+}: {
+  currentName?: string
+  onProfile: (id: number) => void
+}) {
+  const { t } = useT()
+  const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
+  const [showAll, setShowAll] = useState(false)
+  const LIMIT = 12
+
+  useEffect(() => {
+    let alive = true
+    const load = () =>
+      onlinePlayers()
+        .then((p) => alive && setPlayers(p))
+        .catch(() => alive && setPlayers([]))
+    load()
+    const id = window.setInterval(load, 15000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+    }
+  }, [])
+
+  return (
+    <div className="home-panel online-panel">
+      <div className="home-panel-head">
+        <span className="online-dot" />
+        <Icon name="users" size={17} /> {t('online.title')}
+        {players && players.length > 0 && <span className="online-count">{players.length}</span>}
+      </div>
+      {players === null ? (
+        <div className="home-panel-empty">{t('common.loading')}</div>
+      ) : players.length === 0 ? (
+        <div className="home-panel-empty">{t('online.empty')}</div>
+      ) : (
+        <>
+          <div className="rank-list">
+            {(showAll ? players : players.slice(0, LIMIT)).map((p) => (
+              <button
+                key={p.id}
+                className={`rank-row online-row ${currentName && p.name === currentName ? 'mine' : ''}`}
+                onClick={() => onProfile(p.id)}
+              >
+                <span className="online-pdot" title={t('online.title')} />
+                <span className="rank-name">
+                  <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" />
+                </span>
+                <span className="rank-val">{p.rating}</span>
+              </button>
+            ))}
+          </div>
+          {!showAll && players.length > LIMIT && (
+            <Button variant="ghost" className="live-more" onClick={() => setShowAll(true)}>
+              {t('live.showAll', { n: players.length })}
+            </Button>
+          )}
         </>
       )}
     </div>

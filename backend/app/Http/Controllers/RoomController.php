@@ -343,6 +343,28 @@ class RoomController extends Controller
         return response()->json(['matches' => $list]);
     }
 
+    // Cevrimici oyuncular: son 70sn icinde ping'lemis (last_seen) kullanicilar.
+    // Ana sayfa "Cevrimici Oyuncular" paneli icin. Herkese acik (izleme gibi).
+    public function onlinePlayers()
+    {
+        $users = User::whereNotNull('last_seen')
+            ->where('last_seen', '>', now()->subSeconds(70))
+            ->orderByDesc('rating')
+            ->limit(50)
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating']);
+
+        $list = $users->map(fn ($u) => [
+            'id'      => $u->id,
+            'name'    => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+            'avatar'  => $u->avatar,
+            'frame'   => $u->avatar_frame,
+            'country' => $u->country,
+            'rating'  => $u->rating ?? 1500,
+        ]);
+
+        return response()->json(['players' => $list, 'count' => $list->count()]);
+    }
+
     // Giris yapan kullanicinin DEVAM EDEN (playing) online maclari -> geri donebilsin.
     public function myActiveRooms(Request $request)
     {

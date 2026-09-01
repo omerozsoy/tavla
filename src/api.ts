@@ -995,6 +995,20 @@ export async function liveMatches(): Promise<LiveMatch[]> {
   return data.matches
 }
 
+// Cevrimici oyuncular (son 70sn ping'lemis) -> ana sayfa paneli
+export interface OnlinePlayer {
+  id: number
+  name: string
+  avatar?: string | null
+  frame?: string | null
+  country?: string | null
+  rating: number
+}
+export async function onlinePlayers(): Promise<OnlinePlayer[]> {
+  const data = await req<{ players: OnlinePlayer[] }>('/online-players')
+  return data.players
+}
+
 // Devam eden (playing) online maclarim -> geri donebilmek icin
 export interface ActiveRoom {
   code: string
