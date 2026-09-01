@@ -28,8 +28,8 @@ export default function FriendGameSetup({ onCreate, onCancel }: Props) {
   const target = tab === 'single' ? 1 : length
 
   return (
-    <div className="register-overlay page fg-page" role="dialog" aria-modal="true">
-      <div className="register-card fg-card">
+    <div className="fg-page" role="region" aria-label={t('friend.title')}>
+      <div className="fg-card">
         <div className="fg-head">
           <button type="button" className="fg-back" onClick={onCancel} aria-label={t('common.close')}>
             <Icon name="arrow-right" size={20} />
