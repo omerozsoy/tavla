@@ -81,7 +81,6 @@ import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import RankInfo from './ui/RankInfo'
-import ProfileStats from './ui/ProfileStats'
 import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Lessons from './ui/Lessons'
@@ -291,7 +290,6 @@ export default function App() {
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
-  const [profileTab, setProfileTab] = useState<'info' | 'stats' | 'settings' | 'notifications'>('info') // Profilim acilis sekmesi
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -407,7 +405,7 @@ export default function App() {
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
-  const [tournInitialId, setTournInitialId] = useState<number | null>(null) // reklamdan acilan turnuva detayi
+  const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (URL: /turnuvalar/{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
@@ -444,7 +442,9 @@ export default function App() {
     : ranksOpen
     ? 'rutbeler'
     : tournOpen
-      ? 'turnuvalar'
+      ? tournDetailId != null
+        ? 'turnuvalar/' + tournDetailId
+        : 'turnuvalar'
       : shopOpen
         ? 'magaza'
         : frameGalleryOpen
@@ -529,6 +529,8 @@ export default function App() {
           break
         case 'turnuvalar':
           setTournOpen(true)
+          // /turnuvalar/{id} -> dogrudan o turnuvanin detayini ac
+          setTournDetailId(seg[1] && /^\d+$/.test(seg[1]) ? parseInt(seg[1], 10) : null)
           break
         case 'magaza':
           setShopOpen(true)
@@ -537,8 +539,7 @@ export default function App() {
           setFrameGalleryOpen(true)
           break
         case 'istatistiklerim':
-          setProfileTab('stats')
-          setProfileEditMode(true)
+          setProfileEditMode(false) // profil ANA sayfasi (İstatistikler varsayilan sekme)
           setEditProfile(true)
           break
         case 'arkadaslar':
@@ -3245,17 +3246,17 @@ export default function App() {
         setHome(true)
       })
     },
-    // Profil uyelik karti: "Uyeligi Yenile" -> odeme modalini ac (mevcut plan yenilenir)
-    onRenew: () => setMemOpen(true),
-    // "Yenilemeyi iptal et / ac" -> auto_renew degistir, kullaniciyi tazele
-    onToggleAutoRenew: async (enabled: boolean) => {
-      try {
-        const r = await apiSetAutoRenew(enabled)
-        setUser(r.user)
-      } catch {
-        /* sessiz: profil kartinda kritik degil */
-      }
-    },
+  }
+  // Uyelik karti (ProfileOverview, baslik alti): "Uyeligi Yenile" -> odeme modali;
+  // "Yenilemeyi iptal/ac" -> auto_renew degistir + kullaniciyi tazele.
+  const handleRenew = () => setMemOpen(true)
+  const handleToggleAutoRenew = async (enabled: boolean) => {
+    try {
+      const r = await apiSetAutoRenew(enabled)
+      setUser(r.user)
+    } catch {
+      /* sessiz: profil kartinda kritik degil */
+    }
   }
   // Giris/kayit: SAYFA gorunumu (modal degil) — sol menu gorunur kalir, form
   // menunun sagindaki alanda ortalanmis kart olarak acilir. Cikis: Vazgec / Misafir.
@@ -3282,16 +3283,6 @@ export default function App() {
   ]
 
   // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik sayfasi
-  const statsContent = user ? (
-    <ProfileStats
-      embed
-      name={profile.nickname || profile.firstName}
-      avatar={profile.avatar}
-      frame={user.avatar_frame}
-      onClose={() => {}}
-    />
-  ) : null
-
   // Sahip olunan tahtalar (kilitli olmayanlar) + cerceveler (unlocks) — Profil genel bakisi
   const ownedBoards = boardThemeList.filter((b) => b.owned)
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
@@ -3321,21 +3312,21 @@ export default function App() {
         onSelectBoard={setBoardTheme}
         onSelectFrame={handleEquipFrame}
         onClose={() => setEditProfile(false)}
+        onRenew={handleRenew}
+        onToggleAutoRenew={handleToggleAutoRenew}
+        notifications={notifications}
+        onDeleteNotification={handleDeleteNotification}
+        onDeleteAllNotifications={handleDeleteAllNotifications}
       />
     ) : (
       <Auth
-        key={user ? `edit-${user.id}-${profileTab}` : 'edit-guest'}
+        key={user ? `edit-${user.id}` : 'edit-guest'}
         page
         editUser={user}
         editGuest={!user ? guestProfile : null}
         emailUnverified={!!user && !user.email_verified_at}
         resendState={resendState}
         onResendVerification={handleResendVerification}
-        initialTab={profileTab}
-        statsExtra={statsContent}
-        notifications={notifications}
-        onDeleteNotification={handleDeleteNotification}
-        onDeleteAllNotifications={handleDeleteAllNotifications}
         {...authProps}
         onCancel={() => (user ? setProfileEditMode(false) : setEditProfile(false))}
       />
@@ -3369,7 +3360,6 @@ export default function App() {
         className="account-name"
         onClick={() =>
           goPage(() => {
-            setProfileTab('info')
             setProfileEditMode(false)
             setEditProfile(true)
           })
@@ -3495,7 +3485,7 @@ export default function App() {
     setRanksOpen(false)
     setInfoOpen(false)
     setTournOpen(false)
-    setTournInitialId(null)
+    setTournDetailId(null)
     setShopOpen(false)
     setFrameGalleryOpen(false)
     setStatsOpen(false)
@@ -3553,11 +3543,15 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
-    onTournaments: () => goPage(() => setTournOpen(true)),
+    onTournaments: () =>
+      goPage(() => {
+        setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
+        setTournOpen(true)
+      }),
     // Ana sayfa reklamindan: dogrudan ilgili turnuvanin detayini ac
     onTournamentAd: (id: number) =>
       goPage(() => {
-        setTournInitialId(id)
+        setTournDetailId(id)
         setTournOpen(true)
       }),
     onShop: () => goPage(() => setShopOpen(true)),
@@ -3567,8 +3561,7 @@ export default function App() {
     onMyStats: () =>
       user
         ? goPage(() => {
-            setProfileTab('stats')
-            setProfileEditMode(true)
+            setProfileEditMode(false) // profil ANA sayfasi (İstatistikler varsayilan)
             setEditProfile(true)
           })
         : setShowAuth(true),
@@ -3780,10 +3773,11 @@ export default function App() {
         <Tournaments
           myId={user?.id ?? null}
           onPlayMatch={handlePlayTournamentMatch}
-          initialId={tournInitialId}
+          detailId={tournDetailId}
+          onOpenDetail={setTournDetailId}
           onClose={() => {
             setTournOpen(false)
-            setTournInitialId(null)
+            setTournDetailId(null)
           }}
         />
       )}
