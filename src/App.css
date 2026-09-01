@@ -7340,8 +7340,8 @@ button.stat-chip:hover {
   text-align: center;
 }
 .online-row {
-  /* nokta | oyuncu | rating | aksiyonlar */
-  grid-template-columns: 14px 1fr auto auto;
+  /* nokta | oyuncu (sabit) | bayrak (hizali) | rating | aksiyonlar */
+  grid-template-columns: 14px minmax(56px, 148px) 1fr auto auto;
 }
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
 .online-id {
@@ -7508,7 +7508,8 @@ button.stat-chip:hover {
 }
 .rank-row {
   display: grid;
-  grid-template-columns: 26px 1fr auto auto;
+  /* # | isim (sabit) | bayrak (isimden sonra, hizali) | deger */
+  grid-template-columns: 26px minmax(56px, 148px) 1fr auto;
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
@@ -10096,19 +10097,20 @@ button.stat-chip:hover {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu | bayrak | Maç | G/M | % | deger */
-  grid-template-columns: 38px 1fr auto 66px 74px 48px 62px;
+  /* # | oyuncu (sabit) | bayrak (isimden hemen sonra, hizali) | Maç | G/M | % | deger */
+  grid-template-columns: 38px minmax(72px, 170px) 1fr 66px 74px 48px 62px;
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
 }
-/* Bayrak hucresi: ulkesi olmayan oyuncuda ic bayrak null olsa da span grid
-   hucresini korur -> puan kolonu satirlar arasi kaymaz. */
+/* Bayrak hucresi: isim kolonu SABIT genislikte -> bayraklar tum satirlarda ayni
+   kolonda hizalanir; isimden sonra tutarli bir bosluk kalir. Ic bayrak null olsa
+   da span grid hucresini korur -> puan kolonu satirlar arasi kaymaz. */
 .lb-flag,
 .rank-flag {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
 }
 .lb-head {
   color: var(--muted);
