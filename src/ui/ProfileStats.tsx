@@ -438,30 +438,55 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               <div className="lb-empty small">{t('stats.noMatches')}</div>
             ) : (
               <>
-                <div className="mh-list">
-                  {/* Sadece son 10 mac; satira tiklayinca o macin analizi (Mac Analizleri sayfasi) */}
-                  {matches.slice(0, 10).map((m, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className="mh-row mh-row-link"
-                      onClick={() => onOpenMatchHistory?.(m.id)}
-                      title={t('stats.moreMatches')}
-                    >
-                      <span className={`mh-res ${m.won ? 'win' : 'loss'}`}>
-                        {m.won ? t('stats.win') : t('stats.loss')}
-                      </span>
-                      <span className="mh-opp">vs {m.opponent_rating}</span>
-                      <span className={`mh-delta ${m.delta >= 0 ? 'up' : 'down'}`}>
-                        {m.delta >= 0 ? '+' : ''}
-                        {m.delta}
-                      </span>
-                      <span className="mh-date">{fmtDate(m.created_at)}</span>
-                    </button>
-                  ))}
+                <div className="psm-list">
+                  {/* Son 10 mac — zengin satir; tiklayinca o macin analizi (log varsa hamle raporu) */}
+                  {matches.slice(0, 10).map((m, i) => {
+                    const hasScore = m.score_self != null && m.score_opp != null
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`psm-row ${m.won ? 'win' : 'loss'}`}
+                        onClick={() => onOpenMatchHistory?.(m.id)}
+                        title={t('mh.analyze')}
+                      >
+                        <span className={`psm-res ${m.won ? 'win' : 'loss'}`}>
+                          {m.won ? t('stats.win') : t('stats.loss')}
+                        </span>
+                        <span className="psm-main">
+                          <span className="psm-top">
+                            <span className="psm-opp">{m.opponent_name || t('mh.opponentFb')}</span>
+                            <span className="psm-elo">{m.opponent_rating}</span>
+                          </span>
+                          <span className="psm-meta">
+                            <span className="psm-score">
+                              {hasScore
+                                ? `${m.score_self}–${m.score_opp}`
+                                : m.match_length && m.match_length > 0
+                                  ? t('mh.ptMatch', { n: m.match_length })
+                                  : t('mh.moneyGame')}
+                            </span>
+                            {m.pr != null && (
+                              <span className="psm-pr">
+                                PR {m.pr.toFixed(1)}
+                                {m.opponent_pr != null ? ` · ${m.opponent_pr.toFixed(1)}` : ''}
+                              </span>
+                            )}
+                          </span>
+                        </span>
+                        <span className="psm-right">
+                          <span className={`psm-delta ${m.delta >= 0 ? 'up' : 'down'}`}>
+                            {m.delta >= 0 ? '+' : ''}
+                            {m.delta}
+                          </span>
+                          <span className="psm-date">{fmtDate(m.created_at)}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
                 {onOpenMatchHistory && (
-                  <button type="button" className="mh-more" onClick={() => onOpenMatchHistory?.()}>
+                  <button type="button" className="psm-more" onClick={() => onOpenMatchHistory?.()}>
                     {t('stats.moreMatches')}
                   </button>
                 )}

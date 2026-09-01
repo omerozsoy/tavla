@@ -103,9 +103,16 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     if (idx < 0) return
     didAutoOpen.current = true
     setOpenIdx(idx)
-    requestAnimationFrame(() => {
-      document.querySelector('.mh-card .mh-item.open')?.scrollIntoView({ block: 'center' })
-    })
+    const m = rows[idx]
+    if (m.has_log) {
+      // Log varsa (AI maci): dogrudan hamle analizi raporunu ac
+      openReport(m)
+    } else {
+      // Log yoksa (online/PvP): detay satirini genislet + ortaya kaydir
+      requestAnimationFrame(() => {
+        document.querySelector('.mh-card .mh-item.open')?.scrollIntoView({ block: 'center' })
+      })
+    }
   }, [rows, initialMatchId])
 
   return (
