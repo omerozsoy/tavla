@@ -9424,9 +9424,9 @@ button.stat-chip:hover {
   justify-self: start;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
-  /* Oyun tahtasindaki buyutulmus kup (checker*1.28) analiz tahtasinda iri kaliyor;
-     burada dogal (checker'a yakin) boyuta indir. */
-  --cube-size: clamp(28px, calc(var(--checker) * 0.72), 46px);
+  /* Kup orta bara gore olceklenir: bar genisligine (= pul capi) oranli, icine
+     kucuk bir bosluk birakarak otursun. */
+  --cube-size: calc(var(--bar-w) * 0.88);
 }
 /* 15 tas limiti: board ustunde kibar, gecici uyari */
 .pa-limit-toast {
