@@ -169,6 +169,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
+              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
@@ -202,6 +203,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
+              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
