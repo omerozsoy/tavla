@@ -100,6 +100,7 @@ import NotificationBell from './ui/NotificationBell'
 import Info from './ui/Info'
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
+import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
@@ -423,6 +424,7 @@ export default function App() {
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
+  const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
   // Giris/acilista: turnuva/backfill gibi mac-disi kanallardan gelen GORULMEMIS unlock'lari
   // kuyruga al (bir kez animasyon; backend cagride notified=true isaretler).
@@ -2390,14 +2392,15 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.slot, room?.status])
 
-  async function handleCreateRoom(target = 1) {
+  async function handleCreateRoom(target = 1, tc?: TimeControl) {
     setRoomBusy(true)
     setRoomError('')
     try {
       friendlyRef.current = true // davet ile kurulan oda = arkadaslik maci (puan/coin YOK)
       stakeRef.current = 0
       betPctRef.current = 0
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
+      const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse)
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -3561,6 +3564,7 @@ export default function App() {
     setRanksOpen(false)
     setInfoOpen(false)
     setAchOpen(false)
+    setFriendSetupOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -3609,13 +3613,11 @@ export default function App() {
       closeAllPages()
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
-    // Arkadasinla Oyna: online lobiye gec (Oda Olustur -> kod paylas / Kodla Katil).
-    // Matchmaking'e (rastgele rakip) sokMAZ; davet-kodlu ozel oda akisi.
+    // Arkadasinla Oyna: once "Ozel Oyun Olustur" ekrani (Tek oyun/Maç + Saat + Uzunluk),
+    // onaylayinca davet-kodlu oda olusturulur. Matchmaking'e (rastgele rakip) sokMAZ.
     onPlayFriend: () => {
       closeAllPages()
-      setRoom(null)
-      setMode('online')
-      setHome(false)
+      setFriendSetupOpen(true)
     },
     onResume: () => {
       closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
@@ -3799,6 +3801,21 @@ export default function App() {
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
+      {friendSetupOpen && (
+        <FriendGameSetup
+          onCancel={() => setFriendSetupOpen(false)}
+          onCreate={({ target, timeControl }) => {
+            setFriendSetupOpen(false)
+            setTimeControl(timeControl)
+            clockRef.current = CLOCK_PRESETS[timeControl]
+            onlineTargetRef.current = target
+            targetsRef.current = [target]
+            setMode('online')
+            setHome(false)
+            handleCreateRoom(target, timeControl)
+          }}
+        />
+      )}
       {infoOpen && (
         <Info
           onClose={() => setInfoOpen(false)}

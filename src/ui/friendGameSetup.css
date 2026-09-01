@@ -1,0 +1,137 @@
+/* "Özel Oyun Oluştur" (Arkadasinla Oyna) — referans (Galaxy) tarzi. Izole; App.css'e dokunmaz.
+   Koyu navy kart, segmented sekme, radio saat satirlari, 1-25 uzunluk slider'i, yesil vurgu. */
+
+.fg-card {
+  width: min(400px, 94vw);
+  padding: 20px 18px 22px;
+}
+
+.fg-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.fg-back {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 8px;
+}
+.fg-back:hover {
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.fg-back svg {
+  transform: scaleX(-1); /* saga bakan oku sola cevir (geri) */
+}
+.fg-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+/* Segmented sekme */
+.fg-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.fg-tab {
+  flex: 1;
+  padding: 12px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.98rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.fg-tab.active {
+  background: #eef1f6;
+  color: #16202e;
+  border-color: #eef1f6;
+}
+
+.fg-section-title {
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  color: var(--text);
+  margin: 14px 0 10px;
+}
+
+/* Saat satirlari (radio) */
+.fg-clocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fg-clock {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.fg-clock.active {
+  border-color: color-mix(in srgb, #2ecb87 55%, var(--border));
+  background: color-mix(in srgb, #2ecb87 8%, transparent);
+}
+.fg-radio {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--text) 22%, transparent);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.fg-radio.on {
+  background: #2ecb87;
+  box-shadow: inset 0 0 0 2px #2ecb87, 0 0 0 3px color-mix(in srgb, #2ecb87 25%, transparent);
+}
+
+/* Uzunluk slider */
+.fg-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+}
+.fg-slider-val {
+  flex: 0 0 auto;
+  min-width: 28px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #2ecb87;
+}
+.fg-slider {
+  flex: 1;
+  accent-color: #2ecb87;
+  height: 4px;
+}
+
+.fg-create {
+  width: 100%;
+  margin-top: 20px;
+}
