@@ -53,6 +53,8 @@ export function LineChart({
   const [w, setW] = useState(320)
   // Yukseklik de OLCULUR: grafik kutuyu (sd-card) doldursun (prop = baslangic/yedek).
   const [boxH, setBoxH] = useState<number | null>(null)
+  // Uzerine gelince o noktadaki degeri gostermek icin hover indeksi.
+  const [hover, setHover] = useState<number | null>(null)
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '')
 
   useEffect(() => {
@@ -101,8 +103,25 @@ export function LineChart({
       ? Array.from({ length: xCount }, (_, k) => Math.round(((data.length - 1) * k) / (xCount - 1)))
       : []
 
+  // Uzerine gelince en yakin veri noktasini bul.
+  const onMove = (e: { clientX: number }) => {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    const ratio = (e.clientX - rect.left - padL) / plotW
+    const i = Math.max(0, Math.min(data.length - 1, Math.round(ratio * (data.length - 1))))
+    setHover(i)
+  }
+  const hoverX = hover != null ? X(hover) : 0
+  const tipLeftPct = hover != null ? (hoverX / Math.max(1, w)) * 100 : 0
+
   return (
-    <div className="line-chart-wrap" ref={ref}>
+    <div
+      className="line-chart-wrap"
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={() => setHover(null)}
+    >
       <svg
         className="line-chart"
         width={w}
@@ -154,7 +173,24 @@ export function LineChart({
             {fmtDay(dates![i])}
           </text>
         ))}
+        {/* Hover: dikey kilavuz + vurgulu nokta */}
+        {hover != null && (
+          <g>
+            <line className="lc-hover-line" x1={hoverX} y1={padT} x2={hoverX} y2={baseY} />
+            <circle cx={hoverX} cy={Y(data[hover])} r="4" fill={color} stroke="var(--card-bg)" strokeWidth="1.8" />
+          </g>
+        )}
       </svg>
+      {/* Hover tooltip: o noktadaki deger (+ tarih) */}
+      {hover != null && (
+        <div
+          className="lc-tip"
+          style={{ left: `${tipLeftPct}%`, top: `${Y(data[hover])}px` }}
+        >
+          <strong>{fmtAxis(data[hover])}</strong>
+          {hasDates && <span>{fmtDay(dates![hover])}</span>}
+        </div>
+      )}
     </div>
   )
 }
