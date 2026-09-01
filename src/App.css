@@ -6264,6 +6264,14 @@ button.stat-chip:hover {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
+  /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) — kaydirma tekerlek/touch ile calisir. */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* eski Edge */
+}
+.app.lobby::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / yeni Edge */
+  width: 0;
+  height: 0;
 }
 .app.lobby > .account-bar {
   grid-area: bar;
