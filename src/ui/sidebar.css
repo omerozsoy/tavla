@@ -1,0 +1,39 @@
+/* Oyun sol paneli (Backgammon Galaxy tarzi) — izole; App.css'teki .player-card
+   temel gorunumu miras alinir, bu dosya YALNIZCA yeni yerlesim/meta ekler.
+   Ust oyuncu: isim -> avatar -> rating. Alt oyuncu: rating -> avatar -> isim.
+   Ortada: LENGTH (mac uzunlugu) + STAKE (bahis). */
+
+.sidebar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  margin: 6px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+}
+.sm-row {
+  font-size: 0.95rem;
+  letter-spacing: 0.03em;
+}
+.sm-lbl {
+  color: var(--muted);
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-right: 6px;
+}
+.sm-val {
+  color: var(--text);
+  font-weight: 800;
+}
+
+/* Alt oyuncu kartinda sirayi ters cevir (rating ustte, isim altta) DOM ile saglanir;
+   ekstra bir sey gerekmiyor ama hizalamayi netlestir. */
+.player-card.pc-top,
+.player-card.pc-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}

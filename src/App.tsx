@@ -4325,7 +4325,12 @@ export default function App() {
       <main className="main game-scene">
       <div className="game-area">
         {/* Board flip'lendiginde (yerel oyuncu siyah) kartlar da cevrilir: SEN hep altta */}
-        <Sidebar top={flipBoard ? bottomInfo : topInfo} bottom={flipBoard ? topInfo : bottomInfo} />
+        <Sidebar
+          top={flipBoard ? bottomInfo : topInfo}
+          bottom={flipBoard ? topInfo : bottomInfo}
+          length={match.target}
+          stake={stakeRef.current}
+        />
         {clockOn && (
           <ClockStack
             active={gameWon || gameEnd || opening ? null : turnStart.turn}
