@@ -10111,6 +10111,8 @@ button.stat-chip:hover {
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
+  /* isim ile bayrak arasinda biraz daha nefes payi */
+  padding-left: 12px;
 }
 .lb-head {
   color: var(--muted);
