@@ -792,7 +792,9 @@ button[aria-disabled='true'],
   flex: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  /* TÜM menü öğeleri EŞİT aralıkta: gruplar arası da grup içi ile aynı (4px).
+     Aksi halde tek-öğeli gruplar (Üyelik/Bilgi) 8px'le izole "yüzüyor" -> düzensiz ritim. */
+  gap: 4px;
   overflow-x: hidden;
   overflow-y: auto;
   /* Bir ton koyu panel */
