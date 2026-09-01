@@ -56,6 +56,7 @@ import {
   markNotificationsRead,
   deleteNotifications,
   inviteFriend,
+  requestFriendById,
   respondInvite,
   type GameInvite as GameInviteT,
   type AppNotification,
@@ -2700,6 +2701,21 @@ export default function App() {
       /* yoksay */
     }
   }
+  // Cevrimici oyuncu panelinden "Arkadas ol": id ile istek + toast.
+  async function handleAddFriend(userId: number) {
+    try {
+      const r = await requestFriendById(userId)
+      notify.success(
+        r.status === 'accepted'
+          ? t('online.friendMutual')
+          : r.status === 'pending'
+            ? t('online.friendSent')
+            : t('online.friendExists'),
+      )
+    } catch {
+      notify.error(t('online.friendFail'))
+    }
+  }
   async function handleAcceptInvite(inv: GameInviteT) {
     setInvites((list) => list.filter((i) => i.id !== inv.id))
     try {
@@ -3731,6 +3747,8 @@ export default function App() {
     clubsOpen ||
     rulesOpen ||
     analyzerOpen ||
+    achOpen ||
+    friendSetupOpen ||
     editProfile
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
@@ -4164,6 +4182,8 @@ export default function App() {
               <OnlinePlayersPanel
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
+                onInvite={user ? handleInviteFriend : undefined}
+                onAddFriend={user ? handleAddFriend : undefined}
               />
               <RankingPanel
                 currentName={profile.nickname}
