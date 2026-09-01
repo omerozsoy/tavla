@@ -76,7 +76,11 @@ class TournamentAdResource extends Resource
                         ->helperText('Butonun üstünde küçük satır (takvim ikonuyla).')
                         ->columnSpanFull(),
                     Forms\Components\ColorPicker::make('panel_color')->label('Sol panel rengi')
-                        ->helperText('Boş = varsayılan krem. İstersen aşağıdaki resim renklerinden birine tıkla.')
+                        ->helperText('Boş = varsayılan krem. İstersen aşağıdaki resim renklerinden birine tıkla. Sadece renk — yazı için "Üst etiket" alanını kullan.')
+                        // Yalnizca hex renk (#rgb / #rgba / #rrggbb / #rrggbbaa). Yanlislikla yazilan
+                        // metin DB'ye gidip 500 vermesin diye form-icinde dostane hata verir.
+                        ->regex('/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/')
+                        ->validationMessages(['regex' => 'Geçerli bir renk seç (ör. #c8552b). Buraya yazı yazma; metin için "Üst etiket" alanını kullan.'])
                         ->live(),
                     Forms\Components\ViewField::make('palette')
                         ->label('Resimden baskın renkler')

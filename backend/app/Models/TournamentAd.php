@@ -24,6 +24,17 @@ class TournamentAd extends Model
         return $this->belongsTo(Tournament::class);
     }
 
+    // panel_color yalnizca hex renk tutar (varchar 9). Gecersiz/uzun metin ( or. yanlis
+    // alana yazilan reklam yazisi) DB'ye gidip "Data too long" 500 vermesin diye null'lanir.
+    public function setPanelColorAttribute($value): void
+    {
+        $v = is_string($value) ? trim($value) : $value;
+        $this->attributes['panel_color'] =
+            (is_string($v) && preg_match('/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/', $v))
+                ? $v
+                : null;
+    }
+
     protected static function booted(): void
     {
         // Gorsel degistiginde (ya da palet bossa) baskin renkleri cikar ve sessizce sakla.

@@ -101,8 +101,10 @@ export default function BannerSlider({ onOpen }: Props) {
               {hasText && (
                 <span
                   className="bs-panel"
-                  data-dark={b.panel_color && !isLightColor(b.panel_color) ? '' : undefined}
-                  style={b.panel_color ? { background: b.panel_color } : undefined}
+                  // Renk secilmemisse varsayilan SIYAH (sonradan admin panelden degistirilir).
+                  // Siyah koyu oldugu icin data-dark ile metin otomatik beyaza doner.
+                  data-dark={!isLightColor(b.panel_color || '#111111') ? '' : undefined}
+                  style={{ background: b.panel_color || '#111111' }}
                 >
                   {b.logo && <img className="bs-logo" src={srcOf(b.logo)} alt="" loading="lazy" />}
                   {b.kicker && <span className="bs-kicker">{b.kicker}</span>}
