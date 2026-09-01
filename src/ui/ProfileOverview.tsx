@@ -49,6 +49,7 @@ interface Props {
   notifications?: AppNotification[]
   onDeleteNotification?: (id: number) => void
   onDeleteAllNotifications?: () => void
+  onOpenMatchHistory?: () => void // istatistik sekmesi -> Mac Analizleri sayfasi
 }
 
 const fmt = (n: number) => n.toLocaleString('tr-TR')
@@ -80,6 +81,7 @@ export default function ProfileOverview({
   notifications,
   onDeleteNotification,
   onDeleteAllNotifications,
+  onOpenMatchHistory,
 }: Props) {
   const { t, lang } = useT()
   // Profil açılışında İstatistikler sekmesi varsayılan seçili
@@ -315,6 +317,7 @@ export default function ProfileOverview({
               frame={user.avatar_frame}
               name={fullName}
               onClose={() => {}}
+              onOpenMatchHistory={onOpenMatchHistory}
             />
           </div>
         )}

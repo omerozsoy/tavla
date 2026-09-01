@@ -3323,6 +3323,10 @@ export default function App() {
         notifications={notifications}
         onDeleteNotification={handleDeleteNotification}
         onDeleteAllNotifications={handleDeleteAllNotifications}
+        onOpenMatchHistory={() => {
+          setEditProfile(false)
+          setMatchHistOpen(true)
+        }}
       />
     ) : (
       <Auth

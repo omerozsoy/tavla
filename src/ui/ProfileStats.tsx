@@ -20,6 +20,7 @@ interface Props {
   name: string
   onClose: () => void
   embed?: boolean // Profilim sekmesine gomulu render (overlay/kapat/baslik yok)
+  onOpenMatchHistory?: () => void // "Tum mac analizleri" -> /mac-analizleri sayfasi
 }
 
 // Medyan kartinin kategori sirasi (backend ile ayni): Jeton, 1S, 3S, 5S, 7S
@@ -28,7 +29,7 @@ const MED_FILTERS: MedianFilter[] = ['all', '7d', '30d', '90d', '1y']
 // Zar Ortalamalari faz sekmeleri: Tumu / Acilis / Temas / Temas Yok
 const DICE_PHASES: DicePhase[] = ['all', 'opening', 'contact', 'race']
 
-export default function ProfileStats({ avatar, frame, name, onClose, embed }: Props) {
+export default function ProfileStats({ avatar, frame, name, onClose, embed, onOpenMatchHistory }: Props) {
   const { t, lang } = useT()
   useEscape(embed ? () => {} : onClose)
   const [data, setData] = useState<MyStats | null>(null)
@@ -436,21 +437,29 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed }: Pr
             ) : matches.length === 0 ? (
               <div className="lb-empty small">{t('stats.noMatches')}</div>
             ) : (
-              <div className="mh-list">
-                {matches.map((m, i) => (
-                  <div key={i} className="mh-row">
-                    <span className={`mh-res ${m.won ? 'win' : 'loss'}`}>
-                      {m.won ? t('stats.win') : t('stats.loss')}
-                    </span>
-                    <span className="mh-opp">vs {m.opponent_rating}</span>
-                    <span className={`mh-delta ${m.delta >= 0 ? 'up' : 'down'}`}>
-                      {m.delta >= 0 ? '+' : ''}
-                      {m.delta}
-                    </span>
-                    <span className="mh-date">{fmtDate(m.created_at)}</span>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div className="mh-list">
+                  {/* Sadece son 10 mac; fazlasi icin Mac Analizleri sayfasi */}
+                  {matches.slice(0, 10).map((m, i) => (
+                    <div key={i} className="mh-row">
+                      <span className={`mh-res ${m.won ? 'win' : 'loss'}`}>
+                        {m.won ? t('stats.win') : t('stats.loss')}
+                      </span>
+                      <span className="mh-opp">vs {m.opponent_rating}</span>
+                      <span className={`mh-delta ${m.delta >= 0 ? 'up' : 'down'}`}>
+                        {m.delta >= 0 ? '+' : ''}
+                        {m.delta}
+                      </span>
+                      <span className="mh-date">{fmtDate(m.created_at)}</span>
+                    </div>
+                  ))}
+                </div>
+                {onOpenMatchHistory && (
+                  <button type="button" className="mh-more" onClick={onOpenMatchHistory}>
+                    {t('stats.moreMatches')}
+                  </button>
+                )}
+              </>
             )}
           </>
         )}
