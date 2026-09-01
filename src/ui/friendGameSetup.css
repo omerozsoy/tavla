@@ -1,16 +1,23 @@
 /* "Özel Oyun Oluştur" (Arkadasinla Oyna) — referans (Galaxy) tarzi. Izole; App.css'e dokunmaz.
    Koyu navy kart, segmented sekme, radio saat satirlari, 1-25 uzunluk slider'i, yesil vurgu. */
 
-/* Normal sayfa (popup degil): page-host icinde ustten hizali, kart ortali. */
-.register-overlay.page.fg-page {
+/* Normal SAYFA (popup/overlay degil): page-host icinde duz akista. register-overlay'e
+   bagli DEGIL -> sayfa-miras tuzaklarindan bagimsiz, kesin gorunur. */
+.fg-page {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 18px 12px 24px;
+  width: 100%;
+  padding: 18px 12px 28px;
 }
 .fg-card {
   width: min(420px, 96vw);
   padding: 20px 18px 22px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  color: var(--text);
+  font-family: var(--tv-font-ui, inherit);
 }
 
 .fg-head {
