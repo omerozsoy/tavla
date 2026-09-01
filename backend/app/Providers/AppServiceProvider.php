@@ -24,6 +24,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Livewire gecici yukleme klasorunu garanti et. Windows'ta klasor yoksa
+        // "klasor olustur -> hemen boyut oku" yarisi Flysystem'de
+        // "Unable to retrieve the file_size for livewire-tmp/..." hatasi veriyordu.
+        // Klasor onceden varsa yaris olmaz; dosya yuklemeleri sorunsuz calisir.
+        $lwTmp = storage_path('app/private/livewire-tmp');
+        if (! is_dir($lwTmp)) {
+            @mkdir($lwTmp, 0775, true);
+        }
+
         // Marka adi .env'den gelir (APP_NAME=TavlaTv). E-posta basligi/altbilgisi
         // config('app.name') kullanir; ayrica e-posta govdeleri asagida Turkcelestirildi.
 
