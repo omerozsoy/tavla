@@ -12,16 +12,18 @@ import { useT } from '../i18n'
 import { RankProgression } from './RankProgression'
 import FairnessModal from './FairnessModal'
 import ContentView from './ContentView'
+import Achievements from './Achievements'
 
 interface Props {
   onClose: () => void
   currentRating?: number
+  loggedIn?: boolean
   fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-type Tab = 'about' | 'ranks' | 'fair' | 'services'
+type Tab = 'about' | 'ranks' | 'fair' | 'services' | 'badges'
 
-export default function Info({ onClose, currentRating, fair }: Props) {
+export default function Info({ onClose, currentRating, loggedIn = false, fair }: Props) {
   const { t } = useT()
   const [tab, setTab] = useState<Tab>('about')
   useEscape(onClose)
@@ -46,6 +48,9 @@ export default function Info({ onClose, currentRating, fair }: Props) {
           </button>
           <button type="button" role="tab" aria-selected={tab === 'ranks'} className={tab === 'ranks' ? 'active' : ''} onClick={() => setTab('ranks')}>
             {t('menu.ranks')}
+          </button>
+          <button type="button" role="tab" aria-selected={tab === 'badges'} className={tab === 'badges' ? 'active' : ''} onClick={() => setTab('badges')}>
+            {t('ach.title')}
           </button>
           <button type="button" role="tab" aria-selected={tab === 'fair'} className={tab === 'fair' ? 'active' : ''} onClick={() => setTab('fair')}>
             {t('fair.title')}
@@ -77,6 +82,13 @@ export default function Info({ onClose, currentRating, fair }: Props) {
         {tab === 'ranks' && (
           <div className="info-tab-pane">
             <RankProgression currentRating={currentRating} />
+          </div>
+        )}
+
+        {tab === 'badges' && (
+          <div className="info-tab-pane">
+            <p className="ach-howto-intro">{t('ach.howtoIntro')}</p>
+            <Achievements embed loggedIn={loggedIn} />
           </div>
         )}
 

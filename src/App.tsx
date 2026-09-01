@@ -66,6 +66,8 @@ import {
   type ActiveRoom,
   sendChat,
   reportRating,
+  fetchUnseenAchievements,
+  type UnlockedAchievement,
   resendVerification,
   ApiError as ApiErr,
   type Slot,
@@ -96,6 +98,8 @@ import Clubs from './ui/Clubs'
 import Rules from './ui/Rules'
 import NotificationBell from './ui/NotificationBell'
 import Info from './ui/Info'
+import Achievements from './ui/Achievements'
+import AchievementUnlock from './ui/AchievementUnlock'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
@@ -400,6 +404,23 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
+  const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
+  const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
+  // Giris/acilista: turnuva/backfill gibi mac-disi kanallardan gelen GORULMEMIS unlock'lari
+  // kuyruga al (bir kez animasyon; backend cagride notified=true isaretler).
+  useEffect(() => {
+    if (!user) return
+    let alive = true
+    fetchUnseenAchievements()
+      .then((r) => {
+        if (alive && r.items.length) setAchUnlocked((q) => (q.length ? q : r.items))
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
@@ -1780,6 +1801,7 @@ export default function App() {
         .then((r) => {
           setRatingChange({ before, after: r.rating })
           setUser((u) => (u ? { ...u, rating: r.rating } : u))
+          if (r.achievements?.length) setAchUnlocked(r.achievements)
         })
         .catch(() => {
           // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
@@ -1868,6 +1890,7 @@ export default function App() {
         .then((r) => {
           setRatingChange({ before, after: r.rating })
           setUser((u) => (u ? { ...u, rating: r.rating } : u))
+          if (r.achievements?.length) setAchUnlocked(r.achievements)
         })
         .catch(() => {})
     }
@@ -3337,6 +3360,10 @@ export default function App() {
           setEditProfile(false)
           setMatchHistOpen(true)
         }}
+        onOpenAchievements={() => {
+          setEditProfile(false)
+          goPage(() => setAchOpen(true))
+        }}
       />
     ) : (
       <Auth
@@ -3504,6 +3531,7 @@ export default function App() {
     setLeaderboardOpen(false)
     setRanksOpen(false)
     setInfoOpen(false)
+    setAchOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -3564,6 +3592,7 @@ export default function App() {
     onLeaderboard: () => goPage(() => setLeaderboardOpen(true)),
     onRanks: () => goPage(() => setRanksOpen(true)),
     onInfo: () => goPage(() => setInfoOpen(true)),
+    onAchievements: () => goPage(() => setAchOpen(true)),
     onTournaments: () =>
       goPage(() => {
         setTournDetailId(null) // menuden liste (varsa eski detay kapansin)
@@ -3715,6 +3744,16 @@ export default function App() {
   // Sayfa-tipi menu icerikleri (ana sayfada in-flow, oyun icinde overlay)
   const menuPages = (
     <>
+      {achUnlocked.length > 0 && (
+        <AchievementUnlock
+          items={achUnlocked}
+          onClose={() => setAchUnlocked([])}
+          onView={() => {
+            setAchUnlocked([])
+            goPage(() => setAchOpen(true))
+          }}
+        />
+      )}
       {editProfilePage}
       {friendsOpen && user && (
         <Friends onInvite={handleInviteFriend} onClose={() => setFriendsOpen(false)} />
@@ -3722,10 +3761,12 @@ export default function App() {
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
+      {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
       {infoOpen && (
         <Info
           onClose={() => setInfoOpen(false)}
           currentRating={user?.rating ?? undefined}
+          loggedIn={!!user}
           fair={{
             commitment: fairRef.current.commitment,
             clientSeed: fairRef.current.clientSeed,

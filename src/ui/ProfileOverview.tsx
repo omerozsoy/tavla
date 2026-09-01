@@ -49,6 +49,7 @@ interface Props {
   onDeleteNotification?: (id: number) => void
   onDeleteAllNotifications?: () => void
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
+  onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
 }
 
 function ageFrom(birth?: string | null): number | null {
@@ -79,6 +80,7 @@ export default function ProfileOverview({
   onDeleteNotification,
   onDeleteAllNotifications,
   onOpenMatchHistory,
+  onOpenAchievements,
 }: Props) {
   const { t, lang } = useT()
   // Profil açılışında İstatistikler sekmesi varsayılan seçili
@@ -268,6 +270,7 @@ export default function ProfileOverview({
               name={fullName}
               onClose={() => {}}
               onOpenMatchHistory={onOpenMatchHistory}
+              onOpenAchievements={onOpenAchievements}
             />
           </div>
         )}
