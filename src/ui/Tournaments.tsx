@@ -19,12 +19,14 @@ interface Props {
   myId: number | null
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
   onClose: () => void
-  /** Verilirse acilista dogrudan bu turnuvanin detayi gosterilir (ana sayfa reklamindan). */
-  initialId?: number | null
+  /** Acik turnuva detayi (URL: /turnuvalar/{id}). null -> liste. Ust bilesen (App) kontrol eder. */
+  detailId?: number | null
+  /** Detay ac/kapat -> App URL'i gunceller (/turnuvalar/{id} <-> /turnuvalar). */
+  onOpenDetail?: (id: number | null) => void
 }
 
 
-export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: Props) {
+export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOpenDetail }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [list, setList] = useState<Tournament[]>([])
@@ -44,18 +46,26 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
   }
   useEffect(() => {
     refreshList()
-    // Reklamdan gelindiyse dogrudan o turnuvanin detayini ac
-    if (initialId != null) open(initialId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function open(id: number) {
-    try {
-      setActive(await showTournament(id))
-    } catch {
-      /* yoksay */
+  // Detay App/URL tarafindan KONTROL edilir: detailId degisince o turnuvayi getir
+  // (null -> liste). Boylece /turnuvalar/{id} derin linki + geri/ileri tusu calisir.
+  useEffect(() => {
+    if (detailId == null) {
+      setActive(null)
+      return
     }
-  }
+    let ok = true
+    showTournament(detailId)
+      .then((tt) => ok && setActive(tt))
+      .catch(() => {
+        /* yoksay */
+      })
+    return () => {
+      ok = false
+    }
+  }, [detailId])
 
 
 
@@ -104,7 +114,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
           <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
             <Icon name="x" size={16} />
           </Button>
-          <button type="button" className="tourn-back-link" onClick={() => setActive(null)}>
+          <button type="button" className="tourn-back-link" onClick={() => onOpenDetail?.(null)}>
             <span aria-hidden="true">←</span> {t('tourn.back')}
           </button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
@@ -132,7 +142,10 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
               <span className="tc-lbl">
                 <Icon name="clock" size={15} /> {t('tourn.startsIn')}
               </span>
-              <Countdown target={active.starts_at} onExpire={() => open(active.id)} />
+              <Countdown
+                target={active.starts_at}
+                onExpire={() => showTournament(active.id).then(setActive).catch(() => {})}
+              />
               {active.register_until && (
                 <span className="tc-until">
                   {t('tourn.registerUntil')}:{' '}
@@ -343,7 +356,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
                   : tr.prize_coins ?? 0
               const prizeCount = tr.prizes?.length ?? 0
               return (
-                <button key={tr.id} className="tcard" onClick={() => open(tr.id)}>
+                <button key={tr.id} className="tcard" onClick={() => onOpenDetail?.(tr.id)}>
                   <div className="tcard-top">
                     <span className="tcard-name">{tr.name}</span>
                     <span className="tcard-badges">
@@ -383,7 +396,8 @@ export default function Tournaments({ myId, onPlayMatch, onClose, initialId }: P
                         <span className="tcard-val">
                           {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
                         </span>
-                        <span className="tcard-lbl">{t('tourn.entryFee')}</span>
+                        {/* Ucretsizse "Giris Ucreti" alt etiketini yazma */}
+                        {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
                       </span>
                     </div>
                     <div className="tcard-stat">
