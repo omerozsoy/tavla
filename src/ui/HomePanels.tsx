@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, type LiveMatch, type LeaderRow, type Tournament } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
 
@@ -308,7 +309,10 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} country={r.country} size={30} rankSize="md" />
+                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" />
+              </span>
+              <span className="rank-flag">
+                <CountryFlag code={r.country} size={16} rounded={false} />
               </span>
               <span className="rank-val">
                 {by === 'coins' ? (
