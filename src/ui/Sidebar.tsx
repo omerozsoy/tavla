@@ -1,6 +1,7 @@
 import './sidebar.css'
 import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
+import { useT } from '../i18n'
 
 interface PlayerInfo {
   name: string
@@ -81,19 +82,20 @@ function PlayerCard({ p, pos }: { p: PlayerInfo; pos: 'top' | 'bottom' }) {
 }
 
 export default function Sidebar({ top, bottom, length, stake }: SidebarProps) {
+  const { t } = useT()
   return (
     <div className="sidebar">
       <PlayerCard p={top} pos="top" />
       <div className="sidebar-meta">
         {length != null && (
           <div className="sm-row">
-            <span className="sm-lbl">LENGTH</span>
+            <span className="sm-lbl">{t('game.length')}</span>
             <span className="sm-val">{length}</span>
           </div>
         )}
         {stake != null && stake > 0 && (
           <div className="sm-row">
-            <span className="sm-lbl">STAKE</span>
+            <span className="sm-lbl">{t('game.stake')}</span>
             <span className="sm-val">{fmtK(stake)}</span>
           </div>
         )}
