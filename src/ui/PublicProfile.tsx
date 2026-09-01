@@ -42,6 +42,7 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
                 rating={p.rating}
                 avatar={p.avatar}
                 frame={p.frame}
+                country={p.country}
                 size={64}
                 animated
               />
