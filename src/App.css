@@ -6734,6 +6734,9 @@ button.stat-chip:hover {
    editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
+  /* TUM slaytlar icin TEK sabit yukseklik. Yazili/yazisiz banner ve farkli metin
+     uzunlugu fark etmez -> slider hep ayni boyda, gecislerde ziplama olmaz. */
+  --bs-h: clamp(400px, 52vh, 580px);
   /* Yatayda lobby-main padding'ini iptal edip kenarlara daya. Ustte NEGATIF marj YOK:
      banner sabit hesap barinin ALTINDAN baslar (bar artik banner'in ustune binmez). */
   margin: 0 calc(-1 * clamp(12px, 3vw, 40px)) 22px;
@@ -6744,13 +6747,15 @@ button.stat-chip:hover {
      ve track kirpilir (gorunmez olur). flex-shrink:0 ile sabit tutulur. */
   flex-shrink: 0;
 }
-/* Gorus penceresi: mevcut slayt akista yuksekligi verir; giren slayt ustune mutlak biner.
-   Yatay kayma .banner-slider overflow:hidden ile kirpilir (CodePen slide_viewer sistemi). */
+/* Gorus penceresi: SABIT yukseklik (--bs-h). Slaytlar bunu doldurur; giren slayt
+   ustune mutlak biner. Yatay kayma .banner-slider overflow:hidden ile kirpilir. */
 .bs-viewer {
   position: relative;
+  height: var(--bs-h);
 }
 .bs-slide {
   width: 100%;
+  height: 100%;
   display: block;
   padding: 0;
   border: 0;
@@ -6758,35 +6763,30 @@ button.stat-chip:hover {
   cursor: pointer;
   will-change: transform;
 }
-/* Gecis sirasinda ustten giren slayt: mevcut slaytin uzerine tam otur (yukseklik ondan gelir) */
+/* Gecis sirasinda ustten giren slayt: sabit yuksekligi tam kaplasin (inset:0) */
 .bs-slide.is-incoming {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
 }
 .bs-slide:disabled {
   cursor: default;
 }
-/* Yazili banner: sol panel + sag gorsel */
+/* Yazili banner: sol panel + sag gorsel (yukseklik --bs-h'den gelir) */
 .bs-slide.has-text {
   display: grid;
   grid-template-columns: minmax(300px, 40%) 1fr;
-  min-height: clamp(400px, 52vh, 580px);
+  grid-template-rows: 100%;
 }
 .bs-media {
   display: block;
   overflow: hidden;
+  height: 100%;
 }
 .bs-media img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-/* Yazisiz (ciplak) banner: gorsel tam genislik */
-.bs-slide:not(.has-text) .bs-media img {
-  height: clamp(300px, 30vw, 460px);
 }
 
 /* Sol metin paneli (duz sicak zemin, koyu ink metin) */
@@ -6956,14 +6956,18 @@ button.stat-chip:hover {
 }
 
 @media (max-width: 720px) {
-  /* Mobil: gorsel ustte, panel altta (dikey yigin) */
+  /* Mobilde de SABIT yukseklik (daha kisa). Gorsel ustte sabit, panel kalani doldurur. */
+  .banner-slider {
+    --bs-h: clamp(400px, 96vw, 500px);
+  }
+  /* Mobil: gorsel ustte, panel altta (dikey yigin); satirlar auto 1fr -> toplam --bs-h */
   .bs-slide.has-text {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    min-height: 0;
+    grid-template-rows: auto 1fr;
   }
   .bs-slide.has-text .bs-media {
     order: -1;
+    height: auto;
   }
   .bs-slide.has-text .bs-media img {
     height: clamp(180px, 46vw, 260px);
