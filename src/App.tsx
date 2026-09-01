@@ -1662,22 +1662,23 @@ export default function App() {
       }, 2100) // "hamle yok" ~2sn ekranda kalsin
       return () => window.clearTimeout(timer)
     }
-    // Tur basi + tek tam hamle -> komple oyna (otomatik onayli, mevcut davranis)
-    if (played.length === 0 && moves.length === 1 && moves[0].steps.length > 0) {
+    // Zorunlu tam hamle: mevcut pozisyondan TEK sonuc mumkun (oyuncuya hic secim
+    // birakilmiyor) -> otomatik oyna. generateMoves sonuca gore tekillestirir; yani
+    // moves.length === 1 = "hicbir tercih yok" demektir.
+    //  - Tur basi: turun tamami zorunlu -> komple oynayip onayla (mevcut davranis).
+    //  - Tur ici: oyuncu kendi zarini oynadiktan sonra kalan zar(lar) zorunluysa oynanir
+    //    (onay yine oyuncuda).
+    // Zarlardan en az biri oyuncuya secim biraktiginda (moves.length > 1) HICBIRI
+    // otomatik oynanmaz -> zorunlu zar da oyuncunun elinde kalir. (Or. 6 tek yerden,
+    // 2 birden fazla yerden oynanabiliyorsa 6'yi de sistem oynamaz.)
+    if (moves.length === 1 && moves[0].steps.length > 0) {
       const only = moves[0]
       setMessage(t('msg.forcedAuto'))
-      const timer = window.setTimeout(() => commitTurn(only.steps), 1400)
-      return () => window.clearTimeout(timer)
-    }
-    // Zorunlu ilk adim: tum yasal diziler ayni ilk adimla basliyorsa (kirik tas
-    // girisinde tek giris / tek yasal adim) -> o adimi otomatik oyna.
-    const firstKeys = new Set(
-      moves.map((m) => m.steps[0]).filter(Boolean).map((s) => `${s!.from}>${s!.to}:${s!.die}`),
-    )
-    const onlyStep = moves.map((m) => m.steps[0]).find(Boolean)
-    if (firstKeys.size === 1 && onlyStep) {
-      setMessage(t('msg.forcedAuto'))
-      const timer = window.setTimeout(() => playSteps([onlyStep]), 1250)
+      if (played.length === 0) {
+        const timer = window.setTimeout(() => commitTurn(only.steps), 1400)
+        return () => window.clearTimeout(timer)
+      }
+      const timer = window.setTimeout(() => playSteps(only.steps), 1250)
       return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
