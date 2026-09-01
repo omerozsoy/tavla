@@ -75,6 +75,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             rankSize="md"
           />
         </span>
+        <span className="lb-flag">
+          <CountryFlag code={r.country} size={16} rounded={false} />
+        </span>
         <span className="lb-games">
           {r.games} <small>{t('lb.gamesUnit')}</small>
         </span>
@@ -84,9 +87,6 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           <span className="lb-loss">{r.losses}</span>
         </span>
         <span className="lb-wr">{r.games > 0 ? `%${wr}` : '–'}</span>
-        <span className="lb-flag">
-          <CountryFlag code={r.country} size={16} rounded={false} />
-        </span>
         <span className="lb-rating">
           {by === 'coins'
             ? (r.coins ?? 0).toLocaleString('tr-TR')
@@ -166,10 +166,10 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             <div className="lb-head">
               <span className="lb-rank">#</span>
               <span className="lb-name">{t('lb.player')}</span>
+              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
@@ -200,10 +200,10 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             <div className="lb-head">
               <span className="lb-rank">#</span>
               <span className="lb-name">{t('lb.player')}</span>
+              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-games">{t('lb.games')}</span>
               <span className="lb-wl">{t('lb.winLoss')}</span>
               <span className="lb-wr">{t('lb.winRate')}</span>
-              <span className="lb-flag" aria-hidden="true" />
               <span className="lb-rating">
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
