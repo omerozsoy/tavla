@@ -70,8 +70,18 @@ export default function MatchReport({
   // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri.
   // humanColor yoksa (bot-vs-bot/izleyici) ayrim anlamsiz -> hepsi gosterilir (toggle gizli).
   const [scope, setScope] = useState<'mine' | 'opp'>('mine')
+  // Etkin insan rengi: kaydedilmis maclarda hc bazen ters gelebiliyor (eski kayit / online
+  // senkron). "Benim" tarafinda hic analiz edilebilir hamle yokken rakip tarafinda varsa
+  // etiketleme kesinlikle terstir -> otomatik cevir. Dogru veride tetiklenmez.
+  const effHuman: Player | undefined = (() => {
+    if (!humanColor) return humanColor
+    const other: Player = humanColor === 'white' ? 'black' : 'white'
+    const mineN = log.filter((e) => !e.cube && e.player === humanColor).length
+    const oppN = log.filter((e) => !e.cube && e.player === other).length
+    return mineN === 0 && oppN > 0 ? other : humanColor
+  })()
   const inScope = (e: LogEntry) =>
-    !humanColor || (scope === 'mine' ? e.player === humanColor : e.player !== humanColor)
+    !effHuman || (scope === 'mine' ? e.player === effHuman : e.player !== effHuman)
   // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
   const mistakes = log
     .map((e, i) => ({ e, i }))
@@ -88,11 +98,11 @@ export default function MatchReport({
   const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
 
   // Kup kararlari ayri gosterilir; tas oyunu istatistigi/listesi kup satirlarini haric tutar
-  const cubeLog = humanColor
-    ? log.filter((e) => e.cube && e.player === humanColor)
+  const cubeLog = effHuman
+    ? log.filter((e) => e.cube && e.player === effHuman)
     : log.filter((e) => e.cube)
   // Istatistik yalnizca insanin hamleleri; analiz listesi iki tarafi da gosterir
-  const statLog = (humanColor ? log.filter((e) => e.player === humanColor) : log).filter(
+  const statLog = (effHuman ? log.filter((e) => e.player === effHuman) : log).filter(
     (e) => !e.cube,
   )
   const counts = { good: 0, ok: 0, bad: 0, blunder: 0 }
@@ -286,7 +296,7 @@ export default function MatchReport({
             <div className="analysis-detail">
               {cur?.pos && cur.player ? (
                 <>
-                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={humanColor === 'black'} />
+                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={effHuman === 'black'} />
                   {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
                   <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
                     {candIdx < 0 || candIdx === playedIdx
