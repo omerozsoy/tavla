@@ -7,7 +7,19 @@ import { Button } from '@/components/ui/button'
 export default function LangMenu() {
   const { lang, setLang } = useT()
   const [open, setOpen] = useState(false)
+  // Panel position:fixed -> ust bar overflow'una takilmaz / banner arkasinda kalmaz.
+  const [pos, setPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
   const ref = useRef<HTMLDivElement>(null)
+
+  function toggle() {
+    setOpen((o) => {
+      if (!o && ref.current) {
+        const r = ref.current.getBoundingClientRect()
+        setPos({ top: Math.round(r.bottom + 6), right: Math.round(Math.max(8, window.innerWidth - r.right)) })
+      }
+      return !o
+    })
+  }
 
   useEffect(() => {
     if (!open) return
@@ -32,14 +44,14 @@ export default function LangMenu() {
         size="icon"
         type="button"
         className="[&_svg]:w-[24px]! [&_svg]:h-[17px]!"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         title={current.label}
         aria-label={current.label}
       >
         <Flag code={current.code} size={24} />
       </Button>
       {open && (
-        <div className="lang-pop">
+        <div className="lang-pop" style={{ position: 'fixed', top: pos.top, right: pos.right }}>
           {LANGS.map((l) => (
             <Button
               key={l.code}
