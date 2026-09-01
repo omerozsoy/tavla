@@ -11,6 +11,7 @@ export interface SideMenuProps {
   onNewGame: () => void
   onSolo?: () => void
   onAiGame?: () => void
+  onPlayFriend?: () => void
   onResume: () => void
   onLeaderboard: () => void
   onRanks?: () => void
@@ -73,6 +74,11 @@ export default function SideMenu(p: SideMenuProps) {
         {!p.inGame && p.onAiGame && (
           <Button variant="ghost" className={NAV} data-active={p.active === 'aiGame' || undefined} onClick={p.onAiGame}>
             <Icon name="robot" size={24} /> {t('menu.aiGame')}
+          </Button>
+        )}
+        {!p.inGame && p.onPlayFriend && (
+          <Button variant="ghost" className={NAV} data-active={p.active === 'playFriend' || undefined} onClick={p.onPlayFriend}>
+            <Icon name="users" size={24} /> {t('menu.playFriend')}
           </Button>
         )}
         {p.hasActiveGame && !p.inGame && (

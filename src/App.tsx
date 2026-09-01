@@ -3609,6 +3609,14 @@ export default function App() {
       closeAllPages()
       setSetup('pvb')
     }, // Yapay zekaya karsi oyna (bot)
+    // Arkadasinla Oyna: online lobiye gec (Oda Olustur -> kod paylas / Kodla Katil).
+    // Matchmaking'e (rastgele rakip) sokMAZ; davet-kodlu ozel oda akisi.
+    onPlayFriend: () => {
+      closeAllPages()
+      setRoom(null)
+      setMode('online')
+      setHome(false)
+    },
     onResume: () => {
       closeAllPages() // acik menu sayfasi (turnuvalar vb.) kalmasin, oyuna don
       setHome(false)
