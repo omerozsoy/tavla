@@ -1,0 +1,88 @@
+/* Ana sayfa footer'i — izole; site token'lari (koyu chrome). Kolonlar registry'den. */
+.site-footer {
+  margin-top: 40px;
+  border-top: 1px solid var(--border);
+  background: var(--rn-navy, var(--card-bg));
+  color: var(--text);
+}
+.foot-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 34px clamp(16px, 4vw, 48px) 24px;
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.foot-brand {
+  flex: 1 1 200px;
+  min-width: 180px;
+}
+.foot-logo {
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+.foot-logo::first-letter {
+  color: var(--accent);
+}
+.foot-tag {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 260px;
+}
+.foot-cols {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: 28px;
+  flex: 2 1 520px;
+}
+.foot-col-title {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.foot-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.foot-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.9rem;
+  text-align: left;
+  transition: color 0.15s ease;
+  font-family: inherit;
+}
+.foot-link:hover {
+  color: var(--accent);
+}
+.foot-bottom {
+  border-top: 1px solid var(--border);
+  padding: 14px clamp(16px, 4vw, 48px);
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 640px) {
+  .foot-inner {
+    gap: 24px;
+  }
+  .foot-cols {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 20px;
+    flex-basis: 100%;
+  }
+}
