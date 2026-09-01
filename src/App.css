@@ -6209,7 +6209,8 @@ button.stat-chip:hover {
   border-radius: var(--radius-pill);
 }
 .account-id .account-name:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: none; /* uzerine gelince zemin degismesin */
+  border-color: var(--border); /* sadece yuvarlak kenarli ince cerceve */
 }
 /* Ic chip'ler (coin/rating): kendi cerceve/zemini yok; sol bolucu cizgi ile ayrilir */
 .account-id .stat-chip {
@@ -6395,13 +6396,14 @@ button.stat-chip:hover {
   padding: 3px 8px;
   white-space: nowrap;
   background: none;
-  border: none;
+  border: 1px solid transparent; /* hover'da renklenecek cerceve (layout kaymaz) */
   border-radius: var(--radius-pill);
   font-family: inherit;
   cursor: pointer;
 }
 .account-name:hover {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: none; /* uzerine gelince zemin degismesin */
+  border-color: var(--border); /* sadece yuvarlak kenarli ince cerceve */
 }
 .account-btn {
   display: inline-flex;
@@ -8619,7 +8621,7 @@ button.stat-chip:hover {
   display: flex;
   gap: 14px;
   align-items: flex-start;
-  margin-top: 20px; /* sticky baslik ile icerik arasi belirgin nefes */
+  margin-top: 34px; /* sticky baslik ile icerik arasi belirgin nefes */
 }
 .analysis-list {
   flex: 0 0 300px;
