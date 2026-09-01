@@ -72,7 +72,6 @@ import {
 } from './api'
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
-import BoardSettings from './ui/BoardSettings'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
@@ -396,8 +395,8 @@ export default function App() {
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
-  const [boardSettingsOpen, setBoardSettingsOpen] = useState(false) // tahta rengi modali
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
+  const [shopTab, setShopTab] = useState<'coins' | 'board' | 'frame'>('coins') // Magaza acilis sekmesi
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
@@ -481,8 +480,6 @@ export default function App() {
                             ? 'tavla-magazin'
                             : contentView === 'club'
                               ? 'kulup-rehberi'
-                              : boardSettingsOpen
-                              ? 'ayarlar'
                               : quizOpen
                                 ? 'bulmaca'
                                 : clubsOpen
@@ -587,8 +584,9 @@ export default function App() {
           setContentView('club')
           break
         case 'ayarlar':
-        case 'tahta-ayarlari': // eski slug -> geriye donuk uyum
-          setBoardSettingsOpen(true)
+        case 'tahta-ayarlari': // eski slug -> Magaza'nin Tahta Rengi sekmesi
+          setShopTab('board')
+          setShopOpen(true)
           break
         case 'bulmaca':
           setQuizOpen(true)
@@ -3299,9 +3297,7 @@ export default function App() {
   const ownedFrames = AVATAR_FRAMES.filter((f) => (user?.unlocks ?? []).includes('frame.' + f.id))
 
   // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
-  // GARANTI: Ayarlar (boardSettingsOpen) acikken profil RENDER EDILMEZ -> ust uste
-  // binme imkansiz; Ayarlar kapaninca editProfile hala acikse profile geri donulur.
-  const editProfilePage = editProfile && !boardSettingsOpen ? (
+  const editProfilePage = editProfile ? (
     user && !profileEditMode ? (
       <ProfileOverview
         user={user}
@@ -3444,16 +3440,6 @@ export default function App() {
         variant="ghost"
         size="icon"
         className="[&_svg]:size-[24px]!"
-        title={t('menu.settings')}
-        aria-label={t('menu.settings')}
-        onClick={() => openSettings()}
-      >
-        <Icon name="settings" size={24} />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="[&_svg]:size-[24px]!"
         title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
         aria-label={t('menu.theme')}
         onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -3521,7 +3507,6 @@ export default function App() {
     setSoloOpen(false)
     setContentView(null)
     setNewsSlug(null)
-    setBoardSettingsOpen(false)
     setQuizOpen(false)
     setClubsOpen(false)
     setRulesOpen(false)
@@ -3539,17 +3524,6 @@ export default function App() {
     if (!home && !setup && hasActiveGame) return
     closeAllPages()
     open()
-  }
-  // Ayarlar TAM-EKRAN overlay (register-overlay modal) -> alttaki baglami (home/kurulum/
-  // acik sayfa) KAPATMAYA gerek yok. goPage'in closeAllPages'i cagirilsaydi kurulum ekrani
-  // (setup) silinir, kaydedip kapatinca geri donecek yer kalmaz -> ANA SAYFAYA duserdi.
-  // closeAllPages CAGIRMADAN ac: kapaninca acildigi yere (kurulum/sayfa) geri doner.
-  const openSettings = () => {
-    if (!home && !setup && hasActiveGame) return // aktif oyunu bolme (goPage ile ayni koruma)
-    // Diger menu sayfalarini (Magaza, Liderlik vb.) KAPAT ki page-host icinde yigilmasin;
-    // setup KORUNUR (remount olmasin) -> Ayarlar kapaninca kurulum/sayfa yerinde kalir.
-    closeMenuPages()
-    setBoardSettingsOpen(true)
   }
 
   // Ortak menu callback'leri (ana sayfa + oyun ekrani ayni menu)
@@ -3603,7 +3577,6 @@ export default function App() {
     onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
     onLessons: () => goPage(() => setLessonsOpen(true)),
     onFairness: () => goPage(() => setFairOpen(true)),
-    onBoardSettings: openSettings,
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
 
@@ -3668,7 +3641,6 @@ export default function App() {
     lessonsOpen ||
     soloOpen ||
     !!contentView ||
-    boardSettingsOpen ||
     quizOpen ||
     clubsOpen ||
     rulesOpen ||
@@ -3773,7 +3745,26 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
-          onClose={() => setShopOpen(false)}
+          initialTab={shopTab}
+          boardTheme={boardTheme}
+          setBoardTheme={setBoardTheme}
+          boardThemes={boardThemeList}
+          onBuyItem={handleBuy}
+          framesSlot={
+            <FrameShop
+              coins={user.coins ?? 0}
+              unlocks={user.unlocks ?? []}
+              currentFrame={user.avatar_frame ?? null}
+              avatar={profile.avatar ?? null}
+              name={profile.nickname}
+              onBuy={handleBuy}
+              onEquip={handleEquipFrame}
+            />
+          }
+          onClose={() => {
+            setShopOpen(false)
+            setShopTab('coins') // sonraki normal acilis coin sekmesinden baslasin
+          }}
         />
       )}
       {frameGalleryOpen && (
@@ -3850,36 +3841,6 @@ export default function App() {
           />
         </div>
       )}
-      {boardSettingsOpen && (
-        <BoardSettings
-          boardTheme={boardTheme}
-          setBoardTheme={setBoardTheme}
-          boardThemes={boardThemeList}
-          coins={user?.coins ?? 0}
-          onBuy={handleBuy}
-          framesSlot={
-            user ? (
-              <FrameShop
-                coins={user.coins ?? 0}
-                unlocks={user.unlocks ?? []}
-                currentFrame={user.avatar_frame ?? null}
-                avatar={profile.avatar ?? null}
-                name={profile.nickname}
-                onBuy={handleBuy}
-                onEquip={handleEquipFrame}
-              />
-            ) : (
-              <FrameGallery
-                embed
-                avatar={profile.avatar ?? null}
-                name={profile.nickname}
-                onClose={() => {}}
-              />
-            )
-          }
-          onClose={() => setBoardSettingsOpen(false)}
-        />
-      )}
     </>
   )
 
@@ -3896,7 +3857,13 @@ export default function App() {
           onSelect={setBoardTheme}
           onMore={() => {
             setBoardPickerOpen(false)
-            setBoardSettingsOpen(true)
+            // Tum tahtalar + satin alma artik Magaza'nin Tahta Rengi sekmesinde
+            if (user) {
+              setShopTab('board')
+              setShopOpen(true)
+            } else {
+              setShowAuth(true)
+            }
           }}
           onClose={() => setBoardPickerOpen(false)}
         />
@@ -3959,7 +3926,7 @@ export default function App() {
             </div>
           </main>
         </div>
-        {/* Kurulumda "Tahtayi Degistir" -> BoardSettings menuPages icinde; overlay olarak render et */}
+        {/* Kurulumda "Tahtayi Degistir" -> BoardPickerModal (menuOverlays); "Daha fazla" Magaza'yi acar */}
         {menuPages}
         {authModal}
         {menuOverlays}
