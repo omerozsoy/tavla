@@ -158,8 +158,10 @@
   --input-bg: #24211d; /* ink input */
   --on-accent: #f8f1e7; /* brick aksan uzerinde sicak ivory metin */
 
-  /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar) */
-  --header-h: 64px;
+  /* Ust hesap bari icin ayrilan yukseklik (tahta bunun altindan baslar).
+     Grid 'bar' satiri buna KILITLI -> bar icerigi (logo+kontroller) tek satirda
+     tam sigmali; menu her sayfada ayni yerde baslasin. */
+  --header-h: 70px;
 
   /* ====== OYUN GEOMETRI SISTEMI (tek merkez) ======
      Tum olculer birbirinden turetilir; hicbir bilesen magic-number kullanmaz.
@@ -3142,8 +3144,8 @@ button[aria-disabled='true'],
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  /* ust padding hesap barini gecer */
-  padding: 78px clamp(16px, 3vw, 48px) 56px;
+  /* ust padding hesap barini gecer; menu ile ayni hizada baslasin (bar + row-gap) */
+  padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
 }
 /* STANDART SAYFA BASLIGI — tum menu sayfalarinda AYNI (ikon + baslik).
    Setup/solo iki-kolon oldugu icin baslik torun (setup-card/solo-card icinde);
@@ -5832,6 +5834,8 @@ html.fs-active .account-bar {
   /* Yan menu drawer (fixed) -> grid tek kolon: band + icerik (menu kolonu yer kaplamaz). */
   .app.lobby {
     grid-template-columns: 1fr;
+    /* Mobilde bar yuksekligi farkli (48px) -> satiri icerige birak (auto). */
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       'bar'
       'main';
@@ -6241,6 +6245,10 @@ button.stat-chip:hover {
   --radius-pill: 0;
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
+  /* Bar satirini SABIT yukseklige kilitle: aksi halde auto satir, sayfaya gore
+     64-82px arasi degisip altindaki 'menu' satirini kaydiriyordu ("menu asagi
+     kayiyor"). Sabit satir -> menu HER sayfada ayni yerde. */
+  grid-template-rows: var(--header-h) 1fr;
   grid-template-areas:
     'bar bar'
     'menu main';
