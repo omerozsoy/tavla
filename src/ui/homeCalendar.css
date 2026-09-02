@@ -1,14 +1,31 @@
 /* Ana sayfa mini takvim paneli — .home-panel tabaninin (canli maclar boyutu) uzerine.
    Izole; App.css'e dokunmaz. Turnuva gunleri isaretli, bugun vurgulu. */
 /* Diger ana sayfa bloklariyla (hero, mod kartlari) AYNI container: ortalanmis,
-   max-width:--lobby-w -> sol kenari onlarla hizali; artik sola dayali gorunmuyor. */
+   max-width:--lobby-w -> sol kenari onlarla hizali; artik sola dayali gorunmuyor.
+   Icerik 1/2-1/2: solda takvim, sagda (simdilik bos) yan kutu. */
 .home-cal-wrap {
   width: 100%;
   max-width: var(--lobby-w);
   margin: 8px auto 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: stretch;
 }
 .cal-panel {
-  width: 100%; /* container'i doldurur -> Liderlik Tablosu buyuklugu */
+  width: 100%; /* kendi yarisini doldurur */
+}
+/* Sagdaki bos yer tutucu kutu (ileride doldurulacak) */
+.cal-side-box {
+  min-height: 100%;
+}
+@media (max-width: 720px) {
+  .home-cal-wrap {
+    grid-template-columns: 1fr; /* mobilde alt alta */
+  }
+  .cal-side-box {
+    display: none; /* mobilde bos kutu gizli */
+  }
 }
 .cal-head {
   display: flex;
