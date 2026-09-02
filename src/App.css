@@ -3067,7 +3067,8 @@ button[aria-disabled='true'],
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  font-size: 0.88rem;
+  font-size: 0.92rem;
+  font-weight: 400;
   color: var(--muted);
 }
 .event-meta span {
@@ -3082,7 +3083,7 @@ button[aria-disabled='true'],
 .event-organizer {
   gap: 7px;
   font-weight: 400;
-  font-size: 1rem;
+  font-size: 0.92rem;
 }
 .event-social {
   display: inline-flex;
@@ -3124,7 +3125,8 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.85rem;
+  font-size: 0.92rem;
+  font-weight: 400;
   color: var(--accent);
   text-decoration: none;
 }
@@ -3138,12 +3140,12 @@ button[aria-disabled='true'],
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
+  font-weight: 400;
   color: var(--muted);
 }
 .event-hotel {
   color: var(--text);
-  font-weight: 400;
 }
 .event-hotel svg,
 .event-address svg {

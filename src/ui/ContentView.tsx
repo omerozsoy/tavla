@@ -795,7 +795,7 @@ function EventRow({
         <div className="event-meta">
           {ev.organizer && (
             <span className="event-organizer">
-              <Icon name="star" size={12} /> {ev.organizer}
+              <Icon name="star" size={24} /> {ev.organizer}
               {kurum?.instagram && (
                 <a
                   className="event-social ig"
@@ -805,7 +805,7 @@ function EventRow({
                   aria-label="Instagram"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Icon name="instagram" size={14} />
+                  <Icon name="instagram" size={24} />
                 </a>
               )}
               {kurum?.youtube && (
@@ -817,28 +817,28 @@ function EventRow({
                   aria-label="YouTube"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Icon name="youtube" size={14} />
+                  <Icon name="youtube" size={24} />
                 </a>
               )}
             </span>
           )}
           {ev.province && (
             <span>
-              <Icon name="pin" size={12} /> {ev.province}
+              <Icon name="pin" size={24} /> {ev.province}
             </span>
           )}
         </div>
         {/* Otel kendi satirinda */}
         {ev.hotel && (
           <div className="event-hotel">
-            <Icon name="building-office" size={13} /> {ev.hotel}
+            <Icon name="building-office" size={24} /> {ev.hotel}
           </div>
         )}
         {/* Adres kendi satirinda: otel seciliyse OTELIN adresi onceliklidir; yoksa eski 'place'.
             (place alani formdan kaldirildi; eski kayitlarda kalan deger oteli EZMESIN.) */}
         {(hotelPlace || ev.place) && (
           <div className="event-address">
-            <Icon name="pin" size={13} /> {hotelPlace || ev.place}
+            <Icon name="pin" size={24} /> {hotelPlace || ev.place}
           </div>
         )}
         {/* En altta: iletisim kisi(leri) + cep telefonu -> WhatsApp baglantisi */}
@@ -854,7 +854,7 @@ function EventRow({
                   target={wa ? '_blank' : undefined}
                   rel={wa ? 'noreferrer' : undefined}
                 >
-                  <Icon name={wa ? 'whatsapp' : 'phone'} size={14} /> {c.name}
+                  <Icon name={wa ? 'whatsapp' : 'phone'} size={24} /> {c.name}
                   {c.name && c.phone ? ' · ' : ''}
                   {c.phone}
                 </a>
@@ -867,7 +867,7 @@ function EventRow({
                 target={waLink(ev.contact) ? '_blank' : undefined}
                 rel={waLink(ev.contact) ? 'noreferrer' : undefined}
               >
-                <Icon name={waLink(ev.contact) ? 'whatsapp' : 'phone'} size={14} /> {ev.contact}
+                <Icon name={waLink(ev.contact) ? 'whatsapp' : 'phone'} size={24} /> {ev.contact}
               </a>
             )}
           </div>
