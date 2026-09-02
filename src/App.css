@@ -2930,9 +2930,8 @@ button[aria-disabled='true'],
   flex-direction: column;
   gap: 8px;
   padding-left: 18px;
-  /* Sag ust kose kurdelesi (bayrak) icin bos serit: gorsel/yazi bayragin altina
-     girmesin, bayrak temiz zeminde net gozuksun. */
-  padding-right: 56px;
+  /* Sag boslugu KOLONDAN kaldirdik -> gorsel tam genislik (daha cok alan).
+     Bayrak+harita ikonu icin bos serit yalniz baslik metnine uygulanir. */
   border-left: 1px solid var(--border);
 }
 /* Otel gorsel karti: cerceve YOK (border/radius kaldirildi) -> gorsel serbest,
@@ -2946,8 +2945,9 @@ button[aria-disabled='true'],
   height: 180px;
   object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
 }
-/* Ustten alta: otel adi -> adres -> Haritada Gor. Altinda gorsel gelir. */
+/* Otel adi + adres. Sag ust ikon/bayrak altina girmesin diye sag boslugu var. */
 .event-hotel-head {
+  padding-right: 92px;
   color: var(--text);
 }
 .ehc-name {
@@ -2962,23 +2962,24 @@ button[aria-disabled='true'],
   line-height: 1.3;
   color: var(--muted);
 }
-.event-map-link {
-  margin-top: 10px;
+/* Haritada Gor: sag ust kosede (bayragin solunda) 24px ikon. Metinsiz -> gorsele alan. */
+.event-map-icon {
+  position: absolute;
+  top: 14px;
+  right: 62px; /* bayrak: right:8 + width:46 = 54; solunda birak */
+  z-index: 4;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 7px 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  color: var(--text);
-  text-decoration: none;
-  font-size: 0.82rem;
-  transition: border-color 0.16s ease, color 0.16s ease;
-}
-.event-map-link:hover {
-  border-color: var(--accent);
+  width: 24px;
+  height: 24px;
   color: var(--accent);
+  text-decoration: none;
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+.event-map-icon:hover {
+  transform: scale(1.1);
+  opacity: 0.85;
 }
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
