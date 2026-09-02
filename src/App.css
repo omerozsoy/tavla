@@ -2946,9 +2946,12 @@ button[aria-disabled='true'],
   object-fit: cover; /* TEK BOY: farkli oranlardaki gorseller ayni kutuyu doldurur */
   border-radius: var(--radius-md);
 }
-/* SOL kolonda otel blogu: ad -> adres -> Yol Tarifi Al. */
+/* SOL kolonda otel blogu: ad -> adres -> Yol Tarifi Al.
+   Ust tarafta ince ayrac cizgisi (seperator); cizginin alt/ust boslugu AZ. */
 .event-hotel-block {
-  margin-top: 10px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
   color: var(--text);
 }
 .ehc-name {
