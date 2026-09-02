@@ -1,6 +1,7 @@
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
+import { TavlaTvLogo } from './TavlaTvLogo'
 import type { MenuGroup } from '../pages'
 
 // Ana sayfa ve oyun ekraninda ortak tek menu. Ogeler MERKEZI SAYFA KAYDINDAN (pages.ts)
@@ -40,6 +41,11 @@ export default function SideMenu(p: SideMenuProps) {
         if (p.onCloseMobile && (e.target as HTMLElement).closest('button')) p.onCloseMobile()
       }}
     >
+      {/* Mobil drawer basligi: TavlaTV logosu (desktop sabit yan menude CSS ile gizli) */}
+      <div className="side-menu-brand" aria-hidden="true">
+        <TavlaTvLogo size={34} />
+      </div>
+
       {/* Oyun ici eylemler (analiz / pes) — oyun ekraninda, play grubunun yerinde */}
       {p.inGame && (p.onToggleAnalysis || (p.canResign && p.onResign)) && (
         <div className="menu-group">
