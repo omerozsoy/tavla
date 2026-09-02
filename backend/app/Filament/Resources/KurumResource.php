@@ -48,6 +48,13 @@ class KurumResource extends Resource
             Forms\Components\TextInput::make('contact')->label('Web sitesi (URL)')
                 ->url()->prefixIcon('heroicon-o-globe-alt')
                 ->placeholder('https://ornek.com')->columnSpanFull(),
+            Forms\Components\Repeater::make('contacts')->label('Yetkili kişi(ler)')
+                ->schema([
+                    Forms\Components\TextInput::make('name')->label('Ad Soyad')->required(),
+                    Forms\Components\TextInput::make('phone')->label('Cep telefonu')
+                        ->tel()->mask('999 9999999')->placeholder('532 1111111')->required(),
+                ])
+                ->columns(2)->addActionLabel('Yetkili kişi ekle')->reorderable(false)->columnSpanFull(),
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(6)->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
