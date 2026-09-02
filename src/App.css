@@ -2860,6 +2860,58 @@ button[aria-disabled='true'],
   flex: 1 1 auto;
   min-width: 0;
 }
+/* En sag sutun: secili otelin gomulu Google Maps haritasi + "Haritada Gör" butonu. */
+.event-map-col {
+  flex: 0 0 auto;
+  width: 260px;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 18px;
+  border-left: 1px solid var(--border);
+}
+.event-map {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 150px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: block;
+}
+.event-map-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.82rem;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+.event-map-link:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+/* Dar ekran: harita sutunu alta insin, tam genislik. */
+@media (max-width: 860px) {
+  .event-map-col {
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .event-row.has-map {
+    flex-wrap: wrap;
+  }
+  .event-map {
+    min-height: 180px;
+  }
+}
 /* Logosuz etkinlik: sol sutun yok, bilgiler dogal olarak tam genislik alir. */
 @media (max-width: 560px) {
   .event-row {

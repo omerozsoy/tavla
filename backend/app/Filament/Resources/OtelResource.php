@@ -58,6 +58,13 @@ class OtelResource extends Resource
                 ->options(fn (Forms\Get $get) => EventResource::provinceOptions($get('country')))
                 ->searchable(),
             Forms\Components\TextInput::make('place')->label('Adres')->columnSpanFull(),
+            // Google Maps linki: otelin Maps paylasim/harita linki. Etkinlik takviminde
+            // "Haritada Gör" + gomulu harita bu linke gore gosterilir. links.maps alaninda saklanir.
+            Forms\Components\TextInput::make('links.maps')->label('Google Maps linki')
+                ->url()->prefixIcon('heroicon-o-map-pin')
+                ->placeholder('https://maps.app.goo.gl/... veya https://www.google.com/maps/...')
+                ->helperText('Google Maps’te oteli bul → Paylaş → linki buraya yapıştır.')
+                ->columnSpanFull(),
             // Web sitesi ve telefon ayri alanlar. Web -> links.website, telefon -> contact.
             Forms\Components\TextInput::make('links.website')->label('Web sitesi')
                 ->url()->prefixIcon('heroicon-o-globe-alt')->placeholder('https://ornek.com'),

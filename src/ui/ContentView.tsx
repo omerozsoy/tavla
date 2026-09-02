@@ -122,18 +122,22 @@ export default function ContentView({
 
   // Takvim (etkinlik): otel adi -> otel bilgisi (gorsel + adres). hotel adi = otel basligi.
   // Resimler otel kaydina yuklenir; etkinlik takviminde secili otelin gorseli gosterilir.
-  const [hotels, setHotels] = useState<Record<string, { image?: string; place?: string; province?: string }>>({})
+  const [hotels, setHotels] = useState<
+    Record<string, { image?: string; place?: string; province?: string; country?: string; maps?: string }>
+  >({})
   useEffect(() => {
     if (type !== 'event') return
     listContents('otel')
       .then((hs) => {
-        const map: Record<string, { image?: string; place?: string; province?: string }> = {}
+        const map: Record<string, { image?: string; place?: string; province?: string; country?: string; maps?: string }> = {}
         for (const h of hs)
           if (h.title)
             map[h.title] = {
               image: h.image ?? undefined,
               place: h.place ?? undefined,
               province: h.province ?? undefined,
+              country: h.country ?? undefined,
+              maps: h.links?.maps ?? undefined,
             }
         setHotels(map)
       })
@@ -676,15 +680,24 @@ function EventRow({
   ev: Content
   upcoming: boolean
   logo?: string
-  hotel?: { image?: string; place?: string; province?: string }
+  hotel?: { image?: string; place?: string; province?: string; country?: string; maps?: string }
 }) {
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
   // Etkinlik gorseli: once kendi resmi, yoksa secili otelin resmi.
   const img = ev.image || hotel?.image
   // Otelin adresi (varsa) place bos ise gosterilebilir.
   const hotelPlace = hotel?.place
+  // Harita: otel secili ise goster. Gomulu harita otel adi+konum aramasiyla; "Haritada Gor"
+  // butonu otelin yapistirilan Maps linkiyle (yoksa arama URL'i) acilir.
+  const mapQuery = ev.hotel
+    ? [ev.hotel, hotel?.place, hotel?.province, hotel?.country].filter(Boolean).join(', ')
+    : ''
+  const mapEmbed = mapQuery
+    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`
+    : ''
+  const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''}`}>
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${mapEmbed ? 'has-map' : ''}`}>
       {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
           bilgiler tam genislik alir. */}
       {logo && (
@@ -740,6 +753,24 @@ function EventRow({
         )}
         {ev.body && <p className="event-body">{ev.body}</p>}
       </div>
+      {/* Sag: secili otelin konumu — gomulu Google Maps + "Haritada Gör" butonu. */}
+      {mapEmbed && (
+        <div className="event-map-col">
+          <iframe
+            className="event-map"
+            src={mapEmbed}
+            title={`${ev.hotel ?? ''} harita`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+          {mapHref && (
+            <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
+              <Icon name="pin" size={13} /> Haritada Gör
+            </a>
+          )}
+        </div>
+      )}
     </div>
   )
 }

@@ -95,6 +95,7 @@ class ContentController extends Controller
             'links.instagram' => ['nullable', 'string', 'max:300'],
             'links.youtube' => ['nullable', 'string', 'max:300'],
             'links.website' => ['nullable', 'string', 'max:300'],
+            'links.maps' => ['nullable', 'string', 'max:500'],
             'image' => ['nullable', 'string', 'max:500'],
             'event_at' => ['nullable', 'date'],
             'event_end' => ['nullable', 'date'],
