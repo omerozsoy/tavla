@@ -70,6 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/performance-stats', [AuthController::class, 'performanceStats']); // Medyan Hata Orani + WXP
     Route::get('/me/wxp-breakdown', [AuthController::class, 'wxpBreakdown']); // WXP kategori kirilimi (coin/1/3/5/7)
     Route::get('/me/dice-stats', [AuthController::class, 'diceStats']); // Zar Ortalamalari (zar-basina Sen/Rakip)
+    Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating istemci beyanina dayali (online oyunda sunucu-otoriteli mac yok).

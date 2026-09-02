@@ -94,6 +94,7 @@ export class NeuralBot implements Engine {
   name = 'Sinir Ağı'
   level = 10 // 1..10 zorluk (10 = her zaman en iyi)
   lastLoss = 0 // son secilen hamlenin equity kaybi (bot PR'i icin)
+  private static evalWarned = false // eval hatasi icin tek seferlik uyari
   private ort: Ort | null = null
   private contact: InferenceSession | null = null
   private race: InferenceSession | null = null
@@ -144,6 +145,9 @@ export class NeuralBot implements Engine {
     const moves = generateMoves(state)
     if (moves.length === 0) return []
     const cands = await this.scoreMoves(state, moves)
+    // Eval basarisizsa (probs dolmadi) sonuc guvenilmez -> bos don ki cagiran PR'i
+    // uydurma 0.00 ile DOLDURMASIN (record ranks.length===0 gorunce atlar -> PR "—").
+    if (cands.some((c) => (c.probs?.length ?? 0) < 6)) return []
     const ranked = cands.map((c) => ({ move: c.move, equity: c.equity, probs: c.probs }))
     ranked.sort((a, b) => b.equity - a.equity)
     return ranked
@@ -271,10 +275,19 @@ export class NeuralBot implements Engine {
 
     const contactCands = candidates.filter((c) => c.phase === 'contact')
     const raceCands = candidates.filter((c) => c.phase === 'race')
-    await Promise.all([
-      this.evalGroup(this.contact!, contactCands, CONTACT_INPUTS),
-      this.evalGroup(this.race!, raceCands, RACE_INPUTS),
-    ])
+    try {
+      await Promise.all([
+        this.evalGroup(this.contact!, contactCands, CONTACT_INPUTS),
+        this.evalGroup(this.race!, raceCands, RACE_INPUTS),
+      ])
+    } catch (e) {
+      // ONNX/WASM degerlendirmesi basarisiz -> probs bos kalir. Sessiz gecme: bir kez uyar.
+      // (analyzeMoves bu durumda [] doner -> PR sahte 0.00 yerine "—" kalir.)
+      if (!NeuralBot.evalWarned) {
+        NeuralBot.evalWarned = true
+        console.warn('[neuralBot] pozisyon degerlendirmesi basarisiz (ONNX/WASM):', e)
+      }
+    }
     return candidates
   }
 

@@ -1076,7 +1076,12 @@ export async function reportRating(
   matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
   extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
-): Promise<{ rating: number; achievements?: UnlockedAchievement[] }> {
+): Promise<{
+  rating: number
+  achievements?: UnlockedAchievement[]
+  pr_self?: number | null // sunucu-otoriter kendi PR (kendi log'undan)
+  pr_opponent?: number | null // rakibin sunucu-otoriter PR'i (varsa)
+}> {
   return req('/rating/report', {
     method: 'POST',
     body: JSON.stringify({
@@ -1101,6 +1106,18 @@ export async function reportRating(
       ach_flags: extra?.ach_flags ?? [],
     }),
   })
+}
+
+// Online mac PR cifti (sunucu-otoriter): iki oyuncu ayni degerleri gorsun diye
+// sonuc ekrani bunu okur. Rakip henuz raporlamadiysa opponent null gelebilir.
+export async function matchPr(
+  roomCode: string,
+): Promise<{ self: number | null; opponent: number | null }> {
+  try {
+    return await req(`/me/match-pr?room_code=${encodeURIComponent(roomCode)}`)
+  } catch {
+    return { self: null, opponent: null }
+  }
 }
 
 // ==================== BASARIMLAR (ACHIEVEMENTS) ====================
