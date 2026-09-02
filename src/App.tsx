@@ -3560,7 +3560,7 @@ export default function App() {
         />
       )}
       {user && (
-        <Button variant="outline" onClick={() => goPage(() => setShopOpen(true))}>
+        <Button variant="outline" className="account-shop-btn" onClick={() => goPage(() => setShopOpen(true))}>
           <Icon name="shop" size={15} /> {t('shop.title')}
         </Button>
       )}

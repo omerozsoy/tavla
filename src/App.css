@@ -6381,11 +6381,16 @@ button.stat-chip:hover {
       'bar'
       'main';
   }
+  /* Mobilde de TAM wordmark gozuksun (kompakt sembol degil); sigmasi icin
+     inline font-size'i (38px) ez -> daha kucuk olcek. */
   .ab-logo-full {
-    display: none;
+    display: inline-flex;
+  }
+  .ab-logo-full > [role='img'] {
+    font-size: 26px !important;
   }
   .ab-logo-mark {
-    display: inline-flex;
+    display: none;
   }
   .ab-brand {
     margin-left: 0; /* hamburger sagda -> logo solda gorunur */
@@ -6630,9 +6635,16 @@ button.stat-chip:hover {
     min-width: 34px !important;
     padding: 0 5px !important;
   }
-  /* Kompakt logo + hamburger'a yer (biraz daha dar) */
+  /* Dar telefon: wordmark biraz daha kucuk + en sola yaslansin (hamburger sagda). */
+  .ab-logo-full > [role='img'] {
+    font-size: 20px !important;
+  }
   .ab-brand {
-    margin-left: 42px;
+    margin-left: 0;
+  }
+  /* Yer ac: bagimsiz "Magaza" butonu mobilde gereksiz (coin cipi zaten magazayi acar). */
+  .account-shop-btn {
+    display: none;
   }
 }
 
