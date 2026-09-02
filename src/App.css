@@ -15853,11 +15853,13 @@ button.acct-row:hover:not(:disabled) {
 }
 
 /* ---- Kup danismani ---- */
-.cube-offer {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+/* Roll-oncesi kup tavsiyesi: SADECE ogrenme modunda, ogrenme mesajiyla
+   ayni sol-alt konumda (hint-box ile ayni yer; ikisi es zamanli cikmaz). */
+.cube-hint-fixed {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 55;
 }
 .cube-advice {
   display: inline-flex;

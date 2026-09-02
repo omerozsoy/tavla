@@ -3260,7 +3260,7 @@ export default function App() {
         <div className="result-title">
           {t('msg.doubled', { name: pName(cubePending!), value: match.cube.value * 2 })}
         </div>
-        {cubeHint?.kind === 'respond' && (
+        {learnMode && cubeHint?.kind === 'respond' && (
           <div className={`cube-advice ${cubeHint.take === 'take' ? 'ok' : 'warn'}`}>
             <Icon name="bulb" size={14} />
             {t(cubeHint.take === 'take' ? 'cube.advTake' : 'cube.advDrop')} ·{' '}
@@ -3324,22 +3324,9 @@ export default function App() {
       ? null
       : humanCanDouble
         ? (
-            <div className="cube-offer">
-              {cubeHint?.kind === 'offer' && (
-                <div
-                  className={`cube-advice ${
-                    cubeHint.action === 'no-double' ? 'muted' : 'ok'
-                  }`}
-                >
-                  <Icon name="bulb" size={14} />
-                  {t(`cube.adv.${cubeHint.action}`)} · {t('cube.win')}{' '}
-                  {cubeHint.winPct.toFixed(0)}%
-                </div>
-              )}
-              <Button variant="default" onClick={() => handleDouble(turnStart.turn)}>
-                {t('btn.double')}
-              </Button>
-            </div>
+            <Button variant="default" onClick={() => handleDouble(turnStart.turn)}>
+              {t('btn.double')}
+            </Button>
           )
         : diceRolled && played.length > 0
           ? (
@@ -4793,6 +4780,18 @@ export default function App() {
         <Button variant="default" className="fixed left-4 bottom-4 z-[55]" aria-label={t('hint.button')} onClick={() => setHintShown(true)}>
           <Icon name="bulb" size={16} /> {t('hint.button')}
         </Button>
+      )}
+      {/* Kup danismani: SADECE ogrenme modunda ve ogrenme mesajinin ciktigi sol-alt konumda */}
+      {learnMode && humanCanDouble && cubeHint?.kind === 'offer' && (
+        <div className="cube-hint-fixed">
+          <div
+            className={`cube-advice ${cubeHint.action === 'no-double' ? 'muted' : 'ok'}`}
+          >
+            <Icon name="bulb" size={14} />
+            {t(`cube.adv.${cubeHint.action}`)} · {t('cube.win')}{' '}
+            {cubeHint.winPct.toFixed(0)}%
+          </div>
+        </div>
       )}
       {/* Hamburger butonu .game-area içinde board'un sağ kenarına taşındı (aşağı) */}
       <GameMenu
