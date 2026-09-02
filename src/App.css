@@ -5655,19 +5655,20 @@ html.fs-active .account-bar {
   display: none;
   position: fixed;
   z-index: 110;
-  /* En ust sag koseye TAM otursun (safe-area disinda bosluk yok). */
-  top: env(safe-area-inset-top);
+  /* Yatay: sag kose. Dikey: ust beyaz bantta (~48px) ortala -> (48-44)/2 = 2px. */
+  top: calc(2px + env(safe-area-inset-top));
   right: env(safe-area-inset-right);
   width: 44px;
   height: 44px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
+  /* Cerceve YOK (kullanici istegi): border/golge yok. Zemin bant rengiyle ayni ->
+     bantta gorunmez ("cercevesiz"), icerige kayinca ikon okunur kalir. */
+  border: none;
   border-radius: var(--radius-lg);
   background: var(--card-bg);
   color: var(--text);
   cursor: pointer;
-  /* Golge YOK (kullanici istegi) — flat. */
   box-shadow: none;
 }
 .menu-backdrop {
@@ -7480,7 +7481,9 @@ button.acct-row:hover:not(:disabled) {
   font-variant-numeric: tabular-nums;
 }
 /* Turnuvalar: iki kolonu da kaplayan tam genislik panel */
-.tourn-panel {
+/* Sadece home-panels izgarasinda tam genislik; takvim satirinda (home-cal-wrap)
+   normal kolon olarak kalir. */
+.home-panels .tourn-panel {
   grid-column: 1 / -1;
 }
 .home-panel-empty {
