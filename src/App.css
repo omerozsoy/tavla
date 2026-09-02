@@ -2823,6 +2823,8 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .event-row {
+  position: relative; /* kose kurdelesi icin */
+  overflow: hidden; /* kurdele koseye kirpilsin */
   display: flex;
   align-items: flex-start;
   gap: 18px;
@@ -2832,6 +2834,34 @@ button[aria-disabled='true'],
   border-radius: var(--radius-md);
   margin-bottom: 10px;
   background: var(--card-bg);
+}
+/* Sag ust kose kurdelesi (SALE tarzi): kirmizi capraz bant + uzerinde bayrak. */
+.event-ribbon {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 88px;
+  height: 88px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+.event-ribbon-band {
+  position: absolute;
+  top: 17px;
+  right: -28px;
+  width: 126px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 0;
+  background: linear-gradient(135deg, #e30a17, #a10510);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+  transform: rotate(45deg);
+}
+/* Bant 45° dönük; bayrağı -45° ile geri döndürüp DİK tut. */
+.event-ribbon-flag {
+  transform: rotate(-45deg);
 }
 .event-row.past {
   border-left-color: var(--muted);
