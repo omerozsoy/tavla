@@ -1,0 +1,105 @@
+/* Ana sayfa mini takvim paneli — .home-panel tabaninin (canli maclar boyutu) uzerine.
+   Izole; App.css'e dokunmaz. Turnuva gunleri isaretli, bugun vurgulu. */
+.home-cal-wrap {
+  display: flex;
+  margin-bottom: 16px;
+}
+.cal-panel {
+  width: 100%;
+  max-width: 360px; /* canli maclar paneli genisligi */
+}
+.cal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cal-title {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.cal-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.cal-nav button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 7px;
+  cursor: pointer;
+  line-height: 1;
+  font-size: 1rem;
+  display: grid;
+  place-items: center;
+}
+.cal-nav button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cal-month {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text);
+  min-width: 96px;
+  text-align: center;
+  text-transform: capitalize;
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+  padding: 8px 12px 12px;
+}
+.cal-wd {
+  padding-bottom: 2px;
+}
+.cal-wd-cell {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: capitalize;
+  padding: 2px 0;
+}
+.cal-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.82rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cal-cell.empty {
+  cursor: default;
+}
+.cal-cell:not(.empty):hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.cal-cell.today {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 800;
+}
+.cal-cell.has-ev {
+  font-weight: 700;
+}
+.cal-dot {
+  position: absolute;
+  bottom: 4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cal-cell.today .cal-dot {
+  background: #fff;
+}

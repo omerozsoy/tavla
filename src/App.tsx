@@ -114,7 +114,7 @@ import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
-import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel } from './ui/HomePanels'
+import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -4202,6 +4202,9 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
+            <div className="home-cal-wrap">
+              <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
+            </div>
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
                 {activeRooms.map((r) => (
