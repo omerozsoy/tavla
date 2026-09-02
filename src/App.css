@@ -2935,28 +2935,19 @@ button[aria-disabled='true'],
   padding-right: 56px;
   border-left: 1px solid var(--border);
 }
-/* SOLDA otel gorseli, SAGDA otel adi + adres (+ Haritada Gor). */
-.event-hotel-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-}
 /* Otel gorsel karti: cerceve YOK (border/radius kaldirildi) -> gorsel serbest,
    contain letterbox bosluklari sayfa zeminine karisir. */
 .event-hotel-card {
   position: relative;
-  flex: 0 0 auto;
 }
 .event-side-img {
   display: block;
-  width: 150px;
+  width: 100%;
   height: 120px;
   object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
 }
-/* Gorselin SAGINDA otel adi + adres (+ Haritada Gor). */
+/* Ustten alta: otel adi -> adres -> Haritada Gor. Altinda gorsel gelir. */
 .event-hotel-head {
-  flex: 1 1 auto;
-  min-width: 0;
   color: var(--text);
 }
 .ehc-name {
