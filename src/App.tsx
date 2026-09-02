@@ -1394,24 +1394,14 @@ export default function App() {
     setCubePending(null)
   }
 
-  // ---- Pes etme / cekilme (1=oyun, 2=gammon, 3=backgammon) ----
-  // Cekilen oyuncunun konumuna gore adil puan: tas topladiysa 1 (single),
-  // hic toplamadiysa 2 (gammon), barda/rakip evinde tasi varsa 3 (backgammon).
-  function resignMultiplier(state: GameState, loser: Player): 1 | 2 | 3 {
-    if (state.off[loser] > 0) return 1
-    const w = opponent(loser)
-    if (state.bar[loser] > 0) return 3
-    const [hs, he] = w === 'white' ? [0, 6] : [18, 24]
-    const sign = loser === 'white' ? 1 : -1
-    for (let i = hs; i < he; i++) if (state.points[i] * sign > 0) return 3
-    return 2
-  }
-
+  // ---- Pes etme / cekilme ----
+  // NOT: Konuma gore otomatik "adil" carpan kurali kaldirildi (bastan yazilacak).
+  // Simdilik teslim = tek oyun (kup degerince) kaybi.
   function handleResign() {
     setResignOpen(false)
     const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
     const w = opponent(loser)
-    const mult = resignMultiplier(working, loser)
+    const mult = 1
     const points = match.cube.value * mult
     setMatch((m) => scoreGame(m, w, m.cube.value * mult))
     setGameEnd({ winner: w, points, mult, dropped: false, resigned: true })
@@ -1716,25 +1706,6 @@ export default function App() {
         setNoMoveFlash(null)
         commitTurn([])
       }, 2100) // "hamle yok" ~2sn ekranda kalsin
-      return () => window.clearTimeout(timer)
-    }
-    // Zorunlu tam hamle: mevcut pozisyondan TEK sonuc mumkun (oyuncuya hic secim
-    // birakilmiyor) -> otomatik oyna. generateMoves sonuca gore tekillestirir; yani
-    // moves.length === 1 = "hicbir tercih yok" demektir.
-    //  - Tur basi: turun tamami zorunlu -> komple oynayip onayla (mevcut davranis).
-    //  - Tur ici: oyuncu kendi zarini oynadiktan sonra kalan zar(lar) zorunluysa oynanir
-    //    (onay yine oyuncuda).
-    // Zarlardan en az biri oyuncuya secim biraktiginda (moves.length > 1) HICBIRI
-    // otomatik oynanmaz -> zorunlu zar da oyuncunun elinde kalir. (Or. 6 tek yerden,
-    // 2 birden fazla yerden oynanabiliyorsa 6'yi de sistem oynamaz.)
-    if (moves.length === 1 && moves[0].steps.length > 0) {
-      const only = moves[0]
-      setMessage(t('msg.forcedAuto'))
-      if (played.length === 0) {
-        const timer = window.setTimeout(() => commitTurn(only.steps), 1400)
-        return () => window.clearTimeout(timer)
-      }
-      const timer = window.setTimeout(() => playSteps(only.steps), 1250)
       return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2986,19 +2957,8 @@ export default function App() {
     if (!interactive) return
     const stepsFrom = nextSteps.filter((s) => s.from === from)
     if (stepsFrom.length === 0) return
-    const offSteps = stepsFrom.filter((s) => s.to === 'off')
-    if (offSteps.length > 0) {
-      // Toplama esnasinda bu tastan birden fazla oynama varyasyonu varsa
-      // (or. buyuk zarla topla VS kucuk zarla tahta ici ilerlet) otomatik
-      // toplama; yesil hedefleri goster ve secimi kullaniciya birak.
-      const variations = reachableFromChecker(turnStart, played, from)
-      if (variations.size > 1) {
-        setSelectedFrom(from)
-        return
-      }
-      // Sadece toplama mumkun ama birden fazla zarla olabiliyorsa: en kucuk
-      // yeterli zari harca, buyuk zar saklansin (toplarken sira zorunlulugu yok).
-      const offStep = offSteps.reduce((a, b) => (b.die < a.die ? b : a))
+    const offStep = stepsFrom.find((s) => s.to === 'off')
+    if (offStep) {
       playSteps([offStep])
       return
     }
@@ -4934,24 +4894,12 @@ export default function App() {
         <div className="register-overlay modal" role="dialog" aria-modal="true">
           <div className="register-card resign-card">
             <h2><Icon name="flag" size={20} /> {t('resign.title')}</h2>
-            {(() => {
-              const loser: Player = online ? myColor : 'white'
-              const mult = resignMultiplier(working, loser)
-              const pts = match.cube.value * mult
-              const typeKey =
-                mult === 3 ? 'resign.tBackgammon' : mult === 2 ? 'resign.tGammon' : 'resign.tSingle'
-              return (
-                <>
-                  <p className="register-sub">{t('resign.autoHelp')}</p>
-                  <div className="resign-auto">
-                    {t(typeKey)} — <b>{t('resign.losePts', { n: pts })}</b>
-                  </div>
-                  <Button variant="destructive" onClick={handleResign}>
-                    <Icon name="flag" /> {t('resign.confirm')}
-                  </Button>
-                </>
-              )
-            })()}
+            <div className="resign-auto">
+              <b>{t('resign.losePts', { n: match.cube.value })}</b>
+            </div>
+            <Button variant="destructive" onClick={handleResign}>
+              <Icon name="flag" /> {t('resign.confirm')}
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {
