@@ -12995,6 +12995,42 @@ button.acct-row:hover:not(:disabled) {
     transform: none;
   }
 }
+/* ---- Online turnuva karti: turnuva-takvimi (etkinlik) satiri gorunumu ----
+   Kart artik .event-row kabugunu kullanir (SOL logo + ORTA bilgiler). Burada yalniz
+   BUTON sifirlama, hover ve orta sutun dikey ritmi (esit 12px bosluk) ayarlanir.
+   Otel/harita sutunu YOK -> event-map-col hic render edilmez. */
+.tourn-row {
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  color: var(--text);
+  width: 100%;
+  margin-bottom: 0; /* .tourn-list zaten gap veriyor; cift bosluk olmasin */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tourn-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .tourn-row:hover {
+    border-color: var(--accent);
+    box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  .tourn-row:hover .tcard-cta > svg {
+    transform: translateX(3px);
+  }
+}
+/* Orta sutunu dikey akis + esit bosluk yap; alt ogeler kendi margin'lerini birakir. */
+.tourn-row .event-main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.tourn-row .event-datebadges,
+.tourn-row .event-title {
+  margin-bottom: 0;
+}
 .tourn-litem {
   display: flex;
   justify-content: space-between;

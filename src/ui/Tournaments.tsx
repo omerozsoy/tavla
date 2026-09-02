@@ -31,6 +31,13 @@ export function tournUrlSlug(t: { id: number; name: string }): string {
   return s ? `${s}-${t.id}` : String(t.id)
 }
 
+// Takvim (turnuva-takvimi) ile ayni tarih rozeti: bordo kare, GUN + altinda AY.
+const monthUpper = (d: Date) =>
+  d.toLocaleDateString('tr-TR', { month: 'long' }).toLocaleUpperCase('tr-TR')
+// Kurum logosu ciplak yol olabilir -> /uploads/ oneki (mutlak/kok ise dokunma).
+const orgLogoSrc = (logo?: string | null): string | null =>
+  logo ? (/^(https?:|\/)/.test(logo) ? logo : '/uploads/' + logo) : null
+
 interface Props {
   myId: number | null
   onPlayMatch: (tid: number, m: TMatch, oppId: number) => void
@@ -169,7 +176,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               {active.organizer.logo ? (
                 <img
                   className="tourn-org-logo"
-                  src={/^(https?:|\/)/.test(active.organizer.logo) ? active.organizer.logo : '/uploads/' + active.organizer.logo}
+                  src={orgLogoSrc(active.organizer.logo) ?? undefined}
                   alt={active.organizer.name}
                 />
               ) : (
@@ -384,7 +391,10 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
   const activeList = list.filter((tr) => tr.status !== 'finished')
   const pastList = list.filter((tr) => tr.status === 'finished')
 
-  // Tek turnuva karti (aktif + gecmis listelerinde ortak render)
+  // Tek turnuva karti (aktif + gecmis listelerinde ortak render).
+  // Tasarim: turnuva-takvimi (etkinlik) satiri ile ayni yatay duzen — SOL: duzenleyen
+  // kurum logosu; ORTA: tarih rozeti + baslik + kurum/mekan + istatistik + doluluk.
+  // Etkinlik satirindan farki: OTEL ve HARITA sutunu YOK (online turnuvada mekan yok).
   const renderCard = (tr: Tournament) => {
     const full = tr.count >= tr.size
     const pct = tr.size > 0 ? Math.min(100, Math.round((tr.count / tr.size) * 100)) : 0
@@ -393,83 +403,99 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         ? tr.prizes.reduce((s, p) => s + (p.coins || 0), 0)
         : tr.prize_coins ?? 0
     const prizeCount = tr.prizes?.length ?? 0
+    const start = tr.starts_at ? new Date(tr.starts_at) : null
+    const logo = orgLogoSrc(tr.organizer?.logo)
     return (
-      <button key={tr.id} className={`tcard tcard-${tr.status}`} onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}>
-        <div className="tcard-top">
-          <span className="tcard-name">{tr.name}</span>
-          <span className="tcard-badges">
-            {tr.status === 'open' && tr.starts_at && (
-              <Countdown target={tr.starts_at} onExpire={refreshList} />
+      <button
+        key={tr.id}
+        className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
+        onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
+      >
+        {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}
+        {logo && (
+          <div className="event-logo-col">
+            <img className="event-kurum-logo" src={logo} alt={tr.organizer?.name ?? ''} />
+          </div>
+        )}
+        {/* Orta: turnuva bilgileri */}
+        <div className="event-main">
+          {/* Tarih rozeti (baslama gunu) + durum + geri sayim */}
+          <div className="event-datebadges">
+            {start && (
+              <div className="event-datebadge">
+                <span className="edb-day">{start.getDate()}</span>
+                <span className="edb-month">{monthUpper(start)}</span>
+              </div>
             )}
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
+            {tr.status === 'open' && tr.starts_at && (
+              <Countdown target={tr.starts_at} onExpire={refreshList} />
+            )}
+          </div>
+          <div className="event-title">{tr.name}</div>
+          {(tr.organizer || tr.venue) && (
+            <div className="event-meta">
+              {tr.organizer && (
+                <span className="event-organizer">
+                  <Icon name="star" size={24} /> {tr.organizer.name}
+                </span>
+              )}
+              {tr.venue && (
+                <span>
+                  <Icon name="pin" size={24} /> {tr.venue}
+                </span>
+              )}
+            </div>
+          )}
+          {/* Turnuva istatistikleri: odul havuzu / katilim ucreti / oyuncu sayisi */}
+          <div className="tcard-stats">
+            <div className="tcard-stat">
+              <span className="tcard-ic gold" aria-hidden="true">
+                <Icon name="medal" size={17} />
+              </span>
+              <span className="tcard-sb">
+                <span className="tcard-val">
+                  {pool.toLocaleString('tr-TR')} <small>coin</small>
+                </span>
+                <span className="tcard-lbl">
+                  {t('tourn.prizePool')}
+                  {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
+                </span>
+              </span>
+            </div>
+            <div className="tcard-stat">
+              <span className="tcard-ic brick" aria-hidden="true">
+                <Icon name="ticket" size={17} />
+              </span>
+              <span className="tcard-sb">
+                <span className="tcard-val">
+                  {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+                </span>
+                {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
+              </span>
+            </div>
+            <div className="tcard-stat">
+              <span className="tcard-ic navy" aria-hidden="true">
+                <Icon name="users" size={17} />
+              </span>
+              <span className="tcard-sb">
+                <span className="tcard-val" data-full={full || undefined}>
+                  {tr.count}
+                  <small>/{tr.size}</small>
+                </span>
+                <span className="tcard-lbl">{t('tourn.players')}</span>
+              </span>
+            </div>
+          </div>
+          <div className="tcard-bar" aria-hidden="true">
+            <span style={{ width: `${pct}%` }} />
+          </div>
+          <span className="tcard-cta">
+            {t('tourn.details')} <Icon name="arrow-right" size={15} />
           </span>
         </div>
-        {tr.venue && (
-          <div className="tcard-venue">
-            <Icon name="pin" size={13} /> {tr.venue}
-          </div>
-        )}
-        {tr.organizer && (
-          <div className="tcard-organizer">
-            {tr.organizer.logo ? (
-              <img
-                className="tcard-org-logo"
-                src={/^(https?:|\/)/.test(tr.organizer.logo) ? tr.organizer.logo : '/uploads/' + tr.organizer.logo}
-                alt={tr.organizer.name}
-              />
-            ) : (
-              <Icon name="building-office" size={13} />
-            )}
-            {tr.organizer.name}
-          </div>
-        )}
-        <div className="tcard-stats">
-          <div className="tcard-stat">
-            <span className="tcard-ic gold" aria-hidden="true">
-              <Icon name="medal" size={17} />
-            </span>
-            <span className="tcard-sb">
-              <span className="tcard-val">
-                {pool.toLocaleString('tr-TR')} <small>coin</small>
-              </span>
-              <span className="tcard-lbl">
-                {t('tourn.prizePool')}
-                {prizeCount > 1 ? ` · ${prizeCount}×` : ''}
-              </span>
-            </span>
-          </div>
-          <div className="tcard-stat">
-            <span className="tcard-ic brick" aria-hidden="true">
-              <Icon name="ticket" size={17} />
-            </span>
-            <span className="tcard-sb">
-              <span className="tcard-val">
-                {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
-              </span>
-              {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
-            </span>
-          </div>
-          <div className="tcard-stat">
-            <span className="tcard-ic navy" aria-hidden="true">
-              <Icon name="users" size={17} />
-            </span>
-            <span className="tcard-sb">
-              <span className="tcard-val" data-full={full || undefined}>
-                {tr.count}
-                <small>/{tr.size}</small>
-              </span>
-              <span className="tcard-lbl">{t('tourn.players')}</span>
-            </span>
-          </div>
-        </div>
-        <div className="tcard-bar" aria-hidden="true">
-          <span style={{ width: `${pct}%` }} />
-        </div>
-        <span className="tcard-cta">
-          {t('tourn.details')} <Icon name="arrow-right" size={15} />
-        </span>
       </button>
     )
   }
