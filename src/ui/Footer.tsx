@@ -4,6 +4,7 @@ import { useT } from '../i18n'
 export interface FooterItem {
   key: string
   labelKey: string
+  label?: string // admin panelden ozel ad (varsa i18n'i ezer)
   onClick: () => void
 }
 
@@ -33,7 +34,7 @@ export default function Footer({ columns }: Props) {
                   {col.items.map((it) => (
                     <li key={it.key}>
                       <button type="button" className="foot-link" onClick={it.onClick}>
-                        {t(it.labelKey)}
+                        {it.label ?? t(it.labelKey)}
                       </button>
                     </li>
                   ))}

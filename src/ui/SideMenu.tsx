@@ -11,7 +11,8 @@ const NAV = 'w-full justify-start [&_svg]:size-[24px]!'
 
 export interface NavItem {
   key: string // aktif-vurgu anahtari (activeKey ile eslesir)
-  labelKey: string // i18n
+  labelKey: string // i18n (varsayilan)
+  label?: string // admin panelden ozel ad (varsa i18n'i ezer)
   icon: IconName
   onClick: () => void
   hideInGame?: boolean // oyun ekraninda gizle
@@ -69,12 +70,15 @@ export default function SideMenu(p: SideMenuProps) {
         </div>
       )}
 
-      {p.groups.map((g) => {
+      {(() => {
+        // "Oyuna devam" yalnizca ILK play grubuna eklenir (admin menuyu bolerse tekrar etmesin)
+        const firstPlayIdx = p.groups.findIndex((g) => g.group === 'play')
+        return p.groups.map((g, gi) => {
         const items = g.items.filter((it) => !(it.hideInGame && p.inGame))
-        const showResume = g.group === 'play' && !p.inGame && p.hasActiveGame
+        const showResume = gi === firstPlayIdx && !p.inGame && p.hasActiveGame
         if (items.length === 0 && !showResume) return null
         return (
-          <div className="menu-group" key={g.group}>
+          <div className="menu-group" key={`${g.group}-${gi}`}>
             {items.map((it) => (
               <Button
                 key={it.key}
@@ -83,7 +87,7 @@ export default function SideMenu(p: SideMenuProps) {
                 data-active={p.active === it.key || undefined}
                 onClick={it.onClick}
               >
-                <Icon name={it.icon} size={24} /> {t(it.labelKey)}
+                <Icon name={it.icon} size={24} /> {it.label ?? t(it.labelKey)}
               </Button>
             ))}
             {showResume && (
@@ -93,7 +97,8 @@ export default function SideMenu(p: SideMenuProps) {
             )}
           </div>
         )
-      })}
+        })
+      })()}
     </aside>
   )
 }
