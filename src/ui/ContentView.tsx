@@ -844,16 +844,33 @@ function EventRow({
                 </div>
               )
             })}
-            {!contacts.length && ev.contact && (
-              <a
-                className="event-contact"
-                href={waLink(ev.contact) || undefined}
-                target={waLink(ev.contact) ? '_blank' : undefined}
-                rel={waLink(ev.contact) ? 'noreferrer' : undefined}
-              >
-                <Icon name={waLink(ev.contact) ? 'whatsapp' : 'phone'} size={24} /> {ev.contact}
-              </a>
-            )}
+            {!contacts.length &&
+              ev.contact &&
+              (() => {
+                // Serbest metin iletisim: sondaki telefon numarasini ayikla; SADECE numara
+                // link olsun (isim duz metin). Numara bulunmazsa tumu duz metin.
+                const m = ev.contact.match(/([\d(+][\d\s()+\-]{5,})\s*$/)
+                const phone = m ? m[1].trim() : ''
+                const name = m ? ev.contact.slice(0, m.index).trim() : ev.contact
+                const wa = waLink(phone)
+                return (
+                  <div className="event-contact">
+                    <Icon name={wa ? 'whatsapp' : 'phone'} size={24} /> {name}
+                    {name && phone ? ' · ' : ''}
+                    {phone && (
+                      <a
+                        className="event-contact-phone"
+                        href={wa || `tel:${phone}`}
+                        target={wa ? '_blank' : undefined}
+                        rel={wa ? 'noreferrer' : undefined}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {phone}
+                      </a>
+                    )}
+                  </div>
+                )
+              })()}
           </div>
         )}
         {/* Otel bilgisi SOL kolonda: ad -> adres -> Yol Tarifi Al (basinda pin ikonu). */}
