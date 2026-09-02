@@ -1,9 +1,11 @@
 /* Ana sayfa footer'i — izole; site token'lari (koyu chrome). Kolonlar registry'den. */
+/* Zemin SABIT koyu navy; bu yuzden metin renkleri de SABIT acik (--text/--muted
+   cevre baglama gore koyu cozulup okunmaz oluyordu). */
 .site-footer {
   margin-top: 40px;
-  border-top: 1px solid var(--border);
-  background: var(--rn-navy, var(--card-bg));
-  color: var(--text);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: #201d1a;
+  color: #f4efe6;
 }
 .foot-inner {
   max-width: 1200px;
@@ -22,28 +24,28 @@
   font-weight: 800;
   font-size: 1.25rem;
   letter-spacing: 0.06em;
-  color: var(--text);
+  color: #f4efe6;
 }
 .foot-logo::first-letter {
   color: var(--accent);
 }
 .foot-tag {
   margin: 8px 0 0;
-  color: var(--muted);
+  color: rgba(244, 239, 230, 0.62);
   font-size: 0.88rem;
   line-height: 1.5;
   max-width: 260px;
 }
 .foot-cols {
   display: grid;
-  grid-template-columns: repeat(3, minmax(140px, 1fr));
-  gap: 28px;
-  flex: 2 1 520px;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  gap: 24px;
+  flex: 2 1 560px;
 }
 .foot-col-title {
   font-weight: 700;
   font-size: 0.95rem;
-  color: var(--text);
+  color: #f4efe6;
   margin-bottom: 12px;
 }
 .foot-col ul {
@@ -59,20 +61,20 @@
   border: 0;
   padding: 0;
   cursor: pointer;
-  color: var(--muted);
+  color: rgba(244, 239, 230, 0.68);
   font-size: 0.9rem;
   text-align: left;
   transition: color 0.15s ease;
   font-family: inherit;
 }
 .foot-link:hover {
-  color: var(--accent);
+  color: #fff;
 }
 .foot-bottom {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding: 14px clamp(16px, 4vw, 48px);
   text-align: center;
-  color: var(--muted);
+  color: rgba(244, 239, 230, 0.5);
   font-size: 0.82rem;
 }
 

@@ -14,18 +14,19 @@ import FairnessModal from './FairnessModal'
 import ContentView from './ContentView'
 import Achievements from './Achievements'
 
+type Tab = 'about' | 'ranks' | 'fair' | 'services' | 'badges'
+
 interface Props {
   onClose: () => void
   currentRating?: number
   loggedIn?: boolean
+  initialTab?: Tab // footer'dan belirli sekmeyle acmak icin
   fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-type Tab = 'about' | 'ranks' | 'fair' | 'services' | 'badges'
-
-export default function Info({ onClose, currentRating, loggedIn = false, fair }: Props) {
+export default function Info({ onClose, currentRating, loggedIn = false, initialTab, fair }: Props) {
   const { t } = useT()
-  const [tab, setTab] = useState<Tab>('about')
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'about')
   useEscape(onClose)
 
   return (
