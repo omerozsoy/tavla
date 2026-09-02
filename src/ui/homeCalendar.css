@@ -68,15 +68,23 @@
 }
 .cal-cell {
   position: relative;
-  aspect-ratio: 1 / 1;
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1px;
+  min-height: 40px;
+  padding: 3px 1px 2px;
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 0.82rem;
   border-radius: 8px;
   cursor: pointer;
+  overflow: hidden;
+}
+.cal-daynum {
+  font-size: 0.82rem;
+  line-height: 1.1;
 }
 .cal-cell.empty {
   cursor: default;
@@ -87,19 +95,29 @@
 .cal-cell.today {
   background: var(--accent);
   color: #fff;
+}
+.cal-cell.today .cal-daynum {
   font-weight: 800;
 }
-.cal-cell.has-ev {
+/* Turnuva var: gun rengi vurgulu + minnacik isim */
+.cal-cell.has-ev:not(.today) {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+.cal-cell.has-ev:not(.today) .cal-daynum {
+  color: var(--accent);
+  font-weight: 800;
+}
+.cal-evname {
+  width: 100%;
+  font-size: 0.5rem;
+  line-height: 1.05;
   font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--accent);
 }
-.cal-dot {
-  position: absolute;
-  bottom: 4px;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--accent);
-}
-.cal-cell.today .cal-dot {
-  background: #fff;
+.cal-cell.today .cal-evname {
+  color: #fff;
 }
