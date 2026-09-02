@@ -3028,6 +3028,34 @@ button[aria-disabled='true'],
 .event-meta svg {
   color: var(--accent);
 }
+/* Düzenleyen kurumun sosyal medya ikonlari (isim yaninda). */
+.event-organizer {
+  gap: 7px;
+}
+.event-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+.event-social svg {
+  color: currentColor;
+}
+.event-social.ig:hover {
+  color: #fff;
+  background: #e1306c;
+  border-color: #e1306c;
+}
+.event-social.yt:hover {
+  color: #fff;
+  background: #ff0000;
+  border-color: #ff0000;
+}
 .event-body {
   margin: 10px 0 0;
   line-height: 1.55;
