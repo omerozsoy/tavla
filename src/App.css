@@ -2943,7 +2943,7 @@ button[aria-disabled='true'],
 .event-side-img {
   display: block;
   width: 100%;
-  height: 120px;
+  height: 180px;
   object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
 }
 /* Ustten alta: otel adi -> adres -> Haritada Gor. Altinda gorsel gelir. */
