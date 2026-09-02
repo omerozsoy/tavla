@@ -73,7 +73,11 @@ class EventResource extends Resource
         return $form->schema([
             Forms\Components\Hidden::make('type')->default('event'),
             Forms\Components\TextInput::make('title')->label('Etkinlik adı')->required()->columnSpanFull(),
-            Forms\Components\DateTimePicker::make('event_at')->label('Tarih & saat')->required(),
+            Forms\Components\DateTimePicker::make('event_at')->label('Başlangıç tarihi & saat')->required(),
+            Forms\Components\DateTimePicker::make('event_end')
+                ->label('Bitiş tarihi (çok günlü ise)')
+                ->helperText('Çok günlü turnuva ise bitiş gününü seç; takvimde başlangıç–bitiş arası tüm günler işaretlenir. Tek günlükse boş bırak.')
+                ->afterOrEqual('event_at'),
             // Ulke once secilir; il listesi ulkeye gore degisir (Turkiye 81 / KKTC 6).
             Forms\Components\Select::make('country')->label('Ülke')
                 ->options(self::COUNTRIES)->default('Türkiye')->required()->live()
