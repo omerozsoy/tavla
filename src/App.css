@@ -6240,9 +6240,8 @@ button.stat-chip:hover {
   position: relative;
   display: inline-flex;
   align-items: center;
+  min-width: 0; /* dar ekranda ad kisalabilsin (logo/hamburger ile bindirmesin) */
   height: 44px;
-  /* En saga kosaye yasla: gutter'in bir kismini geri al (yatay scroll eklemez). */
-  margin-right: -6px;
 }
 .acct-trigger {
   display: inline-flex;
@@ -6770,8 +6769,13 @@ button.acct-row:hover:not(:disabled) {
   .account-bar {
     min-height: 48px;
     gap: 4px;
-    padding: max(4px, env(safe-area-inset-top)) 8px 4px 10px;
+    /* Sag: sabit hamburger (44px @ right:8px) icin pay birak -> hesap tetigi altina girmesin. */
+    padding: max(4px, env(safe-area-inset-top)) calc(56px + env(safe-area-inset-right)) 4px 10px;
     flex-wrap: nowrap;
+  }
+  /* Dar telefon: ad kisalsin (logo ile bindirmesin) */
+  .acct-trigger-name {
+    max-width: 32vw;
   }
   .account-name {
     display: none;
@@ -9571,10 +9575,11 @@ button.acct-row:hover:not(:disabled) {
   --bar-w: var(--checker); /* orta bar genisligi = pul capi */
   --bearoff-w: calc(var(--checker) * 1);
   --tri-h: calc(var(--board-h) * 0.44);
-  min-height: 100vh;
   padding: calc(var(--header-h) + 6px) 14px 14px;
   background: var(--bg);
-  overflow-y: auto;
+  /* NOT: kendi overflow/scroll'u YOK. Tek kaydirici = .register-overlay.page (overlay)
+     ya da lobi kabugu (page-host). Ic ice scroller + overscroll:contain, icerik tasmayinca
+     dokunma kaydirmayi YUTUYORDU (ne asagi ne yukari). Bkz onceki [[modal-backdrop]] notu. */
 }
 .analyzer-board .board {
   width: fit-content; /* genis flex kolonda gerilmesin -> numaralar hizalansin */

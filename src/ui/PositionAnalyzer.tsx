@@ -317,7 +317,7 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
-    <div className="analyzer" style={{ overscrollBehavior: 'contain' }}>
+    <div className="analyzer">
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
         {/* Kapat dugmesi kaldirildi (kullanici istegi): cikis hamburger menu / ESC ile. */}
