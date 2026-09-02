@@ -12356,6 +12356,30 @@ button.acct-row:hover:not(:disabled) {
   flex: 0 0 auto;
   color: var(--accent, currentColor);
 }
+/* Kart: duzenleyen kurum (logo + isim) */
+.tcard-organizer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  font-size: 0.82rem;
+  color: var(--text-muted, var(--med-slate));
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tcard-organizer svg {
+  flex: 0 0 auto;
+  color: var(--accent, currentColor);
+}
+.tcard-org-logo {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 4px;
+}
 .tcard-status {
   flex: none;
   padding: 3px 11px;
@@ -12400,6 +12424,26 @@ button.acct-row:hover:not(:disabled) {
 .tourn-venue svg {
   flex: 0 0 auto;
   color: var(--accent, currentColor);
+}
+/* Detay: duzenleyen kurum (logo + isim) */
+.tourn-organizer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0 2px;
+  font-size: 0.95rem;
+  color: var(--text-muted, var(--med-slate));
+}
+.tourn-organizer svg {
+  flex: 0 0 auto;
+  color: var(--accent, currentColor);
+}
+.tourn-org-logo {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  border-radius: 5px;
 }
 .tourn-countdown {
   display: flex;

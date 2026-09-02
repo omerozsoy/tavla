@@ -39,6 +39,13 @@ class TournamentResource extends Resource
                     ->label('Düzenlenme yeri / Otel')
                     ->helperText('Turnuvanın fiziksel yeri. Örn: "Titanic Otel, Antalya". Boş bırakılabilir.')
                     ->maxLength(160),
+                Forms\Components\Select::make('organizer_id')
+                    ->label('Düzenleyen kurum')
+                    ->helperText('Turnuvayı düzenleyen kurum. Kurumlar sayfasından yönetilir. Boş bırakılabilir.')
+                    ->relationship('organizer', 'title', fn (Builder $query) => $query->where('type', 'kurum')->orderBy('title'))
+                    ->searchable()
+                    ->preload()
+                    ->nullable(),
                 Forms\Components\TextInput::make('size')
                     ->required()
                     ->numeric()
@@ -131,6 +138,11 @@ class TournamentResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('venue')
                     ->label('Yer / Otel')
+                    ->placeholder('—')
+                    ->searchable()
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('organizer.title')
+                    ->label('Düzenleyen kurum')
                     ->placeholder('—')
                     ->searchable()
                     ->toggleable(),
