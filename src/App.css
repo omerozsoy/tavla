@@ -3096,7 +3096,8 @@ button[aria-disabled='true'],
   color: var(--accent);
 }
 .event-row.past .event-datebadge {
-  background: #7a4a4a;
+  /* Gecmis: token turevi soluk kiremit (sabit renk YOK) */
+  background: color-mix(in srgb, var(--accent) 45%, var(--muted));
 }
 .event-title {
   font-size: 1.15rem;
