@@ -13035,7 +13035,13 @@ button.acct-row:hover:not(:disabled) {
 .tourn-row-stats2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-/* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV logosu (ink pennant). */
+/* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV logosu (ink pennant).
+   Logo net gozuksun diye flama takvimdekinden BUYUK (46x70 -> 60x100). */
+.tourn-ribbon {
+  width: 60px;
+  height: 100px;
+  right: 10px;
+}
 .tourn-ribbon-band {
   background: #1c1a17; /* ink zemin */
   display: flex;
@@ -13047,11 +13053,11 @@ button.acct-row:hover:not(:disabled) {
   transform: rotate(90deg);
   transform-origin: center;
   white-space: nowrap;
-  margin-top: -4px; /* V-catal boslugunu dengele -> gorsel merkez yukari */
+  margin-top: -6px; /* V-catal boslugunu dengele -> gorsel merkez yukari */
 }
-/* Ust satir (tarih + Online + durum + geri sayim) flamanin altina girmesin. */
+/* Ust satir genis flamanin altina girmesin (flama 60px + sag bosluk). */
 .tourn-row .event-datebadges {
-  padding-right: 52px;
+  padding-right: 66px;
 }
 .tourn-row:focus-visible {
   outline: 2px solid var(--accent);
