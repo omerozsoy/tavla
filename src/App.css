@@ -13065,9 +13065,10 @@ button.acct-row:hover:not(:disabled) {
 .tourn-place svg {
   color: var(--accent);
 }
-/* Odul listesi kart icinde: dikey ritme otursun (kendi margin'ini birakma). */
+/* Odul listesi kart icinde: dikey ritme otursun + cok genis olmasin (sag bosluk kalsin). */
 .tourn-row-prizes {
   margin: 0;
+  max-width: 620px;
 }
 /* Ucret + oyuncu: iki kolonlu kompakt satir (3'lu grid yerine). */
 .tourn-row-stats2 {
