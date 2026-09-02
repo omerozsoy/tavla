@@ -756,17 +756,14 @@ function EventRow({
   const img = ev.image || hotel?.image
   // Otelin adresi (varsa) place bos ise gosterilebilir.
   const hotelPlace = hotel?.place
-  // Harita: otel secili ise goster. Gomulu harita otel adi+konum aramasiyla; "Haritada Gor"
-  // butonu otelin yapistirilan Maps linkiyle (yoksa arama URL'i) acilir.
+  // "Haritada Gor" butonu: otelin yapistirilan Maps linki, yoksa otel adi+konum aramasi.
+  // (Gomulu harita KALDIRILDI; sag sutunda sadece otel gorseli + link kaldi.)
   const mapQuery = ev.hotel
     ? [ev.hotel, hotel?.place, hotel?.province, hotel?.country].filter(Boolean).join(', ')
     : ''
-  const mapEmbed = mapQuery
-    ? `https://www.google.com/maps?q=${encodeURIComponent(mapQuery)}&output=embed`
-    : ''
   const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img || mapEmbed ? 'has-map' : ''}`}>
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img || mapHref ? 'has-map' : ''}`}>
       {/* Sag ust kose kurdelesi (SALE tarzi): ulkeye gore bayrak. Turkiye=TR, KKTC=KKTC. */}
       {ev.country && (
         <span className="event-ribbon" aria-hidden="true">
@@ -876,25 +873,22 @@ function EventRow({
             Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
         {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag: otel gorseli + konum haritasi YAN YANA; altta "Haritada Gör" butonu. */}
-      {(img || mapEmbed) && (
+      {/* Sag: otel gorseli; UZERINE otel adi (ust) + adres (altinda) bindirilir; EN ALTTA
+          "Haritada Gör" butonu. Gomulu harita kaldirildi. */}
+      {(img || mapHref) && (
         <div className="event-map-col">
-          <div className="event-side-media">
-            {img && <img className="event-side-img" src={mediaSrc(img)} alt="" />}
-            {mapEmbed && (
-              <iframe
-                className="event-map"
-                src={mapEmbed}
-                title={`${ev.hotel ?? ''} harita`}
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                allowFullScreen
-              />
+          <div className="event-hotel-card">
+            {img && <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />}
+            {(ev.hotel || hotelPlace || ev.place) && (
+              <div className="event-hotel-overlay">
+                {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
+                {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+              </div>
             )}
           </div>
           {mapHref && (
             <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
-              <Icon name="pin" size={13} /> Haritada Gör
+              <Icon name="pin" size={16} /> Haritada Gör
             </a>
           )}
         </div>

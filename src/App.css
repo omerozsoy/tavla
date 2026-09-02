@@ -2915,29 +2915,42 @@ button[aria-disabled='true'],
   padding-left: 18px;
   border-left: 1px solid var(--border);
 }
-/* Gorsel + harita yan yana satiri. */
-.event-side-media {
-  display: flex;
-  gap: 8px;
-  align-items: stretch;
+/* Otel gorsel karti: gorsel tam genislik; uzerine otel adi + adres bindirilir. */
+.event-hotel-card {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
-/* Otel gorseli sag sutunda: yarim genislik, sabit yukseklik. */
 .event-side-img {
   display: block;
-  flex: 1 1 0;
-  min-width: 0;
-  height: 170px;
+  width: 100%;
+  height: 190px;
   object-fit: cover;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
 }
-.event-map {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 170px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  display: block;
+/* Ustte otel adi (buyuk) + altinda adres — okunurluk icin koyu gradient scrim. */
+.event-hotel-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 14px 22px;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), rgba(0, 0, 0, 0));
+  color: #fff;
+}
+.ehc-name {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+.ehc-addr {
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  line-height: 1.3;
+  opacity: 0.95;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .event-map-link {
   display: inline-flex;
