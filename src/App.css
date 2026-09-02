@@ -3019,9 +3019,9 @@ button[aria-disabled='true'],
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 58px;
+  min-width: 58px;
   height: 58px;
-  padding: 5px 4px;
+  padding: 5px 12px;
   background: #6e0000;
   color: #fff;
   border-radius: 10px;
@@ -3031,7 +3031,8 @@ button[aria-disabled='true'],
 .edb-day {
   font-size: 1.6rem;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 .edb-month {
   margin-top: 4px;
@@ -13624,6 +13625,208 @@ button.acct-row:hover:not(:disabled) {
   .cart-row-price {
     min-width: 0;
   }
+}
+
+/* ===== Ödeme sayfası (uygulama-içi kredi kartı) ===== */
+.checkout-split {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) minmax(0, 400px);
+  gap: 18px;
+  align-items: start;
+  justify-content: center;
+  width: 100%;
+}
+@media (max-width: 780px) {
+  .checkout-split {
+    grid-template-columns: 1fr;
+    max-width: 440px;
+  }
+}
+.checkout-summary,
+.checkout-card {
+  margin: 0;
+}
+.checkout-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-bottom: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.checkout-back svg {
+  transform: rotate(180deg);
+}
+.checkout-back:hover {
+  color: var(--accent);
+}
+.co-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+}
+.co-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+.co-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.co-name svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.co-gc {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.8rem;
+}
+.co-qty {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.co-price {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.co-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 12px 4px 2px;
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+.co-total-amt {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+/* Kredi kartı görseli (canlı önizleme) */
+.cc-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 16px;
+  height: 180px;
+  color: #fff;
+  overflow: hidden;
+  margin: 6px 0 16px;
+  background: linear-gradient(135deg, #2a2622, #4a3f38 60%, #6b5a4d);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  transition: background 0.4s ease;
+}
+.cc-card.visa {
+  background: linear-gradient(135deg, #1a1f71, #3b4bb5 60%, #5a6bd8);
+}
+.cc-card.mc {
+  background: linear-gradient(135deg, #7a1f12, #c0392b 55%, #e8873a);
+}
+.cc-card.troy {
+  background: linear-gradient(135deg, #0a5c46, #12a061 60%, #4fd39c);
+}
+.cc-card.amex {
+  background: linear-gradient(135deg, #1f6f8b, #2e97b8 60%, #63c6dd);
+}
+.cc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cc-chip {
+  width: 40px;
+  height: 30px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #e8d9a8, #c9a94e);
+  opacity: 0.95;
+}
+.cc-brand {
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+.cc-num {
+  font-size: 1.24rem;
+  letter-spacing: 2px;
+  margin: 24px 0 14px;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+.cc-foot {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  opacity: 0.92;
+}
+.cc-lbl {
+  display: block;
+  font-size: 0.56rem;
+  opacity: 0.7;
+  margin-bottom: 2px;
+}
+.cc-holder {
+  max-width: 62%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.checkout-card label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--muted);
+  margin: 10px 0 5px;
+}
+.checkout-card input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 16px;
+  background: var(--card-bg);
+  font-variant-numeric: tabular-nums;
+}
+.checkout-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.cc-row {
+  display: flex;
+  gap: 10px;
+}
+.cc-row > div {
+  flex: 1;
+}
+.checkout-pay {
+  width: 100%;
+  margin-top: 18px;
+}
+.checkout-secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 0;
+  color: var(--muted);
+  font-size: 0.76rem;
+  text-align: center;
 }
 .coin-store-title {
   display: flex;

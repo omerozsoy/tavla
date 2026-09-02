@@ -42,25 +42,40 @@ const monthKey = (s?: string | null) => {
   return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
 }
 
-// Saat metni (girilmemis 00:00 ise bos). Etkinlik rozetinin yaninda gosterilir.
-function timeStr(s?: string | null): string {
-  if (!s) return ''
-  const d = new Date(s)
-  if (d.getHours() === 0 && d.getMinutes() === 0) return ''
-  return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
-}
+const monthUpper = (d: Date) =>
+  d.toLocaleDateString('tr-TR', { month: 'long' }).toLocaleUpperCase('tr-TR')
 
-// Takvim rozeti: bordo kare, buyuk GUN + altinda AY (Turkce buyuk harf). Cok gunlu
-// turnuvada baslangic ve bitis icin iki rozet yan yana kullanilir.
-function DateBadge({ iso }: { iso?: string | null }) {
-  if (!iso) return null
-  const d = new Date(iso)
-  const month = d.toLocaleDateString('tr-TR', { month: 'long' }).toLocaleUpperCase('tr-TR')
+// Takvim rozeti: bordo kare, buyuk GUN(ler) + altinda AY. Cok gunlu turnuvada ayni
+// ay icindeki gunler tek rozette listelenir ( or. "18 19 20").
+function DateBadge({ days, month }: { days: number[]; month: string }) {
   return (
     <div className="event-datebadge">
-      <span className="edb-day">{d.getDate()}</span>
+      <span className="edb-day">{days.join(' ')}</span>
       <span className="edb-month">{month}</span>
     </div>
+  )
+}
+
+// event_at (+ event_end) -> rozet(ler). Ayni ay: tek rozet gun listesiyle; farkli ay:
+// baslangic – bitis iki rozet; tek gun: tek rozet.
+function eventBadges(startIso?: string | null, endIso?: string | null) {
+  if (!startIso) return null
+  const s = new Date(startIso)
+  const e = endIso ? new Date(endIso) : null
+  const sameDay = !e || (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate())
+  if (sameDay) return <DateBadge days={[s.getDate()]} month={monthUpper(s)} />
+  const sameMonth = s.getFullYear() === e!.getFullYear() && s.getMonth() === e!.getMonth()
+  if (sameMonth) {
+    const days: number[] = []
+    for (let d = s.getDate(); d <= e!.getDate() && days.length < 20; d++) days.push(d)
+    return <DateBadge days={days} month={monthUpper(s)} />
+  }
+  return (
+    <>
+      <DateBadge days={[s.getDate()]} month={monthUpper(s)} />
+      <span className="event-date-dash">–</span>
+      <DateBadge days={[e!.getDate()]} month={monthUpper(e!)} />
+    </>
   )
 }
 
@@ -774,21 +789,9 @@ function EventRow({
       )}
       {/* Orta: turnuva bilgileri (gorsel ve harita sag sutuna tasindi) */}
       <div className="event-main">
-        {/* Tarih rozet(ler)i: bordo kare, buyuk gun + ay. Cok gunluyse baslangic – bitis. */}
-        <div className="event-datebadges">
-          <DateBadge iso={ev.event_at} />
-          {ev.event_end && fmtDate(ev.event_end) !== fmtDate(ev.event_at ?? null) && (
-            <>
-              <span className="event-date-dash">–</span>
-              <DateBadge iso={ev.event_end} />
-            </>
-          )}
-          {timeStr(ev.event_at) && (
-            <span className="event-time">
-              <Icon name="calendar" size={13} /> {timeStr(ev.event_at)}
-            </span>
-          )}
-        </div>
+        {/* Tarih rozet(ler)i: bordo kare, buyuk gun(ler) + ay. Ayni ayda tum gunler
+            tek rozette listelenir ( or. "18 19 20"); farkli ayda baslangic – bitis. */}
+        <div className="event-datebadges">{eventBadges(ev.event_at, ev.event_end)}</div>
         <div className="event-title">{ev.title}</div>
         <div className="event-meta">
           {ev.organizer && (
