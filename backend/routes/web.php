@@ -60,6 +60,12 @@ Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'c
     ->middleware('throttle:30,1') // forged callback flood'una karsi
     ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 Route::get('/pay/result', fn () => view('pay.result', ['ok' => false, 'msg' => '']))->name('pay.result');
+// Kredi karti arayuzu ONIZLEMESI (gercek tahsilat yok; tasarimi gormek icin).
+Route::get('/pay/onizleme', fn () => view('pay.card', [
+    'payment' => new \App\Models\Payment(['kind' => 'coins', 'coins' => 5000, 'amount' => 400000, 'currency' => '949']),
+    'submitUrl' => '#',
+    'preview' => true,
+]))->name('pay.preview');
 
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.
 // Statik dosyalar (assets/, models/) web sunucusu tarafindan dogrudan sunulur.
