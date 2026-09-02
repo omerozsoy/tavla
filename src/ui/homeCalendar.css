@@ -31,9 +31,11 @@
   min-width: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 800;
-  font-size: 0.95rem;
+  gap: 7px;
+  /* Diğer panel başlıklarıyla (Online Turnuvalar vb.) birebir aynı: Outfit / 20px / 400 */
+  font-family: var(--tv-font-display);
+  font-weight: 400;
+  font-size: 20px;
   color: var(--text);
 }
 .cal-title svg {

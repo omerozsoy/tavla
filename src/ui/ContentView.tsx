@@ -15,6 +15,7 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   ad: { icon: 'star', titleKey: 'menu.services' }, // reklamlar ContentView'de gosterilmez
   quiz: { icon: 'book', titleKey: 'menu.quiz' }, // quiz QuizPlay ile oynatilir
   magazine: { icon: 'play', titleKey: 'menu.magazine' }, // Tavla Magazin (YouTube videolari)
+  kurum: { icon: 'pin', titleKey: 'menu.clubs' }, // Kurumlar ContentView'de gosterilmez (turnuva duzenleyeni)
 }
 
 const paras = (body?: string | null) =>
@@ -102,6 +103,20 @@ export default function ContentView({
   useEffect(() => {
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [type])
+
+  // Takvim (etkinlik): kurum -> logo eslemesi. organizer adi = kurum basligi.
+  // Logosu olan kurumun logosu etkinlik satirinda en basa konur; logosu yoksa hic konmaz.
+  const [kurumLogos, setKurumLogos] = useState<Record<string, string>>({})
+  useEffect(() => {
+    if (type !== 'event') return
+    listContents('kurum')
+      .then((ks) => {
+        const map: Record<string, string> = {}
+        for (const k of ks) if (k.title && k.image) map[k.title] = k.image
+        setKurumLogos(map)
+      })
+      .catch(() => {})
   }, [type])
 
   // Magazin: videolari seriye gore grupla (organizer), playlist sirasi korunur
@@ -330,7 +345,7 @@ export default function ContentView({
               <div key={g.month} className="event-month">
                 <div className="event-month-title">{g.month}</div>
                 {g.list.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming />
+                  <EventRow key={ev.id} ev={ev} upcoming logo={kurumLogos[ev.organizer ?? '']} />
                 ))}
               </div>
             ))}
@@ -338,7 +353,7 @@ export default function ContentView({
               <div className="event-past">
                 <div className="event-month-title past">{t('content.past')}</div>
                 {eventGroups.past.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming={false} />
+                  <EventRow key={ev.id} ev={ev} upcoming={false} logo={kurumLogos[ev.organizer ?? '']} />
                 ))}
               </div>
             )}
@@ -395,8 +410,17 @@ export default function ContentView({
                             <Icon name="phone" size={12} /> {c.contact}
                           </span>
                         )}
-                        {(c.links?.website || c.links?.instagram || c.links?.youtube) && (
+                        {(c.links?.website || c.links?.instagram || c.links?.youtube || c.links?.email) && (
                           <div className="club-links">
+                            {c.links?.email && (
+                              <a
+                                className="club-link"
+                                href={`mailto:${c.links.email}`}
+                                aria-label="E-posta"
+                              >
+                                <Icon name="mail" size={18} />
+                              </a>
+                            )}
                             {c.links?.website && (
                               <a
                                 className="club-link"
@@ -622,10 +646,12 @@ const mediaSrc = (img?: string | null): string | undefined => {
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
 
-function EventRow({ ev, upcoming }: { ev: Content; upcoming: boolean }) {
+function EventRow({ ev, upcoming, logo }: { ev: Content; upcoming: boolean; logo?: string }) {
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
   return (
     <div className={`event-row ${upcoming ? '' : 'past'}`}>
+      {/* Duzenleyen kurumun logosu (varsa) en basta; yoksa hic logo yok. */}
+      {logo && <img className="event-kurum-logo" src={mediaSrc(logo)} alt={ev.organizer ?? ''} />}
       {ev.image && <img className="content-img" src={mediaSrc(ev.image)} alt="" />}
       <div className="event-date">
         <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
