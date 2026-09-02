@@ -416,7 +416,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
         <span className="event-ribbon tourn-ribbon" aria-hidden="true">
           <span className="event-ribbon-band tourn-ribbon-band">
-            <TavlaTvLogo size={16} tone="dark" className="tourn-ribbon-logo" />
+            <TavlaTvLogo size={20} tone="dark" className="tourn-ribbon-logo" />
           </span>
         </span>
         {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}

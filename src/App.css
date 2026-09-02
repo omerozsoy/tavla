@@ -13038,9 +13038,9 @@ button.acct-row:hover:not(:disabled) {
 /* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV logosu (ink pennant).
    Logo net gozuksun diye flama takvimdekinden BUYUK (46x70 -> 60x100). */
 .tourn-ribbon {
-  width: 60px;
-  height: 100px;
-  right: 10px;
+  width: 72px;
+  height: 140px;
+  right: 12px;
 }
 .tourn-ribbon-band {
   background: #1c1a17; /* ink zemin */
@@ -13055,9 +13055,9 @@ button.acct-row:hover:not(:disabled) {
   white-space: nowrap;
   margin-top: -6px; /* V-catal boslugunu dengele -> gorsel merkez yukari */
 }
-/* Ust satir genis flamanin altina girmesin (flama 60px + sag bosluk). */
+/* Ust satir genis flamanin altina girmesin (flama 72px + sag bosluk). */
 .tourn-row .event-datebadges {
-  padding-right: 66px;
+  padding-right: 80px;
 }
 .tourn-row:focus-visible {
   outline: 2px solid var(--accent);
