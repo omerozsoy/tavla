@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Tournament extends Model
 {
     protected $fillable = [
-        'name', 'venue', 'size', 'status', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
+        'name', 'venue', 'organizer_id', 'size', 'status', 'register_until', 'creator_id', 'players', 'bracket', 'champion_id',
         'prize_coins', 'prize_desc', 'prize_paid', 'entry_fee', 'prizes',
     ];
 
@@ -29,6 +29,12 @@ class Tournament extends Model
     public function champion(): BelongsTo
     {
         return $this->belongsTo(User::class, 'champion_id');
+    }
+
+    // Turnuvayi duzenleyen kurum (contents type='kurum')
+    public function organizer(): BelongsTo
+    {
+        return $this->belongsTo(Content::class, 'organizer_id');
     }
 
     // Rating'e gore seed'leyip 1. tur eslesmelerini uret (bye'lar otomatik ilerler).

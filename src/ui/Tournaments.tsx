@@ -164,6 +164,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               <Icon name="pin" size={15} /> {active.venue}
             </div>
           )}
+          {active.organizer && (
+            <div className="tourn-organizer">
+              {active.organizer.logo ? (
+                <img
+                  className="tourn-org-logo"
+                  src={/^(https?:|\/)/.test(active.organizer.logo) ? active.organizer.logo : '/uploads/' + active.organizer.logo}
+                  alt={active.organizer.name}
+                />
+              ) : (
+                <Icon name="building-office" size={15} />
+              )}
+              <span>{t('tourn.organizer')}: {active.organizer.name}</span>
+            </div>
+          )}
           {active.status === 'open' && active.starts_at && (
             <div className="tourn-countdown">
               <span className="tc-lbl">
@@ -395,6 +409,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         {tr.venue && (
           <div className="tcard-venue">
             <Icon name="pin" size={13} /> {tr.venue}
+          </div>
+        )}
+        {tr.organizer && (
+          <div className="tcard-organizer">
+            {tr.organizer.logo ? (
+              <img
+                className="tcard-org-logo"
+                src={/^(https?:|\/)/.test(tr.organizer.logo) ? tr.organizer.logo : '/uploads/' + tr.organizer.logo}
+                alt={tr.organizer.name}
+              />
+            ) : (
+              <Icon name="building-office" size={13} />
+            )}
+            {tr.organizer.name}
           </div>
         )}
         <div className="tcard-stats">

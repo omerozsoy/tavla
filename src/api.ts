@@ -506,6 +506,8 @@ export interface Tournament {
   name: string
   /** Duzenlenme yeri / otel adi (fiziksel mekan). */
   venue?: string | null
+  /** Turnuvayi duzenleyen kurum (panelden secilir). logo = ciplak yol, /uploads/ ile oneklenir. */
+  organizer?: { id: number; name: string; logo?: string | null } | null
   size: number
   status: 'open' | 'running' | 'finished'
   count: number

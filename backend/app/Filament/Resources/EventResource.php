@@ -60,7 +60,14 @@ class EventResource extends Resource
             Forms\Components\Select::make('province')->label('İl')
                 ->options(array_combine(self::PROVINCES, self::PROVINCES))
                 ->searchable(),
-            Forms\Components\TextInput::make('organizer')->label('Düzenleyen'),
+            // Duzenleyen: Kurumlar (Content type='kurum') arasindan secilir; deger kurum ADI
+            // olarak saklanir (frontend organizer string'ini gosterir). Mevcut kayitlar isim
+            // birebir tuttugu icin otomatik eslesir. Yeni kurumu Kurumlar sayfasindan eklersin.
+            Forms\Components\Select::make('organizer')->label('Düzenleyen')
+                ->options(fn () => Content::query()->where('type', 'kurum')
+                    ->orderBy('title')->pluck('title', 'title')->all())
+                ->searchable()
+                ->helperText('Kurumlar sayfasındaki listeden seçilir. Boş bırakılabilir.'),
             Forms\Components\TextInput::make('place')->label('Yer / adres')->columnSpanFull(),
             // Cok kisili iletisim: her satir kisi adi + cep telefonu
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
