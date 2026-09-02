@@ -878,24 +878,22 @@ function EventRow({
         <div className="event-map-col">
           {(ev.hotel || hotelPlace || ev.place) && (
             <div className="event-hotel-head">
-              {ev.hotel && (
-                <div className="ehc-name">
-                  {mapHref && (
-                    <a
-                      className="event-map-icon"
-                      href={mapHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label="Haritada Gör"
-                      title="Haritada Gör"
-                    >
-                      <Icon name="pin" size={26} />
-                    </a>
-                  )}
-                  {ev.hotel}
-                </div>
+              {mapHref && (
+                <a
+                  className="event-map-icon"
+                  href={mapHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Haritada Gör"
+                  title="Haritada Gör"
+                >
+                  <Icon name="pin" size={26} />
+                </a>
               )}
-              {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+              <div className="ehc-text">
+                {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
+                {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+              </div>
             </div>
           )}
           {img && (
