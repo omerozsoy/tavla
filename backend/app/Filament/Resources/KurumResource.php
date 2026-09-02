@@ -48,6 +48,13 @@ class KurumResource extends Resource
             Forms\Components\TextInput::make('contact')->label('Web sitesi (URL)')
                 ->url()->prefixIcon('heroicon-o-globe-alt')
                 ->placeholder('https://ornek.com')->columnSpanFull(),
+            // Sosyal medya: links.instagram / links.youtube (json). Bos birakilabilir.
+            Forms\Components\TextInput::make('links.instagram')->label('Instagram')
+                ->url()->prefixIcon('heroicon-o-camera')
+                ->placeholder('https://instagram.com/kullanici'),
+            Forms\Components\TextInput::make('links.youtube')->label('YouTube')
+                ->url()->prefixIcon('heroicon-o-play-circle')
+                ->placeholder('https://youtube.com/@kanal'),
             Forms\Components\Repeater::make('contacts')->label('Yetkili kişi(ler)')
                 ->schema([
                     Forms\Components\TextInput::make('name')->label('Ad Soyad')->required(),
