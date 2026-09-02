@@ -3081,7 +3081,7 @@ button[aria-disabled='true'],
 /* Düzenleyen kurumun sosyal medya ikonlari (isim yaninda). */
 .event-organizer {
   gap: 7px;
-  font-weight: 600;
+  font-weight: 400;
   font-size: 1rem;
 }
 .event-social {
