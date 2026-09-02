@@ -5983,9 +5983,17 @@ html.fs-active .account-bar {
   .side-menu-brand {
     display: flex;
     align-items: center;
+    width: 100%;
     padding: 4px 6px 12px;
     margin-bottom: 6px;
+    border: none;
     border-bottom: 1px solid var(--border);
+    background: none;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .side-menu-brand:hover {
+    opacity: 0.8;
   }
   .side-menu.open {
     transform: translateX(0);
