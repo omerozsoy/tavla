@@ -1,26 +1,26 @@
-:root {
-  /* ===== TERRACOTTA (KREM/KIREMIT) — merkezi renk sistemi =====
+﻿:root {
+  /* ===== TERRACOTTA (KREM/KIREMIT) â€” merkezi renk sistemi =====
      Sicak + zamansiz + editoryal. Kullanici paletine SADIK:
-       Krem #f4efe6 · Krem-deep #efeae1 · Kiremit(brick) #c9563f/#a83a2b
-       Ink #1c1a17 · Line #ded7ca · Amber #d98b3a · Gold #ffd76a
+       Krem #f4efe6 Â· Krem-deep #efeae1 Â· Kiremit(brick) #c9563f/#a83a2b
+       Ink #1c1a17 Â· Line #ded7ca Â· Amber #d98b3a Â· Gold #ffd76a
      PRIMARY/yapisal = Ink (koyu), ACCENT = Kiremit (brick), sicak tersiyer = Amber.
-     Zemin Krem (sicak). Primitive isimleri (--med-x) legacy — degerler TERRACOTTA.
+     Zemin Krem (sicak). Primitive isimleri (--med-x) legacy â€” degerler TERRACOTTA.
      Board/oyun tahtasi KENDI tema sistemini korur (board token'lari: tri, bar,
-     navy-tas, cream-tas, game-scene — zaten terracotta, dokunulmadi). */
-  --med-ivory: #f4efe6; /* krem — ana acik zemin / koyu uzeri acik metin */
-  --med-porcelain: #ffffff; /* saf beyaz — kart/yuzey */
-  --med-blue: #1c1a17; /* INK — PRIMARY/yapisal koyu [isim legacy] */
-  --med-blue-deep: #100e0c; /* ink deep — primary hover */
-  --med-terracotta: #c9563f; /* KIREMIT (brick) — ACCENT (karakter vurgusu) */
-  --med-terracotta-dark: #a83a2b; /* brick deep — acik zeminde accent + hover */
-  --med-sage: #d99a3f; /* sicak amber-gold — ikincil aksan [isim legacy] */
-  --med-ink: #1c1a17; /* ink — ana metin */
-  --med-slate: #5e574c; /* ink-muted — ikincil metin */
-  --med-sand: #ded7ca; /* kiremit-line — border */
-  --med-sand-warm: #f4efe6; /* krem — sicak soft yuzey */
-  --med-orange: #d98b3a; /* amber — sicak tersiyer (coin/puan) */
-  --med-powder: #efe7d9; /* soft krem — tint yuzey */
-  --med-ice-soft: #efeae1; /* krem-deep — ikincil yuzey (secondary buton) */
+     navy-tas, cream-tas, game-scene â€” zaten terracotta, dokunulmadi). */
+  --med-ivory: #f4efe6; /* krem â€” ana acik zemin / koyu uzeri acik metin */
+  --med-porcelain: #ffffff; /* saf beyaz â€” kart/yuzey */
+  --med-blue: #1c1a17; /* INK â€” PRIMARY/yapisal koyu [isim legacy] */
+  --med-blue-deep: #100e0c; /* ink deep â€” primary hover */
+  --med-terracotta: #c9563f; /* KIREMIT (brick) â€” ACCENT (karakter vurgusu) */
+  --med-terracotta-dark: #a83a2b; /* brick deep â€” acik zeminde accent + hover */
+  --med-sage: #d99a3f; /* sicak amber-gold â€” ikincil aksan [isim legacy] */
+  --med-ink: #1c1a17; /* ink â€” ana metin */
+  --med-slate: #5e574c; /* ink-muted â€” ikincil metin */
+  --med-sand: #ded7ca; /* kiremit-line â€” border */
+  --med-sand-warm: #f4efe6; /* krem â€” sicak soft yuzey */
+  --med-orange: #d98b3a; /* amber â€” sicak tersiyer (coin/puan) */
+  --med-powder: #efe7d9; /* soft krem â€” tint yuzey */
+  --med-ice-soft: #efeae1; /* krem-deep â€” ikincil yuzey (secondary buton) */
   /* Dark tema zeminleri (terracotta koyu varyant) */
   --med-navy-900: #1c1a17; /* ink dark zemin */
   --med-navy-800: #24211d; /* dark kart */
@@ -37,8 +37,8 @@
   --gold-dark: var(--med-terracotta); /* acik zeminde coral aksan */
   --ivory: var(--med-ivory); /* ice white (acik metin, koyu/primary uzeri) */
   --ivory-soft: var(--med-ice-soft);
-  --rn-muted: #c6bfb2; /* muted (dark zeminde) — sicak krem-gri */
-  /* Coastal marka token'lari — component'lerde vurgu icin */
+  --rn-muted: #c6bfb2; /* muted (dark zeminde) â€” sicak krem-gri */
+  /* Coastal marka token'lari â€” component'lerde vurgu icin */
   --terracotta: var(--med-terracotta); /* = coral */
   --terracotta-hover: var(--med-terracotta-dark);
   --sage: var(--med-sage); /* ikincil aksan = sky blue */
@@ -59,9 +59,9 @@
   --tv-cream-deep: var(--ivory-soft); /* ikincil */
   --tv-white: #ffffff; /* saf beyaz (nadir; tas/ikon detaylari) */
   --tv-line: var(--rn-line); /* kenarlik */
-  --tv-ink: var(--ink-navy); /* dark navy — en koyu metin */
+  --tv-ink: var(--ink-navy); /* dark navy â€” en koyu metin */
   --tv-ink-muted: var(--slate); /* ikincil metin */
-  --tv-ink-faint: #8a8377; /* etiket / ucuncul — sicak krem-gri */
+  --tv-ink-faint: #8a8377; /* etiket / ucuncul â€” sicak krem-gri */
   --tv-brick: var(--coral); /* kiremit = brick (sicak aksan) */
   --tv-brick-light: var(--med-terracotta); /* brick (koyu zeminde) */
   --tv-on-dark: var(--rn-muted); /* ikincil metin (koyu zemin) */
@@ -73,7 +73,7 @@
   /* Coin/odul rengi -> amber (terracotta; coin warm tertiary) */
   --tv-gold: var(--orange);
 
-  /* Anlamsal durum renkleri — Terracotta paletine uyumlu */
+  /* Anlamsal durum renkleri â€” Terracotta paletine uyumlu */
   --color-success: #2e9e5b; /* terracotta green (palette disi; semantik zorunlu) */
   --color-warning: var(--orange); /* uyari = amber (palette) */
   --color-error: #e0455e; /* destructive red (brick'ten AYRI, daha pembe-kirmizi) */
@@ -90,7 +90,7 @@
   --shadow-lg: none;
   --shadow-xl: 0 0 0 1px var(--border);
 
-  /* ---- Bosluk (spacing) olcegi — 4px tabanli grid ---- */
+  /* ---- Bosluk (spacing) olcegi â€” 4px tabanli grid ---- */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -100,7 +100,7 @@
   --space-8: 32px;
   --space-10: 40px;
 
-  /* Ana sayfa (lobi) icerik kolonu genisligi — tum lobi bolumleri bunu kullanir */
+  /* Ana sayfa (lobi) icerik kolonu genisligi â€” tum lobi bolumleri bunu kullanir */
   --lobby-w: 1120px;
 
   /* ---- Kose yaricapi (radius) olcegi ---- */
@@ -139,7 +139,7 @@
      NOT: --tri-*, --bar, --navy(tas), --cream(tas) BOARD renkleridir; board kendi
      tema sistemini korur, chrome'a karismaz. */
   color-scheme: dark;
-  --bg: var(--rn-bg); /* deep navy — dis zemin */
+  --bg: var(--rn-bg); /* deep navy â€” dis zemin */
   --area: var(--rn-bg);
   --panel: #2a2620; /* board yari zemini - DOKUNULMADI (board) */
   --tri-a: #c9563f; /* acik ucgen - kiremit (board) */
@@ -191,12 +191,12 @@
   --game-scene-glow: #0b1230; /* board arkasi hafif mavi hale */
   --tray-bg: color-mix(in srgb, var(--bar) 86%, #ffffff 14%); /* cerceve ailesinden tepsi */
 
-  /* ====== OYUNCU RÜTBE (RANK) TOKEN'LARI — DARK (esas) ======
+  /* ====== OYUNCU RÃœTBE (RANK) TOKEN'LARI â€” DARK (esas) ======
      Her aile icin foreground + accent (temayla degisen ANCHOR'lar); background /
-     border / icon bunlardan color-mix ile TÜRETİLİR (DRY; light'ta sadece
+     border / icon bunlardan color-mix ile TÃœRETÄ°LÄ°R (DRY; light'ta sadece
      foreground+accent override edilir, digerleri otomatik doner). Terracotta
      paletiyle uyumlu; dusuk aileler notr/sicak, ust aileler premium.
-     YASAK: neon, rainbow, kalin golge, gradient — sadece hue + kontrast. */
+     YASAK: neon, rainbow, kalin golge, gradient â€” sadece hue + kontrast. */
   --rank-rookie-foreground: #b3ab9c;            --rank-rookie-accent: #c8c1b4;
   --rank-novice-foreground: #a2b3a6;            --rank-novice-accent: #b9c6bb;
   --rank-beginner-foreground: #c4a483;          --rank-beginner-accent: #d6bb9d;
@@ -208,8 +208,8 @@
   --rank-super-grandmaster-foreground: #e37a61; --rank-super-grandmaster-accent: #e8bf6d;
 }
 
-/* Türetilen rank token'ları (icon/background/border) — TEK yerde tanımlı; her iki
-   temada da geçerli (foreground temaya göre değişince otomatik takip eder). */
+/* TÃ¼retilen rank token'larÄ± (icon/background/border) â€” TEK yerde tanÄ±mlÄ±; her iki
+   temada da geÃ§erli (foreground temaya gÃ¶re deÄŸiÅŸince otomatik takip eder). */
 :root,
 :root[data-theme='light'] {
   --rank-rookie-icon: var(--rank-rookie-foreground);
@@ -241,10 +241,10 @@
   --rank-super-grandmaster-border: color-mix(in srgb, var(--rank-super-grandmaster-foreground) 30%, transparent);
 }
 
-/* ===== TERRACOTTA (KREM/KIREMIT) — ESAS (LIGHT) TEMA =====
+/* ===== TERRACOTTA (KREM/KIREMIT) â€” ESAS (LIGHT) TEMA =====
    Krem zemin + beyaz kart + Ink metin + Kiremit (brick) marka aksani.
    Sicak, zamansiz, editoryal. Board renkleri (--tri-*, --bar, --navy[tas], --cream[tas])
-   board temasina ait — dokunulmaz. */
+   board temasina ait â€” dokunulmaz. */
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: var(--med-ice-soft); /* Krem-deep sayfa zemini #efeae1 */
@@ -255,7 +255,7 @@
   --bar: #ded7ca; /* orta bar / cerceve (board) */
   --navy: #1c1a17; /* koyu tas (board) */
   --cream: #f4efe6; /* acik tas (board) */
-  --accent: var(--med-terracotta-dark); /* Kiremit (brick) — acik zeminde okunur #a83a2b */
+  --accent: var(--med-terracotta-dark); /* Kiremit (brick) â€” acik zeminde okunur #a83a2b */
   --text: var(--med-ink); /* Ink metin #1c1a17 */
   --muted: var(--med-slate); /* ink-muted ikincil metin #5e574c */
   --card-bg: var(--med-porcelain); /* beyaz kart #ffffff */
@@ -270,8 +270,8 @@
   /* success METIN: acik zeminde okunur terracotta green */
   --success-fg: #2f7a5e;
 
-  /* ---- Rank ANCHOR'ları — LIGHT (krem/beyaz yüzey için koyulaştırılmış) ----
-     Yalnızca foreground+accent override; background/border/icon türetilmiş
+  /* ---- Rank ANCHOR'larÄ± â€” LIGHT (krem/beyaz yÃ¼zey iÃ§in koyulaÅŸtÄ±rÄ±lmÄ±ÅŸ) ----
+     YalnÄ±zca foreground+accent override; background/border/icon tÃ¼retilmiÅŸ
      token'lardan otomatik gelir. */
   --rank-rookie-foreground: #7c7568;            --rank-rookie-accent: #6a6458;
   --rank-novice-foreground: #6c8478;            --rank-novice-accent: #5c7365;
@@ -338,7 +338,7 @@ body {
 }
 
 /* Basliklar: govdeyle ayni aile (Outfit). Font pairing yok; ayrim agirlik/olcuyle.
-   Weight standardi: H1/H2 700 · H3/H4 600. Outfit'in dogal karakteri korunur. */
+   Weight standardi: H1/H2 700 Â· H3/H4 600. Outfit'in dogal karakteri korunur. */
 h1,
 h2,
 h3,
@@ -518,7 +518,7 @@ button[aria-disabled='true'],
   }
 }
 
-/* Buton-ici kucuk spinner: busy durumunda "…" yerine gorsel geri bildirim */
+/* Buton-ici kucuk spinner: busy durumunda "â€¦" yerine gorsel geri bildirim */
 .btn-spinner {
   display: inline-block;
   width: 1em;
@@ -780,7 +780,7 @@ button[aria-disabled='true'],
   padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right))
     max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
   height: 100vh; /* fallback */
-  /* dvh: iOS Safari araç çubuklari gizlenince/gozukunce gercek gorunur yukseklik ->
+  /* dvh: iOS Safari araÃ§ Ã§ubuklari gizlenince/gozukunce gercek gorunur yukseklik ->
      alttaki dugmeler tarayici cubugunun altinda kalmaz (viewport-units) */
   height: 100dvh;
   overflow: hidden;
@@ -792,8 +792,8 @@ button[aria-disabled='true'],
   flex: none;
   display: flex;
   flex-direction: column;
-  /* TÜM menü öğeleri EŞİT aralıkta: gruplar arası da grup içi ile aynı (4px).
-     Aksi halde tek-öğeli gruplar (Üyelik/Bilgi) 8px'le izole "yüzüyor" -> düzensiz ritim. */
+  /* TÃœM menÃ¼ Ã¶ÄŸeleri EÅžÄ°T aralÄ±kta: gruplar arasÄ± da grup iÃ§i ile aynÄ± (4px).
+     Aksi halde tek-Ã¶ÄŸeli gruplar (Ãœyelik/Bilgi) 8px'le izole "yÃ¼zÃ¼yor" -> dÃ¼zensiz ritim. */
   gap: 4px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -1223,11 +1223,11 @@ button[aria-disabled='true'],
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   border-color: transparent;
 }
-/* Sol menu shadcn nav butonlari (guncel): TEMIZ navigation — kutu/border yok,
+/* Sol menu shadcn nav butonlari (guncel): TEMIZ navigation â€” kutu/border yok,
    coral ikon (canlilik), belirgin aqua hover, AKTIF sayfa = guclu navy.
    Boylece her item ayni soluk gri kutu gibi gorunmez; aktif sayfa ilk bakista bellidir. */
-/* EMIL sol menü: sade, marka-uyumlu (Terracotta). İkon glyph'leri DEĞİŞMEDİ;
-   yalnız hover/aktif/renk kohezyonu yenilendi. Bağıran aqua/navy kaldırıldı. */
+/* EMIL sol menÃ¼: sade, marka-uyumlu (Terracotta). Ä°kon glyph'leri DEÄžÄ°ÅžMEDÄ°;
+   yalnÄ±z hover/aktif/renk kohezyonu yenilendi. BaÄŸÄ±ran aqua/navy kaldÄ±rÄ±ldÄ±. */
 .side-menu [data-slot='button'] {
   border-color: transparent !important;
   color: var(--text);
@@ -1235,16 +1235,16 @@ button[aria-disabled='true'],
   min-height: 44px;
   border-radius: 10px;
   position: relative;
-  isolation: isolate; /* stacking context -> ::before hane z-index:-1 içerikte KALIR */
+  isolation: isolate; /* stacking context -> ::before hane z-index:-1 iÃ§erikte KALIR */
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
 }
 .side-menu [data-slot='button'] svg {
-  color: var(--accent); /* marka aksanı (light: kiremit · dark: coral) — okunur */
+  color: var(--accent); /* marka aksanÄ± (light: kiremit Â· dark: coral) â€” okunur */
   transition: color 0.15s ease;
 }
-/* HOVER = tavla hanesi (accent gradient üçgen; soldan geniş → sağa incelen uç) */
+/* HOVER = tavla hanesi (accent gradient Ã¼Ã§gen; soldan geniÅŸ â†’ saÄŸa incelen uÃ§) */
 .side-menu [data-slot='button']:hover {
   background: transparent !important;
   color: var(--accent) !important;
@@ -1257,7 +1257,7 @@ button[aria-disabled='true'],
   z-index: -1;
   clip-path: polygon(0 0, 100% 40%, 100% 60%, 0 100%);
   pointer-events: none;
-  /* Hover = YUMUŞAK accent hane (önizleme) */
+  /* Hover = YUMUÅžAK accent hane (Ã¶nizleme) */
   background: linear-gradient(
     90deg,
     color-mix(in srgb, var(--accent) 18%, transparent) 0%,
@@ -1265,9 +1265,9 @@ button[aria-disabled='true'],
     transparent 100%
   );
 }
-/* SEÇİLİ/AKTİF = DOLU KOYU accent hane + BEYAZ yazı/ikon. Küt uç (0 0,100% 42-58%,
-   0 100%) -> orta bant tüm genişlikte dolu, beyaz yazı okunur. accent+siyah karışım
-   her iki temada beyazı taşıyacak kadar koyu. */
+/* SEÃ‡Ä°LÄ°/AKTÄ°F = DOLU KOYU accent hane + BEYAZ yazÄ±/ikon. KÃ¼t uÃ§ (0 0,100% 42-58%,
+   0 100%) -> orta bant tÃ¼m geniÅŸlikte dolu, beyaz yazÄ± okunur. accent+siyah karÄ±ÅŸÄ±m
+   her iki temada beyazÄ± taÅŸÄ±yacak kadar koyu. */
 .side-menu [data-slot='button'][data-active='true'] {
   background: transparent !important;
   color: #fff !important;
@@ -1299,7 +1299,7 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true'] svg {
   color: #fff !important;
 }
-/* Aktif öğeyi hover'lasan hane biraz daha koyulaşır, yazı beyaz kalır */
+/* Aktif Ã¶ÄŸeyi hover'lasan hane biraz daha koyulaÅŸÄ±r, yazÄ± beyaz kalÄ±r */
 .side-menu [data-slot='button'][data-active='true']:hover {
   color: #fff !important;
 }
@@ -1713,9 +1713,9 @@ button[aria-disabled='true'],
   gap: 3px;
 }
 
-/* ===== Mac Analizleri — SKORBORD satiri (emil) =====
-   En onemli bilgi hemen gorunur: rakip (PR) — skor — ben (PR). 3 kolon skorbord
-   ustte, altta ince serit (sonuc · tarih · rating degisimi · genislet). */
+/* ===== Mac Analizleri â€” SKORBORD satiri (emil) =====
+   En onemli bilgi hemen gorunur: rakip (PR) â€” skor â€” ben (PR). 3 kolon skorbord
+   ustte, altta ince serit (sonuc Â· tarih Â· rating degisimi Â· genislet). */
 .mh-card .mh-item {
   transition:
     transform 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1)),
@@ -1972,7 +1972,7 @@ button[aria-disabled='true'],
     transform: none;
   }
 }
-/* ===== Hata Gunlugu (Blunder Log) — editorial kart grid =====
+/* ===== Hata Gunlugu (Blunder Log) â€” editorial kart grid =====
    Ic scroll YOK: sayfanin kendi scroll'u kullanilir (nested scroll region,
    ana scroll deneyimini bozar). Her hata board onizlemesiyle gorunur. */
 
@@ -2239,7 +2239,7 @@ button[aria-disabled='true'],
   font-variant-numeric: tabular-nums;
 }
 
-/* Giris animasyonu — stagger; reduced-motion'da kapali */
+/* Giris animasyonu â€” stagger; reduced-motion'da kapali */
 @media (prefers-reduced-motion: no-preference) {
   .bl-card {
     animation: blCardIn 0.4s ease both;
@@ -2880,8 +2880,8 @@ button[aria-disabled='true'],
     transform: none;
   }
 }
-/* Afisin TAMAMI bayrak, DIK asili (yatay bayrak 90° dondurulur -> tam bayrak dikey).
-   Yatay 84x56 bayragi merkeze koyup 90° cevir -> 56x84 olur, dikey afisi doldurur. */
+/* Afisin TAMAMI bayrak, DIK asili (yatay bayrak 90Â° dondurulur -> tam bayrak dikey).
+   Yatay 84x56 bayragi merkeze koyup 90Â° cevir -> 56x84 olur, dikey afisi doldurur. */
 .event-ribbon-flag {
   position: absolute !important;
   top: 50% !important;
@@ -2921,7 +2921,7 @@ button[aria-disabled='true'],
   flex: 1 1 auto;
   min-width: 0;
 }
-/* En sag sutun: otel gorseli + gomulu harita YAN YANA; altta "Haritada Gör" butonu. */
+/* En sag sutun: otel gorseli + gomulu harita YAN YANA; altta "Haritada GÃ¶r" butonu. */
 .event-map-col {
   flex: 0 0 auto;
   width: 420px;
@@ -2935,19 +2935,28 @@ button[aria-disabled='true'],
   padding-right: 56px;
   border-left: 1px solid var(--border);
 }
+/* SOLDA otel gorseli, SAGDA otel adi + adres (+ Haritada Gor). */
+.event-hotel-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
 /* Otel gorsel karti: cerceve YOK (border/radius kaldirildi) -> gorsel serbest,
    contain letterbox bosluklari sayfa zeminine karisir. */
 .event-hotel-card {
   position: relative;
+  flex: 0 0 auto;
 }
 .event-side-img {
   display: block;
-  width: 100%;
+  width: 150px;
   height: 120px;
   object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
 }
-/* Gorselin UST TARAFINDA otel adi + adres (bindirme yok). */
+/* Gorselin SAGINDA otel adi + adres (+ Haritada Gor). */
 .event-hotel-head {
+  flex: 1 1 auto;
+  min-width: 0;
   color: var(--text);
 }
 .ehc-name {
@@ -2963,6 +2972,7 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .event-map-link {
+  margin-top: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3068,7 +3078,7 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-size: 1.3rem;
 }
-/* Il (sehir) — tarih rozetinin yaninda, rakamla ayni boyda, kiremit renk */
+/* Il (sehir) â€” tarih rozetinin yaninda, rakamla ayni boyda, kiremit renk */
 .event-province-top {
   margin-left: 6px;
   font-size: 1.6rem;
@@ -3111,7 +3121,7 @@ button[aria-disabled='true'],
 .event-meta svg {
   color: var(--accent);
 }
-/* Düzenleyen kurumun sosyal medya ikonlari (isim yaninda). */
+/* DÃ¼zenleyen kurumun sosyal medya ikonlari (isim yaninda). */
 .event-organizer {
   gap: 7px;
   font-weight: 400;
@@ -3199,20 +3209,20 @@ button[aria-disabled='true'],
   flex-direction: column;
   gap: 18px;
 }
-/* ===== Türkiye haritası (kulüp rehberi) ===== */
+/* ===== TÃ¼rkiye haritasÄ± (kulÃ¼p rehberi) ===== */
 .turkey-map {
-  position: relative; /* balon (tm-balloon) buna göre konumlanır */
+  position: relative; /* balon (tm-balloon) buna gÃ¶re konumlanÄ±r */
   width: 100%;
   max-width: 760px;
   margin: 0 auto 6px;
 }
-/* Hover balonu: o ildeki kulüpleri ince liste hâlinde gösterir (imleci takip eder) */
+/* Hover balonu: o ildeki kulÃ¼pleri ince liste hÃ¢linde gÃ¶sterir (imleci takip eder) */
 .tm-balloon {
   position: absolute;
-  /* left/top = ilin yan kenarı + dikey ortası. Balon YANA açılır (üste açınca
-     kuzey illerde sayfa dışına taşıyordu). Sağ kısımdaki iller sola açılır. */
+  /* left/top = ilin yan kenarÄ± + dikey ortasÄ±. Balon YANA aÃ§Ä±lÄ±r (Ã¼ste aÃ§Ä±nca
+     kuzey illerde sayfa dÄ±ÅŸÄ±na taÅŸÄ±yordu). SaÄŸ kÄ±sÄ±mdaki iller sola aÃ§Ä±lÄ±r. */
   z-index: 5;
-  pointer-events: none; /* imleçle etkileşmesin -> hover titremesin */
+  pointer-events: none; /* imleÃ§le etkileÅŸmesin -> hover titremesin */
   max-width: 240px;
   padding: 8px 11px;
   background: var(--card-bg);
@@ -3243,7 +3253,7 @@ button[aria-disabled='true'],
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* İsmin başında küçük nokta bullet */
+/* Ä°smin baÅŸÄ±nda kÃ¼Ã§Ã¼k nokta bullet */
 .tm-balloon-list li::before {
   content: '';
   display: inline-block;
@@ -3254,7 +3264,7 @@ button[aria-disabled='true'],
   background: var(--accent);
   vertical-align: middle;
 }
-/* Yön: ilin sağına aç (varsayılan) / sağ kenardaki iller sola aç */
+/* YÃ¶n: ilin saÄŸÄ±na aÃ§ (varsayÄ±lan) / saÄŸ kenardaki iller sola aÃ§ */
 .tm-balloon-right {
   transform: translate(12px, -50%);
 }
@@ -3267,28 +3277,28 @@ button[aria-disabled='true'],
   display: block;
   overflow: visible;
 }
-/* Varsayılan iller: soluk, etkileşimsiz */
+/* VarsayÄ±lan iller: soluk, etkileÅŸimsiz */
 .turkey-map svg path {
   fill: color-mix(in srgb, var(--text) 9%, transparent);
   stroke: var(--card-bg);
   stroke-width: 0.6px;
   transition: fill 0.14s ease;
 }
-/* Kulübü olan iller: accent'in 2 ton açığı -> fark edilir ama yumuşak + tıklanabilir */
+/* KulÃ¼bÃ¼ olan iller: accent'in 2 ton aÃ§Ä±ÄŸÄ± -> fark edilir ama yumuÅŸak + tÄ±klanabilir */
 .turkey-map [data-iladi].has-clubs path {
   fill: color-mix(in srgb, var(--accent) 62%, #fff);
   cursor: pointer;
 }
-/* Yapışkan hover (.hovered) — :hover il sınırlarında titriyordu (bkz TurkeyMap.tsx) */
+/* YapÄ±ÅŸkan hover (.hovered) â€” :hover il sÄ±nÄ±rlarÄ±nda titriyordu (bkz TurkeyMap.tsx) */
 .turkey-map [data-iladi].has-clubs.hovered path {
-  fill: var(--accent); /* hover: tam accent (belirginleşir) */
+  fill: var(--accent); /* hover: tam accent (belirginleÅŸir) */
 }
 .turkey-map [data-iladi].selected path {
   fill: var(--accent);
   stroke: var(--text);
   stroke-width: 1px;
 }
-/* Seçili il filtre çubuğu */
+/* SeÃ§ili il filtre Ã§ubuÄŸu */
 .club-filter-bar {
   display: flex;
   align-items: center;
@@ -3555,7 +3565,7 @@ button[aria-disabled='true'],
   /* ust padding hesap barini gecer; menu ile ayni hizada baslasin (bar + row-gap) */
   padding: calc(var(--header-h) + 18px) clamp(16px, 3vw, 48px) 56px;
 }
-/* STANDART SAYFA BASLIGI — tum menu sayfalarinda AYNI (ikon + baslik).
+/* STANDART SAYFA BASLIGI â€” tum menu sayfalarinda AYNI (ikon + baslik).
    Setup/solo iki-kolon oldugu icin baslik torun (setup-card/solo-card icinde);
    onlari da acikca dahil ediyoruz ki Tek Oyun / Mac Oyunu / Yapay Zeka da
    ayni tek tip basligi kullansin. */
@@ -3563,7 +3573,7 @@ button[aria-disabled='true'],
 .register-overlay.page .setup-card > h2,
 .register-overlay.page .solo-card > h2 {
   font-size: 1.7rem;
-  font-weight: 400; /* bold degil — tek tip sayfa basligi */
+  font-weight: 400; /* bold degil â€” tek tip sayfa basligi */
   letter-spacing: -0.01em;
   text-align: left;
   justify-content: flex-start;
@@ -3572,7 +3582,7 @@ button[aria-disabled='true'],
   gap: 10px;
   margin: 0 0 20px;
   padding-bottom: 0;
-  border-bottom: none; /* sade — tum sayfalarda ayni (cizgisiz) */
+  border-bottom: none; /* sade â€” tum sayfalarda ayni (cizgisiz) */
 }
 /* Baslik ikonu = sol menu ikon boyutu (24px). Inline size prop'unu ez. */
 .register-overlay.page > *:not(.register-overlay) > h2 > svg,
@@ -3660,14 +3670,14 @@ button[aria-disabled='true'],
 .page-host .register-overlay.page > *:not(.register-overlay) {
   /* Sayfa-host'ta sayfa STATIC (grid 'main' satirinda akar) -> zaten hesap
      barinin ALTINDA basliyor. 78px ust padding barI ikinci kez gecerdi ->
-     baslik cok asagi kayardi. Kucuk nefes bosluğu birak. */
+     baslik cok asagi kayardi. Kucuk nefes bosluÄŸu birak. */
   padding: 22px clamp(16px, 3vw, 44px) 56px;
   min-height: 0;
   max-width: 1400px;
   margin: 0;
 }
-/* Sayfa-host'ta scroll YOK (max-height:none) → overflow:auto gereksiz ve ilk kartın
-   üst border'ını 1px kırpabiliyor; görünür yap. */
+/* Sayfa-host'ta scroll YOK (max-height:none) â†’ overflow:auto gereksiz ve ilk kartÄ±n
+   Ã¼st border'Ä±nÄ± 1px kÄ±rpabiliyor; gÃ¶rÃ¼nÃ¼r yap. */
 .page-host .register-overlay.page > .tourn-card {
   overflow: visible;
 }
@@ -3975,7 +3985,7 @@ button[aria-disabled='true'],
 .player-rating > svg {
   color: var(--tv-gold);
 }
-/* Tek ortak maç skoru (iki kartın arasında, ortada) */
+/* Tek ortak maÃ§ skoru (iki kartÄ±n arasÄ±nda, ortada) */
 .sidebar-score {
   display: flex;
   align-items: baseline;
@@ -4260,7 +4270,7 @@ button[aria-disabled='true'],
 .checker.draggable:active {
   cursor: grabbing;
 }
-/* Prosedürel mermer damari (SVG feTurbulence; harici dosya yok, tema-tintable) */
+/* ProsedÃ¼rel mermer damari (SVG feTurbulence; harici dosya yok, tema-tintable) */
 :root {
   --marble: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02 0.11' numOctaves='4' seed='8' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='gamma' exponent='2.4'/%3E%3CfeFuncG type='gamma' exponent='2.4'/%3E%3CfeFuncB type='gamma' exponent='2.4'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E");
 }
@@ -4307,7 +4317,7 @@ button[aria-disabled='true'],
     0 2px 5px rgba(0, 0, 0, 0.5);
 }
 
-/* ===== PUL STILLERI (data-checker) — renk --cream/--navy'den; stil = finish/efekt.
+/* ===== PUL STILLERI (data-checker) â€” renk --cream/--navy'den; stil = finish/efekt.
    Referans board'un pul karakterini yeniden uretir (flat disk / cilali / buz /
    halka / neon). 'flat' varsayilan; asagidakiler onu override eder. ===== */
 
@@ -4325,7 +4335,7 @@ button[aria-disabled='true'],
   box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.34), 0 1px 3px rgba(0, 0, 0, 0.36);
 }
 
-/* ice: buz/kristal — soguk highlight, acik kenar, ic parlama */
+/* ice: buz/kristal â€” soguk highlight, acik kenar, ic parlama */
 [data-checker='ice'] .checker.white {
   background:
     radial-gradient(circle at 34% 24%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.08) 62%),
@@ -4354,7 +4364,7 @@ button[aria-disabled='true'],
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-/* neon: parlak neon disk (Quantum/Singularity) — dis glow + ic parlaklik */
+/* neon: parlak neon disk (Quantum/Singularity) â€” dis glow + ic parlaklik */
 [data-checker='neon'] .checker.white {
   background: radial-gradient(circle at 38% 30%, #fff, var(--cream) 72%);
   box-shadow:
@@ -4378,7 +4388,7 @@ button[aria-disabled='true'],
     color-mix(in srgb, var(--panel) 82%, #000) 100%
   );
 }
-/* felt: cuha dokusu (Monaco/Manhattan) — cok ince capraz iplik dokusu */
+/* felt: cuha dokusu (Monaco/Manhattan) â€” cok ince capraz iplik dokusu */
 [data-surface='felt'] .half {
   background:
     repeating-linear-gradient(45deg, rgba(0, 0, 0, 0.028) 0 2px, transparent 2px 4px),
@@ -4596,7 +4606,7 @@ button[aria-disabled='true'],
 .cube.owner-white {
   bottom: calc(var(--checker) * 0.9);
 } /* beyaz (alt) */
-/* Flip-duyarlı GÖRSEL konum (ana oyun tahtası): sahibi görsel üst/alt'a göre. */
+/* Flip-duyarlÄ± GÃ–RSEL konum (ana oyun tahtasÄ±): sahibi gÃ¶rsel Ã¼st/alt'a gÃ¶re. */
 .cube.cube-center {
   top: 50%;
   transform: translate(-50%, -50%);
@@ -4799,8 +4809,8 @@ button[aria-disabled='true'],
   left: 50%;
   transform: translate(-50%, -50%);
 }
-/* Oyun-içi merkez aksiyon butonları (Onayla / Geri / Roll / Double) — BÜYÜK
-   (yalnız oyun tahtasına özel; shadcn Button 42px sabitini burada ezer) */
+/* Oyun-iÃ§i merkez aksiyon butonlarÄ± (Onayla / Geri / Roll / Double) â€” BÃœYÃœK
+   (yalnÄ±z oyun tahtasÄ±na Ã¶zel; shadcn Button 42px sabitini burada ezer) */
 .center-overlay [data-slot='button'] {
   height: 54px;
   min-height: 54px;
@@ -5324,7 +5334,7 @@ button[aria-disabled='true'],
   gap: 12px;
   flex-wrap: wrap;
 }
-/* "Premium" yazisi: solda, buyuk, display font — one cikar */
+/* "Premium" yazisi: solda, buyuk, display font â€” one cikar */
 .mem-status-plan {
   display: inline-flex;
   align-items: center;
@@ -6099,7 +6109,7 @@ html.fs-active .account-bar {
   cursor: pointer;
   box-shadow: none; /* flat */
 }
-/* Mobilde (game-area kolon olabilir) hamburger board altına yığılmasın -> fixed */
+/* Mobilde (game-area kolon olabilir) hamburger board altÄ±na yÄ±ÄŸÄ±lmasÄ±n -> fixed */
 @media (max-width: 900px) {
   .game-ham {
     position: fixed;
@@ -6164,7 +6174,7 @@ html.fs-active .account-bar {
 .gm-state.off {
   color: var(--muted);
 }
-/* Oyun-ici hizli navigasyon koprusu (Turnuva / Arkadas / Magaza) — drawer kiremit
+/* Oyun-ici hizli navigasyon koprusu (Turnuva / Arkadas / Magaza) â€” drawer kiremit
    zeminde beyaz metin/ikon (accent kiremit zemine karisir). Overlay olarak acilir,
    kapaninca oyuna doner. */
 .gm-nav {
@@ -6193,7 +6203,7 @@ html.fs-active .account-bar {
 .gm-nav-btn:hover {
   opacity: 0.82;
 }
-/* Alt aksiyonlar: Lobi + Pes Et — temiz PILL düğmeler (büyük daireler kaldırıldı) */
+/* Alt aksiyonlar: Lobi + Pes Et â€” temiz PILL dÃ¼ÄŸmeler (bÃ¼yÃ¼k daireler kaldÄ±rÄ±ldÄ±) */
 .gm-actions {
   display: flex;
   gap: 12px;
@@ -6620,7 +6630,7 @@ button.stat-chip:hover {
   /* Sag ikon grubuyla ayni yukseklik (44px); rakamlar kucultulmez */
   height: 44px;
   padding: 0 10px 0 4px;
-  /* Border + pil zemini KALDIRILDI (kullanici istegi) -> isim/coin/rating cerceve­siz. */
+  /* Border + pil zemini KALDIRILDI (kullanici istegi) -> isim/coin/rating cerceveÂ­siz. */
   border: none;
   background: transparent;
 }
@@ -6834,7 +6844,7 @@ button.acct-row:hover:not(:disabled) {
   opacity: 1;
   border-color: var(--accent);
 }
-/* Ust bar: TUM yazilar regular (400) — kalin degil (isim, coin/rating, odul, butonlar) */
+/* Ust bar: TUM yazilar regular (400) â€” kalin degil (isim, coin/rating, odul, butonlar) */
 .account-bar,
 .account-bar [data-slot='button'],
 .account-id .account-name,
@@ -6884,7 +6894,7 @@ button.acct-row:hover:not(:disabled) {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
-  /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) — kaydirma tekerlek/touch ile calisir. */
+  /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) â€” kaydirma tekerlek/touch ile calisir. */
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* eski Edge */
 }
@@ -6935,7 +6945,7 @@ button.acct-row:hover:not(:disabled) {
 /* Desktop: ust band TEK SATIR kalsin. Cok kontrol (giris yapinca) dar genislikte
    2. satira SARIP band'i uzatiyor / icerige biniyordu. nowrap ile yukseklik SABIT;
    tasarsa yatay kaydirilir. (Bu kural base .account-bar'dan SONRA gelmeli ki
-   kaynak-sirasi kazansin — media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni. */
+   kaynak-sirasi kazansin â€” media ozgulluk eklemez.) Mobil (<=900) kendi sarma duzeni. */
 @media (min-width: 901px) {
   .account-bar {
     flex-wrap: nowrap;
@@ -6947,7 +6957,7 @@ button.acct-row:hover:not(:disabled) {
     display: none;
   }
 }
-/* Logo sola, hesap kontrolleri saga (auto margin bosluğu doldurur). */
+/* Logo sola, hesap kontrolleri saga (auto margin bosluÄŸu doldurur). */
 .ab-brand {
   margin-right: auto;
   margin-left: -14px; /* logoyu sola daha da yaklastir (mobilde 46px override edilir) */
@@ -6972,7 +6982,7 @@ button.acct-row:hover:not(:disabled) {
   display: none;
   align-items: center;
 }
-/* Mobil (≤900px): base .app.lobby grid'inden SONRA gelmeli ki onu ezebilsin.
+/* Mobil (â‰¤900px): base .app.lobby grid'inden SONRA gelmeli ki onu ezebilsin.
    Tek kolon (menu drawer), kompakt logo, hamburger'a yer. */
 @media (max-width: 900px) {
   .app.lobby {
@@ -7382,10 +7392,10 @@ button.acct-row:hover:not(:disabled) {
 }
 
 /* ============================================================
-   Ana sayfa hero — "Sicak editoryal" (terracotta/krem, Outfit)
+   Ana sayfa hero â€” "Sicak editoryal" (terracotta/krem, Outfit)
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
-/* Ana sayfa hero banner slider'i — Christie's SPLIT layout: SOL duz sicak panelde
+/* Ana sayfa hero banner slider'i â€” Christie's SPLIT layout: SOL duz sicak panelde
    editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
@@ -7545,7 +7555,7 @@ button.acct-row:hover:not(:disabled) {
   height: 14px;
   padding: 0;
   border: 0;
-  border-radius: 50%; /* YUVARLAK — lobi'de --radius-pill:0 oldugu icin acikca daire */
+  border-radius: 50%; /* YUVARLAK â€” lobi'de --radius-pill:0 oldugu icin acikca daire */
   background: color-mix(in srgb, var(--med-ink) 30%, transparent);
   cursor: pointer;
   transition: transform 0.2s ease, background 0.2s ease;
@@ -7558,7 +7568,7 @@ button.acct-row:hover:not(:disabled) {
 /* Sag-sol oklar: HALKASIZ, beyaz, buyuk (gorsel uzerine biner) */
 .bs-arrow {
   position: absolute;
-  top: calc(var(--bs-h) / 2); /* okları GORSEL merkezine hizala (alttaki noktalar sayilmaz) */
+  top: calc(var(--bs-h) / 2); /* oklarÄ± GORSEL merkezine hizala (alttaki noktalar sayilmaz) */
   transform: translateY(-50%);
   z-index: 3;
   display: flex;
@@ -7771,7 +7781,7 @@ button.acct-row:hover:not(:disabled) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
-/* Emil: basisa aninda tepki — kart "dinliyor" hissi (subtle scale) */
+/* Emil: basisa aninda tepki â€” kart "dinliyor" hissi (subtle scale) */
 .mode-card:active {
   transform: scale(0.985);
   transition-duration: 120ms;
@@ -7802,7 +7812,7 @@ button.acct-row:hover:not(:disabled) {
   line-height: 1.5;
   color: var(--muted);
 }
-/* Alt CTA: "Basla ->" — kart yuksekligini doldurur (margin-top:auto), altta hizali */
+/* Alt CTA: "Basla ->" â€” kart yuksekligini doldurur (margin-top:auto), altta hizali */
 .mode-card-cta {
   display: inline-flex;
   align-items: center;
@@ -7893,7 +7903,7 @@ button.acct-row:hover:not(:disabled) {
 .home-panel-head > svg {
   color: var(--accent);
 }
-/* Başlık link'i: Liderlik/Turnuvalar başlığı → ilgili sayfa (native button reset) */
+/* BaÅŸlÄ±k link'i: Liderlik/Turnuvalar baÅŸlÄ±ÄŸÄ± â†’ ilgili sayfa (native button reset) */
 .home-panel-head.hph-link {
   width: 100%;
   background: none;
@@ -7906,7 +7916,7 @@ button.acct-row:hover:not(:disabled) {
 .home-panel-head.hph-link:hover {
   color: var(--accent);
 }
-/* Baslik sagindaki adet rozeti (or. turnuva sayisi) — tabular sans, serif basliktan ayri */
+/* Baslik sagindaki adet rozeti (or. turnuva sayisi) â€” tabular sans, serif basliktan ayri */
 .panel-count {
   margin-left: auto;
   min-width: 22px;
@@ -7986,7 +7996,7 @@ button.acct-row:hover:not(:disabled) {
   align-items: center;
   gap: 6px;
 }
-/* Kompakt aksiyon butonu (42px yerine 32px) — satir yuksekligini sismesin. */
+/* Kompakt aksiyon butonu (42px yerine 32px) â€” satir yuksekligini sismesin. */
 .online-act.online-act {
   width: 32px;
   height: 32px;
@@ -8274,7 +8284,7 @@ button.acct-row:hover:not(:disabled) {
   gap: 7px;
   flex-wrap: wrap;
 }
-/* Durum rozeti: open=yesil (katilima acik) · running=coral (canli) · finished=notr */
+/* Durum rozeti: open=yesil (katilima acik) Â· running=coral (canli) Â· finished=notr */
 .tr-status {
   padding: 2px 9px;
   border-radius: 999px;
@@ -8295,7 +8305,7 @@ button.acct-row:hover:not(:disabled) {
   background: color-mix(in srgb, var(--muted) 15%, transparent);
   color: var(--muted);
 }
-/* Odul cipi (altin) — belirgin */
+/* Odul cipi (altin) â€” belirgin */
 .tr-prize {
   display: inline-flex;
   align-items: center;
@@ -8315,7 +8325,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   font-weight: 400;
 }
-/* Canli geri sayim sayaci (open turnuva) — "Baslamasina 2g 04:12" */
+/* Canli geri sayim sayaci (open turnuva) â€” "Baslamasina 2g 04:12" */
 .tr-cd-wrap {
   display: inline-flex;
   align-items: center;
@@ -8561,7 +8571,7 @@ button.acct-row:hover:not(:disabled) {
   margin-bottom: 4px;
 }
 /* Stat karti semantik renk kimligi (kart WHITE kalir; sadece ikon + ince ust serit).
-   Puan=Navy · Coin=Orange · Galibiyet=Success(yesil) · Oyun=Coral */
+   Puan=Navy Â· Coin=Orange Â· Galibiyet=Success(yesil) Â· Oyun=Coral */
 .dstat {
   border-top-width: 3px;
 }
@@ -8617,7 +8627,7 @@ button.acct-row:hover:not(:disabled) {
   text-transform: uppercase;
   color: var(--muted);
 }
-/* 3 kartli duzen (Puan · Coin · Performans) */
+/* 3 kartli duzen (Puan Â· Coin Â· Performans) */
 .dash-stats-3 {
   grid-template-columns: repeat(3, 1fr);
 }
@@ -8712,7 +8722,7 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 
-/* Profilim sayfasi: sekme (tab) sistemi — segmented control (UI/UX Pro Max) */
+/* Profilim sayfasi: sekme (tab) sistemi â€” segmented control (UI/UX Pro Max) */
 .prof-tabs {
   display: inline-flex;
   gap: 4px;
@@ -8859,7 +8869,7 @@ button.acct-row:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   margin-bottom: 14px;
 }
-/* Feature ikon container'lari: semantik renk kimligi (navy/coral/orange) — canli, dogurgan */
+/* Feature ikon container'lari: semantik renk kimligi (navy/coral/orange) â€” canli, dogurgan */
 .hf-icon-navy {
   color: var(--navy-brand);
   background: color-mix(in srgb, var(--navy-brand) 14%, transparent);
@@ -9301,7 +9311,7 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.82rem;
 }
 
-/* ---- Galaxy tarzi hamle analizi (tahta tekrari + siralı adaylar) ---- */
+/* ---- Galaxy tarzi hamle analizi (tahta tekrari + siralÄ± adaylar) ---- */
 .report-card:has(.analysis-layout) {
   max-width: 820px;
 }
@@ -9870,7 +9880,7 @@ button.acct-row:hover:not(:disabled) {
 }
 
 /* ============================================================
-   DUZ KOSE (kare) — ana sayfa + kurulum overlay'i.
+   DUZ KOSE (kare) â€” ana sayfa + kurulum overlay'i.
    Butonlar Tailwind 'rounded-md' kullanir (token degil) -> acikca sifirla.
    Solo overlay .app.lobby DISINDA (fixed modal) -> burada acikca kareler.
    Daire avatar/nokta (--radius-circle / 50%) KORUNUR.
@@ -10033,7 +10043,7 @@ button.acct-row:hover:not(:disabled) {
   max-width: 100%;
   margin: 0;
 }
-/* Board'un gercek pul rengiyle kucuk yuvarlak isaret (⚪/⚫ yerine tema-uyumlu) */
+/* Board'un gercek pul rengiyle kucuk yuvarlak isaret (âšª/âš« yerine tema-uyumlu) */
 .pa-swatch {
   display: inline-block;
   width: 0.9em;
@@ -10724,7 +10734,7 @@ button.acct-row:hover:not(:disabled) {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu (sabit) | bayrak (isimden hemen sonra, hizali) | Maç | G/M | % | deger */
+  /* # | oyuncu (sabit) | bayrak (isimden hemen sonra, hizali) | MaÃ§ | G/M | % | deger */
   grid-template-columns: 38px minmax(72px, 170px) 1fr 66px 74px 48px 62px;
   align-items: center;
   gap: 6px;
@@ -11017,8 +11027,8 @@ button.acct-row:hover:not(:disabled) {
 
 /* ---- Lig/division + rozetler ---- */
 /* ============================ RANK BADGE ============================
-   Oyuncu rütbe rozeti. Tek tasarım ailesi; renk data-family ile --rank-*
-   token'larından, kontrast data-tier ile gelir. Flat: golge yok, gradient yok. */
+   Oyuncu rÃ¼tbe rozeti. Tek tasarÄ±m ailesi; renk data-family ile --rank-*
+   token'larÄ±ndan, kontrast data-tier ile gelir. Flat: golge yok, gradient yok. */
 .rank-badge {
   display: inline-flex;
   align-items: center;
@@ -11034,14 +11044,14 @@ button.acct-row:hover:not(:disabled) {
   white-space: nowrap;
   vertical-align: middle;
   transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
-  /* renk kancaları — data-family ile doldurulur */
+  /* renk kancalarÄ± â€” data-family ile doldurulur */
   --_fg: var(--muted);
   --_accent: var(--muted);
   --_bg: color-mix(in srgb, var(--muted) 10%, transparent);
   --_border: color-mix(in srgb, var(--muted) 22%, transparent);
 }
 
-/* Aile → renk token'ları */
+/* Aile â†’ renk token'larÄ± */
 .rank-badge[data-family='rookie']      { --_fg: var(--rank-rookie-foreground);            --_accent: var(--rank-rookie-accent);            --_bg: var(--rank-rookie-background);            --_border: var(--rank-rookie-border); }
 .rank-badge[data-family='novice']      { --_fg: var(--rank-novice-foreground);            --_accent: var(--rank-novice-accent);            --_bg: var(--rank-novice-background);            --_border: var(--rank-novice-border); }
 .rank-badge[data-family='beginner']    { --_fg: var(--rank-beginner-foreground);          --_accent: var(--rank-beginner-accent);          --_bg: var(--rank-beginner-background);          --_border: var(--rank-beginner-border); }
@@ -11052,7 +11062,7 @@ button.acct-row:hover:not(:disabled) {
 .rank-badge[data-family='grandmaster'] { --_fg: var(--rank-grandmaster-foreground);       --_accent: var(--rank-grandmaster-accent);       --_bg: var(--rank-grandmaster-background);       --_border: var(--rank-grandmaster-border); }
 .rank-badge[data-family='superGrandmaster'] { --_fg: var(--rank-super-grandmaster-foreground); --_accent: var(--rank-super-grandmaster-accent); --_bg: var(--rank-super-grandmaster-background); --_border: var(--rank-super-grandmaster-border); }
 
-/* Aile içi kontrast: tier 3 (giriş) hafif · tier 1 (en güçlü) belirgin */
+/* Aile iÃ§i kontrast: tier 3 (giriÅŸ) hafif Â· tier 1 (en gÃ¼Ã§lÃ¼) belirgin */
 .rank-badge[data-tier='3'] {
   --_bg: color-mix(in srgb, var(--_fg) 8%, transparent);
   --_border: color-mix(in srgb, var(--_fg) 18%, transparent);
@@ -11062,7 +11072,7 @@ button.acct-row:hover:not(:disabled) {
   --_border: color-mix(in srgb, var(--_fg) 34%, transparent);
 }
 
-/* İkon konteyneri — çok hafif ayrı yüzey (24-28px) */
+/* Ä°kon konteyneri â€” Ã§ok hafif ayrÄ± yÃ¼zey (24-28px) */
 .rank-badge__icon {
   display: inline-flex;
   align-items: center;
@@ -11080,7 +11090,7 @@ button.acct-row:hover:not(:disabled) {
   background: color-mix(in srgb, var(--_accent) 16%, transparent);
 }
 
-/* Metin bloğu */
+/* Metin bloÄŸu */
 .rank-badge__text {
   display: inline-flex;
   flex-direction: column;
@@ -11129,14 +11139,14 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.78rem;
 }
 
-/* ---- Varyant: STANDARD (satır: Master · M2) ---- */
+/* ---- Varyant: STANDARD (satÄ±r: Master Â· M2) ---- */
 .rank-badge[data-variant='standard'] .rank-badge__text {
   flex-direction: row;
   align-items: baseline;
   gap: 6px;
 }
 
-/* ---- Varyant: FEATURED (büyük ikon + ad + kod + eşik) ---- */
+/* ---- Varyant: FEATURED (bÃ¼yÃ¼k ikon + ad + kod + eÅŸik) ---- */
 .rank-badge[data-variant='featured'] {
   height: auto;
   padding: 10px 16px 10px 10px;
@@ -11156,14 +11166,14 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.9rem;
 }
 
-/* Zirve (Super Grandmaster S1) — SADECE featured'da çok hafif statik highlight */
+/* Zirve (Super Grandmaster S1) â€” SADECE featured'da Ã§ok hafif statik highlight */
 .rank-badge[data-apex][data-variant='featured'] {
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--_accent) 34%, transparent),
     0 0 0 3px color-mix(in srgb, var(--_accent) 8%, transparent);
 }
 
-/* Micro-interaction: çok hafif hover (scale yok) */
+/* Micro-interaction: Ã§ok hafif hover (scale yok) */
 @media (hover: hover) {
   .rank-badge:hover {
     transform: translateY(-1px);
@@ -11224,7 +11234,7 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 
-/* ---- Showcase: Player Ranks tablosu (SADECE showcase düzeni) ---- */
+/* ---- Showcase: Player Ranks tablosu (SADECE showcase dÃ¼zeni) ---- */
 .sc-rank-list {
   display: flex;
   flex-direction: column;
@@ -11365,7 +11375,7 @@ button.acct-row:hover:not(:disabled) {
 }
 .mem-grid {
   display: grid;
-  /* auto-fit: plan sayisindan bagimsiz dengeli hizala (2 veya 3 plan) — onceden
+  /* auto-fit: plan sayisindan bagimsiz dengeli hizala (2 veya 3 plan) â€” onceden
      repeat(3,1fr) 2 planla bos 3. sutun/dar kart olusturuyordu. */
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 14px;
@@ -11597,7 +11607,7 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 
-/* ===== İstatistik panosu (dashboard) — image 33 düzeni ===== */
+/* ===== Ä°statistik panosu (dashboard) â€” image 33 dÃ¼zeni ===== */
 .stats-dash {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -11605,9 +11615,9 @@ button.acct-row:hover:not(:disabled) {
   margin-top: 18px;
 }
 .stats-dash .sd-card-wide {
-  grid-column: 1 / -1; /* tam satır: barlara nefes (Zar) */
+  grid-column: 1 / -1; /* tam satÄ±r: barlara nefes (Zar) */
 }
-/* Üst satır: 3 grafik yan yana (Bakiye · Puan · Medyan) */
+/* Ãœst satÄ±r: 3 grafik yan yana (Bakiye Â· Puan Â· Medyan) */
 .stats-dash-3 {
   grid-template-columns: repeat(3, 1fr);
 }
@@ -11694,7 +11704,7 @@ button.acct-row:hover:not(:disabled) {
   margin-top: -2px;
 }
 
-/* ===== Zar Ortalamaları paneli ===== */
+/* ===== Zar OrtalamalarÄ± paneli ===== */
 .dice-card .sd-head {
   flex-wrap: wrap;
 }
@@ -11748,7 +11758,7 @@ button.acct-row:hover:not(:disabled) {
   grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
   gap: 10px 6px;
 }
-/* Zar hucreleri: referanstaki gibi KUTUSUZ — zar ikonlari + altinda % (ve oynayis) */
+/* Zar hucreleri: referanstaki gibi KUTUSUZ â€” zar ikonlari + altinda % (ve oynayis) */
 .dice-roll {
   display: flex;
   flex-direction: column;
@@ -11920,7 +11930,7 @@ button.acct-row:hover:not(:disabled) {
   width: 100%;
   height: 100%;
   border-radius: var(--radius-md);
-  /* Hafif icbukey yuzey — sert cerceve yerine yumusak zemin (Emil) */
+  /* Hafif icbukey yuzey â€” sert cerceve yerine yumusak zemin (Emil) */
   background: color-mix(in srgb, var(--text) 3%, transparent);
 }
 .lc-grid {
@@ -11929,7 +11939,7 @@ button.acct-row:hover:not(:disabled) {
   stroke-dasharray: 3 3;
   opacity: 0.7;
 }
-/* Eksen etiketleri (SVG icinde): Y baremleri (sol) + tarih (alt) — ince mono */
+/* Eksen etiketleri (SVG icinde): Y baremleri (sol) + tarih (alt) â€” ince mono */
 .lc-tick {
   font-size: 8.5px;
   fill: var(--muted);
@@ -12006,7 +12016,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--accent);
   flex-shrink: 0;
 }
-/* Özellik listesi (Hakkında) — 2 kolon; başlık+açıklama (bold değil, renk/boyut ayrımı) */
+/* Ã–zellik listesi (HakkÄ±nda) â€” 2 kolon; baÅŸlÄ±k+aÃ§Ä±klama (bold deÄŸil, renk/boyut ayrÄ±mÄ±) */
 .info-features {
   list-style: none;
   margin: 4px 0 0;
@@ -12200,7 +12210,7 @@ button.acct-row:hover:not(:disabled) {
 .bar-fill.bad {
   background: var(--tv-brick);
 }
-/* Esik referans cizgisi (kazanma %50 / PR esigi) — cubuklari yorumlamayi kolaylastirir */
+/* Esik referans cizgisi (kazanma %50 / PR esigi) â€” cubuklari yorumlamayi kolaylastirir */
 .bar-thresh {
   position: absolute;
   left: 0;
@@ -12237,7 +12247,7 @@ button.acct-row:hover:not(:disabled) {
   flex-direction: column;
   gap: 4px;
 }
-/* ===== Profil istatistik: Son Maclar (zengin, tiklanabilir) — psm-* ===== */
+/* ===== Profil istatistik: Son Maclar (zengin, tiklanabilir) â€” psm-* ===== */
 .psm-list {
   display: flex;
   flex-direction: column;
@@ -12575,7 +12585,7 @@ button.acct-row:hover:not(:disabled) {
 .tourn-create input {
   flex: 1;
 }
-/* Katıl/Çık onay dialogu (giriş ücreti / iade) */
+/* KatÄ±l/Ã‡Ä±k onay dialogu (giriÅŸ Ã¼creti / iade) */
 .tourn-confirm {
   max-width: 380px;
   text-align: center;
@@ -12614,7 +12624,7 @@ button.acct-row:hover:not(:disabled) {
 .tourn-confirm-actions > * {
   flex: 1;
 }
-/* Detay: sade geri linki (dev buton yerine) + kompakt aksiyon satırı */
+/* Detay: sade geri linki (dev buton yerine) + kompakt aksiyon satÄ±rÄ± */
 .tourn-back-link {
   align-self: flex-start;
   display: inline-flex;
@@ -12659,7 +12669,7 @@ button.acct-row:hover:not(:disabled) {
   border-left: 1px solid color-mix(in srgb, var(--on-accent) 40%, transparent);
   font-variant-numeric: tabular-nums;
 }
-/* Detay başlık chip satırı (durum + katılımcı + ücret) */
+/* Detay baÅŸlÄ±k chip satÄ±rÄ± (durum + katÄ±lÄ±mcÄ± + Ã¼cret) */
 .td-chips {
   display: flex;
   align-items: center;
@@ -12689,12 +12699,12 @@ button.acct-row:hover:not(:disabled) {
 }
 /* Turnuvalar TAM SAYFA (menuden acilan .register-overlay.page): liste sayfayla
    birlikte aksin, IC SCROLL YOK. (.tourn-list ayni zamanda ana sayfa panelinde
-   kullaniliyor; orada max-height:460+overflow ile sinirli kalir — burada ez.) */
+   kullaniliyor; orada max-height:460+overflow ile sinirli kalir â€” burada ez.) */
 .register-overlay.page .tourn-list {
   max-height: none;
   overflow: visible;
 }
-/* ---- Emil turnuva karti: ad+durum · odul/ucret/katilimci · doluluk · detay ---- */
+/* ---- Emil turnuva karti: ad+durum Â· odul/ucret/katilimci Â· doluluk Â· detay ---- */
 .tcard {
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
@@ -12725,8 +12735,8 @@ button.acct-row:hover:not(:disabled) {
 @media (hover: hover) and (pointer: fine) {
   .tcard:hover {
     border-color: var(--accent);
-    /* translateY YOK: transform + 1px border, üst border'ı anti-alias'layıp
-       kaybediyordu ("hover'da üst border yok"). Kalkma hissini gölge veriyor. */
+    /* translateY YOK: transform + 1px border, Ã¼st border'Ä± anti-alias'layÄ±p
+       kaybediyordu ("hover'da Ã¼st border yok"). Kalkma hissini gÃ¶lge veriyor. */
     box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
   }
   .tcard:hover .tcard-cta > svg {
@@ -13025,13 +13035,40 @@ button.acct-row:hover:not(:disabled) {
 .tourn-place svg {
   color: var(--accent);
 }
-/* Odul listesi kart icinde: dikey ritme otursun (kendi margin'ini birakma). */
+/* Odul listesi LISTE KARTINDA: etkinlik satiri estetigi -> altin KUTU/doseme YOK,
+   duz ikon+metin satirlari (detay gorunumundeki .tourn-prizes kutusu korunur). */
 .tourn-row-prizes {
   margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
-/* Ucret + oyuncu: iki kolonlu kompakt satir (3'lu grid yerine). */
+.tourn-row-prizes .tp-head {
+  margin-bottom: 4px;
+  font-size: 0.92rem;
+}
+.tourn-row-prizes .tp-row {
+  background: transparent;
+  padding: 2px 0;
+  font-size: 0.92rem;
+}
+.tourn-row-prizes .tp-desc {
+  font-size: 0.92rem;
+}
+/* Ucret + oyuncu: iki kolonlu kompakt satir; ikon KUTUSU degil duz ikon (etkinlik gibi). */
 .tourn-row-stats2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+.tourn-row-stats2 .tcard-ic {
+  width: auto;
+  height: auto;
+  background: transparent;
+  border-radius: 0;
+}
+.tourn-row-stats2 .tcard-val {
+  font-size: 0.92rem;
 }
 /* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV logosu (ink pennant).
    Logo net gozuksun diye flama takvimdekinden BUYUK (46x70 -> 60x100). */
@@ -13051,7 +13088,7 @@ button.acct-row:hover:not(:disabled) {
   transform: rotate(90deg);
   transform-origin: center;
   white-space: nowrap;
-  margin-top: -16px; /* logoyu flamada biraz daha yukari cek */
+  margin-top: -26px; /* logoyu flamada biraz daha yukari cek */
 }
 /* Ust satir genis flamanin altina girmesin (flama 72px + sag bosluk). */
 .tourn-row .event-datebadges {
@@ -13289,7 +13326,7 @@ button.acct-row:hover:not(:disabled) {
 .btn-reward:not([data-slot]) > svg {
   color: var(--orange);
 }
-/* Gunluk odul geri sayimi (buton DEGIL — pasif durum); buton boyuyla hizali */
+/* Gunluk odul geri sayimi (buton DEGIL â€” pasif durum); buton boyuyla hizali */
 .reward-count {
   display: inline-flex;
   align-items: center;
@@ -13493,7 +13530,7 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.85rem;
   margin-bottom: 6px;
 }
-/* Satin alma hatasi (role=alert) — net gerekce + kurtarma (tekrar dene) */
+/* Satin alma hatasi (role=alert) â€” net gerekce + kurtarma (tekrar dene) */
 .shop-buy-err {
   display: flex;
   align-items: center;
@@ -13750,7 +13787,7 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 
-/* ===== Ödeme sayfası (uygulama-içi kredi kartı) ===== */
+/* ===== Ã–deme sayfasÄ± (uygulama-iÃ§i kredi kartÄ±) ===== */
 .checkout-split {
   display: grid;
   grid-template-columns: minmax(0, 340px) minmax(0, 400px);
@@ -13840,7 +13877,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--accent);
 }
 
-/* Kredi kartı görseli (canlı önizleme) */
+/* Kredi kartÄ± gÃ¶rseli (canlÄ± Ã¶nizleme) */
 .cc-card {
   position: relative;
   border-radius: 16px;
@@ -13969,7 +14006,7 @@ button.acct-row:hover:not(:disabled) {
   gap: 14px;
 }
 /* Emil-sade coin karti: dikey, temiz hiyerarsi (isim -> miktar -> fiyat -> coin basi
-   + avantaj -> CTA). Flat; sadece popüler kart ince accent alir. */
+   + avantaj -> CTA). Flat; sadece popÃ¼ler kart ince accent alir. */
 .coin-card {
   position: relative;
   display: flex;
@@ -14004,7 +14041,7 @@ button.acct-row:hover:not(:disabled) {
     transform: translateX(2px);
   }
 }
-/* Popüler (Kasa): ince accent border + çok hafif tint */
+/* PopÃ¼ler (Kasa): ince accent border + Ã§ok hafif tint */
 .coin-card[data-popular] {
   border-color: color-mix(in srgb, var(--accent) 45%, transparent);
   background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
@@ -14091,7 +14128,7 @@ button.acct-row:hover:not(:disabled) {
 .coin-card-cta > svg {
   transition: transform 160ms ease;
 }
-/* Star Üyelik kartı (aynı grid, dikey ortalı) */
+/* Star Ãœyelik kartÄ± (aynÄ± grid, dikey ortalÄ±) */
 .coin-card-mem {
   justify-content: center;
   gap: 6px;
@@ -14142,7 +14179,7 @@ button.acct-row:hover:not(:disabled) {
   color: #e6b422;
 }
 
-/* ====== Profil genel bakis (ProfileOverview) — kimlik + stat + koleksiyon ====== */
+/* ====== Profil genel bakis (ProfileOverview) â€” kimlik + stat + koleksiyon ====== */
 .prof-ov-card {
   width: min(1000px, 96vw);
   max-height: 90vh;
@@ -14315,7 +14352,7 @@ button.acct-row:hover:not(:disabled) {
   display: grid;
   gap: 18px;
 }
-/* Profil alt sekmeler: Çerçeveler · Tahta Renkleri · İstatistikler (Emil underline) */
+/* Profil alt sekmeler: Ã‡erÃ§eveler Â· Tahta Renkleri Â· Ä°statistikler (Emil underline) */
 .prof-ov-tabs {
   display: flex;
   gap: 4px;
@@ -14412,7 +14449,7 @@ button.acct-row:hover:not(:disabled) {
   border-color: var(--accent);
   box-shadow: inset 0 0 0 2px var(--accent);
 }
-/* Seçili rozeti (sağ üst) — hangisi kuşanılı belli */
+/* SeÃ§ili rozeti (saÄŸ Ã¼st) â€” hangisi kuÅŸanÄ±lÄ± belli */
 .prof-ov-sel {
   position: absolute;
   top: 6px;
@@ -14933,7 +14970,7 @@ button.acct-row:hover:not(:disabled) {
 }
 
 /* Adil zar modali */
-/* ================= Adil Zar — Emil sadelestirme (sade/ferah/premium, flat) =================
+/* ================= Adil Zar â€” Emil sadelestirme (sade/ferah/premium, flat) =================
    Bilgi hiyerarsisi: 1) neden guvenli (infografik) 2) benzetme 3) ana mesaj
    4) teknik detay (accordion) 5) dogrulama araci. Renkler tema token'larindan. */
 .fair-card {
@@ -15089,7 +15126,7 @@ button.acct-row:hover:not(:disabled) {
   border-radius: 999px;
 }
 
-/* ---- Mühürlü kutu benzetmesi ---- */
+/* ---- MÃ¼hÃ¼rlÃ¼ kutu benzetmesi ---- */
 .fair-box {
   border: 1px solid var(--border);
   border-radius: var(--radius-lg, 12px);
@@ -15449,7 +15486,7 @@ button.acct-row:hover:not(:disabled) {
   border-color: var(--accent);
 }
 
-/* ---- Emil sadelestirme: Ayarlar Genel tab — sakin/kompakt kontroller ----
+/* ---- Emil sadelestirme: Ayarlar Genel tab â€” sakin/kompakt kontroller ----
    "Dev gibi" tam genislik/44px butonlar yerine olculu segmented + ince toggle. */
 .board-settings-card .setup-row {
   margin: 2px 0 14px;
@@ -16065,10 +16102,10 @@ button.acct-row:hover:not(:disabled) {
   color: #b7f0c6;
 }
 /* ==========================================================================
-   BİRLEŞİK BİLDİRİM (toast) — src/ui/Toast.tsx
-   Flat/Swiss: dolu yüzey + 1px kenarlık + sol renk şeridi (türe göre). Gölge YOK.
-   Üst-orta yığınlanır, erişilebilir (aria-live), reduced-motion'a saygılı.
-   Eski dağıtık ".verify-toast" + ".save-ok" desenlerinin yerini alır.
+   BÄ°RLEÅžÄ°K BÄ°LDÄ°RÄ°M (toast) â€” src/ui/Toast.tsx
+   Flat/Swiss: dolu yÃ¼zey + 1px kenarlÄ±k + sol renk ÅŸeridi (tÃ¼re gÃ¶re). GÃ¶lge YOK.
+   Ãœst-orta yÄ±ÄŸÄ±nlanÄ±r, eriÅŸilebilir (aria-live), reduced-motion'a saygÄ±lÄ±.
+   Eski daÄŸÄ±tÄ±k ".verify-toast" + ".save-ok" desenlerinin yerini alÄ±r.
    ========================================================================== */
 .toastr-viewport {
   position: fixed;
@@ -16081,7 +16118,7 @@ button.acct-row:hover:not(:disabled) {
   gap: 10px;
   width: max-content;
   max-width: min(92vw, 420px);
-  pointer-events: none; /* boşluklar alttaki tıklamayı engellemesin */
+  pointer-events: none; /* boÅŸluklar alttaki tÄ±klamayÄ± engellemesin */
 }
 .toastr {
   pointer-events: auto;
@@ -16156,7 +16193,7 @@ button.acct-row:hover:not(:disabled) {
 }
 
 /* ==========================================================================
-   BİRLEŞİK FORM SİSTEMİ — tek tasarım dili (2026-08)
+   BÄ°RLEÅžÄ°K FORM SÄ°STEMÄ° â€” tek tasarÄ±m dili (2026-08)
    Tum kullanici + yonetim formlari ayni input/select/textarea gorunumunu
    paylasir. Token tabanli (radius/space/renk) -> dark + light otomatik.
    ISLEVSELLIGE DOKUNMAZ: yalniz gorunum. Kaynak sirasinda EN SONDA oldugu
@@ -16165,7 +16202,7 @@ button.acct-row:hover:not(:disabled) {
    ========================================================================== */
 
 /* --- 0) GLOBAL KAPSAM AGI (sifir ozgulluk :where) ---
-   Projedeki HER metin girisi / select / textarea burada ortak tabani alir —
+   Projedeki HER metin girisi / select / textarea burada ortak tabani alir â€”
    Lobby kod, gelecekte eklenecek formlar DAHIL; hicbiri kapsam disi kalmaz.
    :where() SIFIR ozgulluk tasir: mevcut hicbir sinif kuralini EZMEZ (kompakt
    dp-selects / pa-dice / lang-select / chat-input kendi kuraliyla ustun kalir).
@@ -16453,7 +16490,7 @@ select:-webkit-autofill {
   margin: 0 0 14px;
 }
 
-/* ---- Giris | Kayit YAN YANA (iki EŞIT kolon) ----
+/* ---- Giris | Kayit YAN YANA (iki EÅžIT kolon) ----
    1fr 1fr + ortada bosluk. Ayirici cizgi bosluk ORTASINDA (::before) -> kolon
    iceriklerine asimetrik padding EKLEMEZ; iki kolon birebir esit genislikte. */
 .auth-cols {
@@ -16549,10 +16586,10 @@ select:-webkit-autofill {
   max-width: 620px;
 }
 
-/* Global hata siniri (ErrorBoundary) — tek render hatasinda beyaz ekran yerine
+/* Global hata siniri (ErrorBoundary) â€” tek render hatasinda beyaz ekran yerine
    dostane bir kart + yenile butonu. Tema token'lari kullanir. */
 /* Crash ekrani: cokme aninda tema degiskenleri guvenilmez oldugundan renkler
-   EXPLICIT (temadan bagimsiz) — koyu zemin + acik metin, her temada garanti okunur.
+   EXPLICIT (temadan bagimsiz) â€” koyu zemin + acik metin, her temada garanti okunur.
    Onceki surumde metin `color` ayarlanmiyordu -> acik temada koyu-uzerine-koyu okunmuyordu. */
 .error-boundary {
   position: fixed;
@@ -16591,7 +16628,7 @@ select:-webkit-autofill {
 }
 
 /* ============================================================
-   HATA GUNLUGU (Error Journal) — analiz dashboard'u.
+   HATA GUNLUGU (Error Journal) â€” analiz dashboard'u.
    Mevcut token'lar (flat: golge yok). Emil: olculu micro-interaction,
    veriye dekorasyon yok, prefers-reduced-motion saygili.
    ============================================================ */
@@ -16665,7 +16702,7 @@ select:-webkit-autofill {
   transform: scale(0.97);
 }
 
-/* Gunun ozeti — metrik satiri */
+/* Gunun ozeti â€” metrik satiri */
 .ej-metrics {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
@@ -16734,7 +16771,7 @@ select:-webkit-autofill {
   margin: 0 0 var(--space-3, 12px);
 }
 
-/* En cok zorlandigin alanlar — errorRate barlari */
+/* En cok zorlandigin alanlar â€” errorRate barlari */
 .ej-rank {
   display: flex;
   flex-direction: column;
@@ -16967,7 +17004,7 @@ select:-webkit-autofill {
   margin: 0;
 }
 
-/* Loading skeleton — layout ziplamasini onle (Emil) */
+/* Loading skeleton â€” layout ziplamasini onle (Emil) */
 .ej-skeleton {
   display: flex;
   flex-direction: column;
@@ -17260,7 +17297,7 @@ select:-webkit-autofill {
   text-align: center;
 }
 
-/* Emil profil formu: etiketler SOLA dayali (ortali DEGIL) — temiz, okunur */
+/* Emil profil formu: etiketler SOLA dayali (ortali DEGIL) â€” temiz, okunur */
 .profile-form .form-grid [data-slot='label'] {
   display: block;
   width: 100%;
@@ -17268,13 +17305,13 @@ select:-webkit-autofill {
   justify-content: flex-start;
 }
 
-/* Turnuvalar (.tcard) kartlarina da SOL KENAR VURGU ŞERİDİ (çentik) — Turnuva Takvimi
-   (.event-row) ile tutarli: 1px uniform kenar + 3px kiremit sol şerit. */
+/* Turnuvalar (.tcard) kartlarina da SOL KENAR VURGU ÅžERÄ°DÄ° (Ã§entik) â€” Turnuva Takvimi
+   (.event-row) ile tutarli: 1px uniform kenar + 3px kiremit sol ÅŸerit. */
 .tcard {
   border-left: 3px solid var(--accent);
 }
 
-/* Turnuva kartı sol şeridi DURUMA göre: açık=kiremit, canlı(running)=yeşil, bitti=gri */
+/* Turnuva kartÄ± sol ÅŸeridi DURUMA gÃ¶re: aÃ§Ä±k=kiremit, canlÄ±(running)=yeÅŸil, bitti=gri */
 .tcard.tcard-open {
   border-left-color: var(--accent);
 }
@@ -17285,7 +17322,7 @@ select:-webkit-autofill {
   border-left-color: var(--muted);
 }
 
-/* Turnuvalar: biten turnuvalar "Geçmiş" başlığı altında (sayfa sonu) */
+/* Turnuvalar: biten turnuvalar "GeÃ§miÅŸ" baÅŸlÄ±ÄŸÄ± altÄ±nda (sayfa sonu) */
 .tourn-past { margin-top: 22px; }
 .tourn-past-title {
   margin: 0 0 12px;
