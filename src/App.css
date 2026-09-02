@@ -2946,7 +2946,7 @@ button[aria-disabled='true'],
   display: block;
   width: 100%;
   height: 120px;
-  object-fit: cover;
+  object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
 }
 /* Gorselin UST TARAFINDA otel adi + adres (bindirme yok). */
 .event-hotel-head {
