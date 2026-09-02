@@ -4606,42 +4606,16 @@ export default function App() {
                 ))}
               </div>
             )}
-            <section className="lobby-hero">
-              <div className="hero-copy">
-                {!user && (
+            {!user && (
+              <section className="lobby-hero">
+                <div className="hero-copy">
                   <span className="hero-kicker">
                     <Icon name="dice" size={15} /> {t('home.heroKicker')}
                   </span>
-                )}
-                {!user && <h1 className="hero-title">{t('home.heroTitle')}</h1>}
-                <div className="mode-grid">
-                  <button type="button" className="mode-card" onClick={menuProps.onSolo}>
-                    <span className="mode-card-ic"><Icon name="coins" size={26} /></span>
-                    <span className="mode-card-title">{t('menu.solo')}</span>
-                    <span className="mode-card-desc">{t('home.soloNote')}</span>
-                    <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
-                    </span>
-                  </button>
-                  <button type="button" className="mode-card" onClick={menuProps.onNewGame}>
-                    <span className="mode-card-ic"><Icon name="ranking" size={26} /></span>
-                    <span className="mode-card-title">{t('menu.match')}</span>
-                    <span className="mode-card-desc">{t('home.matchNote')}</span>
-                    <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
-                    </span>
-                  </button>
-                  <button type="button" className="mode-card" onClick={menuProps.onAiGame}>
-                    <span className="mode-card-ic"><Icon name="robot" size={26} /></span>
-                    <span className="mode-card-title">{t('menu.aiGame')}</span>
-                    <span className="mode-card-desc">{t('home.aiNote')}</span>
-                    <span className="mode-card-cta">
-                      {t('home.startCta')} <Icon name="arrow-right" size={15} />
-                    </span>
-                  </button>
+                  <h1 className="hero-title">{t('home.heroTitle')}</h1>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
             {user && (
               <HomeDashboard
                 rating={user.rating ?? 0}
