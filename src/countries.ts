@@ -12,7 +12,20 @@ export const COUNTRY_CODES: string[] = [
   'QA','RO','RU','RW','KN','LC','VC','WS','SM','ST','SA','SN','RS','SC','SL','SG','SK','SI','SB','SO',
   'ZA','SS','ES','LK','SD','SR','SE','CH','SY','TW','TJ','TZ','TH','TL','TG','TO','TT','TN','TR','TM',
   'TV','UG','UA','AE','GB','US','UY','UZ','VU','VA','VE','VN','YE','ZM','ZW','MK','XK','PS',
+  // KKTC: ISO 3166-1'de yok. Kosova'nin ozel-kullanim 'XK' kodu gibi 'XT' ile temsil
+  // edilir. Intl ismi uretemez -> countryName ozel-durum; bayragi Flag.tsx'te gomulu SVG.
+  'XT',
 ]
+
+// KKTC pseudo-kodu (tek yerden). ISO'da olmayan tek ulke; ismi ve bayragi ozel ele alinir.
+export const TRNC_CODE = 'XT'
+const TRNC_NAMES: Record<string, string> = {
+  tr: 'Kuzey Kıbrıs (KKTC)',
+  en: 'Northern Cyprus',
+  es: 'Chipre del Norte',
+  de: 'Nordzypern',
+  fr: 'Chypre du Nord',
+}
 
 const dnCache: Record<string, Intl.DisplayNames> = {}
 function dn(lang: string): Intl.DisplayNames {
@@ -22,6 +35,7 @@ function dn(lang: string): Intl.DisplayNames {
 // Kodun verilen dildeki ulke adi (Intl yoksa/bulamazsa kodu dondurur).
 export function countryName(code: string, lang: string): string {
   if (!code) return ''
+  if (code === TRNC_CODE) return TRNC_NAMES[lang] ?? TRNC_NAMES.en
   try {
     return dn(lang).of(code) ?? code
   } catch {
@@ -47,7 +61,13 @@ function buildReverse(): Record<string, string> {
     }
   }
   // yaygin kisaltmalar / eski degerler
-  Object.assign(map, { usa: 'US', uk: 'GB', turkey: 'TR', türkiye: 'TR', 'türki̇ye': 'TR' })
+  Object.assign(map, {
+    usa: 'US', uk: 'GB', turkey: 'TR', türkiye: 'TR', 'türki̇ye': 'TR',
+    // KKTC serbest-metin eski degerleri -> pseudo-kod
+    kktc: TRNC_CODE, trnc: TRNC_CODE, 'kuzey kıbrıs': TRNC_CODE,
+    'kuzey kibris': TRNC_CODE, 'kuzey kıbrıs türk cumhuriyeti': TRNC_CODE,
+    'northern cyprus': TRNC_CODE,
+  })
   return map
 }
 export function normalizeCountry(value: string | null | undefined): string {

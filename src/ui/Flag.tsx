@@ -1,5 +1,20 @@
 import type { CSSProperties } from 'react'
-import { normalizeCountry } from '../countries'
+import { normalizeCountry, TRNC_CODE } from '../countries'
+
+// KKTC bayragi: ISO kodu olmadigindan flagcdn servis etmez -> gomulu SVG (data-URI).
+// Beyaz zemin, iki yatay kirmizi serit, ortada kirmizi hilal+yildiz (Turk bayraginin
+// ters renkleri). <img> src'si oldugu icin CountryFlag'in yuvarlak/boyut mantigi aynen isler.
+const TRNC_SVG =
+  "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800'>" +
+  "<rect width='1200' height='800' fill='#fff'/>" +
+  "<rect y='160' width='1200' height='66' fill='#E30A17'/>" +
+  "<rect y='574' width='1200' height='66' fill='#E30A17'/>" +
+  "<circle cx='540' cy='400' r='140' fill='#E30A17'/>" +
+  "<circle cx='596' cy='400' r='112' fill='#fff'/>" +
+  "<path fill='#E30A17' d='M720 305L741.3 370.6L810.3 370.6L754.5 411.2L775.8 476.9" +
+  "L720 436.3L664.2 476.9L685.5 411.2L629.7 370.6L698.7 370.6Z'/>" +
+  '</svg>'
+const TRNC_SRC = `data:image/svg+xml,${encodeURIComponent(TRNC_SVG)}`
 
 // SVG bayraklar (emoji bayraklar Windows'ta render olmadigindan). 5 dil.
 export function Flag({ code, size = 20 }: { code: string; size?: number }) {
@@ -83,9 +98,12 @@ export function CountryFlag({
   rounded?: boolean
 }) {
   // Kayitli deger kod ('TR') veya eski isim ('Türkiye') olabilir -> koda normalize et.
-  const c = normalizeCountry(code).trim().toLowerCase()
-  if (c.length !== 2) return null
-  const label = title ?? c.toUpperCase()
+  const norm = normalizeCountry(code).trim()
+  const isTrnc = norm.toUpperCase() === TRNC_CODE
+  const c = norm.toLowerCase()
+  if (!isTrnc && c.length !== 2) return null
+  const label = title ?? (isTrnc ? 'KKTC' : c.toUpperCase())
+  const src = isTrnc ? TRNC_SRC : `https://flagcdn.com/${c}.svg`
   const style: CSSProperties = rounded
     ? {
         width: size,
@@ -105,7 +123,7 @@ export function CountryFlag({
       }
   return (
     <img
-      src={`https://flagcdn.com/${c}.svg`}
+      src={src}
       alt={label}
       title={label}
       height={size}
