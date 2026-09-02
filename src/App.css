@@ -3012,18 +3012,54 @@ button[aria-disabled='true'],
 }
 .club-row {
   display: flex;
-  flex-direction: column;
-  gap: 3px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   margin-bottom: 7px;
   background: var(--card-bg);
 }
+/* Sol blok: logo + isim */
+.club-row-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.club-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  background: var(--surface, #fff);
+}
+.club-logo-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
 .club-name {
   font-weight: 400;
   color: var(--text);
   font-size: 1.02rem;
+}
+/* Sag blok: adres + iletisim (saga dayali) */
+.club-row-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+  text-align: right;
+  flex-shrink: 0;
 }
 .club-addr {
   font-size: 0.88rem;
@@ -3035,6 +3071,17 @@ button[aria-disabled='true'],
   gap: 5px;
   font-size: 0.88rem;
   color: var(--muted);
+}
+@media (max-width: 560px) {
+  .club-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .club-row-meta {
+    align-items: flex-start;
+    text-align: left;
+  }
 }
 .club-contact svg,
 .club-province-title svg {
