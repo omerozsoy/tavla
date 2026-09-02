@@ -2842,9 +2842,9 @@ button[aria-disabled='true'],
 .event-ribbon {
   position: absolute;
   top: -3px;
-  left: 18px;
-  width: 42px;
-  height: 68px;
+  right: 20px;
+  width: 54px;
+  height: 82px;
   pointer-events: none;
   z-index: 3;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
@@ -2863,20 +2863,19 @@ button[aria-disabled='true'],
   box-shadow: inset 0 7px 7px -5px rgba(0, 0, 0, 0.4);
   transform: none;
 }
-/* Afisin TAMAMI bayrak (dikey afiste bayragin orta seridi gorunur). */
+/* Afisin TAMAMI bayrak, DIK asili (yatay bayrak 90° dondurulur -> tam bayrak dikey).
+   Yatay 84x56 bayragi merkeze koyup 90° cevir -> 56x84 olur, dikey afisi doldurur. */
 .event-ribbon-flag {
-  width: 42px !important;
-  height: 68px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 84px !important;
+  height: 56px !important;
   object-fit: cover !important;
-  display: block !important;
-  transform: none !important;
+  transform: translate(-50%, -50%) rotate(90deg) !important;
+  transform-origin: center !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-}
-/* Logosuz satirlarda icerik sol ustte -> dikey afisin altina girmesin diye ice al.
-   Logolu satirlarda afis LOGO sutununun ustunde durur. */
-.event-row:not(.has-logo) .event-main {
-  padding-left: 56px;
 }
 .event-row.past {
   border-left-color: var(--muted);
