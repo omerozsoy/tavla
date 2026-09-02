@@ -5702,11 +5702,12 @@ html.fs-active .account-bar {
   display: none;
   position: fixed;
   z-index: 110;
-  /* Yatay: sag kose. Dikey: ust beyaz bantta (~48px) ortala -> (48-44)/2 = 2px. */
-  top: calc(2px + env(safe-area-inset-top));
+  /* Yatay: sag kose. Dikey ORTALAMA: buton yuksekligi = bant yuksekligi (~56px) ve
+     top:0 -> ikon flex ile bantta tam ortalanir (bant boyu degisse de bozulmaz). */
+  top: env(safe-area-inset-top);
   right: env(safe-area-inset-right);
   width: 44px;
-  height: 44px;
+  height: calc(56px + env(safe-area-inset-top));
   align-items: center;
   justify-content: center;
   /* Cerceve YOK (kullanici istegi): border/golge yok. Zemin bant rengiyle ayni ->
@@ -6823,6 +6824,10 @@ button.acct-row:hover:not(:disabled) {
   /* Dar telefon: ad kisalsin (logo ile bindirmesin) */
   .acct-trigger-name {
     max-width: 32vw;
+  }
+  /* Dar telefonda bant ~52px -> hamburger yuksekligini bantla esitle (dikey ortala). */
+  .hamburger {
+    height: calc(52px + env(safe-area-inset-top));
   }
   .account-name {
     display: none;
