@@ -3047,35 +3047,35 @@ button[aria-disabled='true'],
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 50px;
-  height: 50px;
+  width: 44px;
+  height: 44px;
   padding: 4px 3px;
   background: #6e0000;
   color: #fff;
-  border-radius: 9px;
+  border-radius: 8px;
   line-height: 1;
   flex-shrink: 0;
 }
 .edb-day {
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 400;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 .edb-month {
-  margin-top: 4px;
-  font-size: 0.58rem;
+  margin-top: 3px;
+  font-size: 0.5rem;
   font-weight: 400;
   letter-spacing: 0.08em;
 }
 .event-date-dash {
   color: var(--muted);
-  font-size: 1.13rem;
+  font-size: 0.98rem;
 }
 /* Il (sehir) â€” tarih rozetinin yaninda, rakamla ayni boyda, kiremit renk */
 .event-province-top {
   margin-left: 6px;
-  font-size: 1.4rem;
+  font-size: 1.2rem;
   font-weight: 400;
   line-height: 1;
   color: var(--accent);
@@ -3094,7 +3094,7 @@ button[aria-disabled='true'],
   background: #7a4a4a;
 }
 .event-title {
-  font-size: 1.15rem;
+  font-size: 0.99rem;
   font-weight: 400;
   color: var(--text);
   margin-bottom: 26px;
