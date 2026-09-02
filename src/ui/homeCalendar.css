@@ -212,3 +212,13 @@
 .calb-event .calb-dot {
   background: var(--accent);
 }
+/* Nokta yerine (varsa) duzenleyen kurumun yuvarlak logosu: satir basinda mini rozet. */
+.calb-logo {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}

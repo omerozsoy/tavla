@@ -534,6 +534,14 @@ export function TournamentsPanel({
   )
 }
 
+// Medya yolu: mutlak/kok-baslangicli ise oldugu gibi, degilse /uploads/ oneki (ContentView ile ayni).
+const calMediaSrc = (img?: string | null): string | undefined => {
+  if (!img) return undefined
+  return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
+}
+// Takvim balonundaki tek satir: {isim, varsa yuvarlak kurum logosu}.
+type CalItem = { name: string; logo?: string }
+
 // Ana sayfa mini takvim (slider altinda, canli maclar boyutunda). Turnuva baslama
 // gunleri isaretli; bugun vurgulu. Panel/gun tiklayinca Turnuva Takvimi'ni acar.
 export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen: () => void }) {
@@ -541,13 +549,23 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
   // Hover balonu (native title yerine): sabit konumlu, gun uzerine gelince isim(ler)i gosterir.
-  const [tip, setTip] = useState<{ x: number; y: number; day: number; tourn: string[]; event: string[] } | null>(null)
+  const [tip, setTip] = useState<{ x: number; y: number; day: number; tourn: CalItem[]; event: CalItem[] } | null>(null)
   // Turnuva Takvimi etkinlikleri (dis aktivite/turnuva) -> kiremit. Bizim site turnuvalari (tourns) -> yesil.
   const [events, setEvents] = useState<Content[]>([])
+  // Kurum adi -> yuvarlak logo (etkinlik satirinin basina konur). organizer adi = kurum basligi.
+  const [kurumLogos, setKurumLogos] = useState<Record<string, string>>({})
   useEffect(() => {
     let alive = true
     listContents('event')
       .then((e) => alive && setEvents(e))
+      .catch(() => {})
+    listContents('kurum')
+      .then((ks) => {
+        if (!alive) return
+        const map: Record<string, string> = {}
+        for (const k of ks) if (k.title && k.image) map[k.title] = k.image
+        setKurumLogos(map)
+      })
       .catch(() => {})
     return () => {
       alive = false
@@ -557,19 +575,20 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   const first = new Date(view.y, view.m, 1)
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate()
   const startOffset = (first.getDay() + 6) % 7 // Pazartesi-basli
-  // gun -> isimler (ayri: bizim turnuvalar / dis etkinlikler)
-  const tournMap = new Map<number, string[]>() // yesil
-  const eventMap = new Map<number, string[]>() // kiremit
-  const mark = (map: Map<number, string[]>, day: number, name: string) => {
+  // gun -> ogeler (ayri: bizim turnuvalar / dis etkinlikler); her oge {isim, varsa logo}.
+  const tournMap = new Map<number, CalItem[]>() // yesil
+  const eventMap = new Map<number, CalItem[]>() // kiremit
+  const mark = (map: Map<number, CalItem[]>, day: number, item: CalItem) => {
     const arr = map.get(day) ?? []
-    arr.push(name)
+    arr.push(item)
     map.set(day, arr)
   }
-  // Bizim turnuvalar: tek gun (starts_at).
+  // Bizim turnuvalar: tek gun (starts_at). Logo = duzenleyen kurumun logosu (varsa).
   for (const tr of tourns) {
     if (!tr.starts_at) continue
     const d = new Date(tr.starts_at)
-    if (d.getFullYear() === view.y && d.getMonth() === view.m) mark(tournMap, d.getDate(), tr.name)
+    if (d.getFullYear() === view.y && d.getMonth() === view.m)
+      mark(tournMap, d.getDate(), { name: tr.name, logo: calMediaSrc(tr.organizer?.logo) })
   }
   // Dis etkinlikler: yapisal bitis tarihi YOK -> aciklamadaki "18-19-20 Eylul" gibi
   // gun araligini ayristirip TUM gunleri isaretle (cok gunlu turnuvalar).
@@ -578,6 +597,8 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   for (const ev of events) {
     if (!ev.event_at) continue
     const base = new Date(ev.event_at)
+    // Etkinlik satirinin basina konacak yuvarlak logo: duzenleyen kurumun logosu (varsa).
+    const evItem: CalItem = { name: ev.title, logo: calMediaSrc(kurumLogos[ev.organizer ?? '']) }
     // 1) YAPISAL bitis tarihi (event_end) varsa: baslangic..bitis TUM gunler (en dogru).
     if (ev.event_end) {
       const end = new Date(ev.event_end)
@@ -586,7 +607,7 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
       const last = new Date(end.getFullYear(), end.getMonth(), end.getDate())
       let guard = 0
       while (cur <= last && guard++ < 40) {
-        if (cur.getFullYear() === view.y && cur.getMonth() === view.m) mark(eventMap, cur.getDate(), ev.title)
+        if (cur.getFullYear() === view.y && cur.getMonth() === view.m) mark(eventMap, cur.getDate(), evItem)
         cur.setDate(cur.getDate() + 1)
       }
       continue
@@ -603,7 +624,7 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
         for (let d = lo; d <= hi; d++) days.push(d)
       }
     }
-    for (const day of days) mark(eventMap, day, ev.title)
+    for (const day of days) mark(eventMap, day, evItem)
   }
   const monthLabel = first.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const wd: string[] = []
@@ -640,7 +661,7 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
           if (d === null) return <span key={i} className="cal-cell empty" />
           const tn = tournMap.get(d) // yesil (bizim turnuvalar)
           const en = eventMap.get(d) // kiremit (dis etkinlikler)
-          const title = [...(tn ?? []), ...(en ?? [])].join(' · ')
+          const title = [...(tn ?? []), ...(en ?? [])].map((it) => it.name).join(' · ')
           // Gun numarasi rengi: turnuva varsa yesil, yoksa etkinlik varsa kiremit.
           const kind = tn ? 'tourn' : en ? 'event' : ''
           const marked = !!(tn || en)
@@ -661,13 +682,13 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
               <span className="cal-daynum">{d}</span>
               {tn && (
                 <span className="cal-evname ev-tourn">
-                  {tn[0]}
+                  {tn[0].name}
                   {tn.length > 1 ? ` +${tn.length - 1}` : ''}
                 </span>
               )}
               {en && (
                 <span className="cal-evname ev-event">
-                  {en[0]}
+                  {en[0].name}
                   {en.length > 1 ? ` +${en.length - 1}` : ''}
                 </span>
               )}
@@ -682,14 +703,24 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
       </div>
       {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
         <div className="cal-balloon" style={{ left: tip.x, top: tip.y }} role="tooltip">
-          {tip.tourn.map((n, k) => (
+          {tip.tourn.map((it, k) => (
             <div key={'t' + k} className="calb-row calb-tourn">
-              <span className="calb-dot" /> {n}
+              {it.logo ? (
+                <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
+              ) : (
+                <span className="calb-dot" />
+              )}{' '}
+              {it.name}
             </div>
           ))}
-          {tip.event.map((n, k) => (
+          {tip.event.map((it, k) => (
             <div key={'e' + k} className="calb-row calb-event">
-              <span className="calb-dot" /> {n}
+              {it.logo ? (
+                <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
+              ) : (
+                <span className="calb-dot" />
+              )}{' '}
+              {it.name}
             </div>
           ))}
         </div>
