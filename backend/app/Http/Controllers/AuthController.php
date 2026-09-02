@@ -312,6 +312,14 @@ class AuthController extends Controller
             $newRating = (int) $ra;
         }
 
+        // SUNUCU-OTORITER PR: istemcinin gonderdigi 'pr'e GUVENME (iki oyuncu farkli
+        // gorebiliyordu). PR'i oyuncunun KENDI log'undan (kendi eli) deterministik hesapla.
+        // Log yoksa/bossa istemci degerine dus (pvb eski kayitlar, log kapali durumlar).
+        $selfPr = $this->prFromLog($data['log'] ?? null);
+        if ($selfPr === null) {
+            $selfPr = $data['pr'] ?? null;
+        }
+
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         $mr = [
             'user_id'         => $user->id,
@@ -321,7 +329,7 @@ class AuthController extends Controller
             'rating_after'    => $newRating,
             'delta'           => $newRating - (int) $ra,
             'match_length'    => $data['match_length'] ?? null,
-            'pr'              => $data['pr'] ?? null,
+            'pr'              => $selfPr,
             'coins_after'     => $user->coins ?? 0,
         ];
         // luck/score_* migration ile geldi -> kolonlar varsa ekle (yoksa kayit yine olussun)
@@ -333,6 +341,9 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
             $mr['opponent_pr'] = $data['opponent_pr'] ?? null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
+            $mr['room_code'] = $data['room_code'] ?? null;
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
@@ -394,7 +405,87 @@ class AuthController extends Controller
             ]);
         }
 
-        return response()->json(['rating' => $newRating, 'user' => $user, 'achievements' => $unlocked]);
+        // Online (room_code): rakibin satirini bul -> onun SUNUCU-hesapli PR'i. Iki oyuncu
+        // ayni kanonik cifti gorur (her biri kendi self + digerinin self). Simetrik guncelle:
+        // rakip once raporladiysa bizim opponent_pr'imizi onun pr'i yap; ayrica onun satirinda
+        // bizim pr'imizi opponent_pr olarak isle (o da bizi dogru gorsun).
+        $opponentPr = null;
+        if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
+            $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
+                ->where('user_id', '!=', $user->id)
+                ->latest('id')
+                ->first();
+            if ($oppRow) {
+                $opponentPr = $oppRow->pr;
+                if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
+                    $result->opponent_pr = $opponentPr;
+                    $result->save();
+                    $oppRow->opponent_pr = $selfPr;
+                    $oppRow->save();
+                }
+            }
+        }
+
+        return response()->json([
+            'rating' => $newRating,
+            'user' => $user,
+            'achievements' => $unlocked,
+            'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
+            'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
+        ]);
+    }
+
+    /**
+     * Oyuncunun KENDI PR'ini kendi hamle log'undan hesapla (sunucu-otoriter, deterministik).
+     * Log bicimi: {"hc":"white","log":[{player,loss,...}]}. PR = (kendi hamlelerinin toplam
+     * equity kaybi / karar sayisi) * 500. Kendi kararlari player===hc olanlar. Bos -> null.
+     */
+    private function prFromLog(?string $json): ?float
+    {
+        if (! $json) {
+            return null;
+        }
+        $data = json_decode($json, true);
+        if (! is_array($data) || empty($data['hc']) || ! is_array($data['log'] ?? null)) {
+            return null;
+        }
+        $hc = $data['hc'];
+        $sum = 0.0;
+        $n = 0;
+        foreach ($data['log'] as $e) {
+            if (! is_array($e) || ($e['player'] ?? null) !== $hc) {
+                continue;
+            }
+            $sum += max(0.0, (float) ($e['loss'] ?? 0));
+            $n++;
+        }
+        if ($n === 0) {
+            return null;
+        }
+
+        return round(($sum / $n) * 500, 2);
+    }
+
+    /**
+     * Online macta iki oyuncunun SUNUCU-hesapli PR cifti (tutarli gosterim icin).
+     * Cagiran = kendisi; rakip = ayni room_code'daki diger satir. Sonuc ekrani bunu okur.
+     */
+    public function matchPr(Request $request)
+    {
+        $code = (string) $request->query('room_code', '');
+        $user = $request->user();
+        if ($code === '') {
+            return response()->json(['self' => null, 'opponent' => null]);
+        }
+        $mine = \App\Models\MatchResult::where('room_code', $code)
+            ->where('user_id', $user->id)->latest('id')->first();
+        $opp = \App\Models\MatchResult::where('room_code', $code)
+            ->where('user_id', '!=', $user->id)->latest('id')->first();
+
+        return response()->json([
+            'self' => $mine?->pr,
+            'opponent' => $opp?->pr,
+        ]);
     }
 
     // Rozet tanimlari (id => [ad, ikon]) — frontend ile ayni id'ler

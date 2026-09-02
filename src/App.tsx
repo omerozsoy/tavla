@@ -147,6 +147,7 @@ import {
   toProfile,
   getMenuConfig,
   buyCoins,
+  matchPr,
   type MenuOverride,
   type ServerUser,
 } from './api'
@@ -819,9 +820,15 @@ export default function App() {
   prStatsRef.current = prStats
   // Sans (luck): oyuncu-basi birikmis equity sansi (zarlarin sanslilik toplami)
   const [prLuck, setPrLuck] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
+  // Luck'in EN GUNCEL degeri (mac-sonu flush'i stale closure yerine buradan okur)
+  const prLuckRef = useRef(prLuck)
+  prLuckRef.current = prLuck
   const luckSigRef = useRef('') // ayni turda sansi iki kez saymayi engelle
   const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kazanan coin transferi
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
+  // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
+  // log'undan hesaplanir -> iki oyuncu AYNI degerleri gorur. null ise lokal prOf'a duser.
+  const [serverPr, setServerPr] = useState<{ self: number | null; opp: number | null } | null>(null)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -1123,6 +1130,7 @@ export default function App() {
       setClock((c) => ({ ...c, delay: clockRef.current.move }))
     }
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
+    setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
   }
 
   // PR: bu hamlede wildbg'ye gore kaybedilen equity'yi kaydet (senkron; tur basi analizini kullanir)
@@ -1144,8 +1152,20 @@ export default function App() {
       neuralRef.current
         .analyzeMoves(before)
         .then((ranks) => {
-          if (ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
+          if (ranks.length === 0) return
           const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
+          // Bot luck (sans): aktuel en iyi equity - 21 zarin beklenen en iyisi (tur basi bir kez).
+          // Eskiden bot luck HIC hesaplanmiyordu -> ŞANS pvb'de hep 0 kaliyordu.
+          const luckKey = `${mover}:${seq}`
+          if (luckKey !== luckSigRef.current) {
+            luckSigRef.current = luckKey
+            const actualBest = ranks[0].equity
+            neuralRef.current
+              .expectedBestEquity(before, mover)
+              .then((expEq) => setPrLuck((s) => ({ ...s, [mover]: s[mover] + (actualBest - expEq) })))
+              .catch(() => {})
+          }
+          if ((ranks[0].probs?.length ?? 0) < 6) return // matchLog detayi icin probs sart
           const cands = ranks.slice(0, 5).map((r) => ({
             notation: moveNotation(r.move, mover),
             equity: r.equity,
@@ -1178,7 +1198,9 @@ export default function App() {
     const humanColor: Player = online ? myColor : 'white'
     const playedKey = boardKey(applyPlayed(before, steps))
     const record = (ranks: RankedMove[]) => {
-      if (ranks.length === 0 || (ranks[0].probs?.length ?? 0) < 6) return
+      // PR/luck icin equity YETERLIDIR; probs (kazanma%) sadece basarim/rapor detayi.
+      // Eskiden probs<6 ise TUM kayit dusuyordu -> analiz eksikse PR "—", luck 0 kaliyordu.
+      if (ranks.length === 0) return
       const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
       const loss = Math.max(0, ranks[0].equity - pl.equity)
       setPrStats((s) => ({
@@ -1199,8 +1221,11 @@ export default function App() {
       }
       if (mover !== humanColor) return
       // Basarim: insanin gordugu en dusuk kazanma % (oynanan hamle sonrasi) + kurdugu yapi.
-      const wp = (pl.probs?.[0] ?? 1) * 100
-      if (wp < achMinWpRef.current) achMinWpRef.current = wp
+      // Kazanma% yalnizca probs varsa anlamli -> analiz eksikse basarim sinyalini bozma.
+      if ((pl.probs?.length ?? 0) >= 1) {
+        const wp = (pl.probs![0] ?? 1) * 100
+        if (wp < achMinWpRef.current) achMinWpRef.current = wp
+      }
       const feats = achBoardFeats(applyPlayed(before, steps), humanColor)
       if (feats.prime6) achPrime6Ref.current = true
       if (feats.closeout) achCloseoutRef.current = true
@@ -1927,10 +1952,24 @@ export default function App() {
         room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
         achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
       )
-        .then((r) => {
+        .then(async (r) => {
           setRatingChange({ before, after: r.rating })
           setUser((u) => (u ? { ...u, rating: r.rating } : u))
           if (r.achievements?.length) setAchUnlocked(r.achievements)
+          // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
+          const code = room?.code ?? null
+          let oppPr = r.pr_opponent ?? null
+          setServerPr({ self: r.pr_self ?? null, opp: oppPr })
+          if (oppPr == null && code) {
+            for (let i = 0; i < 8 && oppPr == null; i++) {
+              await new Promise((res) => setTimeout(res, 1500))
+              const pair = await matchPr(code)
+              if (pair.opponent != null) {
+                oppPr = pair.opponent
+                setServerPr({ self: pair.self ?? r.pr_self ?? null, opp: pair.opponent })
+              }
+            }
+          }
         })
         .catch(() => {
           // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
@@ -1999,21 +2038,32 @@ export default function App() {
     ratingReportedRef.current = true
     // Giris yapmis kullanicinin AI maci HER ZAMAN kaydedilir (misafir haric).
     // Casual'da rating degismez: ranked=false -> backend Elo/lig islemez, delta=0 kaydeder.
-    {
-      const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
-      const won = mW === 'white' // pvb'de insan beyaz
-      const before = user.rating ?? 1500
+    const botRating = 900 + difficulty * 100 // seviye 1 -> 1000, seviye 10 -> 1900
+    const won = mW === 'white' // pvb'de insan beyaz
+    const before = user.rating ?? 1500
+    void (async () => {
+      // Bekleyen (async) hamle analizleri bitene kadar bekle (max ~3s) -> PR/luck/log TAM
+      // olsun; sonra stale closure yerine EN GUNCEL ref'lerden oku. (Online tarafiyla ayni.)
+      for (let i = 0; i < 30 && pendingAnalysisRef.current > 0; i++) {
+        await new Promise((res) => setTimeout(res, 100))
+      }
+      await new Promise((res) => setTimeout(res, 200)) // son setPrStats/setPrLuck flush'i
+      const prRef = (c: Player): number | null => {
+        const s = prStatsRef.current[c]
+        return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
+      }
+      const logNow = matchLogRef.current
       reportRating(
         won,
         botRating,
         match.target,
-        prOf('white'),
-        prLuck.white - prLuck.black, // goreceli sans (zero-sum)
+        prRef('white'),
+        prLuckRef.current.white - prLuckRef.current.black, // goreceli sans (zero-sum)
         match.score.white,
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
-        prOf('black'),
-        JSON.stringify({ hc: 'white', log: matchLog.slice(-250) }),
+        prRef('black'),
+        JSON.stringify({ hc: 'white', log: logNow.slice(-250) }),
         rankedMatch,
         'match', // match_type (pvb her zaman N-puanlik)
         null, // room_code yok
@@ -2023,32 +2073,34 @@ export default function App() {
           setRatingChange({ before, after: r.rating })
           setUser((u) => (u ? { ...u, rating: r.rating } : u))
           if (r.achievements?.length) setAchUnlocked(r.achievements)
+          // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
+          setServerPr({ self: r.pr_self ?? null, opp: null })
         })
         .catch(() => {})
-    }
-    // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
-    // Mac baglami: rakip = AI (zorluk), skor, sonuc (insan beyaz)
-    const ctx = {
-      opp: null,
-      ai_level: difficulty,
-      score_me: match.score.white,
-      score_opp: match.score.black,
-      won: mW === 'white',
-    }
-    const bl = matchLog
-      .filter((e) => e.loss >= 0.08 && e.player === 'white')
-      .sort((a, b) => b.loss - a.loss)
-      .slice(0, 5)
-      .map((e) => ({
-        loss: e.loss,
-        played: e.notation,
-        best: e.best,
-        pos: e.pos ? JSON.stringify(e.pos) : undefined,
-        steps: e.steps ? JSON.stringify(e.steps) : undefined,
-        player: e.player,
-        ...ctx,
-      }))
-    saveBlunders(bl).catch(() => {})
+
+      // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
+      const ctx = {
+        opp: null,
+        ai_level: difficulty,
+        score_me: match.score.white,
+        score_opp: match.score.black,
+        won: mW === 'white',
+      }
+      const bl = logNow
+        .filter((e) => e.loss >= 0.08 && e.player === 'white')
+        .sort((a, b) => b.loss - a.loss)
+        .slice(0, 5)
+        .map((e) => ({
+          loss: e.loss,
+          played: e.notation,
+          best: e.best,
+          pos: e.pos ? JSON.stringify(e.pos) : undefined,
+          steps: e.steps ? JSON.stringify(e.steps) : undefined,
+          player: e.player,
+          ...ctx,
+        }))
+      saveBlunders(bl).catch(() => {})
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, user, match, difficulty])
 
@@ -3111,10 +3163,18 @@ export default function App() {
   const prHumanColor: Player = online ? myColor : 'white'
   const prValue = prOf(prHumanColor)
   const prBandKey = prBand(prValue)
+  // Sonuc ekraninda gosterilecek PR: SUNUCU-otoriter deger varsa onu kullan (iki oyuncuda
+  // tutarli); yoksa lokal prOf'a dus. self = kendi rengim, opp = rakip.
+  const prShown = (c: Player): number | null => {
+    if (serverPr) {
+      const v = c === prHumanColor ? serverPr.self : serverPr.opp
+      if (v != null) return v
+    }
+    return prOf(c)
+  }
   // Sans: kendi rengim lokal; online rakip senkronla gelir (hesaplamadiysa —).
-  // pvb'de bot hesaplanmaz -> null (—).
+  // pvb'de bot luck'i da artik hesaplaniyor -> gosterilir (zero-sum net icin gerekli).
   const luckOf = (c: Player): number | null => {
-    if (mode === 'pvb' && c === BOT_PLAYER) return null
     if (online && c !== myColor && prStats[c].decisions === 0) return null
     return prLuck[c]
   }
@@ -4872,10 +4932,10 @@ export default function App() {
           loserColor={opponent(mWinner)}
           winnerScore={match.score[mWinner]}
           loserScore={match.score[opponent(mWinner)]}
-          winnerPr={prOf(mWinner)}
-          loserPr={prOf(opponent(mWinner))}
-          winnerBand={t(prBand(prOf(mWinner)))}
-          loserBand={t(prBand(prOf(opponent(mWinner))))}
+          winnerPr={prShown(mWinner)}
+          loserPr={prShown(opponent(mWinner))}
+          winnerBand={t(prBand(prShown(mWinner)))}
+          loserBand={t(prBand(prShown(opponent(mWinner))))}
           winnerLuck={luckOf(mWinner)}
           loserLuck={luckOf(opponent(mWinner))}
           coinAmount={coinDelta == null ? null : Math.abs(coinDelta)}
