@@ -1,104 +1,125 @@
 import { useState } from 'react'
-import './friendGameSetup.css'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
+import SetupBoard from './SetupBoard'
 import type { TimeControl } from './MatchSetup'
 
-// "Özel Oyun Oluştur" (arkadasinla oyna): Tek oyun / Maç Oyunu sekmesi + Saat preseti
-// (+ Maç Oyunu'nda 1-25 uzunluk slider'i). Onaylayinca davet-kodlu oda olusturulur.
+// "Özel Oyun Oluştur" (arkadasinla oyna). Tasarim MatchSetup (YZ ile Oyna) ile AYNI:
+// sol ayar karti (Oyun turu / Uzunluk / Saat) + sag board onizleme.
 const CLOCKS: { id: TimeControl; key: string }[] = [
   { id: 'casual', key: 'setup.clockCasual' },
   { id: 'normal', key: 'setup.clockNormal' },
   { id: 'speed', key: 'setup.clockSpeed' },
 ]
+// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan).
+const LENGTHS = [3, 5, 7, 9, 11, 15, 25]
+
+interface BoardColors {
+  panel: string
+  a: string
+  b: string
+  checker: string
+}
 
 interface Props {
   onCreate: (opts: { target: number; timeControl: TimeControl }) => void
   onCancel: () => void
+  board: BoardColors
+  onChangeBoard: () => void
 }
 
-export default function FriendGameSetup({ onCreate, onCancel }: Props) {
+export default function FriendGameSetup({ onCreate, onCancel, board, onChangeBoard }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const [tab, setTab] = useState<'single' | 'match'>('single')
   const [tc, setTc] = useState<TimeControl>('casual')
-  const [length, setLength] = useState(1)
+  const [length, setLength] = useState(5)
   const target = tab === 'single' ? 1 : length
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card fg-card">
-        <div className="fg-head">
-          <button type="button" className="fg-back" onClick={onCancel} aria-label={t('common.close')}>
-            <Icon name="arrow-right" size={20} />
-          </button>
-          <h2>{t('friend.title')}</h2>
-        </div>
+    <div className="register-overlay page setup-page">
+      <div className="setup-split">
+        <div className="register-card setup-card">
+          <h2>
+            <Icon name="users" size={24} /> {t('friend.title')}
+          </h2>
 
-        {/* Tek oyun / Maç Oyunu sekmeleri */}
-        <div className="fg-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'single'}
-            className={`fg-tab ${tab === 'single' ? 'active' : ''}`}
-            onClick={() => setTab('single')}
-          >
-            {t('friend.single')}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'match'}
-            className={`fg-tab ${tab === 'match' ? 'active' : ''}`}
-            onClick={() => setTab('match')}
-          >
-            {t('friend.match')}
-          </button>
-        </div>
-
-        {/* Saat */}
-        <div className="fg-section-title">{t('friend.clock')}</div>
-        <div className="fg-clocks">
-          {CLOCKS.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              className={`fg-clock ${tc === c.id ? 'active' : ''}`}
-              onClick={() => setTc(c.id)}
-              aria-pressed={tc === c.id}
-            >
-              <span className={`fg-radio ${tc === c.id ? 'on' : ''}`} aria-hidden />
-              <span className="fg-clock-lbl">{t(c.key)}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Uzunluk (yalnizca Maç Oyunu; Tek oyun = 1 puan) */}
-        {tab === 'match' && (
-          <>
-            <div className="fg-section-title">{t('friend.length')}</div>
-            <div className="fg-slider-row">
-              <span className="fg-slider-val">{length}</span>
-              <input
-                type="range"
-                min={1}
-                max={25}
-                step={1}
-                value={length}
-                onChange={(e) => setLength(Number(e.target.value))}
-                className="fg-slider"
-                aria-label={t('friend.length')}
-              />
+          {/* Oyun türü: Tek Oyun / Maç Oyunu */}
+          <div className="setup-row">
+            <div className="setup-label">{t('friend.type')}</div>
+            <div className="setup-tiles">
+              <button
+                className={`setup-tile ${tab === 'single' ? 'active' : ''}`}
+                onClick={() => setTab('single')}
+              >
+                {t('friend.single')}
+              </button>
+              <button
+                className={`setup-tile ${tab === 'match' ? 'active' : ''}`}
+                onClick={() => setTab('match')}
+              >
+                {t('friend.match')}
+              </button>
             </div>
-          </>
-        )}
+          </div>
 
-        <Button variant="default" className="fg-create" onClick={() => onCreate({ target, timeControl: tc })}>
-          <Icon name="play" size={18} /> {t('friend.create')}
-        </Button>
+          {/* Uzunluk (yalnizca Maç Oyunu) */}
+          {tab === 'match' && (
+            <div className="setup-row">
+              <div className="setup-label">{t('setup.length')}</div>
+              <div className="target-grid">
+                {LENGTHS.map((n) => (
+                  <button
+                    key={n}
+                    className={`target-chip ${length === n ? 'active' : ''}`}
+                    onClick={() => setLength(n)}
+                    aria-pressed={length === n}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Süre (saat) — 3 preset */}
+          <div className="setup-row">
+            <div className="setup-label">{t('setup.time')}</div>
+            <div className="setup-tiles">
+              {CLOCKS.map((c) => (
+                <button
+                  key={c.id}
+                  className={`setup-tile ${tc === c.id ? 'active' : ''}`}
+                  onClick={() => setTc(c.id)}
+                >
+                  {t(c.key)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="setup-actions">
+            <Button variant="secondary" onClick={onCancel}>
+              {t('setup.cancel')}
+            </Button>
+            <Button variant="default" onClick={() => onCreate({ target, timeControl: tc })}>
+              <Icon name="play" size={18} /> {t('friend.create')}
+            </Button>
+          </div>
+        </div>
+
+        <div className="setup-preview">
+          <SetupBoard
+            panel={board.panel}
+            a={board.a}
+            b={board.b}
+            checker={board.checker}
+            onChangeBoard={onChangeBoard}
+            changeLabel={t('setup.changeBoard')}
+          />
+        </div>
       </div>
     </div>
   )

@@ -4174,21 +4174,6 @@ export default function App() {
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
-      {friendSetupOpen && (
-        <FriendGameSetup
-          onCancel={() => setFriendSetupOpen(false)}
-          onCreate={({ target, timeControl }) => {
-            setFriendSetupOpen(false)
-            setTimeControl(timeControl)
-            clockRef.current = CLOCK_PRESETS[timeControl]
-            onlineTargetRef.current = target
-            targetsRef.current = [target]
-            setMode('online')
-            setHome(false)
-            handleCreateRoom(target, timeControl)
-          }}
-        />
-      )}
       {infoOpen && (
         <Info
           onClose={() => setInfoOpen(false)}
@@ -4450,6 +4435,54 @@ export default function App() {
           </main>
         </div>
         {/* Kurulumda "Tahtayi Degistir" -> BoardPickerModal (menuOverlays); "Daha fazla" Magaza'yi acar */}
+        {menuPages}
+        {authModal}
+        {menuOverlays}
+      </>
+    )
+  }
+
+  // Arkadasinla oyna kurulum ekrani. YZ ile Oyna (setup) ile AYNI sayfa duzeni:
+  // sol menu gorunur, kurulum (setup-split + board onizleme) icerik alaninda acilir.
+  if (friendSetupOpen) {
+    return (
+      <>
+        {mobileNav}
+        <div className="app lobby">
+          {accountBar}
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <FriendGameSetup
+                board={(() => {
+                  const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+                  return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
+                })()}
+                onChangeBoard={() => setBoardPickerOpen(true)}
+                onCancel={() => setFriendSetupOpen(false)}
+                onCreate={({ target, timeControl }) => {
+                  setFriendSetupOpen(false)
+                  setTimeControl(timeControl)
+                  clockRef.current = CLOCK_PRESETS[timeControl]
+                  onlineTargetRef.current = target
+                  targetsRef.current = [target]
+                  setMode('online')
+                  setHome(false)
+                  handleCreateRoom(target, timeControl)
+                }}
+              />
+            </div>
+          </main>
+        </div>
         {menuPages}
         {authModal}
         {menuOverlays}
