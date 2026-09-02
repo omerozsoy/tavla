@@ -872,26 +872,28 @@ function EventRow({
             Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
         {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag: USTTE otel adi + adres, ALTINDA otel gorseli, EN ALTTA "Haritada Gör".
+      {/* Sag sutun: SOLDA otel gorseli, SAGDA otel adi + altinda adres (+ Haritada Gor).
           Gomulu harita kaldirildi. */}
       {(img || mapHref) && (
         <div className="event-map-col">
-          {(ev.hotel || hotelPlace || ev.place) && (
-            <div className="event-hotel-head">
-              {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
-              {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
-            </div>
-          )}
-          {img && (
-            <div className="event-hotel-card">
-              <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />
-            </div>
-          )}
-          {mapHref && (
-            <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
-              <Icon name="pin" size={16} /> Haritada Gör
-            </a>
-          )}
+          <div className="event-hotel-row">
+            {img && (
+              <div className="event-hotel-card">
+                <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />
+              </div>
+            )}
+            {(ev.hotel || hotelPlace || ev.place || mapHref) && (
+              <div className="event-hotel-head">
+                {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
+                {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+                {mapHref && (
+                  <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
+                    <Icon name="pin" size={16} /> Haritada Gör
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
