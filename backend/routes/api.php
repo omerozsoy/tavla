@@ -33,6 +33,7 @@ Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
+Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
@@ -79,6 +80,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
     Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
+    Route::post('/shop/coins', [\App\Http\Controllers\PaymentController::class, 'buyCoins']); // sepetteki coin paketleri -> odeme
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::post('/friends/request', [FriendController::class, 'request']);

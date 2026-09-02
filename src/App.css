@@ -2836,36 +2836,66 @@ button[aria-disabled='true'],
   background: var(--card-bg);
 }
 /* Sag ust kose kurdelesi (SALE tarzi): kirmizi capraz bant + uzerinde bayrak. */
+/* SOL UST kose kurdelesi (NEW tarzi sarmali). Kutu koseye kirpar; kanatlar disari tasmaz. */
 .event-ribbon {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 130px;
-  height: 130px;
+  left: 0;
+  width: 132px;
+  height: 132px;
   overflow: hidden;
   pointer-events: none;
   z-index: 3;
 }
+/* Katlama kanatlari: bandin iki ucunda koyu ucgenler -> kurdele koseye SARILMIS gibi durur. */
+.event-ribbon::before,
+.event-ribbon::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 6px solid #7a0410;
+  z-index: 2;
+}
+.event-ribbon::before {
+  top: 0;
+  left: 12px;
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
+.event-ribbon::after {
+  bottom: 12px;
+  left: 0;
+  border-top-color: transparent;
+  border-left-color: transparent;
+}
 .event-ribbon-band {
   position: absolute;
-  top: 30px;
-  right: -46px;
-  width: 190px;
-  height: 50px;
+  top: 26px;
+  left: -42px;
+  width: 170px;
+  height: 42px;
   padding: 0;
   overflow: hidden;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  transform: rotate(45deg);
+  transform: rotate(-45deg);
+  z-index: 3;
 }
-/* Bandin TAMAMI bayrak (kirmizi serit yok). Bayrak bandi doldurur, bantla birlikte 45° egik. */
+/* Bandin TAMAMI bayrak. Bayrak bandi doldurur, bantla birlikte -45° egik. */
 .event-ribbon-flag {
-  width: 190px !important;
-  height: 50px !important;
+  width: 170px !important;
+  height: 42px !important;
   object-fit: cover !important;
   display: block !important;
   transform: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+}
+/* Logosuz satirlarda tarih+baslik sol ustte -> kurdelenin altina girmesin diye ice al.
+   Logolu satirlarda kurdele LOGO sutununun ustunde durur, metin zaten uzakta. */
+.event-row:not(.has-logo) .event-date,
+.event-row:not(.has-logo) .event-title {
+  padding-left: 84px;
 }
 .event-row.past {
   border-left-color: var(--muted);
@@ -13275,6 +13305,155 @@ button.acct-row:hover:not(:disabled) {
 /* ---- Magaza: Coin satin al vitrini (gercek para ile jeton paketleri) ---- */
 .coin-store {
   margin: 4px 0 20px;
+}
+
+/* ===== Sepet (coin paketleri) ===== */
+.cart-card {
+  max-width: 560px;
+}
+.shop-cart-btn {
+  gap: 6px;
+}
+.shop-cart-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  margin-left: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+}
+.cart-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 12px;
+  color: var(--muted);
+}
+.cart-empty p {
+  margin: 0;
+}
+.cart-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 4px;
+}
+.cart-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+.cart-row-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.cart-row-name svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+.cart-row-gc {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.cart-qty {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+.cart-qty button {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text);
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.cart-qty button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cart-row-price {
+  flex: 0 0 auto;
+  min-width: 84px;
+  text-align: right;
+  font-weight: 600;
+}
+.cart-row-del {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 7px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.cart-row-del:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cart-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 4px 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+}
+.cart-total-amt {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: var(--accent);
+}
+.cart-err {
+  color: #c0392b;
+  font-size: 0.86rem;
+  margin: 8px 0 0;
+}
+.cart-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+.cart-actions > * {
+  flex: 1 1 0;
+}
+.cart-note {
+  margin: 10px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+@media (max-width: 520px) {
+  .cart-row {
+    flex-wrap: wrap;
+  }
+  .cart-row-price {
+    min-width: 0;
+  }
 }
 .coin-store-title {
   display: flex;
