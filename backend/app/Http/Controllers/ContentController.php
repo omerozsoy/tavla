@@ -91,6 +91,7 @@ class ContentController extends Controller
             'contact' => ['nullable', 'string', 'max:200'],
             'image' => ['nullable', 'string', 'max:500'],
             'event_at' => ['nullable', 'date'],
+            'event_end' => ['nullable', 'date'],
             'sort' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'published' => ['nullable', 'boolean'],
         ]);

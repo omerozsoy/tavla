@@ -133,3 +133,55 @@
 .cal-cell.today .cal-evname {
   color: #fff;
 }
+
+/* Hover balonu (native title yerine): sabit konumlu, panel disina tasar (clip yok). */
+.cal-balloon {
+  position: fixed;
+  z-index: 1200;
+  transform: translate(-50%, calc(-100% - 10px));
+  max-width: 260px;
+  background: #201d1a;
+  color: #f4efe6;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.cal-balloon::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  width: 12px;
+  height: 12px;
+  background: #201d1a;
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  rotate: 45deg;
+}
+.calb-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  white-space: normal;
+}
+.calb-row + .calb-row {
+  margin-top: 4px;
+}
+.calb-dot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.calb-tourn .calb-dot {
+  background: #2ecb87;
+}
+.calb-event .calb-dot {
+  background: var(--accent);
+}

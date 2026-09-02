@@ -540,6 +540,8 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   const { t, lang } = useT()
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
+  // Hover balonu (native title yerine): sabit konumlu, gun uzerine gelince isim(ler)i gosterir.
+  const [tip, setTip] = useState<{ x: number; y: number; day: number; tourn: string[]; event: string[] } | null>(null)
   // Turnuva Takvimi etkinlikleri (dis aktivite/turnuva) -> kiremit. Bizim site turnuvalari (tourns) -> yesil.
   const [events, setEvents] = useState<Content[]>([])
   useEffect(() => {
@@ -576,6 +578,20 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   for (const ev of events) {
     if (!ev.event_at) continue
     const base = new Date(ev.event_at)
+    // 1) YAPISAL bitis tarihi (event_end) varsa: baslangic..bitis TUM gunler (en dogru).
+    if (ev.event_end) {
+      const end = new Date(ev.event_end)
+      // gun-gun ilerle; yalniz goruntulenen aya dusenleri isaretle.
+      const cur = new Date(base.getFullYear(), base.getMonth(), base.getDate())
+      const last = new Date(end.getFullYear(), end.getMonth(), end.getDate())
+      let guard = 0
+      while (cur <= last && guard++ < 40) {
+        if (cur.getFullYear() === view.y && cur.getMonth() === view.m) mark(eventMap, cur.getDate(), ev.title)
+        cur.setDate(cur.getDate() + 1)
+      }
+      continue
+    }
+    // 2) Bitis yoksa: aciklamadaki "18-19-20 Eylul" araligini ayristir (fallback).
     if (base.getFullYear() !== view.y || base.getMonth() !== view.m) continue
     let days = [base.getDate()]
     const m = (ev.body ?? '').match(rangeRe)
@@ -627,13 +643,20 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
           const title = [...(tn ?? []), ...(en ?? [])].join(' · ')
           // Gun numarasi rengi: turnuva varsa yesil, yoksa etkinlik varsa kiremit.
           const kind = tn ? 'tourn' : en ? 'event' : ''
+          const marked = !!(tn || en)
           return (
             <button
               key={i}
               type="button"
               className={`cal-cell ${isToday(d) ? 'today' : ''} ${kind ? 'has-ev cal-' + kind : ''}`}
               onClick={onOpen}
-              title={title || undefined}
+              aria-label={title || String(d)}
+              onMouseEnter={(e) => {
+                if (!marked) return
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                setTip({ x: r.left + r.width / 2, y: r.top, day: d, tourn: tn ?? [], event: en ?? [] })
+              }}
+              onMouseLeave={() => setTip((cur) => (cur && cur.day === d ? null : cur))}
             >
               <span className="cal-daynum">{d}</span>
               {tn && (
@@ -652,6 +675,20 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
           )
         })}
       </div>
+      {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
+        <div className="cal-balloon" style={{ left: tip.x, top: tip.y }} role="tooltip">
+          {tip.tourn.map((n, k) => (
+            <div key={'t' + k} className="calb-row calb-tourn">
+              <span className="calb-dot" /> {n}
+            </div>
+          ))}
+          {tip.event.map((n, k) => (
+            <div key={'e' + k} className="calb-row calb-event">
+              <span className="calb-dot" /> {n}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

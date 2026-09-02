@@ -8,11 +8,12 @@ class Content extends Model
 {
     protected $fillable = [
         'type', 'title', 'body', 'organizer', 'place', 'province',
-        'contact', 'contacts', 'image', 'gallery', 'video_id', 'event_at', 'sort', 'published',
+        'contact', 'contacts', 'image', 'gallery', 'video_id', 'event_at', 'event_end', 'sort', 'published',
     ];
 
     protected $casts = [
         'event_at' => 'datetime',
+        'event_end' => 'datetime',
         'published' => 'boolean',
         'gallery' => 'array',
         'contacts' => 'array',
