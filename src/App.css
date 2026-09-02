@@ -2860,10 +2860,10 @@ button[aria-disabled='true'],
   flex: 1 1 auto;
   min-width: 0;
 }
-/* En sag sutun: otel gorseli (ustte) + gomulu Google Maps haritasi + "Haritada Gör" butonu. */
+/* En sag sutun: otel gorseli + gomulu harita YAN YANA; altta "Haritada Gör" butonu. */
 .event-map-col {
   flex: 0 0 auto;
-  width: 300px;
+  width: 420px;
   align-self: stretch;
   display: flex;
   flex-direction: column;
@@ -2871,19 +2871,26 @@ button[aria-disabled='true'],
   padding-left: 18px;
   border-left: 1px solid var(--border);
 }
-/* Otel gorseli sag sutunda: sabit oranli, tam genislik. */
+/* Gorsel + harita yan yana satiri. */
+.event-side-media {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+/* Otel gorseli sag sutunda: yarim genislik, sabit yukseklik. */
 .event-side-img {
   display: block;
-  width: 100%;
-  height: 160px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 170px;
   object-fit: cover;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
 .event-map {
-  width: 100%;
-  flex: 1 1 auto;
-  min-height: 150px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 170px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   display: block;
@@ -2938,6 +2945,10 @@ button[aria-disabled='true'],
     width: auto;
     max-width: 160px;
     max-height: 64px;
+  }
+  /* Cok dar ekran: gorsel + harita yan yana sigmaz -> alt alta. */
+  .event-side-media {
+    flex-direction: column;
   }
 }
 .event-date {
