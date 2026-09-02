@@ -50,11 +50,19 @@ class OtelResource extends Resource
                 ->imageEditor()->maxSize(5120)
                 ->helperText('Etkinlik takviminde bu görsel gösterilir. En fazla 5 MB.')
                 ->columnSpanFull(),
+            // Ulke once secilir; il listesi ulkeye gore degisir (Turkiye 81 / KKTC 6).
+            Forms\Components\Select::make('country')->label('Ülke')
+                ->options(EventResource::COUNTRIES)->default('Türkiye')->required()->live()
+                ->afterStateUpdated(fn (Forms\Set $set) => $set('province', null)),
             Forms\Components\Select::make('province')->label('İl')
-                ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
+                ->options(fn (Forms\Get $get) => EventResource::provinceOptions($get('country')))
                 ->searchable(),
             Forms\Components\TextInput::make('place')->label('Adres')->columnSpanFull(),
-            Forms\Components\TextInput::make('contact')->label('Web sitesi / telefon')->columnSpanFull(),
+            // Web sitesi ve telefon ayri alanlar. Web -> links.website, telefon -> contact.
+            Forms\Components\TextInput::make('links.website')->label('Web sitesi')
+                ->url()->prefixIcon('heroicon-o-globe-alt')->placeholder('https://ornek.com'),
+            Forms\Components\TextInput::make('contact')->label('Telefon')
+                ->tel()->prefixIcon('heroicon-o-phone')->placeholder('0392 111 1111'),
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(4)->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
@@ -68,6 +76,7 @@ class OtelResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image')->label('Görsel')->disk('uploads')->height(40),
                 Tables\Columns\TextColumn::make('title')->label('Otel')->searchable()->limit(60),
+                Tables\Columns\TextColumn::make('country')->label('Ülke')->toggleable(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->toggleable(),
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),

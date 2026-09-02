@@ -612,6 +612,7 @@ export interface Content {
   place?: string | null
   hotel?: string | null // etkinligin yapildigi otel adi (Oteller listesinden)
   province?: string | null
+  country?: string | null // 'Türkiye' | 'KKTC'
   contact?: string | null
   contacts?: { name: string; phone: string }[] | null
   links?: { instagram?: string | null; youtube?: string | null; website?: string | null; email?: string | null } | null

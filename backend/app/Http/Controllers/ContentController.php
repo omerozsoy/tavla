@@ -89,6 +89,7 @@ class ContentController extends Controller
             'place' => ['nullable', 'string', 'max:300'],
             'hotel' => ['nullable', 'string', 'max:200'],
             'province' => ['nullable', 'string', 'max:60'],
+            'country' => ['nullable', 'string', 'max:60'],
             'contact' => ['nullable', 'string', 'max:200'],
             'links' => ['nullable', 'array'],
             'links.instagram' => ['nullable', 'string', 'max:300'],
