@@ -2901,7 +2901,7 @@ button[aria-disabled='true'],
 /* Sol sutun: duzenleyen kurumun BUYUK logosu. Sabit genislik -> bilgiler hizali baslar. */
 .event-logo-col {
   flex: 0 0 auto;
-  width: 116px;
+  width: 140px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2913,7 +2913,7 @@ button[aria-disabled='true'],
   display: block;
   width: 100%;
   height: auto;
-  max-height: 96px;
+  max-height: 120px;
   object-fit: contain;
 }
 /* Sag sutun: turnuva bilgileri (tarih, baslik, meta, iletisim, aciklama). */
