@@ -435,10 +435,9 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                 <span className="edb-month">{monthUpper(start)}</span>
               </div>
             )}
-            {/* Online turnuva: fiziksel mekan gosterilmez -> HER ZAMAN "Online" */}
-            <span className="tourn-place">
-              <Icon name="globe" size={16} /> {t('tourn.online')}
-            </span>
+            {/* Online turnuva: etkinlik takvimindeki IL (event-province-top) ile BIREBIR ayni
+                format -> tarih rozetinin yaninda buyuk (1.6rem) kiremit "Online". */}
+            <span className="event-province-top">{t('tourn.online')}</span>
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
