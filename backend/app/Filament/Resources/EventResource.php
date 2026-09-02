@@ -98,7 +98,6 @@ class EventResource extends Resource
                     ->orderBy('title')->pluck('title', 'title')->all())
                 ->searchable()
                 ->helperText('Oteller sayfasındaki listeden seçilir. Resimler otel kaydına yüklenir. Boş bırakılabilir.'),
-            Forms\Components\TextInput::make('place')->label('Yer / adres (opsiyonel)')->columnSpanFull(),
             // Cok kisili iletisim: her satir kisi adi + cep telefonu
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([
@@ -111,11 +110,7 @@ class EventResource extends Resource
                 ->reorderable(false)
                 ->columnSpanFull(),
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(4)->columnSpanFull(),
-            // Görsel: bilgisayardan resim seç (public/uploads/takvim altina yuklenir)
-            Forms\Components\FileUpload::make('image')->label('Görsel')
-                ->image()->disk('uploads')->directory('takvim')->visibility('public')
-                ->imageEditor()->maxSize(5120)
-                ->columnSpanFull(),
+            // Görsel etkinlikte yok: takvimde seçilen OTELİN görseli gösterilir (Oteller sayfasına yüklenir).
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }
