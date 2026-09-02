@@ -2823,6 +2823,9 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .event-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
@@ -2834,14 +2837,47 @@ button[aria-disabled='true'],
   border-left-color: var(--muted);
   opacity: 0.72;
 }
-/* Duzenleyen kurum logosu (varsa) satirin en basinda; marka olcusunde, sade. */
+/* Sol sutun: duzenleyen kurumun BUYUK logosu. Sabit genislik -> bilgiler hizali baslar. */
+.event-logo-col {
+  flex: 0 0 auto;
+  width: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: stretch;
+  padding-right: 18px;
+  border-right: 1px solid var(--border);
+}
 .event-kurum-logo {
   display: block;
-  height: 38px;
-  width: auto;
-  max-width: 160px;
+  width: 100%;
+  height: auto;
+  max-height: 96px;
   object-fit: contain;
-  margin-bottom: 10px;
+}
+/* Sag sutun: turnuva bilgileri (tarih, baslik, meta, iletisim, aciklama). */
+.event-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Logosuz etkinlik: sol sutun yok, bilgiler dogal olarak tam genislik alir. */
+@media (max-width: 560px) {
+  .event-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .event-logo-col {
+    width: auto;
+    align-self: flex-start;
+    justify-content: flex-start;
+    padding-right: 0;
+    border-right: none;
+  }
+  .event-kurum-logo {
+    width: auto;
+    max-width: 160px;
+    max-height: 64px;
+  }
 }
 .event-date {
   display: flex;

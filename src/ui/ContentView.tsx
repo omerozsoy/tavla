@@ -649,49 +649,57 @@ const mediaSrc = (img?: string | null): string | undefined => {
 function EventRow({ ev, upcoming, logo }: { ev: Content; upcoming: boolean; logo?: string }) {
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'}`}>
-      {/* Duzenleyen kurumun logosu (varsa) en basta; yoksa hic logo yok. */}
-      {logo && <img className="event-kurum-logo" src={mediaSrc(logo)} alt={ev.organizer ?? ''} />}
-      {ev.image && <img className="content-img" src={mediaSrc(ev.image)} alt="" />}
-      <div className="event-date">
-        <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
-      </div>
-      <div className="event-title">{ev.title}</div>
-      <div className="event-meta">
-        {ev.organizer && (
-          <span>
-            <Icon name="star" size={12} /> {ev.organizer}
-          </span>
-        )}
-        {ev.province && (
-          <span>
-            <Icon name="pin" size={12} /> {ev.province}
-          </span>
-        )}
-        {ev.place && (
-          <span>
-            <Icon name="pin" size={12} /> {ev.place}
-          </span>
-        )}
-        {/* Tek alan iletisim (eski kayitlar) */}
-        {ev.contact && !contacts.length && (
-          <span>
-            <Icon name="phone" size={12} /> {ev.contact}
-          </span>
-        )}
-      </div>
-      {contacts.length > 0 && (
-        <div className="event-contacts">
-          {contacts.map((c, i) => (
-            <a key={i} className="event-contact" href={c.phone ? `tel:${c.phone}` : undefined}>
-              <Icon name="phone" size={12} /> {c.name}
-              {c.name && c.phone ? ' · ' : ''}
-              {c.phone}
-            </a>
-          ))}
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''}`}>
+      {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
+          bilgiler tam genislik alir. */}
+      {logo && (
+        <div className="event-logo-col">
+          <img className="event-kurum-logo" src={mediaSrc(logo)} alt={ev.organizer ?? ''} />
         </div>
       )}
-      {ev.body && <p className="event-body">{ev.body}</p>}
+      {/* Sag: turnuva bilgileri */}
+      <div className="event-main">
+        {ev.image && <img className="content-img" src={mediaSrc(ev.image)} alt="" />}
+        <div className="event-date">
+          <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
+        </div>
+        <div className="event-title">{ev.title}</div>
+        <div className="event-meta">
+          {ev.organizer && (
+            <span>
+              <Icon name="star" size={12} /> {ev.organizer}
+            </span>
+          )}
+          {ev.province && (
+            <span>
+              <Icon name="pin" size={12} /> {ev.province}
+            </span>
+          )}
+          {ev.place && (
+            <span>
+              <Icon name="pin" size={12} /> {ev.place}
+            </span>
+          )}
+          {/* Tek alan iletisim (eski kayitlar) */}
+          {ev.contact && !contacts.length && (
+            <span>
+              <Icon name="phone" size={12} /> {ev.contact}
+            </span>
+          )}
+        </div>
+        {contacts.length > 0 && (
+          <div className="event-contacts">
+            {contacts.map((c, i) => (
+              <a key={i} className="event-contact" href={c.phone ? `tel:${c.phone}` : undefined}>
+                <Icon name="phone" size={12} /> {c.name}
+                {c.name && c.phone ? ' · ' : ''}
+                {c.phone}
+              </a>
+            ))}
+          </div>
+        )}
+        {ev.body && <p className="event-body">{ev.body}</p>}
+      </div>
     </div>
   )
 }
