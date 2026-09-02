@@ -65,7 +65,7 @@ class ClubResource extends Resource
         return $table
             ->defaultSort('province')
             ->columns([
-                Tables\Columns\ImageColumn::make('image')->label('Logo')->circular(),
+                Tables\Columns\ImageColumn::make('image')->label('Logo')->disk('uploads')->circular(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('title')->label('Kulüp')->searchable(),
                 Tables\Columns\TextColumn::make('place')->label('Adres')->limit(40)->toggleable(),
