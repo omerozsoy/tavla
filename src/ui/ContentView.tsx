@@ -379,16 +379,27 @@ export default function ContentView({
                           {c.title.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <span className="club-name">{c.title}</span>
-                    </div>
-                    {(c.place || c.contact) && (
-                      <div className="club-row-meta">
-                        {c.place && <span className="club-addr">{c.place}</span>}
-                        {c.contact && (
-                          <span className="club-contact">
+                      <div className="club-row-head-text">
+                        <span className="club-name">{c.title}</span>
+                        {(c.contacts ?? [])
+                          .filter((p) => p && (p.name || p.phone))
+                          .map((p, i) => (
+                            <span key={i} className="club-person">
+                              <Icon name="phone" size={12} /> {p.name}
+                              {p.name && p.phone ? ' · ' : ''}
+                              {p.phone}
+                            </span>
+                          ))}
+                        {c.contact && !c.contacts?.length && (
+                          <span className="club-person">
                             <Icon name="phone" size={12} /> {c.contact}
                           </span>
                         )}
+                      </div>
+                    </div>
+                    {c.place && (
+                      <div className="club-row-meta">
+                        <span className="club-addr">{c.place}</span>
                       </div>
                     )}
                   </div>
