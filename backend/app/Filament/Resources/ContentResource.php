@@ -51,7 +51,10 @@ class ContentResource extends Resource
             Forms\Components\TextInput::make('place')->label('Adres/Yer'),
             Forms\Components\TextInput::make('contact')->label('İletişim'),
             Forms\Components\TextInput::make('image')->label('Görsel URL')->maxLength(500)->columnSpanFull(),
-            Forms\Components\DateTimePicker::make('event_at')->label('Tarih (blog/haber: yayın)'),
+            Forms\Components\DateTimePicker::make('event_at')->label('Başlangıç (etkinlik) / Tarih (blog/haber)'),
+            Forms\Components\DateTimePicker::make('event_end')
+                ->label('Bitiş Tarihi (etkinlik — çok günlü ise)')
+                ->helperText('Çok günlü turnuva ise bitiş gününü seç; takvimde başlangıç–bitiş arası tüm günler işaretlenir. Tek günlükse boş bırak.'),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);

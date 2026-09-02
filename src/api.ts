@@ -615,6 +615,7 @@ export interface Content {
   gallery?: string[] | null
   video_id?: string | null
   event_at?: string | null
+  event_end?: string | null // etkinlik bitis (cok gunlu turnuva)
   sort: number
   published: boolean
 }
