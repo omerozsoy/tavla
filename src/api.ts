@@ -262,6 +262,23 @@ export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 
   return data.players
 }
 
+// ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk) ----
+export interface MenuOverride {
+  key: string
+  sort: number
+  visible: boolean
+  labels: Record<string, string> // dil kodu -> ozel ad (bos ise i18n kullanilir)
+}
+// Halka acik; hata olursa bos dizi -> frontend pages.ts varsayilanlarina duser.
+export async function getMenuConfig(): Promise<MenuOverride[]> {
+  try {
+    const d = await req<{ items: MenuOverride[] }>('/menu-config')
+    return d.items || []
+  } catch {
+    return []
+  }
+}
+
 // ---- Kulupler & Lig ----
 export interface ClubSummary {
   id: number
@@ -379,6 +396,10 @@ export async function subscribe(
   period: 'yearly' | 'monthly',
 ): Promise<{ url: string }> {
   return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period }) })
+}
+// Sepetteki coin paketlerini satin al -> Garanti kart sayfasi URL'i doner (yonlendirilir).
+export async function buyCoins(items: { id: string; qty: number }[]): Promise<{ url: string }> {
+  return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items }) })
 }
 
 // Herkese acik oyuncu profili

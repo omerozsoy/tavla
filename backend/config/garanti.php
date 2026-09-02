@@ -36,4 +36,15 @@ return [
         'star'    => ['yearly' => 49990, 'monthly' => 4990],
         'starpro' => ['yearly' => 49990, 'monthly' => 4990], // eski id -> ayni fiyata esitlendi
     ],
+
+    // Coin (jeton) paketleri — KURUS (TL x 100). Frontend src/coinPackages.ts ile BIREBIR ayni
+    // olmali (fiyat sunucuda dogrulanir; frontend'den gelen tutara guvenilmez).
+    'coin_packages' => [
+        'baslangic' => ['price' => 10000,  'gc' => 100],
+        'kese'      => ['price' => 47500,  'gc' => 500],
+        'sandik'    => ['price' => 90000,  'gc' => 1000],
+        'hazine'    => ['price' => 212500, 'gc' => 2500],
+        'kasa'      => ['price' => 400000, 'gc' => 5000],
+        'servet'    => ['price' => 750000, 'gc' => 10000],
+    ],
 ];

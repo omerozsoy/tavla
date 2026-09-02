@@ -18,7 +18,7 @@
   <form class="pc" method="post" action="{{ $submitUrl }}">
     @csrf
     <h1>Ödeme</h1>
-    <p class="sub">{{ strtoupper($payment->plan) }} · {{ $payment->period==='yearly'?'Yıllık':'Aylık' }}
+    <p class="sub">@if($payment->kind === 'coins'){{ number_format((int)$payment->coins, 0, ',', '.') }} coin @else{{ strtoupper($payment->plan) }} · {{ $payment->period==='yearly'?'Yıllık':'Aylık' }}@endif
       · <span class="amt">{{ number_format($payment->amount/100, 2, ',', '.') }} ₺</span></p>
     <label>Kart Numarası</label>
     <input name="number" inputmode="numeric" autocomplete="cc-number" placeholder="0000 0000 0000 0000" required>

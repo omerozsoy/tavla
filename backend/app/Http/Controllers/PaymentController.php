@@ -26,6 +26,7 @@ class PaymentController extends Controller
 
         $payment = Payment::create([
             'user_id'  => $request->user()->id,
+            'kind'     => 'subscription',
             'order_id' => 'TV'.now()->format('ymdHis').mt_rand(100, 999),
             'plan'     => $data['plan'],
             'period'   => $data['period'],
@@ -35,6 +36,52 @@ class PaymentController extends Controller
         ]);
 
         // Kart sayfasi imzali (oturum gerekmeden guvenli, 30 dk)
+        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
+        return response()->json(['url' => $url]);
+    }
+
+    // SPA: sepetteki coin paketlerini satin al -> tek odeme kaydi, kart sayfasi linki don.
+    // Sepet [{id, qty}] gelir; FIYAT SUNUCUDA (config/garanti coin_packages) hesaplanir,
+    // frontend'den gelen tutara ASLA guvenilmez.
+    public function buyCoins(Request $request, GarantiService $garanti)
+    {
+        if (! $garanti->isConfigured()) {
+            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        }
+        $data = $request->validate([
+            'items'          => ['required', 'array', 'min:1', 'max:20'],
+            'items.*.id'     => ['required', 'string'],
+            'items.*.qty'    => ['required', 'integer', 'min:1', 'max:99'],
+        ]);
+
+        $packages = config('garanti.coin_packages', []);
+        $totalKurus = 0;
+        $totalCoins = 0;
+        $ids = [];
+        foreach ($data['items'] as $it) {
+            $pkg = $packages[$it['id']] ?? null;
+            if (! $pkg) {
+                return $this->fail('Geçersiz coin paketi: '.$it['id'], 422);
+            }
+            $totalKurus += (int) $pkg['price'] * (int) $it['qty'];
+            $totalCoins += (int) $pkg['gc'] * (int) $it['qty'];
+            $ids[] = $it['id'].'x'.$it['qty'];
+        }
+        if ($totalKurus <= 0) {
+            return $this->fail('Sepet tutarı geçersiz.', 422);
+        }
+
+        $payment = Payment::create([
+            'user_id'    => $request->user()->id,
+            'kind'       => 'coins',
+            'order_id'   => 'TC'.now()->format('ymdHis').mt_rand(100, 999),
+            'amount'     => $totalKurus,
+            'coins'      => $totalCoins,
+            'package_id' => implode(',', $ids),
+            'currency'   => '949',
+            'status'     => 'pending',
+        ]);
+
         $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
         return response()->json(['url' => $url]);
     }
@@ -123,15 +170,21 @@ class PaymentController extends Controller
                     ->update(['status' => 'paid', 'bank_msg' => $res['msg']]);
                 if ($claimed) {
                     $u = $payment->user;
-                    $u->plan = $payment->plan;
-                    $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
-                    // Uye olma tarihi yalnizca ILK kez set edilir (yenilemede korunur)
-                    if (! $u->plan_since) {
-                        $u->plan_since = now();
+                    if ($payment->kind === 'coins') {
+                        // Coin paketi: satin alinan jetonu hesaba yukle (atomik, tek kez).
+                        $u->increment('coins', (int) $payment->coins);
+                    } else {
+                        // Uyelik: plani aktive et / yenile.
+                        $u->plan = $payment->plan;
+                        $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
+                        // Uye olma tarihi yalnizca ILK kez set edilir (yenilemede korunur)
+                        if (! $u->plan_since) {
+                            $u->plan_since = now();
+                        }
+                        // Odeme -> otomatik yenileme yeniden acilir
+                        $u->auto_renew = true;
+                        $u->save();
                     }
-                    // Odeme -> otomatik yenileme yeniden acilir
-                    $u->auto_renew = true;
-                    $u->save();
                 }
             } elseif ($payment->status === 'pending') {
                 $payment->status = 'failed';
@@ -140,6 +193,10 @@ class PaymentController extends Controller
             }
         }
 
-        return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg']]);
+        $okMsg = $payment && $payment->kind === 'coins'
+            ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
+            : 'Üyeliğin etkinleştirildi.';
+
+        return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg'], 'okMsg' => $okMsg]);
     }
 }

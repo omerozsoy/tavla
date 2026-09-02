@@ -13,7 +13,7 @@
   <div class="r">
     <div class="ic">{{ $ok ? '✅' : '❌' }}</div>
     <h1>{{ $ok ? 'Ödeme Başarılı' : 'Ödeme Başarısız' }}</h1>
-    <p style="color:#5e574c">{{ $ok ? 'Üyeliğin etkinleştirildi.' : ($msg ?: 'İşlem tamamlanamadı.') }}</p>
+    <p style="color:#5e574c">{{ $ok ? ($okMsg ?? 'Üyeliğin etkinleştirildi.') : ($msg ?: 'İşlem tamamlanamadı.') }}</p>
     <a href="/">Siteye Dön</a>
   </div>
 </body></html>

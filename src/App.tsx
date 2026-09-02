@@ -107,6 +107,7 @@ import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
+import Cart, { type CartItem } from './ui/Cart'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
@@ -120,7 +121,6 @@ import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
 import type { PlanId } from './plans'
-import { COIN_PACKAGES } from './coinPackages'
 import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import {
@@ -476,6 +476,23 @@ export default function App() {
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+  const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
+  // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
+  const [cartItems, setCartItems] = useState<CartItem[]>(() => {
+    try {
+      const raw = localStorage.getItem('cart')
+      return raw ? (JSON.parse(raw) as CartItem[]) : []
+    } catch {
+      return []
+    }
+  })
+  useEffect(() => {
+    try {
+      localStorage.setItem('cart', JSON.stringify(cartItems))
+    } catch {
+      /* yoksay */
+    }
+  }, [cartItems])
   const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
   // --- URL yonlendirme (hash tabanli) ---
@@ -493,6 +510,8 @@ export default function App() {
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'online-turnuvalar'
+      : cartOpen
+        ? 'sepet'
       : shopOpen
         ? 'magaza'
         : frameGalleryOpen
@@ -592,6 +611,9 @@ export default function App() {
         }
         case 'magaza':
           setShopOpen(true)
+          break
+        case 'sepet':
+          setCartOpen(true)
           break
         case 'cerceveler':
           setFrameGalleryOpen(true)
@@ -3812,6 +3834,7 @@ export default function App() {
     setTournDetailId(null)
     setTournDetailSlug(null)
     setShopOpen(false)
+    setCartOpen(false)
     setFrameGalleryOpen(false)
     setStatsOpen(false)
     setFriendsOpen(false)
@@ -4166,9 +4189,20 @@ export default function App() {
           rewardSecs={rewardSecs}
           onDaily={handleDaily}
           onBuyCoins={(pkgId) => {
-            const pkg = COIN_PACKAGES.find((p) => p.id === pkgId)
-            // TODO: gercek odeme akisi (Garanti) coin paketi icin baglanacak
-            notify.show(t('shop.coinSoon', { pkg: pkg?.name ?? '' }), 'info')
+            // Coin paketini sepete ekle (varsa adedini arttir) -> sepete yonlendir.
+            setCartItems((prev) => {
+              const ex = prev.find((c) => c.id === pkgId)
+              return ex
+                ? prev.map((c) => (c.id === pkgId ? { ...c, qty: c.qty + 1 } : c))
+                : [...prev, { id: pkgId, qty: 1 }]
+            })
+            setShopOpen(false)
+            setCartOpen(true)
+          }}
+          cartCount={cartItems.reduce((s, c) => s + c.qty, 0)}
+          onOpenCart={() => {
+            setShopOpen(false)
+            setCartOpen(true)
           }}
           onMembership={() => {
             setShopOpen(false)
@@ -4193,6 +4227,19 @@ export default function App() {
           onClose={() => {
             setShopOpen(false)
             setShopTab('coins') // sonraki normal acilis coin sekmesinden baslasin
+          }}
+        />
+      )}
+      {cartOpen && user && (
+        <Cart
+          items={cartItems}
+          setItems={setCartItems}
+          onClose={() => setCartOpen(false)}
+          onContinue={() => {
+            // "Alışverişe devam" -> Mağaza coin sekmesi
+            setCartOpen(false)
+            setShopTab('coins')
+            setShopOpen(true)
           }}
         />
       )}

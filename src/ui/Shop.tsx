@@ -12,6 +12,8 @@ interface Props {
   rewardSecs?: number
   onDaily: () => Promise<{ claimed: boolean; reward?: number }>
   onBuyCoins?: (pkgId: string) => void // gercek para ile jeton paketi al
+  cartCount?: number // sepetteki toplam adet (0 ise buton gizli)
+  onOpenCart?: () => void // sepeti ac
   onMembership?: () => void // Star Uyelik kartindan uyelik ekranini ac
   // Tahta Rengi sekmesi (Ayarlar'dan Magaza'ya tasindi)
   boardTheme: string
@@ -41,6 +43,8 @@ export default function Shop({
   rewardSecs = 0,
   onDaily,
   onBuyCoins,
+  cartCount = 0,
+  onOpenCart,
   boardTheme,
   setBoardTheme,
   boardThemes,
@@ -91,6 +95,11 @@ export default function Shop({
               <Icon name="gift" size={16} />{' '}
               {rewardReady ? t('shop.daily') : <span className="sd-count tnum">{fmtLeft(rewardSecs)}</span>}
             </Button>
+            {onOpenCart && cartCount > 0 && (
+              <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title="Sepet">
+                <Icon name="shop" size={16} /> Sepet <span className="shop-cart-count tnum">{cartCount}</span>
+              </Button>
+            )}
           </div>
         </div>
 
