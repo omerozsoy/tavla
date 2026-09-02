@@ -426,6 +426,7 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
+  const [infoTab, setInfoTab] = useState<'about' | 'ranks' | 'fair' | 'services' | 'badges'>('about') // footer'dan sekme
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
@@ -3753,6 +3754,21 @@ export default function App() {
       .filter((pg) => pg && !!pageHandlers[pg.key] && (pg.gate !== 'user' || !!user))
       .map((pg): FooterItem => ({ key: pg.key, labelKey: pg.labelKey, onClick: pageHandlers[pg.key]! })),
   }))
+  // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar.
+  const openInfoTab = (tab: 'about' | 'ranks' | 'fair' | 'services' | 'badges') => {
+    setInfoTab(tab)
+    goPage(() => setInfoOpen(true))
+  }
+  footerColumns.push({
+    titleKey: 'menu.info',
+    items: [
+      { key: 'info-about', labelKey: 'info.tab.about', onClick: () => openInfoTab('about') },
+      { key: 'info-services', labelKey: 'menu.services', onClick: () => openInfoTab('services') },
+      { key: 'info-ranks', labelKey: 'menu.ranks', onClick: () => openInfoTab('ranks') },
+      { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
+      { key: 'info-fair', labelKey: 'fair.title', onClick: () => openInfoTab('fair') },
+    ],
+  })
 
   const menuGroups = MENU_GROUP_ORDER.map((group) => ({
     group,
@@ -3925,6 +3941,7 @@ export default function App() {
           onClose={() => setInfoOpen(false)}
           currentRating={user?.rating ?? undefined}
           loggedIn={!!user}
+          initialTab={infoTab}
           fair={{
             commitment: fairRef.current.commitment,
             clientSeed: fairRef.current.clientSeed,
