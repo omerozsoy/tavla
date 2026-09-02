@@ -3031,6 +3031,7 @@ button[aria-disabled='true'],
 /* Düzenleyen kurumun sosyal medya ikonlari (isim yaninda). */
 .event-organizer {
   gap: 7px;
+  font-weight: 600;
 }
 .event-social {
   display: inline-flex;
@@ -3078,6 +3079,25 @@ button[aria-disabled='true'],
 }
 .event-contact:hover {
   text-decoration: underline;
+}
+/* Otel + adres: her biri KENDI satirinda (event-meta'dan cikarildi). */
+.event-hotel,
+.event-address {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.event-hotel {
+  font-weight: 600;
+  color: var(--text);
+}
+.event-hotel svg,
+.event-address svg {
+  color: var(--accent);
+  flex-shrink: 0;
 }
 /* Kulupler */
 .content-clubs {
@@ -11937,6 +11957,93 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   font-size: 0.82rem;
   line-height: 1.5;
+}
+/* Puanlama sekmesi (Elo) */
+.scoring {
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  line-height: 1.65;
+}
+.scoring-intro {
+  margin: 0;
+  color: var(--muted);
+}
+.scoring-formula {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+  border: 1px solid var(--border);
+}
+.scoring-formula code {
+  font-size: 1.02rem;
+  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.scoring-formula-expl {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+.scoring-your {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+.scoring-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.scoring-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+.scoring-table th,
+.scoring-table td {
+  padding: 9px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.scoring-table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.82rem;
+}
+.scoring-table td {
+  color: var(--text);
+}
+.scoring-table tr.is-equal {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.scoring-opp-r {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+.scoring-win {
+  color: var(--color-success);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.scoring-loss {
+  color: var(--tv-brick);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.scoring-notes {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 .an-wxp {
   display: flex;

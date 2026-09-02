@@ -13,8 +13,9 @@ import { RankProgression } from './RankProgression'
 import FairnessModal from './FairnessModal'
 import ContentView from './ContentView'
 import Achievements from './Achievements'
+import Scoring from './Scoring'
 
-type Tab = 'about' | 'ranks' | 'fair' | 'services' | 'badges'
+type Tab = 'about' | 'ranks' | 'scoring' | 'fair' | 'services' | 'badges'
 
 interface Props {
   onClose: () => void
@@ -50,6 +51,9 @@ export default function Info({ onClose, currentRating, loggedIn = false, initial
           <button type="button" role="tab" aria-selected={tab === 'ranks'} className={tab === 'ranks' ? 'active' : ''} onClick={() => setTab('ranks')}>
             {t('menu.ranks')}
           </button>
+          <button type="button" role="tab" aria-selected={tab === 'scoring'} className={tab === 'scoring' ? 'active' : ''} onClick={() => setTab('scoring')}>
+            {t('info.tab.scoring')}
+          </button>
           <button type="button" role="tab" aria-selected={tab === 'badges'} className={tab === 'badges' ? 'active' : ''} onClick={() => setTab('badges')}>
             {t('ach.title')}
           </button>
@@ -83,6 +87,12 @@ export default function Info({ onClose, currentRating, loggedIn = false, initial
         {tab === 'ranks' && (
           <div className="info-tab-pane">
             <RankProgression currentRating={currentRating} />
+          </div>
+        )}
+
+        {tab === 'scoring' && (
+          <div className="info-tab-pane">
+            <Scoring currentRating={currentRating} />
           </div>
         )}
 
