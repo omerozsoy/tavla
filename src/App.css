@@ -13039,7 +13039,7 @@ button.acct-row:hover:not(:disabled) {
    Logo net gozuksun diye flama takvimdekinden BUYUK (46x70 -> 60x100). */
 .tourn-ribbon {
   width: 72px;
-  height: 140px;
+  height: 152px;
   right: 12px;
 }
 .tourn-ribbon-band {
@@ -13053,7 +13053,7 @@ button.acct-row:hover:not(:disabled) {
   transform: rotate(90deg);
   transform-origin: center;
   white-space: nowrap;
-  margin-top: -6px; /* V-catal boslugunu dengele -> gorsel merkez yukari */
+  margin-top: -16px; /* logoyu flamada biraz daha yukari cek */
 }
 /* Ust satir genis flamanin altina girmesin (flama 72px + sag bosluk). */
 .tourn-row .event-datebadges {
