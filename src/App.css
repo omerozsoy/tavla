@@ -2849,19 +2849,23 @@ button[aria-disabled='true'],
 .event-ribbon-band {
   position: absolute;
   top: 17px;
-  right: -28px;
-  width: 126px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 0;
-  background: linear-gradient(135deg, #e30a17, #a10510);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.28);
+  right: -30px;
+  width: 128px;
+  height: 30px;
+  padding: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
   transform: rotate(45deg);
 }
-/* Bant 45° dönük; bayrağı -45° ile geri döndürüp DİK tut. */
+/* Bandin TAMAMI bayrak (kirmizi serit yok). Bayrak bandi doldurur, bantla birlikte 45° egik. */
 .event-ribbon-flag {
-  transform: rotate(-45deg);
+  width: 128px !important;
+  height: 30px !important;
+  object-fit: cover !important;
+  display: block !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 .event-row.past {
   border-left-color: var(--muted);
