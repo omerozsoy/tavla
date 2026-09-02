@@ -46,6 +46,23 @@ class EventResource extends Resource
         'Iğdır', 'Yalova', 'Karabük', 'Kilis', 'Osmaniye', 'Düzce',
     ];
 
+    // KKTC (Kuzey Kibris) illeri.
+    public const KKTC_PROVINCES = [
+        'Lefkoşa', 'Gazimağusa', 'Girne', 'Güzelyurt', 'İskele', 'Lefke',
+    ];
+
+    public const COUNTRIES = [
+        'Türkiye' => 'Türkiye',
+        'KKTC' => 'KKTC (Kuzey Kıbrıs)',
+    ];
+
+    /** Secili ulkeye gore il secenekleri (KKTC -> 6 il, aksi halde Turkiye 81 il). */
+    public static function provinceOptions(?string $country): array
+    {
+        $list = $country === 'KKTC' ? self::KKTC_PROVINCES : self::PROVINCES;
+        return array_combine($list, $list);
+    }
+
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()->where('type', 'event');
@@ -57,8 +74,13 @@ class EventResource extends Resource
             Forms\Components\Hidden::make('type')->default('event'),
             Forms\Components\TextInput::make('title')->label('Etkinlik adı')->required()->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Tarih & saat')->required(),
+            // Ulke once secilir; il listesi ulkeye gore degisir (Turkiye 81 / KKTC 6).
+            Forms\Components\Select::make('country')->label('Ülke')
+                ->options(self::COUNTRIES)->default('Türkiye')->required()->live()
+                // Ulke degisince onceki ulkenin ili gecersiz kalmasin.
+                ->afterStateUpdated(fn (Forms\Set $set) => $set('province', null)),
             Forms\Components\Select::make('province')->label('İl')
-                ->options(array_combine(self::PROVINCES, self::PROVINCES))
+                ->options(fn (Forms\Get $get) => self::provinceOptions($get('country')))
                 ->searchable(),
             // Duzenleyen: Kurumlar (Content type='kurum') arasindan secilir; deger kurum ADI
             // olarak saklanir (frontend organizer string'ini gosterir). Mevcut kayitlar isim
@@ -107,6 +129,7 @@ class EventResource extends Resource
                 Tables\Columns\TextColumn::make('title')->label('Etkinlik')->searchable()->limit(50),
                 Tables\Columns\TextColumn::make('organizer')->label('Düzenleyen')->toggleable(),
                 Tables\Columns\TextColumn::make('place')->label('Yer')->toggleable(),
+                Tables\Columns\TextColumn::make('country')->label('Ülke')->toggleable(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->toggleable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
             ])
