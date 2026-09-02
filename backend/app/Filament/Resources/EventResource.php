@@ -73,11 +73,21 @@ class EventResource extends Resource
         return $form->schema([
             Forms\Components\Hidden::make('type')->default('event'),
             Forms\Components\TextInput::make('title')->label('Etkinlik adı')->required()->columnSpanFull(),
-            Forms\Components\DateTimePicker::make('event_at')->label('Başlangıç tarihi & saat')->required(),
+            Forms\Components\DateTimePicker::make('event_at')->label('Başlangıç tarihi & saat')
+                ->required()
+                ->live(onBlur: true)
+                // Baslangic secilince/degisince Bitis bossa onunla doldur (baslangic secili gelir).
+                ->afterStateUpdated(fn ($state, Forms\Set $set, Forms\Get $get) => filled($state) && blank($get('event_end'))
+                    ? $set('event_end', $state)
+                    : null),
             Forms\Components\DateTimePicker::make('event_end')
                 ->label('Bitiş tarihi (çok günlü ise)')
-                ->helperText('Çok günlü turnuva ise bitiş gününü seç; takvimde başlangıç–bitiş arası tüm günler işaretlenir. Tek günlükse boş bırak.')
-                ->afterOrEqual('event_at'),
+                ->helperText('Başlangıçla aynı gelir; çok günlü turnuvada bitiş gününü ileri al. Takvimde başlangıç–bitiş arası tüm günler işaretlenir.')
+                ->afterOrEqual('event_at')
+                // Kayit acilirken Bitis bossa baslangicla doldur -> alan acildiginda baslangic secili gelir.
+                ->afterStateHydrated(fn ($state, Forms\Set $set, Forms\Get $get) => blank($state) && filled($get('event_at'))
+                    ? $set('event_end', $get('event_at'))
+                    : null),
             // Ulke once secilir; il listesi ulkeye gore degisir (Turkiye 81 / KKTC 6).
             Forms\Components\Select::make('country')->label('Ülke')
                 ->options(self::COUNTRIES)->default('Türkiye')->required()->live()
