@@ -6360,8 +6360,9 @@ button.stat-chip:hover {
   align-items: center;
   gap: 8px;
   height: 40px;
-  /* Ad solda -> sol pay genis; avatar sagda -> sag pay dar (koseye otursun). */
-  padding: 3px 3px 3px 12px;
+  /* Ad solda; avatar sagda. Sag pay = (yukseklik/2 - avatar/2) = 20-14 = 6px ->
+     yuvarlak avatar, pill'in yuvarlak sag ucuyla ES MERKEZLI olur (koseye kaykilmaz). */
+  padding: 3px 6px 3px 14px;
   background: none;
   border: 1px solid transparent;
   border-radius: var(--radius-pill);
