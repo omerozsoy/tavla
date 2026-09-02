@@ -2842,7 +2842,7 @@ button[aria-disabled='true'],
 .event-ribbon {
   position: absolute;
   top: -3px;
-  right: 20px;
+  right: 8px;
   width: 46px;
   height: 70px;
   pointer-events: none;
@@ -2913,6 +2913,9 @@ button[aria-disabled='true'],
   flex-direction: column;
   gap: 8px;
   padding-left: 18px;
+  /* Sag ust kose kurdelesi (bayrak) icin bos serit: gorsel/yazi bayragin altina
+     girmesin, bayrak temiz zeminde net gozuksun. */
+  padding-right: 56px;
   border-left: 1px solid var(--border);
 }
 /* Otel gorsel karti: gorsel tam genislik; uzerine otel adi + adres bindirilir. */
@@ -2966,6 +2969,7 @@ button[aria-disabled='true'],
   .event-map-col {
     width: 100%;
     padding-left: 0;
+    padding-right: 0;
     border-left: none;
     border-top: 1px solid var(--border);
     padding-top: 12px;
