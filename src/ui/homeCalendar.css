@@ -15,16 +15,9 @@
 .cal-panel {
   width: 100%; /* kendi yarisini doldurur */
 }
-/* Sagdaki bos yer tutucu kutu (ileride doldurulacak) */
-.cal-side-box {
-  min-height: 100%;
-}
 @media (max-width: 720px) {
   .home-cal-wrap {
     grid-template-columns: 1fr; /* mobilde alt alta */
-  }
-  .cal-side-box {
-    display: none; /* mobilde bos kutu gizli */
   }
 }
 .cal-head {
@@ -36,6 +29,19 @@
 .cal-title {
   flex: 0 1 auto;
   min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+.cal-title svg {
+  color: var(--accent);
+}
+/* Alt aksiyon: tam takvim sayfasina git (bizim <Button> formati) */
+.cal-foot {
+  padding: 0 16px 14px;
 }
 .cal-nav {
   display: flex;

@@ -621,9 +621,9 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   return (
     <div className="home-panel cal-panel">
       <div className="home-panel-head cal-head">
-        <button type="button" className="hph-link cal-title" onClick={onOpen} title={t('menu.calendar')}>
+        <span className="cal-title">
           <Icon name="calendar-dots" size={18} /> {t('menu.calendar')}
-        </button>
+        </span>
         <div className="cal-nav">
           <button type="button" onClick={prev} aria-label="prev">‹</button>
           <span className="cal-month">{monthLabel}</span>
@@ -674,6 +674,11 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
             </button>
           )
         })}
+      </div>
+      <div className="cal-foot">
+        <Button variant="outline" className="w-full" onClick={onOpen}>
+          <Icon name="calendar-dots" size={16} /> {t('menu.calendar')}
+        </Button>
       </div>
       {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
         <div className="cal-balloon" style={{ left: tip.x, top: tip.y }} role="tooltip">

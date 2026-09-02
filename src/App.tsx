@@ -4308,7 +4308,7 @@ export default function App() {
             <BannerSlider onOpen={menuProps.onTournamentAd} />
             <div className="home-cal-wrap">
               <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
-              <div className="home-panel cal-side-box" aria-hidden="true" />
+              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
             </div>
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
@@ -4390,7 +4390,6 @@ export default function App() {
               </div>
             )}
             <div className="home-panels">
-              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
               />
