@@ -112,6 +112,11 @@ class EventResource extends Resource
                     ->orderBy('title')->pluck('title', 'title')->all())
                 ->searchable()
                 ->helperText('Oteller sayfasındaki listeden seçilir. Resimler otel kaydına yüklenir. Boş bırakılabilir.'),
+            // Yer / adres: takvimde otel adresinin YERINE bu metin gosterilir (doluysa).
+            // Bosaltirsan secili otelin kendi adresi gosterilir.
+            Forms\Components\TextInput::make('place')->label('Yer / adres')
+                ->helperText('Takvimde gösterilecek adres. Boş bırakırsan seçili otelin adresi gösterilir.')
+                ->columnSpanFull(),
             // Cok kisili iletisim: her satir kisi adi + cep telefonu
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([
