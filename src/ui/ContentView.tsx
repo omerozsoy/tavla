@@ -873,19 +873,21 @@ function EventRow({
             Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
         {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag: otel gorseli; UZERINE otel adi (ust) + adres (altinda) bindirilir; EN ALTTA
-          "Haritada Gör" butonu. Gomulu harita kaldirildi. */}
+      {/* Sag: USTTE otel adi + adres, ALTINDA otel gorseli, EN ALTTA "Haritada Gör".
+          Gomulu harita kaldirildi. */}
       {(img || mapHref) && (
         <div className="event-map-col">
-          <div className="event-hotel-card">
-            {img && <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />}
-            {(ev.hotel || hotelPlace || ev.place) && (
-              <div className="event-hotel-overlay">
-                {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
-                {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
-              </div>
-            )}
-          </div>
+          {(ev.hotel || hotelPlace || ev.place) && (
+            <div className="event-hotel-head">
+              {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
+              {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+            </div>
+          )}
+          {img && (
+            <div className="event-hotel-card">
+              <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />
+            </div>
+          )}
           {mapHref && (
             <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
               <Icon name="pin" size={16} /> Haritada Gör
