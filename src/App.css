@@ -3019,9 +3019,9 @@ button[aria-disabled='true'],
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-width: 58px;
+  width: 58px;
   height: 58px;
-  padding: 5px 12px;
+  padding: 5px 4px;
   background: #6e0000;
   color: #fff;
   border-radius: 10px;
@@ -3030,14 +3030,14 @@ button[aria-disabled='true'],
 }
 .edb-day {
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 400;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 .edb-month {
   margin-top: 4px;
   font-size: 0.66rem;
-  font-weight: 700;
+  font-weight: 400;
   letter-spacing: 0.08em;
 }
 .event-date-dash {
