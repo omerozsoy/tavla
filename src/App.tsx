@@ -4658,10 +4658,13 @@ export default function App() {
               />
             </div>
             {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
-            <Footer columns={footerColumns} />
             </>
             )}
           </main>
+          {/* Footer TUM lobi sayfalarinda (home + menu sayfalari). .app.lobby kaydirma
+              konteyneri (100dvh) oldugu icin ICINDE kalir; CSS ile iki kolonu birden
+              kapsar (grid-column: 1/-1) -> TAM GENISLIK, en altta. */}
+          <Footer columns={footerColumns} />
         </div>
         {authModal}
         {menuOverlays}

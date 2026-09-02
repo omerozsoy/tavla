@@ -6912,6 +6912,11 @@ button.acct-row:hover:not(:disabled) {
 .app.lobby > .side-menu {
   grid-area: menu;
 }
+/* Footer: grid'in en altinda, HER IKI kolonu (menu + main) kapsar -> TAM GENISLIK.
+   (Grid child oldugu icin varsayilan tek kolona sigardi; 1/-1 ile bara kadar uzar.) */
+.app.lobby > .site-footer {
+  grid-column: 1 / -1;
+}
 /* Sticky yan menu YALNIZ desktop: mobilde .side-menu drawer (position:fixed) -> burada
    sticky vermek onu ezerdi (0,3,0 > 0,1,0). Bu yuzden min-width kosuluyla ayirdik. */
 @media (min-width: 901px) {
