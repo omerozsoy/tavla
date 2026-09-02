@@ -2943,7 +2943,8 @@ button[aria-disabled='true'],
   display: block;
   width: 100%;
   height: 180px;
-  object-fit: contain; /* KIRPMA: gorsel tam gozuksun (kucultup sigdir) */
+  object-fit: cover; /* TEK BOY: farkli oranlardaki gorseller ayni kutuyu doldurur */
+  border-radius: var(--radius-md);
 }
 /* SOL kolonda otel blogu: ad -> adres -> Yol Tarifi Al. */
 .event-hotel-block {
