@@ -2964,7 +2964,7 @@ button[aria-disabled='true'],
   color: var(--muted);
 }
 .event-title {
-  font-size: 1.1rem;
+  font-size: 1.32rem;
   font-weight: 400;
   color: var(--text);
   margin-bottom: 7px;
