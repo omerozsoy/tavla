@@ -544,11 +544,17 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   const first = new Date(view.y, view.m, 1)
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate()
   const startOffset = (first.getDay() + 6) % 7 // Pazartesi-basli
-  const eventDays = new Set<number>()
+  // gun -> o gun baslayan turnuva isimleri
+  const eventMap = new Map<number, string[]>()
   for (const tr of tourns) {
     if (!tr.starts_at) continue
     const d = new Date(tr.starts_at)
-    if (d.getFullYear() === view.y && d.getMonth() === view.m) eventDays.add(d.getDate())
+    if (d.getFullYear() === view.y && d.getMonth() === view.m) {
+      const day = d.getDate()
+      const arr = eventMap.get(day) ?? []
+      arr.push(tr.name)
+      eventMap.set(day, arr)
+    }
   }
   const monthLabel = first.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const wd: string[] = []
@@ -581,21 +587,28 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
         ))}
       </div>
       <div className="cal-grid cal-days">
-        {cells.map((d, i) =>
-          d === null ? (
-            <span key={i} className="cal-cell empty" />
-          ) : (
+        {cells.map((d, i) => {
+          if (d === null) return <span key={i} className="cal-cell empty" />
+          const names = eventMap.get(d)
+          const evTitle = names?.join(' · ')
+          return (
             <button
               key={i}
               type="button"
-              className={`cal-cell ${isToday(d) ? 'today' : ''} ${eventDays.has(d) ? 'has-ev' : ''}`}
+              className={`cal-cell ${isToday(d) ? 'today' : ''} ${names ? 'has-ev' : ''}`}
               onClick={onOpen}
+              title={evTitle}
             >
-              {d}
-              {eventDays.has(d) && <span className="cal-dot" aria-hidden />}
+              <span className="cal-daynum">{d}</span>
+              {names && (
+                <span className="cal-evname">
+                  {names[0]}
+                  {names.length > 1 ? ` +${names.length - 1}` : ''}
+                </span>
+              )}
             </button>
-          ),
-        )}
+          )
+        })}
       </div>
     </div>
   )
