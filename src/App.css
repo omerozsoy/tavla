@@ -3069,7 +3069,7 @@ button[aria-disabled='true'],
   gap: 16px;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--muted);
+  color: var(--text);
 }
 .event-meta span {
   display: flex;
@@ -3127,7 +3127,7 @@ button[aria-disabled='true'],
   gap: 5px;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--accent);
+  color: var(--text);
   text-decoration: none;
 }
 .event-contact:hover {
@@ -3142,9 +3142,6 @@ button[aria-disabled='true'],
   margin-top: 6px;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--muted);
-}
-.event-hotel {
   color: var(--text);
 }
 .event-hotel svg,
