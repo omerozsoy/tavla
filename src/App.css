@@ -5654,14 +5654,12 @@ html.fs-active .account-bar {
 .hamburger {
   display: none;
   position: fixed;
-  top: 8px;
-  right: 8px;
   z-index: 110;
-  top: calc(8px + env(safe-area-inset-top));
-  right: calc(8px + env(safe-area-inset-right));
+  /* En ust sag koseye TAM otursun (safe-area disinda bosluk yok). */
+  top: env(safe-area-inset-top);
+  right: env(safe-area-inset-right);
   width: 44px;
   height: 44px;
-  display: none;
   align-items: center;
   justify-content: center;
   border: 1px solid var(--border);
@@ -5669,7 +5667,8 @@ html.fs-active .account-bar {
   background: var(--card-bg);
   color: var(--text);
   cursor: pointer;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+  /* Golge YOK (kullanici istegi) — flat. */
+  box-shadow: none;
 }
 .menu-backdrop {
   position: fixed;
