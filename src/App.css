@@ -3095,7 +3095,7 @@ button[aria-disabled='true'],
   font-size: 1.32rem;
   font-weight: 400;
   color: var(--text);
-  margin-bottom: 7px;
+  margin-bottom: 16px;
 }
 .event-meta {
   display: flex;
