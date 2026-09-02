@@ -2868,10 +2868,10 @@ button[aria-disabled='true'],
 @keyframes event-ribbon-sway {
   0%,
   100% {
-    transform: rotate(-1.4deg);
+    transform: rotate(-2.5deg);
   }
   50% {
-    transform: rotate(1.4deg);
+    transform: rotate(2.5deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {
