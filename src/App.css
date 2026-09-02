@@ -3030,8 +3030,8 @@ button[aria-disabled='true'],
   min-width: 0;
 }
 .club-logo {
-  width: 42px;
-  height: 42px;
+  width: 60px;
+  height: 60px;
   border-radius: var(--radius-md);
   object-fit: cover;
   flex-shrink: 0;
@@ -3043,7 +3043,7 @@ button[aria-disabled='true'],
   align-items: center;
   justify-content: center;
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
