@@ -602,7 +602,7 @@ export async function adminUserMatches(id: number): Promise<AdminMatch[]> {
   return d.matches
 }
 // ---- Icerik (hizmet / blog / haber / etkinlik / kulup) ----
-export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz' | 'magazine'
+export type ContentType = 'service' | 'blog' | 'news' | 'event' | 'club' | 'ad' | 'quiz' | 'magazine' | 'kurum'
 export interface Content {
   id: number
   type: ContentType
@@ -613,7 +613,7 @@ export interface Content {
   province?: string | null
   contact?: string | null
   contacts?: { name: string; phone: string }[] | null
-  links?: { instagram?: string | null; youtube?: string | null; website?: string | null } | null
+  links?: { instagram?: string | null; youtube?: string | null; website?: string | null; email?: string | null } | null
   image?: string | null
   gallery?: string[] | null
   video_id?: string | null

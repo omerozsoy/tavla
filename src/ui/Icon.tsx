@@ -88,6 +88,7 @@ import {
   DiceSix,
   InstagramLogo,
   YoutubeLogo,
+  EnvelopeSimple,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -173,6 +174,7 @@ export type IconName =
   | 'flame'
   | 'instagram'
   | 'youtube'
+  | 'mail'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -258,6 +260,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'die-6': DiceSix,
   instagram: InstagramLogo,
   youtube: YoutubeLogo,
+  mail: EnvelopeSimple,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)

@@ -2834,6 +2834,15 @@ button[aria-disabled='true'],
   border-left-color: var(--muted);
   opacity: 0.72;
 }
+/* Duzenleyen kurum logosu (varsa) satirin en basinda; marka olcusunde, sade. */
+.event-kurum-logo {
+  display: block;
+  height: 38px;
+  width: auto;
+  max-width: 160px;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
 .event-date {
   display: flex;
   align-items: center;
