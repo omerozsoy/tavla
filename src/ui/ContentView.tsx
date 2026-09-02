@@ -786,6 +786,8 @@ function EventRow({
           {eventDates(ev.event_at, ev.event_end).map((d, i) => (
             <DateBadge key={i} d={d} />
           ))}
+          {/* Il (sehir): rozetin yaninda, rakamla ayni boyda, kiremit renkte */}
+          {ev.province && <span className="event-province-top">{ev.province}</span>}
         </div>
         <div className="event-title">{ev.title}</div>
         <div className="event-meta">
@@ -816,11 +818,6 @@ function EventRow({
                   <Icon name="youtube" size={24} />
                 </a>
               )}
-            </span>
-          )}
-          {ev.province && (
-            <span>
-              <Icon name="pin" size={24} /> {ev.province}
             </span>
           )}
         </div>
