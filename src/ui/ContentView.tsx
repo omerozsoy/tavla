@@ -752,7 +752,9 @@ function EventRow({
             ))}
           </div>
         )}
-        {ev.body && <p className="event-body">{ev.body}</p>}
+        {/* Aciklama SADECE kurum (organizer) secilmemis etkinliklerde gosterilir.
+            Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
+        {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
       </div>
       {/* Sag: otel gorseli + konum haritasi YAN YANA; altta "Haritada Gör" butonu. */}
       {(img || mapEmbed) && (
