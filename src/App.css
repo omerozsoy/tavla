@@ -3102,7 +3102,7 @@ button[aria-disabled='true'],
   font-size: 1.15rem;
   font-weight: 400;
   color: var(--text);
-  margin-bottom: 26px;
+  margin-bottom: 12px;
 }
 .event-meta {
   display: flex;
