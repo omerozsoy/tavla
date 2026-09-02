@@ -2935,12 +2935,10 @@ button[aria-disabled='true'],
   padding-right: 56px;
   border-left: 1px solid var(--border);
 }
-/* Otel gorsel karti: gorsel tam genislik; uzerine otel adi + adres bindirilir. */
+/* Otel gorsel karti: cerceve YOK (border/radius kaldirildi) -> gorsel serbest,
+   contain letterbox bosluklari sayfa zeminine karisir. */
 .event-hotel-card {
   position: relative;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
 }
 .event-side-img {
   display: block;
