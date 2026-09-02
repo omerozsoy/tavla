@@ -48,11 +48,11 @@
   .secure{display:flex;align-items:center;justify-content:center;gap:6px;
     color:var(--muted);font-size:.76rem;margin:12px 0 0;text-align:center}
 </style></head><body>
-  <form class="pc" method="post" action="{{ $submitUrl }}" autocomplete="on">
+  <form class="pc" method="post" action="{{ $submitUrl }}" autocomplete="on" @if(!empty($preview)) onsubmit="alert('Bu bir önizlemedir — gerçek ödeme için Mağaza › Sepet üzerinden ilerleyin.');return false;" @endif>
     @csrf
-    <p class="brandline"><span class="dot"></span> TavlaTv · Güvenli Ödeme</p>
+    <p class="brandline"><span class="dot"></span> TavlaTv · Güvenli Ödeme @if(!empty($preview))<span style="margin-left:auto;font-size:.7rem;color:var(--muted);font-weight:600">ÖNİZLEME</span>@endif</p>
     <p class="sub">
-      @if($payment->kind === 'coins'){{ number_format((int)$payment->coins, 0, ',', '.') }} coin@else{{ strtoupper($payment->plan) }} · {{ $payment->period==='yearly'?'Yıllık':'Aylık' }}@endif
+      @if($payment->kind === 'coins'){{ number_format((int)$payment->coins, 0, ',', '.') }} coin@else{{ strtoupper($payment->plan ?? '') }} · {{ $payment->period==='yearly'?'Yıllık':'Aylık' }}@endif
       · <span class="amt">{{ number_format($payment->amount/100, 2, ',', '.') }} ₺</span>
     </p>
 
