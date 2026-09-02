@@ -793,7 +793,7 @@ function EventRow({
         <div className="event-meta">
           {ev.organizer && (
             <span className="event-organizer">
-              <Icon name="star" size={24} /> {ev.organizer}
+              <Icon name="star" size={18} /> {ev.organizer}
               {kurum?.instagram && (
                 <a
                   className="event-social ig"
@@ -803,7 +803,7 @@ function EventRow({
                   aria-label="Instagram"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Icon name="instagram" size={24} />
+                  <Icon name="instagram" size={18} />
                 </a>
               )}
               {kurum?.youtube && (
@@ -815,7 +815,7 @@ function EventRow({
                   aria-label="YouTube"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <Icon name="youtube" size={24} />
+                  <Icon name="youtube" size={18} />
                 </a>
               )}
             </span>
@@ -828,7 +828,7 @@ function EventRow({
               const wa = waLink(c.phone)
               return (
                 <div key={i} className="event-contact">
-                  <Icon name={wa ? 'whatsapp' : 'phone'} size={24} /> {c.name}
+                  <Icon name={wa ? 'whatsapp' : 'phone'} size={18} /> {c.name}
                   {c.name && c.phone ? ' · ' : ''}
                   {c.phone && (
                     <a
@@ -855,7 +855,7 @@ function EventRow({
                 const wa = waLink(phone)
                 return (
                   <div className="event-contact">
-                    <Icon name={wa ? 'whatsapp' : 'phone'} size={24} /> {name}
+                    <Icon name={wa ? 'whatsapp' : 'phone'} size={18} /> {name}
                     {name && phone ? ' · ' : ''}
                     {phone && (
                       <a
