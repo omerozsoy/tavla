@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { liveMatches, leaderboard, onlinePlayers, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament } from '../api'
@@ -528,6 +529,73 @@ export function TournamentsPanel({
             </button>
           )
         })}
+      </div>
+    </div>
+  )
+}
+
+// Ana sayfa mini takvim (slider altinda, canli maclar boyutunda). Turnuva baslama
+// gunleri isaretli; bugun vurgulu. Panel/gun tiklayinca Turnuva Takvimi'ni acar.
+export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen: () => void }) {
+  const { t, lang } = useT()
+  const today = new Date()
+  const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
+  const locale = lang === 'tr' ? 'tr-TR' : lang
+  const first = new Date(view.y, view.m, 1)
+  const daysInMonth = new Date(view.y, view.m + 1, 0).getDate()
+  const startOffset = (first.getDay() + 6) % 7 // Pazartesi-basli
+  const eventDays = new Set<number>()
+  for (const tr of tourns) {
+    if (!tr.starts_at) continue
+    const d = new Date(tr.starts_at)
+    if (d.getFullYear() === view.y && d.getMonth() === view.m) eventDays.add(d.getDate())
+  }
+  const monthLabel = first.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
+  const wd: string[] = []
+  for (let i = 0; i < 7; i++) {
+    wd.push(new Date(2024, 0, 1 + i).toLocaleDateString(locale, { weekday: 'short' })) // 2024-01-01 = Pazartesi
+  }
+  const cells: (number | null)[] = []
+  for (let i = 0; i < startOffset; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  const isToday = (d: number) =>
+    today.getFullYear() === view.y && today.getMonth() === view.m && today.getDate() === d
+  const prev = () => setView((v) => (v.m === 0 ? { y: v.y - 1, m: 11 } : { y: v.y, m: v.m - 1 }))
+  const next = () => setView((v) => (v.m === 11 ? { y: v.y + 1, m: 0 } : { y: v.y, m: v.m + 1 }))
+
+  return (
+    <div className="home-panel cal-panel">
+      <div className="home-panel-head cal-head">
+        <button type="button" className="hph-link cal-title" onClick={onOpen} title={t('menu.calendar')}>
+          <Icon name="calendar-dots" size={18} /> {t('menu.calendar')}
+        </button>
+        <div className="cal-nav">
+          <button type="button" onClick={prev} aria-label="prev">‹</button>
+          <span className="cal-month">{monthLabel}</span>
+          <button type="button" onClick={next} aria-label="next">›</button>
+        </div>
+      </div>
+      <div className="cal-grid cal-wd">
+        {wd.map((w, i) => (
+          <span key={i} className="cal-wd-cell">{w}</span>
+        ))}
+      </div>
+      <div className="cal-grid cal-days">
+        {cells.map((d, i) =>
+          d === null ? (
+            <span key={i} className="cal-cell empty" />
+          ) : (
+            <button
+              key={i}
+              type="button"
+              className={`cal-cell ${isToday(d) ? 'today' : ''} ${eventDays.has(d) ? 'has-ev' : ''}`}
+              onClick={onOpen}
+            >
+              {d}
+              {eventDays.has(d) && <span className="cal-dot" aria-hidden />}
+            </button>
+          ),
+        )}
       </div>
     </div>
   )
