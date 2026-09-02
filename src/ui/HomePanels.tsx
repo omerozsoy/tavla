@@ -558,18 +558,37 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   // gun -> isimler (ayri: bizim turnuvalar / dis etkinlikler)
   const tournMap = new Map<number, string[]>() // yesil
   const eventMap = new Map<number, string[]>() // kiremit
-  const addTo = (map: Map<number, string[]>, iso: string | null | undefined, name: string) => {
-    if (!iso) return
-    const d = new Date(iso)
-    if (d.getFullYear() === view.y && d.getMonth() === view.m) {
-      const day = d.getDate()
-      const arr = map.get(day) ?? []
-      arr.push(name)
-      map.set(day, arr)
-    }
+  const mark = (map: Map<number, string[]>, day: number, name: string) => {
+    const arr = map.get(day) ?? []
+    arr.push(name)
+    map.set(day, arr)
   }
-  for (const tr of tourns) addTo(tournMap, tr.starts_at, tr.name)
-  for (const ev of events) addTo(eventMap, ev.event_at, ev.title)
+  // Bizim turnuvalar: tek gun (starts_at).
+  for (const tr of tourns) {
+    if (!tr.starts_at) continue
+    const d = new Date(tr.starts_at)
+    if (d.getFullYear() === view.y && d.getMonth() === view.m) mark(tournMap, d.getDate(), tr.name)
+  }
+  // Dis etkinlikler: yapisal bitis tarihi YOK -> aciklamadaki "18-19-20 Eylul" gibi
+  // gun araligini ayristirip TUM gunleri isaretle (cok gunlu turnuvalar).
+  const TR_MONTHS = 'ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik'
+  const rangeRe = new RegExp(`(\\d{1,2}(?:\\s*[-–]\\s*\\d{1,2})+)\\s*(?:${TR_MONTHS})`, 'i')
+  for (const ev of events) {
+    if (!ev.event_at) continue
+    const base = new Date(ev.event_at)
+    if (base.getFullYear() !== view.y || base.getMonth() !== view.m) continue
+    let days = [base.getDate()]
+    const m = (ev.body ?? '').match(rangeRe)
+    if (m) {
+      const nums = m[1].split(/[-–]/).map((x) => parseInt(x.trim(), 10)).filter((n) => n >= 1 && n <= 31)
+      if (nums.length >= 2) {
+        const lo = Math.min(...nums), hi = Math.max(...nums)
+        days = []
+        for (let d = lo; d <= hi; d++) days.push(d)
+      }
+    }
+    for (const day of days) mark(eventMap, day, ev.title)
+  }
   const monthLabel = first.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const wd: string[] = []
   for (let i = 0; i < 7; i++) {
