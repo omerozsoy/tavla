@@ -2837,65 +2837,46 @@ button[aria-disabled='true'],
 }
 /* Sag ust kose kurdelesi (SALE tarzi): kirmizi capraz bant + uzerinde bayrak. */
 /* SOL UST kose kurdelesi (NEW tarzi sarmali). Kutu koseye kirpar; kanatlar disari tasmaz. */
+/* SOL kenardan asili DIKEY afis/bookmark (referans: ustten sarkan, alti V-catal).
+   Ici KOMPLE bayrak. Ust kenarin biraz uzerinden baslar; asili durur. */
 .event-ribbon {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 132px;
-  height: 132px;
-  overflow: hidden;
+  top: -3px;
+  left: 18px;
+  width: 42px;
+  height: 68px;
   pointer-events: none;
   z-index: 3;
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
 }
-/* Katlama kanatlari: bandin iki ucunda koyu ucgenler -> kurdele koseye SARILMIS gibi durur. */
 .event-ribbon::before,
 .event-ribbon::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 0;
-  border: 6px solid #7a0410;
-  z-index: 2;
-}
-.event-ribbon::before {
-  top: 0;
-  left: 12px;
-  border-top-color: transparent;
-  border-left-color: transparent;
-}
-.event-ribbon::after {
-  bottom: 12px;
-  left: 0;
-  border-top-color: transparent;
-  border-left-color: transparent;
+  content: none;
 }
 .event-ribbon-band {
   position: absolute;
-  top: 26px;
-  left: -42px;
-  width: 170px;
-  height: 42px;
+  inset: 0;
   padding: 0;
   overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  transform: rotate(-45deg);
-  z-index: 3;
+  /* Alt uc pennant catal (V girinti) + ust katlama golgesi (inset). */
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  box-shadow: inset 0 7px 7px -5px rgba(0, 0, 0, 0.4);
+  transform: none;
 }
-/* Bandin TAMAMI bayrak. Bayrak bandi doldurur, bantla birlikte -45° egik. */
+/* Afisin TAMAMI bayrak (dikey afiste bayragin orta seridi gorunur). */
 .event-ribbon-flag {
-  width: 170px !important;
-  height: 42px !important;
+  width: 42px !important;
+  height: 68px !important;
   object-fit: cover !important;
   display: block !important;
   transform: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
-/* Logosuz satirlarda tarih+baslik sol ustte -> kurdelenin altina girmesin diye ice al.
-   Logolu satirlarda kurdele LOGO sutununun ustunde durur, metin zaten uzakta. */
-.event-row:not(.has-logo) .event-date,
-.event-row:not(.has-logo) .event-title {
-  padding-left: 84px;
+/* Logosuz satirlarda icerik sol ustte -> dikey afisin altina girmesin diye ice al.
+   Logolu satirlarda afis LOGO sutununun ustunde durur. */
+.event-row:not(.has-logo) .event-main {
+  padding-left: 56px;
 }
 .event-row.past {
   border-left-color: var(--muted);
