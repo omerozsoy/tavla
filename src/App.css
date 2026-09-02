@@ -3162,10 +3162,14 @@ button[aria-disabled='true'],
   gap: 5px;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--text);
+  color: var(--muted);
   text-decoration: none;
 }
-.event-contact:hover {
+.event-contact-phone {
+  color: var(--muted);
+  text-decoration: none;
+}
+.event-contact-phone:hover {
   text-decoration: underline;
 }
 /* Otel + adres: her biri KENDI satirinda (event-meta'dan cikarildi). */
@@ -3177,7 +3181,7 @@ button[aria-disabled='true'],
   margin-top: 6px;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--text);
+  color: var(--muted);
 }
 .event-hotel svg,
 .event-address svg {

@@ -1259,6 +1259,7 @@ export default function App() {
     setTurnStart(s)
     setPlayed([])
     setSelectedFrom(null)
+    fullyForcedRef.current = false
     setRanked(null)
     setCurrentProbs(null)
     setTurnsPlayed((n) => n + 1)
@@ -1681,9 +1682,11 @@ export default function App() {
     setCurBest(null)
   }, [turnStart, played.length])
 
-  // Insan sirasi: hamle yok -> otomatik gec; ZORUNLU adim (tek tam hamle / kirik tas
-  // girisinde alternatif yok / tek yasal adim) -> otomatik oyna. Adim adim ilerler:
-  // sonraki adim da zorunluysa o da oynanir. Secim varsa durur (oyuncu oynar).
+  // Tur bastan sona zorunlu mu oynandi (oyuncu hic secim yapmadi)? -> otomatik onay.
+  const fullyForcedRef = useRef(false)
+  // Insan sirasi: hamle yok -> otomatik gec; ZORUNLU adim (baska alternatifi olmayan
+  // zar) -> otomatik oyna (YAVAS, gorunur). Adim adim ilerler: sonraki adim da
+  // zorunluysa o da oynanir. Secim varsa durur (oyuncu oynar).
   useEffect(() => {
     if (!interactive || !diceRolled) return
     // Mevcut pozisyon: tur basi -> turnStart; mid-turn -> working + kalan zarlar
@@ -1706,6 +1709,28 @@ export default function App() {
         setNoMoveFlash(null)
         commitTurn([])
       }, 2100) // "hamle yok" ~2sn ekranda kalsin
+      return () => window.clearTimeout(timer)
+    }
+    // Yavas oto-oyna temposu: kullanici hamleyi net gorsun.
+    const AUTO_STEP_MS = 1000
+    // Pozisyon TAMAMEN zorunlu (moves.length === 1, hicbir alternatif yok) ->
+    // sonraki tek adimi yavas + gorunur oynat. Effect kalan adim(lar) icin tekrar
+    // calisir; boylece adim adim ilerler. Bir secim cikarsa durur (oyuncu oynar).
+    if (moves.length === 1 && moves[0].steps.length > 0) {
+      if (played.length === 0) fullyForcedRef.current = true
+      setMessage(t('msg.forcedAuto'))
+      const timer = window.setTimeout(() => playSteps([moves[0].steps[0]]), AUTO_STEP_MS)
+      return () => window.clearTimeout(timer)
+    }
+    // Oyuncuya secim birakan bir pozisyon -> tur artik "tamamen zorunlu" degil.
+    if (moves.length > 1) fullyForcedRef.current = false
+    // Tur bastan sona zorunlu oynandiysa (oyuncu hic secim yapmadi) ve tum zarlar
+    // bittiyse -> otomatik onayla (sirayi rakibe ver).
+    if (fullyForcedRef.current && played.length > 0 && remainingDice.length === 0) {
+      const timer = window.setTimeout(() => {
+        fullyForcedRef.current = false
+        handleConfirm()
+      }, AUTO_STEP_MS)
       return () => window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

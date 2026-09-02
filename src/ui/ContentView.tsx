@@ -840,17 +840,21 @@ function EventRow({
             {contacts.map((c, i) => {
               const wa = waLink(c.phone)
               return (
-                <a
-                  key={i}
-                  className="event-contact"
-                  href={wa || (c.phone ? `tel:${c.phone}` : undefined)}
-                  target={wa ? '_blank' : undefined}
-                  rel={wa ? 'noreferrer' : undefined}
-                >
+                <div key={i} className="event-contact">
                   <Icon name={wa ? 'whatsapp' : 'phone'} size={24} /> {c.name}
                   {c.name && c.phone ? ' · ' : ''}
-                  {c.phone}
-                </a>
+                  {c.phone && (
+                    <a
+                      className="event-contact-phone"
+                      href={wa || `tel:${c.phone}`}
+                      target={wa ? '_blank' : undefined}
+                      rel={wa ? 'noreferrer' : undefined}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {c.phone}
+                    </a>
+                  )}
+                </div>
               )
             })}
             {!contacts.length && ev.contact && (
