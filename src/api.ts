@@ -615,7 +615,7 @@ export interface Content {
   country?: string | null // 'Türkiye' | 'KKTC'
   contact?: string | null
   contacts?: { name: string; phone: string }[] | null
-  links?: { instagram?: string | null; youtube?: string | null; website?: string | null; email?: string | null } | null
+  links?: { instagram?: string | null; youtube?: string | null; website?: string | null; email?: string | null; maps?: string | null } | null
   image?: string | null
   gallery?: string[] | null
   video_id?: string | null
