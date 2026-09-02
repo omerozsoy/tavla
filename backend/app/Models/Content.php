@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Content extends Model
 {
     protected $fillable = [
-        'type', 'title', 'body', 'organizer', 'place', 'province',
+        'type', 'title', 'body', 'organizer', 'place', 'hotel', 'province',
         'contact', 'contacts', 'links', 'image', 'gallery', 'video_id', 'event_at', 'event_end', 'sort', 'published',
     ];
 

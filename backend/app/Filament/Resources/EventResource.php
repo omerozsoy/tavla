@@ -68,7 +68,15 @@ class EventResource extends Resource
                     ->orderBy('title')->pluck('title', 'title')->all())
                 ->searchable()
                 ->helperText('Kurumlar sayfasındaki listeden seçilir. Boş bırakılabilir.'),
-            Forms\Components\TextInput::make('place')->label('Yer / adres')->columnSpanFull(),
+            // Otel: Oteller (Content type='otel') listesinden secilir; deger otel ADI olarak
+            // saklanir. Etkinlik takviminde bu ada gore otelin gorseli + adi gosterilir.
+            // Resimler otel kaydina yuklenir; burada sadece secim yapilir.
+            Forms\Components\Select::make('hotel')->label('Otel')
+                ->options(fn () => Content::query()->where('type', 'otel')
+                    ->orderBy('title')->pluck('title', 'title')->all())
+                ->searchable()
+                ->helperText('Oteller sayfasındaki listeden seçilir. Resimler otel kaydına yüklenir. Boş bırakılabilir.'),
+            Forms\Components\TextInput::make('place')->label('Yer / adres (opsiyonel)')->columnSpanFull(),
             // Cok kisili iletisim: her satir kisi adi + cep telefonu
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([

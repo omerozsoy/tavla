@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 
 class ContentController extends Controller
 {
-    private const TYPES = ['service', 'blog', 'news', 'event', 'club', 'ad', 'quiz', 'magazine', 'kurum'];
+    private const TYPES = ['service', 'blog', 'news', 'event', 'club', 'ad', 'quiz', 'magazine', 'kurum', 'otel'];
 
     // Herkese acik: bir turun yayinlanmis icerikleri (uygun siralamayla)
     public function index(Request $request)
@@ -87,6 +87,7 @@ class ContentController extends Controller
             'body' => ['nullable', 'string', 'max:20000'],
             'organizer' => ['nullable', 'string', 'max:200'],
             'place' => ['nullable', 'string', 'max:300'],
+            'hotel' => ['nullable', 'string', 'max:200'],
             'province' => ['nullable', 'string', 'max:60'],
             'contact' => ['nullable', 'string', 'max:200'],
             'links' => ['nullable', 'array'],
