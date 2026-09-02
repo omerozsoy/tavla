@@ -30,8 +30,9 @@ class AuthController extends Controller
             'start_rating' => ['nullable', 'integer', 'in:900,1100,1400,1700'],
         ]);
 
-        // Ulke bos/eksikse '' ata (kolon NOT NULL olsa bile kayit patlamaz)
-        $data['country'] = $data['country'] ?? '';
+        // Ulke secilmediyse VARSAYILAN Turkiye ('TR' kodu; uygulama TR -> "Türkiye" gosterir).
+        $country = trim((string) ($data['country'] ?? ''));
+        $data['country'] = $country !== '' ? $country : 'TR';
 
         // province kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
@@ -151,7 +152,7 @@ class AuthController extends Controller
             $user = User::create([
                 'first_name' => $first,
                 'last_name'  => $last,
-                'country'    => '',
+                'country'    => 'TR', // Google ile ilk kayitta ulke sorulmaz -> varsayilan Turkiye
                 'avatar'     => $p['picture'] ?? null, // Google profil fotografi (onerilir, degistirilebilir)
                 'nickname'   => $nick,
                 'email'      => $email,
@@ -303,19 +304,6 @@ class AuthController extends Controller
                 $user->losses = ($user->losses ?? 0) + 1;
             }
             $user->save();
-
-            // Kulup lig puani: uyeyse galibiyet +3, katilim +1. Kulup toplami da artar.
-            $mem = \App\Models\ClubMember::where('user_id', $user->id)->first();
-            if ($mem) {
-                $gain = $data['won'] ? 3 : 1;
-                $mem->increment('points', $gain);
-                if ($data['won']) {
-                    $mem->increment('wins');
-                } else {
-                    $mem->increment('losses');
-                }
-                \App\Models\Club::where('id', $mem->club_id)->increment('points', $gain);
-            }
 
             $this->awardBadges($user, $newRating);
             $this->awardFrames($user);
