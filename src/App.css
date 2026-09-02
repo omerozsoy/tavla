@@ -7700,7 +7700,9 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 600;
   text-align: center;
 }
-.online-row {
+/* .rank-row.online-row: ozgulluk .rank-row'dan yuksek olmali; yoksa kaynakta sonra
+   gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
+.rank-row.online-row {
   /* nokta | oyuncu (sabit) | bayrak (hizali) | rating | aksiyonlar */
   grid-template-columns: 14px minmax(56px, 148px) 1fr auto auto;
 }
