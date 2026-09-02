@@ -753,7 +753,11 @@ function EventRow({
       {/* Orta: turnuva bilgileri (gorsel ve harita sag sutuna tasindi) */}
       <div className="event-main">
         <div className="event-date">
-          <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
+          <Icon name="calendar" size={14} /> {fmtDate(ev.event_at ?? null, true)}
+          {/* Bitis tarihi: baslangictan FARKLI gunse hemen arkasina ekle (cok gunlu turnuva) */}
+          {ev.event_end && fmtDate(ev.event_end) !== fmtDate(ev.event_at ?? null) && (
+            <> – {fmtDate(ev.event_end)}</>
+          )}
         </div>
         <div className="event-title">{ev.title}</div>
         <div className="event-meta">
