@@ -22,11 +22,13 @@
  */
 
 // ---- Kademe (tier) varsayilanlari: coin odulu + gorsel rarity ----
+// Coin odulleri DUSUK tutuldu (max 500): sahte hesaplarla coin farm'ini onlemek
+// icin (ileride arkadaslar arasi coin transferi gelecek). En buyuk odul = 500.
 $TIER = [
-    'bronze'  => ['coin' => 100,  'rarity' => 'common'],
-    'silver'  => ['coin' => 300,  'rarity' => 'uncommon'],
-    'gold'    => ['coin' => 750,  'rarity' => 'rare'],
-    'diamond' => ['coin' => 2000, 'rarity' => 'epic'],
+    'bronze'  => ['coin' => 100, 'rarity' => 'common'],
+    'silver'  => ['coin' => 250, 'rarity' => 'uncommon'],
+    'gold'    => ['coin' => 400, 'rarity' => 'rare'],
+    'diamond' => ['coin' => 500, 'rarity' => 'epic'],
 ];
 
 /**
@@ -54,11 +56,11 @@ $fam = function (string $prefix, string $category, string $icon, string $metric,
     return $out;
 };
 
-/** Tekil event/gizli rozet kisayolu. */
+/** Tekil event/gizli rozet kisayolu. Coin odulu 500'de SINIRLI (farm onlemi). */
 $ev = function (string $slug, string $category, string $name, string $desc, string $icon, string $metric, string $rarity = 'rare', int $coin = 500, bool $hidden = false): array {
     return [
         'slug' => $slug, 'category' => $category, 'name' => $name, 'desc' => $desc,
-        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => $coin,
+        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => min($coin, 500),
         'hidden' => $hidden, 'type' => 'event', 'metric' => $metric, 'value' => 1,
     ];
 };
@@ -170,11 +172,11 @@ $list = array_merge($list, $fam('coin', 'coin', 'gift', 'coin_balance', [
     [5000000,  'diamond', 'Darphane',        '5.000.000 coin biriktir.'],
     [10000000, 'diamond', 'Merkez Bankası',  '10.000.000 coin biriktir.'],
 ]));
-// LIFETIME kazanılan coin (ileri-dönük izlenir)
+// LIFETIME kazanılan coin (ileri-dönük izlenir). "Servet Avcısı" (1M) KALDIRILDI:
+// sahte hesap coin farm'i onlemi (ileride arkadaslar arasi coin transferi gelecek).
 $list = array_merge($list, $fam('earned', 'coin', 'gift', 'lifetime_coin', [
     [10000,   'silver',  'Emekçi',      'Toplam 10.000 coin kazan.'],
     [100000,  'gold',    'Kazanç Makinesi', 'Toplam 100.000 coin kazan.'],
-    [1000000, 'diamond', 'Servet Avcısı','Toplam 1.000.000 coin kazan.'],
 ]));
 
 // ============ TURNUVA ============
