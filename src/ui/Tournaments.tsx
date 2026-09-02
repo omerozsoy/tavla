@@ -220,7 +220,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Icon name="coin" size={14} /> {pr.coins.toLocaleString('tr-TR')}
+                      <Icon name="coin" size={14} /> {pr.coins.toLocaleString('tr-TR')} coin
                     </span>
                   </li>
                 ))}
@@ -468,7 +468,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Icon name="coin" size={14} /> {pr.coins.toLocaleString('tr-TR')}
+                      <Icon name="coin" size={14} /> {pr.coins.toLocaleString('tr-TR')} coin
                     </span>
                   </li>
                 ))}
@@ -485,7 +485,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className="tp-rank tp-rank-1">1.</span>
                     <span className="tp-desc">{tr.prize_desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      <Icon name="coin" size={14} /> {pool.toLocaleString('tr-TR')}
+                      <Icon name="coin" size={14} /> {pool.toLocaleString('tr-TR')} coin
                     </span>
                   </li>
                 </ol>
