@@ -752,20 +752,22 @@ function EventRow({
         )}
         {ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag: otel gorseli (ustte) + secili otelin konumu (gomulu Google Maps + "Haritada Gör"). */}
+      {/* Sag: otel gorseli + konum haritasi YAN YANA; altta "Haritada Gör" butonu. */}
       {(img || mapEmbed) && (
         <div className="event-map-col">
-          {img && <img className="event-side-img" src={mediaSrc(img)} alt="" />}
-          {mapEmbed && (
-            <iframe
-              className="event-map"
-              src={mapEmbed}
-              title={`${ev.hotel ?? ''} harita`}
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
-            />
-          )}
+          <div className="event-side-media">
+            {img && <img className="event-side-img" src={mediaSrc(img)} alt="" />}
+            {mapEmbed && (
+              <iframe
+                className="event-map"
+                src={mapEmbed}
+                title={`${ev.hotel ?? ''} harita`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            )}
+          </div>
           {mapHref && (
             <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
               <Icon name="pin" size={13} /> Haritada Gör
