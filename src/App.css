@@ -3032,6 +3032,7 @@ button[aria-disabled='true'],
 .event-organizer {
   gap: 7px;
   font-weight: 600;
+  font-size: 1rem;
 }
 .event-social {
   display: inline-flex;
