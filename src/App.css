@@ -13035,40 +13035,13 @@ button.acct-row:hover:not(:disabled) {
 .tourn-place svg {
   color: var(--accent);
 }
-/* Odul listesi LISTE KARTINDA: etkinlik satiri estetigi -> altin KUTU/doseme YOK,
-   duz ikon+metin satirlari (detay gorunumundeki .tourn-prizes kutusu korunur). */
+/* Odul listesi kart icinde: dikey ritme otursun (kendi margin'ini birakma). */
 .tourn-row-prizes {
   margin: 0;
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
 }
-.tourn-row-prizes .tp-head {
-  margin-bottom: 4px;
-  font-size: 0.92rem;
-}
-.tourn-row-prizes .tp-row {
-  background: transparent;
-  padding: 2px 0;
-  font-size: 0.92rem;
-}
-.tourn-row-prizes .tp-desc {
-  font-size: 0.92rem;
-}
-/* Ucret + oyuncu: iki kolonlu kompakt satir; ikon KUTUSU degil duz ikon (etkinlik gibi). */
+/* Ucret + oyuncu: iki kolonlu kompakt satir (3'lu grid yerine). */
 .tourn-row-stats2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
-}
-.tourn-row-stats2 .tcard-ic {
-  width: auto;
-  height: auto;
-  background: transparent;
-  border-radius: 0;
-}
-.tourn-row-stats2 .tcard-val {
-  font-size: 0.92rem;
 }
 /* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV logosu (ink pennant).
    Logo net gozuksun diye flama takvimdekinden BUYUK (46x70 -> 60x100). */
