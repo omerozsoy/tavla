@@ -88,6 +88,7 @@ import {
   DiceSix,
   InstagramLogo,
   YoutubeLogo,
+  WhatsappLogo,
   EnvelopeSimple,
 } from '@phosphor-icons/react'
 
@@ -137,6 +138,7 @@ export type IconName =
   | 'calendar'
   | 'pin'
   | 'phone'
+  | 'whatsapp'
   | 'refresh'
   | 'target'
   | 'globe'
@@ -260,6 +262,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'die-6': DiceSix,
   instagram: InstagramLogo,
   youtube: YoutubeLogo,
+  whatsapp: WhatsappLogo,
   mail: EnvelopeSimple,
 }
 

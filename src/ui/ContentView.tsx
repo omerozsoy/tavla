@@ -54,6 +54,21 @@ export function slugify(s: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+// Cep telefonunu WhatsApp (wa.me) baglantisina cevir. TR varsayilan (+90).
+// Metinden rakamlari ayiklar: "0537 389 19 07" -> https://wa.me/905373891907.
+// Rakam yoksa null (link verilmez). Gecerli bir cep numarasi yoksa da null.
+function waLink(phone?: string | null): string | null {
+  if (!phone) return null
+  let d = phone.replace(/\D/g, '')
+  if (!d) return null
+  if (d.startsWith('00')) d = d.slice(2) // uluslararasi 00 oneki
+  if (d.startsWith('0')) d = '90' + d.slice(1) // yerel TR (0537...) -> 90537...
+  else if (d.length === 10) d = '90' + d // bassiz 10 haneli (537...) -> 90537...
+  // Cok kisa/anlamsiz ise link verme (en az ulke+numara ~11 hane)
+  if (d.length < 11) return null
+  return `https://wa.me/${d}`
+}
+
 // Logosu olmayan kulup icin bas harflerinden dummy logo metni (en fazla 3 harf).
 // Tek kelimeyse ilk 2 harf; cok kelimeyse her kelimenin bas harfi (Turkce buyuk harf).
 function clubInitials(name: string): string {
