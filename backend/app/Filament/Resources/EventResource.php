@@ -137,7 +137,6 @@ class EventResource extends Resource
                 Tables\Columns\TextColumn::make('event_at')->label('Tarih')->dateTime('d.m.Y H:i')->sortable(),
                 Tables\Columns\TextColumn::make('title')->label('Etkinlik')->searchable()->limit(50),
                 Tables\Columns\TextColumn::make('organizer')->label('Düzenleyen')->toggleable(),
-                Tables\Columns\TextColumn::make('country')->label('Ülke')->toggleable(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->toggleable(),
                 // Otel: secili ise yesil rozet (otel adi), degilse kirmizi "Otel yok".
                 Tables\Columns\TextColumn::make('hotel')->label('Otel')->badge()
