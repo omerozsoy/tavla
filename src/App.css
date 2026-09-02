@@ -8245,10 +8245,7 @@ button.acct-row:hover:not(:disabled) {
   scale: 0.99;
 }
 @media (hover: hover) and (pointer: fine) {
-  .tourn-row:hover {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 6%, var(--btn-bg));
-  }
+  /* Etkinlik satiri gibi: hover'da kirmizi border yok (eski kart stili notrlendi). */
   .tourn-row:hover .tr-go {
     color: var(--accent);
     transform: translateX(2px);
@@ -13013,7 +13010,13 @@ button.acct-row:hover:not(:disabled) {
   width: 100%;
   margin-bottom: 0; /* .tourn-list zaten gap veriyor; cift bosluk olmasin */
   background: #fff; /* kart zemini BEYAZ (kullanici istegi) */
+  /* Etkinlik satiriyla AYNI: sol kiremit accent cizgi (8229'daki border shorthand'ini ezer) */
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.tourn-row.past {
+  border-left-color: var(--muted);
 }
 /* Yer etiketi: tarih rozetinin yaninda "Online" (veya varsa fiziksel mekan). */
 .tourn-place {
@@ -13063,10 +13066,7 @@ button.acct-row:hover:not(:disabled) {
   outline-offset: 2px;
 }
 @media (hover: hover) and (pointer: fine) {
-  .tourn-row:hover {
-    border-color: var(--accent);
-    box-shadow: 0 10px 26px -16px color-mix(in srgb, var(--accent) 55%, transparent);
-  }
+  /* Etkinlik satiri gibi: hover'da KIRMIZI border/golge YOK (sadece imlec). */
   .tourn-row:hover .tcard-cta > svg {
     transform: translateX(3px);
   }
