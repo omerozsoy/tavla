@@ -3275,14 +3275,19 @@ button[aria-disabled='true'],
   object-fit: cover;
   flex-shrink: 0;
 }
+/* Logosuz kulup: bas harflerden YUVARLAK dummy logo (rozet). */
 .club-logo-ph {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 2.6rem;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 2.1rem;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  color: #fff;
+  background: linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #000));
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.22);
 }
 .club-name {
   font-weight: 400;
