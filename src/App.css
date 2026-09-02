@@ -12798,12 +12798,38 @@ button.acct-row:hover:not(:disabled) {
 }
 .tcard-status {
   flex: none;
-  padding: 3px 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
   border-radius: 999px;
-  font-size: 0.66rem;
+  font-size: 0.8rem;
   font-weight: 400;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+}
+/* KAYIT ACIK: basinda yanip sonen yesil nokta (canli kayit sinyali) */
+.tcard-status-open::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tv-green, #3f9e6a);
+  animation: tcard-blink 1.1s ease-in-out infinite;
+}
+@keyframes tcard-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tcard-status-open::before {
+    animation: none;
+  }
 }
 /* Geri sayim rozeti (kart): altin, tabular rakam, ikon hizali */
 .tcard-cd {
