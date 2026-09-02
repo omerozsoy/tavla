@@ -3519,6 +3519,10 @@ export default function App() {
             aria-haspopup="menu"
             title={profile.nickname}
           >
+            {/* Ad SOLDA; avatar (menu) en sagda kosede. */}
+            <span className="acct-trigger-name">{profile.nickname}</span>
+            {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
+            <Icon name="chevron" size={16} className="acct-chev" />
             <AvatarFrame
               src={profile.avatar}
               frame={user?.avatar_frame}
@@ -3526,9 +3530,6 @@ export default function App() {
               name={profile.nickname}
               className="account-avf"
             />
-            <span className="acct-trigger-name">{profile.nickname}</span>
-            {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
-            <Icon name="chevron" size={16} className="acct-chev" />
           </button>
           {acctMenuOpen && (
             <div className="acct-pop" role="menu" style={{ position: 'fixed', top: acctMenuPos.top, right: acctMenuPos.right }}>
