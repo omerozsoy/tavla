@@ -107,16 +107,25 @@ export default function ContentView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [type])
 
-  // Takvim (etkinlik): kurum -> logo eslemesi. organizer adi = kurum basligi.
-  // Logosu olan kurumun logosu etkinlik satirinda en basa konur; logosu yoksa hic konmaz.
-  const [kurumLogos, setKurumLogos] = useState<Record<string, string>>({})
+  // Takvim (etkinlik): kurum -> logo + sosyal medya eslemesi. organizer adi = kurum basligi.
+  // Logosu olan kurumun logosu etkinlik satirinda en basa konur; instagram/youtube ikonlari
+  // "Düzenleyen" adinin yaninda gosterilir.
+  const [kurums, setKurums] = useState<
+    Record<string, { image?: string; instagram?: string; youtube?: string }>
+  >({})
   useEffect(() => {
     if (type !== 'event') return
     listContents('kurum')
       .then((ks) => {
-        const map: Record<string, string> = {}
-        for (const k of ks) if (k.title && k.image) map[k.title] = k.image
-        setKurumLogos(map)
+        const map: Record<string, { image?: string; instagram?: string; youtube?: string }> = {}
+        for (const k of ks)
+          if (k.title)
+            map[k.title] = {
+              image: k.image ?? undefined,
+              instagram: k.links?.instagram ?? undefined,
+              youtube: k.links?.youtube ?? undefined,
+            }
+        setKurums(map)
       })
       .catch(() => {})
   }, [type])
@@ -371,7 +380,7 @@ export default function ContentView({
               <div key={g.month} className="event-month">
                 <div className="event-month-title">{g.month}</div>
                 {g.list.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming logo={kurumLogos[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
+                  <EventRow key={ev.id} ev={ev} upcoming kurum={kurums[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
                 ))}
               </div>
             ))}
@@ -379,7 +388,7 @@ export default function ContentView({
               <div className="event-past">
                 <div className="event-month-title past">{t('content.past')}</div>
                 {eventGroups.past.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming={false} logo={kurumLogos[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
+                  <EventRow key={ev.id} ev={ev} upcoming={false} kurum={kurums[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
                 ))}
               </div>
             )}
@@ -675,15 +684,17 @@ const mediaSrc = (img?: string | null): string | undefined => {
 function EventRow({
   ev,
   upcoming,
-  logo,
+  kurum,
   hotel,
 }: {
   ev: Content
   upcoming: boolean
-  logo?: string
+  kurum?: { image?: string; instagram?: string; youtube?: string }
   hotel?: { image?: string; place?: string; province?: string; country?: string; maps?: string }
 }) {
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
+  // Duzenleyen kurumun logosu (sol sutun) + sosyal medyasi (isim yaninda).
+  const logo = kurum?.image
   // Etkinlik gorseli: once kendi resmi, yoksa secili otelin resmi.
   const img = ev.image || hotel?.image
   // Otelin adresi (varsa) place bos ise gosterilebilir.
@@ -722,8 +733,32 @@ function EventRow({
         <div className="event-title">{ev.title}</div>
         <div className="event-meta">
           {ev.organizer && (
-            <span>
+            <span className="event-organizer">
               <Icon name="star" size={12} /> {ev.organizer}
+              {kurum?.instagram && (
+                <a
+                  className="event-social ig"
+                  href={kurum.instagram}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="Instagram"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Icon name="instagram" size={14} />
+                </a>
+              )}
+              {kurum?.youtube && (
+                <a
+                  className="event-social yt"
+                  href={kurum.youtube}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label="YouTube"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Icon name="youtube" size={14} />
+                </a>
+              )}
             </span>
           )}
           {ev.hotel && (
