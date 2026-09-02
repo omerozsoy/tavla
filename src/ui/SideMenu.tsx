@@ -29,6 +29,7 @@ export interface SideMenuProps {
   active?: string
   mobileOpen?: boolean
   onCloseMobile?: () => void
+  onHome?: () => void // drawer logosuna tiklayinca ana sayfa
 }
 
 export default function SideMenu(p: SideMenuProps) {
@@ -41,10 +42,16 @@ export default function SideMenu(p: SideMenuProps) {
         if (p.onCloseMobile && (e.target as HTMLElement).closest('button')) p.onCloseMobile()
       }}
     >
-      {/* Mobil drawer basligi: TavlaTV logosu (desktop sabit yan menude CSS ile gizli) */}
-      <div className="side-menu-brand" aria-hidden="true">
+      {/* Mobil drawer basligi: TavlaTV logosu (desktop sabit yan menude CSS ile gizli).
+          Tiklayinca ana sayfa; onClickCapture (closest button) drawer'i da kapatir. */}
+      <button
+        type="button"
+        className="side-menu-brand"
+        onClick={p.onHome}
+        aria-label={t('brand.name')}
+      >
         <TavlaTvLogo size={34} />
-      </div>
+      </button>
 
       {/* Oyun ici eylemler (analiz / pes) — oyun ekraninda, play grubunun yerinde */}
       {p.inGame && (p.onToggleAnalysis || (p.canResign && p.onResign)) && (

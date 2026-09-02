@@ -4253,6 +4253,7 @@ export default function App() {
             active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
           />
           <main className="main lobby-main has-page">
             <div className="page-host">
@@ -4299,6 +4300,7 @@ export default function App() {
             active={activeKey}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
           />
           <main className={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}>
             {anyPageOpen ? (
