@@ -30,9 +30,9 @@ class AuthController extends Controller
             'start_rating' => ['nullable', 'integer', 'in:900,1100,1400,1700'],
         ]);
 
-        // Ulke secilmediyse VARSAYILAN Turkiye ('TR' kodu; uygulama TR -> "Türkiye" gosterir).
-        $country = trim((string) ($data['country'] ?? ''));
-        $data['country'] = $country !== '' ? $country : 'TR';
+        // Ulke secilmezse BOS kalsin (kullanici sonradan profilinden secer). Kolon NOT NULL
+        // olsa bile kayit patlamasin diye '' ata.
+        $data['country'] = $data['country'] ?? '';
 
         // province kolonu (migration) henuz uygulanmamissa kayit patlamasin: atla.
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
@@ -152,7 +152,7 @@ class AuthController extends Controller
             $user = User::create([
                 'first_name' => $first,
                 'last_name'  => $last,
-                'country'    => 'TR', // Google ile ilk kayitta ulke sorulmaz -> varsayilan Turkiye
+                'country'    => '', // Google ile ilk kayitta ulke sorulmaz -> bos; sonradan profilden secilir
                 'avatar'     => $p['picture'] ?? null, // Google profil fotografi (onerilir, degistirilebilir)
                 'nickname'   => $nick,
                 'email'      => $email,
