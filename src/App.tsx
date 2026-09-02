@@ -4308,6 +4308,7 @@ export default function App() {
             <BannerSlider onOpen={menuProps.onTournamentAd} />
             <div className="home-cal-wrap">
               <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
+              <div className="home-panel cal-side-box" aria-hidden="true" />
             </div>
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
