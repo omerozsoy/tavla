@@ -3168,8 +3168,15 @@ button[aria-disabled='true'],
 .event-contact-phone {
   color: var(--muted);
   text-decoration: none;
+  cursor: pointer;
 }
+/* Telefon numarasi link oldugu belli olsun: hover'da altini ciz + kiremit renk. */
 .event-contact-phone:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
+/* Tek-kisi fallback (numara ayri span degil, tum satir link): o da hover'da altini cizsin. */
+.event-contact[href]:hover {
   text-decoration: underline;
 }
 /* Otel + adres: her biri KENDI satirinda (event-meta'dan cikarildi). */
@@ -13006,7 +13013,39 @@ button.acct-row:hover:not(:disabled) {
   color: var(--text);
   width: 100%;
   margin-bottom: 0; /* .tourn-list zaten gap veriyor; cift bosluk olmasin */
+  background: #fff; /* kart zemini BEYAZ (kullanici istegi) */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+/* Yer etiketi: tarih rozetinin yaninda "Online" (veya varsa fiziksel mekan). */
+.tourn-place {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+.tourn-place svg {
+  color: var(--accent);
+}
+/* Odul listesi kart icinde: dikey ritme otursun (kendi margin'ini birakma). */
+.tourn-row-prizes {
+  margin: 0;
+}
+/* Ucret + oyuncu: iki kolonlu kompakt satir (3'lu grid yerine). */
+.tourn-row-stats2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+/* Sag ust flama: turnuva-takvimindeki bayrak yerine TavlaTV markasi (ink pennant). */
+.tourn-ribbon-band {
+  background: #1c1a17; /* ink zemin */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 6px; /* alt V-catal boslugundan otur -> logo ust ortada net */
+}
+/* Ust satir (tarih + Online + durum + geri sayim) flamanin altina girmesin. */
+.tourn-row .event-datebadges {
+  padding-right: 52px;
 }
 .tourn-row:focus-visible {
   outline: 2px solid var(--accent);
