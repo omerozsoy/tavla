@@ -40,6 +40,11 @@ class ClubResource extends Resource
         return $form->schema([
             Forms\Components\Hidden::make('type')->default('club'),
             Forms\Components\TextInput::make('title')->label('Kulüp adı')->required()->columnSpanFull(),
+            Forms\Components\FileUpload::make('image')->label('Logo')
+                ->image()->disk('uploads')->directory('kulup')->visibility('public')
+                ->imageEditor()->circleCropper()->maxSize(2048)
+                ->helperText('Kulüp logosu — rehberde ismin solunda görünür. Kare/yuvarlak öneririz.')
+                ->columnSpanFull(),
             Forms\Components\Select::make('province')->label('İl')
                 ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
                 ->searchable()->required(),
@@ -60,6 +65,7 @@ class ClubResource extends Resource
         return $table
             ->defaultSort('province')
             ->columns([
+                Tables\Columns\ImageColumn::make('image')->label('Logo')->circular(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('title')->label('Kulüp')->searchable(),
                 Tables\Columns\TextColumn::make('place')->label('Adres')->limit(40)->toggleable(),

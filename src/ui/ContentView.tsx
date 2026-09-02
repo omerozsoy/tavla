@@ -371,12 +371,25 @@ export default function ContentView({
                 </div>
                 {list.map((c) => (
                   <div key={c.id} className="club-row">
-                    <span className="club-name">{c.title}</span>
-                    {c.place && <span className="club-addr">{c.place}</span>}
-                    {c.contact && (
-                      <span className="club-contact">
-                        <Icon name="phone" size={12} /> {c.contact}
-                      </span>
+                    <div className="club-row-head">
+                      {c.image ? (
+                        <img className="club-logo" src={mediaSrc(c.image)} alt="" loading="lazy" />
+                      ) : (
+                        <div className="club-logo club-logo-ph">
+                          {c.title.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <span className="club-name">{c.title}</span>
+                    </div>
+                    {(c.place || c.contact) && (
+                      <div className="club-row-meta">
+                        {c.place && <span className="club-addr">{c.place}</span>}
+                        {c.contact && (
+                          <span className="club-contact">
+                            <Icon name="phone" size={12} /> {c.contact}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
