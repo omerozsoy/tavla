@@ -727,9 +727,11 @@ function EventRow({
               <Icon name="pin" size={12} /> {ev.province}
             </span>
           )}
-          {(ev.place || hotelPlace) && (
+          {/* Adres: otel seciliyse OTELIN adresi onceliklidir; yoksa eski 'place' metni.
+              (place alani formdan kaldirildi; eski kayitlarda kalan deger oteli EZMESIN.) */}
+          {(hotelPlace || ev.place) && (
             <span>
-              <Icon name="pin" size={12} /> {ev.place || hotelPlace}
+              <Icon name="pin" size={12} /> {hotelPlace || ev.place}
             </span>
           )}
           {/* Tek alan iletisim (eski kayitlar) */}

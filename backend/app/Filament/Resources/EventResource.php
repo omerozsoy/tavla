@@ -112,11 +112,6 @@ class EventResource extends Resource
                     ->orderBy('title')->pluck('title', 'title')->all())
                 ->searchable()
                 ->helperText('Oteller sayfasındaki listeden seçilir. Resimler otel kaydına yüklenir. Boş bırakılabilir.'),
-            // Yer / adres: takvimde otel adresinin YERINE bu metin gosterilir (doluysa).
-            // Bosaltirsan secili otelin kendi adresi gosterilir.
-            Forms\Components\TextInput::make('place')->label('Yer / adres')
-                ->helperText('Takvimde gösterilecek adres. Boş bırakırsan seçili otelin adresi gösterilir.')
-                ->columnSpanFull(),
             // Cok kisili iletisim: her satir kisi adi + cep telefonu
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([
@@ -145,7 +140,25 @@ class EventResource extends Resource
                 Tables\Columns\TextColumn::make('place')->label('Yer')->toggleable(),
                 Tables\Columns\TextColumn::make('country')->label('Ülke')->toggleable(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->toggleable(),
+                // Otel: secili ise yesil rozet (otel adi), degilse kirmizi "Otel yok".
+                Tables\Columns\TextColumn::make('hotel')->label('Otel')->badge()
+                    ->getStateUsing(fn ($record) => filled($record->hotel) ? $record->hotel : 'Otel yok')
+                    ->color(fn ($state) => $state === 'Otel yok' ? 'danger' : 'success')
+                    ->searchable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
+            ])
+            ->filters([
+                // Otel secili olan / olmayan etkinlikleri ayikla.
+                Tables\Filters\TernaryFilter::make('hotel')
+                    ->label('Otel durumu')
+                    ->placeholder('Hepsi')
+                    ->trueLabel('Otel seçili')
+                    ->falseLabel('Otel seçili değil')
+                    ->queries(
+                        true: fn ($query) => $query->whereNotNull('hotel')->where('hotel', '!=', ''),
+                        false: fn ($query) => $query->where(fn ($q) => $q->whereNull('hotel')->orWhere('hotel', '')),
+                        blank: fn ($query) => $query,
+                    ),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Düzenle'),
