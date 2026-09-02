@@ -3,7 +3,6 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
-import { buyCoins } from '../api'
 
 // Sepet ogesi: coin paketi id + adet. (Sadece coin paketleri sepete girer.)
 export interface CartItem {
@@ -20,11 +19,13 @@ export default function Cart({
   setItems,
   onClose,
   onContinue,
+  onCheckout,
 }: {
   items: CartItem[]
   setItems: (updater: (prev: CartItem[]) => CartItem[]) => void
   onClose: () => void
   onContinue: () => void // "Alışverişe devam" -> Mağaza (coin sekmesi)
+  onCheckout: (items: CartItem[]) => Promise<void> // "Ödemeye Geç" -> uygulama-ici odeme sayfasi
 }) {
   useEscape(onClose)
   const [busy, setBusy] = useState(false)
@@ -48,8 +49,7 @@ export default function Cart({
     setErr('')
     setBusy(true)
     try {
-      const r = await buyCoins(items)
-      window.location.href = r.url // Garanti kart sayfasina yonlendir
+      await onCheckout(items) // App: buyCoins -> uygulama-ici odeme sayfasini acar
     } catch (e) {
       setErr((e as { message?: string })?.message || 'Ödeme başlatılamadı.')
       setBusy(false)

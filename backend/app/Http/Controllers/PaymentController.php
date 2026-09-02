@@ -82,8 +82,16 @@ class PaymentController extends Controller
             'status'     => 'pending',
         ]);
 
+        // url: eski akis (ayri kart sayfasi). submitUrl: uygulama-ici kart formu bu imzali
+        // uca POST eder (SPA'da kredi karti sayfasi) -> Garanti 3D. amount kurus, coins jeton.
         $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        return response()->json(['url' => $url]);
+        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
+        return response()->json([
+            'url'       => $url,
+            'submitUrl' => $submitUrl,
+            'amount'    => $totalKurus,
+            'coins'     => $totalCoins,
+        ]);
     }
 
     // Kart giris sayfasi (imzali). Kart verisi sunucuda saklanmaz; dogrudan bankaya gider.

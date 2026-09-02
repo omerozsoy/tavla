@@ -397,8 +397,12 @@ export async function subscribe(
 ): Promise<{ url: string }> {
   return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period }) })
 }
-// Sepetteki coin paketlerini satin al -> Garanti kart sayfasi URL'i doner (yonlendirilir).
-export async function buyCoins(items: { id: string; qty: number }[]): Promise<{ url: string }> {
+// Sepetteki coin paketlerini satin al -> odeme kaydi olusur.
+// submitUrl: uygulama-ici kredi karti formu bu imzali uca POST eder (Garanti 3D).
+// url: eski ayri kart sayfasi (yedek). amount: kurus, coins: toplam jeton.
+export async function buyCoins(
+  items: { id: string; qty: number }[],
+): Promise<{ url: string; submitUrl: string; amount: number; coins: number }> {
   return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items }) })
 }
 
