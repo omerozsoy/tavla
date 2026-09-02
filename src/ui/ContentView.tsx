@@ -42,6 +42,28 @@ const monthKey = (s?: string | null) => {
   return d.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' })
 }
 
+// Saat metni (girilmemis 00:00 ise bos). Etkinlik rozetinin yaninda gosterilir.
+function timeStr(s?: string | null): string {
+  if (!s) return ''
+  const d = new Date(s)
+  if (d.getHours() === 0 && d.getMinutes() === 0) return ''
+  return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+}
+
+// Takvim rozeti: bordo kare, buyuk GUN + altinda AY (Turkce buyuk harf). Cok gunlu
+// turnuvada baslangic ve bitis icin iki rozet yan yana kullanilir.
+function DateBadge({ iso }: { iso?: string | null }) {
+  if (!iso) return null
+  const d = new Date(iso)
+  const month = d.toLocaleDateString('tr-TR', { month: 'long' }).toLocaleUpperCase('tr-TR')
+  return (
+    <div className="event-datebadge">
+      <span className="edb-day">{d.getDate()}</span>
+      <span className="edb-month">{month}</span>
+    </div>
+  )
+}
+
 // Baslik -> URL slug (Turkce karakter donusumlu). Detay linkleri + eslestirme icin.
 const TR_MAP: Record<string, string> = {
   ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', İ: 'i', Ç: 'c', Ğ: 'g', Ö: 'o', Ş: 's', Ü: 'u',
@@ -752,11 +774,19 @@ function EventRow({
       )}
       {/* Orta: turnuva bilgileri (gorsel ve harita sag sutuna tasindi) */}
       <div className="event-main">
-        <div className="event-date">
-          <Icon name="calendar" size={14} /> {fmtDate(ev.event_at ?? null, true)}
-          {/* Bitis tarihi: baslangictan FARKLI gunse hemen arkasina ekle (cok gunlu turnuva) */}
+        {/* Tarih rozet(ler)i: bordo kare, buyuk gun + ay. Cok gunluyse baslangic – bitis. */}
+        <div className="event-datebadges">
+          <DateBadge iso={ev.event_at} />
           {ev.event_end && fmtDate(ev.event_end) !== fmtDate(ev.event_at ?? null) && (
-            <> – {fmtDate(ev.event_end)}</>
+            <>
+              <span className="event-date-dash">–</span>
+              <DateBadge iso={ev.event_end} />
+            </>
+          )}
+          {timeStr(ev.event_at) && (
+            <span className="event-time">
+              <Icon name="calendar" size={13} /> {timeStr(ev.event_at)}
+            </span>
           )}
         </div>
         <div className="event-title">{ev.title}</div>

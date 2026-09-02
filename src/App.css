@@ -3007,6 +3007,55 @@ button[aria-disabled='true'],
 .event-row.past .event-date {
   color: var(--muted);
 }
+/* Tarih rozeti (bordo kare: buyuk gun + ay). Cok gunlu turnuvada iki rozet yan yana. */
+.event-datebadges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.event-datebadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  padding: 5px 4px;
+  background: #6e0000;
+  color: #fff;
+  border-radius: 10px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.edb-day {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.edb-month {
+  margin-top: 4px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.event-date-dash {
+  color: var(--muted);
+  font-size: 1.3rem;
+}
+.event-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.event-time svg {
+  color: var(--accent);
+}
+.event-row.past .event-datebadge {
+  background: #7a4a4a;
+}
 .event-title {
   font-size: 1.32rem;
   font-weight: 400;
