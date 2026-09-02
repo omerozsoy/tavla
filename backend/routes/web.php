@@ -54,7 +54,10 @@ Route::prefix('panel')->group(function () {
 Route::get('/pay/card/{payment}', [\App\Http\Controllers\PaymentController::class, 'card'])
     ->name('pay.card')->middleware('signed');
 Route::post('/pay/submit/{payment}', [\App\Http\Controllers\PaymentController::class, 'submit'])
-    ->name('pay.submit')->middleware('signed'); // imzali: baskasinin bekleyen odemesine POST engellenir
+    ->name('pay.submit')->middleware('signed') // imzali: baskasinin bekleyen odemesine POST engellenir
+    // CSRF muaf: uygulama-ici (SPA) kart formu da bu uca POST edebilsin. Imza (30 dk, odemeye
+    // ozel) zaten sahtecilik korumasi saglar; blade formundaki @csrf zararsizca yok sayilir.
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class]);
 Route::post('/pay/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])
     ->name('pay.callback')
     ->middleware('throttle:30,1') // forged callback flood'una karsi

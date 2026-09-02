@@ -108,6 +108,7 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import Cart, { type CartItem } from './ui/Cart'
+import Checkout from './ui/Checkout'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
@@ -145,6 +146,7 @@ import {
   setAutoRenew as apiSetAutoRenew,
   toProfile,
   getMenuConfig,
+  buyCoins,
   type MenuOverride,
   type ServerUser,
 } from './api'
@@ -481,6 +483,14 @@ export default function App() {
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
+  // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [checkoutData, setCheckoutData] = useState<{
+    submitUrl: string
+    amount: number
+    coins: number
+    items: CartItem[]
+  } | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
@@ -514,6 +524,8 @@ export default function App() {
       ? tournDetailId != null
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'online-turnuvalar'
+      : checkoutOpen
+        ? 'odeme'
       : cartOpen
         ? 'sepet'
       : shopOpen
@@ -629,6 +641,10 @@ export default function App() {
           setShopOpen(true)
           break
         case 'sepet':
+          setCartOpen(true)
+          break
+        case 'odeme':
+          // Odeme adimi gecici (imzali submitUrl bellekte); dogrudan/yenileme ile gelince sepete don.
           setCartOpen(true)
           break
         case 'cerceveler':
@@ -3851,6 +3867,7 @@ export default function App() {
     setTournDetailSlug(null)
     setShopOpen(false)
     setCartOpen(false)
+    setCheckoutOpen(false)
     setFrameGalleryOpen(false)
     setStatsOpen(false)
     setFriendsOpen(false)
@@ -4086,6 +4103,7 @@ export default function App() {
     tournOpen ||
     shopOpen ||
     cartOpen ||
+    checkoutOpen ||
     frameGalleryOpen ||
     statsOpen ||
     friendsOpen ||
@@ -4261,6 +4279,25 @@ export default function App() {
             setCartOpen(false)
             setShopTab('coins')
             setShopOpen(true)
+          }}
+          onCheckout={async (its) => {
+            // Odeme kaydi olustur (fiyat sunucuda), imzali submitUrl al -> uygulama-ici odeme sayfasi
+            const r = await buyCoins(its)
+            setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its })
+            setCartOpen(false)
+            setCheckoutOpen(true)
+          }}
+        />
+      )}
+      {checkoutOpen && user && checkoutData && (
+        <Checkout
+          submitUrl={checkoutData.submitUrl}
+          amount={checkoutData.amount}
+          coins={checkoutData.coins}
+          items={checkoutData.items}
+          onBack={() => {
+            setCheckoutOpen(false)
+            setCartOpen(true)
           }}
         />
       )}
