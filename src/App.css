@@ -8253,8 +8253,9 @@ button.acct-row:hover:not(:disabled) {
     border-color 180ms var(--ease-out),
     background 180ms var(--ease-out);
 }
+/* Etkinlik satiri gibi: tiklayinca KUCULME (scale) yok. */
 .tourn-row:active {
-  scale: 0.99;
+  scale: 1;
 }
 @media (hover: hover) and (pointer: fine) {
   /* Etkinlik satiri gibi: hover'da kirmizi border yok (eski kart stili notrlendi). */
@@ -13054,6 +13055,7 @@ button.acct-row:hover:not(:disabled) {
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  animation: none; /* Etkinlik satiri gibi: giris (panel-row-in) animasyonu YOK */
 }
 .tourn-row.past {
   border-left-color: var(--muted);
@@ -13225,9 +13227,9 @@ button.acct-row:hover:not(:disabled) {
 }
 .tp-row {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 28px minmax(0, auto) auto;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   padding: 6px 10px;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 4%, transparent);
@@ -13253,7 +13255,7 @@ button.acct-row:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  justify-self: end;
+  justify-self: start;
   font-weight: 400;
   color: var(--tv-gold);
   font-variant-numeric: tabular-nums;
