@@ -55,23 +55,22 @@ function DateBadge({ d }: { d: Date }) {
   )
 }
 
-// event_at (+ event_end) -> gosterilecek gun listesi. Tek gun: [baslangic]; ayni ay
-// araligi: her gun ayri; farkli ay: [baslangic, bitis].
+// event_at (+ event_end) -> gosterilecek gun listesi. Baslangictan bitise GUN GUN
+// ilerler (ay/yil sinirini gecse bile aradaki tum gunler dahil); her gun ayri rozet.
 function eventDates(startIso?: string | null, endIso?: string | null): Date[] {
   if (!startIso) return []
   const s = new Date(startIso)
   const e = endIso ? new Date(endIso) : null
-  const sameDay = !e || (s.getFullYear() === e.getFullYear() && s.getMonth() === e.getMonth() && s.getDate() === e.getDate())
-  if (sameDay) return [s]
-  const sameMonth = s.getFullYear() === e!.getFullYear() && s.getMonth() === e!.getMonth()
-  if (sameMonth) {
-    const out: Date[] = []
-    for (let day = s.getDate(); day <= e!.getDate() && out.length < 20; day++) {
-      out.push(new Date(s.getFullYear(), s.getMonth(), day))
-    }
-    return out
+  if (!e) return [s]
+  const cur = new Date(s.getFullYear(), s.getMonth(), s.getDate())
+  const end = new Date(e.getFullYear(), e.getMonth(), e.getDate())
+  if (end < cur) return [s] // hatali/ters aralik
+  const out: Date[] = []
+  while (cur <= end && out.length < 40) {
+    out.push(new Date(cur))
+    cur.setDate(cur.getDate() + 1)
   }
-  return [s, e!]
+  return out
 }
 
 // Baslik -> URL slug (Turkce karakter donusumlu). Detay linkleri + eslestirme icin.
