@@ -6400,6 +6400,24 @@ button.stat-chip:hover {
   min-width: 0; /* dar ekranda ad kisalabilsin (logo/hamburger ile bindirmesin) */
   height: 44px;
 }
+/* Desktop (>=901px): eski satir ici bar goster, dropdown gizli.
+   Mobil (<=900px): satir ici bar gizli, dropdown goster. Bar breakpoint'i 900px. */
+.acct-desktop {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.acct-mobile {
+  display: none;
+}
+@media (max-width: 900px) {
+  .acct-desktop {
+    display: none;
+  }
+  .acct-mobile {
+    display: inline-flex;
+  }
+}
 .acct-trigger {
   display: inline-flex;
   align-items: center;

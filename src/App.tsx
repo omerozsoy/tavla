@@ -3509,8 +3509,98 @@ export default function App() {
         </span>
       </button>
       {user ? (
-        /* Sag ust: SADECE avatar + ad. Tiklayinca dropdown (profil + tum kontroller). */
-        <div className="account-menu" ref={acctMenuRef}>
+        <>
+        {/* DESKTOP (>=901px): eski satir ici bar (avatar+ad, coin, puan, odul, bildirim,
+            Magaza, tema, dil). Mobilde gizli -> orada dropdown kullanilir. */}
+        <div className="acct-desktop">
+          <div className="account-id">
+            <button
+              type="button"
+              className="account-name"
+              onClick={() =>
+                goPage(() => {
+                  setProfileEditMode(false)
+                  setEditProfile(true)
+                })
+              }
+              title={t('menu.editProfile')}
+            >
+              <AvatarFrame
+                src={profile.avatar}
+                frame={user?.avatar_frame}
+                size={28}
+                name={profile.nickname}
+                className="account-avf"
+              />
+              {profile.nickname}
+            </button>
+            <button
+              type="button"
+              className="stat-chip stat-chip-coin"
+              onClick={() => goPage(() => setShopOpen(true))}
+              title={t('shop.title')}
+            >
+              <span className="stat-chip-ic"><Icon name="coin" size={18} /></span>
+              <span className="stat-chip-body">
+                <span className="stat-chip-val">{(user.coins ?? 0).toLocaleString('tr-TR')}</span>
+                <span className="stat-chip-bar" aria-hidden="true">
+                  <i style={{ width: `${((user.coins ?? 0) % 1000) / 10}%` }} />
+                </span>
+              </span>
+            </button>
+            {user.rating != null && (
+              <span className="stat-chip stat-chip-rating">
+                <span className="stat-chip-ic"><Icon name="star" size={18} /></span>
+                <span className="stat-chip-body">
+                  <span className="stat-chip-val">{user.rating.toLocaleString('tr-TR')}</span>
+                  <span className="stat-chip-bar" aria-hidden="true">
+                    <i style={{ width: `${user.rating % 100}%` }} />
+                  </span>
+                </span>
+              </span>
+            )}
+          </div>
+          {rewardReady ? (
+            <Button
+              variant="outline"
+              className="btn-reward"
+              onClick={handleCoinClick}
+              title={t('reward.claim')}
+            >
+              <Icon name="gift" size={15} /> 500
+            </Button>
+          ) : (
+            <span className="reward-count" title={t('reward.in')}>
+              <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
+            </span>
+          )}
+          <NotificationBell
+            items={notifications}
+            unread={unreadNotif}
+            onOpen={() => {
+              setUnreadNotif(0)
+              setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+              markNotificationsRead().catch(() => {})
+            }}
+          />
+          <Button variant="outline" className="account-shop-btn" onClick={() => goPage(() => setShopOpen(true))}>
+            <Icon name="shop" size={15} /> {t('shop.title')}
+          </Button>
+          <span className="account-sep" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="[&_svg]:size-[24px]!"
+            title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+            aria-label={t('menu.theme')}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
+          </Button>
+          <LangMenu />
+        </div>
+        {/* MOBIL (<=900px): SADECE avatar + ad. Tiklayinca dropdown. Desktopta gizli. */}
+        <div className="account-menu acct-mobile" ref={acctMenuRef}>
           <button
             type="button"
             className={`acct-trigger ${acctMenuOpen ? 'open' : ''}`}
@@ -3665,6 +3755,7 @@ export default function App() {
             </div>
           )}
         </div>
+        </>
       ) : (
         /* Misafir: Giris + tema + dil (dropdown yok) */
         <>
