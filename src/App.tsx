@@ -4085,6 +4085,7 @@ export default function App() {
     infoOpen ||
     tournOpen ||
     shopOpen ||
+    cartOpen ||
     frameGalleryOpen ||
     statsOpen ||
     friendsOpen ||
