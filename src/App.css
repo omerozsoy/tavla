@@ -3092,6 +3092,7 @@ button[aria-disabled='true'],
 }
 .event-hotel {
   color: var(--text);
+  font-weight: 400;
 }
 .event-hotel svg,
 .event-address svg {
