@@ -395,6 +395,43 @@ export default function ContentView({
                             <Icon name="phone" size={12} /> {c.contact}
                           </span>
                         )}
+                        {(c.links?.website || c.links?.instagram || c.links?.youtube) && (
+                          <div className="club-links">
+                            {c.links?.website && (
+                              <a
+                                className="club-link"
+                                href={c.links.website}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                aria-label="Web sitesi"
+                              >
+                                <Icon name="globe" size={18} />
+                              </a>
+                            )}
+                            {c.links?.instagram && (
+                              <a
+                                className="club-link ig"
+                                href={c.links.instagram}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                aria-label="Instagram"
+                              >
+                                <Icon name="instagram" size={18} />
+                              </a>
+                            )}
+                            {c.links?.youtube && (
+                              <a
+                                className="club-link yt"
+                                href={c.links.youtube}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                aria-label="YouTube"
+                              >
+                                <Icon name="youtube" size={18} />
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                     {c.place && (

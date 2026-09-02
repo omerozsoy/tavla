@@ -611,6 +611,7 @@ export interface Content {
   province?: string | null
   contact?: string | null
   contacts?: { name: string; phone: string }[] | null
+  links?: { instagram?: string | null; youtube?: string | null; website?: string | null } | null
   image?: string | null
   gallery?: string[] | null
   video_id?: string | null
