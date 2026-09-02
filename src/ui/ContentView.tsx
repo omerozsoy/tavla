@@ -821,15 +821,14 @@ function EventRow({
             </span>
           )}
         </div>
-        {/* Otel kendi satirinda */}
-        {ev.hotel && (
+        {/* Otel adi + adres SAG kolonda (otel kartinda) gosterilir. Sol tarafta tekrar
+            ETME. Yalnizca sag kolon hic yoksa (gorsel + harita yoksa) fallback goster. */}
+        {!(img || mapHref) && ev.hotel && (
           <div className="event-hotel">
             <Icon name="building-office" size={24} /> {ev.hotel}
           </div>
         )}
-        {/* Adres kendi satirinda: otel seciliyse OTELIN adresi onceliklidir; yoksa eski 'place'.
-            (place alani formdan kaldirildi; eski kayitlarda kalan deger oteli EZMESIN.) */}
-        {(hotelPlace || ev.place) && (
+        {!(img || mapHref) && (hotelPlace || ev.place) && (
           <div className="event-address">
             <Icon name="pin" size={24} /> {hotelPlace || ev.place}
           </div>
