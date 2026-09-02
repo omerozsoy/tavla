@@ -5,6 +5,7 @@ import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
 import TurkeyMap, { normProvince } from './TurkeyMap'
+import { CountryFlag } from './Flag'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -698,6 +699,14 @@ function EventRow({
   const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
     <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img || mapEmbed ? 'has-map' : ''}`}>
+      {/* Sag ust kose kurdelesi (SALE tarzi): ulkeye gore bayrak. Turkiye=TR, KKTC=KKTC. */}
+      {ev.country && (
+        <span className="event-ribbon" aria-hidden="true">
+          <span className="event-ribbon-band">
+            <CountryFlag code={ev.country} size={15} className="event-ribbon-flag" />
+          </span>
+        </span>
+      )}
       {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
           bilgiler tam genislik alir. */}
       {logo && (
