@@ -3696,7 +3696,7 @@ export default function App() {
         onClick={() => setMenuOpen((v) => !v)}
         aria-label={t('common.menu')}
       >
-        <Icon name="menu" size={24} />
+        <Icon name="menu" size={30} />
       </button>
       {menuOpen && <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />}
     </>

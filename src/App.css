@@ -3045,6 +3045,36 @@ button[aria-disabled='true'],
 .club-person svg {
   color: var(--accent);
 }
+.club-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+}
+.club-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+.club-link:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.club-link.ig:hover {
+  background: color-mix(in srgb, #e1306c 18%, transparent);
+  color: #e1306c;
+}
+.club-link.yt:hover {
+  background: color-mix(in srgb, #ff0000 16%, transparent);
+  color: #ff0000;
+}
 .club-logo {
   width: 120px;
   height: 120px;
@@ -5720,7 +5750,7 @@ html.fs-active .account-bar {
      top:0 -> ikon flex ile bantta tam ortalanir (bant boyu degisse de bozulmaz). */
   top: env(safe-area-inset-top);
   right: env(safe-area-inset-right);
-  width: 44px;
+  width: 52px;
   height: calc(56px + env(safe-area-inset-top));
   align-items: center;
   justify-content: center;
@@ -5952,8 +5982,8 @@ html.fs-active .account-bar {
   .account-bar {
     min-height: 48px;
     gap: 6px;
-    /* Sag: sabit hamburger (44px) icin pay birak -> band ogeleri altina girmesin. */
-    padding: 6px 52px 6px 12px;
+    /* Sag: sabit hamburger (52px) icin pay birak -> band ogeleri altina girmesin. */
+    padding: 6px 60px 6px 12px;
   }
   /* Hamburger artik SAGDA -> logo en solda gorunsun (bosluk yok). */
   .ab-brand {
@@ -6831,8 +6861,8 @@ button.acct-row:hover:not(:disabled) {
   .account-bar {
     min-height: 48px;
     gap: 4px;
-    /* Sag: sabit hamburger (44px @ right:8px) icin pay birak -> hesap tetigi altina girmesin. */
-    padding: max(4px, env(safe-area-inset-top)) calc(56px + env(safe-area-inset-right)) 4px 10px;
+    /* Sag: sabit hamburger (52px) icin pay birak -> hesap tetigi altina girmesin. */
+    padding: max(4px, env(safe-area-inset-top)) calc(64px + env(safe-area-inset-right)) 4px 10px;
     flex-wrap: nowrap;
   }
   /* Dar telefon: ad kisalsin (logo ile bindirmesin) */

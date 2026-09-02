@@ -8,7 +8,7 @@ class Content extends Model
 {
     protected $fillable = [
         'type', 'title', 'body', 'organizer', 'place', 'province',
-        'contact', 'contacts', 'image', 'gallery', 'video_id', 'event_at', 'event_end', 'sort', 'published',
+        'contact', 'contacts', 'links', 'image', 'gallery', 'video_id', 'event_at', 'event_end', 'sort', 'published',
     ];
 
     protected $casts = [
@@ -17,5 +17,6 @@ class Content extends Model
         'published' => 'boolean',
         'gallery' => 'array',
         'contacts' => 'array',
+        'links' => 'array',
     ];
 }

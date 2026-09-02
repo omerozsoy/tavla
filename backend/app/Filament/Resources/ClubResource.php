@@ -56,7 +56,13 @@ class ClubResource extends Resource
                         ->tel()->mask('999 9999999')->placeholder('532 1111111')->required(),
                 ])
                 ->columns(2)->addActionLabel('Kişi ekle')->reorderable(false)->columnSpanFull(),
-            Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
+            Forms\Components\TextInput::make('links.website')->label('Web sayfası')
+                ->url()->prefixIcon('heroicon-o-globe-alt')->placeholder('https://kulup.com')->maxLength(300),
+            Forms\Components\TextInput::make('links.instagram')->label('Instagram')
+                ->prefixIcon('heroicon-o-camera')->placeholder('https://instagram.com/kullanici')->maxLength(300),
+            Forms\Components\TextInput::make('links.youtube')->label('YouTube')
+                ->prefixIcon('heroicon-o-play')->placeholder('https://youtube.com/@kanal')->maxLength(300),
+            Forms\Components\Toggle::make('published')->label('Yayında')->default(true)->columnSpanFull(),
         ]);
     }
 
