@@ -112,6 +112,7 @@ import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
+import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel } from './ui/HomePanels'
@@ -131,7 +132,7 @@ import {
   type SavedGame,
   type MoveLogEntry,
 } from './storage'
-import { useT } from './i18n'
+import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
 import { Button } from '@/components/ui/button'
 import {
@@ -309,7 +310,7 @@ const MOVE_DELAY = CLOCK_PRESETS.normal.move // varsayilan/fallback
 const OVER_TOTAL = CLOCK_PRESETS.normal.over
 
 export default function App() {
-  const { t } = useT()
+  const { t, lang, setLang } = useT()
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)
@@ -2311,6 +2312,33 @@ export default function App() {
 
   const [menuOpen, setMenuOpen] = useState(false) // mobil hamburger menu acik mi
   const [gameMenuOpen, setGameMenuOpen] = useState(false) // oyun-ici menu (Galaxy tarzi)
+  // Sag ust hesap dropdown'u: ada tiklayinca acilir; profil + tum bar kontrolleri icinde.
+  // Panel position:fixed (ust bar overflow'una takilmasin) -> koordinat tetikten hesaplanir.
+  const [acctMenuOpen, setAcctMenuOpen] = useState(false)
+  const [acctMenuPos, setAcctMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
+  const acctMenuRef = useRef<HTMLDivElement>(null)
+  function toggleAcctMenu() {
+    setAcctMenuOpen((o) => {
+      if (!o && acctMenuRef.current) {
+        const r = acctMenuRef.current.getBoundingClientRect()
+        setAcctMenuPos({ top: Math.round(r.bottom + 8), right: Math.round(Math.max(8, window.innerWidth - r.right)) })
+      }
+      return !o
+    })
+  }
+  useEffect(() => {
+    if (!acctMenuOpen) return
+    const onDoc = (e: MouseEvent) => {
+      if (acctMenuRef.current && !acctMenuRef.current.contains(e.target as Node)) setAcctMenuOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setAcctMenuOpen(false)
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [acctMenuOpen])
   const [autoRoll, setAutoRoll] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.autoroll') === '1'
@@ -3480,107 +3508,182 @@ export default function App() {
           <TavlaTvMark size={40} />
         </span>
       </button>
-      {/* Birlesik hesap kimlik pili: avatar+isim + coin + rating tek buyuk pill icinde */}
-      <div className="account-id">
-      <button
-        type="button"
-        className="account-name"
-        onClick={() =>
-          goPage(() => {
-            setProfileEditMode(false)
-            setEditProfile(true)
-          })
-        }
-        title={t('menu.editProfile')}
-      >
-        <AvatarFrame
-          src={profile.avatar}
-          frame={user?.avatar_frame}
-          size={28}
-          name={profile.nickname}
-          className="account-avf"
-        />
-        {profile.nickname}
-      </button>
-      {user && (
-        <button
-          type="button"
-          className="stat-chip stat-chip-coin"
-          onClick={() => goPage(() => setShopOpen(true))}
-          title={t('shop.title')}
-        >
-          <span className="stat-chip-ic"><Icon name="coin" size={18} /></span>
-          <span className="stat-chip-body">
-            <span className="stat-chip-val">{(user.coins ?? 0).toLocaleString('tr-TR')}</span>
-            <span className="stat-chip-bar" aria-hidden="true">
-              <i style={{ width: `${((user.coins ?? 0) % 1000) / 10}%` }} />
-            </span>
-          </span>
-        </button>
-      )}
-      {user?.rating != null && (
-        <span className="stat-chip stat-chip-rating">
-          <span className="stat-chip-ic"><Icon name="star" size={18} /></span>
-          <span className="stat-chip-body">
-            <span className="stat-chip-val">{user.rating.toLocaleString('tr-TR')}</span>
-            <span className="stat-chip-bar" aria-hidden="true">
-              <i style={{ width: `${user.rating % 100}%` }} />
-            </span>
-          </span>
-        </span>
-      )}
-      </div>
-      {/* Ödül bildirimin (bell) SOLUNDA */}
-      {user &&
-        (rewardReady ? (
-          <Button
-            variant="outline"
-            className="btn-reward"
-            onClick={handleCoinClick}
-            title={t('reward.claim')}
+      {user ? (
+        /* Sag ust: SADECE avatar + ad. Tiklayinca dropdown (profil + tum kontroller). */
+        <div className="account-menu" ref={acctMenuRef}>
+          <button
+            type="button"
+            className={`acct-trigger ${acctMenuOpen ? 'open' : ''}`}
+            onClick={toggleAcctMenu}
+            aria-expanded={acctMenuOpen}
+            aria-haspopup="menu"
+            title={profile.nickname}
           >
-            <Icon name="gift" size={15} /> 500
+            <AvatarFrame
+              src={profile.avatar}
+              frame={user?.avatar_frame}
+              size={28}
+              name={profile.nickname}
+              className="account-avf"
+            />
+            <span className="acct-trigger-name">{profile.nickname}</span>
+            {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
+            <Icon name="chevron" size={16} className="acct-chev" />
+          </button>
+          {acctMenuOpen && (
+            <div className="acct-pop" role="menu" style={{ position: 'fixed', top: acctMenuPos.top, right: acctMenuPos.right }}>
+              {/* Profilini Gor */}
+              <button
+                type="button"
+                className="acct-row"
+                role="menuitem"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  goPage(() => {
+                    setProfileEditMode(false)
+                    setEditProfile(true)
+                  })
+                }}
+              >
+                <Icon name="user" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('menu.viewProfile')}</span>
+              </button>
+
+              <div className="acct-div" />
+
+              {/* Coin -> Magaza */}
+              <button
+                type="button"
+                className="acct-row"
+                role="menuitem"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  goPage(() => setShopOpen(true))
+                }}
+              >
+                <Icon name="coin" size={18} className="acct-row-ic acct-ic-coin" />
+                <span className="acct-row-l">{t('home.dash.coins')}</span>
+                <b className="acct-row-v">{(user.coins ?? 0).toLocaleString('tr-TR')}</b>
+              </button>
+
+              {/* Rating (bilgi) */}
+              {user.rating != null && (
+                <div className="acct-row acct-row-static">
+                  <Icon name="star" size={18} className="acct-row-ic acct-ic-rating" />
+                  <span className="acct-row-l">{t('lb.rating')}</span>
+                  <b className="acct-row-v">{user.rating.toLocaleString('tr-TR')}</b>
+                </div>
+              )}
+
+              {/* Gunluk odul */}
+              <button
+                type="button"
+                className={`acct-row ${rewardReady ? 'acct-row-hot' : ''}`}
+                role="menuitem"
+                disabled={!rewardReady}
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  handleCoinClick()
+                }}
+              >
+                <Icon name="gift" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('home.dash.daily')}</span>
+                <span className="acct-row-v">
+                  {rewardReady ? t('home.dash.claim') : fmtCountdown(rewardSecs)}
+                </span>
+              </button>
+
+              {/* Bildirimler (mevcut bell bileseni gomulu) */}
+              <div className="acct-row acct-row-embed">
+                <Icon name="bell" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('notif.title')}</span>
+                <span className="acct-row-embed-c">
+                  <NotificationBell
+                    items={notifications}
+                    unread={unreadNotif}
+                    onOpen={() => {
+                      // Okundu = SADECE okundu isaretle (silme YOK). Rozet 0'a duser;
+                      // bildirimler kalir -> Profilim > Bildirimler sekmesinde silinebilir.
+                      setUnreadNotif(0)
+                      setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+                      markNotificationsRead().catch(() => {})
+                    }}
+                  />
+                </span>
+              </div>
+
+              {/* Magaza */}
+              <button
+                type="button"
+                className="acct-row"
+                role="menuitem"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  goPage(() => setShopOpen(true))
+                }}
+              >
+                <Icon name="shop" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('shop.title')}</span>
+              </button>
+
+              <div className="acct-div" />
+
+              {/* Tema */}
+              <button
+                type="button"
+                className="acct-row"
+                role="menuitem"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              >
+                <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('menu.theme')}</span>
+                <span className="acct-row-v">
+                  {theme === 'dark' ? t('theme.light') : t('theme.dark')}
+                </span>
+              </button>
+
+              {/* Dil (satir ici bayraklar) */}
+              <div className="acct-row acct-row-lang">
+                <Icon name="globe" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('menu.language')}</span>
+                <span className="acct-langs">
+                  {LANGS.map((l) => (
+                    <button
+                      key={l.code}
+                      type="button"
+                      className={`acct-lang ${l.code === lang ? 'on' : ''}`}
+                      onClick={() => setLang(l.code)}
+                      title={l.label}
+                      aria-label={l.label}
+                    >
+                      <Flag code={l.code} size={20} />
+                    </button>
+                  ))}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Misafir: Giris + tema + dil (dropdown yok) */
+        <>
+          <Button variant="default" onClick={() => setShowAuth(true)}>
+            {t('account.auth')}
           </Button>
-        ) : (
-          <span className="reward-count" title={t('reward.in')}>
-            <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
-          </span>
-        ))}
-      {user && (
-        <NotificationBell
-          items={notifications}
-          unread={unreadNotif}
-          onOpen={() => {
-            // Okundu = SADECE okundu isaretle (silme YOK). Rozet 0'a duser; bildirimler
-            // kalir -> kullanici Profilim > Bildirimler sekmesinde gorup silebilir.
-            setUnreadNotif(0)
-            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
-            markNotificationsRead().catch(() => {})
-          }}
-        />
+          <span className="account-sep" />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="[&_svg]:size-[24px]!"
+            title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
+            aria-label={t('menu.theme')}
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          >
+            {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
+          </Button>
+          <LangMenu />
+        </>
       )}
-      {user && (
-        <Button variant="outline" className="account-shop-btn" onClick={() => goPage(() => setShopOpen(true))}>
-          <Icon name="shop" size={15} /> {t('shop.title')}
-        </Button>
-      )}
-      {!user && (
-        <Button variant="default" onClick={() => setShowAuth(true)}>
-          {t('account.auth')}
-        </Button>
-      )}
-      <span className="account-sep" />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="[&_svg]:size-[24px]!"
-        title={theme === 'dark' ? t('theme.light') : t('theme.dark')}
-        aria-label={t('menu.theme')}
-        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      >
-        {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
-      </Button>
-      <LangMenu />
     </div>
   )
 
