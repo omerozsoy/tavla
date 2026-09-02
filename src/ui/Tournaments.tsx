@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
 import PlayerIdentity from './PlayerIdentity'
-import { TavlaTvMark } from './TavlaTvLogo'
+import { TavlaTvLogo } from './TavlaTvLogo'
 import {
   listTournaments,
   showTournament,
@@ -412,10 +412,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         className={`event-row tourn-row ${tr.status === 'finished' ? 'past' : ''} ${logo ? 'has-logo' : ''}`}
         onClick={() => onOpenDetail?.(tr.id, tournUrlSlug(tr))}
       >
-        {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi, icinde TavlaTV markasi. */}
+        {/* Sag ust kose flamasi: turnuva-takvimindeki bayrak gibi -> icinde TavlaTV logosu
+            (wordmark), bayrak gibi 90 derece dondurulup dik flamayi doldurur. */}
         <span className="event-ribbon tourn-ribbon" aria-hidden="true">
           <span className="event-ribbon-band tourn-ribbon-band">
-            <TavlaTvMark size={26} radius={0} background="transparent" />
+            <TavlaTvLogo size={13} tone="dark" className="tourn-ribbon-logo" />
           </span>
         </span>
         {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}
