@@ -54,6 +54,16 @@ export function slugify(s: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+// Logosu olmayan kulup icin bas harflerinden dummy logo metni (en fazla 3 harf).
+// Tek kelimeyse ilk 2 harf; cok kelimeyse her kelimenin bas harfi (Turkce buyuk harf).
+function clubInitials(name: string): string {
+  const words = (name || '').trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return '?'
+  const up = (s: string) => s.toLocaleUpperCase('tr-TR')
+  if (words.length === 1) return up(words[0].slice(0, 2))
+  return up(words.slice(0, 3).map((w) => w.charAt(0)).join(''))
+}
+
 export default function ContentView({
   type,
   onClose,
@@ -425,8 +435,8 @@ export default function ContentView({
                       {c.image ? (
                         <img className="club-logo" src={mediaSrc(c.image)} alt="" loading="lazy" />
                       ) : (
-                        <div className="club-logo club-logo-ph">
-                          {c.title.charAt(0).toUpperCase()}
+                        <div className="club-logo club-logo-ph" aria-label={c.title}>
+                          {clubInitials(c.title)}
                         </div>
                       )}
                       <div className="club-row-head-text">
@@ -761,39 +771,54 @@ function EventRow({
               )}
             </span>
           )}
-          {ev.hotel && (
-            <span>
-              <Icon name="building-office" size={12} /> {ev.hotel}
-            </span>
-          )}
           {ev.province && (
             <span>
               <Icon name="pin" size={12} /> {ev.province}
             </span>
           )}
-          {/* Adres: otel seciliyse OTELIN adresi onceliklidir; yoksa eski 'place' metni.
-              (place alani formdan kaldirildi; eski kayitlarda kalan deger oteli EZMESIN.) */}
-          {(hotelPlace || ev.place) && (
-            <span>
-              <Icon name="pin" size={12} /> {hotelPlace || ev.place}
-            </span>
-          )}
-          {/* Tek alan iletisim (eski kayitlar) */}
-          {ev.contact && !contacts.length && (
-            <span>
-              <Icon name="phone" size={12} /> {ev.contact}
-            </span>
-          )}
         </div>
-        {contacts.length > 0 && (
+        {/* Otel kendi satirinda */}
+        {ev.hotel && (
+          <div className="event-hotel">
+            <Icon name="building-office" size={13} /> {ev.hotel}
+          </div>
+        )}
+        {/* Adres kendi satirinda: otel seciliyse OTELIN adresi onceliklidir; yoksa eski 'place'.
+            (place alani formdan kaldirildi; eski kayitlarda kalan deger oteli EZMESIN.) */}
+        {(hotelPlace || ev.place) && (
+          <div className="event-address">
+            <Icon name="pin" size={13} /> {hotelPlace || ev.place}
+          </div>
+        )}
+        {/* En altta: iletisim kisi(leri) + cep telefonu -> WhatsApp baglantisi */}
+        {(contacts.length > 0 || ev.contact) && (
           <div className="event-contacts">
-            {contacts.map((c, i) => (
-              <a key={i} className="event-contact" href={c.phone ? `tel:${c.phone}` : undefined}>
-                <Icon name="phone" size={12} /> {c.name}
-                {c.name && c.phone ? ' · ' : ''}
-                {c.phone}
+            {contacts.map((c, i) => {
+              const wa = waLink(c.phone)
+              return (
+                <a
+                  key={i}
+                  className="event-contact"
+                  href={wa || (c.phone ? `tel:${c.phone}` : undefined)}
+                  target={wa ? '_blank' : undefined}
+                  rel={wa ? 'noreferrer' : undefined}
+                >
+                  <Icon name={wa ? 'whatsapp' : 'phone'} size={14} /> {c.name}
+                  {c.name && c.phone ? ' · ' : ''}
+                  {c.phone}
+                </a>
+              )
+            })}
+            {!contacts.length && ev.contact && (
+              <a
+                className="event-contact"
+                href={waLink(ev.contact) || undefined}
+                target={waLink(ev.contact) ? '_blank' : undefined}
+                rel={waLink(ev.contact) ? 'noreferrer' : undefined}
+              >
+                <Icon name={waLink(ev.contact) ? 'whatsapp' : 'phone'} size={14} /> {ev.contact}
               </a>
-            ))}
+            )}
           </div>
         )}
         {/* Aciklama SADECE kurum (organizer) secilmemis etkinliklerde gosterilir.
