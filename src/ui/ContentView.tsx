@@ -16,6 +16,7 @@ const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   quiz: { icon: 'book', titleKey: 'menu.quiz' }, // quiz QuizPlay ile oynatilir
   magazine: { icon: 'play', titleKey: 'menu.magazine' }, // Tavla Magazin (YouTube videolari)
   kurum: { icon: 'pin', titleKey: 'menu.clubs' }, // Kurumlar ContentView'de gosterilmez (turnuva duzenleyeni)
+  otel: { icon: 'building-office', titleKey: 'menu.calendar' }, // Oteller ContentView'de gosterilmez (etkinlik mekani)
 }
 
 const paras = (body?: string | null) =>
@@ -115,6 +116,26 @@ export default function ContentView({
         const map: Record<string, string> = {}
         for (const k of ks) if (k.title && k.image) map[k.title] = k.image
         setKurumLogos(map)
+      })
+      .catch(() => {})
+  }, [type])
+
+  // Takvim (etkinlik): otel adi -> otel bilgisi (gorsel + adres). hotel adi = otel basligi.
+  // Resimler otel kaydina yuklenir; etkinlik takviminde secili otelin gorseli gosterilir.
+  const [hotels, setHotels] = useState<Record<string, { image?: string; place?: string; province?: string }>>({})
+  useEffect(() => {
+    if (type !== 'event') return
+    listContents('otel')
+      .then((hs) => {
+        const map: Record<string, { image?: string; place?: string; province?: string }> = {}
+        for (const h of hs)
+          if (h.title)
+            map[h.title] = {
+              image: h.image ?? undefined,
+              place: h.place ?? undefined,
+              province: h.province ?? undefined,
+            }
+        setHotels(map)
       })
       .catch(() => {})
   }, [type])
@@ -345,7 +366,7 @@ export default function ContentView({
               <div key={g.month} className="event-month">
                 <div className="event-month-title">{g.month}</div>
                 {g.list.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming logo={kurumLogos[ev.organizer ?? '']} />
+                  <EventRow key={ev.id} ev={ev} upcoming logo={kurumLogos[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
                 ))}
               </div>
             ))}
@@ -353,7 +374,7 @@ export default function ContentView({
               <div className="event-past">
                 <div className="event-month-title past">{t('content.past')}</div>
                 {eventGroups.past.map((ev) => (
-                  <EventRow key={ev.id} ev={ev} upcoming={false} logo={kurumLogos[ev.organizer ?? '']} />
+                  <EventRow key={ev.id} ev={ev} upcoming={false} logo={kurumLogos[ev.organizer ?? '']} hotel={hotels[ev.hotel ?? '']} />
                 ))}
               </div>
             )}
@@ -646,8 +667,22 @@ const mediaSrc = (img?: string | null): string | undefined => {
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
 
-function EventRow({ ev, upcoming, logo }: { ev: Content; upcoming: boolean; logo?: string }) {
+function EventRow({
+  ev,
+  upcoming,
+  logo,
+  hotel,
+}: {
+  ev: Content
+  upcoming: boolean
+  logo?: string
+  hotel?: { image?: string; place?: string; province?: string }
+}) {
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
+  // Etkinlik gorseli: once kendi resmi, yoksa secili otelin resmi.
+  const img = ev.image || hotel?.image
+  // Otelin adresi (varsa) place bos ise gosterilebilir.
+  const hotelPlace = hotel?.place
   return (
     <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''}`}>
       {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
@@ -659,7 +694,7 @@ function EventRow({ ev, upcoming, logo }: { ev: Content; upcoming: boolean; logo
       )}
       {/* Sag: turnuva bilgileri */}
       <div className="event-main">
-        {ev.image && <img className="content-img" src={mediaSrc(ev.image)} alt="" />}
+        {img && <img className="content-img" src={mediaSrc(img)} alt="" />}
         <div className="event-date">
           <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
         </div>
@@ -670,14 +705,19 @@ function EventRow({ ev, upcoming, logo }: { ev: Content; upcoming: boolean; logo
               <Icon name="star" size={12} /> {ev.organizer}
             </span>
           )}
+          {ev.hotel && (
+            <span>
+              <Icon name="building-office" size={12} /> {ev.hotel}
+            </span>
+          )}
           {ev.province && (
             <span>
               <Icon name="pin" size={12} /> {ev.province}
             </span>
           )}
-          {ev.place && (
+          {(ev.place || hotelPlace) && (
             <span>
-              <Icon name="pin" size={12} /> {ev.place}
+              <Icon name="pin" size={12} /> {ev.place || hotelPlace}
             </span>
           )}
           {/* Tek alan iletisim (eski kayitlar) */}
