@@ -99,11 +99,18 @@
 .cal-cell.today .cal-daynum {
   font-weight: 800;
 }
-/* Turnuva var: gun rengi vurgulu + minnacik isim */
-.cal-cell.has-ev:not(.today) {
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
+/* Renk kodu: BIZIM turnuvalar (tourns) -> YESIL; dis ETKINLIKLER (Turnuva Takvimi) -> KIREMIT. */
+.cal-cell.cal-tourn:not(.today) {
+  background: color-mix(in srgb, #12a061 14%, transparent);
 }
-.cal-cell.has-ev:not(.today) .cal-daynum {
+.cal-cell.cal-tourn:not(.today) .cal-daynum {
+  color: #0f8a54;
+  font-weight: 800;
+}
+.cal-cell.cal-event:not(.today) {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.cal-cell.cal-event:not(.today) .cal-daynum {
   color: var(--accent);
   font-weight: 800;
 }
@@ -116,7 +123,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--accent);
+}
+.ev-tourn {
+  color: #0f8a54; /* bizim turnuva */
+}
+.ev-event {
+  color: var(--accent); /* dis etkinlik (kiremit) */
 }
 .cal-cell.today .cal-evname {
   color: #fff;
