@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
-import { liveMatches, leaderboard, onlinePlayers, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament } from '../api'
+import { liveMatches, leaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -540,22 +540,36 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
   const { t, lang } = useT()
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
+  // Turnuva Takvimi etkinlikleri (dis aktivite/turnuva) -> kiremit. Bizim site turnuvalari (tourns) -> yesil.
+  const [events, setEvents] = useState<Content[]>([])
+  useEffect(() => {
+    let alive = true
+    listContents('event')
+      .then((e) => alive && setEvents(e))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
   const locale = lang === 'tr' ? 'tr-TR' : lang
   const first = new Date(view.y, view.m, 1)
   const daysInMonth = new Date(view.y, view.m + 1, 0).getDate()
   const startOffset = (first.getDay() + 6) % 7 // Pazartesi-basli
-  // gun -> o gun baslayan turnuva isimleri
-  const eventMap = new Map<number, string[]>()
-  for (const tr of tourns) {
-    if (!tr.starts_at) continue
-    const d = new Date(tr.starts_at)
+  // gun -> isimler (ayri: bizim turnuvalar / dis etkinlikler)
+  const tournMap = new Map<number, string[]>() // yesil
+  const eventMap = new Map<number, string[]>() // kiremit
+  const addTo = (map: Map<number, string[]>, iso: string | null | undefined, name: string) => {
+    if (!iso) return
+    const d = new Date(iso)
     if (d.getFullYear() === view.y && d.getMonth() === view.m) {
       const day = d.getDate()
-      const arr = eventMap.get(day) ?? []
-      arr.push(tr.name)
-      eventMap.set(day, arr)
+      const arr = map.get(day) ?? []
+      arr.push(name)
+      map.set(day, arr)
     }
   }
+  for (const tr of tourns) addTo(tournMap, tr.starts_at, tr.name)
+  for (const ev of events) addTo(eventMap, ev.event_at, ev.title)
   const monthLabel = first.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
   const wd: string[] = []
   for (let i = 0; i < 7; i++) {
@@ -589,21 +603,30 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
       <div className="cal-grid cal-days">
         {cells.map((d, i) => {
           if (d === null) return <span key={i} className="cal-cell empty" />
-          const names = eventMap.get(d)
-          const evTitle = names?.join(' · ')
+          const tn = tournMap.get(d) // yesil (bizim turnuvalar)
+          const en = eventMap.get(d) // kiremit (dis etkinlikler)
+          const title = [...(tn ?? []), ...(en ?? [])].join(' · ')
+          // Gun numarasi rengi: turnuva varsa yesil, yoksa etkinlik varsa kiremit.
+          const kind = tn ? 'tourn' : en ? 'event' : ''
           return (
             <button
               key={i}
               type="button"
-              className={`cal-cell ${isToday(d) ? 'today' : ''} ${names ? 'has-ev' : ''}`}
+              className={`cal-cell ${isToday(d) ? 'today' : ''} ${kind ? 'has-ev cal-' + kind : ''}`}
               onClick={onOpen}
-              title={evTitle}
+              title={title || undefined}
             >
               <span className="cal-daynum">{d}</span>
-              {names && (
-                <span className="cal-evname">
-                  {names[0]}
-                  {names.length > 1 ? ` +${names.length - 1}` : ''}
+              {tn && (
+                <span className="cal-evname ev-tourn">
+                  {tn[0]}
+                  {tn.length > 1 ? ` +${tn.length - 1}` : ''}
+                </span>
+              )}
+              {en && (
+                <span className="cal-evname ev-event">
+                  {en[0]}
+                  {en.length > 1 ? ` +${en.length - 1}` : ''}
                 </span>
               )}
             </button>
