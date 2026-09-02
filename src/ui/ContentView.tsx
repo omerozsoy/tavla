@@ -697,7 +697,7 @@ function EventRow({
     : ''
   const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${mapEmbed ? 'has-map' : ''}`}>
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img || mapEmbed ? 'has-map' : ''}`}>
       {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
           bilgiler tam genislik alir. */}
       {logo && (
@@ -705,9 +705,8 @@ function EventRow({
           <img className="event-kurum-logo" src={mediaSrc(logo)} alt={ev.organizer ?? ''} />
         </div>
       )}
-      {/* Sag: turnuva bilgileri */}
+      {/* Orta: turnuva bilgileri (gorsel ve harita sag sutuna tasindi) */}
       <div className="event-main">
-        {img && <img className="content-img" src={mediaSrc(img)} alt="" />}
         <div className="event-date">
           <Icon name="calendar" size={13} /> {fmtDate(ev.event_at ?? null, true)}
         </div>
@@ -753,17 +752,20 @@ function EventRow({
         )}
         {ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag: secili otelin konumu — gomulu Google Maps + "Haritada Gör" butonu. */}
-      {mapEmbed && (
+      {/* Sag: otel gorseli (ustte) + secili otelin konumu (gomulu Google Maps + "Haritada Gör"). */}
+      {(img || mapEmbed) && (
         <div className="event-map-col">
-          <iframe
-            className="event-map"
-            src={mapEmbed}
-            title={`${ev.hotel ?? ''} harita`}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            allowFullScreen
-          />
+          {img && <img className="event-side-img" src={mediaSrc(img)} alt="" />}
+          {mapEmbed && (
+            <iframe
+              className="event-map"
+              src={mapEmbed}
+              title={`${ev.hotel ?? ''} harita`}
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
+            />
+          )}
           {mapHref && (
             <a className="event-map-link" href={mapHref} target="_blank" rel="noreferrer">
               <Icon name="pin" size={13} /> Haritada Gör
