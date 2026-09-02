@@ -762,7 +762,7 @@ function EventRow({
     : ''
   const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img || mapHref ? 'has-map' : ''}`}>
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img ? 'has-map' : ''}`}>
       {/* Sag ust kose kurdelesi (SALE tarzi): ulkeye gore bayrak. Turkiye=TR, KKTC=KKTC. */}
       {ev.country && (
         <span className="event-ribbon" aria-hidden="true">
@@ -821,18 +821,6 @@ function EventRow({
             </span>
           )}
         </div>
-        {/* Otel adi + adres SAG kolonda (otel kartinda) gosterilir. Sol tarafta tekrar
-            ETME. Yalnizca sag kolon hic yoksa (gorsel + harita yoksa) fallback goster. */}
-        {!(img || mapHref) && ev.hotel && (
-          <div className="event-hotel">
-            <Icon name="building-office" size={24} /> {ev.hotel}
-          </div>
-        )}
-        {!(img || mapHref) && (hotelPlace || ev.place) && (
-          <div className="event-address">
-            <Icon name="pin" size={24} /> {hotelPlace || ev.place}
-          </div>
-        )}
         {/* En altta: iletisim kisi(leri) + cep telefonu -> WhatsApp baglantisi */}
         {(contacts.length > 0 || ev.contact) && (
           <div className="event-contacts">
@@ -868,39 +856,34 @@ function EventRow({
             )}
           </div>
         )}
+        {/* Otel bilgisi SOL kolonda: ad -> adres -> Yol Tarifi Al (basinda pin ikonu). */}
+        {(ev.hotel || hotelPlace || ev.place || mapHref) && (
+          <div className="event-hotel-block">
+            {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
+            {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
+            {mapHref && (
+              <a
+                className="event-directions"
+                href={mapHref}
+                target="_blank"
+                rel="noreferrer"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Icon name="pin" size={18} /> Yol Tarifi Al
+              </a>
+            )}
+          </div>
+        )}
         {/* Aciklama SADECE kurum (organizer) secilmemis etkinliklerde gosterilir.
             Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
         {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
       </div>
-      {/* Sag sutun (ustten alta): otel adi -> adres -> Haritada Gor -> gorsel.
-          Gomulu harita kaldirildi. */}
-      {(img || mapHref) && (
+      {/* Sag sutun: SADECE otel gorseli (tek). */}
+      {img && (
         <div className="event-map-col">
-          {(ev.hotel || hotelPlace || ev.place) && (
-            <div className="event-hotel-head">
-              {mapHref && (
-                <a
-                  className="event-map-icon"
-                  href={mapHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label="Haritada Gör"
-                  title="Haritada Gör"
-                >
-                  <Icon name="pin" size={26} />
-                </a>
-              )}
-              <div className="ehc-text">
-                {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
-                {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
-              </div>
-            </div>
-          )}
-          {img && (
-            <div className="event-hotel-card">
-              <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />
-            </div>
-          )}
+          <div className="event-hotel-card">
+            <img className="event-side-img" src={mediaSrc(img)} alt={ev.hotel ?? ''} />
+          </div>
         </div>
       )}
     </div>
