@@ -3026,8 +3026,24 @@ button[aria-disabled='true'],
 .club-row-head {
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 26px;
   min-width: 0;
+}
+.club-row-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.club-person {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.club-person svg {
+  color: var(--accent);
 }
 .club-logo {
   width: 120px;
