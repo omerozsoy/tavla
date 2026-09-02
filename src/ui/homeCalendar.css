@@ -70,7 +70,7 @@
 }
 .cal-month {
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--text);
   min-width: 96px;
   text-align: center;
@@ -88,7 +88,7 @@
 .cal-wd-cell {
   text-align: center;
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: 400;
   color: var(--muted);
   text-transform: capitalize;
   padding: 2px 0;
@@ -124,7 +124,7 @@
   color: #fff;
 }
 .cal-cell.today .cal-daynum {
-  font-weight: 800;
+  font-weight: 400;
 }
 /* Renk kodu: BIZIM turnuvalar (tourns) -> YESIL; dis ETKINLIKLER (Turnuva Takvimi) -> KIREMIT. */
 .cal-cell.cal-tourn:not(.today) {
@@ -132,20 +132,20 @@
 }
 .cal-cell.cal-tourn:not(.today) .cal-daynum {
   color: #0f8a54;
-  font-weight: 800;
+  font-weight: 400;
 }
 .cal-cell.cal-event:not(.today) {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 .cal-cell.cal-event:not(.today) .cal-daynum {
   color: var(--accent);
-  font-weight: 800;
+  font-weight: 400;
 }
 .cal-evname {
   width: 100%;
   font-size: 0.66rem;
   line-height: 1.15;
-  font-weight: 700;
+  font-weight: 400;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -194,7 +194,7 @@
   display: flex;
   align-items: center;
   gap: 7px;
-  font-weight: 600;
+  font-weight: 400;
   white-space: normal;
 }
 .calb-row + .calb-row {
