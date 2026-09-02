@@ -6234,6 +6234,165 @@ button.stat-chip:hover {
 .account-id button.stat-chip:hover .stat-chip-val {
   color: var(--accent);
 }
+
+/* ---- Sag ust hesap dropdown'u: SADECE avatar+ad tetigi, tiklayinca menu ---- */
+.account-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+}
+.acct-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 3px 8px 3px 4px;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition:
+    border-color 160ms var(--ease-out),
+    background 160ms var(--ease-out);
+}
+.acct-trigger:hover,
+.acct-trigger.open {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.acct-trigger-name {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-chev {
+  color: var(--muted);
+  flex: none;
+  transition: transform 180ms var(--ease-out);
+}
+.acct-trigger.open .acct-chev {
+  transform: rotate(180deg);
+}
+/* Bekleyen gunluk odul: ad yaninda kucuk nokta -> menude 'Al' */
+.acct-trigger-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+  flex: none;
+}
+.acct-pop {
+  z-index: 60;
+  min-width: 248px;
+  padding: 6px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.acct-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+.acct-row:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+button.acct-row:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.acct-row-ic {
+  color: var(--muted);
+  flex: none;
+}
+.acct-ic-coin {
+  color: var(--tv-gold, #d9a227);
+}
+.acct-ic-rating {
+  color: var(--accent);
+}
+.acct-row-l {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.acct-row-v {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex: none;
+}
+.acct-row-static {
+  cursor: default;
+}
+.acct-row-hot .acct-row-v {
+  color: var(--accent);
+  font-weight: 600;
+}
+.acct-div {
+  height: 1px;
+  margin: 5px 8px;
+  background: var(--border);
+}
+/* Gomulu bilesen (bildirim cani): satirin sagina hizali */
+.acct-row-embed {
+  cursor: default;
+}
+.acct-row-embed-c {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+}
+/* Dil satiri: satir ici bayrak butonlari */
+.acct-row-lang {
+  cursor: default;
+}
+.acct-langs {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.acct-lang {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm, 6px);
+  background: none;
+  cursor: pointer;
+  opacity: 0.5;
+  transition:
+    opacity 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+.acct-lang:hover {
+  opacity: 0.85;
+}
+.acct-lang.on {
+  opacity: 1;
+  border-color: var(--accent);
+}
 /* Ust bar: TUM yazilar regular (400) — kalin degil (isim, coin/rating, odul, butonlar) */
 .account-bar,
 .account-bar [data-slot='button'],
