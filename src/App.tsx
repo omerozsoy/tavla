@@ -81,7 +81,7 @@ import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
-import { PAGES, MENU_GROUP_ORDER, PAGE_BY_KEY } from './pages'
+import { PAGES, PAGE_BY_KEY, type MenuGroup } from './pages'
 import { Icon } from './ui/Icon'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
@@ -144,6 +144,8 @@ import {
   saveServerGame,
   setAutoRenew as apiSetAutoRenew,
   toProfile,
+  getMenuConfig,
+  type MenuOverride,
   type ServerUser,
 } from './api'
 
@@ -314,6 +316,8 @@ export default function App() {
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)
+  // Sol menu override'lari (admin panelden: sira/ad/gorunurluk). Anahtar -> override.
+  const [menuOverrides, setMenuOverrides] = useState<Record<string, MenuOverride>>({})
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
@@ -577,6 +581,18 @@ export default function App() {
       setMemOpen(true)
     }
   }, [blunderOpen, user])
+
+  // Sol menu yapilandirmasini (admin panelden sira/ad/gorunurluk) acilista bir kez cek.
+  useEffect(() => {
+    let alive = true
+    getMenuConfig().then((items) => {
+      if (!alive) return
+      setMenuOverrides(Object.fromEntries(items.map((it) => [it.key, it])))
+    })
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // URL yolu -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
   // Temiz path kullanilir (SEO): /yz-ile-oyna  (hash # yok; eski /yapay-zeka alias)
@@ -3960,6 +3976,11 @@ export default function App() {
     matchHistory: menuProps.onMatchHistory,
     info: menuProps.onInfo,
   }
+  // Admin panelden (menu_items) override'lar: ozel ad (o dilde), gorunurluk, sira.
+  const menuLabel = (key: string): string | undefined => menuOverrides[key]?.labels?.[lang]
+  const menuVisible = (key: string): boolean => menuOverrides[key]?.visible !== false
+  const menuSort = (key: string, fallback: number): number => menuOverrides[key]?.sort ?? fallback
+
   // Footer kolonlari — merkezi kayittan (pages.ts). Handler/gate menu ile ayni mantik.
   const footerColumns = [
     { titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
@@ -3969,8 +3990,13 @@ export default function App() {
     titleKey: col.titleKey,
     items: col.keys
       .map((k) => PAGE_BY_KEY[k])
-      .filter((pg) => pg && !!pageHandlers[pg.key] && (pg.gate !== 'user' || !!user))
-      .map((pg): FooterItem => ({ key: pg.key, labelKey: pg.labelKey, onClick: pageHandlers[pg.key]! })),
+      .filter((pg) => pg && !!pageHandlers[pg.key] && (pg.gate !== 'user' || !!user) && menuVisible(pg.key))
+      .map((pg): FooterItem => ({
+        key: pg.key,
+        labelKey: pg.labelKey,
+        label: menuLabel(pg.key),
+        onClick: pageHandlers[pg.key]!,
+      })),
   }))
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar.
   const openInfoTab = (tab: 'about' | 'ranks' | 'fair' | 'services' | 'badges') => {
@@ -3988,24 +4014,33 @@ export default function App() {
     ],
   })
 
-  const menuGroups = MENU_GROUP_ORDER.map((group) => ({
-    group,
-    items: PAGES.filter(
-      (pg) =>
-        pg.group === group &&
+  // Sol menu: admin sirasi (menu_items.sort) global uygulanir -> pages.ts genelinde tek
+  // duz liste sirala, sonra ARDISIK ayni-grup kosularina bol (divider'lar korunur). Ozel
+  // ad varsa i18n'i ezer; gorunurlugu kapali ogeler dusurulur. Override yoksa pages.ts sirasi.
+  const orderedPages = PAGES.map((pg, i) => ({ pg, i }))
+    .filter(
+      ({ pg }) =>
         pg.inMenu !== false &&
         !!pageHandlers[pg.key] &&
-        (pg.gate !== 'user' || !!user),
-    ).map(
-      (pg): NavItem => ({
-        key: pg.key,
-        labelKey: pg.labelKey,
-        icon: pg.icon,
-        onClick: pageHandlers[pg.key]!,
-        hideInGame: pg.hideInGame,
-      }),
-    ),
-  }))
+        (pg.gate !== 'user' || !!user) &&
+        menuVisible(pg.key),
+    )
+    .sort((a, b) => menuSort(a.pg.key, a.i) - menuSort(b.pg.key, b.i))
+
+  const menuGroups: { group: MenuGroup; items: NavItem[] }[] = []
+  for (const { pg } of orderedPages) {
+    const item: NavItem = {
+      key: pg.key,
+      labelKey: pg.labelKey,
+      label: menuLabel(pg.key),
+      icon: pg.icon,
+      onClick: pageHandlers[pg.key]!,
+      hideInGame: pg.hideInGame,
+    }
+    const last = menuGroups[menuGroups.length - 1]
+    if (last && last.group === pg.group) last.items.push(item)
+    else menuGroups.push({ group: pg.group, items: [item] })
+  }
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0
