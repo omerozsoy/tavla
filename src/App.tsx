@@ -2595,7 +2595,11 @@ export default function App() {
         status: res.room.status,
       })
     } catch {
-      setRoomError(t('mp.connError'))
+      // Hata: bayat online durumda TAKILMA -> arkadas kurulum ekranina don + toast.
+      notify.error(t('mp.connError'))
+      setRoom(null)
+      setHome(false)
+      setFriendSetupOpen(true)
     } finally {
       setRoomBusy(false)
     }
@@ -2672,12 +2676,15 @@ export default function App() {
     } catch (err) {
       // ApiError (status var) -> sunucunun gercek mesajini goster; yoksa ag hatasi
       const e = err as { status?: number; errors?: Record<string, string[]>; message?: string }
-      if (e?.status) {
-        const first = e.errors ? Object.values(e.errors)[0]?.[0] : undefined
-        setRoomError(first || e.message || t('mp.connError'))
-      } else {
-        setRoomError(t('mp.connError'))
-      }
+      const msg = e?.status
+        ? (e.errors ? Object.values(e.errors)[0]?.[0] : undefined) || e.message || t('mp.connError')
+        : t('mp.connError')
+      // Hata: bayat online durumda TAKILMA (bos board/secim ekrani) -> origine don + toast.
+      notify.error(msg)
+      setRoom(null)
+      setHome(false)
+      if (mmOriginRef.current === 'solo') setSoloOpen(true)
+      else setSetup('online')
     } finally {
       setRoomBusy(false)
     }
@@ -4688,8 +4695,12 @@ export default function App() {
   // ÖNEMLİ: Maç BİTTİYSE (matchOver) lobiye DÜŞME — oda 'finished' olsa bile oyun
   // görünümünü koru ki MatchResult (sonuç + Analiz + Rövanş) gösterilebilsin. Aksi
   // halde maç biter bitmez oyuncular arama/lobi sayfasına atılır (kritik bug).
-  if (mode === 'online' && !matchOver && (!room || room.status !== 'playing')) {
-    // Oda olustur/katil/bekle: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
+  // YALNIZCA gercek bir oda VAR ya da eslesme/oda-kurma SURUYOR (roomBusy) iken bu dala
+  // gir. Aksi halde (bayat mode==='online' + room=null, orn. iptal/hata sonrasi) burasi
+  // devreye girip KULLANILMAYAN "Online Oyun" secim ekranini gosteriyordu (sorunlarin
+  // koku). Artik o ekran hicbir akista gorunmez; setup/solo/home dallari devralir.
+  if (mode === 'online' && !matchOver && (room !== null || roomBusy) && (!room || room.status !== 'playing')) {
+    // Oda olustur/bekle/arama: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
     // menu) icinde GOMULU goster -> menu/logo/sayfa kaybolmaz (kullanici geri bildirimi).
     return (
       <>
