@@ -3527,11 +3527,14 @@ export default function App() {
   const authProps = {
     onAuthed: (u: ServerUser, isNew?: boolean) => {
       const wasEditing = editProfile
-      // Misafirken bitmis bir mac state'te duruyorsa, giris/kayit sonrasi puan
-      // raporu efekti (user null->dolu) geriye donuk tetiklenip bu maci YENI
-      // hesaba yazmasin. loadServerGame async oldugundan mac hemen sifirlanmaz;
-      // bayragi setUser'dan ONCE kapatiyoruz (applySavedGame sonra dogru ayarlar).
-      if (matchWinner(match)) ratingReportedRef.current = true
+      // Misafir (user==null) iken devam eden/biten HERHANGI bir oyun giris/kayit
+      // sonrasi YENI hesaba YAZILMASIN. Eskiden yalniz matchWinner varsa engelleniyordu;
+      // ama oyun uyelik aninda henuz bitmemisse (bot son hamleyi hemen sonra yapip kaybi
+      // raporluyor) "uye oldum direkt maglubiyet" olusuyordu. Misafirden gecen tum bekleyen
+      // maci blokla. (loadServerGame local guest oyununu zaten sifirlar; uyelik sonrasi
+      // BASLATILAN gercek mac flag'i satir ~1158'de tekrar acar.) Profil duzenlemede
+      // (user zaten dolu) DOKUNMA -> devam eden mesru mac raporlanabilsin.
+      if (!user) ratingReportedRef.current = true
       setUser(u)
       setGuestProfile(null)
       setShowAuth(false)
