@@ -525,9 +525,6 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               </div>
             )
           )}
-          <span className="tcard-cta">
-            {t('tourn.details')} <Icon name="arrow-right" size={15} />
-          </span>
         </div>
       </button>
     )
