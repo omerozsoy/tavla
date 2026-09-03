@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\MatchClock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class RoomController extends Controller
 {
@@ -99,6 +100,10 @@ class RoomController extends Controller
         if (empty($stakes)) {
             $stakes = [$stake];
         }
+        // Canlida migration henuz kosmadiysa 'stakes' kolonu olmayabilir -> ona YAZMA
+        // (aksi halde SQLSTATE 42S22 "Unknown column 'stakes'" ile coker). Kolon yoksa
+        // coklu secim tek temsile (en yuksek) duser; migrate --force sonrasi tam calisir.
+        $hasStakesCol = Schema::hasColumn('rooms', 'stakes');
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
         // Server-otoriter saat AYNI tempoyu gerektirir -> eslesme tempoyu da sart kosar.
@@ -202,7 +207,7 @@ class RoomController extends Controller
         }
 
         // Kimse yok -> havuza gir (kabul edilen uzunluklar saklanir)
-        $room = Room::create([
+        $roomData = [
             'code' => $this->generateCode(),
             'p1_token' => $data['token'],
             'p1_user_id' => $userId,
@@ -210,16 +215,22 @@ class RoomController extends Controller
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'mm_waiting',
-            // Tek secimde sabit; coklu secimde eslesince anlasilan tutar yazilir (placeholder 0).
-            'stake' => count($stakes) === 1 ? $stakes[0] : 0,
-            'stakes' => $stakes,
+            // stakes kolonu VARSA: tek secimde sabit, coklu secimde placeholder 0 (eslesmede yazilir).
+            // Kolon YOKSA (migration kosmadi): coklu secim tek temsile (en yuksek) duser.
+            'stake' => $hasStakesCol
+                ? (count($stakes) === 1 ? $stakes[0] : 0)
+                : max($stakes),
             'bet_pct' => $betPct,
             'targets' => $targets,
             'target' => count($targets) === 1 ? $targets[0] : null,
             'mode' => 'ranked', // hizli eslesme -> Mac Oyunu
             'time_control' => $timeControl,
             'version' => 0,
-        ]);
+        ];
+        if ($hasStakesCol) {
+            $roomData['stakes'] = $stakes;
+        }
+        $room = Room::create($roomData);
 
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1', 'matched' => false]);
     }
