@@ -3,6 +3,7 @@ import type { PointerEvent as RPointerEvent } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
+import { BOARD_NORMALIZED_WIDTH, BOARD_NORMALIZED_HEIGHT } from './boardGeometry'
 
 // Fotograftan diz — HIBRIT adim: kullanici tahtanin 4 kosesini isaretler, goruntu
 // perspektif-duzeltme (homografi) ile TEPEDEN-DUZ hale getirilir, sonra Opus'a gider.
@@ -44,16 +45,44 @@ function solveHomography(from: Pt[], to: Pt[]): number[] {
   return [h[0], h[1], h[2], h[3], h[4], h[5], h[6], h[7], 1]
 }
 
+// Auto kose tahmini (Phase 5'te OpenCV/kenar ile gercek olacak). Simdilik hafif ic
+// dikdortgen dondurur; kullanici gerekirse duzeltir (manuel her zaman fallback).
+function estimateInitialCorners(): Pt[] {
+  return [
+    { x: 0.12, y: 0.14 }, { x: 0.88, y: 0.14 }, { x: 0.88, y: 0.86 }, { x: 0.12, y: 0.86 },
+  ]
+}
+
+// Kose gecerliligi: sinir icinde, cok yakin degil, dogru alan, kendini kesmeyen quad.
+function cornersValid(p: Pt[]): boolean {
+  if (p.length !== 4) return false
+  for (const q of p) if (q.x < -0.02 || q.x > 1.02 || q.y < -0.02 || q.y > 1.02) return false
+  // min ikili mesafe
+  for (let i = 0; i < 4; i++) for (let j = i + 1; j < 4; j++) {
+    if (Math.hypot(p[i].x - p[j].x, p[i].y - p[j].y) < 0.08) return false
+  }
+  // ayakkabi-baglama alani (>= ~%15) + tum donusler ayni isaret (konveks, kesismez)
+  let area = 0
+  let sign = 0
+  for (let i = 0; i < 4; i++) {
+    const a = p[i], b = p[(i + 1) % 4], c = p[(i + 2) % 4]
+    area += a.x * b.y - b.x * a.y
+    const cross = (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x)
+    const s = Math.sign(cross)
+    if (s !== 0) { if (sign === 0) sign = s; else if (s !== sign) return false }
+  }
+  return Math.abs(area) / 2 >= 0.15
+}
+
 export default function BoardPhotoWarp({ file, onResult, onCancel }: Props) {
   const { t } = useT()
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
   const imgRef = useRef<HTMLImageElement | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
-  // Baslangic koseleri (hafif ic) — kullanici tahta koselerine tasir. Sira TL,TR,BR,BL.
-  const [pts, setPts] = useState<Pt[]>([
-    { x: 0.12, y: 0.14 }, { x: 0.88, y: 0.14 }, { x: 0.88, y: 0.86 }, { x: 0.12, y: 0.86 },
-  ])
+  // Baslangic koseleri (auto tahmin) — kullanici tahta koselerine tasir. Sira TL,TR,BR,BL.
+  const [pts, setPts] = useState<Pt[]>(() => estimateInitialCorners())
   const dragRef = useRef<number | null>(null)
 
   useEffect(() => {
@@ -87,6 +116,8 @@ export default function BoardPhotoWarp({ file, onResult, onCancel }: Props) {
   async function confirm() {
     const img = imgRef.current
     if (!img || busy) return
+    if (!cornersValid(pts)) { setMsg(t('warp.invalid')); return }
+    setMsg('')
     setBusy(true)
     try {
       const natW = img.naturalWidth, natH = img.naturalHeight
@@ -96,8 +127,8 @@ export default function BoardPhotoWarp({ file, onResult, onCancel }: Props) {
       sctx.drawImage(img, 0, 0)
       const sdata = sctx.getImageData(0, 0, natW, natH).data
 
-      // Cikti boyutu (~1.45:1, tavla oranina yakin), uzun kenar ~1100
-      const OW = 1120, OH = 760
+      // Cikti boyutu merkezi geometriden (magic number YOK)
+      const OW = BOARD_NORMALIZED_WIDTH, OH = BOARD_NORMALIZED_HEIGHT
       const out = document.createElement('canvas')
       out.width = OW; out.height = OH
       const octx = out.getContext('2d')!
@@ -161,10 +192,13 @@ export default function BoardPhotoWarp({ file, onResult, onCancel }: Props) {
               className="warp-handle"
               style={{ left: `${p.x * 100}%`, top: `${p.y * 100}%` }}
               onPointerDown={(e) => onDown(i, e)}
-            />
+            >
+              <span className="warp-dot" />
+            </span>
           ))}
         </div>
 
+        {msg && <div className="warp-msg">{msg}</div>}
         <div className="warp-actions">
           <Button variant="outline" onClick={onCancel} disabled={busy}>{t('setup.cancel')}</Button>
           <Button variant="default" onClick={confirm} disabled={busy}>
