@@ -244,7 +244,7 @@ function validateTurn(state, steps) {
 
 // validator/server.ts
 var SECRET = process.env.VALIDATOR_SECRET || "";
-var PORT = Number(process.env.VALIDATOR_PORT || 8090);
+var PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090);
 function send(res, code, body) {
   const s = JSON.stringify(body);
   res.writeHead(code, { "content-type": "application/json" });
