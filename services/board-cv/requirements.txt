@@ -1,0 +1,8 @@
+fastapi==0.115.*
+uvicorn[standard]==0.32.*
+python-multipart==0.0.*
+opencv-python-headless==4.*
+numpy==2.*
+pydantic==2.*
+# YOLO (model egitim/inference). CPU yeterli; GPU varsa torch-cuda kur.
+ultralytics==8.*
