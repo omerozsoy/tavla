@@ -269,13 +269,15 @@ export default function ContentView({
       }
     return m
   }, [clubGroups])
-  // Harita balonu için il-başına kulüp adları (normalize anahtar)
+  // Harita balonu için il-başına kulüp adı + logosu (normalize anahtar)
   const clubNames = useMemo(() => {
-    const m: Record<string, string[]> = {}
+    const m: Record<string, { name: string; image: string | null }[]> = {}
     if (clubGroups)
       for (const [prov, list] of clubGroups) {
         const k = normProvince(prov)
-        ;(m[k] ||= []).push(...list.map((c) => c.title))
+        ;(m[k] ||= []).push(
+          ...list.map((c) => ({ name: c.title, image: c.image ? mediaSrc(c.image) ?? null : null })),
+        )
       }
     return m
   }, [clubGroups])
@@ -550,6 +552,11 @@ export default function ContentView({
                             <Icon name="phone" size={12} /> {c.contact}
                           </span>
                         )}
+                        {c.place && (
+                          <span className="club-addr">
+                            <Icon name="pin" size={12} /> {c.place}
+                          </span>
+                        )}
                         {(c.links?.website || c.links?.instagram || c.links?.youtube || c.links?.email) && (
                           <div className="club-links">
                             {c.links?.email && (
@@ -558,7 +565,7 @@ export default function ContentView({
                                 href={`mailto:${c.links.email}`}
                                 aria-label="E-posta"
                               >
-                                <Icon name="mail" size={18} />
+                                <Icon name="mail" size={22} />
                               </a>
                             )}
                             {c.links?.website && (
@@ -569,7 +576,7 @@ export default function ContentView({
                                 rel="noreferrer noopener"
                                 aria-label="Web sitesi"
                               >
-                                <Icon name="globe" size={18} />
+                                <Icon name="globe" size={22} />
                               </a>
                             )}
                             {c.links?.instagram && (
@@ -580,7 +587,7 @@ export default function ContentView({
                                 rel="noreferrer noopener"
                                 aria-label="Instagram"
                               >
-                                <Icon name="instagram" size={18} />
+                                <Icon name="instagram" size={22} />
                               </a>
                             )}
                             {c.links?.youtube && (
@@ -591,15 +598,10 @@ export default function ContentView({
                                 rel="noreferrer noopener"
                                 aria-label="YouTube"
                               >
-                                <Icon name="youtube" size={18} />
+                                <Icon name="youtube" size={22} />
                               </a>
                             )}
                           </div>
-                        )}
-                        {c.place && (
-                          <span className="club-addr">
-                            <Icon name="pin" size={12} /> {c.place}
-                          </span>
                         )}
                       </div>
                     </div>

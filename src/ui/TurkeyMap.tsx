@@ -23,9 +23,14 @@ export function normProvince(s: string): string {
     .trim()
 }
 
+export interface ClubBrief {
+  name: string
+  image: string | null
+}
+
 interface Props {
   clubCounts: Record<string, number> // normProvince(il) -> kulüp sayısı
-  clubNames: Record<string, string[]> // normProvince(il) -> kulüp adları (balon listesi)
+  clubNames: Record<string, ClubBrief[]> // normProvince(il) -> kulüp adı+logosu (balon listesi)
   selected: string | null // seçili il (ham ad) veya null
   onSelect: (province: string | null) => void
   countLabel: (n: number) => string // "3 kulüp" gibi (i18n)
@@ -34,7 +39,7 @@ interface Props {
 // Hover balonu durumu: hangi il + kulüpleri + konum (container'a göre) + hangi yöne açılacağı
 interface Balloon {
   name: string
-  clubs: string[]
+  clubs: ClubBrief[]
   x: number
   y: number
   side: 'left' | 'right' // ilin sağına mı soluna mı açılsın (sayfa dışına taşmasın)
@@ -160,7 +165,16 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
           </div>
           <ul className="tm-balloon-list">
             {balloon.clubs.map((c, i) => (
-              <li key={i}>{c}</li>
+              <li key={i}>
+                {c.image ? (
+                  <img className="tm-balloon-logo" src={c.image} alt="" loading="lazy" />
+                ) : (
+                  <span className="tm-balloon-logo tm-balloon-logo-ph" aria-hidden="true">
+                    {c.name.charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="tm-balloon-name">{c.name}</span>
+              </li>
             ))}
           </ul>
         </div>

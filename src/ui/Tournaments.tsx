@@ -184,9 +184,16 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               ) : (
                 <Icon name="building-office" size={15} />
               )}
-              <span>{t('tourn.organizer')}: {active.organizer.name}</span>
+              <span>{t('tourn.organization')}: {active.organizer.name}</span>
             </div>
           )}
+          {/* Duzenleyen: HER online turnuvada TavlaTv (sabit kural) */}
+          <div className="tourn-organizer tourn-runby">
+            <span>
+              {t('tourn.organizer')}:{' '}
+              <TavlaTvLogo size={16} tone="light" className="tourn-runby-logo" />
+            </span>
+          </div>
           {active.status === 'open' && active.starts_at && (
             <div className="tourn-countdown">
               <span className="tc-lbl">
@@ -445,14 +452,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             )}
           </div>
           <div className="event-title">{tr.name}</div>
-          {/* Yer artik tarihin yaninda gosteriliyor -> meta'da sadece duzenleyen kurum */}
-          {tr.organizer && (
-            <div className="event-meta">
+          {/* Organizasyon = katkida bulunan kurum (varsa); Duzenleyen = HER online
+              turnuvada TavlaTv (sabit kural). Iki ayri satir. */}
+          <div className="event-meta">
+            {tr.organizer && (
               <span className="event-organizer">
-                <Icon name="star" size={24} /> {tr.organizer.name}
+                <Icon name="star" size={24} /> {t('tourn.organization')}: {tr.organizer.name}
               </span>
-            </div>
-          )}
+            )}
+            <span className="event-runby">
+              {t('tourn.organizer')}:{' '}
+              <TavlaTvLogo size={16} tone="light" className="event-runby-logo" />
+            </span>
+          </div>
           {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
               prizes[] varsa sira-sira; yoksa tek toplam odul (fallback). */}
           {tr.prizes && tr.prizes.length > 0 ? (
