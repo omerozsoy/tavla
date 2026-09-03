@@ -607,6 +607,10 @@ export default function App() {
     }
   }, [])
 
+  // popstate closure'i icin GUNCEL "aktif oyun var mi" (hasActiveGame render-sonrasi
+  // hesaplaniyor; ref ile son degeri applyFromPath'e tasiyoruz).
+  const hasActiveGameRef = useRef(false)
+
   // URL yolu -> state: dogrudan link, yer imi, geri/ileri tusu (closeAllPages hoisted)
   // Temiz path kullanilir (SEO): /yz-ile-oyna  (hash # yok; eski /yapay-zeka alias)
   useEffect(() => {
@@ -617,6 +621,15 @@ export default function App() {
       closeAllPages()
       setAnalyzerOpen(false)
       setMemOpen(false)
+      // URL navigasyonu (geri/ileri/link) HER ZAMAN lobi baglamidir — oyunun kendi URL
+      // slug'i YOK. Aktif oyun yoksa bayat online/oyun state'ini temizle ki GERI tusunda
+      // ekrana eski/bitmis board gelmesin (kullanici sikayeti). setHome(true) -> sayfa
+      // home dalinda (sol menu + logo) acilir. (Aktif oyun varsa dokunma: resume korunur.)
+      if (!hasActiveGameRef.current) {
+        setMode('pvb')
+        setRoom(null)
+      }
+      setHome(true)
       switch (root) {
         case 'lider-tablosu':
           setLeaderboardOpen(true)
@@ -2679,10 +2692,12 @@ export default function App() {
       const msg = e?.status
         ? (e.errors ? Object.values(e.errors)[0]?.[0] : undefined) || e.message || t('mp.connError')
         : t('mp.connError')
-      // Hata: bayat online durumda TAKILMA (bos board/secim ekrani) -> origine don + toast.
+      // Hata: bayat online durumda TAKILMA (bos board/secim ekrani) -> lobi baglaminda
+      // origine don + toast.
       notify.error(msg)
       setRoom(null)
-      setHome(false)
+      setMode('pvb')
+      setHome(true)
       if (mmOriginRef.current === 'solo') setSoloOpen(true)
       else setSetup('online')
     } finally {
@@ -2706,7 +2721,11 @@ export default function App() {
     setOppStarted(false)
     setChat([])
     tournMatchRef.current = null
-    setHome(false)
+    // LOBI baglamina don (sol menu + logo ile). online'dan cik ki game-view'a dusmesin
+    // (solo iptalde SoloStakes sidebar'siz aciliyordu). solo -> home dalinda SoloStakes,
+    // mac -> setup dali (kendi sidebar'i var).
+    setMode('pvb')
+    setHome(true)
     if (mmOriginRef.current === 'solo') setSoloOpen(true)
     else setSetup('online')
   }
@@ -3901,6 +3920,7 @@ export default function App() {
 
   // Yarim kalan (bitmemis) mac var mi -> menude "Aktif Oyunlar"
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
+  hasActiveGameRef.current = hasActiveGame // popstate/URL navigasyonu guncel degeri okusun
 
   // Menuden acilan TUM sayfa overlaylerini kapat (setup HARIC). Ayni anda page-host
   // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
