@@ -14,7 +14,8 @@ import { validateTurn } from '../src/engine/validateTurn.ts'
 import { generateMoves } from '../src/engine/moves.ts'
 
 const SECRET = process.env.VALIDATOR_SECRET || ''
-const PORT = Number(process.env.VALIDATOR_PORT || 8090)
+// Plesk/Passenger PORT env'i enjekte eder; SSH/PM2'de VALIDATOR_PORT kullanılır; yoksa 8090.
+const PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090)
 
 function send(res: ServerResponse, code: number, body: unknown): void {
   const s = JSON.stringify(body)
