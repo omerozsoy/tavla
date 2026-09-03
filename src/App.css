@@ -7748,7 +7748,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--med-slate);
 }
 .bs-title {
-  font-family: 'Playfair Display', 'Lora', Georgia, 'Times New Roman', serif;
+  font-family: 'Young Serif', 'Playfair Display', 'Lora', Georgia, 'Times New Roman', serif;
   font-weight: 400;
   font-size: clamp(1.15rem, 1.6vw, 1.7rem);
   line-height: 1.15;
@@ -15154,8 +15154,21 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: var(--radius-lg);
+}
+/* Liderlik tablosu satiriyla ayni ritim: serit (bir atlamali) + hover */
+.friend-row:nth-of-type(even) {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+.friend-row:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+/* Ulke bayragi sag sutunda (identity flex:1 iterek sag kenara yaslar) */
+.friend-flag {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 10px;
 }
 /* PlayerIdentity blogu (avatar + isim + altinda rutbe) satirin genisligini alsin */
 .friend-id {
