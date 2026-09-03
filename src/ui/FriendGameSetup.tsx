@@ -25,17 +25,19 @@ interface BoardColors {
 
 interface Props {
   onCreate: (opts: { target: number; timeControl: TimeControl }) => void
+  onJoin: (code: string) => void // arkadasin verdigi kodla odaya katil
   onCancel: () => void
   board: BoardColors
   onChangeBoard: () => void
 }
 
-export default function FriendGameSetup({ onCreate, onCancel, board, onChangeBoard }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const [tab, setTab] = useState<'single' | 'match'>('single')
   const [tc, setTc] = useState<TimeControl>('casual')
   const [length, setLength] = useState(5)
+  const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   const target = tab === 'single' ? 1 : length
 
   return (
@@ -107,6 +109,25 @@ export default function FriendGameSetup({ onCreate, onCancel, board, onChangeBoa
             <Button variant="default" onClick={() => onCreate({ target, timeControl: tc })}>
               <Icon name="play" size={18} /> {t('friend.create')}
             </Button>
+          </div>
+
+          {/* Arkadasin KOD verdiyse: buradan odaya katil (ayarlar odayi kuranin) */}
+          <div className="friend-join-box">
+            <div className="setup-label">{t('friend.joinTitle')}</div>
+            <div className="friend-join">
+              <input
+                className="friend-join-input"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
+                placeholder={t('mp.enterCode')}
+                maxLength={5}
+                autoCapitalize="characters"
+                onKeyDown={(e) => e.key === 'Enter' && code.trim() && onJoin(code.trim())}
+              />
+              <Button variant="outline" disabled={!code.trim()} onClick={() => onJoin(code.trim())}>
+                <Icon name="play" size={16} /> {t('mp.join')}
+              </Button>
+            </div>
           </div>
         </div>
 
