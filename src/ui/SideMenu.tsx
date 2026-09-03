@@ -7,7 +7,7 @@ import type { MenuGroup } from '../pages'
 // Ana sayfa ve oyun ekraninda ortak tek menu. Ogeler MERKEZI SAYFA KAYDINDAN (pages.ts)
 // turetilir; bu bilesen yalnizca RENDER eder. Yeni menu sayfasi = pages.ts'e bir giris.
 // Not: shadcn Button base'i ikonlari 16px'e sabitler -> menu ikonlarini !important ile buyut.
-const NAV = 'w-full justify-start [&_svg]:size-[24px]!'
+const NAV = 'w-full justify-start [&_svg]:size-[20px]!'
 
 export interface NavItem {
   key: string // aktif-vurgu anahtari (activeKey ile eslesir)

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   /* ===== TERRACOTTA (KREM/KIREMIT) â€” merkezi renk sistemi =====
      Sicak + zamansiz + editoryal. Kullanici paletine SADIK:
        Krem #f4efe6 Â· Krem-deep #efeae1 Â· Kiremit(brick) #c9563f/#a83a2b
@@ -794,13 +794,13 @@ button[aria-disabled='true'],
   flex-direction: column;
   /* TÃœM menÃ¼ Ã¶ÄŸeleri EÅžÄ°T aralÄ±kta: gruplar arasÄ± da grup iÃ§i ile aynÄ± (4px).
      Aksi halde tek-Ã¶ÄŸeli gruplar (Ãœyelik/Bilgi) 8px'le izole "yÃ¼zÃ¼yor" -> dÃ¼zensiz ritim. */
-  gap: 4px;
+  gap: 2px;
   overflow-x: hidden;
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
   border-radius: 0; /* Duz kose (ana sayfa) */
-  padding: 12px 10px;
+  padding: 8px 10px;
 }
 /* Drawer logosu yalniz mobil drawer'da; desktop sabit yan menude gizli (ust bantta zaten var) */
 .side-menu-brand {
@@ -1180,7 +1180,7 @@ button[aria-disabled='true'],
 .menu-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 /* Bos grup (tum ogeleri kosullu-gizli) flex child olarak kalip fazladan bosluk
    yaratmasin -> tamamen gizle. (Silinen menu ogelerinden kalan bosluk fix'i.) */
@@ -1213,11 +1213,12 @@ button[aria-disabled='true'],
   color: var(--accent);
 }
 /* Sol menu (sidebar) navigasyonu: cercevesiz, duz -> tikla hafif ton.
-   min-height 44px: WCAG/mobil dokunma hedefi (onceki ~34px'ti). */
+   Masaustunde kompakt 36px satir; mobil drawer'da 44px'e cikar (asagidaki
+   max-width:900px media -> WCAG/dokunma hedefi). */
 .side-menu .menu-btn {
   background: transparent;
   border-color: transparent;
-  min-height: 44px;
+  min-height: 36px;
 }
 .side-menu .menu-btn:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
@@ -1232,7 +1233,7 @@ button[aria-disabled='true'],
   border-color: transparent !important;
   color: var(--text);
   font-weight: 400;
-  min-height: 44px;
+  min-height: 36px;
   border-radius: 10px;
   position: relative;
   isolation: isolate; /* stacking context -> ::before hane z-index:-1 iÃ§erikte KALIR */
@@ -6495,6 +6496,15 @@ html.fs-active .account-bar {
     transform: translateX(-102%);
     transition: transform 0.25s ease;
     overflow-y: auto;
+    gap: 4px; /* mobil drawer: masaustu kompakt ritmini gevset */
+  }
+  /* Mobil drawer: dokunma hedefi WCAG 44px (masaustunde 36px kompakt) */
+  .side-menu .menu-group {
+    gap: 4px;
+  }
+  .side-menu .menu-btn,
+  .side-menu [data-slot='button'] {
+    min-height: 44px;
   }
   /* Drawer basligindaki TavlaTV logosu (yalniz mobil drawer'da gorunur) */
   .side-menu-brand {
@@ -7598,7 +7608,7 @@ button.acct-row:hover:not(:disabled) {
    ============================================================ */
 /* Devam eden online maca geri don banner'i (lobi ustu) */
 /* Ana sayfa hero banner slider'i â€” Christie's SPLIT layout: SOL duz sicak panelde
-   editoryal metin, SAGDA gorsel. Tam genislik (edge-to-edge). Yazi yoksa gorsel tek. */
+   editoryal metin, SAGDA gorsel. Site genisligi kadar (icerik kolonu, ortali). Yazi yoksa gorsel tek. */
 .banner-slider {
   position: relative;
   /* Mouse/parmak surukleme: yatay kaydirmayi biz yonetiriz (dikey scroll serbest),
@@ -7610,7 +7620,11 @@ button.acct-row:hover:not(:disabled) {
   --bs-h: clamp(460px, 62vh, 680px);
   /* Yatayda lobby-main padding'ini iptal edip kenarlara daya. Ustte NEGATIF marj YOK:
      banner sabit hesap barinin ALTINDAN baslar (bar artik banner'in ustune binmez). */
-  margin: 0 calc(-1 * clamp(12px, 3vw, 40px)) 22px;
+  /* Site genisligiyle ayni: edge-to-edge DEGIL, icerik kolonu (--lobby-w) kadar,
+     ortali. Alttaki takvim/panel/dashboard ile birebir hizali. */
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 0 auto 22px;
   overflow: hidden;
   background: var(--sand);
   /* KRITIK: .lobby-main bir flex-column; overflow:hidden olan bu ogenin flex
