@@ -1510,6 +1510,45 @@ button[aria-disabled='true'],
   gap: 8px;
   font-size: 1.05rem;
 }
+/* Arkadasin verdigi kodla odaya katilma (Oda Olustur'un altinda, ince ayrac ile) */
+.friend-join-box {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.friend-join {
+  display: flex;
+  gap: 10px;
+  align-items: stretch;
+  margin-top: 8px;
+}
+.friend-join-input {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 46px;
+  padding: 0 14px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 1.1rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.friend-join-input::placeholder {
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--muted);
+}
+.friend-join-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.friend-join > button:not([data-slot]),
+.friend-join [data-slot='button'] {
+  min-height: 46px;
+}
 .btn-secondary {
   flex: 0 0 auto;
   min-height: 50px;

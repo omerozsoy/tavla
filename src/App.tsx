@@ -4617,6 +4617,13 @@ export default function App() {
                   setHome(false)
                   handleCreateRoom(target, timeControl)
                 }}
+                onJoin={(code) => {
+                  // Arkadasin kodu: online moda gec, odaya katil (uzunluk/saat odayi kuranindir)
+                  setFriendSetupOpen(false)
+                  setMode('online')
+                  setHome(false)
+                  handleJoinRoom(code)
+                }}
               />
             </div>
           </main>
