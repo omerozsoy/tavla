@@ -3121,43 +3121,42 @@ button[aria-disabled='true'],
   box-shadow: none !important;
 }
 /* TavlaTV yayin bayragi (opsiyonel; admin panelden acilir).
-   SOL bastan sarkan SIYAH flama; alti V-catal (fishtail); uzerinde dikey
-   TAVLATV logosu. Ulke bayragi sag kosede kalir (cakisma yok). */
+   Kartin SOL UST kosesinde YATAY kirmizi kurdele: sag ucu sivri (ok),
+   sol altinda katlanmis kivrim (fold). Renk site aksani (var(--accent));
+   kivrim token'dan turetilmis koyu ton. */
 .event-tvflag {
   position: absolute;
-  top: -3px;
-  left: 12px;
-  width: 42px;
-  height: 108px;
-  pointer-events: none;
+  top: 12px;
+  left: 0;
   z-index: 4;
-  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.35));
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22));
 }
 .event-tvflag-band {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 22px 0 12px;
+  background: var(--accent);
+  color: #f4efe6; /* krem wordmark (aksan zemin uzerinde okunur) */
+  /* Sag uc sivri (ok); sol kenar duz. */
+  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
+}
+/* Sol altta katlanma kivrimi: token aksandan turetilmis koyu ucgen, banttan asagi sarkar. */
+.event-tvflag-fold {
   position: absolute;
-  inset: 0;
-  background: #1c1a17; /* ink zemin (marka) */
-  /* Alt uc V-catal (pennant) + ust katlama golgesi (inset). */
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
-  box-shadow: inset 0 7px 7px -5px rgba(0, 0, 0, 0.45);
-  transform-origin: 50% 0;
-  animation: event-ribbon-sway 4.5s ease-in-out infinite;
+  left: 0;
+  top: 100%;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 8px 0 0;
+  border-color: color-mix(in srgb, var(--accent) 55%, #000) transparent transparent transparent;
 }
-@media (prefers-reduced-motion: reduce) {
-  .event-tvflag-band {
-    animation: none;
-    transform: none;
-  }
-}
-/* Yatay TAVLATV wordmark'i 90° cevirip flamaya dikey oturt (yukaridan asagi okunur). */
 .event-tvflag-logo {
-  position: absolute;
-  /* Merkezden biraz yukari: son harf (V) alt V-catala girip kirpilmasin. */
-  top: 44%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(90deg);
-  transform-origin: center;
-  white-space: nowrap;
+  position: relative;
+  z-index: 1;
 }
 .event-row.past {
   border-left-color: var(--muted);
