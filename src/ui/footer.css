@@ -33,14 +33,22 @@
 .foot-logo {
   display: inline-flex;
 }
+/* Slogan artik SVG: width:0 + min-width:100% ile kilidi (=logo) buyutmeden onun
+   genisligini alir; <text> textLength=100% ile TEK SATIR halinde tam yaslanir. */
 .foot-tag {
+  display: block;
   margin: 8px 0 0;
-  color: rgba(244, 239, 230, 0.62);
-  font-size: 0.88rem;
-  line-height: 1.5;
   width: 0;
   min-width: 100%;
-  overflow-wrap: break-word;
+  height: 12px;
+  overflow: visible;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.foot-tag text {
+  fill: rgba(244, 239, 230, 0.62);
 }
 .foot-cols {
   display: grid;

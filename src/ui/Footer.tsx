@@ -22,11 +22,15 @@ export default function Footer({ columns }: Props) {
     <footer className="site-footer">
       <div className="foot-inner">
         <div className="foot-brand">
-          {/* Logo + slogan tek "kilit"te: kilit logo genisligine buzulur, slogan
-              (width:0 + min-width:100%) TAM logo genisliginde sarar. */}
+          {/* Logo + slogan tek "kilit"te: kilit logo genisligine buzulur. Slogan
+              SVG <text> textLength=100% ile TEK SATIR ve TAM logo genisliginde yaslanir. */}
           <div className="foot-brandlock">
             <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
-            <p className="foot-tag">{t('foot.tag')}</p>
+            <svg className="foot-tag" height="12" role="img" aria-label={t('foot.tag')}>
+              <text x="0" y="10" textLength="100%" lengthAdjust="spacingAndGlyphs">
+                {t('foot.tag')}
+              </text>
+            </svg>
           </div>
         </div>
         <nav className="foot-cols">
