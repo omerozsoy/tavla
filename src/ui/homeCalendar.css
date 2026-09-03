@@ -67,8 +67,8 @@
 }
 .news-thumb {
   flex: 0 0 auto;
-  width: 46px;
-  height: 46px;
+  width: 64px;
+  height: 64px;
   border-radius: 8px;
   object-fit: cover;
   background: color-mix(in srgb, var(--text) 9%, transparent);
