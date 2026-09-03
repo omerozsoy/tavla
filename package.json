@@ -11,7 +11,8 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "validator:build": "node scripts/build-validator.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",
@@ -40,6 +41,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
+    "esbuild": "^0.28.2",
     "onnxruntime-node": "^1.27.0",
     "oxlint": "^1.71.0",
     "playwright": "^1.62.1",

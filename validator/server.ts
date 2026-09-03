@@ -1,0 +1,81 @@
+// Sunucu-otoriter hamle doğrulama servisi (para maçı güvenliği Faz 2).
+//
+// Mevcut TS motorunu (src/engine) YENİDEN KULLANIR — PHP↔TS mantık sapması YOK.
+// PHP backend (RoomController) her hamleyi buraya sorar; yasadışıysa reddedilir.
+//
+// Güvenlik: yalnız backend erişmeli. VALIDATOR_SECRET set edilirse `x-validator-secret`
+// başlığı zorunlu. Servisi ASLA halka açık porta koyma (localhost + backend).
+//
+// Çalıştırma (Plesk/Node): `node validator/server.ts` (Node 24 type-stripping) veya
+//   bundle: `node validator/dist/server.mjs`. Port: VALIDATOR_PORT (vars. 8090).
+
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { validateTurn } from '../src/engine/validateTurn.ts'
+import { generateMoves } from '../src/engine/moves.ts'
+
+const SECRET = process.env.VALIDATOR_SECRET || ''
+const PORT = Number(process.env.VALIDATOR_PORT || 8090)
+
+function send(res: ServerResponse, code: number, body: unknown): void {
+  const s = JSON.stringify(body)
+  res.writeHead(code, { 'content-type': 'application/json' })
+  res.end(s)
+}
+
+function readJson(req: IncomingMessage): Promise<unknown> {
+  return new Promise((resolve, reject) => {
+    let data = ''
+    let size = 0
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > 1_000_000) {
+        // 1MB üstü gövde reddet (kötüye kullanım)
+        reject(new Error('body-too-large'))
+        req.destroy()
+        return
+      }
+      data += chunk
+    })
+    req.on('end', () => {
+      try {
+        resolve(data ? JSON.parse(data) : {})
+      } catch {
+        reject(new Error('bad-json'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+const server = createServer(async (req, res) => {
+  // Sağlık kontrolü (secret'siz)
+  if (req.method === 'GET' && req.url === '/health') {
+    return send(res, 200, { ok: true, service: 'tavla-validator' })
+  }
+  // Paylaşılan sır (backend dışına kapalı)
+  if (SECRET && req.headers['x-validator-secret'] !== SECRET) {
+    return send(res, 401, { error: 'unauthorized' })
+  }
+  try {
+    const body = (await readJson(req)) as { state?: unknown; steps?: unknown }
+    if (req.method === 'POST' && req.url === '/validate') {
+      // state: otoriter durum (zar dolu), steps: istemcinin önerdiği tam-tur
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const r = validateTurn(body.state as any, body.steps as any)
+      return send(res, 200, r)
+    }
+    if (req.method === 'POST' && req.url === '/legal-moves') {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const moves = generateMoves(body.state as any)
+      return send(res, 200, { moves })
+    }
+    return send(res, 404, { error: 'not-found' })
+  } catch (e) {
+    return send(res, 400, { error: 'bad-request', detail: String((e as Error)?.message ?? e) })
+  }
+})
+
+server.listen(PORT, () => {
+  // eslint-disable-next-line no-console
+  console.log(`[tavla-validator] listening on :${PORT}${SECRET ? ' (secret on)' : ''}`)
+})
