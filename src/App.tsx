@@ -118,7 +118,7 @@ import AvatarFrame from './ui/AvatarFrame'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import MatchReport from './ui/MatchReport'
-import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel } from './ui/HomePanels'
+import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -4118,6 +4118,8 @@ export default function App() {
     onServices: () => goPage(() => setContentView('service')),
     onBlog: () => goPage(() => setContentView('blog')),
     onNews: () => goPage(() => setContentView('news')),
+    // Belirli bir haberin detayini ac (/haberler/<slug>): liste yerine dogrudan detay.
+    onOpenNews: (slug: string) => goPage(() => { setContentView('news'); setNewsSlug(slug) }),
     onMagazine: () => goPage(() => setContentView('magazine')),
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
@@ -4736,7 +4738,10 @@ export default function App() {
             <BannerSlider onOpen={menuProps.onTournamentAd} />
             <div className="home-cal-wrap">
               <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
-              <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
+              <div className="home-cal-side">
+                <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
+                <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
+              </div>
             </div>
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
