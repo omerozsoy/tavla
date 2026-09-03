@@ -3668,6 +3668,8 @@ export default function App() {
               setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
               markNotificationsRead().catch(() => {})
             }}
+            onDelete={handleDeleteNotification}
+            onDeleteAll={handleDeleteAllNotifications}
           />
           <Button variant="outline" className="account-shop-btn" onClick={() => goPage(() => setShopOpen(true))}>
             <Icon name="shop" size={15} /> {t('shop.title')}
@@ -3780,11 +3782,13 @@ export default function App() {
                     unread={unreadNotif}
                     onOpen={() => {
                       // Okundu = SADECE okundu isaretle (silme YOK). Rozet 0'a duser;
-                      // bildirimler kalir -> Profilim > Bildirimler sekmesinde silinebilir.
+                      // bildirimler kalir -> panelden veya Profilim > Bildirimler'den silinebilir.
                       setUnreadNotif(0)
                       setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
                       markNotificationsRead().catch(() => {})
                     }}
+                    onDelete={handleDeleteNotification}
+                    onDeleteAll={handleDeleteAllNotifications}
                   />
                 </span>
               </div>

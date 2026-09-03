@@ -8,6 +8,8 @@ interface Props {
   items: AppNotification[]
   unread: number
   onOpen: () => void // panel acilinca hepsini okundu isaretle
+  onDelete?: (id: number) => void // tek bildirim sil
+  onDeleteAll?: () => void // hepsini sil (tumunu temizle)
 }
 
 const ICONS: Record<string, IconName> = {
@@ -32,7 +34,7 @@ function timeAgo(iso: string | null | undefined, t: (k: string, p?: Record<strin
 }
 
 // Ust bardaki bildirim cani + kirmizi rozet + acilir liste
-export default function NotificationBell({ items, unread, onOpen }: Props) {
+export default function NotificationBell({ items, unread, onOpen, onDelete, onDeleteAll }: Props) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
   // Panel position:fixed -> ust bar overflow (nowrap/scroll) paneli KIRPMAZ; sayfanin
@@ -77,7 +79,14 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
       </Button>
       {open && (
         <div className="notif-panel" style={{ position: 'fixed', top: pos.top, right: pos.right }}>
-          <div className="notif-head">{t('notif.title')}</div>
+          <div className="notif-head">
+            <span>{t('notif.title')}</span>
+            {items.length > 0 && onDeleteAll && (
+              <button type="button" className="notif-clear" onClick={onDeleteAll}>
+                {t('notif.clearAll')}
+              </button>
+            )}
+          </div>
           {items.length === 0 ? (
             <div className="notif-empty">{t('notif.empty')}</div>
           ) : (
@@ -92,6 +101,17 @@ export default function NotificationBell({ items, unread, onOpen }: Props) {
                     {n.body && <span className="notif-b">{n.body}</span>}
                   </span>
                   <span className="notif-time">{timeAgo(n.created_at, t)}</span>
+                  {onDelete && (
+                    <button
+                      type="button"
+                      className="notif-del"
+                      title={t('notif.delete')}
+                      aria-label={t('notif.delete')}
+                      onClick={() => onDelete(n.id)}
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>

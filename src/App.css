@@ -13601,10 +13601,26 @@ button.acct-row:hover:not(:disabled) {
   overflow: hidden;
 }
 .notif-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 12px 14px;
   font-weight: 400;
   color: var(--text);
   border-bottom: 1px solid var(--border);
+}
+.notif-clear {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+.notif-clear:hover {
+  color: var(--accent);
 }
 .notif-empty {
   padding: 24px 14px;
@@ -13660,6 +13676,25 @@ button.acct-row:hover:not(:disabled) {
   color: var(--faint, var(--muted));
   font-size: 0.72rem;
   white-space: nowrap;
+}
+.notif-del {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: -2px -4px 0 0;
+  border: none;
+  background: none;
+  border-radius: var(--radius-circle);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.notif-del:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* Avatar cercevesi */
