@@ -554,11 +554,12 @@ export interface ChatMessage {
   id: number
   body: string
   mine: boolean
+  read?: boolean // gonderdigim mesaj karsi tarafca okundu mu (mavi cift tik)
   created_at?: string | null
 }
 export interface ChatThread {
   user: ChatUser
-  last: { body: string; mine: boolean; created_at?: string | null } | null
+  last: { body: string; mine: boolean; read?: boolean; created_at?: string | null } | null
   unread: number
 }
 
@@ -712,6 +713,7 @@ export interface Content {
   video_id?: string | null
   event_at?: string | null
   event_end?: string | null // etkinlik bitis (cok gunlu turnuva)
+  created_at?: string | null // kayit tarihi (haber yayin tarihi fallback'i)
   sort: number
   published: boolean
 }

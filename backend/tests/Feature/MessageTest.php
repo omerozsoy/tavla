@@ -75,6 +75,27 @@ class MessageTest extends TestCase
         $this->getJson('/api/messages/unread')->assertOk()->assertJsonPath('unread', 0);
     }
 
+    public function test_read_receipt_flips_after_receiver_opens_thread(): void
+    {
+        $me = $this->makeUser('me');
+        $friend = $this->makeUser('fr');
+        $this->befriend($me, $friend);
+
+        // Ben mesaj gonderirim -> henuz okunmadi (read=false)
+        Sanctum::actingAs($me);
+        $this->postJson("/api/messages/{$friend->id}", ['body' => 'okundu mu?'])
+            ->assertOk()->assertJsonPath('message.read', false);
+        $this->getJson("/api/messages/{$friend->id}")->assertJsonPath('messages.0.read', false);
+
+        // Arkadas konusmayi acar -> mesajim okundu isaretlenir
+        Sanctum::actingAs($friend);
+        $this->getJson("/api/messages/{$me->id}")->assertOk();
+
+        // Ben tekrar bakinca mesajim read=true (mavi tik)
+        Sanctum::actingAs($me);
+        $this->getJson("/api/messages/{$friend->id}")->assertJsonPath('messages.0.read', true);
+    }
+
     public function test_threads_list_shows_last_message_and_unread(): void
     {
         $me = $this->makeUser('me');

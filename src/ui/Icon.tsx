@@ -45,6 +45,7 @@ import {
   Bell,
   Eye,
   Check,
+  Checks,
   X,
   Pencil,
   CaretDown,
@@ -129,6 +130,7 @@ export type IconName =
   | 'bell'
   | 'eye'
   | 'check'
+  | 'checks'
   | 'x'
   | 'pencil'
   | 'chevron'
@@ -217,6 +219,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   bell: Bell,
   eye: Eye,
   check: Check,
+  checks: Checks,
   x: X,
   pencil: Pencil,
   chevron: CaretDown,

@@ -82,6 +82,7 @@ class MessageController extends Controller
                 'last' => $last ? [
                     'body' => $last->body,
                     'mine' => $last->sender_id === $me,
+                    'read' => $last->read_at !== null,
                     'created_at' => optional($last->created_at)->toIso8601String(),
                 ] : null,
                 'unread' => $unread,
@@ -127,6 +128,7 @@ class MessageController extends Controller
             'id' => $m->id,
             'body' => $m->body,
             'mine' => $m->sender_id === $me,
+            'read' => $m->read_at !== null, // gonderdigim mesaj karsi tarafca okundu mu (mavi tik)
             'created_at' => optional($m->created_at)->toIso8601String(),
         ]);
 
@@ -165,6 +167,7 @@ class MessageController extends Controller
                 'id' => $msg->id,
                 'body' => $msg->body,
                 'mine' => true,
+                'read' => false, // yeni gonderildi, henuz okunmadi
                 'created_at' => optional($msg->created_at)->toIso8601String(),
             ],
         ]);

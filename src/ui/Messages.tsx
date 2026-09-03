@@ -213,7 +213,18 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
                     messages.map((m) => (
                       <div key={m.id} className={`msg-bubble ${m.mine ? 'mine' : 'theirs'}`}>
                         <span className="msg-text">{m.body}</span>
-                        <span className="msg-time">{fmtTime(m.created_at)}</span>
+                        <span className="msg-meta">
+                          <span className="msg-time">{fmtTime(m.created_at)}</span>
+                          {m.mine && (
+                            <span
+                              className={`msg-tick ${m.read ? 'read' : ''}`}
+                              aria-label={m.read ? t('dm.read') : t('dm.sent')}
+                              title={m.read ? t('dm.read') : t('dm.sent')}
+                            >
+                              <Icon name={m.read ? 'checks' : 'check'} size={14} />
+                            </span>
+                          )}
+                        </span>
                       </div>
                     ))
                   )}

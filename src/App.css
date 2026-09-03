@@ -14632,17 +14632,31 @@ button.acct-row:hover:not(:disabled) {
 .msg-text {
   white-space: pre-wrap;
 }
-.msg-time {
+.msg-meta {
   flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 1px;
+}
+.msg-time {
   font-size: 0.62rem;
   font-variant-numeric: tabular-nums;
-  margin-bottom: 1px;
 }
 .msg-bubble.mine .msg-time {
   color: rgba(255, 255, 255, 0.82);
 }
 .msg-bubble.theirs .msg-time {
   color: var(--muted);
+}
+/* Okundu bilgisi: tek tik = gonderildi, mavi cift tik = okundu (yalniz kendi mesajlarimda) */
+.msg-tick {
+  display: inline-flex;
+  line-height: 0;
+  color: rgba(255, 255, 255, 0.72);
+}
+.msg-tick.read {
+  color: #7fd4ff;
 }
 .messages-compose {
   position: relative; /* emoji paleti compose'a gore SAGA hizalanabilsin */
