@@ -47,6 +47,12 @@ class NewsResource extends Resource
                 ->imageEditor()->maxSize(4096)
                 ->helperText('Habere kapak fotoğrafı yükle. İçe aktarılan haberlerde otomatik doludur.')
                 ->columnSpanFull(),
+            Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
+                ->image()->multiple()->reorderable()->appendFiles()
+                ->disk('uploads')->directory('haber')->visibility('public')
+                ->maxSize(4096)->panelLayout('grid')
+                ->helperText('Birden fazla fotoğraf ekleyebilirsin. Haber detayında galeri olarak gösterilir; sürükleyerek sıralayabilirsin.')
+                ->columnSpanFull(),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }
