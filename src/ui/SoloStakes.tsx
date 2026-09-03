@@ -42,18 +42,37 @@ interface Props {
   /** Oyuncunun SECILI tahta temasi — sadece pul (checker) rengi icin kullanilir;
       tahta ZEMIN + ucgen renkleri artik SEVIYEYE gore degisir. */
   board: BoardColors
-  onPick: (stake: number) => void
+  /** Secilen BIR VEYA BIRDEN COK bahis (coin tutari). Sunucu kesisen tutarla eslestirir. */
+  onPick: (stakes: number[]) => void
   onClose: () => void
 }
 
 export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  // Baslangicta oynanabilir ilk seviye secili (yoksa ilk seviye)
-  const [sel, setSel] = useState<SoloLevel>(
-    () => SOLO_LEVELS.find((l) => coins >= l.stake) ?? SOLO_LEVELS[0],
-  )
-  const selLocked = coins < sel.stake
+  // Coklu secim: baslangicta oynanabilir ilk seviye secili. Set = secili seviye NO'lari.
+  const firstPlayable = SOLO_LEVELS.find((l) => coins >= l.stake) ?? SOLO_LEVELS[0]
+  const [selected, setSelected] = useState<Set<number>>(() => new Set([firstPlayable.level]))
+
+  function toggle(lv: SoloLevel) {
+    if (coins < lv.stake) return // kilitli tutar secilemez
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(lv.level)) next.delete(lv.level)
+      else next.add(lv.level)
+      return next
+    })
+  }
+
+  const selectedLevels = SOLO_LEVELS.filter((l) => selected.has(l.level))
+  // Onizleme: secili EN YUKSEK seviyenin tahtasi (yoksa ilk oynanabilir)
+  const preview = selectedLevels.length ? selectedLevels[selectedLevels.length - 1] : firstPlayable
+  const canStart = selectedLevels.length >= 1
+
+  function start() {
+    const stakes = selectedLevels.map((l) => l.stake)
+    if (stakes.length) onPick(stakes)
+  }
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -76,11 +95,17 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
               return (
                 <button
                   key={lv.level}
-                  className={`solo-tile ${locked ? 'locked' : ''} ${sel.level === lv.level ? 'selected' : ''}`}
+                  className={`solo-tile ${locked ? 'locked' : ''} ${selected.has(lv.level) ? 'selected' : ''}`}
                   disabled={locked}
-                  onClick={() => setSel(lv)}
+                  onClick={() => toggle(lv)}
+                  aria-pressed={selected.has(lv.level)}
                   title={locked ? t('solo.locked') : t('solo.play')}
                 >
+                  {selected.has(lv.level) && (
+                    <span className="solo-check" aria-hidden="true">
+                      <Icon name="check" size={11} />
+                    </span>
+                  )}
                   <span className="solo-lvl">{t('solo.level', { n: lv.level })}</span>
                   <span
                     className="solo-board"
@@ -112,21 +137,28 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
           {/* Onizleme SECILI SEVIYENIN tahtasini gosterir: zemin + ucgen renkleri
               seviyeye gore degisir (pul rengi oyuncunun kendi checker'i). */}
           <SetupBoard
-            panel={sel.panel}
-            a={sel.a}
-            b={sel.b}
+            panel={preview.panel}
+            a={preview.a}
+            b={preview.b}
             checker={board.checker}
           />
           <div className="solo-preview-bar">
             <span className="solo-preview-info">
-              {t('solo.level', { n: sel.level })} ·{' '}
-              <Coins amount={sel.stake} size={14} />
+              {selectedLevels.length <= 1 ? (
+                <>
+                  {t('solo.level', { n: preview.level })} · <Coins amount={preview.stake} size={14} />
+                </>
+              ) : (
+                <>
+                  {t('solo.selCount', { n: selectedLevels.length })} · <Coins amount={preview.stake} size={14} />
+                </>
+              )}
             </span>
             <Button
               variant="default"
               className="solo-start"
-              disabled={selLocked}
-              onClick={() => onPick(sel.stake)}
+              disabled={!canStart}
+              onClick={start}
             >
               <Icon name="play" size={18} /> {t('setup.start')}
             </Button>

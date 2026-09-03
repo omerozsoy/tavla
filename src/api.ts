@@ -906,6 +906,7 @@ export interface RoomView {
   version: number
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   target?: number | null
+  stake?: number // anlasilan sabit bahis (coklu secimde eslesmede kesinlesir)
   clock?: RoomClock | null
 }
 
@@ -959,6 +960,7 @@ export async function matchmake(
   betPct?: number,
   targets?: number[],
   timeControl?: string,
+  stakes?: number[], // Tek Oyun: kabul edilen coklu bahis; kesisen tutarla eslesir
 ): Promise<{ room: RoomView; slot: Slot; matched: boolean }> {
   return req('/matchmaking', {
     method: 'POST',
@@ -968,6 +970,7 @@ export async function matchmake(
       rating: rating ?? null,
       avatar: avatar ?? null,
       stake: stake ?? 0,
+      stakes: stakes ?? null, // verilmezse backend [stake]'e duser
       user_id: userId ?? null,
       min_rating: minRating ?? 0,
       bet_pct: betPct ?? 0,

@@ -23,6 +23,7 @@ class Room extends Model
         'version',
         'status',
         'stake',
+        'stakes',
         'bet_pct',
         'target',
         'targets',
@@ -41,6 +42,7 @@ class Room extends Model
             'state' => 'array',
             'messages' => 'array',
             'targets' => 'array',
+            'stakes' => 'array',
             'clock' => 'array',
         ];
     }

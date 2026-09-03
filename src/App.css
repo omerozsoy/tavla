@@ -10102,6 +10102,24 @@ button.acct-row:hover:not(:disabled) {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
 }
+/* Coklu secim onay rozeti (sag ust) — birden fazla bahis secilebildigi belli olsun */
+.solo-tile {
+  position: relative;
+}
+.solo-check {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+  color: #fff;
+  z-index: 2;
+}
 .solo-preview-bar {
   display: flex;
   align-items: center;
