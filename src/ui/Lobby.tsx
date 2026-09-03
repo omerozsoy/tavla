@@ -56,6 +56,19 @@ export default function Lobby({
     return () => window.clearInterval(id)
   }, [ads.length])
 
+  // Baglaniyor: oda olusturuluyor / eslesme havuzuna giriliyor (async cagri surerken).
+  // Bu ekran olmadan room=null aninda ALTTAKI oda-secim ekrani (Rakip Bul/Oyun Olustur)
+  // bir an FLASH ediyordu -> setup'tan sonra "sacma" ara ekran. Temiz spinner ile giderildi.
+  if (busy && !room) {
+    return (
+      <div className={wrapCls}>
+        <div className="register-card lobby-connecting">
+          <div className="loading-spinner" />
+        </div>
+      </div>
+    )
+  }
+
   // Hizli eslesme: rakip araniyor (avatar VS spinner + reklam)
   if (room && room.status === 'mm_waiting') {
     const ad = ads.length ? ads[adIdx % ads.length] : null

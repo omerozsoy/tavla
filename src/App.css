@@ -17726,3 +17726,14 @@ select:-webkit-autofill {
   width: 100%;
   padding: clamp(20px, 6vh, 72px) 16px 40px;
 }
+
+
+/* Baglaniyor: oda olustur/eslesme async cagrisi surerken ortali spinner
+   (setup -> arama arasindaki oda-secim/board FLASH'ini gizler). */
+.lobby-connecting {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 48px 40px;
+}
