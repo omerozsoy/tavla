@@ -48,6 +48,9 @@ class ClubResource extends Resource
             Forms\Components\Select::make('province')->label('İl')
                 ->options(array_combine(EventResource::PROVINCES, EventResource::PROVINCES))
                 ->searchable()->required(),
+            Forms\Components\TextInput::make('sort')->label('Sıra (il içinde)')
+                ->numeric()->default(0)->minValue(0)->step(1)
+                ->helperText('Küçük sayı üstte listelenir. Aynı il içindeki kulüpler bu sıraya göre dizilir (eşitse ada göre).'),
             Forms\Components\TextInput::make('place')->label('Adres')->columnSpanFull(),
             Forms\Components\Repeater::make('contacts')->label('İletişim (kişiler)')
                 ->schema([
@@ -80,6 +83,9 @@ class ClubResource extends Resource
             ->reorderable('sort')
             ->defaultSort('sort')
             ->columns([
+                // Hizli sira duzenleme: tabloda dogrudan yaz (kaydetmeden anlik). Kucuk = ustte.
+                Tables\Columns\TextInputColumn::make('sort')->label('Sıra')
+                    ->type('number')->rules(['integer', 'min:0'])->sortable(),
                 Tables\Columns\ImageColumn::make('image')->label('Logo')->disk('uploads')->circular(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('title')->label('Kulüp')->searchable(),
