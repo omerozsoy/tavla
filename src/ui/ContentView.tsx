@@ -891,7 +891,7 @@ function EventRow({
       {ev.show_tavlatv && (
         <span className="event-tvflag" aria-hidden="true">
           <span className="event-tvflag-band">
-            <TavlaTvLogo size={13} tone="dark" className="event-tvflag-logo" />
+            <TavlaTvLogo size={15} tone="dark" className="event-tvflag-logo" />
           </span>
         </span>
       )}

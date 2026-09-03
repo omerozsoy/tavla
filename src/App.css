@@ -3121,17 +3121,17 @@ button[aria-disabled='true'],
   box-shadow: none !important;
 }
 /* TavlaTV yayin bayragi (opsiyonel; admin panelden acilir).
-   Ust-sag koseden sarkan SIYAH flama; alti V-catal (fishtail); uzerinde dikey
-   TAVLATV logosu. Ulke bayragi da varsa o sola kayar, TavlaTV kosede one cikar. */
+   SOL bastan sarkan SIYAH flama; alti V-catal (fishtail); uzerinde dikey
+   TAVLATV logosu. Ulke bayragi sag kosede kalir (cakisma yok). */
 .event-tvflag {
   position: absolute;
   top: -3px;
-  right: 10px;
-  width: 30px;
-  height: 78px;
+  left: 12px;
+  width: 42px;
+  height: 108px;
   pointer-events: none;
   z-index: 4;
-  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.35));
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.35));
 }
 .event-tvflag-band {
   position: absolute;
@@ -3158,10 +3158,6 @@ button[aria-disabled='true'],
   transform: translate(-50%, -50%) rotate(90deg);
   transform-origin: center;
   white-space: nowrap;
-}
-/* Ulke bayragi + TavlaTV birlikte: ulke bayragini sola kaydir, cakismasin. */
-.event-row.has-tvflag .event-ribbon {
-  right: 50px;
 }
 .event-row.past {
   border-left-color: var(--muted);
