@@ -3121,41 +3121,57 @@ button[aria-disabled='true'],
   box-shadow: none !important;
 }
 /* TavlaTV yayin bayragi (opsiyonel; admin panelden acilir).
-   Kartin SOL UST kosesinde YATAY kirmizi kurdele: sag ucu sivri (ok),
-   sol altinda katlanmis kivrim (fold). Renk site aksani (var(--accent));
-   kivrim token'dan turetilmis koyu ton. */
+   Kartin SOL UST KOSESINE oturan KIRMIZI koseli kurdele (dolu ucgen): capraz
+   krem TAVLATV wordmark + iki ucta katlanma tabi. Renk site aksani var(--accent);
+   tab'lar token'dan turetilmis koyu ton. Kartin overflow:hidden'i koseyi kirpar. */
 .event-tvflag {
   position: absolute;
-  top: 12px;
+  top: 0;
   left: 0;
+  width: 112px;
+  height: 112px;
   z-index: 4;
   pointer-events: none;
-  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.22));
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.28));
 }
+/* Dolu ucgen: sol-ust koseyi doldurur (ust kenar + sol kenar + capraz hipotenus). */
 .event-tvflag-band {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  height: 24px;
-  padding: 0 22px 0 12px;
-  background: #1c1a17; /* marka ink zemini (orijinal logo iki-renk kimligi bunda okunur) */
-  /* Sag uc sivri (ok); sol kenar duz. */
-  clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
-}
-/* Sol altta katlanma kivrimi: ink'ten koyu ucgen, banttan asagi sarkar. */
-.event-tvflag-fold {
   position: absolute;
+  top: 0;
   left: 0;
-  top: 100%;
+  width: 112px;
+  height: 112px;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 0 100%);
+}
+/* Uc katlanma tab'lari: koyu ucgenler (ust-sag ucu ve alt-sol ucu). */
+.event-tvflag-tab1 {
+  position: absolute;
+  top: 0;
+  left: 112px;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 7px 8px 0 0;
-  border-color: #0e0d0b transparent transparent transparent;
+  border-width: 0 0 8px 8px;
+  border-color: transparent transparent color-mix(in srgb, var(--accent) 55%, #000) transparent;
 }
+.event-tvflag-tab2 {
+  position: absolute;
+  top: 112px;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 8px 8px 0 0;
+  border-color: color-mix(in srgb, var(--accent) 55%, #000) transparent transparent transparent;
+}
+/* Wordmark capraza (hipotenusle paralel) oturur, koseye dogru ortalanir. */
 .event-tvflag-logo {
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  top: 37px;
+  left: 37px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  transform-origin: center;
 }
 .event-row.past {
   border-left-color: var(--muted);

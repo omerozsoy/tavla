@@ -886,15 +886,14 @@ function EventRow({
           </span>
         </span>
       )}
-      {/* TavlaTV yayin bayragi (admin acinca): sol ust kosede YATAY ink kurdele,
-          sag ucu sivri + sol altta katlanma kivrimi; uzerinde orijinal iki-renk
-          TAVLATV logosu (kiremit ucgen + krem harf; ustteki bar ile ayni). */}
+      {/* TavlaTV yayin bayragi (admin acinca): sol ust KOSEYE oturan kirmizi koseli
+          kurdele (dolu ucgen); capraz krem TAVLATV wordmark + iki uc katlanma tabi. */}
       {ev.show_tavlatv && (
         <span className="event-tvflag" aria-hidden="true">
-          <span className="event-tvflag-band">
-            <TavlaTvLogo size={13} tone="dark" className="event-tvflag-logo" />
-          </span>
-          <span className="event-tvflag-fold" />
+          <span className="event-tvflag-band" />
+          <span className="event-tvflag-tab1" />
+          <span className="event-tvflag-tab2" />
+          <TavlaTvLogo size={13} color="#F4EFE6" className="event-tvflag-logo" />
         </span>
       )}
       {/* Sol: duzenleyen kurumun BUYUK logosu (varsa). Yoksa sutun render edilmez,
