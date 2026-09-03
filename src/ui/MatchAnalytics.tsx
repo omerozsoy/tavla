@@ -45,6 +45,15 @@ function initial(name?: string | null): string {
   return c ? c.toUpperCase() : '?'
 }
 
+// YZ (bot) rakip isimleri — MatchSetup AI_LEVELS ile senkron. Bu isimlerdeki rakip
+// bot demektir; harf monogram yerine robot ikonu gosterilir.
+const BOT_NAMES = new Set(
+  ['beginner', 'rookie', 'casual', 'skilled', 'expert', 'master', 'grandmaster', 'elite', 'legend', 'neural ai'],
+)
+function isBot(name?: string | null): boolean {
+  return BOT_NAMES.has((name ?? '').trim().toLowerCase())
+}
+
 interface Props {
   onClose: () => void
   myName?: string
@@ -189,7 +198,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                     <div className="mh-board">
                       {/* Rakip (sol) */}
                       <div className={`mh-team mh-opp ${oppWon ? 'won' : ''}`}>
-                        <span className="mh-ava" aria-hidden="true">{initial(oppName)}</span>
+                        <span className="mh-ava" aria-hidden="true">
+                          {isBot(oppName) ? <Icon name="robot" size={20} /> : initial(oppName)}
+                        </span>
                         <span className="mh-info">
                           <span className="mh-nm">{oppName}</span>
                           <span className="mh-tags">
