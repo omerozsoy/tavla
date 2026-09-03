@@ -78,11 +78,14 @@ PROMPT;
                 ]],
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Gorsel servisi hatasi.'], 502);
+            return response()->json(['message' => 'Gorsel servisi hatasi.', 'debug' => $e->getMessage()], 502);
         }
 
         if (! $resp->ok()) {
-            return response()->json(['message' => 'Gorsel servisi hatasi.'], 502);
+            return response()->json([
+                'message' => 'Gorsel servisi hatasi.',
+                'debug' => ['status' => $resp->status(), 'body' => mb_substr($resp->body(), 0, 500)],
+            ], 502);
         }
 
         $text = $resp->json('content.0.text', '');
