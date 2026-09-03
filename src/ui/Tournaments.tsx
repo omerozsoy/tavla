@@ -191,7 +191,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           <div className="tourn-organizer tourn-runby">
             <span>
               {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={24} tone="light" className="tourn-runby-logo" />
+              <TavlaTvLogo size={30} tone="light" className="tourn-runby-logo" />
             </span>
           </div>
           {active.status === 'open' && active.starts_at && (
@@ -484,7 +484,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             )}
             <span className="event-runby">
               {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={24} tone="light" className="event-runby-logo" />
+              <TavlaTvLogo size={30} tone="light" className="event-runby-logo" />
             </span>
           </div>
           {/* Odul dagilimi: 1., 2., 3. ... her sira ne kazanir -> NET liste.
