@@ -1,5 +1,6 @@
 import './footer.css'
 import { useT } from '../i18n'
+import { TavlaTvLogo } from './TavlaTvLogo'
 
 export interface FooterItem {
   key: string
@@ -21,7 +22,7 @@ export default function Footer({ columns }: Props) {
     <footer className="site-footer">
       <div className="foot-inner">
         <div className="foot-brand">
-          <div className="foot-logo">TAVLATV</div>
+          <TavlaTvLogo size={22} tone="dark" className="foot-logo" />
           <p className="foot-tag">{t('foot.tag')}</p>
         </div>
         <nav className="foot-cols">
