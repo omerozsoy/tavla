@@ -3626,6 +3626,16 @@ button[aria-disabled='true'],
 .club-person svg {
   color: var(--accent);
 }
+/* Kulup telefonu WhatsApp linki: hover'da altini ciz + kiremit renk */
+.club-person-phone {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+.club-person-phone:hover {
+  text-decoration: underline;
+  color: var(--accent);
+}
 .club-links {
   display: flex;
   align-items: center;
