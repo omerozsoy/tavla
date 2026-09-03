@@ -81,6 +81,9 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
             'stake' => ['nullable', 'integer', 'min:0', 'max:1000000000'],
+            // Tek Oyun: kabul edilen COKLU bahis (kesisen tutarla eslesir). Bos ise [stake]'e duser.
+            'stakes' => ['nullable', 'array', 'max:20'],
+            'stakes.*' => ['integer', 'min:0', 'max:1000000000'],
             // NOT: user_id ISTEMCIDEN alinmaz (guvenlik). Sanctum token'indan gelir; asagida
             // $authUser->id kullanilir. Bu yuzden burada validate/kabul EDILMEZ (olu parametre kaldirildi).
             'min_rating' => ['nullable', 'integer', 'min:0', 'max:4000'],
@@ -90,6 +93,12 @@ class RoomController extends Controller
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
         ]);
         $stake = (int) ($data['stake'] ?? 0);
+        // Kabul edilen bahisler (Tek Oyun coklu secim). Bos -> tek [stake]. Tekillestir + sirala.
+        $stakes = array_values(array_unique(array_map('intval', $data['stakes'] ?? [])));
+        sort($stakes);
+        if (empty($stakes)) {
+            $stakes = [$stake];
+        }
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
         // Server-otoriter saat AYNI tempoyu gerektirir -> eslesme tempoyu da sart kosar.
@@ -107,25 +116,32 @@ class RoomController extends Controller
             $targets = [1];
         }
 
-        // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart
-        if ($stake > 0 || $betPct > 0) {
+        // Bahisli oyun (sabit stake VEYA % bahis): dogrulanmis giris + coin sart.
+        // Coklu bahiste EN YUKSEK secilen tutari karsilayabilmeli (eslesme o tutarda olabilir).
+        $maxStake = max($stakes);
+        if ($maxStake > 0 || $betPct > 0) {
             if (! $authUser) {
                 return $this->fail('Bahisli oyun için giriş yapmalısın.', 422);
             }
-            if (($authUser->coins ?? 0) < max($stake, 1)) {
+            if (($authUser->coins ?? 0) < max($maxStake, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
         }
 
-        // Zaten havuzda bekleyen kendi odam (ayni bahis/kategori) varsa onu don
+        // Zaten havuzda bekleyen kendi odam (ayni kategori) varsa: bahis secimi AYNIysa don,
+        // FARKLIysa eskiyi kaldir (orphan bekleyen oda kalmasin) -> yeni secimle yeniden aranir.
         $mine = Room::where('status', 'mm_waiting')
             ->where('p1_token', $data['token'])
-            ->where('stake', $stake)
             ->where('bet_pct', $betPct)
             ->where('time_control', $timeControl)
             ->first();
         if ($mine) {
-            return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
+            $mineStakes = is_array($mine->stakes) ? array_values(array_map('intval', $mine->stakes)) : [(int) $mine->stake];
+            sort($mineStakes);
+            if ($mineStakes === $stakes) {
+                return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
+            }
+            $mine->delete();
         }
 
         // Ayni bahis/kategorili bekleyen adaylar; min puan filtresi (tek yonlu).
@@ -133,9 +149,9 @@ class RoomController extends Controller
         // ATOMIK: aday secimi (lockForUpdate) + rakibe yazma TEK transaction icinde olmali,
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
-        $opponent = DB::transaction(function () use ($data, $stake, $betPct, $minRating, $targets, $userId, $timeControl) {
+        $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl) {
+            // Bahis KOLONUYLA filtrelemiyoruz: aday listesiyle KESISIM kontrol edilir (coklu secim).
             $q = Room::where('status', 'mm_waiting')
-                ->where('stake', $stake)
                 ->where('bet_pct', $betPct)
                 ->where('time_control', $timeControl) // yalnizca ayni tempo
                 ->where('p1_token', '!=', $data['token'])
@@ -146,19 +162,36 @@ class RoomController extends Controller
             $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
 
             foreach ($candidates as $cand) {
+                // Uzunluk KESISIMI
                 $candTargets = is_array($cand->targets) ? $cand->targets : [1];
-                $common = array_values(array_intersect($candTargets, $targets));
-                if (! empty($common)) {
-                    $cand->p2_token = $data['token'];
-                    $cand->p2_user_id = $userId;
-                    $cand->p2_name = $data['name'];
-                    $cand->p2_rating = $data['rating'] ?? null;
-                    $cand->p2_avatar = $data['avatar'] ?? null;
-                    $cand->target = max($common); // ortak uzunluklardan en uzunu
-                    $cand->status = 'playing';
-                    $cand->save();
-                    return $cand;
+                $commonTargets = array_values(array_intersect($candTargets, $targets));
+                if (empty($commonTargets)) {
+                    continue;
                 }
+                // Bahis KESISIMI (coklu secim): ortak tutarlardan EN YUKSEGI anlasilir.
+                $candStakes = is_array($cand->stakes) ? array_map('intval', $cand->stakes) : [(int) $cand->stake];
+                $commonStakes = array_values(array_intersect($candStakes, $stakes));
+                if (empty($commonStakes)) {
+                    continue;
+                }
+                $agreedStake = max($commonStakes);
+                // Bekleyen oyuncu anlasilan tutari HALA karsilayabiliyor mu? (coin degismis olabilir)
+                if ($agreedStake > 0 && $cand->p1_user_id) {
+                    $candCoins = (int) (User::where('id', $cand->p1_user_id)->value('coins') ?? 0);
+                    if ($candCoins < $agreedStake) {
+                        continue;
+                    }
+                }
+                $cand->p2_token = $data['token'];
+                $cand->p2_user_id = $userId;
+                $cand->p2_name = $data['name'];
+                $cand->p2_rating = $data['rating'] ?? null;
+                $cand->p2_avatar = $data['avatar'] ?? null;
+                $cand->stake = $agreedStake;   // anlasilan sabit bahis (settle bunu kullanir)
+                $cand->target = max($commonTargets); // ortak uzunluklardan en uzunu
+                $cand->status = 'playing';
+                $cand->save();
+                return $cand;
             }
 
             return null;
@@ -177,7 +210,9 @@ class RoomController extends Controller
             'p1_rating' => $data['rating'] ?? null,
             'p1_avatar' => $data['avatar'] ?? null,
             'status' => 'mm_waiting',
-            'stake' => $stake,
+            // Tek secimde sabit; coklu secimde eslesince anlasilan tutar yazilir (placeholder 0).
+            'stake' => count($stakes) === 1 ? $stakes[0] : 0,
+            'stakes' => $stakes,
             'bet_pct' => $betPct,
             'targets' => $targets,
             'target' => count($targets) === 1 ? $targets[0] : null,

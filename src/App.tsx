@@ -475,7 +475,8 @@ export default function App() {
   const [activeRooms, setActiveRooms] = useState<ActiveRoom[]>([]) // devam eden online maclarim
   const [homeProfileId, setHomeProfileId] = useState<number | null>(null) // lobi siralamasindan profil
   const [memOpen, setMemOpen] = useState(false) // uyelik yukseltme modali
-  const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz)
+  const stakeRef = useRef(0) // aktif bahisli online oyunun tutari (0 = bahissiz); coklu secimde anlasilan
+  const stakesRef = useRef<number[] | null>(null) // Tek Oyun: kabul edilen coklu bahis (null = tek/Mac Oyunu)
   // Arkadaslik (davet kodu) maci mi? true -> NE puan NE coin (dostluk). Davet=friendly,
   // eslesme havuzu/solo=ranked. Mac-sonu raporu + coin settle bunu okur.
   const friendlyRef = useRef(false)
@@ -2236,6 +2237,8 @@ export default function App() {
             setMatch(newMatch(rv.target))
             setClock(freshMatchClock(rv.target))
           }
+          // Coklu bahis: bekleyen oyuncu eslesince sunucunun anlastigi tutari uygula.
+          if (rv.stake != null && rv.stake > 0) stakeRef.current = rv.stake
         }
         if (rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
@@ -2623,9 +2626,13 @@ export default function App() {
     }
   }
 
-  // Tek Oyun: bahis + tema sec -> ayni bahisli online eslesmeye gir (tek oyun)
-  function startSoloStake(stake: number, target = 1) {
-    stakeRef.current = stake
+  // Tek Oyun: bir veya BIRDEN COK bahis sec -> kesisen tutarli rakiple eslesir (tek oyun).
+  // Anlasilan tutar sunucuda kesinlesir (ortak tutarlardan en yuksegi); stakeRef gecici max.
+  function startSoloStake(stakes: number[], target = 1) {
+    const list = stakes.filter((s) => s > 0)
+    if (list.length === 0) return
+    stakesRef.current = list
+    stakeRef.current = Math.max(...list) // gecici gosterim; eslesmede room.stake ile guncellenir
     betPctRef.current = 0 // Tek Oyun sabit bahis (pct degil)
     minRatingRef.current = 0 // Tek Oyun: puan filtresi yok
     // Tahta ARTIK seviyeye kilitli degil: oyuncunun secili boardTheme'i korunur
@@ -2660,10 +2667,13 @@ export default function App() {
         betPctRef.current,
         targetsRef.current,
         timeControl,
+        stakesRef.current ?? undefined,
       )
       // Eslesme olduysa sunucu ortak uzunlugu (target) verir; olmadiysa gecici (max).
       matchTargetSyncedRef.current = res.room.target != null
       if (res.room.target != null) onlineTargetRef.current = res.room.target
+      // Eslesme aninda anlasilan bahis (coklu secim) kesinlesti -> gercek tutari uygula.
+      if (res.matched && res.room.stake != null && res.room.stake > 0) stakeRef.current = res.room.stake
       appliedVersionRef.current = -1
       lastSyncRef.current = ''
       syncEnabledRef.current = false
@@ -3017,6 +3027,7 @@ export default function App() {
       targetsRef.current = opts.targets && opts.targets.length ? opts.targets : [opts.target]
       onlineTargetRef.current = Math.max(...targetsRef.current) // gecici; anlasilan uzunluk eslesmede kesinlesir
       stakeRef.current = 0 // Mac Oyunu sabit stake degil, % bahis kullanir
+      stakesRef.current = null // Tek Oyun coklu-bahis'i sizdirma (Mac Oyunu % bahis)
       betPctRef.current = opts.betPct ?? 0
       minRatingRef.current = opts.minRating ?? 0
       setMode('online')
