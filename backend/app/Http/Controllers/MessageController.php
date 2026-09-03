@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
-use App\Models\Notification;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -157,10 +156,9 @@ class MessageController extends Controller
             'created_at' => now(),
         ]);
 
-        // Alicayi bildirimle uyar (can + toast). Body kisaltilmis onizleme.
-        $meName = $me->nickname ?: $me->first_name ?: 'Bir oyuncu';
-        $preview = mb_strlen($body) > 60 ? mb_substr($body, 0, 57).'…' : $body;
-        Notification::notify($userId, "{$meName}: {$preview}", null, 'chat');
+        // NOT: Mesaj icin AYRI bildirim (can/zil) OLUSTURULMAZ -> mesaj+bildirim cift
+        // uyari olmasin. Alici, sag ust chat ikonundaki okunmamis rozetinden (dm_unread,
+        // ping) haberdar olur.
 
         return response()->json([
             'message' => [

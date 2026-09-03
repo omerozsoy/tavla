@@ -19,6 +19,13 @@ interface Props {
   onRead?: () => void // gelenler okundu -> App rozetini tazele
 }
 
+// Sohbet icin basit emoji seti (kutuphane yok; hafif)
+const EMOJIS = [
+  '😀', '😂', '🙂', '😉', '😍', '😘', '😎', '🤔', '😴', '😢',
+  '😭', '😡', '👍', '👎', '👏', '🙏', '💪', '🔥', '🎲', '🏆',
+  '❤️', '💔', '😅', '😜', '🤣', '😊', '🥳', '😳', '🤝', '✌️',
+]
+
 // Kisa saat (HH:MM)
 function fmtTime(iso?: string | null): string {
   if (!iso) return ''
@@ -38,7 +45,9 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
   const [loadingThread, setLoadingThread] = useState(false)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [emojiOpen, setEmojiOpen] = useState(false)
   const listEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const refreshThreads = useCallback(async () => {
     try {
@@ -100,6 +109,7 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
   async function doSend() {
     const body = text.trim()
     if (!body || sending || activeId == null) return
+    setEmojiOpen(false)
     setSending(true)
     // Iyimser ekle
     const optimistic: ChatMessage = { id: -Date.now(), body, mine: true, created_at: new Date().toISOString() }
@@ -211,7 +221,36 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
                 </div>
 
                 <div className="messages-compose">
+                  <div className="emoji-wrap">
+                    <button
+                      type="button"
+                      className="emoji-btn"
+                      onClick={() => setEmojiOpen((o) => !o)}
+                      aria-label="Emoji"
+                      title="Emoji"
+                    >
+                      🙂
+                    </button>
+                    {emojiOpen && (
+                      <div className="emoji-pop">
+                        {EMOJIS.map((e) => (
+                          <button
+                            key={e}
+                            type="button"
+                            className="emoji-item"
+                            onClick={() => {
+                              setText((v) => (v + e).slice(0, 1000))
+                              inputRef.current?.focus()
+                            }}
+                          >
+                            {e}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <input
+                    ref={inputRef}
                     value={text}
                     onChange={(e) => setText(e.target.value)}
                     placeholder={t('dm.placeholder')}
