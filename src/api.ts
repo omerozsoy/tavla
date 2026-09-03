@@ -402,7 +402,7 @@ export async function subscribe(
 // url: eski ayri kart sayfasi (yedek). amount: kurus, coins: toplam jeton.
 export async function buyCoins(
   items: { id: string; qty: number }[],
-): Promise<{ url: string; submitUrl: string; amount: number; coins: number }> {
+): Promise<{ url: string; submitUrl: string; amount: number; coins: number; demo?: boolean }> {
   return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items }) })
 }
 
@@ -424,6 +424,31 @@ export interface PublicProfile {
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)
+}
+
+// Pozisyon Analizi: fotograftan tas dizimi. Gorseli backend'e yollar, pozisyon doner.
+export interface BoardVisionResult {
+  points: number[] // 24 uzunluk: +beyaz / -siyah (engine ile ayni)
+  bar: { white: number; black: number }
+  off: { white: number; black: number }
+  confidence?: number | null
+}
+export async function analyzeBoardImage(file: File): Promise<BoardVisionResult> {
+  const token = getToken()
+  const form = new FormData()
+  form.append('image', file)
+  const res = await fetch(`${API_URL}/analyze-board-image`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  })
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : {}
+  if (!res.ok) throw new ApiError(res.status, data.message || 'Hata', data.errors)
+  return data as BoardVisionResult
 }
 
 export async function claimDaily(): Promise<{ claimed: boolean; reward?: number; coins: number }> {

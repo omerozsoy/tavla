@@ -12,6 +12,13 @@ return [
     'store_key'     => env('GARANTI_STORE_KEY'),           // 3D Secure store key
     'hash_version'  => env('GARANTI_HASH_VERSION', 'v2'),  // v2 = SHA512 (yeni), v1 = SHA1 (eski)
 
+    // DEMO odeme modu: banka bilgileri (yukaridaki) GIRILMEDEN kredi karti sayfasini
+    // gormek/test etmek icin. AKTIFKEN GERCEK PARA CEKILMEZ; "Öde" deyince coin/uyelik
+    // dogrudan hesaba yuklenir. Yalnizca gelistirme/onizleme icindir.
+    // Garanti bilgileri girilir girilmez (isConfigured()) demo otomatik DEVRE DISI kalir.
+    // Varsayilan: APP_DEBUG=true iken acik (yerel), production'da kapali. PAYMENT_DEMO ile ez.
+    'demo'          => (bool) env('PAYMENT_DEMO', env('APP_DEBUG', false)),
+
     // Tutar dogrulama sikiligi. Callback'te banka txnamount'u kayitli tutarla (kurus)
     // TAM SAYI olarak karsilastirilir. Banka test'te txnamount'un HER ZAMAN dolu geldigi
     // dogrulandiktan sonra bunu true yap: o zaman bos/uyumsuz tutar odemeyi REDDEDER.

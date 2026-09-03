@@ -23,6 +23,19 @@ class GarantiService
             && ! empty($this->cfg['store_key']);
     }
 
+    // Demo odeme: banka bilgisi YOKKEN kart sayfasini gormek/test icin. Gercek para CEKILMEZ.
+    // Garanti bilgileri girilince (isConfigured) demo asla devreye girmez -> gercek POS kullanilir.
+    public function isDemo(): bool
+    {
+        return ! $this->isConfigured() && (bool) ($this->cfg['demo'] ?? false);
+    }
+
+    // Odeme baslatilabilir mi? (gercek POS yapilandirildi VEYA demo acik)
+    public function isAvailable(): bool
+    {
+        return $this->isConfigured() || $this->isDemo();
+    }
+
     private function url(string $key): string
     {
         $mode = $this->cfg['mode'] === 'PROD' ? 'PROD' : 'TEST';

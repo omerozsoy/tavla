@@ -492,6 +492,7 @@ export default function App() {
     amount: number
     coins: number
     items: CartItem[]
+    demo?: boolean
   } | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
@@ -4384,7 +4385,7 @@ export default function App() {
           onCheckout={async (its) => {
             // Odeme kaydi olustur (fiyat sunucuda), imzali submitUrl al -> uygulama-ici odeme sayfasi
             const r = await buyCoins(its)
-            setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its })
+            setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
             setCartOpen(false)
             setCheckoutOpen(true)
           }}
@@ -4396,6 +4397,7 @@ export default function App() {
           amount={checkoutData.amount}
           coins={checkoutData.coins}
           items={checkoutData.items}
+          demo={checkoutData.demo}
           onBack={() => {
             setCheckoutOpen(false)
             setCartOpen(true)
