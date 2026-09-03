@@ -59,6 +59,13 @@ class ClubResource extends Resource
                         ->tel()->mask('999 9999999')->placeholder('532 1111111')->required(),
                 ])
                 ->columns(2)->addActionLabel('Kişi ekle')->reorderable(false)->columnSpanFull(),
+            // Eski tek-satir iletisim (seed'den gelen "Ad Soyad 05xx ..."). Yukaridaki
+            // "İletişim (kişiler)" BOŞSA ön yüzde bu gösterilir; kişi eklersen o gecerli olur.
+            Forms\Components\TextInput::make('contact')
+                ->label('İletişim (tek satır — eski/basit)')
+                ->placeholder('Berkant Bilgi 0533 925 13 29')
+                ->helperText('Yukarıdaki "İletişim (kişiler)" boşsa ön yüzde bu satır görünür. Kişi eklersen bu yok sayılır. Temizlemek için boşalt.')
+                ->maxLength(200)->columnSpanFull(),
             Forms\Components\TextInput::make('links.email')->label('E-posta')
                 ->email()->prefixIcon('heroicon-o-envelope')->placeholder('kulup@ornek.com')->maxLength(200),
             Forms\Components\TextInput::make('links.website')->label('Web sayfası')
