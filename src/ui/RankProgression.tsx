@@ -18,7 +18,7 @@ import { RANK_GROUPS, rankOf, nextRank, rankIndex, type RankTier } from '../rank
 import './RankProgression.css'
 
 export interface RankProgressionProps {
-  /** Verilirse mevcut rütbe + ilerleme gösterilir (ör. 1550 → Master M2). */
+  /** Verilirse mevcut rütbe + ilerleme gösterilir (ör. 2125 → Master M2). */
   currentRating?: number
   /** Daha sıkı, küçük varyant (dar alanlar / yan panel). */
   compact?: boolean

@@ -26,7 +26,7 @@ export interface RankBadgeProps {
   level?: string | null
   variant?: RankVariant
   size?: RankSize
-  /** featured'da rating eşiğini göster (ör. "1550+"). Varsayılan: featured'da açık. */
+  /** featured'da rating eşiğini göster (ör. "2100+"). Varsayılan: featured'da açık. */
   showRating?: boolean
   /** Aile adını göster (compact'te varsayılan kapalı, diğerlerinde açık). */
   showLabel?: boolean
