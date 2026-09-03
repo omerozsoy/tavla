@@ -10377,6 +10377,58 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   line-height: 1.4;
 }
+/* Kose-duzeltme (warp) modali: foto + surukle-4-kose + perspektif duzeltme. */
+.warp-card {
+  max-width: 560px;
+  width: 92vw;
+}
+.warp-stage {
+  position: relative;
+  width: 100%;
+  margin: 10px 0 14px;
+  touch-action: none;
+  user-select: none;
+  line-height: 0;
+}
+.warp-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 8px;
+}
+.warp-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.warp-poly {
+  fill: color-mix(in srgb, var(--accent) 16%, transparent);
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.warp-handle {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  touch-action: none;
+}
+.warp-handle:active {
+  cursor: grabbing;
+}
+.warp-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
 /* Board'un gercek pul rengiyle kucuk yuvarlak isaret (âšª/âš« yerine tema-uyumlu) */
 .pa-swatch {
   display: inline-block;

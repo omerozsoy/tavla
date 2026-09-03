@@ -16,6 +16,7 @@ import Board from './Board'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { analyzeBoardImage } from '../api'
+import BoardPhotoWarp from './BoardPhotoWarp'
 
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
@@ -103,12 +104,20 @@ export default function PositionAnalyzer({
   // Fotograftan diz (vision)
   const [visionBusy, setVisionBusy] = useState(false)
   const [visionMsg, setVisionMsg] = useState('')
+  const [warpFile, setWarpFile] = useState<File | null>(null) // kose-duzeltme adimi
   const fileRef = useRef<HTMLInputElement | null>(null)
 
-  async function onPickPhoto(e: RChangeEvent<HTMLInputElement>) {
+  // Foto secilince once KOSE-DUZELTME adimi (acili foto -> tepeden-duz), sonra Opus.
+  function onPickPhoto(e: RChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = '' // ayni dosya tekrar secilebilsin
     if (!file) return
+    setVisionMsg('')
+    setWarpFile(file)
+  }
+
+  async function uploadWarped(file: File) {
+    setWarpFile(null)
     setVisionBusy(true)
     setVisionMsg('')
     try {
@@ -384,6 +393,7 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
+    <>
     <div className="analyzer">
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
@@ -738,5 +748,9 @@ export default function PositionAnalyzer({
         </div>
       </div>
     </div>
+    {warpFile && (
+      <BoardPhotoWarp file={warpFile} onResult={uploadWarped} onCancel={() => setWarpFile(null)} />
+    )}
+    </>
   )
 }
