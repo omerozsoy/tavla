@@ -480,43 +480,8 @@ class AuthController extends Controller
         if (! $room) {
             return null;
         }
-        $slot = (int) $room->p1_user_id === (int) $user->id ? 'p1'
-            : ((int) $room->p2_user_id === (int) $user->id ? 'p2' : null);
-        if ($slot === null) {
-            return null;
-        }
-        $userColor = $slot === 'p1' ? 'white' : 'black';
-        $oppColor = $userColor === 'white' ? 'black' : 'white';
 
-        $state = is_array($room->state) ? $room->state : [];
-        $match = is_array($state['match'] ?? null) ? $state['match'] : [];
-        $score = is_array($match['score'] ?? null) ? $match['score'] : null;
-        $target = (int) ($room->target ?? ($match['target'] ?? 1));
-
-        // 1) Mac skoru: bir taraf hedefe ulasmis ve esitlik yoksa -> kesin sonuc.
-        if ($score !== null && isset($score[$userColor], $score[$oppColor])) {
-            $s = (int) $score[$userColor];
-            $o = (int) $score[$oppColor];
-            if ($s !== $o && $target > 0 && ($s >= $target || $o >= $target)) {
-                return ['won' => $s > $o, 'self' => $s, 'opp' => $o];
-            }
-        }
-        // 2) Oda p{slot}_result (saat/forfeit/settle).
-        $rc = $room->{$slot.'_result'} ?? null;
-        if ($rc === 'won' || $rc === 'lost') {
-            return [
-                'won' => $rc === 'won',
-                'self' => isset($score[$userColor]) ? (int) $score[$userColor] : null,
-                'opp' => isset($score[$oppColor]) ? (int) $score[$oppColor] : null,
-            ];
-        }
-        // 3) Tek-puanlik macta gameEnd.winner (renk).
-        $ge = is_array($state['gameEnd'] ?? null) ? $state['gameEnd'] : null;
-        if ($target <= 1 && $ge !== null && isset($ge['winner']) && in_array($ge['winner'], ['white', 'black'], true)) {
-            return ['won' => $userColor === $ge['winner'], 'self' => null, 'opp' => null];
-        }
-
-        return null;
+        return \App\Support\RoomResult::resolve($room, (int) $user->id);
     }
 
     /**
