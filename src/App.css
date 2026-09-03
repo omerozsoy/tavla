@@ -5125,6 +5125,20 @@ button[aria-disabled='true'],
   gap: 8px;
   align-items: stretch;
 }
+/* Koyu sonuc kutusunda outline/secondary buton: tema 'foreground' (koyu murekkep)
+   koyu zeminde okunmuyordu -> acik metin + gorunur kenar + hafif dolgu. */
+.result-actions [data-slot='button'][data-variant='outline'],
+.result-actions [data-slot='button'][data-variant='secondary'] {
+  color: #eef2ff !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.result-actions [data-slot='button'][data-variant='outline']:hover,
+.result-actions [data-slot='button'][data-variant='secondary']:hover {
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+}
 .result-pr {
   color: var(--text);
   font-size: 0.95rem;
