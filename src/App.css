@@ -7241,6 +7241,29 @@ button.acct-row:hover:not(:disabled) {
   display: inline-flex;
   align-items: center;
 }
+/* Logo + slogan kilidi: genisligi WORDMARK'a buzulur; slogan (SVG textLength=100%)
+   TEK SATIR halinde tam logo genisliginde yaslanir. (Footer'daki .foot-brandlock esi.) */
+.ab-brandlock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+}
+.ab-tag {
+  display: block;
+  width: 0;
+  min-width: 100%;
+  height: 11px;
+  margin-top: 1px;
+  overflow: visible;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.ab-tag text {
+  fill: var(--muted);
+}
 .ab-logo-mark {
   display: none;
   align-items: center;
@@ -7259,8 +7282,12 @@ button.acct-row:hover:not(:disabled) {
   .ab-logo-full {
     display: inline-flex;
   }
-  .ab-logo-full > [role='img'] {
+  .ab-wordmark {
     font-size: 26px !important;
+  }
+  /* Mobil bar cok dar -> slogan gizli (masaustunde gorunur). */
+  .ab-tag {
+    display: none;
   }
   .ab-logo-mark {
     display: none;
@@ -7288,6 +7315,15 @@ button.acct-row:hover:not(:disabled) {
 .account-name:hover {
   background: none; /* uzerine gelince zemin degismesin */
   border-color: var(--border); /* sadece yuvarlak kenarli ince cerceve */
+}
+/* Hesap bari avatari (28px): SoberFrame kalin halka + yumusak glow, kucuk boyutta
+   avatarin cevresinde yuvarlak-kare bir isik lekesi gibi duruyordu. Glow'u kaldirip
+   halkayi inceltince cerceve avatara TAM oturan temiz bir yuvarlak olur. */
+.account-avf {
+  --sf-ring-w: 2px;
+}
+.account-avf .sf-glow {
+  display: none;
 }
 .account-btn {
   display: inline-flex;
@@ -7518,7 +7554,7 @@ button.acct-row:hover:not(:disabled) {
     padding: 0 5px !important;
   }
   /* Dar telefon: wordmark biraz daha kucuk + en sola yaslansin (hamburger sagda). */
-  .ab-logo-full > [role='img'] {
+  .ab-wordmark {
     font-size: 20px !important;
   }
   .ab-brand {

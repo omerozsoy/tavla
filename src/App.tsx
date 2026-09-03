@@ -3375,6 +3375,7 @@ export default function App() {
     rating: online ? (myColor === 'black' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
+    isBot: !online && mode === 'pvb', // PvB'de siyah/ust oyuncu = YZ -> robot ikonu
   }
   const bottomInfo = {
     name: whiteName,
@@ -3586,9 +3587,17 @@ export default function App() {
         title={t('home.title')}
         aria-label={t('brand.name')}
       >
-        {/* Genis ekranda wordmark; mobilde kompakt sembol (yer acar) */}
+        {/* Genis ekranda wordmark + altinda slogan (tek satir, tam logo genisligi);
+            mobilde kompakt sembol (yer acar). */}
         <span className="ab-logo-full">
-          <TavlaTvLogo size={38} />
+          <span className="ab-brandlock">
+            <TavlaTvLogo size={38} className="ab-wordmark" />
+            <svg className="ab-tag" height="11" role="img" aria-label={t('foot.tag')}>
+              <text x="0" y="9" textLength="100%" lengthAdjust="spacingAndGlyphs">
+                {t('foot.tag')}
+              </text>
+            </svg>
+          </span>
         </span>
         <span className="ab-logo-mark">
           <TavlaTvMark size={40} />
