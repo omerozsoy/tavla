@@ -5617,22 +5617,14 @@ button[aria-disabled='true'],
 }
 .mem-status-actions {
   display: flex;
-  flex-wrap: nowrap; /* dar (3'lu grid) sutunda alt alta sarmasin */
+  flex-wrap: wrap; /* standart boy butonlar: sigmazsa alt alta */
   gap: 8px;
   margin-top: 2px;
 }
-/* Premium kart butonlari: kompakt -> dar sutuna tek satirda sigar */
+/* Premium kart butonlari SITE STANDART <Button> boyutunda/tarzinda (ozel kucultme YOK).
+   Yalnizca uzun etiket satir-ici sarmasin diye nowrap. */
 .mem-status-actions button {
-  height: 34px;
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 0.76rem;
   white-space: nowrap;
-  min-width: 0; /* gerekirse hafif kuculsun (tasma yerine) */
-}
-.mem-status-actions button svg {
-  width: 14px;
-  height: 14px;
 }
 
 /* Yalnizca .profile-form (editing modu) etkilenir; login/register dar kartta kalir. */
@@ -15221,6 +15213,11 @@ button.acct-row:hover:not(:disabled) {
 }
 .friend-row:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+/* Offline arkadaslar soluk: oyuncu bilgisi + bayrak solar, aksiyon butonlari net kalir */
+.friend-row-off .friend-id-btn,
+.friend-row-off .friend-flag {
+  opacity: 0.45;
 }
 /* Ulke bayragi SABIT dikey cizgide: identity sabit genislik (0 0 210px) -> bayrak hep ayni sutunda */
 .friend-flag {

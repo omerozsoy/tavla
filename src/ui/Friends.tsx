@@ -149,7 +149,7 @@ export default function Friends({ onInvite, onClose }: Props) {
                 [...friends]
                   .sort((a, b) => Number(b.online) - Number(a.online))
                   .map((f) => (
-                  <div key={f.id} className="friend-row">
+                  <div key={f.id} className={`friend-row ${f.online ? '' : 'friend-row-off'}`}>
                     <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
                     {identity(f)}
                     <span className="friend-flag">
