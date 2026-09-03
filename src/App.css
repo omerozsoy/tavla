@@ -794,13 +794,13 @@ button[aria-disabled='true'],
   flex-direction: column;
   /* TÃœM menÃ¼ Ã¶ÄŸeleri EÅžÄ°T aralÄ±kta: gruplar arasÄ± da grup iÃ§i ile aynÄ± (4px).
      Aksi halde tek-Ã¶ÄŸeli gruplar (Ãœyelik/Bilgi) 8px'le izole "yÃ¼zÃ¼yor" -> dÃ¼zensiz ritim. */
-  gap: 2px;
+  gap: 1px;
   overflow-x: hidden;
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
   border-radius: 0; /* Duz kose (ana sayfa) */
-  padding: 8px 10px;
+  padding: 6px 10px;
 }
 /* Drawer logosu yalniz mobil drawer'da; desktop sabit yan menude gizli (ust bantta zaten var) */
 .side-menu-brand {
@@ -1180,7 +1180,7 @@ button[aria-disabled='true'],
 .menu-group {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 /* Bos grup (tum ogeleri kosullu-gizli) flex child olarak kalip fazladan bosluk
    yaratmasin -> tamamen gizle. (Silinen menu ogelerinden kalan bosluk fix'i.) */
@@ -1218,7 +1218,7 @@ button[aria-disabled='true'],
 .side-menu .menu-btn {
   background: transparent;
   border-color: transparent;
-  min-height: 36px;
+  min-height: 32px;
 }
 .side-menu .menu-btn:hover {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
@@ -1233,7 +1233,8 @@ button[aria-disabled='true'],
   border-color: transparent !important;
   color: var(--text);
   font-weight: 400;
-  min-height: 36px;
+  min-height: 32px;
+  padding-block: 4px; /* shadcn py-2'yi kis -> 32px satir gercekten uygulansin */
   border-radius: 10px;
   position: relative;
   isolation: isolate; /* stacking context -> ::before hane z-index:-1 iÃ§erikte KALIR */
@@ -7618,8 +7619,6 @@ button.acct-row:hover:not(:disabled) {
   /* TUM slaytlar icin TEK sabit yukseklik. Yazili/yazisiz banner ve farkli metin
      uzunlugu fark etmez -> slider hep ayni boyda, gecislerde ziplama olmaz. */
   --bs-h: clamp(460px, 62vh, 680px);
-  /* Yatayda lobby-main padding'ini iptal edip kenarlara daya. Ustte NEGATIF marj YOK:
-     banner sabit hesap barinin ALTINDAN baslar (bar artik banner'in ustune binmez). */
   /* Site genisligiyle ayni: edge-to-edge DEGIL, icerik kolonu (--lobby-w) kadar,
      ortali. Alttaki takvim/panel/dashboard ile birebir hizali. */
   width: 100%;
