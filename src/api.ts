@@ -451,6 +451,48 @@ export async function analyzeBoardImage(file: File): Promise<BoardVisionResult> 
   return data as BoardVisionResult
 }
 
+// Fotograftan pozisyon (CV) — board-cv microservice'i (foto + kose). Engine-uyumlu doner.
+export interface BoardCorners {
+  topLeft: { x: number; y: number }
+  topRight: { x: number; y: number }
+  bottomRight: { x: number; y: number }
+  bottomLeft: { x: number; y: number }
+}
+export interface DetectPositionResult {
+  success: boolean
+  points: number[]
+  bar: { white: number; black: number }
+  off: { white: number; black: number }
+  detection: {
+    confidence: number
+    needsReview: boolean
+    needsReviewPoints: number[]
+    source: string
+    errors: string[]
+  }
+}
+export async function detectPositionFromPhoto(
+  file: File,
+  corners: BoardCorners,
+): Promise<DetectPositionResult> {
+  const token = getToken()
+  const form = new FormData()
+  form.append('image', file)
+  form.append('corners', JSON.stringify(corners))
+  const res = await fetch(`${API_URL}/backgammon-photo/detect-position`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: form,
+  })
+  const text = await res.text()
+  const data = text ? JSON.parse(text) : {}
+  if (!res.ok) throw new ApiError(res.status, data.message || 'Hata', data.errors)
+  return data as DetectPositionResult
+}
+
 export async function claimDaily(): Promise<{ claimed: boolean; reward?: number; coins: number }> {
   return req('/shop/daily', { method: 'POST' })
 }
@@ -567,9 +609,15 @@ export interface ChatThread {
 export async function getThreads(): Promise<{ threads: ChatThread[] }> {
   return req('/messages')
 }
-// Bir arkadasla konusma (gelenler okundu isaretlenir)
-export async function getThread(userId: number): Promise<{ user: ChatUser; messages: ChatMessage[] }> {
+// Bir arkadasla konusma (gelenler okundu isaretlenir). typing: karsi taraf bana yaziyor mu.
+export async function getThread(
+  userId: number,
+): Promise<{ user: ChatUser; messages: ChatMessage[]; typing?: boolean }> {
   return req(`/messages/${userId}`)
+}
+// "Yaziyor…" nabzi (yazarken periyodik gonderilir; fire-and-forget)
+export async function sendTyping(userId: number): Promise<void> {
+  await req(`/messages/${userId}/typing`, { method: 'POST' })
 }
 // Arkadasa mesaj gonder
 export async function sendMessage(userId: number, body: string): Promise<{ message: ChatMessage }> {

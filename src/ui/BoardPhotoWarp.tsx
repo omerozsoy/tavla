@@ -9,11 +9,21 @@ import { BOARD_NORMALIZED_WIDTH, BOARD_NORMALIZED_HEIGHT } from './boardGeometry
 // perspektif-duzeltme (homografi) ile TEPEDEN-DUZ hale getirilir, sonra Opus'a gider.
 // Acili foto -> duz goruntu = LLM'in en cok takildigi sorunu (aci) tarayicida cozer.
 
+import type { BoardCorners } from '../api'
+
 type Pt = { x: number; y: number } // normalize [0..1] (goruntuye gore)
+
+// Sonuc: orijinal foto + koseler (CV servisi kendi warp'ini yapar) + tarayici-warp
+// (Opus fallback icin). PositionAnalyzer once CV'yi dener, olmazsa warped'i Opus'a yollar.
+export interface WarpResult {
+  file: File
+  corners: BoardCorners
+  warped: File
+}
 
 interface Props {
   file: File
-  onResult: (warped: File) => void
+  onResult: (r: WarpResult) => void
   onCancel: () => void
 }
 
@@ -164,7 +174,12 @@ export default function BoardPhotoWarp({ file, onResult, onCancel }: Props) {
       const blob: Blob = await new Promise((res) =>
         out.toBlob((b) => res(b!), 'image/jpeg', 0.92),
       )
-      onResult(new File([blob], 'board-warped.jpg', { type: 'image/jpeg' }))
+      const [tl, tr, br, bl] = pts
+      onResult({
+        file,
+        corners: { topLeft: tl, topRight: tr, bottomRight: br, bottomLeft: bl },
+        warped: new File([blob], 'board-warped.jpg', { type: 'image/jpeg' }),
+      })
     } finally {
       setBusy(false)
     }
