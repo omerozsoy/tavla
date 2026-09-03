@@ -30,6 +30,7 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
   const [profileId, setProfileId] = useState<number | null>(null)
+  const [pendingRemove, setPendingRemove] = useState<Friend | null>(null) // arkadaslıktan cıkar onayı
 
   async function refresh() {
     try {
@@ -184,7 +185,7 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
                         size="icon"
                         title={t('friends.remove')}
                         aria-label={t('friends.remove')}
-                        onClick={() => doRemove(f.id)}
+                        onClick={() => setPendingRemove(f)}
                       >
                         <Icon name="trash" size={16} />
                       </Button>
@@ -199,6 +200,29 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
     </div>
     {profileId !== null && (
       <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+    )}
+    {pendingRemove && (
+      <div className="register-overlay modal" role="dialog" aria-modal="true">
+        <div className="register-card friends-confirm" onClick={(e) => e.stopPropagation()}>
+          <h3>{t('friends.removeConfirm', { name: pendingRemove.name })}</h3>
+          <p className="friends-confirm-desc">{t('friends.removeConfirmDesc')}</p>
+          <div className="friends-confirm-actions">
+            <Button variant="secondary" onClick={() => setPendingRemove(null)}>
+              {t('reg.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const id = pendingRemove.id
+                setPendingRemove(null)
+                doRemove(id)
+              }}
+            >
+              <Icon name="trash" size={16} /> {t('friends.remove')}
+            </Button>
+          </div>
+        </div>
+      </div>
     )}
     </>
   )

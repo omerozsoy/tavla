@@ -45,11 +45,8 @@ export default function Footer({ columns }: Props) {
               SVG <text> textLength=100% ile TEK SATIR ve TAM logo genisliginde yaslanir. */}
           <div className="foot-brandlock">
             <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
-            <svg className="foot-tag" height="12" role="img" aria-label={t('foot.tag')}>
-              <text x="0" y="10" textLength="100%">
-                {t('foot.tag')}
-              </text>
-            </svg>
+            {/* Slogan: duz HTML metin (SVG textLength=%100 Firefox'ta bozuluyordu). */}
+            <span className="foot-tag">{t('foot.tag')}</span>
           </div>
           {/* Ilk 3 kurumun logosu — beyaz yuvarlak cip (koyu footer'da okunur). Web
               sitesi varsa yeni sekmede acilir. */}
@@ -57,7 +54,9 @@ export default function Footer({ columns }: Props) {
             <div className="foot-partners" aria-label={t('menu.clubs')}>
               {partners.map((k) => {
                 const logo = mediaSrc(k.image)
-                const site = k.links?.website?.trim() || null
+                // Kurumun web sitesi 'contact' alaninda tutulur (KurumResource "Web sitesi");
+                // eski links.website'e de geriye-donuk bakilir.
+                const site = (k.contact || k.links?.website || '').trim() || null
                 const inner = (
                   <img className="foot-partner-logo" src={logo} alt={k.title} loading="lazy" />
                 )
