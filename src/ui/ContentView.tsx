@@ -135,7 +135,9 @@ export default function ContentView({
     type === 'news' && slug ? (items.find((i) => slugify(i.title) === slug) ?? null) : null
   // Detaydaki tum gorseller (kapak + galeri) - lightbox bunlar arasinda gezer
   const detailImgs = newsItem
-    ? [newsItem.image, ...(newsItem.gallery ?? [])].filter((x): x is string => !!x)
+    ? [newsItem.image, ...(newsItem.gallery ?? [])]
+        .map((x) => mediaSrc(x))
+        .filter((x): x is string => !!x)
     : []
   const [lightbox, setLightbox] = useState<number | null>(null) // acik gorsel indeksi
   const [playVideo, setPlayVideo] = useState<string | null>(null) // oynatilan YouTube video id
@@ -365,7 +367,7 @@ export default function ContentView({
                   onClick={() => onOpenDetail?.(slugify(p.title))}
                 >
                   {p.image && (
-                    <img className="news-card-img" src={p.image} alt="" loading="lazy" />
+                    <img className="news-card-img" src={mediaSrc(p.image)} alt="" loading="lazy" />
                   )}
                   <div className="news-card-info">
                     <span className="news-card-title">{p.title}</span>
@@ -624,7 +626,7 @@ function NewsDetail({
       {item.image && (
         <img
           className="news-detail-hero"
-          src={item.image}
+          src={mediaSrc(item.image)}
           alt={item.title}
           onClick={() => onOpenImage(0)}
         />
@@ -643,7 +645,7 @@ function NewsDetail({
               onClick={() => onOpenImage(i + 1)}
               aria-label={t('content.image', { n: i + 2 })}
             >
-              <img src={g} alt="" loading="lazy" />
+              <img src={mediaSrc(g)} alt="" loading="lazy" />
             </button>
           ))}
         </div>
