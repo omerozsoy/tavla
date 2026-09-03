@@ -2664,12 +2664,13 @@ button[aria-disabled='true'],
   justify-content: center;
   border: none;
   border-radius: var(--radius-circle);
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--tv-white);
+  /* KOYU pill + beyaz ikon: acik temada da (acik zemin uzerinde) net gozuksun. */
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   cursor: pointer;
 }
 .lightbox-close:not([data-slot]):hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.75);
 }
 .lightbox-nav {
   position: absolute;
@@ -2684,12 +2685,13 @@ button[aria-disabled='true'],
   justify-content: center;
   border: none;
   border-radius: var(--radius-circle);
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--tv-white);
+  /* KOYU pill + beyaz ikon: acik temada da net gozuksun. */
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
   cursor: pointer;
 }
 .lightbox-nav:not([data-slot]):hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(0, 0, 0, 0.75);
 }
 .lightbox-nav.prev {
   left: 16px;
