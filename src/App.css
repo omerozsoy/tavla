@@ -7098,11 +7098,8 @@ button.acct-row:hover:not(:disabled) {
   column-gap: 22px;
   /* Ust bar ile menu/icerik arasinda net bosluk (icerik bara "binmesin"). */
   row-gap: 18px;
-  /* min-height (SABIT height DEGIL): sabit 100dvh, grid'i viewport'a hapsedip 'auto'
-     satirin uzun icerige buyumesini engelliyordu -> footer viewport dibinde kalip
-     icerigin ustune biniyordu. min-height ile kabuk icerige gore buyur, tasma body'de
-     kayar, footer daima en altta. */
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
   /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) â€” kaydirma tekerlek/touch ile calisir. */
@@ -7141,12 +7138,11 @@ button.acct-row:hover:not(:disabled) {
 .app.lobby > .main {
   grid-area: main;
   overflow: visible; /* ic kaydirma YOK -> tum kabuk kayar, band kaybolur */
-  /* Icerik kisa olsa bile main en az bir ekran (viewport - header - row-gap) yuksek olsun ->
-     bos/kisa sayfada footer yukari kayip menuyle cakismaz. DIKKAT: 'stretch' veya height
-     KULLANMA -> main'i satira sabitler, uzun icerik (kulupler) auto-min'e katki vermez,
-     satir menu boyuna klemplenir ve icerik footer'in ustune tasar. Yalniz min-height
-     (taban) -> uzun sayfada main = icerik, footer daima altta kalir. */
-  min-height: calc(100dvh - var(--header-h) - 18px);
+  /* DIKKAT: main'e min-height/height/stretch VERME. 'auto' icerik satiri (yukarida)
+     main min-height'ini taban alip UZUN icerigi (anasayfa/kulupler) klempliyor ->
+     footer icerigin ustune biniyordu. min-height'siz: satir = max(menu, main-icerik)
+     -> uzun sayfada footer icerik altinda; kisa sayfada menu overflow:visible ile
+     satir menu boyuna cikar -> footer menunun bittigi yerde (istenen). */
 }
 
 /* ---- Ust band: SOL logo + SAG hesap kontrolleri (grid 'bar' alani, tam genislik) ---- */
