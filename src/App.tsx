@@ -3736,6 +3736,18 @@ export default function App() {
               <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
             </span>
           )}
+          {/* Mesajlar: bildirim zili gibi ust barda chat ikonu + okunmamis rozeti */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative [&_svg]:size-[24px]!"
+            onClick={() => goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) })}
+            title={t('dm.title')}
+            aria-label={t('dm.title')}
+          >
+            <Icon name="chat" size={24} />
+            {dmUnread > 0 && <span className="notif-badge">{dmUnread > 9 ? '9+' : dmUnread}</span>}
+          </Button>
           <NotificationBell
             items={notifications}
             unread={unreadNotif}
@@ -3846,6 +3858,20 @@ export default function App() {
                 <span className="acct-row-v">
                   {rewardReady ? t('home.dash.claim') : fmtCountdown(rewardSecs)}
                 </span>
+              </button>
+
+              {/* Mesajlar (sag ust chat ikonunun mobil karsiligi) */}
+              <button
+                type="button"
+                className="acct-row"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) })
+                }}
+              >
+                <Icon name="chat" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('dm.title')}</span>
+                {dmUnread > 0 && <span className="acct-row-v">{dmUnread > 9 ? '9+' : dmUnread}</span>}
               </button>
 
               {/* Bildirimler (mevcut bell bileseni gomulu) */}
