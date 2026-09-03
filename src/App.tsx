@@ -63,6 +63,8 @@ import {
   type TournNotice as TournNoticeT,
   showRoom,
   updateRoom,
+  serverRoll,
+  serverMove,
   myActiveRooms,
   type ActiveRoom,
   sendChat,
@@ -240,6 +242,9 @@ interface RoomState {
   oppAvatar: string | null
   oppFrame: string | null
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
+  // Sunucu-otoriter mod (para maçı güvenliği Faz 2c). true iken istemci zar/hamleyi
+  // SUNUCUDAN alır (serverRoll/serverMove). Şu an hiçbir oda için true değil (gated).
+  authoritative?: boolean
 }
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
@@ -816,6 +821,12 @@ export default function App() {
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
+  // Sunucu-otoriter mod (Faz 2c): true iken legacy PUT/lokal-zar DEVRE DISI (serverRoll/Move).
+  const authoritativeRef = useRef(false)
+  const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
+  // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
+  const srvTurnStartRef = useRef<GameState | null>(null)
+  const srvPlayedRef = useRef<Step[]>([])
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
   const turnRankedRef = useRef<RankedMove[] | null>(null) // tur basi tam siralama (hata tespiti)
@@ -1340,6 +1351,13 @@ export default function App() {
     setCurrentProbs(null)
     setTurnsPlayed((n) => n + 1)
     if (!winner(s)) setMessage(t('msg.turnOf', { name: pName(s.turn) }))
+    // Sunucu-otoriter oda (Faz 2c DRAFT): hamleyi sunucuya DOGRULAT (optimistic uyguladik;
+    // sunucu reddederse poll server_state ile duzeltir). Legacy PUT sync effect'te atlanir.
+    if (online && authoritativeRef.current && room?.code) {
+      serverMove(room.code, finalPlayed).catch(() => {
+        /* gecersiz/erisimsiz -> poll otoriter durumu geri yukler */
+      })
+    }
   }
 
   function computeMoveError(finalPlayed: Step[]): MoveError | null {
@@ -1363,7 +1381,41 @@ export default function App() {
     }
   }
 
+  // Sunucu-otoriter zar (Faz 2c DRAFT): zar SUNUCUDAN alinir (serverRoll), istemci secemez.
+  // authoritative oda + online iken doRoll bunu cagirir. CANLIDA TEST EDILMEDEN ACMA.
+  async function doRollAuthoritative() {
+    const code = room?.code
+    if (!code) return
+    if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
+    try {
+      const r = await serverRoll(code)
+      // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
+      const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
+      Sound.dice()
+      const rolled = newTurn(turnStart, dice)
+      setTurnStart(rolled)
+      setPlayed([])
+      setSelectedFrom(null)
+      setLastError(null)
+      setRanked(null)
+      setCurrentProbs(null)
+      const moves = generateMoves(rolled)
+      setMessage(
+        hasNoMove(moves)
+          ? t('msg.noMovePass', { name: pName(rolled.turn) })
+          : t('msg.playing', { name: pName(rolled.turn), dice: dice.join(', ') }),
+      )
+    } catch {
+      notify.error(t('mp.connError'))
+    }
+  }
+
   function doRoll() {
+    // Sunucu-otoriter oda: zari sunucudan al (async), lokal zar uretme.
+    if (online && authoritativeRef.current) {
+      void doRollAuthoritative()
+      return
+    }
     // Roll oncesi kup teklif tavsiyesi varsa: insan katlamak yerine zar atti ->
     // "pas" karari olarak logla (guclu tavsiyeyi kacirdiysa hata sayilir).
     if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
@@ -2204,6 +2256,29 @@ export default function App() {
     if (snap.gameEnd) setGameEnd(snap.gameEnd)
   }
 
+  // Sunucu-otoriter tahtayi (server_state) uygula (Faz 2c DRAFT). Yalniz TUR SINIRINDA
+  // cagirilir (mid-move'u ezmemek icin poll'da korunur). Match/skor tek-oyun kapsaminda.
+  function applyServerBoard(gs: GameState) {
+    syncEnabledRef.current = true
+    setTurnStart(gs)
+    setPlayed([])
+    setSelectedFrom(null)
+    setRanked(null)
+    setCurrentProbs(null)
+    if (!winner(gs)) setMessage(t('msg.turnOf', { name: pName(gs.turn) }))
+  }
+
+  // Poll (stale-closure) icin guncel tur/oynanan + authoritative ref'lerini tazele.
+  useEffect(() => {
+    srvTurnStartRef.current = turnStart
+  }, [turnStart])
+  useEffect(() => {
+    srvPlayedRef.current = played
+  }, [played])
+  useEffect(() => {
+    authoritativeRef.current = !!room?.authoritative
+  }, [room?.authoritative])
+
   // Online: yerel degisikligi odaya gonder (senkron)
   // ONEMLI: bagimliliklarda tum `room` nesnesi YOK -> her yoklamada (oppName/status
   // yenilenince) tekrar gondermeyi onler. Ayrica imza ayni ise (echo) gondermez;
@@ -2212,6 +2287,9 @@ export default function App() {
   const roomStatus = room?.status
   useEffect(() => {
     if (!online || !roomCode || roomStatus !== 'playing' || !syncEnabledRef.current) return
+    // Sunucu-otoriter oda: tum-state PUT ETME. Otorite server_state'te; roll/move ucları
+    // gunceller, poll geri okur. (Legacy istemci-state sync yalniz authoritative=false'ta.)
+    if (authoritativeRef.current) return
     const sig = stateSig(match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd)
     if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
     const timer = window.setTimeout(() => {
@@ -2261,6 +2339,7 @@ export default function App() {
                 oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
                 oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
                 status: rv.status,
+                authoritative: rv.authoritative ?? r.authoritative,
               }
             : r,
         )
@@ -2277,7 +2356,16 @@ export default function App() {
           // Coklu bahis: bekleyen oyuncu eslesince sunucunun anlastigi tutari uygula.
           if (rv.stake != null && rv.stake > 0) stakeRef.current = rv.stake
         }
-        if (rv.version > appliedVersionRef.current && rv.state) {
+        // Sunucu-otoriter mod (Faz 2c DRAFT): bayragi yakala; server_state'i YALNIZ tur
+        // sinirinda uygula (kendi zarim/hamlem elimdeyken ezme). Legacy state sync atlanir.
+        authoritativeRef.current = rv.authoritative ?? authoritativeRef.current
+        if (rv.authoritative && rv.server_state && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
+          const midMove = srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0
+          if (!midMove) {
+            appliedServerVersionRef.current = rv.server_version ?? 0
+            applyServerBoard(rv.server_state)
+          }
+        } else if (!rv.authoritative && rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
           applyOnlineState(rv.state as SavedGame) // lastSyncRef'i kendi ayarlar (echo yok)
