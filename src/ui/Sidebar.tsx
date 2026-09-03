@@ -15,6 +15,7 @@ interface PlayerInfo {
   rating?: number | null
   avatarUrl?: string | null
   frame?: string | null
+  isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
 }
 
 interface SidebarProps {
@@ -42,7 +43,13 @@ function Avatar({ p }: { p: PlayerInfo }) {
     />
   ) : (
     <div className={`avatar ${p.color} ${p.active ? 'active' : ''}`}>
-      {p.avatarUrl ? <img src={p.avatarUrl} alt="" /> : <span>{p.avatar}</span>}
+      {p.avatarUrl ? (
+        <img src={p.avatarUrl} alt="" />
+      ) : p.isBot ? (
+        <Icon name="robot" size={52} />
+      ) : (
+        <span>{p.avatar}</span>
+      )}
     </div>
   )
 }
