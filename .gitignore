@@ -10,6 +10,9 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+# Sunucu-otoriter hamle doğrulama servisi bundle'ı deploy için commit'lenir (dist kuralından muaf)
+!validator/dist/
+!validator/dist/**
 *.local
 
 # Claude Code yerel ayarlar
