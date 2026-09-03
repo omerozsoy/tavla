@@ -972,6 +972,13 @@ export interface RoomView {
   target?: number | null
   stake?: number // anlasilan sabit bahis (coklu secimde eslesmede kesinlesir)
   clock?: RoomClock | null
+  // Sunucu-otoriter mod (Faz 2c). true ise istemci zar/hamleyi SUNUCUDAN alir (serverRoll/
+  // serverMove) + server_state uygular; false (varsayilan) eski akis (degisiklik yok).
+  authoritative?: boolean
+  server_state?: GameState | null // otoriter tahta (yalniz authoritative iken dolu)
+  server_version?: number
+  server_winner?: string | null // 'white'|'black' bir oyun bitince
+  dice_commit?: string | null // provably-fair taahhut (dice_seed sunucuda gizli)
 }
 
 export async function createRoom(
@@ -1345,6 +1352,31 @@ export async function updateRoom(
   return req(`/rooms/${encodeURIComponent(code)}`, {
     method: 'PUT',
     body: JSON.stringify({ token: playerToken(), state, status }),
+  })
+}
+
+// ---- Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2c) ----
+// Sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal) üretilir; istemci seçemez.
+// RE-ROLL ENGELİ: zar zaten verildiyse aynısı döner (reused=true).
+export async function serverRoll(
+  code: string,
+  clientSeed?: string,
+): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean }> {
+  return req(`/rooms/${encodeURIComponent(code)}/roll`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null }),
+  })
+}
+
+// İstemci tam-tur step dizisini gönderir; sunucu (Node validator=TS motoru) yasallığı doğrular.
+// Yasal → uygulanmış otoriter state döner; yasadışı → 422, doğrulama servisi yok → 503.
+export async function serverMove(
+  code: string,
+  steps: Step[],
+): Promise<{ state: GameState; version: number; winner: string | null }> {
+  return req(`/rooms/${encodeURIComponent(code)}/move`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), steps }),
   })
 }
 

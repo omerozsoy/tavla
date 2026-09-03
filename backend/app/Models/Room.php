@@ -44,6 +44,7 @@ class Room extends Model
         'server_state',
         'server_version',
         'server_winner',
+        'authoritative',
     ];
 
     protected function casts(): array
@@ -56,6 +57,7 @@ class Room extends Model
             'clock' => 'array',
             'dice_rolls' => 'array',
             'server_state' => 'array',
+            'authoritative' => 'boolean',
         ];
     }
 
@@ -85,6 +87,12 @@ class Room extends Model
             'stake' => (int) $this->stake,
             'bet_pct' => (int) $this->bet_pct,
             'target' => $this->target !== null ? (int) $this->target : null,
+            // Sunucu-otoriter mod (Faz 2c). false ise istemci eski akisi kullanir (degisiklik yok).
+            'authoritative' => (bool) $this->authoritative,
+            'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
+            'server_version' => (int) $this->server_version,
+            'server_winner' => $this->server_winner,
+            'dice_commit' => $this->dice_commit, // provably-fair taahhut (dice_seed GIZLI kalir)
         ];
     }
 }
