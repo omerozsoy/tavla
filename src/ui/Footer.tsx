@@ -27,7 +27,7 @@ export default function Footer({ columns }: Props) {
           <div className="foot-brandlock">
             <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
             <svg className="foot-tag" height="12" role="img" aria-label={t('foot.tag')}>
-              <text x="0" y="10" textLength="100%" lengthAdjust="spacingAndGlyphs">
+              <text x="0" y="10" textLength="100%">
                 {t('foot.tag')}
               </text>
             </svg>
