@@ -10,6 +10,7 @@ import {
   type Friend,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import PublicProfile from './PublicProfile'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -26,6 +27,7 @@ export default function Friends({ onInvite, onClose }: Props) {
   const [nick, setNick] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const [profileId, setProfileId] = useState<number | null>(null)
 
   async function refresh() {
     try {
@@ -70,20 +72,29 @@ export default function Friends({ onInvite, onClose }: Props) {
   }
 
   const identity = (f: Friend) => (
-    <PlayerIdentity
-      name={f.name}
-      rating={f.rating}
-      avatar={f.avatar}
-      frame={f.frame}
-      country={f.country}
-      flagInline
-      size={38}
-      rankSize="sm"
-      className="friend-id"
-    />
+    <button
+      type="button"
+      className="friend-id-btn"
+      onClick={() => setProfileId(f.id)}
+      title={t('menu.viewProfile')}
+      aria-label={t('menu.viewProfile')}
+    >
+      <PlayerIdentity
+        name={f.name}
+        rating={f.rating}
+        avatar={f.avatar}
+        frame={f.frame}
+        country={f.country}
+        flagInline
+        size={38}
+        rankSize="sm"
+        className="friend-id"
+      />
+    </button>
   )
 
   return (
+    <>
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card friends-card" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
@@ -164,5 +175,9 @@ export default function Friends({ onInvite, onClose }: Props) {
         )}
       </div>
     </div>
+    {profileId !== null && (
+      <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+    )}
+    </>
   )
 }
