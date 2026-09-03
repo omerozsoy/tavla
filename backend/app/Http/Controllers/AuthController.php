@@ -295,12 +295,25 @@ class AuthController extends Controller
         // (pvb / temizlenmis oda) istemci beyanina dus (geriye uyum).
         $clientWon = (bool) $data['won'];
         $won = $clientWon;
-        $srv = $this->serverResultForRoom($user, $data['room_code'] ?? null);
+        $roomCode = $data['room_code'] ?? null;
+        $srv = $this->serverResultForRoom($user, $roomCode);
+
+        // Rakibin (ayni room_code) daha once raporladigi satir — cift-galibiyet/kayip
+        // celiskisini engellemek + yarista yanlis raporlanan rakip satirini duzeltmek icin.
+        $oppRow = null;
+        if (! empty($roomCode)) {
+            $oppRow = \App\Models\MatchResult::where('room_code', $roomCode)
+                ->where('user_id', '!=', $user->id)
+                ->latest('id')
+                ->first();
+        }
+
         if ($srv !== null) {
+            // 1) ODA KESIN -> otoriter sonuc.
             $won = $srv['won'];
             if ($srv['won'] !== $clientWon) {
                 \Illuminate\Support\Facades\Log::warning('reportRating: sunucu-otoriter sonuc istemciden farkli (duzeltildi)', [
-                    'user_id' => $user->id, 'room' => $data['room_code'] ?? null,
+                    'user_id' => $user->id, 'room' => $roomCode,
                     'client_won' => $clientWon, 'server_won' => $srv['won'],
                 ]);
             }
@@ -310,6 +323,22 @@ class AuthController extends Controller
             }
             if ($srv['opp'] !== null) {
                 $data['score_opp'] = $srv['opp'];
+            }
+            // KENDINI-IYILESTIRME: rakip once (oda o an kararsizken) YANLIS raporladiysa,
+            // artik kesin gercekle onun satirini da tamamlayiciya cek (ikisi birden
+            // kazanamaz/kaybedemez). Rakibin rating/win-loss'u da net farkla duzeltilir.
+            if ($oppRow !== null && (bool) $oppRow->won === $won) {
+                $this->reconcileRow($oppRow, ! $won, $srv['opp'], $srv['self']);
+            }
+        } elseif ($oppRow !== null) {
+            // 2) ODA KARARSIZ ama rakip raporlamis -> TAMAMLAYICI ol (celiskiyi reddet).
+            // Rakip 'kazandim' dediyse bu taraf kazanmis olamaz; tersi de gecerli.
+            $won = ! (bool) $oppRow->won;
+            if ($won !== $clientWon) {
+                \Illuminate\Support\Facades\Log::warning('reportRating: oda kararsiz; rakiple tutarlilastirildi (istemci beyani reddedildi)', [
+                    'user_id' => $user->id, 'room' => $roomCode,
+                    'client_won' => $clientWon, 'forced_won' => $won,
+                ]);
             }
         }
 
@@ -482,6 +511,58 @@ class AuthController extends Controller
         }
 
         return \App\Support\RoomResult::resolve($room, (int) $user->id);
+    }
+
+    /**
+     * Yanlis kaydedilmis bir mac satirini DOGRU sonuca cek: won bayragini duzelt,
+     * ranked ise delta'yi dogru Elo ile yeniden hesapla ve o oyuncunun GUNCEL rating +
+     * win/loss'unu net farkla duzelt. Skorlar verilirse onlari da yaz. Zaten dogruysa
+     * dokunmaz. (matches:fix-results ile ayni tek-satir mantigi; nadir yaris self-heal'i.)
+     */
+    private function reconcileRow(\App\Models\MatchResult $row, bool $correctWon, ?int $scoreSelf = null, ?int $scoreOpp = null): void
+    {
+        if ((bool) $row->won === $correctWon) {
+            return;
+        }
+        $rb = $row->rating_before;
+        $ranked = $rb !== null && ((int) $row->delta !== 0 || (int) $row->rating_after !== (int) $rb);
+
+        $oldDelta = (int) $row->delta;
+        $row->won = $correctWon;
+        if ($scoreSelf !== null) {
+            $row->score_self = $scoreSelf;
+        }
+        if ($scoreOpp !== null) {
+            $row->score_opp = $scoreOpp;
+        }
+
+        if ($ranked) {
+            $rbI = (int) $rb;
+            $rOpp = (int) $row->opponent_rating;
+            $expected = 1 / (1 + pow(10, ($rOpp - $rbI) / 400));
+            $newAfter = max(100, (int) round($rbI + 32 * (($correctWon ? 1 : 0) - $expected)));
+            $newDelta = $newAfter - $rbI;
+            $row->delta = $newDelta;
+            $row->rating_after = $newAfter;
+
+            $u = \App\Models\User::find($row->user_id);
+            if ($u) {
+                $u->rating = max(100, (int) ($u->rating ?? 1500) + ($newDelta - $oldDelta));
+                if ($correctWon) {
+                    $u->wins = (int) ($u->wins ?? 0) + 1;
+                    $u->losses = max(0, (int) ($u->losses ?? 0) - 1);
+                } else {
+                    $u->wins = max(0, (int) ($u->wins ?? 0) - 1);
+                    $u->losses = (int) ($u->losses ?? 0) + 1;
+                }
+                $u->save();
+            }
+        }
+        $row->save();
+
+        \Illuminate\Support\Facades\Log::warning('reportRating: rakip satiri kesin gercekle tamamlayiciya duzeltildi', [
+            'match_result_id' => $row->id, 'user_id' => $row->user_id, 'won' => $correctWon,
+        ]);
     }
 
     /**
