@@ -7291,14 +7291,14 @@ button.acct-row:hover:not(:disabled) {
 }
 .ab-tag {
   display: block;
-  margin-top: 2px;
-  /* Logo genisliginde yaslan (fit-content ebeveyn kadar); cross-browser stretch. */
+  margin-top: 3px;
+  /* Logo genisligi kadar kutu (fit-content ebeveyn), metin ORTALI + biraz buyuk. */
   width: 100%;
-  text-align: justify;
-  text-align-last: justify;
+  text-align: center;
   font-family: 'Outfit', system-ui, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 400;
+  letter-spacing: 0.02em;
   color: var(--muted);
 }
 .ab-logo-mark {
