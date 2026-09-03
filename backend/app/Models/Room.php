@@ -34,6 +34,12 @@ class Room extends Model
         'settled',
         'p1_result',
         'p2_result',
+        // Sunucu-otoriter zar (commit-reveal) — Faz 1. dice_seed GİZLİ (toClient'a girmez).
+        'dice_seed',
+        'dice_commit',
+        'dice_client_seed',
+        'dice_roll_index',
+        'dice_rolls',
     ];
 
     protected function casts(): array
@@ -44,6 +50,7 @@ class Room extends Model
             'targets' => 'array',
             'stakes' => 'array',
             'clock' => 'array',
+            'dice_rolls' => 'array',
         ];
     }
 
