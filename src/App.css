@@ -3134,12 +3134,13 @@ button[aria-disabled='true'],
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
 }
-/* Flama govdesi: dolu bant + alt uc V-catal + ust katlama golgesi; ustten salinir. */
+/* Flama govdesi: dolu bant + alt uc V-catal + ust katlama golgesi; ustten salinir.
+   Zemin KOYU (ink) — footer'in koyu zemini gibi; uzerine footer iki-renk logosu oturur. */
 .event-tvflag-band {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  background: var(--accent);
+  background: var(--tv-ink);
   clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
   box-shadow: inset 0 7px 7px -5px rgba(0, 0, 0, 0.4);
   transform-origin: 50% 0;
