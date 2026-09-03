@@ -692,6 +692,20 @@ export async function listTournamentAds(): Promise<TournamentAd[]> {
   return d.ads
 }
 
+// ---- Reklam seritleri (ana sayfada paneller arasi) ----
+export type AdSlotPos = 'top' | 'middle' | 'bottom'
+export interface AdSlot {
+  id: number
+  slot: AdSlotPos
+  image: string // masaustu gorsel (1120x180)
+  image_mobile?: string | null // mobil gorsel (720x300) — opsiyonel
+  link?: string | null // tiklaninca acilacak URL — opsiyonel
+}
+export async function listAdSlots(): Promise<AdSlot[]> {
+  const d = await req<{ ads: AdSlot[] }>('/ad-slots')
+  return d.ads
+}
+
 // ---- Yonetim paneli (admin) ----
 export interface AdminUser {
   id: number
