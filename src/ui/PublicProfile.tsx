@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
@@ -50,7 +50,7 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
               <div className="pp-rating">
                 {p.rating}
                 <div className="pp-coins">
-                  <Icon name="coin" size={14} /> {p.coins}
+                  <Coins amount={p.coins} size={14} />
                 </div>
               </div>
             </div>

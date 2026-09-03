@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
 import PlayerIdentity from './PlayerIdentity'
@@ -220,7 +221,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      +{pr.coins.toLocaleString('tr-TR')} <Icon name="coin" size={14} /> coin
+                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
                     </span>
                   </li>
                 ))}
@@ -237,9 +238,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               <div className="tourn-prize">
                 <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}:{' '}
                 {!!active.prize_coins && (
-                  <b>
-                    <Icon name="coin" size={14} /> {active.prize_coins} coin
-                  </b>
+                  <Coins amount={active.prize_coins} suffix="coin" size={14} />
                 )}
                 {active.prize_desc && <span> {active.prize_desc}</span>}
                 {!!active.entry_fee && (
@@ -259,7 +258,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   {t('tourn.join')}
                   {!!active.entry_fee && (
                     <span className="tourn-join-fee">
-                      <Icon name="coin" size={14} /> {active.entry_fee.toLocaleString('tr-TR')}
+                      <Coins amount={active.entry_fee} size={14} />
                     </span>
                   )}
                 </Button>
@@ -356,7 +355,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                   <h3>{t('tourn.joinTitle')}</h3>
                   <p className="tourn-confirm-desc">{t('tourn.joinDesc')}</p>
                   <div className="tourn-confirm-amt">
-                    <Icon name="coin" size={22} /> {(active.entry_fee ?? 0).toLocaleString('tr-TR')} GC
+                    <Coins amount={active.entry_fee ?? 0} size={22} suffix="GC" />
                   </div>
                   <div className="tourn-confirm-actions">
                     <Button variant="secondary" onClick={() => setConfirm(null)}>
@@ -468,7 +467,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
                     <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      +{pr.coins.toLocaleString('tr-TR')} <Icon name="coin" size={14} /> coin
+                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
                     </span>
                   </li>
                 ))}
@@ -485,7 +484,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
                     <span className="tp-rank tp-rank-1">1.</span>
                     <span className="tp-desc">{tr.prize_desc || t('tourn.prizeCoinLbl')}</span>
                     <span className="tp-coins">
-                      +{pool.toLocaleString('tr-TR')} <Icon name="coin" size={14} /> coin
+                      <Coins amount={pool} gain suffix="coin" size={14} />
                     </span>
                   </li>
                 </ol>

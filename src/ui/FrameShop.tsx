@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useT } from '../i18n'
 import AvatarFrame from './AvatarFrame'
 import {
@@ -76,7 +77,7 @@ function FrameCard(p: CardProps) {
             onClick={() => p.onBuy(sid)}
             aria-label={p.labels.buyAria(p.f.name, price)}
           >
-            <Icon name="coin" size={14} /> <span className="tnum">{fmtCoin(price)}</span>
+            <Coins amount={price} size={14} />
           </Button>
           {p.coins < price && <div className="shop-need">{p.labels.need(price - p.coins)}</div>}
         </>
@@ -127,7 +128,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
   return (
     <div className="frame-shop">
       <div className="frame-shop-bal">
-        <Icon name="coin" size={16} /> <span className="tnum">{fmtCoin(coins)}</span>
+        <Coins amount={coins} size={16} />
       </div>
       {buyErr && (
         <div className="shop-buy-err" role="alert">

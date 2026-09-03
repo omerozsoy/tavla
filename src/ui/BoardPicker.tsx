@@ -1,6 +1,7 @@
 import { type CSSProperties } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
 
@@ -82,7 +83,7 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                     <span className="bp-name">{bt.name}</span>
                     {buyable && (
                       <span className="bp-price">
-                        <Icon name="coin" size={12} /> {price.toLocaleString('tr-TR')}
+                        <Coins amount={price} size={12} />
                       </span>
                     )}
                   </button>

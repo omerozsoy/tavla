@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { COIN_PACKAGES } from '../coinPackages'
@@ -33,7 +34,6 @@ const fmtLeft = (total: number) => {
   const m = Math.floor((s % 3600) / 60)
   return `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 }
-const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
 // Magaza: coin (jeton) satin alma vitrini + gunluk odul. (Cerceveler artik Ayarlar'da.)
@@ -83,7 +83,7 @@ export default function Shop({
         <div className="shop-controls">
           <div className="shop-controls-row">
             <div className="shop-coins">
-              <Icon name="coin" size={16} /> <span className="tnum">{fmtCoin(coins)}</span>
+              <Coins amount={coins} size={16} />
             </div>
             <Button
               variant="default"
@@ -175,9 +175,7 @@ export default function Shop({
                   {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
                   <span className="coin-card-name">{p.name}</span>
                   <span className="coin-card-amount">
-                    <Icon name="coin" size={20} />
-                    <b>{fmtCoin(p.gc)}</b>
-                    <span className="coin-card-unit">coin</span>
+                    <Coins amount={p.gc} size={20} suffix="coin" />
                   </span>
                   <span className="coin-card-price">{fmtTL(p.price)}</span>
                   <span className="coin-card-meta">

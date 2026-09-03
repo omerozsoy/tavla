@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
 
@@ -197,7 +198,7 @@ export default function MatchSetup({
           <>
             <div className="setup-row">
               <div className="setup-label">
-                {t('setup.maxBet')} · <Icon name="coin" size={13} /> {stake.toLocaleString('tr-TR')}
+                {t('setup.maxBet')} · <Coins amount={stake} size={13} />
               </div>
               <div className="setup-tiles bets">
                 {BETS.map((b) => (
