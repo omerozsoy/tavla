@@ -96,6 +96,30 @@ class MessageTest extends TestCase
         $this->getJson("/api/messages/{$friend->id}")->assertJsonPath('messages.0.read', true);
     }
 
+    public function test_typing_flag_visible_to_partner_thread(): void
+    {
+        $me = $this->makeUser('me');
+        $friend = $this->makeUser('fr');
+        $this->befriend($me, $friend);
+
+        // Arkadas yaziyor nabzi birakir
+        Sanctum::actingAs($friend);
+        $this->postJson("/api/messages/{$me->id}/typing")->assertOk();
+
+        // Ben konusmayi acinca typing=true gorunur
+        Sanctum::actingAs($me);
+        $this->getJson("/api/messages/{$friend->id}")->assertOk()->assertJsonPath('typing', true);
+    }
+
+    public function test_typing_requires_friendship(): void
+    {
+        $me = $this->makeUser('me');
+        $stranger = $this->makeUser('st');
+        Sanctum::actingAs($me);
+
+        $this->postJson("/api/messages/{$stranger->id}/typing")->assertStatus(403);
+    }
+
     public function test_threads_list_shows_last_message_and_unread(): void
     {
         $me = $this->makeUser('me');

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 // Arkadaslar arasi ozel mesajlasma (DM). Sadece kabul edilmis arkadaslar yazisabilir.
@@ -132,7 +133,27 @@ class MessageController extends Controller
             'created_at' => optional($m->created_at)->toIso8601String(),
         ]);
 
-        return response()->json(['user' => $this->pub($partner), 'messages' => $messages]);
+        // Karsi taraf su an bana yaziyor mu? (typing heartbeat cache'i, 6 sn TTL)
+        $typing = (bool) Cache::get("dm-typing:{$userId}:{$me}");
+
+        return response()->json([
+            'user' => $this->pub($partner),
+            'messages' => $messages,
+            'typing' => $typing,
+        ]);
+    }
+
+    // "Yaziyor…" nabzi: kullanici yazarken cagirir; kisa omurlu (6 sn) isaret birakir.
+    // Karsi taraf thread yoklamasinda bunu gorur. DB/migration yok -> Cache.
+    public function typing(Request $request, int $userId)
+    {
+        $me = $request->user()->id;
+        if (! $this->areFriends($me, $userId)) {
+            return $this->fail('Bu kullanıcı arkadaşın değil.', 403);
+        }
+        Cache::put("dm-typing:{$me}:{$userId}", 1, now()->addSeconds(6));
+
+        return response()->json(['ok' => true]);
     }
 
     // Arkadasa mesaj gonder.

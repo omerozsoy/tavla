@@ -6,6 +6,7 @@ import {
   getThreads,
   getThread,
   sendMessage,
+  sendTyping,
   type ChatThread,
   type ChatMessage,
   type ChatUser,
@@ -46,8 +47,10 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const listEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
 
   const refreshThreads = useCallback(async () => {
     try {
@@ -74,6 +77,7 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
       const d = await getThread(uid)
       setActiveUser(d.user)
       setMessages(d.messages)
+      setPartnerTyping(!!d.typing) // karsi taraf yaziyor mu
       onReadRef.current?.() // gelenler backend'de okundu -> rozet tazele
     } catch {
       /* yoksay */
@@ -86,18 +90,19 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
     refreshThreads()
   }, [refreshThreads])
 
-  // Aktif konusma degisince yukle
+  // Aktif konusma degisince yukle (onceki konusmanin "yaziyor" durumunu sifirla)
   useEffect(() => {
+    setPartnerTyping(false)
     if (activeId != null) loadThread(activeId)
   }, [activeId, loadThread])
 
-  // Aktif konusma acikken 5 sn'de bir sessiz tazele (yeni mesajlar)
+  // Aktif konusma acikken 3 sn'de bir sessiz tazele (yeni mesajlar + "yaziyor…")
   useEffect(() => {
     if (activeId == null) return
     const id = window.setInterval(() => {
       loadThread(activeId, true)
       refreshThreads()
-    }, 5000)
+    }, 3000)
     return () => window.clearInterval(id)
   }, [activeId, loadThread, refreshThreads])
 
@@ -228,6 +233,16 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
                       </div>
                     ))
                   )}
+                  {partnerTyping && (
+                    <div className="messages-typing" aria-live="polite">
+                      <span className="typing-dots" aria-hidden="true">
+                        <i />
+                        <i />
+                        <i />
+                      </span>
+                      <span className="typing-label">{t('dm.typing')}</span>
+                    </div>
+                  )}
                   <div ref={listEndRef} />
                 </div>
 
@@ -263,7 +278,17 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
                   <input
                     ref={inputRef}
                     value={text}
-                    onChange={(e) => setText(e.target.value)}
+                    onChange={(e) => {
+                      setText(e.target.value)
+                      // Yazarken karsi tarafa "yaziyor…" nabzi (en fazla ~2.5 sn'de bir)
+                      if (activeId != null && e.target.value.trim()) {
+                        const now = Date.now()
+                        if (now - typingSentRef.current > 2500) {
+                          typingSentRef.current = now
+                          sendTyping(activeId).catch(() => {})
+                        }
+                      }
+                    }}
                     placeholder={t('dm.placeholder')}
                     maxLength={1000}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), doSend())}
