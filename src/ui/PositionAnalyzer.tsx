@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type {
-  PointerEvent as RPointerEvent,
-  MouseEvent as RMouseEvent,
-  ChangeEvent as RChangeEvent,
-} from 'react'
+import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { GameState, Player } from '../engine/types'
@@ -15,8 +11,6 @@ import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
-import { analyzeBoardImage, detectPositionFromPhoto } from '../api'
-import BoardPhotoWarp, { type WarpResult } from './BoardPhotoWarp'
 
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
@@ -101,52 +95,6 @@ export default function PositionAnalyzer({
   const [busy, setBusy] = useState(false)
   const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
   const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Fotograftan diz (vision)
-  const [visionBusy, setVisionBusy] = useState(false)
-  const [visionMsg, setVisionMsg] = useState('')
-  const [warpFile, setWarpFile] = useState<File | null>(null) // kose-duzeltme adimi
-  const fileRef = useRef<HTMLInputElement | null>(null)
-
-  // Foto secilince once KOSE-DUZELTME adimi (acili foto -> tepeden-duz), sonra Opus.
-  function onPickPhoto(e: RChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    e.target.value = '' // ayni dosya tekrar secilebilsin
-    if (!file) return
-    setVisionMsg('')
-    setWarpFile(file)
-  }
-
-  function applyPosition(points: number[], bar: { white: number; black: number }, off: { white: number; black: number }) {
-    setPts(points.slice(0, 24))
-    setBar({ white: bar?.white ?? 0, black: bar?.black ?? 0 })
-    setOff({ white: off?.white ?? 0, black: off?.black ?? 0 })
-    setResult(null)
-    setMoveRanked(null)
-  }
-
-  // ONCE CV servisi (board-cv) denenir; yoksa/hatada Opus fallback (mevcut yol).
-  async function uploadWarped(r: WarpResult) {
-    setWarpFile(null)
-    setVisionBusy(true)
-    setVisionMsg('')
-    try {
-      const d = await detectPositionFromPhoto(r.file, r.corners)
-      applyPosition(d.points, d.bar, d.off)
-      const low = d.detection?.needsReview || (d.detection?.confidence ?? 1) < 0.7
-      setVisionMsg(low ? t('pa.photoLowConf') : t('pa.photoDone'))
-    } catch {
-      // CV servisi yok/hata -> Opus fallback (duzlestirilmis goruntu)
-      try {
-        const v = await analyzeBoardImage(r.warped)
-        applyPosition(v.points, v.bar, v.off)
-        setVisionMsg(v.confidence != null && v.confidence < 0.7 ? t('pa.photoLowConf') : t('pa.photoDone'))
-      } catch {
-        setVisionMsg(t('pa.photoFail'))
-      }
-    } finally {
-      setVisionBusy(false)
-    }
-  }
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
 
@@ -405,7 +353,6 @@ export default function PositionAnalyzer({
   const { doublerKey, takerKey } = cubeDecision()
 
   return (
-    <>
     <div className="analyzer">
       <div className="analyzer-head">
         <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
@@ -661,26 +608,6 @@ export default function PositionAnalyzer({
             </div>
           </div>
 
-          {/* Fotograftan diz: gorseli backend vision'a yollar, pozisyonu dizer. */}
-          <div className="setup-row">
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={onPickPhoto}
-            />
-            <Button
-              variant="secondary"
-              className="pa-photo"
-              disabled={visionBusy}
-              onClick={() => fileRef.current?.click()}
-            >
-              <Icon name="camera" size={16} /> {visionBusy ? t('pa.photoBusy') : t('pa.photo')}
-            </Button>
-            {visionMsg && <span className="pa-photo-msg">{visionMsg}</span>}
-          </div>
-
           <Button variant="default" className="pa-analyze" disabled={busy} onClick={analyze}>
             {busy ? (
               t('an.loading')
@@ -760,9 +687,5 @@ export default function PositionAnalyzer({
         </div>
       </div>
     </div>
-    {warpFile && (
-      <BoardPhotoWarp file={warpFile} onResult={uploadWarped} onCancel={() => setWarpFile(null)} />
-    )}
-    </>
   )
 }

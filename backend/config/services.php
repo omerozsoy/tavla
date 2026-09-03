@@ -48,20 +48,4 @@ return [
     // tanimlanmalidir (bkz. .env.example), aksi halde config-admin listesi bostur.
     'admin_emails' => array_filter(array_map('trim', explode(',', (string) env('ADMIN_EMAILS', '')))),
 
-    // Anthropic (Claude) vision — Pozisyon Analizi "fotograftan diz" ozelligi.
-    // Anahtar yoksa uc nokta 503 doner ("yapilandirilmadi").
-    'anthropic' => [
-        'key' => env('ANTHROPIC_API_KEY'),
-        // Opus daha iyi/kalibre okuyor (maliyet ~5x). Env ile Sonnet'e dusurulebilir.
-        'model' => env('ANTHROPIC_VISION_MODEL', 'claude-opus-4-8'),
-        // Kimlige-bagli (identity-linked) anahtar kullaniliyorsa workspace id sart.
-        'workspace' => env('ANTHROPIC_WORKSPACE_ID'),
-    ],
-
-    // Board-CV Python microservice (services/board-cv). Ic agda; bos ise 503.
-    'board_cv' => [
-        'url' => env('BOARD_CV_URL'),          // or. http://127.0.0.1:8091
-        'timeout' => env('BOARD_CV_TIMEOUT', 30),
-    ],
-
 ];
