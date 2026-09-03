@@ -10370,6 +10370,13 @@ button.acct-row:hover:not(:disabled) {
 .analyzer-board .pt-numbers {
   color: var(--muted);
 }
+/* Fotograftan diz: buton + durum mesaji. */
+.pa-photo-msg {
+  margin-left: 10px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
 /* Board'un gercek pul rengiyle kucuk yuvarlak isaret (âšª/âš« yerine tema-uyumlu) */
 .pa-swatch {
   display: inline-block;
@@ -14349,6 +14356,28 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   font-size: 0.76rem;
   text-align: center;
+}
+/* DEMO odeme uyari bandi: banka bagli degil, gercek tahsilat yok */
+.checkout-demo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+.checkout-demo svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--accent);
+}
+.checkout-demo b {
+  color: var(--accent);
 }
 .coin-store-title {
   display: flex;

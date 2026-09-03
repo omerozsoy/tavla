@@ -12,7 +12,7 @@ class PaymentController extends Controller
     // SPA: abonelik baslat -> odeme kaydi olustur, kart sayfasi (imzali) linki don.
     public function subscribe(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isConfigured()) {
+        if (! $garanti->isAvailable()) {
             return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
         }
         $data = $request->validate([
@@ -45,7 +45,7 @@ class PaymentController extends Controller
     // frontend'den gelen tutara ASLA guvenilmez.
     public function buyCoins(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isConfigured()) {
+        if (! $garanti->isAvailable()) {
             return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
         }
         $data = $request->validate([
@@ -91,6 +91,7 @@ class PaymentController extends Controller
             'submitUrl' => $submitUrl,
             'amount'    => $totalKurus,
             'coins'     => $totalCoins,
+            'demo'      => $garanti->isDemo(), // true: gercek tahsilat yok, kart sayfasi onizleme
         ]);
     }
 
@@ -114,6 +115,13 @@ class PaymentController extends Controller
             'year'   => ['required', 'string', 'max:4'],
             'cvv'    => ['required', 'string', 'max:4'],
         ]);
+
+        // DEMO: banka yapilandirilmadi. Gercek POS'a GITME; odemeyi basarili say, coin/plani ver.
+        // (Kart bilgileri hicbir yere gonderilmez/saklanmaz.) Gercek POS acilinca bu dal calismaz.
+        if ($garanti->isDemo()) {
+            return $this->fulfillDemo($payment);
+        }
+
         $success = route('pay.callback');
         $error = route('pay.callback');
         $user = $payment->user;
@@ -126,6 +134,40 @@ class PaymentController extends Controller
             $request->ip(),
         );
         return view('pay.redirect', ['action' => $form['action'], 'fields' => $form['fields']]);
+    }
+
+    // DEMO tahsilat: banka olmadan odemeyi basarili say ve coin/uyeligi ATOMIK (tek kez) ver.
+    // Callback'teki gercek akisla ayni idempotency: yalnizca 'pending' -> 'paid' iddia edilen
+    // odeme hesaba islenir; yenileme/cift submit'te tekrar yuklenmez.
+    private function fulfillDemo(Payment $payment)
+    {
+        $claimed = Payment::where('id', $payment->id)
+            ->where('status', 'pending')
+            ->update(['status' => 'paid', 'bank_msg' => 'DEMO — gerçek tahsilat yapılmadı']);
+        if ($claimed) {
+            $u = $payment->user;
+            if ($payment->kind === 'coins') {
+                $u->increment('coins', (int) $payment->coins);
+            } else {
+                $u->plan = $payment->plan;
+                $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
+                if (! $u->plan_since) {
+                    $u->plan_since = now();
+                }
+                $u->auto_renew = true;
+                $u->save();
+            }
+        }
+
+        $okMsg = $payment->kind === 'coins'
+            ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
+            : 'Üyeliğin etkinleştirildi.';
+
+        return view('pay.result', [
+            'ok'    => true,
+            'msg'   => 'DEMO ödeme — gerçek tahsilat yapılmadı.',
+            'okMsg' => $okMsg,
+        ]);
     }
 
     // Banka 3D donusu -> dogrula, basariliysa plani aktive et.

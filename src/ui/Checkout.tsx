@@ -26,12 +26,14 @@ export default function Checkout({
   amount,
   coins,
   items,
+  demo,
   onBack,
 }: {
   submitUrl: string
   amount: number // kurus
   coins: number
   items: CartItem[]
+  demo?: boolean // true: banka yapilandirilmadi; "Öde" gercek para cekmez (onizleme/test)
   onBack: () => void
 }) {
   useEscape(onBack)
@@ -90,6 +92,16 @@ export default function Checkout({
           <h2>
             <Icon name="star" size={20} /> Kredi Kartı ile Öde
           </h2>
+
+          {demo && (
+            <div className="checkout-demo" role="status">
+              <Icon name="shield-check" size={15} />
+              <span>
+                <b>DEMO modu</b> — banka bağlı değil. Kart bilgileri kimseye gönderilmez; "Öde" deyince gerçek para
+                çekilmeden coin hesabına yüklenir. (Test kartı: 4111 1111 1111 1111 · 12/30 · 123)
+              </span>
+            </div>
+          )}
 
           {/* Canlı kart önizleme */}
           <div className={`cc-card ${brand.cls}`}>
@@ -170,7 +182,7 @@ export default function Checkout({
           </div>
 
           <Button type="submit" variant="default" className="checkout-pay">
-            <Icon name="coin" size={18} /> {fmtTL(amount)} Güvenli Öde
+            <Icon name="coin" size={18} /> {fmtTL(amount)} {demo ? 'Öde (Demo)' : 'Güvenli Öde'}
           </Button>
           <p className="checkout-secure">
             <Icon name="shield-check" size={13} /> 3D Secure · Kart bilgileriniz saklanmaz, doğrudan bankaya iletilir.

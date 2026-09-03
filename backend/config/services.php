@@ -48,4 +48,11 @@ return [
     // tanimlanmalidir (bkz. .env.example), aksi halde config-admin listesi bostur.
     'admin_emails' => array_filter(array_map('trim', explode(',', (string) env('ADMIN_EMAILS', '')))),
 
+    // Anthropic (Claude) vision — Pozisyon Analizi "fotograftan diz" ozelligi.
+    // Anahtar yoksa uc nokta 503 doner ("yapilandirilmadi").
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_VISION_MODEL', 'claude-sonnet-4-5'),
+    ],
+
 ];
