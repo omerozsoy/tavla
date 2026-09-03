@@ -51,23 +51,27 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
     }
   }, [])
 
+  // onRead prop'u her render'da yeni gelebilir (App inline arrow) -> ref'te tut ki
+  // loadThread kimligi sabit kalsin (yoksa yukleme effect'i sonsuz doner -> ekran yanip soner).
+  const onReadRef = useRef(onRead)
+  useEffect(() => {
+    onReadRef.current = onRead
+  }, [onRead])
+
   // Aktif konusmayi yukle (gelenleri okundu isaretler)
-  const loadThread = useCallback(
-    async (uid: number, silent = false) => {
-      if (!silent) setLoadingThread(true)
-      try {
-        const d = await getThread(uid)
-        setActiveUser(d.user)
-        setMessages(d.messages)
-        onRead?.() // gelenler backend'de okundu -> rozet tazele
-      } catch {
-        /* yoksay */
-      } finally {
-        if (!silent) setLoadingThread(false)
-      }
-    },
-    [onRead],
-  )
+  const loadThread = useCallback(async (uid: number, silent = false) => {
+    if (!silent) setLoadingThread(true)
+    try {
+      const d = await getThread(uid)
+      setActiveUser(d.user)
+      setMessages(d.messages)
+      onReadRef.current?.() // gelenler backend'de okundu -> rozet tazele
+    } catch {
+      /* yoksay */
+    } finally {
+      if (!silent) setLoadingThread(false)
+    }
+  }, [])
 
   useEffect(() => {
     refreshThreads()
@@ -130,7 +134,7 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
           {/* Sol: konusma listesi (gelen kutusu) */}
           <div className="messages-threads">
             {loadingThreads ? (
-              <div className="lb-empty">{t('an.loading')}</div>
+              <div className="lb-empty">{t('dm.loading')}</div>
             ) : threads.length === 0 ? (
               <div className="lb-empty">{t('dm.empty')}</div>
             ) : (
@@ -192,7 +196,7 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
 
                 <div className="messages-log">
                   {loadingThread ? (
-                    <div className="lb-empty">{t('an.loading')}</div>
+                    <div className="lb-empty">{t('dm.loading')}</div>
                   ) : messages.length === 0 ? (
                     <div className="messages-hint">{t('dm.firstHint')}</div>
                   ) : (
