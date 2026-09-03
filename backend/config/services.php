@@ -58,4 +58,10 @@ return [
         'workspace' => env('ANTHROPIC_WORKSPACE_ID'),
     ],
 
+    // Board-CV Python microservice (services/board-cv). Ic agda; bos ise 503.
+    'board_cv' => [
+        'url' => env('BOARD_CV_URL'),          // or. http://127.0.0.1:8091
+        'timeout' => env('BOARD_CV_TIMEOUT', 30),
+    ],
+
 ];

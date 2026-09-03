@@ -1,0 +1,10 @@
+services:
+  board-cv:
+    build: .
+    # SADECE localhost'a bagla -> internetten erisilemez; Laravel proxy onunde.
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      - BOARD_CV_MODEL=models/checkers.pt
+      - BOARD_CV_MAX_BYTES=12582912
+    restart: unless-stopped

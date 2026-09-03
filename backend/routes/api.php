@@ -62,6 +62,10 @@ Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::
 Route::middleware(['auth:sanctum', 'throttle:12,1'])
     ->post('/analyze-board-image', [\App\Http\Controllers\BoardVisionController::class, 'analyze']);
 
+// Fotograftan pozisyon (CV) — Python board-cv servisine proxy. Giris + throttle.
+Route::middleware(['auth:sanctum', 'throttle:20,1'])
+    ->post('/backgammon-photo/detect-position', [\App\Http\Controllers\PhotoDetectController::class, 'detect']);
+
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
