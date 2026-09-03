@@ -144,7 +144,7 @@ const TR: Dict = {
   'info.feat.16.d': 'Maçlarını, galibiyetlerini ve performansını takip et.',
   'info.feat.17.t': 'Günlük Performans Analizi',
   'info.feat.17.d': 'Günlük oyun performansını ve yaptığın hataları takip et.',
-  'info.feat.18.t': 'Başarımlar ve Ödüller',
+  'info.feat.18.t': 'Başarılarım ve Ödüller',
   'info.feat.18.d': 'Görevleri tamamla, başarımları aç ve ödüller kazan.',
   'info.feat.19.t': 'Her Seviyeye Uygun',
   'info.feat.19.d': 'Yeni başlayanlardan deneyimli tavla oyuncularına kadar herkes için.',
@@ -386,9 +386,9 @@ const TR: Dict = {
   'notif.delete': 'Sil',
   'badges.title': 'Rozetler',
   'badges.empty': 'Henüz rozet yok.',
-  // ---- Başarımlar (achievements) ----
-  'ach.title': 'Başarımlar',
-  'menu.achievements': 'Başarımlar',
+  // ---- Başarılarım (achievements) ----
+  'ach.title': 'Başarılarım',
+  'menu.achievements': 'Başarılarım',
   'ach.total': 'Toplam Rozet',
   'ach.empty': 'Bu kategoride rozet yok.',
   'ach.viewAll': 'Tümünü gör',
