@@ -32,31 +32,25 @@ class BoardVisionController extends Controller
         $data = base64_encode(file_get_contents($file->getRealPath()));
 
         $prompt = <<<'PROMPT'
-You are a precise backgammon board reader. Look at the photo of a backgammon board and output the exact checker position as JSON.
+You are an expert backgammon board reader. Read the EXACT checker position from the photo.
 
-COORDINATE SYSTEM (must follow exactly):
-- The board has 24 triangular points, numbered 1..24 using STANDARD backgammon numbering.
-- Divide the board into 4 quadrants by the central bar (vertical) and the horizontal middle line:
-  - TOP-LEFT quadrant  = points 13,14,15,16,17,18 (left to right)
-  - TOP-RIGHT quadrant = points 19,20,21,22,23,24 (left to right)
-  - BOTTOM-LEFT quadrant  = points 12,11,10,9,8,7 (left to right)
-  - BOTTOM-RIGHT quadrant = points 6,5,4,3,2,1 (left to right)
-  - If the board in the photo is rotated/mirrored, infer the mapping so it matches this standard layout.
-- There are two checker colors. Treat the LIGHTER color as POSITIVE (white) and the DARKER color as NEGATIVE (black).
+NUMBERING (standard): 4 quadrants split by the central bar (vertical) + horizontal middle.
+- TOP-LEFT = points 13,14,15,16,17,18 (left to right)
+- TOP-RIGHT = points 19,20,21,22,23,24 (left to right)
+- BOTTOM-LEFT = points 12,11,10,9,8,7 (left to right)
+- BOTTOM-RIGHT = points 6,5,4,3,2,1 (left to right)
+- If the board is rotated/mirrored, infer the mapping so it matches this standard layout.
+Two checker colors: LIGHTER color = POSITIVE (white), DARKER = NEGATIVE (black).
 
-OUTPUT (JSON only, no prose, no markdown fences):
-{
-  "points": [24 integers],   // index 0 = point 1 ... index 23 = point 24. +N = N light checkers, -N = N dark checkers, 0 = empty.
-  "bar":  { "white": <light checkers on the central bar>, "black": <dark checkers on the central bar> },
-  "off":  { "white": <light checkers borne off / in the tray>, "black": <dark checkers borne off> },
-  "confidence": <0..1 overall confidence>
-}
+STEP 1 — Reason out loud. Go quadrant by quadrant, then each of its 6 points left-to-right. For every point that has checkers state: point number, color, and how many (count carefully; stacks overlap). Also count the central bar and both borne-off trays. This reasoning is REQUIRED.
 
-RULES:
-- "points" MUST contain EXACTLY 24 integers (index 0..23). Never 23 or 25.
-- Each color has EXACTLY 15 checkers total. The sum over all points of that color's checkers, PLUS its bar, PLUS its off, MUST equal 15 for BOTH colors. Re-count stacked/overlapping checkers until both totals are exactly 15.
-- A single point holds only ONE color (never mix signs on one index).
-- Respond with ONLY the JSON object.
+STEP 2 — Sanity check: each color must total EXACTLY 15 (points + bar + off). If not, RE-EXAMINE and fix before answering.
+
+STEP 3 — Output the FINAL answer as a JSON object inside a ```json fenced code block:
+```json
+{"points":[24 ints, index0=point1..index23=point24, +light/-dark],"bar":{"white":n,"black":n},"off":{"white":n,"black":n},"confidence":0..1}
+```
+"points" MUST be EXACTLY 24 integers. A point holds only ONE color.
 PROMPT;
 
         $headers = [
@@ -72,7 +66,7 @@ PROMPT;
         try {
             $resp = Http::withHeaders($headers)->timeout(60)->post('https://api.anthropic.com/v1/messages', [
                 'model' => config('services.anthropic.model', 'claude-sonnet-4-5'),
-                'max_tokens' => 1024,
+                'max_tokens' => 2500,
                 'messages' => [[
                     'role' => 'user',
                     'content' => [
@@ -103,15 +97,20 @@ PROMPT;
         return response()->json($pos);
     }
 
-    /** Model metnindeki ilk JSON blogunu ayikla + dogrula/temizle. */
+    /** Model muhakeme edip SON ```json blogunda cevap verir; onu ayikla (yoksa ilk{..son}). */
     private function parsePosition(string $text): ?array
     {
-        $start = strpos($text, '{');
-        $end = strrpos($text, '}');
-        if ($start === false || $end === false || $end <= $start) {
-            return null;
+        $json = null;
+        if (preg_match_all('/```json\s*(\{.*?\})\s*```/s', $text, $mm) && $mm[1]) {
+            $json = end($mm[1]); // son fenced JSON blogu
+        } else {
+            $start = strpos($text, '{');
+            $end = strrpos($text, '}');
+            if ($start === false || $end === false || $end <= $start) {
+                return null;
+            }
+            $json = substr($text, $start, $end - $start + 1);
         }
-        $json = substr($text, $start, $end - $start + 1);
         $d = json_decode($json, true);
         if (! is_array($d) || ! isset($d['points']) || ! is_array($d['points'])) {
             return null;
