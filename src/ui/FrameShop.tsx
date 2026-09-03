@@ -128,7 +128,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
   return (
     <div className="frame-shop">
       <div className="frame-shop-bal">
-        <Coins amount={coins} size={16} />
+        <Coins amount={coins} size={22} />
       </div>
       {buyErr && (
         <div className="shop-buy-err" role="alert">
