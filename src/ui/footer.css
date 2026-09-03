@@ -20,14 +20,10 @@
   flex: 1 1 200px;
   min-width: 180px;
 }
+/* Logo artik <TavlaTvLogo> bileseni (wordmark + kiremit ucgen); metin stilleri
+   bilesenin kendi inline stillerinden gelir, burada yalniz dikey hizalama. */
 .foot-logo {
-  font-weight: 800;
-  font-size: 1.25rem;
-  letter-spacing: 0.06em;
-  color: #f4efe6;
-}
-.foot-logo::first-letter {
-  color: var(--accent);
+  display: inline-flex;
 }
 .foot-tag {
   margin: 8px 0 0;
