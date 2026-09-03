@@ -1364,6 +1364,7 @@ export type DicePhase = 'all' | 'opening' | 'contact' | 'race'
 export interface DiceRoll {
   dice: string // "6-3" (kanonik: buyuk-kucuk)
   n: number // kac kez oynandi
+  freq: number // % pay (dagilim; tum zarlar ~%100'e toplanir)
   avgError: number // ortalama equity kaybi (dusuk=iyi)
   avgPip: number | null // ortalama pip
   winRate: number // % (bu tarafin perspektifi)
