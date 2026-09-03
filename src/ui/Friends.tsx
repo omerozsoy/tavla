@@ -145,7 +145,10 @@ export default function Friends({ onInvite, onClose }: Props) {
               {friends.length === 0 ? (
                 <div className="lb-empty">{t('friends.empty')}</div>
               ) : (
-                friends.map((f) => (
+                // Online arkadaslar en ustte (stabil: online grubu once, sonra offline)
+                [...friends]
+                  .sort((a, b) => Number(b.online) - Number(a.online))
+                  .map((f) => (
                   <div key={f.id} className="friend-row">
                     <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
                     {identity(f)}
