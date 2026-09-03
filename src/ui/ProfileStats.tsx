@@ -515,22 +515,13 @@ function fmtDate(iso?: string | null): string {
   return new Date(iso).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' })
 }
 
-// Zar dizilim sirasi: once cift-olmayanlar kanonik artan (1-2,1-3,...,5-6),
-// sonra ciftler (1-1,...,6-6). Anahtar "hi-lo" ya da "lo-hi" olabilir -> normalize.
-function diceOrder(key: string): number {
-  const [a, b] = key.split('-').map(Number)
-  const lo = Math.min(a, b)
-  const hi = Math.max(a, b)
-  const isDouble = a === b
-  return (isDouble ? 1000 : 0) + lo * 10 + hi
-}
-
-// Tum 21 zar kombinasyonu (kanonik buyuk-kucuk), diceOrder sirasinda: once ikili-olmayanlar,
-// sonra ciftler (1-1..6-6). Atilmayanlar da grid'de %0 ile gorunur -> tam dagilim.
+// Tum 21 zar kombinasyonu (kanonik buyuk-kucuk) SABIT ucgen sirada:
+// 1-1, 2-1, 2-2, 3-1, 3-2, 3-3, 4-1..4-4, 5-1..5-5, 6-1..6-6 (ciftler araya serpistirilir).
+// Atilmayanlar da grid'de %0 ile gorunur -> tam dagilim.
 const ALL_DICE: string[] = (() => {
   const list: string[] = []
   for (let hi = 1; hi <= 6; hi++) {
     for (let lo = 1; lo <= hi; lo++) list.push(`${hi}-${lo}`)
   }
-  return list.sort((a, b) => diceOrder(a) - diceOrder(b))
+  return list
 })()
