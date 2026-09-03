@@ -15,7 +15,14 @@
 .cal-panel {
   width: 100%; /* kendi yarisini doldurur */
 }
-/* Sag yarim kolon: Online Turnuvalar + Haberler alt alta (her biri yarim-genislik kutu). */
+/* SOL kolon: Online Turnuvalar (ust) + Turnuva Takvimi (alt). */
+.home-cal-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+/* SAG kolon: Haberler. */
 .home-cal-side {
   display: flex;
   flex-direction: column;
