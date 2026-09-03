@@ -3138,12 +3138,11 @@ button[aria-disabled='true'],
   align-items: center;
   height: 24px;
   padding: 0 22px 0 12px;
-  background: var(--accent);
-  color: #f4efe6; /* krem wordmark (aksan zemin uzerinde okunur) */
+  background: #1c1a17; /* marka ink zemini (orijinal logo iki-renk kimligi bunda okunur) */
   /* Sag uc sivri (ok); sol kenar duz. */
   clip-path: polygon(0 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 0 100%);
 }
-/* Sol altta katlanma kivrimi: token aksandan turetilmis koyu ucgen, banttan asagi sarkar. */
+/* Sol altta katlanma kivrimi: ink'ten koyu ucgen, banttan asagi sarkar. */
 .event-tvflag-fold {
   position: absolute;
   left: 0;
@@ -3152,7 +3151,7 @@ button[aria-disabled='true'],
   height: 0;
   border-style: solid;
   border-width: 7px 8px 0 0;
-  border-color: color-mix(in srgb, var(--accent) 55%, #000) transparent transparent transparent;
+  border-color: #0e0d0b transparent transparent transparent;
 }
 .event-tvflag-logo {
   position: relative;
