@@ -575,8 +575,8 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
   }
   return (
     <div className="home-panel news-panel">
-      <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.news')}>
-        <Icon name="chat" size={18} /> {t('menu.news')}
+      <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('home.news.title')}>
+        <Icon name="chat" size={18} /> {t('home.news.title')}
         {items && items.length > 0 && <span className="panel-count">{items.length}</span>}
       </button>
       {items === null ? (
@@ -584,32 +584,38 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
       ) : items.length === 0 ? (
         <div className="home-panel-empty">{t('home.news.empty')}</div>
       ) : (
-        <div className="news-list">
-          {items.map((n) => {
-            const cover = calMediaSrc(n.image)
-            const date = fmtDate(n)
-            return (
-              <button key={n.id} className="news-row" onClick={() => onOpenNews(newsSlug(n.title))}>
-                {cover ? (
-                  <img className="news-thumb" src={cover} alt="" loading="lazy" />
-                ) : (
-                  <span className="news-thumb news-thumb-ph" aria-hidden="true">
-                    <Icon name="chat" size={16} />
-                  </span>
-                )}
-                <span className="news-main">
-                  <span className="news-title">{n.title}</span>
-                  {date && (
-                    <span className="news-date">
-                      <Icon name="calendar" size={12} /> {date}
+        <>
+          <div className="news-list">
+            {items.map((n) => {
+              const cover = calMediaSrc(n.image)
+              const date = fmtDate(n)
+              return (
+                <button key={n.id} className="news-row" onClick={() => onOpenNews(newsSlug(n.title))}>
+                  {cover ? (
+                    <img className="news-thumb" src={cover} alt="" loading="lazy" />
+                  ) : (
+                    <span className="news-thumb news-thumb-ph" aria-hidden="true">
+                      <Icon name="chat" size={16} />
                     </span>
                   )}
-                </span>
-                <Icon name="arrow-right" size={15} className="news-go" />
-              </button>
-            )
-          })}
-        </div>
+                  <span className="news-main">
+                    <span className="news-title">{n.title}</span>
+                    {date && (
+                      <span className="news-date">
+                        <Icon name="calendar" size={12} /> {date}
+                      </span>
+                    )}
+                  </span>
+                  <Icon name="arrow-right" size={15} className="news-go" />
+                </button>
+              )
+            })}
+          </div>
+          {/* Alt link: tum haberler sayfasina gecer */}
+          <button type="button" className="news-all" onClick={onOpen}>
+            {t('home.news.all')} <Icon name="arrow-right" size={14} />
+          </button>
+        </>
       )}
     </div>
   )
