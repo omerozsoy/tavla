@@ -17861,3 +17861,14 @@ select:-webkit-autofill {
   background: color-mix(in srgb, var(--coin-gold) 8%, var(--card-bg));
   font-weight: 400;
 }
+
+
+/* Lobi kabugu icinde GOMULU multiplayer paneli (oda olustur/katil/bekle).
+   Fixed tam-ekran overlay DEGIL -> logo + sol menu gorunur kalir; kart ortali. */
+.lobby-embed {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  padding: clamp(20px, 6vh, 72px) 16px 40px;
+}
