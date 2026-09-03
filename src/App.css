@@ -7748,7 +7748,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--med-slate);
 }
 .bs-title {
-  font-family: 'Young Serif', 'Playfair Display', 'Lora', Georgia, 'Times New Roman', serif;
+  font-family: 'Spectral', 'Playfair Display', 'Lora', Georgia, 'Times New Roman', serif;
   font-weight: 400;
   font-size: clamp(1.15rem, 1.6vw, 1.7rem);
   line-height: 1.15;
