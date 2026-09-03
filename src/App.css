@@ -3366,9 +3366,12 @@ button[aria-disabled='true'],
   line-height: 1.5;
   color: var(--muted);
 }
-.event-runby-logo {
+.event-runby-logo,
+.tourn-runby-logo {
   position: relative;
   top: 0.06em;
+  /* Logo boyutunu ZORLA (miras alinan .event-runby font-size'ini ez). */
+  font-size: 34px !important;
 }
 .event-social {
   display: inline-flex;
