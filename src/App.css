@@ -2828,6 +2828,15 @@ button[aria-disabled='true'],
   position: absolute;
   top: 16px;
   right: 18px;
+  /* shadcn ghost buton (data-slot) acik temada KOYU ikon veriyordu -> koyu backdrop'ta
+     gorunmuyordu. !important ile ez: her temada beyaz ikon + koyu pill. */
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border-radius: var(--radius-circle);
+}
+.lightbox-close:hover {
+  background: rgba(0, 0, 0, 0.78) !important;
+  color: #fff !important;
 }
 .lightbox-close:not([data-slot]) {
   width: 40px;
@@ -2849,6 +2858,14 @@ button[aria-disabled='true'],
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+  /* Ayni: shadcn ghost'u ez -> her temada beyaz ok + koyu pill (koyu backdrop'ta net). */
+  color: #fff !important;
+  background: rgba(0, 0, 0, 0.55) !important;
+  border-radius: var(--radius-circle);
+}
+.lightbox-nav:hover {
+  background: rgba(0, 0, 0, 0.78) !important;
+  color: #fff !important;
 }
 .lightbox-nav:not([data-slot]) {
   width: 48px;
