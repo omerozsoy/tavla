@@ -3660,11 +3660,9 @@ export default function App() {
         <span className="ab-logo-full">
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
-            <svg className="ab-tag" height="11" role="img" aria-label={t('foot.tag')}>
-              <text x="0" y="9" textLength="100%">
-                {t('foot.tag')}
-              </text>
-            </svg>
+            {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
+                bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
+            <span className="ab-tag">{t('foot.tag')}</span>
           </span>
         </span>
         <span className="ab-logo-mark">

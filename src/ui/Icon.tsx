@@ -272,21 +272,26 @@ const MAP: Record<IconName, PhosphorIcon> = {
 // Tum ikon isimleri (showcase galerisi kullanir)
 export const ICON_NAMES = Object.keys(MAP) as IconName[]
 
+export type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duotone'
+
 export function Icon({
   name,
   size = 20,
   className,
+  weight = 'regular',
 }: {
   name: IconName
   size?: number
   className?: string
+  // Cizgi kalinligi (Phosphor). Varsayilan temiz outline; oklar gibi vurgu icin 'bold'.
+  weight?: IconWeight
 }) {
   const Cmp = MAP[name]
   return (
     <Cmp
       className={className}
       size={size}
-      weight="regular"
+      weight={weight}
       aria-hidden="true"
       style={{ flex: 'none', display: 'inline-block', verticalAlign: '-0.15em' }}
     />

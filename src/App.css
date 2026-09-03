@@ -7291,18 +7291,13 @@ button.acct-row:hover:not(:disabled) {
 }
 .ab-tag {
   display: block;
-  width: 0;
-  min-width: 100%;
-  height: 11px;
-  margin-top: 1px;
-  overflow: visible;
+  margin-top: 2px;
   font-family: 'Outfit', system-ui, sans-serif;
   font-size: 10px;
   font-weight: 400;
-  letter-spacing: 0.01em;
-}
-.ab-tag text {
-  fill: var(--muted);
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  white-space: nowrap;
 }
 .ab-logo-mark {
   display: none;
@@ -7883,28 +7878,30 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 60px;
+  height: 60px;
   padding: 0;
   border: 0;
   background: none;
   color: #fff;
   cursor: pointer;
-  filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55));
+  /* Daha belirgin golge: kalin ok koyu/acik gorsel uzerinde net okunur */
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.7));
   transition: transform 0.15s ease, opacity 0.15s ease;
 }
 .bs-arrow svg {
-  width: 34px;
-  height: 34px;
+  width: 48px;
+  height: 48px;
 }
 .bs-arrow:hover {
   transform: translateY(-50%) scale(1.08);
 }
+/* Okları en dışa çek (panel yazısının üstüne binmesin) */
 .bs-arrow-prev {
-  left: clamp(10px, 2vw, 20px);
+  left: clamp(0px, 0.6vw, 6px);
 }
 .bs-arrow-next {
-  right: clamp(10px, 2vw, 20px);
+  right: clamp(0px, 0.6vw, 6px);
 }
 
 @media (max-width: 720px) {
@@ -7926,12 +7923,12 @@ button.acct-row:hover:not(:disabled) {
   }
   /* Mobilde oklar biraz daha kucuk (yine halkasiz beyaz) */
   .bs-arrow {
-    width: 46px;
-    height: 46px;
+    width: 52px;
+    height: 52px;
   }
   .bs-arrow svg {
-    width: 26px;
-    height: 26px;
+    width: 36px;
+    height: 36px;
   }
 }
 
@@ -12970,6 +12967,32 @@ button.acct-row:hover:not(:disabled) {
   margin-top: 4px;
 }
 .tourn-confirm-actions > * {
+  flex: 1;
+}
+/* Arkadaslıktan cıkar onay dialogu (tourn-confirm ile ayni kalip) */
+.friends-confirm {
+  max-width: 380px;
+  text-align: center;
+  gap: 14px;
+}
+.friends-confirm h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 400;
+  color: var(--text);
+}
+.friends-confirm-desc {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+.friends-confirm-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.friends-confirm-actions > * {
   flex: 1;
 }
 /* Detay: sade geri linki (dev buton yerine) + kompakt aksiyon satÄ±rÄ± */

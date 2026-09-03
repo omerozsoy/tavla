@@ -196,10 +196,10 @@ export default function BannerSlider({ onOpen }: Props) {
       {multi && (
         <>
           <button type="button" className="bs-arrow bs-arrow-prev" onClick={prev} aria-label="Önceki banner">
-            <Icon name="caret-left" size={34} />
+            <Icon name="caret-left" size={46} weight="bold" />
           </button>
           <button type="button" className="bs-arrow bs-arrow-next" onClick={next} aria-label="Sonraki banner">
-            <Icon name="caret-right" size={34} />
+            <Icon name="caret-right" size={46} weight="bold" />
           </button>
         </>
       )}
