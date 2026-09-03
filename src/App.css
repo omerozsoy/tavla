@@ -393,14 +393,9 @@ button[aria-disabled='true'],
   .galaxy-btn,
   .menu-btn,
   .btn-secondary,
-  .account-btn,
   .home-btn,
-  .shop-btn,
   .mem-btn,
-  .friend-btn,
   .danger-btn,
-  .tourn-admin-btn,
-  .admin-edit-btn,
   .club-create-btn
 ) {
   cursor: pointer;
@@ -6572,10 +6567,7 @@ html.fs-active .account-bar {
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .account-btn {
-    padding: 5px 8px;
-    font-size: 0.74rem;
-  }
+
   /* Oyun ekrani (.main) kendi ust boslugu; lobi-main band akista -> ust padding yok. */
   .main {
     padding-top: 52px;
@@ -7317,39 +7309,7 @@ button.acct-row:hover:not(:disabled) {
 .account-avf .sf-glow {
   display: none;
 }
-.account-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  /* Ust bar tek boy: shadcn Button (42px) ile hizali kalsin */
-  min-height: 42px;
-  padding: 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: var(--bg);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.82rem;
-  white-space: nowrap;
-}
-.account-btn:hover {
-  border-color: var(--accent);
-}
-.account-btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-}
-.account-btn.icon {
-  padding: 6px 10px;
-  font-size: 0.82rem;
-}
-.account-btn.leave {
-  border-color: color-mix(in srgb, var(--color-error) 60%, transparent);
-  color: var(--danger-fg);
-  font-weight: 400;
-}
+
 
 /* Ipucu / Ogrenme modu */
 .hint-fab {
@@ -7423,9 +7383,7 @@ button.acct-row:hover:not(:disabled) {
   line-height: 1.3;
   margin: 4px 0 0;
 }
-.account-btn.leave:hover {
-  background: color-mix(in srgb, var(--color-error) 20%, transparent);
-}
+
 .resign-home {
   border-color: color-mix(in srgb, var(--tv-brick-light) 55%, transparent) !important;
   color: #f0c9c0 !important;
@@ -10637,34 +10595,7 @@ button.acct-row:hover:not(:disabled) {
   justify-content: space-between;
   gap: 12px;
 }
-.admin-edit-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  padding: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--btn-bg);
-  color: var(--muted);
-  cursor: pointer;
-}
-/* Gorsel 34px, dokunma hedefi 44px (ux: touch-target-size) */
-.admin-edit-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.admin-edit-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
+
 .admin-edit {
   display: flex;
   flex-wrap: wrap;
@@ -10789,36 +10720,7 @@ button.acct-row:hover:not(:disabled) {
   gap: 4px;
   align-items: center;
 }
-.tourn-admin-btn {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--btn-bg);
-  color: var(--muted);
-  cursor: pointer;
-}
-.tourn-admin-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 44px;
-  height: 44px;
-  transform: translate(-50%, -50%);
-}
-.tourn-admin-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-.tourn-admin-btn.danger:hover {
-  color: var(--tv-brick-light);
-  border-color: var(--tv-brick);
-}
+
 .admin-row-main {
   display: flex;
   flex-direction: column;
@@ -13997,34 +13899,7 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   margin: 5px 0;
 }
-.shop-btn {
-  width: 100%;
-  padding: 5px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--card-bg);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 0.8rem;
-  font-weight: 400;
-}
-.shop-btn.buy {
-  border-color: color-mix(in srgb, var(--tv-gold) 50%, transparent);
-  color: var(--tv-gold);
-}
-.shop-btn.active {
-  border-color: #4fb477;
-  color: var(--success-fg);
-}
-.shop-btn:disabled {
-  opacity: 0.6;
-  cursor: default;
-}
-/* Yetersiz coin: satin alma butonu net "erisilemez" gorunur + altinda gerekce */
-.shop-btn.buy.cant {
-  border-color: var(--border);
-  color: var(--muted);
-}
+
 .shop-need {
   margin-top: 4px;
   display: flex;
@@ -14970,8 +14845,7 @@ button.acct-row:hover:not(:disabled) {
 /* Odak gorunurlugu (erisilebilirlik: focus-states) */
 .shop-chip:focus-visible,
 .shop-colorchip:focus-visible,
-.shop-sw:focus-visible,
-.shop-btn:focus-visible {
+.shop-sw:focus-visible {
   outline: 2px solid var(--tv-gold);
   outline-offset: 2px;
 }
@@ -15353,24 +15227,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--success-fg);
   font-variant-numeric: tabular-nums;
 }
-.friend-btn {
-  border: 1px solid var(--border);
-  background: var(--card-bg);
-  color: var(--text);
-  border-radius: var(--radius-md);
-  width: 30px;
-  height: 30px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-.friend-btn.ok:hover {
-  border-color: #4fb477;
-  color: var(--success-fg);
-}
-.friend-btn.play:hover {
-  border-color: var(--tv-brick-light);
-  color: #f0c9c0;
-}
+
 .friend-dot {
   width: 9px;
   height: 9px;
@@ -15427,10 +15284,7 @@ button.acct-row:hover:not(:disabled) {
   background: var(--border);
   color: var(--text);
 }
-.friend-btn.no:hover {
-  border-color: var(--color-error);
-  color: var(--danger-fg);
-}
+
 
 /* Adil zar modali */
 /* ================= Adil Zar â€” Emil sadelestirme (sade/ferah/premium, flat) =================

@@ -621,11 +621,6 @@ function Showcase() {
           <Item name="Badge collection" code="<BadgeList ids />">
             <BadgeList ids={['first_win', 'streak_5', 'tourney_win']} />
           </Item>
-          <Item name="Follow / Friend" code='class="friend-btn"'>
-            <span style={{ display: 'flex', gap: 8 }}>
-              <button className="friend-btn"><Icon name="users" size={15} /> Arkadaş Ekle</button>
-            </span>
-          </Item>
         </Section>
 
         {/* 12 SPACING / RADIUS / SHADOW */}
