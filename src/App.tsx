@@ -4367,7 +4367,6 @@ export default function App() {
             const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
             return { panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker }
           })()}
-          onChangeBoard={() => setBoardPickerOpen(true)}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
         />

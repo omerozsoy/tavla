@@ -10110,7 +10110,7 @@ button.acct-row:hover:not(:disabled) {
   border-color: var(--accent);
 }
 .setup-split .solo-grid {
-  grid-template-columns: repeat(4, 1fr); /* 12 seviye -> 4'lu, 3 satir */
+  grid-template-columns: repeat(3, 1fr); /* 9 seviye -> 3'lu yan yana, 3 satir */
 }
 .solo-tile.selected {
   border-color: var(--accent);
@@ -15186,7 +15186,7 @@ button.acct-row:hover:not(:disabled) {
 .friend-row:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
-/* Ulke bayragi ismin hemen bittigi yerde (identity icerik-genisligi -> bayrak isme yapisik) */
+/* Ulke bayragi SABIT dikey cizgide: identity sabit genislik (0 0 210px) -> bayrak hep ayni sutunda */
 .friend-flag {
   display: inline-flex;
   align-items: center;
@@ -15206,12 +15206,12 @@ button.acct-row:hover:not(:disabled) {
 }
 /* PlayerIdentity blogu (avatar + isim + altinda rutbe) satirin genisligini alsin */
 .friend-id {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-width: 0;
 }
 /* Arkadas kimligi tiklanabilir: profili acar (buton resetli, satir genisligini alir) */
 .friend-id-btn {
-  flex: 0 1 auto;
+  flex: 0 0 210px;
   min-width: 0;
   display: flex;
   align-items: center;
