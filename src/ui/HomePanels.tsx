@@ -548,7 +548,7 @@ const newsSlug = (s: string): string =>
     .replace(/[çğıöşüİÇĞÖŞÜ]/g, (c) => TR_SLUG[c] ?? c)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
+    .replace(/^-+|-+$/g, '')
 
 // ---- Haberler (ana sayfa yan kutusu; Online Turnuvalar boyutunda) ----
 // En son 6 haber: solda ufak kapak resmi + baslik + yayin tarihi. Satir -> haber detayi.
