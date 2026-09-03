@@ -2569,6 +2569,11 @@ export default function App() {
   async function handleCreateRoom(target = 1, tc?: TimeControl) {
     setRoomBusy(true)
     setRoomError('')
+    // Onceki BITMIS oyunu HEMEN temizle (matchOver true kalirsa oda kurma agi beklerken
+    // game-view eski board'u FLASH ediyordu) -> spinner sorunsuz gorunur.
+    setGameEnd(null)
+    setTurnsPlayed(0)
+    setMatch(newMatch(target))
     try {
       friendlyRef.current = true // davet ile kurulan oda = arkadaslik maci (puan/coin YOK)
       stakeRef.current = 0
@@ -2639,6 +2644,11 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     friendlyRef.current = false // eslesme havuzu / Tek Oyun = puanli/coinli (dostluk degil)
+    // Onceki BITMIS oyunu HEMEN (await'ten once) temizle: matchOver true kalirsa arama
+    // agi beklerken 4691 (!matchOver) atlanip game-view ESKI board'u FLASH ediyordu.
+    setGameEnd(null)
+    setTurnsPlayed(0)
+    setMatch(newMatch(onlineTargetRef.current))
     try {
       const res = await matchmake(
         profile?.nickname ?? t('auth.guestNick'),
