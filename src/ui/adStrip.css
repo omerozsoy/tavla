@@ -1,0 +1,21 @@
+/* Ana sayfa reklam seritleri (paneller arasi). Icerik kolonu genisliginde (--lobby-w),
+   ortali; banner/panellerle birebir hizali. Gorsel tam genislik, oran korunur. */
+.ad-strip {
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 4px auto 18px;
+}
+.ad-strip a {
+  display: block;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.ad-strip picture {
+  display: block;
+}
+.ad-strip .ad-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-lg);
+}

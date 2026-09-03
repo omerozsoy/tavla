@@ -92,6 +92,7 @@ import Messages from './ui/Messages'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import BannerSlider from './ui/BannerSlider'
+import { AdStrip } from './ui/AdStrip'
 import SoloStakes from './ui/SoloStakes'
 import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
@@ -4736,6 +4737,7 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
+            <AdStrip slot="top" />
             <div className="home-cal-wrap">
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
               <div className="home-cal-main">
@@ -4746,6 +4748,7 @@ export default function App() {
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
               </div>
             </div>
+            <AdStrip slot="middle" />
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
                 {activeRooms.map((r) => (
@@ -4816,6 +4819,7 @@ export default function App() {
               />
             </div>
             {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
+            <AdStrip slot="bottom" />
             </>
             )}
           </main>

@@ -36,6 +36,7 @@ Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/hab
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
+Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
