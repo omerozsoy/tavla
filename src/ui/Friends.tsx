@@ -86,7 +86,7 @@ export default function Friends({ onInvite, onClose }: Props) {
         avatar={f.avatar}
         frame={f.frame}
         size={38}
-        rankSize="sm"
+        rankSize="md"
         className="friend-id"
       />
     </button>
@@ -127,12 +127,14 @@ export default function Friends({ onInvite, onClose }: Props) {
                     <span className="friend-flag">
                       <CountryFlag code={f.country} size={16} rounded={false} />
                     </span>
-                    <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
-                      <Icon name="check" size={16} />
-                    </Button>
-                    <Button variant="destructive" size="icon" onClick={() => doRemove(f.id)} aria-label="Sil">
-                      <Icon name="x" size={16} />
-                    </Button>
+                    <span className="friend-actions">
+                      <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
+                        <Icon name="check" size={16} />
+                      </Button>
+                      <Button variant="destructive" size="icon" onClick={() => doRemove(f.id)} aria-label="Sil">
+                        <Icon name="x" size={16} />
+                      </Button>
+                    </span>
                   </div>
                 ))}
               </div>
@@ -150,26 +152,28 @@ export default function Friends({ onInvite, onClose }: Props) {
                     <span className="friend-flag">
                       <CountryFlag code={f.country} size={16} rounded={false} />
                     </span>
-                    {f.online && (
+                    <span className="friend-actions">
+                      {f.online && (
+                        <Button
+                          variant="default"
+                          size="icon"
+                          title={t('friends.invite')}
+                          aria-label={t('friends.invite')}
+                          onClick={() => onInvite(f.id)}
+                        >
+                          <Icon name="play" size={16} />
+                        </Button>
+                      )}
                       <Button
-                        variant="default"
+                        variant="destructive"
                         size="icon"
-                        title={t('friends.invite')}
-                        aria-label={t('friends.invite')}
-                        onClick={() => onInvite(f.id)}
+                        title={t('friends.remove')}
+                        aria-label={t('friends.remove')}
+                        onClick={() => doRemove(f.id)}
                       >
-                        <Icon name="play" size={16} />
+                        <Icon name="trash" size={16} />
                       </Button>
-                    )}
-                    <Button
-                      variant="destructive"
-                      size="icon"
-                      title={t('friends.remove')}
-                      aria-label={t('friends.remove')}
-                      onClick={() => doRemove(f.id)}
-                    >
-                      <Icon name="trash" size={16} />
-                    </Button>
+                    </span>
                   </div>
                 ))
               )}
