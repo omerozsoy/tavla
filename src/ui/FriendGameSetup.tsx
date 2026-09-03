@@ -13,8 +13,8 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
   { id: 'normal', key: 'setup.clockNormal' },
   { id: 'speed', key: 'setup.clockSpeed' },
 ]
-// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan).
-const LENGTHS = [3, 5, 7, 9, 11, 15, 25]
+// Mac uzunlugu secenekleri (Tek Oyun ayri sekme = 1 puan). Tam tek sayi dizisi 3..25.
+const LENGTHS = [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
 
 interface BoardColors {
   panel: string
@@ -35,7 +35,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const { t } = useT()
   useEscape(onCancel)
   const [tab, setTab] = useState<'single' | 'match'>('single')
-  const [tc, setTc] = useState<TimeControl>('casual')
+  const [tc, setTc] = useState<TimeControl>('normal') // varsayilan sure: Normal
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   const target = tab === 'single' ? 1 : length
