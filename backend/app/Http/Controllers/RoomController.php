@@ -346,6 +346,21 @@ class RoomController extends Controller
     // Celiskili (ikisi de 'won') veya tek tarafli beyanda null -> odeme pending kalir.
     private function resolveWinnerSlot(Room $room): ?string
     {
+        // SUNUCU-OTORİTER MAÇ (Faz 3): authoritative oda ise kazanan SUNUCUNUN hesabından
+        // (server_match) gelir — istemci mutabakatına GEREK YOK, forge EDİLEMEZ. Maç bitmişse.
+        if ($room->authoritative && is_array($room->server_match)) {
+            $sm = $room->server_match;
+            if (! empty($sm['done']) && ($sm['winner'] ?? null) === 'white') {
+                return 'p1';
+            }
+            if (! empty($sm['done']) && ($sm['winner'] ?? null) === 'black') {
+                return 'p2';
+            }
+
+            return null; // maç bitmedi -> ödeme yok
+        }
+
+        // Legacy (authoritative=false): iki-taraf mutabakatı (istemci beyanı).
         $r1 = $room->p1_result;
         $r2 = $room->p2_result;
 
@@ -768,6 +783,18 @@ class RoomController extends Controller
         return $slot === 'p1' ? 'white' : 'black';
     }
 
+    // Sunucu-otoriter maç durumunu (skor 0-0) kur. target: odanın maç uzunluğu (yoksa 1).
+    private function initServerMatch(Room $room): array
+    {
+        return [
+            'target' => (int) ($room->target ?? 1),
+            'score' => ['white' => 0, 'black' => 0],
+            'gameNo' => 1,
+            'done' => false,
+            'winner' => null,
+        ];
+    }
+
     /**
      * Sunucu-otoriter ZAR: sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal)
      * üretilir; istemci SEÇEMEZ. RE-ROLL ENGELİ: zar ancak server_state.dice BOŞKEN verilir;
@@ -790,10 +817,13 @@ class RoomController extends Controller
                 return $this->fail('Bu odada değilsin.', 403);
             }
 
-            // Lazy init: otoriter durum + tohum/taahhüt (ilk roll).
+            // Lazy init: otoriter durum + tohum/taahhüt + maç skoru (ilk roll).
             $state = is_array($room->server_state) ? $room->server_state : null;
             if (! $state) {
                 $state = \App\Support\Backgammon::initialState();
+            }
+            if (! is_array($room->server_match)) {
+                $room->server_match = $this->initServerMatch($room);
             }
             if (empty($room->dice_seed)) {
                 $room->dice_seed = $dice->newSeed();
@@ -893,18 +923,42 @@ class RoomController extends Controller
 
             // Otoriter durumu güncelle (validator uyguladı + sırayı devretti).
             $new = $result['state'];
-            $room->server_state = $new;
-            $room->server_version = (int) $room->server_version + 1;
             $winner = \App\Support\Backgammon::winner($new);
+
+            // ---- SUNUCU-OTORİTER MAÇ SKORU (Faz 3) ----
+            // Oyun bittiyse (15 taş) puanı SUNUCU hesaplar (gammon/backgammon), skoru günceller;
+            // maç bitmediyse otomatik YENİ OYUN kurar. İstemci skoru forge EDEMEZ.
+            $matchDone = false;
             if ($winner) {
-                $room->server_winner = $winner;
+                $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+                $pts = \App\Support\Backgammon::gamePoints($new, $winner); // küp çarpanı hariç (Faz 3: küp yok)
+                $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $pts;
+                $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
+                $target = (int) ($sm['target'] ?? 1);
+                if ((int) $sm['score'][$winner] >= $target) {
+                    // MAÇ BİTTİ.
+                    $sm['done'] = true;
+                    $sm['winner'] = $winner;
+                    $matchDone = true;
+                    $room->server_winner = $winner;
+                    $room->server_state = $new; // son tahtayı koru
+                } else {
+                    // Sonraki oyun: temiz tahta (zar sıradaki roll ile gelir).
+                    $room->server_state = \App\Support\Backgammon::initialState();
+                }
+                $room->server_match = $sm;
+            } else {
+                $room->server_state = $new;
             }
+            $room->server_version = (int) $room->server_version + 1;
             $room->save();
 
             return response()->json([
-                'state' => $new,
+                'state' => $room->server_state,
                 'version' => (int) $room->server_version,
-                'winner' => $winner,
+                'winner' => $winner,             // OYUN kazananı (renk) — bittiyse
+                'match' => $room->server_match,  // otoriter maç skoru
+                'match_done' => $matchDone,
             ]);
         });
     }
