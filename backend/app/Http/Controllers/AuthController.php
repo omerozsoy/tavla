@@ -288,17 +288,42 @@ class AuthController extends Controller
         $ra = $user->rating ?? 1500;
         $rb = $data['opponent_rating'];
 
+        // SUNUCU-OTORITER GALIBIYET/MAGLUBIYET: online macta istemcinin 'won' beyanina
+        // GUVENME (perspektif/bayat-state hatasi kazanilan maci "kayip" yazabiliyordu).
+        // Kazanani ODANIN paylasilan senkron durumundan (mac skoru / slot / p_result)
+        // deterministik cikar; iki oyuncu ayni kaynaktan ayni sonucu gorur. Oda yoksa
+        // (pvb / temizlenmis oda) istemci beyanina dus (geriye uyum).
+        $clientWon = (bool) $data['won'];
+        $won = $clientWon;
+        $srv = $this->serverResultForRoom($user, $data['room_code'] ?? null);
+        if ($srv !== null) {
+            $won = $srv['won'];
+            if ($srv['won'] !== $clientWon) {
+                \Illuminate\Support\Facades\Log::warning('reportRating: sunucu-otoriter sonuc istemciden farkli (duzeltildi)', [
+                    'user_id' => $user->id, 'room' => $data['room_code'] ?? null,
+                    'client_won' => $clientWon, 'server_won' => $srv['won'],
+                ]);
+            }
+            // Skorlari da otoriter degerle duzelt ki gecmis satiri tutarli gorunsun.
+            if ($srv['self'] !== null) {
+                $data['score_self'] = $srv['self'];
+            }
+            if ($srv['opp'] !== null) {
+                $data['score_opp'] = $srv['opp'];
+            }
+        }
+
         if ($ranked) {
             // PUANLI: Elo + galibiyet/maglubiyet + kulup + rozet/cerceve
             $k = 32;
             $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-            $score = $data['won'] ? 1 : 0;
+            $score = $won ? 1 : 0;
             $newRating = (int) round($ra + $k * ($score - $expected));
             $newRating = max(100, $newRating); // taban
 
             $user->rating = $newRating;
             $user->games_played = ($user->games_played ?? 0) + 1;
-            if ($data['won']) {
+            if ($won) {
                 $user->wins = ($user->wins ?? 0) + 1;
             } else {
                 $user->losses = ($user->losses ?? 0) + 1;
@@ -323,7 +348,7 @@ class AuthController extends Controller
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         $mr = [
             'user_id'         => $user->id,
-            'won'             => (bool) $data['won'],
+            'won'             => $won,
             'opponent_rating' => $rb,
             'rating_before'   => (int) $ra,
             'rating_after'    => $newRating,
@@ -433,6 +458,65 @@ class AuthController extends Controller
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
         ]);
+    }
+
+    /**
+     * SUNUCU-OTORITER galibiyet/maglubiyet: verilen kullanicinin bu odada gercekten
+     * kazanip kazanmadigini ODANIN paylasilan durumundan cikar. Kaynak onceligi:
+     *   1) Mac skoru (rooms.state.match.score) — bir taraf hedefe ulasmissa kesin.
+     *   2) rooms.p{slot}_result — saat/forfeit/settle ile sunucuda set edilmisse.
+     *   3) tek-puanlik (target<=1) macta rooms.state.gameEnd.winner.
+     * Slot->renk: p1=beyaz, p2=siyah (RoomController ile ayni). Belirlenemezse null
+     * (arayan istemci beyanina duser: pvb / temizlenmis oda / bayat state).
+     *
+     * @return array{won:bool, self:?int, opp:?int}|null
+     */
+    private function serverResultForRoom($user, ?string $code): ?array
+    {
+        if (empty($code)) {
+            return null;
+        }
+        $room = \App\Models\Room::where('code', $code)->first();
+        if (! $room) {
+            return null;
+        }
+        $slot = (int) $room->p1_user_id === (int) $user->id ? 'p1'
+            : ((int) $room->p2_user_id === (int) $user->id ? 'p2' : null);
+        if ($slot === null) {
+            return null;
+        }
+        $userColor = $slot === 'p1' ? 'white' : 'black';
+        $oppColor = $userColor === 'white' ? 'black' : 'white';
+
+        $state = is_array($room->state) ? $room->state : [];
+        $match = is_array($state['match'] ?? null) ? $state['match'] : [];
+        $score = is_array($match['score'] ?? null) ? $match['score'] : null;
+        $target = (int) ($room->target ?? ($match['target'] ?? 1));
+
+        // 1) Mac skoru: bir taraf hedefe ulasmis ve esitlik yoksa -> kesin sonuc.
+        if ($score !== null && isset($score[$userColor], $score[$oppColor])) {
+            $s = (int) $score[$userColor];
+            $o = (int) $score[$oppColor];
+            if ($s !== $o && $target > 0 && ($s >= $target || $o >= $target)) {
+                return ['won' => $s > $o, 'self' => $s, 'opp' => $o];
+            }
+        }
+        // 2) Oda p{slot}_result (saat/forfeit/settle).
+        $rc = $room->{$slot.'_result'} ?? null;
+        if ($rc === 'won' || $rc === 'lost') {
+            return [
+                'won' => $rc === 'won',
+                'self' => isset($score[$userColor]) ? (int) $score[$userColor] : null,
+                'opp' => isset($score[$oppColor]) ? (int) $score[$oppColor] : null,
+            ];
+        }
+        // 3) Tek-puanlik macta gameEnd.winner (renk).
+        $ge = is_array($state['gameEnd'] ?? null) ? $state['gameEnd'] : null;
+        if ($target <= 1 && $ge !== null && isset($ge['winner']) && in_array($ge['winner'], ['white', 'black'], true)) {
+            return ['won' => $userColor === $ge['winner'], 'self' => null, 'opp' => null];
+        }
+
+        return null;
     }
 
     /**
