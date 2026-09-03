@@ -82,9 +82,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
-    // reportRating istemci beyanina dayali (online oyunda sunucu-otoriteli mac yok).
-    // Suistimal (rating/coin farm) hizini kesmek icin siki throttle. Mesru bir mac
-    // en az birkac dakika surer -> 12/dk fazlasiyla yeterli.
+    // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —
+    // odanin paylasilan mac skorundan belirlenir, istemci 'won' beyani gecersizse
+    // duzeltilir (bkz AuthController::serverResultForRoom). Oda yoksa (pvb) istemciye
+    // duser. Suistimal hizini kesmek icin siki throttle; mesru mac dakikalar surer.
     Route::middleware('throttle:12,1')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
