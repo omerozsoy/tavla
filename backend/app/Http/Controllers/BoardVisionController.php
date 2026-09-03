@@ -53,17 +53,24 @@ OUTPUT (JSON only, no prose, no markdown fences):
 }
 
 RULES:
-- Each color has at most 15 checkers total (points + bar + off). Count carefully; stacked checkers may overlap.
+- "points" MUST contain EXACTLY 24 integers (index 0..23). Never 23 or 25.
+- Each color has EXACTLY 15 checkers total. The sum over all points of that color's checkers, PLUS its bar, PLUS its off, MUST equal 15 for BOTH colors. Re-count stacked/overlapping checkers until both totals are exactly 15.
 - A single point holds only ONE color (never mix signs on one index).
 - Respond with ONLY the JSON object.
 PROMPT;
 
+        $headers = [
+            'x-api-key' => $key,
+            'anthropic-version' => '2023-06-01',
+            'content-type' => 'application/json',
+        ];
+        // Kimlige-bagli anahtar: workspace id basligi sart (yoksa 400 doner).
+        if ($ws = config('services.anthropic.workspace')) {
+            $headers['anthropic-workspace-id'] = $ws;
+        }
+
         try {
-            $resp = Http::withHeaders([
-                'x-api-key' => $key,
-                'anthropic-version' => '2023-06-01',
-                'content-type' => 'application/json',
-            ])->timeout(60)->post('https://api.anthropic.com/v1/messages', [
+            $resp = Http::withHeaders($headers)->timeout(60)->post('https://api.anthropic.com/v1/messages', [
                 'model' => config('services.anthropic.model', 'claude-sonnet-4-5'),
                 'max_tokens' => 1024,
                 'messages' => [[
@@ -78,14 +85,13 @@ PROMPT;
                 ]],
             ]);
         } catch (\Throwable $e) {
-            return response()->json(['message' => 'Gorsel servisi hatasi.', 'debug' => $e->getMessage()], 502);
+            report($e);
+            return response()->json(['message' => 'Gorsel servisi hatasi.'], 502);
         }
 
         if (! $resp->ok()) {
-            return response()->json([
-                'message' => 'Gorsel servisi hatasi.',
-                'debug' => ['status' => $resp->status(), 'body' => mb_substr($resp->body(), 0, 500)],
-            ], 502);
+            \Log::warning('vision upstream error', ['status' => $resp->status(), 'body' => mb_substr($resp->body(), 0, 300)]);
+            return response()->json(['message' => 'Gorsel servisi hatasi.'], 502);
         }
 
         $text = $resp->json('content.0.text', '');
@@ -107,15 +113,15 @@ PROMPT;
         }
         $json = substr($text, $start, $end - $start + 1);
         $d = json_decode($json, true);
-        if (! is_array($d) || ! isset($d['points']) || ! is_array($d['points']) || count($d['points']) !== 24) {
+        if (! is_array($d) || ! isset($d['points']) || ! is_array($d['points'])) {
             return null;
         }
 
+        // 24'e normalize et (model bazen 23/25 dondurur): eksigi 0'la doldur, fazlayi kirp.
+        $raw = array_values($d['points']);
         $points = [];
-        foreach ($d['points'] as $v) {
-            $n = (int) $v;
-            // Tek hanede en fazla 15 tas; makul sinira kirp.
-            $points[] = max(-15, min(15, $n));
+        for ($i = 0; $i < 24; $i++) {
+            $points[] = max(-15, min(15, (int) ($raw[$i] ?? 0)));
         }
         $bar = [
             'white' => max(0, (int) ($d['bar']['white'] ?? 0)),
