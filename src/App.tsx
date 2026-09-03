@@ -3593,7 +3593,7 @@ export default function App() {
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
             <svg className="ab-tag" height="11" role="img" aria-label={t('foot.tag')}>
-              <text x="0" y="9" textLength="100%" lengthAdjust="spacingAndGlyphs">
+              <text x="0" y="9" textLength="100%">
                 {t('foot.tag')}
               </text>
             </svg>
