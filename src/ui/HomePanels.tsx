@@ -3,7 +3,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, onlinePlayers, listContents, getFriends, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, onlinePlayers, listContents, getFriends, getToken, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -280,9 +280,12 @@ export function OnlinePlayersPanel({
     }
   }, [])
 
-  // Arkadas listesi (yalnizca giris yapmis kullanicida; onAddFriend o zaman tanimli).
+  // Arkadas listesi -> zaten arkadas olana "arkadas ol" cikmasin. SADECE mount'ta cek:
+  // onAddFriend prop'u her App render'inda kimlik degistirdigi icin bagimlilikta olsaydi
+  // efekt surekli yeniden kosup ucusan getFriends'i iptal eder, friendIds hic dolmazdi
+  // (buton hep gorunurdu). Token yoksa (misafir) hic cekme.
   useEffect(() => {
-    if (!onAddFriend) return
+    if (!getToken()) return
     let alive = true
     getFriends()
       .then((d) => alive && setFriendIds(new Set(d.friends.map((f) => f.id))))
@@ -290,7 +293,7 @@ export function OnlinePlayersPanel({
     return () => {
       alive = false
     }
-  }, [onAddFriend])
+  }, [])
 
   return (
     <div className="home-panel online-panel">
