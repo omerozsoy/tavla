@@ -100,6 +100,22 @@ function waLink(phone?: string | null): string | null {
   return `https://wa.me/${d}`
 }
 
+// Telefonu GOSTERIM icin normalize et: basinda 0 olacak sekilde (TR cep).
+// "5336630850" / "905336630850" / "+90 533..." -> "0533 663 08 50". Zaten 0 ile
+// basliyorsa dokunma. Taninmayan bicimi oldugu gibi dondur.
+function displayPhone(phone?: string | null): string {
+  if (!phone) return ''
+  const raw = String(phone).trim()
+  if (raw.startsWith('0')) return raw
+  let d = raw.replace(/\D/g, '')
+  if (d.startsWith('90') && d.length >= 12) d = d.slice(2) // ulke kodu 90 -> at
+  if (d.length === 10) {
+    // 0XXX XXX XX XX
+    return '0' + d.replace(/(\d{3})(\d{3})(\d{2})(\d{2})/, '$1 $2 $3 $4')
+  }
+  return raw
+}
+
 // Logosu olmayan kulup icin bas harflerinden dummy logo metni (en fazla 3 harf).
 // Tek kelimeyse ilk 2 harf; cok kelimeyse her kelimenin bas harfi (Turkce buyuk harf).
 function clubInitials(name: string): string {
@@ -547,18 +563,58 @@ export default function ContentView({
                         <span className="club-name">{c.title}</span>
                         {(c.contacts ?? [])
                           .filter((p) => p && (p.name || p.phone))
-                          .map((p, i) => (
-                            <span key={i} className="club-person">
-                              <Icon name="phone" size={12} /> {p.name}
-                              {p.name && p.phone ? ' · ' : ''}
-                              {p.phone}
-                            </span>
-                          ))}
-                        {c.contact && !c.contacts?.length && (
-                          <span className="club-person">
-                            <Icon name="phone" size={12} /> {c.contact}
-                          </span>
-                        )}
+                          .map((p, i) => {
+                            const wa = waLink(p.phone)
+                            return (
+                              <span key={i} className="club-person">
+                                <Icon name={wa ? 'whatsapp' : 'phone'} size={12} /> {p.name}
+                                {p.name && p.phone ? ' · ' : ''}
+                                {p.phone &&
+                                  (wa ? (
+                                    <a
+                                      className="club-person-phone"
+                                      href={wa}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {displayPhone(p.phone)}
+                                    </a>
+                                  ) : (
+                                    displayPhone(p.phone)
+                                  ))}
+                              </span>
+                            )
+                          })}
+                        {c.contact &&
+                          !c.contacts?.length &&
+                          (() => {
+                            // Serbest metin: sondaki telefonu ayikla; SADECE numara link olur.
+                            const m = c.contact.match(/([\d(+][\d\s()+\-]{5,})\s*$/)
+                            const phone = m ? m[1].trim() : ''
+                            const name = m ? c.contact.slice(0, m.index).trim() : c.contact
+                            const wa = waLink(phone)
+                            return (
+                              <span className="club-person">
+                                <Icon name={wa ? 'whatsapp' : 'phone'} size={12} /> {name}
+                                {name && phone ? ' · ' : ''}
+                                {phone &&
+                                  (wa ? (
+                                    <a
+                                      className="club-person-phone"
+                                      href={wa}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {displayPhone(phone)}
+                                    </a>
+                                  ) : (
+                                    displayPhone(phone)
+                                  ))}
+                              </span>
+                            )
+                          })()}
                         {c.place && (
                           <span className="club-addr">
                             <Icon name="pin" size={12} /> {c.place}
@@ -896,7 +952,7 @@ function EventRow({
                       rel={wa ? 'noreferrer' : undefined}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      {c.phone}
+                      {displayPhone(c.phone)}
                     </a>
                   )}
                 </div>
@@ -923,7 +979,7 @@ function EventRow({
                         rel={wa ? 'noreferrer' : undefined}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {phone}
+                        {displayPhone(phone)}
                       </a>
                     )}
                   </div>
