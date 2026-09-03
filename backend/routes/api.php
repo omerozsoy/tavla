@@ -92,6 +92,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/friends/{userId}/accept', [FriendController::class, 'accept']);
     Route::delete('/friends/{userId}', [FriendController::class, 'destroy']);
 
+    // Arkadaslar arasi ozel mesajlasma (DM)
+    Route::get('/messages', [\App\Http\Controllers\MessageController::class, 'threads']);
+    Route::get('/messages/unread', [\App\Http\Controllers\MessageController::class, 'unread']);
+    Route::get('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'thread'])->whereNumber('userId');
+    Route::post('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'send'])
+        ->whereNumber('userId')->middleware('throttle:30,1'); // spam/flood korumasi
+
     Route::post('/ping', [PresenceController::class, 'ping']);
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
     Route::post('/notifications/delete', [PresenceController::class, 'deleteNotifications']);

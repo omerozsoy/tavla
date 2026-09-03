@@ -16,10 +16,11 @@ import { Button } from '@/components/ui/button'
 
 interface Props {
   onInvite: (userId: number) => void
+  onMessage?: (userId: number) => void
   onClose: () => void
 }
 
-export default function Friends({ onInvite, onClose }: Props) {
+export default function Friends({ onInvite, onMessage, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [friends, setFriends] = useState<Friend[]>([])
@@ -156,6 +157,17 @@ export default function Friends({ onInvite, onClose }: Props) {
                       <CountryFlag code={f.country} size={16} rounded={false} />
                     </span>
                     <span className="friend-actions">
+                      {onMessage && (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          title={t('dm.message')}
+                          aria-label={t('dm.message')}
+                          onClick={() => onMessage(f.id)}
+                        >
+                          <Icon name="chat" size={16} />
+                        </Button>
+                      )}
                       {f.online && (
                         <Button
                           variant="default"

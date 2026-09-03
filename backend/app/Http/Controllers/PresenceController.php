@@ -88,6 +88,8 @@ class PresenceController extends Controller
                 'created_at' => optional($n->created_at)->toIso8601String(),
             ]);
         $unread = \App\Models\Notification::where('user_id', $me->id)->where('read', false)->count();
+        // Okunmamis ozel mesaj sayisi (mesaj rozeti)
+        $dmUnread = \App\Models\Message::where('receiver_id', $me->id)->whereNull('read_at')->count();
 
         return response()->json([
             'invites' => $invites,
@@ -97,6 +99,7 @@ class PresenceController extends Controller
             'coins' => $me->coins ?? 0,
             'notifications' => $notifications,
             'unread' => $unread,
+            'dm_unread' => $dmUnread,
         ]);
     }
 

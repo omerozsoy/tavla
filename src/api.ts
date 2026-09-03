@@ -498,6 +498,7 @@ export async function ping(): Promise<{
   coins: number
   notifications?: AppNotification[]
   unread?: number
+  dm_unread?: number
 }> {
   return req('/ping', { method: 'POST' })
 }
@@ -537,6 +538,45 @@ export async function acceptFriend(userId: number): Promise<void> {
 
 export async function removeFriend(userId: number): Promise<void> {
   await req(`/friends/${userId}`, { method: 'DELETE' })
+}
+
+// ---- Ozel mesajlasma (DM) ----
+export interface ChatUser {
+  id: number
+  name: string
+  avatar?: string | null
+  frame?: string | null
+  country?: string | null
+  rating: number
+  online?: boolean
+}
+export interface ChatMessage {
+  id: number
+  body: string
+  mine: boolean
+  created_at?: string | null
+}
+export interface ChatThread {
+  user: ChatUser
+  last: { body: string; mine: boolean; created_at?: string | null } | null
+  unread: number
+}
+
+// Gelen kutusu: mesajlasilan arkadaslar + son mesaj + okunmamis sayisi
+export async function getThreads(): Promise<{ threads: ChatThread[] }> {
+  return req('/messages')
+}
+// Bir arkadasla konusma (gelenler okundu isaretlenir)
+export async function getThread(userId: number): Promise<{ user: ChatUser; messages: ChatMessage[] }> {
+  return req(`/messages/${userId}`)
+}
+// Arkadasa mesaj gonder
+export async function sendMessage(userId: number, body: string): Promise<{ message: ChatMessage }> {
+  return req(`/messages/${userId}`, { method: 'POST', body: JSON.stringify({ body }) })
+}
+// Toplam okunmamis mesaj sayisi (rozet tazeleme)
+export async function messagesUnread(): Promise<{ unread: number }> {
+  return req('/messages/unread')
 }
 
 // ---- Turnuvalar ----
