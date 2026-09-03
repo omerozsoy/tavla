@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
@@ -21,6 +21,28 @@ interface Props {
 }
 
 const emptyPoints = () => new Array(24).fill(0)
+
+// Dizilen pozisyonu kalici tut: analyzer kapanip acilinca / sayfa yenilenince
+// pullar KAYBOLMASIN. localStorage'a board dizilimi (nokta/bar/off/sira/kup) yazilir.
+const PA_STORE_KEY = 'pa-position-v1'
+type SavedPos = {
+  pts: number[]
+  bar: { white: number; black: number }
+  off: { white: number; black: number }
+  turn: Player
+  cube: { value: number; owner: Player | null }
+}
+function loadSavedPos(): SavedPos | null {
+  try {
+    const raw = localStorage.getItem(PA_STORE_KEY)
+    if (!raw) return null
+    const s = JSON.parse(raw)
+    if (!Array.isArray(s?.pts) || s.pts.length !== 24) return null
+    return s as SavedPos
+  } catch {
+    return null
+  }
+}
 
 // Board'un gercek pul rengiyle kucuk yuvarlak isaret (⚪/⚫ emojisi yerine).
 // Tema degisince (kiremit=sari/kirmizi, galaxy=krem/lacivert...) otomatik uyar.
@@ -47,14 +69,19 @@ export default function PositionAnalyzer({
   // olmadigi durumda 'atTop'u hep dogru sanip YUKARI kaydirmayi engelliyordu (alta inince
   // yukari cikilamiyordu). Pull-to-refresh korumasi zaten App.css'te .register-overlay.page
   // uzerinde overscroll-behavior-y: contain ile saglaniyor.
-  const [pts, setPts] = useState<number[]>(() => initialState().points)
-  const [bar, setBar] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
-  const [off, setOff] = useState<{ white: number; black: number }>({ white: 0, black: 0 })
-  const [turn, setTurn] = useState<Player>('white')
-  const [cube, setCube] = useState<{ value: number; owner: Player | null }>({
-    value: 1,
-    owner: null,
-  })
+  // Baslangicta kayitli dizilim varsa onu yukle (yoksa standart baslangic).
+  const saved0 = loadSavedPos()
+  const [pts, setPts] = useState<number[]>(() => saved0?.pts ?? initialState().points)
+  const [bar, setBar] = useState<{ white: number; black: number }>(
+    () => saved0?.bar ?? { white: 0, black: 0 },
+  )
+  const [off, setOff] = useState<{ white: number; black: number }>(
+    () => saved0?.off ?? { white: 0, black: 0 },
+  )
+  const [turn, setTurn] = useState<Player>(() => saved0?.turn ?? 'white')
+  const [cube, setCube] = useState<{ value: number; owner: Player | null }>(
+    () => saved0?.cube ?? { value: 1, owner: null },
+  )
   const [placeColor, setPlaceColor] = useState<Player>('white')
   const [editMode, setEditMode] = useState<'add' | 'remove'>('add')
   const [d1, setD1] = useState(0) // 0 = zar yok
@@ -70,6 +97,15 @@ export default function PositionAnalyzer({
   const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
+
+  // Dizilim degistikce kalici kaydet (analyzer kapanip acilinca / yenilenince korunur).
+  useEffect(() => {
+    try {
+      localStorage.setItem(PA_STORE_KEY, JSON.stringify({ pts, bar, off, turn, cube }))
+    } catch {
+      /* kota/private-mode: yoksay */
+    }
+  }, [pts, bar, off, turn, cube])
 
   const allFroms = new Set<number | 'bar'>([...Array(24).keys(), 'bar'])
 
