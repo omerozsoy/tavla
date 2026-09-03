@@ -22,8 +22,12 @@ export default function Footer({ columns }: Props) {
     <footer className="site-footer">
       <div className="foot-inner">
         <div className="foot-brand">
-          <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
-          <p className="foot-tag">{t('foot.tag')}</p>
+          {/* Logo + slogan tek "kilit"te: kilit logo genisligine buzulur, slogan
+              (width:0 + min-width:100%) TAM logo genisliginde sarar. */}
+          <div className="foot-brandlock">
+            <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
+            <p className="foot-tag">{t('foot.tag')}</p>
+          </div>
         </div>
         <nav className="foot-cols">
           {columns
