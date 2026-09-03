@@ -1,0 +1,11 @@
+{
+  "name": "tavla-validator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Sunucu-otoriter tavla hamle doğrulama servisi (Plesk Node.js startup: dist/server.mjs)",
+  "main": "dist/server.mjs",
+  "scripts": {
+    "start": "node dist/server.mjs"
+  }
+}
