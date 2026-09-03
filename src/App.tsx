@@ -3948,6 +3948,14 @@ export default function App() {
     // vb.) ACILMAZ; oyunu bolmesin. Oyun menusunun Ana Menu/Pes Et'i goPage kullanmaz.
     if (!home && !setup && hasActiveGame) return
     closeAllPages()
+    // LOBI baglamina gec: sayfa home dalinda (sol menu + logo ile) acilsin. Aksi halde
+    // bayat mode==='online'/bitmis oyun kaldiysa sayfa game-view'da (sidebar'siz, yuzen
+    // hamburger ile) aciliyordu. Aktif oyun yoksa online oda/state'i de temizle.
+    if (!hasActiveGame) {
+      setMode('pvb')
+      setRoom(null)
+    }
+    setHome(true)
     open()
   }
 
