@@ -26,7 +26,8 @@ class ContentController extends Controller
         } elseif ($type === 'magazine') {
             $q->orderBy('sort')->orderBy('id'); // seri + playlist sirasi
         } elseif ($type === 'club') {
-            $q->orderBy('province')->orderBy('title');
+            // Il bazli grupla; il icinde admin'in elle diktigi sira (sort), sonra ad
+            $q->orderBy('province')->orderBy('sort')->orderBy('title');
         } elseif ($type === 'ad') {
             $q->orderBy('sort')->orderBy('id');
         } else {
