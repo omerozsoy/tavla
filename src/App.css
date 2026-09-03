@@ -6916,6 +6916,10 @@ button.acct-row:hover:not(:disabled) {
    (Grid child oldugu icin varsayilan tek kolona sigardi; 1/-1 ile bara kadar uzar.) */
 .app.lobby > .site-footer {
   grid-column: 1 / -1;
+  /* Yapiskan sol menu, footer satiri grid'i sikistirinca hucresinden tasip footer'in
+     UZERINE binebiliyor. Footer opak + ustte olsun -> tasan menu footer'in arkasinda kalir. */
+  position: relative;
+  z-index: 5;
 }
 /* Sticky yan menu YALNIZ desktop: mobilde .side-menu drawer (position:fixed) -> burada
    sticky vermek onu ezerdi (0,3,0 > 0,1,0). Bu yuzden min-width kosuluyla ayirdik. */
@@ -13231,16 +13235,17 @@ button.acct-row:hover:not(:disabled) {
   gap: 4px;
 }
 .tp-row {
-  display: grid;
-  grid-template-columns: 28px minmax(0, auto) auto;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   padding: 6px 10px;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 4%, transparent);
   font-size: 0.9rem;
 }
 .tp-rank {
+  flex: 0 0 auto;
+  min-width: 18px;
   text-align: center;
   font-weight: 400;
   color: var(--muted);
@@ -13257,10 +13262,10 @@ button.acct-row:hover:not(:disabled) {
   color: #c47a45;
 }
 .tp-coins {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  justify-self: start;
   font-weight: 400;
   color: var(--tv-gold);
   font-variant-numeric: tabular-nums;
@@ -13269,6 +13274,8 @@ button.acct-row:hover:not(:disabled) {
   color: var(--tv-gold);
 }
 .tp-desc {
+  flex: 0 1 auto;
+  min-width: 0;
   color: var(--muted);
   font-size: 0.84rem;
   overflow: hidden;
