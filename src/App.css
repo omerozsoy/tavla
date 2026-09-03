@@ -3144,27 +3144,6 @@ button[aria-disabled='true'],
   background: var(--accent);
   clip-path: polygon(0 0, 100% 0, 0 100%);
 }
-/* Uc katlanma tab'lari: koyu ucgenler (ust-sag ucu ve alt-sol ucu). */
-.event-tvflag-tab1 {
-  position: absolute;
-  top: 0;
-  left: 112px;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 0 8px 8px;
-  border-color: transparent transparent color-mix(in srgb, var(--accent) 55%, #000) transparent;
-}
-.event-tvflag-tab2 {
-  position: absolute;
-  top: 112px;
-  left: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 8px 8px 0 0;
-  border-color: color-mix(in srgb, var(--accent) 55%, #000) transparent transparent transparent;
-}
 /* Wordmark capraza (hipotenusle paralel) oturur, koseye dogru ortalanir. */
 .event-tvflag-logo {
   position: absolute;
