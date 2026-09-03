@@ -467,7 +467,7 @@ export function TournamentsPanel({
           const dateText = tr.starts_at
             ? new Date(tr.starts_at).toLocaleString(lang === 'tr' ? 'tr-TR' : lang, {
                 day: 'numeric',
-                month: 'short',
+                month: 'long',
                 year: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
@@ -551,14 +551,14 @@ const newsSlug = (s: string): string =>
     .replace(/^-+|-+$/g, '')
 
 // ---- Haberler (ana sayfa yan kutusu; Online Turnuvalar boyutunda) ----
-// En son 6 haber: solda ufak kapak resmi + baslik + yayin tarihi. Satir -> haber detayi.
+// En son 3 haber: solda ufak kapak resmi + baslik + yayin tarihi. Satir -> haber detayi.
 export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNews: (slug: string) => void }) {
   const { t, lang } = useT()
   const [items, setItems] = useState<Content[] | null>(null)
   useEffect(() => {
     let alive = true
     listContents('news')
-      .then((n) => alive && setItems(n.slice(0, 6)))
+      .then((n) => alive && setItems(n.slice(0, 3)))
       .catch(() => alive && setItems([]))
     return () => {
       alive = false
@@ -571,7 +571,7 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
     const dt = new Date(d)
     return Number.isNaN(dt.getTime())
       ? null
-      : dt.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+      : dt.toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
   }
   return (
     <div className="home-panel news-panel">
