@@ -596,13 +596,13 @@ export default function ContentView({
                             )}
                           </div>
                         )}
+                        {c.place && (
+                          <span className="club-addr">
+                            <Icon name="pin" size={12} /> {c.place}
+                          </span>
+                        )}
                       </div>
                     </div>
-                    {c.place && (
-                      <div className="club-row-meta">
-                        <span className="club-addr">{c.place}</span>
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
