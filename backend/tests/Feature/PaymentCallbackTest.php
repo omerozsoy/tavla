@@ -29,6 +29,26 @@ class PaymentCallbackTest extends TestCase
         ]);
     }
 
+    // Coin (jeton) odemesi plan/period OLMADAN olusabilmeli (1364 hatasi regresyonu).
+    public function test_coins_payment_can_be_created_without_plan(): void
+    {
+        $u = User::factory()->create(['plan' => 'free']);
+        $p = Payment::create([
+            'user_id' => $u->id,
+            'kind' => 'coins',
+            'order_id' => 'TC-'.$u->id,
+            'amount' => 20000,
+            'coins' => 200,
+            'package_id' => 'baslangicx2',
+            'currency' => '949',
+            'status' => 'pending',
+        ]);
+
+        $this->assertNull($p->fresh()->plan);
+        $this->assertNull($p->fresh()->period);
+        $this->assertSame(200, (int) $p->fresh()->coins);
+    }
+
     // Banka hash/3D dogrulamasini onaylanmis kabul et (tutar karari controller'da kalir).
     private function mockBankApproved(string $orderId): void
     {
