@@ -10365,6 +10365,11 @@ button.acct-row:hover:not(:disabled) {
   max-width: 100%;
   margin: 0;
 }
+/* Pozisyon Analizi ACIK krem zeminde: hane numaralari (1-24) koyu tema rengine
+   donsun -> oyun ekraninin acik/beyaz numara rengi cream'de gorunmuyordu. */
+.analyzer-board .pt-numbers {
+  color: var(--muted);
+}
 /* Board'un gercek pul rengiyle kucuk yuvarlak isaret (âšª/âš« yerine tema-uyumlu) */
 .pa-swatch {
   display: inline-block;
