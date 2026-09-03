@@ -4737,9 +4737,12 @@ export default function App() {
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
             <div className="home-cal-wrap">
-              <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
-              <div className="home-cal-side">
+              {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
+              <div className="home-cal-main">
                 <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
+                <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
+              </div>
+              <div className="home-cal-side">
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
               </div>
             </div>
