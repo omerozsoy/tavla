@@ -452,6 +452,20 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
+            {/* Katilimcilar: UST SATIRDA, durum rozetinin yaninda (kompakt). */}
+            <span className="tourn-players">
+              <span className="tcard-ic navy" aria-hidden="true">
+                <Icon name="users" size={16} />
+              </span>
+              <span className="tourn-pcount" data-full={full || undefined}>
+                {tr.count}
+                <small>/{tr.size}</small>
+              </span>
+              <span className="tourn-plabel">{t('tourn.players')}</span>
+              <span className="tourn-pbar" aria-hidden="true">
+                <span style={{ width: `${pct}%` }} />
+              </span>
+            </span>
           </div>
           {/* Geri sayim: tarihin ALTINDA, baslik ile arasinda (kendi satiri). */}
           {tr.status === 'open' && tr.starts_at && (
@@ -511,20 +525,6 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               </div>
             )
           )}
-          {/* Katilimcilar: kompakt tek satir -> sayac + kucuk etiket + kucuk bar yan yana. */}
-          <div className="tourn-players">
-            <span className="tcard-ic navy" aria-hidden="true">
-              <Icon name="users" size={16} />
-            </span>
-            <span className="tourn-pcount" data-full={full || undefined}>
-              {tr.count}
-              <small>/{tr.size}</small>
-            </span>
-            <span className="tourn-plabel">{t('tourn.players')}</span>
-            <span className="tourn-pbar" aria-hidden="true">
-              <span style={{ width: `${pct}%` }} />
-            </span>
-          </div>
           <span className="tcard-cta">
             {t('tourn.details')} <Icon name="arrow-right" size={15} />
           </span>
