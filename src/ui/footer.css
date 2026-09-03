@@ -37,15 +37,14 @@
    genisligini alir; <text> textLength=100% ile TEK SATIR halinde tam yaslanir. */
 .foot-tag {
   display: block;
-  margin: 8px 0 0;
-  /* Logo genisliginde yaslan: kutu logo (fit-content ebeveyn) kadar, metin o
-     genislige yayilir. SVG textLength hack'i yerine cross-browser text-align-last. */
+  margin: 9px 0 0;
+  /* Logo genisligi kadar kutu (fit-content ebeveyn), metin ORTALI + biraz buyuk. */
   width: 100%;
-  text-align: justify;
-  text-align-last: justify;
+  text-align: center;
   font-family: 'Outfit', system-ui, sans-serif;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
+  letter-spacing: 0.02em;
   color: rgba(244, 239, 230, 0.62);
 }
 /* Ilk 3 kurum logosu: markanin altinda beyaz yuvarlak cipler (koyu footer'da okunur). */
