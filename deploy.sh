@@ -35,6 +35,25 @@ $PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
 
 $PHP artisan optimize:clear
 
+# --- OPcache / PHP-FPM tazeleme ------------------------------------------------
+# SORUN: PHP-FPM ayri (uzun omurlu) surectir; CLI'dan opcache_reset() FPM'in
+# cache'ini ETKILEMEZ. optimize:clear yalniz Laravel cache'ini temizler. Degisen
+# PHP (or. Filament form siniflari) canlida gorunmuyorsa sebep genelde budur.
+# Best-effort: deploy kullanicisi yetkiliyse FPM'i reload eder; degilse SESSIZCE
+# gecer -> o durumda Plesk UI'dan (Domain > PHP > Restart) elle yenile.
+for SVC in plesk-php8.2-fpm plesk-php82-fpm php8.2-fpm php-fpm; do
+  if sudo -n systemctl reload "$SVC" 2>/dev/null; then
+    echo "OPcache: $SVC reload edildi."
+    break
+  fi
+done
+# cachetool varsa (yetkiye gerek yok, FPM socket uzerinden) opcache'i sifirla.
+if [ -f cachetool.phar ]; then
+  $PHP cachetool.phar opcache:reset --fcgi=/var/run/plesk-php82-fpm.sock 2>/dev/null \
+    && echo "OPcache: cachetool ile sifirlandi." || true
+fi
+# -----------------------------------------------------------------------------
+
 # Haberleri commit'li JSON'dan ice aktar (offline; sunucudan internet gerekmez).
 # Gorseller de commit'li (public/news) -> tekrar indirme yok. Hata olsa deploy patlamasin.
 $PHP artisan news:import --file=database/data/news.json || echo "UYARI: news:import atlandi."
