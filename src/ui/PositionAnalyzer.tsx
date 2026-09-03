@@ -15,8 +15,8 @@ import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
-import { analyzeBoardImage } from '../api'
-import BoardPhotoWarp from './BoardPhotoWarp'
+import { analyzeBoardImage, detectPositionFromPhoto } from '../api'
+import BoardPhotoWarp, { type WarpResult } from './BoardPhotoWarp'
 
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
@@ -116,21 +116,33 @@ export default function PositionAnalyzer({
     setWarpFile(file)
   }
 
-  async function uploadWarped(file: File) {
+  function applyPosition(points: number[], bar: { white: number; black: number }, off: { white: number; black: number }) {
+    setPts(points.slice(0, 24))
+    setBar({ white: bar?.white ?? 0, black: bar?.black ?? 0 })
+    setOff({ white: off?.white ?? 0, black: off?.black ?? 0 })
+    setResult(null)
+    setMoveRanked(null)
+  }
+
+  // ONCE CV servisi (board-cv) denenir; yoksa/hatada Opus fallback (mevcut yol).
+  async function uploadWarped(r: WarpResult) {
     setWarpFile(null)
     setVisionBusy(true)
     setVisionMsg('')
     try {
-      const r = await analyzeBoardImage(file)
-      setPts(r.points.slice(0, 24))
-      setBar({ white: r.bar?.white ?? 0, black: r.bar?.black ?? 0 })
-      setOff({ white: r.off?.white ?? 0, black: r.off?.black ?? 0 })
-      setResult(null)
-      setMoveRanked(null)
-      // Model dusuk guven bildirirse kullaniciyi kontrole cagir (foto zor okundu).
-      setVisionMsg(r.confidence != null && r.confidence < 0.7 ? t('pa.photoLowConf') : t('pa.photoDone'))
+      const d = await detectPositionFromPhoto(r.file, r.corners)
+      applyPosition(d.points, d.bar, d.off)
+      const low = d.detection?.needsReview || (d.detection?.confidence ?? 1) < 0.7
+      setVisionMsg(low ? t('pa.photoLowConf') : t('pa.photoDone'))
     } catch {
-      setVisionMsg(t('pa.photoFail'))
+      // CV servisi yok/hata -> Opus fallback (duzlestirilmis goruntu)
+      try {
+        const v = await analyzeBoardImage(r.warped)
+        applyPosition(v.points, v.bar, v.off)
+        setVisionMsg(v.confidence != null && v.confidence < 0.7 ? t('pa.photoLowConf') : t('pa.photoDone'))
+      } catch {
+        setVisionMsg(t('pa.photoFail'))
+      }
     } finally {
       setVisionBusy(false)
     }
