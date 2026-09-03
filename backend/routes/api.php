@@ -102,6 +102,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'thread'])->whereNumber('userId');
     Route::post('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'send'])
         ->whereNumber('userId')->middleware('throttle:30,1'); // spam/flood korumasi
+    Route::post('/messages/{userId}/typing', [\App\Http\Controllers\MessageController::class, 'typing'])
+        ->whereNumber('userId')->middleware('throttle:60,1'); // "yaziyor…" nabzi
 
     Route::post('/ping', [PresenceController::class, 'ping']);
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
