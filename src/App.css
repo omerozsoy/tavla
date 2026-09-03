@@ -1256,7 +1256,7 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button']:hover::before {
   content: '';
   position: absolute;
-  inset: -6px -16px -6px 0;
+  inset: -6px -10px -6px 0;
   z-index: -1;
   clip-path: polygon(0 0, 100% 40%, 100% 60%, 0 100%);
   pointer-events: none;
@@ -1281,7 +1281,7 @@ button[aria-disabled='true'],
 .side-menu [data-slot='button'][data-active='true']::before {
   content: '';
   position: absolute;
-  inset: -6px -16px -6px 0;
+  inset: -6px -10px -6px 0;
   z-index: -1;
   clip-path: polygon(0 0, 100% 40%, 100% 60%, 0 100%);
   pointer-events: none;
@@ -3322,6 +3322,18 @@ button[aria-disabled='true'],
   line-height: 1.5;
   color: var(--muted);
 }
+/* "Duzenleyen: TavlaTv" satiri (her online turnuvada sabit marka kilidi) */
+.event-runby {
+  gap: 6px;
+  font-weight: 400;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.event-runby-logo {
+  position: relative;
+  top: 0.06em;
+}
 .event-social {
   display: inline-flex;
   align-items: center;
@@ -3441,23 +3453,36 @@ button[aria-disabled='true'],
   gap: 3px;
 }
 .tm-balloon-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 0.78rem;
   line-height: 1.35;
   color: var(--muted);
-  white-space: nowrap;
+}
+/* Nokta yerine kulüp logosu (yoksa bas harf rozeti) */
+.tm-balloon-logo {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+}
+.tm-balloon-logo-ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(140deg, var(--accent), color-mix(in srgb, var(--accent) 62%, #000));
+}
+.tm-balloon-name {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-/* Ä°smin baÅŸÄ±nda kÃ¼Ã§Ã¼k nokta bullet */
-.tm-balloon-list li::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 4px;
-  margin-right: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  vertical-align: middle;
+  white-space: nowrap;
 }
 /* YÃ¶n: ilin saÄŸÄ±na aÃ§ (varsayÄ±lan) / saÄŸ kenardaki iller sola aÃ§ */
 .tm-balloon-right {
@@ -3567,8 +3592,8 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   color: var(--text);
   background: color-mix(in srgb, var(--text) 7%, transparent);
@@ -15136,6 +15161,32 @@ button.acct-row:hover:not(:disabled) {
 .friend-id {
   flex: 1;
   min-width: 0;
+}
+/* Arkadas kimligi tiklanabilir: profili acar (buton resetli, satir genisligini alir) */
+.friend-id-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.friend-id-btn > .friend-id {
+  width: 100%;
+}
+.friend-id-btn:hover {
+  opacity: 0.85;
+}
+.friend-id-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 .friend-name {
   flex: 1;
