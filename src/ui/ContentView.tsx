@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
@@ -359,23 +359,70 @@ export default function ContentView({
               onOpenImage={setLightbox}
             />
           ) : (
-            <div className="news-grid">
-              {items.map((p) => (
-                <button
-                  key={p.id}
-                  className="news-card"
-                  onClick={() => onOpenDetail?.(slugify(p.title))}
-                >
-                  {p.image && (
-                    <img className="news-card-img" src={mediaSrc(p.image)} alt="" loading="lazy" />
+            (() => {
+              const [lead, ...rest] = items
+              const excerpt = paras(lead.body)[0]
+              return (
+                <section className="news-editorial">
+                  <article
+                    className="news-lead"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenDetail?.(slugify(lead.title))}
+                    onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(slugify(lead.title))}
+                  >
+                    {lead.image && (
+                      <span className="news-lead-media">
+                        <img src={mediaSrc(lead.image)} alt={lead.title} loading="lazy" />
+                      </span>
+                    )}
+                    <div className="news-lead-body">
+                      <span className="news-kicker">{t('news.featured')}</span>
+                      <h3 className="news-lead-title">{lead.title}</h3>
+                      {excerpt && <p className="news-lead-excerpt">{excerpt}</p>}
+                      <span className="news-meta">
+                        <time>{fmtDate(lead.event_at ?? null)}</time>
+                        <span className="news-readmore">{t('news.read')}</span>
+                      </span>
+                    </div>
+                  </article>
+                  {rest.length > 0 && (
+                    <>
+                      <div className="news-sec-label">{t('news.more')}</div>
+                      <div className="news-grid">
+                        {rest.map((p, i) => (
+                          <article
+                            key={p.id}
+                            className="news-item"
+                            style={{ ['--i']: i } as CSSProperties}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => onOpenDetail?.(slugify(p.title))}
+                            onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(slugify(p.title))}
+                          >
+                            {p.image ? (
+                              <span className="news-item-media">
+                                <img src={mediaSrc(p.image)} alt={p.title} loading="lazy" />
+                              </span>
+                            ) : (
+                              <span className="news-item-media news-item-media-ph" aria-hidden="true">
+                                <Icon name="chat" size={26} />
+                              </span>
+                            )}
+                            <div className="news-item-body">
+                              <h4 className="news-item-title">{p.title}</h4>
+                              <span className="news-meta">
+                                <time>{fmtDate(p.event_at ?? null)}</time>
+                              </span>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </>
                   )}
-                  <div className="news-card-info">
-                    <span className="news-card-title">{p.title}</span>
-                    <span className="news-card-date">{fmtDate(p.event_at ?? null)}</span>
-                  </div>
-                </button>
-              ))}
-            </div>
+                </section>
+              )
+            })()
           )
         ) : type === 'magazine' ? (
           <div className="mag-sections">

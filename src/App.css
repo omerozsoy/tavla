@@ -2339,48 +2339,221 @@ button[aria-disabled='true'],
 .content-card-wide {
   max-width: 960px;
 }
+/* ---- Haberler: editoryal (magazin) duzen ---- */
+.news-editorial {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+/* Ortak kicker: kisa cizgi + kucuk buyuk-harf etiket (kiremit token). */
+.news-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.news-kicker::before {
+  content: '';
+  width: 26px;
+  height: 1px;
+  background: currentColor;
+}
+/* Ortak meta: tarih (tabular) + habere-git baglantisi. */
+.news-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.news-readmore {
+  color: var(--accent);
+  transition: gap 0.16s ease;
+}
+.news-readmore::after {
+  content: ' →';
+}
+
+/* --- One cikan (lead) haber --- */
+.news-lead {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: clamp(20px, 3vw, 44px);
+  align-items: center;
+  cursor: pointer;
+  border: none;
+  background: none;
+  text-align: left;
+}
+.news-lead-media {
+  display: block;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  aspect-ratio: 16 / 10;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.news-lead-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.5s var(--ease-out, ease);
+}
+.news-lead:hover .news-lead-media img {
+  transform: scale(1.035);
+}
+.news-lead-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.news-lead-title {
+  margin: 0;
+  font-family: var(--tv-font-display, inherit);
+  font-weight: 400;
+  font-size: clamp(1.55rem, 1rem + 1.9vw, 2.4rem);
+  line-height: 1.12;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  color: var(--text);
+  transition: color 0.16s ease;
+}
+.news-lead:hover .news-lead-title {
+  color: var(--accent);
+}
+.news-lead-excerpt {
+  margin: 0;
+  max-width: 56ch;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-lead:hover .news-readmore {
+  gap: 16px;
+}
+
+/* --- "Diger Haberler" etiketi: kucuk buyuk-harf + ince cizgi --- */
+.news-sec-label {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.74rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.news-sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* --- Grid (kalan haberler) --- */
 .news-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(240px, 30%, 300px), 1fr));
+  gap: 30px 26px;
   align-items: start;
 }
-.news-card {
+.news-item {
   display: flex;
   flex-direction: column;
   text-align: left;
+  border: none;
+  background: none;
   padding: 0;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
   cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  animation: newsUp 0.5s both;
+  animation-delay: calc(var(--i, 0) * 45ms);
 }
-.news-card:hover {
-  border-color: var(--accent);
-  box-shadow: var(--shadow-md);
-}
-.news-card-img {
-  width: 100%;
-  height: auto; /* kapak tam, kirpma yok */
+.news-item-media {
   display: block;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  aspect-ratio: 16 / 10;
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
 }
-.news-card-info {
+.news-item-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s var(--ease-out, ease);
+}
+.news-item:hover .news-item-media img {
+  transform: scale(1.045);
+}
+.news-item-media-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: color-mix(in srgb, var(--accent) 55%, var(--muted));
+}
+.news-item-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 12px 14px 14px;
+  gap: 8px;
+  padding-top: 12px;
 }
-.news-card-title {
+.news-item-title {
+  margin: 0;
   font-family: var(--tv-font-display, inherit);
   font-weight: 400;
-  line-height: 1.35;
-  font-size: 0.98rem;
+  line-height: 1.32;
+  font-size: 1.02rem;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  color: var(--text);
+  transition: color 0.16s ease;
 }
-.news-card-date {
-  font-size: 0.78rem;
-  color: var(--muted);
+.news-item:hover .news-item-title {
+  color: var(--accent);
+}
+/* Klavye erisimi: role=button ogeler icin gorunur odak halkasi. */
+.news-lead:focus-visible,
+.news-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: var(--radius-md);
+}
+@keyframes newsUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Tek kolon: lead alt alta */
+@media (max-width: 720px) {
+  .news-lead {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .news-editorial {
+    gap: 32px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .news-item {
+    animation: none;
+  }
+  .news-lead-media img,
+  .news-item-media img,
+  .news-readmore {
+    transition: none;
+  }
 }
 /* Detay: sade makale */
 .news-detail {
@@ -15443,6 +15616,9 @@ button.acct-row:hover:not(:disabled) {
   gap: 4px;
 }
 .level-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   padding: 6px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -15452,11 +15628,21 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.8rem;
   text-align: left;
 }
+/* Seviye altindaki hedef PR araligi: muted (sonmuk), kucuk */
+.level-chip-pr {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
 .level-chip.active {
   border-color: var(--accent);
   background: var(--accent);
   color: var(--on-accent);
   font-weight: 400;
+}
+/* Aktif cipte muted satir da okunur kalsin (aksan zemin uzerinde) */
+.level-chip.active .level-chip-pr {
+  color: var(--on-accent);
+  opacity: 0.72;
 }
 .setup-row {
   margin: 6px 0 14px;
