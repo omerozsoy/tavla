@@ -20,6 +20,14 @@
   flex: 1 1 200px;
   min-width: 180px;
 }
+/* Logo + slogan kilidi: genisligi LOGO'ya buzulur (fit-content). Slogan width:0
+   ile bu genisligi buyutmez, min-width:100% ile TAM logo genisliginde sarar. */
+.foot-brandlock {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+}
 /* Logo artik <TavlaTvLogo> bileseni (wordmark + kiremit ucgen); metin stilleri
    bilesenin kendi inline stillerinden gelir, burada yalniz dikey hizalama. */
 .foot-logo {
@@ -30,7 +38,9 @@
   color: rgba(244, 239, 230, 0.62);
   font-size: 0.88rem;
   line-height: 1.5;
-  max-width: 260px;
+  width: 0;
+  min-width: 100%;
+  overflow-wrap: break-word;
 }
 .foot-cols {
   display: grid;
