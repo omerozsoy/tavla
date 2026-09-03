@@ -113,6 +113,30 @@
 .news-row:hover .news-go {
   color: var(--accent);
 }
+/* Alt "Tum Haberler" linki: sade, sag ok'lu, hover'da kiremit */
+.news-all {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 2px 2px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 140ms var(--ease-out);
+}
+.news-all:hover {
+  color: var(--accent);
+}
+.news-all:hover > svg {
+  transform: translateX(2px);
+}
+.news-all > svg {
+  transition: transform 140ms var(--ease-out);
+}
 .cal-head {
   display: flex;
   align-items: center;
