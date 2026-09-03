@@ -425,6 +425,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <TavlaTvLogo size={20} tone="dark" className="tourn-ribbon-logo" />
           </span>
         </span>
+        {/* Katilim ucreti: UST SAGDA (flamanin soluna, altina girmeden). */}
+        <span className={`tourn-fee ${tr.entry_fee ? '' : 'free'}`}>
+          <Icon name="ticket" size={15} />
+          {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
+        </span>
         {/* Sol: duzenleyen kurumun BUYUK logosu (varsa; yoksa sutun render edilmez). */}
         {logo && (
           <div className="event-logo-col">
@@ -447,10 +452,13 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <span className={`tcard-status tcard-status-${tr.status}`}>
               {t(`tourn.status.${tr.status}`)}
             </span>
-            {tr.status === 'open' && tr.starts_at && (
-              <Countdown target={tr.starts_at} onExpire={refreshList} />
-            )}
           </div>
+          {/* Geri sayim: tarihin ALTINDA, baslik ile arasinda (kendi satiri). */}
+          {tr.status === 'open' && tr.starts_at && (
+            <div className="tourn-cd-row">
+              <Countdown target={tr.starts_at} onExpire={refreshList} />
+            </div>
+          )}
           <div className="event-title">{tr.name}</div>
           {/* Organizasyon = katkida bulunan kurum (varsa); Duzenleyen = HER online
               turnuvada TavlaTv (sabit kural). Iki ayri satir. */}
@@ -503,34 +511,19 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
               </div>
             )
           )}
-          {/* Katilim ucreti + oyuncu sayisi (kompakt ikili) */}
-          <div className="tcard-stats tourn-row-stats2">
-            <div className="tcard-stat">
-              <span className="tcard-ic brick" aria-hidden="true">
-                <Icon name="ticket" size={17} />
-              </span>
-              <span className="tcard-sb">
-                <span className="tcard-val">
-                  {tr.entry_fee ? tr.entry_fee.toLocaleString('tr-TR') : t('tourn.free')}
-                </span>
-                {!!tr.entry_fee && <span className="tcard-lbl">{t('tourn.entryFee')}</span>}
-              </span>
-            </div>
-            <div className="tcard-stat">
-              <span className="tcard-ic navy" aria-hidden="true">
-                <Icon name="users" size={17} />
-              </span>
-              <span className="tcard-sb">
-                <span className="tcard-val" data-full={full || undefined}>
-                  {tr.count}
-                  <small>/{tr.size}</small>
-                </span>
-                <span className="tcard-lbl">{t('tourn.players')}</span>
-              </span>
-            </div>
-          </div>
-          <div className="tcard-bar" aria-hidden="true">
-            <span style={{ width: `${pct}%` }} />
+          {/* Katilimcilar: kompakt tek satir -> sayac + kucuk etiket + kucuk bar yan yana. */}
+          <div className="tourn-players">
+            <span className="tcard-ic navy" aria-hidden="true">
+              <Icon name="users" size={16} />
+            </span>
+            <span className="tourn-pcount" data-full={full || undefined}>
+              {tr.count}
+              <small>/{tr.size}</small>
+            </span>
+            <span className="tourn-plabel">{t('tourn.players')}</span>
+            <span className="tourn-pbar" aria-hidden="true">
+              <span style={{ width: `${pct}%` }} />
+            </span>
           </div>
           <span className="tcard-cta">
             {t('tourn.details')} <Icon name="arrow-right" size={15} />
