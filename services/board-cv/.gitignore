@@ -1,9 +1,0 @@
-__pycache__/
-*.pyc
-.pytest_cache/
-.venv/
-runs/
-models/*.pt
-dataset/images/*/*.jpg
-dataset/images/*/*.png
-dataset/labels/*/*.txt
