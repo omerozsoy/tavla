@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Tables\Table;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -35,6 +36,12 @@ class AppServiceProvider extends ServiceProvider
 
         // Marka adi .env'den gelir (APP_NAME=TavlaTv). E-posta basligi/altbilgisi
         // config('app.name') kullanir; ayrica e-posta govdeleri asagida Turkcelestirildi.
+
+        // Tum Filament tablolarinda sayfalama: en az 50 (ilk giriste 50), sonra 100/200/300/Tumu
+        Table::configureUsing(function (Table $table) {
+            $table->paginationPageOptions([50, 100, 200, 300, 'all'])
+                ->defaultPaginationPageOption(50);
+        });
 
         // Filament tarih seciciler: Turkce gun.ay.yil formati + takvim (native degil)
         DatePicker::configureUsing(fn (DatePicker $c) => $c->native(false)->displayFormat('d.m.Y')->locale('tr')->firstDayOfWeek(1));
