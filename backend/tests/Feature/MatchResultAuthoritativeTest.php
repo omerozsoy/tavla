@@ -114,4 +114,70 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertTrue((bool) $mr->won);
         $this->assertGreaterThan(1500, $u->fresh()->rating);
     }
+
+    // Oda KARARSIZ (skor hedefe ulasmamis, p_result yok) ama rakip zaten "kazandim"
+    // raporlamis -> bu tarafin "kazandim"i REDDEDILIR (ikisi birden kazanamaz).
+    public function test_undecided_room_forces_complement_of_opponent(): void
+    {
+        $white = $this->makeUser('wu'); // p1
+        $black = $this->makeUser('bu'); // p2
+        Room::create([
+            'code' => 'UNDEC', 'p1_token' => 't1', 'p1_user_id' => $white->id, 'p1_name' => 'wu',
+            'p2_token' => 't2', 'p2_user_id' => $black->id, 'p2_name' => 'bu',
+            'status' => 'playing', 'target' => 3, 'version' => 1, 'settled' => false,
+            // Skor 1-0, hedef 3 -> KARARSIZ; p_result yok, gameEnd yok.
+            'state' => ['match' => ['target' => 3, 'score' => ['white' => 1, 'black' => 0]]],
+        ]);
+        // Rakip (siyah) ONCE "kazandim" raporladi.
+        MatchResult::create([
+            'user_id' => $black->id, 'won' => true, 'opponent_rating' => 1500,
+            'room_code' => 'UNDEC', 'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+        ]);
+
+        // Beyaz da "kazandim" der -> reddedilmeli (tamamlayici: kayip).
+        Sanctum::actingAs($white);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'UNDEC',
+        ])->assertOk();
+
+        $mr = MatchResult::where('user_id', $white->id)->latest('id')->first();
+        $this->assertFalse((bool) $mr->won, 'Rakip kazandi dediyse bu taraf kazanamaz');
+        $this->assertLessThan(1500, $white->fresh()->rating);
+    }
+
+    // Rakip ONCE (yaris aninda oda kararsizken) YANLIS raporladi; oda simdi KESIN.
+    // Otoriter raporda rakibin satiri da tamamlayiciya cekilir (self-heal).
+    public function test_authoritative_report_heals_opponent_wrong_row(): void
+    {
+        $white = $this->makeUser('wh'); // p1 (kaybeden)
+        $black = $this->makeUser('bh'); // p2 (gercek kazanan)
+        Room::create([
+            'code' => 'HEAL', 'p1_token' => 't1', 'p1_user_id' => $white->id, 'p1_name' => 'wh',
+            'p2_token' => 't2', 'p2_user_id' => $black->id, 'p2_name' => 'bh',
+            'status' => 'finished', 'target' => 3, 'version' => 1, 'settled' => false,
+            'state' => ['match' => ['target' => 3, 'score' => ['white' => 0, 'black' => 3]]],
+        ]);
+        // Siyah (gercek KAZANAN) yanlislikla "kaybettim" raporlamis: rating dusmus.
+        $black->rating = 1484;
+        $black->losses = 1;
+        $black->save();
+        $blackRow = MatchResult::create([
+            'user_id' => $black->id, 'won' => false, 'opponent_rating' => 1500,
+            'room_code' => 'HEAL', 'rating_before' => 1500, 'rating_after' => 1484, 'delta' => -16,
+        ]);
+
+        // Beyaz (kaybeden) raporlar -> oda KESIN (beyaz kaybetti). Bu otoriter rapor
+        // sirasinda siyahin yanlis satiri da duzeltilir (ikisi birden kaybedemez).
+        Sanctum::actingAs($white);
+        $this->postJson('/api/rating/report', [
+            'won' => false, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'HEAL',
+        ])->assertOk();
+
+        $blackRow->refresh();
+        $this->assertTrue((bool) $blackRow->won, 'Siyahin satiri galibiyete duzeltilmeli');
+        $this->assertSame(1516, (int) $blackRow->rating_after);
+        $this->assertSame(1516, (int) $black->fresh()->rating, 'net +32: 1484 -> 1516');
+        $this->assertSame(1, (int) $black->fresh()->wins);
+        $this->assertSame(0, (int) $black->fresh()->losses);
+    }
 }
