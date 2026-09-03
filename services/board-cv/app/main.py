@@ -34,6 +34,18 @@ def health():
     return {"ok": True, "detector": "yolo" if YoloDetector.available() else "opencv"}
 
 
+@app.post("/detect-corners")
+async def detect_corners_ep(image: UploadFile = File(...)):
+    """Auto kose TAHMINI (best-effort). Bulamazsa corners:null -> frontend manuel stub.
+    ASLA zorunlu degil; kullanici her zaman elle duzeltir."""
+    from .board_detect import detect_corners
+    raw = await image.read()
+    if len(raw) > MAX_BYTES:
+        raise HTTPException(status_code=413, detail="Dosya cok buyuk.")
+    corners = detect_corners(_decode(raw))
+    return {"corners": corners}
+
+
 def _decode(raw: bytes) -> np.ndarray:
     img = cv2.imdecode(np.frombuffer(raw, np.uint8), cv2.IMREAD_COLOR)
     if img is None:
