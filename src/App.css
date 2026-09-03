@@ -6916,10 +6916,6 @@ button.acct-row:hover:not(:disabled) {
    (Grid child oldugu icin varsayilan tek kolona sigardi; 1/-1 ile bara kadar uzar.) */
 .app.lobby > .site-footer {
   grid-column: 1 / -1;
-  /* Yapiskan sol menu, footer satiri grid'i sikistirinca hucresinden tasip footer'in
-     UZERINE binebiliyor. Footer opak + ustte olsun -> tasan menu footer'in arkasinda kalir. */
-  position: relative;
-  z-index: 5;
 }
 /* Sticky yan menu YALNIZ desktop: mobilde .side-menu drawer (position:fixed) -> burada
    sticky vermek onu ezerdi (0,3,0 > 0,1,0). Bu yuzden min-width kosuluyla ayirdik. */
@@ -6928,7 +6924,9 @@ button.acct-row:hover:not(:disabled) {
     position: sticky;
     top: 0;
     align-self: start;
-    max-height: 100dvh;
+    /* Kendi grid HUCRESINE sinirla (100dvh degil): footer satiri hucreyi kisaltinca
+       menu tasip footer'in uzerine binmesin -> gerekince menu KENDI ICINDE kayar. */
+    max-height: 100%;
     overflow-y: auto;
   }
 }
