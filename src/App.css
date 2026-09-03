@@ -3511,6 +3511,11 @@ button[aria-disabled='true'],
   fill: color-mix(in srgb, var(--accent) 62%, #fff);
   cursor: pointer;
 }
+/* İstanbul Avrupa+Asya kopru path'i: Bogaz'daki ince cream bosluk iki parcayi ayrik
+   gosteriyordu; kopru il rengini alir ama cream cizgi (border) ALMAZ -> tek il gorunur. */
+.turkey-map .tm-bridge {
+  stroke: none;
+}
 /* YapÄ±ÅŸkan hover (.hovered) â€” :hover il sÄ±nÄ±rlarÄ±nda titriyordu (bkz TurkeyMap.tsx) */
 .turkey-map [data-iladi].has-clubs.hovered path {
   fill: var(--accent); /* hover: tam accent (belirginleÅŸir) */
@@ -15181,7 +15186,7 @@ button.acct-row:hover:not(:disabled) {
 .friend-row:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
-/* Ulke bayragi sag sutunda (identity flex:1 iterek sag kenara yaslar) */
+/* Ulke bayragi ismin hemen bittigi yerde (identity icerik-genisligi -> bayrak isme yapisik) */
 .friend-flag {
   display: inline-flex;
   align-items: center;
@@ -15197,15 +15202,16 @@ button.acct-row:hover:not(:disabled) {
   gap: 6px;
   flex: none;
   min-width: 84px;
+  margin-left: auto;
 }
 /* PlayerIdentity blogu (avatar + isim + altinda rutbe) satirin genisligini alsin */
 .friend-id {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
 }
 /* Arkadas kimligi tiklanabilir: profili acar (buton resetli, satir genisligini alir) */
 .friend-id-btn {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   display: flex;
   align-items: center;
