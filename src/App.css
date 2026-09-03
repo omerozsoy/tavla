@@ -13083,6 +13083,15 @@ button.acct-row:hover:not(:disabled) {
   background: var(--tv-green, #3f9e6a);
   animation: tcard-blink 1.1s ease-in-out infinite;
 }
+/* DEVAM EDIYOR: yaziyla ayni renkte (coral) yanip sonen canli noktasi */
+.tcard-status-running::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--coral);
+  animation: tcard-blink 1.1s ease-in-out infinite;
+}
 @keyframes tcard-blink {
   0%,
   100% {
@@ -13093,7 +13102,8 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .tcard-status-open::before {
+  .tcard-status-open::before,
+  .tcard-status-running::before {
     animation: none;
   }
 }
