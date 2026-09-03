@@ -56,6 +56,9 @@ Route::middleware('throttle:240,1')->group(function () {
     Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
     Route::get('/rooms/{code}', [RoomController::class, 'show']);
     Route::put('/rooms/{code}', [RoomController::class, 'update']);
+    // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)
+    Route::post('/rooms/{code}/roll', [RoomController::class, 'roll']);
+    Route::post('/rooms/{code}/move', [RoomController::class, 'move']);
 });
 Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 

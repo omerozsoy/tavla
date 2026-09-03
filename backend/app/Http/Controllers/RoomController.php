@@ -761,6 +761,154 @@ class RoomController extends Controller
         return response()->json(['messages' => $messages]);
     }
 
+    // ============ SUNUCU-OTORİTER ZAR + HAMLE (para maçı güvenliği Faz 2b) ============
+    // p1 = white, p2 = black.
+    private function slotColor(string $slot): string
+    {
+        return $slot === 'p1' ? 'white' : 'black';
+    }
+
+    /**
+     * Sunucu-otoriter ZAR: sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal)
+     * üretilir; istemci SEÇEMEZ. RE-ROLL ENGELİ: zar ancak server_state.dice BOŞKEN verilir;
+     * bir kez verilince geçerli bir hamle tüketene kadar yeni zar VERİLMEZ (aynısı döner).
+     */
+    public function roll(Request $request, string $code, \App\Services\FairDiceService $dice)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'client_seed' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        return DB::transaction(function () use ($data, $code, $dice) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            $slot = $this->slotOf($room, $data['token']);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+
+            // Lazy init: otoriter durum + tohum/taahhüt (ilk roll).
+            $state = is_array($room->server_state) ? $room->server_state : null;
+            if (! $state) {
+                $state = \App\Support\Backgammon::initialState();
+            }
+            if (empty($room->dice_seed)) {
+                $room->dice_seed = $dice->newSeed();
+                $room->dice_commit = $dice->commit($room->dice_seed);
+                $room->dice_client_seed = substr((string) ($data['client_seed'] ?? ''), 0, 40);
+                $room->dice_roll_index = 0;
+                $room->dice_rolls = [];
+            }
+
+            // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
+            if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
+                return $this->fail('Sıra sende değil.', 409);
+            }
+
+            // RE-ROLL ENGELİ: zar zaten verilmişse (dice dolu) aynısını döndür (idempotent).
+            if (! empty($state['dice'])) {
+                return response()->json([
+                    'dice' => $state['dice'],
+                    'commit' => $room->dice_commit,
+                    'version' => (int) $room->server_version,
+                    'reused' => true,
+                ]);
+            }
+
+            // Yeni el üret (deterministik, sunucu-otoriter). Çift ise 4 hamle.
+            $index = (int) $room->dice_roll_index;
+            [$d1, $d2] = $dice->roll($room->dice_seed, (string) $room->dice_client_seed, $index);
+            $roll = $d1 === $d2 ? [$d1, $d1, $d1, $d1] : [$d1, $d2];
+            $state['dice'] = $roll;
+            $state['diceUsed'] = array_fill(0, count($roll), false);
+
+            $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+            $rolls[] = ['index' => $index, 'slot' => $slot, 'dice' => $roll];
+            $room->dice_rolls = $rolls;
+            $room->dice_roll_index = $index + 1;
+            $room->server_state = $state;
+            $room->server_version = (int) $room->server_version + 1;
+            $room->save();
+
+            return response()->json([
+                'dice' => $roll,
+                'commit' => $room->dice_commit,
+                'version' => (int) $room->server_version,
+                'reused' => false,
+            ]);
+        });
+    }
+
+    /**
+     * Sunucu-otoriter HAMLE: istemci tüm tahtayı değil, önerdiği tam-tur step dizisini gönderir.
+     * Sunucu, Node validator (TS motoru) ile YASALLIĞI doğrular; yasadışıysa REDDEDER.
+     * FAIL-CLOSED: validator erişilemez + config required ise hamle reddedilir.
+     */
+    public function move(Request $request, string $code, \App\Services\MoveValidatorService $validator)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'steps' => ['present', 'array'],
+            'steps.*.from' => ['required'],
+            'steps.*.to' => ['required'],
+            'steps.*.die' => ['required', 'integer', 'min:1', 'max:6'],
+        ]);
+
+        return DB::transaction(function () use ($data, $code, $validator) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            $slot = $this->slotOf($room, $data['token']);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+            $state = is_array($room->server_state) ? $room->server_state : null;
+            if (! $state) {
+                return $this->fail('Oyun durumu yok — önce zar at.', 409);
+            }
+            // Sıra kontrolü + zar atılmış olmalı.
+            if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
+                return $this->fail('Sıra sende değil.', 409);
+            }
+            if (empty($state['dice'])) {
+                return $this->fail('Önce zar at.', 409);
+            }
+
+            // Node validator ile doğrula (TS motoru = tek gerçek).
+            $result = $validator->validate($state, array_values($data['steps']));
+
+            if (! empty($result['unreachable'])) {
+                // FAIL-CLOSED: doğrulama yapılamadıysa hamleyi reddet (güvenli taraf).
+                if (config('validator.required', true)) {
+                    return $this->fail('Doğrulama servisi kullanılamıyor, hamle reddedildi.', 503);
+                }
+            }
+            if (empty($result['valid']) || empty($result['state'])) {
+                return $this->fail('Geçersiz hamle.', 422, ['reason' => $result['reason'] ?? 'invalid']);
+            }
+
+            // Otoriter durumu güncelle (validator uyguladı + sırayı devretti).
+            $new = $result['state'];
+            $room->server_state = $new;
+            $room->server_version = (int) $room->server_version + 1;
+            $winner = \App\Support\Backgammon::winner($new);
+            if ($winner) {
+                $room->server_winner = $winner;
+            }
+            $room->save();
+
+            return response()->json([
+                'state' => $new,
+                'version' => (int) $room->server_version,
+                'winner' => $winner,
+            ]);
+        });
+    }
+
     private function slotOf(Room $room, string $token): ?string
     {
         if ($room->p1_token === $token) {
