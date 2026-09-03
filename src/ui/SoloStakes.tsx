@@ -17,7 +17,7 @@ export interface SoloLevel {
   b: string
 }
 
-// 12 sabit bahis seviyesi; her biri farkli bir tahta temasi.
+// 9 sabit bahis seviyesi; her biri farkli bir tahta temasi (3x3 dizilim).
 export const SOLO_LEVELS: SoloLevel[] = [
   { level: 1, stake: 100, theme: 'tavla', panel: '#efeae1', a: '#d98b7a', b: '#a83a2b' },
   { level: 2, stake: 250, theme: 'walnut', panel: '#7a5230', a: '#caa06a', b: '#5c3a20' },
@@ -28,9 +28,6 @@ export const SOLO_LEVELS: SoloLevel[] = [
   { level: 7, stake: 10000, theme: 'night', panel: '#2a3560', a: '#4a5a9a', b: '#1c2444' },
   { level: 8, stake: 25000, theme: 'gray', panel: '#5a6478', a: '#8b95a8', b: '#434c5e' },
   { level: 9, stake: 50000, theme: 'ocean', panel: '#1f6f8b', a: '#3fa9c9', b: '#144f63' },
-  { level: 10, stake: 100000, theme: 'gold', panel: '#b8912f', a: '#e8c14a', b: '#8a6a1a' },
-  { level: 11, stake: 250000, theme: 'sunset', panel: '#c25a3a', a: '#f0894f', b: '#8f3a22' },
-  { level: 12, stake: 1000000, theme: 'neon', panel: '#2a2a4a', a: '#18e0c0', b: '#7a1fb0' },
 ]
 
 interface BoardColors {
@@ -42,15 +39,14 @@ interface BoardColors {
 
 interface Props {
   coins: number
-  /** Oyuncunun SECILI (gercek) tahta temasi — onizleme + oyunda kullanilir. */
+  /** Oyuncunun SECILI tahta temasi — sadece pul (checker) rengi icin kullanilir;
+      tahta ZEMIN + ucgen renkleri artik SEVIYEYE gore degisir. */
   board: BoardColors
   onPick: (stake: number) => void
-  /** Tahtayi Degistir -> BoardSettings acar (oyuncu kendi tahtasini secer). */
-  onChangeBoard: () => void
   onClose: () => void
 }
 
-export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClose }: Props) {
+export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
   // Baslangicta oynanabilir ilk seviye secili (yoksa ilk seviye)
@@ -113,15 +109,13 @@ export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClos
         </div>
 
         <div className="setup-preview">
-          {/* Onizleme oyuncunun GERCEK tahtasini gosterir + ortada "Tahtayi Degistir".
-              Seviye yalnizca bahsi belirler; tahta artik seviyeye kilitli degil. */}
+          {/* Onizleme SECILI SEVIYENIN tahtasini gosterir: zemin + ucgen renkleri
+              seviyeye gore degisir (pul rengi oyuncunun kendi checker'i). */}
           <SetupBoard
-            panel={board.panel}
-            a={board.a}
-            b={board.b}
+            panel={sel.panel}
+            a={sel.a}
+            b={sel.b}
             checker={board.checker}
-            onChangeBoard={onChangeBoard}
-            changeLabel={t('setup.changeBoard')}
           />
           <div className="solo-preview-bar">
             <span className="solo-preview-info">
