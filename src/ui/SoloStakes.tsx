@@ -71,7 +71,7 @@ export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClos
           </h2>
           <p className="register-sub">{t('solo.sub')}</p>
           <div className="solo-balance">
-            <Coins amount={coins} size={16} />
+            <Coins amount={coins} size={22} />
           </div>
 
           <div className="solo-grid">

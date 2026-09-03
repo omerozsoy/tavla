@@ -1339,7 +1339,7 @@ button[aria-disabled='true'],
   align-items: center;
   font-weight: 400;
   color: var(--text);
-  font-size: 1.05rem;
+  font-size: 1.4rem;
   margin-bottom: 14px;
 }
 .solo-grid {
@@ -13750,7 +13750,7 @@ button.acct-row:hover:not(:disabled) {
   align-items: center;
   color: var(--text);
   font-weight: 400;
-  font-size: 1.05rem;
+  font-size: 1.4rem;
 }
 .shop-daily {
   display: inline-flex;
@@ -14423,7 +14423,7 @@ button.acct-row:hover:not(:disabled) {
   margin: 0 0 14px;
   font-weight: 400;
   color: var(--text);
-  font-size: 1.05rem;
+  font-size: 1.4rem;
 }
 
 /* ====== Profil genel bakis (ProfileOverview) â€” kimlik + stat + koleksiyon ====== */

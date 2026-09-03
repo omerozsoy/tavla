@@ -83,7 +83,7 @@ export default function Shop({
         <div className="shop-controls">
           <div className="shop-controls-row">
             <div className="shop-coins">
-              <Coins amount={coins} size={16} />
+              <Coins amount={coins} size={22} />
             </div>
             <Button
               variant="default"
