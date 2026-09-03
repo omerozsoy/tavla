@@ -35,6 +35,7 @@
   --gold: var(--med-terracotta); /* [eski gold] -> Coral (marka aksani) */
   --gold-hover: var(--med-terracotta-dark); /* -> Coral deep */
   --gold-dark: var(--med-terracotta); /* acik zeminde coral aksan */
+  --coin-gold: #e6b422; /* COIN altini (marka aksanindan AYRI semantik deger) */
   --ivory: var(--med-ivory); /* ice white (acik metin, koyu/primary uzeri) */
   --ivory-soft: var(--med-ice-soft);
   --rn-muted: #c6bfb2; /* muted (dark zeminde) â€” sicak krem-gri */
@@ -6820,10 +6821,10 @@ button.stat-chip:hover {
 }
 /* Coin = altin */
 .stat-chip-coin .stat-chip-ic {
-  color: #e6b422;
+  color: var(--coin-gold);
 }
 .stat-chip-coin .stat-chip-bar > i {
-  background: #e6b422;
+  background: var(--coin-gold);
 }
 /* Rating = brick (marka aksani) */
 .stat-chip-rating .stat-chip-ic {
@@ -7131,11 +7132,19 @@ button.acct-row:hover:not(:disabled) {
   .app.lobby > .side-menu {
     position: static;
     align-self: start;
+    /* Desktop'ta menu icten KAYDIRILMAZ (sayfa kayar). overflow:auto birakilirsa
+       grid bu hucreyi "0 yukseklikte olabilir" sayip satiri menuye gore buyutmez ->
+       kisa icerikte footer yukari kayip menuyle cakisir. visible = intrinsic yukseklik. */
+    overflow: visible;
   }
 }
 .app.lobby > .main {
   grid-area: main;
   overflow: visible; /* ic kaydirma YOK -> tum kabuk kayar, band kaybolur */
+  /* Icerik kisa olsa bile main hucresi satiri (dolayisiyla footer'i) menunun bittigi
+     yere kadar doldursun -> bos sayfada footer menuyle cakismaz, en az menu boyu. */
+  align-self: stretch;
+  min-height: 100%;
 }
 
 /* ---- Ust band: SOL logo + SAG hesap kontrolleri (grid 'bar' alani, tam genislik) ---- */
@@ -17615,3 +17624,44 @@ select:-webkit-autofill {
 /* Biten kartlar gorsel olarak geri planda: hafif soluk, hover'da netlesir */
 .tourn-past .tcard { opacity: .78; }
 .tourn-past .tcard:hover { opacity: 1; }
+
+
+/* ============================================================
+   Coins — site geneli TEK tip "elit" coin gosterimi (altin + tabular)
+   Ust menu (.stat-chip-coin) diliyle ayni: altin coin ikonu + hizali rakam.
+   Bakiye/bahis/fiyat/odul/havuz her yerde <Coins> bunu kullanir.
+   ============================================================ */
+.coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  -webkit-font-smoothing: antialiased;
+}
+.coins-ic {
+  color: var(--coin-gold);
+  flex: none;
+  display: inline-flex;
+}
+.coins-val {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.coins-suffix {
+  opacity: 0.6;
+  font-size: 0.82em;
+  letter-spacing: 0.02em;
+}
+/* Pill: bakiye/vurgu — ust menu stat-chip'e benzer cevrelenmis altin rozet */
+.coins--pill {
+  gap: 7px;
+  padding: 6px 13px 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--coin-gold) 32%, var(--border));
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--coin-gold) 8%, var(--card-bg));
+  font-weight: 400;
+}
