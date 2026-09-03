@@ -1290,9 +1290,34 @@ export default function App() {
     } else {
       // Async analiz: mac-sonu kaydi bunun bitmesini bekleyebilsin diye say
       pendingAnalysisRef.current++
-      neuralRef.current
-        .analyzeMoves(before)
-        .then(record)
+      ;(async () => {
+        // Gecici olarak analyzeMoves BOS ([]) donebilir: (a) sinir agi henuz yuklenmemis
+        // (ozellikle macin ilk hamleleri), (b) tek seferlik WASM hatasi. Eskiden bu insan
+        // kararini TAMAMEN dusururdu (record 1229'da return) -> kisa macta decisions=0 ->
+        // PR "—". Cozum: kisa gecikmelerle birkac kez YENIDEN dene (mac-sonu flush'i
+        // pendingAnalysisRef'i bekler; ag yuklenince retry basarili). Karar ASLA dusmez.
+        let ranks: RankedMove[] = []
+        for (let i = 0; i < 5 && ranks.length === 0; i++) {
+          if (i > 0) await new Promise((r) => setTimeout(r, 300))
+          try {
+            ranks = await neuralRef.current.analyzeMoves(before)
+          } catch {
+            ranks = []
+          }
+        }
+        if (ranks.length === 0) {
+          // Son care (nadir): klasik (heuristik) degerlendirme. Pip-olcegini nöral equity
+          // olcegine (~[-3,3]) tanh ile SIKIStIR ki PR sisip absurd olmasin.
+          ranks = generateMoves(before)
+            .map((move) => ({
+              move,
+              equity: Math.tanh(evaluatePosition(applyPlayed(before, move.steps), mover) / 50),
+              probs: [] as number[],
+            }))
+            .sort((a, b) => b.equity - a.equity)
+        }
+        record(ranks)
+      })()
         .catch(() => {})
         .finally(() => {
           pendingAnalysisRef.current = Math.max(0, pendingAnalysisRef.current - 1)
@@ -4530,6 +4555,13 @@ export default function App() {
       {contentView && (
         <ContentView
           type={contentView}
+          // KURAL: sayfa basligi = menu etiketi. Menude admin yeniden adlandirmissa
+          // (override) baslik da onu alsin; override yoksa ContentView i18n'e duser.
+          titleOverride={menuLabel(
+            ({ event: 'calendar', news: 'news', magazine: 'magazine', club: 'clubs' } as Record<string, string>)[
+              contentView
+            ] ?? '',
+          )}
           onClose={() => setContentView(null)}
           slug={newsSlug}
           onOpenDetail={(s) => setNewsSlug(s)}
@@ -4740,7 +4772,7 @@ export default function App() {
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
               <div className="home-cal-main">
                 <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
-                <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} />
+                <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} title={menuLabel('calendar') ?? t('menu.calendar')} />
               </div>
               <div className="home-cal-side">
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
