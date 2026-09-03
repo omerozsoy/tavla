@@ -99,6 +99,31 @@ export class NeuralBot implements Engine {
   private contact: InferenceSession | null = null
   private race: InferenceSession | null = null
 
+  // ONNX run mutex: ort-web WASM TEK-THREAD (numThreads=1) ve reentrant DEGIL.
+  // Ayni anda iki session.run cakisirsa paylasilan WASM heap bozulur -> eval hata
+  // firlatir -> probs bos kalir -> analyzeMoves [] doner -> insan PR'i "—" kalir.
+  // (Bot lastLoss ile kurtulur, insan kurtulamaz -> "maç yaptım PR yok" sikayeti.)
+  // Cakisma kaynaklari: analiz effect'i Promise.all([analyzeMoves, evalPosition]),
+  // ayrica hizli/oto oynarken bot-luck + insan-kayit + siradaki tur ust uste biner.
+  // TUM run'lari tek zincire diz -> hicbir run digeriyle ortusmez, eval hep tam.
+  private runChain: Promise<unknown> = Promise.resolve()
+
+  private runSession(
+    session: InferenceSession,
+    feeds: InferenceSession.FeedsType,
+  ): Promise<InferenceSession.ReturnType> {
+    // Onceki run bitmeden (hata verse bile) siradakini baslatma.
+    const run = this.runChain.then(
+      () => session.run(feeds),
+      () => session.run(feeds),
+    )
+    this.runChain = run.then(
+      () => undefined,
+      () => undefined,
+    )
+    return run
+  }
+
   async ready(): Promise<void> {
     await this.init()
   }
@@ -251,7 +276,7 @@ export class NeuralBot implements Engine {
     const session = phase === 'contact' ? this.contact! : this.race!
     const n = phase === 'contact' ? CONTACT_INPUTS : RACE_INPUTS
     const tensor = new this.ort!.Tensor('float32', inputs, [1, n]) as Tensor
-    const out = await session.run({ [INPUT_NAME]: tensor })
+    const out = await this.runSession(session, { [INPUT_NAME]: tensor })
     return Array.from((out[session.outputNames[0]].data as Float32Array).slice(0, 6))
   }
 
@@ -298,7 +323,7 @@ export class NeuralBot implements Engine {
     const outName = session.outputNames[0]
     for (const c of cands) {
       const tensor = new this.ort!.Tensor('float32', c.inputs!, [1, numInputs]) as Tensor
-      const out = await session.run({ [INPUT_NAME]: tensor })
+      const out = await this.runSession(session, { [INPUT_NAME]: tensor })
       const opp = out[outName].data as Float32Array
       const moverProbs = switchSides(opp.subarray(0, 6))
       c.probs = moverProbs
