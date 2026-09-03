@@ -101,6 +101,7 @@ frontend online: hamle gönder → sunucu state'ini uygula (optimistic + reconci
 Staked (para) maçlar önce → sonra tüm ranked. pvb istemci-taraflı kalır (para yok).
 Her faz canlıya ayrı çıkar; geri-uyum: eski/casual odalar eski akışta çalışmaya devam eder.
 
-## Karar bekleyen: Faz 2 motoru **A (PHP port)** mı **B (Node servisi)** mi?
-Öneri: doğruluk kritik olduğundan **B (aynı TS motorunu yeniden kullan)** — ama Plesk'te
-Node süreci işletme yükü kabul edilirse. Kabul edilmezse **A (PHP port)** + TS testlerinin PHP aynası.
+## KARAR (2026-09-04): Faz 2 motoru = **B) Node validator (TS motoru yeniden kullanılır)**
+Kullanıcı seçti. Mevcut `src/engine` TS motoru küçük bir Node servisinde çalışır; PHP
+`/validate-move` ile çağırır. Aynı motor → TS↔PHP sapması YOK. Plesk'te kalıcı Node süreci
+(board-cv Python servisi gibi) işletilir. Faz 1 (sunucu zarı) bundan bağımsız, önce yapılır.
