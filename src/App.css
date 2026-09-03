@@ -9851,7 +9851,7 @@ button.acct-row:hover:not(:disabled) {
   border-color: var(--accent);
 }
 .setup-split .solo-grid {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 12 seviye -> 4'lu, 3 satir */
 }
 .solo-tile.selected {
   border-color: var(--accent);
@@ -14506,11 +14506,8 @@ button.acct-row:hover:not(:disabled) {
 .tnum {
   font-variant-numeric: tabular-nums;
 }
-/* Sticky: 210 cerceve icinde kayarken bakiye + filtreler ekranda kalir */
+/* Sticky DEGIL: magaza filtre bari sayfayla birlikte kayar (kullanici tercihi). */
 .shop-controls {
-  position: sticky;
-  top: 0;
-  z-index: 5;
   display: flex;
   flex-direction: column;
   gap: 8px;
