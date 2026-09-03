@@ -34,7 +34,8 @@ class DiceStatisticsService
         }
 
         return Cache::remember(
-            "player:{$user->id}:dice-stats:{$phase}",
+            // v2: cikti sekli degisti (freq eklendi) -> eski cache'ler gecersiz.
+            "player:{$user->id}:dice-stats:v2:{$phase}",
             now()->addHours(6),
             fn () => $this->compute($user->id, $phase),
         );
@@ -44,7 +45,7 @@ class DiceStatisticsService
     public function invalidate(int $userId): void
     {
         foreach (self::PHASES as $phase) {
-            Cache::forget("player:{$userId}:dice-stats:{$phase}");
+            Cache::forget("player:{$userId}:dice-stats:v2:{$phase}");
         }
     }
 
@@ -116,17 +117,20 @@ class DiceStatisticsService
             $byDice[$key]['win'] += (float) $r->win_self * $n;
         }
 
+        // Toplam ornek (dagilim paydasi). freq bu sayede tum zarlarda %100'e toplanir.
+        $sample = array_sum(array_map(fn ($a) => $a['n'], $byDice));
+
         $rolls = [];
-        $sample = 0;
         foreach ($byDice as $dice => $a) {
             $n = $a['n'];
-            $sample += $n;
             // win_self kullanicinin kazanma orani; rakip icin ters cevir.
             $win = $n > 0 ? $a['win'] / $n : 0.0;
             $winRate = $opponent ? (1.0 - $win) : $win;
             $rolls[] = [
                 'dice' => $dice,
                 'n' => $n,
+                // freq: bu zarin tum atislar icindeki payi (%). Toplami ~100 (yuvarlama payi).
+                'freq' => $sample > 0 ? round($n / $sample * 100, 1) : 0.0,
                 'avgError' => $n > 0 ? round($a['loss'] / $n, 4) : 0.0,
                 'avgPip' => $n > 0 ? (int) round($a['pip'] / $n) : null,
                 'winRate' => round($winRate * 100, 1),

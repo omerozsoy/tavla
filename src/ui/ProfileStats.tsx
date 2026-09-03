@@ -429,13 +429,14 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                         // Zar yuzlerini kucukten buyuge diz (or. "6-1" -> 1,6)
                         const faces = r.dice.split('-').map(Number).sort((a, b) => a - b)
                         return (
-                          <div key={r.dice} className="dice-roll">
+                          <div key={r.dice} className="dice-roll" title={`${r.n}× · ${t('dice.win')} %${r.winRate}`}>
                             <span className="dice-roll-face">
                               {faces.map((d, di) => (
                                 <DiceFace key={di} n={d} size={26} />
                               ))}
                             </span>
-                            <span className="dice-roll-win">%{r.winRate}</span>
+                            <span className="dice-roll-freq">%{r.freq}</span>
+                            <span className="dice-roll-win">{t('dice.win')} %{r.winRate}</span>
                           </div>
                         )
                       })}

@@ -95,6 +95,29 @@ class DiceStatsTest extends TestCase
         $this->assertSame(120, $oppRoll['avgPip']);
     }
 
+    // freq: her zarin atilma payi (%). Tum zarlar ~%100'e toplanir.
+    public function test_freq_is_share_and_sums_to_100(): void
+    {
+        $u = $this->makeUser();
+        $won = $this->mr($u, true);
+        // SEN: "6-3" 3 kez, "5-1" 1 kez -> sample 4 -> freq 75 / 25
+        $this->da($u, $won, 0, '6-3', false, 0.02);
+        $this->da($u, $won, 1, '6-3', false, 0.02);
+        $this->da($u, $won, 2, '6-3', false, 0.02);
+        $this->da($u, $won, 3, '5-1', false, 0.02);
+
+        $self = app(DiceStatisticsService::class)->diceStats($u, 'all')['self'];
+
+        $six3 = collect($self['rolls'])->firstWhere('dice', '6-3');
+        $five1 = collect($self['rolls'])->firstWhere('dice', '5-1');
+        $this->assertSame(75.0, $six3['freq']);
+        $this->assertSame(25.0, $five1['freq']);
+
+        // Tum freq'lerin toplami ~100 (yuvarlama payi ile)
+        $sum = array_sum(array_map(fn ($r) => $r['freq'], $self['rolls']));
+        $this->assertEqualsWithDelta(100.0, $sum, 0.2);
+    }
+
     public function test_phase_filter_and_opening_win_rate(): void
     {
         $u = $this->makeUser();
