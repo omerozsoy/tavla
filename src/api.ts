@@ -435,6 +435,7 @@ export interface Friend {
   name: string
   avatar?: string | null
   frame?: string | null
+  country?: string | null
   rating: number
   online?: boolean
 }

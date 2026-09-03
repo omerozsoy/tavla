@@ -26,7 +26,7 @@ class FriendController extends Controller
             ->values();
 
         $friends = User::whereIn('id', $friendIds)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'rating', 'last_seen'])
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'last_seen'])
             ->map(fn ($u) => $this->pub($u));
 
         // Bana gelen bekleyen istekler
@@ -34,7 +34,7 @@ class FriendController extends Controller
             ->join('users', 'users.id', '=', 'friendships.user_id')
             ->where('friendships.friend_id', $me)
             ->where('friendships.status', 'pending')
-            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.avatar_frame', 'users.rating', 'users.last_seen'])
+            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.avatar_frame', 'users.country', 'users.rating', 'users.last_seen'])
             ->map(fn ($u) => $this->pub($u));
 
         return response()->json(['friends' => $friends, 'incoming' => $incoming]);
@@ -145,6 +145,7 @@ class FriendController extends Controller
             'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
             'avatar' => $u->avatar,
             'frame' => $u->avatar_frame ?? null,
+            'country' => $u->country ?? null,
             'rating' => $u->rating ?? 1500,
             'online' => (bool) $online,
         ];

@@ -9,7 +9,7 @@ import {
   removeFriend,
   type Friend,
 } from '../api'
-import AvatarFrame from './AvatarFrame'
+import PlayerIdentity from './PlayerIdentity'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -69,8 +69,18 @@ export default function Friends({ onInvite, onClose }: Props) {
     refresh()
   }
 
-  const avatar = (f: Friend) => (
-    <AvatarFrame src={f.avatar} frame={f.frame} size={30} name={f.name} animated={false} />
+  const identity = (f: Friend) => (
+    <PlayerIdentity
+      name={f.name}
+      rating={f.rating}
+      avatar={f.avatar}
+      frame={f.frame}
+      country={f.country}
+      flagInline
+      size={38}
+      rankSize="sm"
+      className="friend-id"
+    />
   )
 
   return (
@@ -103,8 +113,7 @@ export default function Friends({ onInvite, onClose }: Props) {
                 <h3>{t('friends.requests')}</h3>
                 {incoming.map((f) => (
                   <div key={f.id} className="friend-row">
-                    {avatar(f)}
-                    <span className="friend-name">{f.name}</span>
+                    {identity(f)}
                     <span className="friend-rating">{f.rating}</span>
                     <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
                       <Icon name="check" size={16} />
@@ -125,8 +134,7 @@ export default function Friends({ onInvite, onClose }: Props) {
                 friends.map((f) => (
                   <div key={f.id} className="friend-row">
                     <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
-                    {avatar(f)}
-                    <span className="friend-name">{f.name}</span>
+                    {identity(f)}
                     <span className="friend-rating">{f.rating}</span>
                     {f.online && (
                       <Button

@@ -15114,8 +15114,13 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 4px;
+  padding: 8px 4px;
   border-bottom: 1px solid var(--border);
+}
+/* PlayerIdentity blogu (avatar + isim + altinda rutbe) satirin genisligini alsin */
+.friend-id {
+  flex: 1;
+  min-width: 0;
 }
 .friend-name {
   flex: 1;
