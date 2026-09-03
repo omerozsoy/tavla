@@ -21,6 +21,9 @@ interface Props {
   onMatchmake: () => void
   onCancelMatch: () => void
   onLeave: () => void
+  /** true: lobi kabugu (logo+sidebar) icinde GOMULU render (fixed tam-ekran overlay YERINE
+   *  ortali in-flow panel) -> oda olustur/bekle ekraninda menu/logo kaybolmaz. */
+  embedded?: boolean
 }
 
 export default function Lobby({
@@ -33,8 +36,11 @@ export default function Lobby({
   onMatchmake,
   onCancelMatch,
   onLeave,
+  embedded,
 }: Props) {
   const { t } = useT()
+  // Gomulu: fixed overlay yerine ortali in-flow kap (kabuk gorunur kalir)
+  const wrapCls = embedded ? 'lobby-embed' : 'register-overlay'
   const [code, setCode] = useState('')
   const [ads, setAds] = useState<Content[]>([])
   const [adIdx, setAdIdx] = useState(0)
@@ -54,7 +60,7 @@ export default function Lobby({
   if (room && room.status === 'mm_waiting') {
     const ad = ads.length ? ads[adIdx % ads.length] : null
     return (
-      <div className="register-overlay">
+      <div className={wrapCls}>
         <div className="register-card mm-searching">
           <h2>{t('mp.searching')}</h2>
           <div className="mm-vs">
@@ -103,7 +109,7 @@ export default function Lobby({
   // Odaya girildi, rakip bekleniyor
   if (room && room.status === 'waiting') {
     return (
-      <div className="register-overlay">
+      <div className={wrapCls}>
         <div className="register-card">
           <h2>{t('mp.waiting')}</h2>
           <p className="register-sub">{t('mp.shareCode')}</p>
@@ -126,7 +132,7 @@ export default function Lobby({
 
   // Oda seçimi (oluştur / katıl)
   return (
-    <div className="register-overlay">
+    <div className={wrapCls}>
       <div className="register-card">
         <h2><Icon name="ranking" size={20} /> {t('mp.title')}</h2>
         <p className="register-sub">{t('mp.desc')}</p>

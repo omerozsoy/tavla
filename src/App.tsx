@@ -4689,20 +4689,41 @@ export default function App() {
   // görünümünü koru ki MatchResult (sonuç + Analiz + Rövanş) gösterilebilsin. Aksi
   // halde maç biter bitmez oyuncular arama/lobi sayfasına atılır (kritik bug).
   if (mode === 'online' && !matchOver && (!room || room.status !== 'playing')) {
+    // Oda olustur/katil/bekle: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
+    // menu) icinde GOMULU goster -> menu/logo/sayfa kaybolmaz (kullanici geri bildirimi).
     return (
       <>
-        {accountBar}
-        <Lobby
-          room={room}
-          busy={roomBusy}
-          error={roomError}
-          myAvatar={profile.avatar}
-          onCreate={() => handleCreateRoom(onlineTargetRef.current)}
-          onJoin={handleJoinRoom}
-          onMatchmake={handleMatchmake}
-          onCancelMatch={handleCancelMatch}
-          onLeave={handleLeaveRoom}
-        />
+        {mobileNav}
+        <div className="app lobby">
+          {accountBar}
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main">
+            <Lobby
+              embedded
+              room={room}
+              busy={roomBusy}
+              error={roomError}
+              myAvatar={profile.avatar}
+              onCreate={() => handleCreateRoom(onlineTargetRef.current)}
+              onJoin={handleJoinRoom}
+              onMatchmake={handleMatchmake}
+              onCancelMatch={handleCancelMatch}
+              onLeave={handleLeaveRoom}
+            />
+          </main>
+          <Footer columns={footerColumns} />
+        </div>
+        {authModal}
+        {menuOverlays}
       </>
     )
   }
