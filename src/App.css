@@ -9810,8 +9810,7 @@ button.acct-row:hover:not(:disabled) {
   margin: 0;
 }
 .setup-preview {
-  position: sticky;
-  top: 78px;
+  /* Sticky DEGIL: board onizlemesi sayfayla birlikte kayar (kullanici tercihi). */
   display: flex;
   flex-direction: column;
   gap: 16px;
