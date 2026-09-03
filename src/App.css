@@ -14577,6 +14577,7 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
 }
 .messages-compose {
+  position: relative; /* emoji paleti compose'a gore SAGA hizalanabilsin */
   display: flex;
   gap: 8px;
   padding: 10px;
@@ -14597,7 +14598,6 @@ button.acct-row:hover:not(:disabled) {
 }
 /* Emoji secici */
 .emoji-wrap {
-  position: relative;
   flex: none;
 }
 .emoji-btn {
@@ -14620,7 +14620,8 @@ button.acct-row:hover:not(:disabled) {
 .emoji-pop {
   position: absolute;
   bottom: calc(100% + 8px);
-  left: 0;
+  right: 10px; /* compose'un sag kenarina hizali acilir */
+  left: auto;
   width: 264px;
   max-height: 200px;
   overflow-y: auto;
