@@ -6917,17 +6917,13 @@ button.acct-row:hover:not(:disabled) {
 .app.lobby > .site-footer {
   grid-column: 1 / -1;
 }
-/* Sticky yan menu YALNIZ desktop: mobilde .side-menu drawer (position:fixed) -> burada
-   sticky vermek onu ezerdi (0,3,0 > 0,1,0). Bu yuzden min-width kosuluyla ayirdik. */
+/* Desktop yan menu: STICKY DEGIL -> sayfayla birlikte kayar (kullanici tercihi).
+   Boylece tam-genislik footer ile HIC cakismaz; menu icerikle akar, footer altta kalir.
+   (Mobilde .side-menu position:fixed drawer; bu kural yalniz desktop min-width ile.) */
 @media (min-width: 901px) {
   .app.lobby > .side-menu {
-    position: sticky;
-    top: 0;
+    position: static;
     align-self: start;
-    /* Kendi grid HUCRESINE sinirla (100dvh degil): footer satiri hucreyi kisaltinca
-       menu tasip footer'in uzerine binmesin -> gerekince menu KENDI ICINDE kayar. */
-    max-height: 100%;
-    overflow-y: auto;
   }
 }
 .app.lobby > .main {
