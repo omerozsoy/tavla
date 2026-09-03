@@ -158,6 +158,10 @@ class AuthController extends Controller
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
             ]);
+            // Baslangic puani: e-posta kaydiyla ayni (1400). 'rating' fillable degil,
+            // dogrudan atanir (DB varsayilani 1500 devreye girmesin).
+            $user->rating = 1400;
+            $user->save();
         }
 
         // Google e-postasi zaten dogrulanmis: HEM yeni HEM mevcut kullanicide garantiye al
