@@ -52,7 +52,8 @@ return [
     // Anahtar yoksa uc nokta 503 doner ("yapilandirilmadi").
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
-        'model' => env('ANTHROPIC_VISION_MODEL', 'claude-sonnet-4-5'),
+        // Opus daha iyi/kalibre okuyor (maliyet ~5x). Env ile Sonnet'e dusurulebilir.
+        'model' => env('ANTHROPIC_VISION_MODEL', 'claude-opus-4-8'),
         // Kimlige-bagli (identity-linked) anahtar kullaniliyorsa workspace id sart.
         'workspace' => env('ANTHROPIC_WORKSPACE_ID'),
     ],

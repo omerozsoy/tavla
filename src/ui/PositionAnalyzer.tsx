@@ -118,7 +118,8 @@ export default function PositionAnalyzer({
       setOff({ white: r.off?.white ?? 0, black: r.off?.black ?? 0 })
       setResult(null)
       setMoveRanked(null)
-      setVisionMsg(t('pa.photoDone'))
+      // Model dusuk guven bildirirse kullaniciyi kontrole cagir (foto zor okundu).
+      setVisionMsg(r.confidence != null && r.confidence < 0.7 ? t('pa.photoLowConf') : t('pa.photoDone'))
     } catch {
       setVisionMsg(t('pa.photoFail'))
     } finally {
