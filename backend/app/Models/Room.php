@@ -40,6 +40,10 @@ class Room extends Model
         'dice_client_seed',
         'dice_roll_index',
         'dice_rolls',
+        // Sunucu-otoriter oyun durumu — Faz 2b.
+        'server_state',
+        'server_version',
+        'server_winner',
     ];
 
     protected function casts(): array
@@ -51,6 +55,7 @@ class Room extends Model
             'stakes' => 'array',
             'clock' => 'array',
             'dice_rolls' => 'array',
+            'server_state' => 'array',
         ];
     }
 
