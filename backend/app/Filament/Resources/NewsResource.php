@@ -42,8 +42,11 @@ class NewsResource extends Resource
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Yayın tarihi'),
             Forms\Components\Textarea::make('body')->label('İçerik')->rows(10)->columnSpanFull(),
-            Forms\Components\TextInput::make('image')->label('Kapak görsel (URL)')->maxLength(500)->columnSpanFull()
-                ->helperText('İçe aktarılan haberlerde otomatik doludur.'),
+            Forms\Components\FileUpload::make('image')->label('Kapak fotoğrafı')
+                ->image()->disk('uploads')->directory('haber')->visibility('public')
+                ->imageEditor()->maxSize(4096)
+                ->helperText('Habere kapak fotoğrafı yükle. İçe aktarılan haberlerde otomatik doludur.')
+                ->columnSpanFull(),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }
