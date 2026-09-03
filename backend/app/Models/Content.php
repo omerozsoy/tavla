@@ -9,12 +9,14 @@ class Content extends Model
     protected $fillable = [
         'type', 'title', 'body', 'organizer', 'place', 'hotel', 'province', 'country',
         'contact', 'contacts', 'links', 'image', 'gallery', 'video_id', 'event_at', 'event_end', 'sort', 'published',
+        'show_tavlatv',
     ];
 
     protected $casts = [
         'event_at' => 'datetime',
         'event_end' => 'datetime',
         'published' => 'boolean',
+        'show_tavlatv' => 'boolean',
         'gallery' => 'array',
         'contacts' => 'array',
         'links' => 'array',

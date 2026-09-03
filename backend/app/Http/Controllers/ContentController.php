@@ -102,6 +102,7 @@ class ContentController extends Controller
             'event_end' => ['nullable', 'date'],
             'sort' => ['nullable', 'integer', 'min:0', 'max:100000'],
             'published' => ['nullable', 'boolean'],
+            'show_tavlatv' => ['nullable', 'boolean'],
         ]);
     }
 }
