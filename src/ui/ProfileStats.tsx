@@ -371,11 +371,6 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                     <div className="sd-title">{t('dice.title')}</div>
                     <div className="sd-sub">{t('dice.sub')}</div>
                   </div>
-                  {dSide?.openingWinRate != null && (
-                    <span className="dice-opening">
-                      {t('dice.openingWin')} <strong>%{dSide.openingWinRate}</strong>
-                    </span>
-                  )}
                 </div>
 
                 <div className="dice-controls">
@@ -423,23 +418,24 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   <div className="lb-empty small">{t('dice.empty')}</div>
                 ) : (
                   <div className="dice-grid">
-                    {[...dSide.rolls]
-                      .sort((a, b) => diceOrder(a.dice) - diceOrder(b.dice))
-                      .map((r) => {
-                        // Zar yuzlerini kucukten buyuge diz (or. "6-1" -> 1,6)
-                        const faces = r.dice.split('-').map(Number).sort((a, b) => a - b)
-                        return (
-                          <div key={r.dice} className="dice-roll" title={`${r.n}× · ${t('dice.win')} %${r.winRate}`}>
-                            <span className="dice-roll-face">
-                              {faces.map((d, di) => (
-                                <DiceFace key={di} n={d} size={26} />
-                              ))}
-                            </span>
-                            <span className="dice-roll-freq">%{r.freq}</span>
-                            <span className="dice-roll-win">{t('dice.win')} %{r.winRate}</span>
-                          </div>
-                        )
-                      })}
+                    {ALL_DICE.map((key) => {
+                      // Backend'de bu zar varsa freq/n al; atilmadiysa %0 goster (tam dagilim).
+                      const r = dSide.rolls.find((x) => x.dice === key)
+                      const freq = r?.freq ?? 0
+                      const n = r?.n ?? 0
+                      // Zar yuzlerini kucukten buyuge diz (or. "6-1" -> 1,6)
+                      const faces = key.split('-').map(Number).sort((a, b) => a - b)
+                      return (
+                        <div key={key} className={`dice-roll${n === 0 ? ' dice-roll-zero' : ''}`} title={`${n}×`}>
+                          <span className="dice-roll-face">
+                            {faces.map((d, di) => (
+                              <DiceFace key={di} n={d} size={26} />
+                            ))}
+                          </span>
+                          <span className="dice-roll-freq">%{freq}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -528,3 +524,13 @@ function diceOrder(key: string): number {
   const isDouble = a === b
   return (isDouble ? 1000 : 0) + lo * 10 + hi
 }
+
+// Tum 21 zar kombinasyonu (kanonik buyuk-kucuk), diceOrder sirasinda: once ikili-olmayanlar,
+// sonra ciftler (1-1..6-6). Atilmayanlar da grid'de %0 ile gorunur -> tam dagilim.
+const ALL_DICE: string[] = (() => {
+  const list: string[] = []
+  for (let hi = 1; hi <= 6; hi++) {
+    for (let lo = 1; lo <= hi; lo++) list.push(`${hi}-${lo}`)
+  }
+  return list.sort((a, b) => diceOrder(a) - diceOrder(b))
+})()

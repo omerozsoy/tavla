@@ -12120,7 +12120,7 @@ button.acct-row:hover:not(:disabled) {
   gap: 4px;
   align-items: center;
 }
-/* Ana sayi: bu zarin atilma payi (dagilim; tum zarlar %100'e toplanir) */
+/* Ana (tek) sayi: bu zarin atilma payi (dagilim; tum zarlar %100'e toplanir) */
 .dice-roll-freq {
   font-family: var(--tv-font-mono);
   font-size: 1.24rem;
@@ -12128,13 +12128,9 @@ button.acct-row:hover:not(:disabled) {
   line-height: 1;
   color: var(--accent);
 }
-/* Ikincil: o zarla kazanma orani (kucuk, soluk) */
-.dice-roll-win {
-  font-family: var(--tv-font-mono);
-  font-size: 0.72rem;
-  font-weight: 400;
-  line-height: 1;
-  color: var(--muted);
+/* Hic atilmayan kombinasyon (%0): soluk goster ama gride dahil et (tam dagilim) */
+.dice-roll-zero {
+  opacity: 0.38;
 }
 .dice-roll-meta {
   font-size: 0.68rem;
