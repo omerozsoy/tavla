@@ -11,6 +11,7 @@ import {
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import PublicProfile from './PublicProfile'
+import { CountryFlag } from './Flag'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -84,8 +85,6 @@ export default function Friends({ onInvite, onClose }: Props) {
         rating={f.rating}
         avatar={f.avatar}
         frame={f.frame}
-        country={f.country}
-        flagInline
         size={38}
         rankSize="sm"
         className="friend-id"
@@ -125,7 +124,9 @@ export default function Friends({ onInvite, onClose }: Props) {
                 {incoming.map((f) => (
                   <div key={f.id} className="friend-row">
                     {identity(f)}
-                    <span className="friend-rating">{f.rating}</span>
+                    <span className="friend-flag">
+                      <CountryFlag code={f.country} size={16} rounded={false} />
+                    </span>
                     <Button variant="default" size="icon" onClick={() => doAccept(f.id)} aria-label="Kabul">
                       <Icon name="check" size={16} />
                     </Button>
@@ -146,7 +147,9 @@ export default function Friends({ onInvite, onClose }: Props) {
                   <div key={f.id} className="friend-row">
                     <span className={`friend-dot ${f.online ? 'on' : ''}`} title={f.online ? t('friends.online') : t('friends.offline')} />
                     {identity(f)}
-                    <span className="friend-rating">{f.rating}</span>
+                    <span className="friend-flag">
+                      <CountryFlag code={f.country} size={16} rounded={false} />
+                    </span>
                     {f.online && (
                       <Button
                         variant="default"
