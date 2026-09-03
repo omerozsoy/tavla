@@ -3121,37 +3121,44 @@ button[aria-disabled='true'],
   box-shadow: none !important;
 }
 /* TavlaTV yayin bayragi (opsiyonel; admin panelden acilir).
-   Kartin SOL UST KOSESINE oturan KIRMIZI koseli kurdele (dolu ucgen): capraz
-   krem TAVLATV wordmark + iki ucta katlanma tabi. Renk site aksani var(--accent);
-   tab'lar token'dan turetilmis koyu ton. Kartin overflow:hidden'i koseyi kirpar. */
+   Ulke bayragi kurdelesiyle (.event-ribbon) AYNI TARZ: ustten asili DIKEY flama
+   (alti V-catal, hafif salinim). Fark: kart SOL UST kosesine oturur (en sol) ve
+   ici bayrak yerine capraz TAVLATV wordmark tasir. Zemin site aksani var(--accent). */
 .event-tvflag {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 112px;
-  height: 112px;
-  z-index: 4;
+  top: -3px;
+  left: 8px;
+  width: 46px;
+  height: 70px;
+  z-index: 3;
   pointer-events: none;
-  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
 }
-/* Dolu ucgen: sol-ust koseyi doldurur (ust kenar + sol kenar + capraz hipotenus).
-   Zemin KOYU (ink) — footer'in koyu zemini gibi; uzerine iki-renk logo oturur. */
+/* Flama govdesi: dolu bant + alt uc V-catal + ust katlama golgesi; ustten salinir. */
 .event-tvflag-band {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 112px;
-  height: 112px;
-  background: var(--tv-ink);
-  clip-path: polygon(0 0, 100% 0, 0 100%);
+  inset: 0;
+  overflow: hidden;
+  background: var(--accent);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 82%, 0 100%);
+  box-shadow: inset 0 7px 7px -5px rgba(0, 0, 0, 0.4);
+  transform-origin: 50% 0;
+  animation: event-ribbon-sway 4.5s ease-in-out infinite;
 }
-/* Wordmark capraza (hipotenusle paralel) oturur, koseye dogru ortalanir. */
+@media (prefers-reduced-motion: reduce) {
+  .event-tvflag-band {
+    animation: none;
+    transform: none;
+  }
+}
+/* Wordmark flamayla ayni yonde (dikey) okunur: 90Â° cevrilip banda ortalanir. */
 .event-tvflag-logo {
   position: absolute;
-  top: 37px;
-  left: 37px;
-  transform: translate(-50%, -50%) rotate(-45deg);
+  top: 46%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(90deg);
   transform-origin: center;
+  white-space: nowrap;
 }
 .event-row.past {
   border-left-color: var(--muted);
