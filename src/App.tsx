@@ -2811,6 +2811,11 @@ export default function App() {
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
+      // Kod GECERLI -> simdi online oyuna gec (kurulum ekranindan gelindiyse). Room ile
+      // ayni tik'te ayarlanir (React batch) -> araya bogus board render'i girmez.
+      setFriendSetupOpen(false)
+      setMode('online')
+      setHome(false)
       setRoom({
         code: res.room.code,
         slot: res.slot,
@@ -2821,13 +2826,14 @@ export default function App() {
         status: res.room.status,
       })
     } catch (e) {
-      setRoomError(
+      const msg =
         e instanceof ApiErr && e.status === 404
           ? t('mp.roomNotFound')
           : e instanceof ApiErr && e.status === 409
             ? t('mp.roomFull')
-            : t('mp.connError'),
-      )
+            : t('mp.connError')
+      setRoomError(msg)
+      notify.error(msg) // kurulum ekraninda Lobby yoksa da gorunur ("boyle bir oda yok")
     } finally {
       setRoomBusy(false)
     }
@@ -4725,10 +4731,9 @@ export default function App() {
                   handleCreateRoom(target, timeControl)
                 }}
                 onJoin={(code) => {
-                  // Arkadasin kodu: online moda gec, odaya katil (uzunluk/saat odayi kuranindir)
-                  setFriendSetupOpen(false)
-                  setMode('online')
-                  setHome(false)
+                  // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom
+                  // online'a gecirir; gecersizse (404) kurulum ekraninda kalip toast ile
+                  // "boyle bir oda yok" der (eskiden bogus bir maca dusuyordu).
                   handleJoinRoom(code)
                 }}
               />
