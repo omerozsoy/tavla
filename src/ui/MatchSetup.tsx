@@ -47,6 +47,21 @@ const AI_LEVELS = [
   'Neural AI',
 ]
 
+// Her seviyenin hedef PR (performans reytingi) araligi — dusuk = daha iyi oyun.
+// Seviye butonlarinin altinda muted olarak gosterilir ("Hedef PR 35–50" gibi).
+const PR_TARGETS = [
+  '35–50',
+  '25–35',
+  '18–25',
+  '12–18',
+  '8–12',
+  '5–8',
+  '3–5',
+  '1.5–3',
+  '0.5–1.5',
+  '0–0.5',
+]
+
 interface BoardColors {
   panel: string
   a: string
@@ -133,7 +148,8 @@ export default function MatchSetup({
                   className={`level-chip ${difficulty === i + 1 ? 'active' : ''}`}
                   onClick={() => setDifficulty(i + 1)}
                 >
-                  {i + 1}. {name}
+                  <span className="level-chip-name">{i + 1}. {name}</span>
+                  <span className="level-chip-pr">{t('setup.targetPr')} {PR_TARGETS[i]}</span>
                 </button>
               ))}
             </div>
