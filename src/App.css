@@ -3128,8 +3128,8 @@ button[aria-disabled='true'],
   position: absolute;
   top: -3px;
   left: 8px;
-  width: 46px;
-  height: 70px;
+  width: 54px;
+  height: 82px;
   z-index: 3;
   pointer-events: none;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
