@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import {
@@ -163,7 +164,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} country={u?.country} flagInline size={60} />
                   <div className="stats-rating">
                     {u?.rating ?? 1500}
-                    <div className="stats-coins"><Icon name="coin" size={14} /> {u?.coins ?? 0}</div>
+                    <div className="stats-coins"><Coins amount={u?.coins ?? 0} size={14} /></div>
                   </div>
                 </div>
                 <div className="stats-rank">{t('stats.rank', { r: data.rank, n: data.total })}</div>

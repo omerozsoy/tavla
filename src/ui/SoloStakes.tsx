@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
@@ -52,7 +53,6 @@ interface Props {
 export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClose }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const fmt = (n: number) => n.toLocaleString('tr-TR')
   // Baslangicta oynanabilir ilk seviye secili (yoksa ilk seviye)
   const [sel, setSel] = useState<SoloLevel>(
     () => SOLO_LEVELS.find((l) => coins >= l.stake) ?? SOLO_LEVELS[0],
@@ -71,7 +71,7 @@ export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClos
           </h2>
           <p className="register-sub">{t('solo.sub')}</p>
           <div className="solo-balance">
-            <Icon name="banknotes" size={15} /> {fmt(coins)}
+            <Coins amount={coins} size={16} />
           </div>
 
           <div className="solo-grid">
@@ -104,7 +104,7 @@ export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClos
                     )}
                   </span>
                   <span className="solo-stake">
-                    <Icon name="banknotes" size={14} /> {fmt(lv.stake)}
+                    <Coins amount={lv.stake} size={14} />
                   </span>
                 </button>
               )
@@ -126,9 +126,7 @@ export default function SoloStakes({ coins, board, onPick, onChangeBoard, onClos
           <div className="solo-preview-bar">
             <span className="solo-preview-info">
               {t('solo.level', { n: sel.level })} ·{' '}
-              <b>
-                <Icon name="banknotes" size={14} /> {fmt(sel.stake)}
-              </b>
+              <Coins amount={sel.stake} size={14} />
             </span>
             <Button
               variant="default"

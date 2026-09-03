@@ -1337,17 +1337,10 @@ button[aria-disabled='true'],
 .solo-balance {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   font-weight: 400;
   color: var(--text);
-  background: var(--btn-bg);
-  border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
+  font-size: 1.05rem;
   margin-bottom: 14px;
-}
-.solo-balance > svg {
-  color: var(--accent);
 }
 .solo-grid {
   display: grid;
@@ -6988,7 +6981,7 @@ button.acct-row:hover:not(:disabled) {
   flex: none;
 }
 .acct-ic-coin {
-  color: var(--tv-gold, #d9a227);
+  color: var(--coin-gold);
 }
 .acct-ic-rating {
   color: var(--accent);
@@ -7092,8 +7085,12 @@ button.acct-row:hover:not(:disabled) {
   grid-template-columns: 224px minmax(0, 1fr);
   /* Bar satirini SABIT yukseklige kilitle: aksi halde auto satir, sayfaya gore
      64-82px arasi degisip altindaki 'menu' satirini kaydiriyordu ("menu asagi
-     kayiyor"). Sabit satir -> menu HER sayfada ayni yerde. */
-  grid-template-rows: var(--header-h) 1fr;
+     kayiyor"). Sabit satir -> menu HER sayfada ayni yerde.
+     Icerik satiri 'auto' (1fr DEGIL): 1fr, sabit-yukseklik container'da viewport'a
+     klemplenip UZUN icerigi (kulupler/anasayfa) buyutemiyor -> footer viewport dibinde
+     kalip icerigin ustune biniyordu. 'auto' = satir icerige gore buyur, footer daima
+     altta. Kisa sayfada main'in min-height'i viewport'u doldurur (asagida). */
+  grid-template-rows: var(--header-h) auto;
   grid-template-areas:
     'bar bar'
     'menu main';
@@ -7101,8 +7098,11 @@ button.acct-row:hover:not(:disabled) {
   column-gap: 22px;
   /* Ust bar ile menu/icerik arasinda net bosluk (icerik bara "binmesin"). */
   row-gap: 18px;
-  height: 100dvh;
-  overflow-y: auto;
+  /* min-height (SABIT height DEGIL): sabit 100dvh, grid'i viewport'a hapsedip 'auto'
+     satirin uzun icerige buyumesini engelliyordu -> footer viewport dibinde kalip
+     icerigin ustune biniyordu. min-height ile kabuk icerige gore buyur, tasma body'de
+     kayar, footer daima en altta. */
+  min-height: 100dvh;
   overflow-x: hidden;
   padding: 0;
   /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) â€” kaydirma tekerlek/touch ile calisir. */
@@ -7141,10 +7141,12 @@ button.acct-row:hover:not(:disabled) {
 .app.lobby > .main {
   grid-area: main;
   overflow: visible; /* ic kaydirma YOK -> tum kabuk kayar, band kaybolur */
-  /* Icerik kisa olsa bile main hucresi satiri (dolayisiyla footer'i) menunun bittigi
-     yere kadar doldursun -> bos sayfada footer menuyle cakismaz, en az menu boyu. */
-  align-self: stretch;
-  min-height: 100%;
+  /* Icerik kisa olsa bile main en az bir ekran (viewport - header - row-gap) yuksek olsun ->
+     bos/kisa sayfada footer yukari kayip menuyle cakismaz. DIKKAT: 'stretch' veya height
+     KULLANMA -> main'i satira sabitler, uzun icerik (kulupler) auto-min'e katki vermez,
+     satir menu boyuna klemplenir ve icerik footer'in ustune tasar. Yalniz min-height
+     (taban) -> uzun sayfada main = icerik, footer daima altta kalir. */
+  min-height: calc(100dvh - var(--header-h) - 18px);
 }
 
 /* ---- Ust band: SOL logo + SAG hesap kontrolleri (grid 'bar' alani, tam genislik) ---- */
@@ -13750,17 +13752,9 @@ button.acct-row:hover:not(:disabled) {
 .shop-coins {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--tv-gold) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tv-gold) 45%, transparent);
   color: var(--text);
   font-weight: 400;
-  font-size: 1rem;
-}
-.shop-coins > svg {
-  color: var(--tv-gold);
+  font-size: 1.05rem;
 }
 .shop-daily {
   display: inline-flex;
@@ -14430,18 +14424,10 @@ button.acct-row:hover:not(:disabled) {
 .frame-shop-bal {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   margin: 0 0 14px;
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, #e6b422 12%, var(--card-bg));
   font-weight: 400;
   color: var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.frame-shop-bal > svg {
-  color: #e6b422;
+  font-size: 1.05rem;
 }
 
 /* ====== Profil genel bakis (ProfileOverview) â€” kimlik + stat + koleksiyon ====== */

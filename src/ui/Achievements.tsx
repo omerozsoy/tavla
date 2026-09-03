@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import './achievements.css'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import type { IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
@@ -211,7 +212,7 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
               <span className={`ach-tag rarity-${sel.rarity}`}>{t(`ach.rarity.${sel.rarity}`)}</span>
               {sel.rewardCoin > 0 && (
                 <span className="ach-tag reward">
-                  <Icon name="coins" size={12} /> +{sel.rewardCoin}
+                  <Coins amount={sel.rewardCoin} gain size={12} />
                 </span>
               )}
             </div>

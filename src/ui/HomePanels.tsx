@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
+import { Coins } from './Coins'
 import { liveMatches, leaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
@@ -417,9 +418,7 @@ export function RankingPanel({
               </span>
               <span className="rank-val">
                 {by === 'coins' ? (
-                  <>
-                    <Icon name="coin" size={12} /> {r.coins ?? 0}
-                  </>
+                  <Coins amount={r.coins ?? 0} size={12} />
                 ) : by === 'wxp' ? (
                   r.wxp ?? 0
                 ) : (

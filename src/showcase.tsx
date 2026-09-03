@@ -14,6 +14,7 @@ import './App.css'
 import { LangProvider } from './i18n'
 import { ToastProvider, useToast } from './ui/Toast'
 import { Icon, ICON_NAMES } from './ui/Icon'
+import { Coins } from './ui/Coins'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import AvatarFrame from './ui/AvatarFrame'
 import { DivisionChip, BadgeList } from './ui/Badges'
@@ -415,8 +416,11 @@ function Showcase() {
               <DivisionChip rating={900} />
             </span>
           </Item>
-          <Item name="Coin chip" code='class="coin-chip"'>
-            <span className="coin-chip"><Icon name="coin" size={14} /> 1.250</span>
+          <Item name="Coins (inline)" code='<Coins amount={n} />'>
+            <Coins amount={1250} />
+          </Item>
+          <Item name="Coins (pill)" code='<Coins amount={n} pill />'>
+            <Coins amount={14150} pill />
           </Item>
           <Item name="PR chip" code='class="pr-chip"'>
             <span className="pr-chip">2.35 PR</span>

@@ -7,6 +7,7 @@
 import { useEffect, useState } from 'react'
 import './achievements.css'
 import { Icon } from './Icon'
+import { Coins } from './Coins'
 import type { IconName } from './Icon'
 import { useT } from '../i18n'
 import type { UnlockedAchievement } from '../api'
@@ -59,7 +60,7 @@ export default function AchievementUnlock({ items, onClose, onView }: Props) {
           <div className="ach-unlock-desc">{cur.desc}</div>
           {cur.rewardCoin > 0 && (
             <div className="ach-unlock-reward">
-              <Icon name="coins" size={13} /> +{cur.rewardCoin}
+              <Coins amount={cur.rewardCoin} gain size={13} />
             </div>
           )}
         </div>
