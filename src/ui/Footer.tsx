@@ -22,7 +22,7 @@ export default function Footer({ columns }: Props) {
     <footer className="site-footer">
       <div className="foot-inner">
         <div className="foot-brand">
-          <TavlaTvLogo size={22} tone="dark" className="foot-logo" />
+          <TavlaTvLogo size={34} tone="dark" className="foot-logo" />
           <p className="foot-tag">{t('foot.tag')}</p>
         </div>
         <nav className="foot-cols">
