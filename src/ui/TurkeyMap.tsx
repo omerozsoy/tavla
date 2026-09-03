@@ -53,7 +53,9 @@ export default function TurkeyMap({ clubCounts, clubNames, selected, onSelect, c
 
   useEffect(() => {
     let alive = true
-    fetch('/turkiye.svg')
+    // ?v=2: turkiye.svg hash'siz statik dosya -> tarayici eskisini cache'liyor.
+    // Icerik degisince (ör. İstanbul tek il) surumu artir ki taze surum cekilsin.
+    fetch('/turkiye.svg?v=2')
       .then((r) => (r.ok ? r.text() : Promise.reject()))
       .then((t) => alive && setSvg(t))
       .catch(() => alive && setErr(true))

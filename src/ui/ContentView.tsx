@@ -512,7 +512,8 @@ export default function ContentView({
             {selProvince && (
               <div className="club-filter-bar">
                 <span className="club-filter-cur">
-                  <Icon name="pin" size={14} /> {selProvince}
+                  {/* Parantezli varyant (eski/cache'li SVG'de "İstanbul (Avrupa)") temizlenir -> tek "İstanbul" */}
+                  <Icon name="pin" size={14} /> {selProvince.replace(/\s*\(.*?\)\s*/g, '').trim()}
                 </span>
                 <Button variant="ghost" className="club-filter-clear" onClick={() => setSelProvince(null)}>
                   <Icon name="x" size={14} /> {t('clubs.showAll')}
