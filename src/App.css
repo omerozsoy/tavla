@@ -10409,20 +10409,36 @@ button.acct-row:hover:not(:disabled) {
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
+/* Handle: gorunen nokta kucuk (20px) ama dokunma alani buyuk (44px) — mobil-oncelikli. */
 .warp-handle {
   position: absolute;
-  width: 26px;
-  height: 26px;
-  margin: -13px 0 0 -13px;
-  border-radius: 50%;
-  background: var(--accent);
-  border: 3px solid #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  width: 44px;
+  height: 44px;
+  margin: -22px 0 0 -22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
   cursor: grab;
   touch-action: none;
 }
 .warp-handle:active {
   cursor: grabbing;
+}
+.warp-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+.warp-msg {
+  margin: 0 0 10px;
+  font-size: 0.85rem;
+  color: var(--coral);
 }
 .warp-actions {
   display: flex;
