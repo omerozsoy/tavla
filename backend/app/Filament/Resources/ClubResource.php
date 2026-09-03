@@ -82,6 +82,9 @@ class ClubResource extends Resource
             ->defaultGroup('province')
             ->reorderable('sort')
             ->defaultSort('sort')
+            // Suruke-birak reorder + gruplama sayfalamayla kalici olmuyordu -> tek sayfa.
+            // Kulup sayisi az; tum kayitlar tek sayfada, drag guvenilir kaydeder.
+            ->paginated(false)
             ->columns([
                 // Hizli sira duzenleme: tabloda dogrudan yaz (kaydetmeden anlik). Kucuk = ustte.
                 Tables\Columns\TextInputColumn::make('sort')->label('Sıra')
