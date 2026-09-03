@@ -28,6 +28,7 @@ export interface SideMenuProps {
   onToggleAnalysis?: () => void
   onResign?: () => void
   active?: string
+  badges?: Record<string, number> // menu ogesi key -> rozet sayisi (or. okunmamis mesaj)
   mobileOpen?: boolean
   onCloseMobile?: () => void
   onHome?: () => void // drawer logosuna tiklayinca ana sayfa
@@ -79,7 +80,9 @@ export default function SideMenu(p: SideMenuProps) {
         if (items.length === 0 && !showResume) return null
         return (
           <div className="menu-group" key={`${g.group}-${gi}`}>
-            {items.map((it) => (
+            {items.map((it) => {
+              const badge = p.badges?.[it.key] ?? 0
+              return (
               <Button
                 key={it.key}
                 variant="ghost"
@@ -88,8 +91,10 @@ export default function SideMenu(p: SideMenuProps) {
                 onClick={it.onClick}
               >
                 <Icon name={it.icon} size={24} /> {it.label ?? t(it.labelKey)}
+                {badge > 0 && <span className="menu-badge">{badge > 99 ? '99+' : badge}</span>}
               </Button>
-            ))}
+              )
+            })}
             {showResume && (
               <Button variant="secondary" className={NAV} onClick={p.onResume}>
                 <Icon name="live" size={24} /> {t('menu.activeGames')}

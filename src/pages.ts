@@ -33,6 +33,7 @@ export const PAGES: PageDef[] = [
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
+  { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },
 
   // --- Hesap ---
   { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },

@@ -88,6 +88,7 @@ import Leaderboard from './ui/Leaderboard'
 import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
+import Messages from './ui/Messages'
 import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import BannerSlider from './ui/BannerSlider'
@@ -147,6 +148,7 @@ import {
   toProfile,
   getMenuConfig,
   buyCoins,
+  messagesUnread,
   matchPr,
   type MenuOverride,
   type ServerUser,
@@ -456,6 +458,9 @@ export default function App() {
   const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
+  const [messagesOpen, setMessagesOpen] = useState(false) // ozel mesajlar (DM) modali
+  const [messagesFocusId, setMessagesFocusId] = useState<number | null>(null) // acilirken odaklanilacak arkadas
+  const [dmUnread, setDmUnread] = useState(0) // okunmamis ozel mesaj sayisi (menu rozeti)
   const [lessonsOpen, setLessonsOpen] = useState(false) // dersler modali
   const [tournOpen, setTournOpen] = useState(false) // turnuvalar modali
   const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
@@ -539,6 +544,8 @@ export default function App() {
           ? 'istatistiklerim'
           : friendsOpen
             ? 'arkadaslar'
+            : messagesOpen
+              ? 'mesajlar'
             : blunderOpen
               ? 'hata-gunlugu'
               : matchHistOpen
@@ -672,6 +679,9 @@ export default function App() {
           break
         case 'arkadaslar':
           setFriendsOpen(true)
+          break
+        case 'mesajlar':
+          setMessagesOpen(true)
           break
         case 'hata-gunlugu':
           setBlunderOpen(true)
@@ -2343,6 +2353,7 @@ export default function App() {
       setTournNotices([])
       setNotifications([])
       setUnreadNotif(0)
+      setDmUnread(0)
       seenNotifRef.current.clear()
       notifPrimedRef.current = false
       return
@@ -2367,6 +2378,7 @@ export default function App() {
             notifPrimedRef.current = true
             setNotifications(notifs)
             setUnreadNotif(r.unread ?? 0)
+            setDmUnread(r.dm_unread ?? 0)
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
         })
@@ -2896,6 +2908,13 @@ export default function App() {
     } finally {
       setRoomBusy(false)
     }
+  }
+
+  // Okunmamis mesaj rozetini aninda tazele (ping'i beklemeden; or. konusma acilinca)
+  function refreshDmUnread() {
+    messagesUnread()
+      .then((r) => setDmUnread(r.unread ?? 0))
+      .catch(() => {})
   }
 
   // Arkadasi oyuna davet et: kod al, odaya gir, arkadas kabul edince baslar
@@ -3965,6 +3984,8 @@ export default function App() {
     setFrameGalleryOpen(false)
     setStatsOpen(false)
     setFriendsOpen(false)
+    setMessagesOpen(false)
+    setMessagesFocusId(null)
     setBlunderOpen(false)
     setMatchHistOpen(false)
     setFrameAnimOpen(false)
@@ -4058,6 +4079,7 @@ export default function App() {
           })
         : setShowAuth(true),
     onFriends: () => goPage(() => setFriendsOpen(true)),
+    onMessages: () => goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) }),
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
     // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
     onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
@@ -4085,6 +4107,7 @@ export default function App() {
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
     friends: menuProps.onFriends,
+    messages: menuProps.onMessages,
     membership: menuProps.onMembership,
     calendar: menuProps.onCalendar,
     clubs: menuProps.onClubs,
@@ -4209,6 +4232,7 @@ export default function App() {
     frameGalleryOpen ||
     statsOpen ||
     friendsOpen ||
+    messagesOpen ||
     blunderOpen ||
     matchHistOpen ||
     frameAnimOpen ||
@@ -4240,6 +4264,8 @@ export default function App() {
           ? 'stats'
           : friendsOpen
             ? 'friends'
+            : messagesOpen
+              ? 'messages'
             : blunderOpen
               ? 'blunders'
               : matchHistOpen
@@ -4289,7 +4315,25 @@ export default function App() {
       )}
       {editProfilePage}
       {friendsOpen && user && (
-        <Friends onInvite={handleInviteFriend} onClose={() => setFriendsOpen(false)} />
+        <Friends
+          onInvite={handleInviteFriend}
+          onMessage={(uid) => {
+            setFriendsOpen(false)
+            setMessagesFocusId(uid)
+            setMessagesOpen(true)
+          }}
+          onClose={() => setFriendsOpen(false)}
+        />
+      )}
+      {messagesOpen && user && (
+        <Messages
+          focusUserId={messagesFocusId}
+          onRead={() => refreshDmUnread()}
+          onClose={() => {
+            setMessagesOpen(false)
+            setMessagesFocusId(null)
+          }}
+        />
       )}
       {leaderboardOpen && (
         <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
@@ -4549,6 +4593,7 @@ export default function App() {
             groups={menuGroups}
             onResume={menuProps.onResume}
             active={activeKey}
+            badges={{ messages: dmUnread }}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
             onHome={menuProps.onHome}
@@ -4596,6 +4641,7 @@ export default function App() {
             groups={menuGroups}
             onResume={menuProps.onResume}
             active={activeKey}
+            badges={{ messages: dmUnread }}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
             onHome={menuProps.onHome}
@@ -4651,6 +4697,7 @@ export default function App() {
             groups={menuGroups}
             onResume={menuProps.onResume}
             active={activeKey}
+            badges={{ messages: dmUnread }}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
             onHome={menuProps.onHome}
@@ -4771,6 +4818,7 @@ export default function App() {
             groups={menuGroups}
             onResume={menuProps.onResume}
             active={activeKey}
+            badges={{ messages: dmUnread }}
             mobileOpen={menuOpen}
             onCloseMobile={() => setMenuOpen(false)}
             onHome={menuProps.onHome}
