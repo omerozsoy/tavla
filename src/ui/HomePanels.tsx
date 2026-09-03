@@ -3,7 +3,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, onlinePlayers, listContents, getFriends, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -262,6 +262,8 @@ export function OnlinePlayersPanel({
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
   const [showAll, setShowAll] = useState(false)
+  // Mevcut arkadaslarin id'leri -> zaten arkadas olana "arkadas ol" butonu cikmasin.
+  const [friendIds, setFriendIds] = useState<Set<number>>(new Set())
   const LIMIT = 12
 
   useEffect(() => {
@@ -277,6 +279,18 @@ export function OnlinePlayersPanel({
       window.clearInterval(id)
     }
   }, [])
+
+  // Arkadas listesi (yalnizca giris yapmis kullanicida; onAddFriend o zaman tanimli).
+  useEffect(() => {
+    if (!onAddFriend) return
+    let alive = true
+    getFriends()
+      .then((d) => alive && setFriendIds(new Set(d.friends.map((f) => f.id))))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [onAddFriend])
 
   return (
     <div className="home-panel online-panel">
@@ -318,7 +332,7 @@ export function OnlinePlayersPanel({
                           <Icon name="play" size={15} />
                         </Button>
                       )}
-                      {onAddFriend && (
+                      {onAddFriend && !friendIds.has(p.id) && (
                         <Button
                           variant="outline"
                           size="icon"
@@ -625,8 +639,8 @@ type CalItem = { name: string; logo?: string }
 
 // Ana sayfa mini takvim (slider altinda, canli maclar boyutunda). Turnuva baslama
 // gunleri isaretli; bugun vurgulu. Panel/gun tiklayinca Turnuva Takvimi'ni acar.
-export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen: () => void }) {
-  const { t, lang } = useT()
+export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[]; onOpen: () => void; title: string }) {
+  const { lang } = useT()
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
   // Hover balonu (native title yerine): sabit konumlu, gun uzerine gelince isim(ler)i gosterir.
@@ -724,7 +738,7 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
     <div className="home-panel cal-panel">
       <div className="home-panel-head cal-head">
         <span className="cal-title">
-          <Icon name="calendar-dots" size={18} /> {t('menu.calendar')}
+          <Icon name="calendar-dots" size={18} /> {title}
         </span>
         <div className="cal-nav">
           <button type="button" onClick={prev} aria-label="prev">‹</button>
@@ -779,7 +793,7 @@ export function CalendarPanel({ tourns, onOpen }: { tourns: Tournament[]; onOpen
       </div>
       <div className="cal-foot">
         <Button variant="outline" className="w-full" onClick={onOpen}>
-          <Icon name="calendar-dots" size={16} /> {t('menu.calendar')}
+          <Icon name="calendar-dots" size={16} /> {title}
         </Button>
       </div>
       {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (

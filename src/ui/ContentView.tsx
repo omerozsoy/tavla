@@ -117,6 +117,7 @@ export default function ContentView({
   onOpenDetail,
   onCloseDetail,
   embed = false,
+  titleOverride,
 }: {
   type: ContentType
   onClose: () => void
@@ -124,6 +125,9 @@ export default function ContentView({
   onOpenDetail?: (slug: string) => void
   onCloseDetail?: () => void
   embed?: boolean // Bilgi sayfasi sekmesine gomulu (overlay/kart/kapat/baslik yok)
+  // KURAL: sayfa basligi = menu etiketi. Admin menude yeniden adlandirinca (override)
+  // baslik da otomatik onu alsin diye App cozulmus menu etiketini gecer.
+  titleOverride?: string
 }) {
   const { t } = useT()
   const [items, setItems] = useState<Content[]>([])
@@ -229,6 +233,8 @@ export default function ContentView({
   }, [items, type])
 
   const head = HEAD[type]
+  // KURAL: sayfa basligi = menu etiketi (varsa admin override); yoksa varsayilan i18n.
+  const headTitle = titleOverride ?? t(head.titleKey)
 
   // Etkinlik: yaklasan / gecmis ayrimi + aya gore grupla
   const eventGroups = useMemo(() => {
@@ -327,7 +333,7 @@ export default function ContentView({
           <Icon name="x" size={16} />
         </Button>
         <h2>
-          <Icon name={head.icon} size={20} /> {t(head.titleKey)}
+          <Icon name={head.icon} size={20} /> {headTitle}
         </h2>
 
         {loading ? (
@@ -357,7 +363,7 @@ export default function ContentView({
             <NewsDetail
               item={newsItem}
               onBack={onCloseDetail ?? onClose}
-              backLabel={t(head.titleKey)}
+              backLabel={headTitle}
               onOpenImage={setLightbox}
             />
           ) : (
