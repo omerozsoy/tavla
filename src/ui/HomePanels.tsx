@@ -538,6 +538,82 @@ const calMediaSrc = (img?: string | null): string | undefined => {
   if (!img) return undefined
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
+
+// Baslik -> URL slug (ContentView.slugify ile ayni kural; haber detayini acmak icin).
+const TR_SLUG: Record<string, string> = {
+  ç: 'c', ğ: 'g', ı: 'i', ö: 'o', ş: 's', ü: 'u', İ: 'i', Ç: 'c', Ğ: 'g', Ö: 'o', Ş: 's', Ü: 'u',
+}
+const newsSlug = (s: string): string =>
+  s
+    .replace(/[çğıöşüİÇĞÖŞÜ]/g, (c) => TR_SLUG[c] ?? c)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+
+// ---- Haberler (ana sayfa yan kutusu; Online Turnuvalar boyutunda) ----
+// En son 6 haber: solda ufak kapak resmi + baslik + yayin tarihi. Satir -> haber detayi.
+export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNews: (slug: string) => void }) {
+  const { t, lang } = useT()
+  const [items, setItems] = useState<Content[] | null>(null)
+  useEffect(() => {
+    let alive = true
+    listContents('news')
+      .then((n) => alive && setItems(n.slice(0, 6)))
+      .catch(() => alive && setItems([]))
+    return () => {
+      alive = false
+    }
+  }, [])
+  const locale = lang === 'tr' ? 'tr-TR' : lang
+  const fmtDate = (c: Content): string | null => {
+    const d = c.event_at ?? c.created_at
+    if (!d) return null
+    const dt = new Date(d)
+    return Number.isNaN(dt.getTime())
+      ? null
+      : dt.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+  }
+  return (
+    <div className="home-panel news-panel">
+      <button type="button" className="home-panel-head hph-link" onClick={onOpen} title={t('menu.news')}>
+        <Icon name="chat" size={18} /> {t('menu.news')}
+        {items && items.length > 0 && <span className="panel-count">{items.length}</span>}
+      </button>
+      {items === null ? (
+        <div className="home-panel-empty">{t('common.loading')}</div>
+      ) : items.length === 0 ? (
+        <div className="home-panel-empty">{t('home.news.empty')}</div>
+      ) : (
+        <div className="news-list">
+          {items.map((n) => {
+            const cover = calMediaSrc(n.image)
+            const date = fmtDate(n)
+            return (
+              <button key={n.id} className="news-row" onClick={() => onOpenNews(newsSlug(n.title))}>
+                {cover ? (
+                  <img className="news-thumb" src={cover} alt="" loading="lazy" />
+                ) : (
+                  <span className="news-thumb news-thumb-ph" aria-hidden="true">
+                    <Icon name="chat" size={16} />
+                  </span>
+                )}
+                <span className="news-main">
+                  <span className="news-title">{n.title}</span>
+                  {date && (
+                    <span className="news-date">
+                      <Icon name="calendar" size={12} /> {date}
+                    </span>
+                  )}
+                </span>
+                <Icon name="arrow-right" size={15} className="news-go" />
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
 // Takvim balonundaki tek satir: {isim, varsa yuvarlak kurum logosu}.
 type CalItem = { name: string; logo?: string }
 

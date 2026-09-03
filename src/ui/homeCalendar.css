@@ -15,10 +15,96 @@
 .cal-panel {
   width: 100%; /* kendi yarisini doldurur */
 }
+/* Sag yarim kolon: Online Turnuvalar + Haberler alt alta (her biri yarim-genislik kutu). */
+.home-cal-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
 @media (max-width: 720px) {
   .home-cal-wrap {
     grid-template-columns: 1fr; /* mobilde alt alta */
   }
+}
+
+/* ---- Haberler kutusu (Online Turnuvalar boyutunda) ---- */
+.news-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.news-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--btn-bg);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 180ms var(--ease-out),
+    background 180ms var(--ease-out);
+}
+.news-row:active {
+  scale: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  .news-row:hover {
+    border-color: var(--accent);
+  }
+}
+.news-thumb {
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: color-mix(in srgb, var(--text) 9%, transparent);
+}
+.news-thumb-ph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.news-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.news-title {
+  font-size: 0.9rem;
+  line-height: 1.25;
+  color: var(--text);
+  /* En fazla 2 satir; tasarsa kirp */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.news-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+.news-date > svg {
+  color: var(--accent);
+}
+.news-go {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+.news-row:hover .news-go {
+  color: var(--accent);
 }
 .cal-head {
   display: flex;
