@@ -71,7 +71,14 @@ class ClubResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('province')
+            // İl bazli grupla; her ilin içinde sürükle-bırak sıralama (sort kolonu).
+            // ContentController kulüpleri province -> sort -> title ile listeler.
+            ->groups([
+                Tables\Grouping\Group::make('province')->label('İl')->collapsible(),
+            ])
+            ->defaultGroup('province')
+            ->reorderable('sort')
+            ->defaultSort('sort')
             ->columns([
                 Tables\Columns\ImageColumn::make('image')->label('Logo')->disk('uploads')->circular(),
                 Tables\Columns\TextColumn::make('province')->label('İl')->searchable()->sortable(),
