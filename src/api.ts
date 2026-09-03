@@ -712,6 +712,7 @@ export interface Content {
   created_at?: string | null // kayit tarihi (haber yayin tarihi fallback'i)
   sort: number
   published: boolean
+  show_tavlatv?: boolean | null // admin: takvim kartinda TavlaTV yayin bayragi goster (varsayilan kapali)
 }
 export async function listContents(type: ContentType): Promise<Content[]> {
   const d = await req<{ items: Content[] }>(`/contents?type=${encodeURIComponent(type)}`)

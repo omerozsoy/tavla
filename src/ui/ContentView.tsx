@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
+import { TavlaTvLogo } from './TavlaTvLogo'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -876,12 +877,21 @@ function EventRow({
     : ''
   const mapHref = hotel?.maps || (mapQuery ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}` : '')
   return (
-    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img ? 'has-map' : ''}`}>
+    <div className={`event-row ${upcoming ? '' : 'past'} ${logo ? 'has-logo' : ''} ${img ? 'has-map' : ''} ${ev.show_tavlatv ? 'has-tvflag' : ''}`}>
       {/* Sag ust kose kurdelesi (SALE tarzi): ulkeye gore bayrak. Turkiye=TR, KKTC=KKTC. */}
       {ev.country && (
         <span className="event-ribbon" aria-hidden="true">
           <span className="event-ribbon-band">
             <CountryFlag code={ev.country} size={15} className="event-ribbon-flag" />
+          </span>
+        </span>
+      )}
+      {/* TavlaTV yayin bayragi (admin acinca): kosede asili SIYAH flama, dikey TAVLATV.
+          Ulke bayragi da varsa o sola kayar (CSS .has-tvflag), TavlaTV kosede kalir. */}
+      {ev.show_tavlatv && (
+        <span className="event-tvflag" aria-hidden="true">
+          <span className="event-tvflag-band">
+            <TavlaTvLogo size={13} tone="dark" className="event-tvflag-logo" />
           </span>
         </span>
       )}

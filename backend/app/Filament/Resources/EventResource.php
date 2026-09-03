@@ -126,6 +126,11 @@ class EventResource extends Resource
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(4)->columnSpanFull(),
             // Görsel etkinlikte yok: takvimde seçilen OTELİN görseli gösterilir (Oteller sayfasına yüklenir).
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
+            // TavlaTV yayın bayrağı: açılırsa takvim kartının sağ üst köşesinde siyah TavlaTV
+            // flaması asılı görünür. Varsayılan KAPALI — sadece seçilen maçlarda gösterilir.
+            Forms\Components\Toggle::make('show_tavlatv')->label('TavlaTV bayrağı göster')
+                ->default(false)
+                ->helperText('Açılırsa etkinlik kartında TavlaTV yayın bayrağı gösterilir. Varsayılan kapalı.'),
         ]);
     }
 
@@ -144,6 +149,7 @@ class EventResource extends Resource
                     ->color(fn ($state) => $state === 'Otel yok' ? 'danger' : 'success')
                     ->searchable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
+                Tables\Columns\IconColumn::make('show_tavlatv')->label('TavlaTV')->boolean()->toggleable(),
             ])
             ->filters([
                 // Otel secili olan / olmayan etkinlikleri ayikla.
