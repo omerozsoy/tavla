@@ -7717,7 +7717,9 @@ button.acct-row:hover:not(:disabled) {
   max-width: var(--lobby-w);
   margin: 0 auto 22px;
   overflow: hidden;
-  background: var(--sand);
+  /* Noktalarin altindaki serit kaldirildi: gorsel viewer'i tam kaplar, alt nokta
+     alani sayfa zeminine oturur (ayri gri/sand bant gorunmez). */
+  background: transparent;
   /* KRITIK: .lobby-main bir flex-column; overflow:hidden olan bu ogenin flex
      otomatik min boyutu 0'a duser -> sayfa uzayinca banner 0 yukseklige SIKISIR
      ve track kirpilir (gorunmez olur). flex-shrink:0 ile sabit tutulur. */
