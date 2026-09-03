@@ -30,6 +30,20 @@ class RoomResult
         $userColor = $slot === 'p1' ? 'white' : 'black';
         $oppColor = $userColor === 'white' ? 'black' : 'white';
 
+        // 0) SUNUCU-OTORİTER MAÇ (Faz 3): authoritative oda ise kazananı SUNUCUNUN hesapladığı
+        //    server_match'ten al — istemci state/score'una ASLA güvenme. Maç bitmişse kesin.
+        if ($room->authoritative && is_array($room->server_match)) {
+            $sm = $room->server_match;
+            if (! empty($sm['done']) && in_array($sm['winner'] ?? null, ['white', 'black'], true)) {
+                $s = (int) ($sm['score'][$userColor] ?? 0);
+                $o = (int) ($sm['score'][$oppColor] ?? 0);
+
+                return ['won' => $sm['winner'] === $userColor, 'self' => $s, 'opp' => $o];
+            }
+            // authoritative ama maç bitmemiş -> henüz sonuç yok (client fallback'e DÜŞME).
+            return null;
+        }
+
         $state = is_array($room->state) ? $room->state : [];
         $match = is_array($state['match'] ?? null) ? $state['match'] : [];
         $score = is_array($match['score'] ?? null) ? $match['score'] : null;

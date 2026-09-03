@@ -44,6 +44,7 @@ class Room extends Model
         'server_state',
         'server_version',
         'server_winner',
+        'server_match',
         'authoritative',
     ];
 
@@ -57,6 +58,7 @@ class Room extends Model
             'clock' => 'array',
             'dice_rolls' => 'array',
             'server_state' => 'array',
+            'server_match' => 'array',
             'authoritative' => 'boolean',
         ];
     }
@@ -92,6 +94,7 @@ class Room extends Model
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
             'server_version' => (int) $this->server_version,
             'server_winner' => $this->server_winner,
+            'server_match' => $this->server_match, // otoriter maç skoru {target,score,gameNo,done,winner}
             'dice_commit' => $this->dice_commit, // provably-fair taahhut (dice_seed GIZLI kalir)
         ];
     }

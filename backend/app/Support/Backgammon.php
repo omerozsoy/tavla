@@ -36,4 +36,38 @@ class Backgammon
 
         return null;
     }
+
+    /**
+     * Oyun puanı (küp ÇARPANI HARİÇ): 1 normal, 2 gammon, 3 backgammon.
+     * $winner 15 taşı topladı. Kaybeden:
+     *  - en az 1 taş topladıysa -> 1 (normal)
+     *  - hiç toplamadı + (bar'da taşı VAR ya da kazananın ev bölgesinde taşı VAR) -> 3 (backgammon)
+     *  - hiç toplamadı ama yukarıdakiler yok -> 2 (gammon)
+     * Konvansiyon: points[0..5]=beyazın evi, points[18..23]=siyahın evi. (src/engine/cube ile aynı.)
+     */
+    public static function gamePoints(array $state, string $winner): int
+    {
+        $loser = $winner === 'white' ? 'black' : 'white';
+        $off = $state['off'] ?? [];
+        if ((int) ($off[$loser] ?? 0) > 0) {
+            return 1; // kaybeden bir şey topladı -> normal
+        }
+        // Gammon mu backgammon mu? Kaybedenin bar'da ya da KAZANANIN ev bölgesinde taşı var mı?
+        $bar = $state['bar'] ?? [];
+        if ((int) ($bar[$loser] ?? 0) > 0) {
+            return 3; // bar'da taş -> backgammon
+        }
+        $points = $state['points'] ?? [];
+        // Kazananın ev bölgesi indeksleri + kaybedenin taşının işareti.
+        $range = $winner === 'white' ? range(0, 5) : range(18, 23);
+        foreach ($range as $i) {
+            $v = (int) ($points[$i] ?? 0);
+            $loserHere = $loser === 'white' ? $v > 0 : $v < 0;
+            if ($loserHere) {
+                return 3; // kazananın evinde kaybeden taşı -> backgammon
+            }
+        }
+
+        return 2; // hiç toplamadı, bar/ev yok -> gammon
+    }
 }
