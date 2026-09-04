@@ -98,4 +98,34 @@ class MoveValidatorService
             return null;
         }
     }
+
+    /**
+     * SUNUCU-OTORİTER PR: verilen oyuncunun ($hc) kararlarını Node validator'da sinir agiyla
+     * YENİDEN değerlendirip PR döndürür (istemcinin gönderdiği loss'a güvenmez). $log =
+     * MoveLogEntry dizisi (pos/dice/playedSteps/player alanları). Erişilemez/eksikse null.
+     * Dönüş: ['pr'=>?float, 'decisions'=>int] veya null (validator yok/hatalı).
+     */
+    public function analyzePr(string $hc, array $log): ?array
+    {
+        if (! $this->isConfigured()) {
+            return null;
+        }
+        try {
+            // PR analizi motor calistirir (yavas olabilir) -> daha uzun timeout.
+            $res = $this->client()
+                ->timeout(max($this->timeout, 20))
+                ->post($this->url.'/analyze-pr', ['hc' => $hc, 'log' => $log]);
+            if (! $res->successful()) {
+                Log::warning('validator.analyzePr non-2xx', ['status' => $res->status()]);
+
+                return null;
+            }
+
+            return ['pr' => $res->json('pr'), 'decisions' => (int) $res->json('decisions', 0)];
+        } catch (\Throwable $e) {
+            Log::warning('validator.analyzePr unreachable', ['err' => $e->getMessage()]);
+
+            return null;
+        }
+    }
 }

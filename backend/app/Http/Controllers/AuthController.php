@@ -393,9 +393,31 @@ class AuthController extends Controller
         // SUNUCU-OTORITER PR: istemcinin gonderdigi 'pr'e GUVENME (iki oyuncu farkli
         // gorebiliyordu). PR'i oyuncunun KENDI log'undan (kendi eli) deterministik hesapla.
         // Log yoksa/bossa istemci degerine dus (pvb eski kayitlar, log kapali durumlar).
-        $selfPr = $this->prFromLog($data['log'] ?? null);
-        if ($selfPr === null) {
-            $selfPr = $data['pr'] ?? null;
+        // NOT: prFromLog istemcinin logdaki 'loss' degerlerini ortalar (istemci-turevi). TAM
+        // otorite icin asagida validator (Node + sinir agi) log'u YENIDEN degerlendirir.
+        $clientPr = $this->prFromLog($data['log'] ?? null);
+        $selfPr = $clientPr ?? ($data['pr'] ?? null);
+
+        // TAM SUNUCU-OTORITER PR: validator her karari motorla yeniden degerlendirir -> istemci
+        // sahte dusuk-hata uyduramaz. 'shadow' fark loglar (kaydetmez), 'authoritative' kaydeder.
+        $prMode = (string) config('validator.pr_mode', 'off');
+        if ($prMode !== 'off' && ! empty($data['log'])) {
+            $decoded = json_decode($data['log'], true);
+            if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
+                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log']);
+                if ($srv !== null && $srv['pr'] !== null) {
+                    if ($prMode === 'shadow') {
+                        \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [
+                            'user_id' => $user->id, 'room' => $roomCode,
+                            'client_pr' => $clientPr, 'server_pr' => $srv['pr'],
+                            'decisions' => $srv['decisions'],
+                            'diff' => $clientPr !== null ? round(abs((float) $clientPr - (float) $srv['pr']), 2) : null,
+                        ]);
+                    } elseif ($prMode === 'authoritative') {
+                        $selfPr = $srv['pr']; // istemci loss'una guvenme -> sunucu-hesapli deger
+                    }
+                }
+            }
         }
 
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)

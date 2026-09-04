@@ -242,6 +242,182 @@ function validateTurn(state, steps) {
   return { valid: true, state: endTurn(s) };
 }
 
+// validator/analyzePr.ts
+import * as ort from "onnxruntime-node";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+// src/engine/encoding.ts
+function td(n) {
+  if (n <= 0) return [0, 0, 0, 0];
+  if (n === 1) return [1, 0, 0, 0];
+  if (n === 2) return [0, 1, 0, 0];
+  return [0, 0, 1, n - 3];
+}
+function toWildPos(state, onRoll) {
+  const pips = new Array(26).fill(0);
+  pips[0] = -state.bar.black;
+  pips[25] = state.bar.white;
+  for (let p = 1; p <= 24; p++) {
+    pips[p] = state.points[p - 1];
+  }
+  const white = { pips, xOff: state.off.white, oOff: state.off.black };
+  if (onRoll === WHITE) return white;
+  const switched = new Array(26).fill(0);
+  for (let i = 0; i < 26; i++) switched[i] = -pips[25 - i];
+  return { pips: switched, xOff: white.oOff, oOff: white.xOff };
+}
+var CONTACT_INPUTS = 202;
+function contactInputs(pos) {
+  const out = new Float32Array(CONTACT_INPUTS);
+  out[0] = pos.xOff;
+  out[1] = pos.oOff;
+  const bar = td(pos.pips[25]);
+  out[2] = bar[0];
+  out[3] = bar[1];
+  out[4] = bar[2];
+  out[5] = bar[3];
+  for (let k = 0; k < 24; k++) {
+    const t = td(pos.pips[1 + k]);
+    const s = 6 + k * 4;
+    out[s] = t[0];
+    out[s + 1] = t[1];
+    out[s + 2] = t[2];
+    out[s + 3] = t[3];
+  }
+  for (let k = 0; k < 25; k++) {
+    const t = td(-pos.pips[k]);
+    const s = 102 + k * 4;
+    out[s] = t[0];
+    out[s + 1] = t[1];
+    out[s + 2] = t[2];
+    out[s + 3] = t[3];
+  }
+  return out;
+}
+var RACE_INPUTS = 186;
+function raceInputs(pos) {
+  const out = new Float32Array(RACE_INPUTS);
+  out[0] = pos.xOff;
+  out[1] = pos.oOff;
+  for (let k = 0; k < 23; k++) {
+    const t = td(pos.pips[1 + k]);
+    const s = 2 + k * 4;
+    out[s] = t[0];
+    out[s + 1] = t[1];
+    out[s + 2] = t[2];
+    out[s + 3] = t[3];
+  }
+  for (let k = 0; k < 23; k++) {
+    const t = td(-pos.pips[2 + k]);
+    const s = 94 + k * 4;
+    out[s] = t[0];
+    out[s + 1] = t[1];
+    out[s + 2] = t[2];
+    out[s + 3] = t[3];
+  }
+  return out;
+}
+function phaseOf(pos) {
+  let lastOwn = -1;
+  let lastOpp = -1;
+  for (let i = 0; i < 26; i++) {
+    if (pos.pips[i] > 0) lastOwn = i;
+  }
+  for (let i = 0; i < 26; i++) {
+    if (pos.pips[i] < 0) {
+      lastOpp = i;
+      break;
+    }
+  }
+  return lastOwn > lastOpp ? "contact" : "race";
+}
+function equityFrom(p) {
+  return p[0] - p[3] + 2 * (p[1] - p[4]) + 3 * (p[2] - p[5]);
+}
+
+// validator/analyzePr.ts
+var INPUT_NAME = "onnx::Gemm_0";
+var contactSession = null;
+var raceSession = null;
+function modelsDir() {
+  if (process.env.MODELS_DIR) return process.env.MODELS_DIR;
+  const here = dirname(fileURLToPath(import.meta.url));
+  return join(here, "models");
+}
+async function init() {
+  if (contactSession && raceSession) return;
+  const dir2 = modelsDir();
+  contactSession = await ort.InferenceSession.create(join(dir2, "contact.onnx"));
+  raceSession = await ort.InferenceSession.create(join(dir2, "race.onnx"));
+}
+function switchSides(opp) {
+  return [opp[3], opp[4], opp[5], opp[0], opp[1], opp[2]];
+}
+function terminalEquity(board, mover) {
+  const opp = opponent(mover);
+  if (board.off[opp] > 0) return 1;
+  const [hs, he] = mover === WHITE ? [0, 6] : [18, 24];
+  let bg = board.bar[opp] > 0;
+  if (!bg) {
+    for (let i = hs; i < he; i++) {
+      const v = board.points[i];
+      if (opp === WHITE && v > 0 || opp !== WHITE && v < 0) {
+        bg = true;
+        break;
+      }
+    }
+  }
+  return bg ? 3 : 2;
+}
+async function equityAfter(after, mover) {
+  if (after.off[mover] === 15) return terminalEquity(after, mover);
+  const opp = opponent(mover);
+  const pos = toWildPos(after, opp);
+  const phase = phaseOf(pos);
+  const inputs = phase === "contact" ? contactInputs(pos) : raceInputs(pos);
+  const session = phase === "contact" ? contactSession : raceSession;
+  const n = phase === "contact" ? CONTACT_INPUTS : RACE_INPUTS;
+  const tensor = new ort.Tensor("float32", inputs, [1, n]);
+  const out = await session.run({ [INPUT_NAME]: tensor });
+  const oppProbs = out[session.outputNames[0]].data;
+  return equityFrom(switchSides(oppProbs.subarray(0, 6)));
+}
+function applyMove(state, steps, mover) {
+  const s = cloneState(state);
+  for (const st of steps) applyStep(s, st, mover);
+  return s;
+}
+async function decisionLoss(pos, dice, playedSteps) {
+  const mover = pos.turn;
+  const state = cloneState(pos);
+  state.dice = dice.slice();
+  state.diceUsed = dice.map(() => false);
+  const moves = generateMoves(state);
+  if (moves.length <= 1) return null;
+  let best = -Infinity;
+  for (const m of moves) {
+    const eq = await equityAfter(applyMove(state, m.steps, mover), mover);
+    if (eq > best) best = eq;
+  }
+  const chosenEq = await equityAfter(applyMove(state, playedSteps, mover), mover);
+  return Math.max(0, best - chosenEq);
+}
+async function analyzePr(hc, log) {
+  await init();
+  let sum = 0;
+  let n = 0;
+  for (const e of log) {
+    if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue;
+    const loss = await decisionLoss(e.pos, e.dice, e.playedSteps);
+    if (loss == null) continue;
+    sum += loss;
+    n++;
+  }
+  if (n === 0) return { pr: null, decisions: 0 };
+  return { pr: Math.round(sum / n * 500 * 100) / 100, decisions: n };
+}
+
 // validator/server.ts
 var SECRET = process.env.VALIDATOR_SECRET || "";
 var PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090);
@@ -294,6 +470,13 @@ var server = createServer(async (req, res) => {
     if (req.method === "POST" && req.url === "/legal-moves") {
       const moves = generateMoves(body.state);
       return send(res, 200, { moves });
+    }
+    if (req.method === "POST" && req.url === "/analyze-pr") {
+      const hc = body.hc === "white" || body.hc === "black" ? body.hc : null;
+      const log = Array.isArray(body.log) ? body.log : null;
+      if (!hc || !log) return send(res, 400, { error: "bad-request", detail: "hc/log gerekli" });
+      const r = await analyzePr(hc, log);
+      return send(res, 200, r);
     }
     return send(res, 404, { error: "not-found" });
   } catch (e) {
