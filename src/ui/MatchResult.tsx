@@ -161,20 +161,21 @@ export default function MatchResult({
               {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
             </span>
           </div>
-          {/* XG kırılım: checker (oyun) + küp PR. Satırlar yalnız ilgili karar VARSA görünür ("—" yok). */}
-          {(winnerCheckerPr != null || loserCheckerPr != null) && (
-            <div className="mr-row mr-sub">
-              <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
-              <span className="mr-label">{t('mr.checkerPr')}</span>
-              <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
-            </div>
-          )}
+          {/* XG kırılım YALNIZ küp kararı varsa (aksi halde Oyun PR = Hata Oranı -> gereksiz/karışık).
+              Küp varken: Hata Oranı=genel, Oyun PR=checker, Küp PR=cube (üçü de anlamlı + farklı). */}
           {(winnerCubePr != null || loserCubePr != null) && (
-            <div className="mr-row mr-sub">
-              <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
-              <span className="mr-label">{t('mr.cubePr')}</span>
-              <span className="mr-b">{fmtPr(loserCubePr ?? null)}</span>
-            </div>
+            <>
+              <div className="mr-row mr-sub">
+                <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
+                <span className="mr-label">{t('mr.checkerPr')}</span>
+                <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
+              </div>
+              <div className="mr-row mr-sub">
+                <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
+                <span className="mr-label">{t('mr.cubePr')}</span>
+                <span className="mr-b">{fmtPr(loserCubePr ?? null)}</span>
+              </div>
+            </>
           )}
           <div className="mr-row">
             <span className="mr-a">{ratingText(true)}</span>
