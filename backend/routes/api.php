@@ -41,43 +41,6 @@ Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
-// Teşhis: backend -> Node validator bağlantısını KANITLAR (para maçı güvenliği Faz 2).
-// Secret korumalı (yalnız VALIDATOR_SECRET'i bilen çağırır). authoritative açmadan test:
-//   https://tavlai.com/api/validator-check?key=<VALIDATOR_SECRET>
-// reachable:true + legal_move_count>0 => URL+secret+IP doğru, backend validator'a ulaşıyor.
-Route::get('/validator-check', function (\Illuminate\Http\Request $r) {
-    $secret = (string) config('validator.secret');
-    abort_unless($secret !== '' && hash_equals($secret, (string) $r->query('key')), 403);
-    $url = rtrim((string) config('validator.url'), '/');
-    $verify = (bool) config('validator.verify_tls', false);
-    $out = ['url' => $url, 'verify_tls' => $verify];
-
-    // 1) /health (secret'siz) — ağ/SSL/erişim testi.
-    try {
-        $h = \Illuminate\Support\Facades\Http::withOptions(['verify' => $verify])->timeout(4)->get($url.'/health');
-        $out['health_status'] = $h->status();
-        $out['health_body'] = mb_substr($h->body(), 0, 120);
-    } catch (\Throwable $e) {
-        $out['health_error'] = mb_substr($e->getMessage(), 0, 200);
-    }
-
-    // 2) /legal-moves (secret'li) — secret + uygulama testi.
-    try {
-        $state = \App\Support\Backgammon::initialState();
-        $state['turn'] = 'white';
-        $state['dice'] = [3, 1];
-        $state['diceUsed'] = [false, false];
-        $lm = \Illuminate\Support\Facades\Http::withHeaders(['x-validator-secret' => $secret])
-            ->withOptions(['verify' => $verify])
-            ->timeout(4)->acceptJson()->post($url.'/legal-moves', ['state' => $state]);
-        $out['lm_status'] = $lm->status();
-        $out['lm_body'] = mb_substr($lm->body(), 0, 160);
-    } catch (\Throwable $e) {
-        $out['lm_error'] = mb_substr($e->getMessage(), 0, 200);
-    }
-
-    return response()->json($out);
-})->middleware('throttle:20,1');
 
 // Multiplayer odalari (misafir dostu, token bazli).
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
