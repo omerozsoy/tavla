@@ -4901,8 +4901,14 @@ button[aria-disabled='true'],
 .pip {
   color: rgba(255, 255, 255, 0.9);
   font-weight: 400;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+/* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir) */
+@media (min-width: 900px) {
+  .pip {
+    font-size: 1.35rem;
+  }
 }
 /* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
 .cube {

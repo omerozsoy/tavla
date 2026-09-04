@@ -2402,45 +2402,54 @@ export default function App() {
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
       const achExtra = buildAchExtra()
-      reportRating(
-        won,
-        oppRating,
-        match.target,
-        prRef(myColor),
-        prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
-        match.score[myColor],
-        match.score[opponent(myColor)],
-        room?.oppName ?? null,
-        prRef(opponent(myColor)),
-        JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
-        !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
-        stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
-        room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
-        achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
-      )
-        .then(async (r) => {
-          setRatingChange({ before, after: r.rating })
-          setUser((u) => (u ? { ...u, rating: r.rating } : u))
-          if (r.achievements?.length) setAchUnlocked(r.achievements)
-          // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
-          const code = room?.code ?? null
-          let oppPr = r.pr_opponent ?? null
-          setServerPr({ self: r.pr_self ?? null, opp: oppPr })
-          if (oppPr == null && code) {
-            for (let i = 0; i < 8 && oppPr == null; i++) {
-              await new Promise((res) => setTimeout(res, 1500))
-              const pair = await matchPr(code)
-              if (pair.opponent != null) {
-                oppPr = pair.opponent
-                setServerPr({ self: pair.self ?? r.pr_self ?? null, opp: pair.opponent })
-              }
+      const doReport = () =>
+        reportRating(
+          won,
+          oppRating,
+          match.target,
+          prRef(myColor),
+          prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
+          match.score[myColor],
+          match.score[opponent(myColor)],
+          room?.oppName ?? null,
+          prRef(opponent(myColor)),
+          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
+          !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
+          stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
+          room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
+          achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
+        )
+      // Gecici ag/sunucu hatasi tek denemede "puanin kaydedilemedi" gostermesin -> 3 kez dene.
+      let r: Awaited<ReturnType<typeof reportRating>> | null = null
+      for (let attempt = 1; attempt <= 3 && !r; attempt++) {
+        try {
+          r = await doReport()
+        } catch {
+          if (attempt < 3) await new Promise((res) => setTimeout(res, 800 * attempt))
+        }
+      }
+      if (!r) {
+        // 3 denemede de olmadi -> kullaniciyi uyar (sessiz kalma).
+        notify.error(t('net.ratingFailed'))
+      } else {
+        setRatingChange({ before, after: r.rating })
+        setUser((u) => (u ? { ...u, rating: r!.rating } : u))
+        if (r.achievements?.length) setAchUnlocked(r.achievements)
+        // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
+        const code = room?.code ?? null
+        let oppPr = r.pr_opponent ?? null
+        setServerPr({ self: r.pr_self ?? null, opp: oppPr })
+        if (oppPr == null && code) {
+          for (let i = 0; i < 8 && oppPr == null; i++) {
+            await new Promise((res) => setTimeout(res, 1500))
+            const pair = await matchPr(code)
+            if (pair.opponent != null) {
+              oppPr = pair.opponent
+              setServerPr({ self: pair.self ?? r!.pr_self ?? null, opp: pair.opponent })
             }
           }
-        })
-        .catch(() => {
-          // Ag hatasi: puan sunucuya islenemedi -> sessiz kalma, kullaniciyi uyar.
-          notify.error(t('net.ratingFailed'))
-        })
+        }
+      }
     })()
     // Bahisli oyun (Tek Oyun sabit / Mac Oyunu %) -> coin transferi.
     // Sunucu kazanani yetkili belirler; rakip beyani/durum gec gelirse pending doner,
@@ -2641,7 +2650,16 @@ export default function App() {
       setCubePending(lm.cubePending)
       // Açılış overlay kararı da saf: opened=false->'roll' (yeni oyun), true->null (kaldır), done->keep.
       const os = openingStateFromMatch(sm)
-      if (os !== 'keep') {
+      if (os === 'keep') {
+        // MAÇ BİTTİ (sunucu). KRİTİK: authoritative modda yerel oyun-sonu effect'i (winner(working))
+        // ATLANIR -> gameEnd'i burada SUNUCU sonucundan kurmazsak MatchResult ekranı HİÇ açılmaz;
+        // skor güncellenip matchOver true olur ama sonuç görünmez ("oyun bitmedi" + sadece hata
+        // toast'i yaşanan bug). Yalnız bir kez yaz (mevcut null ise).
+        if (sm.done && sm.winner) {
+          const w = sm.winner
+          setGameEnd((g) => g ?? { winner: w, points: lm.cubeValue, mult: 1, dropped: false })
+        }
+      } else {
         setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
         setOpening(os)
       }
