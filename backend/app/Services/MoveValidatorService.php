@@ -100,6 +100,31 @@ class MoveValidatorService
     }
 
     /**
+     * Validator'ı yeniden başlat (admin panel butonu). Süreç kendini kapatır; Plesk/Passenger
+     * (veya pm2/systemd) bir sonraki istekte canlandirir. Dönüş: ['ok'=>bool, 'error'=>?string].
+     * NOT: süreç yöneticisi YOKSA (bare `node`) geri gelmez — bu Plesk kurulumunda geçerli değil.
+     */
+    public function restartValidator(): array
+    {
+        if (! $this->isConfigured()) {
+            return ['ok' => false, 'error' => 'validator-not-configured'];
+        }
+        try {
+            $res = $this->client()->timeout(5)->post($this->url.'/restart');
+
+            // 200 döndüyse kapanma tetiklendi (süreç yanıttan hemen sonra exit eder).
+            return $res->successful()
+                ? ['ok' => true, 'error' => null]
+                : ['ok' => false, 'error' => 'status-'.$res->status()];
+        } catch (\Throwable $e) {
+            // Süreç yanıtı gönderip HEMEN kapandıysa bağlantı düşebilir -> yine de restart tetiklendi.
+            Log::info('validator.restart connection closed (muhtemelen restart tetiklendi)', ['err' => $e->getMessage()]);
+
+            return ['ok' => true, 'error' => null];
+        }
+    }
+
+    /**
      * SUNUCU-OTORİTER PR: verilen oyuncunun ($hc) kararlarını Node validator'da sinir agiyla
      * YENİDEN değerlendirip PR döndürür (istemcinin gönderdiği loss'a güvenmez). $log =
      * MoveLogEntry dizisi (pos/dice/playedSteps/player alanları). Erişilemez/eksikse null.

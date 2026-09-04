@@ -592,6 +592,11 @@ var server = createServer(async (req, res) => {
   if (SECRET && req.headers["x-validator-secret"] !== SECRET) {
     return send(res, 401, { error: "unauthorized" });
   }
+  if (req.method === "POST" && req.url === "/restart") {
+    send(res, 200, { ok: true, restarting: true });
+    setTimeout(() => process.exit(0), 150);
+    return;
+  }
   try {
     const body = await readJson(req);
     if (req.method === "POST" && req.url === "/validate") {

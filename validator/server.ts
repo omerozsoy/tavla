@@ -68,6 +68,14 @@ const server = createServer(async (req, res) => {
   if (SECRET && req.headers['x-validator-secret'] !== SECRET) {
     return send(res, 401, { error: 'unauthorized' })
   }
+  // Yeniden başlat: süreç kendini kapatır; Plesk/Passenger (veya pm2/systemd) bir sonraki
+  // istekte otomatik canlandirir. Admin panelinden tetiklenir (secret şart). Yanıtı gönderdikten
+  // SONRA çık ki istemci 200 alsın. Süreç yöneticisi YOKSA (bare node) geri gelmez -> uyarilir.
+  if (req.method === 'POST' && req.url === '/restart') {
+    send(res, 200, { ok: true, restarting: true })
+    setTimeout(() => process.exit(0), 150)
+    return
+  }
   try {
     const body = (await readJson(req)) as {
       state?: unknown
