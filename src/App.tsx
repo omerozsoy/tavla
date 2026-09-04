@@ -1662,9 +1662,12 @@ export default function App() {
         )
         return
       }
-      // NOT: reused (zaten verilmiş zar) da UYGULANIR — erken dönersek diceRolled false kalır,
-      // autoRoll/opening effect tekrar tekrar zar ister -> KAÇAK DÖNGÜ. Aynı zarı idempotent
-      // uygulamak diceRolled'ı true yapar (döngü durur); yanlış tahta olursa poll düzeltir.
+      // reused (sunucuda zaten verilmiş el): YEREL uygulama YAPMA. newTurn yerel turn'ü korur;
+      // açılışta gerçek BAŞLAYAN ikinci çağıran olduğunda reused starter taşımadığı için tahta
+      // YANLIŞ turn'de kalır -> "oynayamıyorum". Bunun yerine poll'a bırak: applyServerBoard
+      // doğru turn+zar+opened'i getirir. Döngü YOK: açılışta autoRoll !opening ile gated, normal
+      // turda diceRolled ile gated; poll opening overlay'ini kaldırır + rollInFlightRef korur.
+      if (r.reused) return
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
       Sound.dice()
