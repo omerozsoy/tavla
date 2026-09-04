@@ -5284,8 +5284,14 @@ export default function App() {
                 <TournamentsPanel tourns={lobbyTourns} onOpen={menuProps.onTournaments} />
                 <CalendarPanel tourns={lobbyTourns} onOpen={menuProps.onCalendar} title={menuLabel('calendar') ?? t('menu.calendar')} />
               </div>
+              {/* SAG kolon: Haberler (ust) + Liderlik Tablosu (Takvim'in yanina) */}
               <div className="home-cal-side">
                 <NewsPanel onOpen={menuProps.onNews} onOpenNews={menuProps.onOpenNews} />
+                <RankingPanel
+                  currentName={profile.nickname}
+                  onProfile={(id) => setHomeProfileId(id)}
+                  onOpen={menuProps.onLeaderboard}
+                />
               </div>
             </div>
             <AdStrip slot="middle" />
@@ -5336,11 +5342,6 @@ export default function App() {
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
                 onInvite={user ? handleInviteFriend : undefined}
-              />
-              <RankingPanel
-                currentName={profile.nickname}
-                onProfile={(id) => setHomeProfileId(id)}
-                onOpen={menuProps.onLeaderboard}
               />
             </div>
             {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
