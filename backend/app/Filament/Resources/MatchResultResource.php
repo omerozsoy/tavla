@@ -7,6 +7,7 @@ use App\Models\MatchResult;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class MatchResultResource extends Resource
 {
@@ -30,29 +31,89 @@ class MatchResultResource extends Resource
         return false;
     }
 
+    public static function canEdit($record): bool
+    {
+        return false;
+    }
+
+    // Oyun turu etiketi: 'coin' = Jeton/para maci (bahis > 0), aksi = N-puanlik mac.
+    public static function matchTypeLabel(?string $type, $matchLength = null): string
+    {
+        if ($type === 'coin') {
+            return 'Jeton (para)';
+        }
+
+        return ((int) $matchLength) > 1 ? ((int) $matchLength).' puanlık maç' : 'Tek oyun';
+    }
+
     public static function table(Table $table): Table
     {
         return $table
             ->defaultSort('id', 'desc')
+            // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
+            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'room']))
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
-                Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')->searchable()->default('—'),
-                Tables\Columns\IconColumn::make('won')->label('Kazandı')->boolean(),
-                Tables\Columns\TextColumn::make('match_length')->label('Uzunluk')
-                    ->formatStateUsing(fn ($state) => $state ? $state.' puan' : 'Tek oyun'),
-                Tables\Columns\TextColumn::make('opponent_rating')->label('Rakip P.')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')
+                    ->searchable()->sortable()->default('—')
+                    ->description(fn (MatchResult $r) => $r->user_id ? 'ID '.$r->user_id : null),
+                Tables\Columns\TextColumn::make('opponent_name')->label('Rakip')
+                    ->searchable()->default('—')
+                    ->description(fn (MatchResult $r) => $r->opponent_rating ? 'Puan '.$r->opponent_rating : null),
+                Tables\Columns\TextColumn::make('won')->label('Sonuç')->badge()
+                    ->formatStateUsing(fn ($state) => $state ? 'Galibiyet' : 'Mağlubiyet')
+                    ->color(fn ($state) => $state ? 'success' : 'danger'),
+                Tables\Columns\TextColumn::make('score')->label('Skor')
+                    ->state(fn (MatchResult $r) => ($r->score_self === null && $r->score_opp === null)
+                        ? '—'
+                        : ((int) $r->score_self).' - '.((int) $r->score_opp)),
+                Tables\Columns\TextColumn::make('match_type')->label('Tür')->badge()
+                    ->formatStateUsing(fn ($state, MatchResult $r) => static::matchTypeLabel($state, $r->match_length))
+                    ->color(fn ($state) => $state === 'coin' ? 'warning' : 'info'),
+                Tables\Columns\TextColumn::make('room.stake')->label('Bahis (coin)')
+                    ->formatStateUsing(fn ($state) => $state ? number_format((int) $state).' coin' : '—')
+                    ->color(fn ($state) => $state ? 'warning' : 'gray')
+                    ->alignEnd(),
+                Tables\Columns\TextColumn::make('pr')->label('PR')
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
+                    ->color(fn ($state) => $state === null ? 'gray' : ($state <= 5 ? 'success' : ($state <= 10 ? 'warning' : 'danger')))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('opponent_pr')->label('Rakip PR')
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
+                    ->toggleable(),
+                Tables\Columns\TextColumn::make('luck')->label('Şans')
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('rating_after')->label('Puan')->sortable(),
                 Tables\Columns\TextColumn::make('delta')->label('Δ')
                     ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').(int) $state)
                     ->color(fn ($state) => $state > 0 ? 'success' : ($state < 0 ? 'danger' : 'gray')),
-                Tables\Columns\TextColumn::make('pr')->label('PR')
-                    ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
+                Tables\Columns\TextColumn::make('coins_after')->label('Bakiye')
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((int) $state))
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('created_at')->label('Tarih')->dateTime('d.m.Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('room_code')->label('Oda')
+                    ->copyable()->default('—')->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('created_at')->label('Tarih / Saat')
+                    ->dateTime('d.m.Y H:i:s')->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('won')->label('Sonuç')
                     ->trueLabel('Galibiyet')->falseLabel('Mağlubiyet'),
+                Tables\Filters\SelectFilter::make('match_type')->label('Tür')->options([
+                    'coin' => 'Jeton (para maçı)',
+                    'match' => 'Puanlık maç',
+                ]),
+                Tables\Filters\Filter::make('created_at')
+                    ->form([
+                        \Filament\Forms\Components\DatePicker::make('from')->label('Başlangıç'),
+                        \Filament\Forms\Components\DatePicker::make('until')->label('Bitiş'),
+                    ])
+                    ->query(fn (Builder $query, array $data) => $query
+                        ->when($data['from'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '>=', $d))
+                        ->when($data['until'] ?? null, fn (Builder $q, $d) => $q->whereDate('created_at', '<=', $d))),
+            ])
+            ->actions([
+                Tables\Actions\ViewAction::make()->label('Detay'),
             ]);
     }
 
@@ -60,6 +121,7 @@ class MatchResultResource extends Resource
     {
         return [
             'index' => Pages\ListMatchResults::route('/'),
+            'view' => Pages\ViewMatchResult::route('/{record}'),
         ];
     }
 }
