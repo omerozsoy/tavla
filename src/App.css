@@ -4064,11 +4064,12 @@ button[aria-disabled='true'],
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* safe center: board sigdiginda ortalanir, TASTIGINDA ustten hizalanir ->
-     ortalama board'u yukari cekip sabit barin altina sokamaz */
-  justify-content: safe center;
+  /* Board YUKARI: ustten hizala (safe center buyuk ekranda buyuk bir ust bosluk birakiyordu).
+     padding-top = header-h + kucuk pay -> board yukari ceker AMA 12/13 ust sayilari hesap
+     barinin altinda GORUNUR kalir (kaybolmaz). */
+  justify-content: flex-start;
   gap: 4px;
-  padding-top: var(--header-h); /* ust hesap bari cakismasin */
+  padding-top: calc(var(--header-h) + 6px); /* ust hesap bari + ust sayilar icin kucuk pay */
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior-y: contain; /* dokunmatik "asagi cek-yenile" reload'unu engelle */
@@ -4907,7 +4908,7 @@ button[aria-disabled='true'],
 /* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir) */
 @media (min-width: 900px) {
   .pip {
-    font-size: 1.35rem;
+    font-size: 1.7rem;
   }
 }
 /* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
