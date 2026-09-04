@@ -3,7 +3,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, onlinePlayers, listContents, getFriends, getToken, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -252,18 +252,14 @@ export function OnlinePlayersPanel({
   currentName,
   onProfile,
   onInvite,
-  onAddFriend,
 }: {
   currentName?: string
   onProfile: (id: number) => void
   onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
-  onAddFriend?: (id: number) => void // arkadas ol
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
   const [showAll, setShowAll] = useState(false)
-  // Mevcut arkadaslarin id'leri -> zaten arkadas olana "arkadas ol" butonu cikmasin.
-  const [friendIds, setFriendIds] = useState<Set<number>>(new Set())
   const LIMIT = 12
 
   useEffect(() => {
@@ -277,21 +273,6 @@ export function OnlinePlayersPanel({
     return () => {
       alive = false
       window.clearInterval(id)
-    }
-  }, [])
-
-  // Arkadas listesi -> zaten arkadas olana "arkadas ol" cikmasin. SADECE mount'ta cek:
-  // onAddFriend prop'u her App render'inda kimlik degistirdigi icin bagimlilikta olsaydi
-  // efekt surekli yeniden kosup ucusan getFriends'i iptal eder, friendIds hic dolmazdi
-  // (buton hep gorunurdu). Token yoksa (misafir) hic cekme.
-  useEffect(() => {
-    if (!getToken()) return
-    let alive = true
-    getFriends()
-      .then((d) => alive && setFriendIds(new Set(d.friends.map((f) => f.id))))
-      .catch(() => {})
-    return () => {
-      alive = false
     }
   }, [])
 
@@ -321,32 +302,18 @@ export function OnlinePlayersPanel({
                     <CountryFlag code={p.country} size={16} rounded={false} />
                   </span>
                   <span className="rank-val">{p.rating}</span>
-                  {!self && (onInvite || onAddFriend) && (
+                  {!self && onInvite && (
                     <span className="online-actions">
-                      {onInvite && (
-                        <Button
-                          variant="default"
-                          size="icon"
-                          className="online-act"
-                          title={t('online.invite')}
-                          aria-label={t('online.invite')}
-                          onClick={() => onInvite(p.id)}
-                        >
-                          <Icon name="play" size={15} />
-                        </Button>
-                      )}
-                      {onAddFriend && !friendIds.has(p.id) && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="online-act"
-                          title={t('online.addFriend')}
-                          aria-label={t('online.addFriend')}
-                          onClick={() => onAddFriend(p.id)}
-                        >
-                          <Icon name="user-plus" size={15} />
-                        </Button>
-                      )}
+                      <Button
+                        variant="default"
+                        size="icon"
+                        className="online-act"
+                        title={t('online.invite')}
+                        aria-label={t('online.invite')}
+                        onClick={() => onInvite(p.id)}
+                      >
+                        <Icon name="play" size={15} />
+                      </Button>
                     </span>
                   )}
                 </div>

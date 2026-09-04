@@ -852,6 +852,7 @@ export default function App() {
   // authoritative'den AYRI: doRoll serverRoll'a gider ama commitTurn/PUT sync degismez.
   const diceAuthorityRef = useRef(false)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
+  const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
@@ -1385,6 +1386,35 @@ export default function App() {
     void recordPR(turnStart, finalPlayed)
     // Maç kaydı: bu turu (zar + hamle) logla (turnStart = hamle ONCESI durum).
     recordMatchTurn(turnStart, finalPlayed)
+
+    // ---- OTORİTER (Faz 2): SUNUCU = tek gerçek kaynak ----
+    // Hamleyi sunucuya gönder; DÖNEN otoriter durumu (turn devri + skor + küp) uygula.
+    // Optimistik yerel flip YOK -> istemci sunucudan sapmaz (desync/kilit önlenir). Sunucu
+    // reddederse (yasadışı/erişimsiz) gerçek sebebi göster + poll ile otoriter duruma dön.
+    if (online && authoritativeRef.current && room?.code) {
+      if (moveInFlightRef.current) return // mükerrer commit yok
+      moveInFlightRef.current = true
+      setSelectedFrom(null)
+      setRanked(null)
+      setCurrentProbs(null)
+      serverMove(room.code, finalPlayed)
+        .then((r) => {
+          if (r?.state) {
+            appliedServerVersionRef.current = r.version
+            applyServerBoard(r.state as GameState, r.match ?? null)
+          }
+        })
+        .catch((e) => {
+          notify.error(srvErr(e))
+          appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
+        })
+        .finally(() => {
+          moveInFlightRef.current = false
+        })
+      return
+    }
+
+    // ---- LEGACY / pvb / Faz 1: optimistik yerel uygula (legacy PUT sync effect'te gider) ----
     const s = applyPlayed(turnStart, finalPlayed)
     s.turn = opponent(s.turn)
     s.dice = []
@@ -1397,13 +1427,6 @@ export default function App() {
     setCurrentProbs(null)
     setTurnsPlayed((n) => n + 1)
     if (!winner(s)) setMessage(t('msg.turnOf', { name: pName(s.turn) }))
-    // Sunucu-otoriter oda (Faz 2c DRAFT): hamleyi sunucuya DOGRULAT (optimistic uyguladik;
-    // sunucu reddederse poll server_state ile duzeltir). Legacy PUT sync effect'te atlanir.
-    if (online && authoritativeRef.current && room?.code) {
-      // Hamle sunucuda reddedilir/erişilemezse GERÇEK sebebi göster (ör. "Doğrulama servisi
-      // kullanılamıyor" = validator erişilemiyor). Poll otoriter durumu geri yükler (reconcile).
-      serverMove(room.code, finalPlayed).catch((e) => notify.error(srvErr(e)))
-    }
   }
 
   // ---- Maç kaydı (hamle+zar logu) ----
@@ -3180,8 +3203,11 @@ export default function App() {
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
-        // BAGIMSIZ Faz 1: bahisli oda -> zar sunucudan. Ilk poll'u BEKLEMEDEN gate et ki ilk
-        // zar da serverRoll'dan gelsin (lokal zar PUT'u sunucuca REDDEDILIR -> tur 0 kilitlenir).
+        // KRİTİK: authoritative'i İLK POLL'U BEKLEMEDEN kur. Eşleşen oyuncu (p2) status='playing'
+        // ile hemen açılışa girer; authoritativeRef henüz false ise açılış seededOpening'e (legacy)
+        // düşer -> server_state'e zar YAZILMAZ -> ilk serverMove "Önce zar at" (409) -> sıra geçmez.
+        authoritative: res.room.authoritative,
+        // BAGIMSIZ Faz 1: bahisli oda -> zar sunucudan (serverRoll). Aynı erken-gate mantığı.
         dice_authority: res.room.dice_authority,
       })
     } catch (err) {
@@ -5073,7 +5099,15 @@ export default function App() {
         />
       )}
       {homeProfileId !== null && (
-        <PublicProfile id={homeProfileId} onClose={() => setHomeProfileId(null)} />
+        <PublicProfile
+          id={homeProfileId}
+          onClose={() => setHomeProfileId(null)}
+          onAddFriend={
+            user && user.id !== homeProfileId
+              ? () => handleAddFriend(homeProfileId)
+              : undefined
+          }
+        />
       )}
       {memOpen && user && (
         <Membership
@@ -5214,6 +5248,20 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
+            {user && (
+              <HomeDashboard
+                rating={user.rating ?? 0}
+                coins={user.coins ?? 0}
+                wins={user.wins ?? 0}
+                games={user.games_played ?? 0}
+                showStats={false}
+                daily={{
+                  ready: rewardReady,
+                  countdown: fmtCountdown(rewardSecs),
+                  onClaim: handleDaily,
+                }}
+              />
+            )}
             <AdStrip slot="top" />
             <div className="home-cal-wrap">
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
@@ -5254,20 +5302,6 @@ export default function App() {
                 </div>
               </section>
             )}
-            {user && (
-              <HomeDashboard
-                rating={user.rating ?? 0}
-                coins={user.coins ?? 0}
-                wins={user.wins ?? 0}
-                games={user.games_played ?? 0}
-                showStats={false}
-                daily={{
-                  ready: rewardReady,
-                  countdown: fmtCountdown(rewardSecs),
-                  onClaim: handleDaily,
-                }}
-              />
-            )}
             {hasActiveGame && (
               <div className="lobby-welcome">
                 <Button
@@ -5287,7 +5321,6 @@ export default function App() {
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
                 onInvite={user ? handleInviteFriend : undefined}
-                onAddFriend={user ? handleAddFriend : undefined}
               />
               <RankingPanel
                 currentName={profile.nickname}
