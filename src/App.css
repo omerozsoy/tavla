@@ -8066,6 +8066,33 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   color: var(--accent);
 }
+/* Mobil: tek satira sigmaz -> sardir. Ust satir [CANLI ... Maça dön],
+   alt satir oyuncular+skor+uzunluk. rm-players'i kirpma (avatar/isim kaybolmasin). */
+@media (max-width: 640px) {
+  .resume-match-btn {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    padding: 10px 14px;
+  }
+  .rm-live {
+    order: 1;
+  }
+  .rm-cta {
+    order: 2;
+    margin-left: auto;
+  }
+  .rm-opp {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+  }
+  .rm-players {
+    overflow: visible;
+    white-space: normal;
+    flex-wrap: wrap;
+  }
+}
 
 /* Normal container: sabit yukseklik/overflow/grid YOK -> icerik (uzun aciklamalar
    dahil) tam akar, kirpilmaz. Alt taraftaki dashboard ile ayni genislikte hizali. */
