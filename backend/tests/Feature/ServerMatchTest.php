@@ -14,6 +14,16 @@ class ServerMatchTest extends TestCase
 {
     use RefreshDatabase;
 
+    // Sunucu başlangıç tahtası src/engine/board.ts initialState ile BİREBİR olmalı (validator =
+    // istemci motoru bu konvansiyonu bekler). TERS dizi = hamle reddi + tahta ters görünür.
+    public function test_initial_state_matches_client_engine(): void
+    {
+        $this->assertSame(
+            [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
+            Backgammon::initialState()['points'],
+        );
+    }
+
     // ---- gamePoints ----
     public function test_game_points_normal(): void
     {

@@ -14,7 +14,10 @@ class Backgammon
     public static function initialState(): array
     {
         return [
-            'points' => [2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2],
+            // src/engine/board.ts initialState ile BİREBİR (index 0=1.üçgen). Beyaz(+): [23]=2,
+            // [12]=5, [7]=3, [5]=5; Siyah(-): [0]=-2, [11]=-5, [16]=-3, [18]=-5. (Validator=istemci
+            // motoru bu konvansiyonu bekler; TERS dizi hamleyi reddettirir + tahtayı ters gösterir.)
+            'points' => [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
             'bar' => ['white' => 0, 'black' => 0],
             'off' => ['white' => 0, 'black' => 0],
             'turn' => 'white',
