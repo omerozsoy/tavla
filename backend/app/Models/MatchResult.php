@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MatchResult extends Model
 {
@@ -20,4 +21,17 @@ class MatchResult extends Model
         'pr_equity_lost' => 'float',
         'pr_decisions' => 'integer',
     ];
+
+    // Bu sonucun sahibi oyuncu (yonetim panelinde "Oyuncu" kolonu icin sart).
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // Online macin odasi: bahis (coin) tutari + mod (friendly/matchmake) buradan okunur.
+    // room_code -> rooms.code. Oda temizlenmisse null (bahis "—" gorunur).
+    public function room(): BelongsTo
+    {
+        return $this->belongsTo(Room::class, 'room_code', 'code');
+    }
 }
