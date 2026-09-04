@@ -2186,6 +2186,21 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interactive, diceRolled, played.length, turnStart, working, remainingDice])
 
+  // ---- Tur OTOMATIK tamamla: KAZANILDI ya da elde oynanamayan zar kaldi (baska hamle yok) ----
+  // KRITIK: gameWon iken `interactive` FALSE olur -> yukaridaki oto-oyna effect'i calismaz; ayrica
+  // oynanamayan zar kalinca (5-5 gelip 2 tas kalmasi gibi) o effect "Onayla"yi bekler. Iki durumda
+  // da oyuncunun yapacagi baska sey yok -> el biter bitmez OTOMATIK onayla. Aksi halde oyuncu
+  // "Onayla"yi beklerken sunucu saati biter ve KAZANDIGI eli HAKSIZ kaybeder (yasanan bug).
+  useEffect(() => {
+    if (!diceRolled || played.length === 0 || opening || cubePending || gameEnd || matchOver) return
+    if (!myTurn) return
+    const stuckLeftover = nextSteps.length === 0 && remainingDice.length > 0
+    if (!gameWon && !stuckLeftover) return
+    const timer = window.setTimeout(() => handleConfirm(), 900) // el net gorunsun, sonra kapat
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameWon, diceRolled, played.length, nextSteps.length, remainingDice.length, myTurn, opening, cubePending, gameEnd, matchOver])
+
   // Acilis atisi sonucunu uygula: yuksek zar baslar (esit olamaz - cagiran garanti eder).
   function resolveOpening(w: number, b: number) {
     const winner: Player = w > b ? 'white' : 'black'
@@ -5417,26 +5432,9 @@ export default function App() {
   const showHintUI =
     mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
 
-  const activeBank = turnStart.turn === 'white' ? clock.white : clock.black
-  const inFinalCountdown =
-    clockOn &&
-    !gameEnd &&
-    !matchOver &&
-    !opening &&
-    clock.delay === 0 &&
-    activeBank <= FINAL_STAGE &&
-    activeBank > 0
-
   return (
     <div className="app game-view">
       {accountBar}
-      {/* Menu sayfasi (turnuvalar vb.) acikken oyunun geri sayim overlay'i arkadan sizmasin */}
-      {inFinalCountdown && !anyPageOpen && (
-        <div className="final-countdown" aria-live="assertive">
-          <div className="fc-num">{activeBank}</div>
-          <div className="fc-label">{t('clock.finalWarn')}</div>
-        </div>
-      )}
       {portraitMobile && (
         <div className="rotate-hint">
           <div className="rotate-icon">📱↻</div>

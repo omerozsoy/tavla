@@ -440,7 +440,6 @@ button[aria-disabled='true'],
 /* Sayisal alanlar: tabular rakamlar -> skor/coin/puan/sure kaymadan hizalanir (ux: number-tabular) */
 .account-rating,
 .account-coins-btn,
-.fc-num,
 .clock-stack,
 .clock-delay,
 .pip,
@@ -6595,7 +6594,6 @@ html.fs-active .account-bar {
 /* Animasyonlari kapat */
 [data-anim='off'] .checker,
 [data-anim='off'] .die-face,
-[data-anim='off'] .fc-num,
 [data-anim='off'] .clock-reserve.final {
   animation: none;
 }
@@ -6811,39 +6809,6 @@ html.fs-active .account-bar {
 @keyframes clock-flash {
   50% {
     opacity: 0.5;
-  }
-}
-/* Son asama buyuk geri sayim overlay'i (30dan) */
-.final-countdown {
-  position: fixed;
-  top: 16%;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 70;
-  text-align: center;
-  pointer-events: none;
-}
-.fc-num {
-  font-size: clamp(3rem, 12vw, 7rem);
-  font-weight: 400;
-  color: #ff5a6e;
-  text-shadow: 0 0 24px rgba(224, 69, 94, 0.7);
-  line-height: 1;
-  animation: fc-pop 1s ease-in-out infinite;
-}
-.fc-label {
-  margin-top: 4px;
-  font-size: 0.95rem;
-  font-weight: 400;
-  color: var(--danger-fg);
-}
-@keyframes fc-pop {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.12);
   }
 }
 .clock-delay {
