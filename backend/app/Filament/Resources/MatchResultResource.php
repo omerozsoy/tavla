@@ -72,7 +72,7 @@ class MatchResultResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
-            ->defaultSort('id', 'desc')
+            ->defaultSort('created_at', 'desc')
             ->modifyQueryUsing(function (Builder $query) {
                 // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
                 $query->with(['user', 'room']);
