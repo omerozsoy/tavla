@@ -57,3 +57,45 @@ export function rollResponseAction(resp: { opening?: boolean; reused?: boolean; 
   if (resp.reused) return 'defer-to-poll'
   return 'apply-normal'
 }
+
+/** Sunucu maç durumunun (server_match) senkronu ilgilendiren alanları. */
+export interface ServerMatchView {
+  target?: number
+  score?: { white?: number; black?: number }
+  cube?: { value?: number; owner?: Player | null; pending?: Player | null }
+  done?: boolean
+  opened?: boolean
+}
+
+/** Yerel maç durumunun otoriterden türetilen alanları (App.tsx applyServerBoard bunu uygular). */
+export interface LocalMatchState {
+  target: number
+  score: { white: number; black: number }
+  cubeValue: number
+  cubeOwner: Player | null
+  cubePending: Player | null
+}
+
+/**
+ * server_match -> yerel maç durumu (skor + KÜP). App.tsx `applyServerBoard` bunu KULLANIR;
+ * test bunu çağırır. Küp değeri/sahibi/bekleyen-teklif SUNUCUDAN gelir (forge edilemez);
+ * istemci yalnız yansıtır. Böylece küp senkronu (offer -> pending -> take/drop) tek yerde + testli.
+ */
+export function serverMatchToLocal(sm: ServerMatchView, prevTarget: number): LocalMatchState {
+  return {
+    target: sm.target ?? prevTarget,
+    score: { white: sm.score?.white ?? 0, black: sm.score?.black ?? 0 },
+    cubeValue: sm.cube?.value ?? 1,
+    cubeOwner: sm.cube?.owner ?? null,
+    cubePending: sm.cube?.pending ?? null,
+  }
+}
+
+/**
+ * Yeni oyun açılışı tetiklensin mi? (applyServerBoard: !done iken opened===false -> 'roll',
+ * değilse null.) done iken 'keep' (maç sonu ekranı; opening'e dokunma).
+ */
+export function openingStateFromMatch(sm: ServerMatchView): 'roll' | null | 'keep' {
+  if (sm.done) return 'keep'
+  return sm.opened === false ? 'roll' : null
+}

@@ -30,7 +30,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
-import { shouldApplyServerState } from './online/authSync'
+import { openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -2614,19 +2614,20 @@ export default function App() {
     setRanked(null)
     setCurrentProbs(null)
     if (sm) {
-      // Skor + kup (deger/sahip) + bekleyen kup teklifi -> match/cubePending senkron.
+      // Skor + KÜP (değer/sahip/bekleyen) SAF reduce'la (src/online/authSync + 2-istemci sim testi).
+      const lm = serverMatchToLocal(sm, match.target)
       setMatch((m) => ({
         ...m,
-        target: sm.target ?? m.target,
-        score: { white: sm.score?.white ?? 0, black: sm.score?.black ?? 0 },
-        cube: { value: sm.cube?.value ?? 1, owner: sm.cube?.owner ?? null },
+        target: lm.target,
+        score: lm.score,
+        cube: { value: lm.cubeValue, owner: lm.cubeOwner },
       }))
-      setCubePending(sm.cube?.pending ?? null)
-      if (!sm.done) {
+      setCubePending(lm.cubePending)
+      // Açılış overlay kararı da saf: opened=false->'roll' (yeni oyun), true->null (kaldır), done->keep.
+      const os = openingStateFromMatch(sm)
+      if (os !== 'keep') {
         setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
-        // opened=false: sunucu yeni oyuna geçti -> açılışı otomatik tetikle (opening useEffect).
-        // opened=true: açılış YAPILDI -> "Açılış zarı atılıyor" overlay'ini KALDIR (takılma fix).
-        setOpening(sm.opened === false ? 'roll' : null)
+        setOpening(os)
       }
     }
     if (!winner(gs)) setMessage(t('msg.turnOf', { name: pName(gs.turn) }))

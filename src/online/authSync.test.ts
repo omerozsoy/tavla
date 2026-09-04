@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../engine/types'
-import { rollResponseAction, shouldApplyServerState, type SyncLocal } from './authSync'
+import { openingStateFromMatch, rollResponseAction, serverMatchToLocal, shouldApplyServerState, type SyncLocal } from './authSync'
+
+const other = (p: Player): Player => (p === 'white' ? 'black' : 'white')
 
 // ---- shouldApplyServerState: mid-move koruması sıra sahipliğine bağlı olmalı ----
 describe('shouldApplyServerState', () => {
@@ -55,11 +57,13 @@ class SimServer {
   version = 0
   opened = false
   starter: Player
+  cube = { value: 1, owner: null as Player | null, pending: null as Player | null }
   constructor(starter: Player) {
     this.starter = starter
   }
 
   roll(color: Player): { opening?: boolean; reused?: boolean; starter?: Player; dice: number[] } | { error: 409 } {
+    if (this.cube.pending) return { error: 409 } // küp beklerken zar yok
     if (!this.opened) {
       this.opened = true
       this.turn = this.starter
@@ -75,15 +79,39 @@ class SimServer {
   }
 
   move(color: Player): { ok: boolean } {
-    if (this.turn !== color || this.dice.length === 0) return { ok: false }
-    this.turn = color === 'white' ? 'black' : 'white'
+    if (this.turn !== color || this.dice.length === 0 || this.cube.pending) return { ok: false }
+    this.turn = other(color)
     this.dice = []
     this.version++
     return { ok: true }
   }
 
+  cubeOffer(color: Player): { ok: boolean } {
+    if (this.turn !== color || this.dice.length > 0 || this.cube.pending) return { ok: false }
+    if (this.cube.owner !== null && this.cube.owner !== color) return { ok: false }
+    this.cube.pending = color
+    this.version++
+    return { ok: true }
+  }
+
+  cubeRespond(color: Player, action: 'take' | 'drop'): { ok: boolean } {
+    if (!this.cube.pending || color !== other(this.cube.pending)) return { ok: false }
+    if (action === 'take') {
+      this.cube = { value: this.cube.value * 2, owner: color, pending: null }
+    } else {
+      this.cube = { value: 1, owner: null, pending: null } // drop -> oyun biter, yeni oyun küpü ortada
+    }
+    this.version++
+    return { ok: true }
+  }
+
   view() {
-    return { authoritative: true, server_state: { turn: this.turn, dice: [...this.dice] }, server_version: this.version }
+    return {
+      authoritative: true,
+      server_state: { turn: this.turn, dice: [...this.dice] },
+      server_version: this.version,
+      server_match: { target: 5, score: { white: 0, black: 0 }, cube: { ...this.cube }, done: false, opened: this.opened },
+    }
   }
 }
 
@@ -92,11 +120,36 @@ class SimClient {
   dice: number[] = []
   played = 0
   appliedServerVersion = -1
+  // Küp yerel görünümü (SUNUCUDAN serverMatchToLocal ile senkron; forge yok).
+  cubeValue = 1
+  cubeOwner: Player | null = null
+  cubePending: Player | null = null
   myColor: Player
   server: SimServer
   constructor(myColor: Player, server: SimServer) {
     this.myColor = myColor
     this.server = server
+  }
+
+  // Sunucu görünümündeki maç durumunu (skor+küp) SAF reduce ile yerelе uygula.
+  private syncMatch(sm: Parameters<typeof serverMatchToLocal>[0]) {
+    const lm = serverMatchToLocal(sm, 5)
+    this.cubeValue = lm.cubeValue
+    this.cubeOwner = lm.cubeOwner
+    this.cubePending = lm.cubePending
+  }
+
+  // Sıramsa + zar atmadan önce küp teklif et.
+  cubeOfferIfCan() {
+    if (this.turn !== this.myColor || this.dice.length > 0 || this.cubePending) return
+    this.server.cubeOffer(this.myColor)
+  }
+
+  // Bana teklif geldiyse yanıtla.
+  cubeRespondIfPending(action: 'take' | 'drop') {
+    if (this.cubePending && this.cubePending === other(this.myColor)) {
+      this.server.cubeRespond(this.myColor, action)
+    }
   }
 
   // Açılışı tetikle (App.tsx opening useEffect authoritative dalı gibi).
@@ -133,7 +186,7 @@ class SimClient {
     }
   }
 
-  // Poll: gerçek karar fonksiyonuyla senkronla.
+  // Poll: gerçek karar fonksiyonuyla senkronla (tahta + skor/küp).
   poll() {
     const rv = this.server.view()
     if (
@@ -147,6 +200,7 @@ class SimClient {
       this.turn = rv.server_state.turn
       this.dice = [...rv.server_state.dice]
       this.played = 0
+      this.syncMatch(rv.server_match)
     }
   }
 }
@@ -180,8 +234,12 @@ describe('2-istemci authoritative simülasyonu', () => {
           // DESYNC OLMAMALI: iki istemci de sunucunun sırasında hemfikir.
           expect(white.turn).toBe(server.turn)
           expect(black.turn).toBe(server.turn)
-          // İkisi de aynı sırayı görüyor (biri "benim turum" derken diğeri "rakip turu").
           expect(white.turn).toBe(black.turn)
+          // SAAT dışlaması: TAM BİR istemci "benim turum" der (diğeri "rakip turu"). Aksi halde
+          // iki tarafta da saat sayar / "hamle yap" uyarısı çıkar (yaşanan bug). XOR olmalı.
+          const whiteThinksMine = white.turn === white.myColor
+          const blackThinksMine = black.turn === black.myColor
+          expect(whiteThinksMine).not.toBe(blackThinksMine)
         }
 
         // En az birkaç tur ilerledi (oyun kilitlenmedi).
@@ -189,4 +247,63 @@ describe('2-istemci authoritative simülasyonu', () => {
       })
     }
   }
+
+  it('küp senkronu: teklif -> rakip görür -> take -> iki istemci de ×2 (offer/pending/take)', () => {
+    const server = new SimServer('white')
+    const white = new SimClient('white', server)
+    const black = new SimClient('black', server)
+    // Açılış + senkron (white başlar, zarını oynar, sıra black'e).
+    white.triggerOpening()
+    black.triggerOpening()
+    white.poll()
+    black.poll()
+    white.moveIfMyTurn() // white açılışı oynar -> sıra black
+    white.poll()
+    black.poll()
+    expect(server.turn).toBe('black')
+
+    // Black sırasında, ZAR ATMADAN küp teklif eder.
+    black.cubeOfferIfCan()
+    white.poll()
+    black.poll()
+    // Teklif eden (black) ve rakip (white) İKİSİ de bekleyen teklifi görür (senkron).
+    expect(server.cube.pending).toBe('black')
+    expect(black.cubePending).toBe('black')
+    expect(white.cubePending).toBe('black')
+
+    // Rakip (white) TAKE eder -> ×2, küp white'a geçer, pending temizlenir; iki istemci de senkron.
+    white.cubeRespondIfPending('take')
+    white.poll()
+    black.poll()
+    expect(server.cube.value).toBe(2)
+    expect(white.cubeValue).toBe(2)
+    expect(black.cubeValue).toBe(2)
+    expect(white.cubeOwner).toBe('white')
+    expect(black.cubeOwner).toBe('white')
+    expect(white.cubePending).toBeNull()
+    expect(black.cubePending).toBeNull()
+  })
+})
+
+describe('serverMatchToLocal + openingStateFromMatch', () => {
+  it('küp değeri/sahip/pending sunucudan yansır', () => {
+    const lm = serverMatchToLocal({ target: 5, score: { white: 2, black: 1 }, cube: { value: 4, owner: 'black', pending: 'white' } }, 1)
+    expect(lm.target).toBe(5)
+    expect(lm.score).toEqual({ white: 2, black: 1 })
+    expect(lm.cubeValue).toBe(4)
+    expect(lm.cubeOwner).toBe('black')
+    expect(lm.cubePending).toBe('white')
+  })
+  it('eksik alanlar güvenli varsayılan (küp 1/ortada, skor 0)', () => {
+    const lm = serverMatchToLocal({}, 7)
+    expect(lm.target).toBe(7)
+    expect(lm.cubeValue).toBe(1)
+    expect(lm.cubeOwner).toBeNull()
+    expect(lm.score).toEqual({ white: 0, black: 0 })
+  })
+  it('açılış durumu: yeni oyun(opened false)->roll, oyun içi->null, maç bitti->keep', () => {
+    expect(openingStateFromMatch({ opened: false, done: false })).toBe('roll')
+    expect(openingStateFromMatch({ opened: true, done: false })).toBeNull()
+    expect(openingStateFromMatch({ done: true })).toBe('keep')
+  })
 })
