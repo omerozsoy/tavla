@@ -49,11 +49,12 @@ Route::get('/validator-check', function (\Illuminate\Http\Request $r) {
     $secret = (string) config('validator.secret');
     abort_unless($secret !== '' && hash_equals($secret, (string) $r->query('key')), 403);
     $url = rtrim((string) config('validator.url'), '/');
-    $out = ['url' => $url];
+    $verify = (bool) config('validator.verify_tls', false);
+    $out = ['url' => $url, 'verify_tls' => $verify];
 
     // 1) /health (secret'siz) — ağ/SSL/erişim testi.
     try {
-        $h = \Illuminate\Support\Facades\Http::timeout(4)->get($url.'/health');
+        $h = \Illuminate\Support\Facades\Http::withOptions(['verify' => $verify])->timeout(4)->get($url.'/health');
         $out['health_status'] = $h->status();
         $out['health_body'] = mb_substr($h->body(), 0, 120);
     } catch (\Throwable $e) {
@@ -67,6 +68,7 @@ Route::get('/validator-check', function (\Illuminate\Http\Request $r) {
         $state['dice'] = [3, 1];
         $state['diceUsed'] = [false, false];
         $lm = \Illuminate\Support\Facades\Http::withHeaders(['x-validator-secret' => $secret])
+            ->withOptions(['verify' => $verify])
             ->timeout(4)->acceptJson()->post($url.'/legal-moves', ['state' => $state]);
         $out['lm_status'] = $lm->status();
         $out['lm_body'] = mb_substr($lm->body(), 0, 160);
