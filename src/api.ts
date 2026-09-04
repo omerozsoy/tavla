@@ -1,6 +1,6 @@
 // Laravel API istemcisi (token tabanli auth)
 import type { Profile } from './storage'
-import type { GameState, Step } from './engine/types'
+import type { GameState, Player, Step } from './engine/types'
 import { normalizeCountry } from './countries'
 
 const API_URL =
@@ -1025,6 +1025,9 @@ export interface RoomView {
   dice_authority?: boolean
   dice_seed?: string | null // REVEAL: yalniz mac bitince dolu (provably-fair dogrulama)
   dice_rolls?: Array<{ index: number; slot: string; dice: number[] }> | null // REVEAL
+  // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar ->
+  // rakip adım adım animasyonla görür. Otorite DEĞİL (server_state/version ayrı).
+  live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
 }
 
 export async function createRoom(
@@ -1465,6 +1468,20 @@ export async function serverMove(
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), steps }),
   })
+}
+
+// CANLI hamle önizlemesi (cosmetic): sıradaki oyuncu her adım/geri-almada o anki tam-tur step
+// dizisini yollar -> rakip poll'da okuyup adım adım animasyonla görür. Otorite DEĞİL; hata sessiz
+// yutulur (görsel katman oyunu bloklamamalı). Boş steps = önizlemeyi temizle (tur bitti/başladı).
+export async function postLive(code: string, steps: Step[], turn: Player, seq: number): Promise<void> {
+  try {
+    await req(`/rooms/${encodeURIComponent(code)}/live`, {
+      method: 'POST',
+      body: JSON.stringify({ token: playerToken(), steps, turn, seq }),
+    })
+  } catch {
+    /* cosmetic — yut */
+  }
 }
 
 // Küp teklifi (sıra sahibi, zar atmadan önce). Sunucu kuralları doğrular (sıra/sahiplik/Crawford).
