@@ -300,6 +300,26 @@ class AuthController extends Controller
         $clientWon = (bool) $data['won'];
         $won = $clientWon;
         $roomCode = $data['room_code'] ?? null;
+
+        // IDEMPOTENT (cift sayma engeli): bu oda+oyuncu icin sonuc ZATEN kaydedilmisse
+        // (sunucu forfeit'i = terk eden kaybeder, VEYA bu oyuncunun onceki raporu) tekrar
+        // rating/istatistik/satir YAZMA. Sunucu forfeit'i (ForfeitLoss) kaybedenin satirini
+        // onceden yazmis olabilir; kaybeden gec gelip raporlarsa burada durur.
+        if (! empty($roomCode)) {
+            $existing = \App\Models\MatchResult::where('room_code', $roomCode)
+                ->where('user_id', $user->id)
+                ->first();
+            if ($existing) {
+                return response()->json([
+                    'rating' => $user->rating ?? 1500,
+                    'user' => $user,
+                    'achievements' => [],
+                    'pr_self' => $existing->pr,
+                    'pr_opponent' => null,
+                ]);
+            }
+        }
+
         $srv = $this->serverResultForRoom($user, $roomCode);
 
         // Rakibin (ayni room_code) daha once raporladigi satir — cift-galibiyet/kayip

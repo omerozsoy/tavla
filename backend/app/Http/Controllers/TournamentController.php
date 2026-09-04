@@ -349,6 +349,15 @@ class TournamentController extends Controller
             $room->{$other.'_result'} = 'lost';
             $room->save();
 
+            // GELMEYEN KAYBEDER (sunucu kayit): gelmeyen rakibin rating + maglubiyeti
+            // sunucuda yazilir (client'i hic acilmadi). Idempotent (bkz ForfeitLoss).
+            $loserId = (int) ($ids[0] === $me ? $ids[1] : $ids[0]);
+            $me = \App\Models\User::find($me);
+            \App\Support\ForfeitLoss::record(
+                $room->code, $loserId, (int) ($me->rating ?? 1500),
+                (int) ($room->target ?: 1), 'match', $me->nickname ?? $me->first_name,
+            );
+
             return ['t' => $t];
         });
 
