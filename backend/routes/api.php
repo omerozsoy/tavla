@@ -41,6 +41,27 @@ Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
+// Teşhis: backend -> Node validator bağlantısını KANITLAR (para maçı güvenliği Faz 2).
+// Secret korumalı (yalnız VALIDATOR_SECRET'i bilen çağırır). authoritative açmadan test:
+//   https://tavlai.com/api/validator-check?key=<VALIDATOR_SECRET>
+// reachable:true + legal_move_count>0 => URL+secret+IP doğru, backend validator'a ulaşıyor.
+Route::get('/validator-check', function (\Illuminate\Http\Request $r, \App\Services\MoveValidatorService $v) {
+    $secret = (string) config('validator.secret');
+    abort_unless($secret !== '' && hash_equals($secret, (string) $r->query('key')), 403);
+    $state = \App\Support\Backgammon::initialState();
+    $state['turn'] = 'white';
+    $state['dice'] = [3, 1];
+    $state['diceUsed'] = [false, false];
+    $moves = $v->legalMoves($state);
+
+    return response()->json([
+        'configured' => $v->isConfigured(),
+        'url' => config('validator.url'),
+        'reachable' => $moves !== null,
+        'legal_move_count' => is_array($moves) ? count($moves) : null,
+    ]);
+})->middleware('throttle:20,1');
+
 // Multiplayer odalari (misafir dostu, token bazli).
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
 // 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
@@ -62,6 +83,11 @@ Route::middleware('throttle:240,1')->group(function () {
     Route::post('/rooms/{code}/move', [RoomController::class, 'move']);
 });
 Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
+
+// Maç kaydı (hamle+zar): TÜM maçlar (pvb/online/local) loglanır. Misafir dostu (auth yok),
+// açık uç -> throttle + payload sınırlarıyla korunur (bkz. GameLogController validation).
+// Meşru istemci oyun/maç sonunda birkaç kez yazar; 20/dk fazlasıyla yeter.
+Route::middleware('throttle:20,1')->post('/game-logs', [\App\Http\Controllers\GameLogController::class, 'store']);
 
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {
