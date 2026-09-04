@@ -140,4 +140,45 @@ class RoomClockTest extends TestCase
         $this->assertEqualsWithDelta($startWas, $room->clock['started_at'], 0.5);
         $this->assertSame('p1', $room->clock['turn_slot']);
     }
+
+    // ---- leave: TERK EDEN KAYBEDER (anlik forfeit) ----
+    public function test_leave_forfeits_leaver(): void
+    {
+        $room = $this->playingRoom('CLKL', 'normal', 1);
+        $this->putJson('/api/rooms/CLKL', ['token' => 't1', 'state' => $this->state(1)])->assertOk();
+
+        $this->postJson('/api/rooms/CLKL/leave', ['token' => 't1'])->assertOk(); // p1 terk eder
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        $this->assertSame('lost', $room->p1_result); // terk eden
+        $this->assertSame('won', $room->p2_result);  // rakip kazanir
+        $this->assertSame('black', $room->state['gameEnd']['winner']);
+    }
+
+    // ---- show (poll): rakip poll'u kesince (terk) o kaybeder; SIRA SAHIBI KORUNUR ----
+    public function test_show_forfeits_absent_opponent_protecting_turn_owner(): void
+    {
+        $room = $this->playingRoom('CLKP', 'casual', 5); // uzun banka; AFK 45
+        $this->putJson('/api/rooms/CLKP', ['token' => 't1', 'state' => $this->state(5)])->assertOk();
+
+        $room->refresh();
+        $clock = $room->clock;
+        $now = microtime(true);
+        $clock['started_at'] = $now - 10;  // AFK dolmadi (10 < 45)
+        $clock['p1_seen'] = $now - 1;      // sira sahibi present
+        $clock['p2_seen'] = $now - 40;     // rakip terk (40 > 25+3)
+        $room->clock = $clock;
+        $room->save();
+
+        // Sira sahibi (t1) poll eder -> rakip terk tespit edilir
+        $this->getJson('/api/rooms/CLKP?token=t1')->assertOk();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        $this->assertSame('won', $room->p1_result);  // sira sahibi korundu + kazandi
+        $this->assertSame('lost', $room->p2_result); // terk eden kaybetti
+    }
 }

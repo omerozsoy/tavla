@@ -1334,14 +1334,31 @@ export async function matchLogById(id: number): Promise<string | null> {
 // Poll: since verilirse degismemisse null doner
 export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
   const token = getToken()
-  const q = since !== undefined ? `?since=${since}` : ''
-  const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(code)}${q}`, {
+  // token=oda kimligi: sunucu poll edenin VARLIK (presence) damgasini tazeler ->
+  // terk (poll'u kesme) tespiti calisir; sira sahibi haksiz AFK'dan korunur.
+  const params = new URLSearchParams({ token: playerToken() })
+  if (since !== undefined) params.set('since', String(since))
+  const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(code)}?${params.toString()}`, {
     headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
   })
   if (res.status === 204) return null
   if (!res.ok) throw new ApiError(res.status, 'Oda hatası')
   const data = await res.json()
   return data.room as RoomView
+}
+
+// Maci ACIKCA TERK ET (kullanici "cikis/terk" der) -> terk eden kaybeder, rakip kazanir.
+// NOT: refresh'te CAGIRMA — sekme kapanma/yenileme ayirt edilemez; yenileyen oyuncu
+// haksiz kaybetmesin diye tab-close forfeit'i SUNUCU presence (25sn) ile ele alinir.
+export async function leaveRoom(code: string): Promise<void> {
+  try {
+    await req(`/rooms/${encodeURIComponent(code)}/leave`, {
+      method: 'POST',
+      body: JSON.stringify({ token: playerToken() }),
+    })
+  } catch {
+    // en iyi caba: hata olsa da presence yine forfeit eder
+  }
 }
 
 export async function updateRoom(

@@ -54,6 +54,7 @@ Route::middleware('throttle:240,1')->group(function () {
     Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
     Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
     Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
+    Route::post('/rooms/{code}/leave', [RoomController::class, 'leave']); // terk -> terk eden kaybeder
     Route::get('/rooms/{code}', [RoomController::class, 'show']);
     Route::put('/rooms/{code}', [RoomController::class, 'update']);
     // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)

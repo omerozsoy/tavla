@@ -182,4 +182,66 @@ class MatchClockTest extends TestCase
         $c = $this->started('speed', 1);
         $this->assertSame('TIMEOUT', MatchClock::tick($c, self::T0 + 60)['end']['reason']);
     }
+
+    // ---- 13) VARLIK: rakip poll'u keserse (terk) rakip kaybeder; sira sahibi kazanir ----
+    public function test_presence_absent_opponent_forfeits(): void
+    {
+        $c = $this->started('casual', 5); // aktif p1
+        $c = MatchClock::seen($c, 'p1', self::T0 + 30); // p1 present
+        $c = MatchClock::seen($c, 'p2', self::T0);      // p2 en son t0'da goruldu (terk)
+        $end = MatchClock::tick($c, self::T0 + 30)['end']; // p2: 30sn > 25+3
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertSame('p1', $end['winner']); // rakip terk -> sira sahibi kazanir
+    }
+
+    // ---- 14) VARLIK: sira sahibi poll'u keserse (terk) TERK EDEN kaybeder ----
+    public function test_presence_absent_turn_owner_forfeits(): void
+    {
+        $c = $this->started('casual', 5); // aktif p1
+        $c = MatchClock::seen($c, 'p1', self::T0);      // p1 (sira sahibi) terk
+        $c = MatchClock::seen($c, 'p2', self::T0 + 30); // p2 present
+        $end = MatchClock::tick($c, self::T0 + 30)['end'];
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertSame('p2', $end['winner']); // terk eden (p1) kaybetti
+    }
+
+    // ---- 15) SIRA SAHIBINI KORU: AFK suresi gecse bile rakip terk ettiyse sira sahibi kaybetmez ----
+    public function test_presence_protects_idle_turn_owner_when_opponent_left(): void
+    {
+        $c = $this->started('casual', 5); // aktif p1, afk normalde t0+45
+        $c = MatchClock::seen($c, 'p1', self::T0 + 50); // p1 HALA present (poll ediyor)
+        $c = MatchClock::seen($c, 'p2', self::T0);      // p2 terk
+        // now=50: p1 hamlesiz 50sn (AFK 45 gecti) AMA present; p2 terk -> p1 KORUNUR
+        $end = MatchClock::tick($c, self::T0 + 50)['end'];
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertSame('p1', $end['winner']); // sira sahibi korundu, terk eden kaybetti
+    }
+
+    // ---- 16) Ikisi de present -> normal AFK isler (presence karismaz) ----
+    public function test_presence_both_present_afk_still_applies(): void
+    {
+        $c = $this->started('casual', 5);
+        $c = MatchClock::seen($c, 'p1', self::T0 + 46);
+        $c = MatchClock::seen($c, 'p2', self::T0 + 46);
+        $end = MatchClock::tick($c, self::T0 + 48)['end']; // ikisi de yakinda goruldu
+        $this->assertSame('AFK_TIMEOUT', $end['reason']);
+        $this->assertSame('p2', $end['winner']);
+    }
+
+    // ---- 17) Ikisi de terk -> karar verilmez (haksiz kayip yazma) ----
+    public function test_presence_both_absent_no_decision(): void
+    {
+        $c = $this->started('casual', 5);
+        $c = MatchClock::seen($c, 'p1', self::T0);
+        $c = MatchClock::seen($c, 'p2', self::T0);
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 40)['end'] ?? null);
+    }
+
+    // ---- 18) _seen damgasi yoksa presence ATLANIR (saf zaman davranisi korunur) ----
+    public function test_presence_skipped_without_seen_stamps(): void
+    {
+        $c = $this->started('casual', 5); // hic seen damgasi yok
+        // 48sn: presence olsa "gone" derdi; ama damga yok -> normal AFK isler
+        $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 48)['end']['reason']);
+    }
 }

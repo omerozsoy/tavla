@@ -566,9 +566,12 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        // Poll aninda saati ilerlet + kayip (TIMEOUT/AFK_TIMEOUT) kosulunu uygula.
+        // Poll aninda saati ilerlet + kayip (TIMEOUT/AFK_TIMEOUT/ABANDON) kosulunu uygula.
+        // Token verilirse poll edenin VARLIK (presence) damgasi tazelenir -> terk tespiti.
         // (state degismeden; kayip olursa applyClockEnd version'i artirir.)
-        $this->tickClock($room);
+        $token = (string) $request->query('token', '');
+        $slot = $token !== '' ? $this->slotOf($room, $token) : null;
+        $this->tickClock($room, $slot);
 
         $since = (int) $request->query('since', -1);
         $unchanged = $since >= 0 && $room->version <= $since;
@@ -588,6 +591,34 @@ class RoomController extends Controller
         $payload['clock'] = $clock;
 
         return response()->json(['room' => $payload]);
+    }
+
+    // Oyuncu maci TERK eder -> TERK EDEN KAYBEDER (rakip kazanir). Anlik forfeit.
+    // Sekme kapama/gezinme sirasinda cagrilir (sendBeacon); presence 25sn'yi beklemeden
+    // sonucu netlestirir. Yalniz CANLI (playing, bitmemis) macta anlamli.
+    public function leave(Request $request, string $code)
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['ok' => true]);
+        }
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            return response()->json(['ok' => true]); // odada degil -> yapacak sey yok
+        }
+        $clock = is_array($room->clock) ? $room->clock : [];
+        $ended = ! empty($clock['end']) || $room->status === 'finished';
+        if ($room->status === 'playing' && ! $ended) {
+            // Terk eden = $slot -> rakip kazanir. applyClockEnd skoru/gameEnd'i yazar,
+            // p{slot}_result + end_reason'i set eder (istemci sync'te otoriter sonucu gorur).
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => MatchClock::other($slot)];
+            $this->applyClockEnd($room, $clock);
+            $room->clock = $clock;
+            $room->save();
+        }
+
+        return response()->json(['ok' => true, 'clock' => $this->clockView($room)]);
     }
 
     // Oyun durumunu guncelle (hamle). Sadece odadaki oyuncular.
@@ -627,6 +658,7 @@ class RoomController extends Controller
         if (! empty($clock)) {
             // $slot = istegi yapanin slotu -> sira DEVRINI yalniz sira sahibi tetikleyebilir.
             $clock = MatchClock::onUpdate($clock, $data['state'], $slot, $now);
+            $clock = MatchClock::seen($clock, $slot, $now); // hamle yapan present
             if (! empty($clock['end'])) {
                 $this->applyClockEnd($room, $clock);
             } else {
@@ -647,16 +679,34 @@ class RoomController extends Controller
     }
 
     // Saati poll aninda ilerlet: kayip kosulu olustuysa maci sonlandir (idempotent).
-    private function tickClock(Room $room): void
+    // $slot verilirse poll edenin VARLIK damgasi (throttle ile) tazelenir -> terk tespiti.
+    private function tickClock(Room $room, ?string $slot = null): void
     {
         $clock = $room->clock;
-        if (! is_array($clock) || empty($clock) || ! empty($clock['end'])) {
+        if (! is_array($clock) || empty($clock)) {
             return;
         }
-        $ticked = MatchClock::tick($clock, microtime(true));
+        if (! empty($clock['end'])) {
+            return;
+        }
+        $now = microtime(true);
+        $changed = false;
+        // Varlik damgasi: en fazla ~4sn'de bir yaz (poll her ~1.5sn; gereksiz DB yazma yok).
+        if ($slot !== null) {
+            $prev = (float) ($clock[$slot.'_seen'] ?? 0);
+            if ($now - $prev >= 4.0) {
+                $clock = MatchClock::seen($clock, $slot, $now);
+                $changed = true;
+            }
+        }
+        $ticked = MatchClock::tick($clock, $now);
         if (! empty($ticked['end'])) {
-            $this->applyClockEnd($room, $ticked);
-            $room->clock = $ticked;
+            $clock = $ticked;
+            $this->applyClockEnd($room, $clock);
+            $changed = true;
+        }
+        if ($changed) {
+            $room->clock = $clock;
             $room->save();
         }
     }

@@ -33,6 +33,9 @@ class MatchClock
     public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
     public const AFK_TOTAL = 45;     // toplam hareketsizlik -> kayip (sn)
     public const GRACE = 3;          // network latency toleransi: kayip ilanini geciktir (sn)
+    // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
+    // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
+    public const PRESENCE_TIMEOUT = 25;
 
     public static function normalizeMode(?string $mode): string
     {
@@ -117,6 +120,19 @@ class MatchClock
     }
 
     /**
+     * Varlik damgasi: bir oyuncunun (slot) son poll/update zamanini isaretle.
+     * Yalnizca controller cagirir; saf zaman testlerinde damgalanmaz -> presence atlanir.
+     */
+    public static function seen(array $clock, ?string $slot, float $now): array
+    {
+        if ($slot === 'p1' || $slot === 'p2') {
+            $clock[$slot.'_seen'] = $now;
+        }
+
+        return $clock;
+    }
+
+    /**
      * Bir state guncellemesini isle. Gercek hamle/devir varsa segment islenir, delay+AFK sifirlanir.
      *
      * @param  array  $clock  mevcut saat durumu
@@ -190,6 +206,28 @@ class MatchClock
         }
         $active = $clock['turn_slot'] ?? null;
         if ($active === null) {
+            return $clock;
+        }
+
+        // ---- VARLIK (presence): TERK EDEN KAYBEDER; SIRA SAHIBI KORUNUR ----
+        // _seen yalnizca controller poll/update ile damgalanir. Bir oyuncu
+        // PRESENCE_TIMEOUT (+GRACE) sn boyunca hic gorunmezse "terk etmis" sayilir.
+        // Rakip terk ettiyse sira sahibi haksiz AFK'ya DUSMEZ (once burada karar).
+        $other = self::other($active);
+        $sa = $clock[$active.'_seen'] ?? null;
+        $so = $clock[$other.'_seen'] ?? null;
+        $limit = self::PRESENCE_TIMEOUT + self::GRACE;
+        $activeGone = $sa !== null && ($now - (float) $sa) > $limit;
+        $otherGone = $so !== null && ($now - (float) $so) > $limit;
+        if ($activeGone || $otherGone) {
+            if ($otherGone && ! $activeGone) {
+                // Rakip poll'u kesti (terk) -> rakip kaybeder; sira sahibi korunur.
+                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $active];
+            } elseif ($activeGone && ! $otherGone) {
+                // Sira sahibi poll'u kesti (terk) -> terk eden kaybeder.
+                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $other];
+            }
+            // Ikisi de gitmisse: kimse yok -> haksiz kayip yazma (karar verme).
             return $clock;
         }
 
