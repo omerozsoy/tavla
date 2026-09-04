@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Mail;
  */
 class ValidatorWatch extends Command
 {
-    protected $signature = 'validator:watch';
+    protected $signature = 'validator:watch {--test : Kanalları doğrulamak için hemen test uyarısı gönder}';
 
     protected $description = 'Validator ayakta mı kontrol et; düşerse admin e-posta + WhatsApp uyarısı gönder';
 
@@ -30,6 +30,14 @@ class ValidatorWatch extends Command
 
     public function handle(MoveValidatorService $validator): int
     {
+        // Test: kanalların (e-posta + WhatsApp) çalıştığını servisi düşürmeden doğrula.
+        if ($this->option('test')) {
+            $this->dispatchAlert("🧪 TavlaTV TEST uyarısı — servis izleme kanalları çalışıyor. (Bu bir testtir.)");
+            $this->info('Test uyarısı gönderildi (e-posta + WhatsApp, ayarlı kanallara).');
+
+            return self::SUCCESS;
+        }
+
         // Validator yapılandırılmamışsa (URL yok) authoritative zaten çalışmaz -> uyarma.
         if (! $validator->isConfigured()) {
             return self::SUCCESS;
