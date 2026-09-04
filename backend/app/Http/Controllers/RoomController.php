@@ -1454,6 +1454,31 @@ class RoomController extends Controller
         });
     }
 
+    /**
+     * GEÇİCİ TEŞHİS: backend, Node validator'a ulaşıp bilinen-yasal bir hamleyi doğrulatabiliyor
+     * mu? Secret/URL AÇMAZ; yalnız durum döner. valid=true -> bağlantı TAMAM (sorun başka yerde).
+     * url_set=false -> VALIDATOR_URL okunmuyor (config cache / .env). unreachable=true -> erişemiyor
+     * (secret 401 / IP / URL). Sorun çözülünce bu uç + rota KALDIRILMALI.
+     */
+    public function validatorCheck(\App\Services\MoveValidatorService $validator)
+    {
+        $s = \App\Support\Backgammon::initialState();
+        $s['dice'] = [3, 1];
+        $s['diceUsed'] = [false, false];
+        $r = $validator->validate($s, [
+            ['from' => 5, 'to' => 2, 'die' => 3],
+            ['from' => 2, 'to' => 1, 'die' => 1],
+        ]);
+
+        return response()->json([
+            'url_set' => config('validator.url') !== '',
+            'required' => (bool) config('validator.required'),
+            'valid' => (bool) ($r['valid'] ?? false),
+            'reason' => $r['reason'] ?? null,
+            'unreachable' => (bool) ($r['unreachable'] ?? false),
+        ]);
+    }
+
     private function slotOf(Room $room, string $token): ?string
     {
         if ($room->p1_token === $token) {
