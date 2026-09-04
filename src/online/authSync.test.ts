@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../engine/types'
-import { openingStateFromMatch, rollResponseAction, serverMatchToLocal, shouldApplyServerState, type SyncLocal } from './authSync'
+import {
+  matchEndFromServer,
+  openingStateFromMatch,
+  rollResponseAction,
+  serverMatchToLocal,
+  shouldApplyServerState,
+  type SyncLocal,
+} from './authSync'
 
 const other = (p: Player): Player => (p === 'white' ? 'black' : 'white')
 
@@ -58,8 +65,28 @@ class SimServer {
   opened = false
   starter: Player
   cube = { value: 1, owner: null as Player | null, pending: null as Player | null }
-  constructor(starter: Player) {
+  target = 1
+  score = { white: 0, black: 0 }
+  done = false
+  winner: Player | null = null
+  constructor(starter: Player, target = 1) {
     this.starter = starter
+    this.target = target
+  }
+
+  // Kazanan hamle: sıra sahibi oyunu (ve target=1 maçı) bitirir. Sunucu skoru+winner yazar.
+  winningMove(color: Player): { ok: boolean } {
+    if (this.turn !== color || this.dice.length === 0 || this.cube.pending) return { ok: false }
+    this.score[color] += this.cube.value
+    this.dice = []
+    if (this.score[color] >= this.target) {
+      this.done = true
+      this.winner = color
+    } else {
+      this.turn = other(color) // maç sürüyor -> sıra devret (yeni oyun açılışı ayrı)
+    }
+    this.version++
+    return { ok: true }
   }
 
   roll(color: Player): { opening?: boolean; reused?: boolean; starter?: Player; dice: number[] } | { error: 409 } {
@@ -110,7 +137,14 @@ class SimServer {
       authoritative: true,
       server_state: { turn: this.turn, dice: [...this.dice] },
       server_version: this.version,
-      server_match: { target: 5, score: { white: 0, black: 0 }, cube: { ...this.cube }, done: false, opened: this.opened },
+      server_match: {
+        target: this.target,
+        score: { ...this.score },
+        cube: { ...this.cube },
+        done: this.done,
+        winner: this.winner,
+        opened: this.opened,
+      },
     }
   }
 }
@@ -120,10 +154,12 @@ class SimClient {
   dice: number[] = []
   played = 0
   appliedServerVersion = -1
-  // Küp yerel görünümü (SUNUCUDAN serverMatchToLocal ile senkron; forge yok).
+  // Küp + skor yerel görünümü (SUNUCUDAN serverMatchToLocal ile senkron; forge yok).
   cubeValue = 1
   cubeOwner: Player | null = null
   cubePending: Player | null = null
+  score = { white: 0, black: 0 }
+  target = 1
   myColor: Player
   server: SimServer
   constructor(myColor: Player, server: SimServer) {
@@ -133,10 +169,17 @@ class SimClient {
 
   // Sunucu görünümündeki maç durumunu (skor+küp) SAF reduce ile yerelе uygula.
   private syncMatch(sm: Parameters<typeof serverMatchToLocal>[0]) {
-    const lm = serverMatchToLocal(sm, 5)
+    const lm = serverMatchToLocal(sm, this.target)
     this.cubeValue = lm.cubeValue
     this.cubeOwner = lm.cubeOwner
     this.cubePending = lm.cubePending
+    this.score = lm.score
+    this.target = lm.target
+  }
+
+  // İstemcinin KENDİ senkron skorundan türettiği maç-sonu (App.tsx matchEndFromServer ile aynı).
+  matchEnd() {
+    return matchEndFromServer({ target: this.target, score: this.score })
   }
 
   // Sıramsa + zar atmadan önce küp teklif et.
@@ -183,6 +226,21 @@ class SimClient {
       this.turn = v.server_state.turn
       this.dice = [...v.server_state.dice]
       this.played = 0
+    }
+  }
+
+  // Kazanan hamle + commit (App.tsx commitTurn authoritative gibi: serverMove yanıtını uygula ->
+  // KENDİ zarını temizler + skoru/turnu senkronlar; yani mid-move biter).
+  winningMoveIfMyTurn() {
+    if (this.turn !== this.myColor || this.dice.length === 0) return
+    const res = this.server.winningMove(this.myColor)
+    if (res.ok) {
+      const v = this.server.view()
+      this.appliedServerVersion = v.server_version
+      this.turn = v.server_state.turn
+      this.dice = [...v.server_state.dice]
+      this.played = 0
+      this.syncMatch(v.server_match)
     }
   }
 
@@ -282,6 +340,29 @@ describe('2-istemci authoritative simülasyonu', () => {
     expect(black.cubeOwner).toBe('white')
     expect(white.cubePending).toBeNull()
     expect(black.cubePending).toBeNull()
+  })
+
+  it('maç-sonu senkronu: kazanan hamle -> iki istemci de AYNI kazananı/matchOver görür', () => {
+    const server = new SimServer('white', 1) // tek oyunluk maç
+    const white = new SimClient('white', server)
+    const black = new SimClient('black', server)
+    white.triggerOpening()
+    black.triggerOpening()
+    white.poll()
+    black.poll()
+    expect(server.turn).toBe('white') // starter=white, zarı elinde
+
+    // white kazanan hamleyi yapar (commitTurn -> serverMove yanıtını uygular: kendi zarını temizler).
+    white.winningMoveIfMyTurn()
+    white.poll()
+    black.poll()
+
+    // İki istemci de KENDİ senkron skorundan aynı maç-sonunu türetir (loser 'kazandım' göremez).
+    expect(white.matchEnd()).toEqual({ matchOver: true, winner: 'white' })
+    expect(black.matchEnd()).toEqual({ matchOver: true, winner: 'white' })
+    // İstemci türetimi SUNUCU winner'ıyla TUTARLI (skor-türetme == server_match.winner).
+    expect(server.winner).toBe('white')
+    expect(matchEndFromServer(server.view().server_match).winner).toBe(server.winner)
   })
 })
 
