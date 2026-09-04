@@ -30,6 +30,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
+import { shouldApplyServerState } from './online/authSync'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -2729,17 +2730,22 @@ export default function App() {
         // BAGIMSIZ Faz 1: zar-otorite bayragini yakala (doRoll serverRoll'a gitsin). Legacy
         // PUT/move akisi degismez; yalniz zar kaynagi sunucu olur.
         diceAuthorityRef.current = rv.dice_authority ?? diceAuthorityRef.current
-        if (rv.authoritative && rv.server_state && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
-          // midMove = KENDİ hamlemi ezmesin diye poll'u atla. AMA yalnız KENDİ TURUMDA geçerli:
-          // aksi halde açılışta başlayan-OLMAYAN tarafın tahtasında da zar görünüp (turnStart.dice>0)
-          // poll yanlışlıkla bloklanır -> rakip hamlesi hiç gelmez -> DESYNC (iki taraf da kendi
-          // sırası sanıp saat sayar, biri hareketsizlikten kaybeder). Rakip turundaysa DAİMA senkronla.
-          const myTurnNow = (srvTurnStartRef.current?.turn ?? null) === myColor
-          const midMove = myTurnNow && (srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0)
-          if (!midMove) {
-            appliedServerVersionRef.current = rv.server_version ?? 0
-            applyServerBoard(rv.server_state, rv.server_match) // tahta + skor + kup + Crawford
-          }
+        // Poll-apply kararı SAF fonksiyonda (src/online/authSync + test). midMove yalnız KENDİ
+        // turumda geçerli; rakip turundaysak daima senkronla (açılış desync fix — bkz authSync).
+        if (
+          shouldApplyServerState(
+            {
+              turn: srvTurnStartRef.current?.turn ?? 'white',
+              diceCount: srvTurnStartRef.current?.dice?.length ?? 0,
+              playedCount: srvPlayedRef.current.length,
+              appliedServerVersion: appliedServerVersionRef.current,
+            },
+            rv,
+            myColor,
+          )
+        ) {
+          appliedServerVersionRef.current = rv.server_version ?? 0
+          applyServerBoard(rv.server_state as GameState, rv.server_match) // tahta + skor + kup + Crawford
         } else if (!rv.authoritative && rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
