@@ -5421,20 +5421,38 @@ export default function App() {
             <BannerSlider onOpen={menuProps.onTournamentAd} />
             {activeRooms.length > 0 && (
               <div className="resume-match-bar">
-                {activeRooms.map((r) => (
-                  <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
-                    <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
-                    <span className="rm-opp">
-                      vs {r.opp_name || t('mp.title')}
-                      {r.score && (
-                        <b className="rm-score">
-                          {' '}{r.score.white}–{r.score.black}
-                        </b>
-                      )}
-                    </span>
-                    <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
-                  </button>
-                ))}
+                {activeRooms.map((r) => {
+                  // Skor {white,black}; kendi rengim slot'a bagli (p2=siyah). Bari
+                  // "kendi–rakip" gosterecek sekilde kendi skorumu one al.
+                  const myScore = r.score ? (r.slot === 'p2' ? r.score.black : r.score.white) : null
+                  const oppScore = r.score ? (r.slot === 'p2' ? r.score.white : r.score.black) : null
+                  const myName = profile.nickname || t('resume.you')
+                  const oppName = r.opp_name || t('mp.title')
+                  return (
+                    <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
+                      <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
+                      <span className="rm-opp">
+                        <span className="rm-players">
+                          <span className="rm-me">{myName}</span>
+                          <span className="rm-vs">vs</span>
+                          <span className="rm-you">
+                            {oppName}
+                            {typeof r.opp_rating === 'number' && (
+                              <span className="rm-rat"> {r.opp_rating}</span>
+                            )}
+                          </span>
+                        </span>
+                        {myScore != null && (
+                          <b className="rm-score">{myScore}–{oppScore}</b>
+                        )}
+                        {r.target ? (
+                          <span className="rm-len">{t('resume.point', { n: r.target })}</span>
+                        ) : null}
+                      </span>
+                      <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
+                    </button>
+                  )
+                })}
               </div>
             )}
             {/* Online devam eden mac varsa (resume-match-bar) tekrar buton cikarma:

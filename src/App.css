@@ -8017,8 +8017,41 @@ button.acct-row:hover:not(:disabled) {
   min-width: 0;
   font-weight: 400;
 }
+.rm-players {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rm-me {
+  color: var(--text);
+}
+.rm-vs {
+  font-size: 0.78rem;
+  color: var(--text-dim, color-mix(in srgb, var(--text) 55%, transparent));
+  text-transform: lowercase;
+}
+.rm-you {
+  color: var(--text);
+}
+.rm-rat {
+  font-size: 0.78rem;
+  color: var(--text-dim, color-mix(in srgb, var(--text) 55%, transparent));
+}
 .rm-score {
   color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.rm-len {
+  font-size: 0.76rem;
+  padding: 1px 8px;
+  border-radius: var(--radius-pill, 999px);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  flex: none;
 }
 .rm-cta {
   display: inline-flex;
