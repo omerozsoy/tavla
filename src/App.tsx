@@ -5,6 +5,7 @@ const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
+import { checkerDecision } from './analysis/pr'
 import {
   initialState,
   legalNextSteps,
@@ -1228,13 +1229,8 @@ export default function App() {
     const moves = generateMoves(before)
     if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
     const seq = turnsPlayed // bu turun sirasi (async bot kaydinda korunur)
-    // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (seviyeye gore)
+    // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (XG-style, analiz .then icinde)
     if (mode === 'pvb' && mover === BOT_PLAYER) {
-      const loss = neuralRef.current.lastLoss ?? 0
-      setPrStats((s) => ({
-        ...s,
-        black: { loss: s.black.loss + loss, decisions: s.black.decisions + 1 },
-      }))
       // Botun (rakip) hamlesini de analize kaydet: siralamayi arka planda hesapla
       const playedKey = boardKey(applyPlayed(before, steps))
       neuralRef.current
@@ -1242,6 +1238,20 @@ export default function App() {
         .then((ranks) => {
           if (ranks.length === 0) return
           const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
+          // XG-style: obvious eleme + 1pt faktoru; PR yalniz sayilan kararlardan.
+          const dec = checkerDecision(
+            ranks[0].equity,
+            pl.equity,
+            ranks[ranks.length - 1].equity,
+            moves.length,
+            match.target,
+          )
+          if (dec.countsForPR) {
+            setPrStats((s) => ({
+              ...s,
+              black: { loss: s.black.loss + dec.prAdjustedEquityLoss, decisions: s.black.decisions + 1 },
+            }))
+          }
           // Bot luck (sans): aktuel en iyi equity - 21 zarin beklenen en iyisi (tur basi bir kez).
           // Eskiden bot luck HIC hesaplanmiyordu -> ŞANS pvb'de hep 0 kaliyordu.
           const luckKey = `${mover}:${seq}`
@@ -1264,7 +1274,7 @@ export default function App() {
             {
               notation: moveNotation(pl.move, mover),
               best: moveNotation(ranks[0].move, mover),
-              loss: Math.max(0, ranks[0].equity - pl.equity),
+              loss: dec.normalizedEquityLoss,
               pos: before,
               steps: ranks[0].move.steps,
               playedSteps: pl.move.steps,
@@ -1273,6 +1283,8 @@ export default function App() {
               cands,
               probs: pl.probs,
               seq,
+              countsForPR: dec.countsForPR,
+              prAdjustedEquityLoss: dec.prAdjustedEquityLoss,
             },
           ])
         })
@@ -1290,11 +1302,25 @@ export default function App() {
       // Eskiden probs<6 ise TUM kayit dusuyordu -> analiz eksikse PR "—", luck 0 kaliyordu.
       if (ranks.length === 0) return
       const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
-      const loss = Math.max(0, ranks[0].equity - pl.equity)
-      setPrStats((s) => ({
-        ...s,
-        [mover]: { loss: s[mover].loss + loss, decisions: s[mover].decisions + 1 },
-      }))
+      // XG-style karar: best/worst spread -> obvious eleme, 1pt ×1.5 (src/analysis/pr TEK KAYNAK).
+      const dec = checkerDecision(
+        ranks[0].equity,
+        pl.equity,
+        ranks[ranks.length - 1].equity,
+        moves.length,
+        match.target,
+      )
+      const loss = dec.normalizedEquityLoss // log/error-journal ham (1pt faktörsüz) equity kaybı
+      // PR yalnız SAYILAN kararlardan (zorunlu/obvious hariç); loss = prAdjusted (1pt faktörlü).
+      if (dec.countsForPR) {
+        setPrStats((s) => ({
+          ...s,
+          [mover]: {
+            loss: s[mover].loss + dec.prAdjustedEquityLoss,
+            decisions: s[mover].decisions + 1,
+          },
+        }))
+      }
       // Sans (luck): bu turun sansi = gercek zarin en iyi equity'si (ranks[0]) - 21 zarin
       // beklenen en iyisi. recordPR promise'i (analiz effect'i gibi) IPTAL EDILMEZ -> hizli
       // oynayinca bile guvenilir birikir. Tur basina bir kez (luckSig).
@@ -1337,6 +1363,9 @@ export default function App() {
           cands,
           probs: pl.probs,
           seq,
+          // XG-style PR denetim alanları (backend prFromLog bunları toplar; yoksa eski loss'a düşer).
+          countsForPR: dec.countsForPR,
+          prAdjustedEquityLoss: dec.prAdjustedEquityLoss,
         },
       ])
     }

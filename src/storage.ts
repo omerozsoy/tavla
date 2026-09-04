@@ -15,6 +15,10 @@ export interface MoveLogEntry {
   cands?: { notation: string; equity: number; steps: Step[] }[]
   probs?: number[]
   seq?: number
+  // XG-style PR denetim alanları (src/analysis/pr). countsForPR=false -> zorunlu/obvious (PR paydası
+  // dışı). prAdjustedEquityLoss = 1-puanlık maçta ×1.5 uygulanmış equity kaybı. Backend bunları toplar.
+  countsForPR?: boolean
+  prAdjustedEquityLoss?: number
   // Kup (cube) karari kaydi (taş oyunu degil). Varsa bu bir kup satiridir.
   cube?: {
     win: number // karar aninda kazanma %
