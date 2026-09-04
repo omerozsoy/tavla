@@ -198,6 +198,13 @@ class RoomController extends Controller
                 $cand->stake = $agreedStake;   // anlasilan sabit bahis (settle bunu kullanir)
                 $cand->target = max($commonTargets); // ortak uzunluklardan en uzunu
                 $cand->status = 'playing';
+                // Faz 2: iki oyuncu da belli -> TAM otorite mi? (global staked VEYA test allow-list).
+                // Öyleyse authoritative=true (Faz 1 dice_authority'nin YERİNE geçer).
+                if (Schema::hasColumn('rooms', 'authoritative')
+                    && $this->shouldAuthoritative($cand->p1_user_id, $userId, ($agreedStake > 0 || $betPct > 0))) {
+                    $cand->authoritative = true;
+                    $cand->dice_authority = false;
+                }
                 $cand->save();
                 return $cand;
             }
@@ -233,8 +240,9 @@ class RoomController extends Controller
         if ($hasStakesCol) {
             $roomData['stakes'] = $stakes;
         }
-        // BAĞIMSIZ Faz 1: bahisli (para) oda -> zar SUNUCUDAN (dice_authority). Env kill-switch
-        // (DICE_AUTHORITY=false) ile eski davranışa dönülebilir. Arkadaşlık/turnuva odaları hariç.
+        // BAĞIMSIZ Faz 1 (staked): bekleyen oda zarı sunucudan (dice_authority, CANLIDA gölge).
+        // Faz 2 TAM otorite (authoritative) kararı EŞLEŞME anında verilir (iki oyuncu da bilinince:
+        // global staked VEYA test allow-list). Kolon yoksa yazma -> SQLSTATE çökme önlenir.
         if ($hasDiceAuthCol && config('dice.authority', true) && ($maxStake > 0 || $betPct > 0)) {
             $roomData['dice_authority'] = true;
         }
@@ -1034,6 +1042,22 @@ class RoomController extends Controller
     private function otherColor(string $color): string
     {
         return $color === 'white' ? 'black' : 'white';
+    }
+
+    /**
+     * Faz 2 TAM otorite bu eşleşmede açılsın mı? İki karar yolu:
+     *  - TEST allow-list: iki oyuncu da `game.authoritative_users` listesinde (staked olmasa bile)
+     *    -> 2-hesapla güvenli staging (global kapalıyken yalnız bu çift etkilenir).
+     *  - GLOBAL: `game.server_authoritative` açık VE maç bahisli (para-önce rollout).
+     */
+    private function shouldAuthoritative(?int $u1, ?int $u2, bool $staked): bool
+    {
+        $allow = config('game.authoritative_users', []);
+        if ($u1 && $u2 && $allow && in_array((int) $u1, $allow, true) && in_array((int) $u2, $allow, true)) {
+            return true;
+        }
+
+        return $staked && config('game.server_authoritative', false);
     }
 
     /**

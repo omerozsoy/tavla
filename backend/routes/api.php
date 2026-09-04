@@ -61,6 +61,10 @@ Route::middleware('throttle:240,1')->group(function () {
     // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)
     Route::post('/rooms/{code}/roll', [RoomController::class, 'roll']);
     Route::post('/rooms/{code}/move', [RoomController::class, 'move']);
+    // Sunucu-otoriter küp + resign (Faz 2)
+    Route::post('/rooms/{code}/cube/offer', [RoomController::class, 'cubeOffer']);
+    Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond']);
+    Route::post('/rooms/{code}/resign', [RoomController::class, 'resign']);
 });
 Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 
