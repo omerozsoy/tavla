@@ -5437,6 +5437,17 @@ export default function App() {
                 ))}
               </div>
             )}
+            {hasActiveGame && (
+              <div className="lobby-welcome">
+                <Button
+                  variant="default"
+                  className="w-full"
+                  onClick={() => setHome(false)}
+                >
+                  <Icon name="live" /> {t('menu.resumeGame')}
+                </Button>
+              </div>
+            )}
             {user && (
               <HomeDashboard
                 rating={user.rating ?? 0}
@@ -5478,17 +5489,6 @@ export default function App() {
                   <h1 className="hero-title">{t('home.heroTitle')}</h1>
                 </div>
               </section>
-            )}
-            {hasActiveGame && (
-              <div className="lobby-welcome">
-                <Button
-                  variant="default"
-                  className="w-full"
-                  onClick={() => setHome(false)}
-                >
-                  <Icon name="live" /> {t('menu.resumeGame')}
-                </Button>
-              </div>
             )}
             <div className="home-panels">
               <LiveMatchesPanel
