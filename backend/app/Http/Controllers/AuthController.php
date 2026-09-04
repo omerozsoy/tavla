@@ -613,9 +613,13 @@ class AuthController extends Controller
     }
 
     /**
-     * Oyuncunun KENDI PR'ini kendi hamle log'undan hesapla (sunucu-otoriter, deterministik).
-     * Log bicimi: {"hc":"white","log":[{player,loss,...}]}. PR = (kendi hamlelerinin toplam
-     * equity kaybi / karar sayisi) * 500. Kendi kararlari player===hc olanlar. Bos -> null.
+     * Oyuncunun KENDI PR'ini kendi hamle log'undan hesapla (XG-style, deterministik).
+     * PR = (SAYILAN kararlarin toplam prAdjusted equity kaybi / sayilan karar) * 500.
+     *
+     * XG kurallari (src/analysis/pr TEK KAYNAK) istemcide karar aninda uygulanir; log her karara
+     * `countsForPR` (zorunlu/obvious haric) + `prAdjustedEquityLoss` (1-puanlik mac ×1.5 dahil)
+     * tasir. Bu alanlar VARSA onlari kullan; YOKSA (eski log) ham `loss` ortalamasina dus.
+     * Not: TAM sunucu-otoriter (motorla yeniden hesap) validator /analyze-pr + pr_mode=authoritative.
      */
     private function prFromLog(?string $json): ?float
     {
@@ -633,8 +637,18 @@ class AuthController extends Controller
             if (! is_array($e) || ($e['player'] ?? null) !== $hc) {
                 continue;
             }
-            $sum += max(0.0, (float) ($e['loss'] ?? 0));
-            $n++;
+            if (array_key_exists('countsForPR', $e)) {
+                // XG-style: yalniz SAYILAN kararlar (zorunlu/obvious istemcide elenmis).
+                if (! $e['countsForPR']) {
+                    continue;
+                }
+                $sum += max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
+                $n++;
+            } else {
+                // Eski log (alan yok) -> geriye uyum: ham loss ortalamasi.
+                $sum += max(0.0, (float) ($e['loss'] ?? 0));
+                $n++;
+            }
         }
         if ($n === 0) {
             return null;
