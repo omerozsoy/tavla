@@ -820,6 +820,20 @@ class RoomController extends Controller
         if ($room->end_reason === null) {
             $room->end_reason = $reason;
         }
+
+        // TERK EDEN KAYBEDER (sunucu-otoriter kayit): kaybedenin rating + maglubiyet +
+        // match_results satirini SUNUCUDA yaz -> istemci raporlamasa (sekme kapali) bile
+        // sicile yansisin. Puansiz (friendly) oda haric. Idempotent (bkz ForfeitLoss).
+        if ($room->mode !== 'friendly') {
+            $loserSlot = $winnerSlot === 'p1' ? 'p2' : 'p1';
+            $loserId = (int) ($loserSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id);
+            $oppRating = (int) ($winnerSlot === 'p1' ? $room->p1_rating : $room->p2_rating);
+            $winnerName = $winnerSlot === 'p1' ? $room->p1_name : $room->p2_name;
+            $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match';
+            \App\Support\ForfeitLoss::record(
+                $room->code, $loserId, $oppRating, (int) $room->target, $matchType, $winnerName,
+            );
+        }
     }
 
     // Normal galibiyet/terk icin end_reason etiketle (yalnizca mac gercekten bittiyse).
@@ -973,7 +987,53 @@ class RoomController extends Controller
             'gameNo' => 1,
             'done' => false,
             'winner' => null,
+            // Faz 2 KÜP: value=küp değeri, owner=küpü elinde tutan (null=ortada), pending=teklif
+            // eden renk (yanıt bekleniyor) veya null. Her yeni oyunda ortaya döner.
+            'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
         ];
+    }
+
+    /** server_match.cube (yoksa varsayılan: 1/ortada). */
+    private function cubeOf(Room $room): array
+    {
+        $c = (is_array($room->server_match) ? $room->server_match : [])['cube'] ?? [];
+
+        return [
+            'value' => (int) ($c['value'] ?? 1),
+            'owner' => $c['owner'] ?? null,
+            'pending' => $c['pending'] ?? null,
+        ];
+    }
+
+    /**
+     * OYUN sonucunu maça yaz: kazananın skoruna $points ekle, gameNo++, küpü ortaya döndür,
+     * maç bitti mi (target) belirle. Bitmediyse server_state'i YENİ oyuna sıfırla; bittiyse
+     * dokunma (çağıran son tahtayı korur). matchDone döner. move()/drop/resign ORTAK kullanır.
+     */
+    private function applyGameResult(Room $room, string $winner, int $points): bool
+    {
+        $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+        $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $points;
+        $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
+        $sm['cube'] = ['value' => 1, 'owner' => null, 'pending' => null]; // yeni oyun: küp ortada
+        $target = (int) ($sm['target'] ?? 1);
+        $done = (int) $sm['score'][$winner] >= $target;
+        if ($done) {
+            $sm['done'] = true;
+            $sm['winner'] = $winner;
+            $room->server_winner = $winner;
+            // server_state son tahtada kalır (çağıran ayarlar).
+        } else {
+            $room->server_state = \App\Support\Backgammon::initialState(); // sonraki oyun temiz tahta
+        }
+        $room->server_match = $sm;
+
+        return $done;
+    }
+
+    private function otherColor(string $color): string
+    {
+        return $color === 'white' ? 'black' : 'white';
     }
 
     /**
@@ -1024,6 +1084,10 @@ class RoomController extends Controller
             // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);
+            }
+            // Bekleyen küp teklifi varsa zar ATILAMAZ (önce take/drop yanıtı gelmeli).
+            if ($this->cubeOf($room)['pending'] !== null) {
+                return $this->fail('Önce küp teklifine yanıt ver.', 409);
             }
 
             // RE-ROLL ENGELİ: zar zaten verilmişse (dice dolu) aynısını döndür (idempotent).
@@ -1092,6 +1156,10 @@ class RoomController extends Controller
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);
             }
+            // Bekleyen küp teklifi varsa önce yanıtlanmalı (hamle edilemez).
+            if ($this->cubeOf($room)['pending'] !== null) {
+                return $this->fail('Önce küp teklifine yanıt ver.', 409);
+            }
             if (empty($state['dice'])) {
                 return $this->fail('Önce zar at.', 409);
             }
@@ -1113,28 +1181,15 @@ class RoomController extends Controller
             $new = $result['state'];
             $winner = \App\Support\Backgammon::winner($new);
 
-            // ---- SUNUCU-OTORİTER MAÇ SKORU (Faz 3) ----
-            // Oyun bittiyse (15 taş) puanı SUNUCU hesaplar (gammon/backgammon), skoru günceller;
-            // maç bitmediyse otomatik YENİ OYUN kurar. İstemci skoru forge EDEMEZ.
+            // ---- SUNUCU-OTORİTER MAÇ SKORU + KÜP (Faz 2/3) ----
+            // Oyun bittiyse (15 taş) puanı SUNUCU hesaplar: gammon/backgammon (1/2/3) × KÜP değeri.
+            // Maç bitmediyse applyGameResult otomatik YENİ OYUN kurar. İstemci skoru forge EDEMEZ.
             $matchDone = false;
             if ($winner) {
-                $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
-                $pts = \App\Support\Backgammon::gamePoints($new, $winner); // küp çarpanı hariç (Faz 3: küp yok)
-                $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $pts;
-                $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
-                $target = (int) ($sm['target'] ?? 1);
-                if ((int) $sm['score'][$winner] >= $target) {
-                    // MAÇ BİTTİ.
-                    $sm['done'] = true;
-                    $sm['winner'] = $winner;
-                    $matchDone = true;
-                    $room->server_winner = $winner;
-                    $room->server_state = $new; // son tahtayı koru
-                } else {
-                    // Sonraki oyun: temiz tahta (zar sıradaki roll ile gelir).
-                    $room->server_state = \App\Support\Backgammon::initialState();
-                }
-                $room->server_match = $sm;
+                $cubeVal = $this->cubeOf($room)['value'];
+                $pts = \App\Support\Backgammon::gamePoints($new, $winner) * $cubeVal;
+                $room->server_state = $new; // son tahta (maç biterse korunur; bitmezse applyGameResult ezer)
+                $matchDone = $this->applyGameResult($room, $winner, $pts);
             } else {
                 $room->server_state = $new;
             }
@@ -1147,6 +1202,155 @@ class RoomController extends Controller
                 'winner' => $winner,             // OYUN kazananı (renk) — bittiyse
                 'match' => $room->server_match,  // otoriter maç skoru
                 'match_done' => $matchDone,
+            ]);
+        });
+    }
+
+    /**
+     * KÜP TEKLİFİ (Faz 2): sıra sahibi, zar ATMADAN önce küpü ikiye katlamayı teklif eder.
+     * Kurallar SUNUCUDA: sıra sende + zar boş + bekleyen teklif yok + maç bitmemiş +
+     * küp ortada VEYA senin elinde. Kabul edilince pending=teklif eden; rakip take/drop verir.
+     */
+    public function cubeOffer(Request $request, string $code)
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+
+        return DB::transaction(function () use ($data, $code) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            if (! $room->authoritative) {
+                return $this->fail('Bu oda sunucu-otoriter değil.', 409);
+            }
+            $slot = $this->slotOf($room, $data['token']);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+            $color = $this->slotColor($slot);
+            $state = is_array($room->server_state) ? $room->server_state : null;
+            $sm = is_array($room->server_match) ? $room->server_match : null;
+            if (! $state || ! $sm || ! empty($sm['done'])) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($state['turn'] ?? 'white') !== $color) {
+                return $this->fail('Sıra sende değil.', 409);
+            }
+            if (! empty($state['dice'])) {
+                return $this->fail('Zar atıldıktan sonra küp teklif edilemez.', 409);
+            }
+            $cube = $this->cubeOf($room);
+            if ($cube['pending'] !== null) {
+                return $this->fail('Zaten bekleyen bir küp teklifi var.', 409);
+            }
+            if ($cube['owner'] !== null && $cube['owner'] !== $color) {
+                return $this->fail('Küp rakibin elinde — teklif edemezsin.', 409);
+            }
+
+            $sm['cube'] = ['value' => $cube['value'], 'owner' => $cube['owner'], 'pending' => $color];
+            $room->server_match = $sm;
+            $room->server_version = (int) $room->server_version + 1;
+            $room->save();
+
+            return response()->json(['match' => $room->server_match, 'version' => (int) $room->server_version]);
+        });
+    }
+
+    /**
+     * KÜP YANITI (Faz 2): teklifin rakibi take (ikiye katla + küp bana geçsin, oyun sürer)
+     * ya da drop (pes et) der. drop → teklif eden oyunu MEVCUT küp değerinde kazanır (gammon YOK).
+     */
+    public function cubeRespond(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'action' => ['required', 'string', 'in:take,drop'],
+        ]);
+
+        return DB::transaction(function () use ($data, $code) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            if (! $room->authoritative) {
+                return $this->fail('Bu oda sunucu-otoriter değil.', 409);
+            }
+            $slot = $this->slotOf($room, $data['token']);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+            $color = $this->slotColor($slot);
+            $cube = $this->cubeOf($room);
+            $offerer = $cube['pending'];
+            if ($offerer === null) {
+                return $this->fail('Bekleyen küp teklifi yok.', 409);
+            }
+            // Yalnız teklifin RAKİBİ yanıtlayabilir (teklif eden kendi teklifini yanıtlayamaz).
+            if ($color !== $this->otherColor($offerer)) {
+                return $this->fail('Bu teklifi yanıtlayamazsın.', 403);
+            }
+
+            $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+
+            if ($data['action'] === 'take') {
+                // İkiye katla, küp yanıtlayanın (take eden) eline geçer, teklif temizlenir.
+                $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => $color, 'pending' => null];
+                $room->server_match = $sm;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->save();
+
+                return response()->json([
+                    'match' => $room->server_match, 'action' => 'take',
+                    'version' => (int) $room->server_version, 'match_done' => false,
+                ]);
+            }
+
+            // drop: teklif eden MEVCUT küp değerinde oyunu kazanır (gammon/backgammon çarpanı YOK).
+            $sm['cube']['pending'] = null; // teklifi temizle (applyGameResult zaten küpü sıfırlar)
+            $room->server_match = $sm;
+            $matchDone = $this->applyGameResult($room, $offerer, $cube['value']);
+            $room->server_version = (int) $room->server_version + 1;
+            $room->save();
+
+            return response()->json([
+                'match' => $room->server_match, 'action' => 'drop', 'winner' => $offerer,
+                'version' => (int) $room->server_version, 'match_done' => $matchDone,
+            ]);
+        });
+    }
+
+    /**
+     * RESIGN (Faz 2): oyuncu oyunu terk eder → RAKİP oyunu MEVCUT küp değerinde kazanır.
+     * (v1: tek puan × küp; gammon/backgammon resign türü YOK.) applyGameResult maç bitişini yönetir.
+     */
+    public function resign(Request $request, string $code)
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+
+        return DB::transaction(function () use ($data, $code) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            if (! $room->authoritative) {
+                return $this->fail('Bu oda sunucu-otoriter değil.', 409);
+            }
+            $slot = $this->slotOf($room, $data['token']);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
+            $sm = is_array($room->server_match) ? $room->server_match : null;
+            if (! $sm || ! empty($sm['done'])) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            $winner = $this->otherColor($this->slotColor($slot));
+            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value']);
+            $room->server_version = (int) $room->server_version + 1;
+            $room->save();
+
+            return response()->json([
+                'match' => $room->server_match, 'winner' => $winner,
+                'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
         });
     }
