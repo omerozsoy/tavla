@@ -7,6 +7,7 @@ import './shadcn.css'
 import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
+import GatePrompt from './ui/GatePrompt.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -14,6 +15,8 @@ createRoot(document.getElementById('root')!).render(
       <LangProvider>
         <ToastProvider>
           <App />
+          {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
+          <GatePrompt />
         </ToastProvider>
       </LangProvider>
     </ErrorBoundary>

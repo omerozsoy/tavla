@@ -8,6 +8,7 @@ const API_URL =
   (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api')
 
 const TOKEN_KEY = 'tavla.token'
+const GATE_KEY = 'tavla.gate' // "kapali test" site sifresi (X-Site-Gate basligi)
 
 export function getToken(): string | null {
   try {
@@ -15,6 +16,28 @@ export function getToken(): string | null {
   } catch {
     return null
   }
+}
+
+// Site kapisi (SITE_PASSWORD): sifreyi localStorage'da tut, her istekte X-Site-Gate yolla.
+export function getGate(): string | null {
+  try {
+    return localStorage.getItem(GATE_KEY)
+  } catch {
+    return null
+  }
+}
+export function setGate(v: string | null) {
+  try {
+    if (v) localStorage.setItem(GATE_KEY, v)
+    else localStorage.removeItem(GATE_KEY)
+  } catch {
+    /* yok */
+  }
+}
+// Kapi 401'i gelince App'in sifre ekranini acmasi icin geri cagri.
+let gateHandler: (() => void) | null = null
+export function onGateRequired(fn: () => void) {
+  gateHandler = fn
 }
 function setToken(t: string | null) {
   try {
@@ -80,18 +103,25 @@ class ApiError extends Error {
 
 async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken()
+  const gate = getGate()
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(gate ? { 'X-Site-Gate': gate } : {}),
       ...(options.headers || {}),
     },
   })
   const text = await res.text()
   const data = text ? JSON.parse(text) : {}
   if (!res.ok) {
+    // Site kapisi: yanlis/eksik sifre -> sifre ekranini ac, saklanan yanlis sifreyi temizle.
+    if (res.status === 401 && (data as { gate?: boolean }).gate) {
+      setGate(null)
+      gateHandler?.()
+    }
     throw new ApiError(res.status, data.message || 'Hata', data.errors)
   }
   return data as T

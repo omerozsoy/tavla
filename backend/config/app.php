@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Site Gate (kapali test sifresi)
+    |--------------------------------------------------------------------------
+    |
+    | Doluysa tum /api istekleri dogru X-Site-Gate basligini tasimak zorunda
+    | (bkz App\Http\Middleware\SiteGate). Launch'ta bosalt -> kapi devre disi.
+    |
+    */
+
+    'site_password' => env('SITE_PASSWORD', ''),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |

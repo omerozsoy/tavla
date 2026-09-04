@@ -64,7 +64,29 @@ export interface ServerMatchView {
   score?: { white?: number; black?: number }
   cube?: { value?: number; owner?: Player | null; pending?: Player | null }
   done?: boolean
+  winner?: Player | null
   opened?: boolean
+}
+
+/** Maç bitti mi + kazanan. */
+export interface MatchEndInfo {
+  matchOver: boolean
+  winner: Player | null
+}
+
+/**
+ * Maç-sonu durumu: kazanan SUNUCU skorundan TÜRETİLİR (hedefe ulaşan). İki istemci de aynı
+ * (senkron) skoru aldığından İKİSİ de aynı kazananı hesaplar -> "kazandım ama kayıp yazıldı" /
+ * "iki taraf da kazandı" sınıfı bug OLMAZ. settle/rating zaten backend'de server_match'ten
+ * (forge-red); bu yalnız istemci GÖSTERİMİ. sm.done/sm.winner ile tutarlı olmalı (test eder).
+ */
+export function matchEndFromServer(sm: ServerMatchView): MatchEndInfo {
+  const t = sm.target ?? 1
+  const w = sm.score?.white ?? 0
+  const b = sm.score?.black ?? 0
+  const winner: Player | null = w >= t ? 'white' : b >= t ? 'black' : null
+
+  return { matchOver: winner !== null, winner }
 }
 
 /** Yerel maç durumunun otoriterden türetilen alanları (App.tsx applyServerBoard bunu uygular). */
