@@ -48,7 +48,17 @@ function readJson(req: IncomingMessage): Promise<unknown> {
   })
 }
 
+const LOG_IP = process.env.VALIDATOR_LOG_IP === '1'
+
 const server = createServer(async (req, res) => {
+  // Teşhis: isteğin kaynak IP'sini logla (VALIDATOR_LOG_IP=1). IP Address Restriction'ı
+  // DOĞRU IP'ye kurmak için: backend bir hamle gönderdiğinde loglarda görünen IP = beyaz
+  // listeye alınacak IP (sunucunun kendi public IP'si ya da 127.0.0.1 — kuruluma göre).
+  if (LOG_IP) {
+    const xff = (req.headers['x-forwarded-for'] as string | undefined) || ''
+    // eslint-disable-next-line no-console
+    console.log(`[validator] ${req.method} ${req.url} from=${req.socket.remoteAddress} xff=${xff}`)
+  }
   // Sağlık kontrolü (secret'siz)
   if (req.method === 'GET' && req.url === '/health') {
     return send(res, 200, { ok: true, service: 'tavla-validator' })
