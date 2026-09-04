@@ -38,6 +38,8 @@ class GameLogController extends Controller
             'events.*.p' => ['required', Rule::in(['W', 'B'])],
             'events.*.d' => ['nullable', 'string', 'max:16'],
             'events.*.m' => ['nullable', 'string', 'max:64'],
+            'events.*.o' => ['nullable', 'integer', 'min:-16', 'max:16'], // aynı seq'te ikincil sıra
+            'events.*.k' => ['nullable', Rule::in(['cube', 'end'])],       // kup / oyun sonu
         ]);
 
         $uid = $data['uid'];

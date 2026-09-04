@@ -1421,7 +1421,9 @@ export interface GameLogTurn {
   s: number // sıra (turnsPlayed anındaki değer — iki istemci arasında ortak)
   p: 'W' | 'B' // renk
   d: string // zar "6-5" / "6-6-6-6"
-  m: string // hamle notasyonu "24/18 13/8" / "pas"
+  m: string // hamle notasyonu "24/18 13/8" / "pas" (kup/bitiş için açıklama)
+  o?: number // aynı seq içinde ikincil sıra (kup < hamle < bitiş); varsayılan 0
+  k?: 'cube' | 'end' // tür: kup kararı / oyun sonu (yoksa normal hamle)
 }
 export interface GameLogPayload {
   uid: string

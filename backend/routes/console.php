@@ -22,3 +22,10 @@ Schedule::call(function () {
     Room::where('updated_at', '<', now()->subDay())->delete();
     DB::table('game_invites')->where('created_at', '<', now()->subMinutes(10))->delete();
 })->everyFiveMinutes()->name('cleanup-stale-rooms')->withoutOverlapping();
+
+// Maç kaydı budama: yüksek hacimli pvb (bota karşı) kayıtları game_logs tablosunu
+// şişirmesin -> 90 günden eski pvb maçlarını her gün sil. Online/yerel maçlar korunur.
+Schedule::command('gamelogs:prune --days=90')
+    ->daily()
+    ->name('prune-game-logs')
+    ->withoutOverlapping();

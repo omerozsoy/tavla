@@ -35,8 +35,10 @@ class GameLog extends Model
     }
 
     /**
-     * İki oyuncunun turlarını (g, s) sırasına göre TEK zaman çizelgesinde birleştirir.
-     * Dönen: [['g'=>1,'s'=>0,'p'=>'W','d'=>'6-5','m'=>'24/18 13/8'], ...]
+     * İki oyuncunun turlarını (g, s, o) sırasına göre TEK zaman çizelgesinde birleştirir.
+     * o = aynı seq içinde ikincil sıra (kup<hamle<bitiş). Oyun sonu (k='end') olayları iki
+     * istemci de yazabildiği için oyun başına TEKİLLEŞTİRİLİR.
+     * Dönen: [['g'=>1,'s'=>0,'p'=>'W','d'=>'6-5','m'=>'24/18 13/8','k'=>null], ...]
      */
     public function mergedTurns(): array
     {
@@ -50,10 +52,29 @@ class GameLog extends Model
             if ($ga !== $gb) {
                 return $ga <=> $gb;
             }
+            $sa = (int) ($a['s'] ?? 0);
+            $sb = (int) ($b['s'] ?? 0);
+            if ($sa !== $sb) {
+                return $sa <=> $sb;
+            }
 
-            return (int) ($a['s'] ?? 0) <=> (int) ($b['s'] ?? 0);
+            return (int) ($a['o'] ?? 0) <=> (int) ($b['o'] ?? 0);
         });
 
-        return $turns;
+        // Oyun sonu olaylarını oyun başına tekilleştir (iki istemci de yazmış olabilir).
+        $seenEnd = [];
+        $out = [];
+        foreach ($turns as $t) {
+            if (($t['k'] ?? null) === 'end') {
+                $g = (int) ($t['g'] ?? 0);
+                if (isset($seenEnd[$g])) {
+                    continue;
+                }
+                $seenEnd[$g] = true;
+            }
+            $out[] = $t;
+        }
+
+        return $out;
     }
 }
