@@ -38,12 +38,9 @@ async function matchmake(page: import('@playwright/test').Page, roomToken: strin
   )
 }
 
-// NOT (2026-09-04): Tam stack AYAKTA (smoke.spec geçiyor: backend e2e + validator + vite +
-// tarayıcı) ama bu 2-istemci akışı FLAKY altyapıya takıldı (Vite reuseExistingServer yarışı ->
-// page.goto abort/timeout; uygulama değil, orkestrasyon). Stabilize edilene kadar SKIP; asıl
-// kapsama backend testleri (AuthoritativeLoopTest, 188) + deterministik sim (authSync, 16, dişli).
-// Stabilize için: e2e'ye ayrı Vite portu (reuseExistingServer:false) + goto retry + auth ispatı.
-test.skip('tam stack: 2 istemci auth + eşleşme + oda authoritative', async ({ browser }) => {
+// Tam stack: backend e2e + Node validator + AYRI-port Vite (5199) + tarayıcı. Eski flaky goto
+// (Vite reuse yarışı) ayrı port + retry ile giderildi. Oyun-içi senkron: authSync sim (16 test).
+test('tam stack: 2 istemci auth + eşleşme + oda authoritative', async ({ browser }) => {
   const c1 = await browser.newContext()
   const c2 = await browser.newContext()
   const p1 = await loadAuthed(c1, users[0].token)

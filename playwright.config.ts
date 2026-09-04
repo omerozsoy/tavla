@@ -5,17 +5,19 @@ import { defineConfig, devices } from '@playwright/test'
 // AYRI test DB (.env.e2e -> database/e2e.sqlite); prod/dev verisine dokunmaz. globalSetup seed'ler.
 export default defineConfig({
   testDir: './e2e',
-  timeout: 60_000,
+  timeout: 120_000, // Vite dev SOĞUK-derleme ilk goto'yu yavaşlatır; 2 istemci cold compile sığsın.
   expect: { timeout: 12_000 },
   fullyParallel: false,
   workers: 1,
+  retries: 1, // Vite soğuk-başlangıç geçici hataları için 1 retry (stabilite).
   reporter: [['list']],
   // NOT: DB seed'i MANUEL yapılır (APP_ENV=e2e php artisan e2e:seed) — backend serve sqlite'ı
   // açıkken migrate:fresh KİLİTLENEBİLİR. globalSetup bu yüzden devrede değil (seed dışarıda).
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5199', // E2E'ye AYRI vite portu (kullanıcının 5173'üyle yarışmaz).
     trace: 'retain-on-failure',
     headless: true,
+    navigationTimeout: 45_000, // Vite dev ilk derleme yavaş olabilir.
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
@@ -37,11 +39,13 @@ export default defineConfig({
       timeout: 30_000,
     },
     {
-      // Frontend (Vite dev; DEV modda API'yi localhost:8000'e yollar). Varsa mevcut server kullanılır.
-      command: 'npm run dev',
-      url: 'http://localhost:5173',
-      reuseExistingServer: true,
-      timeout: 60_000,
+      // Frontend (Vite dev; DEV modda API'yi localhost:8000'e yollar). AYRI port (5199) +
+      // reuseExistingServer:false -> her koşuda Playwright TAZE başlatır + kapatır; kullanıcının
+      // 5173'üyle yarış YOK (önceki flaky goto abort/timeout'un kök nedeni buydu).
+      command: 'npm run dev -- --port 5199 --strictPort',
+      url: 'http://localhost:5199',
+      reuseExistingServer: false,
+      timeout: 90_000,
     },
   ],
 })
