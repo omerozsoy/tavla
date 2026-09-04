@@ -10,7 +10,8 @@ class TournamentAdController extends Controller
     // Her banner turnuva id + adiyla doner; tiklaninca o turnuvanin detayi acilir.
     public function index()
     {
-        $ads = TournamentAd::where('published', true)
+        $ads = TournamentAd::with('organizer')
+            ->where('published', true)
             ->whereNotNull('image')
             ->orderBy('sort')
             ->orderBy('id')
@@ -19,7 +20,8 @@ class TournamentAdController extends Controller
             ->map(fn (TournamentAd $ad) => [
                 'id' => $ad->id,
                 'image' => $ad->image,
-                'logo' => $ad->logo,
+                // Secili kurum varsa onun logosu, yoksa elle yuklenen logo.
+                'logo' => $ad->resolved_logo,
                 'kicker' => $ad->kicker,
                 'title' => $ad->title,
                 'subtitle' => $ad->subtitle,
