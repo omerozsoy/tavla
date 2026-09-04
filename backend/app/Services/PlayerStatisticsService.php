@@ -34,8 +34,35 @@ class PlayerStatisticsService
                 'filter' => $period,
                 'categories' => $this->safeMedian($user->id, $period),
             ],
+            // XG-style HAVUZLANMIS PR (§13): asıl PR metriği. Median ayrı bir dağılım göstergesi.
+            'pooled_pr' => [
+                'filter' => $period,
+                'categories' => $this->safePooled($user->id, $period),
+            ],
             'wxp' => $this->wxpBlock($user),
         ];
+    }
+
+    /** Havuzlanmış PR — median gibi güvenli sarmalayıcı (patlarsa boş kategori). */
+    private function safePooled(int $userId, string $period): array
+    {
+        try {
+            return Cache::remember(
+                self::pooledCacheKey($userId, $period),
+                now()->addHours(6),
+                fn () => $this->median->pooledCategoriesFor($userId, $period),
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('pooled PR stats failed', [
+                'user_id' => $userId, 'err' => $e->getMessage(),
+            ]);
+            $out = [];
+            foreach (StatsConfig::CATEGORIES as $key => $label) {
+                $out[$key] = ['label' => $label, 'pooled_pr' => null, 'decisions' => 0];
+            }
+
+            return $out;
+        }
     }
 
     /**
@@ -103,6 +130,7 @@ class PlayerStatisticsService
     {
         foreach (array_keys(StatsConfig::DATE_FILTERS) as $filter) {
             Cache::forget(self::medianCacheKey($userId, $filter));
+            Cache::forget(self::pooledCacheKey($userId, $filter));
         }
     }
 
@@ -111,5 +139,10 @@ class PlayerStatisticsService
         // v2: per-karar medyan (decision_analyses). Anahtar degisti -> eski mean-tabanli
         // cache otomatik gecersiz.
         return "player:{$userId}:median-pr2:{$period}";
+    }
+
+    private static function pooledCacheKey(int $userId, string $period): string
+    {
+        return "player:{$userId}:pooled-pr:{$period}";
     }
 }

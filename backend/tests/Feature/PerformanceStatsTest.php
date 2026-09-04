@@ -238,6 +238,29 @@ class PerformanceStatsTest extends TestCase
             ->assertJsonPath('wxp.win_rate', 66.67);
     }
 
+    // XG §13: lifetime PR HAVUZLANIR (maç PR ortalamasi DEGIL). Cok-kararli maç agir basar.
+    public function test_pooled_pr_pools_raw_totals_not_match_average(): void
+    {
+        $u = $this->makeUser();
+        // Ayni kategori (7S). MaçA: 10 karar, loss 0.04 -> PR 2. MaçB: 100 karar, loss 2.0 -> PR 10.
+        $a = $this->mr($u, true, 7, 'match', 2.0);
+        $a->pr_equity_lost = 0.04;
+        $a->pr_decisions = 10;
+        $a->saveQuietly();
+        $b = $this->mr($u, false, 7, 'match', 10.0);
+        $b->pr_equity_lost = 2.0;
+        $b->pr_decisions = 100;
+        $b->saveQuietly();
+
+        Sanctum::actingAs($u->fresh());
+        $res = $this->getJson('/api/me/performance-stats?period=all');
+        // Havuzlanmis: (0.04+2.0)/(10+100)*500 = 9.27... (ORTALAMA (2+10)/2=6 DEGIL)
+        $res->assertOk()
+            ->assertJsonPath('pooled_pr.categories.7.pooled_pr', 9.27)
+            ->assertJsonPath('pooled_pr.categories.7.decisions', 110)
+            ->assertJsonPath('pooled_pr.categories.coin.pooled_pr', null);
+    }
+
     // Per-karar medyan: kategori bagimsizligi + rakip/forced haric + tarih filtresi.
     public function test_per_decision_median_source_and_filters(): void
     {

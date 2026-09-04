@@ -97,6 +97,7 @@ async function checkerRecord(
   dice: number[],
   playedSteps: Step[],
   matchLength: number,
+  isMoney: boolean,
 ): Promise<PrDecision> {
   const mover = pos.turn
   const state = cloneState(pos)
@@ -105,7 +106,7 @@ async function checkerRecord(
   const moves: Move[] = generateMoves(state)
   if (moves.length <= 1) {
     // Zorunlu (tek/sifir hamle) -> sayilmaz; equity eval'e gerek yok.
-    return checkerDecision(0, 0, 0, moves.length, matchLength)
+    return checkerDecision(0, 0, 0, moves.length, matchLength, isMoney)
   }
   let best = -Infinity
   let worst = Infinity
@@ -115,7 +116,7 @@ async function checkerRecord(
     if (eq < worst) worst = eq
   }
   const chosenEq = await equityAfter(applyMove(state, playedSteps, mover), mover)
-  return checkerDecision(best, chosenEq, worst, moves.length, matchLength)
+  return checkerDecision(best, chosenEq, worst, moves.length, matchLength, isMoney)
 }
 
 export interface PrLogEntry {
@@ -138,12 +139,13 @@ export async function analyzePr(
   hc: Player,
   log: PrLogEntry[],
   matchLength = 1,
+  isMoney = false,
 ): Promise<PrResult> {
   await init()
   const decisions: PrDecision[] = []
   for (const e of log) {
     if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue
-    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength))
+    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney))
   }
   const s = summarize(decisions)
   return { ...s, pr: s.overall.pr, decisions: s.overall.decisions }

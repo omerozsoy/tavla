@@ -121,6 +121,62 @@ class MedianPerformanceService
     }
 
     /**
+     * XG-style HAVUZLANMIS lifetime/oturum PR (§13): maç PR'larının ortalaması ALINMAZ; ham
+     * toplamlar havuzlanır -> lifetimePR = (Σ pr_equity_lost / Σ pr_decisions) × 500. Böylece
+     * 100-kararlık maç, 10-kararlık maçtan 10× ağır basar (medyan/ortalamanın yapamadığı).
+     *
+     * Kaynak: match_results.pr_equity_lost + pr_decisions (XG totalleri; migration ile geldi).
+     * Kategori başına (Jeton/1S/3S/5S/7S) bağımsız havuz. Veri yoksa pr=null (0.00 DEĞİL, §10).
+     *
+     * @param  string  $filter  'all'|'7d'|'30d'|'90d'|'1y'
+     * @return array<string, array{label:string, pooled_pr:float|null, decisions:int}>
+     */
+    public function pooledCategoriesFor(int $userId, string $filter): array
+    {
+        // Kolon yoksa (migration çalışmadı) boş dön -> çağıran güvenle atlar.
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+            return [];
+        }
+        $days = StatsConfig::DATE_FILTERS[$filter] ?? null;
+
+        $q = MatchResult::query()
+            ->where('user_id', $userId)
+            ->whereNotNull('pr_decisions')
+            ->where('pr_decisions', '>', 0);
+
+        if ($days !== null) {
+            $q->where('created_at', '>=', now()->subDays($days));
+        }
+
+        $rows = $q->get(['match_type', 'match_length', 'pr_equity_lost', 'pr_decisions']);
+
+        // Kategori başına ham toplamları HAVUZLA (loss + decisions ayrı ayrı).
+        $pool = [];
+        foreach ($rows as $r) {
+            $len = $r->match_length !== null ? (int) $r->match_length : null;
+            $key = StatsConfig::categoryKey($r->match_type ?? StatsConfig::MATCH_TYPE_MATCH, $len);
+            if ($key === null) {
+                continue;
+            }
+            $pool[$key]['loss'] = ($pool[$key]['loss'] ?? 0.0) + (float) $r->pr_equity_lost;
+            $pool[$key]['dec'] = ($pool[$key]['dec'] ?? 0) + (int) $r->pr_decisions;
+        }
+
+        $out = [];
+        foreach (StatsConfig::CATEGORIES as $key => $label) {
+            $loss = $pool[$key]['loss'] ?? 0.0;
+            $dec = $pool[$key]['dec'] ?? 0;
+            $out[$key] = [
+                'label' => $label,
+                'pooled_pr' => $dec > 0 ? round(($loss / $dec) * 500, 2) : null,
+                'decisions' => $dec,
+            ];
+        }
+
+        return $out;
+    }
+
+    /**
      * Gercek median. Tek sayida -> ortadaki; cift sayida -> ortadaki iki degerin ortalamasi.
      * Bos -> null. Hesap tam precision; sonuc UI icin 2 ondalik yuvarlanir.
      *

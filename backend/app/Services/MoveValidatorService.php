@@ -105,7 +105,7 @@ class MoveValidatorService
      * MoveLogEntry dizisi (pos/dice/playedSteps/player alanları). Erişilemez/eksikse null.
      * Dönüş: ['pr'=>?float, 'decisions'=>int] veya null (validator yok/hatalı).
      */
-    public function analyzePr(string $hc, array $log, int $matchLength = 1): ?array
+    public function analyzePr(string $hc, array $log, int $matchLength = 1, bool $isMoney = false): ?array
     {
         if (! $this->isConfigured()) {
             return null;
@@ -114,7 +114,9 @@ class MoveValidatorService
             // PR analizi motor calistirir (yavas olabilir) -> daha uzun timeout.
             $res = $this->client()
                 ->timeout(max($this->timeout, 20))
-                ->post($this->url.'/analyze-pr', ['hc' => $hc, 'log' => $log, 'matchLength' => $matchLength]);
+                ->post($this->url.'/analyze-pr', [
+                    'hc' => $hc, 'log' => $log, 'matchLength' => $matchLength, 'isMoney' => $isMoney,
+                ]);
             if (! $res->successful()) {
                 Log::warning('validator.analyzePr non-2xx', ['status' => $res->status()]);
 

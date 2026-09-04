@@ -1315,10 +1315,20 @@ export interface MedianCategory {
   median_pr: number | null
   sample_count: number
 }
+export interface PooledCategory {
+  label: string
+  pooled_pr: number | null
+  decisions: number
+}
 export interface PerformanceStats {
   median_error_rate: {
     filter: MedianFilter
     categories: Record<string, MedianCategory> // coin,1,3,5,7
+  }
+  // XG-style HAVUZLANMIS PR (§13): asıl PR metriği (maç PR ortalaması değil, Σloss/Σkarar×500).
+  pooled_pr?: {
+    filter: MedianFilter
+    categories: Record<string, PooledCategory>
   }
   wxp: {
     total: number

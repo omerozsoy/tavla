@@ -395,8 +395,12 @@ class AuthController extends Controller
         // Log yoksa/bossa istemci degerine dus (pvb eski kayitlar, log kapali durumlar).
         // NOT: prFromLog istemcinin logdaki 'loss' degerlerini ortalar (istemci-turevi). TAM
         // otorite icin asagida validator (Node + sinir agi) log'u YENIDEN degerlendirir.
+        $clientTotals = $this->prTotalsFromLog($data['log'] ?? null); // ['loss','decisions'] veya null
         $clientPr = $this->prFromLog($data['log'] ?? null);
         $selfPr = $clientPr ?? ($data['pr'] ?? null);
+        // Havuzlanmis lifetime icin (§13): sayilan kararlarin toplam prAdjusted equity kaybi + sayisi.
+        $prEquityLost = $clientTotals['loss'] ?? null;
+        $prDecisions = $clientTotals['decisions'] ?? null;
 
         // TAM SUNUCU-OTORITER PR: validator her karari motorla yeniden degerlendirir -> istemci
         // sahte dusuk-hata uyduramaz. 'shadow' fark loglar (kaydetmez), 'authoritative' kaydeder.
@@ -405,7 +409,8 @@ class AuthController extends Controller
             $decoded = json_decode($data['log'], true);
             if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
                 $ml = (int) ($data['match_length'] ?? 1);
-                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml);
+                $isMoney = ($data['match_type'] ?? 'match') === 'coin'; // coin=para oyunu -> 1pt ×1.5 YOK
+                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml, $isMoney);
                 if ($srv !== null && $srv['pr'] !== null) {
                     if ($prMode === 'shadow') {
                         \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [
@@ -416,6 +421,9 @@ class AuthController extends Controller
                         ]);
                     } elseif ($prMode === 'authoritative') {
                         $selfPr = $srv['pr']; // istemci loss'una guvenme -> sunucu-hesapli deger
+                        // Havuzlama totalleri de sunucudan (tutarli): overall.equityLost/decisions.
+                        $prEquityLost = (float) ($srv['equity_lost'] ?? $prEquityLost);
+                        $prDecisions = (int) ($srv['decisions'] ?? $prDecisions);
                     }
                 }
             }
@@ -448,6 +456,11 @@ class AuthController extends Controller
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
+        }
+        // XG-style havuzlama totalleri (§13): lifetime PR = ΣequityLost / Σdecisions × 500.
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+            $mr['pr_equity_lost'] = $prEquityLost;
+            $mr['pr_decisions'] = $prDecisions;
         }
         // Oyun turu: Jeton (coin) mi N-puanlik mac mi (Median "Jeton" kategorisi + WXP).
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'match_type')) {
@@ -623,6 +636,21 @@ class AuthController extends Controller
      */
     private function prFromLog(?string $json): ?float
     {
+        $t = $this->prTotalsFromLog($json);
+        if ($t === null || $t['decisions'] === 0) {
+            return null;
+        }
+
+        return round(($t['loss'] / $t['decisions']) * 500, 2);
+    }
+
+    /**
+     * XG-style PR TOPLAMLARI (havuzlanmis lifetime icin sart, §13): sayilan kararlarin toplam
+     * prAdjusted equity kaybi + karar sayisi. ['loss'=>float, 'decisions'=>int] veya null.
+     * countsForPR alani varsa onu kullanir (obvious/zorunlu elenmis); yoksa eski ham loss.
+     */
+    private function prTotalsFromLog(?string $json): ?array
+    {
         if (! $json) {
             return null;
         }
@@ -638,23 +666,18 @@ class AuthController extends Controller
                 continue;
             }
             if (array_key_exists('countsForPR', $e)) {
-                // XG-style: yalniz SAYILAN kararlar (zorunlu/obvious istemcide elenmis).
                 if (! $e['countsForPR']) {
-                    continue;
+                    continue; // zorunlu/obvious -> paydaya girmez
                 }
                 $sum += max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
                 $n++;
             } else {
-                // Eski log (alan yok) -> geriye uyum: ham loss ortalamasi.
-                $sum += max(0.0, (float) ($e['loss'] ?? 0));
+                $sum += max(0.0, (float) ($e['loss'] ?? 0)); // eski log geriye uyum
                 $n++;
             }
         }
-        if ($n === 0) {
-            return null;
-        }
 
-        return round(($sum / $n) * 500, 2);
+        return ['loss' => $sum, 'decisions' => $n];
     }
 
     /**
