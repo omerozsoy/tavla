@@ -988,6 +988,7 @@ export interface RoomView {
   server_state?: GameState | null // otoriter tahta (yalniz authoritative iken dolu)
   server_version?: number
   server_winner?: string | null // 'white'|'black' bir oyun bitince
+  server_match?: ServerMatch | null // otoriter maç skoru + küp + Crawford (authoritative iken)
   dice_commit?: string | null // provably-fair taahhut (dice_seed sunucuda gizli)
   // BAĞIMSIZ Faz 1: true ise zar SUNUCUDAN alinir (serverRoll); hamle/tahta/kup LEGACY kalir.
   // authoritative'den AYRI (o tam otoriter yol). Bahisli (para) odalarda acilir.
@@ -1387,13 +1388,27 @@ export async function updateRoom(
   })
 }
 
-// ---- Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2c) ----
+// ---- Sunucu-otoriter zar + hamle + küp (para maçı güvenliği Faz 2) ----
+// Otoriter maç durumu: skor + küp + Crawford SUNUCUDA. İstemci forge edemez.
+export interface ServerMatch {
+  target: number
+  score: { white: number; black: number }
+  gameNo: number
+  done: boolean
+  winner: 'white' | 'black' | null
+  cube: { value: number; owner: 'white' | 'black' | null; pending: 'white' | 'black' | null }
+  crawford?: boolean
+  crawfordDone?: boolean
+  opened?: boolean
+}
+
 // Sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal) üretilir; istemci seçemez.
-// RE-ROLL ENGELİ: zar zaten verildiyse aynısı döner (reused=true).
+// RE-ROLL ENGELİ: zar zaten verildiyse aynısı döner (reused=true). Oyunun İLK eli = adil
+// AÇILIŞ (opening=true, starter=başlayan renk; iki farklı zar, yüksek başlar).
 export async function serverRoll(
   code: string,
   clientSeed?: string,
-): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean }> {
+): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black' }> {
   return req(`/rooms/${encodeURIComponent(code)}/roll`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null }),
@@ -1401,14 +1416,41 @@ export async function serverRoll(
 }
 
 // İstemci tam-tur step dizisini gönderir; sunucu (Node validator=TS motoru) yasallığı doğrular.
-// Yasal → uygulanmış otoriter state döner; yasadışı → 422, doğrulama servisi yok → 503.
+// Yasal → uygulanmış otoriter state + maç skoru döner; yasadışı → 422, doğrulama servisi yok → 503.
 export async function serverMove(
   code: string,
   steps: Step[],
-): Promise<{ state: GameState; version: number; winner: string | null }> {
+): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean }> {
   return req(`/rooms/${encodeURIComponent(code)}/move`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), steps }),
+  })
+}
+
+// Küp teklifi (sıra sahibi, zar atmadan önce). Sunucu kuralları doğrular (sıra/sahiplik/Crawford).
+export async function serverCubeOffer(code: string): Promise<{ match: ServerMatch; version: number }> {
+  return req(`/rooms/${encodeURIComponent(code)}/cube/offer`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken() }),
+  })
+}
+
+// Küp yanıtı: take (×2 + küp bana) veya drop (pes). Sunucu skoru/küpü günceller.
+export async function serverCubeRespond(
+  code: string,
+  action: 'take' | 'drop',
+): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string }> {
+  return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), action }),
+  })
+}
+
+// Pes et (resign): rakip mevcut küp değerinde kazanır. Sunucu maç bitişini yönetir.
+export async function serverResign(code: string): Promise<{ match: ServerMatch; winner: string; version: number; match_done: boolean }> {
+  return req(`/rooms/${encodeURIComponent(code)}/resign`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken() }),
   })
 }
 
