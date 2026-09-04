@@ -1636,6 +1636,9 @@ export default function App() {
         )
         return
       }
+      // Zaten verilmiş zar (reused): yerel tahtayı optimistik EZME -> poll server_state ile
+      // senkronlar (açılış yarışında ikinci çağıran buraya düşebilir).
+      if (r.reused) return
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
       Sound.dice()
@@ -1652,8 +1655,11 @@ export default function App() {
           ? t('msg.noMovePass', { name: pName(rolled.turn) })
           : t('msg.playing', { name: pName(rolled.turn), dice: dice.join(', ') }),
       )
-    } catch {
-      notify.error(t('mp.connError'))
+    } catch (e) {
+      // Açılış/sıra yarışı: başlayan-olmayan taraf 409 alır -> SESSİZ (poll açılışı getirir).
+      const err = e as { status?: number; message?: string }
+      if (err?.status === 409) return
+      notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
     }
   }
 
@@ -1741,12 +1747,19 @@ export default function App() {
     ])
   }
 
+  // Sunucu (authoritative) çağrısı hatasını okunur mesaja çevir: HTTP hatasında sunucunun
+  // gerçek mesajını (ör. "Crawford oyununda küp kullanılamaz"), ağ kopukluğunda genel uyarı.
+  function srvErr(e: unknown): string {
+    const err = e as { status?: number; message?: string }
+    return err?.status ? err.message || t('mp.connError') : t('mp.connError')
+  }
+
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
     // OTORİTER (Faz 2): küp teklifi SUNUCUYA (kurallar sunucuda: sıra/sahiplik/Crawford).
     // Yerel mutasyon YOK -> poll server_match ile cubePending'i senkronlar (forge yok).
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeOffer(room.code).catch(() => notify.error(t('mp.connError')))
+      if (room?.code) void serverCubeOffer(room.code).catch((e) => notify.error(srvErr(e)))
       return
     }
     const humanColor: Player = online ? myColor : 'white'
@@ -1759,7 +1772,7 @@ export default function App() {
   function handleTake() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeRespond(room.code, 'take').catch(() => notify.error(t('mp.connError')))
+      if (room?.code) void serverCubeRespond(room.code, 'take').catch((e) => notify.error(srvErr(e)))
       return
     }
     const doubler = cubePending
@@ -1775,7 +1788,7 @@ export default function App() {
   function handleDrop() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeRespond(room.code, 'drop').catch(() => notify.error(t('mp.connError')))
+      if (room?.code) void serverCubeRespond(room.code, 'drop').catch((e) => notify.error(srvErr(e)))
       return
     }
     const doubler = cubePending
@@ -1796,7 +1809,7 @@ export default function App() {
     setResignOpen(false)
     // OTORİTER (Faz 2): pes SUNUCUYA -> rakip mevcut küp değerinde kazanır; poll senkronlar.
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverResign(room.code).catch(() => notify.error(t('mp.connError')))
+      if (room?.code) void serverResign(room.code).catch((e) => notify.error(srvErr(e)))
       return
     }
     const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
@@ -2578,9 +2591,9 @@ export default function App() {
       setCubePending(sm.cube?.pending ?? null)
       if (!sm.done) {
         setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
-        // Sunucu yeni oyuna geçtiyse (opened=false) açılışı otomatik tetikle (opening useEffect
-        // authoritative dalı serverRoll ile adil açılışı yapar). İlk oyun App init'ten gelir.
-        if (sm.opened === false) setOpening('roll')
+        // opened=false: sunucu yeni oyuna geçti -> açılışı otomatik tetikle (opening useEffect).
+        // opened=true: açılış YAPILDI -> "Açılış zarı atılıyor" overlay'ini KALDIR (takılma fix).
+        setOpening(sm.opened === false ? 'roll' : null)
       }
     }
     if (!winner(gs)) setMessage(t('msg.turnOf', { name: pName(gs.turn) }))
@@ -5517,11 +5530,7 @@ export default function App() {
 
       <div className="status">
         {match.isCrawford && !gameEnd && <span className="crawford">{t('status.crawford')}</span>}
-        {online && (
-          <span className="room-tag">
-            {t('mp.enterCode')}: {room?.code} ·{' '}
-          </span>
-        )}
+        {/* Oda kodu alttan kaldırıldı: MAÇ ID zaten sol üst HUD'da gösteriliyor (tekrar). */}
         <span>
           {online && onlineReady && !myTurn && !gameEnd && !opening
             ? t('mp.oppTurn')
