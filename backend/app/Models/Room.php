@@ -49,6 +49,9 @@ class Room extends Model
         // BAĞIMSIZ Faz 1: yalnız zar sunucudan (hamle/tahta legacy). authoritative'den AYRI.
         'dice_authority',
         'dice_consumed',
+        // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun oynadığı/geri aldığı adımlar ->
+        // rakip adım adım animasyonla görür. Otorite DEĞİL (roll/move/update ayrı).
+        'live',
     ];
 
     protected function casts(): array
@@ -64,6 +67,7 @@ class Room extends Model
             'server_match' => 'array',
             'authoritative' => 'boolean',
             'dice_authority' => 'boolean',
+            'live' => 'array',
         ];
     }
 
@@ -102,6 +106,8 @@ class Room extends Model
             'dice_commit' => $this->dice_commit, // provably-fair taahhut (dice_seed GIZLI kalir)
             // BAĞIMSIZ Faz 1: bu odada zar sunucudan alınır (istemci serverRoll kullanır).
             'dice_authority' => (bool) $this->dice_authority,
+            // Canlı hamle önizlemesi (cosmetic): {slot, steps, turn, seq}. Rakip adım adım animasyon.
+            'live' => $this->live,
             // REVEAL: maç bitince (yalnız o zaman) tohumu ve el logunu aç -> iki taraf da
             // commit'i ve tüm zarları provably-fair doğrular. Oyun sürerken dice_seed GİZLİ.
             'dice_seed' => $this->status === 'finished' ? $this->dice_seed : null,

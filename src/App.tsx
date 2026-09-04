@@ -32,6 +32,7 @@ import {
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
 import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
+import { liveMoveDelta } from './online/liveMoves'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -71,6 +72,7 @@ import {
   serverCubeOffer,
   serverCubeRespond,
   serverResign,
+  postLive,
   type ServerMatch,
   myActiveRooms,
   type ActiveRoom,
@@ -272,6 +274,8 @@ interface RoomState {
   // BAĞIMSIZ Faz 1: true iken yalnız ZAR sunucudan (serverRoll); hamle/tahta/küp LEGACY kalır.
   // Bahisli (para) eşleşme odalarında açılır. authoritative'den AYRIDIR.
   dice_authority?: boolean
+  // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar.
+  live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
 }
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
@@ -441,6 +445,11 @@ export default function App() {
   const [starter, setStarter] = useState<Player>(saved?.starter ?? 'white')
   const [turnStart, setTurnStart] = useState<GameState>(() => saved?.turnStart ?? freshBoard('white'))
   const [played, setPlayed] = useState<Step[]>(saved?.played ?? [])
+  // CANLI rakip önizlemesi (cosmetic): rakibin o an oynadığı adımlar; ekranda adım adım gösterilir.
+  const [oppLive, setOppLive] = useState<Step[]>([])
+  const oppLiveShownRef = useRef<Step[]>([]) // ekranda gösterilen rakip adımları (delta hesabı)
+  const pendingOppFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
+  const liveSentRef = useRef<string>('') // gönderilen son canlı-önizleme imzası (spam/echo önleme)
   const [selectedFrom, setSelectedFrom] = useState<number | 'bar' | null>(null)
   const [cubePending, setCubePending] = useState<Player | null>(null) // teklif eden
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
@@ -1168,6 +1177,9 @@ export default function App() {
     !matchOver &&
     cubePending === null &&
     !opening
+  // Tahtada gösterilecek durum: kendi turumda `working`; RAKİP turunda canlı önizleme varsa
+  // turnStart + rakip adımları (adım adım animasyonla dolar) -> rakip oynarken/geri alırken görürsün.
+  const boardDisplay = online && !myTurn && oppLive.length > 0 ? applyPlayed(turnStart, oppLive) : working
 
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
@@ -2776,6 +2788,7 @@ export default function App() {
                 status: rv.status,
                 authoritative: rv.authoritative ?? r.authoritative,
                 dice_authority: rv.dice_authority ?? r.dice_authority,
+                live: rv.live ?? null, // canlı rakip önizlemesi (cosmetic)
               }
             : r,
         )
@@ -3080,6 +3093,78 @@ export default function App() {
   // FLIP: playSteps state'i guncellemeden ONCE kaynak dikdortgenini buraya yazar;
   // render sonrasi useLayoutEffect hedef tasi kaynaktan ucurur.
   const pendingFlightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
+
+  // ---- CANLI hamle önizlemesi: GÖNDER (kendi turum) ----
+  // Kendi turumda her adım/geri-almada güncel `played`'i odaya yaz -> rakip adım adım görür.
+  // Cosmetic; otoriteye dokunmaz. 120ms debounce (hızlı çok-adımı topla) + imza (echo/spam önle).
+  useEffect(() => {
+    if (!online || !room?.code || room.status !== 'playing' || !myTurn) return
+    const sig = `${myColor}:${turnsPlayed}:${played.map((s) => `${s.from}>${s.to}/${s.die}`).join('|')}`
+    if (sig === liveSentRef.current) return
+    liveSentRef.current = sig
+    const code = room.code
+    const snapshot = played.slice()
+    const t = window.setTimeout(() => void postLive(code, snapshot, myColor, turnsPlayed), 120)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.code, room?.status, myTurn, myColor, turnsPlayed, played])
+
+  // ---- CANLI hamle önizlemesi: AL + ANİMASYON (rakip turu) ----
+  // Rakibin `live` adımlarını oku; delta'yı (yeni adım vs geri-alma) hesaplayıp adım adım oynat.
+  useEffect(() => {
+    if (!online || myTurn) {
+      // Kendi turum / offline -> önizlemeyi temizle (bir sonraki rakip turuna hazır).
+      if (oppLiveShownRef.current.length) {
+        oppLiveShownRef.current = []
+        setOppLive([])
+      }
+      return
+    }
+    const live = room?.live
+    if (!live || !Array.isArray(live.steps) || live.slot === room?.slot) return
+    if (live.turn && live.turn !== turnStart.turn) return // bu turun/rengin önizlemesi değil
+    const incoming = live.steps as Step[]
+    const delta = liveMoveDelta(oppLiveShownRef.current, incoming)
+    if (delta.reset) {
+      // Geri alma / farklı dizi -> anında turnStart+incoming'e sıçra (geri-almayı net göster).
+      oppLiveShownRef.current = incoming.slice()
+      setOppLive(incoming.slice())
+      return
+    }
+    if (delta.animate.length === 0) return
+    const base = oppLiveShownRef.current.slice()
+    const flip =
+      moveStyle !== 'off' && animOn && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const timers: number[] = []
+    delta.animate.forEach((st, i) => {
+      timers.push(
+        window.setTimeout(() => {
+          if (flip) {
+            const r = sourceRect(st.from) // güncel gösterilen tahtada kaynağı yakala
+            if (r) pendingOppFlightRef.current = { to: st.to, srcRect: r }
+          }
+          base.push(st)
+          oppLiveShownRef.current = base.slice()
+          setOppLive(base.slice())
+        }, i * 450), // adımlar arası görünür gecikme (rakip tek tek oynuyor gibi)
+      )
+    })
+    return () => timers.forEach((t) => window.clearTimeout(t))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, myTurn, room?.live, room?.slot, turnStart, moveStyle, animOn])
+
+  // Rakip önizleme adımı eklendikten sonra hedef taşı kaynaktan uçur (playSteps FLIP'inin eşi).
+  useLayoutEffect(() => {
+    const f = pendingOppFlightRef.current
+    if (!f || moveStyle === 'off') {
+      pendingOppFlightRef.current = null
+      return
+    }
+    pendingOppFlightRef.current = null
+    const el = destEl(f.to)
+    if (el) flyChecker(el, f.srcRect, moveStyle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oppLive])
 
   // Otomatik zar: insanin sirasi gelince zar otomatik atilir (kucuk gecikme).
   // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip
@@ -3802,8 +3887,8 @@ export default function App() {
     }
     return d.map((v, i) => ({ value: v, used: used[i] }))
   })()
-  const pipTop = pipCount(working, 'black')
-  const pipBottom = pipCount(working, 'white')
+  const pipTop = pipCount(boardDisplay, 'black')
+  const pipBottom = pipCount(boardDisplay, 'white')
 
   // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
   const prOf = (c: Player): number | null =>
@@ -5590,7 +5675,7 @@ export default function App() {
           />
         )}
         <Board
-          state={working}
+          state={boardDisplay}
           selectableFroms={selectableFroms}
           targets={targets}
           selectedFrom={selectedFrom}

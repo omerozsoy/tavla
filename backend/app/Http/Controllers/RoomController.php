@@ -1494,6 +1494,43 @@ class RoomController extends Controller
     }
 
     /**
+     * CANLI hamle önizlemesi (cosmetic, OTORİTE DEĞİL): sıradaki oyuncunun o an oynadığı/geri
+     * aldığı adımları odaya yazar -> rakip poll'da okuyup adım adım animasyonla görür. server_state
+     * ve version'a DOKUNMAZ (poll clock çalışırken zaten `live`'ı taşır); yasallık/skor buradan
+     * ETKİLENMEZ. Hızlı + sık çağrılır (her adım/geri-alma). Kayıp/hile riski yok (yalnız görsel).
+     */
+    public function live(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'steps' => ['present', 'array'],
+            'steps.*.from' => ['required'],
+            'steps.*.to' => ['required'],
+            'steps.*.die' => ['nullable', 'integer', 'min:1', 'max:6'],
+            'turn' => ['nullable', 'in:white,black'],
+            'seq' => ['nullable', 'integer', 'min:0'],
+        ]);
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return response()->json(['ok' => false], 404);
+        }
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            return response()->json(['ok' => false], 403);
+        }
+        // Yalnız cosmetic önizleme; version BUMP ETME (poll clock akarken `live`'ı zaten döndürür).
+        $room->live = [
+            'slot' => $slot,
+            'steps' => array_values($data['steps']),
+            'turn' => $data['turn'] ?? null,
+            'seq' => (int) ($data['seq'] ?? 0),
+        ];
+        $room->save();
+
+        return response()->json(['ok' => true]);
+    }
+
+    /**
      * GEÇİCİ TEŞHİS: backend, Node validator'a ulaşıp bilinen-yasal bir hamleyi doğrulatabiliyor
      * mu? Secret/URL AÇMAZ; yalnız durum döner. valid=true -> bağlantı TAMAM (sorun başka yerde).
      * url_set=false -> VALIDATOR_URL okunmuyor (config cache / .env). unreachable=true -> erişemiyor
