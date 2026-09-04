@@ -448,8 +448,6 @@ export default function App() {
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [botDance, setBotDance] = useState(false) // bot "hamle yok" -> popup 2sn gorunur, sonra gecer
-  // "Hamle yok" merkezi banner (pvb'de status mesaji gizli -> rakip/ben gele atinca gorunur)
-  const [noMoveFlash, setNoMoveFlash] = useState<string | null>(null)
   const [turnsPlayed, setTurnsPlayed] = useState(saved?.turnsPlayed ?? 0) // ilk elde kup yok
   const [opening, setOpening] = useState<'roll' | 'reveal' | null>(saved ? null : 'roll')
   const [openingResult, setOpeningResult] = useState<OpeningResult | null>(null)
@@ -1939,9 +1937,7 @@ export default function App() {
     if (!botDance) return
     const name = pName(turnStart.turn)
     setMessage(t('msg.noMovePass', { name }))
-    setNoMoveFlash(name) // pvb'de status gizli -> merkezi banner ile goster
     const timer = window.setTimeout(() => {
-      setNoMoveFlash(null)
       setBotDance(false)
       commitTurn([])
     }, 2100)
@@ -2160,11 +2156,9 @@ export default function App() {
     if (played.length === 0 && hasNoMove(moves)) {
       const name = pName(turnStart.turn)
       setMessage(t('msg.noMovePass', { name }))
-      setNoMoveFlash(name) // pvb'de status gizli -> merkezi banner ile goster
       const timer = window.setTimeout(() => {
-        setNoMoveFlash(null)
         commitTurn([])
-      }, 2100) // "hamle yok" ~2sn ekranda kalsin
+      }, 2100) // "hamle yok" dark panel ~2sn ekranda kalsin
       return () => window.clearTimeout(timer)
     }
     // Yavas oto-oyna temposu: kullanici hamleyi net gorsun.
@@ -3695,8 +3689,12 @@ export default function App() {
   }
 
   // ---- Overlay icerikleri ----
-  // "hamle yok" popup: insan sirasinda VEYA bot dans ederken (izleyenler gorsun) goster
-  const noMove = (interactive || botDance) && diceRolled && hasNoMove(generateMoves(turnStart))
+  // "hamle yok" popup: kendi siramda VEYA bot dans ederken VEYA online RAKİP dans ederken goster
+  // (rakip zar atip hamlesi yoksa yerel oyuncu da ~2sn "Hamle Yok" panelini gorur -> adam anlar).
+  const noMove =
+    diceRolled &&
+    hasNoMove(generateMoves(turnStart)) &&
+    (interactive || botDance || (online && !myTurn && !gameEnd && !matchOver))
   const showRoll = interactive && !diceRolled
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
@@ -5569,12 +5567,6 @@ export default function App() {
             lastError={lastError}
             boardState={analysisBoard}
           />
-        )}
-        {noMoveFlash && (
-          <div className="board-nomove" role="status" aria-live="polite">
-            <Icon name="warning-circle" size={18} />
-            {t('msg.noMovePass', { name: noMoveFlash })}
-          </div>
         )}
         {/* AFK son-15sn uyarisi (sunucu-otoriter): yalniz sirasi gelen YEREL oyuncuya */}
         {online && afkLeft != null && srvActive === myColor && !gameEnd && !matchOver && (

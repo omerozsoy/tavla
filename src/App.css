@@ -4176,46 +4176,6 @@ button[aria-disabled='true'],
   }
 }
 
-/* "Hamle yok" merkezi banner: rakip/ben gele attiginda net gorunur (pvb'de
-   status gizli). Board uzerinde ortada; giris animasyonu (Emil: scale+opacity). */
-.board-nomove {
-  position: absolute;
-  top: 42%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 8;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--tv-brick) 92%, #000);
-  color: var(--tv-white);
-  font-weight: 400;
-  font-size: 1rem;
-  letter-spacing: 0.01em;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-  pointer-events: none;
-  animation: nomove-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-.board-nomove svg {
-  flex: none;
-}
-@keyframes nomove-in {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.92);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .board-nomove {
-    animation: none;
-  }
-}
 
 /* AFK son-15sn uyarisi (sunucu-otoriter): belirgin, pulsing kirmizi banner. */
 .afk-warn {
