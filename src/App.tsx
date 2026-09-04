@@ -902,9 +902,11 @@ export default function App() {
     }
   })
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
+  // loss/decisions = OVERALL (checker+cube, PR'ın kendisi). cubeLoss/cubeDecisions = yalnız küp
+  // (kırılım gösterimi için); checker = overall − cube. Opsiyonel -> reset {loss,decisions} yeter.
   const [prStats, setPrStats] = useState<{
-    white: { loss: number; decisions: number }
-    black: { loss: number; decisions: number }
+    white: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number }
+    black: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number }
   }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
   // PR'in EN GUNCEL degeri: mac-sonu raporu (async recordPR'lar report closure'undan
   // SONRA bittigi icin) stale prStats yerine bu ref'ten okur -> kendi PR'im null dusmez.
@@ -1265,7 +1267,7 @@ export default function App() {
           if (dec.countsForPR) {
             setPrStats((s) => ({
               ...s,
-              black: { loss: s.black.loss + dec.prAdjustedEquityLoss, decisions: s.black.decisions + 1 },
+              black: { ...s.black, loss: s.black.loss + dec.prAdjustedEquityLoss, decisions: s.black.decisions + 1 },
             }))
           }
           // Bot luck (sans): aktuel en iyi equity - 21 zarin beklenen en iyisi (tur basi bir kez).
@@ -1333,6 +1335,7 @@ export default function App() {
         setPrStats((s) => ({
           ...s,
           [mover]: {
+            ...s[mover],
             loss: s[mover].loss + dec.prAdjustedEquityLoss,
             decisions: s[mover].decisions + 1,
           },
@@ -1807,7 +1810,12 @@ export default function App() {
         if (res.countsForPR) {
           setPrStats((s) => ({
             ...s,
-            [player]: { loss: s[player].loss + prAdjusted, decisions: s[player].decisions + 1 },
+            [player]: {
+              loss: s[player].loss + prAdjusted, // overall (checker+cube)
+              decisions: s[player].decisions + 1,
+              cubeLoss: (s[player].cubeLoss ?? 0) + prAdjusted, // yalnız küp (kırılım)
+              cubeDecisions: (s[player].cubeDecisions ?? 0) + 1,
+            },
           }))
         }
         const win = (probs[0] + probs[1] + probs[2]) * 100
@@ -3887,6 +3895,17 @@ export default function App() {
   // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
   const prOf = (c: Player): number | null =>
     prStats[c].decisions > 0 ? (prStats[c].loss / prStats[c].decisions) * 500 : null
+  // Kırılım: küp-yalnız ve checker (= overall − küp). decisions 0 -> null (0.00 değil).
+  const prCubeOf = (c: Player): number | null => {
+    const cd = prStats[c].cubeDecisions ?? 0
+    return cd > 0 ? ((prStats[c].cubeLoss ?? 0) / cd) * 500 : null
+  }
+  const prCheckerOf = (c: Player): number | null => {
+    const cd = prStats[c].cubeDecisions ?? 0
+    const chkDec = prStats[c].decisions - cd
+    const chkLoss = prStats[c].loss - (prStats[c].cubeLoss ?? 0)
+    return chkDec > 0 ? (chkLoss / chkDec) * 500 : null
+  }
   // PR -> seviye unvani (9 kademeli standart tavla tablosu; badges.ts)
   const prBand = (p: number | null): string => (p == null ? '' : divisionOfPR(p).key)
   const prHumanColor: Player = online ? myColor : 'white'
@@ -5778,6 +5797,10 @@ export default function App() {
           loserScore={match.score[opponent(mWinner)]}
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
+          winnerCheckerPr={prCheckerOf(mWinner)}
+          winnerCubePr={prCubeOf(mWinner)}
+          loserCheckerPr={prCheckerOf(opponent(mWinner))}
+          loserCubePr={prCubeOf(opponent(mWinner))}
           winnerBand={t(prBand(prShown(mWinner)))}
           loserBand={t(prBand(prShown(opponent(mWinner))))}
           winnerLuck={luckOf(mWinner)}
