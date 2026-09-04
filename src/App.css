@@ -8026,16 +8026,21 @@ button.acct-row:hover:not(:disabled) {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rm-me {
+.rm-me,
+.rm-you {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   color: var(--text);
+}
+.rm-avf {
+  flex: none;
 }
 .rm-vs {
   font-size: 0.78rem;
   color: var(--text-dim, color-mix(in srgb, var(--text) 55%, transparent));
   text-transform: lowercase;
-}
-.rm-you {
-  color: var(--text);
 }
 .rm-rat {
   font-size: 0.78rem;

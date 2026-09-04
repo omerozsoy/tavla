@@ -5433,9 +5433,13 @@ export default function App() {
                       <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
                       <span className="rm-opp">
                         <span className="rm-players">
-                          <span className="rm-me">{myName}</span>
+                          <span className="rm-me">
+                            <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
+                            {myName}
+                          </span>
                           <span className="rm-vs">vs</span>
                           <span className="rm-you">
+                            <AvatarFrame src={r.opp_avatar} size={26} name={oppName} className="rm-avf" />
                             {oppName}
                             {typeof r.opp_rating === 'number' && (
                               <span className="rm-rat"> {r.opp_rating}</span>
