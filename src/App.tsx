@@ -5720,8 +5720,9 @@ export default function App() {
             white={clock.white}
             black={clock.black}
             final={FINAL_STAGE}
-            topScore={match.score.black}
-            bottomScore={match.score.white}
+            flip={flipBoard}
+            topScore={flipBoard ? match.score.white : match.score.black}
+            bottomScore={flipBoard ? match.score.black : match.score.white}
           />
         )}
         <Board
