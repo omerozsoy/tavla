@@ -104,6 +104,9 @@ class RoomController extends Controller
         // (aksi halde SQLSTATE 42S22 "Unknown column 'stakes'" ile coker). Kolon yoksa
         // coklu secim tek temsile (en yuksek) duser; migrate --force sonrasi tam calisir.
         $hasStakesCol = Schema::hasColumn('rooms', 'stakes');
+        // BAĞIMSIZ Faz 1: bahisli (para) odalarda zarı sunucuya al. Kolon yoksa (migration
+        // kosmadi) yazma -> SQLSTATE cokme onlenir; migrate --force sonrasi devreye girer.
+        $hasDiceAuthCol = Schema::hasColumn('rooms', 'dice_authority');
         $minRating = (int) ($data['min_rating'] ?? 0);
         $betPct = (int) ($data['bet_pct'] ?? 0);
         // Server-otoriter saat AYNI tempoyu gerektirir -> eslesme tempoyu da sart kosar.
@@ -229,6 +232,11 @@ class RoomController extends Controller
         ];
         if ($hasStakesCol) {
             $roomData['stakes'] = $stakes;
+        }
+        // BAĞIMSIZ Faz 1: bahisli (para) oda -> zar SUNUCUDAN (dice_authority). Env kill-switch
+        // (DICE_AUTHORITY=false) ile eski davranışa dönülebilir. Arkadaşlık/turnuva odaları hariç.
+        if ($hasDiceAuthCol && config('dice.authority', true) && ($maxStake > 0 || $betPct > 0)) {
+            $roomData['dice_authority'] = true;
         }
         $room = Room::create($roomData);
 
@@ -639,6 +647,55 @@ class RoomController extends Controller
             return $this->fail('Bu odada değilsin.', 403);
         }
 
+        // ---- BAĞIMSIZ Faz 1: sunucu-otoriter ZAR eşleşmesi (dice_authority odalar) ----
+        // İstemcinin OYNADIĞI zar (state.turnStart.dice) SUNUCUNUN verdiği açık elle eşleşmeli;
+        // aksi halde istemci kendi zarını enjekte etmiş -> REDDET (zar değeri seçme hilesi kapanır).
+        // Tur rengi değişince açık el tüketilmiş sayılır (sıradaki roll yeni el üretir).
+        if ($room->dice_authority && ! $room->authoritative) {
+            $prev = is_array($room->state) ? $room->state : null;
+            $newDiceKey = $this->diceBaseKey($data['state']['turnStart']['dice'] ?? null);
+
+            if ($newDiceKey !== null) {
+                $issued = (int) $room->dice_roll_index;
+                $consumed = (int) $room->dice_consumed;
+                $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+                $openKey = ($issued > $consumed && ! empty($rolls))
+                    ? $this->diceBaseKey($rolls[count($rolls) - 1]['dice'] ?? null)
+                    : null;
+
+                // AÇILIŞ MUAFİYETİ: her oyunun ilk eli serverRoll'dan GELMEZ; oda kodu + oyun no'dan
+                // DETERMINISTIK üretilir (iki istemci aynı). Sunucu aynı değeri yeniden hesaplar
+                // (SeededOpening = JS `seededOpening` byte-exact portu) ve o eli MUAF tutar.
+                // gameNo = maça dek toplam puan (state.match.score) — istemci ile aynı formül.
+                $score = $data['state']['match']['score'] ?? null;
+                $gameNo = is_array($score)
+                    ? (int) ($score['white'] ?? 0) + (int) ($score['black'] ?? 0)
+                    : 0;
+                $openingKey = $this->diceBaseKey(\App\Support\SeededOpening::dice($room->code, $gameNo));
+
+                $mismatch = ($newDiceKey !== $openKey && $newDiceKey !== $openingKey);
+                if ($mismatch) {
+                    if (config('dice.enforce', false)) {
+                        // ENFORCE: istemci zarı sunucununkiyle uyuşmuyor -> reddet (hile kapanır).
+                        return $this->fail('Zar sunucudan alınmalı (geçersiz zar).', 422, ['reason' => 'dice-forgery']);
+                    }
+                    // SHADOW: reddetme ama LOGLA -> canlıda enforce açmadan önce yanlış-red
+                    // (meşru oyunu kıracak edge-case) var mı gör. Beklenen: hiç log olmamalı.
+                    \Illuminate\Support\Facades\Log::warning('dice.shadow-mismatch', [
+                        'room' => $room->code, 'slot' => $slot, 'played' => $newDiceKey,
+                        'open' => $openKey, 'opening' => $openingKey, 'gameNo' => $gameNo,
+                    ]);
+                }
+            }
+
+            // Tüketim: tur rengi değiştiyse açık el(ler) tüketildi -> consumed = issued.
+            $prevTurn = $prev['turnStart']['turn'] ?? null;
+            $newTurn = $data['state']['turnStart']['turn'] ?? null;
+            if ($prevTurn !== null && $newTurn !== null && $prevTurn !== $newTurn) {
+                $room->dice_consumed = (int) $room->dice_roll_index;
+            }
+        }
+
         $room->state = $data['state'];
         $room->version = $room->version + 1;
         if (! empty($data['status'])) {
@@ -833,6 +890,80 @@ class RoomController extends Controller
         return $slot === 'p1' ? 'white' : 'black';
     }
 
+    /**
+     * BAĞIMSIZ Faz 1 zarı: sunucu commit-reveal zarı verir; server_state TUTMAZ (hamle/tahta
+     * legacy). Aynı anda TEK açık (tüketilmemiş) el -> idempotent + zar peek-ahead engeli.
+     * Yeni el ancak önceki tüketilince (update()'te tur rengi değişince consumed++) verilir.
+     */
+    private function rollStandalone(Room $room, string $slot, array $data, \App\Services\FairDiceService $dice)
+    {
+        // Lazy init: gizli tohum + taahhüt (ilk roll). dice_roll_index=VERİLEN, dice_consumed=TÜKETİLEN.
+        if (empty($room->dice_seed)) {
+            $room->dice_seed = $dice->newSeed();
+            $room->dice_commit = $dice->commit($room->dice_seed);
+            $room->dice_client_seed = substr((string) ($data['client_seed'] ?? ''), 0, 40);
+            $room->dice_roll_index = 0;
+            $room->dice_consumed = 0;
+            $room->dice_rolls = [];
+        }
+
+        $issued = (int) $room->dice_roll_index;
+        $consumed = (int) $room->dice_consumed;
+        $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+
+        // Açık el varsa AYNISINI döndür (idempotent): tekrar zar isteyip "daha iyi" değer
+        // seçilemez; ileri el peek EDİLEMEZ (sıradaki el ancak tüketimden sonra üretilir).
+        if ($issued > $consumed && ! empty($rolls)) {
+            $last = $rolls[count($rolls) - 1];
+
+            return response()->json([
+                'index' => (int) ($last['index'] ?? $consumed),
+                'dice' => $last['dice'],
+                'commit' => $room->dice_commit,
+                'version' => (int) $room->version,
+                'reused' => true,
+            ]);
+        }
+
+        // Yeni el üret (deterministik, sunucu-otoriter). Çift ise 4 hane (istemci beklentisi).
+        $index = $consumed;
+        [$d1, $d2] = $dice->roll($room->dice_seed, (string) $room->dice_client_seed, $index);
+        $out = $d1 === $d2 ? [$d1, $d1, $d1, $d1] : [$d1, $d2];
+
+        $rolls[] = ['index' => $index, 'slot' => $slot, 'dice' => $out];
+        $room->dice_rolls = $rolls;
+        $room->dice_roll_index = $index + 1;
+        $room->save();
+
+        return response()->json([
+            'index' => $index,
+            'dice' => $out,
+            'commit' => $room->dice_commit,
+            'version' => (int) $room->version,
+            'reused' => false,
+        ]);
+    }
+
+    /**
+     * Zar dizisini karşılaştırılabilir "temel çift" anahtarına indirger:
+     * çift (4 hane [d,d,d,d]) -> "d-d"; normal (2 hane) -> küçük-büyük "a-b".
+     * Boş/geçersiz -> null (oynanan el yok). Tur içi tekrar PUT'larda kararlı (turnStart.dice sabit).
+     */
+    private function diceBaseKey($dice): ?string
+    {
+        if (! is_array($dice) || count($dice) === 0) {
+            return null;
+        }
+        $vals = array_values(array_map('intval', $dice));
+        // Hepsi eşit (çift): 4 hane [d,d,d,d] veya beklenmedik biçim -> d-d.
+        if (count(array_unique($vals)) === 1) {
+            return $vals[0].'-'.$vals[0];
+        }
+        sort($vals);
+
+        return $vals[0].'-'.$vals[count($vals) - 1];
+    }
+
     // Sunucu-otoriter maç durumunu (skor 0-0) kur. target: odanın maç uzunluğu (yoksa 1).
     private function initServerMatch(Room $room): array
     {
@@ -865,6 +996,13 @@ class RoomController extends Controller
             $slot = $this->slotOf($room, $data['token']);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+
+            // ---- BAĞIMSIZ Faz 1: yalnız ZAR sunucudan (hamle/tahta/küp LEGACY kalır) ----
+            // authoritative TAM yol DEĞİL: sunucu server_state tutmaz; sadece commit-reveal zarı
+            // verir, update() eşleşmeyi zorlar. Tek açık el (idempotent + peek-ahead engeli).
+            if ($room->dice_authority && ! $room->authoritative) {
+                return $this->rollStandalone($room, $slot, $data, $dice);
             }
 
             // Lazy init: otoriter durum + tohum/taahhüt + maç skoru (ilk roll).

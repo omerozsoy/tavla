@@ -979,6 +979,11 @@ export interface RoomView {
   server_version?: number
   server_winner?: string | null // 'white'|'black' bir oyun bitince
   dice_commit?: string | null // provably-fair taahhut (dice_seed sunucuda gizli)
+  // BAĞIMSIZ Faz 1: true ise zar SUNUCUDAN alinir (serverRoll); hamle/tahta/kup LEGACY kalir.
+  // authoritative'den AYRI (o tam otoriter yol). Bahisli (para) odalarda acilir.
+  dice_authority?: boolean
+  dice_seed?: string | null // REVEAL: yalniz mac bitince dolu (provably-fair dogrulama)
+  dice_rolls?: Array<{ index: number; slot: string; dice: number[] }> | null // REVEAL
 }
 
 export async function createRoom(
