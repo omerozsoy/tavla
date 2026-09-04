@@ -12787,6 +12787,9 @@ button.acct-row:hover:not(:disabled) {
 .pp-card {
   max-width: 420px;
 }
+.pp-addfriend {
+  margin-top: 14px;
+}
 .lb-row.clickable {
   cursor: pointer;
 }

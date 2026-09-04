@@ -5,13 +5,25 @@ import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { BadgeList } from './Badges'
+import { Button } from '@/components/ui/button'
+import { Icon } from './Icon'
 
 // Herkese acik oyuncu profili karti (liderlik/rakip isminden acilir)
-export default function PublicProfile({ id, onClose }: { id: number; onClose: () => void }) {
+// onAddFriend: giris yapmis + baskasinin profili ise arkadaslik istegi (App wire'lar).
+export default function PublicProfile({
+  id,
+  onClose,
+  onAddFriend,
+}: {
+  id: number
+  onClose: () => void
+  onAddFriend?: () => void
+}) {
   const { t } = useT()
   useEscape(onClose)
   const [p, setP] = useState<Profile | null>(null)
   const [error, setError] = useState(false)
+  const [friendSent, setFriendSent] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -87,6 +99,21 @@ export default function PublicProfile({ id, onClose }: { id: number; onClose: ()
             )}
 
             <BadgeList ids={p.badges} />
+
+            {onAddFriend && (
+              <Button
+                variant="default"
+                className="pp-addfriend w-full"
+                disabled={friendSent}
+                onClick={() => {
+                  setFriendSent(true)
+                  onAddFriend()
+                }}
+              >
+                <Icon name={friendSent ? 'check' : 'user-plus'} size={16} />{' '}
+                {friendSent ? t('online.friendSent') : t('online.addFriend')}
+              </Button>
+            )}
           </>
         )}
       </div>
