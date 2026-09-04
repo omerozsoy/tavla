@@ -41,7 +41,10 @@
   background: color-mix(in srgb, var(--cube-text, #fff) 16%, transparent);
 }
 .clock-bank.low {
-  color: #ff6b57; /* banka son asamada -> uyari (koyu/acik zeminde okunur) */
+  /* Sabit kirmizi METIN tema zemininde okunmuyordu (koyu temada da acik temada da). Cozum:
+     metin TEMA-KONTRAST (--cube-text: koyuda acik, acikta koyu) KALIR; dusuk-sure uyarisi
+     kirmizi ZEMIN ile verilir -> her temada okunur + urgency. */
+  background: color-mix(in srgb, #ff4d4d 34%, transparent);
 }
 
 /* Ortadaki hamle suresi (sirasi gelen oyuncu; iki taraf icin ortak) */
