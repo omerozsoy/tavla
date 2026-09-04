@@ -19,12 +19,15 @@ class MoveValidatorService
 
     private float $timeout;
 
+    private bool $verifyTls;
+
     public function __construct()
     {
         $cfg = config('validator');
         $this->url = rtrim((string) ($cfg['url'] ?? ''), '/');
         $this->secret = (string) ($cfg['secret'] ?? '');
         $this->timeout = (float) ($cfg['timeout'] ?? 3);
+        $this->verifyTls = (bool) ($cfg['verify_tls'] ?? false);
     }
 
     public function isConfigured(): bool
@@ -35,6 +38,15 @@ class MoveValidatorService
     private function headers(): array
     {
         return $this->secret !== '' ? ['x-validator-secret' => $this->secret] : [];
+    }
+
+    // Iç servis (aynı sunucu, secret korumalı). SSL kurulu değilse doğrulamayı atla.
+    private function client()
+    {
+        return Http::withHeaders($this->headers())
+            ->withOptions(['verify' => $this->verifyTls])
+            ->timeout($this->timeout)
+            ->acceptJson();
     }
 
     /**
@@ -48,10 +60,7 @@ class MoveValidatorService
             return ['valid' => false, 'reason' => 'validator-not-configured', 'unreachable' => true];
         }
         try {
-            $res = Http::withHeaders($this->headers())
-                ->timeout($this->timeout)
-                ->acceptJson()
-                ->post($this->url.'/validate', ['state' => $state, 'steps' => $steps]);
+            $res = $this->client()->post($this->url.'/validate', ['state' => $state, 'steps' => $steps]);
 
             if (! $res->successful()) {
                 Log::warning('validator.validate non-2xx', ['status' => $res->status()]);
@@ -82,10 +91,7 @@ class MoveValidatorService
             return null;
         }
         try {
-            $res = Http::withHeaders($this->headers())
-                ->timeout($this->timeout)
-                ->acceptJson()
-                ->post($this->url.'/legal-moves', ['state' => $state]);
+            $res = $this->client()->post($this->url.'/legal-moves', ['state' => $state]);
 
             return $res->successful() ? ($res->json('moves') ?? []) : null;
         } catch (\Throwable $e) {
