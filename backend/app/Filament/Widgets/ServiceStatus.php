@@ -67,6 +67,15 @@ class ServiceStatus extends Widget
                 ->body('Süreç kapandı; birkaç saniye içinde otomatik canlanır. Durum yenilenecek.')
                 ->success()
                 ->send();
+        } elseif (($r['error'] ?? '') === 'status-404') {
+            // Validator AYAKTA ama ESKİ sürüm: /restart ucu o süreçte yok. Yeni bundle diskte var
+            // (git pull) ama process eski kodu tutuyor -> bir kez ELLE restart gerek.
+            Notification::make()
+                ->title('Validator eski sürümde')
+                ->body('Çalışıyor ama /restart ucu yok. Plesk → Node uygulaması → Restart App ile BİR KEZ elle yeniden başlatın (yeni kod yüklensin); sonra bu buton çalışır.')
+                ->warning()
+                ->persistent()
+                ->send();
         } else {
             Notification::make()
                 ->title('Yeniden başlatılamadı')
