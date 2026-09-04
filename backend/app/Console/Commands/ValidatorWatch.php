@@ -47,19 +47,50 @@ class ValidatorWatch extends Command
         $wasDown = (bool) Cache::get(self::DOWN_KEY, false);
         $now = time();
 
+        // OTOMATİK KURTARMA: düşük görünce önce kendimiz yeniden başlatmayı DENE (Passenger
+        // restart.txt / /restart), 3 sn bekle, TEKRAR ölç. Böylece geçici çökmelerde (süreç öldü,
+        // kod sağlam) uyarı GİTMEDEN kendiliğinden düzelir. Kalıcı sorunda (kod/dep) yine düşük kalır.
+        $autoRestarted = false;
+        if (! $up) {
+            $r = $validator->restartValidator();
+            if (! empty($r['ok'])) {
+                $autoRestarted = true;
+                sleep(3); // Passenger'ın canlanması için kısa bekleme
+                $up = $this->probe($validator);
+            }
+        }
+
         if (! $up) {
             $lastAlert = (int) Cache::get(self::LAST_ALERT_KEY, 0);
             $shouldAlert = ! $wasDown || ($now - $lastAlert >= self::REALERT_SECONDS);
             if ($shouldAlert) {
+                $auto = $autoRestarted ? 'Otomatik yeniden başlatma denendi ama düzelmedi. ' : '';
                 $this->dispatchAlert(
-                    "🔴 TAVLA VALIDATOR DÜŞTÜ\nSunucu-otoriter maçlarda hamleler REDDEDİLİYOR. ".
-                    "Lütfen validator.tavlai.com Node uygulamasını yeniden başlat (admin panel > Servis Durumu > Yeniden Başlat)."
+                    "🔴 TAVLA VALIDATOR DÜŞTÜ\n{$auto}Sunucu-otoriter maçlarda hamleler REDDEDİLİYOR. ".
+                    "Lütfen validator.tavlai.com Node uygulamasını elle yeniden başlat (admin panel > Servis Durumu > Yeniden Başlat)."
                 );
                 Cache::put(self::LAST_ALERT_KEY, $now, now()->addDay());
             }
             Cache::put(self::DOWN_KEY, true, now()->addDays(7));
             $this->error('validator DOWN'.($shouldAlert ? ' (uyarı gönderildi)' : ' (uyarı bastırıldı)'));
         } else {
+            // Otomatik kurtarma başarılıysa: sessizce düzeldi (ilk düşüş henüz uyarılmadıysa e-posta
+            // yağmuru olmasın). Ama daha önce uyarı gitmişse "düzeldi" bilgisi ver.
+            if ($autoRestarted && $wasDown) {
+                $this->dispatchAlert("🟢 TAVLA VALIDATOR otomatik yeniden başlatıldı ve tekrar ÇALIŞIYOR.");
+                Cache::forget(self::DOWN_KEY);
+                Cache::forget(self::LAST_ALERT_KEY);
+                $this->info('validator auto-recovered');
+
+                return self::SUCCESS;
+            }
+            if ($autoRestarted) {
+                $this->info('validator auto-recovered (sessiz)');
+                Cache::forget(self::DOWN_KEY);
+                Cache::forget(self::LAST_ALERT_KEY);
+
+                return self::SUCCESS;
+            }
             if ($wasDown) {
                 $this->dispatchAlert("🟢 TAVLA VALIDATOR tekrar ÇALIŞIYOR.\nMaçlar normale döndü.");
             }
