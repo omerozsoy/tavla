@@ -355,6 +355,15 @@ function checkerDecision(bestEq, playedEq, worstEq, legalMoveCount, matchLength,
     prAdjustedEquityLoss: loss * onePointFactor(matchLength, isMoney)
   };
 }
+function cubeDecision(bestEq, actualEq, countsForPR, matchLength, isMoney = false) {
+  const loss = Math.max(0, bestEq - actualEq);
+  return {
+    type: "cube",
+    countsForPR,
+    normalizedEquityLoss: loss,
+    prAdjustedEquityLoss: loss * onePointFactor(matchLength, isMoney)
+  };
+}
 function summarize(decisions) {
   const acc = {
     checker: { equityLost: 0, decisions: 0 },
@@ -381,6 +390,61 @@ function summarize(decisions) {
     checker: checkerC,
     cube: cubeC,
     overall: { decisions: totalDec, equityLost: totalLost, pr: prValue(totalLost, totalDec) }
+  };
+}
+
+// src/engine/cubeEquity.ts
+var clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+function wlp(probs) {
+  const [wn = 0, wg = 0, wb = 0, ln = 0, lg = 0, lb = 0] = probs;
+  const p = clamp(wn + wg + wb, 1e-6, 1 - 1e-6);
+  const winPts = wn + 2 * wg + 3 * wb;
+  const losePts = ln + 2 * lg + 3 * lb;
+  return { p, W: winPts / p, L: losePts / (1 - p), ecl: winPts - losePts };
+}
+function cubeActionEquities(probs, x = 0.7) {
+  const { p, W, L, ecl } = wlp(probs);
+  const tp = clamp((L - 0.5) / (W + L), 0.02, 0.5);
+  const cashPoint = 1 - tp;
+  const ownedFrac = (pw) => clamp(-0.5 + 1.5 * ((pw - tp) / (1 - tp)), -1, 1);
+  const nonOwnerFrac = (pw) => -ownedFrac(1 - pw);
+  const centeredFrac = (pw) => (ownedFrac(pw) + nonOwnerFrac(pw)) / 2;
+  const dead = clamp(ecl, -3, 3);
+  const noDouble = (1 - x) * dead + x * centeredFrac(p);
+  const takeForDoubler = 2 * nonOwnerFrac(p);
+  const opponentTakes = p < cashPoint;
+  const double = opponentTakes ? takeForDoubler : 1;
+  return { noDouble, double, cashPoint, tp, x };
+}
+function takerEquity(probs, x) {
+  const { p, W, L } = wlp(probs);
+  const tp = clamp((L - 0.5) / (W + L), 0.02, 0.5);
+  const ownedFrac = clamp(-0.5 + 1.5 * ((p - tp) / (1 - tp)), -1, 1);
+  const dead = clamp(2 * p - 1, -1, 1);
+  return 2 * (x * ownedFrac + (1 - x) * dead);
+}
+var XG_OBVIOUS_CUBE_EQUITY_SPREAD = 1e-3;
+function offerLoss(probs, chosen, x = 0.7) {
+  const eq = cubeActionEquities(probs, x);
+  const best = Math.max(eq.noDouble, eq.double);
+  const worst = Math.min(eq.noDouble, eq.double);
+  const chosenEq = chosen === "double" ? eq.double : eq.noDouble;
+  return {
+    normalizedEquityLoss: Math.max(0, best - chosenEq),
+    bestAction: eq.double > eq.noDouble ? "double" : "no-double",
+    countsForPR: best - worst >= XG_OBVIOUS_CUBE_EQUITY_SPREAD
+  };
+}
+function takeLoss(probs, chosen, x = 0.7) {
+  const takeEq = takerEquity(probs, x);
+  const passEq = -1;
+  const best = Math.max(takeEq, passEq);
+  const worst = Math.min(takeEq, passEq);
+  const chosenEq = chosen === "take" ? takeEq : passEq;
+  return {
+    normalizedEquityLoss: Math.max(0, best - chosenEq),
+    bestAction: takeEq >= passEq ? "take" : "pass",
+    countsForPR: best - worst >= XG_OBVIOUS_CUBE_EQUITY_SPREAD
   };
 }
 
@@ -436,6 +500,21 @@ function applyMove(state, steps, mover) {
   for (const st of steps) applyStep(s, st, mover);
   return s;
 }
+async function probsAt(pos, player) {
+  const wp = toWildPos(pos, player);
+  const phase = phaseOf(wp);
+  const inputs = phase === "contact" ? contactInputs(wp) : raceInputs(wp);
+  const session = phase === "contact" ? contactSession : raceSession;
+  const n = phase === "contact" ? CONTACT_INPUTS : RACE_INPUTS;
+  const out = await session.run({ [INPUT_NAME]: new ort.Tensor("float32", inputs, [1, n]) });
+  return Array.from(out[session.outputNames[0]].data.subarray(0, 6));
+}
+async function cubeRecord(pos, player, chosen, matchLength, isMoney) {
+  const probs = await probsAt(pos, player);
+  const isOffer = chosen === "double" || chosen === "no-double";
+  const res = isOffer ? offerLoss(probs, chosen === "double" ? "double" : "no-double") : takeLoss(probs, chosen === "take" ? "take" : "pass");
+  return cubeDecision(res.normalizedEquityLoss, 0, res.countsForPR, matchLength, isMoney);
+}
 async function checkerRecord(pos, dice, playedSteps, matchLength, isMoney) {
   const mover = pos.turn;
   const state = cloneState(pos);
@@ -459,8 +538,12 @@ async function analyzePr(hc, log, matchLength = 1, isMoney = false) {
   await init();
   const decisions = [];
   for (const e of log) {
-    if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue;
-    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney));
+    if (e.player !== hc || !e.pos) continue;
+    if (e.cube && typeof e.cube.chosen === "string") {
+      decisions.push(await cubeRecord(e.pos, hc, e.cube.chosen, matchLength, isMoney));
+    } else if (e.dice && e.playedSteps) {
+      decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney));
+    }
   }
   const s = summarize(decisions);
   return { ...s, pr: s.overall.pr, decisions: s.overall.decisions };

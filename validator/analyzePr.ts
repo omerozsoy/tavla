@@ -23,7 +23,8 @@ import {
   raceInputs,
   toWildPos,
 } from '../src/engine/encoding'
-import { checkerDecision, summarize, type PrDecision, type PrSummary } from '../src/analysis/pr'
+import { checkerDecision, cubeDecision, summarize, type PrDecision, type PrSummary } from '../src/analysis/pr'
+import { offerLoss, takeLoss } from '../src/engine/cubeEquity'
 
 const INPUT_NAME = 'onnx::Gemm_0'
 
@@ -89,6 +90,36 @@ function applyMove(state: GameState, steps: Step[], mover: Player): GameState {
   return s
 }
 
+// Pozisyonun `player` (on-roll = x) perspektifli 6 ham olasılığı [wn,wg,wb,ln,lg,lb].
+// (neuralBot.evalPosition ile aynı: toWildPos(pos, player) -> net çıktısı player perspektifi.)
+async function probsAt(pos: GameState, player: Player): Promise<number[]> {
+  const wp = toWildPos(pos, player)
+  const phase = phaseOf(wp)
+  const inputs = phase === 'contact' ? contactInputs(wp) : raceInputs(wp)
+  const session = phase === 'contact' ? contactSession! : raceSession!
+  const n = phase === 'contact' ? CONTACT_INPUTS : RACE_INPUTS
+  const out = await session.run({ [INPUT_NAME]: new ort.Tensor('float32', inputs, [1, n]) })
+  return Array.from((out[session.outputNames[0]].data as Float32Array).subarray(0, 6))
+}
+
+// Küp kararını (offer/take) XG-style PrDecision'a çevir: pozisyonu player perspektifinden NN ile
+// değerlendir -> cubeEquity offerLoss/takeLoss -> equity kaybı. chosen: double|no-double|take|drop.
+async function cubeRecord(
+  pos: GameState,
+  player: Player,
+  chosen: string,
+  matchLength: number,
+  isMoney: boolean,
+): Promise<PrDecision> {
+  const probs = await probsAt(pos, player)
+  const isOffer = chosen === 'double' || chosen === 'no-double'
+  const res = isOffer
+    ? offerLoss(probs, chosen === 'double' ? 'double' : 'no-double')
+    : takeLoss(probs, chosen === 'take' ? 'take' : 'pass')
+  // best=loss, actual=0 -> normalizedEquityLoss=loss; 1pt faktörü/countsForPR pr modülünde.
+  return cubeDecision(res.normalizedEquityLoss, 0, res.countsForPR, matchLength, isMoney)
+}
+
 // Bir checker kararini XG-style PrDecision'a cevir: tum yasal oynamalarin en iyi/en kotu equity'si
 // + oynanan equity -> checkerDecision (zorunlu/obvious eleme + 1pt faktoru pr modulunde). pos =
 // hamleden onceki tahta (turn=mover, dice dolu). playedSteps = oynanan tam-tur.
@@ -124,6 +155,7 @@ export interface PrLogEntry {
   pos?: GameState
   dice?: number[]
   playedSteps?: Step[]
+  cube?: { chosen?: string } // küp kararı girdisi (chosen: double|no-double|take|drop)
 }
 
 export interface PrResult extends PrSummary {
@@ -144,8 +176,13 @@ export async function analyzePr(
   await init()
   const decisions: PrDecision[] = []
   for (const e of log) {
-    if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue
-    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney))
+    if (e.player !== hc || !e.pos) continue
+    if (e.cube && typeof e.cube.chosen === 'string') {
+      // KÜP kararı -> sunucu-otoriter cube PR (pozisyonu NN ile değerlendir + cubeEquity).
+      decisions.push(await cubeRecord(e.pos, hc, e.cube.chosen, matchLength, isMoney))
+    } else if (e.dice && e.playedSteps) {
+      decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney))
+    }
   }
   const s = summarize(decisions)
   return { ...s, pr: s.overall.pr, decisions: s.overall.decisions }
