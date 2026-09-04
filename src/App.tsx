@@ -5437,7 +5437,9 @@ export default function App() {
                 ))}
               </div>
             )}
-            {hasActiveGame && (
+            {/* Online devam eden mac varsa (resume-match-bar) tekrar buton cikarma:
+                online maçta yalnız "Geri Dön" kalsın, "Oyuna Devam Et" gizli. */}
+            {hasActiveGame && activeRooms.length === 0 && (
               <div className="lobby-welcome">
                 <Button
                   variant="default"
