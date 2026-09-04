@@ -336,6 +336,54 @@ function equityFrom(p) {
   return p[0] - p[3] + 2 * (p[1] - p[4]) + 3 * (p[2] - p[5]);
 }
 
+// src/analysis/pr.ts
+var XG_OBVIOUS_CHECKER_EQUITY_SPREAD = 1e-3;
+function onePointFactor(matchLength) {
+  return matchLength === 1 ? 1.5 : 1;
+}
+function prValue(equityLost, decisions) {
+  if (decisions <= 0) return null;
+  return equityLost / decisions * 500;
+}
+function checkerDecision(bestEq, playedEq, worstEq, legalMoveCount, matchLength) {
+  const counts = legalMoveCount > 1 && bestEq - worstEq >= XG_OBVIOUS_CHECKER_EQUITY_SPREAD;
+  const loss = Math.max(0, bestEq - playedEq);
+  return {
+    type: "checker",
+    countsForPR: counts,
+    normalizedEquityLoss: loss,
+    prAdjustedEquityLoss: loss * onePointFactor(matchLength)
+  };
+}
+function summarize(decisions) {
+  const acc = {
+    checker: { equityLost: 0, decisions: 0 },
+    cube: { equityLost: 0, decisions: 0 }
+  };
+  for (const d of decisions) {
+    if (!d.countsForPR) continue;
+    acc[d.type].equityLost += d.prAdjustedEquityLoss;
+    acc[d.type].decisions += 1;
+  }
+  const checkerC = {
+    decisions: acc.checker.decisions,
+    equityLost: acc.checker.equityLost,
+    pr: prValue(acc.checker.equityLost, acc.checker.decisions)
+  };
+  const cubeC = {
+    decisions: acc.cube.decisions,
+    equityLost: acc.cube.equityLost,
+    pr: prValue(acc.cube.equityLost, acc.cube.decisions)
+  };
+  const totalLost = checkerC.equityLost + cubeC.equityLost;
+  const totalDec = checkerC.decisions + cubeC.decisions;
+  return {
+    checker: checkerC,
+    cube: cubeC,
+    overall: { decisions: totalDec, equityLost: totalLost, pr: prValue(totalLost, totalDec) }
+  };
+}
+
 // validator/analyzePr.ts
 var INPUT_NAME = "onnx::Gemm_0";
 var contactSession = null;
@@ -388,34 +436,34 @@ function applyMove(state, steps, mover) {
   for (const st of steps) applyStep(s, st, mover);
   return s;
 }
-async function decisionLoss(pos, dice, playedSteps) {
+async function checkerRecord(pos, dice, playedSteps, matchLength) {
   const mover = pos.turn;
   const state = cloneState(pos);
   state.dice = dice.slice();
   state.diceUsed = dice.map(() => false);
   const moves = generateMoves(state);
-  if (moves.length <= 1) return null;
+  if (moves.length <= 1) {
+    return checkerDecision(0, 0, 0, moves.length, matchLength);
+  }
   let best = -Infinity;
+  let worst = Infinity;
   for (const m of moves) {
     const eq = await equityAfter(applyMove(state, m.steps, mover), mover);
     if (eq > best) best = eq;
+    if (eq < worst) worst = eq;
   }
   const chosenEq = await equityAfter(applyMove(state, playedSteps, mover), mover);
-  return Math.max(0, best - chosenEq);
+  return checkerDecision(best, chosenEq, worst, moves.length, matchLength);
 }
-async function analyzePr(hc, log) {
+async function analyzePr(hc, log, matchLength = 1) {
   await init();
-  let sum = 0;
-  let n = 0;
+  const decisions = [];
   for (const e of log) {
     if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue;
-    const loss = await decisionLoss(e.pos, e.dice, e.playedSteps);
-    if (loss == null) continue;
-    sum += loss;
-    n++;
+    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength));
   }
-  if (n === 0) return { pr: null, decisions: 0 };
-  return { pr: Math.round(sum / n * 500 * 100) / 100, decisions: n };
+  const s = summarize(decisions);
+  return { ...s, pr: s.overall.pr, decisions: s.overall.decisions };
 }
 
 // validator/server.ts
@@ -475,7 +523,8 @@ var server = createServer(async (req, res) => {
       const hc = body.hc === "white" || body.hc === "black" ? body.hc : null;
       const log = Array.isArray(body.log) ? body.log : null;
       if (!hc || !log) return send(res, 400, { error: "bad-request", detail: "hc/log gerekli" });
-      const r = await analyzePr(hc, log);
+      const ml = typeof body.matchLength === "number" && body.matchLength >= 1 ? body.matchLength : 1;
+      const r = await analyzePr(hc, log, ml);
       return send(res, 200, r);
     }
     return send(res, 404, { error: "not-found" });

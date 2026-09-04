@@ -74,6 +74,7 @@ const server = createServer(async (req, res) => {
       steps?: unknown
       hc?: unknown
       log?: unknown
+      matchLength?: unknown
     }
     if (req.method === 'POST' && req.url === '/validate') {
       // state: otoriter durum (zar dolu), steps: istemcinin önerdiği tam-tur
@@ -91,7 +92,8 @@ const server = createServer(async (req, res) => {
       const hc = body.hc === 'white' || body.hc === 'black' ? body.hc : null
       const log = Array.isArray(body.log) ? (body.log as PrLogEntry[]) : null
       if (!hc || !log) return send(res, 400, { error: 'bad-request', detail: 'hc/log gerekli' })
-      const r = await analyzePr(hc, log)
+      const ml = typeof body.matchLength === 'number' && body.matchLength >= 1 ? body.matchLength : 1
+      const r = await analyzePr(hc, log, ml)
       return send(res, 200, r)
     }
     return send(res, 404, { error: 'not-found' })
