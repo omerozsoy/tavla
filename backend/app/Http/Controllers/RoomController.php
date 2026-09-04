@@ -776,6 +776,41 @@ class RoomController extends Controller
         }
     }
 
+    /**
+     * AUTHORITATIVE saat: legacy update() çağrılmadığı için saati server_state/server_match'ten
+     * SÜR. İlk çağrıda init; her aksiyonda (roll/move/cube/resign) segment ilerler. turnsPlayed
+     * yerine server_version (monotonik) -> imza her aksiyonda değişir; onUpdate delay+bankayı
+     * doğru işler. Kayıp olursa applyClockEnd (server_match forfeit). $room->clock set edilir
+     * (çağıran KAYDEDER). AFK/presence/timeout MatchClock ile aynı (legacy ile ortak motor).
+     */
+    private function driveAuthoritativeClock(Room $room, string $slot, float $now): void
+    {
+        $clock = is_array($room->clock) ? $room->clock : [];
+        if (empty($clock)) {
+            $target = (int) (($room->server_match['target'] ?? null) ?? $room->target ?? 1);
+            $clock = MatchClock::init($room->time_control, max(1, $target), $now);
+        }
+        $ss = is_array($room->server_state) ? $room->server_state : [];
+        $sm = is_array($room->server_match) ? $room->server_match : [];
+        $winner = $ss ? \App\Support\Backgammon::winner($ss) : null;
+        $clockState = [
+            'turnStart' => ['turn' => $ss['turn'] ?? 'white'],
+            'played' => [],
+            'turnsPlayed' => (int) $room->server_version, // monotonik: her aksiyonda imza değişir
+            'starter' => '',
+            'match' => ['cube' => $sm['cube'] ?? ['value' => 1, 'owner' => null]],
+            'cubePending' => $sm['cube']['pending'] ?? null,
+            'gameEnd' => $winner ? ['winner' => $winner] : null,
+            'matchOver' => ! empty($sm['done']),
+        ];
+        $clock = MatchClock::onUpdate($clock, $clockState, $slot, $now);
+        $clock = MatchClock::seen($clock, $slot, $now);
+        if (! empty($clock['end'])) {
+            $this->applyClockEnd($room, $clock);
+        }
+        $room->clock = $clock;
+    }
+
     // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
     private function clockView(Room $room): ?array
     {
@@ -1165,6 +1200,7 @@ class RoomController extends Controller
                 $room->server_state = $state;
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
+                $this->driveAuthoritativeClock($room, $slot, microtime(true)); // açılış -> saati başlat
                 $room->save();
 
                 return response()->json([
@@ -1209,6 +1245,7 @@ class RoomController extends Controller
             $room->dice_roll_index = $index + 1;
             $room->server_state = $state;
             $room->server_version = (int) $room->server_version + 1;
+            $this->driveAuthoritativeClock($room, $slot, microtime(true)); // zar -> segment/delay
             $room->save();
 
             return response()->json([
@@ -1290,6 +1327,7 @@ class RoomController extends Controller
                 $room->server_state = $new;
             }
             $room->server_version = (int) $room->server_version + 1;
+            $this->driveAuthoritativeClock($room, $slot, microtime(true)); // hamle -> tur devri saate
             $room->save();
 
             return response()->json([
@@ -1445,6 +1483,7 @@ class RoomController extends Controller
             $winner = $this->otherColor($this->slotColor($slot));
             $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value']);
             $room->server_version = (int) $room->server_version + 1;
+            $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur
             $room->save();
 
             return response()->json([
