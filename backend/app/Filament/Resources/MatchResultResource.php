@@ -36,6 +36,29 @@ class MatchResultResource extends Resource
         return false;
     }
 
+    /**
+     * ONLINE MAÇ TEK SATIR: bir online maç iki match_results satırı üretir (her
+     * oyuncunun kendi PR'ı ayrı kaydedilir). Aynı room_code'un iki satırından
+     * yalnız kanonik olanı (en küçük id) göster; satır zaten Oyuncu+Rakip'i,
+     * iki tarafın PR'ını ve skoru taşıdığı için bilgi kaybı yok. Oda kodsuz
+     * (pvb / yerel / eski) satırlar olduğu gibi kalır. Filament'in ekleyeceği
+     * filtre where'leri ile doğru AND önceliği için tek where grubuna sarılır.
+     */
+    public static function dedupeOnlineRows(Builder $query): Builder
+    {
+        return $query->where(function (Builder $outer) {
+            $outer->where(function (Builder $q) {
+                $q->whereNull('room_code')->orWhere('room_code', '=', '');
+            })->orWhereIn('id', function ($sub) {
+                $sub->selectRaw('MIN(id)')
+                    ->from('match_results')
+                    ->whereNotNull('room_code')
+                    ->where('room_code', '!=', '')
+                    ->groupBy('room_code');
+            });
+        });
+    }
+
     // Oyun turu etiketi: 'coin' = Jeton/para maci (bahis > 0), aksi = N-puanlik mac.
     public static function matchTypeLabel(?string $type, $matchLength = null): string
     {
@@ -50,8 +73,11 @@ class MatchResultResource extends Resource
     {
         return $table
             ->defaultSort('id', 'desc')
-            // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
-            ->modifyQueryUsing(fn (Builder $query) => $query->with(['user', 'room']))
+            ->modifyQueryUsing(function (Builder $query) {
+                // N+1 onle: her satir icin oyuncu + oda (bahis) tek sorguda gelsin.
+                $query->with(['user', 'room']);
+                static::dedupeOnlineRows($query);
+            })
             ->columns([
                 Tables\Columns\TextColumn::make('id')->label('#')->sortable(),
                 Tables\Columns\TextColumn::make('user.nickname')->label('Oyuncu')
