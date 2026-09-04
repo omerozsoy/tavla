@@ -48,4 +48,12 @@ return [
     // tanimlanmalidir (bkz. .env.example), aksi halde config-admin listesi bostur.
     'admin_emails' => array_filter(array_map('trim', explode(',', (string) env('ADMIN_EMAILS', '')))),
 
+    // Servis uyarısı (validator düştü/döndü) kanalları. E-posta ADMIN_EMAILS'e gider.
+    // WhatsApp (CallMeBot): kendi numaran + CallMeBot'tan aldığın apikey. İkisi de doluysa
+    // WhatsApp bildirimi gönderilir. phone: uluslararası, + ile (örn +90532...).
+    'alert' => [
+        'whatsapp_phone' => env('ALERT_WHATSAPP_PHONE', ''),
+        'whatsapp_apikey' => env('ALERT_WHATSAPP_APIKEY', ''),
+    ],
+
 ];
