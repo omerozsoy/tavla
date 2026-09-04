@@ -1418,6 +1418,57 @@ export default function App() {
     })
   }
 
+  // Kup (double) kararını kaydeder: katla / kabul / pas. Aktör oyuncu (player) yazar; her
+  // istemci yalnız KENDİ kup eylemini kaydeder (online'da rakibinki kendi istemcisinde).
+  // o<0 -> aynı seq'te ilgili hamleden ÖNCE sıralanır.
+  function recordCubeEvent(player: Player, chosen: 'double' | 'take' | 'drop') {
+    const log = gameRecordRef.current
+    if (!log) return
+    if (log.online && player !== myColor) return
+    const m =
+      chosen === 'double'
+        ? `Katla → ${match.cube.value * 2}`
+        : chosen === 'take'
+          ? `Kabul (${match.cube.value * 2})`
+          : 'Pas (çekildi)'
+    log.events.push({
+      g: log.gameNo,
+      s: turnsPlayedRef.current,
+      o: chosen === 'double' ? -3 : -2,
+      k: 'cube',
+      p: player === 'white' ? 'W' : 'B',
+      d: '',
+      m,
+    })
+  }
+
+  // Oyun sonu özeti (kazanan · tür · puan). Her iki istemci de yazabilir; birleştirmede
+  // oyun başına tekilleştirilir (bkz. GameLog::mergedTurns).
+  function recordEndEvent(ge: GameEnd) {
+    const log = gameRecordRef.current
+    if (!log) return
+    const type = ge.resigned
+      ? 'Terk'
+      : ge.timeout
+        ? 'Süre doldu'
+        : ge.dropped
+          ? 'Kup pas'
+          : ge.mult === 3
+            ? 'Çifte mars'
+            : ge.mult === 2
+              ? 'Mars'
+              : 'Normal'
+    log.events.push({
+      g: log.gameNo,
+      s: turnsPlayedRef.current,
+      o: 9,
+      k: 'end',
+      p: ge.winner === 'white' ? 'W' : 'B',
+      d: '',
+      m: `${ge.winner === 'white' ? 'Beyaz' : 'Siyah'} · ${type} · ${ge.points}p`,
+    })
+  }
+
   // Kaydı sunucuya gönderir (en iyi çaba). final=true → maç sonu: kazanan + skor + 'finished'.
   function flushMatchLog(final: boolean) {
     const log = gameRecordRef.current
@@ -1512,6 +1563,7 @@ export default function App() {
   useEffect(() => {
     const has = !!gameEnd
     if (has && !prevGameEndRef.current && gameRecordRef.current) {
+      if (gameEnd) recordEndEvent(gameEnd)
       flushMatchLog(false)
       gameRecordRef.current.gameNo += 1
     }
@@ -1667,6 +1719,7 @@ export default function App() {
     const humanColor: Player = online ? myColor : 'white'
     if (player === humanColor) logCubeDecision('double')
     else logCubeAction('double', player)
+    recordCubeEvent(player, 'double') // maç kaydı
     setCubePending(player)
     setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
   }
@@ -1677,6 +1730,7 @@ export default function App() {
     const humanColor: Player = online ? myColor : 'white'
     if (taker === humanColor) logCubeDecision('take')
     else logCubeAction('take', taker)
+    recordCubeEvent(taker, 'take') // maç kaydı
     setMatch((m) => ({ ...m, cube: { value: m.cube.value * 2, owner: taker } }))
     setCubePending(null)
     setMessage(t('msg.took', { name: pName(taker), doubler: pName(doubler) }))
@@ -1687,6 +1741,7 @@ export default function App() {
     const humanColor: Player = online ? myColor : 'white'
     if (opponent(doubler) === humanColor) logCubeDecision('drop')
     else logCubeAction('drop', opponent(doubler))
+    recordCubeEvent(opponent(doubler), 'drop') // maç kaydı
     const points = match.cube.value
     setMatch((m) => scoreGame(m, doubler, points))
     setGameEnd({ winner: doubler, points, mult: 1, dropped: true })
@@ -1732,6 +1787,7 @@ export default function App() {
             const w = probs[0] + probs[1] + probs[2]
             if (!cancelled && w >= 0.7 && w <= 0.97) {
               logCubeAction('double', BOT_PLAYER) // botun kup teklifini .mat icin logla
+              recordCubeEvent(BOT_PLAYER, 'double') // maç kaydı
               setCubePending(BOT_PLAYER)
               setMessage(t('msg.doubledAsk', { value: match.cube.value * 2 }))
               return

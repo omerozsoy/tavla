@@ -94,4 +94,43 @@ class GameLogTest extends TestCase
             'uid' => 'bad uid!', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1, 'events' => [],
         ])->assertStatus(422);
     }
+
+    public function test_cube_and_end_events_order_and_dedupe(): void
+    {
+        // Aynı seq'te: kup(o=-3) < hamle(o=0) < bitiş(o=9). Bitiş iki kez yazılırsa tekilleşir.
+        $this->postJson('/api/game-logs', [
+            'uid' => 'CUBE01', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1,
+            'events' => [
+                ['g' => 1, 's' => 4, 'p' => 'W', 'd' => '', 'm' => 'Beyaz · Normal · 1p', 'o' => 9, 'k' => 'end'],
+                ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '6-5', 'm' => '24/18 13/8', 'o' => 0],
+                ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '', 'm' => 'Katla → 2', 'o' => -3, 'k' => 'cube'],
+                // Bitiş olayının ikinci istemci kopyası (dedupe edilmeli)
+                ['g' => 1, 's' => 4, 'p' => 'W', 'd' => '', 'm' => 'Beyaz · Normal · 1p', 'o' => 9, 'k' => 'end'],
+            ],
+        ])->assertOk();
+
+        $merged = GameLog::where('uid', 'CUBE01')->firstOrFail()->mergedTurns();
+        $this->assertCount(3, $merged); // 4 event -> bitiş tekilleşti
+        $this->assertSame('cube', $merged[0]['k']);      // önce kup (o=-3)
+        $this->assertSame('24/18 13/8', $merged[1]['m']); // sonra hamle (o=0)
+        $this->assertSame('end', $merged[2]['k']);       // en son bitiş (o=9)
+    }
+
+    public function test_prune_deletes_old_pvb_only(): void
+    {
+        $mk = function (string $uid, string $mode, int $daysAgo) {
+            $g = GameLog::create(['uid' => $uid, 'mode' => $mode, 'target' => 1]);
+            $g->created_at = now()->subDays($daysAgo);
+            $g->save();
+        };
+        $mk('OLDPVB', 'pvb', 120);
+        $mk('NEWPVB', 'pvb', 10);
+        $mk('OLDONL', 'online', 120);
+
+        $this->artisan('gamelogs:prune --days=90')->assertExitCode(0);
+
+        $this->assertNull(GameLog::where('uid', 'OLDPVB')->first());   // eski pvb silindi
+        $this->assertNotNull(GameLog::where('uid', 'NEWPVB')->first()); // yeni pvb kaldı
+        $this->assertNotNull(GameLog::where('uid', 'OLDONL')->first()); // online korundu
+    }
 }
