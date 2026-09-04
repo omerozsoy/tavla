@@ -5057,11 +5057,14 @@ button[aria-disabled='true'],
     opacity: 1;
   }
 }
+/* Zar rengi = SIRADAKI oyuncunun PUL rengi (owner=turnStart.turn ile gelir).
+   Sira kimde karisikligini onlemek icin tema-ozel zar rengi (--die*-bg) YOK SAYILIR:
+   zar DOGRUDAN pul rengini (cream=beyaz pul / navy=siyah pul) alir. */
 .die-face.white {
-  background: var(--die1-bg, var(--cream));
+  background: var(--cream);
 }
 .die-face.black {
-  background: var(--die2-bg, var(--navy));
+  background: var(--navy);
 }
 .pip-dot {
   position: absolute;
@@ -5072,11 +5075,13 @@ button[aria-disabled='true'],
 }
 /* Zar noktalari NOTR (tema-renk tint YOK): acik zar -> koyu nokta, koyu zar -> acik.
    Tema yine de d1Pip/d2Pip ile bilincli override edebilir (kulup/frostfall vb.). */
+/* Pip'ler notr kontrast: beyaz pul zar -> koyu nokta, siyah pul zar -> acik nokta
+   (zar artik pul rengini aldigi icin tema pip override'i da kullanilmaz). */
 .die-face.white .pip-dot {
-  background: var(--die1-pip, #18181b);
+  background: #18181b;
 }
 .die-face.black .pip-dot {
-  background: var(--die2-pip, #f2f3f7);
+  background: #f2f3f7;
 }
 .die-face.used {
   opacity: 0.35;

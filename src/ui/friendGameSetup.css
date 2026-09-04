@@ -56,9 +56,11 @@
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 .fg-tab.active {
-  background: #eef1f6;
-  color: #16202e;
-  border-color: #eef1f6;
+  /* Secili sekme: token-tabanli (eski sabit Coastal cip #eef1f6/#16202e dark modda
+     temayla uyusmuyordu). Site geneli secili/aktif dili = accent dolgu. */
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--accent);
 }
 
 .fg-section-title {
