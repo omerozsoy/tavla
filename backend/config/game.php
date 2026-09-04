@@ -3,10 +3,11 @@
 // Oyun sunucu-otoritesi (para maçı güvenliği Faz 2). TAM otoriter: zar+hamle+tahta+skor+küp
 // SUNUCUDA. Faz 1 (yalnız zar, dice_authority) yerine geçer.
 return [
-    // Faz 2 tam otorite: AÇIK ise yeni bahisli (staked) eşleşme odaları authoritative=true olur
-    // → istemci server_state uygular, her hamle Node validator'da doğrulanır, skor+küp sunucuda.
-    // VARSAYILAN KAPALI (dormant): önce validator ayakta + 2-istemci staging + frontend (Adım E)
-    // tamam olmalı; ayrıca açılış/başlayan (Adım C) ve Crawford eksikleri kapanmalı. Rollback = env.
+    // Faz 2 tam otorite: AÇIK ise TÜM yeni eşleşme odaları (bahisli + ücretsiz/arkadaşlık)
+    // authoritative=true olur → istemci server_state uygular, her hamle Node validator'da
+    // doğrulanır, skor+küp sunucuda. (Bahis ayrımı KALDIRILDI — direktif: herkes test etsin.)
+    // VARSAYILAN KAPALI: açmadan önce Node validator ayakta olmalı (VALIDATOR_URL/SECRET); PR'ı da
+    // otoriter istersen VALIDATOR_PR_MODE. Rollback = env false + config:clear + FPM restart.
     'server_authoritative' => (bool) env('SERVER_AUTHORITATIVE', false),
 
     // TEST allow-list: GLOBAL kapalıyken bile, SADECE bu user id'lerin İKİSİ de eşleşirse
