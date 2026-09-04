@@ -1399,9 +1399,9 @@ export default function App() {
     // Sunucu-otoriter oda (Faz 2c DRAFT): hamleyi sunucuya DOGRULAT (optimistic uyguladik;
     // sunucu reddederse poll server_state ile duzeltir). Legacy PUT sync effect'te atlanir.
     if (online && authoritativeRef.current && room?.code) {
-      serverMove(room.code, finalPlayed).catch(() => {
-        /* gecersiz/erisimsiz -> poll otoriter durumu geri yukler */
-      })
+      // Hamle sunucuda reddedilir/erişilemezse GERÇEK sebebi göster (ör. "Doğrulama servisi
+      // kullanılamıyor" = validator erişilemiyor). Poll otoriter durumu geri yükler (reconcile).
+      serverMove(room.code, finalPlayed).catch((e) => notify.error(srvErr(e)))
     }
   }
 
