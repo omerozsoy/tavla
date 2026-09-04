@@ -9,7 +9,6 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Ana sayfanin en ustunde SLIDER (carousel) olarak donen banner gorselleri.
@@ -45,7 +44,8 @@ class TournamentAdResource extends Resource
             // Düzenleyen kurum: Kurumlar (İçerik › Kurumlar) listesinden seçilir; sol panelde
             // başlığın üstünde o kurumun LOGOSU küçük gösterilir. Logo elle yüklenmez.
             Forms\Components\Select::make('organizer_id')->label('Düzenleyen kurum')
-                ->relationship('organizer', 'title', fn (Builder $q) => $q->where('type', 'kurum'))
+                ->options(fn () => \App\Models\Content::query()
+                    ->where('type', 'kurum')->orderBy('title')->pluck('title', 'id'))
                 ->searchable()
                 ->preload()
                 ->helperText('Opsiyonel. Seçilen kurumun logosu sol panelde başlığın üstünde gösterilir. Kurumu ve logosunu “İçerik › Kurumlar”dan yönetebilirsin.')
