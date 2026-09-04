@@ -64,6 +64,20 @@ export default function PublicProfile({
                 <div className="pp-coins">
                   <Coins amount={p.coins} size={14} />
                 </div>
+                {onAddFriend && (
+                  <Button
+                    variant="default"
+                    className="pp-addfriend"
+                    disabled={friendSent}
+                    onClick={() => {
+                      setFriendSent(true)
+                      onAddFriend()
+                    }}
+                  >
+                    <Icon name={friendSent ? 'check' : 'user-plus'} size={14} />{' '}
+                    {friendSent ? t('online.friendSent') : t('online.addFriend')}
+                  </Button>
+                )}
               </div>
             </div>
             <div className="pp-rank">{t('stats.rank', { r: p.rank, n: '' }).replace('/ ', '')}</div>
@@ -99,21 +113,6 @@ export default function PublicProfile({
             )}
 
             <BadgeList ids={p.badges} />
-
-            {onAddFriend && (
-              <Button
-                variant="default"
-                className="pp-addfriend w-full"
-                disabled={friendSent}
-                onClick={() => {
-                  setFriendSent(true)
-                  onAddFriend()
-                }}
-              >
-                <Icon name={friendSent ? 'check' : 'user-plus'} size={16} />{' '}
-                {friendSent ? t('online.friendSent') : t('online.addFriend')}
-              </Button>
-            )}
           </>
         )}
       </div>
