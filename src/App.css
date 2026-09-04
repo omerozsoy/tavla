@@ -12788,8 +12788,20 @@ button.acct-row:hover:not(:disabled) {
 .pp-card {
   max-width: 420px;
 }
+/* Arkadaslik butonu: header sag sutununda (rating/coin altinda) KUCUK & kompakt.
+   Global 42px standardini bu baglamda bilincli olarak ezeriz. */
 .pp-addfriend {
-  margin-top: 14px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-top: 10px;
+}
+.pp-addfriend svg {
+  width: 14px;
+  height: 14px;
 }
 
 /* Kapali test sifre kapisi (GatePrompt) — tum ekrani kaplar, en ustte */
@@ -12853,7 +12865,7 @@ button.acct-row:hover:not(:disabled) {
 }
 .pp-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
   margin-bottom: 18px;
 }
@@ -12890,6 +12902,9 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.85rem;
 }
 .pp-rating {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
   font-size: 1.6rem;
   font-weight: 400;
   color: var(--accent);
