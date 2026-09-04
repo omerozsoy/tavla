@@ -1,0 +1,16 @@
+[Unit]
+Description=GNU Backgammon analiz servisi (tavlai — ana motor)
+After=network.target
+
+[Service]
+Type=simple
+# GNUBG_SECRET'i UZUN-RASTGELE bir değerle değiştir (backend .env ile AYNI olacak).
+Environment=GNUBG_PORT=8092
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
