@@ -47,6 +47,7 @@ import {
   enterRoom,
   tournamentMatchRoom,
   reportTournament,
+  tournamentNoShow,
   listTournaments,
   type Tournament,
   buyItem,
@@ -2023,6 +2024,27 @@ export default function App() {
     if (online && room?.status === 'playing') void neuralRef.current.ready().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.status])
+
+  // ---- Turnuva maci: rakip 1dk icinde GELMEZSE hukmen (walkover) kazan ----
+  // Yalniz bekleyen (status='waiting') turnuva macinda calisir; opponent odaya girince
+  // status 'playing' olur -> effect cleanup timer'i iptal eder. Sunucu 60sn esigini +
+  // rakibin gercekten girmedigini (slot token bos) DOGRULAR (istemci saati otoriter degil).
+  useEffect(() => {
+    const tm = tournMatchRef.current
+    if (!online || !tm || room?.status !== 'waiting' || !room?.code) return
+    const id = window.setTimeout(() => {
+      tournamentNoShow(tm.tid, tm.matchKey)
+        .then(() => {
+          notify.success(t('tourn.walkover'))
+          handleLeaveRoom()
+        })
+        .catch(() => {
+          // rakip bu arada girdi / sure dolmadi -> sessizce beklemeye devam
+        })
+    }, 65000) // 60sn sunucu esigi + ag payi
+    return () => window.clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.status, room?.code])
 
   // ---- Online mac bitince Elo puanini bildir (sadece giris yapmis kullanici) ----
   useEffect(() => {

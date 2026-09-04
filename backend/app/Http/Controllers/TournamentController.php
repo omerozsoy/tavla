@@ -218,50 +218,144 @@ class TournamentController extends Controller
                 ? $authWinner
                 : (int) $data['winner_id'];
 
-            $bracket[$ri][$mi]['winner'] = $winnerId;
-            $winner = ($m['p1']['id'] ?? null) === $winnerId ? $m['p1'] : $m['p2'];
-
-            if (isset($bracket[$ri + 1])) {
-                $nextIndex = intdiv($mi, 2);
-                $slot = $mi % 2 === 0 ? 'p1' : 'p2';
-                $bracket[$ri + 1][$nextIndex][$slot] = $winner;
-            } else {
-                // Final bitti -> sampiyon
-                $t->champion_id = $winnerId;
-                $t->status = 'finished';
-                // Odulleri bir kez ode (kilit altinda check-then-set yaris-guvenli).
-                if (! $t->prize_paid) {
-                    $this->payPrizes($t, $bracket, $winnerId);
-                    $t->prize_paid = true;
-                }
-                // Kazanilan avatar cerceveleri KALDIRILDI (eski frame sistemi temizlendi).
-            }
-
-            $t->bracket = $bracket;
-            $t->save();
+            $this->applyWinnerToBracket($t, $ri, $mi, $winnerId);
             return ['t' => $t];
         });
 
         if (isset($out['err'])) {
             return $this->fail($out['err'], $out['code']);
         }
-        // Basarim: turnuva bitti ve sampiyon belli -> galibiyet rozetleri (idempotent).
-        // tournaments_won sayaci champion_id sayimindan yeniden kurulur (cift-artis olmaz).
-        $t = $out['t'];
-        if ($t->status === 'finished' && $t->champion_id) {
-            try {
-                $champ = User::find($t->champion_id);
-                if ($champ) {
-                    $stat = \App\Models\UserStat::forUser($champ->id);
-                    $stat->tournaments_won = Tournament::where('champion_id', $champ->id)->where('status', 'finished')->count();
-                    $stat->save();
-                    $champ->unsetRelation('stat');
-                    app(\App\Services\Achievements\AchievementService::class)->evaluate($champ);
-                }
-            } catch (\Throwable $e) {
-                \Illuminate\Support\Facades\Log::warning('Tournament champion achievement failed', ['tournament_id' => $t->id, 'err' => $e->getMessage()]);
+        $this->awardChampionIfFinished($out['t']);
+        return response()->json(['tournament' => $this->full($out['t']->fresh())]);
+    }
+
+    // Kazanani bracket'e yaz + bir ust tura tasiy VEYA final ise sampiyonu belirle + odul ode.
+    // (report ve noShow ortak kullanir; cagiran ATOMIK transaction + lockForUpdate saglamali.)
+    private function applyWinnerToBracket(Tournament $t, int $ri, int $mi, int $winnerId): void
+    {
+        $bracket = $t->bracket;
+        $m = $bracket[$ri][$mi];
+        $bracket[$ri][$mi]['winner'] = $winnerId;
+        $winner = ($m['p1']['id'] ?? null) === $winnerId ? $m['p1'] : $m['p2'];
+
+        if (isset($bracket[$ri + 1])) {
+            $nextIndex = intdiv($mi, 2);
+            $slot = $mi % 2 === 0 ? 'p1' : 'p2';
+            $bracket[$ri + 1][$nextIndex][$slot] = $winner;
+        } else {
+            // Final bitti -> sampiyon
+            $t->champion_id = $winnerId;
+            $t->status = 'finished';
+            // Odulleri bir kez ode (kilit altinda check-then-set yaris-guvenli).
+            if (! $t->prize_paid) {
+                $this->payPrizes($t, $bracket, $winnerId);
+                $t->prize_paid = true;
             }
         }
+
+        $t->bracket = $bracket;
+        $t->save();
+    }
+
+    // Turnuva bittiyse sampiyona galibiyet rozetleri (idempotent). tournaments_won
+    // sayaci champion_id sayimindan yeniden kurulur (cift-artis olmaz).
+    private function awardChampionIfFinished(Tournament $t): void
+    {
+        if ($t->status !== 'finished' || ! $t->champion_id) {
+            return;
+        }
+        try {
+            $champ = User::find($t->champion_id);
+            if ($champ) {
+                $stat = \App\Models\UserStat::forUser($champ->id);
+                $stat->tournaments_won = Tournament::where('champion_id', $champ->id)->where('status', 'finished')->count();
+                $stat->save();
+                $champ->unsetRelation('stat');
+                app(\App\Services\Achievements\AchievementService::class)->evaluate($champ);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Tournament champion achievement failed', ['tournament_id' => $t->id, 'err' => $e->getMessage()]);
+        }
+    }
+
+    // Rakip GELMEDI -> hukmen (walkover) kazan. Oda acildiktan 60sn sonra, rakip odaya
+    // HIC girmemisse (slot token'i bos) cagiran oyuncu maci hukmen kazanir; bracket ilerler.
+    public function noShow(Request $request, Tournament $tournament)
+    {
+        $data = $request->validate([
+            'match' => ['required', 'string', 'max:16'],
+            'token' => ['required', 'string', 'max:64'], // oda kimligi (slot tespiti)
+        ]);
+        if ($tournament->status !== 'running') {
+            return $this->fail('Turnuva aktif değil.', 422);
+        }
+        $me = $request->user()->id;
+
+        $out = DB::transaction(function () use ($tournament, $data, $me) {
+            $t = Tournament::lockForUpdate()->find($tournament->id);
+            if (! $t || $t->status !== 'running') {
+                return ['err' => 'Turnuva aktif değil.', 'code' => 422];
+            }
+            $found = null;
+            foreach ($t->bracket as $ri => $round) {
+                foreach ($round as $mi => $m) {
+                    if ($m['key'] === $data['match']) {
+                        $found = [$ri, $mi, $m];
+                        break 2;
+                    }
+                }
+            }
+            if (! $found) {
+                return ['err' => 'Maç bulunamadı.', 'code' => 404];
+            }
+            [$ri, $mi, $m] = $found;
+            $ids = [$m['p1']['id'] ?? null, $m['p2']['id'] ?? null];
+            if (! in_array($me, $ids, true)) {
+                return ['err' => 'Bu maçta değilsin.', 'code' => 403];
+            }
+            if (! empty($m['winner'])) {
+                return ['err' => 'Sonuç zaten girildi.', 'code' => 422];
+            }
+            $code = $m['room'] ?? null;
+            if (! $code) {
+                return ['err' => 'Maç odası henüz açılmadı.', 'code' => 422];
+            }
+            $room = \App\Models\Room::where('code', $code)->first();
+            if (! $room) {
+                return ['err' => 'Maç odası bulunamadı.', 'code' => 422];
+            }
+            // 60sn gelmeme suresi: oda olusturuldugundan (ilk giren) bu yana gecmeli.
+            if ($room->created_at && $room->created_at->gt(now()->subSeconds(60))) {
+                return ['err' => 'Rakip için bekleme süresi (1 dk) dolmadı.', 'code' => 422];
+            }
+            // Cagiranin slotu (token) -> rakip slotu. Cagiran odada olmali.
+            $slot = $room->p1_token === $data['token'] ? 'p1'
+                : ($room->p2_token === $data['token'] ? 'p2' : null);
+            if ($slot === null) {
+                return ['err' => 'Bu odada değilsin.', 'code' => 403];
+            }
+            $other = $slot === 'p1' ? 'p2' : 'p1';
+            // GERCEK no-show: rakip odaya HIC girmemis (slot token bos). Girdiyse hukmen YOK
+            // (oynasinlar; saat/presence halleder) -> yanlis walkover engellenir.
+            if (! empty($room->{$other.'_token'})) {
+                return ['err' => 'Rakip odaya girdi; hükmen kazanamazsın.', 'code' => 422];
+            }
+
+            $this->applyWinnerToBracket($t, $ri, $mi, $me);
+            // Odayi da kapat (temiz sonuc).
+            $room->status = 'finished';
+            $room->end_reason = 'NO_SHOW';
+            $room->{$slot.'_result'} = 'won';
+            $room->{$other.'_result'} = 'lost';
+            $room->save();
+
+            return ['t' => $t];
+        });
+
+        if (isset($out['err'])) {
+            return $this->fail($out['err'], $out['code']);
+        }
+        $this->awardChampionIfFinished($out['t']);
         return response()->json(['tournament' => $this->full($out['t']->fresh())]);
     }
 

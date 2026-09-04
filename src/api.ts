@@ -897,6 +897,16 @@ export async function reportTournament(
   return d.tournament
 }
 
+// Rakip GELMEDI -> hukmen (walkover) kazan. Oda acildiktan 1dk sonra rakip odaya hic
+// girmemisse cagiran maci hukmen kazanir; sunucu sureyi+rakip yoklugunu dogrular.
+export async function tournamentNoShow(id: number, matchKey: string): Promise<Tournament> {
+  const d = await req<{ tournament: Tournament }>(`/tournaments/${id}/no-show`, {
+    method: 'POST',
+    body: JSON.stringify({ match: matchKey, token: playerToken() }),
+  })
+  return d.tournament
+}
+
 // Turnuva maci icin paylasimli oda kodu al (iki oyuncu ayni koda girer)
 export async function tournamentMatchRoom(id: number, matchKey: string): Promise<string> {
   const d = await req<{ code: string }>(`/tournaments/${id}/match-room`, {
