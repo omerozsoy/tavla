@@ -10120,6 +10120,13 @@ button.acct-row:hover:not(:disabled) {
 .mr-row:nth-child(even) {
   background: color-mix(in srgb, var(--text) 4%, var(--card-bg));
 }
+/* XG kırılım alt-satırları (checker/küp PR): overall PR'ın altında daha küçük + soluk. */
+.mr-row.mr-sub {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
 .mr-row:not(:last-child) {
   border-bottom: 1px solid var(--border);
 }
