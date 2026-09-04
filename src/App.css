@@ -7871,6 +7871,12 @@ button.acct-row:hover:not(:disabled) {
   color: var(--med-ink);
   text-align: left;
 }
+/* Logo varsa: icerik ortalanmak yerine ustten baslar ve logonun ALTINA iner
+   (buyuk logo basliga degmesin). Logo yoksa yukaridaki ortalanmis hal kalir. */
+.bs-panel:has(.bs-logo) {
+  justify-content: flex-start;
+  padding-top: clamp(100px, 13vw, 172px);
+}
 /* Duzenleyen (organizator) logosu: panelin fiziksel EN USTUNE sabit (icerik
    ortalanmis olsa da logo tepede kalir; panel padding'iyle hizali). */
 .bs-logo {
