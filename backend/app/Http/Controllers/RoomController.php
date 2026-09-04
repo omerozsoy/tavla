@@ -1118,7 +1118,8 @@ class RoomController extends Controller
      * Faz 2 TAM otorite bu eşleşmede açılsın mı? İki karar yolu:
      *  - TEST allow-list: iki oyuncu da `game.authoritative_users` listesinde (staked olmasa bile)
      *    -> 2-hesapla güvenli staging (global kapalıyken yalnız bu çift etkilenir).
-     *  - GLOBAL: `game.server_authoritative` açık VE maç bahisli (para-önce rollout).
+     *  - GLOBAL: `game.server_authoritative` açık -> TÜM maçlar (bahisli + ücretsiz/arkadaşlık).
+     *    (Kullanıcı direktifi: herkes test etsin. Bahis koşulu kaldırıldı.)
      */
     private function shouldAuthoritative(?int $u1, ?int $u2, bool $staked): bool
     {
@@ -1127,7 +1128,8 @@ class RoomController extends Controller
             return true;
         }
 
-        return $staked && config('game.server_authoritative', false);
+        // GLOBAL açıksa bahisli/ücretsiz AYRIMI YOK -> her eşleşme authoritative.
+        return (bool) config('game.server_authoritative', false);
     }
 
     /**
