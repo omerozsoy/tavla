@@ -796,6 +796,23 @@ class RoomController extends Controller
         $reason = $end['reason'];     // TIMEOUT|AFK_TIMEOUT
         $winnerColor = $winnerSlot === 'p1' ? 'white' : 'black';
 
+        // AUTHORITATIVE (Faz 2): timeout/AFK forfeit'i server_match'e YANSIT (RoomResult/settle
+        // authoritative iken burayı okur). Kazanan hedefe ulaşır -> maç biter. Küp değeriyle.
+        if ($room->authoritative) {
+            $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+            if (empty($sm['done'])) {
+                $target = (int) ($sm['target'] ?? $room->target ?? 1);
+                $cubeVal = (int) ($sm['cube']['value'] ?? 1);
+                $sm['score'][$winnerColor] = max($target, (int) ($sm['score'][$winnerColor] ?? 0) + max(1, $cubeVal));
+                $sm['done'] = true;
+                $sm['winner'] = $winnerColor;
+                $sm['cube']['pending'] = null;
+                $room->server_match = $sm;
+                $room->server_winner = $winnerColor;
+                $room->server_version = (int) $room->server_version + 1;
+            }
+        }
+
         $state = is_array($room->state) ? $room->state : [];
         if (empty($state['gameEnd'])) {
             $match = is_array($state['match'] ?? null) ? $state['match'] : [];
@@ -998,6 +1015,12 @@ class RoomController extends Controller
             // Faz 2 KÜP: value=küp değeri, owner=küpü elinde tutan (null=ortada), pending=teklif
             // eden renk (yanıt bekleniyor) veya null. Her yeni oyunda ortaya döner.
             'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+            // CRAWFORD: crawford=bu oyun Crawford oyunu (çift YASAK); crawfordDone=Crawford oyunu
+            // oynandı (sonrası çift serbest). Bir oyuncu ilk kez (target-1)'e ulaşınca SONRAKİ oyun.
+            'crawford' => false,
+            'crawfordDone' => false,
+            // opened=bu oyunun AÇILIŞ eli atıldı mı (başlayan belirlendi). Yeni oyunda false.
+            'opened' => false,
         ];
     }
 
@@ -1021,9 +1044,11 @@ class RoomController extends Controller
     private function applyGameResult(Room $room, string $winner, int $points): bool
     {
         $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+        $wasCrawford = ! empty($sm['crawford']);
         $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $points;
         $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
         $sm['cube'] = ['value' => 1, 'owner' => null, 'pending' => null]; // yeni oyun: küp ortada
+        $sm['opened'] = false; // sonraki oyun yeni açılış eli ister
         $target = (int) ($sm['target'] ?? 1);
         $done = (int) $sm['score'][$winner] >= $target;
         if ($done) {
@@ -1032,6 +1057,16 @@ class RoomController extends Controller
             $room->server_winner = $winner;
             // server_state son tahtada kalır (çağıran ayarlar).
         } else {
+            // CRAWFORD geçişi: Crawford oyunu YENİ bittiyse -> sonrası serbest (crawfordDone).
+            // Değilse ve biri ilk kez (target-1)'e ulaştıysa -> SONRAKİ oyun Crawford (çift yasak).
+            if (! empty($sm['crawfordDone'])) {
+                $sm['crawford'] = false;
+            } elseif ($wasCrawford) {
+                $sm['crawford'] = false;
+                $sm['crawfordDone'] = true;
+            } elseif (max((int) $sm['score']['white'], (int) $sm['score']['black']) === $target - 1) {
+                $sm['crawford'] = true;
+            }
             $room->server_state = \App\Support\Backgammon::initialState(); // sonraki oyun temiz tahta
         }
         $room->server_match = $sm;
@@ -1103,6 +1138,43 @@ class RoomController extends Controller
                 $room->dice_client_seed = substr((string) ($data['client_seed'] ?? ''), 0, 40);
                 $room->dice_roll_index = 0;
                 $room->dice_rolls = [];
+            }
+
+            // ---- AÇILIŞ ELİ (Adım C): oyunun ilk eli ADİL açılış — iki oyuncu 1'er zar, YÜKSEK
+            // başlar (asla çift, asla berabere). SUNUCUDA deterministik (seed + gameNo). Başlayan
+            // belli olmadığı için SIRA KONTROLÜ YOK (ilk çağıran tetikler; diğerine poll ile gelir).
+            $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+            if (empty($sm['opened'])) {
+                $gameNo = (int) ($sm['gameNo'] ?? 1);
+                $base = $gameNo * 4; // 'single' HMAC alanı (normal 'roll' alanından bağımsız)
+                $cs = (string) $room->dice_client_seed;
+                $wDie = $dice->single($room->dice_seed, $cs, $base);
+                $bDie = $dice->single($room->dice_seed, $cs, $base + 1);
+                for ($k = 2; $wDie === $bDie; $k++) { // berabere olamaz -> farklı çıkana kadar
+                    $bDie = $dice->single($room->dice_seed, $cs, $base + $k);
+                }
+                $starter = $wDie > $bDie ? 'white' : 'black';
+                $state['turn'] = $starter;
+                $state['dice'] = [max($wDie, $bDie), min($wDie, $bDie)]; // başlayan bu çifti oynar
+                $state['diceUsed'] = [false, false];
+                $sm['opened'] = true;
+
+                $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+                $rolls[] = ['opening' => $gameNo, 'white' => $wDie, 'black' => $bDie, 'starter' => $starter];
+                $room->dice_rolls = $rolls;
+                $room->server_state = $state;
+                $room->server_match = $sm;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->save();
+
+                return response()->json([
+                    'dice' => $state['dice'],
+                    'starter' => $starter,
+                    'opening' => true,
+                    'commit' => $room->dice_commit,
+                    'version' => (int) $room->server_version,
+                    'reused' => false,
+                ]);
             }
 
             // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
@@ -1259,6 +1331,9 @@ class RoomController extends Controller
             }
             if (($state['turn'] ?? 'white') !== $color) {
                 return $this->fail('Sıra sende değil.', 409);
+            }
+            if (! empty($sm['crawford'])) {
+                return $this->fail('Crawford oyununda küp kullanılamaz.', 409);
             }
             if (! empty($state['dice'])) {
                 return $this->fail('Zar atıldıktan sonra küp teklif edilemez.', 409);

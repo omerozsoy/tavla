@@ -62,7 +62,9 @@ class ServerMatchTest extends TestCase
             'p2_token' => 'p2', 'p2_name' => 'B', 'p2_user_id' => 20,
             'status' => 'playing', 'version' => 0, 'target' => $target,
             'authoritative' => true,
-            'server_match' => ['target' => $target, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false, 'winner' => null],
+            // opened=true: açılış (Adım C) geçildi -> roll normal beyaz eli (bu testler skoru sınar).
+            'server_state' => Backgammon::initialState(),
+            'server_match' => ['target' => $target, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false, 'winner' => null, 'opened' => true],
         ]);
     }
 
