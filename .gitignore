@@ -72,3 +72,7 @@ scripts/crop-out.mjs
 public/icon-512.png
 public/email-preview.html
 scripts/email-shot.mjs
+
+# Playwright E2E (Faz 2 harness)
+/test-results/
+/playwright-report/

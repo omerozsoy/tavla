@@ -28,3 +28,4 @@ Thumbs.db
 # Filament (deploy.sh -> filament:assets ile sunucuda uretilir)
 /public/css/filament
 /public/js/filament
+.env.e2e
