@@ -273,7 +273,12 @@ function readJson(req) {
     req.on("error", reject);
   });
 }
+var LOG_IP = process.env.VALIDATOR_LOG_IP === "1";
 var server = createServer(async (req, res) => {
+  if (LOG_IP) {
+    const xff = req.headers["x-forwarded-for"] || "";
+    console.log(`[validator] ${req.method} ${req.url} from=${req.socket.remoteAddress} xff=${xff}`);
+  }
   if (req.method === "GET" && req.url === "/health") {
     return send(res, 200, { ok: true, service: "tavla-validator" });
   }
