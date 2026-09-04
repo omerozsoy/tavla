@@ -667,12 +667,14 @@ class AuthController extends Controller
             }
             if (array_key_exists('countsForPR', $e)) {
                 if (! $e['countsForPR']) {
-                    continue; // zorunlu/obvious -> paydaya girmez
+                    continue; // zorunlu/obvious (checker VEYA cube) -> paydaya girmez
                 }
                 $sum += max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
                 $n++;
+            } elseif (array_key_exists('cube', $e)) {
+                continue; // ESKİ cube log (PR alanı yok, loss=0) -> phantom 0-karar sayma
             } else {
-                $sum += max(0.0, (float) ($e['loss'] ?? 0)); // eski log geriye uyum
+                $sum += max(0.0, (float) ($e['loss'] ?? 0)); // eski checker log geriye uyum
                 $n++;
             }
         }
