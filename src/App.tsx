@@ -2730,7 +2730,12 @@ export default function App() {
         // PUT/move akisi degismez; yalniz zar kaynagi sunucu olur.
         diceAuthorityRef.current = rv.dice_authority ?? diceAuthorityRef.current
         if (rv.authoritative && rv.server_state && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
-          const midMove = srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0
+          // midMove = KENDİ hamlemi ezmesin diye poll'u atla. AMA yalnız KENDİ TURUMDA geçerli:
+          // aksi halde açılışta başlayan-OLMAYAN tarafın tahtasında da zar görünüp (turnStart.dice>0)
+          // poll yanlışlıkla bloklanır -> rakip hamlesi hiç gelmez -> DESYNC (iki taraf da kendi
+          // sırası sanıp saat sayar, biri hareketsizlikten kaybeder). Rakip turundaysa DAİMA senkronla.
+          const myTurnNow = (srvTurnStartRef.current?.turn ?? null) === myColor
+          const midMove = myTurnNow && (srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0)
           if (!midMove) {
             appliedServerVersionRef.current = rv.server_version ?? 0
             applyServerBoard(rv.server_state, rv.server_match) // tahta + skor + kup + Crawford
