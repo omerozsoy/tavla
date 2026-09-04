@@ -23,6 +23,12 @@ class ServerMoveTest extends TestCase
             'p2_name' => 'P2',
             'status' => 'playing',
             'version' => 0,
+            // Açılış (Adım C) GEÇİLDİ (opened=true) -> ilk roll NORMAL beyaz eli. Bu testler
+            // hamle/validator/skoru sınar, açılışı değil (beyaz başlar varsayımı korunur).
+            'server_state' => Backgammon::initialState(),
+            'server_match' => ['target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true],
         ]);
     }
 

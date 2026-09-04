@@ -27,7 +27,8 @@ class RoomCubeTest extends TestCase
             'status' => 'playing', 'version' => 0, 'target' => $target,
             'authoritative' => true,
             'server_state' => $state,
-            'server_match' => ['target' => $target, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false, 'winner' => null, 'cube' => $cube],
+            // opened=true: açılış geçildi (küp teklifleri hep oyun-içi/açılış sonrası olur).
+            'server_match' => ['target' => $target, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false, 'winner' => null, 'cube' => $cube, 'opened' => true],
         ]);
     }
 
