@@ -58,7 +58,8 @@ class MatchClock
             'started_at' => $now,  // aktif segmentin (son gercek hamle/devir) sunucu ts'i
             'sig' => null,         // en son islenen state imzasi
             'running' => false,
-            'end' => null,         // ['reason' => TIMEOUT|AFK_TIMEOUT, 'winner' => 'p1'|'p2']
+            'moved' => false,      // macin ILK gercek hamlesi yapildi mi? (AFK bundan once SAYILMAZ)
+            'end' => null,         // ['reason' => TIMEOUT|AFK_TIMEOUT|ABANDON, 'winner' => 'p1'|'p2']
         ];
     }
 
@@ -180,6 +181,7 @@ class MatchClock
             $clock['turn_slot'] = $newTurn;
             $clock['started_at'] = $now;
             $clock['running'] = $running;
+            $clock['moved'] = true; // ILK gercek hamle yapildi -> AFK artik gecerli
         } else {
             // Gercek hamle yok (echo/clock-only) VEYA yetkisiz forge denemesi:
             // started_at'a DOKUNMA (AFK korunur). Yalnizca running bayragini guncelle.
@@ -236,20 +238,19 @@ class MatchClock
         $delay = (float) ($clock['delay'] ?? 0);
         $timeoutAt = $start + $delay + $bank; // ana sure bitisi
         $afkAt = $start + self::AFK_TOTAL;     // hareketsizlik bitisi
-
-        // Once gerceklesen (grace toleransiyla) kayip nedenidir.
-        if ($timeoutAt <= $afkAt) {
-            if ($now >= $timeoutAt + self::GRACE) {
-                $clock['end'] = ['reason' => 'TIMEOUT', 'winner' => self::other($active)];
-            } elseif ($now >= $afkAt + self::GRACE) {
-                $clock['end'] = ['reason' => 'AFK_TIMEOUT', 'winner' => self::other($active)];
-            }
-        } else {
-            if ($now >= $afkAt + self::GRACE) {
-                $clock['end'] = ['reason' => 'AFK_TIMEOUT', 'winner' => self::other($active)];
-            } elseif ($now >= $timeoutAt + self::GRACE) {
-                $clock['end'] = ['reason' => 'TIMEOUT', 'winner' => self::other($active)];
-            }
+        // AFK, macin ILK gercek hamlesinden ONCE SAYILMAZ (matchmaking sonrasi yukleme/acilis
+        // payi). O ana kadar sadece TIMEOUT (banka) + presence (terk) yedek olarak calisir
+        // -> hazir bekleyen oyuncu acilista haksiz AFK yemez, ama sonsuza dek de stall edemez.
+        $moved = (bool) ($clock['moved'] ?? false);
+        $timedOut = $now >= $timeoutAt + self::GRACE;              // banka tukendi
+        $afkedOut = $moved && ($now >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
+        if ($timedOut || $afkedOut) {
+            // Hangi deadline ONCE geldiyse kayip nedeni odur (AFK yalniz armed ise aday).
+            $afkFirst = $afkedOut && (! $timedOut || $afkAt < $timeoutAt);
+            $clock['end'] = [
+                'reason' => $afkFirst ? 'AFK_TIMEOUT' : 'TIMEOUT',
+                'winner' => self::other($active),
+            ];
         }
 
         return $clock;
@@ -277,7 +278,8 @@ class MatchClock
                 $p2 = max(0.0, $p2 - $used);
             }
             $delayRem = max(0.0, (float) ($clock['delay'] ?? 0) - $elapsed);
-            $afkRem = max(0.0, self::AFK_TOTAL - $elapsed);
+            // AFK geri sayimi yalniz ILK gercek hamleden sonra gorunur (acilis payi).
+            $afkRem = ! empty($clock['moved']) ? max(0.0, self::AFK_TOTAL - $elapsed) : null;
         }
 
         $activeColor = $active === 'p1' ? 'white' : ($active === 'p2' ? 'black' : null);

@@ -97,10 +97,16 @@ class RoomClockTest extends TestCase
     }
 
     // ---- show AFK_TIMEOUT'u enforce eder (casual 5: ana sure uzun, once AFK) ----
+    // AFK yalniz ILK gercek hamleden sonra sayilir -> once bir gercek hamle gonderilir.
     public function test_show_enforces_afk_timeout(): void
     {
         $room = $this->playingRoom('CLK3', 'casual', 5); // banka 900 -> timeout cok ileride
         $this->putJson('/api/rooms/CLK3', ['token' => 't1', 'state' => $this->state(5)])->assertOk();
+        // Ilk gercek hamle (imza degisir) -> moved=true, AFK artik gecerli
+        $moved = $this->state(5);
+        $moved['turnsPlayed'] = 1;
+        $moved['played'] = [['x' => 1]];
+        $this->putJson('/api/rooms/CLK3', ['token' => 't1', 'state' => $moved])->assertOk();
 
         $room->refresh();
         $clock = $room->clock;
