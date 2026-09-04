@@ -30,7 +30,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
-import { openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
+import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -1152,7 +1152,14 @@ export default function App() {
   const flipBoard = online && myColor === 'black'
   // Saat, kurulumda bir sure secildiyse (kapali degilse) calisir
   const clockOn = true // Galaxy tarzi: her oyunda saat acik (3 preset)
-  const onlineReady = !online || (room!.status === 'playing' && (room!.slot === 'p1' || oppStarted))
+  // Hazırlık gate'i saf isOnlineReady'de (authSync); testli. p2 authoritative bug'ı orada belgeli.
+  const onlineReady = isOnlineReady({
+    online,
+    status: room?.status,
+    slot: room?.slot,
+    oppStarted,
+    authoritative: room?.authoritative,
+  })
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
     onlineReady &&
