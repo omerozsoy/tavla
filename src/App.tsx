@@ -76,6 +76,8 @@ import {
   ApiError as ApiErr,
   type Slot,
   type ChatMsg,
+  submitGameLog,
+  type GameLogTurn,
 } from './api'
 import Chat from './ui/Chat'
 import ClockStack from './ui/ClockStack'
@@ -228,6 +230,21 @@ const AI_LEVELS = [
   'Legend',
   'Neural AI',
 ]
+// ---- Maç kaydı (hamle+zar logu) yardımcıları ----
+// Offline (pvb/pvp) maçlar için kısa, okunur maç kimliği üretir (regex [A-Za-z0-9]).
+function genLocalUid(): string {
+  const abc = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // karışan harfler (I,O,0,1) atlandı
+  const arr = new Uint8Array(7)
+  ;(globalThis.crypto ?? window.crypto).getRandomValues(arr)
+  let out = 'L'
+  for (const b of arr) out += abc[b % abc.length]
+  return out
+}
+// Step[] -> notasyon ("24/18 13/8" / "pas"). moveNotation yalnız .steps okur.
+function turnNotation(steps: Step[], player: Player): string {
+  return moveNotation({ steps, resultKey: '' }, player)
+}
+
 // Eski kayit ('neural'/'heuristic') veya sayi -> 1..10
 function normDifficulty(d: unknown): number {
   if (typeof d === 'number' && d >= 1 && d <= 10) return Math.round(d)
@@ -837,6 +854,21 @@ export default function App() {
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
   const turnRankedRef = useRef<RankedMove[] | null>(null) // tur basi tam siralama (hata tespiti)
+  // ---- Maç kaydı (hamle+zar logu): TÜM maçları logla (bkz. submitGameLog) ----
+  // NOT: mevcut `matchLogRef` (analiz logu) ile KARISTIRMA — bu ayri bir kayit.
+  const gameRecordRef = useRef<{
+    uid: string
+    online: boolean
+    slot: Slot
+    mode: 'pvb' | 'online' | 'local'
+    target: number
+    gameNo: number
+    events: GameLogTurn[]
+    done: boolean
+  } | null>(null)
+  const [recordUid, setRecordUid] = useState<string | null>(null) // sol üst HUD'da gösterilen maç ID
+  const prevGameEndRef = useRef(false) // gameEnd null->deger gecisini yakala (oyun-sonu flush)
+  const turnsPlayedRef = useRef(0) // commitTurn anindaki ortak sira (iki istemci ayni deger)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
   const [analysisLoading, setAnalysisLoading] = useState(false)
@@ -1346,6 +1378,8 @@ export default function App() {
   function commitTurn(finalPlayed: Step[]) {
     // Her oyuncunun hamlesini PR'a ekle (online'da sadece kendi hamlelerim gecer)
     void recordPR(turnStart, finalPlayed)
+    // Maç kaydı: bu turu (zar + hamle) logla (turnStart = hamle ONCESI durum).
+    recordMatchTurn(turnStart, finalPlayed)
     const s = applyPlayed(turnStart, finalPlayed)
     s.turn = opponent(s.turn)
     s.dice = []
@@ -1366,6 +1400,133 @@ export default function App() {
       })
     }
   }
+
+  // ---- Maç kaydı (hamle+zar logu) ----
+  // Bir turu kaydeder. Online'da SADECE kendi rengimin turlarini yazarim (rakip kendi
+  // istemcisinde kendi turunu yazar; admin gorunumu seq'e gore birlestirir). pvb/pvp'de
+  // tek istemci her iki rengi de yazar.
+  function recordMatchTurn(before: GameState, steps: Step[]) {
+    const log = gameRecordRef.current
+    if (!log) return
+    if (log.online && before.turn !== myColor) return
+    log.events.push({
+      g: log.gameNo,
+      s: turnsPlayedRef.current,
+      p: before.turn === 'white' ? 'W' : 'B',
+      d: (before.dice ?? []).join('-'),
+      m: turnNotation(steps, before.turn),
+    })
+  }
+
+  // Kaydı sunucuya gönderir (en iyi çaba). final=true → maç sonu: kazanan + skor + 'finished'.
+  function flushMatchLog(final: boolean) {
+    const log = gameRecordRef.current
+    if (!log) return
+    let p1: string | null
+    let p2: string | null
+    if (log.online) {
+      const me = profile?.nickname ?? t('auth.guestNick')
+      const opp = room?.oppName ?? null
+      if (log.slot === 'p1') {
+        p1 = me
+        p2 = opp
+      } else {
+        p1 = opp
+        p2 = me
+      }
+    } else if (log.mode === 'pvb') {
+      p1 = profile?.nickname ?? t('auth.guestNick')
+      p2 = AI_LEVELS[difficulty - 1] ?? 'AI'
+    } else {
+      p1 = pName('white')
+      p2 = pName('black')
+    }
+    const mW = matchWinner(match)
+    void submitGameLog({
+      uid: log.uid,
+      slot: log.slot,
+      mode: log.mode,
+      target: log.target,
+      p1_name: p1,
+      p2_name: p2,
+      status: final ? 'finished' : 'playing',
+      winner: final ? (mW === 'white' || mW === 'black' ? mW : null) : null,
+      score: final ? { white: match.score.white, black: match.score.black } : null,
+      events: log.events,
+    })
+  }
+
+  // turnsPlayed'i ref'e yansit (commitTurn aninda ortak sira degeri icin).
+  useEffect(() => {
+    turnsPlayedRef.current = turnsPlayed
+  }, [turnsPlayed])
+
+  // Maç kaydı yaşam döngüsü: aktif bir maç başladığında yeni kayıt aç (uid üret / oda kodu).
+  useEffect(() => {
+    if (home) {
+      gameRecordRef.current = null
+      setRecordUid(null)
+      return
+    }
+    if (online) {
+      const code = room?.code
+      if (!code || room?.status !== 'playing') return
+      if (gameRecordRef.current?.uid !== code) {
+        gameRecordRef.current = {
+          uid: code,
+          online: true,
+          slot: room!.slot,
+          mode: 'online',
+          target: match.target,
+          gameNo: 1,
+          events: [],
+          done: false,
+        }
+        prevGameEndRef.current = false
+        setRecordUid(code)
+      }
+    } else if (mode === 'pvb' || mode === 'pvp') {
+      // Yerel maç: taze maç (0-0, tur yok) ise yeni uid; bitmiş kayıttan sonra rovans -> rotasyon.
+      const fresh = turnsPlayed === 0 && !gameEnd && match.score.white === 0 && match.score.black === 0
+      const cur = gameRecordRef.current
+      if (!cur || cur.online || (cur.done && fresh)) {
+        const uid = genLocalUid()
+        gameRecordRef.current = {
+          uid,
+          online: false,
+          slot: 'p1',
+          mode: mode === 'pvp' ? 'local' : 'pvb',
+          target: match.target,
+          gameNo: 1,
+          events: [],
+          done: false,
+        }
+        prevGameEndRef.current = false
+        setRecordUid(uid)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [home, online, room?.code, room?.status, mode, turnsPlayed, gameEnd, match])
+
+  // Oyun sonu: kısmi kaydı gönder (disconnect'e karşı) + sonraki oyun için gameNo artır.
+  useEffect(() => {
+    const has = !!gameEnd
+    if (has && !prevGameEndRef.current && gameRecordRef.current) {
+      flushMatchLog(false)
+      gameRecordRef.current.gameNo += 1
+    }
+    prevGameEndRef.current = has
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameEnd])
+
+  // Maç sonu: kesin kaydı (kazanan + skor) gönder ve kilitle.
+  useEffect(() => {
+    if (matchOver && gameRecordRef.current && !gameRecordRef.current.done) {
+      gameRecordRef.current.done = true
+      flushMatchLog(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchOver])
 
   function computeMoveError(finalPlayed: Step[]): MoveError | null {
     // Hata tespiti icin TUM turun siralamasini kullan (tur basinda hesaplanan)
@@ -5150,6 +5311,13 @@ export default function App() {
 
       <main className="main game-scene">
       <div className="game-area">
+        {/* Maç ID (sol üst): oynanan maçın kimliği — admin panelde bu ID ile bulunur */}
+        {recordUid && (
+          <div className="match-id-hud" title={t('log.matchId')}>
+            <span className="match-id-hud__label">{t('log.matchId')}</span>
+            <span className="match-id-hud__code">#{recordUid}</span>
+          </div>
+        )}
         {/* Board flip'lendiginde (yerel oyuncu siyah) kartlar da cevrilir: SEN hep altta */}
         <Sidebar
           top={flipBoard ? bottomInfo : topInfo}
