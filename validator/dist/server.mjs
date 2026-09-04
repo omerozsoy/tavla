@@ -243,7 +243,6 @@ function validateTurn(state, steps) {
 }
 
 // validator/analyzePr.ts
-import * as ort from "onnxruntime-node";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -450,6 +449,7 @@ function takeLoss(probs, chosen, x = 0.7) {
 
 // validator/analyzePr.ts
 var INPUT_NAME = "onnx::Gemm_0";
+var ort = null;
 var contactSession = null;
 var raceSession = null;
 function modelsDir() {
@@ -459,6 +459,7 @@ function modelsDir() {
 }
 async function init() {
   if (contactSession && raceSession) return;
+  if (!ort) ort = await import("onnxruntime-node");
   const dir2 = modelsDir();
   contactSession = await ort.InferenceSession.create(join(dir2, "contact.onnx"));
   raceSession = await ort.InferenceSession.create(join(dir2, "race.onnx"));
