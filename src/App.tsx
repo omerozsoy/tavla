@@ -5334,6 +5334,24 @@ export default function App() {
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
+            {activeRooms.length > 0 && (
+              <div className="resume-match-bar">
+                {activeRooms.map((r) => (
+                  <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
+                    <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
+                    <span className="rm-opp">
+                      vs {r.opp_name || t('mp.title')}
+                      {r.score && (
+                        <b className="rm-score">
+                          {' '}{r.score.white}–{r.score.black}
+                        </b>
+                      )}
+                    </span>
+                    <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             {user && (
               <HomeDashboard
                 rating={user.rating ?? 0}
@@ -5366,24 +5384,6 @@ export default function App() {
               </div>
             </div>
             <AdStrip slot="middle" />
-            {activeRooms.length > 0 && (
-              <div className="resume-match-bar">
-                {activeRooms.map((r) => (
-                  <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
-                    <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
-                    <span className="rm-opp">
-                      vs {r.opp_name || t('mp.title')}
-                      {r.score && (
-                        <b className="rm-score">
-                          {' '}{r.score.white}–{r.score.black}
-                        </b>
-                      )}
-                    </span>
-                    <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
-                  </button>
-                ))}
-              </div>
-            )}
             {!user && (
               <section className="lobby-hero">
                 <div className="hero-copy">
