@@ -30,4 +30,10 @@ return [
     //                      erişilemezse prFromLog'a düşer (fail-open; PR istatistik, para değil).
     // Sunucuda 'onnxruntime-node' + modeller şart (bkz build-validator.mjs -> dist/models).
     'pr_mode' => env('VALIDATOR_PR_MODE', 'off'),
+
+    // OTOMATİK KURTARMA: validator:watch düşüş görünce Passenger'ın restart dosyasına DOKUNUR
+    // -> app yeniden başlar (süreç ÇÖKMÜŞken bile; Passenger dosyayı okur, Node koduna bağlı DEĞİL).
+    // Yol = validator app kökü + /tmp/restart.txt. Örn Plesk: /var/www/vhosts/tavlai.com/httpdocs/
+    // validator/tmp/restart.txt. Boşsa yalnız /restart ucu denenir (servis ayaktaysa işe yarar).
+    'restart_file' => env('VALIDATOR_RESTART_FILE', ''),
 ];

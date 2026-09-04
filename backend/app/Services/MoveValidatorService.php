@@ -106,22 +106,47 @@ class MoveValidatorService
      */
     public function restartValidator(): array
     {
-        if (! $this->isConfigured()) {
-            return ['ok' => false, 'error' => 'validator-not-configured'];
-        }
-        try {
-            $res = $this->client()->timeout(5)->post($this->url.'/restart');
+        $did = false;
+        $errors = [];
 
-            // 200 döndüyse kapanma tetiklendi (süreç yanıttan hemen sonra exit eder).
-            return $res->successful()
-                ? ['ok' => true, 'error' => null]
-                : ['ok' => false, 'error' => 'status-'.$res->status()];
-        } catch (\Throwable $e) {
-            // Süreç yanıtı gönderip HEMEN kapandıysa bağlantı düşebilir -> yine de restart tetiklendi.
-            Log::info('validator.restart connection closed (muhtemelen restart tetiklendi)', ['err' => $e->getMessage()]);
-
-            return ['ok' => true, 'error' => null];
+        // 1) Passenger restart dosyasına DOKUN — süreç ÇÖKMÜŞken bile çalışır (Node koduna bağlı
+        //    değil; Passenger dosyayı görüp app'i yeniden başlatır). Otomatik kurtarmanın ası budur.
+        $file = (string) config('validator.restart_file', '');
+        if ($file !== '') {
+            try {
+                $dir = dirname($file);
+                if (! is_dir($dir)) {
+                    @mkdir($dir, 0775, true);
+                }
+                if (@touch($file)) {
+                    $did = true;
+                } else {
+                    $errors[] = 'touch-failed';
+                }
+            } catch (\Throwable $e) {
+                $errors[] = 'touch-exc';
+                Log::warning('validator.restart touch failed', ['file' => $file, 'err' => $e->getMessage()]);
+            }
         }
+
+        // 2) /restart ucu — servis AYAKTAYKEN graceful (yeni sürümde var). Down iken bağlantı düşer.
+        if ($this->isConfigured()) {
+            try {
+                $res = $this->client()->timeout(5)->post($this->url.'/restart');
+                if ($res->successful()) {
+                    $did = true;
+                } else {
+                    $errors[] = 'status-'.$res->status();
+                }
+            } catch (\Throwable $e) {
+                // Süreç yanıtı gönderip hemen kapandıysa (yeni sürüm) bağlantı düşebilir -> tetiklendi.
+                $did = true;
+            }
+        }
+
+        return $did
+            ? ['ok' => true, 'error' => null]
+            : ['ok' => false, 'error' => $errors ? implode(',', $errors) : 'no-mechanism'];
     }
 
     /**
