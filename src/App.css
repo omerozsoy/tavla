@@ -13534,7 +13534,9 @@ button.acct-row:hover:not(:disabled) {
   color: var(--text);
   width: 100%;
   margin-bottom: 0; /* .tourn-list zaten gap veriyor; cift bosluk olmasin */
-  background: #fff; /* kart zemini BEYAZ (kullanici istegi) */
+  /* Kart zemini: light'ta BEYAZ (--card-bg=#fff, kullanici istegi), dark'ta koyu
+     yuzey (navy). Sabit #fff dark modda ivory metni okunmaz yapiyordu. */
+  background: var(--card-bg);
   /* Etkinlik satiriyla AYNI: sol kiremit accent cizgi (8229'daki border shorthand'ini ezer) */
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
