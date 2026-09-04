@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TournamentAd extends Model
 {
     protected $fillable = [
-        'tournament_id', 'image', 'logo', 'kicker', 'title', 'subtitle', 'meta', 'cta',
+        'tournament_id', 'organizer_id', 'image', 'logo', 'kicker', 'title', 'subtitle', 'meta', 'cta',
         'panel_color', 'palette', 'sort', 'published',
     ];
 
@@ -22,6 +22,18 @@ class TournamentAd extends Model
     public function tournament(): BelongsTo
     {
         return $this->belongsTo(Tournament::class);
+    }
+
+    // Duzenleyen kurum (Content type='kurum'). Secilirse paneldeki logo bundan cikar.
+    public function organizer(): BelongsTo
+    {
+        return $this->belongsTo(Content::class, 'organizer_id');
+    }
+
+    // Sol panelde gosterilecek logo: once secili kurumun logosu, yoksa elle yuklenen logo.
+    public function getResolvedLogoAttribute(): ?string
+    {
+        return $this->organizer?->image ?: $this->logo;
     }
 
     // panel_color yalnizca hex renk tutar (varchar 9). Gecersiz/uzun metin ( or. yanlis
