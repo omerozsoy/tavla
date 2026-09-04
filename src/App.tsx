@@ -902,11 +902,12 @@ export default function App() {
     }
   })
   // PR (Performans Reytingi): her oyuncu icin karar basina kaybedilen equity
-  // loss/decisions = OVERALL (checker+cube, PR'ın kendisi). cubeLoss/cubeDecisions = yalnız küp
-  // (kırılım gösterimi için); checker = overall − cube. Opsiyonel -> reset {loss,decisions} yeter.
+  // loss/decisions = STRICT XG (obvious+forced hariç, PR'ın kendisi). cubeLoss/cubeDecisions =
+  // yalnız küp (kırılım). allLoss/allDecisions = TÜM kaydedilen kararlar (obvious dahil) -> strict
+  // 0 çıkarsa PR "—" olmasın diye GARANTİ yedeği. Opsiyonel -> reset {loss,decisions} yeter.
   const [prStats, setPrStats] = useState<{
-    white: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number }
-    black: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number }
+    white: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number; allLoss?: number; allDecisions?: number }
+    black: { loss: number; decisions: number; cubeLoss?: number; cubeDecisions?: number; allLoss?: number; allDecisions?: number }
   }>({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
   // PR'in EN GUNCEL degeri: mac-sonu raporu (async recordPR'lar report closure'undan
   // SONRA bittigi icin) stale prStats yerine bu ref'ten okur -> kendi PR'im null dusmez.
@@ -1264,12 +1265,16 @@ export default function App() {
             match.target,
             isMoney,
           )
-          if (dec.countsForPR) {
-            setPrStats((s) => ({
-              ...s,
-              black: { ...s.black, loss: s.black.loss + dec.prAdjustedEquityLoss, decisions: s.black.decisions + 1 },
-            }))
-          }
+          setPrStats((s) => ({
+            ...s,
+            black: {
+              ...s.black,
+              loss: s.black.loss + (dec.countsForPR ? dec.prAdjustedEquityLoss : 0),
+              decisions: s.black.decisions + (dec.countsForPR ? 1 : 0),
+              allLoss: (s.black.allLoss ?? 0) + dec.prAdjustedEquityLoss,
+              allDecisions: (s.black.allDecisions ?? 0) + 1,
+            },
+          }))
           // Bot luck (sans): aktuel en iyi equity - 21 zarin beklenen en iyisi (tur basi bir kez).
           // Eskiden bot luck HIC hesaplanmiyordu -> ŞANS pvb'de hep 0 kaliyordu.
           const luckKey = `${mover}:${seq}`
@@ -1331,16 +1336,18 @@ export default function App() {
       )
       const loss = dec.normalizedEquityLoss // log/error-journal ham (1pt faktörsüz) equity kaybı
       // PR yalnız SAYILAN kararlardan (zorunlu/obvious hariç); loss = prAdjusted (1pt faktörlü).
-      if (dec.countsForPR) {
-        setPrStats((s) => ({
-          ...s,
-          [mover]: {
-            ...s[mover],
-            loss: s[mover].loss + dec.prAdjustedEquityLoss,
-            decisions: s[mover].decisions + 1,
-          },
-        }))
-      }
+      // STRICT (countsForPR) PR'a girer; ANCAK her non-forced karar all*'a girer (PR "—" olmasın
+      // diye garanti yedeği: strict 0 çıkarsa loose kullanılır).
+      setPrStats((s) => ({
+        ...s,
+        [mover]: {
+          ...s[mover],
+          loss: s[mover].loss + (dec.countsForPR ? dec.prAdjustedEquityLoss : 0),
+          decisions: s[mover].decisions + (dec.countsForPR ? 1 : 0),
+          allLoss: (s[mover].allLoss ?? 0) + dec.prAdjustedEquityLoss,
+          allDecisions: (s[mover].allDecisions ?? 0) + 1,
+        },
+      }))
       // Sans (luck): bu turun sansi = gercek zarin en iyi equity'si (ranks[0]) - 21 zarin
       // beklenen en iyisi. recordPR promise'i (analiz effect'i gibi) IPTAL EDILMEZ -> hizli
       // oynayinca bile guvenilir birikir. Tur basina bir kez (luckSig).
@@ -1807,17 +1814,18 @@ export default function App() {
             : takeLoss(probs, chosen === 'take' ? 'take' : 'pass')
         const loss = res.normalizedEquityLoss
         const prAdjusted = loss * onePointFactor(match.target, isMoney)
-        if (res.countsForPR) {
-          setPrStats((s) => ({
-            ...s,
-            [player]: {
-              loss: s[player].loss + prAdjusted, // overall (checker+cube)
-              decisions: s[player].decisions + 1,
-              cubeLoss: (s[player].cubeLoss ?? 0) + prAdjusted, // yalnız küp (kırılım)
-              cubeDecisions: (s[player].cubeDecisions ?? 0) + 1,
-            },
-          }))
-        }
+        setPrStats((s) => ({
+          ...s,
+          [player]: {
+            ...s[player],
+            loss: s[player].loss + (res.countsForPR ? prAdjusted : 0),
+            decisions: s[player].decisions + (res.countsForPR ? 1 : 0),
+            cubeLoss: (s[player].cubeLoss ?? 0) + (res.countsForPR ? prAdjusted : 0),
+            cubeDecisions: (s[player].cubeDecisions ?? 0) + (res.countsForPR ? 1 : 0),
+            allLoss: (s[player].allLoss ?? 0) + prAdjusted,
+            allDecisions: (s[player].allDecisions ?? 0) + 1,
+          },
+        }))
         const win = (probs[0] + probs[1] + probs[2]) * 100
         const equity = probs[0] - probs[3] + 2 * (probs[1] - probs[4]) + 3 * (probs[2] - probs[5])
         setMatchLog((log) => [
@@ -3911,14 +3919,19 @@ export default function App() {
   const prHumanColor: Player = online ? myColor : 'white'
   const prValue = prOf(prHumanColor)
   const prBandKey = prBand(prValue)
-  // Sonuc ekraninda gosterilecek PR: SUNUCU-otoriter deger varsa onu kullan (iki oyuncuda
-  // tutarli); yoksa lokal prOf'a dus. self = kendi rengim, opp = rakip.
-  const prShown = (c: Player): number | null => {
+  // GARANTİ: sonuç ekranında PR ASLA "—" olmasın (kullanıcı direktifi). Öncelik: SUNUCU-otoriter
+  // (iki oyuncuda tutarlı) -> STRICT lokal XG -> LOOSE (obvious dahil tüm non-forced) -> 0.00.
+  // 0'a düşme yalnızca hiç ölçülebilir karar yoksa (ör. hamlesiz timeout) olur.
+  const prLooseOf = (c: Player): number | null => {
+    const ad = prStats[c].allDecisions ?? 0
+    return ad > 0 ? ((prStats[c].allLoss ?? 0) / ad) * 500 : null
+  }
+  const prShown = (c: Player): number => {
     if (serverPr) {
       const v = c === prHumanColor ? serverPr.self : serverPr.opp
       if (v != null) return v
     }
-    return prOf(c)
+    return prOf(c) ?? prLooseOf(c) ?? 0
   }
   // Sans: kendi rengim lokal; online rakip senkronla gelir (hesaplamadiysa —).
   // pvb'de bot luck'i da artik hesaplaniyor -> gosterilir (zero-sum net icin gerekli).
