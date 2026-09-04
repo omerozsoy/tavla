@@ -23,6 +23,7 @@ import {
   raceInputs,
   toWildPos,
 } from '../src/engine/encoding'
+import { checkerDecision, summarize, type PrDecision, type PrSummary } from '../src/analysis/pr'
 
 const INPUT_NAME = 'onnx::Gemm_0'
 
@@ -88,24 +89,33 @@ function applyMove(state: GameState, steps: Step[], mover: Player): GameState {
   return s
 }
 
-// Bir insan kararinin equity kaybi: en iyi legal hamle equity'si - oynanan hamle equity'si.
-// Secim yoksa (0/1 hamle) karar degil -> null (PR'a katilmaz). pos = hamleden onceki tahta
-// (turn=mover, dice dolu). playedSteps = oyuncunun oynadigi tam-tur.
-async function decisionLoss(pos: GameState, dice: number[], playedSteps: Step[]): Promise<number | null> {
+// Bir checker kararini XG-style PrDecision'a cevir: tum yasal oynamalarin en iyi/en kotu equity'si
+// + oynanan equity -> checkerDecision (zorunlu/obvious eleme + 1pt faktoru pr modulunde). pos =
+// hamleden onceki tahta (turn=mover, dice dolu). playedSteps = oynanan tam-tur.
+async function checkerRecord(
+  pos: GameState,
+  dice: number[],
+  playedSteps: Step[],
+  matchLength: number,
+): Promise<PrDecision> {
   const mover = pos.turn
   const state = cloneState(pos)
   state.dice = dice.slice()
   state.diceUsed = dice.map(() => false)
   const moves: Move[] = generateMoves(state)
-  if (moves.length <= 1) return null // tek/ hic secenek -> karar degil (forced/pas)
-
+  if (moves.length <= 1) {
+    // Zorunlu (tek/sifir hamle) -> sayilmaz; equity eval'e gerek yok.
+    return checkerDecision(0, 0, 0, moves.length, matchLength)
+  }
   let best = -Infinity
+  let worst = Infinity
   for (const m of moves) {
     const eq = await equityAfter(applyMove(state, m.steps, mover), mover)
     if (eq > best) best = eq
+    if (eq < worst) worst = eq
   }
   const chosenEq = await equityAfter(applyMove(state, playedSteps, mover), mover)
-  return Math.max(0, best - chosenEq)
+  return checkerDecision(best, chosenEq, worst, moves.length, matchLength)
 }
 
 export interface PrLogEntry {
@@ -115,21 +125,26 @@ export interface PrLogEntry {
   playedSteps?: Step[]
 }
 
-// Verilen oyuncunun (hc) log'undan SUNUCU-otoriter PR. decisions=0 ise null.
+export interface PrResult extends PrSummary {
+  pr: number | null // overall.pr (geriye uyum + ana gosterim)
+  decisions: number // overall.decisions
+}
+
+// Verilen oyuncunun (hc) log'undan SUNUCU-otoriter XG-style PR. matchLength=1 -> ×1.5 (pr modulu).
+// NOT: cube PR icin log best/actual cubeful equity TASIMAZ (motor online cube equity uretmiyor)
+// -> cube kararlari suan PR'a girmez (overall = checker). Cube equity eklenince cubeDecision ile
+// buraya baglanir. checker tarafi TAM XG-style (zorunlu+obvious eleme, 1pt faktoru, havuzlama).
 export async function analyzePr(
   hc: Player,
   log: PrLogEntry[],
-): Promise<{ pr: number | null; decisions: number }> {
+  matchLength = 1,
+): Promise<PrResult> {
   await init()
-  let sum = 0
-  let n = 0
+  const decisions: PrDecision[] = []
   for (const e of log) {
     if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue
-    const loss = await decisionLoss(e.pos, e.dice, e.playedSteps)
-    if (loss == null) continue
-    sum += loss
-    n++
+    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength))
   }
-  if (n === 0) return { pr: null, decisions: 0 }
-  return { pr: Math.round((sum / n) * 500 * 100) / 100, decisions: n }
+  const s = summarize(decisions)
+  return { ...s, pr: s.overall.pr, decisions: s.overall.decisions }
 }

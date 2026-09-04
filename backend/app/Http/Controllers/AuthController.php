@@ -404,7 +404,8 @@ class AuthController extends Controller
         if ($prMode !== 'off' && ! empty($data['log'])) {
             $decoded = json_decode($data['log'], true);
             if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
-                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log']);
+                $ml = (int) ($data['match_length'] ?? 1);
+                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml);
                 if ($srv !== null && $srv['pr'] !== null) {
                     if ($prMode === 'shadow') {
                         \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [

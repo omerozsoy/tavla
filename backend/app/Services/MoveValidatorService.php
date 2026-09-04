@@ -105,7 +105,7 @@ class MoveValidatorService
      * MoveLogEntry dizisi (pos/dice/playedSteps/player alanları). Erişilemez/eksikse null.
      * Dönüş: ['pr'=>?float, 'decisions'=>int] veya null (validator yok/hatalı).
      */
-    public function analyzePr(string $hc, array $log): ?array
+    public function analyzePr(string $hc, array $log, int $matchLength = 1): ?array
     {
         if (! $this->isConfigured()) {
             return null;
@@ -114,14 +114,22 @@ class MoveValidatorService
             // PR analizi motor calistirir (yavas olabilir) -> daha uzun timeout.
             $res = $this->client()
                 ->timeout(max($this->timeout, 20))
-                ->post($this->url.'/analyze-pr', ['hc' => $hc, 'log' => $log]);
+                ->post($this->url.'/analyze-pr', ['hc' => $hc, 'log' => $log, 'matchLength' => $matchLength]);
             if (! $res->successful()) {
                 Log::warning('validator.analyzePr non-2xx', ['status' => $res->status()]);
 
                 return null;
             }
 
-            return ['pr' => $res->json('pr'), 'decisions' => (int) $res->json('decisions', 0)];
+            // XG-style: overall.pr + kirilim (checker/cube) + havuzlama icin totaller.
+            return [
+                'pr' => $res->json('pr'),                          // overall.pr
+                'decisions' => (int) $res->json('decisions', 0),   // overall.decisions
+                'equity_lost' => (float) $res->json('overall.equityLost', 0),
+                'checker' => $res->json('checker'),
+                'cube' => $res->json('cube'),
+                'overall' => $res->json('overall'),
+            ];
         } catch (\Throwable $e) {
             Log::warning('validator.analyzePr unreachable', ['err' => $e->getMessage()]);
 
