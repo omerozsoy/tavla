@@ -68,8 +68,8 @@ Route::middleware('throttle:240,1')->group(function () {
 });
 Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // GEÇİCİ TEŞHİS (Faz 2): backend Node validator'a ulaşabiliyor mu? Secret/URL AÇMAZ. Sorun
-// çözülünce KALDIR. Tarayıcıda /api/validator-check açılır.
-Route::middleware('throttle:10,1')->get('/validator-check', [RoomController::class, 'validatorCheck']);
+// çözülünce KALDIR. Tarayıcıda /api/validator-check açılır. Limit bol (teşhis için yenilenebilsin).
+Route::middleware('throttle:60,1')->get('/validator-check', [RoomController::class, 'validatorCheck']);
 
 // Maç kaydı (hamle+zar): TÜM maçlar (pvb/online/local) loglanır. Misafir dostu (auth yok),
 // açık uç -> throttle + payload sınırlarıyla korunur (bkz. GameLogController validation).
