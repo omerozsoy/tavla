@@ -851,6 +851,7 @@ export default function App() {
   // BAGIMSIZ Faz 1: true iken yalniz ZAR sunucudan (serverRoll); hamle/tahta/PUT LEGACY kalir.
   // authoritative'den AYRI: doRoll serverRoll'a gider ama commitTurn/PUT sync degismez.
   const diceAuthorityRef = useRef(false)
+  const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
@@ -1610,6 +1611,8 @@ export default function App() {
   async function doRollAuthoritative() {
     const code = room?.code
     if (!code) return
+    if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
+    rollInFlightRef.current = true
     if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
     try {
       const r = await serverRoll(code)
@@ -1636,9 +1639,9 @@ export default function App() {
         )
         return
       }
-      // Zaten verilmiş zar (reused): yerel tahtayı optimistik EZME -> poll server_state ile
-      // senkronlar (açılış yarışında ikinci çağıran buraya düşebilir).
-      if (r.reused) return
+      // NOT: reused (zaten verilmiş zar) da UYGULANIR — erken dönersek diceRolled false kalır,
+      // autoRoll/opening effect tekrar tekrar zar ister -> KAÇAK DÖNGÜ. Aynı zarı idempotent
+      // uygulamak diceRolled'ı true yapar (döngü durur); yanlış tahta olursa poll düzeltir.
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
       Sound.dice()
@@ -1658,8 +1661,11 @@ export default function App() {
     } catch (e) {
       // Açılış/sıra yarışı: başlayan-olmayan taraf 409 alır -> SESSİZ (poll açılışı getirir).
       const err = e as { status?: number; message?: string }
-      if (err?.status === 409) return
-      notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
+      if (err?.status !== 409) {
+        notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
+      }
+    } finally {
+      rollInFlightRef.current = false // uçuş kilidi her durumda serbest bırakılır
     }
   }
 
@@ -2842,7 +2848,11 @@ export default function App() {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [user])
+    // KRİTİK: yalnız [user?.id] — coins güncellemesi (beat içindeki setUser) `user` kimliğini
+    // değiştirip bu effect'i yeniden kurmasın; aksi halde her ping ANINDA yeni ping tetikler ->
+    // KAÇAK DÖNGÜ (binlerce request). user?.id sadece giriş/çıkışta değişir.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id])
 
   // Odul geri sayimi: her saniye azalt (ping 20sn'de bir gercek degeri yeniler)
   useEffect(() => {
