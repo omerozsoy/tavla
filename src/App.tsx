@@ -66,6 +66,10 @@ import {
   updateRoom,
   serverRoll,
   serverMove,
+  serverCubeOffer,
+  serverCubeRespond,
+  serverResign,
+  type ServerMatch,
   myActiveRooms,
   type ActiveRoom,
   sendChat,
@@ -1609,6 +1613,29 @@ export default function App() {
     if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
     try {
       const r = await serverRoll(code)
+      // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
+      if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
+        const starter = r.starter
+        const s = freshBoard(starter)
+        s.dice = r.dice
+        s.diceUsed = [false, false]
+        Sound.dice()
+        setStarter(starter)
+        setTurnStart(s)
+        setPlayed([])
+        setSelectedFrom(null)
+        setLastError(null)
+        setRanked(null)
+        setCurrentProbs(null)
+        setOpening(null) // reveal ekranını atla — sunucu başlayanı belirledi
+        const moves = generateMoves(s)
+        setMessage(
+          hasNoMove(moves)
+            ? t('msg.noMovePass', { name: pName(starter) })
+            : t('msg.playing', { name: pName(starter), dice: r.dice.join(', ') }),
+        )
+        return
+      }
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
       Sound.dice()
@@ -1716,6 +1743,12 @@ export default function App() {
 
   function handleDouble(player: Player) {
     if (diceRolled || !canDouble(match, player, cubePending !== null)) return
+    // OTORİTER (Faz 2): küp teklifi SUNUCUYA (kurallar sunucuda: sıra/sahiplik/Crawford).
+    // Yerel mutasyon YOK -> poll server_match ile cubePending'i senkronlar (forge yok).
+    if (online && authoritativeRef.current) {
+      if (room?.code) void serverCubeOffer(room.code).catch(() => notify.error(t('mp.connError')))
+      return
+    }
     const humanColor: Player = online ? myColor : 'white'
     if (player === humanColor) logCubeDecision('double')
     else logCubeAction('double', player)
@@ -1725,6 +1758,10 @@ export default function App() {
   }
   function handleTake() {
     if (!cubePending) return
+    if (online && authoritativeRef.current) {
+      if (room?.code) void serverCubeRespond(room.code, 'take').catch(() => notify.error(t('mp.connError')))
+      return
+    }
     const doubler = cubePending
     const taker = opponent(doubler)
     const humanColor: Player = online ? myColor : 'white'
@@ -1737,6 +1774,10 @@ export default function App() {
   }
   function handleDrop() {
     if (!cubePending) return
+    if (online && authoritativeRef.current) {
+      if (room?.code) void serverCubeRespond(room.code, 'drop').catch(() => notify.error(t('mp.connError')))
+      return
+    }
     const doubler = cubePending
     const humanColor: Player = online ? myColor : 'white'
     if (opponent(doubler) === humanColor) logCubeDecision('drop')
@@ -1753,6 +1794,11 @@ export default function App() {
   // Simdilik teslim = tek oyun (kup degerince) kaybi.
   function handleResign() {
     setResignOpen(false)
+    // OTORİTER (Faz 2): pes SUNUCUYA -> rakip mevcut küp değerinde kazanır; poll senkronlar.
+    if (online && authoritativeRef.current) {
+      if (room?.code) void serverResign(room.code).catch(() => notify.error(t('mp.connError')))
+      return
+    }
     const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
     const w = opponent(loser)
     const mult = 1
@@ -1763,6 +1809,9 @@ export default function App() {
 
   // ---- Oyun sonu (bear off) cozumleme ----
   useEffect(() => {
+    // OTORİTER (Faz 2): oyun-sonu puanını SUNUCU hesaplar (move() → server_match); yerelde
+    // SKORLAMA -> çifte sayım olur. Skoru poll (applyServerBoard) server_match'ten alır.
+    if (online && authoritativeRef.current) return
     if (gameEnd || cubePending) return
     const w = winner(working)
     if (!w) return
@@ -2154,8 +2203,13 @@ export default function App() {
     // Online'da rakip hazir olana kadar bekle (mm_waiting / tek kisi)
     if (online && (!onlineReady || room?.status !== 'playing')) return
     const id = window.setTimeout(() => {
-      if (online && room) {
-        // Oyun no = macta bugune dek toplanan puan (iki istemci ayni deger)
+      if (online && room && authoritativeRef.current) {
+        // Faz 2: açılışı SUNUCU yapar (adil, deterministik). serverRoll opening+starter döner;
+        // doRollAuthoritative taze tahtayı kurar. Sıra-değil hatası olursa (diğer taraf tetikledi)
+        // poll server_state ile senkron gelir -> sessiz geç.
+        void doRollAuthoritative()
+      } else if (online && room) {
+        // Faz 1/legacy: oyun no = maçta toplanan puan (iki istemci deterministik aynı açılış).
         seededOpening(room.code, match.score.white + match.score.black)
       } else {
         handleOpeningRoll()
@@ -2503,15 +2557,32 @@ export default function App() {
     if (snap.gameEnd) setGameEnd(snap.gameEnd)
   }
 
-  // Sunucu-otoriter tahtayi (server_state) uygula (Faz 2c DRAFT). Yalniz TUR SINIRINDA
-  // cagirilir (mid-move'u ezmemek icin poll'da korunur). Match/skor tek-oyun kapsaminda.
-  function applyServerBoard(gs: GameState) {
+  // Sunucu-otoriter durumu (server_state + server_match) uygula (Faz 2). Yalniz TUR SINIRINDA
+  // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
+  // Crawford + mac-bitti hepsi sunucudan gelir; istemci yalniz yansitir (forge edemez).
+  function applyServerBoard(gs: GameState, sm?: ServerMatch | null) {
     syncEnabledRef.current = true
     setTurnStart(gs)
     setPlayed([])
     setSelectedFrom(null)
     setRanked(null)
     setCurrentProbs(null)
+    if (sm) {
+      // Skor + kup (deger/sahip) + bekleyen kup teklifi -> match/cubePending senkron.
+      setMatch((m) => ({
+        ...m,
+        target: sm.target ?? m.target,
+        score: { white: sm.score?.white ?? 0, black: sm.score?.black ?? 0 },
+        cube: { value: sm.cube?.value ?? 1, owner: sm.cube?.owner ?? null },
+      }))
+      setCubePending(sm.cube?.pending ?? null)
+      if (!sm.done) {
+        setGameEnd(null) // yeni oyun -> önceki oyun-sonu ekranını temizle
+        // Sunucu yeni oyuna geçtiyse (opened=false) açılışı otomatik tetikle (opening useEffect
+        // authoritative dalı serverRoll ile adil açılışı yapar). İlk oyun App init'ten gelir.
+        if (sm.opened === false) setOpening('roll')
+      }
+    }
     if (!winner(gs)) setMessage(t('msg.turnOf', { name: pName(gs.turn) }))
   }
 
@@ -2617,7 +2688,7 @@ export default function App() {
           const midMove = srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0
           if (!midMove) {
             appliedServerVersionRef.current = rv.server_version ?? 0
-            applyServerBoard(rv.server_state)
+            applyServerBoard(rv.server_state, rv.server_match) // tahta + skor + kup + Crawford
           }
         } else if (!rv.authoritative && rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
