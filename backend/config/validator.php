@@ -21,4 +21,13 @@ return [
     // subdomain'de geçerli SSL yoksa (Plesk self-signed) doğrulamayı atlamak makul.
     // Let's Encrypt kurulunca true yapabilirsin. Varsayılan false (hemen çalışsın).
     'verify_tls' => filter_var(env('VALIDATOR_VERIFY_TLS', false), FILTER_VALIDATE_BOOL),
+
+    // SUNUCU-OTORİTER PR modu (validator /analyze-pr):
+    //   'off'           -> istemci log'undan hesaplanan PR (prFromLog) kullanılır (mevcut davranış).
+    //   'shadow'        -> sunucu PR'i AYRICA hesaplanır, istemci PR'iyle FARKI loglanır ama
+    //                      KAYDEDİLEN değer hâlâ istemci-türevi (güvenli doğrulama aşaması).
+    //   'authoritative' -> sunucu-hesaplı PR KAYDEDİLİR (istemci loss'una güvenilmez). Validator
+    //                      erişilemezse prFromLog'a düşer (fail-open; PR istatistik, para değil).
+    // Sunucuda 'onnxruntime-node' + modeller şart (bkz build-validator.mjs -> dist/models).
+    'pr_mode' => env('VALIDATOR_PR_MODE', 'off'),
 ];
