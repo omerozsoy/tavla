@@ -23,7 +23,8 @@ const EMOJIS = [
 export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
-  const [open, setOpen] = useState(true)
+  // Maca girince sohbet KAPALI baslar; baslikla acilir.
+  const [open, setOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
 

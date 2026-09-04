@@ -25,14 +25,20 @@ class GarantiService
 
     // Demo odeme: banka bilgisi YOKKEN kart sayfasini gormek/test icin. Gercek para CEKILMEZ.
     // Garanti bilgileri girilince (isConfigured) demo asla devreye girmez -> gercek POS kullanilir.
-    // GUVENLIK: production'da ASLA otomatik acilmasin (bedava coin landmine'i). Yalniz local/dev.
+    //
+    // GUVENLIK UYARISI: demo = BEDAVA COIN acigi (demo odeme "basarili" sayilip coin yukler).
+    // Bu yuzden demo yalniz PAYMENT_DEMO bayragi ACIKCA true ise acilir. Local'de APP_DEBUG=true
+    // oldugundan otomatik acik gelir; production'da APP_DEBUG=false oldugundan demo yalniz
+    // .env'e ELLE `PAYMENT_DEMO=true` yazilirsa acilir (gecici canli test icin).
+    // TEST BITINCE: PAYMENT_DEMO'yu kaldir + `php artisan config:clear` + PHP-FPM restart.
     public function isDemo(): bool
     {
-        if (app()->isProduction()) {
+        // Gercek POS yapilandirildiysa demo asla devreye girmez.
+        if ($this->isConfigured()) {
             return false;
         }
 
-        return ! $this->isConfigured() && (bool) ($this->cfg['demo'] ?? false);
+        return (bool) ($this->cfg['demo'] ?? false);
     }
 
     // Odeme baslatilabilir mi? (gercek POS yapilandirildi VEYA demo acik)
