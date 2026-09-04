@@ -5,7 +5,8 @@ const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
-import { checkerDecision } from './analysis/pr'
+import { checkerDecision, onePointFactor } from './analysis/pr'
+import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
   initialState,
   legalNextSteps,
@@ -1687,7 +1688,10 @@ export default function App() {
     if (!code) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
-    if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
+    if (cubeHintRef.current?.kind === 'offer') {
+      cubeHintRef.current = null
+      recordCubePR(myColor, 'offer', 'no-double')
+    }
     try {
       const r = await serverRoll(code)
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
@@ -1755,8 +1759,11 @@ export default function App() {
       return
     }
     // Roll oncesi kup teklif tavsiyesi varsa: insan katlamak yerine zar atti ->
-    // "pas" karari olarak logla (guclu tavsiyeyi kacirdiysa hata sayilir).
-    if (cubeHintRef.current?.kind === 'offer') logCubeDecision('no-double')
+    // "no-double" karari olarak PR'a isle (guclu tavsiyeyi kacirdiysa equity kaybi sayilir).
+    if (cubeHintRef.current?.kind === 'offer') {
+      cubeHintRef.current = null
+      recordCubePR(online ? myColor : 'white', 'offer', 'no-double')
+    }
     const dice = orderDice(fairRef.current.next()) // varsayilan: buyuk zar once (tikla-degistir mevcut)
     Sound.dice()
     const rolled = newTurn(turnStart, dice)
@@ -1777,57 +1784,50 @@ export default function App() {
   // ---- Kup ----
   // Insan kup kararini (teklif/pas/take/drop) danisman tavsiyesiyle karsilastir
   // ve mac raporuna kaydet. Yalnizca insanin kendi karari loglanir.
-  function logCubeDecision(chosen: 'double' | 'no-double' | 'take' | 'drop') {
-    const h = cubeHintRef.current
-    if (!h) return
-    cubeHintRef.current = null // ayni karari iki kez loglama
-    const humanColor: Player = online ? myColor : 'white'
-    let recommended: string
-    let correct: boolean
-    let win: number
-    let equity = 0
-    if (h.kind === 'offer') {
-      recommended = h.action
-      win = h.winPct
-      equity = h.equity
-      const shouldDouble = h.action === 'double-take' || h.action === 'double-pass'
-      correct = chosen === 'double' ? shouldDouble : !shouldDouble
-    } else {
-      recommended = h.take
-      win = h.winPct
-      correct = chosen === h.take
-    }
-    setMatchLog((log) => [
-      ...log,
-      {
-        notation: '',
-        best: '',
-        loss: 0,
-        player: humanColor,
-        pos: turnStart,
-        seq: turnsPlayed,
-        cube: { win, equity, recommended, chosen, correct },
-      },
-    ])
-  }
-
-  // Rakip/bot kup eylemini (analiz verisi olmadan) .mat icin logla. Insanin karari
-  // logCubeDecision ile (tavsiye/dogruluk dahil) loglanir; bu yalnizca eylem + oyuncu.
-  // Online'da rakibin karari kendi istemcisinde loglanip senkronla gelir -> burada sadece
-  // pvb (bot) ve yerel pvp'de karsi taraf icin cagrilir (cift loglama olmaz).
-  function logCubeAction(chosen: 'double' | 'take' | 'drop', player: Player) {
-    setMatchLog((log) => [
-      ...log,
-      {
-        notation: '',
-        best: '',
-        loss: 0,
-        player,
-        pos: turnStart,
-        seq: turnsPlayed,
-        cube: { win: 0, equity: 0, recommended: chosen, chosen, correct: true },
-      },
-    ])
+  // Küp kararı PR + kayıt (XG-style). Karar anındaki pozisyonu (turnStart) sinir ağıyla değerlendirir
+  // -> cubeEquity ile aksiyon equity KAYBI (en iyi − seçilen). prStats'a (overall PR'a cube dahil)
+  // ekler + matchLog'a TEK cube girdisi yazar (hem .mat hem backend PR: countsForPR+prAdjusted).
+  // Online: yalnız KENDİ kararım (rakibinki kendi istemcisinde). authoritative dalı handler'da
+  // erken döner -> burası legacy/pvb/pvp; motor tarayıcıda mevcut (checker PR gibi).
+  function recordCubePR(player: Player, kind: 'offer' | 'take', chosen: 'double' | 'no-double' | 'take' | 'drop') {
+    if (online && player !== myColor) return // online: sadece kendi kararım
+    const pos = turnStart
+    const seq = turnsPlayed
+    const isMoney = stakeRef.current > 0
+    neuralRef.current
+      .evalPosition(pos, player)
+      .then((probs) => {
+        if (!probs || probs.length < 6) return
+        const res =
+          kind === 'offer'
+            ? offerLoss(probs, chosen === 'double' ? 'double' : 'no-double')
+            : takeLoss(probs, chosen === 'take' ? 'take' : 'pass')
+        const loss = res.normalizedEquityLoss
+        const prAdjusted = loss * onePointFactor(match.target, isMoney)
+        if (res.countsForPR) {
+          setPrStats((s) => ({
+            ...s,
+            [player]: { loss: s[player].loss + prAdjusted, decisions: s[player].decisions + 1 },
+          }))
+        }
+        const win = (probs[0] + probs[1] + probs[2]) * 100
+        const equity = probs[0] - probs[3] + 2 * (probs[1] - probs[4]) + 3 * (probs[2] - probs[5])
+        setMatchLog((log) => [
+          ...log,
+          {
+            notation: '',
+            best: '',
+            loss,
+            player,
+            pos,
+            seq,
+            cube: { win, equity, recommended: res.bestAction, chosen, correct: loss < 0.001 },
+            countsForPR: res.countsForPR,
+            prAdjustedEquityLoss: prAdjusted,
+          },
+        ])
+      })
+      .catch(() => {})
   }
 
   // Sunucu (authoritative) çağrısı hatasını okunur mesaja çevir: HTTP hatasında sunucunun
@@ -1845,10 +1845,8 @@ export default function App() {
       if (room?.code) void serverCubeOffer(room.code).catch((e) => notify.error(srvErr(e)))
       return
     }
-    const humanColor: Player = online ? myColor : 'white'
-    if (player === humanColor) logCubeDecision('double')
-    else logCubeAction('double', player)
-    recordCubeEvent(player, 'double') // maç kaydı
+    recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
+    recordCubeEvent(player, 'double') // maç kaydı (okunur)
     setCubePending(player)
     setMessage(t('msg.doubled', { name: pName(player), value: match.cube.value * 2 }))
   }
@@ -1860,10 +1858,8 @@ export default function App() {
     }
     const doubler = cubePending
     const taker = opponent(doubler)
-    const humanColor: Player = online ? myColor : 'white'
-    if (taker === humanColor) logCubeDecision('take')
-    else logCubeAction('take', taker)
-    recordCubeEvent(taker, 'take') // maç kaydı
+    recordCubePR(taker, 'take', 'take') // XG cube PR + .mat kaydı
+    recordCubeEvent(taker, 'take') // maç kaydı (okunur)
     setMatch((m) => ({ ...m, cube: { value: m.cube.value * 2, owner: taker } }))
     setCubePending(null)
     setMessage(t('msg.took', { name: pName(taker), doubler: pName(doubler) }))
@@ -1875,10 +1871,8 @@ export default function App() {
       return
     }
     const doubler = cubePending
-    const humanColor: Player = online ? myColor : 'white'
-    if (opponent(doubler) === humanColor) logCubeDecision('drop')
-    else logCubeAction('drop', opponent(doubler))
-    recordCubeEvent(opponent(doubler), 'drop') // maç kaydı
+    recordCubePR(opponent(doubler), 'take', 'drop') // XG cube PR + .mat kaydı
+    recordCubeEvent(opponent(doubler), 'drop') // maç kaydı (okunur)
     const points = match.cube.value
     setMatch((m) => scoreGame(m, doubler, points))
     setGameEnd({ winner: doubler, points, mult: 1, dropped: true })
@@ -1931,7 +1925,7 @@ export default function App() {
             const probs = await neuralRef.current.evalPosition(turnStart, BOT_PLAYER)
             const w = probs[0] + probs[1] + probs[2]
             if (!cancelled && w >= 0.7 && w <= 0.97) {
-              logCubeAction('double', BOT_PLAYER) // botun kup teklifini .mat icin logla
+              recordCubePR(BOT_PLAYER, 'offer', 'double') // XG cube PR + .mat kaydı
               recordCubeEvent(BOT_PLAYER, 'double') // maç kaydı
               setCubePending(BOT_PLAYER)
               setMessage(t('msg.doubledAsk', { value: match.cube.value * 2 }))
