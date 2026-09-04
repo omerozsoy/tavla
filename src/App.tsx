@@ -245,6 +245,9 @@ interface RoomState {
   // Sunucu-otoriter mod (para maçı güvenliği Faz 2c). true iken istemci zar/hamleyi
   // SUNUCUDAN alır (serverRoll/serverMove). Şu an hiçbir oda için true değil (gated).
   authoritative?: boolean
+  // BAĞIMSIZ Faz 1: true iken yalnız ZAR sunucudan (serverRoll); hamle/tahta/küp LEGACY kalır.
+  // Bahisli (para) eşleşme odalarında açılır. authoritative'den AYRIDIR.
+  dice_authority?: boolean
 }
 const BOT_PLAYER: Player = 'black'
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
@@ -823,6 +826,9 @@ export default function App() {
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
   // Sunucu-otoriter mod (Faz 2c): true iken legacy PUT/lokal-zar DEVRE DISI (serverRoll/Move).
   const authoritativeRef = useRef(false)
+  // BAGIMSIZ Faz 1: true iken yalniz ZAR sunucudan (serverRoll); hamle/tahta/PUT LEGACY kalir.
+  // authoritative'den AYRI: doRoll serverRoll'a gider ama commitTurn/PUT sync degismez.
+  const diceAuthorityRef = useRef(false)
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
@@ -1411,8 +1417,10 @@ export default function App() {
   }
 
   function doRoll() {
-    // Sunucu-otoriter oda: zari sunucudan al (async), lokal zar uretme.
-    if (online && authoritativeRef.current) {
+    // Sunucu-otoriter oda (tam Faz 2c) VEYA BAGIMSIZ Faz 1 (yalniz zar): zari SUNUCUDAN al
+    // (async), lokal zar URETME. Ikisinde de doRollAuthoritative zari serverRoll'dan ceker;
+    // fark move tarafinda (Faz 1'de commitTurn LEGACY PUT kullanir, serverMove'a gitmez).
+    if (online && (authoritativeRef.current || diceAuthorityRef.current)) {
       void doRollAuthoritative()
       return
     }
@@ -2278,6 +2286,9 @@ export default function App() {
   useEffect(() => {
     authoritativeRef.current = !!room?.authoritative
   }, [room?.authoritative])
+  useEffect(() => {
+    diceAuthorityRef.current = !!room?.dice_authority
+  }, [room?.dice_authority])
 
   // Online: yerel degisikligi odaya gonder (senkron)
   // ONEMLI: bagimliliklarda tum `room` nesnesi YOK -> her yoklamada (oppName/status
@@ -2340,6 +2351,7 @@ export default function App() {
                 oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
                 status: rv.status,
                 authoritative: rv.authoritative ?? r.authoritative,
+                dice_authority: rv.dice_authority ?? r.dice_authority,
               }
             : r,
         )
@@ -2359,6 +2371,9 @@ export default function App() {
         // Sunucu-otoriter mod (Faz 2c DRAFT): bayragi yakala; server_state'i YALNIZ tur
         // sinirinda uygula (kendi zarim/hamlem elimdeyken ezme). Legacy state sync atlanir.
         authoritativeRef.current = rv.authoritative ?? authoritativeRef.current
+        // BAGIMSIZ Faz 1: zar-otorite bayragini yakala (doRoll serverRoll'a gitsin). Legacy
+        // PUT/move akisi degismez; yalniz zar kaynagi sunucu olur.
+        diceAuthorityRef.current = rv.dice_authority ?? diceAuthorityRef.current
         if (rv.authoritative && rv.server_state && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
           const midMove = srvPlayedRef.current.length > 0 || (srvTurnStartRef.current?.dice?.length ?? 0) > 0
           if (!midMove) {
@@ -2832,6 +2847,9 @@ export default function App() {
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
+        // BAGIMSIZ Faz 1: bahisli oda -> zar sunucudan. Ilk poll'u BEKLEMEDEN gate et ki ilk
+        // zar da serverRoll'dan gelsin (lokal zar PUT'u sunucuca REDDEDILIR -> tur 0 kilitlenir).
+        dice_authority: res.room.dice_authority,
       })
     } catch (err) {
       // ApiError (status var) -> sunucunun gercek mesajini goster; yoksa ag hatasi

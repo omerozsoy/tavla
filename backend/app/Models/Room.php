@@ -46,6 +46,9 @@ class Room extends Model
         'server_winner',
         'server_match',
         'authoritative',
+        // BAĞIMSIZ Faz 1: yalnız zar sunucudan (hamle/tahta legacy). authoritative'den AYRI.
+        'dice_authority',
+        'dice_consumed',
     ];
 
     protected function casts(): array
@@ -60,6 +63,7 @@ class Room extends Model
             'server_state' => 'array',
             'server_match' => 'array',
             'authoritative' => 'boolean',
+            'dice_authority' => 'boolean',
         ];
     }
 
@@ -96,6 +100,12 @@ class Room extends Model
             'server_winner' => $this->server_winner,
             'server_match' => $this->server_match, // otoriter maç skoru {target,score,gameNo,done,winner}
             'dice_commit' => $this->dice_commit, // provably-fair taahhut (dice_seed GIZLI kalir)
+            // BAĞIMSIZ Faz 1: bu odada zar sunucudan alınır (istemci serverRoll kullanır).
+            'dice_authority' => (bool) $this->dice_authority,
+            // REVEAL: maç bitince (yalnız o zaman) tohumu ve el logunu aç -> iki taraf da
+            // commit'i ve tüm zarları provably-fair doğrular. Oyun sürerken dice_seed GİZLİ.
+            'dice_seed' => $this->status === 'finished' ? $this->dice_seed : null,
+            'dice_rolls' => $this->status === 'finished' ? ($this->dice_rolls ?? []) : null,
         ];
     }
 }
