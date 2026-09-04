@@ -1412,6 +1412,37 @@ export async function serverMove(
   })
 }
 
+// ---- Maç kaydı (hamle+zar logu) ----
+// Oyun tarayıcıda çalıştığı için TÜM maçlar (pvb/online/local) burada loglanır: istemci KENDİ
+// turlarını kendi slot kolonuna yazar (online'da iki oyuncu p1/p2, pvb'de tek istemci hepsi).
+// Açık uç (misafir dostu); en iyi çaba — başarısızlıkta oyun akışı ETKİLENMEZ.
+export interface GameLogTurn {
+  g: number // oyun no (maç içinde)
+  s: number // sıra (turnsPlayed anındaki değer — iki istemci arasında ortak)
+  p: 'W' | 'B' // renk
+  d: string // zar "6-5" / "6-6-6-6"
+  m: string // hamle notasyonu "24/18 13/8" / "pas"
+}
+export interface GameLogPayload {
+  uid: string
+  slot: Slot
+  mode: 'pvb' | 'online' | 'local'
+  target: number
+  p1_name?: string | null
+  p2_name?: string | null
+  status?: 'playing' | 'finished'
+  winner?: 'white' | 'black' | null
+  score?: { white: number; black: number } | null
+  events: GameLogTurn[]
+}
+export async function submitGameLog(payload: GameLogPayload): Promise<void> {
+  try {
+    await req('/game-logs', { method: 'POST', body: JSON.stringify(payload) })
+  } catch {
+    // en iyi çaba: log yazılamazsa oyun akışını bozma
+  }
+}
+
 // Sohbet mesaji gonder -> guncel mesaj listesini doner
 export async function sendChat(code: string, text: string): Promise<{ messages: ChatMsg[] }> {
   return req(`/rooms/${encodeURIComponent(code)}/chat`, {

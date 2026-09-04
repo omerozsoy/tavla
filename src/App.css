@@ -4134,6 +4134,48 @@ button[aria-disabled='true'],
   max-width: 100%;
 }
 
+/* Maç ID (sol üst HUD): oynanan maçın kimliği; admin panelde bu ID ile bulunur.
+   Nötr, dikkat dağıtmayan rozet — board köşesinde yüzer, tıklamayı engellemez. */
+.match-id-hud {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--game-scene) 60%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-cream) 20%, transparent);
+  color: color-mix(in srgb, var(--tv-cream) 82%, transparent);
+  font-size: 0.72rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  backdrop-filter: blur(3px);
+}
+.match-id-hud__label {
+  opacity: 0.66;
+  text-transform: uppercase;
+  font-size: 0.6rem;
+}
+.match-id-hud__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (max-width: 720px) {
+  .match-id-hud {
+    top: 4px;
+    left: 4px;
+    padding: 3px 7px;
+    font-size: 0.66rem;
+  }
+  .match-id-hud__label {
+    display: none; /* dar ekranda yalniz kod */
+  }
+}
+
 /* "Hamle yok" merkezi banner: rakip/ben gele attiginda net gorunur (pvb'de
    status gizli). Board uzerinde ortada; giris animasyonu (Emil: scale+opacity). */
 .board-nomove {
