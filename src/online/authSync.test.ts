@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../engine/types'
 import {
+  isOnlineReady,
   matchEndFromServer,
   openingStateFromMatch,
   rollResponseAction,
@@ -298,6 +299,17 @@ describe('2-istemci authoritative simülasyonu', () => {
           const whiteThinksMine = white.turn === white.myColor
           const blackThinksMine = black.turn === black.myColor
           expect(whiteThinksMine).not.toBe(blackThinksMine)
+
+          // OYNANABİLİRLİK: sırası olan istemci authoritative'de TAHTAYA ETKİLEŞEBİLMELİ (onlineReady).
+          // p2(black) authoritative'de oppStarted asla set olmaz; gate onu kilitlerse HAMLE YAPAMAZ
+          // (yaşanan "zar atıldı oynayamadım" bug'ı). İki istemci de authoritative -> daima hazır.
+          for (const [c, slot] of [[white, 'p1'], [black, 'p2']] as const) {
+            expect(
+              isOnlineReady({ online: true, status: 'playing', slot, oppStarted: false, authoritative: true }),
+              `${slot} authoritative'de hazır olmalı (oppStarted olmadan)`,
+            ).toBe(true)
+            void c
+          }
         }
 
         // En az birkaç tur ilerledi (oyun kilitlenmedi).
@@ -386,5 +398,27 @@ describe('serverMatchToLocal + openingStateFromMatch', () => {
     expect(openingStateFromMatch({ opened: false, done: false })).toBe('roll')
     expect(openingStateFromMatch({ opened: true, done: false })).toBeNull()
     expect(openingStateFromMatch({ done: true })).toBe('keep')
+  })
+})
+
+// ---- isOnlineReady: tahta etkileşimi gate'i (p2 authoritative kilitlenme bug'ı) ----
+describe('isOnlineReady', () => {
+  it('offline -> daima hazır', () => {
+    expect(isOnlineReady({ online: false, oppStarted: false })).toBe(true)
+  })
+  it('online ama status playing değil -> hazır değil', () => {
+    expect(isOnlineReady({ online: true, status: 'waiting', slot: 'p1', oppStarted: false })).toBe(false)
+  })
+  it('p1 (başlatan) playing -> hazır (rakip beklemeye gerek yok)', () => {
+    expect(isOnlineReady({ online: true, status: 'playing', slot: 'p1', oppStarted: false })).toBe(true)
+  })
+  it('LEGACY p2: rakip snapshot gelene (oppStarted) kadar hazır DEĞİL', () => {
+    expect(isOnlineReady({ online: true, status: 'playing', slot: 'p2', oppStarted: false })).toBe(false)
+    expect(isOnlineReady({ online: true, status: 'playing', slot: 'p2', oppStarted: true })).toBe(true)
+  })
+  it('BUG FIX: AUTHORITATIVE p2 -> oppStarted olmadan da hazır (yoksa siyah HİÇ oynayamaz)', () => {
+    expect(
+      isOnlineReady({ online: true, status: 'playing', slot: 'p2', oppStarted: false, authoritative: true }),
+    ).toBe(true)
   })
 })

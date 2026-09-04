@@ -121,3 +121,21 @@ export function openingStateFromMatch(sm: ServerMatchView): 'roll' | null | 'kee
   if (sm.done) return 'keep'
   return sm.opened === false ? 'roll' : null
 }
+
+/**
+ * Online'da istemci "hazır" mı (tahta etkileşimi açılabilir)? p2 legacy'de rakibin ilk
+ * snapshot'ını (oppStarted) bekler; ama AUTHORITATIVE modda o snapshot applyServerBoard'dan gelir
+ * (applyOnlineState değil) -> oppStarted asla set olmaz -> p2 HİÇ oynayamaz (yaşanan KRİTİK bug).
+ * authoritative'de sunucu turu (myTurn) zaten gate'ler; p2 beklemeye gerek yok -> hazır say.
+ */
+export function isOnlineReady(p: {
+  online: boolean
+  status?: string
+  slot?: 'p1' | 'p2'
+  oppStarted: boolean
+  authoritative?: boolean
+}): boolean {
+  if (!p.online) return true
+  if (p.status !== 'playing') return false
+  return p.slot === 'p1' || p.oppStarted || !!p.authoritative
+}
