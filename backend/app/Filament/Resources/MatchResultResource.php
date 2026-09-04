@@ -120,7 +120,8 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('room_code')->label('Oda')
                     ->copyable()->default('—')->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')->label('Tarih / Saat')
-                    ->dateTime('d.m.Y H:i:s')->sortable(),
+                    // DB UTC yazar; panelde Turkiye saati (UTC+3) goster (veriye dokunma).
+                    ->dateTime('d.m.Y H:i:s', 'Europe/Istanbul')->sortable(),
             ])
             ->filters([
                 Tables\Filters\TernaryFilter::make('won')->label('Sonuç')

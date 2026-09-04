@@ -34,7 +34,8 @@ class ViewMatchResult extends ViewRecord
                     TextEntry::make('match_type')->label('Tür')->badge()
                         ->formatStateUsing(fn ($state, MatchResult $r) => MatchResultResource::matchTypeLabel($state, $r->match_length))
                         ->color(fn ($state) => $state === 'coin' ? 'warning' : 'info'),
-                    TextEntry::make('created_at')->label('Tarih / Saat')->dateTime('d.m.Y H:i:s'),
+                    TextEntry::make('created_at')->label('Tarih / Saat')
+                        ->dateTime('d.m.Y H:i:s', 'Europe/Istanbul'),
                 ])
                 ->columns(3),
             Section::make('Bahis (Coin)')

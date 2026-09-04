@@ -42,7 +42,7 @@ class ViewGameLog extends ViewRecord
 
                             return 'Beyaz '.($state['white'] ?? 0).' — '.($state['black'] ?? 0).' Siyah';
                         }),
-                    TextEntry::make('created_at')->label('Tarih')->dateTime('d.m.Y H:i'),
+                    TextEntry::make('created_at')->label('Tarih')->dateTime('d.m.Y H:i', 'Europe/Istanbul'),
                 ])
                 ->columns(3),
             ViewEntry::make('replay')

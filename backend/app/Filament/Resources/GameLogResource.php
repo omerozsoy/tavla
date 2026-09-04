@@ -73,7 +73,8 @@ class GameLogResource extends Resource
                 Tables\Columns\TextColumn::make('status')->label('Durum')->badge()
                     ->formatStateUsing(fn ($state) => $state === 'finished' ? 'Bitti' : 'Sürüyor')
                     ->color(fn ($state) => $state === 'finished' ? 'success' : 'warning'),
-                Tables\Columns\TextColumn::make('created_at')->label('Tarih')->dateTime('d.m.Y H:i')->sortable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Tarih')
+                    ->dateTime('d.m.Y H:i', 'Europe/Istanbul')->sortable(),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('mode')->label('Tür')->options([
