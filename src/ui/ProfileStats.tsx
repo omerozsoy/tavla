@@ -289,11 +289,14 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                     invert
                     threshold={8}
                     items={MED_ORDER.map((k) => {
-                      const c = perf.median_error_rate.categories[k]
-                      const n = c?.sample_count ?? 0
+                      // XG-style HAVUZLANMIS PR birincil (Σloss/Σkarar×500); yoksa medyana düş.
+                      const pooled = perf.pooled_pr?.categories?.[k]
+                      const med = perf.median_error_rate.categories[k]
+                      const value = pooled?.pooled_pr ?? med?.median_pr ?? null
+                      const n = pooled?.decisions ?? med?.sample_count ?? 0
                       return {
                         label: catLabel(k),
-                        value: c?.median_pr ?? null,
+                        value,
                         sub: n > 0 ? t('med.decisions', { n }) : undefined,
                       }
                     })}

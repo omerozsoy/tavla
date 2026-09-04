@@ -1229,6 +1229,8 @@ export default function App() {
     const moves = generateMoves(before)
     if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
     const seq = turnsPlayed // bu turun sirasi (async bot kaydinda korunur)
+    // Money (coin) oyunu -> 1-puanlik maç ×1.5 faktörü UYGULANMAZ (yalniz gerçek 1-puanlik MAÇ).
+    const isMoney = stakeRef.current > 0
     // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (XG-style, analiz .then icinde)
     if (mode === 'pvb' && mover === BOT_PLAYER) {
       // Botun (rakip) hamlesini de analize kaydet: siralamayi arka planda hesapla
@@ -1245,6 +1247,7 @@ export default function App() {
             ranks[ranks.length - 1].equity,
             moves.length,
             match.target,
+            isMoney,
           )
           if (dec.countsForPR) {
             setPrStats((s) => ({
@@ -1309,6 +1312,7 @@ export default function App() {
         ranks[ranks.length - 1].equity,
         moves.length,
         match.target,
+        isMoney,
       )
       const loss = dec.normalizedEquityLoss // log/error-journal ham (1pt faktörsüz) equity kaybı
       // PR yalnız SAYILAN kararlardan (zorunlu/obvious hariç); loss = prAdjusted (1pt faktörlü).

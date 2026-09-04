@@ -39,9 +39,11 @@ export interface PrSummary {
   overall: PrCategory
 }
 
-// 1-puanlık maç faktörü (§14): XG tek-puanlık maçta hataları ×1.5 ölçekler. Merkezî.
-export function onePointFactor(matchLength: number): number {
-  return matchLength === 1 ? 1.5 : 1
+// 1-puanlık maç faktörü (§14): XG tek-puanlık MAÇTA hataları ×1.5 ölçekler. Merkezî.
+// isMoney=true (kübsüz para/coin oyunu) -> faktör UYGULANMAZ (§15); para oyunu maç-equity
+// çarpıtması taşımaz. Yalnız gerçek 1-puanlık MAÇ (match play, target=1) ×1.5 alır.
+export function onePointFactor(matchLength: number, isMoney = false): number {
+  return !isMoney && matchLength === 1 ? 1.5 : 1
 }
 
 // PR = (equityLost / decisions) × 500; karar yoksa null (§10-12: asla 0 döndürme). Tam hassasiyet;
@@ -66,6 +68,7 @@ export function checkerDecision(
   worstEq: number,
   legalMoveCount: number,
   matchLength: number,
+  isMoney = false,
 ): PrDecision {
   const counts = legalMoveCount > 1 && bestEq - worstEq >= XG_OBVIOUS_CHECKER_EQUITY_SPREAD
   const loss = Math.max(0, bestEq - playedEq) // FP gürültüsü negatife düşmesin (§2)
@@ -73,7 +76,7 @@ export function checkerDecision(
     type: 'checker',
     countsForPR: counts,
     normalizedEquityLoss: loss,
-    prAdjustedEquityLoss: loss * onePointFactor(matchLength),
+    prAdjustedEquityLoss: loss * onePointFactor(matchLength, isMoney),
   }
 }
 
@@ -85,13 +88,14 @@ export function cubeDecision(
   actualEq: number,
   countsForPR: boolean,
   matchLength: number,
+  isMoney = false,
 ): PrDecision {
   const loss = Math.max(0, bestEq - actualEq)
   return {
     type: 'cube',
     countsForPR,
     normalizedEquityLoss: loss,
-    prAdjustedEquityLoss: loss * onePointFactor(matchLength),
+    prAdjustedEquityLoss: loss * onePointFactor(matchLength, isMoney),
   }
 }
 

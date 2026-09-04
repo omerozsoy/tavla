@@ -338,21 +338,21 @@ function equityFrom(p) {
 
 // src/analysis/pr.ts
 var XG_OBVIOUS_CHECKER_EQUITY_SPREAD = 1e-3;
-function onePointFactor(matchLength) {
-  return matchLength === 1 ? 1.5 : 1;
+function onePointFactor(matchLength, isMoney = false) {
+  return !isMoney && matchLength === 1 ? 1.5 : 1;
 }
 function prValue(equityLost, decisions) {
   if (decisions <= 0) return null;
   return equityLost / decisions * 500;
 }
-function checkerDecision(bestEq, playedEq, worstEq, legalMoveCount, matchLength) {
+function checkerDecision(bestEq, playedEq, worstEq, legalMoveCount, matchLength, isMoney = false) {
   const counts = legalMoveCount > 1 && bestEq - worstEq >= XG_OBVIOUS_CHECKER_EQUITY_SPREAD;
   const loss = Math.max(0, bestEq - playedEq);
   return {
     type: "checker",
     countsForPR: counts,
     normalizedEquityLoss: loss,
-    prAdjustedEquityLoss: loss * onePointFactor(matchLength)
+    prAdjustedEquityLoss: loss * onePointFactor(matchLength, isMoney)
   };
 }
 function summarize(decisions) {
@@ -436,14 +436,14 @@ function applyMove(state, steps, mover) {
   for (const st of steps) applyStep(s, st, mover);
   return s;
 }
-async function checkerRecord(pos, dice, playedSteps, matchLength) {
+async function checkerRecord(pos, dice, playedSteps, matchLength, isMoney) {
   const mover = pos.turn;
   const state = cloneState(pos);
   state.dice = dice.slice();
   state.diceUsed = dice.map(() => false);
   const moves = generateMoves(state);
   if (moves.length <= 1) {
-    return checkerDecision(0, 0, 0, moves.length, matchLength);
+    return checkerDecision(0, 0, 0, moves.length, matchLength, isMoney);
   }
   let best = -Infinity;
   let worst = Infinity;
@@ -453,14 +453,14 @@ async function checkerRecord(pos, dice, playedSteps, matchLength) {
     if (eq < worst) worst = eq;
   }
   const chosenEq = await equityAfter(applyMove(state, playedSteps, mover), mover);
-  return checkerDecision(best, chosenEq, worst, moves.length, matchLength);
+  return checkerDecision(best, chosenEq, worst, moves.length, matchLength, isMoney);
 }
-async function analyzePr(hc, log, matchLength = 1) {
+async function analyzePr(hc, log, matchLength = 1, isMoney = false) {
   await init();
   const decisions = [];
   for (const e of log) {
     if (e.player !== hc || !e.pos || !e.dice || !e.playedSteps) continue;
-    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength));
+    decisions.push(await checkerRecord(e.pos, e.dice, e.playedSteps, matchLength, isMoney));
   }
   const s = summarize(decisions);
   return { ...s, pr: s.overall.pr, decisions: s.overall.decisions };
@@ -524,7 +524,7 @@ var server = createServer(async (req, res) => {
       const log = Array.isArray(body.log) ? body.log : null;
       if (!hc || !log) return send(res, 400, { error: "bad-request", detail: "hc/log gerekli" });
       const ml = typeof body.matchLength === "number" && body.matchLength >= 1 ? body.matchLength : 1;
-      const r = await analyzePr(hc, log, ml);
+      const r = await analyzePr(hc, log, ml, body.isMoney === true);
       return send(res, 200, r);
     }
     return send(res, 404, { error: "not-found" });

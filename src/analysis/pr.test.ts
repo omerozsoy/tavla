@@ -56,6 +56,12 @@ describe('XG-style PR — spec test cases', () => {
     expect(onePointFactor(3)).toBe(1)
   })
 
+  it('MONEY oyunu: target=1 olsa bile ×1.5 UYGULANMAZ (§15)', () => {
+    const d = checkerDecision(0.04, 0.0, -0.2, 5, 1, true) // isMoney=true
+    expect(d.prAdjustedEquityLoss).toBeCloseTo(0.04, 10) // faktör yok
+    expect(onePointFactor(1, true)).toBe(1)
+  })
+
   it('TEST F — agregasyon: (0.1+1.0)/(10+100)×500 = 5.0', () => {
     expect(pooledPR(0.1 + 1.0, 10 + 100)).toBeCloseTo(5.0, 10)
   })
