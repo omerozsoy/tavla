@@ -40,3 +40,47 @@
   align-items: center;
   gap: 6px;
 }
+
+/* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir. */
+.pc-avatar {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pc-avatar .avatar {
+  margin: 0;
+}
+/* Iki yay (sol+sag) = parantez: buyuk bir halkanin ust/alt kenari saydam -> yalniz yanlar gorunur.
+   "sira kimde" NET olsun diye yanip soner. Renk site aksani (token); sabit hex YOK. */
+.turn-arcs {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 126px;
+  height: 126px;
+  transform: translate(-50%, -50%);
+  border: 3px solid var(--accent);
+  border-top-color: transparent;
+  border-bottom-color: transparent;
+  border-radius: var(--radius-circle);
+  pointer-events: none;
+  animation: turn-arcs-blink 1s ease-in-out infinite;
+}
+@keyframes turn-arcs-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .turn-arcs {
+    animation: none;
+  }
+}

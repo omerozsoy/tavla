@@ -33,7 +33,7 @@ function fmtK(n: number): string {
 }
 
 function Avatar({ p }: { p: PlayerInfo }) {
-  return p.frame ? (
+  const inner = p.frame ? (
     <AvatarFrame
       src={p.avatarUrl}
       frame={p.frame}
@@ -50,6 +50,13 @@ function Avatar({ p }: { p: PlayerInfo }) {
       ) : (
         <span>{p.avatar}</span>
       )}
+    </div>
+  )
+  // Sira gostergesi: avatarin iki yaninda parantez benzeri iki yay, yanip soner (net "sira kimde")
+  return (
+    <div className={`pc-avatar ${p.active ? 'active' : ''}`}>
+      {p.active && <span className="turn-arcs" aria-hidden="true" />}
+      {inner}
     </div>
   )
 }
