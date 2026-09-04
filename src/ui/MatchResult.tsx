@@ -161,12 +161,14 @@ export default function MatchResult({
               {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
             </span>
           </div>
-          {/* XG kırılım: checker (oyun) + küp PR. Küp satırı yalnız küp kararı varsa görünür. */}
-          <div className="mr-row mr-sub">
-            <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
-            <span className="mr-label">{t('mr.checkerPr')}</span>
-            <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
-          </div>
+          {/* XG kırılım: checker (oyun) + küp PR. Satırlar yalnız ilgili karar VARSA görünür ("—" yok). */}
+          {(winnerCheckerPr != null || loserCheckerPr != null) && (
+            <div className="mr-row mr-sub">
+              <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
+              <span className="mr-label">{t('mr.checkerPr')}</span>
+              <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
+            </div>
+          )}
           {(winnerCubePr != null || loserCubePr != null) && (
             <div className="mr-row mr-sub">
               <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
