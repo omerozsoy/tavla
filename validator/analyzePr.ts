@@ -8,7 +8,11 @@
 // (neuralBot.ts) ile AYNI kod. Ayni model dosyalari (contact/race.onnx) + ayni girdi -> ayni
 // equity. Yani sunucu PR'i, dogru oynayan istemcinin PR'iyle SAYISAL eslesir (gölge modda
 // dogrulanir). Fark yalnizca calisma-zamani (ort-node vs ort-web) — ONNX deterministik.
-import * as ort from 'onnxruntime-node'
+// onnxruntime-node LAZY (dinamik) import: NATIVE modül. STATİK import edilirse ve sunucuda
+// kurulu DEĞİLSE (npm i yapılmadıysa) TÜM validator başlamaz (500 -> hamle doğrulama da düşer!).
+// Dinamik import ile validator DAİMA ayağa kalkar; yalnız /analyze-pr çağrılınca yüklenir,
+// eksikse SADECE PR başarısız olur (backend fail-open -> istemci PR'ına düşer).
+import type { InferenceSession } from 'onnxruntime-node'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import type { GameState, Move, Player, Step } from '../src/engine/types'
@@ -28,8 +32,9 @@ import { offerLoss, takeLoss } from '../src/engine/cubeEquity'
 
 const INPUT_NAME = 'onnx::Gemm_0'
 
-let contactSession: ort.InferenceSession | null = null
-let raceSession: ort.InferenceSession | null = null
+let ort: typeof import('onnxruntime-node') | null = null
+let contactSession: InferenceSession | null = null
+let raceSession: InferenceSession | null = null
 
 // Model dizini: MODELS_DIR env (deploy) veya bundle yanindaki `models/` (build-validator kopyalar).
 function modelsDir(): string {
@@ -40,9 +45,10 @@ function modelsDir(): string {
 
 async function init(): Promise<void> {
   if (contactSession && raceSession) return
+  if (!ort) ort = await import('onnxruntime-node') // ilk PR analizinde yüklenir (eksikse burada hata)
   const dir = modelsDir()
-  contactSession = await ort.InferenceSession.create(join(dir, 'contact.onnx'))
-  raceSession = await ort.InferenceSession.create(join(dir, 'race.onnx'))
+  contactSession = await ort!.InferenceSession.create(join(dir, 'contact.onnx'))
+  raceSession = await ort!.InferenceSession.create(join(dir, 'race.onnx'))
 }
 
 // Rakip 6 olasiligini mover perspektifine cevir (neuralBot.switchSides ile birebir).
@@ -78,7 +84,7 @@ async function equityAfter(after: GameState, mover: Player): Promise<number> {
   const inputs = phase === 'contact' ? contactInputs(pos) : raceInputs(pos)
   const session = phase === 'contact' ? contactSession! : raceSession!
   const n = phase === 'contact' ? CONTACT_INPUTS : RACE_INPUTS
-  const tensor = new ort.Tensor('float32', inputs, [1, n])
+  const tensor = new ort!.Tensor('float32', inputs, [1, n])
   const out = await session.run({ [INPUT_NAME]: tensor })
   const oppProbs = out[session.outputNames[0]].data as Float32Array
   return equityFrom(switchSides(oppProbs.subarray(0, 6)))
@@ -98,7 +104,7 @@ async function probsAt(pos: GameState, player: Player): Promise<number[]> {
   const inputs = phase === 'contact' ? contactInputs(wp) : raceInputs(wp)
   const session = phase === 'contact' ? contactSession! : raceSession!
   const n = phase === 'contact' ? CONTACT_INPUTS : RACE_INPUTS
-  const out = await session.run({ [INPUT_NAME]: new ort.Tensor('float32', inputs, [1, n]) })
+  const out = await session.run({ [INPUT_NAME]: new ort!.Tensor('float32', inputs, [1, n]) })
   return Array.from((out[session.outputNames[0]].data as Float32Array).subarray(0, 6))
 }
 
