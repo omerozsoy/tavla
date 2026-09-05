@@ -127,6 +127,75 @@ export function clearGame(): void {
   }
 }
 
+// ---- Bekleyen maç-sonu raporu/settle (dayanıklılık) ----
+// reportRating/settle ağ hatasıyla başarısız olursa payload'ı sakla; açılışta/yeniden-bağlanınca
+// tekrar dene. Backend idempotent (oda+kullanıcı tek satır; settle atomik) -> çift-sayma yok.
+// Böylece düşen istemcinin rating + analiz satırı + coin'i kaybolmaz.
+const PENDING_REPORT_KEY = 'tavla.pendingReport'
+const PENDING_SETTLE_KEY = 'tavla.pendingSettle'
+const PENDING_MAX_AGE = 3 * 24 * 60 * 60 * 1000 // 3 gün sonra vazgeç
+
+export interface PendingReport {
+  args: unknown[] // api.reportRating pozisyonel argümanları (serializable)
+  ts: number
+}
+export interface PendingSettle {
+  code: string
+  won: boolean
+  ts: number
+}
+
+function readPending<T extends { ts: number }>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return null
+    const v = JSON.parse(raw) as T
+    if (!v || typeof v.ts !== 'number' || Date.now() - v.ts > PENDING_MAX_AGE) {
+      localStorage.removeItem(key)
+      return null
+    }
+    return v
+  } catch {
+    return null
+  }
+}
+
+export function savePendingReport(args: unknown[]): void {
+  try {
+    localStorage.setItem(PENDING_REPORT_KEY, JSON.stringify({ args, ts: Date.now() }))
+  } catch {
+    /* yok */
+  }
+}
+export function loadPendingReport(): PendingReport | null {
+  return readPending<PendingReport>(PENDING_REPORT_KEY)
+}
+export function clearPendingReport(): void {
+  try {
+    localStorage.removeItem(PENDING_REPORT_KEY)
+  } catch {
+    /* yok */
+  }
+}
+
+export function savePendingSettle(code: string, won: boolean): void {
+  try {
+    localStorage.setItem(PENDING_SETTLE_KEY, JSON.stringify({ code, won, ts: Date.now() }))
+  } catch {
+    /* yok */
+  }
+}
+export function loadPendingSettle(): PendingSettle | null {
+  return readPending<PendingSettle>(PENDING_SETTLE_KEY)
+}
+export function clearPendingSettle(): void {
+  try {
+    localStorage.removeItem(PENDING_SETTLE_KEY)
+  } catch {
+    /* yok */
+  }
+}
+
 // ---- Takma isim kaydi (yerel benzersizlik kontrolu) ----
 export function loadNicknames(): string[] {
   try {

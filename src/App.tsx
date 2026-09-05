@@ -145,6 +145,12 @@ import {
   loadProfile,
   saveGame,
   saveProfile,
+  savePendingReport,
+  loadPendingReport,
+  clearPendingReport,
+  savePendingSettle,
+  loadPendingSettle,
+  clearPendingSettle,
   type Profile,
   type SavedGame,
   type MoveLogEntry,
@@ -656,6 +662,46 @@ export default function App() {
       alive = false
     }
   }, [])
+
+  // DAYANIKLILIK: önceki maçta ağ hatasıyla başarısız olan reportRating/settle'ı açılışta ve
+  // yeniden-bağlanınca tekrar dene. Backend idempotent (oda+kullanıcı tek satır; settle atomik)
+  // -> çift-sayma yok. Düşen istemcinin rating + analiz satırı + coin'i kaybolmaz (ekran görüntüsü
+  // bug'ı: bir taraf "bağlantı hatası" alıp maç analizinde görünmüyordu). Yalnız user hazırken.
+  useEffect(() => {
+    if (!user) return
+    let alive = true
+    const flush = async () => {
+      const pr = loadPendingReport()
+      if (pr) {
+        try {
+          const rr = await reportRating(...(pr.args as Parameters<typeof reportRating>))
+          if (alive) setUser((u) => (u ? { ...u, rating: rr.rating } : u))
+          clearPendingReport()
+        } catch {
+          /* sonraki açılışta yine denenir */
+        }
+      }
+      const ps = loadPendingSettle()
+      if (ps) {
+        try {
+          const sr = await settleRoomConfirmed(ps.code, ps.won)
+          if (sr.ok || !sr.pending) {
+            if (alive && typeof sr.coins === 'number') setUser((u) => (u ? { ...u, coins: sr.coins } : u))
+            clearPendingSettle()
+          }
+        } catch {
+          /* sonra */
+        }
+      }
+    }
+    flush()
+    const onOnline = () => flush()
+    window.addEventListener('online', onOnline)
+    return () => {
+      alive = false
+      window.removeEventListener('online', onOnline)
+    }
+  }, [user?.id]) // stabil kimlik -> döngü yok (bkz heartbeat-ping-kacak-dongu)
 
   // popstate closure'i icin GUNCEL "aktif oyun var mi" (hasActiveGame render-sonrasi
   // hesaplaniyor; ref ile son degeri applyFromPath'e tasiyoruz).
@@ -2484,8 +2530,26 @@ export default function App() {
         }
       }
       if (!r) {
-        // 3 denemede de olmadi -> kullaniciyi uyar (sessiz kalma).
+        // 3 denemede de olmadi -> kullaniciyi uyar + KURTARMA: raporu sakla, sonra (açılış/yeniden-
+        // bağlanma) tekrar dene. Backend idempotent (oda+kullanıcı tek satır) -> düşen istemcinin
+        // rating + analiz satırı + coin'i kaybolmaz. Log otoriter (sunucu skoru/PR'ı yeniden hesaplar).
         notify.error(t('net.ratingFailed'))
+        savePendingReport([
+          won,
+          oppRating,
+          match.target,
+          prRef(myColor),
+          prLuck[myColor] - prLuck[opponent(myColor)],
+          match.score[myColor],
+          match.score[opponent(myColor)],
+          room?.oppName ?? null,
+          prRef(opponent(myColor)),
+          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
+          !friendlyRef.current,
+          stakeRef.current > 0 ? 'coin' : 'match',
+          room?.code ?? null,
+          achExtra,
+        ])
       } else {
         setRatingChange({ before, after: r.rating })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
@@ -2520,6 +2584,8 @@ export default function App() {
         })
         .catch(() => {
           notify.error(t('net.settleFailed'))
+          // KURTARMA: settle'ı sakla, açılış/yeniden-bağlanmada tekrar dene (settle atomik+idempotent).
+          if (room?.code) savePendingSettle(room.code, won)
         })
       stakeRef.current = 0
       betPctRef.current = 0
@@ -3933,10 +3999,17 @@ export default function App() {
     }
     return prOf(c) ?? prLooseOf(c) ?? 0
   }
-  // Sans: kendi rengim lokal; online rakip senkronla gelir (hesaplamadiysa —).
-  // pvb'de bot luck'i da artik hesaplaniyor -> gosterilir (zero-sum net icin gerekli).
+  // Sans: online'da SIFIR-TOPLAMLI göster. reportRating'e giden değer = kendi göreceli şansım
+  // (prLuck[ben] - prLuck[rakip]); rakip = onun NEGATİFİ. Böylece sonuç ekranı hep tutarlı
+  // (kazanan/kaybeden birbirinin negatifi) ve sunucuya kaydedilen değerle AYNI olur — her iki
+  // istemci de kendi hesabından tutarlı bir bölünme gösterir. (Tam çapraz-istemci tek-kaynak
+  // için sunucu-otoriter luck -> GNU orchestrator; şimdilik istemci-hesaplı.)
+  // pvb (offline): her renk kendi lokal luck'ını gösterir.
   const luckOf = (c: Player): number | null => {
-    if (online && c !== myColor && prStats[c].decisions === 0) return null
+    if (online) {
+      const rel = prLuck[myColor] - prLuck[opponent(myColor)]
+      return c === myColor ? rel : -rel
+    }
     return prLuck[c]
   }
 
