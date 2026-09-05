@@ -508,9 +508,35 @@ def _maptest():
     return {"maptest": out}
 
 
+def _capture_command(cmd):
+    """gnubg.command() çıktısı C-stdout'a (fd 1) yazılır; fd 1'i geçici dosyaya yönlendirip yakala."""
+    import os
+    import tempfile
+
+    path = os.path.join(tempfile.gettempdir(), "gnubg_capture.txt")
+    old = os.dup(1)
+    f = open(path, "w")
+    try:
+        os.dup2(f.fileno(), 1)
+        try:
+            gnubg.command(cmd)
+        except Exception:
+            pass
+    finally:
+        os.dup2(old, 1)
+        os.close(old)
+        f.close()
+    try:
+        with open(path) as r:
+            return r.read()
+    except Exception:
+        return ""
+
+
 def _cubetest(pos):
-    """KÜP kararı teşhisi: pozisyonu kur, gnubg'nin kup analizini FARKLI yollarla dene, HER birinin
-    ham sonucunu/HATASINI döndür (böylece cube PR'ı doğru yapıyla yazarım). /analyze hatayı yutuyordu."""
+    """KÜP kararı teşhisi. gnubg.hint() KÜP'ü desteklemiyor ('not implemented'); bu yüzden:
+    (1) gnubg.evaluate() ham değerlendirme, (2) 'hint' KOMUTUNUN metin çıktısı (CLI küp analizini
+    yazar; fd-yakalama ile alınır), (3) cubeinfo. Bu yapıya göre cube PR yazılacak."""
     out = {}
     try:
         gid = structured_to_gnubgid(pos)
@@ -519,19 +545,15 @@ def _cubetest(pos):
     except Exception as e:
         out["setgnubgid_err"] = str(e)
         return out
-    # 1) düz hint()
     try:
-        out["hint"] = _safe(gnubg.hint())
+        out["evaluate"] = _safe(gnubg.evaluate())
     except Exception as e:
-        out["hint_err"] = str(e)
-    # 2) 'hint' komutu (metin) — kup analizini gösterebilir
+        out["evaluate_err"] = str(e)
     try:
-        out["cmd_hint"] = _safe(gnubg.command("hint"))
+        out["hint_text"] = _capture_command("hint")
     except Exception as e:
-        out["cmd_hint_err"] = str(e)
-    # 3) posinfo/cubeinfo (durumu görmek için)
+        out["hint_text_err"] = str(e)
     try:
-        out["posinfo"] = _safe(gnubg.posinfo())
         out["cubeinfo"] = _safe(gnubg.cubeinfo())
     except Exception as e:
         out["info_err"] = str(e)
