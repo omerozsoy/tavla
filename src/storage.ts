@@ -27,6 +27,16 @@ export interface MoveLogEntry {
     chosen: string // 'double'|'no-double'|'take'|'drop'
     correct: boolean
   }
+  // Karar anındaki MAÇ BAĞLAMI (match-aware EMG PR için — gnubg doğru equity için skoru bilmeli).
+  // Log tek-taraflı (yalnız kendi hamlelerim) olduğundan skor SUNUCUDA yeniden kurulamaz -> istemci
+  // her karara ekler. Eski kayıtlar bunu taşımaz -> orchestrator money'ye (skor-bağımsız) düşer.
+  mctx?: {
+    score: Record<Player, number>
+    cube: number // güncel küp değeri (1,2,4,...)
+    cubeOwner: Player | null
+    crawford: boolean
+    matchLen: number // hedef puan (0/1 = money-benzeri)
+  }
 }
 
 const PROFILE_KEY = 'tavla.profile'

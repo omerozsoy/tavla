@@ -58,15 +58,26 @@ class AnalysisOrchestrator
                 continue;
             }
             $pos = $e['pos'];
-            $res = $this->gnubg->analyze([
+            $mctx = $e['mctx'] ?? null; // karar anındaki maç bağlamı (istemci ekler; eski loglarda yok)
+            $structured = [
                 'points' => $pos['points'],
                 'bar' => $pos['bar'] ?? ['white' => 0, 'black' => 0],
                 'turn' => $player,
                 'dice' => array_values($e['dice']),
-                'matchLength' => $matchLength,
+                'matchLength' => is_array($mctx) ? (int) ($mctx['matchLen'] ?? $matchLength) : $matchLength,
                 'plies' => $plies,
                 'playedSteps' => $e['playedSteps'],
-            ]);
+            ];
+            // Match-aware EMG: mctx varsa karar anındaki skor/küp/crawford -> gnubg doğru match equity.
+            // Yoksa money (skor-bağımsız) fallback -> PR yine üretilir (eski loglar bozulmaz).
+            if (is_array($mctx)) {
+                if (isset($mctx['score'])) {
+                    $structured['score'] = $mctx['score'];
+                }
+                $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
+                $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
+            }
+            $res = $this->gnubg->analyze($structured);
             if ($res === null) {
                 $skipped++;
                 $reasons['gnubg_null']++;

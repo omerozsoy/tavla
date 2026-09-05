@@ -95,4 +95,33 @@ class AnalysisOrchestratorTest extends TestCase
         $this->assertEqualsWithDelta(10.0, $r['loosePr'], 0.001, 'loose = (0.02/1)*500 = 10');
         $this->assertEqualsWithDelta(10.0, $r['pr'], 0.001, 'PR loose fallback (asla null)');
     }
+
+    public function test_mctx_makes_analysis_match_aware(): void
+    {
+        $fake = new class extends GnuBgClient
+        {
+            public array $captured = [];
+
+            public function analyze(array $position): ?array
+            {
+                $this->captured[] = $position;
+
+                return ['result' => ['hint' => [['move' => 'a', 'equity' => 0.2], ['move' => 'b', 'equity' => -0.3]]],
+                    'played' => ['move' => 'b', 'loss' => 0.05]];
+            }
+        };
+        $entry = ['player' => 'white', 'pos' => $this->pos(), 'dice' => [3, 1],
+            'playedSteps' => [['from' => 1, 'to' => 2]],
+            'mctx' => ['score' => ['white' => 2, 'black' => 1], 'cube' => 2, 'cubeOwner' => 'white',
+                'crawford' => false, 'matchLen' => 5]];
+
+        $orch = new AnalysisOrchestrator($fake);
+        $orch->checkerPr([$entry], 'white', 0, 2); // fallback matchLength 0, ama mctx.matchLen=5 kazanır
+
+        $sent = $fake->captured[0];
+        $this->assertSame(5, $sent['matchLength'], 'mctx.matchLen match-aware kullanılır');
+        $this->assertSame(['white' => 2, 'black' => 1], $sent['score']);
+        $this->assertSame(2, $sent['cube']['value']);
+        $this->assertSame('white', $sent['cube']['owner']);
+    }
 }
