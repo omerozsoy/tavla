@@ -1354,6 +1354,13 @@ export default function App() {
               seq,
               countsForPR: dec.countsForPR,
               prAdjustedEquityLoss: dec.prAdjustedEquityLoss,
+              mctx: {
+                score: match.score,
+                cube: match.cube.value,
+                cubeOwner: match.cube.owner,
+                crawford: match.isCrawford,
+                matchLen: match.target,
+              },
             },
           ])
         })
@@ -1439,6 +1446,14 @@ export default function App() {
           // XG-style PR denetim alanları (backend prFromLog bunları toplar; yoksa eski loss'a düşer).
           countsForPR: dec.countsForPR,
           prAdjustedEquityLoss: dec.prAdjustedEquityLoss,
+          // Karar anındaki maç bağlamı (match-aware EMG PR için — gnubg orchestrator kullanır).
+          mctx: {
+            score: match.score,
+            cube: match.cube.value,
+            cubeOwner: match.cube.owner,
+            crawford: match.isCrawford,
+            matchLen: match.target,
+          },
         },
       ])
     }
