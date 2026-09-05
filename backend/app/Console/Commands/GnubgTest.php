@@ -75,13 +75,25 @@ class GnubgTest extends Command
             return self::FAILURE;
         }
         $this->line(sprintf('  eslesen: %s  loss=%.4f (beklenen ~0.237)', $played['move'], $played['loss'] ?? -1));
-        if ($played['move'] === '24/20' && abs(($played['loss'] ?? 0) - 0.237) < 0.03) {
-            $this->info('BASARILI: backend -> gnubg analiz + oynanan-hamle kaybi (PR cekirdegi) dogru.');
+        if ($played['move'] !== '24/20' || abs(($played['loss'] ?? 0) - 0.237) >= 0.03) {
+            $this->warn('Oynanan-hamle kaybi beklenenden farkli. Eslestirme kontrol.');
 
-            return self::SUCCESS;
+            return self::FAILURE;
         }
-        $this->warn('Oynanan-hamle kaybi beklenenden farkli. Eslestirme kontrol.');
+        $this->info('Checker PR cekirdegi: OK');
 
-        return self::FAILURE;
+        // KÜP (cube) TEŞHİSİ: zarsiz pozisyon -> gnubg cube analizini dondurur. Bu YAPIYI gorup
+        // cube PR'i (double/take/pass equity kaybi) implemente edecegim. (Yaris pozisyonu, beyaz onde.)
+        $this->line('');
+        $this->line('KUP analiz yapisi (cube PR icin — bu ciktiyi paylas):');
+        $cube = $gnubg->analyze([
+            'points' => [2, 2, 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, -3, -3, -2, -2, -2],
+            'turn' => 'white', 'dice' => [], 'matchLength' => 0, 'plies' => 2,
+        ]);
+        $this->line(json_encode($cube['result'] ?? $cube));
+
+        $this->info('BASARILI. (Kup yapisini paylas -> cube PR eklenecek.)');
+
+        return self::SUCCESS;
     }
 }
