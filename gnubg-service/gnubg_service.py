@@ -508,6 +508,36 @@ def _maptest():
     return {"maptest": out}
 
 
+def _cubetest(pos):
+    """KÜP kararı teşhisi: pozisyonu kur, gnubg'nin kup analizini FARKLI yollarla dene, HER birinin
+    ham sonucunu/HATASINI döndür (böylece cube PR'ı doğru yapıyla yazarım). /analyze hatayı yutuyordu."""
+    out = {}
+    try:
+        gid = structured_to_gnubgid(pos)
+        out["gnubgid"] = gid
+        gnubg.setgnubgid(gid)
+    except Exception as e:
+        out["setgnubgid_err"] = str(e)
+        return out
+    # 1) düz hint()
+    try:
+        out["hint"] = _safe(gnubg.hint())
+    except Exception as e:
+        out["hint_err"] = str(e)
+    # 2) 'hint' komutu (metin) — kup analizini gösterebilir
+    try:
+        out["cmd_hint"] = _safe(gnubg.command("hint"))
+    except Exception as e:
+        out["cmd_hint_err"] = str(e)
+    # 3) posinfo/cubeinfo (durumu görmek için)
+    try:
+        out["posinfo"] = _safe(gnubg.posinfo())
+        out["cubeinfo"] = _safe(gnubg.cubeinfo())
+    except Exception as e:
+        out["info_err"] = str(e)
+    return out
+
+
 def _initial_pos():
     return {
         "points": [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
@@ -633,6 +663,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, _selfplay(
                     white_error=float(data.get("white_error", 0.35)),
                     plies=int(data.get("plies", 1))))
+            if self.path == "/cubetest":
+                if not data.get("points"):
+                    return self._send(400, {"error": "points gerekli"})
+                return self._send(200, _cubetest(data))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})

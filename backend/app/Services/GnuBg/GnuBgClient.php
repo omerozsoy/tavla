@@ -75,6 +75,21 @@ class GnuBgClient
         }
     }
 
+    /** KÜP teşhisi: pozisyonun gnubg cube analizini (farklı yollarla + hata detayı) döndürür. */
+    public function cubetest(array $position): ?array
+    {
+        try {
+            $resp = Http::timeout((int) config('gnubg.timeout', 20))
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/cubetest'), $position);
+
+            return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
