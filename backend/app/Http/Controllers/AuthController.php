@@ -468,6 +468,18 @@ class AuthController extends Controller
         }
         $result = \App\Models\MatchResult::create($mr);
 
+        // GNU-only SHADOW PR: gnubg PR'ını ARKA PLANDA (database kuyruğu) hesapla + gnubg_* kolonlarına
+        // yaz + client PR ile logla. Gösterilen/otoriter PR'a DOKUNMAZ. Yalnız pr_mode!=off + log varsa.
+        // onConnection('database') -> global QUEUE_CONNECTION'a dokunmadan queue worker'a düşer.
+        if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
+            && ! empty($mr['log'])) {
+            try {
+                \App\Jobs\AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('gnubg PR dispatch hata', ['err' => $e->getMessage()]);
+            }
+        }
+
         // WXP odullendir (kazanan + desteklenen tur/uzunluk). Idempotent + transaction-safe.
         // Ayri, bagimsiz domain akisi: WXP source of truth ledger'dir (rating'den bagimsiz).
         try {
