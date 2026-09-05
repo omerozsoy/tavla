@@ -337,13 +337,105 @@ def _set_plies(plies):
         pass
 
 
+_SIGN = {"white": 1, "black": -1}
+
+
+def _apply_our_steps(points, bar, steps, turn):
+    """Oynanan Step[]'i (bizim format: from 0-23|'bar', to 0-23|'off') uygula -> yeni points+bar.
+    Vurus (tek rakip tasi) dahil. points: 24 isaretli (beyaz +, siyah -)."""
+    pts = [int(x) for x in points]
+    b = {"white": int((bar or {}).get("white", 0) or 0), "black": int((bar or {}).get("black", 0) or 0)}
+    sign = _SIGN[turn]
+    opp = "black" if turn == "white" else "white"
+    for st in steps:
+        frm = st.get("from")
+        to = st.get("to")
+        if frm == "bar":
+            b[turn] -= 1
+        else:
+            pts[int(frm)] -= sign
+        if to != "off":
+            t = int(to)
+            if pts[t] == -sign:  # tek rakip tasi -> vur (bara gonder)
+                pts[t] = 0
+                b[opp] += 1
+            pts[t] += sign
+    return pts, b
+
+
+def _points_to_boards(pts, bar):
+    white = [0] * 25
+    black = [0] * 25
+    for p in range(24):
+        v = int(pts[p])
+        if v > 0:
+            white[p] = v
+        elif v < 0:
+            black[23 - p] = -v
+    white[24] = int((bar or {}).get("white", 0) or 0)
+    black[24] = int((bar or {}).get("black", 0) or 0)
+    return white, black
+
+
+def _after_positionid(pos, steps):
+    """Oynanan hamleden SONRAKI pozisyonun gnubg positionid'i (sira rakibe gecti)."""
+    turn = pos.get("turn", "white")
+    pts, bar = _apply_our_steps(pos["points"], pos.get("bar", {}), steps, turn)
+    white, black = _points_to_boards(pts, bar)
+    opp_is_white = (turn == "black")  # yeni on-roll = rakip
+    onroll = white if opp_is_white else black
+    other = black if opp_is_white else white
+    return encode_position_id((onroll, other))
+
+
+def _match_played(gid, dice, cand, played_rid):
+    """Her adayi gnubg'de kendi notasyonuyla oynat, sonuc positionid'i played_rid ile eslesen adayi bul."""
+    for c in cand:
+        mv = c.get("move")
+        if not mv:
+            continue
+        try:
+            gnubg.setgnubgid(gid)
+            if len(dice) >= 2:
+                gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
+            gnubg.command("move " + mv)
+            if gnubg.positionid() == played_rid:
+                return c
+        except Exception:
+            continue
+    return None
+
+
 def _analyze(pos):
     """Yapisal konum -> gnubgid -> setgnubgid -> (ply) -> hint. Ham hint + gnubgid doner.
-    Normalizasyon (checker EMG eqdiff / cube cubeful) backend GnuBgAdapter'da yapilir."""
+    playedSteps verilirse oynanan adayi (sonuc-pozisyonu eslestirmesiyle) bulur ve equity kaybini
+    ekler (PR icin: loss = best_eq - played_eq, EMG). Normalizasyon backend GnuBgAdapter'da."""
     gid = structured_to_gnubgid(pos)
     gnubg.setgnubgid(gid)
     _set_plies(pos.get("plies"))
-    return {"gnubgid": gid, "result": gnubg.hint()}
+    hint = gnubg.hint()
+    out = {"gnubgid": gid, "result": hint}
+
+    steps = pos.get("playedSteps")
+    if steps and isinstance(hint, dict) and hint.get("hint"):
+        cand = hint["hint"]
+        best_eq = cand[0].get("equity")
+        try:
+            played_rid = _after_positionid(pos, steps)
+        except Exception as e:
+            out["played"] = {"error": "apply-failed: %s" % e}
+            return out
+        matched = _match_played(gid, pos.get("dice", []) or [], cand, played_rid)
+        gnubg.setgnubgid(gid)  # durumu geri yukle
+        if matched is not None:
+            peq = matched.get("equity") or 0.0
+            out["played"] = {
+                "move": matched.get("move"), "equity": peq, "eqdiff": matched.get("eqdiff"),
+                "loss": max(0.0, (best_eq or 0.0) - peq),
+            }
+        else:
+            out["played"] = {"matched": False, "played_positionid": played_rid}
+    return out
 
 
 def _maptest():
@@ -362,17 +454,26 @@ def _maptest():
             _set_plies(2)
             h = gnubg.hint()
             cand = h.get("hint") if isinstance(h, dict) else None
-            board = gnubg.board()
             out.append({
-                "name": t["name"], "gnubgid": gid,
-                "best_move": (cand[0].get("move") if cand else None),
-                "board_back": [list(board[0]), list(board[1])],
-                "top3": [{"move": c.get("move"), "equity": c.get("equity"), "eqdiff": c.get("eqdiff")}
-                         for c in (cand or [])[:3]],
+                "name": t["name"], "best_move": (cand[0].get("move") if cand else None),
+                "expected_best": "8/5 6/5",
             })
         except Exception as e:
             out.append({"name": t["name"], "error": str(e)})
-    return {"maptest": out, "expected_best": "8/5 6/5"}
+
+    # Oynanan-hamle eslestirme + kayip (PR cekirdegi): 8/5 6/5 -> kayip ~0; 24/20 -> ~0.237.
+    played_tests = [
+        ("oynanan 8/5 6/5 (en iyi)", [{"from": 7, "to": 4, "die": 3}, {"from": 5, "to": 4, "die": 1}], "8/5 6/5"),
+        ("oynanan 24/20 (zayif)", [{"from": 23, "to": 22, "die": 1}, {"from": 22, "to": 19, "die": 3}], "24/20"),
+    ]
+    for name, steps, exp_move in played_tests:
+        try:
+            res = _analyze({"points": opening, "turn": "white", "dice": [3, 1],
+                            "matchLength": 5, "plies": 2, "playedSteps": steps})
+            out.append({"name": name, "expected_move": exp_move, "played": res.get("played")})
+        except Exception as e:
+            out.append({"name": name, "error": str(e)})
+    return {"maptest": out}
 
 
 class Handler(BaseHTTPRequestHandler):
