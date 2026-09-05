@@ -50,6 +50,31 @@ class GnuBgClient
         }
     }
 
+    /**
+     * Iki bot (gnubg) bir oyun oynar; BIZIM log formatinda karar listesi doner (test/uretim).
+     * ['log'=>[...], 'winner'=>..., 'decisions'=>int] veya null.
+     */
+    public function selfplay(array $params = []): ?array
+    {
+        try {
+            $resp = Http::timeout(180) // self-play ~60 hint -> uzun timeout
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/selfplay'), $params);
+            if (! $resp->ok()) {
+                Log::warning('gnubg selfplay non-ok', ['status' => $resp->status()]);
+
+                return null;
+            }
+
+            return $resp->json();
+        } catch (\Throwable $e) {
+            Log::warning('gnubg selfplay exception', ['msg' => $e->getMessage()]);
+
+            return null;
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
