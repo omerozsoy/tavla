@@ -16,6 +16,7 @@
 import json
 import os
 import random as _random
+import re  # modül düzeyi regex derlemeleri (luck parse) için — eskiden yalnız fonksiyon-içiydi
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 try:
