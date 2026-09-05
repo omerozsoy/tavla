@@ -147,12 +147,43 @@ def _evaluate(gnubgid):
     return {"gnubgid": gnubgid, "evaluate": gnubg.evaluate()}
 
 
+def _match_fields(ci, pi):
+    """cubeinfo()+posinfo() -> encode_match_id alanlari. gnubg: cubeowner -1=merkez(->3),
+    move/turn 0|1, dice [d0,d1], matchto=match uzunlugu, score [s0,s1]."""
+    ci = ci or {}
+    pi = pi or {}
+    cube = ci.get("cube", 1) or 1
+    owner = ci.get("cubeowner", -1)
+    dice = pi.get("dice", [0, 0]) or [0, 0]
+    score = ci.get("score", [0, 0]) or [0, 0]
+    turn = 1 if pi.get("turn", 0) == 1 else 0
+    return {
+        "cube_loglevel": _log2_int(cube),
+        "cube_owner": 3 if owner is None or owner < 0 else int(owner),
+        "player_on_roll": turn,
+        "crawford": 1 if ci.get("crawford") else 0,
+        "game_state": int(pi.get("gamestate", 1) or 0),
+        "player_on_move": turn,
+        "doubled": 1 if pi.get("doubled") else 0,
+        "resigned": int(pi.get("resigned", 0) or 0),
+        "dice0": int(dice[0]) if len(dice) > 0 else 0,
+        "dice1": int(dice[1]) if len(dice) > 1 else 0,
+        "match_length": int(ci.get("matchto", 0) or 0),
+        "score0": int(score[0]) if len(score) > 0 else 0,
+        "score1": int(score[1]) if len(score) > 1 else 0,
+    }
+
+
 def _selftest(walk=40):
-    """Encoder'ı gnubg'nin KENDİ positionid()'siyle doğrula: bir maçı gerçek pozisyonlarla
-    yürü, her adımda encode_position_id(board()) == positionid() mi bak. İlk uyuşmazlığı +
-    cubeinfo()/posinfo() ham yapısını (MatchID encoder tasarımı için) döndür."""
+    """Encoder dogrulama: bir maci gercek pozisyonlarla yuru; her adimda
+      (1) PositionID: encode_position_id(board()) == positionid() ?
+      (2) MatchID round-trip: setgnubgid(pid + ':' + kendi_matchid) sonrasi gnubg ayni
+          kup/skor/sira/zar'i geri okuyor mu ? (byte-exact sart degil; fonksiyonel dogruluk)
+    Ilk uyusmazligi + ham yapilari dondurur."""
     pos_tested = pos_ok = 0
-    first_mismatch = None
+    pos_first_mismatch = None
+    mid_tested = mid_rt_ok = mid_exact = 0
+    mid_first_mismatch = None
     raw_dumps = None
     samples = []
     try:
@@ -166,32 +197,63 @@ def _selftest(walk=40):
             gnubg.command("set dice %d %d" % (_random.randint(1, 6), _random.randint(1, 6)))
             board = gnubg.board()
             pid = gnubg.positionid()
-            mine = encode_position_id(board)
+            orig_gid = gnubg.gnubgid()
+            ci = gnubg.cubeinfo()
+            pi = gnubg.posinfo()
+
+            # (1) PositionID encoder
+            mine_pid = encode_position_id(board)
             pos_tested += 1
-            if mine == pid:
+            if mine_pid == pid:
                 pos_ok += 1
-            elif first_mismatch is None:
-                first_mismatch = {
-                    "step": step, "gnubg_positionid": pid, "mine": mine,
-                    "board": [list(board[0]), list(board[1])],
+            elif pos_first_mismatch is None:
+                pos_first_mismatch = {"step": step, "gnubg": pid, "mine": mine_pid,
+                                      "board": [list(board[0]), list(board[1])]}
+
+            # (2) MatchID encoder (round-trip + byte-exact bilgi amacli)
+            fields = _match_fields(ci, pi)
+            mine_mid = encode_match_id(fields)
+            gnubg_mid = gnubg.matchid()
+            mid_tested += 1
+            if mine_mid == gnubg_mid:
+                mid_exact += 1
+            rt_ok = True
+            rt_detail = None
+            try:
+                gnubg.setgnubgid(pid + ":" + mine_mid)
+                ci2 = gnubg.cubeinfo()
+                pi2 = gnubg.posinfo()
+                checks = {
+                    "cube": ci2.get("cube") == ci.get("cube"),
+                    "cubeowner": ci2.get("cubeowner") == ci.get("cubeowner"),
+                    "matchto": ci2.get("matchto") == ci.get("matchto"),
+                    "score": list(ci2.get("score", [])) == list(ci.get("score", [])),
+                    "turn": pi2.get("turn") == pi.get("turn"),
+                    "dice": sorted(pi2.get("dice", [])) == sorted(pi.get("dice", [])),
+                    "crawford": ci2.get("crawford") == ci.get("crawford"),
                 }
+                rt_ok = all(checks.values())
+                if not rt_ok:
+                    rt_detail = {"checks": checks, "read_cubeinfo": _safe(ci2), "read_posinfo": _safe(pi2)}
+            except Exception as e:
+                rt_ok = False
+                rt_detail = {"error": str(e)}
+            finally:
+                gnubg.setgnubgid(orig_gid)  # yuruyusu bozma -> durumu geri yukle
+            if rt_ok:
+                mid_rt_ok += 1
+            elif mid_first_mismatch is None:
+                mid_first_mismatch = {"step": step, "fields": fields, "mine": mine_mid,
+                                      "gnubg": gnubg_mid, "detail": rt_detail}
+
             if raw_dumps is None:
-                ci = pi = None
-                try:
-                    ci = gnubg.cubeinfo()
-                except Exception:
-                    pass
-                try:
-                    pi = gnubg.posinfo()
-                except Exception:
-                    pass
                 raw_dumps = {
-                    "positionid": pid, "matchid": gnubg.matchid(), "gnubgid": gnubg.gnubgid(),
-                    "board": [list(board[0]), list(board[1])],
-                    "cubeinfo": _safe(ci), "posinfo": _safe(pi),
+                    "positionid": pid, "matchid": gnubg_mid, "mine_matchid": mine_mid,
+                    "gnubgid": orig_gid, "board": [list(board[0]), list(board[1])],
+                    "cubeinfo": _safe(ci), "posinfo": _safe(pi), "fields": fields,
                 }
             if len(samples) < 4:
-                samples.append(gnubg.gnubgid())
+                samples.append(orig_gid)
             gnubg.command("play")
         except Exception:
             try:
@@ -199,7 +261,9 @@ def _selftest(walk=40):
             except Exception:
                 pass
     return {
-        "position_encoder": {"tested": pos_tested, "passed": pos_ok, "first_mismatch": first_mismatch},
+        "position_encoder": {"tested": pos_tested, "passed": pos_ok, "first_mismatch": pos_first_mismatch},
+        "match_encoder": {"tested": mid_tested, "roundtrip_passed": mid_rt_ok,
+                          "byte_exact": mid_exact, "first_mismatch": mid_first_mismatch},
         "raw_dumps": raw_dumps,
         "samples": samples,
     }
