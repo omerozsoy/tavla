@@ -7,8 +7,9 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-// Bahisli oda settle GUVENLIGI: coin YALNIZCA iki oyuncunun tutarli beyaninda tasinir.
-// (state client-yazilabilir oldugu icin tek tarafli/celiskili beyanda odeme yapilmaz.)
+// Bahisli oda settle GUVENLIGI (C1): coin YALNIZCA SUNUCU-OTORITER sonuctan (server_match)
+// transfer edilir. Legacy mutual-consent (istemci beyani) ile TRANSFER YOK -> iki-hesap collusion
+// (kaybeden 'lost' + kazanan 'won' anlasmasi) engellenir. Sunucu sonucu yoksa odeme pending kalir.
 class RoomSettleTest extends TestCase
 {
     use RefreshDatabase;
@@ -63,15 +64,41 @@ class RoomSettleTest extends TestCase
         $this->assertEquals(100, $p2->fresh()->coins);
     }
 
-    public function test_mutual_agreement_transfers_coins(): void
+    public function test_mutual_agreement_does_not_transfer_staked(): void
     {
+        // GÜVENLİK (C1): BAHİSLİ maçta legacy mutual-consent ile coin TRANSFER EDİLMEZ. p1 'won' +
+        // p2 'lost' beyan etse bile (collusion) sunucu-otoriter sonuç (server_match) olmadan ödeme
+        // PENDING kalır. Böylece iki hesap anlaşıp coin aktaramaz.
         $p1 = $this->makeUser('carol', 100);
         $p2 = $this->makeUser('dave', 100);
-        $room = $this->makeRoom($p1, $p2, 50);
+        $room = $this->makeRoom($p1, $p2, 50); // authoritative değil, server_match yok
 
-        // p1 kazandi + p2 kaybetti -> mutabakat -> 50 coin transfer.
         $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])->assertOk();
         $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok2', 'won' => false])
+            ->assertOk()
+            ->assertJson(['ok' => false]); // transfer YOK
+
+        $this->assertEquals(100, $p1->fresh()->coins);
+        $this->assertEquals(100, $p2->fresh()->coins);
+    }
+
+    public function test_authoritative_settle_transfers_coins(): void
+    {
+        // Bahisli maçta coin YALNIZCA sunucu-otoriter sonuçtan (server_match done+winner) transfer
+        // edilir — istemci mutabakatına gerek yok, forge edilemez.
+        $p1 = $this->makeUser('carol', 100);
+        $p2 = $this->makeUser('dave', 100);
+        $room = Room::create([
+            'code' => 'TESTA',
+            'p1_token' => 'tok1', 'p1_user_id' => $p1->id, 'p1_name' => $p1->nickname,
+            'p2_token' => 'tok2', 'p2_user_id' => $p2->id, 'p2_name' => $p2->nickname,
+            'status' => 'playing', 'stake' => 50, 'bet_pct' => 0, 'version' => 1, 'settled' => false,
+            'authoritative' => true,
+            'server_match' => ['done' => true, 'winner' => 'white'], // p1 (beyaz) kazandı
+        ]);
+
+        // Tek settle çağrısı yeter: kazanan server_match'ten gelir.
+        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])
             ->assertOk()
             ->assertJson(['ok' => true]);
 

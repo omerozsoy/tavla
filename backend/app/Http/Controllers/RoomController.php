@@ -367,6 +367,8 @@ class RoomController extends Controller
     // Celiskili (ikisi de 'won') veya tek tarafli beyanda null -> odeme pending kalir.
     private function resolveWinnerSlot(Room $room): ?string
     {
+        $staked = ((int) $room->stake) > 0 || ((int) $room->bet_pct) > 0;
+
         // SUNUCU-OTORİTER MAÇ (Faz 3): authoritative oda ise kazanan SUNUCUNUN hesabından
         // (server_match) gelir — istemci mutabakatına GEREK YOK, forge EDİLEMEZ. Maç bitmişse.
         if ($room->authoritative && is_array($room->server_match)) {
@@ -381,7 +383,15 @@ class RoomController extends Controller
             return null; // maç bitmedi -> ödeme yok
         }
 
-        // Legacy (authoritative=false): iki-taraf mutabakatı (istemci beyanı).
+        // PARA GÜVENLİĞİ (C1): BAHİSLİ maçta ASLA istemci mutabakatına (legacy) düşme — iki hesap
+        // anlaşıp coin transferi yapamasın. Sunucu-otoriter sonuç yoksa ödeme PENDING kalır
+        // (coin transferi YAPILMAZ; stuck > çalınmış). Bahisli odalar zaten authoritative kurulur
+        // (shouldAuthoritative), bu yalnızca güvenlik ağı (server_match eksikse legacy'ye kaçma).
+        if ($staked) {
+            return null;
+        }
+
+        // Legacy (yalnız ÜCRETSİZ oda): iki-taraf mutabakatı (istemci beyanı).
         $r1 = $room->p1_result;
         $r2 = $room->p2_result;
 
@@ -1128,12 +1138,20 @@ class RoomController extends Controller
      */
     private function shouldAuthoritative(?int $u1, ?int $u2, bool $staked): bool
     {
+        // PARA GÜVENLİĞİ (C1): bahisli oda (stake/bet) HER ZAMAN authoritative — global flag
+        // KAPALI olsa bile. Böylece settle mutual-consent'e düşemez; iki-hesap collusion ile
+        // coin transferi (kaybeden 'lost' + kazanan 'won' anlaşması) KAPANIR. Kazanan yalnız
+        // sunucunun server_match'inden gelir (forge edilemez).
+        if ($staked) {
+            return true;
+        }
+
         $allow = config('game.authoritative_users', []);
         if ($u1 && $u2 && $allow && in_array((int) $u1, $allow, true) && in_array((int) $u2, $allow, true)) {
             return true;
         }
 
-        // GLOBAL açıksa bahisli/ücretsiz AYRIMI YOK -> her eşleşme authoritative.
+        // GLOBAL açıksa ücretsiz maçlar da authoritative.
         return (bool) config('game.server_authoritative', false);
     }
 
