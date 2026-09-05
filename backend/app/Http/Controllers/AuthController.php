@@ -322,12 +322,18 @@ class AuthController extends Controller
                 ->where('user_id', $user->id)
                 ->first();
             if ($existing) {
+                // Rakip satırı (varsa) -> tutarlı sunucu-otoriter PR + luck çifti.
+                $oppExisting = \App\Models\MatchResult::where('room_code', $roomCode)
+                    ->where('user_id', '!=', $user->id)->latest('id')->first();
+
                 return response()->json([
                     'rating' => $user->rating ?? 1500,
                     'user' => $user,
                     'achievements' => [],
                     'pr_self' => $existing->pr,
-                    'pr_opponent' => null,
+                    'pr_opponent' => $oppExisting?->pr,
+                    'luck_self' => $existing->luck,
+                    'luck_opp' => $oppExisting?->luck,
                 ]);
             }
         }
@@ -559,6 +565,7 @@ class AuthController extends Controller
         // rakip once raporladiysa bizim opponent_pr'imizi onun pr'i yap; ayrica onun satirinda
         // bizim pr'imizi opponent_pr olarak isle (o da bizi dogru gorsun).
         $opponentPr = null;
+        $opponentLuck = null; // rakibin HAM luck'ı (kendi renginden) — sunucu-otoriter sans için
         try {
             if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
                 $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
@@ -567,6 +574,7 @@ class AuthController extends Controller
                     ->first();
                 if ($oppRow) {
                     $opponentPr = $oppRow->pr;
+                    $opponentLuck = $oppRow->luck;
                     if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
                         $result->opponent_pr = $opponentPr;
                         $result->save();
@@ -585,6 +593,8 @@ class AuthController extends Controller
             'achievements' => $unlocked,
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
+            'luck_self' => $result->luck,      // kendi HAM luck'ım (bu maçta sakladığım renk-luck)
+            'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
         ]);
     }
 
@@ -740,6 +750,11 @@ class AuthController extends Controller
         return response()->json([
             'self' => $mine?->pr,
             'opponent' => $opp?->pr,
+            // Sans (luck) SUNUCU-OTORITER: her oyuncu KENDİ renginin HAM luck'ını raporlar
+            // (kendi ONNX'inden — aynı zar+pozisyonla merkezî hesapla özdeş). İki istemci de
+            // buradan AYNI beyaz+siyah ham çifti okur -> net (kazanan−kaybeden) TUTARLI görünür.
+            'luck_self' => $mine?->luck,
+            'luck_opp' => $opp?->luck,
         ]);
     }
 

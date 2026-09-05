@@ -222,4 +222,50 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(1, (int) $black->fresh()->wins);
         $this->assertSame(0, (int) $black->fresh()->losses);
     }
+
+    // SUNUCU-OTORITER SANS (luck): her oyuncu KENDİ renginin HAM luck'ını raporlar; /me/match-pr
+    // iki oyuncuya da AYNI çifti verir (self+opp). Çapraz-tutarlı: A'nın self'i = B'nin opp'u.
+    // Böylece MatchResult net'i (kazanan−kaybeden) iki ekranda ÖZDEŞ -> "farklı şans" bug'ı biter.
+    public function test_luck_is_cross_client_consistent(): void
+    {
+        $white = $this->makeUser('wluck'); // p1
+        $black = $this->makeUser('bluck'); // p2
+        $this->makeFinishedRoom($white, $black);
+
+        // Beyaz kendi HAM luck'ını (0.42) raporlar.
+        Sanctum::actingAs($white);
+        $this->postJson('/api/rating/report', [
+            'won' => false, 'opponent_rating' => 1500, 'ranked' => true,
+            'room_code' => 'AUTHR', 'luck' => 0.42,
+        ])->assertOk();
+
+        // Siyah kendi HAM luck'ını (-0.17) raporlar.
+        Sanctum::actingAs($black);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true,
+            'room_code' => 'AUTHR', 'luck' => -0.17,
+        ])->assertOk();
+
+        // Beyaz gözünden: self=0.42 (kendi), opp=-0.17 (siyahın).
+        Sanctum::actingAs($white);
+        $wPair = $this->getJson('/api/me/match-pr?room_code=AUTHR')->assertOk()->json();
+        $this->assertEqualsWithDelta(0.42, $wPair['luck_self'], 1e-6);
+        $this->assertEqualsWithDelta(-0.17, $wPair['luck_opp'], 1e-6);
+
+        // Siyah gözünden: self=-0.17 (kendi), opp=0.42 (beyazın).
+        Sanctum::actingAs($black);
+        $bPair = $this->getJson('/api/me/match-pr?room_code=AUTHR')->assertOk()->json();
+        $this->assertEqualsWithDelta(-0.17, $bPair['luck_self'], 1e-6);
+        $this->assertEqualsWithDelta(0.42, $bPair['luck_opp'], 1e-6);
+
+        // ÇAPRAZ TUTARLILIK: A.self == B.opp ve A.opp == B.self (renk-keyli tek kaynak).
+        $this->assertEqualsWithDelta($wPair['luck_self'], $bPair['luck_opp'], 1e-6);
+        $this->assertEqualsWithDelta($wPair['luck_opp'], $bPair['luck_self'], 1e-6);
+
+        // Gösterilen net (white − black) İKİ ekranda özdeş: 0.42 − (−0.17) = 0.59.
+        $netWhiteScreen = $wPair['luck_self'] - $wPair['luck_opp']; // beyaz: white−black
+        $netBlackScreen = $bPair['luck_opp'] - $bPair['luck_self']; // siyah: white−black
+        $this->assertEqualsWithDelta(0.59, $netWhiteScreen, 1e-6);
+        $this->assertEqualsWithDelta($netWhiteScreen, $netBlackScreen, 1e-6);
+    }
 }

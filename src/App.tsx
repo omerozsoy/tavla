@@ -971,6 +971,10 @@ export default function App() {
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
   // log'undan hesaplanir -> iki oyuncu AYNI degerleri gorur. null ise lokal prOf'a duser.
   const [serverPr, setServerPr] = useState<{ self: number | null; opp: number | null } | null>(null)
+  // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
+  // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
+  // Renk-anahtarlı (peer snapshot'a güvenmez). null iken lokal prLuck'a düşer.
+  const [serverLuck, setServerLuck] = useState<{ white: number | null; black: number | null } | null>(null)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -1283,6 +1287,7 @@ export default function App() {
     }
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
     setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
+    setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
   }
 
   // PR: bu hamlede wildbg'ye gore kaybedilen equity'yi kaydet (senkron; tur basi analizini kullanir)
@@ -2532,7 +2537,7 @@ export default function App() {
           oppRating,
           match.target,
           prRef(myColor),
-          prLuck[myColor] - prLuck[opponent(myColor)], // goreceli sans (zero-sum)
+          prLuck[myColor], // HAM kendi-renk luck -> sunucu iki oyuncunun hamını saklar, net'i istemci hesaplar (tutarlı)
           match.score[myColor],
           match.score[opponent(myColor)],
           room?.oppName ?? null,
@@ -2562,7 +2567,7 @@ export default function App() {
           oppRating,
           match.target,
           prRef(myColor),
-          prLuck[myColor] - prLuck[opponent(myColor)],
+          prLuck[myColor], // HAM kendi-renk luck (bkz doReport) — pending retry de aynı semantik
           match.score[myColor],
           match.score[opponent(myColor)],
           room?.oppName ?? null,
@@ -2581,13 +2586,28 @@ export default function App() {
         const code = room?.code ?? null
         let oppPr = r.pr_opponent ?? null
         setServerPr({ self: r.pr_self ?? null, opp: oppPr })
-        if (oppPr == null && code) {
-          for (let i = 0; i < 8 && oppPr == null; i++) {
+        // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
+        // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
+        const setLuckPair = (selfL?: number | null, oppL?: number | null) =>
+          setServerLuck((prev) => {
+            const next = { white: prev?.white ?? null, black: prev?.black ?? null }
+            if (selfL != null) next[myColor] = selfL
+            if (oppL != null) next[opponent(myColor)] = oppL
+            return next
+          })
+        setLuckPair(r.luck_self, r.luck_opp)
+        let oppLuckDone = r.luck_opp != null
+        if ((oppPr == null || !oppLuckDone) && code) {
+          for (let i = 0; i < 8 && (oppPr == null || !oppLuckDone); i++) {
             await new Promise((res) => setTimeout(res, 1500))
             const pair = await matchPr(code)
             if (pair.opponent != null) {
               oppPr = pair.opponent
               setServerPr({ self: pair.self ?? r!.pr_self ?? null, opp: pair.opponent })
+            }
+            if (pair.luck_opp != null || pair.luck_self != null) {
+              setLuckPair(pair.luck_self, pair.luck_opp)
+              if (pair.luck_opp != null) oppLuckDone = true
             }
           }
         }
@@ -4040,8 +4060,11 @@ export default function App() {
   // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
   // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
   // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
-  // Tam çapraz-istemci tutarlılık sunucu-otoriter luck (GNU orchestrator) ile gelecek.
+  // ÇAPRAZ-İSTEMCİ TUTARLILIK: sunucu-otoriter ham renk-luck varsa onu kullan (iki oyuncu da
+  // backend'den AYNI white+black çiftini okur -> MatchResult net'i özdeş). Yoksa lokal prLuck'a
+  // düş (online'da rakip henüz hesaplanmadıysa null -> MatchResult negatifiyle sıfır-toplam).
   const luckOf = (c: Player): number | null => {
+    if (serverLuck && serverLuck[c] != null) return serverLuck[c]
     if (online && c !== myColor && prStats[c].decisions === 0) return null
     return prLuck[c]
   }

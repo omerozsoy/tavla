@@ -1205,6 +1205,8 @@ export async function reportRating(
   achievements?: UnlockedAchievement[]
   pr_self?: number | null // sunucu-otoriter kendi PR (kendi log'undan)
   pr_opponent?: number | null // rakibin sunucu-otoriter PR'i (varsa)
+  luck_self?: number | null // kendi HAM luck'ım (renk-luck) — sunucu-otoriter sans
+  luck_opp?: number | null // rakibin HAM luck'ı (varsa) -> iki ekranda tutarlı net
 }> {
   return req('/rating/report', {
     method: 'POST',
@@ -1236,7 +1238,12 @@ export async function reportRating(
 // sonuc ekrani bunu okur. Rakip henuz raporlamadiysa opponent null gelebilir.
 export async function matchPr(
   roomCode: string,
-): Promise<{ self: number | null; opponent: number | null }> {
+): Promise<{
+  self: number | null
+  opponent: number | null
+  luck_self?: number | null
+  luck_opp?: number | null
+}> {
   try {
     return await req(`/me/match-pr?room_code=${encodeURIComponent(roomCode)}`)
   } catch {
