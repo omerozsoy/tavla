@@ -302,28 +302,32 @@ def structured_to_gnubgid(pos):
     onroll_white = (turn == "white")
     onroll = white if onroll_white else black
     opp = black if onroll_white else white
-    posid = encode_position_id((onroll, opp))  # on-roll = gnubg oyuncu 0
+    posid = encode_position_id((onroll, opp))  # gnubg positionid = on-roll perspektifi (slot0=on-roll)
 
+    # matchid PLAYER-INDEX tabanlı: player0=beyaz, player1=siyah. On-roll'ı fMove/fTurn BELİRTİR.
+    # BUG FIX 2026-09-05: eskiden fMove HEP 0'dı -> beyaz on-roll'da tesadüfen doğru (beyaz=oyuncu0)
+    # ama SİYAH on-roll'da gnubg pozisyonu on-roll perspektifinde okuyup YANLIŞ oyuncuyu (beyazı)
+    # analiz ediyordu -> siyahın hamleleri eşleşmiyordu (no_match). Beyaz etkilenmez.
+    on_roll_idx = 0 if onroll_white else 1
     cube = pos.get("cube", {}) or {}
     owner = cube.get("owner", None)
-    cube_owner = 3 if owner is None else (0 if owner == turn else 1)
+    cube_owner = 3 if owner is None else (0 if owner == "white" else 1)
     dice = pos.get("dice", []) or []
     score = pos.get("score", {}) or {}
-    opp_color = "black" if onroll_white else "white"
     fields = {
         "cube_loglevel": _log2_int(int(cube.get("value", 1) or 1)),
         "cube_owner": cube_owner,
-        "player_on_roll": 0,
+        "player_on_roll": on_roll_idx,
         "crawford": 1 if pos.get("crawford") else 0,
         "game_state": 1,
-        "player_on_move": 0,
+        "player_on_move": on_roll_idx,
         "doubled": 0,
         "resigned": 0,
         "dice0": int(dice[0]) if len(dice) > 0 else 0,
         "dice1": int(dice[1]) if len(dice) > 1 else 0,
         "match_length": int(pos.get("matchLength", 0) or 0),
-        "score0": int(score.get(turn, 0) or 0),
-        "score1": int(score.get(opp_color, 0) or 0),
+        "score0": int(score.get("white", 0) or 0),
+        "score1": int(score.get("black", 0) or 0),
     }
     return posid + ":" + encode_match_id(fields)
 
