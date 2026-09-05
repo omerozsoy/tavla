@@ -48,11 +48,18 @@ class GnubgPr extends Command
         $r = $orch->checkerPr($log, $player, 0, 2); // v1: money temeli
 
         $this->line('');
-        $this->line('gnubg checker PR : '.($r['pr'] !== null ? round($r['pr'], 2) : 'null')
+        $this->line('gnubg checker PR : '.round($r['pr'], 2)
             ."  (sayilan {$r['decisions']}, degerlendirilen {$r['evaluated']}, atlanan {$r['skipped']})");
+        $this->line('  strict='.($r['strictPr'] !== null ? round($r['strictPr'], 2) : '-')
+            .'  loose='.($r['loosePr'] !== null ? round($r['loosePr'], 2) : '-'));
         $this->line('client PR (kayit): '.($mr->pr ?? 'null'));
 
-        // Ilk birkac karari goster (goz kontrolu).
+        // Atlama teshisi: neden atlandi + ilk atlanan girdinin yapisi.
+        if ($r['skipped'] > 0) {
+            $this->warn('Atlama sebepleri: '.json_encode($r['skipReasons']));
+            $this->warn('Ilk atlanan: '.json_encode($r['firstSkip']));
+        }
+
         foreach (array_slice($r['perDecision'], 0, 8) as $i => $d) {
             $this->line(sprintf('  #%-2d %-16s loss=%.4f %s', $i + 1, $d['move'] ?? '?', $d['loss'], $d['counts'] ? '' : '(sayilmaz)'));
         }
