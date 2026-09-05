@@ -30,10 +30,13 @@ class AnalysisOrchestrator
     public function checkerPr(array $log, string $player, int $matchLength = 0, int $plies = 2): array
     {
         $loss = 0.0;
+        $allLoss = 0.0; // TUM degerlendirilen kararlarin loss'u (loose PR yedegi -> PR asla null olmaz)
         $decisions = 0;
         $evaluated = 0;
         $skipped = 0;
         $per = [];
+        $reasons = ['no_content' => 0, 'gnubg_null' => 0, 'no_match' => 0];
+        $firstSkip = null;
 
         foreach ($log as $e) {
             if (($e['player'] ?? null) !== $player) {
@@ -44,6 +47,13 @@ class AnalysisOrchestrator
             }
             if (empty($e['pos']) || empty($e['playedSteps']) || empty($e['dice'])) {
                 $skipped++;
+                $reasons['no_content']++;
+                if ($firstSkip === null) {
+                    $firstSkip = ['why' => 'no_content', 'entry_keys' => array_keys($e),
+                        'has_pos' => ! empty($e['pos']), 'has_playedSteps' => ! empty($e['playedSteps']),
+                        'has_dice' => ! empty($e['dice']),
+                        'pos_keys' => isset($e['pos']) && is_array($e['pos']) ? array_keys($e['pos']) : null];
+                }
 
                 continue;
             }
@@ -59,6 +69,10 @@ class AnalysisOrchestrator
             ]);
             if ($res === null) {
                 $skipped++;
+                $reasons['gnubg_null']++;
+                if ($firstSkip === null) {
+                    $firstSkip = ['why' => 'gnubg_null'];
+                }
 
                 continue;
             }
@@ -66,10 +80,16 @@ class AnalysisOrchestrator
             $played = $res['played'] ?? null;
             if (! is_array($played) || ! isset($played['loss'])) {
                 $skipped++;
+                $reasons['no_match']++;
+                if ($firstSkip === null) {
+                    $firstSkip = ['why' => 'no_match', 'played' => $played, 'cand_count' => count($cand),
+                        'dice' => array_values($e['dice']), 'playedSteps' => $e['playedSteps']];
+                }
 
                 continue;
             }
             $evaluated++;
+            $allLoss += (float) $played['loss'];
 
             $legal = count($cand);
             $bestEq = $cand[0]['equity'] ?? 0.0;
@@ -86,14 +106,22 @@ class AnalysisOrchestrator
             ];
         }
 
-        $pr = $decisions > 0 ? ($loss / $decisions) * 500 : null;
+        // DIREKTIF: PR ASLA null olmasin. Once strict (sayilan kararlar); yoksa loose (tum
+        // degerlendirilen kararlar); yoksa 0. Boylece maç-sonu/istatistikte hicbir zaman bos gorunmez.
+        $strictPr = $decisions > 0 ? ($loss / $decisions) * 500 : null;
+        $loosePr = $evaluated > 0 ? ($allLoss / $evaluated) * 500 : null;
+        $pr = $strictPr ?? $loosePr ?? 0.0;
 
         return [
-            'pr' => $pr,
+            'pr' => $pr,                 // asla null
+            'strictPr' => $strictPr,     // seffaflik: sayilan kararlardan (null olabilir)
+            'loosePr' => $loosePr,       // degerlendirilen tum kararlardan (null olabilir)
             'loss' => $loss,
             'decisions' => $decisions,
             'evaluated' => $evaluated,
             'skipped' => $skipped,
+            'skipReasons' => $reasons,
+            'firstSkip' => $firstSkip,
             'perDecision' => $per,
         ];
     }
