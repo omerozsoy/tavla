@@ -641,6 +641,120 @@ def _initial_pos():
     }
 
 
+def _play_auto_match(points_match=1, steps_out=None):
+    """İki gnubg botu (0-ply) verilen uzunlukta bir maç oynar. Oyunları elle ilerletir."""
+    def _cmd(c):
+        try:
+            gnubg.command(c)
+            if steps_out is not None:
+                steps_out.append({"cmd": c, "ok": True})
+        except Exception as e:
+            if steps_out is not None:
+                steps_out.append({"cmd": c, "ok": False, "err": str(e)})
+    _cmd("set player 0 gnubg")
+    _cmd("set player 1 gnubg")
+    _cmd("set player 0 chequer evaluation plies 0")
+    _cmd("set player 1 chequer evaluation plies 0")
+    _cmd("set analysis luck on")
+    _cmd("set analysis moves on")
+    _cmd("set automatic roll on")
+    _cmd("set automatic game off")
+    _cmd("new match %d" % int(points_match))
+    plays = 0
+    for _ in range(4000):
+        try:
+            gnubg.command("play")
+            plays += 1
+        except Exception:
+            try:
+                gnubg.command("new game")
+            except Exception:
+                break
+    return plays
+
+
+_LUCK_TOTAL_RE = re.compile(
+    r"Luck total EMG \(MWC\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)")
+_LUCK_RATE_RE = re.compile(
+    r"Luck rate mEMG \(MWC\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)")
+_PLAYER_HDR_RE = re.compile(r"^Player\s+(\S+)\s+(\S+)\s*$", re.M)
+
+
+def _parse_luck_stats(stats):
+    """'show statistics match' metninden per-oyuncu native luck'ı çıkar. Sütun 0 = ilk oyuncu
+    (.mat'te white/soldaki), sütun 1 = ikinci (black/sağdaki). gnubg native: 0-ply cubeful."""
+    out = {"names": None, "p0": None, "p1": None}
+    if not stats:
+        return out
+    ph = _PLAYER_HDR_RE.search(stats)
+    if ph:
+        out["names"] = [ph.group(1), ph.group(2)]
+    mt = _LUCK_TOTAL_RE.search(stats)
+    mr = _LUCK_RATE_RE.search(stats)
+    if mt:
+        out["p0"] = {"emg_total": float(mt.group(1)), "mwc_total": float(mt.group(2))}
+        out["p1"] = {"emg_total": float(mt.group(3)), "mwc_total": float(mt.group(4))}
+    if mr:
+        if out["p0"] is None:
+            out["p0"] = {}
+        if out["p1"] is None:
+            out["p1"] = {}
+        out["p0"].update({"emg_rate": float(mr.group(1)), "mwc_rate": float(mr.group(2))})
+        out["p1"].update({"emg_rate": float(mr.group(3)), "mwc_rate": float(mr.group(4))})
+    return out
+
+
+def _matchluck(mat_text=None, selftest=False, points_match=1):
+    """.mat maçının gnubg NATIVE luck'ını (per-oyuncu MWC% + EMG) döndürür — Tavlai Luck V1 kaynağı.
+    mat_text verilmezse (selftest) gnubg kendi maçını oynar+export eder+reimport eder -> import+
+    analyse+parse hattını tek çağrıda kanıtlar. Üretimde backend gerçek .mat gönderir."""
+    out = {"import_cmd": None, "luck": None}
+    tmp = "/tmp/tavlai_luck.mat"
+    try:
+        if selftest or not mat_text:
+            steps = []
+            out["selftest_plays"] = _play_auto_match(int(points_match), steps)
+            try:
+                gnubg.command("export match mat " + tmp)
+                with open(tmp, "r") as f:
+                    mat_text = f.read()
+                out["selftest_mat_head"] = mat_text[:400]
+            except Exception as e:
+                out["export_err"] = str(e)
+                return out
+        # Temiz .mat'i diske yaz + import et (birkaç komut varyantı dene).
+        with open(tmp, "w") as f:
+            f.write(mat_text)
+        imported = False
+        last_err = None
+        for cmd in ("import mat " + tmp, "load match " + tmp):
+            try:
+                gnubg.command("new match 1")  # önceki maçı temizle
+            except Exception:
+                pass
+            try:
+                gnubg.command(cmd)
+                imported = True
+                out["import_cmd"] = cmd
+                break
+            except Exception as e:
+                last_err = str(e)
+        if not imported:
+            out["import_err"] = last_err
+            return out
+        try:
+            gnubg.command("set analysis luck on")
+        except Exception:
+            pass
+        gnubg.command("analyse match")
+        stats = _capture_command("show statistics match")
+        out["luck"] = _parse_luck_stats(stats)
+        out["statistics_match"] = stats
+    except Exception as e:
+        out["error"] = str(e)
+    return out
+
+
 def _lucktest(points_match=1):
     """TEŞHİS (üretim değil): gnubg'nin NATIVE 'luck' (şans) çıktısını ölçmek için. İki gnubg botu
     kısa bir maç oynar; 'analyse match' çalışır; sonra HEM insan-okur 'show statistics match' metni
@@ -835,6 +949,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, _rollouttest(data, int(data.get("trials", 36))))
             if self.path == "/lucktest":
                 return self._send(200, _lucktest(int(data.get("points_match", 1))))
+            if self.path == "/matchluck":
+                return self._send(200, _matchluck(
+                    mat_text=data.get("mat"),
+                    selftest=bool(data.get("selftest", False)),
+                    points_match=int(data.get("points_match", 1))))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})
