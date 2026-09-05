@@ -47,12 +47,40 @@ class GnubgTest extends Command
             $this->line(sprintf('  %-16s eq=%+.4f  eqdiff=%+.4f', $c['move'] ?? '?', $c['equity'] ?? 0, $c['eqdiff'] ?? 0));
         }
 
-        if ($best === '8/5 6/5') {
-            $this->info('BASARILI: backend -> gnubg dogru analiz veriyor.');
+        if ($best !== '8/5 6/5') {
+            $this->warn('Beklenen "8/5 6/5" degil. Yonelim/secret kontrol et.');
+
+            return self::FAILURE;
+        }
+        $this->info('En iyi hamle: OK (8/5 6/5)');
+
+        // Oynanan-hamle eslestirme + equity kaybi (PR cekirdegi): zayif 24/20 -> kayip ~0.237.
+        $this->line('');
+        $this->line('Oynanan-hamle testi (24/20 oynanmis):');
+        $res2 = $gnubg->analyze([
+            'points' => $opening,
+            'turn' => 'white',
+            'dice' => [3, 1],
+            'matchLength' => 5,
+            'plies' => 2,
+            'playedSteps' => [
+                ['from' => 23, 'to' => 22, 'die' => 1],
+                ['from' => 22, 'to' => 19, 'die' => 3],
+            ],
+        ]);
+        $played = $res2['played'] ?? null;
+        if (! is_array($played) || ! isset($played['move'])) {
+            $this->error('Oynanan hamle eslestirilemedi: '.json_encode($played));
+
+            return self::FAILURE;
+        }
+        $this->line(sprintf('  eslesen: %s  loss=%.4f (beklenen ~0.237)', $played['move'], $played['loss'] ?? -1));
+        if ($played['move'] === '24/20' && abs(($played['loss'] ?? 0) - 0.237) < 0.03) {
+            $this->info('BASARILI: backend -> gnubg analiz + oynanan-hamle kaybi (PR cekirdegi) dogru.');
 
             return self::SUCCESS;
         }
-        $this->warn('Beklenen "8/5 6/5" degil. Yonelim/secret kontrol et.');
+        $this->warn('Oynanan-hamle kaybi beklenenden farkli. Eslestirme kontrol.');
 
         return self::FAILURE;
     }
