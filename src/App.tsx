@@ -4037,17 +4037,12 @@ export default function App() {
     }
     return prOf(c) ?? prLooseOf(c) ?? 0
   }
-  // Sans: online'da SIFIR-TOPLAMLI göster. reportRating'e giden değer = kendi göreceli şansım
-  // (prLuck[ben] - prLuck[rakip]); rakip = onun NEGATİFİ. Böylece sonuç ekranı hep tutarlı
-  // (kazanan/kaybeden birbirinin negatifi) ve sunucuya kaydedilen değerle AYNI olur — her iki
-  // istemci de kendi hesabından tutarlı bir bölünme gösterir. (Tam çapraz-istemci tek-kaynak
-  // için sunucu-otoriter luck -> GNU orchestrator; şimdilik istemci-hesaplı.)
-  // pvb (offline): her renk kendi lokal luck'ını gösterir.
+  // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
+  // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
+  // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
+  // Tam çapraz-istemci tutarlılık sunucu-otoriter luck (GNU orchestrator) ile gelecek.
   const luckOf = (c: Player): number | null => {
-    if (online) {
-      const rel = prLuck[myColor] - prLuck[opponent(myColor)]
-      return c === myColor ? rel : -rel
-    }
+    if (online && c !== myColor && prStats[c].decisions === 0) return null
     return prLuck[c]
   }
 
@@ -5935,6 +5930,13 @@ export default function App() {
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
           oppRating={mode === 'pvb' ? 900 + difficulty * 100 : (room?.oppRating ?? null)}
+          // Rakip rating değişimi: online PUANLI maçta Elo sıfır-toplamlı -> -(kendi delta). pvb
+          // (AI kalıcı rating yok) veya puansız -> null. Her iki ekranda TUTARLI (deterministik).
+          oppRatingDelta={
+            mode !== 'pvb' && !friendlyRef.current && ratingChange
+              ? -Math.round(ratingChange.after - ratingChange.before)
+              : null
+          }
           onRematch={() => {
             if (online) {
               // Havuza OTOMATIK atma yok: odadan cik, Mac Oyunu kurulumuna don ->
