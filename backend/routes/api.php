@@ -98,8 +98,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —
     // odanin paylasilan mac skorundan belirlenir, istemci 'won' beyani gecersizse
     // duzeltilir (bkz AuthController::serverResultForRoom). Oda yoksa (pvb) istemciye
-    // duser. Suistimal hizini kesmek icin siki throttle; mesru mac dakikalar surer.
-    Route::middleware('throttle:12,1')->post('/rating/report', [AuthController::class, 'reportRating']);
+    // duser. Throttle: mesru mac dakikalar surer ama 2 istemci x 3 retry + arka arkaya
+    // test maclari 12/dk'yi asip 429 -> "puanin kaydedilemedi" verebiliyordu; 30/dk yeterli
+    // headroom (reportRating oda+kullanici basi IDEMPOTENT -> yuksek limit guvenli).
+    Route::middleware('throttle:30,1')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
