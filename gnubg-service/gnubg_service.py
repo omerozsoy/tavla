@@ -508,6 +508,61 @@ def _maptest():
     return {"maptest": out}
 
 
+def _initial_pos():
+    return {
+        "points": [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
+        "bar": {"white": 0, "black": 0},
+        "off": {"white": 0, "black": 0},
+        "turn": "white",
+    }
+
+
+def _selfplay(max_plies=400, white_error=0.35, plies=1):
+    """Iki bot (gnubg) bir oyun oynar. Beyaz, white_error olasilikla en iyi OLMAYAN adayi oynar ->
+    beyazin PR'i sifir olmaz (orchestrator pipeline testi). BIZIM log formatinda karar listesi doner."""
+    pos = _initial_pos()
+    log = []
+    winner = None
+    for _ in range(max_plies):
+        turn = pos["turn"]
+        d1 = _random.randint(1, 6)
+        d2 = _random.randint(1, 6)
+        cand = None
+        try:
+            gid = structured_to_gnubgid({"points": pos["points"], "bar": pos["bar"],
+                                         "turn": turn, "dice": [d1, d2], "matchLength": 0})
+            gnubg.setgnubgid(gid)
+            _set_plies(plies)
+            h = gnubg.hint()
+            cand = h.get("hint") if isinstance(h, dict) else None
+        except Exception:
+            cand = None
+        if not cand:
+            pos["turn"] = "black" if turn == "white" else "white"  # dance -> sira gecer
+            continue
+        chosen = cand[0]
+        if turn == "white" and len(cand) > 1 and _random.random() < white_error:
+            chosen = cand[_random.randint(1, len(cand) - 1)]
+        steps = _parse_gnubg_move_to_steps(turn, chosen.get("move", ""))
+        log.append({
+            "player": turn,
+            "pos": {"points": list(pos["points"]), "bar": dict(pos["bar"]),
+                    "off": dict(pos["off"]), "turn": turn},
+            "dice": [d1, d2],
+            "playedSteps": steps,
+            "move": chosen.get("move"),
+        })
+        pts, bar = _apply_our_steps(pos["points"], pos["bar"], steps, turn)
+        pos["points"] = pts
+        pos["bar"] = bar
+        pos["off"][turn] += sum(1 for s in steps if s.get("to") == "off")
+        if pos["off"][turn] >= 15:
+            winner = turn
+            break
+        pos["turn"] = "black" if turn == "white" else "white"
+    return {"log": log, "winner": winner, "decisions": len(log)}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):  # gnubg konsolunu kirletme
         pass
@@ -552,6 +607,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not data.get("points"):
                     return self._send(400, {"error": "points gerekli (24 uzunlukta yapisal konum)"})
                 return self._send(200, _analyze(data))
+            if self.path == "/selfplay":
+                return self._send(200, _selfplay(
+                    white_error=float(data.get("white_error", 0.35)),
+                    plies=int(data.get("plies", 1))))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})
