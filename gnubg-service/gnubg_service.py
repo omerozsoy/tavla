@@ -377,22 +377,54 @@ def _points_to_boards(pts, bar):
     return white, black
 
 
-def _match_played(gid, dice, cand, white_after, black_after):
-    """Her adayi gnubg'de kendi notasyonuyla oynat; sonuc TAHTASI oynanan tahtayla eslesen adayi bul.
-    Iki slot sirasini da dener (gnubg sira degisince slot sirasini degistirebilir) -> yonelim tahmini yok."""
+def _gnubg_point_to_index(turn, tok):
+    """gnubg mover-noktasi (1-24, 'bar', 'off') -> bizim ucgen index (0-23) / 'bar' / 'off'.
+    Beyaz: gnubg P -> index P-1. Siyah: gnubg P -> index 24-P (ayna)."""
+    if tok == "bar":
+        return "bar"
+    if tok == "off":
+        return "off"
+    p = int(tok)
+    return (p - 1) if turn == "white" else (24 - p)
+
+
+def _parse_gnubg_move_to_steps(turn, notation):
+    """gnubg hamle notasyonu ('8/5 6/5', 'bar/20', '6/off', '13/7*/2', '24/18(2)') -> bizim Step[].
+    '*' (vurus) ve '(n)' (n kopya) islenir; zincir 'a/b/c' -> a->b, b->c (tahta icin ara onemsiz)."""
+    steps = []
+    for token in notation.split():
+        token = token.replace("*", "")
+        count = 1
+        if "(" in token:
+            base, _, rest = token.partition("(")
+            count = int(rest.rstrip(")") or "1")
+            token = base
+        parts = token.split("/")
+        for _ in range(count):
+            for i in range(len(parts) - 1):
+                steps.append({
+                    "from": _gnubg_point_to_index(turn, parts[i]),
+                    "to": _gnubg_point_to_index(turn, parts[i + 1]),
+                    "die": 0,
+                })
+    return steps
+
+
+def _boards_after(pos, steps):
+    """pos + Step[] -> (white_board, black_board) [25'er, index24=bar]."""
+    pts, bar = _apply_our_steps(pos["points"], pos.get("bar", {}), steps, pos.get("turn", "white"))
+    return _points_to_boards(pts, bar)
+
+
+def _match_played(pos, cand, white_after, black_after):
+    """Her adayin notasyonunu PARSE edip tahtasini hesapla; oynanan tahtayla eslesen adayi bul (saf Python)."""
     for c in cand:
         mv = c.get("move")
         if not mv:
             continue
         try:
-            gnubg.setgnubgid(gid)
-            if len(dice) >= 2:
-                gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
-            gnubg.command(mv)  # gnubg: hamle DOGRUDAN girilir ("move" oneki yok)
-            b = gnubg.board()
-            g0 = [int(x) for x in b[0]]
-            g1 = [int(x) for x in b[1]]
-            if (g0 == white_after and g1 == black_after) or (g0 == black_after and g1 == white_after):
+            cw, cb = _boards_after(pos, _parse_gnubg_move_to_steps(pos.get("turn", "white"), mv))
+            if cw == white_after and cb == black_after:
                 return c
         except Exception:
             continue
@@ -414,13 +446,11 @@ def _analyze(pos):
         cand = hint["hint"]
         best_eq = cand[0].get("equity")
         try:
-            pts, bar = _apply_our_steps(pos["points"], pos.get("bar", {}), steps, pos.get("turn", "white"))
-            white_after, black_after = _points_to_boards(pts, bar)
+            white_after, black_after = _boards_after(pos, steps)
         except Exception as e:
             out["played"] = {"error": "apply-failed: %s" % e}
             return out
-        matched = _match_played(gid, pos.get("dice", []) or [], cand, white_after, black_after)
-        gnubg.setgnubgid(gid)  # durumu geri yukle
+        matched = _match_played(pos, cand, white_after, black_after)
         if matched is not None:
             peq = matched.get("equity") or 0.0
             out["played"] = {
@@ -430,14 +460,9 @@ def _analyze(pos):
         else:
             dbg = None
             try:
-                dice = pos.get("dice", []) or []
-                gnubg.setgnubgid(gid)
-                if len(dice) >= 2:
-                    gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
-                gnubg.command(cand[0].get("move", ""))
-                bb = gnubg.board()
-                dbg = {"cand0_move": cand[0].get("move"), "cand0_board": [list(bb[0]), list(bb[1])]}
-                gnubg.setgnubgid(gid)
+                m0 = cand[0].get("move", "")
+                cw0, cb0 = _boards_after(pos, _parse_gnubg_move_to_steps(pos.get("turn", "white"), m0))
+                dbg = {"cand0_move": m0, "cand0_white": cw0, "cand0_black": cb0}
             except Exception as e:
                 dbg = {"err": str(e)}
             out["played"] = {"matched": False, "white_after": white_after,
