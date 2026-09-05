@@ -120,6 +120,25 @@ class GnuBgClient
         }
     }
 
+    /**
+     * .mat maçının gnubg NATIVE luck'ını döndürür (Tavlai Luck V1 kaynağı): per-oyuncu MWC% + EMG.
+     * $mat null + selftest=true -> gnubg kendi maçını export/reimport eder (hat doğrulama).
+     * Doner: ['luck'=>['names'=>[..], 'p0'=>['mwc_total'=>..], 'p1'=>..], 'import_cmd'=>..] veya hata.
+     */
+    public function matchluck(?string $mat = null, bool $selftest = false): ?array
+    {
+        try {
+            $resp = Http::timeout(180) // import + analyse match
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/matchluck'), ['mat' => $mat, 'selftest' => $selftest]);
+
+            return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
