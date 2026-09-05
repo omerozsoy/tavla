@@ -377,19 +377,9 @@ def _points_to_boards(pts, bar):
     return white, black
 
 
-def _after_positionid(pos, steps):
-    """Oynanan hamleden SONRAKI pozisyonun gnubg positionid'i (sira rakibe gecti)."""
-    turn = pos.get("turn", "white")
-    pts, bar = _apply_our_steps(pos["points"], pos.get("bar", {}), steps, turn)
-    white, black = _points_to_boards(pts, bar)
-    opp_is_white = (turn == "black")  # yeni on-roll = rakip
-    onroll = white if opp_is_white else black
-    other = black if opp_is_white else white
-    return encode_position_id((onroll, other))
-
-
-def _match_played(gid, dice, cand, played_rid):
-    """Her adayi gnubg'de kendi notasyonuyla oynat, sonuc positionid'i played_rid ile eslesen adayi bul."""
+def _match_played(gid, dice, cand, white_after, black_after):
+    """Her adayi gnubg'de kendi notasyonuyla oynat; sonuc TAHTASI oynanan tahtayla eslesen adayi bul.
+    Iki slot sirasini da dener (gnubg sira degisince slot sirasini degistirebilir) -> yonelim tahmini yok."""
     for c in cand:
         mv = c.get("move")
         if not mv:
@@ -399,7 +389,10 @@ def _match_played(gid, dice, cand, played_rid):
             if len(dice) >= 2:
                 gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
             gnubg.command("move " + mv)
-            if gnubg.positionid() == played_rid:
+            b = gnubg.board()
+            g0 = [int(x) for x in b[0]]
+            g1 = [int(x) for x in b[1]]
+            if (g0 == white_after and g1 == black_after) or (g0 == black_after and g1 == white_after):
                 return c
         except Exception:
             continue
@@ -408,7 +401,7 @@ def _match_played(gid, dice, cand, played_rid):
 
 def _analyze(pos):
     """Yapisal konum -> gnubgid -> setgnubgid -> (ply) -> hint. Ham hint + gnubgid doner.
-    playedSteps verilirse oynanan adayi (sonuc-pozisyonu eslestirmesiyle) bulur ve equity kaybini
+    playedSteps verilirse oynanan adayi (sonuc-TAHTASI eslestirmesiyle) bulur ve equity kaybini
     ekler (PR icin: loss = best_eq - played_eq, EMG). Normalizasyon backend GnuBgAdapter'da."""
     gid = structured_to_gnubgid(pos)
     gnubg.setgnubgid(gid)
@@ -421,11 +414,12 @@ def _analyze(pos):
         cand = hint["hint"]
         best_eq = cand[0].get("equity")
         try:
-            played_rid = _after_positionid(pos, steps)
+            pts, bar = _apply_our_steps(pos["points"], pos.get("bar", {}), steps, pos.get("turn", "white"))
+            white_after, black_after = _points_to_boards(pts, bar)
         except Exception as e:
             out["played"] = {"error": "apply-failed: %s" % e}
             return out
-        matched = _match_played(gid, pos.get("dice", []) or [], cand, played_rid)
+        matched = _match_played(gid, pos.get("dice", []) or [], cand, white_after, black_after)
         gnubg.setgnubgid(gid)  # durumu geri yukle
         if matched is not None:
             peq = matched.get("equity") or 0.0
@@ -434,7 +428,7 @@ def _analyze(pos):
                 "loss": max(0.0, (best_eq or 0.0) - peq),
             }
         else:
-            out["played"] = {"matched": False, "played_positionid": played_rid}
+            out["played"] = {"matched": False, "white_after": white_after, "black_after": black_after}
     return out
 
 
