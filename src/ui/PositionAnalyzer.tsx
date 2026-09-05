@@ -13,9 +13,9 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { analyzePosition, getToken } from '../api'
 
-// Motor: wildbg (tarayıcı sinir ağı) veya gnubg (sunucu). Sonuçlar ORTAK biçime indirgenir.
-type Engine = 'wildbg' | 'gnubg'
-// Gösterim için ortak hamle satırı: label = hazır notasyon (wildbg'de moveNotation, gnubg'de düz metin).
+// Analiz STANDART olarak sunucudaki GNU Backgammon (gnubg) ile yapılır; giriş yoksa veya gnubg
+// ulaşılamazsa SESSİZCE tarayıcıdaki wildbg sinir ağına düşülür (motor seçimi kullanıcıya sunulmaz).
+// Gösterim için ortak hamle satırı: label = hazır notasyon (gnubg'de düz metin, wildbg'de moveNotation).
 type MoveRow = { label: string; equity: number; probs: number[] }
 
 interface Props {
@@ -98,8 +98,6 @@ export default function PositionAnalyzer({
   const [result, setResult] = useState<number[] | null>(null)
   const [moveRows, setMoveRows] = useState<MoveRow[] | null>(null)
   const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
-  const [engine, setEngine] = useState<Engine>('wildbg') // analiz motoru (wildbg=tarayıcı, gnubg=sunucu)
-  const [engineMsg, setEngineMsg] = useState('') // gnubg giriş/erişim uyarısı
   const [busy, setBusy] = useState(false)
   const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
   const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -263,41 +261,45 @@ export default function PositionAnalyzer({
   }
 
   async function analyze() {
-    setEngineMsg('')
-    // gnubg (sunucu) motoru giriş ister — misafirde çağırma, kibar uyar.
-    if (engine === 'gnubg' && !getToken()) {
-      setEngineMsg(t('pa.gnuLogin'))
-      return
-    }
     setBusy(true)
     setResult(null)
     setMoveRows(null)
     try {
       const deep = ply === 2
       const hasDice = !!(d1 && d2)
-      if (engine === 'gnubg') {
-        // Sunucudaki GNU Backgammon: yapısal konumu gönder, ortak biçime indir.
-        const resp = await analyzePosition({
-          points: pts,
-          bar,
-          turn,
-          dice: hasDice ? [d1, d2] : [], // çift zar bile [d,d]; gnubg kendisi genişletir
-          cube: { value: cube.value, owner: cube.owner },
-          score: { white: scoreW, black: scoreB },
-          matchLength: matchLen,
-          plies: deep ? 2 : 0,
-        })
-        if (resp.moves && resp.moves.length > 0) {
-          setMoveRows(
-            resp.moves.map((m) => ({ label: m.notation, equity: m.equity, probs: m.probs ?? [] })),
-          )
-        } else if (resp.probs && resp.probs.length >= 6) {
-          setResult(resp.probs)
-        } else {
-          setEngineMsg(t('pa.gnuFail'))
+
+      // STANDART: sunucudaki GNU Backgammon (gnubg). Giriş yapılmışsa dene; başarısız/boş olursa
+      // aşağıdaki wildbg'ye sessizce düş (kullanıcıya motor seçimi/uyarı gösterilmez).
+      if (getToken()) {
+        try {
+          const resp = await analyzePosition({
+            points: pts,
+            bar,
+            turn,
+            dice: hasDice ? [d1, d2] : [], // çift zar bile [d,d]; gnubg kendisi genişletir
+            cube: { value: cube.value, owner: cube.owner },
+            score: { white: scoreW, black: scoreB },
+            matchLength: matchLen,
+            plies: deep ? 2 : 0,
+          })
+          if (resp.moves && resp.moves.length > 0) {
+            setMoveRows(
+              resp.moves.map((m) => ({ label: m.notation, equity: m.equity, probs: m.probs ?? [] })),
+            )
+            return
+          }
+          if (resp.probs && resp.probs.length >= 6) {
+            setResult(resp.probs)
+            return
+          }
+          // gnubg boş döndü -> wildbg'ye düş
+        } catch {
+          // gnubg erişilemedi -> wildbg'ye düş
         }
-      } else if (hasDice) {
-        // wildbg — zar verildi -> en iyi hamle(ler)
+      }
+
+      // wildbg (tarayıcı sinir ağı) — misafir veya gnubg fallback yolu.
+      if (hasDice) {
         const dice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
         const st: GameState = { ...state, dice, diceUsed: dice.map(() => false) }
         const ranked = await neuralAnalyze(st, deep)
@@ -305,12 +307,10 @@ export default function PositionAnalyzer({
           ranked.map((r) => ({ label: moveNotation(r.move, turn), equity: r.equity, probs: r.probs })),
         )
       } else {
-        // wildbg — zarsız -> pozisyonun genel kazanma şansı
         setResult(await neuralEval(state, turn, deep))
       }
     } catch {
-      // gnubg erişilemedi / sinir ağı yok
-      if (engine === 'gnubg') setEngineMsg(t('pa.gnuFail'))
+      /* motor yok / değerlendirme başarısız */
     } finally {
       setBusy(false)
     }
@@ -599,42 +599,6 @@ export default function PositionAnalyzer({
                 ))}
               </select>
             </div>
-          </div>
-
-          <div className="setup-row">
-            <div className="setup-label">{t('pa.engine')}</div>
-            <div className="menu-targets">
-              <Button
-                variant={engine === 'wildbg' ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setEngine('wildbg')
-                  setResult(null)
-                  setMoveRows(null)
-                  setEngineMsg('')
-                }}
-              >
-                {t('pa.engineFast')}
-              </Button>
-              <Button
-                variant={engine === 'gnubg' ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setEngine('gnubg')
-                  setResult(null)
-                  setMoveRows(null)
-                  setEngineMsg(getToken() ? '' : t('pa.gnuLogin'))
-                }}
-              >
-                {t('pa.engineGnu')}
-              </Button>
-            </div>
-            <div className="pa-depth-note">
-              {engine === 'gnubg' ? t('pa.engineGnuNote') : t('pa.engineFastNote')}
-            </div>
-            {engineMsg && (
-              <div className="pa-limit-toast" role="alert" style={{ position: 'static', marginTop: 6 }}>
-                <Icon name="alert" size={15} /> {engineMsg}
-              </div>
-            )}
           </div>
 
           <div className="setup-row">
