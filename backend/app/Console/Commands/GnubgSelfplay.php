@@ -31,6 +31,9 @@ class GnubgSelfplay extends Command
         if (! empty($sp['invalid'])) {
             $this->error('TAHTA BOZULDU (self-play bug): '.json_encode($sp['invalid']));
         }
+        if (empty($sp['winner']) && ! empty($sp['stuck'])) {
+            $this->warn('TAKILDI (kazanan yok): '.json_encode($sp['stuck']));
+        }
 
         $r = $orch->checkerPr($sp['log'], 'white', 0, 2); // beyazi 2-ply ile yeniden degerlendir
 
