@@ -4,6 +4,7 @@ import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
+import { PR_TARGET_LABELS } from '../botPr'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
@@ -50,18 +51,8 @@ const AI_LEVELS = [
 
 // Her seviyenin hedef PR (performans reytingi) araligi — dusuk = daha iyi oyun.
 // Seviye butonlarinin altinda muted olarak gosterilir ("Hedef PR 35–50" gibi).
-const PR_TARGETS = [
-  '35–50',
-  '25–35',
-  '18–25',
-  '12–18',
-  '8–12',
-  '5–8',
-  '3–5',
-  '1.5–3',
-  '0.5–1.5',
-  '0–0.5',
-]
+// TEK KAYNAK: src/botPr.ts (bot-sonu PR uretimiyle ayni araliklar).
+const PR_TARGETS = PR_TARGET_LABELS
 
 interface BoardColors {
   panel: string

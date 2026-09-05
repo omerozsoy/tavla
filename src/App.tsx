@@ -34,6 +34,7 @@ import {
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
 import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
+import { randomBotPr } from './botPr'
 import Board from './ui/Board'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
@@ -2647,6 +2648,19 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
+  // pvb: bot rakibin PR'ini seviyeye uygun SABIT-RASTGELE goster. NeuralBot neredeyse-optimal
+  // oynadigi icin olculen bot PR'i ~0.0 cikar ve "0.0" itici gorunur. Mac bitince bir kez
+  // hesaplanir (useMemo -> render icinde stabil); hem sonuc ekraninda hem reportRating kaydinda
+  // AYNI deger kullanilir. bkz src/botPr.ts
+  const botMatchDone = mode === 'pvb' && !!matchWinner(match)
+  const botPr = useMemo(
+    () => (botMatchDone ? randomBotPr(difficulty) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [botMatchDone, difficulty],
+  )
+  const botPrRef = useRef<number | null>(null)
+  botPrRef.current = botPr
+
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).
   // Casual (rankedMatch=false) macta puana/lig'e etki yok; PR + hata gunlugu kalir.
   useEffect(() => {
@@ -2680,7 +2694,7 @@ export default function App() {
         match.score.white,
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
-        prRef('black'),
+        botPrRef.current ?? prRef('black'), // bot PR: seviyeye uygun sabit-rastgele (bkz botPr.ts)
         JSON.stringify({ hc: 'white', log: logNow.slice(-250) }),
         rankedMatch,
         'match', // match_type (pvb her zaman N-puanlik)
@@ -4015,6 +4029,8 @@ export default function App() {
     return ad > 0 ? ((prStats[c].allLoss ?? 0) / ad) * 500 : null
   }
   const prShown = (c: Player): number => {
+    // pvb: bot rakibin PR'i seviyeye uygun sabit-rastgele deger (gercek olculen ~0.0 itici).
+    if (!online && botPr != null && c !== prHumanColor) return botPr
     if (serverPr) {
       const v = c === prHumanColor ? serverPr.self : serverPr.opp
       if (v != null) return v
