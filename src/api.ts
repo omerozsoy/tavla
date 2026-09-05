@@ -1200,13 +1200,16 @@ export async function reportRating(
   matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
   extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
+  mat?: string | null, // .mat (gnubg NATIVE luck V1 — backend analyse match ile per-oyuncu MWC%)
 ): Promise<{
   rating: number
   achievements?: UnlockedAchievement[]
   pr_self?: number | null // sunucu-otoriter kendi PR (kendi log'undan)
   pr_opponent?: number | null // rakibin sunucu-otoriter PR'i (varsa)
-  luck_self?: number | null // kendi HAM luck'ım (renk-luck) — sunucu-otoriter sans
+  luck_self?: number | null // kendi HAM luck'ım (renk-luck) — sunucu-otoriter sans (ONNX fallback)
   luck_opp?: number | null // rakibin HAM luck'ı (varsa) -> iki ekranda tutarlı net
+  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1, async -> ilkin null)
+  luck_mwc_opp?: number | null // rakibin gnubg MWC-luck %'si (varsa)
 }> {
   return req('/rating/report', {
     method: 'POST',
@@ -1222,6 +1225,7 @@ export async function reportRating(
       opponent_name: opponentName ?? null,
       opponent_pr: opponentPr ?? null,
       log: log ?? null,
+      mat: mat ?? null,
       ranked,
       room_code: roomCode ?? null,
       // Basarim sinyalleri (opsiyonel): mars/katmerli mars sayisi, en dusuk kazanma %,
@@ -1243,6 +1247,8 @@ export async function matchPr(
   opponent: number | null
   luck_self?: number | null
   luck_opp?: number | null
+  luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1)
+  luck_mwc_opp?: number | null
 }> {
   try {
     return await req(`/me/match-pr?room_code=${encodeURIComponent(roomCode)}`)

@@ -156,6 +156,7 @@ import {
   type SavedGame,
   type MoveLogEntry,
 } from './storage'
+import { buildMat } from './matExport'
 import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
 import { Button } from '@/components/ui/button'
@@ -975,6 +976,9 @@ export default function App() {
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
   // Renk-anahtarlı (peer snapshot'a güvenmez). null iken lokal prLuck'a düşer.
   const [serverLuck, setServerLuck] = useState<{ white: number | null; black: number | null } | null>(null)
+  // Tavlai Luck V1: gnubg NATIVE per-oyuncu MWC-luck (%). Async (analyse match) -> hazır olunca
+  // dolar; İKİSİ de biliniyorsa MatchResult BAĞIMSIZ % gösterir (sıfır-toplam DEĞİL, gnubg gibi).
+  const [serverLuckMwc, setServerLuckMwc] = useState<{ white: number | null; black: number | null } | null>(null)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -1288,6 +1292,7 @@ export default function App() {
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
     setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
     setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
+    setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
   }
 
   // PR: bu hamlede wildbg'ye gore kaybedilen equity'yi kaydet (senkron; tur basi analizini kullanir)
@@ -2531,6 +2536,14 @@ export default function App() {
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
       const achExtra = buildAchExtra()
+      // Tavlai Luck V1: TAM maç .mat'i (gnubg NATIVE luck kaynağı — backend analyse match).
+      // TAM log (luck bütün oyunları ister); PR log'u ayrı 250-slice. Üretilemezse null (fallback).
+      let matText: string | null = null
+      try {
+        matText = buildMat(matchLogRef.current, { matchLength: match.target })
+      } catch {
+        matText = null
+      }
       const doReport = () =>
         reportRating(
           won,
@@ -2547,6 +2560,7 @@ export default function App() {
           stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
           room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
           achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
+          matText, // .mat -> gnubg native luck (V1)
         )
       // Gecici ag/sunucu hatasi tek denemede "puanin kaydedilemedi" gostermesin -> 3 kez dene.
       let r: Awaited<ReturnType<typeof reportRating>> | null = null
@@ -2577,6 +2591,7 @@ export default function App() {
           stakeRef.current > 0 ? 'coin' : 'match',
           room?.code ?? null,
           achExtra,
+          matText, // .mat -> gnubg native luck (V1); pending retry de gönderir
         ])
       } else {
         setRatingChange({ before, after: r.rating })
@@ -2596,9 +2611,20 @@ export default function App() {
             return next
           })
         setLuckPair(r.luck_self, r.luck_opp)
+        // Tavlai Luck V1: gnubg NATIVE MWC-luck (%) — renge eşle (self->myColor). Async (analyse
+        // match) olduğundan ilkin null; poll ederek doldur. İkisi de gelince BAĞIMSIZ % gösterilir.
+        const setLuckMwcPair = (selfL?: number | null, oppL?: number | null) =>
+          setServerLuckMwc((prev) => {
+            const next = { white: prev?.white ?? null, black: prev?.black ?? null }
+            if (selfL != null) next[myColor] = selfL
+            if (oppL != null) next[opponent(myColor)] = oppL
+            return next
+          })
+        setLuckMwcPair(r.luck_mwc_self, r.luck_mwc_opp)
         let oppLuckDone = r.luck_opp != null
-        if ((oppPr == null || !oppLuckDone) && code) {
-          for (let i = 0; i < 8 && (oppPr == null || !oppLuckDone); i++) {
+        let mwcDone = r.luck_mwc_self != null && r.luck_mwc_opp != null
+        if ((oppPr == null || !oppLuckDone || !mwcDone) && code) {
+          for (let i = 0; i < 12 && (oppPr == null || !oppLuckDone || !mwcDone); i++) {
             await new Promise((res) => setTimeout(res, 1500))
             const pair = await matchPr(code)
             if (pair.opponent != null) {
@@ -2608,6 +2634,10 @@ export default function App() {
             if (pair.luck_opp != null || pair.luck_self != null) {
               setLuckPair(pair.luck_self, pair.luck_opp)
               if (pair.luck_opp != null) oppLuckDone = true
+            }
+            if (pair.luck_mwc_self != null || pair.luck_mwc_opp != null) {
+              setLuckMwcPair(pair.luck_mwc_self, pair.luck_mwc_opp)
+              if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) mwcDone = true
             }
           }
         }
@@ -4067,6 +4097,15 @@ export default function App() {
     if (serverLuck && serverLuck[c] != null) return serverLuck[c]
     if (online && c !== myColor && prStats[c].decisions === 0) return null
     return prLuck[c]
+  }
+  // Tavlai Luck V1: gnubg NATIVE MWC-luck (%). İKİSİ de biliniyorsa MatchResult BAĞIMSIZ %
+  // gösterir (sıfır-toplam DEĞİL — gnubg metodolojisi: her oyuncu kendi zarlarından). Biri
+  // eksikse null -> MatchResult ham luck (net) fallback'ine düşer.
+  const luckPctOf = (c: Player): number | null => {
+    if (serverLuckMwc && serverLuckMwc.white != null && serverLuckMwc.black != null) {
+      return serverLuckMwc[c]
+    }
+    return null
   }
 
   let centerMain: React.ReactNode = null
@@ -5960,6 +5999,8 @@ export default function App() {
           loserBand={t(prBand(prShown(opponent(mWinner))))}
           winnerLuck={luckOf(mWinner)}
           loserLuck={luckOf(opponent(mWinner))}
+          winnerLuckPct={luckPctOf(mWinner)}
+          loserLuckPct={luckPctOf(opponent(mWinner))}
           coinAmount={coinDelta == null ? null : Math.abs(coinDelta)}
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
