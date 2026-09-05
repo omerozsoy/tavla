@@ -1,0 +1,19 @@
+[Unit]
+Description=Tavla queue worker (gnubg PR shadow analiz)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı olmalı (storage/logs hem worker hem PHP-FPM tarafından
+# yazılır -> root çalıştırma izin çakışması yaratır). Kullanıcıyı bul:
+#   stat -c '%U' /var/www/vhosts/tavlai.com/httpdocs
+# ve CHANGE_ME_VHOST_USER yerine yaz.
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlai.com/httpdocs/backend
+# database kuyruğunu işle. timeout=600 (uzun maç ~60 gnubg çağrısı). tries=1 (gnubg down->sessiz).
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --sleep=3 --tries=1 --timeout=600
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
