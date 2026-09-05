@@ -302,7 +302,10 @@ def structured_to_gnubgid(pos):
     onroll_white = (turn == "white")
     onroll = white if onroll_white else black
     opp = black if onroll_white else white
-    posid = encode_position_id((onroll, opp))  # gnubg positionid = on-roll perspektifi (slot0=on-roll)
+    # gnubg her zaman anBoard[1]'i (slot1) hamle-yapan sayar; board()=(RAKİP, on-roll). Bu yüzden
+    # on-roll SLOT1'e, rakip SLOT0'a. BUG FIX 2026-09-05: eskiden (on-roll, opp) idi -> gnubg slot1'deki
+    # RAKİBİ analiz ediyordu (beyazda simetrik açılış gizledi; siyahta no_match + self-play çökmesi).
+    posid = encode_position_id((opp, onroll))
 
     # matchid PLAYER-INDEX tabanlı: player0=beyaz, player1=siyah. On-roll'ı fMove/fTurn BELİRTİR.
     # BUG FIX 2026-09-05: eskiden fMove HEP 0'dı -> beyaz on-roll'da tesadüfen doğru (beyaz=oyuncu0)
