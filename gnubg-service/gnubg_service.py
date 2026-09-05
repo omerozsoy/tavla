@@ -388,7 +388,7 @@ def _match_played(gid, dice, cand, white_after, black_after):
             gnubg.setgnubgid(gid)
             if len(dice) >= 2:
                 gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
-            gnubg.command("move " + mv)
+            gnubg.command(mv)  # gnubg: hamle DOGRUDAN girilir ("move" oneki yok)
             b = gnubg.board()
             g0 = [int(x) for x in b[0]]
             g1 = [int(x) for x in b[1]]
@@ -428,7 +428,20 @@ def _analyze(pos):
                 "loss": max(0.0, (best_eq or 0.0) - peq),
             }
         else:
-            out["played"] = {"matched": False, "white_after": white_after, "black_after": black_after}
+            dbg = None
+            try:
+                dice = pos.get("dice", []) or []
+                gnubg.setgnubgid(gid)
+                if len(dice) >= 2:
+                    gnubg.command("set dice %d %d" % (int(dice[0]), int(dice[1])))
+                gnubg.command(cand[0].get("move", ""))
+                bb = gnubg.board()
+                dbg = {"cand0_move": cand[0].get("move"), "cand0_board": [list(bb[0]), list(bb[1])]}
+                gnubg.setgnubgid(gid)
+            except Exception as e:
+                dbg = {"err": str(e)}
+            out["played"] = {"matched": False, "white_after": white_after,
+                             "black_after": black_after, "debug": dbg}
     return out
 
 
