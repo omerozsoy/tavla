@@ -31,7 +31,10 @@ interface Props {
   ratingBefore: number | null
   ratingAfter: number | null
   ratingIsWinner: boolean // true: rating kazanan tarafta
-  oppRating: number | null // rakip rating (online rakip / AI zorluga gore)
+  oppRating: number | null // rakip rating (online rakip / AI zorluga gore) — maç ÖNCESİ
+  // Rakip rating değişimi (online puanlı maçta). Elo sıfır-toplamlı -> = -(kendi delta). null ->
+  // gösterme (pvb/AI kalıcı rating yok, veya puansız). Her iki ekranda TUTARLI (deterministik).
+  oppRatingDelta?: number | null
   onNewMatch: () => void
   onRematch: () => void
   onHome: () => void
@@ -72,6 +75,7 @@ export default function MatchResult({
   ratingAfter,
   ratingIsWinner,
   oppRating,
+  oppRatingDelta,
   onNewMatch,
   onRematch,
   onHome,
@@ -88,11 +92,23 @@ export default function MatchResult({
   // Rating: insan (rating raporlanan) tarafi degisimli; diger taraf = rakip (online
   // rakip rating / AI zorluk). ratingIsWinner: insan kazanan tarafta mi.
   const ratingText = (winnerSide: boolean) => {
-    if (winnerSide === ratingIsWinner && ratingBefore != null && ratingAfter != null) {
-      const d = Math.round(ratingAfter - ratingBefore)
-      return `${Math.round(ratingAfter)} (${d >= 0 ? '+' : ''}${d})`
+    // KENDİ tarafı: sunucudan gelen before/after.
+    if (winnerSide === ratingIsWinner) {
+      if (ratingBefore != null && ratingAfter != null) {
+        const d = Math.round(ratingAfter - ratingBefore)
+        return d !== 0 ? `${Math.round(ratingAfter)} (${d >= 0 ? '+' : ''}${d})` : String(Math.round(ratingAfter))
+      }
+      return oppRating != null ? String(Math.round(oppRating)) : '—'
     }
-    return oppRating != null ? String(Math.round(oppRating)) : '—'
+    // RAKİP tarafı: Elo sıfır-toplamlı -> rakip delta = -(kendi delta); after = oppRating(before) + delta.
+    // Böylece HER İKİ ekranda iki tarafın rating değişimi TUTARLI görünür (kullanıcı isteği).
+    if (oppRating != null) {
+      if (oppRatingDelta != null && oppRatingDelta !== 0) {
+        return `${Math.round(oppRating + oppRatingDelta)} (${oppRatingDelta >= 0 ? '+' : ''}${oppRatingDelta})`
+      }
+      return String(Math.round(oppRating))
+    }
+    return '—'
   }
   // Sans (luck) ZERO-SUM: iki taraf da biliniyorsa goreceli sansi goster
   // (kazanan - kaybeden, zit isaretli) -> toplam 0 VE iki istemcide ayni deger
