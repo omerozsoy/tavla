@@ -523,11 +523,16 @@ def _selfplay(max_plies=400, white_error=0.35, plies=1):
     pos = _initial_pos()
     log = []
     winner = None
+    stuck = None
+    dances = 0
     for _ in range(max_plies):
         turn = pos["turn"]
         d1 = _random.randint(1, 6)
         d2 = _random.randint(1, 6)
         cand = None
+        gid = None
+        h = None
+        err = None
         try:
             gid = structured_to_gnubgid({"points": pos["points"], "bar": pos["bar"],
                                          "turn": turn, "dice": [d1, d2], "matchLength": 0})
@@ -535,11 +540,20 @@ def _selfplay(max_plies=400, white_error=0.35, plies=1):
             _set_plies(plies)
             h = gnubg.hint()
             cand = h.get("hint") if isinstance(h, dict) else None
-        except Exception:
+        except Exception as e:
+            err = str(e)
             cand = None
         if not cand:
+            if stuck is None:  # ilk takilmayi yakala (dance mi hata mi + pozisyon)
+                stuck = {"turn": turn, "dice": [d1, d2], "gnubgid": gid, "err": err,
+                         "raw_hint": _safe(h), "points": list(pos["points"]),
+                         "bar": dict(pos["bar"]), "off": dict(pos["off"])}
+            dances += 1
+            if dances > 20:  # gercekten takildi -> bosuna 400 donme
+                break
             pos["turn"] = "black" if turn == "white" else "white"  # dance -> sira gecer
             continue
+        dances = 0
         chosen = cand[0]
         if turn == "white" and len(cand) > 1 and _random.random() < white_error:
             chosen = cand[_random.randint(1, len(cand) - 1)]
@@ -568,7 +582,7 @@ def _selfplay(max_plies=400, white_error=0.35, plies=1):
             winner = turn
             break
         pos["turn"] = "black" if turn == "white" else "white"
-    return {"log": log, "winner": winner, "decisions": len(log)}
+    return {"log": log, "winner": winner, "decisions": len(log), "stuck": stuck}
 
 
 class Handler(BaseHTTPRequestHandler):
