@@ -641,6 +641,74 @@ def _initial_pos():
     }
 
 
+def _lucktest(points_match=1):
+    """TEŞHİS (üretim değil): gnubg'nin NATIVE 'luck' (şans) çıktısını ölçmek için. İki gnubg botu
+    kısa bir maç oynar; 'analyse match' çalışır; sonra HEM insan-okur 'show statistics match' metni
+    (luck rate + ÖLÇEK/BİRİM burada görünür) HEM de (varsa) yapısal gnubg.match() per-move luck
+    alanları dökülür. Amaç: luck ölçeği/normalizasyonu/ply/işaret'i TAHMİN ETMEDEN doğrulamak."""
+    out = {"version": None, "steps": []}
+
+    def _cmd(c):
+        try:
+            gnubg.command(c)
+            out["steps"].append({"cmd": c, "ok": True})
+        except Exception as e:
+            out["steps"].append({"cmd": c, "ok": False, "err": str(e)})
+
+    try:
+        out["version"] = gnubg.command("show version")
+    except Exception:
+        pass
+    # İki gnubg botu; 0-ply (hızlı, luck için tipik). Otomatik zar; oyunları elle ilerlet.
+    _cmd("set player 0 gnubg")
+    _cmd("set player 1 gnubg")
+    _cmd("set player 0 chequer evaluation plies 0")
+    _cmd("set player 1 chequer evaluation plies 0")
+    _cmd("set analysis luck on")
+    _cmd("set analysis moves on")
+    _cmd("set automatic roll on")
+    _cmd("set automatic game off")
+    _cmd("new match %d" % int(points_match))
+    plays = 0
+    for _ in range(4000):
+        try:
+            gnubg.command("play")   # sıradaki gnubg oyuncusu için oto roll+move
+            plays += 1
+        except Exception:
+            try:
+                gnubg.command("new game")  # oyun bitti -> sonraki oyun
+            except Exception:
+                break                       # maç bitti -> dur
+    out["plays"] = plays
+    # Luck eval AYRI mı? (rapor: hangi ply/eval luck için kullanılıyor)
+    out["show_analysis"] = _capture_command("show analysis")
+    _cmd("analyse match")
+    # KRİTİK KANIT: luck rate + ölçek + normalizasyon burada (EMG/MWC, per-move mi, işaret).
+    out["statistics_match"] = _capture_command("show statistics match")
+    # Yapısal per-move luck (varsa) — native alan adları + ham değerler.
+    try:
+        m = gnubg.match(1)  # analiz dahil
+        out["match_struct_type"] = str(type(m))
+        if isinstance(m, dict):
+            out["match_struct_keys"] = list(m.keys())
+        sample = []
+        games = m.get("games") if isinstance(m, dict) else None
+        if games:
+            first = games[0]
+            moves = None
+            if isinstance(first, dict):
+                moves = first.get("game") or first.get("moves") or first.get("analysis")
+            if isinstance(moves, list):
+                for mv in moves[:10]:
+                    if isinstance(mv, dict):
+                        sample.append({k: _safe(mv.get(k)) for k in mv.keys()
+                                       if ("luck" in str(k).lower()) or k in ("player", "action", "type", "dice", "move")})
+        out["luck_move_sample"] = sample
+    except Exception as e:
+        out["match_struct_err"] = str(e)
+    return out
+
+
 def _selfplay(max_plies=400, white_error=0.35, plies=1):
     """Iki bot (gnubg) bir oyun oynar. Beyaz, white_error olasilikla en iyi OLMAYAN adayi oynar ->
     beyazin PR'i sifir olmaz (orchestrator pipeline testi). BIZIM log formatinda karar listesi doner."""
@@ -765,6 +833,8 @@ class Handler(BaseHTTPRequestHandler):
                 if not data.get("points"):
                     return self._send(400, {"error": "points gerekli"})
                 return self._send(200, _rollouttest(data, int(data.get("trials", 36))))
+            if self.path == "/lucktest":
+                return self._send(200, _lucktest(int(data.get("points_match", 1))))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})
