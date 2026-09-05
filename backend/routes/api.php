@@ -91,6 +91,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/wxp-breakdown', [AuthController::class, 'wxpBreakdown']); // WXP kategori kirilimi (coin/1/3/5/7)
     Route::get('/me/dice-stats', [AuthController::class, 'diceStats']); // Zar Ortalamalari (zar-basina Sen/Rakip)
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
+    // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
+    Route::middleware('throttle:30,1')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —
