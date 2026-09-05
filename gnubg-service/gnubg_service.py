@@ -269,6 +269,112 @@ def _selftest(walk=40):
     }
 
 
+# =====================================================================================
+# YAPISAL KONUM -> gnubgid (GnuBgAdapter cekirdegi). Backend'in gonderdigi kanonik konumu
+# gnubg koduna cevirir. Tahta yonelimi (acilistan dogrulandi):
+#   points[i] (i=0..23, ucgen i+1; beyaz +, siyah -), bar{white,black}, off, turn, dice,
+#   cube{value,owner}, score{white,black}, matchLength, crawford.
+#   white_board[p] = max(0, points[p]);           white_board[24] = bar.white
+#   black_board[p] = max(0, -points[23-p]);        black_board[24] = bar.black
+#   gnubg tuple = (on-roll, rakip); on-roll = gnubg oyuncu 0 (fMove=fTurn=0).
+# =====================================================================================
+
+
+def _structured_to_boards(pos):
+    pts = pos["points"]
+    bar = pos.get("bar", {}) or {}
+    white = [0] * 25
+    black = [0] * 25
+    for p in range(24):
+        v = int(pts[p])
+        if v > 0:
+            white[p] = v
+        elif v < 0:
+            black[23 - p] = -v
+    white[24] = int(bar.get("white", 0) or 0)
+    black[24] = int(bar.get("black", 0) or 0)
+    return white, black
+
+
+def structured_to_gnubgid(pos):
+    white, black = _structured_to_boards(pos)
+    turn = pos.get("turn", "white")
+    onroll_white = (turn == "white")
+    onroll = white if onroll_white else black
+    opp = black if onroll_white else white
+    posid = encode_position_id((onroll, opp))  # on-roll = gnubg oyuncu 0
+
+    cube = pos.get("cube", {}) or {}
+    owner = cube.get("owner", None)
+    cube_owner = 3 if owner is None else (0 if owner == turn else 1)
+    dice = pos.get("dice", []) or []
+    score = pos.get("score", {}) or {}
+    opp_color = "black" if onroll_white else "white"
+    fields = {
+        "cube_loglevel": _log2_int(int(cube.get("value", 1) or 1)),
+        "cube_owner": cube_owner,
+        "player_on_roll": 0,
+        "crawford": 1 if pos.get("crawford") else 0,
+        "game_state": 1,
+        "player_on_move": 0,
+        "doubled": 0,
+        "resigned": 0,
+        "dice0": int(dice[0]) if len(dice) > 0 else 0,
+        "dice1": int(dice[1]) if len(dice) > 1 else 0,
+        "match_length": int(pos.get("matchLength", 0) or 0),
+        "score0": int(score.get(turn, 0) or 0),
+        "score1": int(score.get(opp_color, 0) or 0),
+    }
+    return posid + ":" + encode_match_id(fields)
+
+
+def _set_plies(plies):
+    if plies is None:
+        return
+    try:
+        gnubg.command("set evaluation chequer evaluation plies %d" % int(plies))
+    except Exception:
+        pass
+
+
+def _analyze(pos):
+    """Yapisal konum -> gnubgid -> setgnubgid -> (ply) -> hint. Ham hint + gnubgid doner.
+    Normalizasyon (checker EMG eqdiff / cube cubeful) backend GnuBgAdapter'da yapilir."""
+    gid = structured_to_gnubgid(pos)
+    gnubg.setgnubgid(gid)
+    _set_plies(pos.get("plies"))
+    return {"gnubgid": gid, "result": gnubg.hint()}
+
+
+def _maptest():
+    """GameState->gnubgid esleme + yonelim dogrulamasi: acilis 3-1 -> en iyi 8/5 6/5 olmali.
+    Iki tarafi da test eder (beyaz/siyah on-roll simetrik)."""
+    opening = [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2]
+    tests = [
+        {"name": "acilis beyaz 3-1", "points": opening, "turn": "white", "dice": [3, 1], "matchLength": 5},
+        {"name": "acilis siyah 3-1", "points": opening, "turn": "black", "dice": [3, 1], "matchLength": 5},
+    ]
+    out = []
+    for t in tests:
+        try:
+            gid = structured_to_gnubgid(t)
+            gnubg.setgnubgid(gid)
+            _set_plies(2)
+            h = gnubg.hint()
+            cand = h.get("hint") if isinstance(h, dict) else None
+            board = gnubg.board()
+            out.append({
+                "name": t["name"], "gnubgid": gid,
+                "best_move": (cand[0].get("move") if cand else None),
+                "board_back": [list(board[0]), list(board[1])],
+                "top3": [{"move": c.get("move"), "equity": c.get("equity"), "eqdiff": c.get("eqdiff")}
+                         for c in (cand or [])[:3]],
+            })
+        except Exception as e:
+            out.append({"name": t["name"], "error": str(e)})
+    return {"maptest": out, "expected_best": "8/5 6/5"}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):  # gnubg konsolunu kirletme
         pass
@@ -286,6 +392,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"ok": True, "service": "gnubg", "version": _gnubg_version()})
         if self.path == "/selftest":
             return self._send(200, _selftest())
+        if self.path == "/maptest":
+            return self._send(200, _maptest())
         self._send(404, {"error": "not-found"})
 
     def do_POST(self):
@@ -307,6 +415,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not gid:
                     return self._send(400, {"error": "gnubgid gerekli"})
                 return self._send(200, _evaluate(gid))
+            if self.path == "/analyze":
+                if not data.get("points"):
+                    return self._send(400, {"error": "points gerekli (24 uzunlukta yapisal konum)"})
+                return self._send(200, _analyze(data))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})
