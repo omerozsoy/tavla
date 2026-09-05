@@ -86,11 +86,11 @@ class GnubgTest extends Command
         // cube PR'i (double/take/pass equity kaybi) implemente edecegim. (Yaris pozisyonu, beyaz onde.)
         $this->line('');
         $this->line('KUP analiz yapisi (cube PR icin — bu ciktiyi paylas):');
-        $cube = $gnubg->analyze([
+        $cube = $gnubg->cubetest([
             'points' => [2, 2, 2, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, -3, -3, -2, -2, -2],
-            'turn' => 'white', 'dice' => [], 'matchLength' => 0, 'plies' => 2,
+            'turn' => 'white', 'dice' => [], 'matchLength' => 0,
         ]);
-        $this->line(json_encode($cube['result'] ?? $cube));
+        $this->line(json_encode($cube));
 
         $this->info('BASARILI. (Kup yapisini paylas -> cube PR eklenecek.)');
 
