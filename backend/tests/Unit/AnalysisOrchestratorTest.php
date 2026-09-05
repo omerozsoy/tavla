@@ -124,4 +124,45 @@ class AnalysisOrchestratorTest extends TestCase
         $this->assertSame(2, $sent['cube']['value']);
         $this->assertSame('white', $sent['cube']['owner']);
     }
+
+    private function cubeFake(): GnuBgClient
+    {
+        // Örnek gnubg cube analizi: noDouble +0.385, doubleTake +0.301, doublePass +1.000.
+        return new class extends GnuBgClient
+        {
+            public function analyze(array $position): ?array
+            {
+                return ['cube' => ['equities' => ['noDouble' => 0.385, 'doubleTake' => 0.301, 'doublePass' => 1.000]]];
+            }
+        };
+    }
+
+    private function cubeEntry(string $chosen): array
+    {
+        return ['player' => 'white', 'pos' => ['points' => array_fill(0, 24, 0), 'bar' => ['white' => 0, 'black' => 0], 'turn' => 'white'],
+            'cube' => ['chosen' => $chosen]];
+    }
+
+    public function test_cube_pr_offer_wrong_double(): void
+    {
+        // No double doğru (0.385) iken DOUBLE oynamak -> kayıp 0.385-0.301=0.084 -> PR 42.
+        $r = (new AnalysisOrchestrator($this->cubeFake()))->cubePr([$this->cubeEntry('double')], 'white', 0);
+        $this->assertSame(1, $r['decisions']);
+        $this->assertEqualsWithDelta(42.0, $r['pr'], 0.1);
+    }
+
+    public function test_cube_pr_offer_correct_nodouble(): void
+    {
+        // No double doğru -> kayıp 0 (ama sayılır: best-worst spread büyük) -> PR 0.
+        $r = (new AnalysisOrchestrator($this->cubeFake()))->cubePr([$this->cubeEntry('no-double')], 'white', 0);
+        $this->assertSame(1, $r['decisions']);
+        $this->assertSame(0.0, $r['pr']);
+    }
+
+    public function test_cube_pr_wrong_drop(): void
+    {
+        // Take doğru (-0.301) iken DROP/pass (-1) -> kayıp 0.699 -> PR ~349.5.
+        $r = (new AnalysisOrchestrator($this->cubeFake()))->cubePr([$this->cubeEntry('drop')], 'white', 0);
+        $this->assertEqualsWithDelta(349.5, $r['pr'], 0.5);
+    }
 }

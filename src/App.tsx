@@ -1901,6 +1901,13 @@ export default function App() {
             cube: { win, equity, recommended: res.bestAction, chosen, correct: loss < 0.001 },
             countsForPR: res.countsForPR,
             prAdjustedEquityLoss: prAdjusted,
+            mctx: {
+              score: match.score,
+              cube: match.cube.value,
+              cubeOwner: match.cube.owner,
+              crawford: match.isCrawford,
+              matchLen: match.target,
+            },
           },
         ])
       })
