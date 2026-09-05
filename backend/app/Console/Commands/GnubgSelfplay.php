@@ -28,6 +28,9 @@ class GnubgSelfplay extends Command
             return self::FAILURE;
         }
         $this->line("Oyun bitti: kazanan={$sp['winner']}  toplam-karar={$sp['decisions']}");
+        if (! empty($sp['invalid'])) {
+            $this->error('TAHTA BOZULDU (self-play bug): '.json_encode($sp['invalid']));
+        }
 
         $r = $orch->checkerPr($sp['log'], 'white', 0, 2); // beyazi 2-ply ile yeniden degerlendir
 
