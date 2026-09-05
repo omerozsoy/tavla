@@ -572,8 +572,15 @@ def _parse_cube_text(text):
 
 
 def _cube_result(gid):
-    """Kup kararı analizi: gnubg 'hint' metnini yakala + parse et (hint() küp desteklemiyor)."""
-    return {"gnubgid": gid, "cube": _parse_cube_text(_capture_command("hint"))}
+    """Kup kararı analizi: gnubg 'hint' metnini yakala + parse et (hint() küp desteklemiyor).
+    'evaluate' = pozisyonun ham 5'li kümülatif olasılığı (W,WG,WB,LG,LB) — Pozisyon Analizi
+    ekranı zarsız durumda kazanma % göstermek için kullanır (setgnubgid çağıran zaten yaptı)."""
+    out = {"gnubgid": gid, "cube": _parse_cube_text(_capture_command("hint"))}
+    try:
+        out["evaluate"] = _safe(gnubg.evaluate())
+    except Exception as e:
+        out["evaluate_err"] = str(e)
+    return out
 
 
 def _cubetest(pos):

@@ -1244,6 +1244,37 @@ export async function matchPr(
   }
 }
 
+// ---- Pozisyon Analizi: GNU Backgammon motoru (sunucu) ----
+// PositionAnalyzer "GNU" motorunu secince cagrilir. Tarayicidaki wildbg'ye EK; gnubg sunucuda.
+// probs = 6'li DISLAYAN [wn,wg,wb,ln,lg,lb] (wildbg ile ayni) -> mevcut gosterim aynen calisir.
+export interface GnuMove {
+  notation: string // gnubg hamle notasyonu ("8/5 6/5")
+  equity: number // cubeful/EMG equity
+  probs: number[] | null // 6'li [wn,wg,wb,ln,lg,lb] (yoksa null)
+}
+export interface GnuAnalysis {
+  engine: string
+  gnubgid?: string | null
+  probs?: number[] | null // zarsiz: pozisyon degerlendirmesi
+  moves?: GnuMove[] | null // zarli: aday hamleler
+  cube?: unknown
+}
+export async function analyzePosition(body: {
+  points: number[]
+  bar: { white: number; black: number }
+  turn: Player
+  dice: number[] // [] veya [d1,d2] (cift zar bile [d,d]; gnubg genisletir)
+  cube?: { value: number; owner: Player | null }
+  score?: { white: number; black: number }
+  matchLength?: number
+  plies?: number // 0 (hizli) | 2 (derin)
+}): Promise<GnuAnalysis> {
+  return req<GnuAnalysis>('/analyze-position', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  })
+}
+
 // ==================== BASARIMLAR (ACHIEVEMENTS) ====================
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'diamond' | null
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'

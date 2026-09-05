@@ -11,6 +11,12 @@ import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
+import { analyzePosition, getToken } from '../api'
+
+// Motor: wildbg (tarayıcı sinir ağı) veya gnubg (sunucu). Sonuçlar ORTAK biçime indirgenir.
+type Engine = 'wildbg' | 'gnubg'
+// Gösterim için ortak hamle satırı: label = hazır notasyon (wildbg'de moveNotation, gnubg'de düz metin).
+type MoveRow = { label: string; equity: number; probs: number[] }
 
 interface Props {
   neuralEval: (state: GameState, onRoll: Player, deep: boolean) => Promise<number[]>
@@ -90,8 +96,10 @@ export default function PositionAnalyzer({
   const [scoreW, setScoreW] = useState(0)
   const [scoreB, setScoreB] = useState(0)
   const [result, setResult] = useState<number[] | null>(null)
-  const [moveRanked, setMoveRanked] = useState<RankedMove[] | null>(null)
+  const [moveRows, setMoveRows] = useState<MoveRow[] | null>(null)
   const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
+  const [engine, setEngine] = useState<Engine>('wildbg') // analiz motoru (wildbg=tarayıcı, gnubg=sunucu)
+  const [engineMsg, setEngineMsg] = useState('') // gnubg giriş/erişim uyarısı
   const [busy, setBusy] = useState(false)
   const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
   const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -255,22 +263,54 @@ export default function PositionAnalyzer({
   }
 
   async function analyze() {
+    setEngineMsg('')
+    // gnubg (sunucu) motoru giriş ister — misafirde çağırma, kibar uyar.
+    if (engine === 'gnubg' && !getToken()) {
+      setEngineMsg(t('pa.gnuLogin'))
+      return
+    }
     setBusy(true)
     setResult(null)
-    setMoveRanked(null)
+    setMoveRows(null)
     try {
       const deep = ply === 2
-      if (d1 && d2) {
-        // Zar verildi -> en iyi hamle(ler)
+      const hasDice = !!(d1 && d2)
+      if (engine === 'gnubg') {
+        // Sunucudaki GNU Backgammon: yapısal konumu gönder, ortak biçime indir.
+        const resp = await analyzePosition({
+          points: pts,
+          bar,
+          turn,
+          dice: hasDice ? [d1, d2] : [], // çift zar bile [d,d]; gnubg kendisi genişletir
+          cube: { value: cube.value, owner: cube.owner },
+          score: { white: scoreW, black: scoreB },
+          matchLength: matchLen,
+          plies: deep ? 2 : 0,
+        })
+        if (resp.moves && resp.moves.length > 0) {
+          setMoveRows(
+            resp.moves.map((m) => ({ label: m.notation, equity: m.equity, probs: m.probs ?? [] })),
+          )
+        } else if (resp.probs && resp.probs.length >= 6) {
+          setResult(resp.probs)
+        } else {
+          setEngineMsg(t('pa.gnuFail'))
+        }
+      } else if (hasDice) {
+        // wildbg — zar verildi -> en iyi hamle(ler)
         const dice = d1 === d2 ? [d1, d1, d1, d1] : [d1, d2]
         const st: GameState = { ...state, dice, diceUsed: dice.map(() => false) }
-        setMoveRanked(await neuralAnalyze(st, deep))
+        const ranked = await neuralAnalyze(st, deep)
+        setMoveRows(
+          ranked.map((r) => ({ label: moveNotation(r.move, turn), equity: r.equity, probs: r.probs })),
+        )
       } else {
-        // Zarsiz -> pozisyonun genel kazanma sansi
+        // wildbg — zarsız -> pozisyonun genel kazanma şansı
         setResult(await neuralEval(state, turn, deep))
       }
     } catch {
-      /* sinir agi yok */
+      // gnubg erişilemedi / sinir ağı yok
+      if (engine === 'gnubg') setEngineMsg(t('pa.gnuFail'))
     } finally {
       setBusy(false)
     }
@@ -539,7 +579,7 @@ export default function PositionAnalyzer({
                 onClick={() => {
                   setD1(0)
                   setD2(0)
-                  setMoveRanked(null)
+                  setMoveRows(null)
                 }}
               >
                 {t('pa.noDice')}
@@ -559,6 +599,42 @@ export default function PositionAnalyzer({
                 ))}
               </select>
             </div>
+          </div>
+
+          <div className="setup-row">
+            <div className="setup-label">{t('pa.engine')}</div>
+            <div className="menu-targets">
+              <Button
+                variant={engine === 'wildbg' ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setEngine('wildbg')
+                  setResult(null)
+                  setMoveRows(null)
+                  setEngineMsg('')
+                }}
+              >
+                {t('pa.engineFast')}
+              </Button>
+              <Button
+                variant={engine === 'gnubg' ? 'secondary' : 'ghost'}
+                onClick={() => {
+                  setEngine('gnubg')
+                  setResult(null)
+                  setMoveRows(null)
+                  setEngineMsg(getToken() ? '' : t('pa.gnuLogin'))
+                }}
+              >
+                {t('pa.engineGnu')}
+              </Button>
+            </div>
+            <div className="pa-depth-note">
+              {engine === 'gnubg' ? t('pa.engineGnuNote') : t('pa.engineFastNote')}
+            </div>
+            {engineMsg && (
+              <div className="pa-limit-toast" role="alert" style={{ position: 'static', marginTop: 6 }}>
+                <Icon name="alert" size={15} /> {engineMsg}
+              </div>
+            )}
           </div>
 
           <div className="setup-row">
@@ -620,7 +696,7 @@ export default function PositionAnalyzer({
         </div>
 
         <div className="analyzer-results">
-          {!result && !moveRanked && <div className="pa-placeholder">{t('pa.resultsPlaceholder')}</div>}
+          {!result && !moveRows && <div className="pa-placeholder">{t('pa.resultsPlaceholder')}</div>}
 
           {result && (
             <div className="pa-result">
@@ -658,26 +734,30 @@ export default function PositionAnalyzer({
             </div>
           )}
 
-          {moveRanked && moveRanked.length > 0 && (
+          {moveRows && moveRows.length > 0 && (
             <div className="pa-result">
               <div className="pa-win">
-                {t('pa.bestMove')}: <b>{moveNotation(moveRanked[0].move, turn)}</b>
+                {t('pa.bestMove')}: <b>{moveRows[0].label}</b>
               </div>
               <div className="prob-sub">
-                <Swatch color={turn} />{' '}
-                {t('pa.winChance', { name: turn === 'white' ? t('pa.white') : t('pa.black') })}{' '}
-                {winOf(moveRanked[0].probs).toFixed(1)}% · {t('an.equity')}:{' '}
-                {moveRanked[0].equity.toFixed(3)}
+                {moveRows[0].probs.length >= 6 && (
+                  <>
+                    <Swatch color={turn} />{' '}
+                    {t('pa.winChance', { name: turn === 'white' ? t('pa.white') : t('pa.black') })}{' '}
+                    {winOf(moveRows[0].probs).toFixed(1)}% ·{' '}
+                  </>
+                )}
+                {t('an.equity')}: {moveRows[0].equity.toFixed(3)}
               </div>
               <div className="move-list">
                 <div className="move-list-head">{t('an.bestMoves')}</div>
-                {moveRanked.slice(0, 5).map((r, i) => (
-                  <div key={r.move.resultKey} className={`move-row ${i === 0 ? 'best' : ''}`}>
+                {moveRows.slice(0, 5).map((r, i) => (
+                  <div key={`${i}-${r.label}`} className={`move-row ${i === 0 ? 'best' : ''}`}>
                     <span className="rank">{i + 1}.</span>
-                    <span className="notation">{moveNotation(r.move, turn)}</span>
+                    <span className="notation">{r.label}</span>
                     <span className="eq">{r.equity.toFixed(3)}</span>
                     <span className="diff">
-                      {i === 0 ? '' : (r.equity - moveRanked[0].equity).toFixed(3)}
+                      {i === 0 ? '' : (r.equity - moveRows[0].equity).toFixed(3)}
                     </span>
                   </div>
                 ))}
