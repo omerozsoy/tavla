@@ -136,4 +136,105 @@ class AnalysisOrchestrator
             'perDecision' => $per,
         ];
     }
+
+    /**
+     * KÜP PR (double/no-double/take/drop). gnubg cube analizi (3 aksiyon equity'si) -> XG kaybı.
+     * Küp girdileri: e['cube']['chosen'] + e['pos'] (doubler on-roll). PR asla null.
+     *
+     * @return array{pr:float,strictPr:?float,loosePr:?float,loss:float,decisions:int,evaluated:int,skipped:int,perDecision:array}
+     */
+    public function cubePr(array $log, string $player, int $matchLength = 0): array
+    {
+        $loss = 0.0;
+        $allLoss = 0.0;
+        $decisions = 0;
+        $evaluated = 0;
+        $skipped = 0;
+        $per = [];
+
+        foreach ($log as $e) {
+            if (($e['player'] ?? null) !== $player) {
+                continue;
+            }
+            if (empty($e['cube']) || empty($e['pos'])) {
+                continue;
+            }
+            $chosen = $e['cube']['chosen'] ?? null;
+            if (! in_array($chosen, ['double', 'no-double', 'take', 'drop'], true)) {
+                $skipped++;
+
+                continue;
+            }
+            $pos = $e['pos'];
+            $mctx = $e['mctx'] ?? null;
+            $structured = [
+                'points' => $pos['points'],
+                'bar' => $pos['bar'] ?? ['white' => 0, 'black' => 0],
+                'turn' => $pos['turn'] ?? $player, // küp kararında pozisyon doubler'ın (on-roll)
+                'dice' => [], // küp kararı -> zar yok
+                'matchLength' => is_array($mctx) ? (int) ($mctx['matchLen'] ?? $matchLength) : $matchLength,
+            ];
+            if (is_array($mctx)) {
+                if (isset($mctx['score'])) {
+                    $structured['score'] = $mctx['score'];
+                }
+                $structured['cube'] = ['value' => (int) ($mctx['cube'] ?? 1), 'owner' => $mctx['cubeOwner'] ?? null];
+                $structured['crawford'] = (bool) ($mctx['crawford'] ?? false);
+            }
+            $res = $this->gnubg->analyze($structured);
+            $eq = $res['cube']['equities'] ?? null;
+            if (! is_array($eq) || ! isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
+                $skipped++;
+
+                continue;
+            }
+            $evaluated++;
+            [$lossVal, $counts] = $this->cubeLoss($chosen, (float) $eq['noDouble'], (float) $eq['doubleTake'], (float) $eq['doublePass']);
+            $allLoss += $lossVal;
+            if ($counts) {
+                $loss += $lossVal;
+                $decisions++;
+            }
+            $per[] = ['chosen' => $chosen, 'loss' => round($lossVal, 4), 'counts' => $counts];
+        }
+
+        $strict = $decisions > 0 ? ($loss / $decisions) * 500 : null;
+        $loose = $evaluated > 0 ? ($allLoss / $evaluated) * 500 : null;
+
+        return [
+            'pr' => $strict ?? $loose ?? 0.0,
+            'strictPr' => $strict,
+            'loosePr' => $loose,
+            'loss' => $loss,
+            'decisions' => $decisions,
+            'evaluated' => $evaluated,
+            'skipped' => $skipped,
+            'perDecision' => $per,
+        ];
+    }
+
+    /**
+     * Küp aksiyonu equity kaybı (XG). gnubg equity'leri doubler perspektifi:
+     *   noDouble, doubleTake, doublePass. Teklif: Double = min(take,pass) [rakip en kötüyü seçer].
+     *   Yanıt (take/drop): rakip perspektifi -> take = -doubleTake, pass = -1.
+     *
+     * @return array{0:float,1:bool} [loss, countsForPR]
+     */
+    private function cubeLoss(string $chosen, float $noDouble, float $doubleTake, float $doublePass): array
+    {
+        if ($chosen === 'double' || $chosen === 'no-double') {
+            $doubleVal = min($doubleTake, $doublePass); // rakip optimal yanıt (doubler için en kötü)
+            $best = max($noDouble, $doubleVal);
+            $worst = min($noDouble, $doubleVal);
+            $chosenVal = $chosen === 'double' ? $doubleVal : $noDouble;
+        } else { // take / drop -> yanıt veren (rakip) perspektifi
+            $takeVal = -$doubleTake;
+            $passVal = -1.0;
+            $best = max($takeVal, $passVal);
+            $worst = min($takeVal, $passVal);
+            $chosenVal = $chosen === 'take' ? $takeVal : $passVal;
+        }
+
+        return [max(0.0, $best - $chosenVal), abs($best - $worst) >= self::OBVIOUS];
+    }
 }

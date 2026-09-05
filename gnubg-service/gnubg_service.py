@@ -437,6 +437,9 @@ def _analyze(pos):
     ekler (PR icin: loss = best_eq - played_eq, EMG). Normalizasyon backend GnuBgAdapter'da."""
     gid = structured_to_gnubgid(pos)
     gnubg.setgnubgid(gid)
+    # Zar yoksa -> KÜP kararı (gnubg.hint() küp desteklemiyor; 'hint' metnini parse et).
+    if len([d for d in (pos.get("dice", []) or []) if d]) < 2:
+        return _cube_result(gid)
     _set_plies(pos.get("plies"))
     hint = gnubg.hint()
     out = {"gnubgid": gid, "result": hint}
@@ -531,6 +534,39 @@ def _capture_command(cmd):
             return r.read()
     except Exception:
         return ""
+
+
+def _parse_cube_text(text):
+    """gnubg 'hint' metnindeki KÜP analizinden aksiyon equity'lerini çıkar:
+      1. No double     +0.385
+      2. Double, pass  +1.000
+      3. Double, take  +0.301
+    -> {equities:{noDouble,doublePass,doubleTake}, proper, raw}."""
+    import re
+
+    names = {
+        "No double": "noDouble", "No redouble": "noDouble",
+        "Double, pass": "doublePass", "Redouble, pass": "doublePass",
+        "Double, take": "doubleTake", "Redouble, take": "doubleTake",
+        "Too good to double, pass": "doublePass", "Too good to double, take": "doubleTake",
+    }
+    eq = {}
+    for line in (text or "").splitlines():
+        m = re.match(r"\s*\d+\.\s+(.+?)\s+([+-]?\d+\.\d+)", line)
+        if m:
+            key = names.get(m.group(1).strip())
+            if key and key not in eq:
+                eq[key] = float(m.group(2))
+    proper = None
+    for line in (text or "").splitlines():
+        if "Proper cube action:" in line:
+            proper = line.split(":", 1)[1].strip()
+    return {"equities": eq, "proper": proper, "raw": text}
+
+
+def _cube_result(gid):
+    """Kup kararı analizi: gnubg 'hint' metnini yakala + parse et (hint() küp desteklemiyor)."""
+    return {"gnubgid": gid, "cube": _parse_cube_text(_capture_command("hint"))}
 
 
 def _cubetest(pos):

@@ -45,26 +45,34 @@ class GnubgPr extends Command
         $this->line("Mac #{$mr->id}  oyuncu=$player  match_length=".($mr->match_length ?? 0).'  log-entry='.count($log));
         $this->line('Analiz ediliyor (gnubg, karar basina bir cagri)...');
 
-        $r = $orch->checkerPr($log, $player, 0, 2); // v1: money temeli
+        $ml = (int) ($mr->match_length ?? 0); // fallback; mctx varsa karar-başı match-aware kullanılır
+        $r = $orch->checkerPr($log, $player, $ml, 2);
+        $c = $orch->cubePr($log, $player, $ml);
+
+        // Genel PR = havuzlanmış (checker + cube). PR asla null.
+        $totLoss = $r['loss'] + $c['loss'];
+        $totDec = $r['decisions'] + $c['decisions'];
+        $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : ($r['pr'] ?: $c['pr']);
 
         $this->line('');
-        $this->line('gnubg checker PR : '.round($r['pr'], 2)
+        $this->line('gnubg CHECKER PR : '.round($r['pr'], 2)
             ."  (sayilan {$r['decisions']}, degerlendirilen {$r['evaluated']}, atlanan {$r['skipped']})");
-        $this->line('  strict='.($r['strictPr'] !== null ? round($r['strictPr'], 2) : '-')
-            .'  loose='.($r['loosePr'] !== null ? round($r['loosePr'], 2) : '-'));
+        $this->line('gnubg CUBE    PR : '.round($c['pr'], 2)
+            ."  (sayilan {$c['decisions']}, degerlendirilen {$c['evaluated']}, atlanan {$c['skipped']})");
+        $this->line('gnubg GENEL   PR : '.round($overall, 2)."  (toplam sayilan {$totDec})");
         $this->line('client PR (kayit): '.($mr->pr ?? 'null'));
 
-        // Atlama teshisi: neden atlandi + ilk atlanan girdinin yapisi.
         if ($r['skipped'] > 0) {
-            $this->warn('Atlama sebepleri: '.json_encode($r['skipReasons']));
-            $this->warn('Ilk atlanan: '.json_encode($r['firstSkip']));
+            $this->warn('Checker atlama: '.json_encode($r['skipReasons']).'  ilk: '.json_encode($r['firstSkip']));
+        }
+        foreach (array_slice($r['perDecision'], 0, 6) as $i => $d) {
+            $this->line(sprintf('  chk#%-2d %-16s loss=%.4f %s', $i + 1, $d['move'] ?? '?', $d['loss'], $d['counts'] ? '' : '(sayilmaz)'));
+        }
+        foreach (array_slice($c['perDecision'], 0, 6) as $i => $d) {
+            $this->line(sprintf('  cube#%-2d %-10s loss=%.4f %s', $i + 1, $d['chosen'] ?? '?', $d['loss'], $d['counts'] ? '' : '(sayilmaz)'));
         }
 
-        foreach (array_slice($r['perDecision'], 0, 8) as $i => $d) {
-            $this->line(sprintf('  #%-2d %-16s loss=%.4f %s', $i + 1, $d['move'] ?? '?', $d['loss'], $d['counts'] ? '' : '(sayilmaz)'));
-        }
-
-        $this->info('Bitti. (gnubg = checker-only + money v1; client = checker+cube.)');
+        $this->info('Bitti. (gnubg checker+cube; mctx varsa match-aware, yoksa money.)');
 
         return self::SUCCESS;
     }
