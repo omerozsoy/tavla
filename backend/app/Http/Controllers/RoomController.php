@@ -331,15 +331,20 @@ class RoomController extends Controller
             } else {
                 $amount = $stake;
             }
-            if ($winner) {
-                $winner->coins = ($winner->coins ?? 0) + $amount;
-                $winner->save();
-            }
+            // COIN KORUNUMU (güvenlik): kaybedenden fiilen alınabilen kadar düş (min stake, bakiye);
+            // kazanana TAM O KADARINI ekle. Aksi halde kaybedenin bakiyesi stake'in altındaysa
+            // (ör. eşzamanlı maçlarla drenaj) net coin BASILIR: kazanan tam stake alır, kaybeden
+            // yalnız bakiyesini kaybeder. min() ile mint engellenir; transfer her zaman sıfır-toplam.
+            $debit = $loser ? min($amount, max(0, (int) ($loser->coins ?? 0))) : $amount;
             if ($loser) {
-                $loser->coins = max(0, ($loser->coins ?? 0) - $amount);
+                $loser->coins = ($loser->coins ?? 0) - $debit;
                 $loser->save();
             }
-            return ['amount' => $amount];
+            if ($winner) {
+                $winner->coins = ($winner->coins ?? 0) + $debit;
+                $winner->save();
+            }
+            return ['amount' => $debit];
         });
 
         if (isset($out['already'])) {
