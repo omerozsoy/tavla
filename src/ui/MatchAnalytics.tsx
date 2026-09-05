@@ -247,8 +247,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                       </div>
                     </div>
 
-                    {/* Alt serit: sonuc · tarih · rating degisimi · genislet */}
+                    {/* Alt serit: mac id · sonuc · tarih · rating degisimi · genislet */}
                     <div className="mh-foot">
+                      <span className="mh-id" title={t('mh.matchId')}>#{m.id}</span>
                       <span className={`mh-out ${m.won ? 'win' : 'loss'}`}>
                         {m.won ? t('mh.win') : t('mh.loss')}
                       </span>
@@ -262,6 +263,10 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                   </button>
                   {open && (
                     <div className="mh-detail">
+                      <div className="mh-stat">
+                        <span className="mh-stat-k">{t('mh.matchId')}</span>
+                        <span className="mh-stat-v">#{m.id}</span>
+                      </div>
                       <div className="mh-stat">
                         <span className="mh-stat-k">{t('mh.dScore')}</span>
                         <span className="mh-stat-v">{hasScore ? `${m.score_self}–${m.score_opp}` : '—'}</span>

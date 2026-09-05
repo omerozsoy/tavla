@@ -1944,6 +1944,13 @@ button[aria-disabled='true'],
 .mh-card .mh-out.loss {
   background: var(--tv-brick, #c9563f);
 }
+.mh-card .mh-foot .mh-id {
+  flex: none;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  opacity: 0.75;
+}
 .mh-card .mh-foot .mh-date {
   font-size: 0.76rem;
   color: var(--muted);
