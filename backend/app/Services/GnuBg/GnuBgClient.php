@@ -105,6 +105,21 @@ class GnuBgClient
         }
     }
 
+    /** LUCK teşhisi: gnubg native 'luck' çıktısını (istatistik metni + yapısal per-move) döndürür. */
+    public function lucktest(int $pointsMatch = 1): ?array
+    {
+        try {
+            $resp = Http::timeout(180) // oto-maç + analiz -> uzun
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/lucktest'), ['points_match' => $pointsMatch]);
+
+            return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
