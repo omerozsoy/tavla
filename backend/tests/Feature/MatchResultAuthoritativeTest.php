@@ -145,6 +145,48 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertLessThan(1500, $white->fresh()->rating);
     }
 
+    // ÜRETİM REPRODUCTION: online maç GERÇEK log (checker + cube kararları + mctx) ile raporlanır.
+    // reportRating'in tüm senkron işleri (ErrorJournalService, prFromLog, achievement, opponent PR)
+    // gerçek log üzerinde çalışır. Hiçbiri 500'e yol açmamalı ("puanın kaydedilemedi" bug'ı).
+    public function test_report_with_full_online_log_does_not_500(): void
+    {
+        $white = $this->makeUser('logw'); // p1
+        $black = $this->makeUser('logb'); // p2 (gerçek kazanan, score 0-3)
+        $this->makeFinishedRoom($white, $black);
+
+        $opening = [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2];
+        $mctx = ['score' => ['white' => 0, 'black' => 0], 'cube' => 1, 'cubeOwner' => null, 'crawford' => false, 'matchLen' => 3];
+        $pos = fn ($turn, $dice) => [
+            'points' => $opening, 'bar' => ['white' => 0, 'black' => 0], 'off' => ['white' => 0, 'black' => 0],
+            'turn' => $turn, 'dice' => $dice, 'diceUsed' => array_fill(0, max(2, count($dice)), false),
+        ];
+        $log = json_encode(['hc' => 'black', 'log' => [
+            [
+                'notation' => '24/22 13/11', 'best' => '24/22 13/11', 'loss' => 0.02,
+                'pos' => $pos('black', [3, 2]), 'steps' => [],
+                'playedSteps' => [['from' => 0, 'to' => 2, 'die' => 2], ['from' => 11, 'to' => 13, 'die' => 2]],
+                'player' => 'black', 'dice' => [3, 2], 'cands' => [], 'probs' => [0.5, 0.1, 0.01, 0.3, 0.05, 0.01],
+                'seq' => 0, 'countsForPR' => true, 'prAdjustedEquityLoss' => 0.02, 'mctx' => $mctx,
+            ],
+            [
+                'notation' => '', 'best' => '', 'loss' => 0.0, 'player' => 'black', 'pos' => $pos('black', []),
+                'seq' => 1, 'cube' => ['win' => 60, 'equity' => 0.3, 'recommended' => 'no-double', 'chosen' => 'no-double', 'correct' => true],
+                'countsForPR' => false, 'prAdjustedEquityLoss' => 0.0, 'mctx' => $mctx,
+            ],
+        ]]);
+
+        Sanctum::actingAs($black);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'AUTHR',
+            'match_length' => 3, 'match_type' => 'match', 'pr' => 3.33, 'luck' => 1.5,
+            'score_self' => 3, 'score_opp' => 0, 'log' => $log,
+        ])->assertOk();
+
+        $mr = MatchResult::where('user_id', $black->id)->latest('id')->first();
+        $this->assertNotNull($mr);
+        $this->assertTrue((bool) $mr->won);
+    }
+
     // Rakip ONCE (yaris aninda oda kararsizken) YANLIS raporladi; oda simdi KESIN.
     // Otoriter raporda rakibin satiri da tamamlayiciya cekilir (self-heal).
     public function test_authoritative_report_heals_opponent_wrong_row(): void
