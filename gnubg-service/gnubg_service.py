@@ -461,13 +461,13 @@ def _analyze(pos):
                 "loss": max(0.0, (best_eq or 0.0) - peq),
             }
         else:
-            dbg = None
+            dbg = {"turn": pos.get("turn"), "gnubgid": gid,
+                   "all_moves": [c.get("move") for c in cand]}
             try:
-                m0 = cand[0].get("move", "")
-                cw0, cb0 = _boards_after(pos, _parse_gnubg_move_to_steps(pos.get("turn", "white"), m0))
-                dbg = {"cand0_move": m0, "cand0_white": cw0, "cand0_black": cb0}
+                gb = gnubg.board()  # gnubg'nin analiz ettiği GERÇEK tahta (structured_to_gnubgid sonucu)
+                dbg["gnubg_board"] = [list(gb[0]), list(gb[1])]
             except Exception as e:
-                dbg = {"err": str(e)}
+                dbg["board_err"] = str(e)
             out["played"] = {"matched": False, "white_after": white_after,
                              "black_after": black_after, "debug": dbg}
     return out
