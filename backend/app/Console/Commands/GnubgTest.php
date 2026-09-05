@@ -92,7 +92,22 @@ class GnubgTest extends Command
         ]);
         $this->line(json_encode($cube));
 
-        $this->info('BASARILI. (Kup yapisini paylas -> cube PR eklenecek.)');
+        // ROLLOUT teşhisi: gnubg rollout çıktı formatı (rollout tırmanma tasarımı için).
+        $this->line('');
+        $this->line('ROLLOUT yapisi (rollout tirmanma icin — bu ciktiyi paylas):');
+        $ro = $gnubg->rollouttest([
+            'points' => $opening, 'turn' => 'white', 'dice' => [3, 1], 'matchLength' => 5, 'trials' => 36,
+        ]);
+        // rollout_text uzun olabilir -> ilk 1500 char yeter (format icin).
+        if (isset($ro['rollout_text'])) {
+            $ro['rollout_text'] = substr((string) $ro['rollout_text'], 0, 1500);
+        }
+        if (isset($ro['hint_text'])) {
+            $ro['hint_text'] = substr((string) $ro['hint_text'], 0, 400);
+        }
+        $this->line(json_encode($ro));
+
+        $this->info('BASARILI. (Kup + rollout yapisini paylas -> cube PR / rollout tirmanma.)');
 
         return self::SUCCESS;
     }

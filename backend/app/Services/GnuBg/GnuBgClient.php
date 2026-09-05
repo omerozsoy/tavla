@@ -90,6 +90,21 @@ class GnuBgClient
         }
     }
 
+    /** ROLLOUT teşhisi: pozisyonun gnubg rollout çıktısını döndürür (rollout tırmanma tasarımı için). */
+    public function rollouttest(array $position): ?array
+    {
+        try {
+            $resp = Http::timeout(120) // rollout yavaş
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/rollouttest'), $position);
+
+            return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;

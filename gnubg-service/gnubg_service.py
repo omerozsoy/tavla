@@ -603,6 +603,28 @@ def _cubetest(pos):
     return out
 
 
+def _rollouttest(pos, trials=36):
+    """ROLLOUT teşhisi: pozisyonu kur, küçük bir rollout çalıştır, çıktıyı (fd-yakalama) döndür.
+    gnubg rollout API/çıktı formatını görmek için (adaptive rollout tırmanmasını buna göre yazacağım).
+    rollout PAHALI -> yalnız teşhis/az trial."""
+    out = {}
+    try:
+        gid = structured_to_gnubgid(pos)
+        out["gnubgid"] = gid
+        gnubg.setgnubgid(gid)
+    except Exception as e:
+        out["setgnubgid_err"] = str(e)
+        return out
+    try:
+        gnubg.command("set rollout trials %d" % int(trials))
+    except Exception as e:
+        out["set_trials_err"] = str(e)
+    # rollout metni C-stdout'a yazılır -> fd-yakalama ile al. (Önce hint move listesini kurabilir.)
+    out["hint_text"] = _capture_command("hint")
+    out["rollout_text"] = _capture_command("rollout")
+    return out
+
+
 def _initial_pos():
     return {
         "points": [-2, 0, 0, 0, 0, 5, 0, 3, 0, 0, 0, -5, 5, 0, 0, 0, -3, 0, -5, 0, 0, 0, 0, 2],
@@ -732,6 +754,10 @@ class Handler(BaseHTTPRequestHandler):
                 if not data.get("points"):
                     return self._send(400, {"error": "points gerekli"})
                 return self._send(200, _cubetest(data))
+            if self.path == "/rollouttest":
+                if not data.get("points"):
+                    return self._send(400, {"error": "points gerekli"})
+                return self._send(200, _rollouttest(data, int(data.get("trials", 36))))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})
