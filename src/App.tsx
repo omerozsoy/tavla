@@ -5721,6 +5721,18 @@ export default function App() {
     )
   }
 
+  // GÜVENLİK AĞI (board FLASH fix): online modda GERÇEK oyun yoksa (oda 'playing' değil + maç
+  // bitmedi) game-view'ı (board) RENDER ETME. "Tek Oyun Başla → bir an board görünüp arama
+  // ekranına geçme" bug'ı: Start geçişinde roomBusy daha true olmadan (veya bayat mode='online'
+  // + room=null iken) bu dala düşüp VARSAYILAN board'u (opening='roll') bir kare gösteriyordu.
+  // Aranırken/bekleme odasında roomBusy/oda dalı (yukarıda) zaten arama ekranını gösterir; buraya
+  // yalnız geçiş/bayat kare düşer -> board YERİNE boş bırak (bir sonraki render arama/home devralır).
+  // NOT: room===null'a daralt -> 'waiting'/'playing'/'finished' odalar (arama dalı + sonuç ekranı)
+  // ETKİLENMEZ; yalnız oda YOKKEN (Start geçişi / bayat online) board flash'ı engellenir.
+  if (mode === 'online' && !matchOver && room === null) {
+    return <div className="app game-view" aria-hidden />
+  }
+
   const showHintUI =
     mode === 'pvb' && interactive && diceRolled && !gameWon && remainingDice.length > 0
 
