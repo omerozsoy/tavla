@@ -418,26 +418,32 @@ class AuthController extends Controller
         // sahte dusuk-hata uyduramaz. 'shadow' fark loglar (kaydetmez), 'authoritative' kaydeder.
         $prMode = (string) config('validator.pr_mode', 'off');
         if ($prMode !== 'off' && ! empty($data['log'])) {
-            $decoded = json_decode($data['log'], true);
-            if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
-                $ml = (int) ($data['match_length'] ?? 1);
-                $isMoney = ($data['match_type'] ?? 'match') === 'coin'; // coin=para oyunu -> 1pt ×1.5 YOK
-                $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml, $isMoney);
-                if ($srv !== null && $srv['pr'] !== null) {
-                    if ($prMode === 'shadow') {
-                        \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [
-                            'user_id' => $user->id, 'room' => $roomCode,
-                            'client_pr' => $clientPr, 'server_pr' => $srv['pr'],
-                            'decisions' => $srv['decisions'],
-                            'diff' => $clientPr !== null ? round(abs((float) $clientPr - (float) $srv['pr']), 2) : null,
-                        ]);
-                    } elseif ($prMode === 'authoritative') {
-                        $selfPr = $srv['pr']; // istemci loss'una guvenme -> sunucu-hesapli deger
-                        // Havuzlama totalleri de sunucudan (tutarli): overall.equityLost/decisions.
-                        $prEquityLost = (float) ($srv['equity_lost'] ?? $prEquityLost);
-                        $prDecisions = (int) ($srv['decisions'] ?? $prDecisions);
+            // BEST-EFFORT: validator (harici servis) yavaş/hatalı olsa bile reportRating'i ASLA
+            // düşürme (aksi halde "puanın kaydedilemedi" + rating kaydolmaz). Hata -> logla, geç.
+            try {
+                $decoded = json_decode($data['log'], true);
+                if (is_array($decoded) && ! empty($decoded['hc']) && is_array($decoded['log'] ?? null)) {
+                    $ml = (int) ($data['match_length'] ?? 1);
+                    $isMoney = ($data['match_type'] ?? 'match') === 'coin'; // coin=para oyunu -> 1pt ×1.5 YOK
+                    $srv = app(\App\Services\MoveValidatorService::class)->analyzePr($decoded['hc'], $decoded['log'], $ml, $isMoney);
+                    if ($srv !== null && $srv['pr'] !== null) {
+                        if ($prMode === 'shadow') {
+                            \Illuminate\Support\Facades\Log::info('PR shadow (client vs server)', [
+                                'user_id' => $user->id, 'room' => $roomCode,
+                                'client_pr' => $clientPr, 'server_pr' => $srv['pr'],
+                                'decisions' => $srv['decisions'],
+                                'diff' => $clientPr !== null ? round(abs((float) $clientPr - (float) $srv['pr']), 2) : null,
+                            ]);
+                        } elseif ($prMode === 'authoritative') {
+                            $selfPr = $srv['pr']; // istemci loss'una guvenme -> sunucu-hesapli deger
+                            // Havuzlama totalleri de sunucudan (tutarli): overall.equityLost/decisions.
+                            $prEquityLost = (float) ($srv['equity_lost'] ?? $prEquityLost);
+                            $prDecisions = (int) ($srv['decisions'] ?? $prDecisions);
+                        }
                     }
                 }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('validator PR hata (yok sayildi)', ['err' => $e->getMessage()]);
             }
         }
 
@@ -502,8 +508,13 @@ class AuthController extends Controller
                 'match_result_id' => $result->id, 'user_id' => $user->id,
             ]);
         }
-        // Yeni mac -> median cache'ini (tum filtreler) gecersiz kil.
-        app(\App\Services\PlayerStatisticsService::class)->invalidate($user->id);
+        // Yeni mac -> median cache'ini (tum filtreler) gecersiz kil. (best-effort: cache hatasi
+        // reportRating'i dusurmesin.)
+        try {
+            app(\App\Services\PlayerStatisticsService::class)->invalidate($user->id);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('stats invalidate hata (yok sayildi)', ['err' => $e->getMessage()]);
+        }
 
         // Hata Gunlugu: bu macin log'unu karar-karar analiz et (siniflandirma+pip).
         // Motor CALISMAZ; log'daki hazir equity/loss kullanilir. Hata olursa mac
@@ -548,20 +559,24 @@ class AuthController extends Controller
         // rakip once raporladiysa bizim opponent_pr'imizi onun pr'i yap; ayrica onun satirinda
         // bizim pr'imizi opponent_pr olarak isle (o da bizi dogru gorsun).
         $opponentPr = null;
-        if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
-            $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
-                ->where('user_id', '!=', $user->id)
-                ->latest('id')
-                ->first();
-            if ($oppRow) {
-                $opponentPr = $oppRow->pr;
-                if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
-                    $result->opponent_pr = $opponentPr;
-                    $result->save();
-                    $oppRow->opponent_pr = $selfPr;
-                    $oppRow->save();
+        try {
+            if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
+                $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
+                    ->where('user_id', '!=', $user->id)
+                    ->latest('id')
+                    ->first();
+                if ($oppRow) {
+                    $opponentPr = $oppRow->pr;
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
+                        $result->opponent_pr = $opponentPr;
+                        $result->save();
+                        $oppRow->opponent_pr = $selfPr;
+                        $oppRow->save();
+                    }
                 }
             }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('opponent PR senkron hata (yok sayildi)', ['err' => $e->getMessage()]);
         }
 
         return response()->json([
