@@ -282,6 +282,7 @@ class AuthController extends Controller
 
         // YETKILI KURAL: oda 'friendly' (davet kodu maci) ise KESINLIKLE puansiz — istemci
         // ranked=true gonderse veya refresh/rejoin ile bayrak kaybolsa bile oda mode'u belirler.
+        $room = null;
         if (! empty($data['room_code'])) {
             $room = \App\Models\Room::where('code', $data['room_code'])->first();
             if ($room && $room->mode === 'friendly') {
@@ -290,7 +291,18 @@ class AuthController extends Controller
         }
 
         $ra = $user->rating ?? 1500;
-        $rb = $data['opponent_rating'];
+        // RATING BÜTÜNLÜĞÜ (güvenlik): rakip rating'ine İSTEMCİDEN GÜVENME -> online odada gerçek
+        // rakip slotunun (maç anındaki) rating'iyle geçersiz kıl. Aksi halde istemci
+        // opponent_rating:4000 gönderip Elo kazancını şişirebilir. Oda/rating yoksa istemciye düş
+        // (pvb / temizlenmiş oda geri uyum).
+        $rb = (int) ($data['opponent_rating'] ?? $ra);
+        if ($room) {
+            $oppRating = $room->p1_user_id === $user->id ? $room->p2_rating
+                : ($room->p2_user_id === $user->id ? $room->p1_rating : null);
+            if ($oppRating !== null && (int) $oppRating > 0) {
+                $rb = (int) $oppRating;
+            }
+        }
 
         // SUNUCU-OTORITER GALIBIYET/MAGLUBIYET: online macta istemcinin 'won' beyanina
         // GUVENME (perspektif/bayat-state hatasi kazanilan maci "kayip" yazabiliyordu).

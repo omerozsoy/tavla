@@ -15,9 +15,10 @@ return [
     // DEMO odeme modu: banka bilgileri (yukaridaki) GIRILMEDEN kredi karti sayfasini
     // gormek/test etmek icin. AKTIFKEN GERCEK PARA CEKILMEZ; "Öde" deyince coin/uyelik
     // dogrudan hesaba yuklenir. Yalnizca gelistirme/onizleme icindir.
-    // Garanti bilgileri girilir girilmez (isConfigured()) demo otomatik DEVRE DISI kalir.
-    // Varsayilan: APP_DEBUG=true iken acik (yerel), production'da kapali. PAYMENT_DEMO ile ez.
-    'demo'          => (bool) env('PAYMENT_DEMO', env('APP_DEBUG', false)),
+    // GUVENLIK: demo YALNIZ acikca PAYMENT_DEMO=true ile acilir (APP_DEBUG'dan TUREMEZ) ve
+    // production'da ASLA aktif olmaz. Boylece yanlislikla APP_DEBUG=true birakilirsa bedava
+    // coin/uyelik BASILAMAZ. Garanti bilgileri girilince (isConfigured()) demo zaten devre disi.
+    'demo'          => env('APP_ENV') === 'production' ? false : (bool) env('PAYMENT_DEMO', false),
 
     // Tutar dogrulama sikiligi. Callback'te banka txnamount'u kayitli tutarla (kurus)
     // TAM SAYI olarak karsilastirilir. Banka test'te txnamount'un HER ZAMAN dolu geldigi
