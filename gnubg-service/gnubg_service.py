@@ -556,6 +556,14 @@ def _selfplay(max_plies=400, white_error=0.35, plies=1):
         pos["points"] = pts
         pos["bar"] = bar
         pos["off"][turn] += sum(1 for s in steps if s.get("to") == "off")
+        # DENETIM: her tarafta tam 15 tas olmali (points+bar+off). Bozulursa dur + hangi hamle bildir.
+        wtot = sum(x for x in pts if x > 0) + bar["white"] + pos["off"]["white"]
+        btot = sum(-x for x in pts if x < 0) + bar["black"] + pos["off"]["black"]
+        if wtot != 15 or btot != 15:
+            return {"log": log, "winner": None, "decisions": len(log), "invalid": {
+                "move": chosen.get("move"), "turn": turn, "steps": steps, "dice": [d1, d2],
+                "wtot": wtot, "btot": btot, "points": list(pts),
+                "bar": dict(bar), "off": dict(pos["off"])}}
         if pos["off"][turn] >= 15:
             winner = turn
             break
