@@ -129,6 +129,12 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('luck')->label('Şans')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
+                // Tavlai Luck V1 (gnubg NATIVE MWC-luck, YÜZDE). GNUBG_PR_MODE=shadow + istemci .mat ile dolar.
+                Tables\Columns\TextColumn::make('luck_mwc')->label('gnubg Şans %')
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : sprintf('%+.1f%%', (float) $state))
+                    ->color(fn ($state) => $state === null ? 'gray' : ((float) $state >= 0 ? 'success' : 'danger'))
+                    ->tooltip('GNU Backgammon native luck (MWC%) — bağımsız per-oyuncu, sıfır-toplam değil')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('rating_after')->label('Puan')->sortable(),
                 Tables\Columns\TextColumn::make('delta')->label('Δ')
                     ->formatStateUsing(fn ($state) => ($state > 0 ? '+' : '').(int) $state)

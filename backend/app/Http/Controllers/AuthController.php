@@ -274,6 +274,7 @@ class AuthController extends Controller
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
             'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
+            'mat'             => ['nullable', 'string', 'max:200000'],  // .mat (gnubg native luck V1)
             'ranked'          => ['nullable', 'boolean'],
             'room_code'       => ['nullable', 'string', 'max:20'], // online oda (friendly denetimi)
         ]);
@@ -334,6 +335,8 @@ class AuthController extends Controller
                     'pr_opponent' => $oppExisting?->pr,
                     'luck_self' => $existing->luck,
                     'luck_opp' => $oppExisting?->luck,
+                    'luck_mwc_self' => $existing->luck_mwc,
+                    'luck_mwc_opp' => $oppExisting?->luck_mwc,
                 ]);
             }
         }
@@ -504,6 +507,18 @@ class AuthController extends Controller
             }
         }
 
+        // Tavlai Luck V1 (gnubg NATIVE): istemci .mat gönderdiyse maçı gnubg'de analiz edip per-oyuncu
+        // MWC-luck'ı ARKA PLANDA hesapla + luck_mwc/emg kolonlarına yaz. Gösterilen luck'a anlık
+        // dokunmaz (istemci ONNX fallback kalır); hazır olunca matchPr %'yi döndürür. pr_mode gate.
+        if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
+            && ! empty($data['mat'])) {
+            try {
+                \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id, (string) $data['mat'])->onConnection('database');
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning('gnubg luck dispatch hata', ['err' => $e->getMessage()]);
+            }
+        }
+
         // WXP odullendir (kazanan + desteklenen tur/uzunluk). Idempotent + transaction-safe.
         // Ayri, bagimsiz domain akisi: WXP source of truth ledger'dir (rating'den bagimsiz).
         try {
@@ -566,6 +581,7 @@ class AuthController extends Controller
         // bizim pr'imizi opponent_pr olarak isle (o da bizi dogru gorsun).
         $opponentPr = null;
         $opponentLuck = null; // rakibin HAM luck'ı (kendi renginden) — sunucu-otoriter sans için
+        $opponentLuckMwc = null; // rakibin gnubg NATIVE MWC-luck'ı (V1, varsa)
         try {
             if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
                 $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
@@ -575,6 +591,7 @@ class AuthController extends Controller
                 if ($oppRow) {
                     $opponentPr = $oppRow->pr;
                     $opponentLuck = $oppRow->luck;
+                    $opponentLuckMwc = $oppRow->luck_mwc ?? null;
                     if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
                         $result->opponent_pr = $opponentPr;
                         $result->save();
@@ -595,6 +612,8 @@ class AuthController extends Controller
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
             'luck_self' => $result->luck,      // kendi HAM luck'ım (bu maçta sakladığım renk-luck)
             'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
+            'luck_mwc_self' => $result->luck_mwc,       // gnubg V1 (async -> ilkin null, matchPr poll'lar)
+            'luck_mwc_opp' => $opponentLuckMwc,         // rakibin gnubg MWC%'si (varsa)
         ]);
     }
 
@@ -755,6 +774,10 @@ class AuthController extends Controller
             // buradan AYNI beyaz+siyah ham çifti okur -> net (kazanan−kaybeden) TUTARLI görünür.
             'luck_self' => $mine?->luck,
             'luck_opp' => $opp?->luck,
+            // Tavlai Luck V1 (gnubg NATIVE MWC%) — hazır olduğunda (async job) dolu; istemci bunu
+            // tercih eder (bağımsız per-oyuncu %). Yoksa yukarıdaki ONNX ham luck fallback.
+            'luck_mwc_self' => $mine?->luck_mwc,
+            'luck_mwc_opp' => $opp?->luck_mwc,
         ]);
     }
 
