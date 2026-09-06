@@ -30,9 +30,10 @@ Schedule::command('gamelogs:prune --days=90')
     ->name('prune-game-logs')
     ->withoutOverlapping();
 
-// Validator (sunucu-otoriter hakem) izleme: dakikada bir kontrol; düşerse admin e-posta +
-// WhatsApp (CallMeBot, ayarlıysa) uyarısı. Fail-closed olduğu için hızlı haber şart.
-Schedule::command('validator:watch')
+// ÇALIŞAN TÜM SERVİSLERİ izle: dakikada bir kontrol; düşerse OTOMATİK yeniden başlat, kalıcıysa
+// admin e-posta + WhatsApp (CallMeBot, ayarlıysa) uyarısı. Validator + gnubg + queue + veritabanı.
+// (validator:watch komutu --test için duruyor ama zamanlama buraya birleşti -> çift-uyarı yok.)
+Schedule::command('services:watch')
     ->everyMinute()
-    ->name('validator-watch')
+    ->name('services-watch')
     ->withoutOverlapping();
