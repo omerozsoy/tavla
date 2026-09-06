@@ -34,6 +34,24 @@ class AppServiceProvider extends ServiceProvider
             @mkdir($lwTmp, 0775, true);
         }
 
+        // AKSAMA UYARISI: herhangi bir arka plan job'ı BAŞARISIZ olursa (PR/Şans analizi, ödeme
+        // sonrası işler vb.) admin'e e-posta + WhatsApp. Merkezi -> tek yerden tüm job'lar kapsanır.
+        // Spam-önleyici: 15 dk'da bir (tekil job hatası yağmuru olmasın). Alert kanalları ayarsızsa
+        // yalnız loglar. \App\Support\Alert = 'her aşama' için ortak hook.
+        \Illuminate\Support\Facades\Queue::failing(function ($event) {
+            try {
+                if (\Illuminate\Support\Facades\Cache::get('alert:jobfail:last')) {
+                    return; // 15 dk penceresi -> bastır
+                }
+                \Illuminate\Support\Facades\Cache::put('alert:jobfail:last', time(), now()->addMinutes(15));
+                $job = method_exists($event->job, 'resolveName') ? $event->job->resolveName() : 'job';
+                $err = $event->exception ? $event->exception->getMessage() : 'bilinmiyor';
+                \App\Support\Alert::send("🔴 Arka plan işi BAŞARISIZ: {$job}\n{$err}", 'TavlaTV — Job Hatası');
+            } catch (\Throwable $e) {
+                // uyarı mekanizması hiçbir job akışını bozmasın
+            }
+        });
+
         // Marka adi .env'den gelir (APP_NAME=TavlaTv). E-posta basligi/altbilgisi
         // config('app.name') kullanir; ayrica e-posta govdeleri asagida Turkcelestirildi.
 
