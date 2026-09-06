@@ -1107,7 +1107,7 @@ export async function matchmake(
 export async function settleRoom(
   code: string,
   won: boolean,
-): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean }> {
+): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean; won_amount?: number; commission?: number }> {
   return req(`/rooms/${code}/settle`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), won }),
@@ -1119,7 +1119,7 @@ export async function settleRoom(
 export async function settleRoomConfirmed(
   code: string,
   won: boolean,
-): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean }> {
+): Promise<{ ok: boolean; pending?: boolean; coins?: number; stake?: number; won?: boolean; won_amount?: number; commission?: number }> {
   let last: Awaited<ReturnType<typeof settleRoom>> = { ok: false }
   for (let i = 0; i < 4; i++) {
     try {

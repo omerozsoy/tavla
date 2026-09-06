@@ -408,7 +408,9 @@ class RoomController extends Controller
         // Ayni oyuncunun es zamanli birden fazla oda cozumunde net coin uretimi/kaybi engellenir.
         // ESCROW: sabit-stake maçında rezerv yapıldıysa settle transfer'iyle BİRLİKTE (atomik) bırak.
         $escrowed = Schema::hasColumn('rooms', 'escrowed') ? (bool) $room->escrowed : false;
-        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed) {
+        // KOMISYON (rake): kazanan stake × (1 − oran) alır; fark commissions ledger'ına yazılır.
+        $commissionPct = max(0, min(90, (int) config('game.commission_pct', 0)));
+        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct) {
             // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
             $claimed = Room::where('code', $code)->where('settled', false)
                 ->update($escrowed ? ['settled' => true, 'escrowed' => false] : ['settled' => true]);
@@ -438,6 +440,9 @@ class RoomController extends Controller
             // (ör. eşzamanlı maçlarla drenaj) net coin BASILIR: kazanan tam stake alır, kaybeden
             // yalnız bakiyesini kaybeder. min() ile mint engellenir; transfer her zaman sıfır-toplam.
             $debit = $loser ? min($amount, max(0, (int) ($loser->coins ?? 0))) : $amount;
+            // KOMISYON: kaybeden TAM $debit öder; kazanan $debit − komisyon alır; fark ledger'a.
+            $commission = (int) floor($debit * $commissionPct / 100);
+            $winnerGets = max(0, $debit - $commission);
             if ($loser) {
                 $loser->coins = ($loser->coins ?? 0) - $debit;
                 if ($escrowed && $stake > 0) { // rezerv bırak (sabit-stake escrow)
@@ -446,13 +451,19 @@ class RoomController extends Controller
                 $loser->save();
             }
             if ($winner) {
-                $winner->coins = ($winner->coins ?? 0) + $debit;
+                $winner->coins = ($winner->coins ?? 0) + $winnerGets;
                 if ($escrowed && $stake > 0) {
                     $winner->coins_reserved = max(0, (int) ($winner->coins_reserved ?? 0) - $stake);
                 }
                 $winner->save();
             }
-            return ['amount' => $debit];
+            if ($commission > 0) {
+                \App\Models\Commission::create([
+                    'room_code' => $code, 'winner_id' => $winnerId, 'loser_id' => $loserId,
+                    'stake' => $debit, 'commission' => $commission, 'pct' => $commissionPct,
+                ]);
+            }
+            return ['amount' => $debit, 'commission' => $commission, 'won_amount' => $winnerGets];
         });
 
         if (isset($out['already'])) {
@@ -464,7 +475,9 @@ class RoomController extends Controller
         return response()->json([
             'ok' => true,
             'coins' => $caller?->coins ?? 0,
-            'stake' => $out['amount'],
+            'stake' => $out['amount'],                            // kaybedenin ödediği (TAM stake)
+            'won_amount' => $out['won_amount'] ?? $out['amount'], // kazananın aldığı (komisyon sonrası)
+            'commission' => $out['commission'] ?? 0,              // platform payı (ledger'a yazıldı)
             'won' => $winnerId === $callerId,
         ]);
     }

@@ -967,7 +967,10 @@ export default function App() {
   const prLuckRef = useRef(prLuck)
   prLuckRef.current = prLuck
   const luckSigRef = useRef('') // ayni turda sansi iki kez saymayi engelle
-  const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kazanan coin transferi
+  const [coinDelta, setCoinDelta] = useState<number | null>(null) // bahisli macta kendi coin degisimi
+  // Komisyon (rake): kazananin aldigi (won) vs kaybedenin odedigi (lost) ASIMETRIK olabilir
+  // (kazanan stake x (1-komisyon)). MatchResult iki tarafi ayri gosterir. null -> simetrik fallback.
+  const [coinPair, setCoinPair] = useState<{ won: number; lost: number } | null>(null)
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
   // log'undan hesaplanir -> iki oyuncu AYNI degerleri gorur. null ise lokal prOf'a duser.
@@ -2653,10 +2656,16 @@ export default function App() {
       settleRoomConfirmed(room.code, won)
         .then((r) => {
           if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
-          // Mac sonu ekraninda gosterilecek coin transferi (kazanan +, kaybeden -)
-          if (r.ok && typeof r.stake === 'number') setCoinDelta(won ? r.stake : -r.stake)
-          // ok=false && pending: rakip henuz sonucu bildirmedi -> coin askida (uyar)
-          else if (!r.ok && r.pending) notify.error(t('net.settlePending'))
+          // Mac sonu coin gosterimi. Komisyon: kazanan won_amount (stake x (1-komisyon)) alir,
+          // kaybeden TAM stake oder -> ASIMETRIK (kazanan +861 / kaybeden -1013 gibi).
+          if (r.ok && typeof r.stake === 'number') {
+            const wonAmt = typeof r.won_amount === 'number' ? r.won_amount : r.stake
+            setCoinDelta(won ? wonAmt : -r.stake)
+            setCoinPair({ won: wonAmt, lost: r.stake })
+          } else if (!r.ok && r.pending) {
+            // rakip henuz sonucu bildirmedi -> coin askida (uyar)
+            notify.error(t('net.settlePending'))
+          }
         })
         .catch(() => {
           notify.error(t('net.settleFailed'))
@@ -3422,6 +3431,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
     setMatchLog([])
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -3513,6 +3523,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -3604,6 +3615,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
     setMatchLog([])
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -3655,6 +3667,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -3706,6 +3719,7 @@ export default function App() {
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
       setMatchLog([])
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
@@ -3983,6 +3997,7 @@ export default function App() {
     setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
+    setCoinPair(null)
     setMatchLog([])
     setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
@@ -6005,6 +6020,8 @@ export default function App() {
           winnerLuckPct={luckPctOf(mWinner)}
           loserLuckPct={luckPctOf(opponent(mWinner))}
           coinAmount={coinDelta == null ? null : Math.abs(coinDelta)}
+          winnerCoin={coinPair?.won ?? null}
+          loserCoin={coinPair?.lost ?? null}
           ratingBefore={ratingChange?.before ?? null}
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}

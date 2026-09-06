@@ -18,4 +18,9 @@ return [
         'intval',
         explode(',', (string) env('SERVER_AUTHORITATIVE_USERS', '')),
     ))),
+
+    // KOMISYON (rake): bahisli maç settle'ında platform payı (%). Kazanan stake × (1 − oran) alır;
+    // fark commissions ledger'ına kaydedilir (kimseye kredi edilmez). 0 = kapalı (sıfır-toplam).
+    // Galaxy ≈ %15; biz %10. 0..90 aralığına kırpılır. Değişiklik: env + config:clear + FPM restart.
+    'commission_pct' => max(0, min(90, (int) env('COMMISSION_PCT', 10))),
 ];

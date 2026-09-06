@@ -31,6 +31,10 @@ interface Props {
   loserLuckPct?: number | null
   // Bahisli macta coin transfer tutari (mutlak); kazanan +, kaybeden -. null = bahissiz
   coinAmount: number | null
+  // Komisyon (rake): kazananin ALDIGI (won) ve kaybedenin ODEDIGI (lost) ayri (asimetrik). İkisi
+  // de doluysa bunlar gosterilir (kazanan +won / kaybeden -lost); null -> coinAmount simetrik fallback.
+  winnerCoin?: number | null
+  loserCoin?: number | null
   // Rating degisimi (giris yapmis insan icin). Hangi tarafta gosterilecegi:
   ratingBefore: number | null
   ratingAfter: number | null
@@ -77,6 +81,8 @@ export default function MatchResult({
   winnerLuckPct,
   loserLuckPct,
   coinAmount,
+  winnerCoin,
+  loserCoin,
   ratingBefore,
   ratingAfter,
   ratingIsWinner,
@@ -142,8 +148,12 @@ export default function MatchResult({
   const lLuckText = useGnubgPct ? fmtPct(loserLuckPct as number) : fmtLuck(lLuck)
   const wLuckPos = useGnubgPct ? (winnerLuckPct as number) >= 0 : (wLuck ?? 0) >= 0
   const lLuckPos = useGnubgPct ? (loserLuckPct as number) >= 0 : (lLuck ?? 0) >= 0
-  const fmtCoins = (isWinner: boolean) =>
-    coinAmount == null ? '—' : `${isWinner ? '+' : '-'}${coinAmount} GC`
+  // Komisyon (asimetrik): kazanan +won / kaybeden -lost. Yoksa simetrik coinAmount.
+  const asymCoin = winnerCoin != null && loserCoin != null
+  const fmtCoins = (isWinner: boolean) => {
+    if (asymCoin) return isWinner ? `+${winnerCoin} GC` : `-${loserCoin} GC`
+    return coinAmount == null ? '—' : `${isWinner ? '+' : '-'}${coinAmount} GC`
+  }
 
   return (
     <div className="register-overlay modal mr-overlay">
@@ -211,7 +221,7 @@ export default function MatchResult({
             <span className="mr-label">{t('mr.rating')}</span>
             <span className="mr-b">{ratingText(false)}</span>
           </div>
-          {coinAmount != null && (
+          {(coinAmount != null || asymCoin) && (
             <div className="mr-row">
               <span className="mr-a mr-pos">{fmtCoins(true)}</span>
               <span className="mr-label">{t('mr.coins')}</span>
