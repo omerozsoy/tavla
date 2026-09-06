@@ -32,11 +32,15 @@ function prCls(pr: number | null | undefined): string {
   return 'bad'
 }
 
-// Sans (luck): ham equity sansini okunur isaretli skora olcekle (x100). null -> gosterme.
-function fmtLuck(v?: number | null): string | null {
-  if (v == null) return null
-  const s = Math.round(v * 100)
-  return `${s >= 0 ? '+' : ''}${s}`
+// Sans etiketi: Tavlai Luck V1 -> gnubg NATIVE MWC% (bagimsiz per-oyuncu, yuzde) VARSA onu goster;
+// yoksa ham equity luck'ini okunur isaretli skora olcekle (x100). Ikisi de null -> gosterme.
+function luckLabel(mwc?: number | null, raw?: number | null): { text: string; pos: boolean } | null {
+  if (mwc != null) return { text: `${mwc >= 0 ? '+' : ''}${mwc.toFixed(1)}%`, pos: mwc >= 0 }
+  if (raw != null) {
+    const s = Math.round(raw * 100)
+    return { text: `${s >= 0 ? '+' : ''}${s}`, pos: s >= 0 }
+  }
+  return null
 }
 
 function fmtDate(iso?: string | null): string {
@@ -189,6 +193,12 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
               const oppWon = hasScore ? m.score_opp! > m.score_self! : !m.won
               const oppName = m.opponent_name || t('mh.opponentFb')
               const meName = myName || t('mh.you')
+              // Sans: gnubg NATIVE MWC% oncelikli, yoksa ham luck — her oyuncu kendi tarafinda.
+              const selfLuck = luckLabel(m.luck_mwc, m.luck)
+              const oppLuck = luckLabel(m.opponent_luck_mwc, m.opponent_luck)
+              // Rating degisimi Elo sifir-toplamli: birine +N ise digerine -N. Rakip GERCEK
+              // puanli oyuncu ise (bot degil, delta != 0) rakip tarafinda -(self) goster.
+              const oppDelta = !isBot(oppName) && m.delta ? -m.delta : null
               return (
                 <div
                   key={i}
@@ -214,12 +224,17 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             {m.opponent_pr != null && (
                               <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
                             )}
-                            {m.opponent_luck != null && (
-                              <span className={`mh-luck ${m.opponent_luck >= 0 ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
-                                <Icon name="dice" size={11} /> {fmtLuck(m.opponent_luck)}
+                            {oppLuck && (
+                              <span className={`mh-luck ${oppLuck.pos ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
+                                <Icon name="dice" size={13} /> {oppLuck.text}
                               </span>
                             )}
-                            <span className="mh-elo">{m.opponent_rating}</span>
+                            <span className="mh-elo">
+                              {m.opponent_rating}
+                              {oppDelta != null && (
+                                <b className={oppDelta >= 0 ? 'good' : 'bad'}> {oppDelta >= 0 ? '+' : ''}{oppDelta}</b>
+                              )}
+                            </span>
                           </span>
                         </span>
                       </div>
@@ -250,12 +265,15 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             {m.pr != null && (
                               <span className={`mh-prc ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
                             )}
-                            {m.luck != null && (
-                              <span className={`mh-luck ${m.luck >= 0 ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
-                                <Icon name="dice" size={11} /> {fmtLuck(m.luck)}
+                            {selfLuck && (
+                              <span className={`mh-luck ${selfLuck.pos ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
+                                <Icon name="dice" size={13} /> {selfLuck.text}
                               </span>
                             )}
-                            <span className="mh-elo">{m.rating_after}</span>
+                            <span className="mh-elo">
+                              {m.rating_after}
+                              <b className={m.delta >= 0 ? 'good' : 'bad'}> {m.delta >= 0 ? '+' : ''}{m.delta}</b>
+                            </span>
                           </span>
                         </span>
                         <span className="mh-ava mh-ava-me" aria-hidden="true">
@@ -264,18 +282,15 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                       </div>
                     </div>
 
-                    {/* Alt serit: mac id · sonuc · tarih · rating degisimi · genislet */}
+                    {/* Alt serit: mac id · sonuc · tarih · genislet (rating degisimi artik
+                        her oyuncunun kendi tarafinda — sifir-toplamli). */}
                     <div className="mh-foot">
                       <span className="mh-id" title={t('mh.matchId')}>#{m.id}</span>
                       <span className={`mh-out ${m.won ? 'win' : 'loss'}`}>
                         {m.won ? t('mh.win') : t('mh.loss')}
                       </span>
                       <span className="mh-date">{fmtDate(m.created_at)}</span>
-                      <span className={`mh-delta ${m.delta >= 0 ? 'good' : 'bad'}`}>
-                        <Icon name="star" size={12} /> {m.rating_after}
-                        <b>{' '}{m.delta >= 0 ? '+' : ''}{m.delta}</b>
-                      </span>
-                      <Icon name="chevron" size={16} className={`mh-chev ${open ? 'chev-open' : ''}`} />
+                      <Icon name="chevron" size={16} className={`mh-chev mh-chev-end ${open ? 'chev-open' : ''}`} />
                     </div>
                   </button>
                   {open && (

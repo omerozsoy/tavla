@@ -1808,26 +1808,28 @@ button[aria-disabled='true'],
 .mh-card .mh-nm {
   font-family: var(--tv-font-display);
   font-weight: 400;
-  font-size: 1rem;
+  font-size: 1.12rem;
   color: var(--text);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Rozetler ALT ALTA (PR · sans · rating) — her oyuncunun kendi tarafinda, buyutuldu. */
 .mh-card .mh-tags {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 2px;
 }
 .mh-card .mh-me .mh-tags {
-  justify-content: flex-end;
+  align-items: flex-end;
 }
 .mh-card .mh-prc {
-  font-weight: 400;
-  font-size: 0.72rem;
-  padding: 2px 7px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 3px 11px;
   border-radius: var(--radius-pill);
   font-variant-numeric: tabular-nums;
   border: 1px solid transparent;
@@ -1849,18 +1851,32 @@ button[aria-disabled='true'],
   border-color: color-mix(in srgb, var(--tv-brick, #c9563f) 28%, transparent);
 }
 .mh-card .mh-elo {
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+/* Rating degisimi (sifir-toplamli): rating'in yaninda renkli (+ yesil / - kiremit). */
+.mh-card .mh-elo b {
+  font-weight: 600;
+}
+.mh-card .mh-elo b.good {
+  color: var(--success-fg, #4caf7d);
+}
+.mh-card .mh-elo b.bad {
+  color: var(--tv-brick, #c9563f);
 }
 /* Sans (luck) rozeti — her oyuncunun kendi tarafinda (PR ile birlikte). */
 .mh-card .mh-luck {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 0.72rem;
+  gap: 4px;
+  font-size: 0.85rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
-  padding: 2px 7px;
+  padding: 3px 10px;
   border-radius: var(--radius-pill);
   border: 1px solid transparent;
   white-space: nowrap;
@@ -1999,6 +2015,10 @@ button[aria-disabled='true'],
   flex: none;
   color: var(--muted);
   transition: transform 200ms var(--ease-out, cubic-bezier(0.22, 1, 0.36, 1));
+}
+/* mh-delta kaldirildi (rating artik oyuncu tarafinda) -> chevron'u saga it. */
+.mh-card .mh-chev-end {
+  margin-left: auto;
 }
 .mh-card .mh-chev.chev-open {
   transform: rotate(180deg);
