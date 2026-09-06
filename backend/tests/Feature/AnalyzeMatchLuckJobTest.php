@@ -104,6 +104,21 @@ class AnalyzeMatchLuckJobTest extends TestCase
         $this->assertEqualsWithDelta(-13.0, (float) $bRow->fresh()->luck_mwc, 1e-6);
     }
 
+    public function test_skips_when_both_rows_already_computed(): void
+    {
+        // Çift gnubg analizi önlemi: iki satır da ZATEN luck_mwc'ye sahipse (diğer oyuncunun job'ı
+        // yaptı) job gnubg'yi TEKRAR çağırmamalı.
+        [$wRow, $bRow] = $this->rows('LKD');
+        MatchResult::where('id', $wRow->id)->update(['luck_mwc' => 5.0]);
+        MatchResult::where('id', $bRow->id)->update(['luck_mwc' => -3.0]);
+        $mock = Mockery::mock(GnuBgClient::class);
+        $mock->shouldNotReceive('matchluck'); // ikisi de dolu -> tekrar analiz YOK
+
+        (new AnalyzeMatchLuckJob($wRow->id))->handle($mock);
+
+        $this->assertEqualsWithDelta(5.0, (float) $wRow->fresh()->luck_mwc, 1e-6);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();

@@ -674,10 +674,11 @@ def _play_auto_match(points_match=1, steps_out=None):
     return plays
 
 
+# İşaret OPSİYONEL ([+-]?) — gnubg işaretsiz sıfır (0.000) veya format varyantı yazarsa da eşleşsin.
 _LUCK_TOTAL_RE = re.compile(
-    r"Luck total EMG \(MWC\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)")
+    r"Luck total EMG \(MWC\)\s+([+-]?[\d.]+)\s+\(\s*([+-]?[\d.]+)%\)\s+([+-]?[\d.]+)\s+\(\s*([+-]?[\d.]+)%\)")
 _LUCK_RATE_RE = re.compile(
-    r"Luck rate mEMG \(MWC\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)\s+([+-][\d.]+)\s+\(\s*([+-][\d.]+)%\)")
+    r"Luck rate mEMG \(MWC\)\s+([+-]?[\d.]+)\s+\(\s*([+-]?[\d.]+)%\)\s+([+-]?[\d.]+)\s+\(\s*([+-]?[\d.]+)%\)")
 _PLAYER_HDR_RE = re.compile(r"^Player\s+(\S+)\s+(\S+)\s*$", re.M)
 
 

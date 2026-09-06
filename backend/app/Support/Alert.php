@@ -78,7 +78,9 @@ class Alert
             $should = ! $wasDown || ($now - $last >= $realertSeconds);
             if ($should) {
                 self::send($downMsg, 'TavlaTV — Sistem Uyarısı');
-                $cache::put($lastKey, $now, now()->addDay());
+                // downKey ile AYNI TTL (7 gün) -> 1 günden uzun kesintide $last süresi dolup fazladan
+                // uyarı tetiklemesin (aksi halde günde bir kez yeniden-uyarı yağmuru).
+                $cache::put($lastKey, $now, now()->addDays(7));
             }
             $cache::put($downKey, true, now()->addDays(7));
 
