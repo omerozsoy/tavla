@@ -57,20 +57,41 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         $mine = $hc === 'white' ? $white : $black;
         $opp = $hc === 'white' ? $black : $white;
 
-        $this->write($mr->id, $mine);
+        // ŞÜPHELİ: emg_total TAM 0 = gerçek maçta imkânsız (onlarca zarın equity toplamı). O oyuncunun
+        // hamleleri bu .mat'te eksik demektir (her istemci KENDİ kısmi .mat'ini gönderir; rakip tarafı
+        // eksik olabilir). Böyle bir değeri YAZMA -> gerçek değeri 0'la ezme.
+        $suspicious = fn ($l) => ! isset($l['emg_total']) || abs((float) $l['emg_total']) < 1e-9;
 
-        // Rakip satırı (aynı oda) — idempotent senkron: iki oyuncu da kendi luck'ını görsün.
-        if (! empty($mr->room_code)) {
+        if ($suspicious($mine) || $suspicious($opp)) {
+            // Kök neden teşhisi: ham .mat + gnubg istatistiği (düzelene kadar).
+            Log::warning('gnubg luck ŞÜPHELİ 0 (.mat eksik olabilir)', [
+                'id' => $mr->id, 'hc' => $hc, 'p0' => $white, 'p1' => $black,
+                'mat_len' => strlen($this->mat),
+                'mat_head' => substr($this->mat, 0, 1800),
+                'stats' => substr((string) ($res['statistics_match'] ?? ''), 0, 1400),
+            ]);
+        }
+
+        // KENDİ satırı: kendi raporu kendi oyuncusu için en güvenilir. YALNIZ gerçek değeri yaz;
+        // şüpheli 0 ise null bırak (istemci ONNX fallback; diğer oyuncunun raporu doldurabilir).
+        if (! $suspicious($mine)) {
+            $this->write($mr->id, $mine);
+        }
+
+        // RAKİP satırı: yalnız BOŞSA + gerçek değerle doldur (kendi raporu gelince EZMESİN; her
+        // oyuncunun satırı kendi güvenilir .mat'inden gelsin). Bu, "biri 0" bug'ının çözümü.
+        if (! empty($mr->room_code) && ! $suspicious($opp)) {
             $oppRow = MatchResult::where('room_code', $mr->room_code)
                 ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
-            if ($oppRow) {
+            if ($oppRow && $oppRow->luck_mwc === null) {
                 $this->write($oppRow->id, $opp);
             }
         }
 
         Log::info('gnubg luck V1', [
             'id' => $mr->id, 'hc' => $hc,
-            'mine_mwc' => $mine['mwc_total'] ?? null, 'opp_mwc' => $opp['mwc_total'] ?? null,
+            'mine_mwc' => $mine['mwc_total'] ?? null, 'mine_susp' => $suspicious($mine),
+            'opp_mwc' => $opp['mwc_total'] ?? null, 'opp_susp' => $suspicious($opp),
         ]);
     }
 
