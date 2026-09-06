@@ -151,7 +151,7 @@ class ShopController extends Controller
         return response()->json(['unlocks' => $r['unlocks'], 'coins' => $r['coins']]);
     }
 
-    private const REWARD_AMOUNT = 500;
+    private const REWARD_AMOUNT = 25; // 6 saatlik ödül (Free). Yeni ekonomi: 500 -> 25.
     private const REWARD_COOLDOWN = 6 * 3600; // 6 saat (saniye)
 
     // 6 saatte bir 500 coin odulu
@@ -170,10 +170,10 @@ class ShopController extends Controller
                     'next_in' => self::REWARD_COOLDOWN - $elapsed,
                 ];
             }
-            // Gunluk bonus plana gore: Free 500, Star 800, StarPRO 1200
+            // 6 saatlik bonus plana gore (yeni ekonomi): Free 25, Star 40, StarPRO 60.
             $amount = match ($u->plan_active) {
-                'starpro' => 1200,
-                'star' => 800,
+                'starpro' => 60,
+                'star' => 40,
                 default => self::REWARD_AMOUNT,
             };
             $u->coins = ($u->coins ?? 0) + $amount;
