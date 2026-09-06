@@ -22,13 +22,14 @@
  */
 
 // ---- Kademe (tier) varsayilanlari: coin odulu + gorsel rarity ----
-// Coin odulleri DUSUK tutuldu (max 500): sahte hesaplarla coin farm'ini onlemek
-// icin (ileride arkadaslar arasi coin transferi gelecek). En buyuk odul = 500.
+// Coin odulleri MAKUL seviyeye cekildi: gunluk odul 25-50 seviyesinde oldugundan
+// (bkz Site Ayarlari) 106 rozet x yuksek odul ekonomiyi bozuyordu. Rozet odulu
+// artik gunluk odul olcegiyle uyumlu kucuk bonuslar (max 75); event max 100.
 $TIER = [
-    'bronze'  => ['coin' => 100, 'rarity' => 'common'],
-    'silver'  => ['coin' => 250, 'rarity' => 'uncommon'],
-    'gold'    => ['coin' => 400, 'rarity' => 'rare'],
-    'diamond' => ['coin' => 500, 'rarity' => 'epic'],
+    'bronze'  => ['coin' => 15,  'rarity' => 'common'],
+    'silver'  => ['coin' => 30,  'rarity' => 'uncommon'],
+    'gold'    => ['coin' => 50,  'rarity' => 'rare'],
+    'diamond' => ['coin' => 75,  'rarity' => 'epic'],
 ];
 
 /**
@@ -56,11 +57,11 @@ $fam = function (string $prefix, string $category, string $icon, string $metric,
     return $out;
 };
 
-/** Tekil event/gizli rozet kisayolu. Coin odulu 500'de SINIRLI (farm onlemi). */
-$ev = function (string $slug, string $category, string $name, string $desc, string $icon, string $metric, string $rarity = 'rare', int $coin = 500, bool $hidden = false): array {
+/** Tekil event/gizli rozet kisayolu. Coin odulu 100'de SINIRLI (makul + farm onlemi). */
+$ev = function (string $slug, string $category, string $name, string $desc, string $icon, string $metric, string $rarity = 'rare', int $coin = 50, bool $hidden = false): array {
     return [
         'slug' => $slug, 'category' => $category, 'name' => $name, 'desc' => $desc,
-        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => min($coin, 500),
+        'icon' => $icon, 'tier' => null, 'rarity' => $rarity, 'reward_coin' => min($coin, 100),
         'hidden' => $hidden, 'type' => 'event', 'metric' => $metric, 'value' => 1,
     ];
 };
