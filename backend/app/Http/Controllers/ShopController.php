@@ -13,7 +13,7 @@ class ShopController extends Controller
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
 
     // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE + CLUB_BOARD_PRICE ile BIREBIR).
-    private const BOARD_PRICE = ['common' => 1000, 'rare' => 2000, 'epic' => 3000, 'legendary' => 4000, 'mythic' => 5000, 'club' => 1000];
+    private const BOARD_PRICE = ['common' => 50, 'rare' => 90, 'epic' => 150, 'legendary' => 250, 'mythic' => 400, 'club' => 100];
 
     // Satin alinabilir tahta id -> nadirlik. Kaynak: src/boardThemes.ts (senkron tut).
     // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
@@ -77,7 +77,7 @@ class ShopController extends Controller
         'rising' => 'mythic', 'gradWave' => 'mythic',
     ];
 
-    private const RARITY_PRICE = ['common' => 250, 'rare' => 500, 'epic' => 1000, 'legendary' => 2000, 'mythic' => 4000];
+    private const RARITY_PRICE = ['common' => 30, 'rare' => 60, 'epic' => 120, 'legendary' => 180, 'mythic' => 250];
 
     // Tam katalog: tahtalar (nadirlik fiyati) + 62 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
