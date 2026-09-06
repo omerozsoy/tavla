@@ -121,6 +121,11 @@ class ShopController extends Controller
             if (in_array($id, $unlocks, true)) {
                 return ['owned' => true, 'unlocks' => $unlocks, 'coins' => $u->coins ?? 0];
             }
+            // %-BAHİS KİLİDİ: oynanan bir % (bet_pct) maçta coin harcaması yasak (escrow'suz -> bakiye
+            // eritip settle'ı eksik ödetme engeli). Sabit-stake ise aşağıdaki rezerv kontrolü yeter.
+            if (\App\Models\Room::userInPctStakedPlaying($u->id)) {
+                return ['pct_locked' => true, 'coins' => $u->coins ?? 0];
+            }
             // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta REZERVE edilmiş
             // coin mağazaya harcanamaz -> kaybeden stake'i maç sırasında eritip settle'ı eksik ödetemez.
             if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $price) {
@@ -133,6 +138,9 @@ class ShopController extends Controller
             return ['unlocks' => $unlocks, 'coins' => $u->coins];
         });
 
+        if (isset($r['pct_locked'])) {
+            return $this->fail('Yüzde bahisli maçtayken coin harcayamazsın. Maç bitince tekrar dene.', 422, ['coins' => $r['coins']]);
+        }
         if (isset($r['insufficient'])) {
             return $this->fail('Yetersiz coin.', 422, ['coins' => $r['coins']]);
         }
