@@ -4283,6 +4283,14 @@ button[aria-disabled='true'],
 .main.game-scene .status {
   color: rgba(220, 230, 255, 0.68);
 }
+/* Oyun ekraninda ust hesap bari GIZLI (.game-view .account-bar { display:none }) oldugundan
+   .main'in header-h kadar ust boslugu bos yer birakiyordu -> board'u YUKARI cek (masaustu).
+   Mobil (<=900) ve fiziksel yatay kendi tuned padding'lerini korur. */
+@media (min-width: 901px) {
+  .main.game-scene {
+    padding-top: 12px;
+  }
+}
 
 /* ---- Sidebar (dar oyuncu paneli, #4) ---- */
 .sidebar {
