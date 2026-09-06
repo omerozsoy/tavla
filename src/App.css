@@ -4297,6 +4297,15 @@ button[aria-disabled='true'],
     padding-top: 12px;
   }
 }
+/* Board ekrana TAM otursun: oyun ekraninda ust hesap bari gizli oldugundan board
+   yuksekligi artik header payini (--header-h) DUSMEZ; sadece gercek chrome (ust pay +
+   nokta seritleri + app padding ~92px) dusulur. Genislik kisiti hala kapak (tasma yok).
+   Sadece masaustu-uzun ekran; fiziksel yatay (max-height:560) kendi tuned board-h'ini korur. */
+@media (min-width: 901px) and (min-height: 561px) {
+  .app.game-view {
+    --board-h: max(320px, min(calc(100dvh - 92px), calc((100vw - 548px) / 1.3)));
+  }
+}
 
 /* ---- Sidebar (dar oyuncu paneli, #4) ---- */
 .sidebar {
