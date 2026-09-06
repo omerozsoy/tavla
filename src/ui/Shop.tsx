@@ -28,20 +28,11 @@ interface Props {
 
 type ShopTab = 'coins' | 'board' | 'frame'
 
-const fmtLeft = (total: number) => {
-  const s = Math.max(0, Math.floor(total))
-  const h = Math.floor(s / 3600)
-  const m = Math.floor((s % 3600) / 60)
-  return `${h}:${String(m).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-}
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
 // Magaza: coin (jeton) satin alma vitrini + gunluk odul. (Cerceveler artik Ayarlar'da.)
 export default function Shop({
   coins,
-  rewardReady = false,
-  rewardSecs = 0,
-  onDaily,
   onBuyCoins,
   cartCount = 0,
   onOpenCart,
@@ -55,19 +46,7 @@ export default function Shop({
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [busy, setBusy] = useState<string | null>(null)
-  const [dailyMsg, setDailyMsg] = useState('')
   const [tab, setTab] = useState<ShopTab>(initialTab)
-
-  async function daily() {
-    setBusy('daily')
-    try {
-      const r = await onDaily()
-      setDailyMsg(r.claimed ? t('shop.dailyGot', { n: r.reward ?? 0 }) : t('shop.dailyDone'))
-    } finally {
-      setBusy(null)
-    }
-  }
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -85,16 +64,7 @@ export default function Shop({
             <div className="shop-coins">
               <Coins amount={coins} size={22} />
             </div>
-            <Button
-              variant="default"
-              className={`shop-daily ${rewardReady ? 'ready' : ''}`}
-              disabled={busy === 'daily' || !rewardReady}
-              onClick={daily}
-              title={rewardReady ? t('reward.claim') : t('reward.in')}
-            >
-              <Icon name="gift" size={16} />{' '}
-              {rewardReady ? t('shop.daily') : <span className="sd-count tnum">{fmtLeft(rewardSecs)}</span>}
-            </Button>
+            {/* Günlük ödül butonu KALDIRILDI (ödül üst bardaki butondan alınır). */}
             {onOpenCart && cartCount > 0 && (
               <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title="Sepet">
                 <Icon name="shop" size={16} /> Sepet <span className="shop-cart-count tnum">{cartCount}</span>
@@ -102,8 +72,6 @@ export default function Shop({
             )}
           </div>
         </div>
-
-        {dailyMsg && <div className="shop-daily-msg">{dailyMsg}</div>}
 
         {/* Sekmeler: Jeton Al | Tahta Rengi | Avatar Cercevesi (Ayarlar'dan tasindi) */}
         <div className="prof-tabs bs-tabs" role="tablist">
