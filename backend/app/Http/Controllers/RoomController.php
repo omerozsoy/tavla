@@ -24,6 +24,27 @@ class RoomController extends Controller
         return $code;
     }
 
+    /**
+     * C1: Kullanıcının ŞU AN OYNANAN (status=playing) bir bahisli maçı (stake>0 veya bet_pct>0)
+     * var mı? Eşzamanlı bahisli maçları engellemek için (coin drain/shortchange exploit'i kapatır).
+     */
+    private function userInStakedPlaying(?int $uid, ?int $excludeRoomId = null): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+
+        return Room::where('status', 'playing')
+            ->when($excludeRoomId, fn ($q) => $q->where('id', '!=', $excludeRoomId))
+            ->where(function ($q) {
+                $q->where('stake', '>', 0)->orWhere('bet_pct', '>', 0);
+            })
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            })
+            ->exists();
+    }
+
     // Oda olustur
     public function create(Request $request)
     {
@@ -134,6 +155,11 @@ class RoomController extends Controller
             if (($authUser->coins ?? 0) < max($maxStake, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
+            // C1: Zaten OYNANAN bahisli bir maçı varsa yeni bahisli arama/eşleşme REDDEDİLİR ->
+            // eşzamanlı bahisli maçlarla coin drain/shortchange exploit'i kapanır (tek aktif bahisli maç).
+            if ($this->userInStakedPlaying($userId)) {
+                return $this->fail('Zaten devam eden bahisli bir maçın var. Önce onu bitir.', 422);
+            }
         }
 
         // Zaten havuzda bekleyen kendi odam (ayni kategori) varsa: bahis secimi AYNIysa don,
@@ -189,6 +215,12 @@ class RoomController extends Controller
                     if ($candCoins < $agreedStake) {
                         continue;
                     }
+                }
+                // C1: eşzamanlı bahisli maç YOK. Aday (p1) VEYA arayan (userId) zaten OYNANAN bir
+                // bahisli maçtaysa bu eşleşmeyi atla (create-time guard yarışına karşı transaction-içi).
+                if (($agreedStake > 0 || $betPct > 0)
+                    && ($this->userInStakedPlaying($cand->p1_user_id) || $this->userInStakedPlaying($userId))) {
+                    continue;
                 }
                 $cand->p2_token = $data['token'];
                 $cand->p2_user_id = $userId;
