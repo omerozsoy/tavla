@@ -62,6 +62,7 @@ class RoomEscrowTest extends TestCase
 
     public function test_settle_releases_escrow_and_transfers(): void
     {
+        config(['game.commission_pct' => 0]); // escrow'u izole test et (komisyon ayrı testte)
         $p1 = $this->user('setA', 100);
         $p2 = $this->user('setB', 100);
         User::where('id', $p1->id)->update(['coins_reserved' => 50]);
@@ -113,6 +114,34 @@ class RoomEscrowTest extends TestCase
             'status' => 'playing', 'stake' => 100, 'bet_pct' => 0, 'version' => 1, 'settled' => false,
         ]);
         $this->assertFalse(Room::userInPctStakedPlaying($uf->id));
+    }
+
+    public function test_commission_deducted_from_winner_and_recorded(): void
+    {
+        // KOMISYON (rake) %10: kaybeden TAM stake öder, kazanan stake × 0.9 alır, fark ledger'a.
+        config(['game.commission_pct' => 10]);
+        $p1 = $this->user('comA', 100);
+        $p2 = $this->user('comB', 100);
+        User::where('id', $p1->id)->update(['coins_reserved' => 100]);
+        User::where('id', $p2->id)->update(['coins_reserved' => 100]);
+        Room::create([
+            'code' => 'COMM', 'p1_token' => 'tok1', 'p1_user_id' => $p1->id, 'p1_name' => 'comA',
+            'p2_token' => 'tok2', 'p2_user_id' => $p2->id, 'p2_name' => 'comB',
+            'status' => 'playing', 'stake' => 100, 'bet_pct' => 0, 'version' => 1, 'settled' => false,
+            'escrowed' => true, 'authoritative' => true,
+            'server_match' => ['done' => true, 'winner' => 'white'], // p1 kazandı
+        ]);
+
+        Sanctum::actingAs($p1);
+        $resp = $this->postJson('/api/rooms/COMM/settle', ['token' => 'tok1', 'won' => true])->assertOk();
+
+        // Kazanan (p1): +90 = 190. Kaybeden (p2): -100 = 0. Komisyon 10 -> ledger.
+        $this->assertSame(190, (int) $p1->fresh()->coins, 'kazanan stake×0.9 = 90 alır');
+        $this->assertSame(0, (int) $p2->fresh()->coins, 'kaybeden TAM stake 100 öder');
+        $resp->assertJsonPath('won_amount', 90)->assertJsonPath('commission', 10);
+        $this->assertSame(1, \App\Models\Commission::count());
+        $this->assertSame(10, (int) \App\Models\Commission::first()->commission);
+        $this->assertSame(100, (int) \App\Models\Commission::first()->stake);
     }
 
     public function test_cleanup_releases_stranded_escrow_no_coin_loss(): void

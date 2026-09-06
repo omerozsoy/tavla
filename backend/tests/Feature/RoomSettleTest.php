@@ -86,6 +86,7 @@ class RoomSettleTest extends TestCase
     {
         // Bahisli maçta coin YALNIZCA sunucu-otoriter sonuçtan (server_match done+winner) transfer
         // edilir — istemci mutabakatına gerek yok, forge edilemez.
+        config(['game.commission_pct' => 0]); // saf transfer testi (komisyon ayrı testte, RoomEscrowTest)
         $p1 = $this->makeUser('carol', 100);
         $p2 = $this->makeUser('dave', 100);
         $room = Room::create([
