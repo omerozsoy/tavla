@@ -121,7 +121,9 @@ class ShopController extends Controller
             if (in_array($id, $unlocks, true)) {
                 return ['owned' => true, 'unlocks' => $unlocks, 'coins' => $u->coins ?? 0];
             }
-            if (($u->coins ?? 0) < $price) {
+            // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta REZERVE edilmiş
+            // coin mağazaya harcanamaz -> kaybeden stake'i maç sırasında eritip settle'ı eksik ödetemez.
+            if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $price) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
             $u->coins = ($u->coins ?? 0) - $price;

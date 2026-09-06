@@ -45,6 +45,35 @@ class RoomController extends Controller
             ->exists();
     }
 
+    /**
+     * ESCROW BIRAK: bu odanın rezerve edilmiş stake'ini iki oyuncudan serbest bırak. IDEMPOTENT
+     * (escrowed true->false tek claim). Coin DÜŞMEZ/EKLENMEZ; yalnız coins_reserved azalır -> hiçbir
+     * yol kaçsa bile coin KAYBOLMAZ (en fazla geçici kilitli). Settle sonrası + abort/cleanup öncesi çağrılır.
+     */
+    private function releaseEscrow(Room $room): void
+    {
+        if (! Schema::hasColumn('rooms', 'escrowed') || ! $room->escrowed) {
+            return;
+        }
+        $stake = (int) $room->stake;
+        DB::transaction(function () use ($room, $stake) {
+            // Idempotent: yalnız ilk çağrı escrowed'u false yapıp rezervi bırakır.
+            $claimed = Room::where('id', $room->id)->where('escrowed', true)->update(['escrowed' => false]);
+            if (! $claimed || $stake <= 0) {
+                return;
+            }
+            $uids = array_values(array_unique(array_filter([$room->p1_user_id, $room->p2_user_id])));
+            sort($uids);
+            foreach ($uids as $uid) {
+                $u = User::lockForUpdate()->find($uid);
+                if ($u) {
+                    $u->coins_reserved = max(0, (int) ($u->coins_reserved ?? 0) - $stake);
+                    $u->save();
+                }
+            }
+        });
+    }
+
     // Oda olustur
     public function create(Request $request)
     {
@@ -83,7 +112,19 @@ class RoomController extends Controller
                 ->whereNull('p2_token')
                 ->where('created_at', '<', now()->subMinutes(2))
                 ->delete();
-            Room::where('updated_at', '<', now()->subDay())->delete();
+            // Eski (>1 gün) odalar. ESCROW: rezerve edilmiş (escrowed) varsa ÖNCE rezervi bırak
+            // (terk edilmiş bahisli maçın coin'i kilitli kalmasın; idempotent). NOT: releaseEscrow
+            // Eloquent update ile updated_at'i touch ediyor -> silinecek id'leri ÖNCE yakala, sonra
+            // o id'lerle sil (aksi halde bırakılan oda "artık eski değil" olup delete'i kaçırırdı).
+            $staleIds = Room::where('updated_at', '<', now()->subDay())->pluck('id')->all();
+            if ($staleIds && Schema::hasColumn('rooms', 'escrowed')) {
+                foreach (Room::whereIn('id', $staleIds)->where('escrowed', true)->get() as $r) {
+                    $this->releaseEscrow($r);
+                }
+            }
+            if ($staleIds) {
+                Room::whereIn('id', $staleIds)->delete();
+            }
             \Illuminate\Support\Facades\DB::table('game_invites')
                 ->where('created_at', '<', now()->subMinutes(10))
                 ->delete();
@@ -152,7 +193,9 @@ class RoomController extends Controller
             if (! $authUser) {
                 return $this->fail('Bahisli oyun için giriş yapmalısın.', 422);
             }
-            if (($authUser->coins ?? 0) < max($maxStake, 1)) {
+            // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Rezerve edilmiş coin yeni
+            // bahse sayılmaz (o an başka maçta kilitli).
+            if ((($authUser->coins ?? 0) - ($authUser->coins_reserved ?? 0)) < max($maxStake, 1)) {
                 return $this->fail('Yetersiz coin.', 422);
             }
             // C1: Zaten OYNANAN bahisli bir maçı varsa yeni bahisli arama/eşleşme REDDEDİLİR ->
@@ -221,6 +264,30 @@ class RoomController extends Controller
                 if (($agreedStake > 0 || $betPct > 0)
                     && ($this->userInStakedPlaying($cand->p1_user_id) || $this->userInStakedPlaying($userId))) {
                     continue;
+                }
+                // ESCROW (rezervasyon): SABİT bahis -> iki oyuncunun stake'ini REZERVE et (coins DÜŞMEZ).
+                // Kullanılabilir bakiye (coins - coins_reserved) < stake ise eşleşme YAPMA (o an başka
+                // yere ayrılmış olabilir). Atomik: tx içinde, deadlock için user'lar sıralı-id kilitli.
+                // Böylece kaybeden stake'i maç sırasında harcayamaz -> settle her zaman TAM öder.
+                if ($agreedStake > 0 && Schema::hasColumn('users', 'coins_reserved')
+                    && $cand->p1_user_id && $userId) {
+                    $uids = [(int) $cand->p1_user_id, (int) $userId];
+                    sort($uids);
+                    $lk = [];
+                    foreach ($uids as $uid) {
+                        $lk[$uid] = User::lockForUpdate()->find($uid);
+                    }
+                    $p1u = $lk[$cand->p1_user_id] ?? null;
+                    $p2u = $lk[$userId] ?? null;
+                    $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                    if (! $p1u || ! $p2u || $avail($p1u) < $agreedStake || $avail($p2u) < $agreedStake) {
+                        continue; // biri kullanılabilir bakiyeyle karşılayamıyor -> bu eşleşme yok
+                    }
+                    $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $agreedStake;
+                    $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $agreedStake;
+                    $p1u->save();
+                    $p2u->save();
+                    $cand->escrowed = true;
                 }
                 $cand->p2_token = $data['token'];
                 $cand->p2_user_id = $userId;
@@ -339,9 +406,12 @@ class RoomController extends Controller
 
         // ATOMIK: "settled" iddiasi + coin transferi TEK transaction, kullanicilar kilitli.
         // Ayni oyuncunun es zamanli birden fazla oda cozumunde net coin uretimi/kaybi engellenir.
-        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake) {
-            // Yalnizca ilk cagri coin tasir
-            $claimed = Room::where('code', $code)->where('settled', false)->update(['settled' => true]);
+        // ESCROW: sabit-stake maçında rezerv yapıldıysa settle transfer'iyle BİRLİKTE (atomik) bırak.
+        $escrowed = Schema::hasColumn('rooms', 'escrowed') ? (bool) $room->escrowed : false;
+        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed) {
+            // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
+            $claimed = Room::where('code', $code)->where('settled', false)
+                ->update($escrowed ? ['settled' => true, 'escrowed' => false] : ['settled' => true]);
             if (! $claimed) {
                 return ['already' => true];
             }
@@ -370,10 +440,16 @@ class RoomController extends Controller
             $debit = $loser ? min($amount, max(0, (int) ($loser->coins ?? 0))) : $amount;
             if ($loser) {
                 $loser->coins = ($loser->coins ?? 0) - $debit;
+                if ($escrowed && $stake > 0) { // rezerv bırak (sabit-stake escrow)
+                    $loser->coins_reserved = max(0, (int) ($loser->coins_reserved ?? 0) - $stake);
+                }
                 $loser->save();
             }
             if ($winner) {
                 $winner->coins = ($winner->coins ?? 0) + $debit;
+                if ($escrowed && $stake > 0) {
+                    $winner->coins_reserved = max(0, (int) ($winner->coins_reserved ?? 0) - $stake);
+                }
                 $winner->save();
             }
             return ['amount' => $debit];

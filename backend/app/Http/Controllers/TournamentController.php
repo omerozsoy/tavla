@@ -90,7 +90,9 @@ class TournamentController extends Controller
             }
             if (! $already && $fee > 0) {
                 $u = User::lockForUpdate()->find($me->id);
-                if (($u->coins ?? 0) < $fee) {
+                // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta rezerve
+                // edilmiş coin turnuva ücretine harcanamaz (stake maç sonuna kadar kilitli).
+                if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $fee) {
                     return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
                 }
                 $u->coins = ($u->coins ?? 0) - $fee;

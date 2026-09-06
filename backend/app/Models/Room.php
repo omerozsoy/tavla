@@ -32,6 +32,7 @@ class Room extends Model
         'clock',
         'end_reason',
         'settled',
+        'escrowed', // rezervasyon escrow: bu odanın stake'i coins_reserved'a rezerve edildi mi
         'p1_result',
         'p2_result',
         // Sunucu-otoriter zar (commit-reveal) — Faz 1. dice_seed GİZLİ (toClient'a girmez).
