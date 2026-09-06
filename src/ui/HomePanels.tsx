@@ -711,9 +711,10 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
               onMouseEnter={(e) => {
                 if (!marked) return
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                // Ust satirlardaki gunlerde balon yukari acilirsa ay basligini orter;
-                // yeterli yer yoksa hucrenin ALTINA ac.
-                const below = r.top < 150
+                // Ilk (ve ikinci) satirdaki gunlerde balon yukari acilirsa ay basligini/
+                // gun adlarini orter -> bu satirlarda hucrenin ALTINA ac (deterministik).
+                const row = Math.floor(i / 7)
+                const below = row <= 1
                 setTip({
                   x: r.left + r.width / 2,
                   y: below ? r.bottom : r.top,
