@@ -314,6 +314,31 @@ class AuthController extends Controller
         $won = $clientWon;
         $roomCode = $data['room_code'] ?? null;
 
+        // M2 (denetim): aynı room+user için EŞ ZAMANLI raporları SERİLEŞTİR -> çift-Elo + çift-satır
+        // yarışını kapat. Kilidi alamazsak (başka rapor işliyor) çift İŞLEM yapma; mevcut durumu
+        // idempotent dön. TTL 30s: kritik bölüm (validator PR max ~20s dahil) sığar. Kilit altyapısı
+        // yoksa best-effort devam (unique index yine çift satırı önler).
+        if (! empty($roomCode)) {
+            $gotLock = true;
+            try {
+                $gotLock = \Illuminate\Support\Facades\Cache::lock('rr:'.$roomCode.':'.$user->id, 30)->get();
+            } catch (\Throwable $e) {
+                $gotLock = true;
+            }
+            if (! $gotLock) {
+                $ex = \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first();
+                $oppEx = \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', '!=', $user->id)->latest('id')->first();
+                $fresh = $user->fresh() ?? $user;
+
+                return response()->json([
+                    'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
+                    'pr_self' => $ex?->pr, 'pr_opponent' => $oppEx?->pr,
+                    'luck_self' => $ex?->luck, 'luck_opp' => $oppEx?->luck,
+                    'luck_mwc_self' => $ex?->luck_mwc, 'luck_mwc_opp' => $oppEx?->luck_mwc,
+                ]);
+            }
+        }
+
         // IDEMPOTENT (cift sayma engeli): bu oda+oyuncu icin sonuc ZATEN kaydedilmisse
         // (sunucu forfeit'i = terk eden kaybeder, VEYA bu oyuncunun onceki raporu) tekrar
         // rating/istatistik/satir YAZMA. Sunucu forfeit'i (ForfeitLoss) kaybedenin satirini
@@ -493,7 +518,23 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'match_type')) {
             $mr['match_type'] = $data['match_type'] ?? \App\Support\StatsConfig::MATCH_TYPE_MATCH;
         }
-        $result = \App\Models\MatchResult::create($mr);
+        // M2 emniyet ağı: kilit başarısız olup gerçek yarış olursa unique index çift satırı reddeder.
+        // create'i yut -> 500 ("puanın kaydedilemedi") yerine idempotent (mevcut satır) dön.
+        try {
+            $result = \App\Models\MatchResult::create($mr);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            $existing = ! empty($roomCode)
+                ? \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first()
+                : null;
+            $fresh = $user->fresh() ?? $user;
+
+            return response()->json([
+                'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
+                'pr_self' => $existing?->pr, 'pr_opponent' => null,
+                'luck_self' => $existing?->luck, 'luck_opp' => null,
+                'luck_mwc_self' => $existing?->luck_mwc, 'luck_mwc_opp' => null,
+            ]);
+        }
 
         // GNU-only SHADOW PR: gnubg PR'ını ARKA PLANDA (database kuyruğu) hesapla + gnubg_* kolonlarına
         // yaz + client PR ile logla. Gösterilen/otoriter PR'a DOKUNMAZ. Yalnız pr_mode!=off + log varsa.
