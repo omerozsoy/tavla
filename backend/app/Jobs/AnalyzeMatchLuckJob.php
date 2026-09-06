@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\MatchResult;
 use App\Services\GnuBg\GnuBgClient;
+use App\Support\MatBuilder;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -13,11 +14,12 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
 /**
- * Tavlai Luck V1: bir maçın .mat'ini gnubg'ye analiz ettirip (analyse match) NATIVE per-oyuncu
- * luck'ı ARKA PLANDA (queue) hesaplar. gnubg 'Luck total (MWC)' zaten yüzde -> luck_mwc'ye yazılır
- * (kullanıcıya "+8.4%"). .mat'te sütun 0 = white (sol), sütun 1 = black (sağ) — buildMat garantisi.
- * Bu satırın oyuncusunun rengi (log.hc) ile eşlenir; rakip satırı da (aynı room_code) idempotent
- * güncellenir. gnubg down/başarısızsa sessiz geçer (istemci ONNX luck fallback kalır).
+ * Tavlai Luck V1 (KALICI): online maçın NATIVE gnubg luck'ını ARKA PLANDA (queue) hesaplar. Her
+ * istemci KENDİ kısmi matchLog'unu gönderir (rakip hamleleri eksik olabilir) -> tek istemci .mat'i
+ * güvenilmez ("biri 0" bug'ı). ÇÖZÜM: İKİ oyuncunun stored logunu BİRLEŞTİR (MatBuilder — her
+ * oyuncunun KENDİ renginin hamleleri kendi logunda TAM) -> TAM .mat -> gnubg iki oyuncuya da GERÇEK
+ * luck verir. Sonuç luck_mwc/emg (MWC% = display). Yalnız İKİ oyuncu da raporlayınca çalışır
+ * (rakip yoksa döner; rakip raporlayınca job yeniden tetiklenir + iki satırı da yazar).
  */
 class AnalyzeMatchLuckJob implements ShouldQueue
 {
@@ -27,71 +29,78 @@ class AnalyzeMatchLuckJob implements ShouldQueue
 
     public int $timeout = 200;
 
-    public function __construct(public int $matchResultId, public string $mat) {}
+    public function __construct(public int $matchResultId) {}
 
     public function handle(GnuBgClient $gnubg): void
     {
         if (! Schema::hasColumn('match_results', 'luck_mwc')) {
-            return; // migration henüz yoksa sessiz geç
+            return; // migration yoksa sessiz geç
         }
         $mr = MatchResult::find($this->matchResultId);
-        if (! $mr || $this->mat === '') {
+        if (! $mr || empty($mr->room_code)) {
+            return; // online (room_code) değilse birleştirilecek rakip yok
+        }
+        $oppRow = MatchResult::where('room_code', $mr->room_code)
+            ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
+        if (! $oppRow) {
+            return; // rakip henüz raporlamadı; onun raporu bu job'ı yeniden tetikler (iki log hazır olur)
+        }
+
+        $mine = json_decode((string) $mr->log, true);
+        $theirs = json_decode((string) $oppRow->log, true);
+        if (! is_array($mine) || ! is_array($theirs)) {
             return;
         }
-        $res = $gnubg->matchluck($this->mat);
+        $myHc = $mine['hc'] ?? null;
+        $theirHc = $theirs['hc'] ?? null;
+        if (! in_array($myHc, ['white', 'black'], true) || ! in_array($theirHc, ['white', 'black'], true) || $myHc === $theirHc) {
+            return; // renkler belirsiz/aynı -> güvenli çık
+        }
+
+        // Beyaz-logu ve siyah-logu belirle (her oyuncunun KENDİ renginin hamleleri kendi logunda tam).
+        [$whiteLog, $blackLog] = $myHc === 'white'
+            ? [$mine['log'] ?? [], $theirs['log'] ?? []]
+            : [$theirs['log'] ?? [], $mine['log'] ?? []];
+        [$whiteRow, $blackRow] = $myHc === 'white' ? [$mr, $oppRow] : [$oppRow, $mr];
+
+        $merged = MatBuilder::mergeLogs(is_array($whiteLog) ? $whiteLog : [], is_array($blackLog) ? $blackLog : []);
+        if (count($merged) < 2) {
+            return;
+        }
+        $matchLen = max(1, (int) ($mr->match_length ?? 1));
+        $mat = MatBuilder::build($merged, $matchLen, 'White', 'Black');
+
+        $res = $gnubg->matchluck($mat);
         $luck = is_array($res) ? ($res['luck'] ?? null) : null;
         if (! is_array($luck) || ! isset($luck['p0'], $luck['p1'])) {
-            Log::warning('gnubg luck: parse yok', ['id' => $mr->id, 'res' => is_array($res) ? array_keys($res) : gettype($res)]);
+            Log::warning('gnubg luck (merged): parse yok', ['id' => $mr->id, 'mat_len' => strlen($mat)]);
 
             return;
         }
         $white = $luck['p0']; // .mat sol sütun = white
-        $black = $luck['p1']; // sağ sütun = black
+        $black = $luck['p1'];
 
-        // Bu satırın oyuncusunun rengi (log.hc). Bilinmezse white varsay (geriye uyum).
-        $hc = 'white';
-        $decoded = json_decode((string) $mr->log, true);
-        if (is_array($decoded) && in_array(($decoded['hc'] ?? null), ['white', 'black'], true)) {
-            $hc = $decoded['hc'];
-        }
-        $mine = $hc === 'white' ? $white : $black;
-        $opp = $hc === 'white' ? $black : $white;
-
-        // ŞÜPHELİ: emg_total TAM 0 = gerçek maçta imkânsız (onlarca zarın equity toplamı). O oyuncunun
-        // hamleleri bu .mat'te eksik demektir (her istemci KENDİ kısmi .mat'ini gönderir; rakip tarafı
-        // eksik olabilir). Böyle bir değeri YAZMA -> gerçek değeri 0'la ezme.
+        // emg TAM 0 = hesaplanamadı (birleştirilmiş .mat'te bile eksikse ciddi) -> yazma + logla.
         $suspicious = fn ($l) => ! isset($l['emg_total']) || abs((float) $l['emg_total']) < 1e-9;
-
-        if ($suspicious($mine) || $suspicious($opp)) {
-            // Kök neden teşhisi: ham .mat + gnubg istatistiği (düzelene kadar).
-            Log::warning('gnubg luck ŞÜPHELİ 0 (.mat eksik olabilir)', [
-                'id' => $mr->id, 'hc' => $hc, 'p0' => $white, 'p1' => $black,
-                'mat_len' => strlen($this->mat),
-                'mat_head' => substr($this->mat, 0, 1800),
-                'stats' => substr((string) ($res['statistics_match'] ?? ''), 0, 1400),
+        if ($suspicious($white) || $suspicious($black)) {
+            Log::warning('gnubg luck (merged) ŞÜPHELİ 0 — birleştirmeye rağmen eksik', [
+                'id' => $mr->id, 'p0' => $white, 'p1' => $black,
+                'merged_count' => count($merged), 'mat_head' => substr($mat, 0, 1800),
+                'stats' => substr((string) ($res['statistics_match'] ?? ''), 0, 1200),
             ]);
         }
 
-        // KENDİ satırı: kendi raporu kendi oyuncusu için en güvenilir. YALNIZ gerçek değeri yaz;
-        // şüpheli 0 ise null bırak (istemci ONNX fallback; diğer oyuncunun raporu doldurabilir).
-        if (! $suspicious($mine)) {
-            $this->write($mr->id, $mine);
+        // Birleştirilmiş .mat AUTHORITATIVE (tam) -> iki satırı da (yalnız gerçek değerle) yaz/ez.
+        if (! $suspicious($white)) {
+            $this->write($whiteRow->id, $white);
+        }
+        if (! $suspicious($black)) {
+            $this->write($blackRow->id, $black);
         }
 
-        // RAKİP satırı: yalnız BOŞSA + gerçek değerle doldur (kendi raporu gelince EZMESİN; her
-        // oyuncunun satırı kendi güvenilir .mat'inden gelsin). Bu, "biri 0" bug'ının çözümü.
-        if (! empty($mr->room_code) && ! $suspicious($opp)) {
-            $oppRow = MatchResult::where('room_code', $mr->room_code)
-                ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
-            if ($oppRow && $oppRow->luck_mwc === null) {
-                $this->write($oppRow->id, $opp);
-            }
-        }
-
-        Log::info('gnubg luck V1', [
-            'id' => $mr->id, 'hc' => $hc,
-            'mine_mwc' => $mine['mwc_total'] ?? null, 'mine_susp' => $suspicious($mine),
-            'opp_mwc' => $opp['mwc_total'] ?? null, 'opp_susp' => $suspicious($opp),
+        Log::info('gnubg luck V1 (merged)', [
+            'room' => $mr->room_code, 'merged' => count($merged),
+            'white_mwc' => $white['mwc_total'] ?? null, 'black_mwc' => $black['mwc_total'] ?? null,
         ]);
     }
 
