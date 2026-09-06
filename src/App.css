@@ -14155,6 +14155,76 @@ button.acct-row:hover:not(:disabled) {
   max-height: 88vh;
   overflow-y: auto;
 }
+/* ===== Magaza redesign (editoryal header + cuzdan + sekme seridi) ===== */
+.shop-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px 18px;
+  flex-wrap: wrap;
+  margin: 2px 0 18px;
+}
+.shop-head-text h2 {
+  margin: 0;
+}
+.shop-sub {
+  margin: 5px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 40ch;
+  text-wrap: pretty;
+}
+.shop-head-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+/* Cuzdan: bakiyeyi baglamlandiran net panel (etiket + miktar). Sicak kiremit/altin tint. */
+.shop-wallet {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 7px 15px;
+  border: 1px solid color-mix(in srgb, var(--tv-gold) 40%, var(--border));
+  background: color-mix(in srgb, var(--tv-gold) 9%, var(--card-bg));
+  border-radius: var(--radius-lg, 12px);
+}
+.shop-wallet-label {
+  font-size: 0.6rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.shop-wallet-amt {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.3rem;
+  line-height: 1.05;
+  color: var(--text);
+}
+/* Sekme seridi: yatay kaydirmali, kesilme yok (uzun TR etiketleri icin) */
+.shop-tabs {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.shop-tabs::-webkit-scrollbar {
+  display: none;
+}
+.shop-tabs .prof-tab {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 480px) {
+  .shop-head-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
 /* Coin + gunluk odul: ikisi de solda, net kontrastli chip'ler (geri sayim dahil) */
 .shop-top {
   display: flex;

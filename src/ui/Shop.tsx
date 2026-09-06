@@ -54,27 +54,31 @@ export default function Shop({
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2>
-          <Icon name="shop" size={20} /> {t('shop.title')}
-        </h2>
-
-        {/* Sticky kontrol bari: bakiye + gunluk odul */}
-        <div className="shop-controls">
-          <div className="shop-controls-row">
-            <div className="shop-coins">
-              <Coins amount={coins} size={22} />
-            </div>
-            {/* Günlük ödül butonu KALDIRILDI (ödül üst bardaki butondan alınır). */}
+        {/* Editoryal baslik + cuzdan: solda baslik/alt-baslik, sagda bakiye (+ sepet) */}
+        <header className="shop-head">
+          <div className="shop-head-text">
+            <h2>
+              <Icon name="shop" size={20} /> {t('shop.title')}
+            </h2>
+            <p className="shop-sub">{t('shop.subtitle')}</p>
+          </div>
+          <div className="shop-head-actions">
             {onOpenCart && cartCount > 0 && (
-              <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title="Sepet">
-                <Icon name="shop" size={16} /> Sepet <span className="shop-cart-count tnum">{cartCount}</span>
+              <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
+                <Icon name="shop" size={16} /> {t('shop.cart')} <span className="shop-cart-count tnum">{cartCount}</span>
               </Button>
             )}
+            <div className="shop-wallet" title={t('shop.balance')}>
+              <span className="shop-wallet-label">{t('shop.balance')}</span>
+              <span className="shop-wallet-amt">
+                <Coins amount={coins} size={22} />
+              </span>
+            </div>
           </div>
-        </div>
+        </header>
 
-        {/* Sekmeler: Jeton Al | Tahta Rengi | Avatar Cercevesi (Ayarlar'dan tasindi) */}
-        <div className="prof-tabs bs-tabs" role="tablist">
+        {/* Sekmeler: Jeton Al | Tahta Rengi | Avatar Cercevesi (yatay kaydirmali, kesilmez) */}
+        <div className="prof-tabs bs-tabs shop-tabs" role="tablist">
           <button
             type="button"
             role="tab"
@@ -123,9 +127,6 @@ export default function Shop({
         {/* --- Coin satin al: gercek para ile jeton paketleri (vitrin) --- */}
         {tab === 'coins' && (
         <section className="coin-store" aria-label={t('shop.buyCoins')}>
-          <h3 className="coin-store-title">
-            <Icon name="coin" size={18} /> {t('shop.buyCoins')}
-          </h3>
           <div className="coin-grid">
             {COIN_PACKAGES.map((p) => {
               const per = (p.price / p.gc).toLocaleString('tr-TR', {
