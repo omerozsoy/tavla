@@ -223,6 +223,29 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(0, (int) $black->fresh()->losses);
     }
 
+    // M2 (denetim): aynı room+user için ÇİFT rapor -> tek satır + tek Elo değişimi (çift-Elo yarışı
+    // fix: serileştirme kilidi + unique index + idempotent erken-dönüş). "Yarım kalan" değil.
+    public function test_double_report_is_idempotent_single_row(): void
+    {
+        $white = $this->makeUser('dupw'); // p1
+        $black = $this->makeUser('dupb'); // p2 (kazanan)
+        $this->makeFinishedRoom($white, $black);
+
+        Sanctum::actingAs($black);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'AUTHR',
+        ])->assertOk();
+        $ratingAfter1 = (int) $black->fresh()->rating;
+
+        // İkinci (çift) rapor -> idempotent: rating DEĞİŞMEMELİ, ikinci satır OLUŞMAMALI.
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'AUTHR',
+        ])->assertOk();
+
+        $this->assertSame($ratingAfter1, (int) $black->fresh()->rating, 'ikinci rapor rating\'i değiştirmemeli');
+        $this->assertSame(1, MatchResult::where('room_code', 'AUTHR')->where('user_id', $black->id)->count(), 'tek satır');
+    }
+
     // SUNUCU-OTORITER SANS (luck): her oyuncu KENDİ renginin HAM luck'ını raporlar; /me/match-pr
     // iki oyuncuya da AYNI çifti verir (self+opp). Çapraz-tutarlı: A'nın self'i = B'nin opp'u.
     // Böylece MatchResult net'i (kazanan−kaybeden) iki ekranda ÖZDEŞ -> "farklı şans" bug'ı biter.
