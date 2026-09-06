@@ -7,8 +7,12 @@
 .sf {
   position: relative;
   display: inline-block;
+  /* flex satirlarinda (kimlik blogu, hesap bari) yatayda ezilip oval olmasin diye
+     kucumseme kapali + kare oran garanti. */
+  flex: 0 0 auto;
   width: var(--sf-size, 104px);
   height: var(--sf-size, 104px);
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
   --sf-ring-w: 4px;
 }
