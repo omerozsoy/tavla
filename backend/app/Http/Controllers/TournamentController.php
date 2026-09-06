@@ -90,6 +90,10 @@ class TournamentController extends Controller
             }
             if (! $already && $fee > 0) {
                 $u = User::lockForUpdate()->find($me->id);
+                // %-BAHİS KİLİDİ: oynanan bir % (bet_pct) maçta coin harcaması yasak (escrow'suz).
+                if (\App\Models\Room::userInPctStakedPlaying($u->id)) {
+                    return ['err' => 'Yüzde bahisli maçtayken coin harcayamazsın (turnuva ücreti). Maç bitince tekrar dene.', 'code' => 422];
+                }
                 // KULLANILABİLİR bakiye = coins - coins_reserved (escrow). Bahisli maçta rezerve
                 // edilmiş coin turnuva ücretine harcanamaz (stake maç sonuna kadar kilitli).
                 if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $fee) {

@@ -55,6 +55,25 @@ class Room extends Model
         'live',
     ];
 
+    /**
+     * Kullanıcı ŞU AN OYNANAN bir % (bet_pct) bahisli maçta mı? %-maçlar escrow'suz (settle-time
+     * modeli) olduğundan, bu maç sürerken coin harcaması (mağaza/turnuva) KİLİTLENİR -> kaybeden
+     * bakiyesini eritip settle'ı eksik ödetemez.
+     */
+    public static function userInPctStakedPlaying(?int $uid): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+
+        return static::where('status', 'playing')
+            ->where('bet_pct', '>', 0)
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            })
+            ->exists();
+    }
+
     protected function casts(): array
     {
         return [

@@ -84,6 +84,37 @@ class RoomEscrowTest extends TestCase
         $this->assertSame(0, (int) $p2->fresh()->coins_reserved);
     }
 
+    public function test_pct_match_blocks_shop_spending(): void
+    {
+        // %-bahis maçları escrow'suz -> oynanan % maçta coin harcaması (mağaza) KİLİTLİ (coin olsa bile).
+        $u = $this->user('pctU', 1000);
+        Room::create([
+            'code' => 'PCTM', 'p1_token' => 't1', 'p1_user_id' => $u->id, 'p1_name' => 'pctU',
+            'p2_token' => 't2', 'p2_user_id' => 999999, 'p2_name' => 'X',
+            'status' => 'playing', 'stake' => 0, 'bet_pct' => 50, 'version' => 1, 'settled' => false,
+        ]);
+        Sanctum::actingAs($u->fresh());
+        $this->postJson('/api/shop/buy', ['id' => 'frame.pulse'])->assertStatus(422); // % maçta -> kilit
+    }
+
+    public function test_pct_helper_only_matches_pct_not_fixed(): void
+    {
+        $up = $this->user('hp', 1000);
+        Room::create([
+            'code' => 'HP', 'p1_token' => 't1', 'p1_user_id' => $up->id, 'p1_name' => 'hp',
+            'status' => 'playing', 'stake' => 0, 'bet_pct' => 50, 'version' => 1, 'settled' => false,
+        ]);
+        $this->assertTrue(Room::userInPctStakedPlaying($up->id));
+
+        // Sabit-stake (bet_pct 0) -> false (sabit-stake rezervasyonla korunur, tam kilit değil).
+        $uf = $this->user('hf', 1000);
+        Room::create([
+            'code' => 'HF', 'p1_token' => 't1', 'p1_user_id' => $uf->id, 'p1_name' => 'hf',
+            'status' => 'playing', 'stake' => 100, 'bet_pct' => 0, 'version' => 1, 'settled' => false,
+        ]);
+        $this->assertFalse(Room::userInPctStakedPlaying($uf->id));
+    }
+
     public function test_cleanup_releases_stranded_escrow_no_coin_loss(): void
     {
         // Terk edilmiş escrowed oda (>1 gün) silinirken rezerv BIRAKILIR -> coin kaybı YOK.
