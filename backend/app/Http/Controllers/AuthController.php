@@ -916,6 +916,7 @@ class AuthController extends Controller
         $hasNew = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck');
         $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
         $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
+        $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
@@ -924,13 +925,33 @@ class AuthController extends Controller
         if ($hasOpp) {
             $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
         }
+        if ($hasRoom) {
+            $cols[] = 'room_code';
+        }
         $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(30)->select($cols);
         if ($hasLog) {
             // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
             // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
             $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND CHAR_LENGTH(log) > 40) as has_log'));
         }
-        $matches = $q->get()
+        $rows = $q->get();
+
+        // Rakip ŞANS'ı (herkesin şansı kendi tarafında gösterilsin): online maçlarda rakibin
+        // satırı aynı room_code'da; tek toplu sorgu ile room_code -> rakip luck haritası çıkar.
+        $oppLuckByRoom = [];
+        if ($hasRoom && $hasNew) {
+            $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
+            if (! empty($codes)) {
+                \App\Models\MatchResult::whereIn('room_code', $codes)
+                    ->where('user_id', '!=', $me->id)
+                    ->get(['room_code', 'luck'])
+                    ->each(function ($r) use (&$oppLuckByRoom) {
+                        $oppLuckByRoom[$r->room_code] = $r->luck;
+                    });
+            }
+        }
+
+        $matches = $rows
             ->map(fn ($m) => [
                 'id' => $m->id,
                 'won' => (bool) $m->won,
@@ -944,6 +965,7 @@ class AuthController extends Controller
                 'pr' => $m->pr,
                 'coins_after' => $m->coins_after,
                 'luck' => $hasNew ? $m->luck : null,
+                'opponent_luck' => ($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null,
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
                 'has_log' => $hasLog ? (bool) $m->has_log : false,

@@ -1853,6 +1853,28 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* Sans (luck) rozeti — her oyuncunun kendi tarafinda (PR ile birlikte). */
+.mh-card .mh-luck {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.mh-card .mh-luck.good {
+  color: var(--success-fg, #4caf7d);
+  background: color-mix(in srgb, var(--success-fg, #4caf7d) 12%, transparent);
+  border-color: color-mix(in srgb, var(--success-fg, #4caf7d) 28%, transparent);
+}
+.mh-card .mh-luck.bad {
+  color: var(--tv-brick, #c9563f);
+  background: color-mix(in srgb, var(--tv-brick, #c9563f) 12%, transparent);
+  border-color: color-mix(in srgb, var(--tv-brick, #c9563f) 28%, transparent);
+}
 .mh-card .mh-ava {
   flex: none;
   width: 40px;

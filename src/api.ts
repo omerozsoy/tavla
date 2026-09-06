@@ -378,6 +378,7 @@ export interface MyMatch {
   pr?: number | null
   coins_after?: number | null
   luck?: number | null
+  opponent_luck?: number | null
   score_self?: number | null
   score_opp?: number | null
   created_at?: string | null
