@@ -1,0 +1,10 @@
+[Unit]
+Description=Tavla scheduler'ı her dakika çalıştır (Laravel schedule:run)
+
+[Timer]
+OnCalendar=*:0/1
+AccuracySec=15s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

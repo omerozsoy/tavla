@@ -1,0 +1,11 @@
+[Unit]
+Description=Tavla Laravel scheduler (schedule:run — services:watch + temizlik + prune)
+After=network.target mariadb.service mysqld.service
+
+[Service]
+Type=oneshot
+# ÖNEMLİ: tavla-queue.service ile AYNI vhost kullanıcısı (storage/logs izin çakışması olmasın).
+# Bul: stat -c '%U' /var/www/vhosts/tavlai.com/httpdocs
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlai.com/httpdocs/backend
+ExecStart=/opt/plesk/php/8.2/bin/php artisan schedule:run
