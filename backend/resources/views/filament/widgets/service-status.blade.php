@@ -26,8 +26,8 @@
                             size="sm"
                             color="gray"
                             icon="heroicon-m-arrow-path"
-                            wire:click="restart"
-                            wire:confirm="Validator yeniden başlatılsın mı? (Süreç kapanır; Plesk/Passenger birkaç saniyede otomatik canlandırır.)"
+                            wire:click="restartService('{{ $svc['key'] }}')"
+                            wire:confirm="{{ $svc['name'] }} yeniden başlatılsın mı?"
                             wire:loading.attr="disabled"
                         >
                             Yeniden Başlat

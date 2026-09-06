@@ -83,9 +83,9 @@ class ServiceStatus extends Widget
         try {
             $up = app(GnuBgClient::class)->health();
 
-            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, $up, $url);
+            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, $up, $url, true);
         } catch (\Throwable $e) {
-            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, false, 'İstisna: '.$e->getMessage());
+            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, false, 'İstisna: '.$e->getMessage(), true);
         }
     }
 
@@ -120,7 +120,7 @@ class ServiceStatus extends Widget
             if ($pending === 0) {
                 $detail = 'Boşta (bekleyen iş yok'.($failed > 0 ? ", $failed başarısız" : '').')';
 
-                return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, null, $detail);
+                return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, null, $detail, true);
             }
             $oldest = DB::table('jobs')->min('available_at');
             $age = $oldest ? (time() - (int) $oldest) : 0;
@@ -130,9 +130,9 @@ class ServiceStatus extends Widget
                 $detail .= ' — birikmiş (worker kapalı olabilir)';
             }
 
-            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $up, $detail);
+            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $up, $detail, true);
         } catch (\Throwable $e) {
-            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, false, 'jobs tablosu okunamadı');
+            return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, false, 'jobs tablosu okunamadı', true);
         }
     }
 
@@ -142,31 +142,60 @@ class ServiceStatus extends Widget
         return compact('key', 'name', 'configured', 'up', 'detail', 'restart');
     }
 
-    /** "Yeniden Başlat" butonu -> validator'ı restart et (süreç exit -> Passenger canlandirir). */
-    public function restart(): void
+    /**
+     * "Yeniden Başlat" butonu. validator -> HTTP /restart (Passenger canlandırır). gnubg/queue ->
+     * systemd (sudo -n systemctl restart; izin yoksa uyarı + SSH komutu gösterir).
+     */
+    public function restartService(string $key): void
     {
-        $r = app(MoveValidatorService::class)->restartValidator();
         Cache::forget('admin:services-status'); // durum yeniden ölçülsün
-        Cache::forget('admin:validator-status');
-        if (! empty($r['ok'])) {
-            Notification::make()
-                ->title('Validator yeniden başlatılıyor…')
-                ->body('Süreç kapandı; birkaç saniye içinde otomatik canlanır. Durum yenilenecek.')
-                ->success()
-                ->send();
-        } elseif (($r['error'] ?? '') === 'status-404') {
-            Notification::make()
-                ->title('Validator eski sürümde')
-                ->body('Çalışıyor ama /restart ucu yok. Plesk → Node uygulaması → Restart App ile BİR KEZ elle yeniden başlatın (yeni kod yüklensin); sonra bu buton çalışır.')
-                ->warning()
-                ->persistent()
-                ->send();
-        } else {
-            Notification::make()
-                ->title('Yeniden başlatılamadı')
-                ->body('Hata: '.($r['error'] ?? 'bilinmiyor').' — validator ayakta değilse önce Plesk\'ten başlatın.')
-                ->danger()
-                ->send();
+
+        if ($key === 'validator') {
+            $r = app(MoveValidatorService::class)->restartValidator();
+            Cache::forget('admin:validator-status');
+            if (! empty($r['ok'])) {
+                Notification::make()->title('Validator yeniden başlatılıyor…')
+                    ->body('Süreç kapandı; birkaç saniye içinde otomatik canlanır.')->success()->send();
+            } elseif (($r['error'] ?? '') === 'status-404') {
+                Notification::make()->title('Validator eski sürümde')
+                    ->body('Çalışıyor ama /restart ucu yok. Plesk → Node uygulaması → Restart App ile BİR KEZ elle yeniden başlat.')
+                    ->warning()->persistent()->send();
+            } else {
+                Notification::make()->title('Yeniden başlatılamadı')
+                    ->body('Hata: '.($r['error'] ?? 'bilinmiyor').' — validator ayakta değilse önce Plesk\'ten başlat.')
+                    ->danger()->send();
+            }
+
+            return;
         }
+
+        $unit = $key === 'gnubg' ? 'gnubg-analysis' : ($key === 'queue' ? 'tavla-queue' : null);
+        if (! $unit) {
+            Notification::make()->title('Bilinmeyen servis')->danger()->send();
+
+            return;
+        }
+        [$ok, $out] = $this->systemctlRestart($unit);
+        if ($ok) {
+            Notification::make()->title($unit.' yeniden başlatıldı')
+                ->body('Servis yenilendi. Durum birkaç saniyede güncellenecek.')->success()->send();
+        } else {
+            Notification::make()->title($unit.' yeniden başlatılamadı')
+                ->body('sudo izni gerekebilir (bkz deploy notu). SSH: `systemctl restart '.$unit.'`. Detay: '.($out ?: 'izin yok'))
+                ->warning()->persistent()->send();
+        }
+    }
+
+    /** systemd birimini best-effort yeniden başlat (sudo -n; izin yoksa false + çıktı). */
+    private function systemctlRestart(string $unit): array
+    {
+        if (! function_exists('exec')) {
+            return [false, 'exec kapalı (paylaşımlı hosting)'];
+        }
+        $o = [];
+        $code = 1;
+        @exec('sudo -n systemctl restart '.escapeshellarg($unit).' 2>&1', $o, $code);
+
+        return [$code === 0, implode("\n", $o)];
     }
 }
