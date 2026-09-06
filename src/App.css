@@ -8164,6 +8164,28 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   color: var(--accent);
 }
+/* Devam eden mac kartindaki bastaki nokta: dikkat cekici yanip-sonme + accent nabiz halka
+   (varsayilan coin-pulse gold + cok soluktu; burada accent renkte belirgin blink). */
+.resume-match-btn .rm-live .live-dot {
+  background: var(--accent);
+  animation: rm-live-blink 1.1s ease-in-out infinite;
+}
+@keyframes rm-live-blink {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent);
+  }
+  50% {
+    opacity: 0.3;
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 0%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resume-match-btn .rm-live .live-dot {
+    animation: none;
+  }
+}
 /* Mobil: tek satira sigmaz -> sardir. Ust satir [CANLI ... Maça dön],
    alt satir oyuncular+skor+uzunluk. rm-players'i kirpma (avatar/isim kaybolmasin). */
 @media (max-width: 640px) {
