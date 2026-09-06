@@ -223,6 +223,39 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(0, (int) $black->fresh()->losses);
     }
 
+    // M1 (denetim): oda SİLİNMİŞ + puanlı rapor -> istemci opponent_rating:4000 ile Elo ŞİŞİREMEZ.
+    // Otoriter kaynak (rakip satırı) yoksa kendi rating'ine sabitlenir (~even Elo).
+    public function test_purged_room_ranked_clamps_opponent_rating(): void
+    {
+        $u = $this->makeUser('ghost'); // rating 1500
+        Sanctum::actingAs($u);
+        // 'GHOST' odası YOK (silinmiş). Puanlı galibiyet, istemci opponent 4000 iddia ediyor.
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 4000, 'ranked' => true, 'room_code' => 'GHOST', 'match_length' => 1,
+        ])->assertOk();
+        // Kendi 1500'üne sabit -> eşit rakibe galibiyet = +16 -> 1516 (4000'den ~+32 DEĞİL).
+        $this->assertSame(1516, (int) $u->fresh()->rating, 'silinmiş odada opponent_rating kendi puanına sabitlenmeli');
+    }
+
+    // M1: oda silinmiş ama rakibin match_results satırı VAR -> onun rating_before'ı otoriter kullanılır.
+    public function test_purged_room_uses_opponent_row_rating(): void
+    {
+        $u = $this->makeUser('m1a');
+        $opp = $this->makeUser('m1b');
+        MatchResult::create([
+            'user_id' => $opp->id, 'won' => false, 'room_code' => 'GONE',
+            'opponent_rating' => 1500, 'rating_before' => 1600, 'rating_after' => 1584, 'delta' => -16,
+        ]);
+        Sanctum::actingAs($u);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 4000, 'ranked' => true, 'room_code' => 'GONE', 'match_length' => 1,
+        ])->assertOk();
+        // rb = rakip satırı rating_before = 1600 -> güçlü rakibe galibiyet: 1516 < yeni < 1532 (4000 değil).
+        $r = (int) $u->fresh()->rating;
+        $this->assertGreaterThan(1516, $r, '1600 kullanılmalı (eşitten fazla kazanç)');
+        $this->assertLessThan(1532, $r, '4000 kullanılmamalı');
+    }
+
     // M2 (denetim): aynı room+user için ÇİFT rapor -> tek satır + tek Elo değişimi (çift-Elo yarışı
     // fix: serileştirme kilidi + unique index + idempotent erken-dönüş). "Yarım kalan" değil.
     public function test_double_report_is_idempotent_single_row(): void
