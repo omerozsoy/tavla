@@ -108,6 +108,59 @@ class PaymentController extends Controller
         ]);
     }
 
+    // SPA: "Üyeliğini Uzat" -> sepetteki 1 yillik Premium uzatmayi satin al. Tek urun; FIYAT
+    // SUNUCUDA (config/garanti.renew), client'a guvenilmez. buyCoins ile ayni donus sekli
+    // (url/submitUrl/amount/demo) -> ayni uygulama-ici odeme sayfasi kullanilir. kind='renew':
+    // callback'te plan_until'a +1 yil EKLENIR (sifirlanmaz).
+    public function buyMembership(Request $request, GarantiService $garanti)
+    {
+        if (! $garanti->isAvailable()) {
+            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        }
+        $amount = (int) config('garanti.renew.yearly', 49900);
+        if ($amount <= 0) {
+            return $this->fail('Üyelik fiyatı yapılandırılmamış.', 422);
+        }
+
+        $payment = Payment::create([
+            'user_id'  => $request->user()->id,
+            'kind'     => 'renew',
+            'order_id' => 'TM'.now()->format('ymdHis').mt_rand(100, 999),
+            'plan'     => 'star',
+            'period'   => 'yearly',
+            'amount'   => $amount,
+            'currency' => '949',
+            'status'   => 'pending',
+        ]);
+
+        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
+        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
+        return response()->json([
+            'url'       => $url,
+            'submitUrl' => $submitUrl,
+            'amount'    => $amount,
+            'demo'      => $garanti->isDemo(),
+        ]);
+    }
+
+    // Uyeligi aktive et / UZAT. kind='renew' -> mevcut bitis tarihi gelecekteyse USTUNE ekle
+    // (sure kaybi olmaz); dolmus/bos ise bugunden baslat. kind='subscription' -> ayni davranis
+    // (ilk abonelikte plan_until bos oldugundan bugunden baslar). ATOMIK caginin ICINDE cagrilir.
+    private function activateMembership(\App\Models\User $u, Payment $payment): void
+    {
+        $future = $u->plan_until && \Illuminate\Support\Carbon::parse($u->plan_until)->isFuture();
+        $base = $future ? \Illuminate\Support\Carbon::parse($u->plan_until) : now();
+        $u->plan = $payment->plan ?: 'star';
+        $u->plan_until = $payment->period === 'monthly'
+            ? $base->copy()->addMonth()
+            : $base->copy()->addYear();
+        if (! $u->plan_since) {
+            $u->plan_since = now();
+        }
+        $u->auto_renew = true;
+        $u->save();
+    }
+
     // Sepet alt toplami (kurus) + coin + id ozetleri (config'ten, client'a GUVENILMEZ).
     // Donus: [totalKurus, totalCoins, ids[], errorOrNull].
     private function coinSubtotal(array $items): array
@@ -227,19 +280,14 @@ class PaymentController extends Controller
                     \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
                 }
             } else {
-                $u->plan = $payment->plan;
-                $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
-                if (! $u->plan_since) {
-                    $u->plan_since = now();
-                }
-                $u->auto_renew = true;
-                $u->save();
+                // 'subscription' (etkinlestir) veya 'renew' (uzat) — ikisi de plan_until'i buradan yonetir.
+                $this->activateMembership($u, $payment);
             }
         }
 
         $okMsg = $payment->kind === 'coins'
             ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
-            : 'Üyeliğin etkinleştirildi.';
+            : ($payment->kind === 'renew' ? 'Üyeliğin uzatıldı.' : 'Üyeliğin etkinleştirildi.');
 
         return view('pay.result', [
             'ok'    => true,
@@ -306,16 +354,8 @@ class PaymentController extends Controller
                             \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
                         }
                     } else {
-                        // Uyelik: plani aktive et / yenile.
-                        $u->plan = $payment->plan;
-                        $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
-                        // Uye olma tarihi yalnizca ILK kez set edilir (yenilemede korunur)
-                        if (! $u->plan_since) {
-                            $u->plan_since = now();
-                        }
-                        // Odeme -> otomatik yenileme yeniden acilir
-                        $u->auto_renew = true;
-                        $u->save();
+                        // Uyelik: 'subscription' -> aktive et, 'renew' -> mevcut bitise +sure EKLE.
+                        $this->activateMembership($u, $payment);
                     }
                 }
             } elseif ($payment->status === 'pending') {
@@ -327,7 +367,7 @@ class PaymentController extends Controller
 
         $okMsg = $payment && $payment->kind === 'coins'
             ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
-            : 'Üyeliğin etkinleştirildi.';
+            : ($payment && $payment->kind === 'renew' ? 'Üyeliğin uzatıldı.' : 'Üyeliğin etkinleştirildi.');
 
         return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg'], 'okMsg' => $okMsg]);
     }

@@ -440,6 +440,17 @@ export async function buyCoins(
   return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items, code: code || undefined }) })
 }
 
+// "Üyeliğini Uzat" -> 1 yillik Premium uzatma satin al. Fiyat SUNUCUDA (config/garanti.renew).
+// buyCoins ile ayni odeme akisi (submitUrl -> uygulama-ici kart formu). amount: kurus.
+export async function buyMembership(): Promise<{
+  url: string
+  submitUrl: string
+  amount: number
+  demo?: boolean
+}> {
+  return req('/shop/membership', { method: 'POST', body: JSON.stringify({}) })
+}
+
 // Indirim kodu dogrula (odeme baslatmadan): sunucu sepet toplamindan indirimi hesaplar.
 // Tutarlar KURUS (TL x100). Hatali kod -> req reject (mesaj gosterilir).
 export interface PromoResult {

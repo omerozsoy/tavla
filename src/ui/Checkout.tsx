@@ -48,6 +48,7 @@ export default function Checkout({
   const numView = ((digits + '••••••••••••••••').slice(0, 16).match(/.{1,4}/g) ?? []).join(' ')
   const grouped = (digits.match(/.{1,4}/g) ?? []).join(' ')
 
+  const isMembership = items.some((it) => it.kind === 'membership')
   const rows = useMemo(
     () =>
       items
@@ -68,20 +69,36 @@ export default function Checkout({
             <Icon name="shop" size={20} /> Sipariş Özeti
           </h2>
           <div className="co-list">
-            {rows.map(({ it, pkg }) => (
-              <div className="co-row" key={it.id}>
+            {isMembership ? (
+              <div className="co-row">
                 <span className="co-name">
-                  <Icon name="coin" size={15} /> {pkg.name}
-                  <b className="co-gc">{fmtCoin(pkg.gc)} coin</b>
-                  {it.qty > 1 && <span className="co-qty">×{it.qty}</span>}
+                  <Icon name="crown" size={15} /> 1 Yıllık Premium Üyelik
+                  <b className="co-gc">Üyelik bitişine +1 yıl</b>
                 </span>
-                <span className="co-price tnum">{fmtTL(pkg.price * 100 * it.qty)}</span>
+                <span className="co-price tnum">{fmtTL(amount)}</span>
               </div>
-            ))}
+            ) : (
+              rows.map(({ it, pkg }) => (
+                <div className="co-row" key={it.id}>
+                  <span className="co-name">
+                    <Icon name="coin" size={15} /> {pkg.name}
+                    <b className="co-gc">{fmtCoin(pkg.gc)} coin</b>
+                    {it.qty > 1 && <span className="co-qty">×{it.qty}</span>}
+                  </span>
+                  <span className="co-price tnum">{fmtTL(pkg.price * 100 * it.qty)}</span>
+                </div>
+              ))
+            )}
           </div>
           <div className="co-total">
             <span>
-              Toplam <b className="tnum">{fmtCoin(coins)}</b> coin
+              {isMembership ? (
+                'Toplam'
+              ) : (
+                <>
+                  Toplam <b className="tnum">{fmtCoin(coins)}</b> coin
+                </>
+              )}
             </span>
             <span className="co-total-amt tnum">{fmtTL(amount)}</span>
           </div>
@@ -98,7 +115,7 @@ export default function Checkout({
               <Icon name="shield-check" size={15} />
               <span>
                 <b>DEMO modu</b> — banka bağlı değil. Kart bilgileri kimseye gönderilmez; "Öde" deyince gerçek para
-                çekilmeden coin hesabına yüklenir. (Test kartı: 4111 1111 1111 1111 · 12/30 · 123)
+                çekilmeden {isMembership ? 'üyeliğin uzatılır' : 'coin hesabına yüklenir'}. (Test kartı: 4111 1111 1111 1111 · 12/30 · 123)
               </span>
             </div>
           )}
@@ -182,7 +199,7 @@ export default function Checkout({
           </div>
 
           <Button type="submit" variant="default" className="checkout-pay">
-            <Icon name="coin" size={18} /> {fmtTL(amount)} {demo ? 'Öde (Demo)' : 'Güvenli Öde'}
+            <Icon name={isMembership ? 'crown' : 'coin'} size={18} /> {fmtTL(amount)} {demo ? 'Öde (Demo)' : 'Güvenli Öde'}
           </Button>
           <p className="checkout-secure">
             <Icon name="shield-check" size={13} /> 3D Secure · Kart bilgileriniz saklanmaz, doğrudan bankaya iletilir.

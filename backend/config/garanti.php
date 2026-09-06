@@ -45,6 +45,10 @@ return [
         'starpro' => ['yearly' => 49990, 'monthly' => 4990], // eski id -> ayni fiyata esitlendi
     ],
 
+    // "Üyeliğini Uzat" -> sepet -> 1 yillik Premium uzatma. KURUS. 499,00 TL = 49900 kurus
+    // (Ekranda gosterilen 499 TL ile birebir; odeme callback'inde plan_until'a +1 yil EKLENIR.)
+    'renew' => ['yearly' => 49900],
+
     // Coin (jeton) paketleri — KURUS (TL x 100). Frontend src/coinPackages.ts ile BIREBIR ayni
     // olmali (fiyat sunucuda dogrulanir; frontend'den gelen tutara guvenilmez).
     'coin_packages' => [
