@@ -1,7 +1,33 @@
+import { useEffect, useRef, useState } from 'react'
 import './sidebar.css'
 import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
 import { useT } from '../i18n'
+
+// Anlik PR degisim yonu: son harekette PR yukseldi (kotu) mi dustu (iyi) mi?
+// Kisa sureligine dondurur (arrow animasyonu icin), sonra null'a doner.
+function usePrTrend(pr: number | null | undefined): 'bad' | 'good' | null {
+  const prev = useRef<number | null>(null)
+  const [trend, setTrend] = useState<'bad' | 'good' | null>(null)
+  useEffect(() => {
+    if (pr == null) {
+      prev.current = null
+      return
+    }
+    const before = prev.current
+    prev.current = pr
+    if (before == null) return
+    const d = pr - before
+    let next: 'bad' | 'good' | null = null
+    if (d > 0.05) next = 'bad' // PR yukseldi -> yanlis/zayif hamle
+    else if (d < -0.05) next = 'good' // PR dustu -> iyi hamle
+    if (!next) return
+    setTrend(next)
+    const id = setTimeout(() => setTrend(null), 2600)
+    return () => clearTimeout(id)
+  }, [pr])
+  return trend
+}
 
 interface PlayerInfo {
   name: string
@@ -63,14 +89,20 @@ function Avatar({ p }: { p: PlayerInfo }) {
 }
 
 function Name({ p }: { p: PlayerInfo }) {
+  const trend = usePrTrend(p.pr)
   return (
     <div className="player-name-wrap">
       <div className="player-name">{p.name}</div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
-      {/* Anlik PR (performans reytingi) — dusuk = iyi */}
+      {/* Anlik PR (performans reytingi) — dusuk = iyi. Yanlis hamlede kirmizi oklar
+          yukari, iyi hamlede yesil oklar asagi (iki yanda) animasyon: ogretici. */}
       {p.pr != null ? (
-        <div className="player-sub pc-pr">PR {p.pr.toFixed(1)}</div>
+        <div className={`pc-pr ${trend ? 'pr-' + trend : ''}`}>
+          {trend && <span className="pr-arrow pa-left" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
+          <span className="pr-val">PR {p.pr.toFixed(1)}</span>
+          {trend && <span className="pr-arrow pa-right" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
+        </div>
       ) : null}
     </div>
   )

@@ -4286,12 +4286,75 @@ button[aria-disabled='true'],
   font-size: 0.8rem;
   margin-top: 2px;
 }
-/* Anlik PR alt satiri: hafif altin vurgu (kalite/reyting hissi), tabular rakam */
-.main.game-scene .pc-pr {
-  color: color-mix(in srgb, var(--tv-gold) 60%, #eef2ff);
-  font-size: 0.82rem;
-  margin-top: 2px;
+/* Anlik PR: 2x buyuk, iki yaninda trend oklari (yanlis=kirmizi yukari, iyi=yesil asagi). */
+.pc-pr {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 5px;
   font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.pc-pr .pr-val {
+  font-size: 1.64rem; /* onceki 0.82rem'in 2 kati */
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+.main.game-scene .pc-pr .pr-val {
+  color: color-mix(in srgb, var(--tv-gold) 60%, #eef2ff);
+}
+/* Trend renginde PR degeri de vurgulanir (kisa sureligine) */
+.pc-pr.pr-bad .pr-val {
+  color: var(--color-error);
+}
+.pc-pr.pr-good .pr-val {
+  color: var(--color-success);
+}
+.pc-pr .pr-arrow {
+  font-size: 1.25rem;
+  line-height: 1;
+  display: inline-block;
+}
+.pc-pr.pr-bad .pr-arrow {
+  color: var(--color-error);
+  animation: pr-arw-up 0.7s ease-in-out infinite;
+}
+.pc-pr.pr-good .pr-arrow {
+  color: var(--color-success);
+  animation: pr-arw-down 0.7s ease-in-out infinite;
+}
+/* Cift ok his ver? tek ok yeterli; sag/sol simetri zaten "iki ok". */
+@keyframes pr-arw-up {
+  0% {
+    transform: translateY(6px);
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-7px);
+    opacity: 0.15;
+  }
+}
+@keyframes pr-arw-down {
+  0% {
+    transform: translateY(-6px);
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(7px);
+    opacity: 0.15;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pc-pr .pr-arrow {
+    animation: none !important;
+  }
 }
 .main.game-scene .status {
   color: rgba(220, 230, 255, 0.68);
