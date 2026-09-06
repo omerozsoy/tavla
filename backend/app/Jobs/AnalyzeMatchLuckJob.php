@@ -45,6 +45,12 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         if (! $oppRow) {
             return; // rakip henüz raporlamadı; onun raporu bu job'ı yeniden tetikler (iki log hazır olur)
         }
+        // DEDUP: iki oyuncu da aynı anda raporlarsa her iki job da tam gnubg analizini çalıştırır
+        // (pahalı, çift). İki satır da ZATEN yazılıysa atla -> tek queue worker sıralı işlediği için
+        // ikinci job bunu görür, çift analiz olmaz. (Yazımlar idempotent olduğundan yarış zararsız.)
+        if ($mr->luck_mwc !== null && $oppRow->luck_mwc !== null) {
+            return;
+        }
 
         $mine = json_decode((string) $mr->log, true);
         $theirs = json_decode((string) $oppRow->log, true);

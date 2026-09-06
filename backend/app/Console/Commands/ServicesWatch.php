@@ -8,6 +8,7 @@ use App\Services\MoveValidatorService;
 use App\Support\Alert;
 use App\Support\Backgammon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -128,17 +129,21 @@ class ServicesWatch extends Command
     private function probeQueue(): bool
     {
         try {
+            // 1) NABIZ tazeliği: worker QueueHeartbeatJob'ı işlediğinde cache'e zaman yazar. Bayatsa
+            //    (>180sn) worker İŞLEMİYOR — boştayken (backlog yokken) bile ölü worker'ı yakalar.
+            $hb = Cache::get('queue:heartbeat');
+            $hbStale = $hb !== null && (time() - (int) $hb) > 180;
+            // 2) BACKLOG: bekleyen en eski iş >180sn = worker consume etmiyor (nabız da burada birikir).
             $oldest = DB::table('jobs')->min('available_at');
-            $age = $oldest ? (time() - (int) $oldest) : 0;
-            $down = $age > 180; // 3 dk birikmiş iş -> worker kapalı
-            // Sonraki tur için nabız bırak (worker up ise hızlıca tüketir; down ise birikip yaşlanır).
+            $backlog = $oldest && (time() - (int) $oldest) > 180;
+            // Sonraki tur için nabız bırak (worker up ise hızlıca tüketir + cache tazeler; down ise birikir).
             try {
                 QueueHeartbeatJob::dispatch()->onConnection('database');
             } catch (\Throwable $e) {
                 // dispatch edemezsek (DB?) queue zaten sorunlu; database probe yakalar
             }
 
-            return ! $down;
+            return ! ($hbStale || $backlog);
         } catch (\Throwable $e) {
             return false; // jobs tablosu okunamıyor -> DB sorunu (database probe da uyarır)
         }
