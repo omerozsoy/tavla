@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
@@ -763,34 +764,40 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
           <Icon name="calendar-dots" size={16} /> {title}
         </Button>
       </div>
-      {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
-        <div
-          className={`cal-balloon ${tip.below ? 'below' : ''}`}
-          style={{ left: tip.x, top: tip.y, ['--arrow' as string]: `${tip.arrow}px` }}
-          role="tooltip"
-        >
-          {tip.tourn.map((it, k) => (
-            <div key={'t' + k} className="calb-row calb-tourn">
-              {it.logo ? (
-                <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
-              ) : (
-                <span className="calb-dot" />
-              )}{' '}
-              {it.name}
-            </div>
-          ))}
-          {tip.event.map((it, k) => (
-            <div key={'e' + k} className="calb-row calb-event">
-              {it.logo ? (
-                <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
-              ) : (
-                <span className="calb-dot" />
-              )}{' '}
-              {it.name}
-            </div>
-          ))}
-        </div>
-      )}
+      {tip &&
+        (tip.tourn.length > 0 || tip.event.length > 0) &&
+        // Portal document.body'ye: takvim, transform'lu/overflow'lu bir kabuk (scroll-away
+        // lobi) icinde oldugundan position:fixed balon o kabuga gore konumlanip KIRPILIYORDU
+        // ("okunmuyor"). Portal ile balon viewport'a gore dogru yerde ve kirpilmadan cikar.
+        createPortal(
+          <div
+            className={`cal-balloon ${tip.below ? 'below' : ''}`}
+            style={{ left: tip.x, top: tip.y, ['--arrow' as string]: `${tip.arrow}px` }}
+            role="tooltip"
+          >
+            {tip.tourn.map((it, k) => (
+              <div key={'t' + k} className="calb-row calb-tourn">
+                {it.logo ? (
+                  <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
+                ) : (
+                  <span className="calb-dot" />
+                )}{' '}
+                {it.name}
+              </div>
+            ))}
+            {tip.event.map((it, k) => (
+              <div key={'e' + k} className="calb-row calb-event">
+                {it.logo ? (
+                  <img className="calb-logo" src={it.logo} alt="" loading="lazy" />
+                ) : (
+                  <span className="calb-dot" />
+                )}{' '}
+                {it.name}
+              </div>
+            ))}
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
