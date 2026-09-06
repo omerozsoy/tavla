@@ -150,7 +150,6 @@ export default function Membership({
             )
           })}
         </div>
-        <p className="mem-foot">{t('mem.trialNote')}</p>
       </div>
     </div>
   )

@@ -113,6 +113,39 @@
   grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 10px;
 }
+/* Rarity gruplari: Yaygin / Siradisi / Nadir ... her biri baslikli bir bolum */
+.ach-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.ach-group-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ach-group-title.rarity-common { color: var(--rar-common); }
+.ach-group-title.rarity-uncommon { color: var(--rar-uncommon); }
+.ach-group-title.rarity-rare { color: var(--rar-rare); }
+.ach-group-title.rarity-epic { color: var(--rar-epic); }
+.ach-group-title.rarity-legendary { color: var(--rar-legendary); }
+.ach-group-title.rarity-mythic { color: var(--rar-mythic); }
+.ach-rdot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+.ach-group-count {
+  color: var(--muted);
+  font-weight: 400;
+}
 .ach-card {
   position: relative;
   display: flex;

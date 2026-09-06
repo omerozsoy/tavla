@@ -9,7 +9,6 @@ import {
   type DiceStats, type DicePhase,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
-import { BadgeList } from './Badges'
 import { LineChart, BarChart } from './Charts'
 import { DiceFace } from './DiceFace'
 import { Skeleton } from './Skeleton'
@@ -203,7 +202,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
               </div>
             )}
 
-            <BadgeList ids={u?.badges} />
+            {/* Rozetler (BadgeList) artik profilde ayri "Basarilarim" sekmesinde gosteriliyor. */}
 
             {/* Basarimlar galerisine giris (tam rozet sistemi) */}
             {onOpenAchievements && (
