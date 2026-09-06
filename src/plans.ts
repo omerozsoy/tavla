@@ -23,31 +23,29 @@ export const PLANS: Plan[] = [
     yearly: 0,
     monthly: 0,
     features: [
-      { key: 'feat.lowAnalysis', on: true },
-      { key: 'feat.lowBonus', on: true },
-      { key: 'feat.basicModule', on: true },
+      { key: 'feat.surfaceAnalysis', on: true }, // yuzeysel analiz
+      { key: 'feat.bonus25', on: true }, // gunluk 25 bonus
       { key: 'feat.limitedLessons', on: true },
-      { key: 'feat.limitedAi', on: true },
       { key: 'feat.chat', on: false },
       { key: 'feat.errorDb', on: false },
-      { key: 'feat.customBoards', on: false },
+      { key: 'feat.errorJournal', on: false },
+      { key: 'feat.premiumTournaments', on: false },
     ],
   },
   {
     id: 'star',
     nameKey: 'plan.star',
     color: '#a06bd4',
-    yearly: 499.9, // TL/yil
-    monthly: 49.9, // TL/ay
+    yearly: 499, // TL/yil
+    monthly: 49, // TL/ay
     features: [
-      { key: 'feat.analysis4ply', on: true },
-      { key: 'feat.bonus800', on: true },
-      { key: 'feat.detailedModule', on: true },
+      { key: 'feat.deepAnalysis', on: true }, // derin analiz
+      { key: 'feat.bonus50', on: true }, // gunluk 50 bonus
       { key: 'feat.unlimitedLessons', on: true },
-      { key: 'feat.fullAiMatches', on: true },
       { key: 'feat.chat', on: true },
-      { key: 'feat.errorDb4ply', on: true },
-      { key: 'feat.customBoards', on: true },
+      { key: 'feat.errorDb', on: true },
+      { key: 'feat.errorJournal', on: true },
+      { key: 'feat.premiumTournaments', on: true },
     ],
   },
 ]

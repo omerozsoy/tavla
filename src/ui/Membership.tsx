@@ -80,6 +80,17 @@ export default function Membership({
                 <div className="mem-plan-name" style={{ color: p.color }}>
                   {t(p.nameKey)}
                 </div>
+                {/* Fiyat basligi — her zaman gorunur (yenileme durumunda bile) */}
+                <div className="mem-price-head">
+                  <span className="mem-price-num">
+                    {price.toLocaleString('tr-TR', {
+                      minimumFractionDigits: Number.isInteger(price) ? 0 : 2,
+                      maximumFractionDigits: 2,
+                    })}{' '}
+                    ₺
+                  </span>
+                  <span className="mem-price-per">/{yearly ? t('mem.perYear') : t('mem.perMonth')}</span>
+                </div>
                 <ul className="mem-feats">
                   {p.features.map((f) => (
                     <li key={f.key} className={f.on ? 'on' : 'off'}>
@@ -132,15 +143,6 @@ export default function Membership({
                       >
                         {t('mem.subscribe')}
                       </Button>
-                      <div className="mem-price">
-                        {t('mem.after', {
-                          price: `${price.toLocaleString('tr-TR', {
-                            minimumFractionDigits: Number.isInteger(price) ? 0 : 2,
-                            maximumFractionDigits: 2,
-                          })} ₺`,
-                          period: yearly ? t('mem.perYear') : t('mem.perMonth'),
-                        })}
-                      </div>
                     </>
                   )}
                 </div>
