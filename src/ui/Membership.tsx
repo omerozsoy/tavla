@@ -59,13 +59,26 @@ export default function Membership({
         </Button>
         <h2 className="mem-title">{t('mem.title')}</h2>
 
-        <div className="mem-toggle">
-          <Button type="button" variant={yearly ? 'secondary' : 'ghost'} onClick={() => setYearly(true)}>
+        <div className="mem-toggle" role="tablist" aria-label={t('mem.title')}>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={yearly}
+            className={yearly ? 'active' : ''}
+            onClick={() => setYearly(true)}
+          >
             {t('mem.yearly')}
-          </Button>
-          <Button type="button" variant={!yearly ? 'secondary' : 'ghost'} onClick={() => setYearly(false)}>
+            <span className="mem-toggle-badge">{t('mem.saveShort')}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={!yearly}
+            className={!yearly ? 'active' : ''}
+            onClick={() => setYearly(false)}
+          >
             {t('mem.monthly')}
-          </Button>
+          </button>
         </div>
 
         {err && <div className="register-error mem-err">{err}</div>}
