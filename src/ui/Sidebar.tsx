@@ -89,6 +89,7 @@ function Avatar({ p }: { p: PlayerInfo }) {
 }
 
 function Name({ p }: { p: PlayerInfo }) {
+  const { t } = useT()
   const trend = usePrTrend(p.pr)
   return (
     <div className="player-name-wrap">
@@ -96,12 +97,15 @@ function Name({ p }: { p: PlayerInfo }) {
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
       {/* Anlik PR (performans reytingi) — dusuk = iyi. Yanlis hamlede kirmizi oklar
-          yukari, iyi hamlede yesil oklar asagi (iki yanda) animasyon: ogretici. */}
+          yukari, iyi hamlede yesil oklar asagi (iki yanda) animasyon + kucuk not: ogretici. */}
       {p.pr != null ? (
-        <div className={`pc-pr ${trend ? 'pr-' + trend : ''}`}>
-          {trend && <span className="pr-arrow pa-left" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
-          <span className="pr-val">PR {p.pr.toFixed(1)}</span>
-          {trend && <span className="pr-arrow pa-right" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
+        <div className={`pc-pr-wrap ${trend ? 'pr-' + trend : ''}`}>
+          <div className="pc-pr">
+            {trend && <span className="pr-arrow pa-left" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
+            <span className="pr-val">PR {p.pr.toFixed(1)}</span>
+            {trend && <span className="pr-arrow pa-right" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
+          </div>
+          {trend && <div className="pc-pr-note">{trend === 'bad' ? t('pr.bad') : t('pr.good')}</div>}
         </div>
       ) : null}
     </div>
