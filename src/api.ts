@@ -454,6 +454,7 @@ export interface PublicProfile {
   rank: number
   form: boolean[] // en yeni once, true=galibiyet
   badges?: string[]
+  online?: boolean // cevrimici mi (last_seen son 2 dk)
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)

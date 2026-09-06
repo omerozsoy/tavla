@@ -956,6 +956,10 @@ class AuthController extends Controller
             'form' => $form,
             'badges' => $user->badges ?? [],
             'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),
+            // Cevrimici mi? last_seen son 2 dk icinde ise (presence ping penceresiyle ayni).
+            'online' => $user->last_seen
+                ? \Illuminate\Support\Carbon::parse($user->last_seen)->gt(now()->subMinutes(2))
+                : false,
         ]);
     }
 
