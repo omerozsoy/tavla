@@ -62,7 +62,13 @@ function Avatar({ p }: { p: PlayerInfo }) {
 }
 
 function Name({ p }: { p: PlayerInfo }) {
-  return <div className="player-name">{p.name}</div>
+  return (
+    <div className="player-name-wrap">
+      <div className="player-name">{p.name}</div>
+      {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
+      {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
+    </div>
+  )
 }
 
 function Rating({ p }: { p: PlayerInfo }) {
