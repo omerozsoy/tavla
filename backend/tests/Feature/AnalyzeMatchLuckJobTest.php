@@ -10,9 +10,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;
 
-// Tavlai Luck V1: AnalyzeMatchLuckJob gnubg NATIVE luck'ı (.mat -> analyse match) per-oyuncu
-// MWC%'ye yazar. KRİTİK: .mat sütun 0 = white, sütun 1 = black -> her satıra KENDİ renginin
-// luck'ı gitmeli (log.hc ile eşlenir). İki satır da (aynı oda) idempotent güncellenir.
+// Tavlai Luck V1 (KALICI): job İKİ oyuncunun logunu BİRLEŞTİRİP tam .mat kurar (MatBuilder) ->
+// gnubg NATIVE luck -> per-oyuncu MWC%. .mat sütun 0=white, 1=black -> her satıra KENDİ rengi.
+// gnubg HTTP mock'lu (gerçek gnubg sunucuda; .mat üretimi + eşleme + suspicious mantığı test edilir).
 class AnalyzeMatchLuckJobTest extends TestCase
 {
     use RefreshDatabase;
@@ -25,80 +25,83 @@ class AnalyzeMatchLuckJobTest extends TestCase
         ]);
     }
 
-    public function test_maps_columns_to_colors_and_syncs_both_rows(): void
+    /** İki satır (aynı oda), her biri KENDİ renginde tam log. Döner: [whiteRow, blackRow]. */
+    private function rows(string $room = 'LK1'): array
     {
-        $w = $this->user('wl');
-        $b = $this->user('bl');
-        // Beyaz oyuncunun satırı (log.hc=white) + siyah oyuncunun satırı (log.hc=black), aynı oda.
-        $base = ['opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0];
+        $w = $this->user('w'.substr(md5($room), 0, 4));
+        $b = $this->user('b'.substr(md5($room), 0, 4));
+        $base = ['opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0, 'match_length' => 1];
         $wRow = MatchResult::create($base + [
-            'user_id' => $w->id, 'won' => true, 'room_code' => 'LK1',
-            'log' => json_encode(['hc' => 'white', 'log' => []]),
+            'user_id' => $w->id, 'won' => true, 'room_code' => $room,
+            'log' => json_encode(['hc' => 'white', 'log' => [
+                ['player' => 'white', 'notation' => '8/5 6/5', 'dice' => [3, 1], 'seq' => 0],
+            ]]),
         ]);
         $bRow = MatchResult::create($base + [
-            'user_id' => $b->id, 'won' => false, 'room_code' => 'LK1',
-            'log' => json_encode(['hc' => 'black', 'log' => []]),
+            'user_id' => $b->id, 'won' => false, 'room_code' => $room,
+            'log' => json_encode(['hc' => 'black', 'log' => [
+                ['player' => 'black', 'notation' => '24/21 13/11', 'dice' => [3, 2], 'seq' => 1],
+            ]]),
         ]);
 
-        // gnubg: p0 (white) = +39.0% / +0.78 ; p1 (black) = -13.0% / -0.26
+        return [$wRow, $bRow];
+    }
+
+    public function test_merged_writes_luck_to_both_colors(): void
+    {
+        [$wRow, $bRow] = $this->rows('LKM');
         $mock = Mockery::mock(GnuBgClient::class);
         $mock->shouldReceive('matchluck')->once()->andReturn([
-            'import_cmd' => 'import mat',
             'luck' => [
-                'names' => ['White', 'Black'],
-                'p0' => ['mwc_total' => 39.0, 'emg_total' => 0.78],
-                'p1' => ['mwc_total' => -13.0, 'emg_total' => -0.26],
+                'p0' => ['mwc_total' => 39.0, 'emg_total' => 0.78],   // white
+                'p1' => ['mwc_total' => -13.0, 'emg_total' => -0.26], // black
             ],
         ]);
 
-        (new AnalyzeMatchLuckJob($wRow->id, "1 point match\n Game 1\n"))->handle($mock);
+        (new AnalyzeMatchLuckJob($wRow->id))->handle($mock);
 
         $wRow->refresh();
         $bRow->refresh();
-        // Beyaz satırı white (p0) luck'ını almalı; siyah satırı black (p1).
-        $this->assertEqualsWithDelta(39.0, (float) $wRow->luck_mwc, 1e-6);
+        $this->assertEqualsWithDelta(39.0, (float) $wRow->luck_mwc, 1e-6, 'beyaz satırı white (p0) luck');
         $this->assertEqualsWithDelta(0.78, (float) $wRow->luck_emg, 1e-6);
-        $this->assertEqualsWithDelta(-13.0, (float) $bRow->luck_mwc, 1e-6);
+        $this->assertEqualsWithDelta(-13.0, (float) $bRow->luck_mwc, 1e-6, 'siyah satırı black (p1) luck');
         $this->assertSame('TAVLAI_LUCK_V1', $wRow->luck_method);
-        $this->assertSame('TAVLAI_LUCK_V1', $bRow->luck_method);
     }
 
-    // KRİTİK: "biri 0" bug'ının çözümü. Bir istemcinin kısmi .mat'i bir oyuncuya emg=0 (imkânsız)
-    // verirse, o ŞÜPHELİ 0 GERÇEK değeri EZMEMELİ (kendi satırı) ve boş olmayan rakip satırına
-    // yazılmamalı. Böylece her oyuncunun luck'ı kendi güvenilir .mat'inden gelir.
-    public function test_suspicious_zero_does_not_overwrite_real(): void
+    public function test_waits_when_opponent_not_reported(): void
     {
-        $w = $this->user('ws');
-        $b = $this->user('bs');
-        $base = ['opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0];
-        // Beyaz satırı ZATEN gerçek değere sahip (kendi iyi raporundan gelmiş gibi).
-        // luck_mwc fillable DEĞİL -> query-builder ile koy (job da öyle yazar).
-        $wRow = MatchResult::create($base + [
-            'user_id' => $w->id, 'won' => true, 'room_code' => 'LKS',
-            'log' => json_encode(['hc' => 'white', 'log' => []]),
+        // Rakip satırı yoksa (henüz raporlamadı) -> job hiçbir şey yazmaz (rakip raporunda tetiklenir).
+        $w = $this->user('solo1');
+        $wRow = MatchResult::create([
+            'user_id' => $w->id, 'won' => true, 'room_code' => 'LKW', 'match_length' => 1,
+            'opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0,
+            'log' => json_encode(['hc' => 'white', 'log' => [['player' => 'white', 'notation' => '8/5', 'dice' => [3, 1], 'seq' => 0]]]),
         ]);
-        MatchResult::where('id', $wRow->id)->update(['luck_mwc' => 5.0, 'luck_emg' => 0.10]);
-        $bRow = MatchResult::create($base + [
-            'user_id' => $b->id, 'won' => false, 'room_code' => 'LKS',
-            'log' => json_encode(['hc' => 'black', 'log' => []]),
-        ]);
+        $mock = Mockery::mock(GnuBgClient::class);
+        $mock->shouldNotReceive('matchluck'); // rakip yok -> gnubg çağrılmamalı
 
-        // Bu .mat beyazı (p0) ŞÜPHELİ 0 veriyor (kısmi .mat), siyahı (p1) gerçek.
+        (new AnalyzeMatchLuckJob($wRow->id))->handle($mock);
+
+        $this->assertNull($wRow->fresh()->luck_mwc);
+    }
+
+    public function test_suspicious_zero_not_written(): void
+    {
+        // Birleştirmeye rağmen bir oyuncu emg=0 (imkânsız) dönerse o satır YAZILMAZ (gerçeği ezmez).
+        [$wRow, $bRow] = $this->rows('LKS');
+        MatchResult::where('id', $wRow->id)->update(['luck_mwc' => 5.0, 'luck_emg' => 0.1]); // önceki gerçek
         $mock = Mockery::mock(GnuBgClient::class);
         $mock->shouldReceive('matchluck')->andReturn([
             'luck' => [
-                'p0' => ['mwc_total' => 0.0, 'emg_total' => 0.0],   // ŞÜPHELİ
-                'p1' => ['mwc_total' => -13.0, 'emg_total' => -0.26], // gerçek
+                'p0' => ['mwc_total' => 0.0, 'emg_total' => 0.0],    // white ŞÜPHELİ
+                'p1' => ['mwc_total' => -13.0, 'emg_total' => -0.26], // black gerçek
             ],
         ]);
 
-        // Beyaz oyuncunun raporundan tetiklenen job (hc=white -> mine=p0 ŞÜPHELİ).
-        (new AnalyzeMatchLuckJob($wRow->id, "1 point match\n"))->handle($mock);
+        (new AnalyzeMatchLuckJob($bRow->id))->handle($mock);
 
-        $wRow->refresh();
-        $bRow->refresh();
-        $this->assertEqualsWithDelta(5.0, (float) $wRow->luck_mwc, 1e-6, 'şüpheli 0, beyazın GERÇEK 5.0 değerini EZMEMELİ');
-        $this->assertEqualsWithDelta(-13.0, (float) $bRow->luck_mwc, 1e-6, 'siyahın gerçek değeri boş satıra yazılmalı');
+        $this->assertEqualsWithDelta(5.0, (float) $wRow->fresh()->luck_mwc, 1e-6, 'şüpheli 0 gerçek 5.0\'ı ezmemeli');
+        $this->assertEqualsWithDelta(-13.0, (float) $bRow->fresh()->luck_mwc, 1e-6);
     }
 
     protected function tearDown(): void

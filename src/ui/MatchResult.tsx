@@ -136,7 +136,7 @@ export default function MatchResult({
     const s = Math.round(v * 100)
     return `${s >= 0 ? '+' : ''}${s}`
   }
-  const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
+  const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(3)}%`
   // Gösterilecek metin + işaret: gnubg % (bağımsız) ya da ham net (fallback).
   const wLuckText = useGnubgPct ? fmtPct(winnerLuckPct as number) : fmtLuck(wLuck)
   const lLuckText = useGnubgPct ? fmtPct(loserLuckPct as number) : fmtLuck(lLuck)

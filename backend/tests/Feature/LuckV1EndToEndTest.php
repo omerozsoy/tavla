@@ -11,10 +11,9 @@ use Laravel\Sanctum\Sanctum;
 use Mockery;
 use Tests\TestCase;
 
-// Tavlai Luck V1 UÇTAN UCA: gerçek reportRating -> gerçek database queue -> gerçek AnalyzeMatchLuckJob
-// (yalnız gnubg HTTP mock'lu, çünkü gnubg sunucuda) -> match_results.luck_mwc -> /me/match-pr.
-// İki oyuncunun sonuç ekranında BAĞIMSIZ % göreceğini (çapraz-tutarlı) kanıtlar. gnubg'nin gerçek
-// .mat->luck hesabı ayrıca sunucuda selftest ile doğrulandı (tavla:gnubg-matchluck-test).
+// Tavlai Luck V1 UÇTAN UCA (KALICI): gerçek reportRating -> gerçek database queue -> gerçek
+// AnalyzeMatchLuckJob (İKİ oyuncunun logunu BİRLEŞTİRİP .mat kurar) -> match_results.luck_mwc ->
+// /me/match-pr. gnubg HTTP mock'lu. İki ekranda BAĞIMSIZ % + çapraz-tutarlı olduğunu kanıtlar.
 class LuckV1EndToEndTest extends TestCase
 {
     use RefreshDatabase;
@@ -31,7 +30,6 @@ class LuckV1EndToEndTest extends TestCase
         return $u;
     }
 
-    // p1=beyaz, p2=siyah; skor black=1/white=0, target=1 -> SIYAH kazandı.
     private function room(User $w, User $b): Room
     {
         return Room::create([
@@ -43,85 +41,81 @@ class LuckV1EndToEndTest extends TestCase
         ]);
     }
 
-    public function test_full_chain_report_to_queue_to_matchpr(): void
+    public function test_full_chain_merged_report_to_queue_to_matchpr(): void
     {
-        // gnubg SHADOW açık + gnubg HTTP mock (gerçek gnubg sunucuda; burada .mat->luck davranışını taklit).
         config(['gnubg.pr_mode' => 'shadow']);
         $mock = Mockery::mock(GnuBgClient::class);
-        // p0 (white/sol) = +39.0% ; p1 (black/sağ) = -13.0% — gnubg selftest ölçeğiyle aynı biçim.
+        // Birleştirilmiş .mat -> p0 (white) +39.0% ; p1 (black) -13.0%.
         $mock->shouldReceive('matchluck')->andReturn([
-            'import_cmd' => 'import mat',
             'luck' => [
-                'names' => ['White', 'Black'],
                 'p0' => ['mwc_total' => 39.0, 'emg_total' => 0.78],
                 'p1' => ['mwc_total' => -13.0, 'emg_total' => -0.26],
             ],
         ]);
-        // PR job da tetiklenir; log.log=[] -> PR job erken döner (gnubg'ye gitmez). analyze çağrılmaz.
+        // PR job da tetiklenir -> analyze/health mock'la (null -> PR sessiz atlar).
+        $mock->shouldReceive('analyze')->andReturnNull();
+        $mock->shouldReceive('health')->andReturnTrue();
         $this->app->instance(GnuBgClient::class, $mock);
 
         $white = $this->user('w2e');
         $black = $this->user('b2e');
         $this->room($white, $black);
 
-        // .mat: geçerli-görünümlü (mock içeriğe bakmaz); log: hc + boş moves (PR job'ı gnubg'siz bırakır).
-        $mat = "1 point match\n\n Game 1\n w2e : 0                      b2e : 0\n  1) 31: 8/5 6/5                42: 24/20 13/11\n      Wins 1 point\n";
+        // Her oyuncu KENDİ renginde tam log gönderir (rakip renginde çöp -> birleştirme eler).
+        $whiteLog = json_encode(['hc' => 'white', 'log' => [
+            ['player' => 'white', 'notation' => '8/5 6/5', 'dice' => [3, 1], 'seq' => 0],
+        ]]);
+        $blackLog = json_encode(['hc' => 'black', 'log' => [
+            ['player' => 'black', 'notation' => '24/21 13/11', 'dice' => [3, 2], 'seq' => 1],
+        ]]);
 
-        // 1) BEYAZ (kaybeden) raporlar — .mat + log(hc=white).
         Sanctum::actingAs($white);
         $this->postJson('/api/rating/report', [
             'won' => false, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'LKE2E',
-            'match_length' => 1, 'mat' => $mat, 'log' => json_encode(['hc' => 'white', 'log' => []]),
+            'match_length' => 1, 'log' => $whiteLog,
         ])->assertOk();
 
-        // 2) SIYAH (kazanan) raporlar — .mat + log(hc=black).
         Sanctum::actingAs($black);
         $this->postJson('/api/rating/report', [
             'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'LKE2E',
-            'match_length' => 1, 'mat' => $mat, 'log' => json_encode(['hc' => 'black', 'log' => []]),
+            'match_length' => 1, 'log' => $blackLog,
         ])->assertOk();
 
-        // 3) GERÇEK queue worker — database bağlantısındaki job'ları (luck + no-op PR) işle.
+        // Gerçek queue worker: luck (+ no-op PR) job'ları işle.
         Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1]);
 
-        // 4) /me/match-pr — BEYAZ gözünden: self = white(p0) = +39.0, opp = black(p1) = -13.0.
+        // BEYAZ gözünden: self=white(p0)=+39, opp=black(p1)=-13.
         Sanctum::actingAs($white);
         $wp = $this->getJson('/api/me/match-pr?room_code=LKE2E')->assertOk()->json();
-        $this->assertEqualsWithDelta(39.0, $wp['luck_mwc_self'], 1e-6, 'beyaz kendi MWC luck (p0)');
-        $this->assertEqualsWithDelta(-13.0, $wp['luck_mwc_opp'], 1e-6, 'beyaz gözünden rakip (p1)');
+        $this->assertEqualsWithDelta(39.0, $wp['luck_mwc_self'], 1e-6);
+        $this->assertEqualsWithDelta(-13.0, $wp['luck_mwc_opp'], 1e-6);
 
-        // 5) SIYAH gözünden: self = black(p1) = -13.0, opp = white(p0) = +39.0.
+        // SIYAH gözünden: self=black(p1)=-13, opp=white(p0)=+39.
         Sanctum::actingAs($black);
         $bp = $this->getJson('/api/me/match-pr?room_code=LKE2E')->assertOk()->json();
-        $this->assertEqualsWithDelta(-13.0, $bp['luck_mwc_self'], 1e-6, 'siyah kendi MWC luck (p1)');
-        $this->assertEqualsWithDelta(39.0, $bp['luck_mwc_opp'], 1e-6, 'siyah gözünden rakip (p0)');
+        $this->assertEqualsWithDelta(-13.0, $bp['luck_mwc_self'], 1e-6);
+        $this->assertEqualsWithDelta(39.0, $bp['luck_mwc_opp'], 1e-6);
 
-        // 6) ÇAPRAZ TUTARLILIK: beyaz.self == siyah.opp ve beyaz.opp == siyah.self (tek kaynak, iki ekran).
+        // Çapraz tutarlılık + bağımsız (sıfır-toplam değil).
         $this->assertEqualsWithDelta($wp['luck_mwc_self'], $bp['luck_mwc_opp'], 1e-6);
-        $this->assertEqualsWithDelta($wp['luck_mwc_opp'], $bp['luck_mwc_self'], 1e-6);
-
-        // 7) BAĞIMSIZ (sıfır-toplam DEĞİL): +39.0 + (-13.0) = +26.0 != 0 (gnubg metodolojisi).
         $this->assertNotEqualsWithDelta(0.0, $wp['luck_mwc_self'] + $wp['luck_mwc_opp'], 1e-6);
     }
 
-    public function test_no_mat_leaves_luck_mwc_null(): void
+    public function test_offline_no_room_no_luck(): void
     {
-        // .mat gönderilmezse gnubg luck job dispatch EDİLMEZ -> luck_mwc null kalır (istemci ONNX fallback).
+        // room_code yok (pvb/solo) -> luck job dispatch edilmez -> luck_mwc null.
         config(['gnubg.pr_mode' => 'shadow']);
-        $white = $this->user('w3');
-        $black = $this->user('b3');
-        $this->room($white, $black);
-
-        Sanctum::actingAs($black);
+        $u = $this->user('solo');
+        Sanctum::actingAs($u);
         $this->postJson('/api/rating/report', [
-            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'LKE2E',
-            'match_length' => 1, 'log' => json_encode(['hc' => 'black', 'log' => []]),
+            'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'match_length' => 1,
+            'log' => json_encode(['hc' => 'white', 'log' => []]),
         ])->assertOk();
 
         Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1]);
 
-        $bp = $this->getJson('/api/me/match-pr?room_code=LKE2E')->assertOk()->json();
-        $this->assertNull($bp['luck_mwc_self'], 'mat yoksa gnubg luck yok -> null');
+        $mr = \App\Models\MatchResult::where('user_id', $u->id)->latest('id')->first();
+        $this->assertNull($mr->luck_mwc);
     }
 
     protected function tearDown(): void

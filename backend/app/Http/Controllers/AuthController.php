@@ -507,13 +507,14 @@ class AuthController extends Controller
             }
         }
 
-        // Tavlai Luck V1 (gnubg NATIVE): istemci .mat gönderdiyse maçı gnubg'de analiz edip per-oyuncu
-        // MWC-luck'ı ARKA PLANDA hesapla + luck_mwc/emg kolonlarına yaz. Gösterilen luck'a anlık
-        // dokunmaz (istemci ONNX fallback kalır); hazır olunca matchPr %'yi döndürür. pr_mode gate.
+        // Tavlai Luck V1 (gnubg NATIVE, KALICI): online maç sonrası per-oyuncu MWC-luck'ı ARKA PLANDA
+        // hesapla. Job İKİ oyuncunun stored logunu BİRLEŞTİRİP tam .mat kurar (istemci kısmi .mat'ine
+        // GÜVENMEZ -> "biri 0" bug'ı çözülür). Yalnız online (room_code) + log varsa. matchPr %'yi
+        // döndürür (hazır olunca); istemci ONNX fallback kalır. pr_mode gate.
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($data['mat'])) {
+            && ! empty($mr['log']) && ! empty($data['room_code'])) {
             try {
-                \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id, (string) $data['mat'])->onConnection('database');
+                \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::warning('gnubg luck dispatch hata', ['err' => $e->getMessage()]);
             }

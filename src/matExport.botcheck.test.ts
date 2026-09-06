@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, it, expect } from 'vitest'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { initialState, cloneState, opponent, gameOutcome } from './engine/board'
@@ -66,6 +67,9 @@ describe('bot maçı .mat kontrolü', () => {
     // Fixture: sunucuda gerçek gnubg'ye beslemek için (tavla:gnubg-matchluck-file). Deterministik.
     mkdirSync('backend/tests/Fixtures', { recursive: true })
     writeFileSync('backend/tests/Fixtures/bot-match.mat', mat)
+    // Log JSON'u: PHP MatBuilder'ın TS buildMat ile BİREBİR aynı .mat'i ürettiğini doğrulamak için
+    // (MatBuilderTest bu log'u okuyup üretir + bot-match.mat ile karşılaştırır -> port parite).
+    writeFileSync('backend/tests/Fixtures/bot-match-log.json', JSON.stringify(log))
 
     const whiteMoves = log.filter((e) => e.player === 'white' && !e.cube).length
     const blackMoves = log.filter((e) => e.player === 'black' && !e.cube).length
