@@ -117,6 +117,36 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
     }
   }
 
+  // Tek bir rozet kartini uretir (rarity gruplarinda tekrar kullanilir)
+  const renderCard = (a: (typeof shown)[number]) => {
+    const mystery = a.hidden && !a.unlocked
+    return (
+      <button
+        key={a.slug}
+        type="button"
+        className={`ach-card ${a.unlocked ? 'unlocked' : 'locked'} tier-${a.tier ?? 'none'} rarity-${a.rarity}`}
+        onClick={() => setSel(a)}
+        title={mystery ? '???' : a.name}
+      >
+        {featured.includes(a.slug) && (
+          <span className="ach-fstar" aria-hidden="true">
+            <Icon name="star" size={12} />
+          </span>
+        )}
+        <span className="ach-ic">
+          <Icon name={(mystery ? 'lock-key' : (a.icon as IconName)) || 'medal'} size={26} />
+        </span>
+        <span className="ach-name">{mystery ? '???' : a.name}</span>
+        {a.tier && <span className="ach-tier">{t(`ach.tier.${a.tier}`)}</span>}
+        {!a.unlocked && !a.hidden && a.target > 1 && (
+          <span className="ach-bar">
+            <span className="ach-bar-fill" style={{ width: `${a.progressPct}%` }} />
+          </span>
+        )}
+      </button>
+    )
+  }
+
   const body = (
     <>
       {loggedIn && (
@@ -164,33 +194,20 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
       ) : shown.length === 0 ? (
         <div className="ach-empty">{t('ach.empty')}</div>
       ) : (
-        <div className="ach-grid">
-          {shown.map((a) => {
-            const mystery = a.hidden && !a.unlocked
+        // Rarity'ye gore grupla: Yaygin · Siradisi · Nadir · (Epik · Efsanevi · Mitik)
+        <div className="ach-groups">
+          {RARITIES.map((r) => {
+            const group = shown.filter((a) => a.rarity === r)
+            if (group.length === 0) return null
             return (
-              <button
-                key={a.slug}
-                type="button"
-                className={`ach-card ${a.unlocked ? 'unlocked' : 'locked'} tier-${a.tier ?? 'none'} rarity-${a.rarity}`}
-                onClick={() => setSel(a)}
-                title={mystery ? '???' : a.name}
-              >
-                {featured.includes(a.slug) && (
-                  <span className="ach-fstar" aria-hidden="true">
-                    <Icon name="star" size={12} />
-                  </span>
-                )}
-                <span className="ach-ic">
-                  <Icon name={(mystery ? 'lock-key' : (a.icon as IconName)) || 'medal'} size={26} />
-                </span>
-                <span className="ach-name">{mystery ? '???' : a.name}</span>
-                {a.tier && <span className="ach-tier">{t(`ach.tier.${a.tier}`)}</span>}
-                {!a.unlocked && !a.hidden && a.target > 1 && (
-                  <span className="ach-bar">
-                    <span className="ach-bar-fill" style={{ width: `${a.progressPct}%` }} />
-                  </span>
-                )}
-              </button>
+              <section key={r} className="ach-group">
+                <h3 className={`ach-group-title rarity-${r}`}>
+                  <span className={`ach-rdot rarity-${r}`} aria-hidden="true" />
+                  {t(`ach.rarity.${r}`)}
+                  <span className="ach-group-count">{group.length}</span>
+                </h3>
+                <div className="ach-grid">{group.map((a) => renderCard(a))}</div>
+              </section>
             )
           })}
         </div>

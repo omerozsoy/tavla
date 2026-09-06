@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import ProfileStats from './ProfileStats'
 import Achievements from './Achievements'
+import { BadgeList } from './Badges'
 import AvatarFrame from './AvatarFrame'
 import './profileShopLink.css'
 import { Flag } from './Flag'
@@ -294,6 +295,8 @@ export default function ProfileOverview({
 
         {tab === 'badges' && (
           <section className="prof-ov-col">
+            {/* Rozetler (eski badge listesi) — istatistik sekmesinden buraya tasindi */}
+            <BadgeList ids={user.badges} />
             <Achievements embed loggedIn />
           </section>
         )}
