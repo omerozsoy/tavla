@@ -27,11 +27,11 @@ export const FRAME_RARITY_COLOR: Record<FrameRarity, string> = RARITY_COLORS
 
 // Rarity coin fiyatlari (backend ShopController RARITY_PRICE ile birebir ayni olmali)
 export const FRAME_RARITY_PRICE: Record<FrameRarity, number> = {
-  common: 250,
-  rare: 500,
-  epic: 1000,
-  legendary: 2000,
-  mythic: 4000,
+  common: 30,
+  rare: 60,
+  epic: 120,
+  legendary: 180,
+  mythic: 250,
 }
 // Satin alma fiyati; 'earned' cerceveler magazadan alinamaz (undefined)
 export function framePrice(f: AvatarFrameDef): number | undefined {
