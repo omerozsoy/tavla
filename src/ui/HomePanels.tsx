@@ -717,19 +717,16 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
                 // gun adlarini orter -> bu satirlarda hucrenin ALTINA ac (deterministik).
                 const row = Math.floor(i / 7)
                 const below = row <= 1
-                // Balonu takvim panelinin icinde tut (sag/sol kenardan tasmasin);
-                // hucrenin gercek merkezini kaybetmemek icin ok (arrow) kaydirilir.
+                // Balon body'ye portal edildigi icin viewport'a gore konumlanir; balonu
+                // viewport icinde tut (sag/sol kenardan tasmasin). Balon merkezi gunden
+                // kaydiginda ok (arrow) gercek gune dogru kayar.
                 const cx = r.left + r.width / 2
-                const panel = cell.closest('.cal-panel') as HTMLElement | null
-                const pr = panel?.getBoundingClientRect()
                 const halfW = 130 // max-width 260 / 2
                 const margin = 10
-                let x = cx
-                if (pr) {
-                  const lo = pr.left + margin + halfW
-                  const hi = pr.right - margin - halfW
-                  if (lo <= hi) x = Math.max(lo, Math.min(hi, cx))
-                }
+                const vw = window.innerWidth
+                const lo = margin + halfW
+                const hi = vw - margin - halfW
+                const x = lo <= hi ? Math.max(lo, Math.min(hi, cx)) : cx
                 setTip({
                   x,
                   y: below ? r.bottom : r.top,
