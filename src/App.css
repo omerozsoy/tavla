@@ -4280,6 +4280,12 @@ button[aria-disabled='true'],
 .main.game-scene .player-rating {
   color: rgba(220, 230, 255, 0.6);
 }
+/* Bot seviye alt satiri: hafif kiremit vurgu -> "seviye" oldugu net okunur */
+.main.game-scene .pc-bot-lvl {
+  color: color-mix(in srgb, var(--accent) 62%, #eef2ff);
+  font-size: 0.8rem;
+  margin-top: 2px;
+}
 .main.game-scene .status {
   color: rgba(220, 230, 255, 0.68);
 }
@@ -8115,6 +8121,19 @@ button.acct-row:hover:not(:disabled) {
 }
 .rm-avf {
   flex: none;
+}
+/* Yerel bot rakip: gercek avatar yok -> robot ikonu daire icinde (26px avatarlarla ayni) */
+.rm-bot-ava {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 18%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  color: var(--accent);
 }
 .rm-vs {
   font-size: 0.78rem;

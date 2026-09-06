@@ -4314,7 +4314,7 @@ export default function App() {
         ? t('player.you')
         : t('mp.title')
       : mode === 'pvb'
-        ? `${AI_LEVELS[difficulty - 1]} (${difficulty})`
+        ? `${t('solo.level', { n: difficulty })} · ${AI_LEVELS[difficulty - 1]}`
         : t('player.p2'),
     off: working.off.black,
     active: turnStart.turn === 'black' && !gameWon && !gameEnd,
@@ -5684,14 +5684,37 @@ export default function App() {
             {/* Online devam eden mac varsa (resume-match-bar) tekrar buton cikarma:
                 online maçta yalnız "Geri Dön" kalsın, "Oyuna Devam Et" gizli. */}
             {hasActiveGame && activeRooms.length === 0 && (
-              <div className="lobby-welcome">
-                <Button
-                  variant="default"
-                  className="w-full"
-                  onClick={() => setHome(false)}
-                >
-                  <Icon name="live" /> {t('menu.resumeGame')}
-                </Button>
+              // Yerel (bota karsi / pass-and-play) devam eden mac: online resume karti
+              // ile ayni belirgin tam-genislik tasarim (kucuk dugme yerine).
+              <div className="resume-match-bar">
+                <button className="resume-match-btn" onClick={() => setHome(false)}>
+                  <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
+                  <span className="rm-opp">
+                    <span className="rm-players">
+                      <span className="rm-me">
+                        <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
+                        {profile.nickname || t('resume.you')}
+                      </span>
+                      <span className="rm-vs">vs</span>
+                      <span className="rm-you">
+                        {mode === 'pvb' ? (
+                          <span className="rm-bot-ava"><Icon name="robot" size={16} /></span>
+                        ) : (
+                          <AvatarFrame src={null} size={26} name={t('player.p2')} className="rm-avf" />
+                        )}
+                        {mode === 'pvb' ? t('player.bot') : t('player.p2')}
+                        {mode === 'pvb' && (
+                          <span className="rm-rat"> {t('solo.level', { n: difficulty })}</span>
+                        )}
+                      </span>
+                    </span>
+                    <b className="rm-score">{match.score.white}–{match.score.black}</b>
+                    {match.target ? (
+                      <span className="rm-len">{t('resume.point', { n: match.target })}</span>
+                    ) : null}
+                  </span>
+                  <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
+                </button>
               </div>
             )}
             {user && (
