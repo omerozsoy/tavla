@@ -233,12 +233,18 @@
 .cal-cell.empty {
   cursor: default;
 }
-.cal-cell:not(.empty):hover {
+/* Bugun (dolu accent zemin + beyaz metin) HARIC hover: hafif tint.
+   Bugun'u disla, yoksa hover zemini acilir ama beyaz "7" metni okunmaz olur. */
+.cal-cell:not(.empty):not(.today):hover {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 .cal-cell.today {
   background: var(--accent);
   color: #fff;
+}
+/* Bugun hover: zemin biraz KOYULASIR (acilmaz) -> beyaz "7" her zaman okunur. */
+.cal-cell.today:hover {
+  background: color-mix(in srgb, var(--accent) 86%, #000);
 }
 .cal-cell.today .cal-daynum {
   font-weight: 400;
