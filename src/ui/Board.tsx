@@ -81,6 +81,9 @@ function Checker({
           ? (e) => {
               e.dataTransfer.effectAllowed = 'move'
               e.dataTransfer.setData('text/plain', 'checker')
+              // Surukleme hayaleti = YUVARLAK tasin kendisi (varsayilan gri kare kutu yerine).
+              const el = e.currentTarget as HTMLElement
+              e.dataTransfer.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2)
               onDragStart()
             }
           : undefined
