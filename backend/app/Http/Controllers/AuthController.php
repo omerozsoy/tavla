@@ -45,6 +45,7 @@ class AuthController extends Controller
 
         $user = User::create($data);
         $user->rating = $startRating;
+        $user->coins = (int) config('game.welcome_coins', 0); // hoşgeldin coin'i (fillable dışı -> doğrudan)
         $user->save();
 
         // E-posta dogrulama linki gonder (teslim icin gercek SMTP gerekir; MAIL_MAILER)
@@ -161,6 +162,7 @@ class AuthController extends Controller
             // Baslangic puani: e-posta kaydiyla ayni (1400). 'rating' fillable degil,
             // dogrudan atanir (DB varsayilani 1500 devreye girmesin).
             $user->rating = 1400;
+            $user->coins = (int) config('game.welcome_coins', 0); // hoşgeldin coin'i (e-posta ile aynı)
             $user->save();
         }
 
