@@ -246,14 +246,15 @@ function Board({
         >
           {showPip && <div className="pip pip-top">{topPip}</div>}
           <div className="bar-checkers top">
-            {Array.from({ length: topBarCount }).map((_, i) => (
+            {/* Kirik taslar YIGILMAZ: tek tas, ortasinda kirik adedi (>1 iken) */}
+            {topBarCount > 0 && (
               <Checker
-                key={i}
                 player={topBarPlayer}
                 draggable={barSelectable}
                 onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
+                label={topBarCount > 1 ? topBarCount : undefined}
               />
-            ))}
+            )}
           </div>
           {/* Küp GÖRSEL tarafı flip'e göre: sahibi görsel üstteyse üstte, alttaysa altta
               (owner renk sabit değil; online'da tahta çevrilince sahip alta gelir). */}
@@ -266,14 +267,15 @@ function Board({
             {cube.value === 1 ? 64 : cube.value}
           </div>
           <div className="bar-checkers bottom">
-            {Array.from({ length: bottomBarCount }).map((_, i) => (
+            {/* Kirik taslar YIGILMAZ: tek tas, ortasinda kirik adedi (>1 iken) */}
+            {bottomBarCount > 0 && (
               <Checker
-                key={i}
                 player={bottomBarPlayer}
                 draggable={barSelectable}
                 onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
+                label={bottomBarCount > 1 ? bottomBarCount : undefined}
               />
-            ))}
+            )}
           </div>
           {showPip && <div className="pip pip-bottom">{bottomPip}</div>}
         </div>

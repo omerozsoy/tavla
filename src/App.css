@@ -4983,6 +4983,7 @@ button[aria-disabled='true'],
   font-weight: 400;
   font-size: 1.05rem;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  transform: translateY(-5px); /* pip sayilari cok az yukari */
 }
 /* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir) */
 @media (min-width: 900px) {
