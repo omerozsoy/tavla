@@ -409,7 +409,8 @@ class RoomController extends Controller
         // ESCROW: sabit-stake maçında rezerv yapıldıysa settle transfer'iyle BİRLİKTE (atomik) bırak.
         $escrowed = Schema::hasColumn('rooms', 'escrowed') ? (bool) $room->escrowed : false;
         // KOMISYON (rake): kazanan stake × (1 − oran) alır; fark commissions ledger'ına yazılır.
-        $commissionPct = max(0, min(90, (int) config('game.commission_pct', 0)));
+        // Oran admin 'commission_pct' ayarından (varsayılan config; 0..90 kırpılır).
+        $commissionPct = max(0, min(90, \App\Models\Setting::int('commission_pct', (int) config('game.commission_pct', 5))));
         $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct) {
             // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
             $claimed = Room::where('code', $code)->where('settled', false)

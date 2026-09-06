@@ -38,10 +38,10 @@ class AuthController extends Controller
             unset($data['province']);
         }
 
-        // Baslangic puani: TÜM yeni üyeler SABİT 1400 (seviye seçimi kaldırıldı). 'rating' fillable
-        // değil -> doğrudan atanır (DB varsayılanı 1500 devreye girmesin).
+        // Baslangic puani: TÜM yeni üyeler admin ayarı 'starting_rating' (varsayılan 1400; seviye
+        // seçimi kaldırıldı). 'rating' fillable değil -> doğrudan atanır (DB varsayılanı 1500 devreye girmesin).
         $user = User::create($data);
-        $user->rating = 1400;
+        $user->rating = \App\Models\Setting::int('starting_rating', 1400);
         $user->save();
         // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
         // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).
@@ -157,9 +157,8 @@ class AuthController extends Controller
                 'email'      => $email,
                 'password'   => Hash::make(Str::random(40)), // Google kullanicisi sifre kullanmaz
             ]);
-            // Baslangic puani: e-posta kaydiyla ayni (1400). 'rating' fillable degil,
-            // dogrudan atanir (DB varsayilani 1500 devreye girmesin).
-            $user->rating = 1400;
+            // Baslangic puani: e-posta kaydiyla ayni (admin 'starting_rating', varsayilan 1400).
+            $user->rating = \App\Models\Setting::int('starting_rating', 1400);
             $user->save();
         }
 
@@ -1240,7 +1239,7 @@ class AuthController extends Controller
         if (! Schema::hasColumn('users', 'welcome_granted')) {
             return;
         }
-        $amount = (int) config('game.welcome_coins', 0);
+        $amount = \App\Models\Setting::int('welcome_coins', (int) config('game.welcome_coins', 100));
         if ($amount <= 0) {
             return;
         }

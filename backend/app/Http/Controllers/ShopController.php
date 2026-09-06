@@ -170,12 +170,12 @@ class ShopController extends Controller
                     'next_in' => self::REWARD_COOLDOWN - $elapsed,
                 ];
             }
-            // 6 saatlik bonus plana gore (yeni ekonomi): Free 25, Star 40, StarPRO 60.
-            $amount = match ($u->plan_active) {
-                'starpro' => 60,
-                'star' => 40,
-                default => self::REWARD_AMOUNT,
-            };
+            // 6 saatlik bonus (admin ayarı): normal kullanıcı reward_normal (25), premium (star/starpro)
+            // reward_premium (50). Ayarlar Site Ayarları'ndan yönetilir.
+            $premium = in_array($u->plan_active, ['star', 'starpro'], true);
+            $amount = $premium
+                ? \App\Models\Setting::int('reward_premium', 50)
+                : \App\Models\Setting::int('reward_normal', 25);
             $u->coins = ($u->coins ?? 0) + $amount;
             $u->last_reward = now();
             $u->save();
