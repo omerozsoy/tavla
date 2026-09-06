@@ -32,6 +32,13 @@ function prCls(pr: number | null | undefined): string {
   return 'bad'
 }
 
+// Sans (luck): ham equity sansini okunur isaretli skora olcekle (x100). null -> gosterme.
+function fmtLuck(v?: number | null): string | null {
+  if (v == null) return null
+  const s = Math.round(v * 100)
+  return `${s >= 0 ? '+' : ''}${s}`
+}
+
 function fmtDate(iso?: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
@@ -207,6 +214,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             {m.opponent_pr != null && (
                               <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
                             )}
+                            {m.opponent_luck != null && (
+                              <span className={`mh-luck ${m.opponent_luck >= 0 ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
+                                <Icon name="dice" size={11} /> {fmtLuck(m.opponent_luck)}
+                              </span>
+                            )}
                             <span className="mh-elo">{m.opponent_rating}</span>
                           </span>
                         </span>
@@ -238,6 +250,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                             {m.pr != null && (
                               <span className={`mh-prc ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>
                             )}
+                            {m.luck != null && (
+                              <span className={`mh-luck ${m.luck >= 0 ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
+                                <Icon name="dice" size={11} /> {fmtLuck(m.luck)}
+                              </span>
+                            )}
                             <span className="mh-elo">{m.rating_after}</span>
                           </span>
                         </span>
@@ -264,45 +281,12 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                   {open && (
                     <div className="mh-detail">
                       <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.matchId')}</span>
-                        <span className="mh-stat-v">#{m.id}</span>
-                      </div>
-                      <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.dScore')}</span>
-                        <span className="mh-stat-v">{hasScore ? `${m.score_self}–${m.score_opp}` : '—'}</span>
-                      </div>
-                      <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.dPr')}</span>
-                        <span className={`mh-stat-v ${m.pr != null ? prCls(m.pr) : ''}`}>
-                          {m.pr != null ? m.pr.toFixed(1) : '—'}
-                        </span>
-                      </div>
-                      <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.dLuck')}</span>
-                        <span className={`mh-stat-v ${m.luck != null ? (m.luck >= 0 ? 'good' : 'bad') : ''}`}>
-                          {m.luck != null ? `${m.luck >= 0 ? '+' : ''}${Math.round(m.luck * 100)}` : '—'}
-                        </span>
-                      </div>
-                      <div className="mh-stat">
                         <span className="mh-stat-k">{t('mh.dRating')}</span>
                         <span className="mh-stat-v">
                           {m.rating_before} → {m.rating_after}{' '}
                           <b className={m.delta >= 0 ? 'good' : 'bad'}>
                             ({m.delta >= 0 ? '+' : ''}{m.delta})
                           </b>
-                        </span>
-                      </div>
-                      <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.dVs')}</span>
-                        <span className="mh-stat-v">
-                          {m.opponent_name || '—'}
-                          {m.opponent_rating ? <span className="mh-stat-sub"> ({m.opponent_rating})</span> : null}
-                        </span>
-                      </div>
-                      <div className="mh-stat">
-                        <span className="mh-stat-k">{t('mh.dOppPr')}</span>
-                        <span className={`mh-stat-v ${m.opponent_pr != null ? prCls(m.opponent_pr) : ''}`}>
-                          {m.opponent_pr != null ? m.opponent_pr.toFixed(1) : '—'}
                         </span>
                       </div>
                       {m.coins_after != null && (
