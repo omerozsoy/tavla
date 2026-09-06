@@ -54,7 +54,12 @@ interface Props {
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
   onOpenShop?: (tab: 'frame' | 'board') => void // Magaza (avatar/tahta sekmesi)
+  // Kontrollu sekme (URL'e yansisin diye App'ten gelir; verilmezse ic state ile calisir)
+  tab?: ProfTab
+  onTabChange?: (tab: ProfTab) => void
 }
+
+type ProfTab = 'frames' | 'boards' | 'stats' | 'notifs' | 'badges'
 
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
@@ -86,10 +91,18 @@ export default function ProfileOverview({
   onOpenMatchHistory,
   onOpenAchievements,
   onOpenShop,
+  tab: tabProp,
+  onTabChange,
 }: Props) {
   const { t, lang } = useT()
-  // Profil açılışında İstatistikler sekmesi varsayılan seçili
-  const [tab, setTab] = useState<'frames' | 'boards' | 'stats' | 'notifs' | 'badges'>('stats')
+  // Profil açılışında İstatistikler sekmesi varsayılan seçili. Kontrollu (App'ten tab)
+  // veya kontrolsuz (ic state) — her iki durumda setTab hem ici hem App'i gunceller.
+  const [tabState, setTabState] = useState<ProfTab>('stats')
+  const tab = tabProp ?? tabState
+  const setTab = (v: ProfTab) => {
+    setTabState(v)
+    onTabChange?.(v)
+  }
   const unread = (notifications ?? []).filter((n) => !n.read).length
   useEscape(onClose)
 
