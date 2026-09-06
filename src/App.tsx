@@ -373,6 +373,8 @@ export default function App() {
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
+  // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
+  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'notifs'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
   const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
@@ -570,7 +572,17 @@ export default function App() {
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
   const currentSlug = editProfile
-    ? 'profil'
+    ? profileEditMode
+      ? 'profil/duzenle'
+      : profileTab === 'frames'
+        ? 'profil/avatarlar'
+        : profileTab === 'boards'
+          ? 'profil/tahtalar'
+          : profileTab === 'badges'
+            ? 'profil/basarilar'
+            : profileTab === 'notifs'
+              ? 'profil/bildirimler'
+              : 'profil'
     : infoOpen
     ? 'bilgi'
     : leaderboardOpen
@@ -762,8 +774,9 @@ export default function App() {
         case 'cerceveler':
           setFrameGalleryOpen(true)
           break
-        case 'istatistiklerim':
-          setProfileEditMode(false) // profil ANA sayfasi (İstatistikler varsayilan sekme)
+        case 'istatistiklerim': // eski slug -> profil ANA sayfasi (İstatistikler sekmesi)
+          setProfileEditMode(false)
+          setProfileTab('stats')
           setEditProfile(true)
           break
         case 'arkadaslar':
@@ -842,9 +855,31 @@ export default function App() {
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
           setSetup('pvb')
           break
-        case 'profil':
-        case 'profil-duzenle': // eski slug -> geriye donuk uyum
-          setProfileEditMode(false)
+        case 'profil': {
+          // Alt-yol -> profil sekmesi (kisisel yer-imi/link): /profil/avatarlar, /tahtalar, /basarilar,
+          // /bildirimler, /duzenle. Alt-yol yoksa (veya bilinmeyen) İstatistikler sekmesi.
+          const sub = seg[1] || ''
+          if (sub === 'duzenle') {
+            setProfileEditMode(true)
+          } else {
+            setProfileEditMode(false)
+            setProfileTab(
+              sub === 'avatarlar'
+                ? 'frames'
+                : sub === 'tahtalar'
+                  ? 'boards'
+                  : sub === 'basarilar'
+                    ? 'badges'
+                    : sub === 'bildirimler'
+                      ? 'notifs'
+                      : 'stats',
+            )
+          }
+          setEditProfile(true)
+          break
+        }
+        case 'profil-duzenle': // eski slug -> geriye donuk uyum (duzenleme formu)
+          setProfileEditMode(true)
           setEditProfile(true)
           break
         default:
@@ -4513,6 +4548,8 @@ export default function App() {
             setShopOpen(true)
           })
         }}
+        tab={profileTab}
+        onTabChange={setProfileTab}
       />
     ) : (
       <Auth
@@ -4567,6 +4604,7 @@ export default function App() {
               onClick={() =>
                 goPage(() => {
                   setProfileEditMode(false)
+                  setProfileTab('stats')
                   setEditProfile(true)
                 })
               }
@@ -4701,6 +4739,7 @@ export default function App() {
                   setAcctMenuOpen(false)
                   goPage(() => {
                     setProfileEditMode(false)
+                    setProfileTab('stats')
                     setEditProfile(true)
                   })
                 }}
@@ -4994,6 +5033,7 @@ export default function App() {
       user
         ? goPage(() => {
             setProfileEditMode(false) // profil ANA sayfasi (İstatistikler varsayilan)
+            setProfileTab('stats')
             setEditProfile(true)
           })
         : setShowAuth(true),
