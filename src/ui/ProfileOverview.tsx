@@ -146,7 +146,13 @@ export default function ProfileOverview({
           {/* Premium karti: profil ile tahta arasinda (3'lu ust satir) */}
           <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
           {equipped && (
-            <div className="prof-ov-board">
+            // Tiklayinca Tavla Tasarimlari sekmesine gecer -> tahta buradan degistirilebilir.
+            <button
+              type="button"
+              className="prof-ov-board"
+              onClick={() => setTab('boards')}
+              title={t('prof.changeBoard')}
+            >
               <div className="prof-ov-board-prev" style={boardVars(equipped)}>
                 <SetupBoard
                   panel={equipped.panel ?? equipped.b}
@@ -159,8 +165,11 @@ export default function ProfileOverview({
               <div className="prof-ov-board-name">
                 <span className="prof-ov-board-lbl">{t('menu.board')}</span>
                 {equipped.name}
+                <span className="prof-ov-board-change">
+                  <Icon name="settings" size={13} /> {t('prof.changeBoard')}
+                </span>
               </div>
-            </div>
+            </button>
           )}
         </div>
 
