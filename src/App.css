@@ -4304,11 +4304,17 @@ button[aria-disabled='true'],
 .main.game-scene .pc-pr .pr-val {
   color: color-mix(in srgb, var(--tv-gold) 60%, #eef2ff);
 }
+/* PR + not sarmalayici (dikey, ortali) */
+.pc-pr-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
 /* Trend renginde PR degeri de vurgulanir (kisa sureligine) */
-.pc-pr.pr-bad .pr-val {
+.pc-pr-wrap.pr-bad .pr-val {
   color: var(--color-error);
 }
-.pc-pr.pr-good .pr-val {
+.pc-pr-wrap.pr-good .pr-val {
   color: var(--color-success);
 }
 .pc-pr .pr-arrow {
@@ -4316,13 +4322,26 @@ button[aria-disabled='true'],
   line-height: 1;
   display: inline-block;
 }
-.pc-pr.pr-bad .pr-arrow {
+.pc-pr-wrap.pr-bad .pr-arrow {
   color: var(--color-error);
   animation: pr-arw-up 0.7s ease-in-out infinite;
 }
-.pc-pr.pr-good .pr-arrow {
+.pc-pr-wrap.pr-good .pr-arrow {
   color: var(--color-success);
   animation: pr-arw-down 0.7s ease-in-out infinite;
+}
+/* Oklarin altindaki kucuk not: "iyi hamle" / "hata" */
+.pc-pr-note {
+  margin-top: 1px;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
+}
+.pc-pr-wrap.pr-bad .pc-pr-note {
+  color: var(--color-error);
+}
+.pc-pr-wrap.pr-good .pc-pr-note {
+  color: var(--color-success);
 }
 /* Cift ok his ver? tek ok yeterli; sag/sol simetri zaten "iki ok". */
 @keyframes pr-arw-up {
