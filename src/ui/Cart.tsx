@@ -5,11 +5,17 @@ import { COIN_PACKAGES } from '../coinPackages'
 import { validatePromo, type PromoResult } from '../api'
 import { Button } from '@/components/ui/button'
 
-// Sepet ogesi: coin paketi id + adet. (Sadece coin paketleri sepete girer.)
+// Sepet ogesi: coin paketi id + adet. kind='membership' -> "Üyeliğini Uzat" (1 yil premium).
+// Eski localStorage ogelerinde kind yok -> coin sayilir (geriye donuk uyum).
 export interface CartItem {
   id: string
   qty: number
+  kind?: 'coins' | 'membership'
 }
+
+// "Üyeliğini Uzat" tek urunu (sepette coin'lerle karismaz — eklenince sepeti bu tek oge kaplar).
+export const MEMBERSHIP_ITEM_ID = 'premium-yil'
+export const MEMBERSHIP_PRICE_TL = 499 // config/garanti.renew.yearly (49900 kurus) ile birebir
 
 const fmtCoin = (n: number) => n.toLocaleString('tr-TR')
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
@@ -37,6 +43,8 @@ export default function Cart({
   const [promoErr, setPromoErr] = useState('')
   const [promoBusy, setPromoBusy] = useState(false)
 
+  // Üyelik uzatma ogesi (varsa sepet TAMAMEN buna ayrilir; coin karismaz).
+  const memItem = items.find((i) => i.kind === 'membership')
   // Sepet satirlari: gecerli paketlerle eslesenler.
   const rows = items
     .map((it) => ({ it, pkg: COIN_PACKAGES.find((p) => p.id === it.id) }))
@@ -81,11 +89,12 @@ export default function Cart({
   }
 
   async function checkout() {
-    if (!rows.length) return
+    if (!rows.length && !memItem) return
     setErr('')
     setBusy(true)
     try {
-      await onCheckout(items, applied?.code ?? null) // App: buyCoins(items, code) -> odeme sayfasi
+      // App: uyelik ogesi varsa buyMembership, degilse buyCoins(items, code) -> odeme sayfasi
+      await onCheckout(items, applied?.code ?? null)
     } catch (e) {
       setErr((e as { message?: string })?.message || 'Ödeme başlatılamadı.')
       setBusy(false)
@@ -102,10 +111,54 @@ export default function Cart({
           <h2>
             <Icon name="shop" size={20} /> Sepet
           </h2>
-          <p className="cart-sub">Coin paketlerini gözden geçir, indirim kodunu uygula ve güvenle öde.</p>
+          <p className="cart-sub">
+            {memItem
+              ? 'Üyeliğini gözden geçir ve güvenle öde. Bitiş tarihine 1 yıl eklenir.'
+              : 'Coin paketlerini gözden geçir, indirim kodunu uygula ve güvenle öde.'}
+          </p>
         </header>
 
-        {rows.length === 0 ? (
+        {memItem ? (
+          /* --- Üyelik uzatma sepeti (tek urun) --- */
+          <>
+            <div className="cart-list">
+              <div className="cart-row cart-row-mem">
+                <span className="cart-row-name">
+                  <Icon name="crown" size={16} /> 1 Yıllık Premium Üyelik
+                  <b className="cart-row-gc">Üyelik bitişine +1 yıl</b>
+                </span>
+                <span className="cart-row-price tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
+                <button
+                  type="button"
+                  className="cart-row-del"
+                  onClick={() => setItems((prev) => prev.filter((p) => p.kind !== 'membership'))}
+                  aria-label="kaldır"
+                >
+                  <Icon name="x" size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="cart-summary">
+              <div className="cart-sum-row cart-sum-total">
+                <span>Toplam</span>
+                <span className="cart-sum-amt tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
+              </div>
+            </div>
+
+            {err && <div className="cart-err">{err}</div>}
+
+            <div className="cart-actions">
+              <Button variant="outline" onClick={onClose}>
+                Vazgeç
+              </Button>
+              <Button variant="default" disabled={busy} onClick={checkout}>
+                <Icon name="crown" size={16} /> Ödemeye Geç
+              </Button>
+            </div>
+            <p className="cart-note">Ödeme Garanti BBVA 3D Secure ile güvenli şekilde alınır. Üyelik bitiş tarihine 1 yıl eklenir.</p>
+          </>
+        ) : rows.length === 0 ? (
           <div className="cart-empty">
             <Icon name="shop" size={34} />
             <p>Sepetin boş.</p>

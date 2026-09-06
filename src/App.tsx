@@ -124,7 +124,7 @@ import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
-import Cart, { type CartItem } from './ui/Cart'
+import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import Checkout from './ui/Checkout'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
@@ -171,6 +171,7 @@ import {
   toProfile,
   getMenuConfig,
   buyCoins,
+  buyMembership,
   messagesUnread,
   matchPr,
   type MenuOverride,
@@ -5336,11 +5337,13 @@ export default function App() {
           onDaily={handleDaily}
           onBuyCoins={(pkgId) => {
             // Coin paketini sepete ekle (varsa adedini arttir) -> sepete yonlendir.
+            // Uyelik ogesi coin ile karismaz: coin eklenince sepetten cikarilir (tek-tip sepet).
             setCartItems((prev) => {
-              const ex = prev.find((c) => c.id === pkgId)
+              const coins = prev.filter((c) => c.kind !== 'membership')
+              const ex = coins.find((c) => c.id === pkgId)
               return ex
-                ? prev.map((c) => (c.id === pkgId ? { ...c, qty: c.qty + 1 } : c))
-                : [...prev, { id: pkgId, qty: 1 }]
+                ? coins.map((c) => (c.id === pkgId ? { ...c, qty: c.qty + 1 } : c))
+                : [...coins, { id: pkgId, qty: 1 }]
             })
             setShopOpen(false)
             setCartOpen(true)
@@ -5388,9 +5391,15 @@ export default function App() {
             setShopOpen(true)
           }}
           onCheckout={async (its, code) => {
-            // Odeme kaydi olustur (fiyat + indirim sunucuda), imzali submitUrl al -> odeme sayfasi
-            const r = await buyCoins(its, code)
-            setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
+            // Odeme kaydi olustur (fiyat + indirim sunucuda), imzali submitUrl al -> odeme sayfasi.
+            // Uyelik uzatma ogesi varsa buyMembership (tek urun), degilse coin sepeti.
+            if (its.some((i) => i.kind === 'membership')) {
+              const r = await buyMembership()
+              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: 0, items: its, demo: r.demo })
+            } else {
+              const r = await buyCoins(its, code)
+              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
+            }
             setCartOpen(false)
             setCheckoutOpen(true)
           }}
@@ -5550,6 +5559,12 @@ export default function App() {
           trialUsed={!!user.trial_used}
           onUpgraded={(u) => setUser(u)}
           onClose={() => setMemOpen(false)}
+          onExtend={() => {
+            // "Üyeliğini Uzat": 1 yillik premium tek urun sepeti -> /sepet -> odeme
+            setCartItems([{ id: MEMBERSHIP_ITEM_ID, qty: 1, kind: 'membership' }])
+            setMemOpen(false)
+            goPage(() => setCartOpen(true))
+          }}
         />
       )}
     </>

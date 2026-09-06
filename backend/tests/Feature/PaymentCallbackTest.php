@@ -117,4 +117,58 @@ class PaymentCallbackTest extends TestCase
 
         $this->assertSame('failed', $p->fresh()->status);
     }
+
+    // "Üyeliğini Uzat" (kind=renew): mevcut GELECEK bitis tarihine +1 yil EKLENIR (sifirlanmaz).
+    public function test_renew_extends_existing_future_expiry(): void
+    {
+        $until = now()->addDays(30);
+        $u = User::factory()->create(['plan' => 'star', 'plan_until' => $until]);
+        $p = Payment::create([
+            'user_id' => $u->id,
+            'kind' => 'renew',
+            'order_id' => 'TM-'.$u->id,
+            'plan' => 'star',
+            'period' => 'yearly',
+            'amount' => 49900,
+            'currency' => '949',
+            'status' => 'pending',
+        ]);
+        $this->mockBankApproved($p->order_id);
+
+        $this->post('/pay/callback', ['txnamount' => '49900'])->assertOk();
+
+        $this->assertSame('paid', $p->fresh()->status);
+        // Yeni bitis ~ eski bitis + 1 yil (bugunden degil).
+        $expected = $until->copy()->addYear();
+        $this->assertEqualsWithDelta(
+            $expected->timestamp,
+            User::find($u->id)->plan_until->timestamp,
+            60,
+        );
+    }
+
+    // Suresi DOLMUS uyelikte uzatma bugunden baslar (gecmis tarihe eklenmez).
+    public function test_renew_starts_from_now_when_expired(): void
+    {
+        $u = User::factory()->create(['plan' => 'star', 'plan_until' => now()->subDays(10)]);
+        $p = Payment::create([
+            'user_id' => $u->id,
+            'kind' => 'renew',
+            'order_id' => 'TM2-'.$u->id,
+            'plan' => 'star',
+            'period' => 'yearly',
+            'amount' => 49900,
+            'currency' => '949',
+            'status' => 'pending',
+        ]);
+        $this->mockBankApproved($p->order_id);
+
+        $this->post('/pay/callback', ['txnamount' => '49900'])->assertOk();
+
+        $this->assertEqualsWithDelta(
+            now()->addYear()->timestamp,
+            User::find($u->id)->plan_until->timestamp,
+            60,
+        );
+    }
 }

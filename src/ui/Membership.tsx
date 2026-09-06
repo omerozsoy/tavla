@@ -11,11 +11,13 @@ export default function Membership({
   trialUsed,
   onUpgraded,
   onClose,
+  onExtend,
 }: {
   current: PlanId
   trialUsed: boolean
   onUpgraded: (u: ServerUser) => void
   onClose: () => void
+  onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
 }) {
   const { t } = useT()
   useEscape(onClose)
@@ -113,18 +115,15 @@ export default function Membership({
                 </ul>
                 <div className="mem-cta">
                   {isCurrent && p.id !== 'free' ? (
-                    // Aktif (odemeli) plan: "Mevcut plan" yerine yenileme — sure uzatir
+                    // Aktif (odemeli) plan: "Üyeliğini Uzat" -> 1 yillik premium SEPETE eklenir,
+                    // odeme sonrasi bitis tarihine +1 yil eklenir (onExtend App'te sepeti acar).
                     <Button
                       variant="secondary"
                       className="w-full"
                       disabled={busy !== null}
-                      onClick={() => pay(p.id as 'star' | 'starpro')}
+                      onClick={() => (onExtend ? onExtend() : pay(p.id as 'star' | 'starpro'))}
                     >
-                      {busy === p.id ? (
-                        <span className="btn-spinner" aria-hidden="true" />
-                      ) : (
-                        t('mem.status.renew')
-                      )}
+                      {t('mem.status.renew')}
                     </Button>
                   ) : isCurrent ? (
                     <Button variant="secondary" className="w-full" disabled>
