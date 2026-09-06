@@ -877,6 +877,7 @@ export default function App() {
   const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
+  const [rewardCoins, setRewardCoins] = useState(25) // odul miktari (plana+admin ayarina gore; presence'tan)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
@@ -3117,6 +3118,7 @@ export default function App() {
             setTournNotices(r.tournament_matches ?? [])
             setRewardReady(!!r.reward_ready)
             setRewardSecs(r.reward_seconds ?? 0)
+            if (typeof r.reward_coins === 'number') setRewardCoins(r.reward_coins)
             const notifs = r.notifications ?? []
             // Yeni (daha once gorulmemis) bildirimleri toast ile aktif uyar.
             // Ilk ping'te (primed=false) eski okunmamislari toast'lama, sadece kaydet.
@@ -4610,11 +4612,19 @@ export default function App() {
               onClick={handleCoinClick}
               title={t('reward.claim')}
             >
-              <Icon name="gift" size={15} /> 500
+              <Icon name="gift" size={15} />
+              <span className="rb-stack">
+                <span className="rb-main">{rewardCoins}</span>
+                <span className="rb-sub">{t('reward.bonus')}</span>
+              </span>
             </Button>
           ) : (
             <span className="reward-count" title={t('reward.in')}>
-              <Icon name="gift" size={14} /> {fmtCountdown(rewardSecs)}
+              <Icon name="gift" size={14} />
+              <span className="rb-stack">
+                <span className="rb-main tnum">{fmtCountdown(rewardSecs)}</span>
+                <span className="rb-sub">{t('reward.in')}</span>
+              </span>
             </span>
           )}
           {/* Mesajlar: bildirim zili gibi ust barda chat ikonu + okunmamis rozeti */}

@@ -7219,6 +7219,27 @@ button.acct-row:hover:not(:disabled) {
 .account-bar .reward-count {
   font-weight: 400;
 }
+/* 6 saatlik ödül: ikon + iki satır (miktar/sayaç üstte, "Bonus"/"Sonraki Ödül" altta) */
+.account-bar .btn-reward:not([data-slot]),
+.account-bar .reward-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.rb-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.08;
+}
+.rb-main {
+  font-size: 0.92rem;
+}
+.rb-sub {
+  font-size: 0.58rem;
+  opacity: 0.68;
+  letter-spacing: 0.02em;
+}
 .player-rating {
   margin-top: 2px;
   font-size: 0.8rem;
