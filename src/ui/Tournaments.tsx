@@ -139,6 +139,11 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
       : null
     const joined = active.players?.some((p) => p.id === myId)
     const canJoin = active.status === 'open' && !joined && myId != null
+    // Hero ozet: toplam odul havuzu + katilim doluluk yuzdesi
+    const totalPrize = active.prizes && active.prizes.length
+      ? active.prizes.reduce((s, pr) => s + (pr.coins || 0), 0)
+      : (active.prize_coins || 0)
+    const fillPct = active.size ? Math.min(100, Math.round((active.count / active.size) * 100)) : 0
     return (
       <div className="register-overlay modal page" role="dialog" aria-modal="true">
         <div className="register-card tourn-card" onClick={(e) => e.stopPropagation()}>
@@ -154,114 +159,89 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <Icon name="caret-left" size={16} /> {t('tourn.back')}
           </Button>
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
-          <div className="td-chips">
+
+          {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
+          <div className="tourn-subline">
             <span className={`tr-status tr-status-${active.status}`}>
               {t(`tourn.status.${active.status}`)}
             </span>
-            <span className="td-chip">
-              <Icon name="users" size={13} /> {active.count}/{active.size}
-            </span>
-            {!!active.entry_fee && (
-              <span className="td-chip">
-                <Icon name="ticket" size={13} /> {t('tourn.entryFee')}:{' '}
-                {active.entry_fee.toLocaleString('tr-TR')}
-              </span>
-            )}
-          </div>
-          {active.venue && (
-            <div className="tourn-venue">
-              <Icon name="pin" size={15} /> {active.venue}
-            </div>
-          )}
-          {active.organizer && (
-            <div className="tourn-organizer">
-              {active.organizer.logo ? (
-                <img
-                  className="tourn-org-logo"
-                  src={orgLogoSrc(active.organizer.logo) ?? undefined}
-                  alt={active.organizer.name}
-                />
-              ) : (
-                <Icon name="building-office" size={15} />
+            <span className="tourn-meta-inline">
+              {t('tourn.organizer')}:
+              <TavlaTvLogo size={26} tone="light" className="tourn-runby-logo" />
+              {active.organizer && (
+                <>
+                  <span className="tourn-meta-sep">·</span>
+                  {active.organizer.logo && (
+                    <img
+                      className="tourn-org-logo sm"
+                      src={orgLogoSrc(active.organizer.logo) ?? undefined}
+                      alt={active.organizer.name}
+                    />
+                  )}
+                  {active.organizer.name}
+                </>
               )}
-              <span>{t('tourn.organization')}: {active.organizer.name}</span>
-            </div>
-          )}
-          {/* Duzenleyen: HER online turnuvada TavlaTv (sabit kural) */}
-          <div className="tourn-organizer tourn-runby">
-            <span>
-              {t('tourn.organizer')}:{' '}
-              <TavlaTvLogo size={30} tone="light" className="tourn-runby-logo" />
+              {active.venue && (
+                <>
+                  <span className="tourn-meta-sep">·</span>
+                  <Icon name="pin" size={13} /> {active.venue}
+                </>
+              )}
             </span>
           </div>
-          {active.status === 'open' && active.starts_at && (
-            <div className="tourn-countdown">
-              <span className="tc-lbl">
-                <Icon name="clock" size={15} /> {t('tourn.startsIn')}
+
+          {/* Hero: turnuvanin ozeti — odul havuzu / baslangic / katilim / giris */}
+          <div className="tourn-hero">
+            <div className="th-stat th-prize">
+              <span className="th-lbl">{t('tourn.prizePool')}</span>
+              <span className="th-val">
+                {totalPrize > 0 ? <Coins amount={totalPrize} gain suffix="coin" size={18} /> : '—'}
               </span>
-              <Countdown
-                target={active.starts_at}
-                onExpire={() => showTournament(active.id).then(setActive).catch(() => {})}
-              />
-              {active.register_until && (
-                <span className="tc-until">
+            </div>
+            <div className="th-stat">
+              <span className="th-lbl">{t('tourn.startLabel')}</span>
+              <span className="th-val">
+                {active.status === 'open' && active.starts_at ? (
+                  <Countdown
+                    target={active.starts_at}
+                    onExpire={() => showTournament(active.id).then(setActive).catch(() => {})}
+                  />
+                ) : active.status === 'running' ? (
+                  t('tourn.status.running')
+                ) : (
+                  t('tourn.status.finished')
+                )}
+              </span>
+              {active.status === 'open' && active.register_until && (
+                <span className="th-sub">
                   {t('tourn.registerUntil')}:{' '}
                   {new Date(active.register_until).toLocaleString('tr-TR', {
                     day: '2-digit',
                     month: '2-digit',
-                    year: 'numeric',
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
                 </span>
               )}
             </div>
-          )}
-          {active.prizes && active.prizes.length > 0 ? (
-            <div className="tourn-prizes">
-              <div className="tp-head">
-                <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}
-              </div>
-              <ol className="tp-list">
-                {active.prizes.map((pr, i) => (
-                  <li key={i} className="tp-row">
-                    <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
-                    <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
-                    <span className="tp-coins">
-                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
-                    </span>
-                  </li>
-                ))}
-              </ol>
-              {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
-              {!!active.entry_fee && (
-                <div className="tourn-fee">
-                  <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
-                </div>
-              )}
+            <div className="th-stat">
+              <span className="th-lbl">{t('tourn.participation')}</span>
+              <span className="th-val tnum">{active.count}/{active.size}</span>
+              <span className="th-fill"><i style={{ width: `${fillPct}%` }} /></span>
             </div>
-          ) : (
-            (!!active.prize_coins || active.prize_desc || !!active.entry_fee) && (
-              <div className="tourn-prize">
-                <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}:{' '}
-                {!!active.prize_coins && (
-                  <Coins amount={active.prize_coins} suffix="coin" size={14} />
-                )}
-                {active.prize_desc && <span> {active.prize_desc}</span>}
-                {!!active.entry_fee && (
-                  <span className="tourn-fee">
-                    {' '}
-                    · <Icon name="ticket" size={14} /> {t('tourn.entryFee')}: {active.entry_fee}
-                  </span>
-                )}
-              </div>
-            )
-          )}
+            <div className="th-stat">
+              <span className="th-lbl">{t('tourn.entry')}</span>
+              <span className="th-val">
+                {active.entry_fee ? <Coins amount={active.entry_fee} size={16} /> : t('tourn.free')}
+              </span>
+            </div>
+          </div>
 
+          {/* Birincil aksiyon: Katil / Kaydi iptal (hero'nun hemen altinda, belirgin) */}
           {(canJoin || (joined && active.status === 'open')) && (
-            <div className="tourn-actions">
+            <div className="tourn-actions tourn-actions-hero">
               {canJoin && (
-                <Button variant="default" disabled={busy} onClick={() => setConfirm('join')}>
+                <Button variant="default" className="tourn-join-btn" disabled={busy} onClick={() => setConfirm('join')}>
                   {t('tourn.join')}
                   {!!active.entry_fee && (
                     <span className="tourn-join-fee">
@@ -282,6 +262,33 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             <div className="tourn-champ">
               <Icon name="crown" size={16} /> {t('tourn.champion')}: {champ.name}
             </div>
+          )}
+
+          {/* Odul dagilimi (siralamaya gore) */}
+          {active.prizes && active.prizes.length > 0 ? (
+            <div className="tourn-prizes">
+              <div className="tp-head">
+                <Icon name="medal" size={16} /> {t('tourn.breakdown')}
+              </div>
+              <ol className="tp-list">
+                {active.prizes.map((pr, i) => (
+                  <li key={i} className="tp-row">
+                    <span className={`tp-rank${i < 3 ? ' tp-rank-' + (i + 1) : ''}`}>{i + 1}.</span>
+                    <span className="tp-desc">{pr.desc || t('tourn.prizeCoinLbl')}</span>
+                    <span className="tp-coins">
+                      <Coins amount={pr.coins} gain suffix="coin" size={14} />
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              {active.prize_desc && <div className="tp-note">{active.prize_desc}</div>}
+            </div>
+          ) : (
+            active.prize_desc && (
+              <div className="tourn-prize">
+                <Icon name="medal" size={16} /> {t('tourn.prizeLabel')}: <span>{active.prize_desc}</span>
+              </div>
+            )
           )}
 
           {/* Katilimci listesi HER durumda gorunur (acik/devam/bitti) */}
