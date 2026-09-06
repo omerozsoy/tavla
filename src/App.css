@@ -11950,7 +11950,7 @@ button.acct-row:hover:not(:disabled) {
   margin: 0 0 16px;
 }
 .mem-toggle {
-  display: inline-flex;
+  display: flex;
   gap: 2px;
   width: fit-content;
   margin: 0 auto 18px;
