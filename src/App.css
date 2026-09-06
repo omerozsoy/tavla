@@ -4286,6 +4286,13 @@ button[aria-disabled='true'],
   font-size: 0.8rem;
   margin-top: 2px;
 }
+/* Anlik PR alt satiri: hafif altin vurgu (kalite/reyting hissi), tabular rakam */
+.main.game-scene .pc-pr {
+  color: color-mix(in srgb, var(--tv-gold) 60%, #eef2ff);
+  font-size: 0.82rem;
+  margin-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
 .main.game-scene .status {
   color: rgba(220, 230, 255, 0.68);
 }

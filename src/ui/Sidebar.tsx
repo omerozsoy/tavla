@@ -16,6 +16,7 @@ interface PlayerInfo {
   avatarUrl?: string | null
   frame?: string | null
   isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
+  pr?: number | null // anlik PR (performans reytingi); null ise gizli
 }
 
 interface SidebarProps {
@@ -67,6 +68,10 @@ function Name({ p }: { p: PlayerInfo }) {
       <div className="player-name">{p.name}</div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
+      {/* Anlik PR (performans reytingi) — dusuk = iyi */}
+      {p.pr != null ? (
+        <div className="player-sub pc-pr">PR {p.pr.toFixed(1)}</div>
+      ) : null}
     </div>
   )
 }

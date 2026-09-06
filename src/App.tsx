@@ -4344,6 +4344,8 @@ export default function App() {
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
+    // Anlik PR: yalniz bota karsi (pvb) goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
+    pr: mode === 'pvb' ? (prValue ?? prLooseOf('white')) : null,
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
