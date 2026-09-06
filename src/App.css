@@ -11950,8 +11950,8 @@ button.acct-row:hover:not(:disabled) {
   margin: 0 0 16px;
 }
 .mem-toggle {
-  display: flex;
-  gap: 4px;
+  display: inline-flex;
+  gap: 2px;
   width: fit-content;
   margin: 0 auto 18px;
   background: var(--btn-bg);
@@ -11959,17 +11959,41 @@ button.acct-row:hover:not(:disabled) {
   border-radius: var(--radius-pill);
   padding: 3px;
 }
-.mem-toggle button:not([data-slot]) {
-  padding: 7px 22px;
+.mem-toggle button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 20px;
   border-radius: var(--radius-pill);
   border: none;
   background: none;
   color: var(--muted);
   font-weight: 400;
+  font-size: 0.94rem;
+  line-height: 1;
   cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.mem-toggle button:hover:not(.active) {
+  color: var(--text);
 }
 .mem-toggle button.active {
   background: var(--accent);
+  color: var(--on-accent);
+}
+/* Yillik butonundaki "indirim" rozeti — aktifken beyaz cerceve, pasifken accent */
+.mem-toggle-badge {
+  font-size: 0.68rem;
+  font-weight: 400;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.mem-toggle button.active .mem-toggle-badge {
+  background: color-mix(in srgb, var(--on-accent) 22%, transparent);
   color: var(--on-accent);
 }
 .mem-err {
