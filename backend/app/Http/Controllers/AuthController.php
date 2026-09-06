@@ -917,10 +917,14 @@ class AuthController extends Controller
         $hasOpp = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name');
         $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
         $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
+        $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
             $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
+        }
+        if ($hasMwc) {
+            $cols[] = 'luck_mwc'; // Tavlai Luck V1 — gnubg NATIVE MWC% (bağımsız per-oyuncu)
         }
         if ($hasOpp) {
             $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
@@ -938,15 +942,24 @@ class AuthController extends Controller
 
         // Rakip ŞANS'ı (herkesin şansı kendi tarafında gösterilsin): online maçlarda rakibin
         // satırı aynı room_code'da; tek toplu sorgu ile room_code -> rakip luck haritası çıkar.
+        // Hem ham luck hem gnubg NATIVE MWC% (V1) — istemci MWC%'yi tercih eder, yoksa ham.
         $oppLuckByRoom = [];
+        $oppLuckMwcByRoom = [];
         if ($hasRoom && $hasNew) {
             $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             if (! empty($codes)) {
+                $oppCols = ['room_code', 'luck'];
+                if ($hasMwc) {
+                    $oppCols[] = 'luck_mwc';
+                }
                 \App\Models\MatchResult::whereIn('room_code', $codes)
                     ->where('user_id', '!=', $me->id)
-                    ->get(['room_code', 'luck'])
-                    ->each(function ($r) use (&$oppLuckByRoom) {
+                    ->get($oppCols)
+                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, $hasMwc) {
                         $oppLuckByRoom[$r->room_code] = $r->luck;
+                        if ($hasMwc) {
+                            $oppLuckMwcByRoom[$r->room_code] = $r->luck_mwc;
+                        }
                     });
             }
         }
@@ -966,6 +979,8 @@ class AuthController extends Controller
                 'coins_after' => $m->coins_after,
                 'luck' => $hasNew ? $m->luck : null,
                 'opponent_luck' => ($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null,
+                'luck_mwc' => $hasMwc ? $m->luck_mwc : null,
+                'opponent_luck_mwc' => ($hasRoom && $hasMwc && $m->room_code) ? ($oppLuckMwcByRoom[$m->room_code] ?? null) : null,
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
                 'has_log' => $hasLog ? (bool) $m->has_log : false,

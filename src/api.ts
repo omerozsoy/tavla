@@ -379,6 +379,9 @@ export interface MyMatch {
   coins_after?: number | null
   luck?: number | null
   opponent_luck?: number | null
+  // Tavlai Luck V1 — gnubg NATIVE MWC% (bağımsız per-oyuncu). Doluysa ham luck yerine gösterilir.
+  luck_mwc?: number | null
+  opponent_luck_mwc?: number | null
   score_self?: number | null
   score_opp?: number | null
   created_at?: string | null
