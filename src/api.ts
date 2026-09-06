@@ -504,6 +504,7 @@ export async function ping(): Promise<{
   tournament_matches: TournNotice[]
   reward_ready: boolean
   reward_seconds?: number
+  reward_coins?: number
   coins: number
   notifications?: AppNotification[]
   unread?: number

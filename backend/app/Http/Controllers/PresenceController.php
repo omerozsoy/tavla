@@ -73,6 +73,10 @@ class PresenceController extends Controller
         $elapsed = $last ? (int) abs(now()->diffInSeconds($last)) : PHP_INT_MAX;
         $rewardReady = $elapsed >= 6 * 3600;
         $rewardSeconds = $rewardReady ? 0 : (6 * 3600 - $elapsed);
+        // 6 saatlik ödül MİKTARI (plana + admin ayarına göre): premium 50, normal 25 (Site Ayarları).
+        $rewardCoins = in_array($me->plan_active, ['star', 'starpro'], true)
+            ? \App\Models\Setting::int('reward_premium', 50)
+            : \App\Models\Setting::int('reward_normal', 25);
 
         // Bildirimler (son 20) + okunmamis sayisi
         $notifications = \App\Models\Notification::where('user_id', $me->id)
@@ -96,6 +100,7 @@ class PresenceController extends Controller
             'tournament_matches' => $tmatches,
             'reward_ready' => $rewardReady,
             'reward_seconds' => $rewardSeconds,
+            'reward_coins' => $rewardCoins,
             'coins' => $me->coins ?? 0,
             'notifications' => $notifications,
             'unread' => $unread,
