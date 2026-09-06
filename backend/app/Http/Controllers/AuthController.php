@@ -303,6 +303,17 @@ class AuthController extends Controller
             if ($oppRating !== null && (int) $oppRating > 0) {
                 $rb = (int) $oppRating;
             }
+        } elseif (! empty($data['room_code'])) {
+            // M1 (denetim): oda SİLİNMİŞ (cleanup >1 gün). İstemci opponent_rating:4000 gönderip Elo
+            // şişiremesin. Rakibin match_results satırı varsa (raporladıysa) onun rating_before'ı
+            // AUTORİTER; yoksa PUANLI raporu kendi rating'ine sabitle (şişirme engeli; ~even Elo).
+            $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
+                ->where('user_id', '!=', $user->id)->latest('id')->first();
+            if ($oppRow && (int) $oppRow->rating_before > 0) {
+                $rb = (int) $oppRow->rating_before;
+            } elseif ($ranked) {
+                $rb = (int) $ra;
+            }
         }
 
         // SUNUCU-OTORITER GALIBIYET/MAGLUBIYET: online macta istemcinin 'won' beyanina
