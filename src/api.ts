@@ -435,8 +435,26 @@ export async function subscribe(
 // url: eski ayri kart sayfasi (yedek). amount: kurus, coins: toplam jeton.
 export async function buyCoins(
   items: { id: string; qty: number }[],
-): Promise<{ url: string; submitUrl: string; amount: number; coins: number; demo?: boolean }> {
-  return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items }) })
+  code?: string | null,
+): Promise<{ url: string; submitUrl: string; amount: number; coins: number; discount?: number; code?: string | null; demo?: boolean }> {
+  return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items, code: code || undefined }) })
+}
+
+// Indirim kodu dogrula (odeme baslatmadan): sunucu sepet toplamindan indirimi hesaplar.
+// Tutarlar KURUS (TL x100). Hatali kod -> req reject (mesaj gosterilir).
+export interface PromoResult {
+  code: string
+  type: 'percent' | 'fixed'
+  value: number
+  discount: number // kurus
+  subtotal: number // kurus
+  final: number // kurus
+}
+export async function validatePromo(
+  items: { id: string; qty: number }[],
+  code: string,
+): Promise<PromoResult> {
+  return req('/shop/promo/validate', { method: 'POST', body: JSON.stringify({ items, code }) })
 }
 
 // Herkese acik oyuncu profili

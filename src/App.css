@@ -14604,7 +14604,7 @@ button.acct-row:hover:not(:disabled) {
   flex: 0 0 auto;
   min-width: 84px;
   text-align: right;
-  font-weight: 600;
+  font-weight: 400;
 }
 .cart-row-del {
   flex: 0 0 auto;
@@ -14653,6 +14653,120 @@ button.acct-row:hover:not(:disabled) {
   text-align: center;
   color: var(--muted);
   font-size: 0.78rem;
+}
+/* ===== Sepet redesign: editoryal header + indirim kodu + ozet ===== */
+.cart-head {
+  margin: 2px 0 12px;
+}
+.cart-head h2 {
+  margin: 0;
+}
+.cart-sub {
+  margin: 5px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted);
+  max-width: 46ch;
+  text-wrap: pretty;
+}
+/* Indirim kodu alani */
+.cart-promo {
+  margin: 12px 0 4px;
+}
+.cart-promo-form {
+  display: flex;
+  gap: 8px;
+}
+.cart-promo-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  color: var(--text);
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.cart-promo-input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.cart-promo-applied {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-success) 35%, var(--border));
+  background: color-mix(in srgb, var(--color-success) 9%, transparent);
+}
+.cart-promo-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+.cart-promo-ok > svg {
+  color: var(--color-success, #1a7f37);
+}
+.cart-promo-off {
+  margin-left: auto;
+  color: var(--color-success, #1a7f37);
+  font-variant-numeric: tabular-nums;
+}
+.cart-promo-del {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  border-radius: 7px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.cart-promo-del:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.cart-promo-err {
+  margin-top: 6px;
+  color: var(--danger-fg, #c0392b);
+  font-size: 0.82rem;
+}
+/* Ozet: ara toplam + indirim + toplam */
+.cart-summary {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cart-sum-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.cart-sum-disc {
+  color: var(--color-success, #1a7f37);
+}
+.cart-sum-total {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-size: 1rem;
+  color: var(--text);
+}
+.cart-sum-amt {
+  font-size: 1.28rem;
+  color: var(--accent);
 }
 @media (max-width: 520px) {
   .cart-row {

@@ -5345,9 +5345,9 @@ export default function App() {
             setShopTab('coins')
             setShopOpen(true)
           }}
-          onCheckout={async (its) => {
-            // Odeme kaydi olustur (fiyat sunucuda), imzali submitUrl al -> uygulama-ici odeme sayfasi
-            const r = await buyCoins(its)
+          onCheckout={async (its, code) => {
+            // Odeme kaydi olustur (fiyat + indirim sunucuda), imzali submitUrl al -> odeme sayfasi
+            const r = await buyCoins(its, code)
             setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
             setCartOpen(false)
             setCheckoutOpen(true)
