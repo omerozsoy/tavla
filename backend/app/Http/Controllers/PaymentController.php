@@ -52,34 +52,45 @@ class PaymentController extends Controller
             'items'          => ['required', 'array', 'min:1', 'max:20'],
             'items.*.id'     => ['required', 'string'],
             'items.*.qty'    => ['required', 'integer', 'min:1', 'max:99'],
+            'code'           => ['nullable', 'string', 'max:40'],
         ]);
 
-        $packages = config('garanti.coin_packages', []);
-        $totalKurus = 0;
-        $totalCoins = 0;
-        $ids = [];
-        foreach ($data['items'] as $it) {
-            $pkg = $packages[$it['id']] ?? null;
-            if (! $pkg) {
-                return $this->fail('Geçersiz coin paketi: '.$it['id'], 422);
-            }
-            $totalKurus += (int) $pkg['price'] * (int) $it['qty'];
-            $totalCoins += (int) $pkg['gc'] * (int) $it['qty'];
-            $ids[] = $it['id'].'x'.$it['qty'];
+        [$totalKurus, $totalCoins, $ids, $err] = $this->coinSubtotal($data['items']);
+        if ($err) {
+            return $this->fail($err, 422);
         }
         if ($totalKurus <= 0) {
             return $this->fail('Sepet tutarı geçersiz.', 422);
         }
 
+        // Indirim kodu (opsiyonel): SUNUCU-OTORITER dogrulama + uygulama. amount ZATEN indirimli.
+        $discountKurus = 0;
+        $discountCode = null;
+        if (! empty($data['code'])) {
+            $reason = null;
+            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+            if (! $promo) {
+                return $this->fail($this->promoReason($reason), 422);
+            }
+            $discountKurus = $promo->discountKurus($totalKurus);
+            $discountCode = $promo->code;
+        }
+        $chargeKurus = $totalKurus - $discountKurus;
+        if ($chargeKurus <= 0) {
+            return $this->fail('İndirim kodu sepeti tamamen sıfırlıyor; geçersiz.', 422);
+        }
+
         $payment = Payment::create([
-            'user_id'    => $request->user()->id,
-            'kind'       => 'coins',
-            'order_id'   => 'TC'.now()->format('ymdHis').mt_rand(100, 999),
-            'amount'     => $totalKurus,
-            'coins'      => $totalCoins,
-            'package_id' => implode(',', $ids),
-            'currency'   => '949',
-            'status'     => 'pending',
+            'user_id'        => $request->user()->id,
+            'kind'           => 'coins',
+            'order_id'       => 'TC'.now()->format('ymdHis').mt_rand(100, 999),
+            'amount'         => $chargeKurus,
+            'coins'          => $totalCoins,
+            'package_id'     => implode(',', $ids),
+            'discount_code'  => $discountCode,
+            'discount_kurus' => $discountKurus,
+            'currency'       => '949',
+            'status'         => 'pending',
         ]);
 
         // url: eski akis (ayri kart sayfasi). submitUrl: uygulama-ici kart formu bu imzali
@@ -89,9 +100,73 @@ class PaymentController extends Controller
         return response()->json([
             'url'       => $url,
             'submitUrl' => $submitUrl,
-            'amount'    => $totalKurus,
+            'amount'    => $chargeKurus,
             'coins'     => $totalCoins,
+            'discount'  => $discountKurus,
+            'code'      => $discountCode,
             'demo'      => $garanti->isDemo(), // true: gercek tahsilat yok, kart sayfasi onizleme
+        ]);
+    }
+
+    // Sepet alt toplami (kurus) + coin + id ozetleri (config'ten, client'a GUVENILMEZ).
+    // Donus: [totalKurus, totalCoins, ids[], errorOrNull].
+    private function coinSubtotal(array $items): array
+    {
+        $packages = config('garanti.coin_packages', []);
+        $totalKurus = 0;
+        $totalCoins = 0;
+        $ids = [];
+        foreach ($items as $it) {
+            $pkg = $packages[$it['id']] ?? null;
+            if (! $pkg) {
+                return [0, 0, [], 'Geçersiz coin paketi: '.$it['id']];
+            }
+            $totalKurus += (int) $pkg['price'] * (int) $it['qty'];
+            $totalCoins += (int) $pkg['gc'] * (int) $it['qty'];
+            $ids[] = $it['id'].'x'.$it['qty'];
+        }
+
+        return [$totalKurus, $totalCoins, $ids, null];
+    }
+
+    // Promo dogrulama gerekce -> kullanici mesaji.
+    private function promoReason(?string $reason): string
+    {
+        return match ($reason) {
+            'expired'    => 'İndirim kodunun süresi dolmuş.',
+            'exhausted'  => 'İndirim kodu kullanım limitine ulaştı.',
+            'min_amount' => 'İndirim kodu için sepet tutarı yetersiz.',
+            default      => 'İndirim kodu geçersiz.',
+        };
+    }
+
+    // POST /shop/promo/validate — sepet + kod -> sunucu indirimi hesaplar (odeme baslatmadan).
+    public function promoValidate(Request $request)
+    {
+        $data = $request->validate([
+            'items'       => ['required', 'array', 'min:1', 'max:20'],
+            'items.*.id'  => ['required', 'string'],
+            'items.*.qty' => ['required', 'integer', 'min:1', 'max:99'],
+            'code'        => ['required', 'string', 'max:40'],
+        ]);
+        [$totalKurus, , , $err] = $this->coinSubtotal($data['items']);
+        if ($err || $totalKurus <= 0) {
+            return $this->fail($err ?: 'Sepet tutarı geçersiz.', 422);
+        }
+        $reason = null;
+        $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+        if (! $promo) {
+            return $this->fail($this->promoReason($reason), 422);
+        }
+        $discount = $promo->discountKurus($totalKurus);
+
+        return response()->json([
+            'code'     => $promo->code,
+            'type'     => $promo->type,
+            'value'    => (int) $promo->value,
+            'discount' => $discount,                        // kurus
+            'subtotal' => $totalKurus,                      // kurus
+            'final'    => max(0, $totalKurus - $discount),  // kurus
         ]);
     }
 
@@ -148,6 +223,9 @@ class PaymentController extends Controller
             $u = $payment->user;
             if ($payment->kind === 'coins') {
                 $u->increment('coins', (int) $payment->coins);
+                if (! empty($payment->discount_code)) {
+                    \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+                }
             } else {
                 $u->plan = $payment->plan;
                 $u->plan_until = $payment->period === 'yearly' ? now()->addYear() : now()->addMonth();
@@ -223,6 +301,10 @@ class PaymentController extends Controller
                     if ($payment->kind === 'coins') {
                         // Coin paketi: satin alinan jetonu hesaba yukle (atomik, tek kez).
                         $u->increment('coins', (int) $payment->coins);
+                        // Promo kodu kullanildiysa BASARILI redemption sayacini artir (yalniz burada).
+                        if (! empty($payment->discount_code)) {
+                            \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+                        }
                     } else {
                         // Uyelik: plani aktive et / yenile.
                         $u->plan = $payment->plan;
