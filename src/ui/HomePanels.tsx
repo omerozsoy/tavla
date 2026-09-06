@@ -585,7 +585,7 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
   // Hover balonu (native title yerine): sabit konumlu, gun uzerine gelince isim(ler)i gosterir.
-  const [tip, setTip] = useState<{ x: number; y: number; day: number; tourn: CalItem[]; event: CalItem[] } | null>(null)
+  const [tip, setTip] = useState<{ x: number; y: number; below: boolean; day: number; tourn: CalItem[]; event: CalItem[] } | null>(null)
   // Turnuva Takvimi etkinlikleri (dis aktivite/turnuva) -> kiremit. Bizim site turnuvalari (tourns) -> yesil.
   const [events, setEvents] = useState<Content[]>([])
   // Kurum adi -> yuvarlak logo (etkinlik satirinin basina konur). organizer adi = kurum basligi.
@@ -711,7 +711,17 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
               onMouseEnter={(e) => {
                 if (!marked) return
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
-                setTip({ x: r.left + r.width / 2, y: r.top, day: d, tourn: tn ?? [], event: en ?? [] })
+                // Ust satirlardaki gunlerde balon yukari acilirsa ay basligini orter;
+                // yeterli yer yoksa hucrenin ALTINA ac.
+                const below = r.top < 150
+                setTip({
+                  x: r.left + r.width / 2,
+                  y: below ? r.bottom : r.top,
+                  below,
+                  day: d,
+                  tourn: tn ?? [],
+                  event: en ?? [],
+                })
               }}
               onMouseLeave={() => setTip((cur) => (cur && cur.day === d ? null : cur))}
             >
@@ -738,7 +748,7 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
         </Button>
       </div>
       {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
-        <div className="cal-balloon" style={{ left: tip.x, top: tip.y }} role="tooltip">
+        <div className={`cal-balloon ${tip.below ? 'below' : ''}`} style={{ left: tip.x, top: tip.y }} role="tooltip">
           {tip.tourn.map((it, k) => (
             <div key={'t' + k} className="calb-row calb-tourn">
               {it.logo ? (
