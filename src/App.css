@@ -13140,6 +13140,114 @@ button.acct-row:hover:not(:disabled) {
   max-height: 88vh;
   overflow-y: auto;
 }
+/* ===== Turnuva detay redesign: alt-satir + hero ozet band ===== */
+.tourn-subline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 2px 0 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.tourn-meta-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tourn-meta-inline .tourn-runby-logo {
+  vertical-align: middle;
+}
+.tourn-meta-inline > svg {
+  color: var(--accent);
+}
+.tourn-meta-sep {
+  opacity: 0.5;
+}
+.tourn-org-logo.sm {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+/* Hero: 4 istatistik hucre (odul / baslangic / katilim / giris) */
+.tourn-hero {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 0 0 14px;
+}
+@media (min-width: 560px) {
+  .tourn-hero {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.th-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.th-lbl {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.th-val {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1.05rem;
+  color: var(--text);
+  line-height: 1.15;
+}
+.th-val.tnum {
+  font-variant-numeric: tabular-nums;
+}
+/* Countdown hero hucresinde sade dursun (kendi pill stilini kucult) */
+.th-val .tcard-cd {
+  font-size: 0.98rem;
+  padding: 0;
+  background: none;
+  border: none;
+}
+.th-sub {
+  font-size: 0.68rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Odul havuzu hucresi one cikar: altin tint */
+.th-prize {
+  border-color: color-mix(in srgb, var(--tv-gold) 40%, var(--border));
+  background: color-mix(in srgb, var(--tv-gold) 9%, transparent);
+}
+/* Katilim doluluk cubugu */
+.th-fill {
+  display: block;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+  overflow: hidden;
+  margin-top: 2px;
+}
+.th-fill > i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 320ms ease;
+}
+/* Birincil aksiyon hero altinda */
+.tourn-actions-hero {
+  margin: 0 0 14px;
+}
+.tourn-actions-hero .tourn-join-btn {
+  min-width: 180px;
+}
 .tourn-back {
   margin-bottom: 4px;
 }
@@ -16102,12 +16210,18 @@ button.acct-row:hover:not(:disabled) {
   width: 9px;
   height: 9px;
   border-radius: var(--radius-circle);
-  background: #6b7280;
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
   flex: none;
 }
+/* Online arkadas: profil kartiyla ayni yesil yanip sonen dot (pp-online-pulse) */
 .friend-dot.on {
-  background: #4fce6a;
-  box-shadow: 0 0 6px #4fce6a;
+  background: var(--color-success, #1a7f37);
+  animation: pp-online-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .friend-dot.on {
+    animation: none;
+  }
 }
 .invite-stack {
   position: fixed;
