@@ -301,11 +301,13 @@
 .cal-balloon.below {
   transform: translate(-50%, 9px);
 }
-/* Kucuk ucgen ok — kart rengiyle ayni, ince cerceveyle. */
+/* Kucuk ucgen ok — kart rengiyle ayni, ince cerceveyle.
+   Ok, balon merkezinden --arrow kadar kayar: balon panel kenarina sabitlense bile
+   gunu isaret etmeyi surdurur; kenara cok yaklasinca balon icinde kalir. */
 .cal-balloon::after {
   content: '';
   position: absolute;
-  left: 50%;
+  left: clamp(14px, calc(50% + var(--arrow, 0px)), calc(100% - 14px));
   width: 10px;
   height: 10px;
   background: var(--card-bg);

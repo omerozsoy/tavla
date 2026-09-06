@@ -585,7 +585,7 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
   const today = new Date()
   const [view, setView] = useState(() => ({ y: today.getFullYear(), m: today.getMonth() }))
   // Hover balonu (native title yerine): sabit konumlu, gun uzerine gelince isim(ler)i gosterir.
-  const [tip, setTip] = useState<{ x: number; y: number; below: boolean; day: number; tourn: CalItem[]; event: CalItem[] } | null>(null)
+  const [tip, setTip] = useState<{ x: number; y: number; arrow: number; below: boolean; day: number; tourn: CalItem[]; event: CalItem[] } | null>(null)
   // Turnuva Takvimi etkinlikleri (dis aktivite/turnuva) -> kiremit. Bizim site turnuvalari (tourns) -> yesil.
   const [events, setEvents] = useState<Content[]>([])
   // Kurum adi -> yuvarlak logo (etkinlik satirinin basina konur). organizer adi = kurum basligi.
@@ -710,14 +710,29 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
               aria-label={title || String(d)}
               onMouseEnter={(e) => {
                 if (!marked) return
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect()
+                const cell = e.currentTarget as HTMLElement
+                const r = cell.getBoundingClientRect()
                 // Ilk (ve ikinci) satirdaki gunlerde balon yukari acilirsa ay basligini/
                 // gun adlarini orter -> bu satirlarda hucrenin ALTINA ac (deterministik).
                 const row = Math.floor(i / 7)
                 const below = row <= 1
+                // Balonu takvim panelinin icinde tut (sag/sol kenardan tasmasin);
+                // hucrenin gercek merkezini kaybetmemek icin ok (arrow) kaydirilir.
+                const cx = r.left + r.width / 2
+                const panel = cell.closest('.cal-panel') as HTMLElement | null
+                const pr = panel?.getBoundingClientRect()
+                const halfW = 130 // max-width 260 / 2
+                const margin = 10
+                let x = cx
+                if (pr) {
+                  const lo = pr.left + margin + halfW
+                  const hi = pr.right - margin - halfW
+                  if (lo <= hi) x = Math.max(lo, Math.min(hi, cx))
+                }
                 setTip({
-                  x: r.left + r.width / 2,
+                  x,
                   y: below ? r.bottom : r.top,
+                  arrow: cx - x, // ok, balon merkezine gore bu kadar kayar
                   below,
                   day: d,
                   tourn: tn ?? [],
@@ -749,7 +764,11 @@ export function CalendarPanel({ tourns, onOpen, title }: { tourns: Tournament[];
         </Button>
       </div>
       {tip && (tip.tourn.length > 0 || tip.event.length > 0) && (
-        <div className={`cal-balloon ${tip.below ? 'below' : ''}`} style={{ left: tip.x, top: tip.y }} role="tooltip">
+        <div
+          className={`cal-balloon ${tip.below ? 'below' : ''}`}
+          style={{ left: tip.x, top: tip.y, ['--arrow' as string]: `${tip.arrow}px` }}
+          role="tooltip"
+        >
           {tip.tourn.map((it, k) => (
             <div key={'t' + k} className="calb-row calb-tourn">
               {it.logo ? (
