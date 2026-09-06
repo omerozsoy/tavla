@@ -2555,7 +2555,10 @@ export default function App() {
           match.score[opponent(myColor)],
           room?.oppName ?? null,
           prRef(opponent(myColor)),
-          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
+          // slice(-1000): TAM maçı kapsa. gnubg luck merge (MatBuilder) oyunları açılış-tespitiyle
+          // böler; -250 truncation uzun çok-oyunlu maçta erken oyunları kırpıp bölmeyi bozuyordu
+          // (luck sessizce yanlış). 1000 giriş gerçekçi tüm maçları kapsar + 1.2MB validation altında.
+          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-1000) }),
           !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
           stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
           room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
@@ -2586,7 +2589,7 @@ export default function App() {
           match.score[opponent(myColor)],
           room?.oppName ?? null,
           prRef(opponent(myColor)),
-          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-250) }),
+          JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-1000) }),
           !friendlyRef.current,
           stakeRef.current > 0 ? 'coin' : 'match',
           room?.code ?? null,
@@ -2745,7 +2748,7 @@ export default function App() {
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
         botPrRef.current ?? prRef('black'), // bot PR: seviyeye uygun sabit-rastgele (bkz botPr.ts)
-        JSON.stringify({ hc: 'white', log: logNow.slice(-250) }),
+        JSON.stringify({ hc: 'white', log: logNow.slice(-1000) }),
         rankedMatch,
         'match', // match_type (pvb her zaman N-puanlik)
         null, // room_code yok
