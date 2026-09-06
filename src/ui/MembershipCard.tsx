@@ -58,7 +58,15 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Pro
             </Button>
           )}
           {onToggleAutoRenew && (
-            <Button type="button" variant="outline" onClick={() => onToggleAutoRenew(!autoRenew)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                // Yalniz IPTAL ederken onay iste (acarken gerek yok).
+                if (autoRenew && !window.confirm(t('mem.status.cancelConfirm'))) return
+                onToggleAutoRenew(!autoRenew)
+              }}
+            >
               {autoRenew ? t('mem.status.cancelRenew') : t('mem.status.enableRenew')}
             </Button>
           )}

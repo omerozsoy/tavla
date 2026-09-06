@@ -127,9 +127,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
 
   return (
     <div className="frame-shop">
-      <div className="frame-shop-bal">
-        <Coins amount={coins} size={22} />
-      </div>
+      {/* Bakiye ust magaza basliginda zaten var -> burada tekrar gosterme (mukerrer). */}
       {buyErr && (
         <div className="shop-buy-err" role="alert">
           <Icon name="alert" size={15} /> {buyErr}

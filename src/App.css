@@ -15803,6 +15803,26 @@ button.acct-row:hover:not(:disabled) {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--card-bg);
+  /* Tiklanabilir: tahtayi degistirmek icin Tavla Tasarimlari sekmesine gecer */
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.prof-ov-board:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+}
+/* "Tahtayi degistir" ipucu (isim altinda, kiremit) */
+.prof-ov-board-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  font-family: var(--tv-font-ui);
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--accent);
 }
 .prof-ov-board-prev {
   width: 150px;
