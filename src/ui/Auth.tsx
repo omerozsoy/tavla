@@ -101,7 +101,6 @@ export default function Auth({
   const nickTaken = nickStatus === 'taken' // alinmis -> kirmizi + gonderim engellenir
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
-  const [startRating] = useState(1400) // baslangic seviyesi: kayitta gizli, sabit 1400 gonderilir
   const [forgot, setForgot] = useState(false) // sifremi unuttum modu
   const [forgotSent, setForgotSent] = useState(false)
 
@@ -250,7 +249,6 @@ export default function Auth({
         avatar,
         birthDate,
         password,
-        start_rating: startRating,
       })
       onAuthed(user)
     } catch (err) {

@@ -130,7 +130,7 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
 export { ApiError }
 
 export async function register(
-  input: Profile & { password: string; start_rating?: number },
+  input: Profile & { password: string },
 ): Promise<ServerUser> {
   const data = await req<{ user: ServerUser; token: string }>('/register', {
     method: 'POST',
@@ -144,7 +144,6 @@ export async function register(
       nickname: input.nickname,
       email: input.email,
       password: input.password,
-      start_rating: input.start_rating ?? null,
     }),
   })
   setToken(data.token)

@@ -27,7 +27,6 @@ class AuthController extends Controller
             'nickname'   => ['required', 'string', 'max:40', 'unique:users,nickname'],
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             'password'   => ['required', 'string', 'min:6', 'max:100'],
-            'start_rating' => ['nullable', 'integer', 'in:900,1100,1400,1700'],
         ]);
 
         // Ulke secilmezse BOS kalsin (kullanici sonradan profilinden secer). Kolon NOT NULL
@@ -39,14 +38,13 @@ class AuthController extends Controller
             unset($data['province']);
         }
 
-        // Baslangic puani: oyuncu kendi seviyesini secer (Galaxy tarzi). Yoksa 1400.
-        $startRating = $data['start_rating'] ?? 1400;
-        unset($data['start_rating']);
-
+        // Baslangic puani: TÜM yeni üyeler SABİT 1400 (seviye seçimi kaldırıldı). 'rating' fillable
+        // değil -> doğrudan atanır (DB varsayılanı 1500 devreye girmesin).
         $user = User::create($data);
-        $user->rating = $startRating;
-        $user->coins = (int) config('game.welcome_coins', 0); // hoşgeldin coin'i (fillable dışı -> doğrudan)
+        $user->rating = 1400;
         $user->save();
+        // NOT: hoşgeldin coin'i KAYITTA verilmez -> e-posta DOĞRULAYINCA verilir (grantWelcomeCoins),
+        // sahte e-posta ile bonus farmlanmasın. Google kullanıcısı doğrulanmış sayılır (aşağıda alır).
 
         // E-posta dogrulama linki gonder (teslim icin gercek SMTP gerekir; MAIL_MAILER)
         try {
@@ -162,7 +160,6 @@ class AuthController extends Controller
             // Baslangic puani: e-posta kaydiyla ayni (1400). 'rating' fillable degil,
             // dogrudan atanir (DB varsayilani 1500 devreye girmesin).
             $user->rating = 1400;
-            $user->coins = (int) config('game.welcome_coins', 0); // hoşgeldin coin'i (e-posta ile aynı)
             $user->save();
         }
 
@@ -170,6 +167,7 @@ class AuthController extends Controller
         // (eski hesaplar Google'a baglaninca "e-postani dogrula" uyarisi almasin).
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified(); // fillable disi, guvenli
+            $this->grantWelcomeCoins($user->id); // Google = doğrulanmış -> hoşgeldin coin'i (idempotent)
         }
 
         if ($user->isBanned()) {
@@ -1227,8 +1225,29 @@ class AuthController extends Controller
         if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
             event(new \Illuminate\Auth\Events\Verified($user));
+            $this->grantWelcomeCoins($user->id); // e-posta DOĞRULANDI -> hoşgeldin coin'i (idempotent)
         }
         return redirect("{$base}/?verified=1");
+    }
+
+    /**
+     * HOŞGELDİN coin'ini BİR KEZ ver (atomik idempotent): welcome_granted=false ise coins += welcome
+     * + flag=true. Yalnız e-posta doğrulayan / Google (doğrulanmış) kullanıcıya çağrılır. Eski
+     * (zaten doğrulanmış) kullanıcılar doğrulama geçişi yaşamadığı için almaz (retroaktif değil).
+     */
+    private function grantWelcomeCoins(int $userId): void
+    {
+        if (! Schema::hasColumn('users', 'welcome_granted')) {
+            return;
+        }
+        $amount = (int) config('game.welcome_coins', 0);
+        if ($amount <= 0) {
+            return;
+        }
+        User::where('id', $userId)->where('welcome_granted', false)->update([
+            'welcome_granted' => true,
+            'coins' => \Illuminate\Support\Facades\DB::raw('coins + '.$amount),
+        ]);
     }
 
     // Dogrulama e-postasini tekrar gonder (giris yapmis kullanici)
