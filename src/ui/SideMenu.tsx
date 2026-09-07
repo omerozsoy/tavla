@@ -90,7 +90,7 @@ export default function SideMenu(p: SideMenuProps) {
                 data-active={p.active === it.key || undefined}
                 onClick={it.onClick}
               >
-                <Icon name={it.icon} size={24} /> {it.label ?? t(it.labelKey)}
+                <Icon name={it.icon} size={24} /> <span className="nav-label">{it.label ?? t(it.labelKey)}</span>
                 {badge > 0 && <span className="menu-badge">{badge > 99 ? '99+' : badge}</span>}
               </Button>
               )
