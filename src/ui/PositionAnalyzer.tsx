@@ -134,8 +134,12 @@ export default function PositionAnalyzer({
   const [cube, setCube] = useState<{ value: number; owner: Player | null }>(
     () => saved0?.cube ?? { value: 1, owner: null },
   )
-  // Renk/silme MODU YOK (sag paneldeki "Taş koy" bolumu kaldirildi): fare tusu belirler.
-  // Sol tik = beyaz, sag tik = siyah, PULUN UZERINE sag tik = o pulu sil.
+  // FARE: renk secimi YOK -> sol tik = beyaz, sag tik = siyah, pulun uzerine sag tik = sil.
+  // DOKUNMATIK: sag tik yok (uzun basma her cihazda guvenilir degil) -> renk secimi GERI
+  // geldi; secili renk dokunusla konur, silmek icin pula uzun bas (contextmenu).
+  const isTouch =
+    typeof window !== 'undefined' && !!window.matchMedia?.('(hover: none) and (pointer: coarse)').matches
+  const [touchColor, setTouchColor] = useState<Player>('white')
   // Oyun yonu: oyun ekranlariyla ORTAK ayar (localStorage) — burada degistirmek her yeri etkiler.
   const [boardDir, setBoardDir] = useBoardDir()
   // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir)
@@ -231,7 +235,7 @@ export default function PositionAnalyzer({
       return
     }
 
-    const color: Player = secondary ? 'black' : 'white'
+    const color: Player = secondary ? 'black' : isTouch ? touchColor : 'white'
     const sign = color === 'white' ? 1 : -1
     const cur = pts[idx]
     const mine = sign > 0 ? Math.max(0, cur) : Math.max(0, -cur)
@@ -259,7 +263,7 @@ export default function PositionAnalyzer({
       setBar((b) => ({ ...b, [barColor]: Math.max(0, b[barColor] - 1) }))
       return
     }
-    const color: Player = secondary ? 'black' : 'white'
+    const color: Player = secondary ? 'black' : isTouch ? touchColor : 'white'
     if (atLimit(color)) return warnLimit() // 15 pul siniri
     setBar((b) => ({ ...b, [color]: b[color] + 1 }))
   }
@@ -325,6 +329,21 @@ export default function PositionAnalyzer({
     if (slot?.dataset.slot === 'bar') return { type: 'bar' }
     if (slot?.dataset.slot === 'off') return { type: 'off' }
     return null
+  }
+
+  // "Asagi cek -> sil" jesti: o hanenin TUM pullarini kaldirir (bar'da cekilen rengi).
+  function clearFrom(from: DragFrom, color: Player) {
+    setResult(null)
+    if (from.type === 'bar') {
+      setBar((b) => ({ ...b, [color]: 0 }))
+      return
+    }
+    setPts((p) => {
+      if (p[from.idx] === 0) return p
+      const n = p.slice()
+      n[from.idx] = 0
+      return n
+    })
   }
 
   function performMove(color: Player, from: DragFrom, to: DropLoc) {
@@ -394,7 +413,18 @@ export default function PositionAnalyzer({
       if (d?.ghost) d.ghost.remove()
       if (d?.moved) {
         justDraggedRef.current = true // sonraki click'i (tas ekleme) bastir
-        performMove(d.color, d.from, locFromPoint(ev.clientX, ev.clientY))
+        const to = locFromPoint(ev.clientX, ev.clientY)
+        // ASAGI CEKME = SIL: pulu tutup asagi dogru cekip birakirsan o hanedeki pullar
+        // silinir. Yalniz gecerli bir hedefe BIRAKILMADIYSA (bosluk ya da ayni hane)
+        // gecerlidir -> normal hamle (or. ust haneden alt haneye tasima) BOZULMAZ.
+        const dy = ev.clientY - d.y0
+        const dx = Math.abs(ev.clientX - d.x0)
+        const nowhere =
+          !to ||
+          (to.type === 'point' && d.from.type === 'point' && to.idx === d.from.idx) ||
+          (to.type === 'bar' && d.from.type === 'bar')
+        if (nowhere && dy >= 24 && dy >= dx) clearFrom(d.from, d.color)
+        else performMove(d.color, d.from, to)
       }
     }
     window.addEventListener('pointermove', onMove)
@@ -640,7 +670,24 @@ export default function PositionAnalyzer({
               15'lik pul sayaci + kisa kullanim notu. */}
           <div className="setup-row">
             <div className="setup-label">{t('pa.checkers')}</div>
-            <div className="pa-edit-help">{t('pa.editHelp')}</div>
+            {/* Renk secimi YALNIZ dokunmatikte: parmakla "sag tik" yok, secili renk konur. */}
+            {isTouch && (
+              <div className="menu-targets">
+                <Button
+                  variant={touchColor === 'white' ? 'secondary' : 'ghost'}
+                  onClick={() => setTouchColor('white')}
+                >
+                  <Swatch color="white" /> {t('pa.white')}
+                </Button>
+                <Button
+                  variant={touchColor === 'black' ? 'secondary' : 'ghost'}
+                  onClick={() => setTouchColor('black')}
+                >
+                  <Swatch color="black" /> {t('pa.black')}
+                </Button>
+              </div>
+            )}
+            <div className="pa-edit-help">{t(isTouch ? 'pa.editHelpTouch' : 'pa.editHelp')}</div>
             <div className="pa-count">
               <span className={whiteCount >= MAX_CHECKERS ? 'full' : ''}>
                 <Swatch color="white" /> {whiteCount}/{MAX_CHECKERS}
