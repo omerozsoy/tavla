@@ -186,19 +186,56 @@ export default function PositionAnalyzer({
     limitTimer.current = setTimeout(() => setLimitMsg(false), 2600)
   }
 
+  // Tiklanan noktada farenin hangi "kat"a denk geldigi. 3. kat hizasinda tiklamak
+  // = 3 pul. maxSlots ucgene sigan gorunur kat sayisi (tipik 5): dolu yiginin
+  // tepesine tiklamak 6+ pul dizebilmek icin +1 ekler.
+  type SlotHit = { slot: number; maxSlots: number }
+  const pendingSlotRef = useRef<SlotHit | null>(null)
+
+  function slotFromPointEl(el: HTMLElement, clientY: number): SlotHit {
+    const rect = el.getBoundingClientRect()
+    const cssChk = parseFloat(getComputedStyle(el).getPropertyValue('--checker'))
+    const measured = (el.querySelector('.checker') as HTMLElement | null)?.getBoundingClientRect().height ?? 0
+    const chk = cssChk > 0 ? cssChk : measured > 0 ? measured : rect.height / 5.5
+    const PAD = 2 // .checkers padding-top / padding-bottom
+    // Ust noktalar yukaridan, alt noktalar asagidan yigilir.
+    const dist = el.classList.contains('bottom') ? rect.bottom - clientY : clientY - rect.top
+    const maxSlots = Math.max(1, Math.floor((rect.height - PAD) / chk))
+    const slot = Math.ceil((dist - PAD) / chk)
+    return { slot: Math.min(maxSlots, Math.max(1, slot)), maxSlots }
+  }
+
   function editPoint(idx: number) {
-    if (editMode === 'add' && atLimit(placeColor)) return warnLimit() // 15 pul siniri
+    const hit = pendingSlotRef.current
+    pendingSlotRef.current = null
+
+    if (editMode === 'remove') {
+      setResult(null)
+      setPts((p) => {
+        const n = p.slice()
+        const cur = n[idx]
+        n[idx] = cur > 0 ? cur - 1 : cur < 0 ? cur + 1 : 0
+        return n
+      })
+      return
+    }
+
+    const sign = placeColor === 'white' ? 1 : -1
+    const cur = pts[idx]
+    const mine = sign > 0 ? Math.max(0, cur) : Math.max(0, -cur)
+    // Fare yuksekligine kadar doldur (yigin gorunur kat sayisini doldurmussa +1 ekle).
+    const atTop = !!hit && hit.slot >= hit.maxSlots && mine >= hit.maxSlots
+    let want = hit && !atTop ? hit.slot : mine + 1
+    const room = MAX_CHECKERS - ((placeColor === 'white' ? whiteCount : blackCount) - mine) // 15 pul siniri
+    if (want > room) {
+      want = room
+      warnLimit()
+    }
+    if (want === mine) return
     setResult(null)
     setPts((p) => {
       const n = p.slice()
-      const cur = n[idx]
-      if (editMode === 'remove') {
-        n[idx] = cur > 0 ? cur - 1 : cur < 0 ? cur + 1 : 0
-      } else if (placeColor === 'white') {
-        n[idx] = cur >= 0 ? cur + 1 : 1
-      } else {
-        n[idx] = cur <= 0 ? cur - 1 : -1
-      }
+      n[idx] = sign * want
       return n
     })
   }
@@ -319,6 +356,7 @@ export default function PositionAnalyzer({
     if (justDraggedRef.current) {
       e.stopPropagation()
       justDraggedRef.current = false
+      pendingSlotRef.current = null
       return
     }
     // Onizleme acikken tahtanin HERHANGI yerine dokunmak duzenlemeye geri doner (toast bunu
@@ -327,7 +365,13 @@ export default function PositionAnalyzer({
     if (previewIdx != null) {
       e.stopPropagation()
       setPreviewIdx(null)
+      pendingSlotRef.current = null
+      return
     }
+    // Board onSelectFrom(index) event tasimadigi icin klik yuksekligini burada
+    // (capture fazi, Point onClick'ten once) yakalayip editPoint'e birakiyoruz.
+    const ptEl = (e.target as HTMLElement).closest('.point[data-point]') as HTMLElement | null
+    pendingSlotRef.current = ptEl ? slotFromPointEl(ptEl, e.clientY) : null
   }
 
   async function analyze() {
