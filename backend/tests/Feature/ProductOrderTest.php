@@ -19,10 +19,12 @@ class ProductOrderTest extends TestCase
 
     private function product(array $attrs = []): Product
     {
+        $cat = \App\Models\ProductCategory::firstOrCreate(['slug' => 'tavla'], ['name' => 'Tavla']);
+
         return Product::create(array_merge([
             'name'         => 'Ceviz Tavla',
             'slug'         => 'ceviz-tavla-'.uniqid(),
-            'category'     => 'tavla',
+            'category_id'  => $cat->id,
             'payment_type' => 'both',
             'coin_price'   => 300,
             'money_price'  => 150000, // 1500 TL (kurus)
@@ -51,6 +53,8 @@ class ProductOrderTest extends TestCase
         $res = $this->getJson('/api/products')->assertOk()->json('products');
         $this->assertCount(1, $res);
         $this->assertSame('Ceviz Tavla', $res[0]['name']);
+        $this->assertSame('tavla', $res[0]['category']);
+        $this->assertSame('Tavla', $res[0]['category_name']);
     }
 
     public function test_coin_order_deducts_coins_and_stock_and_is_paid(): void

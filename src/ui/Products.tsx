@@ -44,14 +44,19 @@ export default function Products({
       .catch(() => setError(true))
   }, [])
 
-  const catLabel = (c: string) => t(`products.category.${c}`)
-
-  // Sadece urunlerde MEVCUT kategoriler (katalog sirasi korunur) -> filtre cubugu.
+  // Kategori adlari panelden gelir (dinamik) -> slug -> ad haritasi + mevcut kategoriler.
+  // slug null olan urunleri "diger" altina toplama; sadece kategorisi olanlari filtrele.
   const cats = useMemo(() => {
     const seen: string[] = []
-    for (const p of products ?? []) if (!seen.includes(p.category)) seen.push(p.category)
+    for (const p of products ?? []) if (p.category && !seen.includes(p.category)) seen.push(p.category)
     return seen
   }, [products])
+  const catNames = useMemo(() => {
+    const m: Record<string, string> = {}
+    for (const p of products ?? []) if (p.category) m[p.category] = p.category_name || p.category
+    return m
+  }, [products])
+  const catLabel = (c: string) => catNames[c] ?? c
   const visible = useMemo(
     () => (products ?? []).filter((p) => cat === 'all' || p.category === cat),
     [products, cat],
@@ -118,7 +123,7 @@ export default function Products({
                       {out && <span className="product-out">{t('products.soldOut')}</span>}
                     </div>
                     <div className="product-info">
-                      <span className="product-cat">{catLabel(p.category)}</span>
+                      <span className="product-cat">{p.category_name ?? ''}</span>
                       <span className="product-name">{p.name}</span>
                       <span className="product-price">
                         {p.money_price != null && <span>{fmtTL(p.money_price)}</span>}
@@ -256,7 +261,7 @@ function ProductDetail({
         </div>
 
         <div className="product-detail-info">
-          <span className="product-cat">{t(`products.category.${product.category}`)}</span>
+          <span className="product-cat">{product.category_name ?? ''}</span>
           <h2>{product.name}</h2>
           {product.description && <p className="product-desc">{product.description}</p>}
 
