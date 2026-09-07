@@ -8,7 +8,7 @@ class Payment extends Model
 {
     protected $fillable = [
         'user_id', 'kind', 'order_id', 'plan', 'period', 'amount', 'coins', 'package_id', 'currency', 'status', 'bank_msg',
-        'discount_code', 'discount_kurus',
+        'discount_code', 'discount_kurus', 'product_order_id',
     ];
 
     public function user()

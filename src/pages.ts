@@ -39,12 +39,14 @@ export const PAGES: PageDef[] = [
 
   // --- Hesap ---
   { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
+  { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user' },
 
   // --- Bilgi / icerik (herkese acik) ---
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
   { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
   { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'content', hideInGame: true },
+  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'shop', group: 'content', hideInGame: true },
 
   // --- Araclar ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },

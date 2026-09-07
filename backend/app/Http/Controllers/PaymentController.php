@@ -143,6 +143,32 @@ class PaymentController extends Controller
         ]);
     }
 
+    // kind='product' odemesi basariliysa bagli siparisi 'paid' yap + stok dus (idempotent:
+    // yalniz 'pending' siparis islenir). ATOMIK claim'in ICINDE cagrilir (tek kez). Stok
+    // arada tukendiyse siparis yine 'paid' olur (para alindi) ama admin notu dusulur.
+    private function fulfillProductOrder(Payment $payment): void
+    {
+        if (! $payment->product_order_id) {
+            return;
+        }
+        $order = \App\Models\ProductOrder::where('id', $payment->product_order_id)
+            ->where('status', 'pending')
+            ->first();
+        if (! $order) {
+            return;
+        }
+        $order->status = 'paid';
+        if ($order->product_id) {
+            $dec = \App\Models\Product::where('id', $order->product_id)
+                ->where('stock', '>=', $order->qty)
+                ->decrement('stock', $order->qty);
+            if (! $dec) {
+                $order->admin_note = trim(($order->admin_note ?? '')."\n[sistem] Ödeme alındı ancak stok yetersizdi; stok elle kontrol edilmeli.");
+            }
+        }
+        $order->save();
+    }
+
     // Uyeligi aktive et / UZAT. kind='renew' -> mevcut bitis tarihi gelecekteyse USTUNE ekle
     // (sure kaybi olmaz); dolmus/bos ise bugunden baslat. kind='subscription' -> ayni davranis
     // (ilk abonelikte plan_until bos oldugundan bugunden baslar). ATOMIK caginin ICINDE cagrilir.
@@ -279,15 +305,16 @@ class PaymentController extends Controller
                 if (! empty($payment->discount_code)) {
                     \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
                 }
+            } elseif ($payment->kind === 'product') {
+                // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
+                $this->fulfillProductOrder($payment);
             } else {
                 // 'subscription' (etkinlestir) veya 'renew' (uzat) — ikisi de plan_until'i buradan yonetir.
                 $this->activateMembership($u, $payment);
             }
         }
 
-        $okMsg = $payment->kind === 'coins'
-            ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
-            : ($payment->kind === 'renew' ? 'Üyeliğin uzatıldı.' : 'Üyeliğin etkinleştirildi.');
+        $okMsg = $this->fulfillMessage($payment);
 
         return view('pay.result', [
             'ok'    => true,
@@ -353,6 +380,9 @@ class PaymentController extends Controller
                         if (! empty($payment->discount_code)) {
                             \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
                         }
+                    } elseif ($payment->kind === 'product') {
+                        // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
+                        $this->fulfillProductOrder($payment);
                     } else {
                         // Uyelik: 'subscription' -> aktive et, 'renew' -> mevcut bitise +sure EKLE.
                         $this->activateMembership($u, $payment);
@@ -365,10 +395,19 @@ class PaymentController extends Controller
             }
         }
 
-        $okMsg = $payment && $payment->kind === 'coins'
-            ? number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.'
-            : ($payment && $payment->kind === 'renew' ? 'Üyeliğin uzatıldı.' : 'Üyeliğin etkinleştirildi.');
+        $okMsg = $payment ? $this->fulfillMessage($payment) : 'İşlem tamamlandı.';
 
         return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg'], 'okMsg' => $okMsg]);
+    }
+
+    // Odeme turune gore basari mesaji.
+    private function fulfillMessage(Payment $payment): string
+    {
+        return match ($payment->kind) {
+            'coins'   => number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.',
+            'product' => 'Siparişin alındı. Kargo süreci başlayınca bilgilendirileceksin.',
+            'renew'   => 'Üyeliğin uzatıldı.',
+            default   => 'Üyeliğin etkinleştirildi.',
+        };
     }
 }
