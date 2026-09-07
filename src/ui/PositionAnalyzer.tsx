@@ -135,8 +135,9 @@ export default function PositionAnalyzer({
   )
   const [placeColor, setPlaceColor] = useState<Player>('white')
   const [editMode, setEditMode] = useState<'add' | 'remove'>('add')
-  const [d1, setD1] = useState(0) // 0 = zar yok
-  const [d2, setD2] = useState(0)
+  // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir)
+  const [d1, setD1] = useState(1)
+  const [d2, setD2] = useState(1)
   const [matchLen, setMatchLen] = useState(0) // 0 = para oyunu; 1,3,5,7,9,11
   const [scoreW, setScoreW] = useState(0)
   const [scoreB, setScoreB] = useState(0)
