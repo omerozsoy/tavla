@@ -18381,13 +18381,16 @@ select:-webkit-autofill {
   .register-card.profile-form {
     padding: 20px 18px;
   }
-  /* Giris | Kayit yan yana -> mobilde alt alta (tek kolon), ayirici cizgi yatay */
-  .auth-cols {
+  /* Giris | Kayit yan yana -> mobilde alt alta (tek kolon), ayirici cizgi yatay.
+     ONEMLI: base `.auth-cols{1fr 1fr}` bu media'DAN SONRA tanimli + ayni ozgullukte ->
+     kaynak sirasi geregi mobilde bile 2 kolon kaziniyordu (giris formu mobilde bozuktu).
+     Ozgullugu `.auth-card` ile yukselt (0,2,0 > 0,1,0) ki mobil kural KESIN kazansin. */
+  .auth-card .auth-cols {
     grid-template-columns: 1fr;
     gap: 20px;
   }
   /* Mobilde tek kolon -> dikey ortadan ayirici gizle; yerine yatay ayirici */
-  .auth-cols::before {
+  .auth-card .auth-cols::before {
     display: none;
   }
   .auth-col + .auth-col {
