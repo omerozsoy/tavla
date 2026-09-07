@@ -1522,6 +1522,27 @@ class RoomController extends Controller
                 ]);
             }
 
+            // AÇILIŞ ZATEN YAPILDI ama HENÜZ OYNANMADI (turns=0 + zar duruyor): İKİNCİ çağırana
+            // da açılışı AYNEN döndür (starter + zar). Aksi halde açılış yarışını kaybeden taraf
+            // 409/reused alıp poll'a kalıyordu; poll'un TEK bir apply'ı kaçırması (sürüm
+            // muhasebesi/istisna/yarış) o istemciyi "Açılış zarı atılıyor…" ekranında KALICI
+            // olarak kilitliyordu (yaşanan canlı bug). Zar ÜRETİLMEZ -> idempotent ve adil.
+            // GÜVENLİK: yalnız TAHTA HENÜZ BAŞLANGIÇ KONUMUNDAYKEN (hiçbir taş oynanmamış).
+            // 'turns' alanı olmayan ESKİ odalarda (?? 0) bu dal oyun ortasında tetiklenip
+            // istemciye taze tahta kurdurabilirdi -> konum kaybı. Konum kontrolü bunu keser.
+            $fresh = \App\Support\Backgammon::initialState()['points'];
+            if ((int) ($sm['turns'] ?? 0) === 0 && ! empty($state['dice'])
+                && ($state['points'] ?? null) === $fresh) {
+                return response()->json([
+                    'dice' => $state['dice'],
+                    'starter' => $state['turn'] ?? 'white',
+                    'opening' => true,
+                    'commit' => $room->dice_commit,
+                    'version' => (int) $room->server_version,
+                    'reused' => true,
+                ]);
+            }
+
             // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);

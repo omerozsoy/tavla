@@ -23,6 +23,8 @@ export interface ServerSyncView {
   authoritative?: boolean
   server_state?: { turn?: Player; dice?: number[] } | null
   server_version?: number
+  // Açılış kalkanı (openingNeedsResync) için: sunucuda bu oyunun açılış eli atıldı mı.
+  server_match?: { opened?: boolean; done?: boolean } | null
 }
 
 /**
@@ -129,6 +131,24 @@ export function serverMatchToLocal(sm: ServerMatchView, prevTarget: number): Loc
 export function openingStateFromMatch(sm: ServerMatchView): 'roll' | null | 'keep' {
   if (sm.done) return 'keep'
   return sm.opened === false ? 'roll' : null
+}
+
+/**
+ * "Açılış zarı atılıyor…" KALKANI: istemci hâlâ açılış overlay'inde ama SUNUCUDA oyun ZATEN
+ * açılmışsa (opened=true ya da server_state'te zar var) otoriter durum KOŞULSUZ uygulanmalıdır.
+ *
+ * NEDEN: açılışı sunucuda ilk tetikleyen taraf yanıtı (opening+starter) uygular; DİĞER taraf
+ * reused/409 alıp poll'a bırakır. O poll tek bir muhasebe hatasında (surum ref'i ileride kalmis,
+ * apply sirasinda atilan bir istisna, applyServerBoard'i ezen bir yarış) BİR DAHA uygulanmaz ve
+ * overlay SONSUZA KADAR kalır — rakip normal oynarken saat de akmaya devam eder (canli bug).
+ * Bu kalkan sebebi ne olursa olsun takılmayı en fazla bir poll (1.2sn) sürdürür: çağıran
+ * appliedServerVersion'i sıfırlar ve mid-move korumasını atlar (açılışta oynanan hamle YOKTUR).
+ */
+export function openingNeedsResync(showingOpening: boolean, rv: ServerSyncView): boolean {
+  if (!showingOpening) return false
+  if (!rv.authoritative || !rv.server_state) return false
+  if (rv.server_match?.done) return false // maç bitti -> açılış değil, sonuç ekranı
+  return rv.server_match?.opened === true || (rv.server_state.dice?.length ?? 0) > 0
 }
 
 /**
