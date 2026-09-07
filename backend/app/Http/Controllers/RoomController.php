@@ -1042,6 +1042,12 @@ class RoomController extends Controller
         if (! empty($clock['end'])) {
             return;
         }
+        // MAC BITTI -> saat DURUR. Aksi halde kazanan ilan edildikten sonra da her poll'da
+        // tick isliyor ve istemci sonuc ekraninin ARKASINDA akan bir sayac gosteriyordu.
+        $sm = is_array($room->server_match) ? $room->server_match : null;
+        if ($room->status === 'finished' || ($sm && ! empty($sm['done']))) {
+            return;
+        }
         $now = microtime(true);
         $changed = false;
         // Varlik damgasi: en fazla ~4sn'de bir yaz (poll her ~1.5sn; gereksiz DB yazma yok).
