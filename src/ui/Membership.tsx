@@ -5,6 +5,7 @@ import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
 import { startTrial, subscribe, type ServerUser } from '../api'
 import { Button } from '@/components/ui/button'
+import { useToast } from './Toast'
 
 export default function Membership({
   current,
@@ -20,6 +21,7 @@ export default function Membership({
   onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
 }) {
   const { t } = useT()
+  const notify = useToast()
   useEscape(onClose)
   const [yearly, setYearly] = useState(true)
   const [busy, setBusy] = useState<PlanId | null>(null)
@@ -34,7 +36,9 @@ export default function Membership({
       onClose()
     } catch (e) {
       const m = e as { message?: string }
-      setErr(m?.message || t('mem.err'))
+      const msg = m?.message || t('mem.err')
+      setErr(msg)
+      notify.error(msg)
     } finally {
       setBusy(null)
     }
@@ -48,7 +52,9 @@ export default function Membership({
       window.location.href = r.url // Garanti kart sayfasina yonlendir
     } catch (e) {
       const m = e as { message?: string }
-      setErr(m?.message || t('mem.err'))
+      const msg = m?.message || t('mem.err')
+      setErr(msg)
+      notify.error(msg)
       setBusy(null)
     }
   }

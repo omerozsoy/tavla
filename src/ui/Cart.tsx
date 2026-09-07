@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { COIN_PACKAGES } from '../coinPackages'
 import { validatePromo, type PromoResult } from '../api'
 import { Button } from '@/components/ui/button'
+import { useToast } from './Toast'
 
 // Sepet ogesi: coin paketi id + adet. kind='membership' -> "Üyeliğini Uzat" (1 yil premium).
 // Eski localStorage ogelerinde kind yok -> coin sayilir (geriye donuk uyum).
@@ -35,6 +36,7 @@ export default function Cart({
   onCheckout: (items: CartItem[], code?: string | null) => Promise<void> // "Ödemeye Geç" -> odeme sayfasi
 }) {
   useEscape(onClose)
+  const notify = useToast()
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   // Indirim kodu durumu (sunucu-otoriter dogrulama)
@@ -82,7 +84,9 @@ export default function Cart({
       setCode('')
     } catch (e) {
       setApplied(null)
-      setPromoErr((e as { message?: string })?.message || 'İndirim kodu geçersiz.')
+      const m = (e as { message?: string })?.message || 'İndirim kodu geçersiz.'
+      setPromoErr(m)
+      notify.error(m)
     } finally {
       setPromoBusy(false)
     }
@@ -96,7 +100,9 @@ export default function Cart({
       // App: uyelik ogesi varsa buyMembership, degilse buyCoins(items, code) -> odeme sayfasi
       await onCheckout(items, applied?.code ?? null)
     } catch (e) {
-      setErr((e as { message?: string })?.message || 'Ödeme başlatılamadı.')
+      const m = (e as { message?: string })?.message || 'Ödeme başlatılamadı.'
+      setErr(m)
+      notify.error(m)
       setBusy(false)
     }
   }
