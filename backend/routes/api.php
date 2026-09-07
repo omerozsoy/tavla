@@ -161,6 +161,15 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/admin/contents', [ContentController::class, 'store']);
         Route::put('/admin/contents/{content}', [ContentController::class, 'update']);
         Route::delete('/admin/contents/{content}', [ContentController::class, 'destroy']);
+
+        // Şans Çarkı yönetimi (Filament'e paralel REST). Yazımlar model event'i ile audit'lenir.
+        Route::get('/admin/lucky-wheel/rewards', [\App\Http\Controllers\LuckyWheelAdminController::class, 'rewards']);
+        Route::post('/admin/lucky-wheel/rewards', [\App\Http\Controllers\LuckyWheelAdminController::class, 'storeReward']);
+        Route::put('/admin/lucky-wheel/rewards/{reward}', [\App\Http\Controllers\LuckyWheelAdminController::class, 'updateReward']);
+        Route::delete('/admin/lucky-wheel/rewards/{reward}', [\App\Http\Controllers\LuckyWheelAdminController::class, 'destroyReward']);
+        Route::get('/admin/lucky-wheel/settings', [\App\Http\Controllers\LuckyWheelAdminController::class, 'getSettings']);
+        Route::put('/admin/lucky-wheel/settings', [\App\Http\Controllers\LuckyWheelAdminController::class, 'updateSettings']);
+        Route::post('/admin/lucky-wheel/reorder', [\App\Http\Controllers\LuckyWheelAdminController::class, 'reorder']);
     });
 
     Route::get('/shop', [ShopController::class, 'index']);
