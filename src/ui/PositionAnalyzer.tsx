@@ -319,6 +319,14 @@ export default function PositionAnalyzer({
     if (justDraggedRef.current) {
       e.stopPropagation()
       justDraggedRef.current = false
+      return
+    }
+    // Onizleme acikken tahtanin HERHANGI yerine dokunmak duzenlemeye geri doner (toast bunu
+    // vaat eder). Preview'de selectableFroms bos oldugundan Board onSelectFrom -> handleFrom
+    // tetiklenmiyordu; capture fazinda burada yakalayip preview'i kapatiyoruz.
+    if (previewIdx != null) {
+      e.stopPropagation()
+      setPreviewIdx(null)
     }
   }
 
@@ -802,7 +810,7 @@ export default function PositionAnalyzer({
                   <button
                     type="button"
                     key={`${i}-${r.label}`}
-                    className={`move-row ${i === 0 ? 'best' : ''} ${previewIdx === i ? 'sel' : ''}`}
+                    className={`move-row ${previewIdx === i ? 'sel' : ''}`}
                     onClick={() => setPreviewIdx((cur) => (cur === i ? null : i))}
                     title={t('pa.previewHint')}
                   >
