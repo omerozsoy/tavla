@@ -765,6 +765,12 @@ export default function App() {
         case 'magaza':
           setShopOpen(true)
           break
+        case 'uyelik':
+          // Uyelik modali (menu key 'membership' -> slug 'uyelik'). Dogrudan link/yenileme/
+          // geri tusuyla gelince de acilsin (aksi halde home'a dusuyordu). Modal user
+          // gerektirir; misafirde memOpen no-op olur (home gorunur).
+          setMemOpen(true)
+          break
         case 'sepet':
           setCartOpen(true)
           break
@@ -5500,7 +5506,8 @@ export default function App() {
             }
             premium={premium}
             onUpgrade={() => {
-              setAnalyzerOpen(false)
+              // Analyzer'i KAPATMA: uyelik modali ustune acilir, kapatilinca
+              // kullanici pozisyon-analizi sayfasinda kalir (ana sayfaya donmez).
               setMemOpen(true)
             }}
             onClose={() => setAnalyzerOpen(false)}

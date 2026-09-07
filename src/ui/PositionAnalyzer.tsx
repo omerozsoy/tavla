@@ -618,7 +618,6 @@ export default function PositionAnalyzer({
                 {!premium && <Icon name="crown" size={13} />} {t('pa.ply2')}
               </Button>
             </div>
-            <div className="pa-depth-note">{ply === 2 ? t('pa.ply2Note') : t('pa.ply1Note')}</div>
           </div>
 
           <div className="setup-row">
