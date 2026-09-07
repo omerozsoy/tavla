@@ -69,7 +69,7 @@ class AppServiceProvider extends ServiceProvider
         ResetPassword::createUrlUsing(function ($notifiable, string $token) {
             $base = rtrim((string) config('app.frontend_url', 'https://tavlai.com'), '/');
             $email = urlencode($notifiable->getEmailForPasswordReset());
-            return "{$base}/?action=reset&token={$token}&email={$email}";
+            return "{$base}/sifre-sifirla?token={$token}&email={$email}";
         });
 
         // E-posta dogrulama e-postasi: markali HTML sablon (logo + terracotta)
@@ -89,7 +89,7 @@ class AppServiceProvider extends ServiceProvider
         ResetPassword::toMailUsing(function ($notifiable, string $token) {
             $base = rtrim((string) config('app.frontend_url', 'https://tavlai.com'), '/');
             $email = urlencode($notifiable->getEmailForPasswordReset());
-            $url = "{$base}/?action=reset&token={$token}&email={$email}";
+            $url = "{$base}/sifre-sifirla?token={$token}&email={$email}";
 
             return (new MailMessage)
                 ->subject('TavlaTV — Şifre Sıfırlama')
