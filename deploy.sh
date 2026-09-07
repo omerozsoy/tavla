@@ -48,9 +48,23 @@ for SVC in plesk-php8.2-fpm plesk-php82-fpm php8.2-fpm php-fpm; do
   fi
 done
 # cachetool varsa (yetkiye gerek yok, FPM socket uzerinden) opcache'i sifirla.
+# Socket adi Plesk/dagitim arasinda degisebilir -> yaygin yollari sirayla dene,
+# ilki tutunca dur. (cachetool.phar repoda commit'li; PHP 8.2+ gerekir.)
 if [ -f cachetool.phar ]; then
-  $PHP cachetool.phar opcache:reset --fcgi=/var/run/plesk-php82-fpm.sock 2>/dev/null \
-    && echo "OPcache: cachetool ile sifirlandi." || true
+  CT_OK=0
+  for SOCK in \
+    /var/run/plesk-php82-fpm.sock \
+    /run/plesk-php82-fpm.sock \
+    /var/run/php-fpm/plesk-php82-fpm.sock \
+    /run/php-fpm/plesk-php82-fpm.sock \
+    /var/run/php/php8.2-fpm.sock; do
+    if [ -S "$SOCK" ] && $PHP cachetool.phar opcache:reset --fcgi="$SOCK" 2>/dev/null; then
+      echo "OPcache: cachetool ile sifirlandi ($SOCK)."
+      CT_OK=1
+      break
+    fi
+  done
+  [ "$CT_OK" = 1 ] || echo "UYARI: cachetool opcache:reset socket bulamadi -> gerekirse Plesk'ten FPM restart."
 fi
 # -----------------------------------------------------------------------------
 
