@@ -19569,3 +19569,26 @@ select:-webkit-autofill {
   font-size: 0.8rem;
   line-height: 1.45;
 }
+
+/* Pozisyon analizi: kup artik TAHTADAN ayarlanir (sag paneldeki deger/sahiplik
+   butonlari kalkti) -> kup tiklanabilir gorunsun, panelde yalniz durum yazisi kalsin. */
+.analyzer-board .cube {
+  cursor: pointer;
+}
+.pa-cube-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.pa-cube-state > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+}
