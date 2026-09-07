@@ -3,7 +3,6 @@ import type { GameState } from './types'
 import { WHITE, BLACK, gameOutcome } from './board'
 import {
   canDouble,
-  isCubeDead,
   matchWinner,
   newMatch,
   scoreGame,
@@ -99,10 +98,8 @@ describe('Crawford kurali', () => {
     // Geride olan (siyah, 5 puan uzakta) kupu teklif edebilir; kup geri geldi.
     expect(canDouble(m, 'black', false)).toBe(true)
     // 1 puan kala olan (beyaz) icin kup OLU ama teklif ENGELLENMEZ (gercek tavla: legal,
-    // sadece anlamsiz). isCubeDead bunu isaretler.
+    // sadece anlamsiz).
     expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(isCubeDead(m, WHITE)).toBe(true)
-    expect(isCubeDead(m, 'black')).toBe(false)
   })
 
   it('Crawford oyununda kup teklif edilemez', () => {
@@ -123,7 +120,6 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
   it('olu kup ARTIK engel degil -> katla cikar, otomatik atmaz', () => {
     // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> olu kup ama teklif LEGAL (kullanici direktifi)
     const m = { ...newMatch(3), score: { white: 2, black: 0 } }
-    expect(isCubeDead(m, WHITE)).toBe(true)
     expect(canDouble(m, WHITE, false)).toBe(true)
     expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
   })
