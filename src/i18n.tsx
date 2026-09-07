@@ -1072,7 +1072,7 @@ const TR: Dict = {
   'mp.roomNotFound': 'Oda bulunamadı.',
   'mp.roomFull': 'Oda dolu.',
   'mp.connError': 'Sunucuya ulaşılamadı.',
-  'mp.loginRequired': 'Online maç için önce giriş yapmalısın.',
+  'mp.loginRequired': 'Online maçlara katılmak için lütfen giriş yapın.',
   'chat.title': 'Sohbet',
   'chat.placeholder': 'Mesaj yaz…',
   'chat.premium': 'Yazılı sohbet premium — Yükselt',
