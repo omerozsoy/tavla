@@ -113,15 +113,15 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
 
   it('1 puanlik oyunda kup yok -> her zaman otomatik atar', () => {
     const m = newMatch(1)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
-    expect(shouldAutoRoll(m, BLACK, turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed)).toBe(true)
   })
 
   it('olu kup ARTIK engel degil -> katla cikar, otomatik atmaz', () => {
     // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> olu kup ama teklif LEGAL (kullanici direktifi)
     const m = { ...newMatch(3), score: { white: 2, black: 0 } }
     expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
   })
 
   it('5 puanlik macta kup 4 bende, skor 1-0 -> KATLA cikar (eski olu-kup hatasi)', () => {
@@ -131,39 +131,35 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
       cube: { value: 4, owner: 'white' as const },
     }
     expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
   })
 
   it('Crawford oyununda kup yok -> otomatik atar', () => {
     const m = { ...newMatch(5), isCrawford: true }
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
   })
 
   it('rakip kupu tutuyorsa teklif edemem -> otomatik atar', () => {
     const m = { ...newMatch(7), cube: { value: 2, owner: 'black' as const } }
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
     // Kup sahibi (siyah) hala teklif edebilir -> beklenir (otomatik atmaz)
-    expect(shouldAutoRoll(m, BLACK, turnsPlayed, false)).toBe(false)
+    expect(shouldAutoRoll(m, BLACK, turnsPlayed)).toBe(false)
   })
 
   it('kup 64 tavanda -> otomatik atar', () => {
     const m = { ...newMatch(128), cube: { value: 64, owner: null } }
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
   })
 
   it('ilk elde (turnsPlayed=0) kup yok -> otomatik atar', () => {
     const m = newMatch(7)
-    expect(shouldAutoRoll(m, WHITE, 0, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, 0)).toBe(true)
   })
 
-  it('kup teklif edilebilirken autoRoll KAPALI -> beklenir (buton)', () => {
+  it('kup teklif edilebilirken beklenir (Zar At / Katla butonu cikar)', () => {
     const m = newMatch(7)
     expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
   })
 
-  it('kup teklif edilebilirken autoRoll ACIK -> otomatik atar', () => {
-    const m = newMatch(7)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, true)).toBe(true)
-  })
 })

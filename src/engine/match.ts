@@ -40,16 +40,12 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
 }
 
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
-// Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip kupu
-// tutuyor veya ilk el) beklemenin anlami yok -> autoRoll ayari kapali olsa bile
-// otomatik at. Kup karari verilebilecekse yalnizca autoRoll acikken otomatik at.
-export function shouldAutoRoll(
-  m: MatchState,
-  turn: Player,
-  turnsPlayed: number,
-  autoRoll: boolean,
-): boolean {
-  if (autoRoll) return true
+// Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyor veya
+// ilk el) beklemenin anlami yok -> otomatik at.
+export function shouldAutoRoll(m: MatchState, turn: Player, turnsPlayed: number): boolean {
+  // "Otomatik zar" AYARI KALDIRILDI (kullanici direktifi): zar yalnizca kup teklif etme
+  // secenegi YOKKEN otomatik atilir. Teklif mumkunse oyuncu "Zar At"/"Katla" arasinda
+  // secim yapabilsin diye beklenir.
   const canOfferCube = turnsPlayed > 0 && canDouble(m, turn, false)
   return !canOfferCube
 }
