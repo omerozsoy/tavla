@@ -614,7 +614,9 @@ export default function App() {
             : blunderOpen
               ? 'hata-gunlugu'
               : matchHistOpen
-                ? 'mac-analizleri'
+                ? matchHistInitialId != null
+                  ? 'mac-analizleri/' + matchHistInitialId
+                  : 'mac-analizleri'
               : frameAnimOpen
                 ? 'cerceve-anim'
               : gamePreviewOpen
@@ -800,9 +802,14 @@ export default function App() {
         case 'hata-gunlugu':
           setBlunderOpen(true)
           break
-        case 'mac-analizleri':
+        case 'mac-analizleri': {
+          // /mac-analizleri/<id> -> o macin raporunu otomatik ac (paylasilabilir link).
+          // MatchAnalytics initialMatchId ile o maci bulup rapor/detayi acar.
+          const mid = /^\d+$/.test(seg[1] || '') ? parseInt(seg[1], 10) : null
+          setMatchHistInitialId(mid)
           setMatchHistOpen(true)
           break
+        }
         case 'cerceve-anim':
           setFrameAnimOpen(true)
           break
@@ -4977,6 +4984,7 @@ export default function App() {
     setMessagesFocusId(null)
     setBlunderOpen(false)
     setMatchHistOpen(false)
+    setMatchHistInitialId(null) // /mac-analizleri/<id> deep-link: bayat id menuden acmayi bozmasin
     setFrameAnimOpen(false)
     setGamePreviewOpen(false)
     setFairOpen(false)
