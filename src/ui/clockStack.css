@@ -58,3 +58,41 @@
   background: color-mix(in srgb, var(--cube-text, #000) 14%, transparent);
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cube-text, #000) 22%, transparent);
 }
+
+/* --- Portre mobil: dikey saat kulesi (skor/saat/skor) board'u ekran altina itiyordu
+   (14pro'da board top~566, bottom fold-altinda). Yatay KOMPAKT seride topla -> saat ~350px
+   yerine ~56px olur, board yukari gelip ekrana tam sigar. YALNIZ PORTRE: yatayda (landscape)
+   saat board yaninda dar dikey kolon olarak DOGRU kalir. Ozgulluk icin .game-area ile sar. --- */
+@media (max-width: 900px) and (orientation: portrait) {
+  .game-area .clock-stack {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex-wrap: nowrap;
+  }
+  .game-area .clock-stack .clock-off {
+    font-size: 1.45rem;
+    min-width: 0;
+    padding: 8px 14px;
+    flex: 0 0 auto;
+  }
+  .game-area .clock-group {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    min-width: 0;
+    flex: 0 1 auto;
+  }
+  .game-area .clock-bank {
+    font-size: 1.05rem;
+    padding: 5px 9px;
+  }
+  .game-area .clock-move {
+    font-size: 1.15rem;
+    padding: 5px 11px;
+    min-width: 40px;
+  }
+}
