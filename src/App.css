@@ -18508,6 +18508,15 @@ select:-webkit-autofill {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 16px;
 }
+/* shadcn <Label> (data-slot=label) `items-center` + `.register-card label{flex-direction:column}`
+   birlesince kayit/profil etiketleri YATAY ORTALANIYORDU (Ad/Soyad/E-posta ortada, giris
+   kolonu etiketleri solda -> tutarsiz gorunum). Yalniz STANDALONE shadcn etiketlerini sola
+   hizala; input SARAN dogal <label>'lara (giris kolonu) DOKUNMA (orada flex-start input'u
+   daraltirdi). */
+.register-card label[data-slot='label'] {
+  align-items: flex-start;
+  text-align: left;
+}
 /* reg-grid icindeki E-posta ve Takma ad tam satir istemez; ikili kalir.
    Sifre + baslangic seviyesi (rating) grid DISINDA, dogal tam genislik. */
 
