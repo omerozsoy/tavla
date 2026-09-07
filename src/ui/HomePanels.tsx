@@ -23,13 +23,14 @@ const LIVE_CAT_KEY: Record<LiveCat, string> = {
 }
 
 // ---- Ozellik vitrini (yalniz misafirlere): urunun ne sundugunu tanitir ----
-const FEATURES: { icon: IconName; key: string }[] = [
-  { icon: 'robot', key: 'ai' },
-  { icon: 'users', key: 'online' },
-  { icon: 'medal', key: 'tourn' },
-  { icon: 'chart', key: 'rating' },
-  { icon: 'star', key: 'themes' },
-  { icon: 'graduation', key: 'learn' },
+// title/desc dogrudan i18n anahtari; 2-6. kartlar info.feat.* ile ORTAK (8 dilde hazir).
+const FEATURES: { icon: IconName; t: string; d: string }[] = [
+  { icon: 'medal', t: 'menu.tournaments', d: 'home.feat.tourn.d' },
+  { icon: 'gift', t: 'info.feat.1.t', d: 'info.feat.1.d' },
+  { icon: 'robot', t: 'info.feat.2.t', d: 'info.feat.2.d' },
+  { icon: 'users', t: 'info.feat.3.t', d: 'info.feat.3.d' },
+  { icon: 'chart', t: 'info.feat.7.t', d: 'info.feat.7.d' },
+  { icon: 'shield-check', t: 'info.feat.10.t', d: 'info.feat.10.d' },
 ]
 
 // ---- Uye panosu (giris yapmis kullaniciya): tek bakista durum + hizli erisim ----
@@ -99,12 +100,12 @@ export function HomeFeatures() {
       </header>
       <div className="hf-grid">
         {FEATURES.map((f, i) => (
-          <div className="hf-card" key={f.key}>
+          <div className="hf-card" key={f.t}>
             <span className={`hf-icon hf-icon-${['navy', 'coral', 'orange'][i % 3]}`} aria-hidden="true">
               <Icon name={f.icon} size={22} />
             </span>
-            <h3 className="hf-card-title">{t(`home.feat.${f.key}.t`)}</h3>
-            <p className="hf-card-desc">{t(`home.feat.${f.key}.d`)}</p>
+            <h3 className="hf-card-title">{t(f.t)}</h3>
+            <p className="hf-card-desc">{t(f.d)}</p>
           </div>
         ))}
       </div>

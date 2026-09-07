@@ -6238,6 +6238,7 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
+            {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
               <div className="home-cal-main">
@@ -6265,7 +6266,6 @@ export default function App() {
                 onInvite={user ? handleInviteFriend : undefined}
               />
             </div>
-            {!user && <HomeFeatures />}
             <AdStrip slot="bottom" />
             </>
             )}
