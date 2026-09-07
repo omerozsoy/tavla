@@ -3,6 +3,7 @@ import type { GameState } from './types'
 import { WHITE, BLACK, gameOutcome } from './board'
 import {
   canDouble,
+  isCubeDead,
   matchWinner,
   newMatch,
   scoreGame,
@@ -97,8 +98,11 @@ describe('Crawford kurali', () => {
     expect(m.crawfordDone).toBe(true)
     // Geride olan (siyah, 5 puan uzakta) kupu teklif edebilir; kup geri geldi.
     expect(canDouble(m, 'black', false)).toBe(true)
-    // 1 puan kala olan (beyaz) icin kup oludur -> teklif edemez.
-    expect(canDouble(m, WHITE, false)).toBe(false)
+    // 1 puan kala olan (beyaz) icin kup OLU ama teklif ENGELLENMEZ (gercek tavla: legal,
+    // sadece anlamsiz). isCubeDead bunu isaretler.
+    expect(canDouble(m, WHITE, false)).toBe(true)
+    expect(isCubeDead(m, WHITE)).toBe(true)
+    expect(isCubeDead(m, 'black')).toBe(false)
   })
 
   it('Crawford oyununda kup teklif edilemez', () => {
@@ -116,11 +120,22 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
     expect(shouldAutoRoll(m, BLACK, turnsPlayed, false)).toBe(true)
   })
 
-  it('olu kup (kup >= hedefe kalan) -> otomatik atar', () => {
-    // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> katlamak maci gecer, olu kup
+  it('olu kup ARTIK engel degil -> katla cikar, otomatik atmaz', () => {
+    // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> olu kup ama teklif LEGAL (kullanici direktifi)
     const m = { ...newMatch(3), score: { white: 2, black: 0 } }
-    expect(canDouble(m, WHITE, false)).toBe(false)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(true)
+    expect(isCubeDead(m, WHITE)).toBe(true)
+    expect(canDouble(m, WHITE, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
+  })
+
+  it('5 puanlik macta kup 4 bende, skor 1-0 -> KATLA cikar (eski olu-kup hatasi)', () => {
+    const m = {
+      ...newMatch(5),
+      score: { white: 1, black: 0 },
+      cube: { value: 4, owner: 'white' as const },
+    }
+    expect(canDouble(m, WHITE, false)).toBe(true)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed, false)).toBe(false)
   })
 
   it('Crawford oyununda kup yok -> otomatik atar', () => {

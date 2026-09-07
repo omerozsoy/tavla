@@ -24,6 +24,7 @@ import { Sound } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
+  isCubeDead,
   matchWinner,
   newMatch,
   scoreGame,
@@ -2114,7 +2115,13 @@ export default function App() {
     let timer: number
     if (!diceRolled) {
       timer = window.setTimeout(async () => {
-        if (turnsPlayed > 0 && canDouble(match, BOT_PLAYER, false) && match.cube.value < 8) {
+        // Bot: olu kupte katlamaz (anlamsiz). Insan icin boyle bir kisit YOK (bkz canDouble).
+        if (
+          turnsPlayed > 0 &&
+          canDouble(match, BOT_PLAYER, false) &&
+          !isCubeDead(match, BOT_PLAYER) &&
+          match.cube.value < 8
+        ) {
           try {
             const probs = await neuralRef.current.evalPosition(turnStart, BOT_PLAYER)
             const w = probs[0] + probs[1] + probs[2]
