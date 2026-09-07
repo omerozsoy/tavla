@@ -1511,7 +1511,7 @@ export async function showRoom(code: string, since?: number): Promise<RoomView |
 
 // Maci ACIKCA TERK ET (kullanici "cikis/terk" der) -> terk eden kaybeder, rakip kazanir.
 // NOT: refresh'te CAGIRMA — sekme kapanma/yenileme ayirt edilemez; yenileyen oyuncu
-// haksiz kaybetmesin diye tab-close forfeit'i SUNUCU presence (25sn) ile ele alinir.
+// haksiz kaybetmesin diye tab-close forfeit'i SUNUCU presence (60sn) ile ele alinir.
 export async function leaveRoom(code: string): Promise<void> {
   try {
     await req(`/rooms/${encodeURIComponent(code)}/leave`, {

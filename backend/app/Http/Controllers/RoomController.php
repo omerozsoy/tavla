@@ -898,7 +898,7 @@ class RoomController extends Controller
     }
 
     // Oyuncu maci TERK eder -> TERK EDEN KAYBEDER (rakip kazanir). Anlik forfeit.
-    // Sekme kapama/gezinme sirasinda cagrilir (sendBeacon); presence 25sn'yi beklemeden
+    // Sekme kapama/gezinme sirasinda cagrilir (sendBeacon); presence 60sn'yi beklemeden
     // sonucu netlestirir. Yalniz CANLI (playing, bitmemis) macta anlamli.
     public function leave(Request $request, string $code)
     {

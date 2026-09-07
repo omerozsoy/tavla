@@ -11,8 +11,8 @@ namespace App\Services;
  *  - Her yeni gercek hamlede delay ve AFK sayaci yeniden TAM baslar (kalan delay devretmez).
  *  - Ana sure 0 -> TIMEOUT (aktif oyuncu maci kaybeder).
  *
- * AFK (normal saatten bagimsiz): sira sahibi 30sn hicbir GERCEK hamle yapmazsa uyari,
- * 45sn'de AFK_TIMEOUT. Iki sayactan hangisi once kayba ularsa mac o nedenle biter.
+ * AFK (normal saatten bagimsiz): sira sahibi 45sn hicbir GERCEK hamle yapmazsa uyari,
+ * 60sn'de AFK_TIMEOUT. Iki sayactan hangisi once kayba ularsa mac o nedenle biter.
  *
  * Otorite/guvenlik: "gercek hamle" state IMZASINDAN tespit edilir (sahte etkilesimle
  * sifirlanamaz). Sira DEVRI yalnizca mevcut sira sahibinin token'iyla kabul edilir;
@@ -29,13 +29,13 @@ class MatchClock
     /** Hamle basina delay (saniye). */
     public const DELAY = ['casual' => 15, 'normal' => 10, 'speed' => 8];
 
-    public const AFK_IDLE = 30;      // uyari esigi (sn)
+    public const AFK_IDLE = 45;      // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
     public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
-    public const AFK_TOTAL = 45;     // toplam hareketsizlik -> kayip (sn)
+    public const AFK_TOTAL = 60;     // toplam hareketsizlik -> kayip (sn)
     public const GRACE = 3;          // network latency toleransi: kayip ilanini geciktir (sn)
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
-    public const PRESENCE_TIMEOUT = 25;
+    public const PRESENCE_TIMEOUT = 60;
 
     public static function normalizeMode(?string $mode): string
     {
