@@ -16,7 +16,7 @@ const TRNC_SVG =
   '</svg>'
 const TRNC_SRC = `data:image/svg+xml,${encodeURIComponent(TRNC_SVG)}`
 
-// SVG bayraklar (emoji bayraklar Windows'ta render olmadigindan). 5 dil.
+// SVG bayraklar (emoji bayraklar Windows'ta render olmadigindan). 8 dil.
 export function Flag({ code, size = 20 }: { code: string; size?: number }) {
   const h = Math.round((size * 5) / 7)
   const common = {
@@ -72,6 +72,35 @@ export function Flag({ code, size = 20 }: { code: string; size?: number }) {
           <rect width="7" height="15" fill="#0055A4" />
           <rect x="7" width="7" height="15" fill="#fff" />
           <rect x="14" width="7" height="15" fill="#EF4135" />
+        </svg>
+      )
+    case 'el': // Yunanistan: 9 mavi/beyaz serit + sol ust mavi kanton icinde beyaz hac
+      return (
+        <svg {...common}>
+          <rect width="21" height="15" fill="#0D5EAF" />
+          <rect y="1.667" width="21" height="1.667" fill="#fff" />
+          <rect y="5" width="21" height="1.667" fill="#fff" />
+          <rect y="8.333" width="21" height="1.667" fill="#fff" />
+          <rect y="11.667" width="21" height="1.667" fill="#fff" />
+          <rect width="8.333" height="8.333" fill="#0D5EAF" />
+          <rect x="3.333" width="1.667" height="8.333" fill="#fff" />
+          <rect y="3.333" width="8.333" height="1.667" fill="#fff" />
+        </svg>
+      )
+    case 'ru': // Rusya: beyaz/mavi/kirmizi yatay serit
+      return (
+        <svg {...common}>
+          <rect width="21" height="15" fill="#fff" />
+          <rect y="5" width="21" height="5" fill="#0039A6" />
+          <rect y="10" width="21" height="5" fill="#D52B1E" />
+        </svg>
+      )
+    case 'fa': // Iran: yesil/beyaz/kirmizi yatay serit
+      return (
+        <svg {...common}>
+          <rect width="21" height="5" fill="#239F40" />
+          <rect y="5" width="21" height="5" fill="#fff" />
+          <rect y="10" width="21" height="5" fill="#DA0000" />
         </svg>
       )
     default:
