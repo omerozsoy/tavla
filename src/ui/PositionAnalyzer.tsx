@@ -134,8 +134,8 @@ export default function PositionAnalyzer({
   const [cube, setCube] = useState<{ value: number; owner: Player | null }>(
     () => saved0?.cube ?? { value: 1, owner: null },
   )
-  const [placeColor, setPlaceColor] = useState<Player>('white')
-  const [editMode, setEditMode] = useState<'add' | 'remove'>('add')
+  // Renk/silme MODU YOK (sag paneldeki "Taş koy" bolumu kaldirildi): fare tusu belirler.
+  // Sol tik = beyaz, sag tik = siyah, PULUN UZERINE sag tik = o pulu sil.
   // Oyun yonu: oyun ekranlariyla ORTAK ayar (localStorage) — burada degistirmek her yeri etkiler.
   const [boardDir, setBoardDir] = useBoardDir()
   // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir)
@@ -196,6 +196,8 @@ export default function PositionAnalyzer({
   // tepesine tiklamak 6+ pul dizebilmek icin +1 ekler.
   type SlotHit = { slot: number; maxSlots: number }
   const pendingSlotRef = useRef<SlotHit | null>(null)
+  // Tiklama DOGRUDAN bir pulun uzerine mi geldi (sag tikta silme bunu okur).
+  const pendingOnCheckerRef = useRef(false)
 
   function slotFromPointEl(el: HTMLElement, clientY: number): SlotHit {
     const rect = el.getBoundingClientRect()
@@ -210,28 +212,33 @@ export default function PositionAnalyzer({
     return { slot: Math.min(maxSlots, Math.max(1, slot)), maxSlots }
   }
 
-  function editPoint(idx: number) {
+  // secondary = sag tik (dokunmatikte uzun basma). Pulun UZERINE geldiyse siler,
+  // bos hane ise SIYAH koyar. Sol tik her zaman BEYAZ koyar/duzenler.
+  function editPoint(idx: number, secondary = false) {
     const hit = pendingSlotRef.current
+    const onChecker = pendingOnCheckerRef.current
     pendingSlotRef.current = null
+    pendingOnCheckerRef.current = false
 
-    if (editMode === 'remove') {
+    if (secondary && onChecker && pts[idx] !== 0) {
       setResult(null)
       setPts((p) => {
         const n = p.slice()
         const cur = n[idx]
-        n[idx] = cur > 0 ? cur - 1 : cur < 0 ? cur + 1 : 0
+        n[idx] = cur > 0 ? cur - 1 : cur + 1
         return n
       })
       return
     }
 
-    const sign = placeColor === 'white' ? 1 : -1
+    const color: Player = secondary ? 'black' : 'white'
+    const sign = color === 'white' ? 1 : -1
     const cur = pts[idx]
     const mine = sign > 0 ? Math.max(0, cur) : Math.max(0, -cur)
     // Fare yuksekligine kadar doldur (yigin gorunur kat sayisini doldurmussa +1 ekle).
     const atTop = !!hit && hit.slot >= hit.maxSlots && mine >= hit.maxSlots
     let want = hit && !atTop ? hit.slot : mine + 1
-    const room = MAX_CHECKERS - ((placeColor === 'white' ? whiteCount : blackCount) - mine) // 15 pul siniri
+    const room = MAX_CHECKERS - ((color === 'white' ? whiteCount : blackCount) - mine) // 15 pul siniri
     if (want > room) {
       want = room
       warnLimit()
@@ -245,14 +252,16 @@ export default function PositionAnalyzer({
     })
   }
 
-  function editBar() {
-    if (editMode === 'add' && atLimit(placeColor)) return warnLimit() // 15 pul siniri
+  // barColor: sag tik DOGRUDAN bardaki pulun uzerine geldiyse o pulun rengi -> silinir.
+  function editBar(secondary = false, barColor?: Player) {
     setResult(null)
-    setBar((b) => {
-      const key = placeColor
-      if (editMode === 'remove') return { ...b, [key]: Math.max(0, b[key] - 1) }
-      return { ...b, [key]: b[key] + 1 }
-    })
+    if (secondary && barColor) {
+      setBar((b) => ({ ...b, [barColor]: Math.max(0, b[barColor] - 1) }))
+      return
+    }
+    const color: Player = secondary ? 'black' : 'white'
+    if (atLimit(color)) return warnLimit() // 15 pul siniri
+    setBar((b) => ({ ...b, [color]: b[color] + 1 }))
   }
 
   function handleFrom(from: number | 'bar') {
@@ -263,6 +272,30 @@ export default function PositionAnalyzer({
     }
     if (from === 'bar') editBar()
     else editPoint(from)
+  }
+
+  // SAG TIK (Board'un kendi onClick'i sadece sol tik verir -> burada DOM'dan cozuyoruz).
+  function onBoardContextMenu(e: RMouseEvent<HTMLDivElement>) {
+    const el = e.target as HTMLElement
+    // Zar kendi sag tikini isler (geri sayar); kup/merkez overlay duzenlenmez.
+    if (el.closest('.pa-die-btn') || el.closest('.cube') || el.closest('.center-overlay')) return
+    e.preventDefault()
+    if (previewIdx != null) {
+      setPreviewIdx(null)
+      return
+    }
+    const chk = el.closest('.checker') as HTMLElement | null
+    const ptEl = el.closest('.point[data-point]') as HTMLElement | null
+    if (ptEl) {
+      pendingSlotRef.current = slotFromPointEl(ptEl, e.clientY)
+      pendingOnCheckerRef.current = !!chk
+      editPoint(Number(ptEl.dataset.point), true)
+      return
+    }
+    const slotEl = el.closest('[data-slot]') as HTMLElement | null
+    if (slotEl?.dataset.slot === 'bar') {
+      editBar(true, chk ? (chk.classList.contains('black') ? 'black' : 'white') : undefined)
+    }
   }
 
   // ----- Zar: sag paneldeki select'ler yerine TAHTANIN uzerinde -----
@@ -570,6 +603,7 @@ export default function PositionAnalyzer({
           className={`analyzer-board${previewState ? ' pa-previewing' : ''}`}
           onPointerDown={onBoardPointerDown}
           onClickCapture={onBoardClickCapture}
+          onContextMenu={onBoardContextMenu}
           onDragStartCapture={(e) => e.preventDefault()}
         >
           {limitMsg && (
@@ -601,34 +635,12 @@ export default function PositionAnalyzer({
         </div>
 
         <div className="analyzer-controls">
+          {/* "Taş koy" (beyaz/siyah/çıkar) butonlari KALDIRILDI: renk artik fare tusundan
+              geliyor (sol=beyaz, sag=siyah, pulun uzerine sag tik=sil). Kalan satir yalniz
+              15'lik pul sayaci + kisa kullanim notu. */}
           <div className="setup-row">
-            <div className="setup-label">{t('pa.place')}</div>
-            <div className="menu-targets">
-              <Button
-                variant={placeColor === 'white' && editMode === 'add' ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setPlaceColor('white')
-                  setEditMode('add')
-                }}
-              >
-                <Swatch color="white" /> {t('pa.white')}
-              </Button>
-              <Button
-                variant={placeColor === 'black' && editMode === 'add' ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setPlaceColor('black')
-                  setEditMode('add')
-                }}
-              >
-                <Swatch color="black" /> {t('pa.black')}
-              </Button>
-              <Button
-                variant={editMode === 'remove' ? 'secondary' : 'ghost'}
-                onClick={() => setEditMode('remove')}
-              >
-                ➖ {t('pa.remove')}
-              </Button>
-            </div>
+            <div className="setup-label">{t('pa.checkers')}</div>
+            <div className="pa-edit-help">{t('pa.editHelp')}</div>
             <div className="pa-count">
               <span className={whiteCount >= MAX_CHECKERS ? 'full' : ''}>
                 <Swatch color="white" /> {whiteCount}/{MAX_CHECKERS}
