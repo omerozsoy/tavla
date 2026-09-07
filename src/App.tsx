@@ -653,6 +653,8 @@ export default function App() {
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
                                         ? 'yz-ile-oyna'
+                                      : spectate
+                                        ? 'izle/' + spectate.code
                                         : ''
 
   // Hata Gunlugu PREMIUM-only: URL/deep-link ile (/hata-gunlugu) premium OLMAYAN giren
@@ -853,6 +855,13 @@ export default function App() {
         case 'basarimlar':
           setAchOpen(true)
           break
+        case 'izle': {
+          // Canli mac izleme deep-link: /izle/<ODA_KODU>. Isimler oda verisinden
+          // (showRoom p1_name/p2_name) gelir -> prop bos verilebilir. Kod yoksa yok say.
+          const c = (seg[1] || '').toUpperCase()
+          if (c) setSpectate({ code: c, p1: '', p2: '' })
+          break
+        }
         case 'arkadasinla-oyna':
           setFriendSetupOpen(true)
           break
@@ -4978,6 +4987,7 @@ export default function App() {
     setRulesOpen(false)
     setAnalyzerOpen(false)
     setEditProfile(false)
+    setSpectate(null) // /izle URL sayfasi: menu/logo navigasyonu izlemeyi de kapatir
   }
   // Menuden acilan tum sayfalari kapat (ayni anda tek sayfa acik kalir) + kurulum ekrani
   function closeAllPages() {
