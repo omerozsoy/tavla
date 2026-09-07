@@ -3951,6 +3951,14 @@ export default function App() {
 
   // Mac kurulum ekrani onaylandi -> ayarlari uygula, maci/odayi baslat
   function applyMatchSetup(opts: MatchOptions) {
+    // Mac Oyunu her zaman online (gercek rakiple eslesme) -> hesap sart. Misafir icin
+    // API'ye gidip kafa karistiran 'Bahisli oyun icin giris yapmalisin' 422'sini yemeden
+    // ONCE net giris akisi ac (kullanici kurulumda kalir, uzerine Giris/Kayit modali gelir).
+    if (opts.mode === 'online' && !user) {
+      notify.info(t('mp.loginRequired'))
+      setShowAuth(true)
+      return
+    }
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
     setTimeControl(opts.timeControl)
