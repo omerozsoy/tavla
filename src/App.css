@@ -5611,11 +5611,36 @@ button[aria-disabled='true'],
 .move-row {
   display: grid;
   grid-template-columns: 24px 1fr 64px 64px;
+  align-items: center;
   gap: 6px;
-  padding: 3px 4px;
+  padding: 6px 6px;
   font-size: 0.9rem;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   font-variant-numeric: tabular-nums;
+}
+/* Analizde hamle satiri artik TIKLANABILIR buton (tahtada onizleme) */
+button.move-row {
+  width: 100%;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+button.move-row:hover {
+  background: color-mix(in oklab, var(--accent) 12%, transparent);
+}
+button.move-row.sel {
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+button.move-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .move-row.best {
   background: rgba(201, 86, 63, 0.18);
@@ -10728,6 +10753,47 @@ button.acct-row:hover:not(:disabled) {
    donsun -> oyun ekraninin acik/beyaz numara rengi cream'de gorunmuyordu. */
 .analyzer-board .pt-numbers {
   color: var(--muted);
+}
+/* Pip sayilari (167/127) analizde ASIRI buyuktu (oyun board'u 1.7rem) -> olculu kucult.
+   Yalniz analyzer'a scope'lu; oyun ekranindaki pip boyutu degismez. */
+.analyzer-board .pip {
+  font-size: 0.95rem;
+  transform: translateY(-3px);
+}
+@media (min-width: 900px) {
+  .analyzer-board .pip {
+    font-size: 1.05rem;
+  }
+}
+/* Hamle onizlemesi: board hafif soluk + "onizleme" rozeti (salt-gorunum oldugunu belli et) */
+.analyzer-board.pa-previewing {
+  cursor: default;
+}
+.analyzer-board.pa-previewing .board-inner {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: var(--radius-md);
+}
+.pa-preview-toast {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.pa-preview-toast svg {
+  flex: none;
 }
 /* Board'un gercek pul rengiyle kucuk yuvarlak isaret (âšª/âš« yerine tema-uyumlu) */
 .pa-swatch {
