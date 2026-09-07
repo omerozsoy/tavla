@@ -216,21 +216,20 @@ export default function MatchResult({
               {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
             </span>
           </div>
-          {/* XG kırılım YALNIZ küp kararı varsa (aksi halde Pul PR = Hata Oranı -> gereksiz/karışık).
-              Küp varken: Hata Oranı=genel, Pul PR=checker, Küp PR=cube (üçü de anlamlı + farklı). */}
+          {/* Pul PR HER MAÇTA gösterilir (tek oyun dahil) — kullanıcı direktifi. Küp kararı yoksa
+              Pul PR = Hata Oranı (App tarafı bunu aynı değere sabitler). Küp PR ise yalnız küp
+              kararı varken anlamlı -> o satır koşullu kalır. */}
+          <div className="mr-row mr-sub">
+            <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
+            <span className="mr-label">{t('mr.checkerPr')}</span>
+            <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
+          </div>
           {(winnerCubePr != null || loserCubePr != null) && (
-            <>
-              <div className="mr-row mr-sub">
-                <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
-                <span className="mr-label">{t('mr.checkerPr')}</span>
-                <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
-              </div>
-              <div className="mr-row mr-sub">
-                <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
-                <span className="mr-label">{t('mr.cubePr')}</span>
-                <span className="mr-b">{fmtPr(loserCubePr ?? null)}</span>
-              </div>
-            </>
+            <div className="mr-row mr-sub">
+              <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
+              <span className="mr-label">{t('mr.cubePr')}</span>
+              <span className="mr-b">{fmtPr(loserCubePr ?? null)}</span>
+            </div>
           )}
           <div className="mr-row">
             <span className="mr-a">{ratingText(true)}</span>

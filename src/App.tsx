@@ -4317,6 +4317,11 @@ export default function App() {
     }
     return prOf(c) ?? prLooseOf(c) ?? 0
   }
+  // Sonuç ekranında gösterilen Pul PR. Küp kararı YOKSA Pul PR = genel PR -> "Hata Oranı"
+  // satırıyla AYNI kaynağı (sunucu-otoriter / bot PR) kullan; aksi halde iki satır farklı
+  // çıkıyordu (ör. bot: Hata Oranı 8.4 ama Pul PR 0.12). Küp varsa gerçek checker kırılımı.
+  const prCheckerShown = (c: Player): number | null =>
+    (prStats[c].cubeDecisions ?? 0) > 0 ? prCheckerOf(c) : prShown(c)
   // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
   // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
   // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
@@ -6290,9 +6295,9 @@ export default function App() {
           loserScore={match.score[opponent(mWinner)]}
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
-          winnerCheckerPr={prCheckerOf(mWinner)}
+          winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeOf(mWinner)}
-          loserCheckerPr={prCheckerOf(opponent(mWinner))}
+          loserCheckerPr={prCheckerShown(opponent(mWinner))}
           loserCubePr={prCubeOf(opponent(mWinner))}
           winnerBand={t(prBand(prShown(mWinner)))}
           loserBand={t(prBand(prShown(opponent(mWinner))))}
