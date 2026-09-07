@@ -1405,7 +1405,10 @@ export default function App() {
   // freshBank=true: yeni MAC -> rezerv bankasi bastan dolar.
   // freshBank=false: mac ici SONRAKI oyun -> rezerv bankasi korunur (Galaxy: mac-basi saat),
   //   sadece hamle gecikmesi sifirlanir.
-  function resetGameUi(freshBank = true) {
+  // bankTarget: rezerv bankasi HANGI mac uzunluguna gore dolsun. VARSAYILAN `match.target`
+  // STALE'dir (setMatch ayni render'da state'i degistirmez) -> yeni mac baslatan cagirici
+  // hedefi ACIKCA gecmelidir; aksi halde 9'luk mactan 3'luk maca gecerken saat 9 dk kalirdi.
+  function resetGameUi(freshBank = true, bankTarget = match.target) {
     setPlayed([])
     setSelectedFrom(null)
     setCubePending(null)
@@ -1417,8 +1420,7 @@ export default function App() {
     setOpening('roll') // her yeni oyun acilis atisiyla baslar
     setOpeningResult(null)
     if (freshBank) {
-      const bank = clockRef.current.over * Math.max(1, match.target)
-      setClock({ delay: clockRef.current.move, white: bank, black: bank })
+      setClock(freshMatchClock(bankTarget))
     } else {
       setClock((c) => ({ ...c, delay: clockRef.current.move }))
     }
@@ -4415,7 +4417,8 @@ export default function App() {
     setMatch(newMatch(target))
     setStarter('white')
     setTurnStart(freshBoard('white'))
-    resetGameUi()
+    // Saat bankasi YENI hedefe gore dolsun (match state'i bu render'da hala ESKI mac).
+    resetGameUi(true, target)
     setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
     setCoinDelta(null)
