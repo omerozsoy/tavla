@@ -3,6 +3,7 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
+import { useToast } from './Toast'
 import * as api from '../api'
 
 interface Props {
@@ -13,7 +14,13 @@ interface Props {
 
 export default function ResetPassword({ email, token, onDone }: Props) {
   const { t } = useT()
+  const notify = useToast()
   useEscape(onDone)
+  // Hata hem inline banner hem site-standart toast (belirgin)
+  const showErr = (m: string) => {
+    setError(m)
+    notify.error(m)
+  }
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [busy, setBusy] = useState(false)
@@ -25,11 +32,11 @@ export default function ResetPassword({ email, token, onDone }: Props) {
     e.preventDefault()
     setError('')
     if (password.length < 6) {
-      setError(t('reset.tooShort'))
+      showErr(t('reset.tooShort'))
       return
     }
     if (password !== password2) {
-      setError(t('reset.mismatch'))
+      showErr(t('reset.mismatch'))
       return
     }
     setBusy(true)
@@ -37,7 +44,7 @@ export default function ResetPassword({ email, token, onDone }: Props) {
       await api.resetPassword(email, token, password)
       setDone(true)
     } catch {
-      setError(t('reset.fail'))
+      showErr(t('reset.fail'))
     } finally {
       setBusy(false)
     }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useToast } from './Toast'
 import { useT } from '../i18n'
 import {
   listClubs,
@@ -22,6 +23,7 @@ interface Props {
 
 export default function Clubs({ onClose }: Props) {
   const { t } = useT()
+  const notify = useToast()
   useEscape(onClose)
   const [mine, setMine] = useState<ClubFull | null>(null)
   const [clubs, setClubs] = useState<ClubSummary[] | null>(null)
@@ -69,7 +71,11 @@ export default function Clubs({ onClose }: Props) {
       setTag('')
       setDesc('')
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : t('clubs.error'))
+      {
+        const m = e instanceof Error ? e.message : t('clubs.error')
+        setMsg(m)
+        notify.error(m)
+      }
     } finally {
       setBusy(false)
     }
@@ -84,7 +90,11 @@ export default function Clubs({ onClose }: Props) {
       setMine(c)
       setView(null)
     } catch (e) {
-      setMsg(e instanceof Error ? e.message : t('clubs.error'))
+      {
+        const m = e instanceof Error ? e.message : t('clubs.error')
+        setMsg(m)
+        notify.error(m)
+      }
     } finally {
       setBusy(false)
     }

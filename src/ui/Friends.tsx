@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useToast } from './Toast'
 import { useT } from '../i18n'
 import {
   getFriends,
@@ -22,6 +23,7 @@ interface Props {
 
 export default function Friends({ onInvite, onMessage, onClose }: Props) {
   const { t } = useT()
+  const notify = useToast()
   useEscape(onClose)
   const [friends, setFriends] = useState<Friend[]>([])
   const [incoming, setIncoming] = useState<Friend[]>([])
@@ -55,11 +57,14 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
     setMsg('')
     try {
       const r = await requestFriend(nick.trim())
-      setMsg(r.status === 'accepted' ? t('friends.added') : t('friends.sent'))
+      const okMsg = r.status === 'accepted' ? t('friends.added') : t('friends.sent')
+      setMsg(okMsg)
+      notify.success(okMsg)
       setNick('')
       refresh()
     } catch {
       setMsg(t('friends.notFound'))
+      notify.error(t('friends.notFound'))
     } finally {
       setBusy(false)
     }
