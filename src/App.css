@@ -768,6 +768,45 @@ button[aria-disabled='true'],
   border-color: var(--accent);
 }
 
+/* ==========================================================================
+   SCROLLBAR — sitenin HER kaydirilabilir alaninda marka rengi (kiremit).
+   Onceden .app.lobby ve sekme seritlerinde cubuk GIZLENIYORDU ("dum duz sayfa");
+   kullanici istegi uzerine her yerde gorunur hale getirildi.
+   Iki API birlikte verilir: scrollbar-width/-color (Firefox + standart) ve
+   ::-webkit-scrollbar ailesi (Chrome / Safari / Edge) -> ayni gorunum.
+   Thumb'a saydam kenarlik + background-clip: cubuk iz icinde INCE durur.
+   ========================================================================== */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--terracotta) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--terracotta);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--terracotta-hover);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+/* Yatay sekme seritleri: cubuk daha ince -> seridin yuksekligi buyumesin. */
+.account-bar::-webkit-scrollbar,
+.shop-tabs::-webkit-scrollbar,
+.prof-ov-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
 .app {
   display: flex;
   gap: 22px;
@@ -7483,14 +7522,7 @@ button.acct-row:hover:not(:disabled) {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0;
-  /* Scrollbar GORUNMESIN ("dum duz sayfa" hissi) â€” kaydirma tekerlek/touch ile calisir. */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* eski Edge */
-}
-.app.lobby::-webkit-scrollbar {
-  display: none; /* Chrome / Safari / yeni Edge */
-  width: 0;
-  height: 0;
+  /* Scrollbar GORUNUR: marka renkli global kural (bkz. dosya basi) gecerlidir. */
 }
 .app.lobby > .account-bar {
   grid-area: bar;
@@ -7552,10 +7584,6 @@ button.acct-row:hover:not(:disabled) {
     flex-wrap: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    scrollbar-width: none;
-  }
-  .account-bar::-webkit-scrollbar {
-    display: none;
   }
 }
 /* Logo sola, hesap kontrolleri saga (auto margin bosluÄŸu doldurur). */
@@ -14897,11 +14925,7 @@ button.acct-row:hover:not(:disabled) {
 .shop-tabs {
   flex-wrap: nowrap;
   overflow-x: auto;
-  scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
-}
-.shop-tabs::-webkit-scrollbar {
-  display: none;
 }
 .shop-tabs .prof-tab {
   flex: 0 0 auto;
@@ -16311,10 +16335,6 @@ button.acct-row:hover:not(:disabled) {
     flex-wrap: nowrap;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  .prof-ov-tabs::-webkit-scrollbar {
-    display: none;
   }
   .prof-ov-tabs > button {
     flex: 0 0 auto;
