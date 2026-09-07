@@ -4,6 +4,7 @@ import { canDouble, newMatch, shouldAutoRoll } from '../engine/match'
 import {
   isOnlineReady,
   matchEndFromServer,
+  openingNeedsResync,
   openingStateFromMatch,
   rollResponseAction,
   serverMatchToLocal,
@@ -56,6 +57,45 @@ describe('rollResponseAction', () => {
   })
   it('normal -> apply-normal', () => {
     expect(rollResponseAction({ reused: false })).toBe('apply-normal')
+  })
+})
+
+// ---- AÇILIŞ KALKANI: "Açılış zarı atılıyor…" ekranında kalıcı takılmayı kırar ----
+describe('openingNeedsResync', () => {
+  const opened = {
+    authoritative: true,
+    server_state: { turn: 'white' as Player, dice: [5, 3] },
+    server_version: 1,
+    server_match: { opened: true, done: false },
+  }
+
+  it('overlay YOKken hiçbir şey yapmaz (normal turda poll kararını bozmasın)', () => {
+    expect(openingNeedsResync(false, opened)).toBe(false)
+  })
+  it('sunucuda oyun açıldıysa (opened=true) uygula', () => {
+    expect(openingNeedsResync(true, opened)).toBe(true)
+  })
+  it('opened bayrağı gelmese de server_state ZAR taşıyorsa uygula', () => {
+    expect(
+      openingNeedsResync(true, { ...opened, server_match: { opened: false, done: false } }),
+    ).toBe(true)
+  })
+  it('sunucu henüz açmadıysa (zar yok) bekle — açılış tetiği kendi işini yapsın', () => {
+    expect(
+      openingNeedsResync(true, {
+        authoritative: true,
+        server_state: { turn: 'white', dice: [] },
+        server_version: 1,
+        server_match: { opened: false, done: false },
+      }),
+    ).toBe(false)
+  })
+  it('authoritative değilse / server_state yoksa uygulamaz (legacy akışa dokunma)', () => {
+    expect(openingNeedsResync(true, { ...opened, authoritative: false })).toBe(false)
+    expect(openingNeedsResync(true, { authoritative: true, server_version: 1 })).toBe(false)
+  })
+  it('maç bittiyse uygulamaz (sonuç ekranı açılışa dönmesin)', () => {
+    expect(openingNeedsResync(true, { ...opened, server_match: { opened: true, done: true } })).toBe(false)
   })
 })
 
@@ -282,7 +322,12 @@ class SimClient {
     const rv = this.server.view()
     // App.tsx poll: eski odadan kalan surum ref'ini kendi kendine onar.
     if (selfHeal && staleServerVersion(rv, this.appliedServerVersion)) this.appliedServerVersion = -1
+    // App.tsx poll: "Acilis zari atiliyor..." ekraninda takildiysak (sunucuda oyun ZATEN acik)
+    // surum muhasebesine bakmadan uygula -> kalici takilma en fazla bir poll surer.
+    const stuckOpening = selfHeal && openingNeedsResync(this.opening === 'roll', rv)
+    if (stuckOpening) this.appliedServerVersion = -1
     if (
+      stuckOpening ||
       shouldApplyServerState(
         { turn: this.turn, diceCount: this.dice.length, playedCount: this.played, appliedServerVersion: this.appliedServerVersion },
         rv,
@@ -300,6 +345,26 @@ class SimClient {
 }
 
 describe('2-istemci authoritative simülasyonu', () => {
+  // CANLI BUG: açılışı ilk tetikleyemeyen taraf (reused/409 -> poll'a bırakır) tek bir kaçırılmış
+  // apply'dan sonra "Açılış zarı atılıyor…" ekranında SONSUZA KADAR kalıyordu; rakibi normal
+  // oynuyor, saat de akıyordu. Sürüm "uygulandı" yazılıp apply'in düşmesi (istisna/yarış) bu
+  // duruma yol açar ve staleServerVersion onu YAKALAMAZ (sürüm geride değil, EŞİT).
+  it('KALICI TAKILMA: sürüm uygulandı sanılsa bile açılış kalkanı istemciyi kurtarır', () => {
+    const server = new SimServer('white')
+    const black = new SimClient('black', server)
+    server.roll('white') // rakip açılışı tetikledi -> sunucuda oyun açık (opened=true, zar var)
+    black.appliedServerVersion = server.version // apply kaçtı ama sürüm "uygulandı" yazıldı
+
+    black.poll(false) // KALKANSIZ (eski davranış): overlay kalkmaz -> takılma
+    expect(black.opening).toBe('roll')
+
+    black.poll() // KALKANLI: tek poll yeter
+    expect(black.opening).toBe(null)
+    expect(black.turn).toBe('white')
+    expect(black.dice).toEqual([5, 3])
+  })
+
+
   // Her iki başlayan senaryosu (white/black) + hangi istemcinin açılışı önce tetiklediği önemli.
   for (const starter of ['white', 'black'] as Player[]) {
     for (const firstToTrigger of ['white', 'black'] as Player[]) {

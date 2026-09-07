@@ -35,6 +35,7 @@ import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './en
 import { reconstructOppMove } from './online/oppMove'
 import {
   isOnlineReady,
+  openingNeedsResync,
   openingStateFromMatch,
   serverMatchToLocal,
   shouldApplyServerState,
@@ -1013,6 +1014,9 @@ export default function App() {
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
   const srvPlayedRef = useRef<Step[]>([])
+  // Poll (stale-closure) acilis overlay'ini de gormeli: "Acilis zari atiliyor..."da takilirsak
+  // sunucudaki acilmis oyunu KOSULSUZ uygula (openingNeedsResync kalkani).
+  const openingRef = useRef<'roll' | 'reveal' | null>(null)
   const oppLoggedRef = useRef('') // otoriter modda rakip hamlesi bir KEZ loglansin
   // Odaya (yeniden) GIRERKEN senkron sayaclarini sifirla — TEK YER.
   // KRITIK BUG (canli): appliedServerVersionRef yalniz ilk mount'ta -1'di ve oda girislerinde
@@ -1895,8 +1899,10 @@ export default function App() {
     if (!code) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
-    recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
     try {
+      // NOT: try'in İÇİNDE — dışarıda atarsa uçuş kilidi (rollInFlightRef) asla açılmaz ve
+      // o istemci bir daha ZAR ATAMAZ (açılışta: overlay'de kalıcı takılma).
+      recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
       const r = await serverRoll(code)
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
       if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
@@ -2589,7 +2595,7 @@ export default function App() {
     if (opening !== 'roll' || cubePending || gameEnd || matchOver) return
     // Online'da rakip hazir olana kadar bekle (mm_waiting / tek kisi)
     if (online && (!onlineReady || room?.status !== 'playing')) return
-    const id = window.setTimeout(() => {
+    const fire = () => {
       if (online && room && authoritativeRef.current) {
         // Faz 2: açılışı SUNUCU yapar (adil, deterministik). serverRoll opening+starter döner;
         // doRollAuthoritative taze tahtayı kurar. Sıra-değil hatası olursa (diğer taraf tetikledi)
@@ -2601,8 +2607,17 @@ export default function App() {
       } else {
         handleOpeningRoll()
       }
-    }, 800)
-    return () => window.clearTimeout(id)
+    }
+    const id = window.setTimeout(fire, 800)
+    // TEK ATIŞ YETMEZ (canlı bug: "Açılış zarı atılıyor…"da kalıcı takılma). İlk deneme ağ
+    // hatasına/409'a/uçuş kilidine takılırsa hiçbir şey tekrar denemiyordu; overlay durdukça
+    // periyodik yeniden dene. Sunucu açılışı IDEMPOTENT'tir (opened=true ise ikinci çağrı yeni
+    // zar üretmez, reused/409 döner) -> tekrar güvenli. Overlay kalkınca effect temizlenir.
+    const retry = online ? window.setInterval(fire, 2500) : null
+    return () => {
+      window.clearTimeout(id)
+      if (retry !== null) window.clearInterval(retry)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
 
@@ -3140,6 +3155,9 @@ export default function App() {
     srvPlayedRef.current = played
   }, [played])
   useEffect(() => {
+    openingRef.current = opening
+  }, [opening])
+  useEffect(() => {
     authoritativeRef.current = !!room?.authoritative
   }, [room?.authoritative])
   useEffect(() => {
@@ -3266,9 +3284,15 @@ export default function App() {
         // uygulamaz (acilisi kaybeden taraf "Acilis zari atiliyor"da takilir). resetRoomSync
         // giris noktalarinda zaten sifirliyor; bu, kacan bir yol kalirsa kendini onarir.
         if (staleServerVersion(rv, appliedServerVersionRef.current)) appliedServerVersionRef.current = -1
+        // AÇILIŞ KALKANI: hâlâ "Açılış zarı atılıyor…" ekranındayız ama sunucuda oyun ZATEN
+        // açılmışsa surum muhasebesine BAKMADAN uygula. Acilisi ilk tetikleyemeyen taraf
+        // (reused/409) tek bir kacirilmis apply'da sonsuza kadar bu ekranda kaliyordu.
+        const stuckOpening = openingNeedsResync(openingRef.current === 'roll', rv)
+        if (stuckOpening) appliedServerVersionRef.current = -1
         // Poll-apply kararı SAF fonksiyonda (src/online/authSync + test). midMove yalnız KENDİ
         // turumda geçerli; rakip turundaysak daima senkronla (açılış desync fix — bkz authSync).
         if (
+          stuckOpening ||
           shouldApplyServerState(
             {
               turn: srvTurnStartRef.current?.turn ?? 'white',
@@ -3280,8 +3304,15 @@ export default function App() {
             myColor,
           )
         ) {
-          appliedServerVersionRef.current = rv.server_version ?? 0
-          applyServerBoard(rv.server_state as GameState, rv.server_match) // tahta + skor + kup + Crawford
+          // ÖNCE uygula, SONRA "uygulandı" yaz. Ters sırada, applyServerBoard içinde atılan bir
+          // istisna sürümü uygulanmış SAYDIRIYOR ve poll o durumu bir daha getirmiyordu
+          // (kalıcı takılma). Hata olursa ref -1'e döner -> sonraki poll yeniden dener.
+          try {
+            applyServerBoard(rv.server_state as GameState, rv.server_match) // tahta + skor + kup + Crawford
+            appliedServerVersionRef.current = rv.server_version ?? 0
+          } catch {
+            appliedServerVersionRef.current = -1
+          }
         } else if (!rv.authoritative && rv.version > appliedVersionRef.current && rv.state) {
           appliedVersionRef.current = rv.version
           syncEnabledRef.current = true
