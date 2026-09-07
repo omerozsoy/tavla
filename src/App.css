@@ -5142,6 +5142,17 @@ button[aria-disabled='true'],
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   z-index: 5;
 }
+/* Crawford oyunu: kupte sayi yerine kelime durur -> kucuk, sikisik, iki satira tasabilir */
+.cube.cube-crawford {
+  font-size: calc(var(--cube-size) * 0.165);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-align: center;
+  padding: 0 3px;
+  overflow-wrap: anywhere;
+}
 /* Kup sahibinin tarafinda durur */
 .cube.owner-center {
   top: 50%;

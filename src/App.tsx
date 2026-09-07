@@ -6293,6 +6293,7 @@ export default function App() {
           pipTop={pipTop}
           pipBottom={pipBottom}
           cube={match.cube}
+          crawford={match.isCrawford}
           centerLeft={centerLeft}
           centerRight={centerRight}
           centerMain={centerMain}
