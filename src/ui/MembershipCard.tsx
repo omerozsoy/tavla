@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
@@ -13,6 +15,7 @@ interface Props {
 // Yenile / Yenilemeyi iptal. Profil ANA sayfasinda (ProfileOverview) baslikin altinda.
 export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Props) {
   const { t } = useT()
+  const [confirmOpen, setConfirmOpen] = useState(false) // oto-yenileme iptal onay modali
   const plan = user.plan_active ?? 'free'
   const premium = plan === 'star' || plan === 'starpro'
   const until = user.plan_until ?? null
@@ -62,9 +65,10 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Pro
               type="button"
               variant="outline"
               onClick={() => {
-                // Yalniz IPTAL ederken onay iste (acarken gerek yok).
-                if (autoRenew && !window.confirm(t('mem.status.cancelConfirm'))) return
-                onToggleAutoRenew(!autoRenew)
+                // Yalniz IPTAL ederken onay iste (acarken gerek yok). Native confirm yerine
+                // site-tasarimli in-app modal (register-overlay) -> mobil + tema tutarli.
+                if (autoRenew) setConfirmOpen(true)
+                else onToggleAutoRenew(true)
               }}
             >
               {autoRenew ? t('mem.status.cancelRenew') : t('mem.status.enableRenew')}
@@ -72,6 +76,38 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Pro
           )}
         </div>
       )}
+      {/* Oto-yenileme iptal onayi: site-tasarimli modal (native confirm yerine). Kart profil
+          icinde (transform'lu ata olabilir) -> position:fixed overlay kirpilmasin diye
+          createPortal ile body'ye tasinir. Bkz [[fixed-portal-transform-tuzagi]]. */}
+      {confirmOpen &&
+        createPortal(
+          <div
+            className="register-overlay modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setConfirmOpen(false)}
+          >
+            <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+              <h2>
+                <Icon name="crown" size={20} /> {t('mem.status.cancelRenew')}
+              </h2>
+              <p className="register-sub">{t('mem.status.cancelConfirm')}</p>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setConfirmOpen(false)
+                  onToggleAutoRenew?.(false)
+                }}
+              >
+                {t('mem.status.cancelRenew')}
+              </Button>
+              <Button variant="secondary" onClick={() => setConfirmOpen(false)}>
+                {t('reg.cancel')}
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
