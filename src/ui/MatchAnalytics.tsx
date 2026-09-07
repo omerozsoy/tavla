@@ -8,20 +8,20 @@ import MatchReport from './MatchReport'
 import type { MoveLogEntry } from '../storage'
 import type { Player } from '../engine/types'
 
-// Donem filtresi (Hata Gunlugu ile ayni): Bugun/3g/7g/30g/Tumu. Varsayilan 7g.
+// Her "Daha fazla goster" 30 mac yukler (sunucu offset/limit).
+const PAGE = 30
+// Donem filtresi (Hata Gunlugu ile ayni): Bugun/3g/7g/30g/Tumu. Varsayilan Tumu.
 const PERIODS: EJPeriod[] = ['today', '3d', '7d', '30d', 'all']
-function inPeriod(iso: string | null | undefined, p: EJPeriod): boolean {
-  if (p === 'all') return true
-  if (!iso) return false
-  const d = new Date(iso).getTime()
-  if (isNaN(d)) return false
+// Donem -> 'from' ISO (created_at >=); 'all' -> filtresiz. Filtreleme SUNUCU tarafinda.
+function periodFrom(p: EJPeriod): string | undefined {
+  if (p === 'all') return undefined
   if (p === 'today') {
     const s = new Date()
     s.setHours(0, 0, 0, 0)
-    return d >= s.getTime()
+    return s.toISOString()
   }
   const days = p === '3d' ? 3 : p === '7d' ? 7 : 30
-  return d >= Date.now() - days * 86400000
+  return new Date(Date.now() - days * 86400000).toISOString()
 }
 
 // PR bandi (dusuk = iyi). MatchReport ile ayni ruh: kaba renk sinifi.
@@ -77,14 +77,17 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   useEscape(onClose)
   const [rows, setRows] = useState<MyMatch[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState(false)
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
-  // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi (eski
-  // maclar gizli kaliyordu). Kullanici isterse sekmelerden daralt.
+  // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
   const [period, setPeriod] = useState<EJPeriod>('all')
-  const filtered = rows.filter((m) => inPeriod(m.created_at, period))
+  const [q, setQ] = useState('') // rakip arama (ham input)
+  const [qDeb, setQDeb] = useState('') // debounce sonrasi (sunucuya giden)
+  const offsetRef = useRef(0)
 
   // Bir macin tam analizini (log) cek -> MatchReport ac
   async function openReport(m: MyMatch) {
@@ -104,37 +107,69 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     }
   }
 
-  const load = () => {
-    setLoading(true)
-    setError(false)
-    myMatches()
-      .then(setRows)
-      .catch(() => setError(true))
-      .finally(() => setLoading(false))
+  // reset=true -> filtre/ilk yukleme (bastan); false -> "Daha fazla goster" (ekle).
+  const load = (reset: boolean) => {
+    if (reset) {
+      setLoading(true)
+      setError(false)
+      offsetRef.current = 0
+    } else {
+      setLoadingMore(true)
+    }
+    const off = reset ? 0 : offsetRef.current
+    myMatches({ offset: off, limit: PAGE, q: qDeb, from: periodFrom(period) })
+      .then((data) => {
+        setRows((prev) => (reset ? data : [...prev, ...data]))
+        offsetRef.current = off + data.length
+        setHasMore(data.length === PAGE) // tam sayfa geldiyse dahasi olabilir
+        setError(false)
+      })
+      .catch(() => {
+        if (reset) setError(true)
+      })
+      .finally(() => {
+        setLoading(false)
+        setLoadingMore(false)
+      })
   }
-  useEffect(() => {
-    load()
-  }, [])
 
-  // Profilden bir mac id'siyle gelindiyse: rows yuklenince o maci bul, genislet, ortala.
+  // Rakip aramasini debounce et (her tusa istek atma)
+  useEffect(() => {
+    const id = setTimeout(() => setQDeb(q.trim()), 350)
+    return () => clearTimeout(id)
+  }, [q])
+
+  // Filtre degisince (arama/donem) bastan yukle. Mount'ta da bir kez calisir (ilk yukleme).
+  useEffect(() => {
+    setOpenIdx(null)
+    load(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qDeb, period])
+
+  // Profilden bir mac id'siyle gelindiyse: o maci bul, genislet, ortala. Ilk sayfada yoksa
+  // (eski mac) bulana kadar "Daha fazla" ile sayfalari otomatik cek.
   const didAutoOpen = useRef(false)
   useEffect(() => {
-    if (initialMatchId == null || rows.length === 0 || didAutoOpen.current) return
+    if (initialMatchId == null || didAutoOpen.current) return
     const idx = rows.findIndex((m) => m.id === initialMatchId)
-    if (idx < 0) return
-    didAutoOpen.current = true
-    setOpenIdx(idx)
-    const m = rows[idx]
-    if (m.has_log) {
-      // Log varsa (AI maci): dogrudan hamle analizi raporunu ac
-      openReport(m)
-    } else {
-      // Log yoksa (online/PvP): detay satirini genislet + ortaya kaydir
-      requestAnimationFrame(() => {
-        document.querySelector('.mh-card .mh-item.open')?.scrollIntoView({ block: 'center' })
-      })
+    if (idx >= 0) {
+      didAutoOpen.current = true
+      setOpenIdx(idx)
+      const m = rows[idx]
+      if (m.has_log) {
+        // Log varsa (AI maci): dogrudan hamle analizi raporunu ac
+        openReport(m)
+      } else {
+        // Log yoksa (online/PvP): detay satirini genislet + ortaya kaydir
+        requestAnimationFrame(() => {
+          document.querySelector('.mh-card .mh-item.open')?.scrollIntoView({ block: 'center' })
+        })
+      }
+    } else if (hasMore && !loading && !loadingMore) {
+      load(false)
     }
-  }, [rows, initialMatchId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, hasMore, loading, loadingMore, initialMatchId])
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -153,19 +188,16 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
         </h2>
         <p className="register-sub">{t('mh.sub')}</p>
 
-        {loading ? (
-          <div className="admin-empty">{t('admin.loading')}</div>
-        ) : error ? (
-          <div className="admin-empty">
-            {t('common.loadError')}{' '}
-            <Button variant="outline" onClick={load}>
-              {t('common.retry')}
-            </Button>
-          </div>
-        ) : rows.length === 0 ? (
-          <div className="admin-empty">{t('mh.empty')}</div>
-        ) : (
-          <>
+        {/* Filtre: rakip arama + donem sekmeleri (her zaman gorunur ki bos durumda da daraltilabilsin) */}
+        <div className="mh-filters">
+          <input
+            className="mh-search"
+            type="search"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={t('mh.searchOpp')}
+            aria-label={t('mh.searchOpp')}
+          />
           <div className="ej-periods" role="tablist" aria-label={t('errorJournal.periodLabel')}>
             {PERIODS.map((p) => (
               <button
@@ -174,20 +206,29 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                 role="tab"
                 aria-selected={period === p}
                 className={`ej-period ${period === p ? 'active' : ''}`}
-                onClick={() => {
-                  setPeriod(p)
-                  setOpenIdx(null)
-                }}
+                onClick={() => setPeriod(p)}
               >
                 {t(`errorJournal.period.${p}`)}
               </button>
             ))}
           </div>
-          {filtered.length === 0 ? (
-            <div className="admin-empty">{t('mh.emptyPeriod')}</div>
-          ) : (
+        </div>
+
+        {loading ? (
+          <div className="admin-empty">{t('admin.loading')}</div>
+        ) : error ? (
+          <div className="admin-empty">
+            {t('common.loadError')}{' '}
+            <Button variant="outline" onClick={() => load(true)}>
+              {t('common.retry')}
+            </Button>
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="admin-empty">{qDeb || period !== 'all' ? t('mh.emptyPeriod') : t('mh.empty')}</div>
+        ) : (
+          <>
           <div className="mh-list">
-            {filtered.map((m, i) => {
+            {rows.map((m, i) => {
               const open = openIdx === i
               const hasScore = m.score_self != null && m.score_opp != null
               const selfWon = hasScore ? m.score_self! > m.score_opp! : m.won
@@ -327,6 +368,12 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
               )
             })}
           </div>
+          {hasMore && (
+            <div className="mh-more">
+              <Button variant="outline" onClick={() => load(false)} disabled={loadingMore}>
+                {loadingMore ? t('admin.loading') : t('mh.showMore')}
+              </Button>
+            </div>
           )}
           </>
         )}
