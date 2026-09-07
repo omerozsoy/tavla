@@ -2149,7 +2149,8 @@ export default function App() {
   // (1 normal, 2 gammon/mars, 3 backgammon — bkz engine/board lossMultiplier).
   // Otoriter online'da carpani SUNUCU hesaplar (Backgammon::gamePoints) -> forge edilemez;
   // asagidaki yerel hesap yalniz pvb/pvp/legacy icin ve EKRANDA gostermek icindir.
-  const resignLoser: Player = online ? myColor : 'white' // pvb/pvp'de teslim olan insan = beyaz
+  // Teslim olan: online -> ben; pvb -> insan (beyaz); pvp -> sirasi gelen (cihaz basindaki) oyuncu.
+  const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
   const resignMult = lossMultiplier(working, resignLoser)
   const resignPoints = match.cube.value * resignMult
   const resignKindKey =
@@ -6402,7 +6403,7 @@ export default function App() {
         boardDir={boardDir}
         setBoardDir={setBoardDir}
         canAnalyze={mode === 'pvb'}
-        canResign={!matchOver && (mode === 'pvb' || online)}
+        canResign={!matchOver}
         loggedIn={!!user}
         onTournaments={online && !matchOver ? undefined : menuProps.onTournaments}
         onFriends={online && !matchOver ? undefined : menuProps.onFriends}
@@ -6615,6 +6616,10 @@ export default function App() {
             {/* PES = bu OYUNU vermek. Kac puan kaybettigin KONUMDAN turer: kup x carpan
                 (1 normal / 2 gammon / 3 backgammon) -> oyuncu neye imza attigini GORUR. */}
             <div className="resign-auto">
+              {/* PVP (ayni cihaz): pes eden = sirasi gelen oyuncu -> KIM oldugu yazilsin. */}
+              {mode === 'pvp' && (
+                <div className="resign-help">{t('resign.who', { name: pName(resignLoser) })}</div>
+              )}
               <div className="resign-help">{t('resign.autoHelp')}</div>
               <div className={`resign-kind m${resignMult}`}>{t(resignKindKey)}</div>
               <div className="resign-calc">

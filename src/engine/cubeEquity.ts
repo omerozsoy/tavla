@@ -77,7 +77,12 @@ export interface CubeLossResult {
 }
 
 // Obvious küp kararı eşiği (§8): en iyi ile en kötü aksiyon farkı bunun altındaysa sayılmaz.
-export const XG_OBVIOUS_CUBE_EQUITY_SPREAD = 0.001
+// 0.001 ÇOK GEVŞEKTİ: küp gündemde bile olmayan (açılış/erken oyun) her zar atışındaki
+// "katlama" kararı da paydaya giriyordu. Bu kararlar zaten hep doğru seçiliyor (ikili seçim ->
+// doğru taraf = tam 0 kayıp), sonuçta sonuç ekranındaki Küp PR her maçta 0.00'a çöküyordu.
+// 0.03: yalnız küpün GERÇEKTEN tartışmalı olduğu pozisyonlar sayılır -> hem Küp PR hem genel
+// PR anlamlı olur. (Bariz kararlar hâlâ .mat/analiz logunda görünür; sadece PR paydasına girmez.)
+export const XG_OBVIOUS_CUBE_EQUITY_SPREAD = 0.03
 
 // TEKLİF kararı (mover, zar atmadan): no-double vs double. probs = MOVER perspektifi.
 export function offerLoss(probs: number[], chosen: CubeOfferAction, x = 0.7): CubeLossResult {
