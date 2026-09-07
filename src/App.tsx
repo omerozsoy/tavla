@@ -98,6 +98,7 @@ import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
 import { PAGES, PAGE_BY_KEY, type MenuGroup } from './pages'
 import { Icon } from './ui/Icon'
+import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
 import Leaderboard from './ui/Leaderboard'
 import RankInfo from './ui/RankInfo'
@@ -3197,6 +3198,17 @@ export default function App() {
     return () => window.clearInterval(id)
   }, [rewardReady, rewardSecs > 0])
 
+  // Bonus HAZIR OLDUGU AN (false->true gecisi) konfeti patlat. prevRef ile yalniz
+  // geciste tetiklenir (her render'da degil). Buton yeni render oldugu icin rect'i
+  // bir sonraki frame'de olcup body'ye portal konfeti sac.
+  const prevRewardReadyRef = useRef(false)
+  useEffect(() => {
+    if (rewardReady && !prevRewardReadyRef.current) {
+      requestAnimationFrame(() => burstConfettiAt(document.querySelector('.btn-reward'), 36))
+    }
+    prevRewardReadyRef.current = rewardReady
+  }, [rewardReady])
+
   // Magaza: satin al / cerceve tak
   async function handleBuy(shopId: string) {
     try {
@@ -4653,7 +4665,11 @@ export default function App() {
             <Button
               variant="outline"
               className="btn-reward"
-              onClick={handleCoinClick}
+              onClick={(e) => {
+                // Odulu alirken konfeti (buton merkezinden). currentTarget sync okunur.
+                burstConfettiAt(e.currentTarget)
+                handleCoinClick()
+              }}
               title={t('reward.claim')}
             >
               <Icon name="gift" size={15} />
