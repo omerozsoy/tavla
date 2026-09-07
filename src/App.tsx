@@ -3396,15 +3396,12 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
 
-  // Mobil: kucuk ekran + dikey yon -> oyunda yatay cevirme uyarisi
-  const [portraitMobile, setPortraitMobile] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 820px) and (orientation: portrait)')
-    const on = () => setPortraitMobile(mq.matches)
-    on()
-    mq.addEventListener('change', on)
-    return () => mq.removeEventListener('change', on)
-  }, [])
+  // NOT: Eski "telefonunu yan cevir" bloklayici uyari EKRANI kaldirildi (kullanici istegi).
+  // Oyun artik hem DIKEY hem YATAY oynanabilir: portre'de @media (max-width:900px) sutun
+  // duzeni + portre board olcegi devreye girer; kullanici telefonu yan cevirince
+  // @media (orientation: landscape) kurallari otomatik yatay duzene gecer (JS gerekmez).
+  // Tam ekran istegi icin .fs-toggle butonu (asagida) her zaman durur.
+
   // Manuel yatay: cihazin donme kilidi acikken (iPhone) fiziksel cevirmeden
   // gorunumu 90 dondurup yatay oynatir. Kullanici "yine de yatay oyna" ile secer.
   // Mobil portre: FIZIKSEL cevirme (native landscape) kullanilir. Kirik CSS 90°
@@ -5916,12 +5913,6 @@ export default function App() {
   return (
     <div className="app game-view">
       {accountBar}
-      {portraitMobile && (
-        <div className="rotate-hint">
-          <div className="rotate-icon">📱↻</div>
-          <div className="rotate-text">{t('mobile.rotate')}</div>
-        </div>
-      )}
       <button
         className="fs-toggle"
         onClick={toggleFullscreen}
