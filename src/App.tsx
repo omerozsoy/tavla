@@ -33,6 +33,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
+import { reconstructOppMove } from './online/oppMove'
 import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
 import { randomBotPr } from './botPr'
@@ -1005,6 +1006,7 @@ export default function App() {
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
   const srvPlayedRef = useRef<Step[]>([])
+  const oppLoggedRef = useRef('') // otoriter modda rakip hamlesi bir KEZ loglansin
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
   const turnRankedRef = useRef<RankedMove[] | null>(null) // tur basi tam siralama (hata tespiti)
@@ -2954,6 +2956,40 @@ export default function App() {
   // cagirilir (mid-move'u ezmemek icin poll'da korunur). Otorite SUNUCU: tahta + skor + KUP +
   // Crawford + mac-bitti hepsi sunucudan gelir; istemci yalniz yansitir (forge edemez).
   function applyServerBoard(gs: GameState, sm?: ServerMatch | null) {
+    // RAKIBIN HAMLESINI GERI URET. Otoriter modda applyOnlineState CALISMAZ; rakip
+    // hamlelerini matchLog'a katan tek yer orasiydi (snap.moves birlestirmesi) ->
+    // matchLog tek tarafli kaliyor, disa aktarilan .mat'te rakip sutunu BOMBOS oluyor
+    // ve XG "The game contains some invalid moves" diyor (gnubg luck/PR de eksik).
+    // Otoriter gecis rakibin hamlesini tek anlamli belirler: rakibin tur-basi durumu
+    // (zarlariyla) + yeni tahta -> ayni tahtaya goturen legal/maksimal terminal.
+    const prev = srvTurnStartRef.current
+    if (online && prev && prev.turn !== myColor && (prev.dice?.length ?? 0) > 0 && gs.turn !== prev.turn) {
+      const sig = `${boardKey(prev)}|${prev.dice.join('')}|${boardKey(gs)}`
+      if (sig !== oppLoggedRef.current) {
+        // Dance (oynanamayan tur) bos dizi olarak doner -> o da yazilir; aksi halde
+        // .mat'te tur atlanir ve sutun almasigi bozulur. Cozulemezse null -> kayit YOK
+        // (uydurma satir yazmaktansa eksik birakmak yeglenir).
+        const steps = reconstructOppMove(prev, gs)
+        if (steps) {
+          oppLoggedRef.current = sig
+          const oc = prev.turn
+          setMatchLog((l) => [
+            ...l,
+            {
+              notation: moveNotation({ steps, resultKey: '' }, oc),
+              best: '',
+              loss: 0,
+              pos: cloneState(prev),
+              steps,
+              playedSteps: steps,
+              player: oc,
+              dice: prev.dice.slice(0, 2),
+              seq: turnsPlayedRef.current,
+            },
+          ])
+        }
+      }
+    }
     syncEnabledRef.current = true
     setTurnStart(gs)
     setPlayed([])
@@ -3584,6 +3620,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
     setMatchLog([])
+    oppLoggedRef.current = ''
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       fairRef.current = new FairDice()
@@ -3688,6 +3725,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
       setMatchLog([])
+    oppLoggedRef.current = ''
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       fairRef.current = new FairDice()
@@ -3780,6 +3818,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
     setMatchLog([])
+    oppLoggedRef.current = ''
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
@@ -3832,6 +3871,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
       setMatchLog([])
+    oppLoggedRef.current = ''
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = 1 // turnuva maci: tek oyun
@@ -3889,6 +3929,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
       setMatchLog([])
+    oppLoggedRef.current = ''
       setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = target
@@ -4218,6 +4259,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
     setMatchLog([])
+    oppLoggedRef.current = ''
     setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
   }
