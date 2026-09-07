@@ -342,7 +342,9 @@ export default function Auth({
     <>
       <div className="grid gap-1.5">
         <Label htmlFor="pf-firstName">{t('reg.firstName')}</Label>
-        <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus />
+        {/* autoFocus YALNIZ profil duzenlemede; giris/kayit landing'inde odagi CALMA
+            (kullanici nereye yazacagini kendi secsin — istek). */}
+        <Input id="pf-firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoFocus={editing} />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="pf-lastName">{t('reg.lastName')}</Label>
