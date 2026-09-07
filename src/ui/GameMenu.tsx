@@ -19,8 +19,6 @@ interface Props {
   setShowAnalysis: (v: boolean) => void
   learnMode: boolean
   setLearnMode: (v: boolean) => void
-  autoRoll: boolean
-  setAutoRoll: (v: boolean) => void
   animOn: boolean
   toggleAnim: () => void
   /** Oyun yonu: pullarin toplandigi taraf. Tum modlarda ayni ayar. */
@@ -43,7 +41,6 @@ interface Props {
 export default function GameMenu(p: Props) {
   const { t } = useT()
   const rows: Row[] = [
-    { label: t('gm.autoRoll'), on: p.autoRoll, toggle: () => p.setAutoRoll(!p.autoRoll) },
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
     // Canlı "Analizi göster" KALDIRILDI (maç sonu analizi yeterli). Öğrenme Modu SADECE pvb.
     ...(p.canAnalyze

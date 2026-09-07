@@ -137,6 +137,7 @@ import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
+import ScrollTop from './ui/ScrollTop'
 import MatchReport from './ui/MatchReport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
@@ -1896,7 +1897,7 @@ export default function App() {
       // reused (sunucuda zaten verilmiş el): YEREL uygulama YAPMA. newTurn yerel turn'ü korur;
       // açılışta gerçek BAŞLAYAN ikinci çağıran olduğunda reused starter taşımadığı için tahta
       // YANLIŞ turn'de kalır -> "oynayamıyorum". Bunun yerine poll'a bırak: applyServerBoard
-      // doğru turn+zar+opened'i getirir. Döngü YOK: açılışta autoRoll !opening ile gated, normal
+      // doğru turn+zar+opened'i getirir. Döngü YOK: açılışta otomatik zar !opening ile gated, normal
       // turda diceRolled ile gated; poll opening overlay'ini kaldırır + rollInFlightRef korur.
       if (r.reused) return
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
@@ -3407,20 +3408,6 @@ export default function App() {
   // OYUN YONU (saga/sola topla) — tek ayar, tum modlarda (ve analiz sayfasinda) gecerli.
   const [boardDir, setBoardDir] = useBoardDir()
   const boardMirror = boardDir === 'left'
-  const [autoRoll, setAutoRoll] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem('tavla.autoroll') === '1'
-    } catch {
-      return false
-    }
-  })
-  useEffect(() => {
-    try {
-      localStorage.setItem('tavla.autoroll', autoRoll ? '1' : '0')
-    } catch {
-      /* yok */
-    }
-  }, [autoRoll])
   const [animOn, setAnimOn] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.animoff') !== '1'
@@ -3524,16 +3511,16 @@ export default function App() {
   }, [oppLive])
 
   // Otomatik zar: insanin sirasi gelince zar otomatik atilir (kucuk gecikme).
-  // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, olu kup, rakip
-  // kupu tutuyorsa veya ilk el) beklemenin anlami yok -> autoRoll kapali olsa
-  // bile otomatik at. Kup karari verilebilecekse yalnizca autoRoll acikken at.
+  // Kup teklif etme secenegi yoksa (1 puanlik oyun, Crawford, rakip kupu tutuyorsa
+  // veya ilk el) beklemenin anlami yok -> otomatik at. Teklif mumkunse beklenir ki
+  // oyuncu "Zar At"/"Katla" arasinda secim yapabilsin. (Ayar olarak sunulmuyor.)
   useEffect(() => {
     if (!interactive || diceRolled || opening || cubePending || gameWon) return
-    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed, autoRoll)) return
+    if (!shouldAutoRoll(match, turnStart.turn, turnsPlayed)) return
     const id = window.setTimeout(() => doRoll(), 500)
     return () => window.clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRoll, interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
+  }, [interactive, diceRolled, opening, cubePending, gameWon, turnStart, turnsPlayed, match])
 
   // NOT: Eski "telefonunu yan cevir" bloklayici uyari EKRANI kaldirildi (kullanici istegi).
   // Oyun artik hem DIKEY hem YATAY oynanabilir: portre'de @media (max-width:900px) sutun
@@ -4291,7 +4278,7 @@ export default function App() {
     !opening &&
     !cubePending &&
     !gameWon &&
-    shouldAutoRoll(match, turnStart.turn, turnsPlayed, autoRoll)
+    shouldAutoRoll(match, turnStart.turn, turnsPlayed)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
@@ -5157,6 +5144,9 @@ export default function App() {
         <Icon name="menu" size={30} />
       </button>
       {menuOpen && <div className="menu-backdrop" onClick={() => setMenuOpen(false)} />}
+      {/* "En Uste Git": mobileNav TAM OLARAK 4 lobi dalinda cizilir (oyun ekraninda YOK)
+          -> buton da tam oralarda cikar. Kendi scroller'ini (.app.lobby) bulur. */}
+      <ScrollTop />
     </>
   )
 
@@ -6216,8 +6206,6 @@ export default function App() {
         setShowAnalysis={setShowAnalysis}
         learnMode={learnMode}
         setLearnMode={setLearnMode}
-        autoRoll={autoRoll}
-        setAutoRoll={setAutoRoll}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
         boardDir={boardDir}

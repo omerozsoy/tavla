@@ -19426,3 +19426,61 @@ select:-webkit-autofill {
   min-height: 180px;
   padding: 48px 40px;
 }
+
+/* ---- "En Uste Git" (ScrollTop) ----
+   Kaydirma kabi .app.lobby (body overflow:hidden -> window scroll YOK). Buton yalniz
+   esik asilinca cizilir. Renk: sitenin ANA marka rengi (--terracotta / kiremit). */
+.to-top {
+  position: fixed;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  right: calc(18px + env(safe-area-inset-right));
+  z-index: 120;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-circle);
+  border: none;
+  background: var(--terracotta);
+  color: var(--ivory);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 22%);
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease;
+  animation: to-top-in 0.18s ease-out;
+}
+.to-top:hover {
+  background: var(--terracotta-hover);
+}
+.to-top:active {
+  transform: scale(0.94);
+}
+.to-top:focus-visible {
+  outline: 2px solid var(--terracotta-hover);
+  outline-offset: 2px;
+}
+@keyframes to-top-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (max-width: 900px) {
+  .to-top {
+    width: 42px;
+    height: 42px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    right: calc(14px + env(safe-area-inset-right));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .to-top {
+    animation: none;
+  }
+}

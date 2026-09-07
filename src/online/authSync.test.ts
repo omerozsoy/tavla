@@ -457,7 +457,7 @@ describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
     black.poll()
     // Açılış eli (ilk tur) HENÜZ oynanmadı -> küp yok, zar otomatik (beklemenin anlamı yok).
     expect(white.turnsPlayed).toBe(0)
-    expect(shouldAutoRoll(match5, 'white', white.turnsPlayed, false)).toBe(true)
+    expect(shouldAutoRoll(match5, 'white', white.turnsPlayed)).toBe(true)
 
     white.moveIfMyTurn() // açılış eli oynandı -> sıra siyahta
     black.poll()
@@ -467,10 +467,10 @@ describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
     expect(black.turnsPlayed).toBe(1)
     // Sıradaki oyuncu (siyah) artık küp teklif edebilir -> "Katla" butonu çıkar, zar beklenir.
     expect(canDouble(match5, 'black', false)).toBe(true)
-    expect(shouldAutoRoll(match5, 'black', black.turnsPlayed, false)).toBe(false)
+    expect(shouldAutoRoll(match5, 'black', black.turnsPlayed)).toBe(false)
 
     // Ve teklif gerçekten sunucuda oluşur (rakip poll ile yanıt ekranını görür): siyah zar
-    // ATMADAN küpü teklif eder (otomatik zar kapalı olduğu için bu fırsat artık var).
+    // ATMADAN küpü teklif eder (zar otomatik atılmadığı için bu fırsat var).
     black.cubeOfferIfCan()
     white.poll()
     expect(white.cubePending).toBe('black')
@@ -479,6 +479,6 @@ describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
   it('1 puanlık maçta küp YOK (tur sayacı ilerlese de) -> zar otomatik', () => {
     const match1 = newMatch(1)
     expect(canDouble(match1, 'white', false)).toBe(false)
-    expect(shouldAutoRoll(match1, 'white', 3, false)).toBe(true)
+    expect(shouldAutoRoll(match1, 'white', 3)).toBe(true)
   })
 })
