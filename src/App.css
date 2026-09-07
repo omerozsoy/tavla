@@ -5815,6 +5815,19 @@ button.move-row:focus-visible {
   color: var(--color-error);
   font-size: 0.85rem;
 }
+/* Giris/kayit hata banner'i: kucuk kirmizi yazi "belirgin degil" -> USTTE net uyari kutusu
+   (kirmizi zemin+kenar, ortali). Toast ile birlikte kullanici KESIN gorur. */
+.auth-error-top {
+  margin: 2px 0 6px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md, 10px);
+  background: color-mix(in srgb, var(--color-error) 12%, var(--card-bg, #fff));
+  border: 1px solid color-mix(in srgb, var(--color-error) 48%, transparent);
+  color: var(--color-error);
+  font-size: 0.95rem;
+  font-weight: 400;
+  text-align: center;
+}
 .field-error {
   color: var(--color-error);
   font-size: 0.78rem;

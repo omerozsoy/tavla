@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import type { Profile } from '../storage'
@@ -220,8 +221,11 @@ export default function Auth({
       const user = await api.login(loginId.trim(), loginPw)
       onAuthed(user)
     } catch (err) {
-      // Giriste alan bazli mesaj yerine tek anlasilir uyari
-      setError(err instanceof api.ApiError ? t('auth.badLogin') : t('auth.offline'))
+      // Giriste alan bazli mesaj yerine tek anlasilir uyari. Hem inline banner (giris
+      // kolonu ustunde, belirgin) hem site-standart toast -> kullanici KESIN gorur.
+      const msg = err instanceof api.ApiError ? t('auth.badLogin') : t('auth.offline')
+      setError(msg)
+      notify.error(msg)
     } finally {
       setBusy(false)
     }
@@ -532,6 +536,11 @@ export default function Auth({
         {/* GATE: Giris | Kayit YAN YANA (iki kolon) — sekmeler kaldirildi.
             Tek <form> korunur: Giris type=button->doLogin, Kayit type=submit->doRegister
             (form onSubmit). Login sifresi AYRI state (loginPw) -> alanlar cakismaz. */}
+        {/* Hata banner'i giris/kayit alaninin USTUNDE (belirgin) — eskiden kolonlarin
+            altinda dipte "saclma sapan" yerde cikiyordu. Ayrica toast da basilir. */}
+        {!editing && !forgot && error && (
+          <div className="register-error auth-error-top" role="alert">{error}</div>
+        )}
         {!editing && !forgot && (
           <div className="auth-cols">
             {/* Sol kolon: Giris yap. Sira: Google ile giris (ust) -> cizgi ->
@@ -658,7 +667,7 @@ export default function Auth({
           </>
         )}
 
-        {!forgot && error && <div className="register-error" role="alert">{error}</div>}
+        {editing && error && <div className="register-error" role="alert">{error}</div>}
 
         {/* Ana aksiyon grubu: [Vazgeç] [Kaydet] birlikte, sag hizali */}
         {editing && (
@@ -706,44 +715,56 @@ export default function Auth({
         {editUser && onDeleteAccount && (
           <>
             <Separator className="my-6" />
-            {onDeleteAccount && (
-              <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-                <h3 className="text-sm font-normal text-destructive">{danger.zone}</h3>
-                <p className="mt-1 text-sm text-muted-foreground">{danger.desc}</p>
-                {confirmDelete ? (
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                    <span className="text-sm font-normal text-foreground">
-                      {t('account.deleteConfirm')}
-                    </span>
-                    <div className="flex gap-3">
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setConfirmDelete(false)}
-                      >
-                        {t('reg.cancel')}
-                      </Button>
-                      <Button type="button" variant="destructive" onClick={onDeleteAccount}>
-                        {t('account.deleteYes')}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="mt-4">
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      onClick={() => setConfirmDelete(true)}
-                    >
-                      <Icon name="trash" size={16} /> {t('account.delete')}
-                    </Button>
-                  </div>
-                )}
+            <div className="mt-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+              <h3 className="text-sm font-normal text-destructive">{danger.zone}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{danger.desc}</p>
+              <div className="mt-4">
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  <Icon name="trash" size={16} /> {t('account.delete')}
+                </Button>
               </div>
-            )}
+            </div>
           </>
         )}
       </form>
+      {/* Hesap silme onayi: inline yerine site-tasarimli modal (register-overlay). Auth
+          tam-sayfa overlay icinde oldugundan position:fixed guvenli olsun diye createPortal
+          ile body'ye tasinir. Bkz [[fixed-portal-transform-tuzagi]]. */}
+      {confirmDelete &&
+        editUser &&
+        onDeleteAccount &&
+        createPortal(
+          <div
+            className="register-overlay modal"
+            role="dialog"
+            aria-modal="true"
+            onClick={() => setConfirmDelete(false)}
+          >
+            <div className="register-card resign-card" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-destructive">
+                <Icon name="trash" size={20} /> {danger.zone}
+              </h2>
+              <p className="register-sub">{t('account.deleteConfirm')}</p>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  setConfirmDelete(false)
+                  onDeleteAccount()
+                }}
+              >
+                <Icon name="trash" size={16} /> {t('account.deleteYes')}
+              </Button>
+              <Button variant="secondary" onClick={() => setConfirmDelete(false)}>
+                {t('reg.cancel')}
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
