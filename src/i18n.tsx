@@ -1017,7 +1017,7 @@ const TR: Dict = {
   'mr.loser': 'Kaybeden',
   'mr.level': 'Seviye',
   'mr.errorRate': 'Hata Oranı (PR)',
-  'mr.checkerPr': 'Oyun PR',
+  'mr.checkerPr': 'Pul PR',
   'mr.cubePr': 'Küp PR',
   'mr.rating': 'Rating',
   'mr.coins': 'Coin',

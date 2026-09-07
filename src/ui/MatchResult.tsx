@@ -200,8 +200,8 @@ export default function MatchResult({
               {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
             </span>
           </div>
-          {/* XG kırılım YALNIZ küp kararı varsa (aksi halde Oyun PR = Hata Oranı -> gereksiz/karışık).
-              Küp varken: Hata Oranı=genel, Oyun PR=checker, Küp PR=cube (üçü de anlamlı + farklı). */}
+          {/* XG kırılım YALNIZ küp kararı varsa (aksi halde Pul PR = Hata Oranı -> gereksiz/karışık).
+              Küp varken: Hata Oranı=genel, Pul PR=checker, Küp PR=cube (üçü de anlamlı + farklı). */}
           {(winnerCubePr != null || loserCubePr != null) && (
             <>
               <div className="mr-row mr-sub">
