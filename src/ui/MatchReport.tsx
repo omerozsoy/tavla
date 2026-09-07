@@ -163,215 +163,216 @@ export default function MatchReport({
             <Icon name="x" size={18} />
           </Button>
         </div>
-
-        {log.length === 0 ? (
-          <p className="register-sub">{t('rep.empty')}</p>
-        ) : mode === 'stats' ? (
-          <div className="report-stats">
-            {pr != null && (
-              <div className="rep-pr">
-                <span className="rep-pr-num">
-                  PR <b>{pr.toFixed(2)}</b>
-                </span>
-                <span
-                  className="rep-pr-title"
-                  style={{ color: divisionOfPR(pr).color, borderColor: divisionOfPR(pr).color }}
-                >
-                  <Icon name={divisionOfPR(pr).icon} size={14} /> {t(divisionOfPR(pr).key)}
-                </span>
-              </div>
-            )}
-            <div className="rep-line">
-              <span>{t('rep.decisions')}</span>
-              <b>{statLog.length}</b>
-            </div>
-            <div className="rep-line good">
-              <span>{t('rep.perfect')}</span>
-              <b>{counts.good}</b>
-            </div>
-            <div className="rep-line ok">
-              <span>{t('rep.minor')}</span>
-              <b>{counts.ok}</b>
-            </div>
-            <div className="rep-line bad">
-              <span>{t('rep.error')}</span>
-              <b>{counts.bad}</b>
-            </div>
-            <div className="rep-line blunder">
-              <span>{t('rep.blunder')}</span>
-              <b>{counts.blunder}</b>
-            </div>
-            {worst && worst.loss > 0.001 && (
-              <div className="rep-worst">
-                {t('rep.worst')}: <code>{worst.notation}</code> → <code>{worst.best}</code> (
-                {worst.loss.toFixed(3)})
-              </div>
-            )}
-            {cubeLog.length > 0 && (
-              <div className="rep-cube">
-                <div className="rep-cube-head">
-                  <Icon name="target" size={14} /> {t('cube.decisions')}
-                </div>
-                {cubeLog.map((e, i) => (
-                  <div
-                    key={i}
-                    className={`rep-cube-row ${e.cube!.correct ? 'ok' : 'wrong'}`}
+        <div className="report-body">
+          {log.length === 0 ? (
+            <p className="register-sub">{t('rep.empty')}</p>
+          ) : mode === 'stats' ? (
+            <div className="report-stats">
+              {pr != null && (
+                <div className="rep-pr">
+                  <span className="rep-pr-num">
+                    PR <b>{pr.toFixed(2)}</b>
+                  </span>
+                  <span
+                    className="rep-pr-title"
+                    style={{ color: divisionOfPR(pr).color, borderColor: divisionOfPR(pr).color }}
                   >
-                    <span className="rcc-chose">{t(`cube.chose.${e.cube!.chosen}`)}</span>
-                    <span className="rcc-win">{t('cube.win')} {e.cube!.win.toFixed(0)}%</span>
-                    <span className="rcc-verdict">
-                      {e.cube!.correct ? (
-                        <>
-                          <Icon name="check" size={12} /> {t('cube.correct')}
-                        </>
-                      ) : (
-                        recLabel(e.cube!.recommended)
-                      )}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="analysis-layout">
-            {/* Sol: hamle listesi */}
-            <div className="analysis-list">
-              {humanColor && (
-                <div className="rep-filter">
-                  <Button
-                    variant={scope === 'mine' ? 'secondary' : 'ghost'}
-                    onClick={() => setScope('mine')}
-                  >
-                    {t('rep.scopeMine')}
-                  </Button>
-                  <Button
-                    variant={scope === 'opp' ? 'secondary' : 'ghost'}
-                    onClick={() => setScope('opp')}
-                  >
-                    {t('rep.scopeOpp')}
-                  </Button>
+                    <Icon name={divisionOfPR(pr).icon} size={14} /> {t(divisionOfPR(pr).key)}
+                  </span>
                 </div>
               )}
-              <div className="rep-filter">
-                <Button
-                  variant={worstFirst ? 'ghost' : 'secondary'}
-                  onClick={() => setWorstFirst(false)}
-                >
-                  {t('rep.byOrder')}
-                </Button>
-                <Button
-                  variant={worstFirst ? 'secondary' : 'ghost'}
-                  onClick={() => setWorstFirst(true)}
-                >
-                  {t('rep.byWorst', { n: mistakes.length })}
-                </Button>
+              <div className="rep-line">
+                <span>{t('rep.decisions')}</span>
+                <b>{statLog.length}</b>
               </div>
-              <div className="analysis-rows">
-                {rows.map(({ e, i }, idx) => {
-                  const b = band(e.loss)
-                  return (
-                    <button
-                      key={i}
-                      className={`analysis-row ${sel === i ? 'sel' : ''}`}
-                      onClick={() => selectMove(i)}
-                    >
-                      <span className={`aq-dot ${b.cls}`} />
-                      <span className="ar-no">{idx + 1}.</span>
-                      {e.dice && e.dice.length >= 2 && e.player && (
-                        <span className="ar-dice">
-                          <Die value={e.dice[0]} owner={e.player} used={false} />
-                          <Die value={e.dice[1]} owner={e.player} used={false} />
-                        </span>
-                      )}
-                      <span className="ar-move">{e.notation}</span>
-                      {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
-                    </button>
-                  )
-                })}
+              <div className="rep-line good">
+                <span>{t('rep.perfect')}</span>
+                <b>{counts.good}</b>
               </div>
-            </div>
-
-            {/* Sag: secili hamlenin tahtasi + siralı adaylar */}
-            <div className="analysis-detail">
-              {cur?.pos && cur.player ? (
-                <>
-                  <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={effHuman === 'black'} />
-                  {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
-                  <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
-                    {candIdx < 0 || candIdx === playedIdx
-                      ? t('rep.yourMove')
-                      : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
+              <div className="rep-line ok">
+                <span>{t('rep.minor')}</span>
+                <b>{counts.ok}</b>
+              </div>
+              <div className="rep-line bad">
+                <span>{t('rep.error')}</span>
+                <b>{counts.bad}</b>
+              </div>
+              <div className="rep-line blunder">
+                <span>{t('rep.blunder')}</span>
+                <b>{counts.blunder}</b>
+              </div>
+              {worst && worst.loss > 0.001 && (
+                <div className="rep-worst">
+                  {t('rep.worst')}: <code>{worst.notation}</code> → <code>{worst.best}</code> (
+                  {worst.loss.toFixed(3)})
+                </div>
+              )}
+              {cubeLog.length > 0 && (
+                <div className="rep-cube">
+                  <div className="rep-cube-head">
+                    <Icon name="target" size={14} /> {t('cube.decisions')}
                   </div>
-                  {winPct(cur.probs) != null && (
-                    <div className="an-winbar" title={t('rep.winChance')}>
-                      <div className="an-winfill" style={{ width: `${winPct(cur.probs)}%` }} />
-                      <span className="an-winlabel">
-                        {t('rep.winChance')}: {winPct(cur.probs)}%
+                  {cubeLog.map((e, i) => (
+                    <div
+                      key={i}
+                      className={`rep-cube-row ${e.cube!.correct ? 'ok' : 'wrong'}`}
+                    >
+                      <span className="rcc-chose">{t(`cube.chose.${e.cube!.chosen}`)}</span>
+                      <span className="rcc-win">{t('cube.win')} {e.cube!.win.toFixed(0)}%</span>
+                      <span className="rcc-verdict">
+                        {e.cube!.correct ? (
+                          <>
+                            <Icon name="check" size={12} /> {t('cube.correct')}
+                          </>
+                        ) : (
+                          recLabel(e.cube!.recommended)
+                        )}
                       </span>
                     </div>
-                  )}
-                  <div className="an-cands">
-                    {(cur.cands ?? []).map((c, ci) => {
-                      const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
-                      const isPlayed = ci === playedIdx
-                      return (
-                        <button
-                          key={ci}
-                          className={`an-cand ${candIdx === ci ? 'view' : ''} ${isPlayed ? 'played' : ''}`}
-                          onClick={() => setCandIdx(ci)}
-                        >
-                          <span className="an-rank">{ci + 1}</span>
-                          <span className="an-cmove">{c.notation}</span>
-                          <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
-                            {ci === 0
-                              ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`
-                              : diff.toFixed(3)}
-                          </span>
-                          <span className="an-tags">
-                            {ci === 0 && (
-                              <span className="an-star" title={t('rep.best')}>
-                                <Icon name="star" size={13} />
-                              </span>
-                            )}
-                            {isPlayed && (
-                              <span className="an-you-tag">{t('rep.yourMove')}</span>
-                            )}
-                          </span>
-                        </button>
-                      )
-                    })}
-                    {/* Oynadigin hamle top listede yoksa (blunder) ayrica goster + isaretle */}
-                    {playedIdx < 0 && cur.notation && (
-                      <button
-                        className={`an-cand played you ${candIdx < 0 ? 'view' : ''}`}
-                        onClick={() => setCandIdx(-1)}
-                      >
-                        <span className="an-rank">·</span>
-                        <span className="an-cmove">{cur.notation}</span>
-                        <span className="an-eq neg">
-                          {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
-                        </span>
-                        <span className="an-tags">
-                          <span className="an-you-tag">{t('rep.yourMove')}</span>
-                        </span>
-                      </button>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <p className="register-sub small">{t('rep.selectMove')}</p>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-        )}
-        {log.length > 0 && (
-          <div className="mt-3.5 flex justify-center">
-            <Button variant="outline" onClick={exportMat}>
-              <Icon name="install" size={14} /> {t('rep.export')}
-            </Button>
-          </div>
-        )}
+          ) : (
+            <div className="analysis-layout">
+              {/* Sol: hamle listesi */}
+              <div className="analysis-list">
+                {humanColor && (
+                  <div className="rep-filter">
+                    <Button
+                      variant={scope === 'mine' ? 'secondary' : 'ghost'}
+                      onClick={() => setScope('mine')}
+                    >
+                      {t('rep.scopeMine')}
+                    </Button>
+                    <Button
+                      variant={scope === 'opp' ? 'secondary' : 'ghost'}
+                      onClick={() => setScope('opp')}
+                    >
+                      {t('rep.scopeOpp')}
+                    </Button>
+                  </div>
+                )}
+                <div className="rep-filter">
+                  <Button
+                    variant={worstFirst ? 'ghost' : 'secondary'}
+                    onClick={() => setWorstFirst(false)}
+                  >
+                    {t('rep.byOrder')}
+                  </Button>
+                  <Button
+                    variant={worstFirst ? 'secondary' : 'ghost'}
+                    onClick={() => setWorstFirst(true)}
+                  >
+                    {t('rep.byWorst', { n: mistakes.length })}
+                  </Button>
+                </div>
+                <div className="analysis-rows">
+                  {rows.map(({ e, i }, idx) => {
+                    const b = band(e.loss)
+                    return (
+                      <button
+                        key={i}
+                        className={`analysis-row ${sel === i ? 'sel' : ''}`}
+                        onClick={() => selectMove(i)}
+                      >
+                        <span className={`aq-dot ${b.cls}`} />
+                        <span className="ar-no">{idx + 1}.</span>
+                        {e.dice && e.dice.length >= 2 && e.player && (
+                          <span className="ar-dice">
+                            <Die value={e.dice[0]} owner={e.player} used={false} />
+                            <Die value={e.dice[1]} owner={e.player} used={false} />
+                          </span>
+                        )}
+                        <span className="ar-move">{e.notation}</span>
+                        {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Sag: secili hamlenin tahtasi + siralı adaylar */}
+              <div className="analysis-detail">
+                {cur?.pos && cur.player ? (
+                  <>
+                    <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={effHuman === 'black'} />
+                    {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
+                    <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
+                      {candIdx < 0 || candIdx === playedIdx
+                        ? t('rep.yourMove')
+                        : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
+                    </div>
+                    {winPct(cur.probs) != null && (
+                      <div className="an-winbar" title={t('rep.winChance')}>
+                        <div className="an-winfill" style={{ width: `${winPct(cur.probs)}%` }} />
+                        <span className="an-winlabel">
+                          {t('rep.winChance')}: {winPct(cur.probs)}%
+                        </span>
+                      </div>
+                    )}
+                    <div className="an-cands">
+                      {(cur.cands ?? []).map((c, ci) => {
+                        const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
+                        const isPlayed = ci === playedIdx
+                        return (
+                          <button
+                            key={ci}
+                            className={`an-cand ${candIdx === ci ? 'view' : ''} ${isPlayed ? 'played' : ''}`}
+                            onClick={() => setCandIdx(ci)}
+                          >
+                            <span className="an-rank">{ci + 1}</span>
+                            <span className="an-cmove">{c.notation}</span>
+                            <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
+                              {ci === 0
+                                ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`
+                                : diff.toFixed(3)}
+                            </span>
+                            <span className="an-tags">
+                              {ci === 0 && (
+                                <span className="an-star" title={t('rep.best')}>
+                                  <Icon name="star" size={13} />
+                                </span>
+                              )}
+                              {isPlayed && (
+                                <span className="an-you-tag">{t('rep.yourMove')}</span>
+                              )}
+                            </span>
+                          </button>
+                        )
+                      })}
+                      {/* Oynadigin hamle top listede yoksa (blunder) ayrica goster + isaretle */}
+                      {playedIdx < 0 && cur.notation && (
+                        <button
+                          className={`an-cand played you ${candIdx < 0 ? 'view' : ''}`}
+                          onClick={() => setCandIdx(-1)}
+                        >
+                          <span className="an-rank">·</span>
+                          <span className="an-cmove">{cur.notation}</span>
+                          <span className="an-eq neg">
+                            {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
+                          </span>
+                          <span className="an-tags">
+                            <span className="an-you-tag">{t('rep.yourMove')}</span>
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <p className="register-sub small">{t('rep.selectMove')}</p>
+                )}
+              </div>
+            </div>
+          )}
+          {log.length > 0 && (
+            <div className="mt-3.5 flex justify-center">
+              <Button variant="outline" onClick={exportMat}>
+                <Icon name="install" size={14} /> {t('rep.export')}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
