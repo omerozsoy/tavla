@@ -36,6 +36,7 @@ export default function Products({
   const [products, setProducts] = useState<Product[] | null>(null)
   const [error, setError] = useState(false)
   const [selected, setSelected] = useState<Product | null>(null)
+  const [cat, setCat] = useState<string>('all') // secili kategori filtresi
 
   useEffect(() => {
     getProducts()
@@ -44,6 +45,17 @@ export default function Products({
   }, [])
 
   const catLabel = (c: string) => t(`products.category.${c}`)
+
+  // Sadece urunlerde MEVCUT kategoriler (katalog sirasi korunur) -> filtre cubugu.
+  const cats = useMemo(() => {
+    const seen: string[] = []
+    for (const p of products ?? []) if (!seen.includes(p.category)) seen.push(p.category)
+    return seen
+  }, [products])
+  const visible = useMemo(
+    () => (products ?? []).filter((p) => cat === 'all' || p.category === cat),
+    [products, cat],
+  )
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -59,13 +71,35 @@ export default function Products({
             </h2>
             <p className="register-sub">{t('products.sub')}</p>
 
+            {cats.length > 1 && (
+              <div className="products-cats" role="tablist">
+                <button
+                  type="button"
+                  className={`products-cat-chip ${cat === 'all' ? 'active' : ''}`}
+                  onClick={() => setCat('all')}
+                >
+                  {t('products.all')}
+                </button>
+                {cats.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    className={`products-cat-chip ${cat === c ? 'active' : ''}`}
+                    onClick={() => setCat(c)}
+                  >
+                    {catLabel(c)}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {error && <p className="products-msg">{t('products.loadError')}</p>}
             {!error && products && products.length === 0 && (
               <p className="products-msg">{t('products.empty')}</p>
             )}
 
             <div className="products-grid">
-              {(products ?? []).map((p) => {
+              {visible.map((p) => {
                 const out = p.stock <= 0
                 return (
                   <button

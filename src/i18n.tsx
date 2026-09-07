@@ -276,6 +276,7 @@ const TR: Dict = {
   'products.category.kitap': 'Kitap',
   'products.category.zar_kulesi': 'Zar Kulesi',
   'products.category.diger': 'Diğer',
+  'products.all': 'Tümü',
   // Siparislerim
   'orders.title': 'Siparişlerim',
   'orders.sub': 'Verdiğin siparişler ve durumları.',
@@ -1491,6 +1492,7 @@ const EN: Dict = {
   'products.category.kitap': 'Book',
   'products.category.zar_kulesi': 'Dice Tower',
   'products.category.diger': 'Other',
+  'products.all': 'All',
   // My orders
   'orders.title': 'My Orders',
   'orders.sub': 'Your orders and their status.',

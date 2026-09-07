@@ -19604,6 +19604,30 @@ select:-webkit-autofill {
   text-align: center;
   padding: 24px 0;
 }
+.products-cats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.products-cat-chip {
+  padding: 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.products-cat-chip:hover {
+  border-color: var(--accent);
+}
+.products-cat-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
 .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
