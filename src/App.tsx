@@ -1086,7 +1086,17 @@ export default function App() {
   const [ratingChange, setRatingChange] = useState<{ before: number; after: number } | null>(null)
   // Sunucu-otoriter PR (mac-sonu): kendi + rakip PR'i backend'de her oyuncunun KENDI
   // log'undan hesaplanir -> iki oyuncu AYNI degerleri gorur. null ise lokal prOf'a duser.
-  const [serverPr, setServerPr] = useState<{ self: number | null; opp: number | null } | null>(null)
+  // KIRILIM (checker/cube) da sunucudan gelir -> "Pul Oyunu PR" / "Kup PR" satirlari da iki
+  // oyuncuda OZDES olur (rakibin kup kararlari lokal olarak hic olculemez; backend onun kendi
+  // log'undan hesaplar). Alan null ise lokal olcume duser.
+  const [serverPr, setServerPr] = useState<{
+    self: number | null
+    opp: number | null
+    checkerSelf?: number | null
+    checkerOpp?: number | null
+    cubeSelf?: number | null
+    cubeOpp?: number | null
+  } | null>(null)
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
   // Renk-anahtarlı (peer snapshot'a güvenmez). null iken lokal prLuck'a düşer.
@@ -1885,10 +1895,7 @@ export default function App() {
     if (!code) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
-    if (cubeHintRef.current?.kind === 'offer') {
-      cubeHintRef.current = null
-      recordCubePR(myColor, 'offer', 'no-double')
-    }
+    recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
     try {
       const r = await serverRoll(code)
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
@@ -1955,12 +1962,9 @@ export default function App() {
       void doRollAuthoritative()
       return
     }
-    // Roll oncesi kup teklif tavsiyesi varsa: insan katlamak yerine zar atti ->
-    // "no-double" karari olarak PR'a isle (guclu tavsiyeyi kacirdiysa equity kaybi sayilir).
-    if (cubeHintRef.current?.kind === 'offer') {
-      cubeHintRef.current = null
-      recordCubePR(online ? myColor : 'white', 'offer', 'no-double')
-    }
+    // Insan katlamak yerine zar atti -> "no-double" karari olarak PR'a isle (guclu tavsiyeyi
+    // kacirdiysa equity kaybi sayilir). Kup danismani (pvb) olsun olmasin kaydedilir.
+    recordNoDoubleIfEligible()
     const dice = orderDice(fairRef.current.next()) // varsayilan: buyuk zar once (tikla-degistir mevcut)
     Sound.dice()
     const rolled = newTurn(turnStart, dice)
@@ -2040,6 +2044,20 @@ export default function App() {
       .catch(() => {})
   }
 
+  // "Katlamama" (no-double) DA bir küp kararıdır (XG): zar atıldığı anda oyuncu küpü teklif
+  // edebiliyorduysa PR'a no-double olarak yazılır. Eskiden yalnız küp DANIŞMANI hint'i varken
+  // (mode==='pvb') sayılıyordu -> online/pvp maçlarda hiç küp kararı oluşmuyor, sonuç ekranındaki
+  // "Küp PR" satırı hep boş kalıyordu. Burası danışmanı GÖSTERMEZ (online'da hile olurdu),
+  // yalnızca kararı kaydeder. Uygunluk koşulları küp danışmanı effect'iyle BİREBİR aynı.
+  function recordNoDoubleIfEligible() {
+    cubeHintRef.current = null
+    const c: Player = online ? myColor : turnStart.turn
+    if (gameEnd || gameWon || matchOver || cubePending !== null || diceRolled) return
+    if (turnsPlayed <= 0 || turnStart.turn !== c) return
+    if (!canDouble(match, c, false)) return
+    recordCubePR(c, 'offer', 'no-double')
+  }
+
   // Sunucu (authoritative) çağrısı hatasını okunur mesaja çevir: HTTP hatasında sunucunun
   // gerçek mesajını (ör. "Crawford oyununda küp kullanılamaz"), ağ kopukluğunda genel uyarı.
   function srvErr(e: unknown): string {
@@ -2052,7 +2070,16 @@ export default function App() {
     // OTORİTER (Faz 2): küp teklifi SUNUCUYA (kurallar sunucuda: sıra/sahiplik/Crawford).
     // Yerel mutasyon YOK -> poll server_match ile cubePending'i senkronlar (forge yok).
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeOffer(room.code).catch((e) => notify.error(srvErr(e)))
+      // Küp kararı SUNUCUDA uygulanır ama PR/.mat kaydı istemcide tutulur -> sunucu teklifi
+      // KABUL ettiyse (2xx) kendi kararımı da logla; yoksa online maçta Küp PR hiç oluşmuyordu.
+      if (room?.code) {
+        void serverCubeOffer(room.code)
+          .then(() => {
+            recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
+            recordCubeEvent(player, 'double') // maç kaydı (okunur)
+          })
+          .catch((e) => notify.error(srvErr(e)))
+      }
       return
     }
     recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
@@ -2063,7 +2090,15 @@ export default function App() {
   function handleTake() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeRespond(room.code, 'take').catch((e) => notify.error(srvErr(e)))
+      if (room?.code) {
+        const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
+        void serverCubeRespond(room.code, 'take')
+          .then(() => {
+            recordCubePR(srvTaker, 'take', 'take') // XG cube PR + .mat kaydı
+            recordCubeEvent(srvTaker, 'take') // maç kaydı (okunur)
+          })
+          .catch((e) => notify.error(srvErr(e)))
+      }
       return
     }
     const doubler = cubePending
@@ -2077,7 +2112,15 @@ export default function App() {
   function handleDrop() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverCubeRespond(room.code, 'drop').catch((e) => notify.error(srvErr(e)))
+      if (room?.code) {
+        const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
+        void serverCubeRespond(room.code, 'drop')
+          .then(() => {
+            recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
+            recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
+          })
+          .catch((e) => notify.error(srvErr(e)))
+      }
       return
     }
     const doubler = cubePending
@@ -2172,6 +2215,8 @@ export default function App() {
               setMessage(t('msg.doubledAsk', { value: match.cube.value * 2 }))
               return
             }
+            // Katlamadi -> bu da bir kup karari (no-double): XG'de paydaya girer.
+            if (!cancelled) recordCubePR(BOT_PLAYER, 'offer', 'no-double')
           } catch {
             /* ag yuklenemedi - kupsuz devam */
           }
@@ -2753,7 +2798,14 @@ export default function App() {
         // Sunucu-otoriter PR (iki oyuncuda AYNI). Rakip henuz raporlamadiysa poll et.
         const code = room?.code ?? null
         let oppPr = r.pr_opponent ?? null
-        setServerPr({ self: r.pr_self ?? null, opp: oppPr })
+        setServerPr({
+          self: r.pr_self ?? null,
+          opp: oppPr,
+          checkerSelf: r.pr_checker_self ?? null,
+          checkerOpp: r.pr_checker_opponent ?? null,
+          cubeSelf: r.pr_cube_self ?? null,
+          cubeOpp: r.pr_cube_opponent ?? null,
+        })
         // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
         // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
         const setLuckPair = (selfL?: number | null, oppL?: number | null) =>
@@ -2782,7 +2834,15 @@ export default function App() {
             const pair = await matchPr(code)
             if (pair.opponent != null) {
               oppPr = pair.opponent
-              setServerPr({ self: pair.self ?? r!.pr_self ?? null, opp: pair.opponent })
+              // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
+              setServerPr((prev) => ({
+                self: pair.self ?? prev?.self ?? r!.pr_self ?? null,
+                opp: pair.opponent,
+                checkerSelf: pair.checker_self ?? prev?.checkerSelf ?? null,
+                checkerOpp: pair.checker_opponent ?? prev?.checkerOpp ?? null,
+                cubeSelf: pair.cube_self ?? prev?.cubeSelf ?? null,
+                cubeOpp: pair.cube_opponent ?? prev?.cubeOpp ?? null,
+              }))
             }
             if (pair.luck_opp != null || pair.luck_self != null) {
               setLuckPair(pair.luck_self, pair.luck_opp)
@@ -4417,11 +4477,23 @@ export default function App() {
     }
     return prOf(c) ?? prLooseOf(c) ?? 0
   }
-  // Sonuç ekranında gösterilen Pul PR. Küp kararı YOKSA Pul PR = genel PR -> "Hata Oranı"
-  // satırıyla AYNI kaynağı (sunucu-otoriter / bot PR) kullan; aksi halde iki satır farklı
-  // çıkıyordu (ör. bot: Hata Oranı 8.4 ama Pul PR 0.12). Küp varsa gerçek checker kırılımı.
-  const prCheckerShown = (c: Player): number | null =>
-    (prStats[c].cubeDecisions ?? 0) > 0 ? prCheckerOf(c) : prShown(c)
+  // Sonuç ekranındaki "Pul Oyunu PR". Öncelik: pvb bot (sentetik PR ile TUTARLI kal) ->
+  // SUNUCU-otoriter kırılım (iki oyuncuda özdeş) -> lokal ölçüm. Küp kararı YOKSA Pul PR =
+  // genel PR -> "Hata Oranı" satırıyla AYNI kaynağı kullan; aksi halde iki satır farklı
+  // çıkıyordu (ör. bot: Hata Oranı 8.4 ama Pul PR 0.12).
+  const prCheckerShown = (c: Player): number | null => {
+    if (!online && botPr != null && c !== prHumanColor) return botPr
+    const srv = serverPr ? (c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) : null
+    if (srv != null) return srv
+    return (prStats[c].cubeDecisions ?? 0) > 0 ? prCheckerOf(c) : prShown(c)
+  }
+  // "Küp PR": sunucu kırılımı -> lokal küp ölçümü. Hiç SAYILAN küp kararı yoksa null -> "—"
+  // (satır her maçta görünür; uydurma 0.00 YAZMAYIZ).
+  const prCubeShown = (c: Player): number | null => {
+    const srv = serverPr ? (c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) : null
+    if (srv != null) return srv
+    return prCubeOf(c)
+  }
   // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
   // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
   // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
@@ -6404,9 +6476,9 @@ export default function App() {
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           winnerCheckerPr={prCheckerShown(mWinner)}
-          winnerCubePr={prCubeOf(mWinner)}
+          winnerCubePr={prCubeShown(mWinner)}
           loserCheckerPr={prCheckerShown(opponent(mWinner))}
-          loserCubePr={prCubeOf(opponent(mWinner))}
+          loserCubePr={prCubeShown(opponent(mWinner))}
           winnerBand={t(prBand(prShown(mWinner)))}
           loserBand={t(prBand(prShown(opponent(mWinner))))}
           winnerLuck={luckOf(mWinner)}

@@ -1256,6 +1256,11 @@ export async function reportRating(
   achievements?: UnlockedAchievement[]
   pr_self?: number | null // sunucu-otoriter kendi PR (kendi log'undan)
   pr_opponent?: number | null // rakibin sunucu-otoriter PR'i (varsa)
+  // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — ayni log'dan pul/kup ayri havuzlanir.
+  pr_checker_self?: number | null
+  pr_cube_self?: number | null // hic sayilan kup karari yoksa null -> "—"
+  pr_checker_opponent?: number | null
+  pr_cube_opponent?: number | null
   luck_self?: number | null // kendi HAM luck'ım (renk-luck) — sunucu-otoriter sans (ONNX fallback)
   luck_opp?: number | null // rakibin HAM luck'ı (varsa) -> iki ekranda tutarlı net
   luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1, async -> ilkin null)
@@ -1295,6 +1300,10 @@ export async function matchPr(
 ): Promise<{
   self: number | null
   opponent: number | null
+  checker_self?: number | null // XG kirilimi: pul-yalniz PR
+  cube_self?: number | null // XG kirilimi: kup-yalniz PR (kup karari yoksa null)
+  checker_opponent?: number | null
+  cube_opponent?: number | null
   luck_self?: number | null
   luck_opp?: number | null
   luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1)
