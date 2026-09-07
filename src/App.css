@@ -1127,6 +1127,13 @@ button[aria-disabled='true'],
     grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
   }
 }
+/* Dar telefon: 3 kolonda hucre (~91px) < cerceve (96-102px) -> tasma/kirpma.
+   2 kolona dus (~167px hucre) -> cerceve rahat sigar, kirpma biter. */
+@media (max-width: 400px) {
+  .fg-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
 .shop-sec-row {
   display: flex;
   align-items: center;
@@ -6797,8 +6804,9 @@ html.fs-active .account-bar {
     left: 0;
     top: 0;
     height: 100%;
-    width: 210px;
-    max-width: 82vw;
+    /* 210px'te uzun etiketler ("Online Turnuvalar") ~9px kirpiliyordu -> genislet. */
+    width: 236px;
+    max-width: 84vw;
     z-index: 100;
     background: var(--card-bg);
     padding: 14px 12px 12px;
@@ -6815,6 +6823,9 @@ html.fs-active .account-bar {
   .side-menu .menu-btn,
   .side-menu [data-slot='button'] {
     min-height: 44px;
+    /* shadcn px-4 (16px) uzun etiketi (~10px) drawer disina tasiriyordu -> kis. */
+    padding-inline: 10px;
+    justify-content: flex-start;
   }
   /* Drawer basligindaki TavlaTV logosu (yalniz mobil drawer'da gorunur) */
   .side-menu-brand {
@@ -11520,6 +11531,26 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   font-weight: 400;
 }
+/* ---- Mobil (dar telefon): 7 kolon 375px karta sigmaz -> "PUAN" kolonu kirpiliyordu.
+   Ikincil kolonlari (Mac / G-M / %) gizle; # | oyuncu | bayrak | deger kalir.
+   Not: rating/coin zaten oyuncu adinin ALTINDA (PlayerIdentity) gorunur -> bilgi kaybi az. */
+@media (max-width: 560px) {
+  .lb-head,
+  .lb-row {
+    grid-template-columns: 26px minmax(0, 1fr) 22px minmax(46px, auto);
+    gap: 4px;
+    padding: 8px 8px;
+  }
+  .lb-games,
+  .lb-wl,
+  .lb-wr {
+    display: none;
+  }
+  .lb-flag,
+  .rank-flag {
+    padding-left: 4px;
+  }
+}
 /* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
 .wxp-bd {
   margin: 4px 0 12px;
@@ -15974,6 +16005,25 @@ button.acct-row:hover:not(:disabled) {
 .prof-ov-tabs > button.active .prof-ov-count {
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent);
+}
+/* Mobil: 5 sekme dar telefona sigmaz (588px > 347px) -> yatay kaydirilabilir serit.
+   Sekmeler kucultulmez (flex:0 0 auto), scrollbar gizli, hafif daha kompakt padding. */
+@media (max-width: 560px) {
+  .prof-ov-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .prof-ov-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .prof-ov-tabs > button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 9px 11px;
+    font-size: 0.88rem;
+  }
 }
 .prof-ov-stats-tab {
   margin-top: 2px;

@@ -182,6 +182,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                     <Skeleton w={22} h={22} r="50%" />
                     <Skeleton w={90 + ((i * 17) % 50)} h={12} />
                   </span>
+                  <span className="lb-flag" aria-hidden="true" />
                   <span className="lb-games"><Skeleton w={36} h={12} /></span>
                   <span className="lb-wl"><Skeleton w={40} h={12} /></span>
                   <span className="lb-wr"><Skeleton w={28} h={12} /></span>
