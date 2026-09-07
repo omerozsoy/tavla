@@ -19,6 +19,11 @@
 //  2) EKSIK KAYIT: rakibin istemcisi senkron gonderemediyse teklif ya da yanit hic
 //     gelmeyebilir. Askida kalan kup satiri dosyayi bozdugundan eksik taraf oyunun
 //     devamindan cikarilarak URETILIR (devam ediyorsa Takes, oyun bittiyse Drops).
+//  3) OYUN SINIRI: seq = turnsPlayed ve turnsPlayed HER OYUNDA sifirlanir (App.resetGameUi),
+//     log ise mac boyunca birikir. Tum maci tek seq'le siralamak oyunlari IC ICE gecirir
+//     (7 oyunluk mac -> 6 bos "Game N" basligi + tek dev bozuk oyun; XG/gnubg okuyamaz).
+//     -> Once her oyuncunun KENDI akisinda oyun numarasi cikarilir (gameNoOf), siralama ve
+//     bolme once ona gore yapilir.
 import type { MoveLogEntry } from './storage'
 import type { Player } from './engine/types'
 import { initialState, cloneState, gameOutcome, opponent } from './engine/board'
@@ -49,18 +54,45 @@ export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
     return p.points.length === 24 && p.points.every((v, i) => v === INIT[i])
   }
 
-  // seq'e gore sirala (async bot kayitlari dogru yere otursun) + oyunlara bol.
+  // Her girdinin OYUN numarasi (bkz. dosya basi (3)). Bir oyuncunun kendi turlari o oyun
+  // icinde 0,2,4... (veya 1,3,5...) diye ARTAR; seq'in DUSUP 0/1'e inmesi ancak yeni oyunun
+  // ilk turunda olur. Kup girdisi turun hamlesiyle AYNI seq'i tasidigindan esitlik sinir
+  // sayilmaz (yalniz kesin dusus). Oyuncu bazinda bakilir: online'da log
+  // [...benim girdilerim, ...rakibinkiler] seklinde bloklu gelir, oyuncu ici sira kronolojiktir.
+  const entries = log.filter((e) => e.player)
+  const gameNoOf = new Map<number, number>()
+  {
+    const last: Partial<Record<Player, number>> = {}
+    const g: Record<Player, number> = { white: 0, black: 0 }
+    entries.forEach((e, i) => {
+      const p = e.player as Player
+      const s = e.seq ?? i
+      const prev = last[p]
+      if (prev !== undefined && s < prev && s <= 1) g[p] += 1
+      last[p] = s
+      gameNoOf.set(i, g[p])
+    })
+  }
+
+  // (oyun, seq)'e gore sirala (async bot kayitlari dogru yere otursun) + oyunlara bol.
   // AYNI seq icinde: teklif (0) < yanit (1) < hamle (2). Bkz. dosya basi (1).
   const rank = (e: MoveLogEntry): number => (!e.cube ? 2 : e.cube.chosen === 'double' ? 0 : 1)
-  const seqAll = log
+  const gn = (i: number): number => gameNoOf.get(i) ?? 0
+  const seqAll = entries
     .map((e, i) => ({ e, i }))
     .sort(
       (a, b) =>
-        (a.e.seq ?? a.i) - (b.e.seq ?? b.i) || rank(a.e) - rank(b.e) || a.i - b.i,
+        gn(a.i) - gn(b.i) ||
+        (a.e.seq ?? a.i) - (b.e.seq ?? b.i) ||
+        rank(a.e) - rank(b.e) ||
+        a.i - b.i,
     )
   const games: MoveLogEntry[][] = []
-  for (const { e } of seqAll) {
-    if (isOpening(e) || games.length === 0) games.push([])
+  let prevG = -1
+  for (const { e, i } of seqAll) {
+    const g = gn(i)
+    if (isOpening(e) || g !== prevG || games.length === 0) games.push([])
+    prevG = g
     games[games.length - 1].push(e)
   }
 

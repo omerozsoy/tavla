@@ -32,7 +32,7 @@ import {
   type MatchState,
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
-import { reconstructOppMove } from './online/oppMove'
+import { reconstructOppMove, mergeOppLog } from './online/oppMove'
 import {
   isOnlineReady,
   openingNeedsResync,
@@ -3054,10 +3054,19 @@ export default function App() {
     if (snap.luck && typeof snap.luck[oppColor] === 'number') {
       setPrLuck((s) => ({ ...s, [oppColor]: snap.luck![oppColor] }))
     }
-    // Rakibin analiz hamlelerini birlestir: kendi hamlelerim + rakibin gonderdikleri
+    // Rakibin analiz hamlelerini birlestir: kendi hamlelerim + rakibin gonderdikleri.
+    // KAYIPSIZ: snapshot rakibin logunun yalniz SON 80 girdisini tasir (~tek uzun oyun);
+    // gelen listeyle EZMEK cok oyunlu macta rakibin erken oyunlarini siliyordu -> .mat'te
+    // o oyunlarin sag sutunu bos kaliyordu. mergeOppLog ortusmeyi bulup oncesini KORUR.
     if (snap.moves) {
       const oppMoves = snap.moves.filter((e) => e.player === oppColor)
-      setMatchLog((prev) => [...prev.filter((e) => e.player === myColor), ...oppMoves])
+      setMatchLog((prev) => [
+        ...prev.filter((e) => e.player === myColor),
+        ...mergeOppLog(
+          prev.filter((e) => e.player === oppColor),
+          oppMoves,
+        ),
+      ])
     }
     setBotAnim(null)
     setOpening(null)
@@ -3192,8 +3201,12 @@ export default function App() {
         cubePending,
         pr: prStats,
         luck: prLuck,
-        // Analiz hamleleri: yuk boyutunu sinirla (son 80 hamle senkronlanir)
-        moves: matchLog.slice(-80),
+        // Analiz hamleleri: KENDI rengimin son 80 girdisi (karsi taraf zaten yalniz rakip
+        // renkli olanlari alir). KRITIK: duz `matchLog.slice(-80)` YANLISTI — birlesik log
+        // [...benimkiler, ...rakibinkiler] siralı oldugundan son 80 girdi cogunlukla RAKIBIN
+        // girdileriydi; log 80'i asinca kendi hamlelerimi gondermeyi birakiyordum ve rakibin
+        // .mat'inde benim sutunum donup kaliyordu. Suzmek ayrica yuku de yariya indirir.
+        moves: matchLog.filter((e) => e.player === myColor).slice(-80),
       }
       // Mac bittiyse odayi 'finished' isaretle -> Canli Maclar'da gorunmesin (bug: bitmis
       // mac status='playing' kalip 3dk listede duruyordu).

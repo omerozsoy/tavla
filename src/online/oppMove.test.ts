@@ -3,7 +3,8 @@ import { initialState, cloneState, opponent } from '../engine/board'
 import { maximalTerminals, boardKey } from '../engine/moves'
 import { moveNotation } from '../engine/notation'
 import type { GameState, Player } from '../engine/types'
-import { reconstructOppMove } from './oppMove'
+import type { MoveLogEntry } from '../storage'
+import { reconstructOppMove, mergeOppLog } from './oppMove'
 
 // Rakibin tur-basi durumunu kur (zar atilmis, sira onda)
 const turnOf = (base: GameState, player: Player, dice: number[]): GameState => ({
@@ -99,5 +100,71 @@ describe('reconstructOppMove — otoriter gecisten rakip hamlesi', () => {
       mover = opponent(mover)
     }
     expect(recovered).toBe(12) // hicbir tur kaybolmadi -> .mat'te sutun bosluk kalmaz
+  })
+})
+
+// ---- mergeOppLog: otoriter OLMAYAN odalarda rakip logunun KAYIPSIZ birikmesi ----
+//
+// applyOnlineState eskiden rakibin girdilerini gelen snapshot'la KOMPLE degistiriyordu.
+// Snapshot yalniz `matchLog.slice(-80)` tasidigi icin (~tek uzun oyun) cok oyunlu macta
+// rakibin erken oyunlari logdan dusuyor, .mat'te o oyunlarin sag sutunu bos kaliyordu.
+describe('mergeOppLog — snapshot penceresi disinda kalan rakip hamleleri kaybolmaz', () => {
+  // Gercekci sahte log: 2 oyun, her oyunda seq 0'dan baslar (turnsPlayed sifirlanir), acilis
+  // hamleleri iki oyunda da AYNI notasyon+zar+seq (yanlis hizalama tuzagi).
+  const mkLog = (games: number, turnsPerGame: number): MoveLogEntry[] => {
+    const out: MoveLogEntry[] = []
+    for (let g = 0; g < games; g++) {
+      for (let t = 0; t < turnsPerGame; t++) {
+        for (const p of ['white', 'black'] as Player[]) {
+          out.push({
+            notation: t === 0 ? '8/5 6/5' : `13/${10 - (t % 5)} 24/23`,
+            best: '', loss: 0, player: p, dice: [3, 1], seq: t * 2 + (p === 'white' ? 0 : 1),
+          })
+        }
+      }
+    }
+    return out
+  }
+
+  // Alan alan esitlik (referans degil): birlestirme kopya degil ayni KAYITLARI vermeli
+  const sig = (l: MoveLogEntry[]) =>
+    l.map((e) => `${e.player}|${e.seq}|${e.notation}|${e.loss}`).join(';')
+
+  it('adim adim senkronda tam rakip logu birikir (eski davranis kaybediyordu)', () => {
+    const full = mkLog(2, 40) // 2 oyun x 40 tur x 2 renk = 160 girdi
+    const oppOnly = full.filter((e) => e.player === 'black')
+
+    let merged: MoveLogEntry[] = []
+    let replaced: MoveLogEntry[] = [] // ESKI davranis (kiyas icin)
+    for (let t = 1; t <= full.length; t++) {
+      const snapshot = full.slice(0, t).slice(-80) // rakibin gonderdigi (birlesik log, son 80)
+      const incoming = snapshot.filter((e) => e.player === 'black')
+      merged = mergeOppLog(merged, incoming)
+      replaced = incoming
+    }
+
+    expect(sig(merged)).toBe(sig(oppOnly)) // KAYIPSIZ
+    expect(merged.length).toBe(oppOnly.length) // duplikasyon da yok
+    expect(replaced.length).toBeLessThan(oppOnly.length) // eski davranis: erken oyunlar dusmus
+  })
+
+  it('gelen bos ise elimizdeki korunur; ilk senkronda gelen aynen alinir', () => {
+    const have = mkLog(1, 3).filter((e) => e.player === 'black')
+    expect(mergeOppLog(have, [])).toBe(have)
+    expect(mergeOppLog([], have)).toBe(have)
+  })
+
+  it('ayni snapshot tekrar gelirse log buyumez', () => {
+    const have = mkLog(1, 5).filter((e) => e.player === 'black')
+    const again = mergeOppLog(have, have.slice(-3))
+    expect(sig(again)).toBe(sig(have))
+  })
+
+  it('ortusen kisimda TAZE kopya kazanir (analiz alanlari sonradan doluyor)', () => {
+    const have = mkLog(1, 3).filter((e) => e.player === 'black')
+    const fresh = have.map((e) => ({ ...e, loss: 0.05 })) // rakip analizi tamamladi
+    const merged = mergeOppLog(have, fresh)
+    expect(merged.length).toBe(have.length)
+    expect(merged.every((e) => e.loss === 0.05)).toBe(true)
   })
 })

@@ -241,6 +241,45 @@ describe('buildMat — gercek maci .mat olarak uret + dogrula', () => {
     expect(alternates(actors(mat))).toBe(true)
   })
 
+  // seq = turnsPlayed ve turnsPlayed HER OYUNDA sifirlanir (App.nextGame -> resetGameUi), log
+  // ise mac boyunca birikir. Tum log'u TEK seq'le siralamak oyunlari IC ICE gecirirdi: dosyada
+  // once N-1 tane BOS "Game" basligi, sonra tum hamleler tek dev bozuk oyunda. Online sekli
+  // ([...benim girdilerim, ...rakibinkiler]) ile test edilir — en zor hali.
+  it('cok oyunlu: seq her oyunda sifirlansa da oyunlar dogru bolunur', () => {
+    const mine = [
+      mkMove('white', '8/5 6/5', 0, initialState()), // oyun 1
+      mkMove('white', '13/10 13/11', 2),
+      mkMove('white', '24/23 13/9', 1), // oyun 2 (seq bastan basladi)
+    ]
+    const theirs = [
+      mkMove('black', '24/23 13/9', 1), // oyun 1
+      mkMove('black', '8/5 6/5', 0, initialState()), // oyun 2 (siyah basliyor)
+    ]
+    const mat = buildMat([...mine, ...theirs], { matchLength: 3, whiteName: 'W', blackName: 'B' })
+    const headers = mat.split('\n').filter((l) => /^ Game \d+$/.test(l))
+    expect(headers).toEqual([' Game 1', ' Game 2'])
+    // Hicbir oyun BOS olmamali: "Game N" + skor satirinin ardindan hamle satiri gelmeli
+    const lines = mat.split('\n')
+    lines.forEach((l, i) => {
+      if (/^ Game \d+$/.test(l)) expect(lines[i + 2]).toMatch(/^\s*\d+\)/)
+    })
+    expect(alternates(actors(mat))).toBe(true)
+    // Her hamle KENDI oyununda olmali (eski hata: oyun 1'in devami oyun 2'ye kayiyordu)
+    const rowsOf = (g: number) => {
+      const from = lines.indexOf(` Game ${g}`)
+      const to = lines.findIndex((l, i) => i > from && /^ Game \d+$/.test(l))
+      return lines.slice(from, to < 0 ? lines.length : to).filter((l) => /^\s*\d+\)/.test(l))
+    }
+    expect(rowsOf(1)).toEqual([
+      '  1) 31: 8/5 6/5                       31: 24/23 13/9',
+      '  2) 31: 13/10 13/11',
+    ])
+    expect(rowsOf(2)).toEqual([
+      '  1)                                   31: 8/5 6/5',
+      '  2) 31: 24/23 13/9',
+    ])
+  })
+
   it('kup take: gercek oyuna double+take enjekte edilir, notasyon+kup tutarli', () => {
     const log = playRealGame(777, { atSeq: 6, response: 'take' })
     const mat = buildMat(log, { matchLength: 5, whiteName: 'Omer', blackName: 'GnuBot' })
