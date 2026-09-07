@@ -19520,3 +19520,37 @@ select:-webkit-autofill {
     animation: none;
   }
 }
+
+/* ---- Pes et paneli: konumdan turetilen puan ozeti (kup x carpan) ---- */
+.resign-auto .resign-help {
+  font-size: 0.8rem;
+  opacity: 0.78;
+  margin-bottom: 6px;
+}
+.resign-auto .resign-kind {
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 2px;
+}
+/* Agirlasan sonuc = daha guclu uyari rengi (1 normal / 2 gammon / 3 backgammon) */
+.resign-auto .resign-kind.m1 {
+  color: var(--text);
+}
+.resign-auto .resign-kind.m2 {
+  color: var(--orange);
+}
+.resign-auto .resign-kind.m3 {
+  color: var(--danger-fg);
+}
+.resign-auto .resign-calc {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+  opacity: 0.85;
+  margin-bottom: 6px;
+}
+.resign-quit-note {
+  font-size: 0.78rem;
+  opacity: 0.72;
+  margin: -2px 0 10px;
+  line-height: 1.35;
+}

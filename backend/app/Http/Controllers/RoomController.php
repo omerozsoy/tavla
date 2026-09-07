@@ -1798,7 +1798,14 @@ class RoomController extends Controller
                 return $this->fail('Oyun aktif değil.', 409);
             }
             $winner = $this->otherColor($this->slotColor($slot));
-            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value']);
+            // PES = bu OYUNU vermek; puan KONUMDAN turer: kup x carpan (1 normal, 2 gammon,
+            // 3 backgammon). Eskiden HER pes 1x kup yaziyordu -> mars/backgammon konumunda
+            // pes eden oyuncu haksiz yere ucuz kurtuluyordu (istemci de "1 puan" gosteriyordu).
+            // Carpani SUNUCU hesaplar (istemci forge edemez); istemci ayni kurali ekranda
+            // onizler (src/engine/board.ts lossMultiplier).
+            $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
+            $mult = \App\Support\Backgammon::gamePoints($state, $winner);
+            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value'] * $mult);
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur
             $room->save();

@@ -3,7 +3,7 @@ import './App.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
-import { cloneState, gameOutcome, opponent, winner } from './engine/board'
+import { cloneState, gameOutcome, lossMultiplier, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { checkerDecision, onePointFactor } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
@@ -83,6 +83,7 @@ import {
   serverCubeOffer,
   serverCubeRespond,
   serverResign,
+  leaveRoom,
   postLive,
   type ServerMatch,
   myActiveRooms,
@@ -2089,21 +2090,43 @@ export default function App() {
   }
 
   // ---- Pes etme / cekilme ----
-  // NOT: Konuma gore otomatik "adil" carpan kurali kaldirildi (bastan yazilacak).
-  // Simdilik teslim = tek oyun (kup degerince) kaybi.
+  // PES = bu OYUNU vermek. Kaybedilen puan KONUMDAN turer: kup degeri x carpan
+  // (1 normal, 2 gammon/mars, 3 backgammon — bkz engine/board lossMultiplier).
+  // Otoriter online'da carpani SUNUCU hesaplar (Backgammon::gamePoints) -> forge edilemez;
+  // asagidaki yerel hesap yalniz pvb/pvp/legacy icin ve EKRANDA gostermek icindir.
+  const resignLoser: Player = online ? myColor : 'white' // pvb/pvp'de teslim olan insan = beyaz
+  const resignMult = lossMultiplier(working, resignLoser)
+  const resignPoints = match.cube.value * resignMult
+  const resignKindKey =
+    resignMult === 3 ? 'resign.tBackgammon' : resignMult === 2 ? 'resign.tGammon' : 'resign.tSingle'
+
   function handleResign() {
     setResignOpen(false)
-    // OTORİTER (Faz 2): pes SUNUCUYA -> rakip mevcut küp değerinde kazanır; poll senkronlar.
+    // OTORİTER (Faz 2): pes SUNUCUYA -> rakip küp x konum çarpanı kadar kazanır; poll senkronlar.
     if (online && authoritativeRef.current) {
       if (room?.code) void serverResign(room.code).catch((e) => notify.error(srvErr(e)))
       return
     }
-    const loser: Player = online ? myColor : 'white' // pvb'de insan beyaz
-    const w = opponent(loser)
-    const mult = 1
+    const w = opponent(resignLoser)
+    const mult = resignMult
     const points = match.cube.value * mult
     setMatch((m) => scoreGame(m, w, m.cube.value * mult))
     setGameEnd({ winner: w, points, mult, dropped: false, resigned: true })
+  }
+
+  // MAÇTAN ÇEKIL: skordan BAGIMSIZ — tum maci birakirsin, rakip maci kazanir.
+  // Online: /leave ucu (ABANDON) rakibi maç galibi ilan eder (presence beklemeden, ANINDA).
+  // Offline: rakibin skorunu hedefe cekip mac-sonu ekranini acar.
+  function handleQuitMatch() {
+    setResignOpen(false)
+    if (online && room?.code) {
+      const code = room.code
+      void leaveRoom(code).finally(() => handleLeaveRoom())
+      return
+    }
+    const w = opponent(resignLoser)
+    setMatch((m) => ({ ...m, score: { ...m.score, [w]: m.target } }))
+    setGameEnd({ winner: w, points: match.cube.value, mult: 1, dropped: false, resigned: true })
   }
 
   // ---- Oyun sonu (bear off) cozumleme ----
@@ -6448,25 +6471,24 @@ export default function App() {
         <div className="register-overlay modal" role="dialog" aria-modal="true">
           <div className="register-card resign-card">
             <h2><Icon name="flag" size={20} /> {t('resign.title')}</h2>
+            {/* PES = bu OYUNU vermek. Kac puan kaybettigin KONUMDAN turer: kup x carpan
+                (1 normal / 2 gammon / 3 backgammon) -> oyuncu neye imza attigini GORUR. */}
             <div className="resign-auto">
-              <b>{t('resign.losePts', { n: match.cube.value })}</b>
+              <div className="resign-help">{t('resign.autoHelp')}</div>
+              <div className={`resign-kind m${resignMult}`}>{t(resignKindKey)}</div>
+              <div className="resign-calc">
+                {t('resign.calc', { cube: match.cube.value, mult: resignMult, n: resignPoints })}
+              </div>
+              <b>{t('resign.losePts', { n: resignPoints })}</b>
             </div>
             <Button variant="destructive" onClick={handleResign}>
-              <Icon name="flag" /> {t('resign.confirm')}
+              <Icon name="flag" /> {t('resign.confirmPts', { n: resignPoints })}
             </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                setResignOpen(false)
-                if (online) handleLeaveRoom()
-                else {
-                  tournMatchRef.current = null
-                  setHome(true)
-                }
-              }}
-            >
-              <Icon name="home" /> {t('resign.toHome')}
+            {/* MACTAN CEKIL: skordan BAGIMSIZ — tum maci birakir, rakip maci kazanir. */}
+            <Button variant="secondary" onClick={handleQuitMatch}>
+              <Icon name="home" /> {t('resign.quitMatch')}
             </Button>
+            <div className="resign-quit-note">{t('resign.quitMatchDesc')}</div>
             <Button variant="secondary" onClick={() => setResignOpen(false)}>
               {t('reg.cancel')}
             </Button>
