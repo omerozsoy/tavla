@@ -72,13 +72,13 @@ class RoomClockTest extends TestCase
         $this->assertSame('white', $showClock['active']);
     }
 
-    // ---- show TIMEOUT'u enforce eder (speed 1: ana sure 45sn'den once biter) ----
+    // ---- show TIMEOUT'u enforce eder (speed 1: ana sure AFK'dan once biter) ----
     public function test_show_enforces_timeout(): void
     {
         $room = $this->playingRoom('CLK2', 'speed', 1); // banka 24, delay 8 -> timeout 32sn
         $this->putJson('/api/rooms/CLK2', ['token' => 't1', 'state' => $this->state(1)])->assertOk();
 
-        // started_at'i gecmise it: 40sn once (timeout 32 gecti, afk 45 henuz)
+        // started_at'i gecmise it: 40sn once (timeout 32 gecti, afk 60 henuz)
         $room->refresh();
         $clock = $room->clock;
         $clock['started_at'] = microtime(true) - 40;
@@ -110,7 +110,7 @@ class RoomClockTest extends TestCase
 
         $room->refresh();
         $clock = $room->clock;
-        $clock['started_at'] = microtime(true) - 50; // afk 45 gecti
+        $clock['started_at'] = microtime(true) - 65; // afk 60 gecti
         $room->clock = $clock;
         $room->save();
 
@@ -166,15 +166,15 @@ class RoomClockTest extends TestCase
     // ---- show (poll): rakip poll'u kesince (terk) o kaybeder; SIRA SAHIBI KORUNUR ----
     public function test_show_forfeits_absent_opponent_protecting_turn_owner(): void
     {
-        $room = $this->playingRoom('CLKP', 'casual', 5); // uzun banka; AFK 45
+        $room = $this->playingRoom('CLKP', 'casual', 5); // uzun banka; AFK 60
         $this->putJson('/api/rooms/CLKP', ['token' => 't1', 'state' => $this->state(5)])->assertOk();
 
         $room->refresh();
         $clock = $room->clock;
         $now = microtime(true);
-        $clock['started_at'] = $now - 10;  // AFK dolmadi (10 < 45)
+        $clock['started_at'] = $now - 10;  // AFK dolmadi (10 < 60)
         $clock['p1_seen'] = $now - 1;      // sira sahibi present
-        $clock['p2_seen'] = $now - 40;     // rakip terk (40 > 25+3)
+        $clock['p2_seen'] = $now - 70;     // rakip terk (70 > 60+3)
         $room->clock = $clock;
         $room->save();
 
