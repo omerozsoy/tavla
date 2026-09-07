@@ -110,19 +110,23 @@ export interface GameOutcome {
 export function gameOutcome(state: GameState): GameOutcome | null {
   const w = winner(state)
   if (!w) return null
-  const loser = opponent(w)
-  if (state.off[loser] > 0) return { winner: w, multiplier: 1 } // normal
-  // Kaybeden hic tas toplamadi -> gammon; kazananin evinde/bar'da tasi varsa backgammon
-  const [hs, he] = w === WHITE ? [0, 6] : [18, 24] // kazananin ev bolgesi
-  let backgammon = state.bar[loser] > 0
-  if (!backgammon) {
-    for (let i = hs; i < he; i++) {
-      const v = state.points[i]
-      if ((loser === WHITE && v > 0) || (loser === BLACK && v < 0)) {
-        backgammon = true
-        break
-      }
-    }
+  return { winner: w, multiplier: lossMultiplier(state, opponent(w)) }
+}
+
+// Kaybedenin KAC KAT kaybettigi: 1 normal, 2 gammon (mars), 3 backgammon.
+// Oyunun BITMIS olmasi SART DEGIL -> pes etme ekrani da bunu kullanir ("simdi teslim
+// olursam kac puan?"). Kural (backend App\Support\Backgammon::gamePoints ile BIREBIR):
+//   - kaybeden en az 1 tas topladiysa            -> 1
+//   - hic toplamadi + bar'da ya da RAKIP evinde  -> 3
+//   - hic toplamadi, bar/ev yok                  -> 2
+export function lossMultiplier(state: GameState, loser: Player): 1 | 2 | 3 {
+  if (state.off[loser] > 0) return 1 // bir sey topladi -> normal
+  if (state.bar[loser] > 0) return 3 // barda tas -> backgammon
+  const winnerSide = opponent(loser)
+  const [hs, he] = winnerSide === WHITE ? [0, 6] : [18, 24] // KAZANANIN ev bolgesi
+  for (let i = hs; i < he; i++) {
+    const v = state.points[i]
+    if ((loser === WHITE && v > 0) || (loser === BLACK && v < 0)) return 3
   }
-  return { winner: w, multiplier: backgammon ? 3 : 2 }
+  return 2 // hic toplamadi, bar/ev yok -> gammon
 }
