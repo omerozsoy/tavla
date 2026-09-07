@@ -81,6 +81,11 @@ export interface SavedGame {
   // Analiz hamleleri (online): her istemci kendi hamlelerini gonderir, karsi taraf
   // rakip renkli olanlari alir -> analiz ekraninda iki tarafin hamleleri gorunur.
   moves?: MoveLogEntry[]
+  // KARAR LOGU (matchLog): mac-sonu raporunun (PR + .mat) tek kaynagi. Refresh'te
+  // kaybolursa sunucu o oyuncunun PR'ini eksik logdan hesaplar (Kup PR "—" kalir) ->
+  // localStorage'a da yazilir. Boyut icin son 600 girdi (rapor zaten son 1000'i gonderir).
+  // NOT: yalniz YEREL kayitta bulunur; saveServerGame bunu GONDERMEZ (istek boyutu).
+  log?: MoveLogEntry[]
   // Kayit aninda kullanici OYUN gorunumunde miydi? refresh'te ana sayfadan oyuna
   // ZORLA sokmamak icin (aktif oyun "Devam Et" ile erisilebilir kalir). undefined
   // (eski kayit) -> ana sayfada kal.
