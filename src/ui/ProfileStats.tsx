@@ -41,11 +41,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
   const [perf, setPerf] = useState<PerformanceStats | null>(null)
   const [perfErr, setPerfErr] = useState(false)
   const [medFilter, setMedFilter] = useState<MedianFilter>('all')
-  // Zar Ortalamalari: faz (Tumu/Acilis/Temas/Temas Yok) + taraf (Sen/Rakip)
+  // Zar Ortalamalari: faz (Tumu/Acilis/Temas/Temas Yok). Sadece KENDI verim gosterilir
+  // (Sen/Rakip secici kullanici istegiyle kaldirildi).
   const [dice, setDice] = useState<DiceStats | null>(null)
   const [diceErr, setDiceErr] = useState(false)
   const [dicePhase, setDicePhase] = useState<DicePhase>('all')
-  const [diceSide, setDiceSide] = useState<'self' | 'opponent'>('self')
 
   useEffect(() => {
     let alive = true
@@ -106,8 +106,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
   const wins = u?.wins ?? 0
   const losses = u?.losses ?? 0
   const wr = games > 0 ? Math.round((wins / games) * 100) : 0
-  // Zar panelinde secili taraf (Sen/Rakip)
-  const dSide = dice ? (diceSide === 'self' ? dice.self : dice.opponent) : null
+  // Zar paneli: yalnizca KENDI atislarim (Sen/Rakip secici kaldirildi)
+  const dSide = dice ? dice.self : null
 
   return (
     <div
@@ -389,26 +389,6 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                         {t(`dice.phase.${p}`)}
                       </Button>
                     ))}
-                  </div>
-                  <div className="dice-side" role="tablist" aria-label={t('dice.side')}>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={diceSide === 'self'}
-                      className={diceSide === 'self' ? 'active' : ''}
-                      onClick={() => setDiceSide('self')}
-                    >
-                      {t('dice.self')}
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={diceSide === 'opponent'}
-                      className={diceSide === 'opponent' ? 'active' : ''}
-                      onClick={() => setDiceSide('opponent')}
-                    >
-                      {t('dice.opponent')}
-                    </button>
                   </div>
                 </div>
 
