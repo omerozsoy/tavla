@@ -395,7 +395,10 @@ export default function PositionAnalyzer({
   return (
     <div className="analyzer">
       <div className="analyzer-head">
-        <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
+        <div className="analyzer-title">
+          <h2><Icon name="search" size={20} /> {t('pa.title')}</h2>
+          <p className="analyzer-sub">{t('pa.hint')}</p>
+        </div>
         {/* Kapat dugmesi kaldirildi (kullanici istegi): cikis hamburger menu / ESC ile. */}
       </div>
 
@@ -427,8 +430,6 @@ export default function PositionAnalyzer({
         </div>
 
         <div className="analyzer-controls">
-          <div className="pa-hint">{t('pa.hint')}</div>
-
           <div className="setup-row">
             <div className="setup-label">{t('pa.place')}</div>
             <div className="menu-targets">
@@ -508,13 +509,12 @@ export default function PositionAnalyzer({
 
           <div className="setup-row">
             <div className="setup-label">{t('pa.cubeOwner')}</div>
-            <div className="menu-targets">
+            <div className="menu-targets pa-owner">
               <Button
-                size="icon"
                 variant={cube.owner === 'white' ? 'secondary' : 'ghost'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'white' }))}
               >
-                <Swatch color="white" />
+                <Swatch color="white" /> {t('pa.white')}
               </Button>
               <Button
                 variant={cube.owner === null ? 'secondary' : 'ghost'}
@@ -523,11 +523,10 @@ export default function PositionAnalyzer({
                 {t('pa.center')}
               </Button>
               <Button
-                size="icon"
                 variant={cube.owner === 'black' ? 'secondary' : 'ghost'}
                 onClick={() => setCube((c) => ({ ...c, owner: 'black' }))}
               >
-                <Swatch color="black" />
+                <Swatch color="black" /> {t('pa.black')}
               </Button>
             </div>
           </div>
@@ -659,7 +658,24 @@ export default function PositionAnalyzer({
         </div>
 
         <div className="analyzer-results">
-          {!result && !moveRows && <div className="pa-placeholder">{t('pa.resultsPlaceholder')}</div>}
+          {busy && !result && !moveRows && (
+            <div className="pa-loading" aria-hidden>
+              <div className="pa-skel pa-skel-lg" />
+              <div className="pa-skel" />
+              <div className="pa-skel pa-skel-sm" />
+              <div className="pa-skel-list">
+                <div className="pa-skel" />
+                <div className="pa-skel" />
+                <div className="pa-skel" />
+              </div>
+            </div>
+          )}
+          {!busy && !result && !moveRows && (
+            <div className="pa-placeholder">
+              <Icon name="search" size={30} />
+              <span>{t('pa.resultsPlaceholder')}</span>
+            </div>
+          )}
 
           {result && (
             <div className="pa-result">
