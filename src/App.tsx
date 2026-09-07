@@ -510,7 +510,6 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
-  const [statsOpen, setStatsOpen] = useState(false) // istatistiklerim modali
   const [fairOpen, setFairOpen] = useState(false) // adil zar modali
   const [friendsOpen, setFriendsOpen] = useState(false) // arkadaslar modali
   const [messagesOpen, setMessagesOpen] = useState(false) // ozel mesajlar (DM) modali
@@ -575,7 +574,11 @@ export default function App() {
   // --- URL yonlendirme (hash tabanli) ---
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
-  const currentSlug = editProfile
+  const currentSlug = showAuth
+    ? 'giris'
+    : memOpen
+    ? 'uyelik'
+    : editProfile
     ? profileEditMode
       ? 'profil/duzenle'
       : profileTab === 'frames'
@@ -598,15 +601,13 @@ export default function App() {
         ? 'online-turnuvalar/' + (tournDetailSlug || tournDetailId)
         : 'online-turnuvalar'
       : checkoutOpen
-        ? 'odeme'
+        ? 'sepet' // odeme adimi URL'de /sepet gosterir: yenileme/geri guvenle sepete doner
       : cartOpen
         ? 'sepet'
       : shopOpen
         ? 'magaza'
         : frameGalleryOpen
           ? 'cerceveler'
-        : statsOpen
-          ? 'istatistiklerim'
           : friendsOpen
             ? 'arkadaslar'
             : messagesOpen
@@ -907,6 +908,9 @@ export default function App() {
         case 'profil-duzenle': // eski slug -> geriye donuk uyum (duzenleme formu)
           setProfileEditMode(true)
           setEditProfile(true)
+          break
+        case 'giris': // Giris/Kayit artik normal sayfa (URL'li). Deep-link/geri tusu ile acilir.
+          setShowAuth(true)
           break
         default:
           break // ana sayfa (bos path)
@@ -4978,7 +4982,6 @@ export default function App() {
     setCartOpen(false)
     setCheckoutOpen(false)
     setFrameGalleryOpen(false)
-    setStatsOpen(false)
     setFriendsOpen(false)
     setMessagesOpen(false)
     setMessagesFocusId(null)
@@ -5231,7 +5234,6 @@ export default function App() {
     cartOpen ||
     checkoutOpen ||
     frameGalleryOpen ||
-    statsOpen ||
     friendsOpen ||
     messagesOpen ||
     blunderOpen ||
@@ -5261,8 +5263,6 @@ export default function App() {
       ? 'tournaments'
       : shopOpen
         ? 'shop'
-        : statsOpen
-          ? 'stats'
           : friendsOpen
             ? 'friends'
             : messagesOpen
