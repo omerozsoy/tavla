@@ -6255,16 +6255,6 @@ export default function App() {
               </div>
             </div>
             <AdStrip slot="middle" />
-            {!user && (
-              <section className="lobby-hero">
-                <div className="hero-copy">
-                  <span className="hero-kicker">
-                    <Icon name="dice" size={15} /> {t('home.heroKicker')}
-                  </span>
-                  <h1 className="hero-title">{t('home.heroTitle')}</h1>
-                </div>
-              </section>
-            )}
             <div className="home-panels">
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
@@ -6275,7 +6265,7 @@ export default function App() {
                 onInvite={user ? handleInviteFriend : undefined}
               />
             </div>
-            {!user && <HomeFeatures onPlay={menuProps.onAiGame} />}
+            {!user && <HomeFeatures />}
             <AdStrip slot="bottom" />
             </>
             )}
