@@ -10,6 +10,7 @@ import { moveNotation } from '../engine/notation'
 import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { Die } from './Dice'
+import { useBoardDir } from './boardDirection'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { analyzePosition, getToken } from '../api'
@@ -135,6 +136,8 @@ export default function PositionAnalyzer({
   )
   const [placeColor, setPlaceColor] = useState<Player>('white')
   const [editMode, setEditMode] = useState<'add' | 'remove'>('add')
+  // Oyun yonu: oyun ekranlariyla ORTAK ayar (localStorage) — burada degistirmek her yeri etkiler.
+  const [boardDir, setBoardDir] = useBoardDir()
   // Varsayilan zar 1-1 (0 = zarsiz; tahtadaki zara tiklayarak degistirilir)
   const [d1, setD1] = useState(1)
   const [d2, setD2] = useState(1)
@@ -523,6 +526,8 @@ export default function PositionAnalyzer({
 
   // Zarlar oyundaki gibi sirasi gelenin tarafinda durur (kup bar'da kaldigi icin
   // tam merkez kullanilmaz). Bos zar = "zarsiz": analiz yalnizca kup karari verir.
+  // Zar sirasi gelenin ev tarafinda durur; "sola topla"da bu taraf aynalanir.
+  const diceOnRight = boardDir === 'left' ? turn === 'black' : turn === 'white'
   const boardDice = (
     <div className="board-dice pa-board-dice" title={t('pa.diceHint')}>
       {([1, 2] as const).map((which) => {
@@ -588,8 +593,9 @@ export default function PositionAnalyzer({
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={cube}
-            centerLeft={turn === 'black' ? boardDice : undefined}
-            centerRight={turn === 'white' ? boardDice : undefined}
+            mirror={boardDir === 'left'}
+            centerLeft={diceOnRight ? undefined : boardDice}
+            centerRight={diceOnRight ? boardDice : undefined}
             showPip
           />
         </div>
@@ -733,6 +739,24 @@ export default function PositionAnalyzer({
                 </label>
               </div>
             )}
+          </div>
+
+          <div className="setup-row">
+            <div className="setup-label">{t('gm.boardDir')}</div>
+            <div className="menu-targets">
+              <Button
+                variant={boardDir === 'right' ? 'secondary' : 'ghost'}
+                onClick={() => setBoardDir('right')}
+              >
+                {t('dir.right')}
+              </Button>
+              <Button
+                variant={boardDir === 'left' ? 'secondary' : 'ghost'}
+                onClick={() => setBoardDir('left')}
+              >
+                {t('dir.left')}
+              </Button>
+            </div>
           </div>
 
           <div className="setup-row">

@@ -5237,6 +5237,17 @@ button[aria-disabled='true'],
 }
 
 /* ---- Bear-off tepsisi (#10): board cerceve ailesinden, kopuk siyah kutu DEGIL ---- */
+/* OYUN YONU "sola topla": tahta yatay aynalanir -> bear-off tepsisi SOLA, tahta saga. */
+.board.mirror {
+  grid-template-columns: var(--bearoff-w) auto;
+}
+.board.mirror .bearoff {
+  grid-column: 1;
+}
+.board.mirror .pt-numbers,
+.board.mirror .board-inner {
+  grid-column: 2;
+}
 .bearoff {
   grid-column: 2;
   grid-row: 2; /* board-inner ile ayni hizada (numara satirlarina tasmaz) */
@@ -6723,6 +6734,11 @@ html.fs-active .account-bar {
 .gm-state {
   font-weight: 400;
   font-size: 0.95rem;
+}
+/* Ac/Kapa disi (metin) satirlar: Oyun Yonu gibi deger gosterenler */
+.gm-state.val {
+  color: var(--accent);
+  font-weight: 600;
 }
 .gm-state.on {
   color: #8effb0;
