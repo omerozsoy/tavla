@@ -378,6 +378,7 @@ export default function App() {
   // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
   const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'notifs'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
+  const [authForgot, setAuthForgot] = useState(false) // Auth "sifremi unuttum" modu -> /sifremi-unuttum
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
   const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
     try {
@@ -575,7 +576,9 @@ export default function App() {
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
   const currentSlug = showAuth
-    ? 'giris'
+    ? authForgot
+      ? 'sifremi-unuttum'
+      : 'giris'
     : memOpen
     ? 'uyelik'
     : editProfile
@@ -911,6 +914,11 @@ export default function App() {
           break
         case 'giris': // Giris/Kayit artik normal sayfa (URL'li). Deep-link/geri tusu ile acilir.
           setShowAuth(true)
+          setAuthForgot(false)
+          break
+        case 'sifremi-unuttum': // Sifremi unuttum = Auth'un forgot alt-modu, artik kendi URL'si
+          setShowAuth(true)
+          setAuthForgot(true)
           break
         default:
           break // ana sayfa (bos path)
@@ -4544,7 +4552,9 @@ export default function App() {
   }
   // Giris/kayit: SAYFA gorunumu (modal degil) — sol menu gorunur kalir, form
   // menunun sagindaki alanda ortalanmis kart olarak acilir. Cikis: Vazgec / Misafir.
-  const authModal = showAuth ? <Auth key="auth" page {...authProps} /> : null
+  const authModal = showAuth ? (
+    <Auth key="auth" page initialForgot={authForgot} onForgotChange={setAuthForgot} {...authProps} />
+  ) : null
   // Ucretli plan aktif mi (premium ozellik kilidi)
   const premium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
 
@@ -5000,6 +5010,7 @@ export default function App() {
     // Tam-ekran overlay'ler: menu/logo navigasyonu bunlari da KAPATMALI yoksa ustte
     // kalip sayfayi kilitler (auth/uyelik). Bkz [[menu-sayfa-kayit]].
     setShowAuth(false)
+    setAuthForgot(false)
     setMemOpen(false)
     setLeaderboardOpen(false)
     setRanksOpen(false)

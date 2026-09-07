@@ -56,6 +56,8 @@ interface Props {
   onResendVerification?: () => void
   modal?: boolean // true: yari saydam arka planla modal pencere
   page?: boolean // true: tam sayfa (sol menu gorunur), modal degil
+  initialForgot?: boolean // /sifremi-unuttum deep-link: acilista "sifremi unuttum" modu
+  onForgotChange?: (v: boolean) => void // mod degisince URL guncelle (App: /giris <-> /sifremi-unuttum)
 }
 
 export default function Auth({
@@ -70,6 +72,8 @@ export default function Auth({
   onResendVerification,
   modal,
   page,
+  initialForgot,
+  onForgotChange,
 }: Props) {
   const { t, lang } = useT()
   const notify = useToast()
@@ -101,8 +105,17 @@ export default function Auth({
   const nickTaken = nickStatus === 'taken' // alinmis -> kirmizi + gonderim engellenir
   const [showPw, setShowPw] = useState(false)
   const [showLoginPw, setShowLoginPw] = useState(false)
-  const [forgot, setForgot] = useState(false) // sifremi unuttum modu
+  const [forgot, setForgot] = useState(!!initialForgot) // sifremi unuttum modu (/sifremi-unuttum)
   const [forgotSent, setForgotSent] = useState(false)
+  // Mod degistir + URL'i senkronla (App /giris <-> /sifremi-unuttum). URL'den (geri/ileri)
+  // gelen initialForgot degisimini de yansit.
+  const changeForgot = (v: boolean) => {
+    setForgot(v)
+    onForgotChange?.(v)
+  }
+  useEffect(() => {
+    setForgot(!!initialForgot)
+  }, [initialForgot])
 
   async function doForgot(e: React.FormEvent) {
     e.preventDefault()
@@ -476,7 +489,7 @@ export default function Auth({
                   type="button"
                   variant="secondary"
                   onClick={() => {
-                    setForgot(false)
+                    changeForgot(false)
                     setForgotSent(false)
                   }}
                 >
@@ -501,7 +514,7 @@ export default function Auth({
                     type="button"
                     variant="secondary"
                     className="flex-1"
-                    onClick={() => setForgot(false)}
+                    onClick={() => changeForgot(false)}
                   >
                     {t('reg.cancel')}
                   </Button>
@@ -568,7 +581,7 @@ export default function Auth({
                 variant="ghost"
                 className="self-end"
                 onClick={() => {
-                  setForgot(true)
+                  changeForgot(true)
                   setError('')
                 }}
               >
