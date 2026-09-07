@@ -168,6 +168,79 @@ describe('buildMat — gercek maci .mat olarak uret + dogrula', () => {
     expect(mat).toMatch(/ {6}Wins 1 point/) // beyaz (sol sutun) kazanir, 1 puana kirpili
   })
 
+  // .mat satirlarini hucrelere ayir: sol sutun = beyaz, sag sutun = siyah (COLW=34,
+  // "NNN) " onEki 5 karakter). XG/gnubg sirayi SUTUNDAN cikardigi icin hucre dizisi
+  // kesintisiz W,B,W,B... gitmeli; gitmezse "The game contains some invalid moves".
+  const actors = (mat: string): string[] => {
+    const out: string[] = []
+    for (const line of mat.split('\n')) {
+      if (!/^\s*\d+\)\s/.test(line)) continue
+      const left = line.slice(5, 5 + 34).trim()
+      const right = line.slice(5 + 34).trim()
+      if (left) out.push('W')
+      if (right) out.push('B')
+    }
+    return out
+  }
+  const alternates = (seq: string[]): boolean => seq.every((p, i) => i === 0 || p !== seq[i - 1])
+
+  const midPos = () => {
+    const mid = cloneState(initialState())
+    mid.points[23] = 1 // acilis dizilimi olmasin (isOpening false -> yeni oyun baslatmaz)
+    return mid
+  }
+  const mkMove = (player: Player, notation: string, seq: number, pos = midPos()): MoveLogEntry => ({
+    notation, best: '', loss: 0, player, pos, dice: [3, 1], playedSteps: [], seq,
+  })
+  const mkCube = (player: Player, chosen: 'double' | 'take' | 'drop', seq: number): MoveLogEntry => ({
+    notation: '', best: '', loss: 0, player, pos: midPos(), seq,
+    cube: { win: 0, equity: 0, recommended: chosen, chosen, correct: true },
+  })
+
+  // ONLINE: her istemci yalniz KENDI renginin girdilerini yazar; App birlestirmeyi
+  // [...benimkiler, ...rakibinkiler] seklinde ARDISIK yapar ve sirayi seq'e birakir.
+  // Kup girdileri o turun hamlesiyle AYNI seq'i tasidigindan (seq = turnsPlayed) esit
+  // seq'te dogal sira "teklifim, hamlem, rakibin kabulu" olur -> Doubles cevapsiz kalir
+  // ve sutunlar bir kayar (XG: invalid moves). buildMat ikincil siralamayla duzeltir.
+  it('online birlesik log: kup hamleyle ayni seq olsa da Doubles/Takes cift kalir', () => {
+    const mine = [mkMove('white', '8/5 6/5', 0), mkCube('white', 'double', 2), mkMove('white', '13/10 13/11', 2)]
+    const theirs = [mkMove('black', '8/5 6/5', 1), mkCube('black', 'take', 2), mkMove('black', '24/23 13/9', 3)]
+    const mat = buildMat([...mine, ...theirs], { matchLength: 3, whiteName: 'W', blackName: 'B' })
+    expect(mat).toMatch(/Doubles => 2\s+Takes/) // ayni satirda cift
+    expect(alternates(actors(mat))).toBe(true) // sutun almasigi bozulmamis
+  })
+
+  // Rakibin istemcisi senkron gonderemezse yanit hic gelmeyebilir. Askida kalan
+  // "Doubles" dosyayi bozar -> oyun devam ettigine gore Takes URETILIR.
+  it('eksik kayit: cevapsiz Doubles icin Takes uretilir', () => {
+    const log: MoveLogEntry[] = [
+      mkMove('white', '8/5 6/5', 0, initialState()),
+      mkMove('black', '8/5 6/5', 1),
+      mkCube('white', 'double', 2),
+      mkMove('white', '13/10 13/11', 2),
+      mkMove('black', '24/23 13/9', 3),
+    ]
+    const mat = buildMat(log, { matchLength: 3, whiteName: 'W', blackName: 'B' })
+    expect(mat).toMatch(/Doubles => 2\s+Takes/)
+    expect(alternates(actors(mat))).toBe(true)
+  })
+
+  // Ters yon: yalniz KENDI kabulum senkronlandi, rakibin teklifi kayip -> teklif URETILIR
+  // (kup degeri korunur, satir cifti tamamlanir).
+  it('eksik kayit: teklifsiz Takes icin Doubles uretilir', () => {
+    const log: MoveLogEntry[] = [
+      mkMove('white', '8/5 6/5', 0, initialState()),
+      mkCube('white', 'take', 1),
+      mkMove('black', '24/23 13/9', 1),
+    ]
+    const mat = buildMat(log, { matchLength: 3, whiteName: 'W', blackName: 'B' })
+    // Siyah katladiginda cift AYNI satirda olmaz: teklif sag sutun, kabul bir sonraki
+    // satirin sol sutunu. Onemli olan ikisinin de yazilmasi ve sutun almasiginin korunmasi.
+    expect(mat).toContain('Doubles => 2') // teklif siyah adina uretildi
+    expect(mat).toContain('Takes')
+    expect(alternates(actors(mat))).toBe(true)
+  })
+
   it('kup take: gercek oyuna double+take enjekte edilir, notasyon+kup tutarli', () => {
     const log = playRealGame(777, { atSeq: 6, response: 'take' })
     const mat = buildMat(log, { matchLength: 5, whiteName: 'Omer', blackName: 'GnuBot' })
