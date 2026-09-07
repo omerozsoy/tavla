@@ -2075,6 +2075,13 @@ export default function App() {
     // SKORLAMA -> çifte sayım olur. Skoru poll (applyServerBoard) server_match'ten alır.
     if (online && authoritativeRef.current) return
     if (gameEnd || cubePending) return
+    // KRİTİK (eski "Maç Sonucu" flash'ının GERÇEK kaynağı): yeni maç başlarken match/gameEnd
+    // sıfırlansa da BOARD (turnStart/played) bir an ESKİ bitmiş pozisyon kalabiliyor. Online
+    // başlangıçta `await matchmake` boşluğunda room=null -> `online` FALSE olur -> üstteki
+    // authoritative guard'ı ATLANIR -> bu effect stale kazanan board'dan gameEnd'i YENİDEN
+    // kurup maçı skorluyordu -> MatchResult flash. turnsPlayed=0 iken (her reset'te 0) HİÇBİR
+    // oyun kazanılmış olamaz (0 turda bear-off imkânsız) -> güvenli, kesin guard.
+    if (turnsPlayed === 0) return
     const w = winner(working)
     if (!w) return
     const outcome = gameOutcome(working)
@@ -2082,7 +2089,7 @@ export default function App() {
     const points = match.cube.value * outcome.multiplier
     setMatch((m) => scoreGame(m, w, m.cube.value * outcome.multiplier))
     setGameEnd({ winner: w, points, mult: outcome.multiplier, dropped: false })
-  }, [working, gameEnd, cubePending, match.cube.value])
+  }, [working, gameEnd, cubePending, match.cube.value, turnsPlayed])
 
   // ---- Bot sirasi: kup teklifi -> zar -> oyna ----
   useEffect(() => {
@@ -3905,6 +3912,12 @@ export default function App() {
     setMatch(newMatch(match.target))
     setGameEnd(null)
     setTurnsPlayed(0)
+    // BOARD'u da sifirla: aksi halde `working` (turnStart+played) ESKI KAZANAN pozisyon kalir
+    // ve oyun-sonu effect'i (turnsPlayed>0 iken) gameEnd'i yeniden kurabilir. turnsPlayed=0
+    // guard'i asil koruma; bu ise `working`'i temiz tutar (defans-derinligi).
+    setTurnStart(freshBoard('white'))
+    setPlayed([])
+    setSelectedFrom(null)
     setHome(true)
   }
 
@@ -3989,6 +4002,13 @@ export default function App() {
       setMatch(newMatch(tgt))
       setGameEnd(null)
       setTurnsPlayed(0)
+      // BOARD'u da `await matchmake` boslugundan ONCE sifirla: room=null olunca `online`
+      // false olur, oyun-sonu effect'inin authoritative guard'i atlanir; stale KAZANAN board
+      // + gameEnd=null -> effect maci yeniden skorlar -> MatchResult flash. turnsPlayed=0 guard
+      // asil koruma; bu `working`'i temiz tutar (bkz oyun-sonu effect'i).
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
     }
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
