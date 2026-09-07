@@ -28,8 +28,8 @@ export function newMatch(target: number): MatchState {
 // Bir oyuncu kupu teklif edebilir mi?
 // NOT: "Olu kup" (kup >= hedefe kalan) ARTIK ENGELLENMEZ (kullanici direktifi). Gercek tavlada
 // redouble her zaman LEGAL'dir; olu kupte sadece ANLAMSIZDIR. Eskiden buton gizleniyordu ve
-// oyuncu "5'lik macta kup 4 bende, neden katlayamiyorum?" diye sasiriyordu. Anlamsizligi
-// isaretlemek icin isCubeDead() var (bot bunu kullanir, insan serbesttir).
+// oyuncu "5'lik macta kup 4 bende, neden katlayamiyorum?" diye sasiriyordu. Bot da AYNI kurala
+// tabidir (ona ek olu-kup/tavan kisiti YOK) -> insan ve bot birebir ayni kupu kullanir.
 export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean): boolean {
   if (awaitingResponse) return false
   if (m.isCrawford) return false // Crawford oyununda kup yok
@@ -37,13 +37,6 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
   if (m.cube.value >= 64) return false
   if (m.cube.owner !== null && m.cube.owner !== player) return false
   return true
-}
-
-// Kup bu oyuncu icin OLU mu: mevcut kup degeri maci kazanmaya zaten yetiyorsa katlamak sonucu
-// degistiremez (kazaninca mac biter; rakip pas derse de ayni puan). Kurali ENGELLEMEZ — yalniz
-// botun bos yere katlamasini onlemek / UI'da isaretlemek icin.
-export function isCubeDead(m: MatchState, player: Player): boolean {
-  return m.cube.value >= m.target - m.score[player]
 }
 
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
