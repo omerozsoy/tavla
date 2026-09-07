@@ -62,6 +62,50 @@ function Swatch({ color }: { color: Player }) {
   )
 }
 
+// Bir hamle notasyonunu (or. "8/7(2) 6/5(2)", "bar/22 13/7*", "13/7*/2") mevcut dizilime
+// uygulayip ONIZLEME board dondurur. gnubg + wildbg sonuclari ortak moveNotation formatinda
+// gelir. Notasyon oyuncu-perspektifi (moveNotation'in tersi): beyaz=num-1, siyah=24-num.
+// Board temsili: pts[24] (beyaz +, siyah -), bar/off {white,black}. Kirilma (vurus) islenir.
+type PreviewBoard = {
+  pts: number[]
+  bar: { white: number; black: number }
+  off: { white: number; black: number }
+}
+function previewFromNotation(base: PreviewBoard, turn: Player, label: string): PreviewBoard {
+  const pts = base.pts.slice()
+  const bar = { ...base.bar }
+  const off = { ...base.off }
+  const sign = turn === 'white' ? 1 : -1
+  const opp: Player = turn === 'white' ? 'black' : 'white'
+  const toLoc = (tok: string): number | 'bar' | 'off' | null => {
+    if (tok === 'bar') return 'bar'
+    if (tok === 'off') return 'off'
+    const n = parseInt(tok, 10)
+    if (!Number.isFinite(n) || n < 1 || n > 24) return null
+    return turn === 'white' ? n - 1 : 24 - n
+  }
+  const stepOnce = (from: number | 'bar' | 'off' | null, to: number | 'bar' | 'off' | null) => {
+    if (from === null || to === null) return
+    if (from === 'bar') bar[turn] = Math.max(0, bar[turn] - 1)
+    else if (from !== 'off') pts[from] -= sign
+    if (to === 'off') off[turn] += 1
+    else if (to !== 'bar') {
+      if (pts[to] === -sign) { pts[to] = 0; bar[opp] += 1 } // tek rakip pul -> kirilir
+      pts[to] += sign
+    }
+  }
+  for (const part of label.trim().split(/\s+/)) {
+    if (!part || part === 'pas' || part === 'pass') continue
+    const cm = part.match(/\((\d+)\)\s*$/)
+    const count = cm ? parseInt(cm[1], 10) : 1
+    const locs = part.replace(/\((\d+)\)\s*$/, '').replace(/\*/g, '').split('/')
+    for (let c = 0; c < count; c++) {
+      for (let i = 0; i < locs.length - 1; i++) stepOnce(toLoc(locs[i]), toLoc(locs[i + 1]))
+    }
+  }
+  return { pts, bar, off }
+}
+
 export default function PositionAnalyzer({
   neuralEval,
   neuralAnalyze,
@@ -99,10 +143,22 @@ export default function PositionAnalyzer({
   const [moveRows, setMoveRows] = useState<MoveRow[] | null>(null)
   const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
   const [busy, setBusy] = useState(false)
+  const [previewIdx, setPreviewIdx] = useState<number | null>(null) // sagdaki hamleye tiklayinca board onizlemesi
   const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
   const limitTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
+
+  // Onizleme: sagdaki hamleye tiklandiginda o hamle uygulanmis SALT-GORUNUM board.
+  // Editable dizilim (pts/bar/off) DEGISMEZ; board'a tiklayinca duzenlemeye geri donulur.
+  const previewState: GameState | null =
+    previewIdx != null && moveRows?.[previewIdx]
+      ? (() => {
+          const pv = previewFromNotation({ pts, bar, off }, turn, moveRows[previewIdx].label)
+          return { points: pv.pts, bar: pv.bar, off: pv.off, turn, dice: [], diceUsed: [] }
+        })()
+      : null
+  const displayState = previewState ?? state
 
   // Dizilim degistikce kalici kaydet (analyzer kapanip acilinca / yenilenince korunur).
   useEffect(() => {
@@ -158,6 +214,11 @@ export default function PositionAnalyzer({
   }
 
   function handleFrom(from: number | 'bar') {
+    // Onizleme acikken board'a tiklamak duzenlemeye geri doner (dizilim bozulmaz).
+    if (previewIdx != null) {
+      setPreviewIdx(null)
+      return
+    }
     if (from === 'bar') editBar()
     else editPoint(from)
   }
@@ -204,6 +265,7 @@ export default function PositionAnalyzer({
   }
 
   function onBoardPointerDown(e: RPointerEvent<HTMLDivElement>) {
+    if (previewIdx != null) return // onizleme modunda surukleme yok
     if (e.button !== 0 && e.pointerType === 'mouse') return
     const target = e.target as HTMLElement
     const checkerEl = target.closest('.checker') as HTMLElement | null
@@ -264,6 +326,7 @@ export default function PositionAnalyzer({
     setBusy(true)
     setResult(null)
     setMoveRows(null)
+    setPreviewIdx(null)
     try {
       const deep = ply === 2
       const hasDice = !!(d1 && d2)
@@ -404,7 +467,7 @@ export default function PositionAnalyzer({
 
       <div className="analyzer-body">
         <div
-          className="analyzer-board"
+          className={`analyzer-board${previewState ? ' pa-previewing' : ''}`}
           onPointerDown={onBoardPointerDown}
           onClickCapture={onBoardClickCapture}
           onDragStartCapture={(e) => e.preventDefault()}
@@ -414,16 +477,21 @@ export default function PositionAnalyzer({
               <Icon name="alert" size={15} /> {t('pa.limitWarn')}
             </div>
           )}
+          {previewState && (
+            <div className="pa-preview-toast" role="status">
+              <Icon name="eye" size={14} /> {t('pa.previewOn')}
+            </div>
+          )}
           <Board
-            state={state}
-            selectableFroms={allFroms}
+            state={displayState}
+            selectableFroms={previewState ? new Set() : allFroms}
             targets={new Set()}
             selectedFrom={null}
             onSelectFrom={handleFrom}
             onSelectTarget={() => {}}
             onDragFrom={() => {}}
-            pipTop={pipCount(state, 'black')}
-            pipBottom={pipCount(state, 'white')}
+            pipTop={pipCount(displayState, 'black')}
+            pipBottom={pipCount(displayState, 'white')}
             cube={cube}
             showPip
           />
@@ -731,14 +799,20 @@ export default function PositionAnalyzer({
               <div className="move-list">
                 <div className="move-list-head">{t('an.bestMoves')}</div>
                 {moveRows.slice(0, 5).map((r, i) => (
-                  <div key={`${i}-${r.label}`} className={`move-row ${i === 0 ? 'best' : ''}`}>
+                  <button
+                    type="button"
+                    key={`${i}-${r.label}`}
+                    className={`move-row ${i === 0 ? 'best' : ''} ${previewIdx === i ? 'sel' : ''}`}
+                    onClick={() => setPreviewIdx((cur) => (cur === i ? null : i))}
+                    title={t('pa.previewHint')}
+                  >
                     <span className="rank">{i + 1}.</span>
                     <span className="notation">{r.label}</span>
                     <span className="eq">{r.equity.toFixed(3)}</span>
                     <span className="diff">
                       {i === 0 ? '' : (r.equity - moveRows[0].equity).toFixed(3)}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
