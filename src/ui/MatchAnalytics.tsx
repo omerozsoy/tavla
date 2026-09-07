@@ -81,8 +81,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
   const [reportBusy, setReportBusy] = useState(false)
-  // Belirli bir mac aciliyorsa donem filtresi 'Tumu' olsun (mac 7g disinda olabilir).
-  const [period, setPeriod] = useState<EJPeriod>(initialMatchId != null ? 'all' : '7d')
+  // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi (eski
+  // maclar gizli kaliyordu). Kullanici isterse sekmelerden daralt.
+  const [period, setPeriod] = useState<EJPeriod>('all')
   const filtered = rows.filter((m) => inPeriod(m.created_at, period))
 
   // Bir macin tam analizini (log) cek -> MatchReport ac
