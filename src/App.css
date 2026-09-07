@@ -5142,15 +5142,16 @@ button[aria-disabled='true'],
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
   z-index: 5;
 }
-/* Crawford oyunu: kupte sayi yerine kelime durur -> kucuk, sikisik, iki satira tasabilir */
+/* Crawford oyunu: kupte sayi yerine kelime durur -> kucuk, sikisik, TEK SATIRA sigsin.
+   (0.165 + letter-spacing ile CRAWFORD en kucuk kupte tasip ikiye boluniyordu.) */
 .cube.cube-crawford {
-  font-size: calc(var(--cube-size) * 0.165);
+  font-size: calc(var(--cube-size) * 0.125);
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0;
   text-transform: uppercase;
-  line-height: 1.1;
+  line-height: 1.05;
   text-align: center;
-  padding: 0 3px;
+  padding: 0 2px;
   overflow-wrap: anywhere;
 }
 /* Kup sahibinin tarafinda durur */
