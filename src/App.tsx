@@ -3546,6 +3546,14 @@ export default function App() {
   function startSoloStake(stakes: number[], target = 1) {
     const list = stakes.filter((s) => s > 0)
     if (list.length === 0) return
+    // Tek Oyun = coin bahisli online eslesme -> hesap sart. Misafir icin API'ye gidip
+    // kafa karistiran 'Bahisli oyun icin giris yapmalisin' 422'sini yemeden ONCE net
+    // giris akisi ac (Mac Oyunu ile ayni davranis).
+    if (!user) {
+      notify.info(t('mp.loginRequired'))
+      setShowAuth(true)
+      return
+    }
     stakesRef.current = list
     stakeRef.current = Math.max(...list) // gecici gosterim; eslesmede room.stake ile guncellenir
     betPctRef.current = 0 // Tek Oyun sabit bahis (pct degil)
