@@ -716,7 +716,7 @@ const TR: Dict = {
   'cube.note': 'Para oyunu (cubeless) yaklaşımı — maç skorunu hesaba katmaz.',
   'cube.matchNote': 'Maç: {n} puanlık, skor ⚪{sw}–⚫{sb} (MET tabanlı, yaklaşık).',
   'pa.match': 'Maç / Skor',
-  'pa.money': 'Para',
+  'pa.money': 'Sınırsız', // Maç/Skor secimi: 0 = mac siniri YOK (tavla terimiyle "para oyunu")
   'theme.dark': 'Koyu',
   'theme.light': 'Açık',
   'player.bot': 'Bot',
