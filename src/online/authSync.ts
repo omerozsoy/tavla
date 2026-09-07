@@ -66,6 +66,11 @@ export interface ServerMatchView {
   done?: boolean
   winner?: Player | null
   opened?: boolean
+  // Bu OYUNDA tamamlanan tur sayisi (sunucu sayar). Kup hakki icin sart: ilk el (acilis)
+  // oynanmadan kup teklif edilemez. Otoriter modda istemcinin yerel sayaci ARTMAZ
+  // (commitTurn sunucuya devreder) -> bu alan olmadan kup butonu HIC cikmaz.
+  turns?: number
+  crawford?: boolean
 }
 
 /** Maç bitti mi + kazanan. */
@@ -96,6 +101,8 @@ export interface LocalMatchState {
   cubeValue: number
   cubeOwner: Player | null
   cubePending: Player | null
+  turns: number // bu oyunda tamamlanan tur sayisi (App: setTurnsPlayed -> kup hakki + auto-roll)
+  crawford: boolean // Crawford oyunu mu (kup YASAK) — sunucu da reddeder, istemci butonu gizler
 }
 
 /**
@@ -110,6 +117,8 @@ export function serverMatchToLocal(sm: ServerMatchView, prevTarget: number): Loc
     cubeValue: sm.cube?.value ?? 1,
     cubeOwner: sm.cube?.owner ?? null,
     cubePending: sm.cube?.pending ?? null,
+    turns: Math.max(0, sm.turns ?? 0),
+    crawford: !!sm.crawford,
   }
 }
 
