@@ -1537,6 +1537,7 @@ export interface ServerMatch {
   crawford?: boolean
   crawfordDone?: boolean
   opened?: boolean
+  turns?: number // bu oyunda tamamlanan tur sayisi (kup hakki: ilk el oynanmadan kup yok)
 }
 
 // Sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal) üretilir; istemci seçemez.

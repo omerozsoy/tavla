@@ -122,6 +122,35 @@ class AuthoritativeLoopTest extends TestCase
         $this->assertNull($c['pending']);
     }
 
+    /**
+     * TUR SAYACI (server_match.turns) — KÜP HAKKININ kaynağı. Otoriter modda istemcinin yerel
+     * turnsPlayed sayacı ARTMAZ (commitTurn sunucuya devreder); sunucu saymazsa istemci küp
+     * butonunu HİÇ açmaz ve zarı otomatik atar (3/5/7'lik maçta "küp hiç sorulmuyor" bug'ı).
+     */
+    public function test_turns_counter_increments_and_resets_per_game(): void
+    {
+        config()->set('validator.url', 'http://validator.test');
+        $this->room(target: 5);
+        [$starterColor, $starterTok, $otherColor, ] = $this->openingRoll();
+
+        // Açılış eli henüz OYNANMADI -> 0 tur (bu turda küp teklif edilemez).
+        $this->assertSame(0, Room::first()->fresh()->server_match['turns']);
+
+        // Açılış eli oynandı -> 1 tur (sıradaki oyuncu artık küp teklif edebilir).
+        $this->fakeFlip($otherColor);
+        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
+        $this->assertSame(1, Room::first()->fresh()->server_match['turns']);
+
+        // Oyun bitti (maç sürüyor) -> yeni oyunda sayaç 0'a döner: açılış eli şartı yine geçerli.
+        $this->postJson('/api/rooms/LOOPX/roll', ['token' => $starterTok === 'p1' ? 'p2' : 'p1'])->assertOk();
+        $this->fakeFlip($starterColor, ['white' => 0, 'black' => 0, $otherColor => 15]);
+        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
+            ->assertOk()->assertJsonPath('match_done', false);
+        $sm = Room::first()->fresh()->server_match;
+        $this->assertSame(0, $sm['turns']);
+        $this->assertFalse($sm['opened']); // yeni oyun -> yeni açılış eli
+    }
+
     public function test_clock_follows_authoritative_turns(): void
     {
         config()->set('validator.url', 'http://validator.test');

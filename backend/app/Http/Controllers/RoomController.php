@@ -1344,6 +1344,10 @@ class RoomController extends Controller
             'crawfordDone' => false,
             // opened=bu oyunun AÇILIŞ eli atıldı mı (başlayan belirlendi). Yeni oyunda false.
             'opened' => false,
+            // turns=bu OYUNDA tamamlanan tur sayısı. KÜP HAKKI buna bağlı: açılış eli
+            // oynanmadan (turns=0) küp teklif edilemez. İstemci turnsPlayed'i BURADAN alır
+            // (otoriter modda yerel sayaç artmaz). Her yeni oyunda 0'a döner.
+            'turns' => 0,
         ];
     }
 
@@ -1372,6 +1376,7 @@ class RoomController extends Controller
         $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
         $sm['cube'] = ['value' => 1, 'owner' => null, 'pending' => null]; // yeni oyun: küp ortada
         $sm['opened'] = false; // sonraki oyun yeni açılış eli ister
+        $sm['turns'] = 0; // yeni oyun: tur sayacı sıfır -> açılış elinden önce küp yok
         $target = (int) ($sm['target'] ?? 1);
         $done = (int) $sm['score'][$winner] >= $target;
         if ($done) {
@@ -1611,6 +1616,14 @@ class RoomController extends Controller
             // Otoriter durumu güncelle (validator uyguladı + sırayı devretti).
             $new = $result['state'];
             $winner = \App\Support\Backgammon::winner($new);
+
+            // TUR SAYACI: geçerli hamle sırayı devretti -> bu oyunda bir tur daha tamamlandı.
+            // İstemci küp hakkını (ilk elden sonra) ve otomatik-zar kararını BUNDAN okur;
+            // otoriter modda yerel sayaç artmadığı için sunucu saymazsa küp HİÇ açılmaz.
+            // (applyGameResult oyun bitince 0'a döndürür -> yeni oyunda yine açılış eli şartı.)
+            $smTurn = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
+            $smTurn['turns'] = (int) ($smTurn['turns'] ?? 0) + 1;
+            $room->server_match = $smTurn;
 
             // ---- SUNUCU-OTORİTER MAÇ SKORU + KÜP (Faz 2/3) ----
             // Oyun bittiyse (15 taş) puanı SUNUCU hesaplar: gammon/backgammon (1/2/3) × KÜP değeri.

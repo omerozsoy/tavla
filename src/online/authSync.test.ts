@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Player } from '../engine/types'
+import { canDouble, newMatch, shouldAutoRoll } from '../engine/match'
 import {
   isOnlineReady,
   matchEndFromServer,
@@ -70,6 +71,7 @@ class SimServer {
   score = { white: 0, black: 0 }
   done = false
   winner: Player | null = null
+  turns = 0 // bu oyunda tamamlanan tur (backend server_match.turns) -> istemcinin küp hakkı
   constructor(starter: Player, target = 1) {
     this.starter = starter
     this.target = target
@@ -110,6 +112,7 @@ class SimServer {
     if (this.turn !== color || this.dice.length === 0 || this.cube.pending) return { ok: false }
     this.turn = other(color)
     this.dice = []
+    this.turns++ // tur tamamlandı (backend move() ile aynı) -> açılış elinden sonra küp serbest
     this.version++
     return { ok: true }
   }
@@ -145,6 +148,7 @@ class SimServer {
         done: this.done,
         winner: this.winner,
         opened: this.opened,
+        turns: this.turns,
       },
     }
   }
@@ -161,6 +165,9 @@ class SimClient {
   cubePending: Player | null = null
   score = { white: 0, black: 0 }
   target = 1
+  // App.tsx turnsPlayed'in otoriter moddaki karşılığı: SUNUCUDAN gelir (yerel commitTurn
+  // otoriter dalda erken döner, sayacı artırmaz). Küp butonunun (turnsPlayed>0) tek kaynağı.
+  turnsPlayed = 0
   myColor: Player
   server: SimServer
   constructor(myColor: Player, server: SimServer) {
@@ -176,6 +183,7 @@ class SimClient {
     this.cubePending = lm.cubePending
     this.score = lm.score
     this.target = lm.target
+    this.turnsPlayed = lm.turns
   }
 
   // İstemcinin KENDİ senkron skorundan türettiği maç-sonu (App.tsx matchEndFromServer ile aynı).
@@ -227,6 +235,7 @@ class SimClient {
       this.turn = v.server_state.turn
       this.dice = [...v.server_state.dice]
       this.played = 0
+      this.syncMatch(v.server_match) // App.tsx: applyServerBoard(r.state, r.match) -> skor+küp+tur
     }
   }
 
@@ -394,6 +403,15 @@ describe('serverMatchToLocal + openingStateFromMatch', () => {
     expect(lm.cubeOwner).toBeNull()
     expect(lm.score).toEqual({ white: 0, black: 0 })
   })
+  it('tur sayacı + Crawford sunucudan yansır (küp hakkının kaynağı)', () => {
+    const lm = serverMatchToLocal({ target: 5, turns: 3, crawford: true }, 1)
+    expect(lm.turns).toBe(3)
+    expect(lm.crawford).toBe(true)
+    // Alan yoksa (eski sunucu) güvenli varsayılan: küp yok gibi davran (0 tur / Crawford değil).
+    const old = serverMatchToLocal({ target: 5 }, 1)
+    expect(old.turns).toBe(0)
+    expect(old.crawford).toBe(false)
+  })
   it('açılış durumu: yeni oyun(opened false)->roll, oyun içi->null, maç bitti->keep', () => {
     expect(openingStateFromMatch({ opened: false, done: false })).toBe('roll')
     expect(openingStateFromMatch({ opened: true, done: false })).toBeNull()
@@ -420,5 +438,47 @@ describe('isOnlineReady', () => {
     expect(
       isOnlineReady({ online: true, status: 'playing', slot: 'p2', oppStarted: false, authoritative: true }),
     ).toBe(true)
+  })
+})
+
+// ---- KÜP HAKKI (yaşanan bug): 3/5/7'lik OTORİTER maçta "Katla" butonu HİÇ çıkmıyordu ----
+// Sebep: otoriter modda commitTurn sunucuya devredip ERKEN döner -> yerel turnsPlayed 0'da
+// kalır. App.tsx küp butonunu `turnsPlayed > 0` ile gate'ler ve shouldAutoRoll de küp seçeneği
+// yoksa zarı OTOMATİK atar -> oyuncu küpü ne görebiliyor ne teklif edebiliyordu.
+// Çözüm: tur sayacı SUNUCUDAN (server_match.turns) gelir; applyServerBoard setTurnsPlayed yapar.
+describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
+  it('açılış eli oynandıktan SONRA küp teklif edilebilir ve zar otomatik atılmaz', () => {
+    const server = new SimServer('white', 5)
+    const white = new SimClient('white', server)
+    const black = new SimClient('black', server)
+    const match5 = { ...newMatch(5) }
+
+    white.triggerOpening()
+    black.poll()
+    // Açılış eli (ilk tur) HENÜZ oynanmadı -> küp yok, zar otomatik (beklemenin anlamı yok).
+    expect(white.turnsPlayed).toBe(0)
+    expect(shouldAutoRoll(match5, 'white', white.turnsPlayed, false)).toBe(true)
+
+    white.moveIfMyTurn() // açılış eli oynandı -> sıra siyahta
+    black.poll()
+
+    // İki istemci de sunucudan aynı tur sayısını alır.
+    expect(white.turnsPlayed).toBe(1)
+    expect(black.turnsPlayed).toBe(1)
+    // Sıradaki oyuncu (siyah) artık küp teklif edebilir -> "Katla" butonu çıkar, zar beklenir.
+    expect(canDouble(match5, 'black', false)).toBe(true)
+    expect(shouldAutoRoll(match5, 'black', black.turnsPlayed, false)).toBe(false)
+
+    // Ve teklif gerçekten sunucuda oluşur (rakip poll ile yanıt ekranını görür): siyah zar
+    // ATMADAN küpü teklif eder (otomatik zar kapalı olduğu için bu fırsat artık var).
+    black.cubeOfferIfCan()
+    white.poll()
+    expect(white.cubePending).toBe('black')
+  })
+
+  it('1 puanlık maçta küp YOK (tur sayacı ilerlese de) -> zar otomatik', () => {
+    const match1 = newMatch(1)
+    expect(canDouble(match1, 'white', false)).toBe(false)
+    expect(shouldAutoRoll(match1, 'white', 3, false)).toBe(true)
   })
 })

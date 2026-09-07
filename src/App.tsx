@@ -2956,8 +2956,13 @@ export default function App() {
         target: lm.target,
         score: lm.score,
         cube: { value: lm.cubeValue, owner: lm.cubeOwner },
+        isCrawford: lm.crawford, // Crawford'da kup YASAK (sunucu da reddeder) -> buton cikmasin
       }))
       setCubePending(lm.cubePending)
+      // TUR SAYACI otoriter modda SUNUCUDAN gelir: commitTurn authoritative dalinda erken
+      // doner (yerel setTurnsPlayed calismaz) -> sayac 0'da kalirsa `turnsPlayed > 0` sarti
+      // hic saglanmaz: "Katla" butonu HIC gorunmez ve shouldAutoRoll her turu otomatik atar.
+      setTurnsPlayed(lm.turns)
       // Açılış overlay kararı da saf: opened=false->'roll' (yeni oyun), true->null (kaldır), done->keep.
       const os = openingStateFromMatch(sm)
       if (os === 'keep') {
