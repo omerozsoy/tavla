@@ -26,25 +26,22 @@ export function newMatch(target: number): MatchState {
 }
 
 // Bir oyuncu kupu teklif edebilir mi?
-// NOT: "Olu kup" (kup >= hedefe kalan) ARTIK ENGELLENMEZ (kullanici direktifi). Gercek tavlada
-// redouble her zaman LEGAL'dir; olu kupte sadece ANLAMSIZDIR. Eskiden buton gizleniyordu ve
-// oyuncu "5'lik macta kup 4 bende, neden katlayamiyorum?" diye sasiriyordu. Bot da AYNI kurala
-// tabidir (ona ek olu-kup/tavan kisiti YOK) -> insan ve bot birebir ayni kupu kullanir.
+// OLU KUP artik TEKLIF EDEN ACISINDAN degerlendirilir (kullanici direktifi): kupun MEVCUT
+// degeri, teklif edenin maci bitirmesi icin gereken puani zaten karsiliyorsa katlamak ona
+// HICBIR SEY kazandirmaz, yalniz rakibe daha buyuk bir kup verir. Or. 7'lik macta 6-1
+// ondeyken rakip katladi (kup 2): bu oyunu kazanmak maci bitiriyor -> 4'e cekmek anlamsiz,
+// buton CIKMAZ. Rakip icin (6 puan uzakta) kup hala anlamlidir, ona kapatilmaz.
+// Bot da AYNI kurala tabidir (ek kisit YOK) -> insan ve bot birebir ayni kupu kullanir.
 export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean): boolean {
   if (awaitingResponse) return false
   if (m.isCrawford) return false // Crawford oyununda kup yok
   if (m.target <= 1) return false // 1 puanlik mac (tek oyun): kup HIC yok (gercek kural)
   if (m.cube.value >= 64) return false
   if (m.cube.owner !== null && m.cube.owner !== player) return false
-  // IKI TARAF ICIN DE OLU KUP: kupun MEVCUT degeri her iki oyuncunun maci bitirmek icin
-  // ihtiyaci olan puani zaten karsiliyorsa katlamak hicbir seyi degistiremez (or. 7'lik
-  // macta kup 8: bu oyunu kim kazanirsa maci kazanir). Teklif SUNULMAZ -> zar dogrudan
-  // atilir (shouldAutoRoll bunu okur). Bot da ayni kurala tabi.
-  // NOT: yalniz BIR taraf icin olu olmasi engel DEGILDIR (once verilen direktif): or.
-  // 3'luk macta 2-0 ondeyken kup 1 -> rakip icin hala anlamli, "Katla" gorunur kalir.
-  const needWhite = m.target - m.score.white
-  const needBlack = m.target - m.score.black
-  if (m.cube.value >= needWhite && m.cube.value >= needBlack) return false
+  // OLU KUP (teklif eden icin): kup zaten teklif edenin ihtiyaci olan puani karsiliyorsa
+  // katlamanin kazanci YOKTUR (oyunu kazaninca mac zaten bitiyor), riski vardir. Teklif
+  // SUNULMAZ -> zar dogrudan atilir (shouldAutoRoll bunu okur).
+  if (m.cube.value >= pointsNeeded(m, player)) return false
   return true
 }
 

@@ -97,9 +97,26 @@ describe('Crawford kurali', () => {
     expect(m.crawfordDone).toBe(true)
     // Geride olan (siyah, 5 puan uzakta) kupu teklif edebilir; kup geri geldi.
     expect(canDouble(m, 'black', false)).toBe(true)
-    // 1 puan kala olan (beyaz) icin kup OLU ama teklif ENGELLENMEZ (gercek tavla: legal,
-    // sadece anlamsiz).
-    expect(canDouble(m, WHITE, false)).toBe(true)
+    // 1 puan kala olan (beyaz) icin kup OLU -> teklif SUNULMAZ (katlamanin kazanci yok).
+    expect(canDouble(m, WHITE, false)).toBe(false)
+  })
+
+  // Kullanici raporu: "3'luk YZ macinda 2-0 iken Crawford goremedim". Motor mod-bagimsiz;
+  // 2-0'da (hedef-1) sonraki oyun Crawford OLMALI ve kup iki tarafa da kapanmalidir.
+  it('3 puanlik macta 2-0 -> sonraki oyun Crawford (kup iki tarafa da kapali)', () => {
+    let m = newMatch(3)
+    m = scoreGame(m, WHITE, 2) // 2-0: hedefe 1 kala
+    m = setupNextGame(m)
+    expect(m.isCrawford).toBe(true)
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(canDouble(m, 'black', false)).toBe(false)
+  })
+
+  it('3 puanlik macta gammon ile 0-2 (siyah onde) -> yine Crawford', () => {
+    let m = newMatch(3)
+    m = scoreGame(m, 'black', 2) // tek oyunda mars -> 0-2
+    m = setupNextGame(m)
+    expect(m.isCrawford).toBe(true)
   })
 
   it('Crawford oyununda kup teklif edilemez', () => {
@@ -117,21 +134,23 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
     expect(shouldAutoRoll(m, BLACK, turnsPlayed)).toBe(true)
   })
 
-  it('olu kup ARTIK engel degil -> katla cikar, otomatik atmaz', () => {
-    // 3 hedefli macta skor 2/3: kalan 1, kup 1 -> olu kup ama teklif LEGAL (kullanici direktifi)
+  it('teklif edene olu kup -> KATLA cikmaz, otomatik atar', () => {
+    // 3 hedefli macta skor 2/3: beyaza 1 kaldi, kup 1 -> kazanmak zaten maci bitiriyor.
     const m = { ...newMatch(3), score: { white: 2, black: 0 } }
-    expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
+    // Geride olan (siyah, 3 puan uzakta) icin kup hala anlamli.
+    expect(canDouble(m, 'black', false)).toBe(true)
   })
 
-  it('5 puanlik macta kup 4 bende, skor 1-0 -> KATLA cikar (eski olu-kup hatasi)', () => {
+  it('5 puanlik macta kup 4 bende, skor 1-0 -> kup benim icin OLU, KATLA cikmaz', () => {
     const m = {
       ...newMatch(5),
       score: { white: 1, black: 0 },
       cube: { value: 4, owner: 'white' as const },
     }
-    expect(canDouble(m, WHITE, false)).toBe(true)
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
+    expect(canDouble(m, WHITE, false)).toBe(false) // beyaza 4 kaldi, kup zaten 4
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
   })
 
   it('Crawford oyununda kup yok -> otomatik atar', () => {
@@ -164,11 +183,24 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
     expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
   })
 
-  // Kup TEK tarafi bitiriyorsa olu SAYILMAZ: rakip icin hala anlamli.
-  it('7lik macta 6-0 onde, kup 1 -> rakip icin anlamli, KATLA cikar', () => {
+  // Olu kup TEKLIF EDENE gore: onde olana kapali, geride olana acik.
+  it('7lik macta 6-0 onde, kup 1 -> onde olana KATLA cikmaz, geride olana cikar', () => {
     const m = { ...newMatch(7), score: { white: 6, black: 0 } }
-    expect(canDouble(m, WHITE, false)).toBe(true) // beyaza 1 kaldi ama siyaha 7
-    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
+    expect(canDouble(m, WHITE, false)).toBe(false) // beyaza 1 kaldi -> kup olu
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
+    expect(canDouble(m, 'black', false)).toBe(true) // siyaha 7 kaldi -> anlamli
+  })
+
+  // Kullanici raporu: 7lik macta 6-1 ondeyken rakip katladi (kup 2). Bu oyunu kazanmak
+  // maci bitiriyor -> 4e cekmek kazanc saglamaz, sadece rakibe 4 puan riski yazar.
+  it('7lik macta 6-1 ondeyken rakip katladi (kup 2) -> 4e cekemem', () => {
+    const m = {
+      ...newMatch(7),
+      score: { white: 6, black: 1 },
+      cube: { value: 2, owner: 'white' as const },
+    }
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
   })
 
   it('7lik macta 6-6 berabere, kup 1 -> ikisine de 1 kaldi, otomatik atar', () => {
