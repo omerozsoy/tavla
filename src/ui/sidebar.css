@@ -84,3 +84,26 @@
     animation: none;
   }
 }
+
+/* Crawford rozeti: durum cubugu (.status) mobil/zorunlu YATAYDA display:none oldugundan
+   ve pvb'de durum mesaji hic yazilmadigindan, Crawford'un TEK gorunur izi kupun icindeki
+   minik yaziydi (telefonda okunmuyor). Rozet artik yan panelde -> her ekranda, her modda. */
+.sm-crawford {
+  gap: 3px;
+}
+.sm-crawford-tag {
+  display: inline-block;
+  align-self: center;
+  background: #ffd54a;
+  color: #2a2413;
+  font-weight: 800;
+  font-size: 0.95rem;
+  border-radius: 6px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+}
+.sm-crawford-note {
+  color: #cfc9bd;
+  font-weight: 600;
+  font-size: 0.78rem;
+}

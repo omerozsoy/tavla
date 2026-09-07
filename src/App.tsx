@@ -6428,6 +6428,7 @@ export default function App() {
           bottom={flipBoard ? topInfo : bottomInfo}
           length={match.target}
           stake={stakeRef.current}
+          crawford={match.isCrawford && !gameEnd}
         />
         {clockOn && (
           <ClockStack
@@ -6503,8 +6504,11 @@ export default function App() {
             ? t('mp.oppTurn')
             : // Yapay zekaya karsi oyunda "Beyaz oynuyor / Zarlar / dusunuyor" gibi
               // anlatim yazilarini gosterme (board zaten zar+sirayi gorsel veriyor).
+              // TEK istisna: Crawford — kup neden yok, oyuncu YAZIYLA gorsun.
               mode === 'pvb'
-              ? null
+              ? match.isCrawford
+                ? t('board.crawfordHint')
+                : null
               : message}
         </span>
       </div>

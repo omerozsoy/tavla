@@ -50,6 +50,7 @@ interface SidebarProps {
   bottom: PlayerInfo
   length?: number // mac uzunlugu (LENGTH)
   stake?: number // bahis tutari (STAKE); 0 ise gizli
+  crawford?: boolean // Crawford oyunu: kup YOK -> panelde rozet (her modda, her ekranda)
 }
 
 // Sadelestirilmis sayi: 1400 -> "1.4K", 2000000 -> "2M".
@@ -142,12 +143,18 @@ function PlayerCard({ p, pos }: { p: PlayerInfo; pos: 'top' | 'bottom' }) {
   )
 }
 
-export default function Sidebar({ top, bottom, length, stake }: SidebarProps) {
+export default function Sidebar({ top, bottom, length, stake, crawford }: SidebarProps) {
   const { t } = useT()
   return (
     <div className="sidebar">
       <PlayerCard p={top} pos="top" />
       <div className="sidebar-meta">
+        {crawford && (
+          <div className="sm-row sm-crawford" title={t('board.crawfordHint')}>
+            <span className="sm-crawford-tag">{t('board.crawford')}</span>
+            <span className="sm-crawford-note">{t('game.noCube')}</span>
+          </div>
+        )}
         {length != null && (
           <div className="sm-row">
             <span className="sm-lbl">{t('game.length')}</span>
