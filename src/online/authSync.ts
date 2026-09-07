@@ -170,16 +170,26 @@ export function isOnlineReady(p: {
 }
 
 /**
- * Uygulanan server_version ESKI ODADAN mi kalmis? Her oda kendi server_version'ini 0'dan
+ * Uygulanan server_version BASKA ODADAN mi kalmis? Her oda kendi server_version'ini 0'dan
  * baslatir; oyuncu ayni sekmede ikinci maca girince (rovans / yeni eslesme) onceki odadan
  * kalan yuksek deger, poll'un "surum ilerledi mi" kontrolunu KALICI olarak dusurur ->
- * otoriter durum bir daha ASLA uygulanmaz. Sunucunun surumu bizimkinin GERISINDEyse bu
- * kesin olarak eski/baska odanin degeridir; sifirlanmali.
+ * otoriter durum bir daha ASLA uygulanmaz (acilis yarisini kaybeden taraf "Acilis zari
+ * atiliyor..." ekraninda sonsuza kadar takilir). resetRoomSync giris noktalarinda sifirliyor;
+ * bu, kacan bir yol kalirsa kendini onaran emniyet subabi.
  *
- * YASANAN CANLI BUG: acilis yarisini kaybeden taraf (sunucudan reused/409 alip poll'a birakan)
- * "Acilis zari atiliyor..." ekraninda sonsuza kadar takili kaldi; rakibi normal oynadi.
+ * KIMLIK ODA KODUDUR, SURUM SIRASI DEGIL. Onceki surum "sunucu surumu bizimkinin GERISINDE"
+ * diye karar veriyordu ve bu CANLI BIR BUG'A yol acti: ayni odada surumun geride gelmesi eski
+ * oda demek DEGILDIR — sunucu surumu oda icinde yalniz ARTAR (RoomController: server_version+1)
+ * — ucusta kalmis ESKI bir poll yaniti demektir. Tipik akis: poll GET yola cikar (surum N),
+ * oyuncu hamlesini onaylar, serverMove N+1 doner ve uygulanir, sonra o eski GET yanit verir
+ * (N < N+1) -> "eski oda" sanilip ref -1'e cekilir -> N'lik ESKI durum tahtaya UYGULANIR:
+ * oyuncunun ONAYLADIGI HAMLE GERI ALINIR. Tekrar oynayip onaylayinca sunucu artik N+1'de
+ * oldugu icin "Sira sende degil." / "Once zar at." (409) doner.
+ *
+ * Dogru kural: ref'i YALNIZ oda degistiginde sifirla. Ayni odada geride gelen surumu
+ * shouldApplyServerState zaten (surum ilerlemedi diye) eler.
  */
-export function staleServerVersion(rv: ServerSyncView, appliedServerVersion: number): boolean {
-  if (!rv.authoritative || !rv.server_state) return false
-  return (rv.server_version ?? 0) < appliedServerVersion
+export function serverSyncRoomChanged(appliedRoom: string | null, currentRoom: string | null): boolean {
+  if (!currentRoom) return false // oda yok -> karar verme
+  return appliedRoom !== currentRoom
 }
