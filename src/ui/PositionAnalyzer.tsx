@@ -278,14 +278,31 @@ export default function PositionAnalyzer({
     else editPoint(from)
   }
 
+  // KUP tahtadan ayarlanir. toward = kupun gitmesi istenen taraf (sol tik: beyaz/ben,
+  // sag tik: siyah/rakip). O taraftaysa 2->4->...->64 BUYUR; karsi taraftaysa ayni
+  // adimlarla KUCULUR ve 2'nin altina inince kup ORTAYA doner (deger 1).
+  function bumpCube(toward: Player) {
+    setResult(null)
+    setCube((c) => {
+      if (c.owner === null) return { value: 2, owner: toward }
+      if (c.owner === toward) return { value: Math.min(64, c.value * 2), owner: toward }
+      const next = Math.floor(c.value / 2)
+      return next < 2 ? { value: 1, owner: null } : { value: next, owner: c.owner }
+    })
+  }
+
   // SAG TIK (Board'un kendi onClick'i sadece sol tik verir -> burada DOM'dan cozuyoruz).
   function onBoardContextMenu(e: RMouseEvent<HTMLDivElement>) {
     const el = e.target as HTMLElement
-    // Zar kendi sag tikini isler (geri sayar); kup/merkez overlay duzenlenmez.
-    if (el.closest('.pa-die-btn') || el.closest('.cube') || el.closest('.center-overlay')) return
+    // Zar kendi sag tikini isler (geri sayar); merkez overlay duzenlenmez.
+    if (el.closest('.pa-die-btn') || el.closest('.center-overlay')) return
     e.preventDefault()
     if (previewIdx != null) {
       setPreviewIdx(null)
+      return
+    }
+    if (el.closest('.cube')) {
+      bumpCube('black') // sag tik: kup rakibe dogru
       return
     }
     const chk = el.closest('.checker') as HTMLElement | null
@@ -446,6 +463,14 @@ export default function PositionAnalyzer({
       e.stopPropagation()
       setPreviewIdx(null)
       pendingSlotRef.current = null
+      return
+    }
+    // KUP: bar'in ICINDE duruyor -> bar onClick'i (bara pul ekler) tetiklenmesin diye
+    // capture fazinda yakalayip durduruyoruz. Sol tik kupu BANA dogru oynatir.
+    if ((e.target as HTMLElement).closest('.cube')) {
+      e.stopPropagation()
+      pendingSlotRef.current = null
+      bumpCube('white')
       return
     }
     // Board onSelectFrom(index) event tasimadigi icin klik yuksekligini burada
@@ -722,43 +747,21 @@ export default function PositionAnalyzer({
             </div>
           </div>
 
+          {/* Kup deger/sahiplik butonlari KALDIRILDI: kup artik TAHTADAN ayarlaniyor
+              (sol tik = bana dogru, sag tik = rakibe dogru; 2->64, ters yonde kucultur,
+              2'nin altina inince ortaya doner). Satirda yalniz durum + kisa not kaldi. */}
           <div className="setup-row">
             <div className="setup-label">{t('pa.cube')}</div>
-            <div className="menu-targets">
-              {[1, 2, 4, 8, 16, 32, 64].map((v) => (
-                <Button
-                  key={v}
-                  variant={cube.value === v ? 'secondary' : 'ghost'}
-                  onClick={() => setCube((c) => ({ ...c, value: v }))}
-                >
-                  {v}
-                </Button>
-              ))}
+            <div className="pa-cube-state">
+              {cube.owner === null ? (
+                <span>{t('pa.center')}</span>
+              ) : (
+                <span>
+                  <Swatch color={cube.owner} /> {cube.value}
+                </span>
+              )}
             </div>
-          </div>
-
-          <div className="setup-row">
-            <div className="setup-label">{t('pa.cubeOwner')}</div>
-            <div className="menu-targets pa-owner">
-              <Button
-                variant={cube.owner === 'white' ? 'secondary' : 'ghost'}
-                onClick={() => setCube((c) => ({ ...c, owner: 'white' }))}
-              >
-                <Swatch color="white" /> {t('pa.white')}
-              </Button>
-              <Button
-                variant={cube.owner === null ? 'secondary' : 'ghost'}
-                onClick={() => setCube((c) => ({ ...c, owner: null }))}
-              >
-                {t('pa.center')}
-              </Button>
-              <Button
-                variant={cube.owner === 'black' ? 'secondary' : 'ghost'}
-                onClick={() => setCube((c) => ({ ...c, owner: 'black' }))}
-              >
-                <Swatch color="black" /> {t('pa.black')}
-              </Button>
-            </div>
+            <div className="pa-edit-help">{t('pa.cubeHint')}</div>
           </div>
 
           <div className="setup-row">
