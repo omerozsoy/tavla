@@ -26,6 +26,36 @@ class MatBuilderTest extends TestCase
         $this->assertSame($expected, $actual, 'PHP MatBuilder çıktısı TS buildMat ile BİREBİR aynı olmalı');
     }
 
+    // ÇOK OYUNLU + KÜP + seq reset: .mat'i bozan asıl senaryo (seq = turnsPlayed her oyunda
+    // sıfırlanır, log birikir). Parite burada da BİREBİR olmalı — gnubg luck bu dosyadan okunur.
+    public function test_php_matbuilder_matches_ts_on_multi_game_match(): void
+    {
+        $dir = base_path('tests/Fixtures');
+        $logPath = "$dir/multi-game-match-log.json";
+        $matPath = "$dir/multi-game-match.mat";
+        if (! is_file($logPath) || ! is_file($matPath)) {
+            $this->markTestSkipped('Fixture yok — `npx vitest run src/matExport.botcheck.test.ts` çalıştır.');
+        }
+        $log = json_decode((string) file_get_contents($logPath), true);
+        $expected = (string) file_get_contents($matPath);
+
+        $actual = MatBuilder::build($log, 11, 'Omer', 'GnuBot');
+
+        $this->assertSame($expected, $actual, 'Çok oyunlu + küplü maçta da PHP/TS çıktısı BİREBİR aynı olmalı');
+        // Oyunlar gerçekten bölünmüş mü + hiçbiri BOŞ değil (eski hata: N-1 boş "Game" başlığı,
+        // ardından tüm hamleler tek dev oyuna iç içe geçmiş halde).
+        $lines = explode("\n", $actual);
+        $games = 0;
+        foreach ($lines as $i => $line) {
+            if (! preg_match('/^ Game \d+$/', $line)) {
+                continue;
+            }
+            $games++;
+            $this->assertMatchesRegularExpression('/^\s*\d+\)/', $lines[$i + 2] ?? '', "Game başlığı boş kalmış (satır $i)");
+        }
+        $this->assertGreaterThan(2, $games);
+    }
+
     public function test_merge_logs_takes_own_color_from_each(): void
     {
         // Her oyuncunun logu KENDİ renginde tam + rakip renginde ÇÖP (eksik) içersin. mergeLogs

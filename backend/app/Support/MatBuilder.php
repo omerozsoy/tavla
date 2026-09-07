@@ -62,24 +62,63 @@ class MatBuilder
             return true;
         };
 
-        // seq'e göre STABIL sırala (aynı seq -> orijinal sıra; PHP 8 usort stabil).
+        // Her girdinin OYUN numarası (bkz. src/matExport.ts dosya başı (3)). seq = turnsPlayed ve
+        // turnsPlayed HER OYUNDA sıfırlanır (App.resetGameUi); log ise maç boyunca birikir. Tüm maçı
+        // tek seq'le sıralamak oyunları İÇ İÇE geçirir (N oyunluk maç -> N-1 boş "Game" başlığı +
+        // tek dev bozuk oyun). Bir oyuncunun kendi turları oyun içinde ARTAR; seq'in DÜŞÜP 0/1'e
+        // inmesi ancak yeni oyunun ilk turunda olur (küp girdisi turun hamlesiyle AYNI seq'i taşır
+        // -> eşitlik sınır sayılmaz, yalnız kesin düşüş).
+        $entries = [];
+        foreach ($log as $e) {
+            if (! empty($e['player'])) {
+                $entries[] = $e;
+            }
+        }
+        $gameNoOf = [];
+        $lastSeq = [];
+        $g = ['white' => 0, 'black' => 0];
+        foreach ($entries as $i => $e) {
+            $p = $e['player'];
+            $sq = $e['seq'] ?? $i;
+            if (isset($lastSeq[$p]) && $sq < $lastSeq[$p] && $sq <= 1) {
+                $g[$p] = ($g[$p] ?? 0) + 1;
+            }
+            $lastSeq[$p] = $sq;
+            $gameNoOf[$i] = $g[$p] ?? 0;
+        }
+
+        // (oyun, seq)'e göre sırala. AYNI seq içinde: teklif (0) < yanıt (1) < hamle (2) — online
+        // birleşik logda doğal sıra "kendi teklifim, kendi hamlem, rakibin kabulü" olur ve satır
+        // çiftini bozar (XG: "The game contains some invalid moves").
+        $rank = function ($e) {
+            if (empty($e['cube'])) {
+                return 2;
+            }
+
+            return ($e['cube']['chosen'] ?? null) === 'double' ? 0 : 1;
+        };
         $indexed = [];
-        foreach ($log as $i => $e) {
+        foreach ($entries as $i => $e) {
             $indexed[] = ['e' => $e, 'i' => $i];
         }
-        usort($indexed, function ($a, $b) {
+        usort($indexed, function ($a, $b) use ($gameNoOf, $rank) {
+            $ga = $gameNoOf[$a['i']] ?? 0;
+            $gb = $gameNoOf[$b['i']] ?? 0;
             $sa = $a['e']['seq'] ?? $a['i'];
             $sb = $b['e']['seq'] ?? $b['i'];
 
-            return $sa <=> $sb ?: $a['i'] <=> $b['i'];
+            return ($ga <=> $gb) ?: (($sa <=> $sb) ?: (($rank($a['e']) <=> $rank($b['e'])) ?: ($a['i'] <=> $b['i'])));
         });
 
         $games = [];
+        $prevG = -1;
         foreach ($indexed as $it) {
             $e = $it['e'];
-            if ($isOpening($e) || count($games) === 0) {
+            $gn = $gameNoOf[$it['i']] ?? 0;
+            if ($isOpening($e) || $gn !== $prevG || count($games) === 0) {
                 $games[] = [];
             }
+            $prevG = $gn;
             $games[count($games) - 1][] = $e;
         }
 
@@ -91,32 +130,27 @@ class MatBuilder
             $out[] = ' Game '.($gi + 1);
             $out[] = ' '.str_pad("$whiteName : $sw", $COLW + 4)."$blackName : $sb";
 
+            $acts = self::actsOf($game);
+
             $rows = [];
             $cube = 1;
-            foreach ($game as $e) {
-                if (empty($e['player'])) {
-                    continue;
-                }
-                if (! empty($e['cube'])) {
-                    $chosen = $e['cube']['chosen'] ?? null;
-                    if ($chosen === 'double') {
-                        $text = 'Doubles => '.($cube * 2);
-                    } elseif ($chosen === 'take') {
-                        $cube *= 2;
-                        $text = 'Takes';
-                    } elseif ($chosen === 'drop') {
-                        $text = 'Drops';
-                    } else {
-                        continue;
-                    }
-                } else {
+            foreach ($acts as $a) {
+                if ($a['kind'] === 'move') {
+                    $e = $a['e'];
                     $dice = $e['dice'] ?? [];
                     $d = count($dice) >= 2 ? "{$dice[0]}{$dice[1]}" : '  ';
                     $n = $e['notation'] ?? '';
                     $mv = ($n !== '' && $n !== 'pas' && $n !== 'pass') ? $n : '';
                     $text = $mv ? "$d: $mv" : "$d:";
+                } elseif ($a['kind'] === 'double') {
+                    $text = 'Doubles => '.($cube * 2);
+                } elseif ($a['kind'] === 'take') {
+                    $cube *= 2;
+                    $text = 'Takes';
+                } else {
+                    $text = 'Drops';
                 }
-                if ($e['player'] === 'white') {
+                if ($a['player'] === 'white') {
                     $rows[] = ['w' => $text];
                 } else {
                     $li = count($rows) - 1;
@@ -132,7 +166,7 @@ class MatBuilder
                 $out[] = rtrim(sprintf('%3d) %s%s', $idx + 1, $left, $r['b'] ?? ''));
             }
 
-            $oc = self::outcomeOf($game);
+            $oc = self::outcomeOf($acts);
             if ($oc) {
                 $pts = $oc['points'];
                 if ($matchLength > 0) {
@@ -154,22 +188,79 @@ class MatBuilder
         return implode("\n", $out)."\n";
     }
 
+    /**
+     * Bir oyunun eylem dizisi. Küp satırları ÇİFTLENİR: her "Doubles"ın hemen ardından rakibin
+     * "Takes"/"Drops" yanıtı gelir. Eksik kayıt (rakibin istemcisi senkron gönderemedi) oyunun
+     * devamından ÜRETİLİR — askıda kalan küp satırı .mat'i bozar (XG: "invalid moves").
+     */
+    private static function actsOf(array $game): array
+    {
+        $raw = [];
+        foreach ($game as $e) {
+            if (empty($e['player'])) {
+                continue;
+            }
+            if (! empty($e['cube'])) {
+                $c = $e['cube']['chosen'] ?? null;
+                if ($c === 'double' || $c === 'take' || $c === 'drop') {
+                    $raw[] = ['kind' => $c, 'player' => $e['player'], 'e' => $e];
+                }
+
+                continue; // 'no-double' vb. .mat'e yazılmaz (küp eylemi gerçekleşmemiş)
+            }
+            $raw[] = ['kind' => 'move', 'player' => $e['player'], 'e' => $e];
+        }
+
+        $out = [];
+        $pending = null; // yanıt bekleyen teklif
+        $answer = function (string $kind) use (&$out, &$pending) {
+            if (! $pending) {
+                return;
+            }
+            $out[] = ['kind' => $kind, 'player' => self::opp($pending['player']), 'e' => null];
+            $pending = null;
+        };
+        foreach ($raw as $a) {
+            if ($a['kind'] === 'double') {
+                $answer('take'); // önceki teklif cevapsız kaldıysa: oyun sürdüğüne göre kabul edilmiş
+                $out[] = $a;
+                $pending = $a;
+
+                continue;
+            }
+            if ($a['kind'] === 'take' || $a['kind'] === 'drop') {
+                if (! $pending || $pending['player'] !== self::opp($a['player'])) {
+                    // Teklif kaydı eksik -> rakip adına üret ki küp değeri ve satır çifti korunsun
+                    $out[] = ['kind' => 'double', 'player' => self::opp($a['player']), 'e' => null];
+                }
+                $pending = null;
+                $out[] = $a;
+
+                continue;
+            }
+            $answer('take'); // hamle geldiyse teklif kabul edilmiş demektir
+            $out[] = $a;
+        }
+        $answer('drop'); // oyun teklifin ardından bittiyse: pas
+
+        return $out;
+    }
+
     /** Bir oyunun sonucu: küp drop -> teklifi kabul etmeyen kaybeder; yoksa son hamleyi uygulayıp tahtadan. */
-    private static function outcomeOf(array $game): ?array
+    private static function outcomeOf(array $acts): ?array
     {
         $cube = 1;
         $dropWinner = null;
         $last = null;
-        foreach ($game as $e) {
-            if (! empty($e['cube'])) {
-                $chosen = $e['cube']['chosen'] ?? null;
-                if ($chosen === 'drop') {
-                    $dropWinner = ! empty($e['player']) ? self::opp($e['player']) : null;
-                } elseif ($chosen === 'take') {
-                    $cube *= 2;
-                }
-            } elseif (! empty($e['player'])) {
-                $last = $e;
+        foreach ($acts as $a) {
+            // Küp yalnızca KABUL edilince (take) katlanır; teklif + kabul ayrı satırlar olduğundan
+            // ikisinde de katlarsak x4 olurdu.
+            if ($a['kind'] === 'drop') {
+                $dropWinner = self::opp($a['player']);
+            } elseif ($a['kind'] === 'take') {
+                $cube *= 2;
+            } elseif ($a['kind'] === 'move') {
+                $last = $a['e'];
             }
         }
         if ($dropWinner) {
