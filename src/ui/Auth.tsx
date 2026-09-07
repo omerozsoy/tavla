@@ -153,8 +153,10 @@ export default function Auth({
       if (!g?.accounts?.id || !googleBtnRef.current || cancelled) return false
       g.accounts.id.initialize({ client_id: api.GOOGLE_CLIENT_ID, callback: handleCredential })
       googleBtnRef.current.innerHTML = ''
+      // Notr 'outline' tema: sitenin sicak kiremit/krem paletiyle uyumlu (parlak mavi pill
+      // paleti bozuyordu). Beyaz zemin + ince kenar, kremsi kartta temiz durur.
       g.accounts.id.renderButton(googleBtnRef.current, {
-        theme: 'filled_blue',
+        theme: 'outline',
         size: 'large',
         text: 'continue_with',
         shape: 'pill',
