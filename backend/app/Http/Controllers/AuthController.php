@@ -992,7 +992,9 @@ class AuthController extends Controller
         if ($hasLog) {
             // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
             // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
-            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND CHAR_LENGTH(log) > 40) as has_log'));
+            // LENGTH: hem MySQL hem SQLite'ta var (CHAR_LENGTH sqlite'ta YOK -> local dev 500).
+            // Esik 40; bos sarmalayici (~24) ile gercek log ayrimi icin bayt/karakter farki onemsiz.
+            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND LENGTH(log) > 40) as has_log'));
         }
         $rows = $q->get();
 
