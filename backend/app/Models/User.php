@@ -138,4 +138,16 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     {
         return $this->hasMany(UserAchievement::class);
     }
+
+    // ---- Şans Çarkı (Lucky Wheel) ilişkileri ----
+
+    public function luckyWheelState(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(LuckyWheelUserState::class, 'user_id');
+    }
+
+    public function luckyWheelSpins(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LuckyWheelSpin::class, 'user_id');
+    }
 }

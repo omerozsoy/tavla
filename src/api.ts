@@ -1740,3 +1740,69 @@ export async function sendChat(code: string, text: string): Promise<{ messages: 
     body: JSON.stringify({ token: playerToken(), text }),
   })
 }
+
+// ---- Şans Çarkı (Lucky Wheel) ----
+// Kazananı DAİMA sunucu belirler (weighted random). Frontend yalnız animasyon gösterir.
+
+export interface WheelReward {
+  id: number
+  name: string
+  description: string | null
+  type: string
+  amount: number
+  icon: string
+  sliceColor: string
+  textColor: string
+  probability: number | null // yalnız admin "yüzdeyi göster" açıksa dolu
+}
+
+export interface WheelState {
+  enabled: boolean
+  ready: boolean
+  settings: {
+    animationDuration: number
+    showProbability: boolean
+    freeSpinsPerDay: number
+    requireLogin: boolean
+  }
+  rewards: WheelReward[]
+  sliceCount: number
+  remainingSpins: number
+  bonusSpins: number
+  nextFreeSpinAt: string | null
+  cooldownSeconds: number
+  coins: number
+}
+
+export interface WheelSpinReward {
+  id: number
+  name: string
+  type: string
+  amount: number
+  reference_id: string | null
+  icon: string | null
+  slice_color: string | null
+  text_color: string | null
+  description: string | null
+}
+
+export interface WheelSpinResult {
+  success: boolean
+  reward: WheelSpinReward
+  winningRewardId: number
+  remainingSpins: number
+  bonusSpins: number
+  nextFreeSpinAt: string | null
+  coins: number
+  user: ServerUser
+}
+
+// Çark durumu (ödüller, kalan hak, ayarlar). Misafir de görebilir (çevirmek giriş ister).
+export async function getLuckyWheel(): Promise<WheelState> {
+  return req<WheelState>('/lucky-wheel')
+}
+
+// Güvenli çevirme: sonuç sunucuda seçilir; dönen winningRewardId'e animasyon yapılır.
+export async function spinLuckyWheel(): Promise<WheelSpinResult> {
+  return req<WheelSpinResult>('/lucky-wheel/spin', { method: 'POST', body: '{}' })
+}
