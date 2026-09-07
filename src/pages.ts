@@ -32,6 +32,7 @@ export const PAGES: PageDef[] = [
   // --- Rekabet + sosyal ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
+  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'gift', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar sol menude DEGIL; sag ust barda (bildirim gibi) chat ikonu ile acilir.
   // inMenu:false -> menude gizli ama /mesajlar URL'i yine calisir (derin-link).

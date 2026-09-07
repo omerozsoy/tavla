@@ -136,6 +136,7 @@ import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
+import LuckyWheel from './ui/LuckyWheel'
 import Products from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
@@ -564,6 +565,7 @@ export default function App() {
   const betPctRef = useRef(0) // Mac Oyunu: bahis = bakiyenin %'si (0 = pct bahis yok)
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
+  const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
   // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -629,6 +631,8 @@ export default function App() {
         ? 'sepet'
       : shopOpen
         ? 'magaza'
+      : luckyWheelOpen
+        ? 'sans-carki'
         : frameGalleryOpen
           ? 'cerceveler'
           : friendsOpen
@@ -795,6 +799,9 @@ export default function App() {
         }
         case 'magaza':
           setShopOpen(true)
+          break
+        case 'sans-carki':
+          setLuckyWheelOpen(true)
           break
         case 'urunler':
           setProductsOpen(true)
@@ -5389,6 +5396,7 @@ export default function App() {
     setTournDetailId(null)
     setTournDetailSlug(null)
     setShopOpen(false)
+    setLuckyWheelOpen(false)
     setCartOpen(false)
     setCheckoutOpen(false)
     setFrameGalleryOpen(false)
@@ -5481,6 +5489,7 @@ export default function App() {
         setTournOpen(true)
       }),
     onShop: () => goPage(() => setShopOpen(true)),
+    onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
     onMembership: premium ? undefined : () => setMemOpen(true),
@@ -5524,6 +5533,7 @@ export default function App() {
     playFriend: menuProps.onPlayFriend,
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
+    luckywheel: menuProps.onLuckyWheel,
     friends: menuProps.onFriends,
     messages: menuProps.onMessages,
     membership: menuProps.onMembership,
@@ -5647,6 +5657,7 @@ export default function App() {
     infoOpen ||
     tournOpen ||
     shopOpen ||
+    luckyWheelOpen ||
     cartOpen ||
     checkoutOpen ||
     frameGalleryOpen ||
@@ -5909,6 +5920,15 @@ export default function App() {
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
+        />
+      )}
+      {luckyWheelOpen && (
+        <LuckyWheel
+          loggedIn={!!user}
+          onClose={() => setLuckyWheelOpen(false)}
+          onRequireLogin={() => setShowAuth(true)}
+          onCoinsChange={(c) => setUser((u) => (u ? { ...u, coins: c } : u))}
+          onUser={(su) => setUser(su)}
         />
       )}
       {productsOpen && (
