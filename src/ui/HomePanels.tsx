@@ -87,7 +87,7 @@ export function HomeDashboard(p: {
   )
 }
 
-export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
+export function HomeFeatures() {
   const { t } = useT()
   return (
     <section className="home-features" aria-labelledby="home-features-title">
@@ -107,13 +107,6 @@ export function HomeFeatures({ onPlay }: { onPlay: () => void }) {
             <p className="hf-card-desc">{t(`home.feat.${f.key}.d`)}</p>
           </div>
         ))}
-      </div>
-      <div className="home-finalcta">
-        <h2 className="hfc-title">{t('home.finalCta.title')}</h2>
-        <p className="hfc-sub">{t('home.finalCta.sub')}</p>
-        <Button variant="default" className="mt-5" onClick={onPlay}>
-          <Icon name="dice" size={18} /> {t('home.finalCta.button')}
-        </Button>
       </div>
     </section>
   )
