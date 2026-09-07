@@ -1067,17 +1067,31 @@ class AuthController extends Controller
         if ($hasRoom) {
             $cols[] = 'room_code';
         }
-        // Limit 30 -> 500: "bazi oynadigim maclar cikmiyor" sikayeti. 30 cok dusuktu; aktif
-        // oyuncuda eski maclar hic gelmiyordu. Log kolonu SECILMEDIGI icin 500 satir hafif.
-        $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(500)->select($cols);
+        // Sayfalama + filtre: "Daha fazla goster" ile 30'ar yukle; rakip adiyla ara; tarihten sonra.
+        $offset = max(0, (int) $request->query('offset', 0));
+        $limit = min(100, max(1, (int) $request->query('limit', 30)));
+        $search = trim((string) $request->query('q', ''));
+        $from = $request->query('from');
+        $query = \App\Models\MatchResult::where('user_id', $me->id);
+        if ($search !== '' && $hasOpp) {
+            $query->where('opponent_name', 'like', '%'.$search.'%');
+        }
+        if ($from) {
+            try {
+                $query->where('created_at', '>=', \Illuminate\Support\Carbon::parse($from));
+            } catch (\Throwable $e) {
+                // gecersiz tarih -> filtreyi yoksay
+            }
+        }
+        $query->orderByDesc('id')->offset($offset)->limit($limit)->select($cols);
         if ($hasLog) {
             // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
             // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
             // LENGTH: hem MySQL hem SQLite'ta var (CHAR_LENGTH sqlite'ta YOK -> local dev 500).
             // Esik 40; bos sarmalayici (~24) ile gercek log ayrimi icin bayt/karakter farki onemsiz.
-            $q->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND LENGTH(log) > 40) as has_log'));
+            $query->addSelect(\Illuminate\Support\Facades\DB::raw('(log IS NOT NULL AND LENGTH(log) > 40) as has_log'));
         }
-        $rows = $q->get();
+        $rows = $query->get();
 
         // Rakip ŞANS'ı (herkesin şansı kendi tarafında gösterilsin): online maçlarda rakibin
         // satırı aynı room_code'da; tek toplu sorgu ile room_code -> rakip luck haritası çıkar.

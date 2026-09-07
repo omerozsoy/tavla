@@ -385,8 +385,21 @@ export interface MyMatch {
   score_opp?: number | null
   created_at?: string | null
 }
-export async function myMatches(): Promise<MyMatch[]> {
-  const data = await req<{ matches: MyMatch[] }>('/me/matches')
+// Sayfalama + filtre: offset/limit (30'ar yükle), q (rakip adı arama), from (tarih >= ISO)
+export interface MyMatchesQuery {
+  offset?: number
+  limit?: number
+  q?: string
+  from?: string
+}
+export async function myMatches(opts: MyMatchesQuery = {}): Promise<MyMatch[]> {
+  const p = new URLSearchParams()
+  if (opts.offset) p.set('offset', String(opts.offset))
+  if (opts.limit) p.set('limit', String(opts.limit))
+  if (opts.q && opts.q.trim()) p.set('q', opts.q.trim())
+  if (opts.from) p.set('from', opts.from)
+  const qs = p.toString()
+  const data = await req<{ matches: MyMatch[] }>(`/me/matches${qs ? `?${qs}` : ''}`)
   return data.matches
 }
 
@@ -466,6 +479,78 @@ export async function validatePromo(
   code: string,
 ): Promise<PromoResult> {
   return req('/shop/promo/validate', { method: 'POST', body: JSON.stringify({ items, code }) })
+}
+
+// ---- Fiziksel urun magazasi (Tavla, zar, kitap, zar kulesi vb.) ----
+// Odeme tipi urun bazinda: coin (aninda) veya money (Garanti 3D). Renk = gorsel varyant.
+export interface ProductColor {
+  name: string
+  hex: string
+}
+export interface Product {
+  id: number
+  slug: string
+  name: string
+  category: string
+  description?: string | null
+  images: string[] // dosya adlari (disk 'uploads')
+  colors: ProductColor[]
+  payment_type: 'coin' | 'money' | 'both'
+  coin_price: number | null
+  money_price: number | null // kurus
+  stock: number
+}
+export interface ShippingInput {
+  ship_name: string
+  ship_phone: string
+  ship_address: string
+  ship_city: string
+  ship_postal?: string
+  note?: string
+}
+export interface OrderInput extends ShippingInput {
+  product_id: number
+  qty: number
+  color?: string | null
+  payment_type: 'coin' | 'money'
+}
+export interface ProductOrder {
+  id: number
+  product_name: string
+  color?: string | null
+  qty: number
+  payment_type: 'coin' | 'money'
+  coin_cost: number | null
+  amount: number | null // kurus
+  status: string
+  status_label: string
+  tracking?: string | null
+  ship_name: string
+  ship_city: string
+  created_at?: string | null
+}
+// Coin siparis: {ok, kind:'coin', coins, order}. Money siparis: {ok, kind:'money', submitUrl, amount, order_id, demo}.
+export interface OrderResult {
+  ok: boolean
+  kind: 'coin' | 'money'
+  coins?: number
+  order?: ProductOrder
+  url?: string
+  submitUrl?: string
+  amount?: number // kurus
+  order_id?: number
+  demo?: boolean
+}
+export async function getProducts(): Promise<Product[]> {
+  const r = await req<{ products: Product[] }>('/products')
+  return r.products
+}
+export async function orderProduct(input: OrderInput): Promise<OrderResult> {
+  return req('/products/order', { method: 'POST', body: JSON.stringify(input) })
+}
+export async function getMyOrders(): Promise<ProductOrder[]> {
+  const r = await req<{ orders: ProductOrder[] }>('/me/orders')
+  return r.orders
 }
 
 // Herkese acik oyuncu profili
