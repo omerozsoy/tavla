@@ -36,6 +36,15 @@ export function canDouble(m: MatchState, player: Player, awaitingResponse: boole
   if (m.target <= 1) return false // 1 puanlik mac (tek oyun): kup HIC yok (gercek kural)
   if (m.cube.value >= 64) return false
   if (m.cube.owner !== null && m.cube.owner !== player) return false
+  // IKI TARAF ICIN DE OLU KUP: kupun MEVCUT degeri her iki oyuncunun maci bitirmek icin
+  // ihtiyaci olan puani zaten karsiliyorsa katlamak hicbir seyi degistiremez (or. 7'lik
+  // macta kup 8: bu oyunu kim kazanirsa maci kazanir). Teklif SUNULMAZ -> zar dogrudan
+  // atilir (shouldAutoRoll bunu okur). Bot da ayni kurala tabi.
+  // NOT: yalniz BIR taraf icin olu olmasi engel DEGILDIR (once verilen direktif): or.
+  // 3'luk macta 2-0 ondeyken kup 1 -> rakip icin hala anlamli, "Katla" gorunur kalir.
+  const needWhite = m.target - m.score.white
+  const needBlack = m.target - m.score.black
+  if (m.cube.value >= needWhite && m.cube.value >= needBlack) return false
   return true
 }
 

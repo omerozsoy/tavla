@@ -156,6 +156,26 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
     expect(shouldAutoRoll(m, WHITE, 0)).toBe(true)
   })
 
+  // 7lik macta kup 8: bu oyunu kim kazanirsa maci kazanir -> katlamak HICBIR seyi
+  // degistirmez. Teklif sunulmaz, zar dogrudan atilir.
+  it('7lik macta kup 8 (iki taraf icin de olu) -> teklif YOK, otomatik atar', () => {
+    const m = { ...newMatch(7), cube: { value: 8, owner: 'white' as const } }
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
+  })
+
+  // Kup TEK tarafi bitiriyorsa olu SAYILMAZ: rakip icin hala anlamli.
+  it('7lik macta 6-0 onde, kup 1 -> rakip icin anlamli, KATLA cikar', () => {
+    const m = { ...newMatch(7), score: { white: 6, black: 0 } }
+    expect(canDouble(m, WHITE, false)).toBe(true) // beyaza 1 kaldi ama siyaha 7
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
+  })
+
+  it('7lik macta 6-6 berabere, kup 1 -> ikisine de 1 kaldi, otomatik atar', () => {
+    const m = { ...newMatch(7), score: { white: 6, black: 6 } }
+    expect(canDouble(m, WHITE, false)).toBe(false)
+    expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(true)
+  })
   it('kup teklif edilebilirken beklenir (Zar At / Katla butonu cikar)', () => {
     const m = newMatch(7)
     expect(canDouble(m, WHITE, false)).toBe(true)
