@@ -36,6 +36,7 @@ import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplySe
 import { liveMoveDelta } from './online/liveMoves'
 import { randomBotPr } from './botPr'
 import Board from './ui/Board'
+import { useBoardDir } from './ui/boardDirection'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import DiceRow, { Die } from './ui/Dice'
@@ -3347,6 +3348,9 @@ export default function App() {
       document.removeEventListener('keydown', onKey)
     }
   }, [acctMenuOpen])
+  // OYUN YONU (saga/sola topla) — tek ayar, tum modlarda (ve analiz sayfasinda) gecerli.
+  const [boardDir, setBoardDir] = useBoardDir()
+  const boardMirror = boardDir === 'left'
   const [autoRoll, setAutoRoll] = useState<boolean>(() => {
     try {
       return localStorage.getItem('tavla.autoroll') === '1'
@@ -4461,7 +4465,9 @@ export default function App() {
 
   // Sirasi gelenin ana butonu (Onayla/Zar) kendi ev tarafinda durur.
   // Normal tahtada beyaz sagda; cevrili tahtada (siyah bakisi) siyah sagda.
-  const mySideRight = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
+  const mySideBase = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
+  // "Sola topla"da tahta yatay aynalanir -> merkez butonlari/zar da karsi yariya gecer.
+  const mySideRight = boardMirror ? !mySideBase : mySideBase
   const centerRight = mySideRight ? primary : secondary
   const centerLeft = mySideRight ? secondary : primary
 
@@ -6122,6 +6128,8 @@ export default function App() {
         setAutoRoll={setAutoRoll}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
+        boardDir={boardDir}
+        setBoardDir={setBoardDir}
         canAnalyze={mode === 'pvb'}
         canResign={!matchOver && (mode === 'pvb' || online)}
         loggedIn={!!user}
@@ -6176,6 +6184,7 @@ export default function App() {
           centerRight={centerRight}
           centerMain={centerMain}
           flip={flipBoard}
+          mirror={boardMirror}
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
         />

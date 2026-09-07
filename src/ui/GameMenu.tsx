@@ -1,4 +1,5 @@
 import { useT } from '../i18n'
+import type { BoardDir } from './boardDirection'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 
@@ -6,6 +7,8 @@ interface Row {
   label: string
   on: boolean
   toggle: () => void
+  /** Ac/Kapa yerine metin gosteren satirlar (or. Oyun Yonu: Saga/Sola topla). */
+  value?: string
 }
 
 interface Props {
@@ -20,6 +23,9 @@ interface Props {
   setAutoRoll: (v: boolean) => void
   animOn: boolean
   toggleAnim: () => void
+  /** Oyun yonu: pullarin toplandigi taraf. Tum modlarda ayni ayar. */
+  boardDir: BoardDir
+  setBoardDir: (d: BoardDir) => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -44,6 +50,12 @@ export default function GameMenu(p: Props) {
       ? [{ label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) }]
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
+    {
+      label: t('gm.boardDir'),
+      on: p.boardDir === 'right',
+      value: t(p.boardDir === 'left' ? 'dir.left' : 'dir.right'),
+      toggle: () => p.setBoardDir(p.boardDir === 'left' ? 'right' : 'left'),
+    },
   ]
   return (
     <>
@@ -53,8 +65,8 @@ export default function GameMenu(p: Props) {
           {rows.map((r) => (
             <Button key={r.label} variant="ghost" className="w-full justify-between" onClick={r.toggle}>
               <span className="gm-label">{r.label}</span>
-              <span className={`gm-state ${r.on ? 'on' : 'off'}`}>
-                {r.on ? t('setup.on') : t('setup.off')}
+              <span className={`gm-state ${r.value ? 'val' : r.on ? 'on' : 'off'}`}>
+                {r.value ?? (r.on ? t('setup.on') : t('setup.off'))}
               </span>
             </Button>
           ))}

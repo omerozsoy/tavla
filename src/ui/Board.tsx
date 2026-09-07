@@ -36,6 +36,26 @@ const LAYOUT = {
   },
 } as const
 
+// YATAY AYNA (oyun yonu = "sola topla"): sag/sol yarilar yer degistirir ve her ceyregin
+// sirasi ters cevrilir -> ev tahtasi SOLA gecer (bear-off tepsisi de solda).
+type Layout = {
+  TL: readonly number[]
+  TR: readonly number[]
+  BL: readonly number[]
+  BR: readonly number[]
+  topNums: readonly (readonly number[])[]
+  botNums: readonly (readonly number[])[]
+}
+const mirrorOf = (L: Layout): Layout => ({
+  TL: [...L.TR].reverse(),
+  TR: [...L.TL].reverse(),
+  BL: [...L.BR].reverse(),
+  BR: [...L.BL].reverse(),
+  topNums: [[...L.topNums[1]].reverse(), [...L.topNums[0]].reverse()],
+  botNums: [[...L.botNums[1]].reverse(), [...L.botNums[0]].reverse()],
+})
+const MIRROR = { normal: mirrorOf(LAYOUT.normal), flipped: mirrorOf(LAYOUT.flipped) }
+
 interface BoardProps {
   state: GameState
   selectableFroms: Set<number | 'bar'>
@@ -51,6 +71,7 @@ interface BoardProps {
   centerRight?: ReactNode
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
+  mirror?: boolean // true: oyun yonu "sola topla" (tahta yatay aynalanir, tepsi solda)
   showPip?: boolean // pip sayilari gorunur mu
   watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
 }
@@ -172,11 +193,18 @@ function Board({
   centerRight,
   centerMain,
   flip = false,
+  mirror = false,
   showPip = true,
   watermark,
 }: BoardProps) {
   const { t } = useT()
-  const L = flip ? LAYOUT.flipped : LAYOUT.normal
+  const L: Layout = mirror
+    ? flip
+      ? MIRROR.flipped
+      : MIRROR.normal
+    : flip
+      ? LAYOUT.flipped
+      : LAYOUT.normal
 
   const renderPoint = (index: number, top: boolean) => (
     <Point
@@ -209,7 +237,7 @@ function Board({
   const bottomOffCount = flip ? state.off.black : state.off.white
 
   return (
-    <div className="board">
+    <div className={`board${mirror ? ' mirror' : ''}`}>
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
         {L.topNums[0].map((n) => (
@@ -311,7 +339,7 @@ function Board({
         ))}
       </div>
 
-      {/* Sag bear-off tepsisi (off hedefi) */}
+      {/* Bear-off tepsisi (off hedefi). Oyun yonu "sola topla" iken CSS ile sola gecer. */}
       <div
         className={`bearoff ${offTarget ? 'target' : ''}`}
         data-slot="off"
