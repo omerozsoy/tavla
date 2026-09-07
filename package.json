@@ -10,6 +10,7 @@
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "check:mat": "vitest run src/matValidate.test.ts",
     "test:watch": "vitest",
     "preview": "vite preview",
     "validator:build": "node scripts/build-validator.mjs"
