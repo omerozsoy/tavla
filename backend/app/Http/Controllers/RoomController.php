@@ -1704,6 +1704,9 @@ class RoomController extends Controller
             $sm['cube'] = ['value' => $cube['value'], 'owner' => $cube['owner'], 'pending' => $color];
             $room->server_match = $sm;
             $room->server_version = (int) $room->server_version + 1;
+            // Teklif anini saate isle: teklif edenin harcadigi sure bankasindan dusulur,
+            // yeni segment YANITLAYANIN uzerinde baslar (bkz. MatchClock::turnSlotFromState).
+            $this->driveAuthoritativeClock($room, $slot, microtime(true));
             $room->save();
 
             return response()->json(['match' => $room->server_match, 'version' => (int) $room->server_version]);
@@ -1751,6 +1754,9 @@ class RoomController extends Controller
                 $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => $color, 'pending' => null];
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
+                // Karar suresi yanitlayanin bankasindan dusulur; sira yine teklif edende
+                // (zarini atacak) -> segment ona gecer.
+                $this->driveAuthoritativeClock($room, $slot, microtime(true));
                 $room->save();
 
                 return response()->json([
@@ -1764,6 +1770,7 @@ class RoomController extends Controller
             $room->server_match = $sm;
             $matchDone = $this->applyGameResult($room, $offerer, $cube['value']);
             $room->server_version = (int) $room->server_version + 1;
+            $this->driveAuthoritativeClock($room, $slot, microtime(true)); // karar suresi + oyun sonu
             $room->save();
 
             return response()->json([

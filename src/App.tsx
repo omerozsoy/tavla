@@ -2590,15 +2590,18 @@ export default function App() {
     setClock((c) => ({ ...c, delay: clockRef.current.move }))
   }, [turnStart.turn, turnsPlayed])
 
-  // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir
+  // Her saniye: once 12sn gecikme, o bitince ek sure (30+30) azalir.
+  // KUP TEKLIFI beklerken saat DURMAZ: karar YANITLAYANIN oldugu icin sure onun
+  // bankasindan isler (sunucu tarafinda ayni kural: MatchClock::turnSlotFromState).
   useEffect(() => {
-    if (!clockOn || gameEnd || matchOver || opening || cubePending || gameWon) return
+    if (!clockOn || gameEnd || matchOver || opening || gameWon) return
     if (online && !onlineReady) return
+    const active: Player = cubePending ? opponent(cubePending) : turnStart.turn
     const id = window.setInterval(() => {
       setClock((c) => {
         if (c.delay > 0) return { ...c, delay: c.delay - 1 }
-        // Gecikme bitti -> sirasi gelen oyuncunun rezerv bankasi azalir
-        if (turnStart.turn === 'white') return { ...c, delay: 0, white: Math.max(0, c.white - 1) }
+        // Gecikme bitti -> aktif oyuncunun rezerv bankasi azalir
+        if (active === 'white') return { ...c, delay: 0, white: Math.max(0, c.white - 1) }
         return { ...c, delay: 0, black: Math.max(0, c.black - 1) }
       })
     }, 1000)
@@ -2620,7 +2623,8 @@ export default function App() {
   useEffect(() => {
     if (online) return
     if (!clockOn || gameEnd || matchOver) return
-    const who = turnStart.turn
+    // Kup teklifi beklerken suresi akan taraf YANITLAYANDIR -> suresi biterse o kaybeder.
+    const who: Player = cubePending ? opponent(cubePending) : turnStart.turn
     const bank = who === 'white' ? clock.white : clock.black
     if (clock.delay > 0 || bank > 0) return
     if (online && myColor !== who) return // online'da sadece suresi biten ilan etsin
@@ -2629,7 +2633,7 @@ export default function App() {
     setMatch((m) => scoreGame(m, w, Math.max(m.cube.value, m.target - m.score[w])))
     setGameEnd({ winner: w, points: match.cube.value, mult: 1, dropped: false, timeout: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, online, myColor])
+  }, [clock, clockOn, gameEnd, matchOver, turnStart.turn, cubePending, online, myColor])
 
   // Online analiz: oyun basinda sinir agini ONCEDEN yukle -> recordPR ilk hamleden
   // itibaren hazir (aksi halde tembel yukleme yavas kalir, ilk hamleler kaydedilmez).
@@ -6295,7 +6299,13 @@ export default function App() {
         />
         {clockOn && (
           <ClockStack
-            active={gameWon || gameEnd || opening ? null : turnStart.turn}
+            active={
+              gameWon || gameEnd || opening
+                ? null
+                : cubePending // kup karari bekleniyor -> vurgu yanitlayanda (saati o harciyor)
+                  ? opponent(cubePending)
+                  : turnStart.turn
+            }
             delay={clock.delay}
             white={clock.white}
             black={clock.black}

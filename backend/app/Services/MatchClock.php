@@ -82,14 +82,28 @@ class MatchClock
             $s['starter'] ?? '',
             $cubeVal,
             $cubeOwner,
-            ! empty($s['cubePending']) ? 1 : 0,
+            // Yalniz "var/yok" degil KIM teklif etti: aktif taraf buna gore degisiyor.
+            is_string($s['cubePending'] ?? null) ? $s['cubePending'] : (! empty($s['cubePending']) ? 1 : 0),
             ! empty($s['gameEnd']) ? 1 : 0,
         ]);
     }
 
-    /** state.turnStart.turn -> slot. beyaz=p1, siyah=p2. */
+    /**
+     * state.turnStart.turn -> slot. beyaz=p1, siyah=p2.
+     * KÜP TEKLİFİ BEKLİYORSA aktif taraf teklif eden DEĞİL, YANITLAYANDIR: karar onun
+     * (take/drop) ve düşünme süresi onun bankasından işlemeli. Aksi halde rakip "kabul mü
+     * pas mı" diye düşünürken saat teklif edenin bankasından iniyordu (ve AFK sayacı da
+     * yanlış tarafa bakıyordu).
+     */
     public static function turnSlotFromState(array $s): ?string
     {
+        $pending = $s['cubePending'] ?? null;
+        if ($pending === 'white') {
+            return 'p2'; // beyaz teklif etti -> karar siyahin
+        }
+        if ($pending === 'black') {
+            return 'p1';
+        }
         $ts = $s['turnStart'] ?? [];
         $turn = is_array($ts) ? ($ts['turn'] ?? null) : null;
         if ($turn === 'white') {

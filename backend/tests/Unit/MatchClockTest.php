@@ -278,4 +278,42 @@ class MatchClockTest extends TestCase
         $c = $this->movedClock('casual', 5);
         $this->assertSame('AFK_TIMEOUT', MatchClock::tick($c, self::T0 + 48)['end']['reason']);
     }
+    // ---- KUP TEKLIFI: saat ilerler, karar suresi YANITLAYANIN bankasindan iner ----
+    // Teklif anina kadar gecen sure teklif edenden dusulur; teklif beklerken aktif taraf
+    // YANITLAYAN olur (karar onun). Eskiden teklif edenin saati islemeye devam ediyordu.
+    public function test_cube_offer_switches_active_side_to_responder(): void
+    {
+        $c = $this->started('normal', 5); // banka 300, delay 10; aktif p1 (beyaz)
+        // t0+30: beyaz kupu teklif eder -> delay 10 + 20sn ana sure harcadi
+        $offered = MatchClock::onUpdate(
+            $c,
+            $this->state('white', 5, 1, 0, ['cubePending' => 'white']),
+            'p1',
+            self::T0 + 30,
+        );
+        $this->assertEqualsWithDelta(280.0, $offered['p1_bank'], 0.001); // 300 - 20
+        $this->assertSame('p2', $offered['turn_slot']); // karar siyahin -> aktif taraf o
+
+        // Siyah 25sn dusunur: delay 10 + 15sn ana sure SIYAHIN bankasindan iner.
+        $v = MatchClock::clientView($offered, self::T0 + 55);
+        $this->assertSame('black', $v['active']);
+        $this->assertEqualsWithDelta(285.0, $v['black'], 0.001); // 300 - 15
+        $this->assertEqualsWithDelta(280.0, $v['white'], 0.001); // teklif edenin saati DURUR
+    }
+
+    // ---- KUP KABUL: karar suresi yanitlayandan iner, sira yine teklif edende ----
+    public function test_cube_take_charges_responder_then_returns_to_offerer(): void
+    {
+        $offered = MatchClock::onUpdate(
+            $this->started('normal', 5),
+            $this->state('white', 5, 1, 0, ['cubePending' => 'white']),
+            'p1',
+            self::T0 + 30,
+        );
+        // t0+55: siyah "kabul" der -> pending temizlenir, sira yine beyazda (zarini atacak)
+        $taken = MatchClock::onUpdate($offered, $this->state('white', 5, 1, 0), 'p2', self::T0 + 55);
+        $this->assertEqualsWithDelta(285.0, $taken['p2_bank'], 0.001); // siyahtan 15sn indi
+        $this->assertEqualsWithDelta(280.0, $taken['p1_bank'], 0.001); // beyaz degismedi
+        $this->assertSame('p1', $taken['turn_slot']);
+    }
 }
