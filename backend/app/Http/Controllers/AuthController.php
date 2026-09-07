@@ -457,6 +457,12 @@ class AuthController extends Controller
         // Havuzlanmis lifetime icin (§13): sayilan kararlarin toplam prAdjusted equity kaybi + sayisi.
         $prEquityLost = $clientTotals['loss'] ?? null;
         $prDecisions = $clientTotals['decisions'] ?? null;
+        // XG KIRILIMI (sonuc ekrani "Pul Oyunu PR" / "Kup PR"): AYNI log'dan pul/kup ayri
+        // havuzlanir. Rakip kendi kirilimini kendi satirinda tasir -> iki oyuncu OZDES gorur
+        // (istemci rakibin kup kararlarini hic olcemez). Kup karari yoksa null -> arayuzde "—".
+        $selfSplit = $this->prSplitFromLog($data['log'] ?? null);
+        $selfCheckerPr = $selfSplit['checker'];
+        $selfCubePr = $selfSplit['cube'];
 
         // TAM SUNUCU-OTORITER PR: validator her karari motorla yeniden degerlendirir -> istemci
         // sahte dusuk-hata uyduramaz. 'shadow' fark loglar (kaydetmez), 'authoritative' kaydeder.
@@ -483,6 +489,13 @@ class AuthController extends Controller
                             // Havuzlama totalleri de sunucudan (tutarli): overall.equityLost/decisions.
                             $prEquityLost = (float) ($srv['equity_lost'] ?? $prEquityLost);
                             $prDecisions = (int) ($srv['decisions'] ?? $prDecisions);
+                            // Kirilim da validator'dan (checker/cube havuzlari); yoksa istemci degeri kalir.
+                            if (isset($srv['checker']['pr'])) {
+                                $selfCheckerPr = (float) $srv['checker']['pr'];
+                            }
+                            if (isset($srv['cube']['pr'])) {
+                                $selfCubePr = (float) $srv['cube']['pr'];
+                            }
                         }
                     }
                 }
@@ -632,6 +645,8 @@ class AuthController extends Controller
         // rakip once raporladiysa bizim opponent_pr'imizi onun pr'i yap; ayrica onun satirinda
         // bizim pr'imizi opponent_pr olarak isle (o da bizi dogru gorsun).
         $opponentPr = null;
+        $opponentCheckerPr = null; // rakibin pul-yalniz PR'i (kendi log'undan)
+        $opponentCubePr = null;    // rakibin kup-yalniz PR'i (kup karari yoksa null)
         $opponentLuck = null; // rakibin HAM luck'ı (kendi renginden) — sunucu-otoriter sans için
         $opponentLuckMwc = null; // rakibin gnubg NATIVE MWC-luck'ı (V1, varsa)
         try {
@@ -642,6 +657,9 @@ class AuthController extends Controller
                     ->first();
                 if ($oppRow) {
                     $opponentPr = $oppRow->pr;
+                    $oppSplit = $this->prSplitFromLog($oppRow->log ?? null);
+                    $opponentCheckerPr = $oppSplit['checker'];
+                    $opponentCubePr = $oppSplit['cube'];
                     $opponentLuck = $oppRow->luck;
                     $opponentLuckMwc = $oppRow->luck_mwc ?? null;
                     if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
@@ -662,6 +680,10 @@ class AuthController extends Controller
             'achievements' => $unlocked,
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
+            'pr_checker_self' => $selfCheckerPr,          // XG kirilimi: pul-yalniz
+            'pr_cube_self' => $selfCubePr,                // XG kirilimi: kup-yalniz (yoksa null)
+            'pr_checker_opponent' => $opponentCheckerPr,
+            'pr_cube_opponent' => $opponentCubePr,
             'luck_self' => $result->luck,      // kendi HAM luck'ım (bu maçta sakladığım renk-luck)
             'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
             'luck_mwc_self' => $result->luck_mwc,       // gnubg V1 (async -> ilkin null, matchPr poll'lar)
@@ -803,6 +825,54 @@ class AuthController extends Controller
     }
 
     /**
+     * XG KIRILIMI: ayni log'dan PUL (checker) ve KUP (cube) PR'lari AYRI havuzlanir
+     * (PR = havuzlanan loss / karar x 500; §13 — iki PR'in ortalamasi ALINMAZ).
+     * Bir kova bos ise (ör. hic sayilan kup karari yok) o deger null -> arayuz "—" gosterir.
+     * Log'da kup girdileri 'cube' alanini tasir; countsForPR=false (zorunlu/obvious) elenir.
+     * Eski loglarda (countsForPR yok) kup girdileri PR alanlari tasimadigi icin sayilmaz.
+     *
+     * @return array{checker: ?float, cube: ?float}
+     */
+    private function prSplitFromLog(?string $json): array
+    {
+        $empty = ['checker' => null, 'cube' => null];
+        if (! $json) {
+            return $empty;
+        }
+        $data = json_decode($json, true);
+        if (! is_array($data) || empty($data['hc']) || ! is_array($data['log'] ?? null)) {
+            return $empty;
+        }
+        $hc = $data['hc'];
+        $sum = ['checker' => 0.0, 'cube' => 0.0];
+        $n = ['checker' => 0, 'cube' => 0];
+        foreach ($data['log'] as $e) {
+            if (! is_array($e) || ($e['player'] ?? null) !== $hc) {
+                continue;
+            }
+            $isCube = array_key_exists('cube', $e);
+            if (array_key_exists('countsForPR', $e)) {
+                if (! $e['countsForPR']) {
+                    continue; // zorunlu/obvious -> paydaya girmez
+                }
+                $k = $isCube ? 'cube' : 'checker';
+                $sum[$k] += max(0.0, (float) ($e['prAdjustedEquityLoss'] ?? $e['loss'] ?? 0));
+                $n[$k]++;
+            } elseif ($isCube) {
+                continue; // ESKI cube log (PR alani yok) -> phantom 0-karar sayma
+            } else {
+                $sum['checker'] += max(0.0, (float) ($e['loss'] ?? 0)); // eski checker log
+                $n['checker']++;
+            }
+        }
+
+        return [
+            'checker' => $n['checker'] > 0 ? round(($sum['checker'] / $n['checker']) * 500, 2) : null,
+            'cube' => $n['cube'] > 0 ? round(($sum['cube'] / $n['cube']) * 500, 2) : null,
+        ];
+    }
+
+    /**
      * Online macta iki oyuncunun SUNUCU-hesapli PR cifti (tutarli gosterim icin).
      * Cagiran = kendisi; rakip = ayni room_code'daki diger satir. Sonuc ekrani bunu okur.
      */
@@ -818,9 +888,18 @@ class AuthController extends Controller
         $opp = \App\Models\MatchResult::where('room_code', $code)
             ->where('user_id', '!=', $user->id)->latest('id')->first();
 
+        $mineSplit = $this->prSplitFromLog($mine?->log ?? null);
+        $oppSplit = $this->prSplitFromLog($opp?->log ?? null);
+
         return response()->json([
             'self' => $mine?->pr,
             'opponent' => $opp?->pr,
+            // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — rakip gec raporlarsa
+            // istemci poll'u kirilimi de buradan doldurur.
+            'checker_self' => $mineSplit['checker'],
+            'cube_self' => $mineSplit['cube'],
+            'checker_opponent' => $oppSplit['checker'],
+            'cube_opponent' => $oppSplit['cube'],
             // Sans (luck) SUNUCU-OTORITER: her oyuncu KENDİ renginin HAM luck'ını raporlar
             // (kendi ONNX'inden — aynı zar+pozisyonla merkezî hesapla özdeş). İki istemci de
             // buradan AYNI beyaz+siyah ham çifti okur -> net (kazanan−kaybeden) TUTARLI görünür.
