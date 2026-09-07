@@ -5292,7 +5292,11 @@ export default function App() {
     analyzerOpen ||
     achOpen ||
     friendSetupOpen ||
-    editProfile
+    editProfile ||
+    // Giris/Kayit (/giris) ve Sifremi Unuttum (/sifremi-unuttum): auth sayfasi da diger menu
+    // sayfalari gibi page-host icinde acilsin -> ust hesap bari (header) gorunur kalir (aksi
+    // halde standalone .register-overlay.page fixed overlay header'i orterdi).
+    showAuth
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
   const activeKey = infoOpen
@@ -5776,7 +5780,11 @@ export default function App() {
           />
           <main className={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}>
             {anyPageOpen ? (
-              <div className="page-host">{menuPages}</div>
+              <div className="page-host">
+                {menuPages}
+                {/* Auth (/giris, /sifremi-unuttum) da page-host icinde -> header korunur */}
+                {authModal}
+              </div>
             ) : (
             <>
             <BannerSlider onOpen={menuProps.onTournamentAd} />
@@ -5918,7 +5926,8 @@ export default function App() {
               kapsar (grid-column: 1/-1) -> TAM GENISLIK, en altta. */}
           <Footer columns={footerColumns} />
         </div>
-        {authModal}
+        {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
+            (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
         {menuOverlays}
       </>
     )
