@@ -10760,15 +10760,28 @@ button.acct-row:hover:not(:disabled) {
 }
 .analyzer-head {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   width: 100%;
   max-width: 1080px;
-  margin: 0 auto 14px;
+  margin: 0 auto 18px;
 }
 .analyzer-head h2 {
   margin: 0;
+  letter-spacing: -0.01em;
+}
+.analyzer-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.analyzer-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+  max-width: 62ch;
 }
 .analyzer-close {
   flex: none;
@@ -10838,7 +10851,30 @@ button.acct-row:hover:not(:disabled) {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 14px;
+  padding: 16px 16px 18px;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+}
+/* Kontrol paneli mikro-etiketleri: kucuk, izli buyuk-harf -> net bolum hiyerarsisi.
+   Sadece analyzer'a scope'lu (genel .setup-label degismez). */
+.analyzer-controls .setup-label {
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+/* Bolumler arasi ince ritim: her setup-row esit nefes alsin */
+.analyzer-controls .setup-row {
+  margin: 0 0 14px;
+}
+.analyzer-controls .setup-row:last-of-type {
+  margin-bottom: 0;
+}
+/* Kup sahibi: 3 esit segment (beyaz | ortada | siyah) -> hizali, dengeli.
+   Onceki ikon-buton + genis metin-buton karisikligi giderildi. */
+.pa-owner {
+  grid-template-columns: 1fr 1fr 1fr;
 }
 .analyzer-results {
   grid-area: results;
@@ -10851,17 +10887,69 @@ button.acct-row:hover:not(:disabled) {
 }
 .pa-placeholder {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   line-height: 1.5;
   background: var(--card-bg);
-  border: 1px dashed var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 40px 20px;
-  min-height: 200px;
+  padding: 44px 24px;
+  min-height: 220px;
   display: flex;
+  flex-direction: column;
+  gap: 14px;
   align-items: center;
   justify-content: center;
   text-align: center;
+}
+.pa-placeholder svg {
+  color: var(--border);
+  opacity: 0.9;
+}
+.pa-placeholder span {
+  max-width: 24ch;
+}
+/* Analiz sirasinda: sonuc kartinin sekline uyan iskelet (spinner yerine) */
+.pa-loading {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 220px;
+}
+.pa-skel {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--border) 0%,
+    color-mix(in oklab, var(--border) 45%, transparent) 50%,
+    var(--border) 100%
+  );
+  background-size: 200% 100%;
+  animation: pa-shimmer 1.3s ease-in-out infinite;
+}
+.pa-skel-lg {
+  height: 30px;
+  width: 70%;
+}
+.pa-skel-sm {
+  width: 45%;
+}
+.pa-skel-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+@keyframes pa-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pa-skel { animation: none; }
 }
 .pa-hint {
   color: var(--muted);
@@ -10871,18 +10959,28 @@ button.acct-row:hover:not(:disabled) {
 }
 .pa-count {
   display: flex;
-  gap: 14px;
-  margin-top: 8px;
-  font-size: 0.82rem;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.8rem;
   color: var(--muted);
+}
+.pa-count > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--bg);
+  font-variant-numeric: tabular-nums;
 }
 .pa-count .full {
   color: var(--accent);
-  font-weight: 400;
+  border-color: var(--accent);
 }
 .pa-analyze {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 14px;
 }
 .pa-dice select {
   padding: 8px 6px;
@@ -11288,17 +11386,30 @@ button.acct-row:hover:not(:disabled) {
 }
 .pa-result {
   margin-top: 14px;
-  padding: 12px;
+  padding: 16px;
   border-radius: var(--radius-lg);
   background: var(--bg);
   border: 1px solid var(--border);
 }
 .pa-win {
-  font-size: 1.1rem;
-  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 0.95rem;
+  color: var(--muted);
+  margin-bottom: 4px;
 }
 .pa-win b {
   color: var(--success-fg);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+}
+.pa-result .prob-sub {
+  font-variant-numeric: tabular-nums;
 }
 /* Orta ekran: tahta ustte tam genislik, altinda kontrol | sonuc yan yana */
 /* 3-sutun (board|kontrol|sonuc) yalniz GENIS ekranda; daha darda board USTTE
