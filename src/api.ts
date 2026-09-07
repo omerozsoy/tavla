@@ -1062,6 +1062,10 @@ export interface RoomView {
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar ->
   // rakip adım adım animasyonla görür. Otorite DEĞİL (server_state/version ayrı).
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
+  bet_pct?: number
+  mode?: string | null // 'ranked' | 'friendly' — rovans sonrasi puanli/puansiz ayrimi korunur
+  // ROVANS: iki tarafin cevabi (null|'yes'|'no') + anlasma saglandiysa YENI odanin kodu.
+  rematch?: { p1: string | null; p2: string | null; code: string | null } | null
 }
 
 export async function createRoom(
@@ -1133,6 +1137,18 @@ export async function matchmake(
     }),
   })
 }
+// ROVANS: "ayni ayarlarla yeniden" cevabi. Iki taraf da accept=true derse sunucu eski odanin
+// ayarlariyla (uzunluk, bahis, mod, tempo) YENI oda acar ve kodunu rematch.code ile bildirir.
+export async function rematchRoom(
+  code: string,
+  accept: boolean,
+): Promise<{ ok: boolean; rematch?: { p1: string | null; p2: string | null; code: string | null } }> {
+  return req(`/rooms/${encodeURIComponent(code)}/rematch`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), accept }),
+  })
+}
+
 // Bahisli online mac coin transferi (mac bitince cagrilir)
 export async function settleRoom(
   code: string,

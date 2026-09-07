@@ -46,6 +46,7 @@ import {
   createRoom,
   joinRoom,
   matchmake,
+  rematchRoom,
   cancelMatchmake,
   settleRoomConfirmed,
   saveBlunders,
@@ -960,6 +961,14 @@ export default function App() {
   const onlineTargetRef = useRef(1) // online oda kurulunca kullanilacak mac uzunlugu
   const targetsRef = useRef<number[]>([1]) // eslesme icin kabul edilen uzunluklar (coklu)
   const matchTargetSyncedRef = useRef(false) // eslesme sonrasi anlasilan uzunluk uygulandi mi
+  // ROVANS (online): biten oda yeniden kullanilamaz (settle onu 'finished' isaretler), bu yuzden
+  // iki taraf da isteyince SUNUCU ayni ayarlarla yeni oda acar. mine/theirs: null|'yes'|'no'.
+  const [rematch, setRematch] = useState<{ mine: string | null; theirs: string | null; code: string | null }>({
+    mine: null,
+    theirs: null,
+    code: null,
+  })
+  const rematchEnteredRef = useRef<string | null>(null) // girilen rovans odasinin kodu (tekrar girme)
   // Saat: hamle gecikmesi (delay, her tur sifirlanir) + oyuncu-basi rezerv bankasi
   // (white/black; maca gore kurulur, turlar boyunca tukenir - Galaxy tarzi).
   const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
@@ -3048,6 +3057,27 @@ export default function App() {
             : r,
         )
         if (rv.messages) setChat(rv.messages)
+        // ROVANS: rakibin cevabini yansit; kod gelince (iki taraf da 'yes') ayni ayarlarla
+        // acilan YENI odaya gec. Ayar ref'leri once set edilir -> puan/bahis/tempo korunur.
+        if (rv.rematch) {
+          const rm = rv.rematch
+          setRematch({
+            mine: room.slot === 'p1' ? rm.p1 : rm.p2,
+            theirs: room.slot === 'p1' ? rm.p2 : rm.p1,
+            code: rm.code,
+          })
+          if (rm.code && rematchEnteredRef.current !== rm.code) {
+            rematchEnteredRef.current = rm.code
+            const tgt = rv.target ?? onlineTargetRef.current
+            friendlyRef.current = rv.mode === 'friendly'
+            stakeRef.current = rv.stake ?? 0
+            betPctRef.current = rv.bet_pct ?? 0
+            onlineTargetRef.current = tgt
+            matchTargetSyncedRef.current = true
+            await enterOnlineByCode(rm.code, tgt)
+            return
+          }
+        }
         // Bekleyen oyuncu (p1) eslesince: sunucunun anlastigi uzunlugu uygula (henuz
         // hamle senkronu gelmeden). Bir kez ve yalnizca oyun baslamadan.
         if (!matchTargetSyncedRef.current && rv.target != null && appliedVersionRef.current < 0) {
@@ -3517,6 +3547,7 @@ export default function App() {
       syncEnabledRef.current = false
       setOppStarted(false)
       setChat([])
+      setRematch({ mine: null, theirs: null, code: null })
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
@@ -3904,6 +3935,8 @@ export default function App() {
   function handleLeaveRoom() {
     stakeRef.current = 0
     betPctRef.current = 0
+    setRematch({ mine: null, theirs: null, code: null })
+    rematchEnteredRef.current = null
     setRoom(null)
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
@@ -6238,16 +6271,22 @@ export default function App() {
               ? -Math.round(ratingChange.after - ratingChange.before)
               : null
           }
+          rematchState={online ? rematch : null}
           onRematch={() => {
             if (online) {
-              // Havuza OTOMATIK atma yok: odadan cik, Mac Oyunu kurulumuna don ->
-              // oyuncu ne oynayacagini KENDISI secsin (eslesme / arkadas daveti).
-              handleLeaveRoom()
-              setHome(false)
-              setSetup('online')
+              // ROVANS = ayni rakip, ayni ayarlar. Odadan CIKMIYORUZ: teklif sunucuya gider,
+              // rakip de kabul edince sunucu yeni odayi acar ve poll ikimizi de oraya sokar.
+              if (!room) return
+              setRematch((r) => ({ ...r, mine: 'yes' }))
+              rematchRoom(room.code, true).catch(() => setRematch((r) => ({ ...r, mine: null })))
             } else {
               handleNewMatch(match.target, mode)
             }
+          }}
+          onRematchDecline={() => {
+            if (!room) return
+            setRematch((r) => ({ ...r, mine: 'no' }))
+            rematchRoom(room.code, false).catch(() => {})
           }}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}

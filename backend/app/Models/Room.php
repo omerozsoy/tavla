@@ -53,6 +53,10 @@ class Room extends Model
         // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun oynadığı/geri aldığı adımlar ->
         // rakip adım adım animasyonla görür. Otorite DEĞİL (roll/move/update ayrı).
         'live',
+        // RÖVANŞ: biten odada iki taraf da isterse sunucu ayni ayarlarla yeni oda acar.
+        'rematch_p1',
+        'rematch_p2',
+        'rematch_code',
     ];
 
     /**
@@ -132,6 +136,15 @@ class Room extends Model
             // commit'i ve tüm zarları provably-fair doğrular. Oyun sürerken dice_seed GİZLİ.
             'dice_seed' => $this->status === 'finished' ? $this->dice_seed : null,
             'dice_rolls' => $this->status === 'finished' ? ($this->dice_rolls ?? []) : null,
+            // Oda modu (ranked/friendly): rovans sonrasi istemci puanli/puansiz ayrimini korur.
+            'mode' => $this->mode,
+            // RÖVANŞ durumu: p1/p2 cevaplari (null|yes|no) + anlasma saglandiysa YENI oda kodu.
+            // Kolonlar yoksa (migration kosmadi) hepsi null gelir -> istemci rovansi gostermez.
+            'rematch' => [
+                'p1' => $this->rematch_p1,
+                'p2' => $this->rematch_p2,
+                'code' => $this->rematch_code,
+            ],
         ];
     }
 }

@@ -45,6 +45,9 @@ interface Props {
   oppRatingDelta?: number | null
   onNewMatch: () => void
   onRematch: () => void
+  // ROVANS (yalniz online): iki tarafin cevabi. null -> offline, dogrudan yeniden baslar.
+  rematchState?: { mine: string | null; theirs: string | null; code: string | null } | null
+  onRematchDecline?: () => void
   onHome: () => void
   onStats: () => void
   onAnalysis: () => void
@@ -90,12 +93,25 @@ export default function MatchResult({
   oppRatingDelta,
   onNewMatch,
   onRematch,
+  rematchState,
+  onRematchDecline,
   onHome,
   onStats,
   onAnalysis,
   hasReport,
 }: Props) {
   const { t } = useT()
+  // ROVANS asamasi (online): idle = teklif edilebilir, waiting = rakip bekleniyor,
+  // asked = rakip istedi (kabul/reddet), done = taraflardan biri reddetti -> buton yok.
+  const rmPhase: 'idle' | 'waiting' | 'asked' | 'done' = !rematchState
+    ? 'idle'
+    : rematchState.theirs === 'no' || rematchState.mine === 'no'
+      ? 'done'
+      : rematchState.mine === 'yes'
+        ? 'waiting'
+        : rematchState.theirs === 'yes'
+          ? 'asked'
+          : 'idle'
   const fmtPr = (p: number | null) => (p == null ? '—' : p.toFixed(2))
   // Dusuk PR daha iyi -> tac dusuk olanda
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
@@ -249,10 +265,33 @@ export default function MatchResult({
             </Button>
           </div>
         )}
+        {rmPhase === 'asked' && (
+          <div className="mr-rematch-note">
+            <Icon name="refresh" size={14} /> {t('mr.rematchAsk')}
+          </div>
+        )}
+        {rematchState?.theirs === 'no' && (
+          <div className="mr-rematch-note declined">{t('mr.rematchDeclined')}</div>
+        )}
         <div className="mr-actions">
-          <Button variant="default" onClick={onRematch}>
-            <Icon name="refresh" /> {t('mr.rematch')}
-          </Button>
+          {rmPhase === 'waiting' ? (
+            <Button variant="default" disabled>
+              <Icon name="refresh" /> {t('mr.rematchWait')}
+            </Button>
+          ) : rmPhase === 'asked' ? (
+            <>
+              <Button variant="default" onClick={onRematch}>
+                <Icon name="refresh" /> {t('mr.rematchAccept')}
+              </Button>
+              <Button variant="outline" onClick={onRematchDecline}>
+                {t('mr.rematchDecline')}
+              </Button>
+            </>
+          ) : rmPhase === 'done' ? null : (
+            <Button variant="default" onClick={onRematch}>
+              <Icon name="refresh" /> {t('mr.rematch')}
+            </Button>
+          )}
           <Button variant="outline" onClick={onNewMatch}>
             {t('mr.newMatch')}
           </Button>
