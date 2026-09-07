@@ -382,7 +382,9 @@ export default function App() {
   const [resetInfo, setResetInfo] = useState<{ email: string; token: string } | null>(() => {
     try {
       const p = new URLSearchParams(window.location.search)
-      if (p.get('action') === 'reset' && p.get('token') && p.get('email')) {
+      // Temiz yol (/sifre-sifirla) VEYA eski link (?action=reset) — ikisi de token+email ister.
+      const onResetPath = window.location.pathname.replace(/\/+$/, '') === '/sifre-sifirla'
+      if ((p.get('action') === 'reset' || onResetPath) && p.get('token') && p.get('email')) {
         return { email: p.get('email') as string, token: p.get('token') as string }
       }
     } catch {
