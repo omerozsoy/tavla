@@ -969,7 +969,12 @@ export default function App() {
     theirs: null,
     code: null,
   })
-  const rematchEnteredRef = useRef<string | null>(null) // girilen rovans odasinin kodu (tekrar girme)
+  const rematchEnteredRef = useRef<string | null>(null) // GIRILEN rovans odasinin kodu (tekrar girme)
+  const rematchEnteringRef = useRef<string | null>(null) // girisi SURMEKTE olan kod (poll ust uste denemesin)
+  // Sunucuya GONDERDIGIM cevap ('yes'/'no'). Poll her 1.2sn'de rematch state'ini sunucudan
+  // ezdigi icin, sunucu cevabimi henuz yansitmadiysa iyimser deger BUNDAN korunur (aksi halde
+  // "Rakip bekleniyor…" tekrar "Rövanş" butonuna donup titriyordu).
+  const rematchSentRef = useRef<string | null>(null)
   // Saat: hamle gecikmesi (delay, her tur sifirlanir) + oyuncu-basi rezerv bankasi
   // (white/black; maca gore kurulur, turlar boyunca tukenir - Galaxy tarzi).
   const [clock, setClock] = useState<{ delay: number; white: number; black: number }>({
@@ -3067,20 +3072,28 @@ export default function App() {
         // acilan YENI odaya gec. Ayar ref'leri once set edilir -> puan/bahis/tempo korunur.
         if (rv.rematch) {
           const rm = rv.rematch
+          const srvMine = room.slot === 'p1' ? rm.p1 : rm.p2
           setRematch({
-            mine: room.slot === 'p1' ? rm.p1 : rm.p2,
+            // Sunucu cevabimi henuz yazmadiysa (istek ucusta) GONDERDIGIMI koru -> buton titremez.
+            mine: srvMine ?? rematchSentRef.current,
             theirs: room.slot === 'p1' ? rm.p2 : rm.p1,
             code: rm.code,
           })
-          if (rm.code && rematchEnteredRef.current !== rm.code) {
-            rematchEnteredRef.current = rm.code
+          if (srvMine) rematchSentRef.current = srvMine // sunucu yakaladi -> iyimser deger biter
+          if (rm.code && rematchEnteredRef.current !== rm.code && rematchEnteringRef.current !== rm.code) {
+            rematchEnteringRef.current = rm.code
             const tgt = rv.target ?? onlineTargetRef.current
             friendlyRef.current = rv.mode === 'friendly'
             stakeRef.current = rv.stake ?? 0
             betPctRef.current = rv.bet_pct ?? 0
             onlineTargetRef.current = tgt
             matchTargetSyncedRef.current = true
-            await enterOnlineByCode(rm.code, tgt)
+            // Odaya girmeyi BASARIRSAK kodu isaretle. Basarisizsa isaretleme: sonraki poll
+            // yeniden dener (aksi halde ref pesin yazildigi icin iki taraf da sonuc ekraninda
+            // kilitli kaliyordu ve rovans bir daha ASLA denenmiyordu).
+            const ok = await enterOnlineByCode(rm.code, tgt)
+            rematchEnteringRef.current = null
+            if (ok) rematchEnteredRef.current = rm.code
             return
           }
         }
@@ -3557,6 +3570,7 @@ export default function App() {
       setOppStarted(false)
       setChat([])
       setRematch({ mine: null, theirs: null, code: null })
+      rematchSentRef.current = null
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
@@ -3845,7 +3859,8 @@ export default function App() {
   }
 
   // Paylasimli kodla online oyuna gir (arkadas daveti). Turnuva baglami yok.
-  async function enterOnlineByCode(code: string, target = 3) {
+  // DONUS: girildi mi (true/false). Rovans akisi bunu okur -> basarisiz girisi TEKRAR dener.
+  async function enterOnlineByCode(code: string, target = 3): Promise<boolean> {
     setRoomBusy(true)
     setRoomError('')
     try {
@@ -3857,6 +3872,10 @@ export default function App() {
       fairRef.current = new FairDice()
       setOppStarted(false)
       setChat([])
+      // Yeni oda = temiz rovans durumu. (Zincirleme rovansta onceki macin 'yes' cevabi
+      // tasinirsa yeni sonuc ekrani bastan "Rakip bekleniyor…" gosteriyordu.)
+      setRematch({ mine: null, theirs: null, code: null })
+      rematchSentRef.current = null
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
@@ -3888,8 +3907,14 @@ export default function App() {
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
         status: res.room.status,
       })
-    } catch {
-      setRoomError(t('mp.connError'))
+      return true
+    } catch (err) {
+      // Sessiz kalma: girilemeyen oda kullaniciya BILDIRILIR (rovansta iki taraf da sonuc
+      // ekraninda "hicbir sey olmuyor" diye kaliyordu).
+      const msg = (err as { message?: string })?.message || t('mp.connError')
+      setRoomError(msg)
+      notify.error(msg)
+      return false
     } finally {
       setRoomBusy(false)
     }
@@ -3946,6 +3971,8 @@ export default function App() {
     betPctRef.current = 0
     setRematch({ mine: null, theirs: null, code: null })
     rematchEnteredRef.current = null
+    rematchEnteringRef.current = null
+    rematchSentRef.current = null
     setRoom(null)
     syncEnabledRef.current = false
     appliedVersionRef.current = -1
@@ -6293,16 +6320,28 @@ export default function App() {
               // ROVANS = ayni rakip, ayni ayarlar. Odadan CIKMIYORUZ: teklif sunucuya gider,
               // rakip de kabul edince sunucu yeni odayi acar ve poll ikimizi de oraya sokar.
               if (!room) return
+              rematchSentRef.current = 'yes'
               setRematch((r) => ({ ...r, mine: 'yes' }))
-              rematchRoom(room.code, true).catch(() => setRematch((r) => ({ ...r, mine: null })))
+              rematchRoom(room.code, true).catch((err) => {
+                // Hatayi YUTMA: teklif gitmediyse buton "hicbir sey yapmiyor" gorunuyordu
+                // (or. migration kosmadiysa sunucu 503 "Rövanş bu sunucuda kapalı." doner).
+                rematchSentRef.current = null
+                setRematch((r) => ({ ...r, mine: null }))
+                notify.error((err as { message?: string })?.message || t('mp.connError'))
+              })
             } else {
               handleNewMatch(match.target, mode)
             }
           }}
           onRematchDecline={() => {
             if (!room) return
+            rematchSentRef.current = 'no'
             setRematch((r) => ({ ...r, mine: 'no' }))
-            rematchRoom(room.code, false).catch(() => {})
+            rematchRoom(room.code, false).catch((err) => {
+              rematchSentRef.current = null
+              setRematch((r) => ({ ...r, mine: null }))
+              notify.error((err as { message?: string })?.message || t('mp.connError'))
+            })
           }}
           onNewMatch={() => setSetup('pvb')}
           onHome={() => (online ? handleLeaveRoom() : setHome(true))}
