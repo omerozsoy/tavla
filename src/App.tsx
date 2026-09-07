@@ -3565,6 +3565,10 @@ export default function App() {
     // kafa karistiran 'Bahisli oyun icin giris yapmalisin' 422'sini yemeden ONCE net
     // giris akisi ac (Mac Oyunu ile ayni davranis).
     if (!user) {
+      // Tek Oyun sayfasini KAPAT + home dalina dus -> auth page-host'ta TEK basina (header'li)
+      // acilir. Aksi halde soloOpen acik kalip auth ile ALT ALTA yigiliyordu ("sayfa en altta").
+      setSoloOpen(false)
+      setHome(true)
       notify.info(t('mp.loginRequired'))
       setShowAuth(true)
       return
@@ -3990,6 +3994,11 @@ export default function App() {
     // API'ye gidip kafa karistiran 'Bahisli oyun icin giris yapmalisin' 422'sini yemeden
     // ONCE net giris akisi ac (kullanici kurulumda kalir, uzerine Giris/Kayit modali gelir).
     if (opts.mode === 'online' && !user) {
+      // Kurulum (setup) ekranini KAPAT + home dalina dus -> auth page-host'ta header'li acilir.
+      // Aksi halde setup dalinda authModal SIBLING fixed-overlay olarak render edilip ust
+      // hesap barini (header) orterdi ("ust menu uctu").
+      setSetup(null)
+      setHome(true)
       notify.info(t('mp.loginRequired'))
       setShowAuth(true)
       return
@@ -5801,9 +5810,10 @@ export default function App() {
           <main className={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}>
             {anyPageOpen ? (
               <div className="page-host">
-                {menuPages}
-                {/* Auth (/giris, /sifremi-unuttum) da page-host icinde -> header korunur */}
-                {authModal}
+                {/* showAuth iken YALNIZ auth goster -> baska sayfa (Tek Oyun vb.) acikken auth
+                    ile ALT ALTA yigilmasin. Auth kapaninca menuPages geri gelir. Header page-host
+                    icinde oldugu icin korunur. */}
+                {showAuth ? authModal : menuPages}
               </div>
             ) : (
             <>
