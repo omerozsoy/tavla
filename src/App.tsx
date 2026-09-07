@@ -3891,6 +3891,12 @@ export default function App() {
     setOppStarted(false)
     setChat([])
     tournMatchRef.current = null
+    // Biten macin sonuc state'ini de temizle -> odadan cikinca matchOver/gameEnd STALE kalmasin.
+    // Aksi halde sonraki Mac Oyunu/Basla gecisinde early-return'ler (!matchOver'a bagli arama/
+    // board) atlanip eski MatchResult (sonuc ekrani) bir kare FLASH ediyordu.
+    setMatch(newMatch(match.target))
+    setGameEnd(null)
+    setTurnsPlayed(0)
     setHome(true)
   }
 
@@ -3966,6 +3972,15 @@ export default function App() {
       notify.info(t('mp.loginRequired'))
       setShowAuth(true)
       return
+    }
+    // Onceki BITMIS macin sonuc state'ini (matchOver kaynagi match + gameEnd) setup KAPANMADAN
+    // ONCE temizle. Arama/board early-return'leri !matchOver'a bagli; matchOver stale iken
+    // setSetup(null) render'i bir kare eski MatchResult'i FLASH ediyordu (sonra arama gelir).
+    if (opts.mode === 'online') {
+      const tgt = Math.max(...(opts.targets && opts.targets.length ? opts.targets : [opts.target]))
+      setMatch(newMatch(tgt))
+      setGameEnd(null)
+      setTurnsPlayed(0)
     }
     setShowPip(opts.showPip)
     setShowAnalysis(opts.showAnalysis)
