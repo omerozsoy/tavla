@@ -54,11 +54,21 @@ class ProductResource extends Resource
                 ->unique(ignoreRecord: true)
                 ->dehydrateStateUsing(fn ($state) => Str::slug((string) $state))
                 ->helperText('Boş bırakırsan addan üretilir.'),
-            Forms\Components\Select::make('category')
+            Forms\Components\Select::make('category_id')
                 ->label('Kategori')
-                ->options(Product::CATEGORIES)
-                ->default('diger')
-                ->required(),
+                ->relationship('category', 'name', fn ($query) => $query->orderBy('sort'))
+                ->searchable()
+                ->preload()
+                ->required()
+                // Formdan hizli yeni kategori ekleme (ad + otomatik slug).
+                ->createOptionForm([
+                    Forms\Components\TextInput::make('name')->label('Kategori adı')->required()->maxLength(60),
+                ])
+                ->createOptionUsing(fn (array $data) => \App\Models\ProductCategory::create([
+                    'name' => $data['name'],
+                    'slug' => Str::slug($data['name']),
+                    'sort' => (int) (\App\Models\ProductCategory::max('sort') ?? 0) + 1,
+                ])->id),
             Forms\Components\Textarea::make('description')
                 ->label('Açıklama')
                 ->rows(4)
@@ -154,9 +164,9 @@ class ProductResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('images.0')->label('Görsel')->disk('uploads')->square(),
                 Tables\Columns\TextColumn::make('name')->label('Ürün')->searchable()->weight('medium'),
-                Tables\Columns\TextColumn::make('category')->label('Kategori')
-                    ->formatStateUsing(fn ($s) => Product::CATEGORIES[$s] ?? $s)
-                    ->badge(),
+                Tables\Columns\TextColumn::make('category.name')->label('Kategori')
+                    ->badge()
+                    ->placeholder('—'),
                 Tables\Columns\TextColumn::make('payment_type')->label('Ödeme')
                     ->formatStateUsing(fn ($s) => match ($s) {
                         'coin' => 'Coin', 'both' => 'TL / Coin', default => 'TL',
@@ -173,7 +183,8 @@ class ProductResource extends Resource
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable()->toggleable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('category')->label('Kategori')->options(Product::CATEGORIES),
+                Tables\Filters\SelectFilter::make('category_id')->label('Kategori')
+                    ->relationship('category', 'name'),
                 Tables\Filters\TernaryFilter::make('published')->label('Yayında'),
             ])
             ->actions([

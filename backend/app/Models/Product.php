@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     protected $fillable = [
-        'name', 'slug', 'category', 'description', 'images', 'colors',
+        'name', 'slug', 'category_id', 'description', 'images', 'colors',
         'payment_type', 'coin_price', 'money_price', 'stock', 'published', 'sort',
     ];
 
@@ -21,15 +21,12 @@ class Product extends Model
         'stock'       => 'integer',
     ];
 
-    public const CATEGORIES = [
-        'tavla'      => 'Tavla',
-        'zar'        => 'Zar',
-        'kitap'      => 'Kitap',
-        'zar_kulesi' => 'Zar Kulesi',
-        'diger'      => 'Diğer',
-    ];
-
     public const PAYMENT_TYPES = ['coin', 'money', 'both'];
+
+    public function category()
+    {
+        return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
 
     public function orders()
     {
@@ -50,11 +47,12 @@ class Product extends Model
     public function toCatalog(): array
     {
         return [
-            'id'           => $this->id,
-            'slug'         => $this->slug,
-            'name'         => $this->name,
-            'category'     => $this->category,
-            'description'  => $this->description,
+            'id'            => $this->id,
+            'slug'          => $this->slug,
+            'name'          => $this->name,
+            'category'      => $this->category?->slug,       // gruplama anahtari
+            'category_name' => $this->category?->name,       // gosterim adi (panelden)
+            'description'   => $this->description,
             'images'       => array_values($this->images ?? []),
             'colors'       => array_values($this->colors ?? []),
             'payment_type' => $this->payment_type,

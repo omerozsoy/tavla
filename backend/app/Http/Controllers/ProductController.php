@@ -22,7 +22,8 @@ class ProductController extends Controller
     // GET /products — yayindaki urun katalogu (misafir dahil).
     public function index()
     {
-        $products = Product::where('published', true)
+        $products = Product::with('category')
+            ->where('published', true)
             ->orderBy('sort')
             ->orderByDesc('id')
             ->get()

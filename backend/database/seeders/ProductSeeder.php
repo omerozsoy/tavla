@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\Product;
+use App\Models\ProductCategory;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 // Test icin 10 ornek urun (Tavla/zar/kitap/zar kulesi). Idempotent: slug ile updateOrCreate.
 // Fiyatlar: money_price KURUS (TL x100), coin_price jeton. Renk = gorsel varyant.
@@ -46,11 +48,19 @@ class ProductSeeder extends Seeder
                 'Tavla, turnuva zarları ve zar kulesini bir arada sunan hediye seti.'],
         ];
 
+        // Kategori slug -> id (yoksa olustur; migrate ile 5 varsayilan zaten gelir).
+        $catId = function (string $slug) {
+            return ProductCategory::firstOrCreate(
+                ['slug' => $slug],
+                ['name' => Str::title(str_replace('_', ' ', $slug)), 'sort' => 99],
+            )->id;
+        };
+
         $sort = 0;
         foreach ($items as [$slug, $name, $cat, $pay, $money, $coin, $stock, $colors, $desc]) {
             Product::updateOrCreate(['slug' => $slug], [
                 'name'         => $name,
-                'category'     => $cat,
+                'category_id'  => $catId($cat),
                 'description'  => $desc,
                 'images'       => [],
                 'colors'       => $colors,

@@ -491,7 +491,8 @@ export interface Product {
   id: number
   slug: string
   name: string
-  category: string
+  category: string | null // kategori slug (gruplama)
+  category_name?: string | null // kategori adı (panelden, gösterim)
   description?: string | null
   images: string[] // dosya adlari (disk 'uploads')
   colors: ProductColor[]
