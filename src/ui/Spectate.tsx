@@ -30,6 +30,8 @@ export default function Spectate({
   const [snap, setSnap] = useState<Snap | null>(null)
   const [gone, setGone] = useState(false)
   const verRef = useRef(-1)
+  // Isimler oda verisinden (deep-link /izle/<code> ile prop bos gelebilir -> poll doldurur)
+  const [names, setNames] = useState<{ p1: string; p2: string }>({ p1, p2 })
 
   useEffect(() => {
     let alive = true
@@ -40,6 +42,7 @@ export default function Spectate({
         if (!alive) return
         if (rv === null) return // degismedi
         verRef.current = rv.version
+        if (rv.p1_name || rv.p2_name) setNames({ p1: rv.p1_name || p1, p2: rv.p2_name || p2 })
         if (rv.state) setSnap(rv.state as Snap)
         if (rv.status === 'finished') {
           misses++
@@ -74,13 +77,13 @@ export default function Spectate({
 
         <div className="spectate-players">
           <span className={`sp-player ${ts?.turn === 'white' ? 'turn' : ''}`}>
-            <span className="dot white" /> {p1}
+            <span className="dot white" /> {names.p1}
             {snap?.match && <b> {snap.match.score.white}</b>}
           </span>
           <span className="sp-vs">–</span>
           <span className={`sp-player ${ts?.turn === 'black' ? 'turn' : ''}`}>
             {snap?.match && <b>{snap.match.score.black} </b>}
-            {p2} <span className="dot black" />
+            {names.p2} <span className="dot black" />
           </span>
         </div>
 
