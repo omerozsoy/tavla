@@ -401,49 +401,52 @@ function wlp(probs) {
   const losePts = ln + 2 * lg + 3 * lb;
   return { p, W: winPts / p, L: losePts / (1 - p), ecl: winPts - losePts };
 }
-function cubeActionEquities(probs, x = 0.7) {
+var CUBE_EFFICIENCY = 0.5;
+var liveLine = (lo, hi, p) => clamp(-1 + 2 * ((p - lo) / Math.max(1e-9, hi - lo)), -1, 1);
+function cubeActionEquities(probs, x = CUBE_EFFICIENCY) {
   const { p, W, L, ecl } = wlp(probs);
   const tp = clamp((L - 0.5) / (W + L), 0.02, 0.5);
-  const cashPoint = 1 - tp;
-  const ownedFrac = (pw) => clamp(-0.5 + 1.5 * ((pw - tp) / (1 - tp)), -1, 1);
-  const nonOwnerFrac = (pw) => -ownedFrac(1 - pw);
-  const centeredFrac = (pw) => (ownedFrac(pw) + nonOwnerFrac(pw)) / 2;
+  const tpOpp = clamp((W - 0.5) / (W + L), 0.02, 0.5);
+  const cashPoint = clamp(1 - tpOpp, 0.5, 0.98);
   const dead = clamp(ecl, -3, 3);
-  const noDouble = (1 - x) * dead + x * centeredFrac(p);
-  const takeForDoubler = 2 * nonOwnerFrac(p);
+  const blend = (live) => (1 - x) * dead + x * live;
+  const noDouble = blend(liveLine(tp, cashPoint, p));
   const opponentTakes = p < cashPoint;
-  const double = opponentTakes ? takeForDoubler : 1;
+  const double = opponentTakes ? 2 * blend(liveLine(tp, 1, p)) : 1;
   return { noDouble, double, cashPoint, tp, x };
 }
 function takerEquity(probs, x) {
-  const { p, W, L } = wlp(probs);
-  const tp = clamp((L - 0.5) / (W + L), 0.02, 0.5);
-  const ownedFrac = clamp(-0.5 + 1.5 * ((p - tp) / (1 - tp)), -1, 1);
-  const dead = clamp(2 * p - 1, -1, 1);
-  return 2 * (x * ownedFrac + (1 - x) * dead);
+  const { p, W, L, ecl } = wlp(probs);
+  const tpOpp = clamp((W - 0.5) / (W + L), 0.02, 0.5);
+  const cashPoint = clamp(1 - tpOpp, 0.5, 0.98);
+  const dead = clamp(ecl, -3, 3);
+  return 2 * ((1 - x) * dead + x * liveLine(0, cashPoint, p));
 }
-var XG_OBVIOUS_CUBE_EQUITY_SPREAD = 1e-3;
-function offerLoss(probs, chosen, x = 0.7) {
+var XG_CUBE_DECISION_BAND = 0.3;
+var XG_CUBE_ERROR_EPS = 1e-3;
+function offerLoss(probs, chosen, x = CUBE_EFFICIENCY) {
   const eq = cubeActionEquities(probs, x);
   const best = Math.max(eq.noDouble, eq.double);
   const worst = Math.min(eq.noDouble, eq.double);
   const chosenEq = chosen === "double" ? eq.double : eq.noDouble;
+  const loss = Math.max(0, best - chosenEq);
   return {
-    normalizedEquityLoss: Math.max(0, best - chosenEq),
+    normalizedEquityLoss: loss,
     bestAction: eq.double > eq.noDouble ? "double" : "no-double",
-    countsForPR: best - worst >= XG_OBVIOUS_CUBE_EQUITY_SPREAD
+    countsForPR: best - worst <= XG_CUBE_DECISION_BAND || loss > XG_CUBE_ERROR_EPS
   };
 }
-function takeLoss(probs, chosen, x = 0.7) {
+function takeLoss(probs, chosen, x = CUBE_EFFICIENCY) {
   const takeEq = takerEquity(probs, x);
   const passEq = -1;
   const best = Math.max(takeEq, passEq);
   const worst = Math.min(takeEq, passEq);
   const chosenEq = chosen === "take" ? takeEq : passEq;
+  const loss = Math.max(0, best - chosenEq);
   return {
-    normalizedEquityLoss: Math.max(0, best - chosenEq),
+    normalizedEquityLoss: loss,
     bestAction: takeEq >= passEq ? "take" : "pass",
-    countsForPR: best - worst >= XG_OBVIOUS_CUBE_EQUITY_SPREAD
+    countsForPR: best - worst <= XG_CUBE_DECISION_BAND || loss > XG_CUBE_ERROR_EPS
   };
 }
 
