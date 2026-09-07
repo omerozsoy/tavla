@@ -36,7 +36,8 @@ class PurgeEmptyMatches extends Command
         $base = function () {
             $q = DB::table('match_results')->where(function ($w) {
                 // Analizsiz: log NULL veya bos sarmalayici ({"hc":"white","log":[]} ~ 23-40 char)
-                $w->whereNull('log')->orWhereRaw('CHAR_LENGTH(log) <= 40');
+                // LENGTH: MySQL+SQLite ortak (CHAR_LENGTH sqlite'ta yok); esik 40 icin fark onemsiz.
+                $w->whereNull('log')->orWhereRaw('LENGTH(log) <= 40');
             });
             if ($this->option('user')) {
                 $q->where('user_id', (int) $this->option('user'));
