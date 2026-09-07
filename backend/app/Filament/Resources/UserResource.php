@@ -71,6 +71,14 @@ class UserResource extends Resource
                     'star' => 'Premium',
                 ])->default('free'),
                 Forms\Components\DateTimePicker::make('plan_until')->label('Plan bitişi'),
+                // Hizli sure ekleme: basilinca bitis tarihine ekler (gelecekteyse ustune,
+                // gecmis/bossa bugunden baslar), plan'i Premium yapar ve ANINDA kaydeder.
+                Forms\Components\Actions::make([
+                    self::extendPlanAction('add1m', '1 Ay Ekle', 1),
+                    self::extendPlanAction('add3m', '3 Ay Ekle', 3),
+                    self::extendPlanAction('add6m', '6 Ay Ekle', 6),
+                    self::extendPlanAction('add12m', '1 Yıl Ekle', 12),
+                ])->columnSpanFull(),
                 Forms\Components\Toggle::make('is_admin')->label('Yönetici'),
                 Forms\Components\DateTimePicker::make('banned_at')->label('Yasak tarihi (boş = aktif)'),
                 Forms\Components\DateTimePicker::make('email_verified_at')
@@ -78,6 +86,43 @@ class UserResource extends Resource
                     ->helperText('Doldurulursa doğrulanmış sayılır; temizlenirse doğrulama kalkar'),
             ]),
         ]);
+    }
+
+    /**
+     * "Süre Ekle" form-içi buton: bitiş tarihine $months ay ekler.
+     * - Mevcut bitiş gelecekteyse onun üstüne, geçmiş/boşsa bugünden başlar.
+     * - Plan 'free' ise 'star' (Premium) yapar; zaten premiumsa korur.
+     * - Kayıtlı üyede forceFill ile ANINDA kaydeder ($fillable kısıtlı — asla fillable'a ekleme).
+     */
+    protected static function extendPlanAction(string $key, string $label, int $months): Forms\Components\Actions\Action
+    {
+        return Forms\Components\Actions\Action::make($key)
+            ->label($label)
+            ->icon('heroicon-m-plus')
+            ->color('gray')
+            ->action(function (?User $record, Forms\Set $set, Forms\Get $get) use ($months) {
+                $current = $get('plan_until');
+                $base = $current ? \Illuminate\Support\Carbon::parse($current) : now();
+                if ($base->isPast()) {
+                    $base = now();
+                }
+                $new = $base->copy()->addMonths($months);
+                $plan = ($get('plan') ?? 'free') === 'free' ? 'star' : $get('plan');
+
+                // Formda göster (kaydet'e basılmasa da alan güncel görünür)
+                $set('plan_until', $new->format('Y-m-d H:i:s'));
+                $set('plan', $plan);
+
+                // Kayıtlı üyede diske ANINDA yaz
+                if ($record) {
+                    $record->forceFill(['plan_until' => $new, 'plan' => $plan])->save();
+                    \Filament\Notifications\Notification::make()
+                        ->title('Süre eklendi')
+                        ->body('Yeni bitiş: '.$new->format('d.m.Y H:i'))
+                        ->success()
+                        ->send();
+                }
+            });
     }
 
     public static function table(Table $table): Table
