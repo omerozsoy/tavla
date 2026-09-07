@@ -777,12 +777,12 @@ button[aria-disabled='true'],
    Thumb'a saydam kenarlik + background-clip: cubuk iz icinde INCE durur.
    ========================================================================== */
 * {
-  scrollbar-width: thin;
+  scrollbar-width: auto; /* 'thin' fazla inceydi -> platform genisligi (Firefox) */
   scrollbar-color: var(--terracotta) transparent;
 }
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 16px;
+  height: 16px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -790,7 +790,7 @@ button[aria-disabled='true'],
 ::-webkit-scrollbar-thumb {
   background: var(--terracotta);
   background-clip: padding-box;
-  border: 2px solid transparent;
+  border: 3px solid transparent; /* 16px iz icinde 10px gorunur cubuk */
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
@@ -804,7 +804,12 @@ button[aria-disabled='true'],
 .account-bar::-webkit-scrollbar,
 .shop-tabs::-webkit-scrollbar,
 .prof-ov-tabs::-webkit-scrollbar {
-  height: 6px;
+  height: 12px;
+}
+.account-bar::-webkit-scrollbar-thumb,
+.shop-tabs::-webkit-scrollbar-thumb,
+.prof-ov-tabs::-webkit-scrollbar-thumb {
+  border-width: 3px; /* 12px iz icinde 6px gorunur cubuk */
 }
 
 .app {
