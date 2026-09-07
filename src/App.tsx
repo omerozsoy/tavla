@@ -33,7 +33,13 @@ import {
 } from './engine/match'
 import { cubeAdvice, takeDecision, type CubeAction, type TakeAction } from './engine/cube'
 import { reconstructOppMove } from './online/oppMove'
-import { isOnlineReady, openingStateFromMatch, serverMatchToLocal, shouldApplyServerState } from './online/authSync'
+import {
+  isOnlineReady,
+  openingStateFromMatch,
+  serverMatchToLocal,
+  shouldApplyServerState,
+  staleServerVersion,
+} from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
 import { randomBotPr } from './botPr'
 import Board from './ui/Board'
@@ -1007,6 +1013,19 @@ export default function App() {
   const srvTurnStartRef = useRef<GameState | null>(null)
   const srvPlayedRef = useRef<Step[]>([])
   const oppLoggedRef = useRef('') // otoriter modda rakip hamlesi bir KEZ loglansin
+  // Odaya (yeniden) GIRERKEN senkron sayaclarini sifirla — TEK YER.
+  // KRITIK BUG (canli): appliedServerVersionRef yalniz ilk mount'ta -1'di ve oda girislerinde
+  // SIFIRLANMIYORDU. Yeni odanin server_version'i 0/1'den basladigi icin, ayni sekmede ikinci
+  // (rovans/yeni eslesme) maca giren oyuncuda "surum ilerledi mi" kontrolu KALICI olarak
+  // basarisiz oluyor -> poll otoriter durumu HIC uygulamiyor. Acilis yarisini KAYBEDEN taraf
+  // (reused/409 alip poll'a birakan) "Acilis zari atiliyor..." ekraninda SONSUZA KADAR takili
+  // kaliyor; rakibi normal oynuyordu. srvTurnStart/oppLogged de eski odadan tasinmasin.
+  function resetRoomSync() {
+    appliedVersionRef.current = -1
+    appliedServerVersionRef.current = -1
+    srvTurnStartRef.current = null
+    oppLoggedRef.current = ''
+  }
   // Bitmis mac restore edildiyse puan tekrar bildirilmesin (refresh koruma)
   const ratingReportedRef = useRef(!!(saved && (saved.gameEnd || matchWinner(saved.match))))
   const turnRankedRef = useRef<RankedMove[] | null>(null) // tur basi tam siralama (hata tespiti)
@@ -3154,6 +3173,12 @@ export default function App() {
         // BAGIMSIZ Faz 1: zar-otorite bayragini yakala (doRoll serverRoll'a gitsin). Legacy
         // PUT/move akisi degismez; yalniz zar kaynagi sunucu olur.
         diceAuthorityRef.current = rv.dice_authority ?? diceAuthorityRef.current
+        // EMNIYET SUBABI: sunucu surumu bizim UYGULADIGIMIZIN GERISINDEyse ref eski odadan
+        // kalmistir (her yeni oda server_version 0/1'den baslar). Sifirlanmazsa "surum ilerledi
+        // mi" kontrolu KALICI olarak basarisiz olur ve poll otoriter durumu bir daha ASLA
+        // uygulamaz (acilisi kaybeden taraf "Acilis zari atiliyor"da takilir). resetRoomSync
+        // giris noktalarinda zaten sifirliyor; bu, kacan bir yol kalirsa kendini onarir.
+        if (staleServerVersion(rv, appliedServerVersionRef.current)) appliedServerVersionRef.current = -1
         // Poll-apply kararı SAF fonksiyonda (src/online/authSync + test). midMove yalnız KENDİ
         // turumda geçerli; rakip turundaysak daima senkronla (açılış desync fix — bkz authSync).
         if (
@@ -3589,7 +3614,7 @@ export default function App() {
       betPctRef.current = 0
       const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
       const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse)
-      appliedVersionRef.current = -1
+      resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
@@ -3696,7 +3721,7 @@ export default function App() {
       if (res.room.target != null) onlineTargetRef.current = res.room.target
       // Eslesme aninda anlasilan bahis (coklu secim) kesinlesti -> gercek tutari uygula.
       if (res.matched && res.room.stake != null && res.room.stake > 0) stakeRef.current = res.room.stake
-      appliedVersionRef.current = -1
+      resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       setOppStarted(false)
@@ -3767,7 +3792,7 @@ export default function App() {
     // eslesmeyi baslatan kurulum ekranina geri donuyoruz (kullanici kaldigi yere donsun).
     setRoom(null)
     syncEnabledRef.current = false
-    appliedVersionRef.current = -1
+    resetRoomSync()
     setOppStarted(false)
     setChat([])
     tournMatchRef.current = null
@@ -3788,7 +3813,7 @@ export default function App() {
       stakeRef.current = 0
       betPctRef.current = 0
       const res = await joinRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
-      appliedVersionRef.current = -1
+      resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       fairRef.current = new FairDice()
@@ -3841,7 +3866,7 @@ export default function App() {
       const code = await tournamentMatchRoom(tid, m.key)
       const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       tournMatchRef.current = { tid, matchKey: m.key, oppId }
-      appliedVersionRef.current = -1
+      resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       fairRef.current = new FairDice()
@@ -3895,7 +3920,7 @@ export default function App() {
     try {
       const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
       tournMatchRef.current = null
-      appliedVersionRef.current = -1
+      resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false
       fairRef.current = new FairDice()
@@ -4005,7 +4030,7 @@ export default function App() {
     rematchSentRef.current = null
     setRoom(null)
     syncEnabledRef.current = false
-    appliedVersionRef.current = -1
+    resetRoomSync()
     setOppStarted(false)
     setChat([])
     tournMatchRef.current = null
@@ -4030,7 +4055,7 @@ export default function App() {
     const tgt = r.target ?? 1
     onlineTargetRef.current = tgt
     matchTargetSyncedRef.current = true
-    appliedVersionRef.current = -1 // poll guncel state'i uygulasin
+    resetRoomSync()
     syncEnabledRef.current = false // poll apply edince acilir (echo yok)
     setMode('online')
     fairRef.current = new FairDice()

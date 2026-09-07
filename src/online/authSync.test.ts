@@ -8,6 +8,7 @@ import {
   rollResponseAction,
   serverMatchToLocal,
   shouldApplyServerState,
+  staleServerVersion,
   type SyncLocal,
 } from './authSync'
 
@@ -170,9 +171,30 @@ class SimClient {
   turnsPlayed = 0
   myColor: Player
   server: SimServer
+  // App.tsx `opening` state'i: 'roll' iken ekranda "Acilis zari atiliyor..." overlay'i durur.
+  opening: 'roll' | null = 'roll'
   constructor(myColor: Player, server: SimServer) {
     this.myColor = myColor
     this.server = server
+  }
+
+  // Yeni odaya gir (rovans / yeni eslesme). App.tsx resetRoomSync + setOpening('roll') karsiligi.
+  enterRoom(server: SimServer) {
+    this.server = server
+    this.turn = 'white'
+    this.dice = []
+    this.played = 0
+    this.opening = 'roll'
+    this.appliedServerVersion = -1 // resetRoomSync: BU SATIR eksikti -> canli bug
+  }
+
+  // resetRoomSync'in YAPILMADIGI (hatali) oda girisi — regresyon testinin kontrol grubu.
+  enterRoomWithoutReset(server: SimServer) {
+    this.server = server
+    this.turn = 'white'
+    this.dice = []
+    this.played = 0
+    this.opening = 'roll'
   }
 
   // Sunucu görünümündeki maç durumunu (skor+küp) SAF reduce ile yerelе uygula.
@@ -213,6 +235,7 @@ class SimClient {
       this.turn = r.starter!
       this.dice = [...r.dice]
       this.played = 0
+      this.opening = null // App.tsx doRollAuthoritative: acilis uygulandi -> overlay kalkar
     }
     // defer-to-poll / apply-normal(opening değil) -> poll'a bırak
   }
@@ -255,8 +278,10 @@ class SimClient {
   }
 
   // Poll: gerçek karar fonksiyonuyla senkronla (tahta + skor/küp).
-  poll() {
+  poll(selfHeal = true) {
     const rv = this.server.view()
+    // App.tsx poll: eski odadan kalan surum ref'ini kendi kendine onar.
+    if (selfHeal && staleServerVersion(rv, this.appliedServerVersion)) this.appliedServerVersion = -1
     if (
       shouldApplyServerState(
         { turn: this.turn, diceCount: this.dice.length, playedCount: this.played, appliedServerVersion: this.appliedServerVersion },
@@ -269,6 +294,7 @@ class SimClient {
       this.dice = [...rv.server_state.dice]
       this.played = 0
       this.syncMatch(rv.server_match)
+      this.opening = openingStateFromMatch(rv.server_match) === 'roll' ? 'roll' : null
     }
   }
 }
@@ -480,5 +506,94 @@ describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
     const match1 = newMatch(1)
     expect(canDouble(match1, 'white', false)).toBe(false)
     expect(shouldAutoRoll(match1, 'white', 3)).toBe(true)
+  })
+})
+
+// ---- staleServerVersion: eski odadan kalan surum ref'i ----
+describe('staleServerVersion (oda degisince surum ref eskiyor)', () => {
+  const rv = (v: number) => ({ authoritative: true, server_state: { turn: 'white' as Player, dice: [] }, server_version: v })
+
+  it('sunucu surumu uygulanandan GERIDEyse eskidir (yeni oda 0dan baslar)', () => {
+    expect(staleServerVersion(rv(1), 40)).toBe(true)
+    expect(staleServerVersion(rv(0), 12)).toBe(true)
+  })
+  it('esit/ileri surum eski DEGIL', () => {
+    expect(staleServerVersion(rv(40), 40)).toBe(false)
+    expect(staleServerVersion(rv(41), 40)).toBe(false)
+    expect(staleServerVersion(rv(3), -1)).toBe(false)
+  })
+  it('authoritative degilse / server_state yoksa karar verme', () => {
+    expect(staleServerVersion({ authoritative: false, server_version: 1 }, 40)).toBe(false)
+    expect(staleServerVersion({ authoritative: true, server_version: 1 }, 40)).toBe(false)
+  })
+})
+
+// ---- REGRESYON: ikinci maca girince acilis ekraninda takilma ----
+// CANLI BUG: iki kisi maca girdi; birine zar geldi oynadi, RAKIBI "Acilis zari atiliyor..."
+// ekraninda kalici olarak takildi. Sebep: appliedServerVersionRef oda girislerinde
+// SIFIRLANMIYORDU; yeni odanin server_version'i 0'dan basladigi icin poll "surum ilerlemedi"
+// deyip otoriter durumu HIC uygulamiyordu -> acilis yarisini kaybeden taraf (reused/409)
+// overlay'de kaliyordu.
+describe('REGRESYON: ikinci odada acilis overlay kilidi', () => {
+  // Ilk maci oynayip surum ref'ini yukselten iki istemci hazirla.
+  const playFirstMatch = () => {
+    const s1 = new SimServer('white', 5)
+    const white = new SimClient('white', s1)
+    const black = new SimClient('black', s1)
+    white.triggerOpening()
+    black.triggerOpening()
+    white.poll()
+    black.poll()
+    for (let i = 0; i < 6; i++) {
+      white.rollIfMyTurn()
+      black.rollIfMyTurn()
+      white.moveIfMyTurn()
+      black.moveIfMyTurn()
+      white.poll()
+      black.poll()
+    }
+    return { white, black }
+  }
+
+  it('HATA TABLOSU: reset YOK + emniyet subabi YOK -> acilisi kaybeden taraf takilir', () => {
+    const { white, black } = playFirstMatch()
+    expect(white.appliedServerVersion).toBeGreaterThan(1) // ilk maçtan kalan yüksek sürüm
+    const s2 = new SimServer('white', 5) // YENI oda: server_version 0'dan baslar
+    white.enterRoomWithoutReset(s2)
+    black.enterRoomWithoutReset(s2)
+    white.triggerOpening() // beyaz yarisi kazanir -> acilisi uygular, oynar
+    black.triggerOpening() // siyah reused/409 -> poll'a birakir
+    white.poll(false)
+    black.poll(false)
+    expect(white.opening).toBe(null) // rakip normal oynuyor
+    expect(black.opening).toBe('roll') // ...ama bu taraf overlay'de KILITLI (yasanan bug)
+  })
+
+  it('DUZELTME: oda girisinde surum ref sifirlanir -> iki taraf da acilistan cikar', () => {
+    const { white, black } = playFirstMatch()
+    const s2 = new SimServer('white', 5)
+    white.enterRoom(s2) // resetRoomSync
+    black.enterRoom(s2)
+    white.triggerOpening()
+    black.triggerOpening()
+    white.poll()
+    black.poll()
+    expect(white.opening).toBe(null)
+    expect(black.opening).toBe(null)
+    expect(black.turn).toBe('white')
+    expect(black.dice.length).toBe(2) // acilis zarini gorur (rakibin turu)
+  })
+
+  it('EMNIYET SUBABI: reset kacsa bile poll kendini onarir', () => {
+    const { white, black } = playFirstMatch()
+    const s2 = new SimServer('black', 5)
+    white.enterRoomWithoutReset(s2) // reset YOK
+    black.enterRoomWithoutReset(s2)
+    black.triggerOpening() // siyah acilisi yapar
+    white.triggerOpening() // beyaz reused/409 -> poll'a kalir
+    white.poll() // staleServerVersion -> ref sifirlanir -> uygulanir
+    black.poll()
+    expect(white.opening).toBe(null)
+    expect(black.opening).toBe(null)
   })
 })

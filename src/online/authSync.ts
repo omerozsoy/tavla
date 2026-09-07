@@ -148,3 +148,18 @@ export function isOnlineReady(p: {
   if (p.status !== 'playing') return false
   return p.slot === 'p1' || p.oppStarted || !!p.authoritative
 }
+
+/**
+ * Uygulanan server_version ESKI ODADAN mi kalmis? Her oda kendi server_version'ini 0'dan
+ * baslatir; oyuncu ayni sekmede ikinci maca girince (rovans / yeni eslesme) onceki odadan
+ * kalan yuksek deger, poll'un "surum ilerledi mi" kontrolunu KALICI olarak dusurur ->
+ * otoriter durum bir daha ASLA uygulanmaz. Sunucunun surumu bizimkinin GERISINDEyse bu
+ * kesin olarak eski/baska odanin degeridir; sifirlanmali.
+ *
+ * YASANAN CANLI BUG: acilis yarisini kaybeden taraf (sunucudan reused/409 alip poll'a birakan)
+ * "Acilis zari atiliyor..." ekraninda sonsuza kadar takili kaldi; rakibi normal oynadi.
+ */
+export function staleServerVersion(rv: ServerSyncView, appliedServerVersion: number): boolean {
+  if (!rv.authoritative || !rv.server_state) return false
+  return (rv.server_version ?? 0) < appliedServerVersion
+}
