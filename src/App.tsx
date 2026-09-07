@@ -4463,13 +4463,11 @@ export default function App() {
             )
           : null
 
-  // Sirasi gelenin ana butonu (Onayla/Zar) kendi ev tarafinda durur.
-  // Normal tahtada beyaz sagda; cevrili tahtada (siyah bakisi) siyah sagda.
-  const mySideBase = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
-  // "Sola topla"da tahta yatay aynalanir -> merkez butonlari/zar da karsi yariya gecer.
-  const mySideRight = boardMirror ? !mySideBase : mySideBase
-  const centerRight = mySideRight ? primary : secondary
-  const centerLeft = mySideRight ? secondary : primary
+  // KESIN KURAL: merkez slotlari SABIT. Sira kimde olursa olsun (ve tahta cevrili/aynali
+  // olsun) zar + ana buton (Oyna/Onayla/Zar At) DAIMA SAGDA, yan buton (Geri Al / Kup)
+  // DAIMA SOLDA durur. Butonlar tur degistikce yer degistirmez -> el/goz alisan sabit kalir.
+  const centerRight = primary
+  const centerLeft = secondary
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
