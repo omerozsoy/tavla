@@ -15,7 +15,8 @@ interface Section {
 // Kural rehberi icerigi dile gore (i18n sozlugunu sismemek icin burada tutulur).
 // 5 dil: tr, en, es, de, fr. Bilinmeyen dil -> en.
 type RulesContent = { title: string; intro: string; sections: Section[] }
-const CONTENT: Record<'tr' | 'en' | 'es' | 'de' | 'fr', RulesContent> = {
+// Yeni diller (el/ru/fa) icin ayri kural metni yok; CONTENT[lang] ?? CONTENT.en ile EN'e duser.
+const CONTENT: Record<string, RulesContent> = {
   tr: {
     title: 'Tavla Nasıl Oynanır?',
     intro:
