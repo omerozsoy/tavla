@@ -37,9 +37,13 @@ Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index'
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri
+Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index']); // fiziksel magaza katalogu (acik)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);
+
+// Şans Çarkı durumu (misafir de çarkı görebilir; çevirmek için giriş gerekir).
+Route::get('/lucky-wheel', [\App\Http\Controllers\LuckyWheelController::class, 'show']);
 
 
 // Multiplayer odalari (misafir dostu, token bazli).
@@ -163,6 +167,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/shop/buy', [ShopController::class, 'buy']);
     Route::post('/shop/frame', [ShopController::class, 'selectFrame']);
     Route::post('/shop/daily', [ShopController::class, 'daily']);
+
+    // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
+    Route::middleware('throttle:20,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
+
+    // Fiziksel urun magazasi: siparis (coin aninda / money -> odeme) + kullanicinin siparisleri.
+    Route::post('/products/order', [\App\Http\Controllers\ProductController::class, 'order']);
+    Route::get('/me/orders', [\App\Http\Controllers\ProductController::class, 'myOrders']);
 
     Route::get('/blunders', [BlunderController::class, 'index']);
     Route::post('/blunders', [BlunderController::class, 'store']);

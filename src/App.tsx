@@ -136,6 +136,8 @@ import FriendGameSetup from './ui/FriendGameSetup'
 import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
+import Products from './ui/Products'
+import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import Checkout from './ui/Checkout'
 import FrameShop from './ui/FrameShop'
@@ -537,6 +539,8 @@ export default function App() {
   const [tournDetailId, setTournDetailId] = useState<number | null>(null) // acik turnuva detayi (fetch id)
   const [tournDetailSlug, setTournDetailSlug] = useState<string | null>(null) // SEO URL slug (/online-turnuvalar/isim-{id})
   const [soloOpen, setSoloOpen] = useState(false) // Tek Oyun bahis gridi
+  const [productsOpen, setProductsOpen] = useState(false) // fiziksel urun magazasi (/urunler)
+  const [myOrdersOpen, setMyOrdersOpen] = useState(false) // siparislerim (/siparislerim)
   const [blunderOpen, setBlunderOpen] = useState(false) // hata gunlugu
   const [matchHistOpen, setMatchHistOpen] = useState(false) // mac analizleri (gecmis maclar)
   const [matchHistInitialId, setMatchHistInitialId] = useState<number | null>(null) // acilista otomatik acilacak mac
@@ -791,6 +795,12 @@ export default function App() {
         }
         case 'magaza':
           setShopOpen(true)
+          break
+        case 'urunler':
+          setProductsOpen(true)
+          break
+        case 'siparislerim':
+          setMyOrdersOpen(true)
           break
         case 'uyelik':
           // Uyelik modali (menu key 'membership' -> slug 'uyelik'). Dogrudan link/yenileme/
@@ -5393,6 +5403,8 @@ export default function App() {
     setFairOpen(false)
     setLessonsOpen(false)
     setSoloOpen(false)
+    setProductsOpen(false)
+    setMyOrdersOpen(false)
     setContentView(null)
     setNewsSlug(null)
     setQuizOpen(false)
@@ -5497,6 +5509,8 @@ export default function App() {
     // Belirli bir haberin detayini ac (/haberler/<slug>): liste yerine dogrudan detay.
     onOpenNews: (slug: string) => goPage(() => { setContentView('news'); setNewsSlug(slug) }),
     onMagazine: () => goPage(() => setContentView('magazine')),
+    onProducts: () => goPage(() => setProductsOpen(true)),
+    onMyOrders: () => (user ? goPage(() => setMyOrdersOpen(true)) : setShowAuth(true)),
     onQuiz: () => goPage(() => setQuizOpen(true)),
   }
 
@@ -5517,6 +5531,8 @@ export default function App() {
     clubs: menuProps.onClubs,
     news: menuProps.onNews,
     magazine: menuProps.onMagazine,
+    products: menuProps.onProducts,
+    myOrders: menuProps.onMyOrders,
     analyzer: menuProps.onAnalyzer,
     blunders: menuProps.onBlunders,
     matchHistory: menuProps.onMatchHistory,
@@ -5893,6 +5909,27 @@ export default function App() {
           })()}
           onPick={startSoloStake}
           onClose={() => setSoloOpen(false)}
+        />
+      )}
+      {productsOpen && (
+        <Products
+          coins={user?.coins ?? 0}
+          defaultName={profile.nickname}
+          onCoinsChange={(c) => setUser((u) => (u ? { ...u, coins: c } : u))}
+          onGoOrders={() => {
+            setProductsOpen(false)
+            if (user) setMyOrdersOpen(true)
+          }}
+          onClose={() => setProductsOpen(false)}
+        />
+      )}
+      {myOrdersOpen && user && (
+        <MyOrders
+          onClose={() => setMyOrdersOpen(false)}
+          onShop={() => {
+            setMyOrdersOpen(false)
+            setProductsOpen(true)
+          }}
         />
       )}
       {blunderOpen && user && premium && <ErrorJournal onClose={() => setBlunderOpen(false)} />}
