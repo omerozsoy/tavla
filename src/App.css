@@ -10459,6 +10459,22 @@ button.acct-row:hover:not(:disabled) {
 .mr-score span:first-child {
   color: var(--accent);
 }
+/* ROVANS bilgi satiri (rakip istedi / reddetti) — sonuc ekraninda butonlarin ustunde */
+.mr-rematch-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 10px 0 -4px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-align: center;
+}
+.mr-rematch-note.declined {
+  color: var(--muted);
+  font-weight: 400;
+}
 .mr-actions {
   display: flex;
   flex-wrap: wrap;

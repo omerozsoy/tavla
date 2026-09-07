@@ -746,6 +746,157 @@ class RoomController extends Controller
         return response()->json(['room' => $payload]);
     }
 
+    /**
+     * RÖVANŞ: biten odada "ayni ayarlarla yeniden" teklifi. Her oyuncu bir kez cevap verir
+     * (accept=true istiyorum / false reddediyorum). IKI taraf da 'yes' derse sunucu AYNI
+     * ayarlarla (uzunluk, bahis, bet_pct, mod, tempo) YENI oda acar; kodu iki tarafa da
+     * show() ile ulasir, istemciler o odaya girer. Biten oda yeniden kullanilamaz
+     * (settle onu 'finished' + 'settled' isaretler) -> rovans daima yeni odadir.
+     */
+    public function rematch(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'accept' => ['required', 'boolean'],
+        ]);
+        if (! Schema::hasColumn('rooms', 'rematch_p1')) {
+            return $this->fail('Rövanş bu sunucuda kapalı.', 503);
+        }
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return $this->fail('Oda bulunamadı.', 404);
+        }
+        $slot = $this->slotOf($room, $data['token']);
+        if ($slot === null) {
+            return $this->fail('Bu odada değilsin.', 403);
+        }
+        if (! $room->p1_token || ! $room->p2_token) {
+            return $this->fail('Rakip yok.', 409);
+        }
+
+        $room->{'rematch_'.$slot} = $data['accept'] ? 'yes' : 'no';
+        $room->save();
+        $room = $room->fresh();
+
+        // Iki taraf da kabul -> yeni odayi TEK kez ac (yaris: lockForUpdate + kod bir kez yazilir).
+        if ($room->rematch_p1 === 'yes' && $room->rematch_p2 === 'yes' && ! $room->rematch_code) {
+            $stake = (int) $room->stake;
+            $betPct = (int) $room->bet_pct;
+            // C1: bahisli rovans, oyunculardan biri baska bir bahisli macta ise ACILMAZ.
+            if (($stake > 0 || $betPct > 0)
+                && ($this->userInStakedPlaying($room->p1_user_id, $room->id)
+                    || $this->userInStakedPlaying($room->p2_user_id, $room->id))) {
+                $room->{'rematch_'.$slot} = null;
+                $room->save();
+
+                return $this->fail('Devam eden bahisli maçın var.', 409);
+            }
+            try {
+                $newCode = $this->openRematchRoom($room);
+            } catch (\RuntimeException $e) {
+                // Bahis karsilanamiyor -> teklifi geri al ki taraflar "bekliyor"da asili kalmasin.
+                $room->rematch_p1 = null;
+                $room->rematch_p2 = null;
+                $room->save();
+
+                return $this->fail($e->getMessage(), 422);
+            }
+            $room->rematch_code = $newCode;
+        }
+
+        return response()->json([
+            'ok' => true,
+            'rematch' => [
+                'p1' => $room->rematch_p1,
+                'p2' => $room->rematch_p2,
+                'code' => $room->rematch_code,
+            ],
+        ]);
+    }
+
+    /**
+     * Rovans odasini ayni ayarlarla ac (atomik). Slotlar KORUNUR (p1/p2 ayni oyuncu) -> istemci
+     * renk/slot mantigini degistirmeden devam eder. Sabit bahiste ESCROW yeniden kurulur:
+     * kullanilabilir bakiye (coins - coins_reserved) yetmiyorsa oda ACILMAZ (RuntimeException).
+     */
+    private function openRematchRoom(Room $old): string
+    {
+        return DB::transaction(function () use ($old) {
+            $locked = Room::where('id', $old->id)->lockForUpdate()->first();
+            if ($locked->rematch_code) {
+                return $locked->rematch_code; // rakip cagrisi zaten acti
+            }
+            $stake = (int) $locked->stake;
+            $escrowed = false;
+            // ESCROW: sabit bahis -> iki oyuncunun stake'ini yeniden rezerve et (matchmaking ile ayni
+            // kural). Deadlock'a karsi user'lar sirali-id kilitlenir.
+            if ($stake > 0 && Schema::hasColumn('users', 'coins_reserved')
+                && $locked->p1_user_id && $locked->p2_user_id) {
+                $uids = [(int) $locked->p1_user_id, (int) $locked->p2_user_id];
+                sort($uids);
+                $lk = [];
+                foreach ($uids as $uid) {
+                    $lk[$uid] = User::lockForUpdate()->find($uid);
+                }
+                $p1u = $lk[$locked->p1_user_id] ?? null;
+                $p2u = $lk[$locked->p2_user_id] ?? null;
+                $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                if (! $p1u || ! $p2u || $avail($p1u) < $stake || $avail($p2u) < $stake) {
+                    throw new \RuntimeException('Bahis için yeterli bakiye yok.');
+                }
+                $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $stake;
+                $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $stake;
+                $p1u->save();
+                $p2u->save();
+                $escrowed = true;
+            }
+
+            $fields = [
+                'code' => $this->generateCode(),
+                'p1_token' => $locked->p1_token,
+                'p1_user_id' => $locked->p1_user_id,
+                'p1_name' => $locked->p1_name,
+                'p1_rating' => $locked->p1_rating,
+                'p1_avatar' => $locked->p1_avatar,
+                'p2_token' => $locked->p2_token,
+                'p2_user_id' => $locked->p2_user_id,
+                'p2_name' => $locked->p2_name,
+                'p2_rating' => $locked->p2_rating,
+                'p2_avatar' => $locked->p2_avatar,
+                'status' => 'playing', // iki oyuncu da oturmus -> beklemeye gerek yok
+                'stake' => $stake,
+                'bet_pct' => (int) $locked->bet_pct,
+                'target' => $locked->target,
+                'targets' => $locked->targets,
+                'mode' => $locked->mode,
+                'time_control' => $locked->time_control,
+                'version' => 0,
+            ];
+            if (Schema::hasColumn('rooms', 'stakes')) {
+                $fields['stakes'] = $locked->stakes;
+            }
+            if (Schema::hasColumn('rooms', 'escrowed')) {
+                $fields['escrowed'] = $escrowed;
+            }
+            // Otorite bayraklari aynen tasinir (zar/hamle kaynagi degismesin).
+            if (Schema::hasColumn('rooms', 'authoritative')) {
+                $fields['authoritative'] = (bool) $locked->authoritative;
+            }
+            if (Schema::hasColumn('rooms', 'dice_authority')) {
+                $fields['dice_authority'] = (bool) $locked->dice_authority;
+            }
+            Room::create($fields); // yeni tohum/commit ilk zarda uretilir (provably-fair taze)
+
+            $locked->rematch_code = $fields['code'];
+            // Eski oda kapanir: rovans YENI odada oynanir (Canli Maclar'da olu oda gorunmesin,
+            // C1 bahis guardi eski odayi 'oynaniyor' saymasin).
+            $locked->status = 'finished';
+            $locked->save();
+
+            return $fields['code'];
+        });
+    }
+
     // Oyuncu maci TERK eder -> TERK EDEN KAYBEDER (rakip kazanir). Anlik forfeit.
     // Sekme kapama/gezinme sirasinda cagrilir (sendBeacon); presence 25sn'yi beklemeden
     // sonucu netlestirir. Yalniz CANLI (playing, bitmemis) macta anlamli.
