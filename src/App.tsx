@@ -3203,11 +3203,19 @@ export default function App() {
         // Sunucu-otoriter saat: her poll'de (state degismese de) guncel saat + AFK.
         // Kayip (timeout/AFK) sunucu tarafinda ilan edilir ve state.gameEnd olarak gelir
         // (applyOnlineState onu uygular) -> lokal timeout karari online'da devre disi.
-        const sc = rv.clock
+        // MAC BITTI -> sunucu saatini artik uygulama. Yerel sayac zaten gameEnd/matchOver
+        // ile duruyordu ama otoriter modda saat POLL'dan geliyor: sonuc ekraninin ARKASINDA
+        // sayac akmaya devam ediyordu. Sunucu tarafinda da tick durduruldu; bu istemci
+        // korumasi deploy oncesi acilmis odalar icin de gecerli.
+        const srvDone = !!rv.server_match?.done || rv.status === 'finished'
+        const sc = srvDone ? null : rv.clock
         if (sc) {
           setClock({ delay: sc.delay, white: sc.white, black: sc.black })
           setSrvActive(sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null)
           setAfkLeft(sc.afk)
+        } else if (srvDone) {
+          setSrvActive(null) // aktif taraf vurgusu + AFK geri sayimi da dursun
+          setAfkLeft(null)
         }
       } catch {
         /* gecici */
