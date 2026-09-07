@@ -6804,9 +6804,10 @@ html.fs-active .account-bar {
     left: 0;
     top: 0;
     height: 100%;
-    /* 210px'te uzun etiketler ("Online Turnuvalar") ~9px kirpiliyordu -> genislet. */
-    width: 236px;
-    max-width: 84vw;
+    /* 210px'te uzun etiketler ("Online Turnuvalar") ~9px kirpiliyordu -> genislet.
+       236px'te de en uzun etiket ~10px tasiyordu -> 248px (dar telefonda 86vw kapak). */
+    width: 248px;
+    max-width: 86vw;
     z-index: 100;
     background: var(--card-bg);
     padding: 14px 12px 12px;
@@ -6826,6 +6827,18 @@ html.fs-active .account-bar {
     /* shadcn px-4 (16px) uzun etiketi (~10px) drawer disina tasiriyordu -> kis. */
     padding-inline: 10px;
     justify-content: flex-start;
+    /* En uzun etiketler ("Tavla Kulüpleri" 15ch) 0.95rem'de ~10px kirpiliyordu ->
+       drawer'a ozel hafif kucult; hepsi tam sigar. Cok uzun etiket .nav-label ile
+       ellipsis'e duser (hard-clip yerine "…"). */
+    font-size: 0.82rem;
+    min-width: 0;
+  }
+  /* Etiket alani buzulebilir + tasarsa zarif ellipsis (bare text node span'e alindi) */
+  .side-menu .nav-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   /* Drawer basligindaki TavlaTV logosu (yalniz mobil drawer'da gorunur) */
   .side-menu-brand {
@@ -6876,7 +6889,10 @@ html.fs-active .account-bar {
 @media (max-height: 560px) and (orientation: landscape) {
   :root {
     --header-h: 6px;
-    --board-h: max(200px, min(calc(100vh - 62px), calc((100vw - 150px) / 1.4)));
+    /* Genislik terimi yatayda board'u kirpiyordu: sol kume (panel 104 + saat + bosluk)
+       ~214px yer kapliyor ama eski formul yalniz 150px ayiriyordu -> board sag kenardan
+       ~25px tasip kesiliyordu. Ayrilan pay 232'ye, oran 1.5'e cekildi (board tam siar). */
+    --board-h: max(200px, min(calc(100vh - 62px), calc((100vw - 264px) / 1.5)));
   }
   /* Hesap cubugu oyun-ici yatayda board'a biniyordu -> gizle (menu game-ham'da) */
   .account-bar,
