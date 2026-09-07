@@ -9,6 +9,7 @@ import { equityFrom } from '../engine/encoding'
 import { moveNotation } from '../engine/notation'
 import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
+import { Die } from './Dice'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { analyzePosition, getToken } from '../api'
@@ -260,6 +261,18 @@ export default function PositionAnalyzer({
     else editPoint(from)
   }
 
+  // ----- Zar: sag paneldeki select'ler yerine TAHTANIN uzerinde -----
+  // Zara tiklayinca deger doner: zarsiz -> 1 -> ... -> 6 -> zarsiz. Sag tik geri alir.
+  const cycleDie = (v: number, dir: number) => {
+    const n = v + dir
+    return n > 6 ? 0 : n < 0 ? 6 : n
+  }
+  function bumpDie(which: 1 | 2, dir: number) {
+    setMoveRows(null)
+    if (which === 1) setD1((v) => cycleDie(v, dir))
+    else setD2((v) => cycleDie(v, dir))
+  }
+
   // ----- Surukle-birak (fare + dokunma): mevcut pulu bir noktadan digerine tasi -----
   type DragFrom = { type: 'point'; idx: number } | { type: 'bar' }
   type DropLoc = DragFrom | { type: 'off' } | null
@@ -507,6 +520,35 @@ export default function PositionAnalyzer({
   }
   const { doublerKey, takerKey } = cubeDecision()
 
+  // Zarlar oyundaki gibi sirasi gelenin tarafinda durur (kup bar'da kaldigi icin
+  // tam merkez kullanilmaz). Bos zar = "zarsiz": analiz yalnizca kup karari verir.
+  const boardDice = (
+    <div className="board-dice pa-board-dice" title={t('pa.diceHint')}>
+      {([1, 2] as const).map((which) => {
+        const v = which === 1 ? d1 : d2
+        return (
+          <button
+            key={which}
+            type="button"
+            className="pa-die-btn"
+            aria-label={`${t('pa.dice')} ${which}: ${v || '-'}`}
+            onClick={() => bumpDie(which, 1)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              bumpDie(which, -1)
+            }}
+          >
+            {v ? (
+              <Die value={v} owner={turn} used={false} />
+            ) : (
+              <div className="die-face pa-die-empty">–</div>
+            )}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div className="analyzer">
       <div className="analyzer-head">
@@ -545,6 +587,8 @@ export default function PositionAnalyzer({
             pipTop={pipCount(displayState, 'black')}
             pipBottom={pipCount(displayState, 'white')}
             cube={cube}
+            centerLeft={turn === 'black' ? boardDice : undefined}
+            centerRight={turn === 'white' ? boardDice : undefined}
             showPip
           />
         </div>
@@ -688,36 +732,6 @@ export default function PositionAnalyzer({
                 </label>
               </div>
             )}
-          </div>
-
-          <div className="setup-row">
-            <div className="setup-label">{t('pa.dice')}</div>
-            <div className="menu-targets pa-dice">
-              <Button
-                variant={d1 === 0 && d2 === 0 ? 'secondary' : 'ghost'}
-                onClick={() => {
-                  setD1(0)
-                  setD2(0)
-                  setMoveRows(null)
-                }}
-              >
-                {t('pa.noDice')}
-              </Button>
-              <select value={d1} onChange={(e) => setD1(Number(e.target.value))}>
-                {[0, 1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n === 0 ? '–' : n}
-                  </option>
-                ))}
-              </select>
-              <select value={d2} onChange={(e) => setD2(Number(e.target.value))}>
-                {[0, 1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n === 0 ? '–' : n}
-                  </option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div className="setup-row">
