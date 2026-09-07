@@ -524,8 +524,10 @@ export default function PositionAnalyzer({
   }
   const { doublerKey, takerKey } = cubeDecision()
 
-  // KESIN KURAL (oyun ekraniyla ayni): zar DAIMA SAGDA. Sira/renk/oyun yonu degistirmez.
-  // Bos zar = "zarsiz": analiz yalnizca kup karari verir.
+  // KESIN KURAL (oyun ekraniyla ayni): "benim" zarim SAGDA, rakibin zari SOLDA. Analizde
+  // alttaki (kendi) taraf beyaz -> beyazin sirasinda zar sagda, siyahinkinde solda. Oyun
+  // yonu (saga/sola topla) bunu DEGISTIRMEZ. Bos zar = "zarsiz": yalnizca kup karari.
+  const diceOnRight = turn === 'white'
   const boardDice = (
     <div className="board-dice pa-board-dice" title={t('pa.diceHint')}>
       {([1, 2] as const).map((which) => {
@@ -592,7 +594,8 @@ export default function PositionAnalyzer({
             pipBottom={pipCount(displayState, 'white')}
             cube={cube}
             mirror={boardDir === 'left'}
-            centerRight={boardDice}
+            centerLeft={diceOnRight ? undefined : boardDice}
+            centerRight={diceOnRight ? boardDice : undefined}
             showPip
           />
         </div>

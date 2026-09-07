@@ -4468,11 +4468,15 @@ export default function App() {
             )
           : null
 
-  // KESIN KURAL: merkez slotlari SABIT. Sira kimde olursa olsun (ve tahta cevrili/aynali
-  // olsun) zar + ana buton (Oyna/Onayla/Zar At) DAIMA SAGDA, yan buton (Geri Al / Kup)
-  // DAIMA SOLDA durur. Butonlar tur degistikce yer degistirmez -> el/goz alisan sabit kalir.
-  const centerRight = primary
-  const centerLeft = secondary
+  // KESIN KURALLAR (her modda; tahta cevrili ya da "sola topla" aynali olsa da DEGISMEZ):
+  //  1) BENIM zarim + ana butonum (Oyna/Onayla/Zar At) DAIMA SAGDA
+  //  2) RAKIBIN zari DAIMA SOLDA
+  // Kendi rengim tahtada hep ALTTA durur (online'da flipBoard bunu saglar; pvb'de insan
+  // beyaz), dolayisiyla "alttaki oyuncunun sirasi mi" = "sira bende mi".
+  // Yan slot (Katla / Geri Al) yalniz kendi turumda dolar -> rakip zariyla cakismaz.
+  const turnIsMine = flipBoard ? turnStart.turn === 'black' : turnStart.turn === 'white'
+  const centerRight = turnIsMine ? primary : secondary
+  const centerLeft = turnIsMine ? secondary : primary
 
   const myName = profile?.nickname ?? t('player.you')
   const blackName = online
