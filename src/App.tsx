@@ -4283,6 +4283,15 @@ export default function App() {
     hasNoMove(generateMoves(turnStart)) &&
     (interactive || botDance || (online && !myTurn && !gameEnd && !matchOver))
   const showRoll = interactive && !diceRolled
+  // Zar zaten OTOMATIK atilacaksa "Zar At" butonunu HIC cizme (kullanici direktifi: kup
+  // rakipteyse dugmeyi gormeyeyim, dogrudan zari goreyim). Kosul, otomatik-zar effect'iyle
+  // BIREBIR ayni (shouldAutoRoll + ayni guard'lar) -> buton gizlenip zar atilmama riski yok.
+  const autoRollPending =
+    showRoll &&
+    !opening &&
+    !cubePending &&
+    !gameWon &&
+    shouldAutoRoll(match, turnStart.turn, turnsPlayed, autoRoll)
   // Tum oynanabilir zarlar oynandi -> onay bekleniyor
   const turnComplete =
     interactive && diceRolled && played.length > 0 && nextSteps.length === 0
@@ -4513,7 +4522,7 @@ export default function App() {
     <Button variant="default" onClick={handleConfirm}>
       {t('btn.confirm')}
     </Button>
-  ) : showRoll ? (
+  ) : showRoll && !autoRollPending ? (
     <Button variant="default" onClick={doRoll}>
       {t('btn.roll')}
     </Button>
