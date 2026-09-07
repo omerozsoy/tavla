@@ -11061,13 +11061,35 @@ button.acct-row:hover:not(:disabled) {
   width: 100%;
   margin-top: 14px;
 }
-.pa-dice select {
-  padding: 8px 6px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border);
-  background: var(--bg);
-  color: var(--text);
-  font-weight: 400;
+/* Zar artik sag panelde degil TAHTANIN uzerinde: zara tiklayinca deger doner
+   (zarsiz -> 1..6 -> zarsiz), sag tik geri alir. */
+.pa-board-dice .pa-die-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+.pa-board-dice .die-face {
+  animation: none; /* dizilim kurarken tumble/gecikme istemiyoruz */
+}
+.pa-board-dice .pa-die-btn:hover .die-face {
+  filter: brightness(1.12);
+}
+.pa-board-dice .pa-die-btn:active .die-face {
+  transform: scale(0.94);
+}
+.pa-board-dice .die-face.pa-die-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.24);
+  border: 2px dashed rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: calc(var(--dice-size) * 0.52);
+  font-weight: 600;
+  line-height: 1;
 }
 /* Lobide aktif turnuvalar */
 .lobby-tourns {
