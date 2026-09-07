@@ -39,7 +39,7 @@ import {
   openingStateFromMatch,
   serverMatchToLocal,
   shouldApplyServerState,
-  staleServerVersion,
+  serverSyncRoomChanged,
 } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
 import { randomBotPr } from './botPr'
@@ -1011,6 +1011,9 @@ export default function App() {
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
+  // Yukaridaki surum HANGI odaya ait? Surumler oda-yerelidir (her oda 0'dan baslar), bu yuzden
+  // "ref eskimis mi" karari SURUM SIRASINA degil ODA KIMLIGINE bakmali (bkz. serverSyncRoomChanged).
+  const appliedServerRoomRef = useRef<string | null>(null)
   // Poll (stale-closure) icin guncel tur/oynanan ref'leri: server_state'i mid-move'u ezmeden uygula.
   const srvTurnStartRef = useRef<GameState | null>(null)
   const srvPlayedRef = useRef<Step[]>([])
@@ -1028,6 +1031,7 @@ export default function App() {
   function resetRoomSync() {
     appliedVersionRef.current = -1
     appliedServerVersionRef.current = -1
+    appliedServerRoomRef.current = null
     srvTurnStartRef.current = null
     oppLoggedRef.current = ''
   }
@@ -1660,10 +1664,12 @@ export default function App() {
       setSelectedFrom(null)
       setRanked(null)
       setCurrentProbs(null)
-      serverMove(room.code, finalPlayed)
+      const code = room.code
+      serverMove(code, finalPlayed)
         .then((r) => {
           if (r?.state) {
             appliedServerVersionRef.current = r.version
+            appliedServerRoomRef.current = code // surum + ait oldugu oda BIRLIKTE yazilir
             applyServerBoard(r.state as GameState, r.match ?? null)
           }
         })
@@ -3291,12 +3297,20 @@ export default function App() {
         // BAGIMSIZ Faz 1: zar-otorite bayragini yakala (doRoll serverRoll'a gitsin). Legacy
         // PUT/move akisi degismez; yalniz zar kaynagi sunucu olur.
         diceAuthorityRef.current = rv.dice_authority ?? diceAuthorityRef.current
-        // EMNIYET SUBABI: sunucu surumu bizim UYGULADIGIMIZIN GERISINDEyse ref eski odadan
-        // kalmistir (her yeni oda server_version 0/1'den baslar). Sifirlanmazsa "surum ilerledi
-        // mi" kontrolu KALICI olarak basarisiz olur ve poll otoriter durumu bir daha ASLA
-        // uygulamaz (acilisi kaybeden taraf "Acilis zari atiliyor"da takilir). resetRoomSync
-        // giris noktalarinda zaten sifirliyor; bu, kacan bir yol kalirsa kendini onarir.
-        if (staleServerVersion(rv, appliedServerVersionRef.current)) appliedServerVersionRef.current = -1
+        // EMNIYET SUBABI: uygulanan surum BASKA ODAYA aitse sifirla (her yeni oda
+        // server_version 0/1'den baslar; sifirlanmazsa "surum ilerledi mi" kontrolu KALICI
+        // olarak basarisiz olur ve poll otoriter durumu bir daha ASLA uygulamaz -> acilisi
+        // kaybeden taraf "Acilis zari atiliyor"da takilir). resetRoomSync giris noktalarinda
+        // zaten sifirliyor; bu, kacan bir yol kalirsa kendini onarir.
+        //
+        // DIKKAT: bu karar SURUM SIRASINA BAKARAK verilemez. Ayni odada surumun geride gelmesi
+        // "eski oda" degil, UCUSTA KALMIS ESKI BIR POLL YANITI demektir; onu eskimis sayip ref'i
+        // sifirlamak eski durumu tahtaya uygulatiyor ve oyuncunun ONAYLADIGI HAMLE GERI ALINIYOR
+        // (sonra sunucu "Sira sende degil"/"Once zar at" der). Bkz. serverSyncRoomChanged.
+        if (serverSyncRoomChanged(appliedServerRoomRef.current, room.code)) {
+          appliedServerVersionRef.current = -1
+          appliedServerRoomRef.current = room.code
+        }
         // AÇILIŞ KALKANI: hâlâ "Açılış zarı atılıyor…" ekranındayız ama sunucuda oyun ZATEN
         // açılmışsa surum muhasebesine BAKMADAN uygula. Acilisi ilk tetikleyemeyen taraf
         // (reused/409) tek bir kacirilmis apply'da sonsuza kadar bu ekranda kaliyordu.
@@ -3323,6 +3337,7 @@ export default function App() {
           try {
             applyServerBoard(rv.server_state as GameState, rv.server_match) // tahta + skor + kup + Crawford
             appliedServerVersionRef.current = rv.server_version ?? 0
+            appliedServerRoomRef.current = room.code // surum + ait oldugu oda BIRLIKTE yazilir
           } catch {
             appliedServerVersionRef.current = -1
           }

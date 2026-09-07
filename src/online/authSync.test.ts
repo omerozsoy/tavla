@@ -9,7 +9,7 @@ import {
   rollResponseAction,
   serverMatchToLocal,
   shouldApplyServerState,
-  staleServerVersion,
+  serverSyncRoomChanged,
   type SyncLocal,
 } from './authSync'
 
@@ -113,10 +113,13 @@ class SimServer {
   done = false
   winner: Player | null = null
   turns = 0 // bu oyunda tamamlanan tur (backend server_match.turns) -> istemcinin küp hakkı
-  constructor(starter: Player, target = 1) {
+  code: string // oda kodu: server_version ODA-YERELDIR, "ref eskimis mi" karari buna bakar
+  constructor(starter: Player, target = 1, code = `R${++SimServer.seq}`) {
     this.starter = starter
     this.target = target
+    this.code = code
   }
+  private static seq = 0
 
   // Kazanan hamle: sıra sahibi oyunu (ve target=1 maçı) bitirir. Sunucu skoru+winner yazar.
   winningMove(color: Player): { ok: boolean } {
@@ -200,6 +203,7 @@ class SimClient {
   dice: number[] = []
   played = 0
   appliedServerVersion = -1
+  appliedServerRoom: string | null = null // App.tsx appliedServerRoomRef: surumun AIT OLDUGU oda
   // Küp + skor yerel görünümü (SUNUCUDAN serverMatchToLocal ile senkron; forge yok).
   cubeValue = 1
   cubeOwner: Player | null = null
@@ -226,6 +230,7 @@ class SimClient {
     this.played = 0
     this.opening = 'roll'
     this.appliedServerVersion = -1 // resetRoomSync: BU SATIR eksikti -> canli bug
+    this.appliedServerRoom = null
   }
 
   // resetRoomSync'in YAPILMADIGI (hatali) oda girisi — regresyon testinin kontrol grubu.
@@ -295,6 +300,7 @@ class SimClient {
     if (res.ok) {
       const v = this.server.view()
       this.appliedServerVersion = v.server_version
+      this.appliedServerRoom = this.server.code // surum + ait oldugu oda BIRLIKTE yazilir
       this.turn = v.server_state.turn
       this.dice = [...v.server_state.dice]
       this.played = 0
@@ -310,6 +316,7 @@ class SimClient {
     if (res.ok) {
       const v = this.server.view()
       this.appliedServerVersion = v.server_version
+      this.appliedServerRoom = this.server.code
       this.turn = v.server_state.turn
       this.dice = [...v.server_state.dice]
       this.played = 0
@@ -318,10 +325,20 @@ class SimClient {
   }
 
   // Poll: gerçek karar fonksiyonuyla senkronla (tahta + skor/küp).
-  poll(selfHeal = true) {
-    const rv = this.server.view()
-    // App.tsx poll: eski odadan kalan surum ref'ini kendi kendine onar.
-    if (selfHeal && staleServerVersion(rv, this.appliedServerVersion)) this.appliedServerVersion = -1
+  // `view`: UCUSTA kalmis (eski) bir yaniti modellemek icin onceden yakalanmis goruntu.
+  // `legacyValve`: emniyet subabinin ESKI (surum sirasina bakan) hali — hata tablosu icin.
+  poll(selfHeal = true, view?: ReturnType<SimServer['view']>, legacyValve = false) {
+    const rv = view ?? this.server.view()
+    // App.tsx poll: BASKA odadan kalan surum ref'ini kendi kendine onar (kimlik = oda kodu).
+    if (selfHeal && !legacyValve && serverSyncRoomChanged(this.appliedServerRoom, this.server.code)) {
+      this.appliedServerVersion = -1
+      this.appliedServerRoom = this.server.code
+    }
+    // ESKI (hatali) subap: "surum geride -> eski oda". Ayni odada ucusta kalmis poll yanitini
+    // da eskimis sayar ve ONAYLANAN HAMLEYI GERI ALDIRIR (bkz. regresyon testi).
+    if (selfHeal && legacyValve && (rv.server_version ?? 0) < this.appliedServerVersion) {
+      this.appliedServerVersion = -1
+    }
     // App.tsx poll: "Acilis zari atiliyor..." ekraninda takildiysak (sunucuda oyun ZATEN acik)
     // surum muhasebesine bakmadan uygula -> kalici takilma en fazla bir poll surer.
     const stuckOpening = selfHeal && openingNeedsResync(this.opening === 'roll', rv)
@@ -335,6 +352,7 @@ class SimClient {
       )
     ) {
       this.appliedServerVersion = rv.server_version
+      this.appliedServerRoom = this.server.code
       this.turn = rv.server_state.turn
       this.dice = [...rv.server_state.dice]
       this.played = 0
@@ -348,7 +366,7 @@ describe('2-istemci authoritative simülasyonu', () => {
   // CANLI BUG: açılışı ilk tetikleyemeyen taraf (reused/409 -> poll'a bırakır) tek bir kaçırılmış
   // apply'dan sonra "Açılış zarı atılıyor…" ekranında SONSUZA KADAR kalıyordu; rakibi normal
   // oynuyor, saat de akıyordu. Sürüm "uygulandı" yazılıp apply'in düşmesi (istisna/yarış) bu
-  // duruma yol açar ve staleServerVersion onu YAKALAMAZ (sürüm geride değil, EŞİT).
+  // duruma yol açar ve oda-kimligi kontrolu onu YAKALAMAZ (oda AYNI).
   it('KALICI TAKILMA: sürüm uygulandı sanılsa bile açılış kalkanı istemciyi kurtarır', () => {
     const server = new SimServer('white')
     const black = new SimClient('black', server)
@@ -574,31 +592,22 @@ describe('otoriter maçta küp hakkı (turnsPlayed sunucudan)', () => {
   })
 })
 
-// ---- staleServerVersion: eski odadan kalan surum ref'i ----
-describe('staleServerVersion (oda degisince surum ref eskiyor)', () => {
-  const rv = (v: number) => ({ authoritative: true, server_state: { turn: 'white' as Player, dice: [] }, server_version: v })
-
-  it('sunucu surumu uygulanandan GERIDEyse eskidir (yeni oda 0dan baslar)', () => {
-    expect(staleServerVersion(rv(1), 40)).toBe(true)
-    expect(staleServerVersion(rv(0), 12)).toBe(true)
+// ---- serverSyncRoomChanged: BASKA odadan kalan surum ref'i ----
+describe('serverSyncRoomChanged (surum ref hangi odaya ait)', () => {
+  it('oda degistiyse ref eskidir (yeni oda server_version 0dan baslar)', () => {
+    expect(serverSyncRoomChanged('ABC', 'XYZ')).toBe(true)
+    expect(serverSyncRoomChanged(null, 'XYZ')).toBe(true) // henuz hic uygulanmadi
   })
-  it('esit/ileri surum eski DEGIL', () => {
-    expect(staleServerVersion(rv(40), 40)).toBe(false)
-    expect(staleServerVersion(rv(41), 40)).toBe(false)
-    expect(staleServerVersion(rv(3), -1)).toBe(false)
+  it('AYNI odada ref eski DEGIL — surum geride gelse bile', () => {
+    // KRITIK: ayni odada geride gelen surum "eski oda" degil, UCUSTA KALMIS bir poll yanitidir.
+    // Eskisi buna bakip ref'i sifirliyor ve onaylanan hamleyi geri aldiriyordu.
+    expect(serverSyncRoomChanged('ABC', 'ABC')).toBe(false)
   })
-  it('authoritative degilse / server_state yoksa karar verme', () => {
-    expect(staleServerVersion({ authoritative: false, server_version: 1 }, 40)).toBe(false)
-    expect(staleServerVersion({ authoritative: true, server_version: 1 }, 40)).toBe(false)
+  it('oda yoksa karar verme', () => {
+    expect(serverSyncRoomChanged('ABC', null)).toBe(false)
   })
 })
 
-// ---- REGRESYON: ikinci maca girince acilis ekraninda takilma ----
-// CANLI BUG: iki kisi maca girdi; birine zar geldi oynadi, RAKIBI "Acilis zari atiliyor..."
-// ekraninda kalici olarak takildi. Sebep: appliedServerVersionRef oda girislerinde
-// SIFIRLANMIYORDU; yeni odanin server_version'i 0'dan basladigi icin poll "surum ilerlemedi"
-// deyip otoriter durumu HIC uygulamiyordu -> acilis yarisini kaybeden taraf (reused/409)
-// overlay'de kaliyordu.
 describe('REGRESYON: ikinci odada acilis overlay kilidi', () => {
   // Ilk maci oynayip surum ref'ini yukselten iki istemci hazirla.
   const playFirstMatch = () => {
@@ -656,9 +665,82 @@ describe('REGRESYON: ikinci odada acilis overlay kilidi', () => {
     black.enterRoomWithoutReset(s2)
     black.triggerOpening() // siyah acilisi yapar
     white.triggerOpening() // beyaz reused/409 -> poll'a kalir
-    white.poll() // staleServerVersion -> ref sifirlanir -> uygulanir
+    white.poll() // serverSyncRoomChanged -> ref sifirlanir -> uygulanir
     black.poll()
     expect(white.opening).toBe(null)
     expect(black.opening).toBe(null)
+  })
+})
+
+// ---- REGRESYON: onaylanan hamlenin GERI ALINMASI (ucusta kalmis poll yaniti) ----
+// CANLI BUG (kullanici bildirimi): "gelen zari oynadim, Onayla'ya bastigimda hamlemi geri aldi;
+// tekrar oynayip onaylayinca 'Once zar at' / 'Sira sende degil' dedi."
+//
+// Zincir: poll GET yola cikar (sunucu surumu N) -> oyuncu onaylar -> serverMove N+1 doner ve
+// uygulanir (tur rakibe gecer) -> ESKI GET yaniti simdi gelir (N). Emniyet subabi surum
+// SIRASINA baktigi icin (N < N+1) bunu "eski oda" sanip appliedServerVersion'i -1'e ceker;
+// artik "surum ilerledi" kontrolu gecer ve N'lik ESKI durum tahtaya UYGULANIR -> hamle geri
+// alinir, tur yeniden bende gorunur. Ikinci onayda sunucu N+1'de oldugu icin 409 doner.
+describe('REGRESYON: ucusta kalmis eski poll yaniti onaylanan hamleyi geri almaz', () => {
+  // Beyaz oynayacak duruma gelmis iki istemci + sunucu.
+  const ready = () => {
+    const server = new SimServer('white', 5)
+    const white = new SimClient('white', server)
+    const black = new SimClient('black', server)
+    white.triggerOpening()
+    black.triggerOpening()
+    white.poll()
+    black.poll()
+    return { server, white, black }
+  }
+
+  it('HATA TABLOSU: eski subap (surum sirasi) -> hamle geri alinir, sunucu 409 verir', () => {
+    const { server, white } = ready()
+    const inFlight = server.view() // poll GET yola cikti: surum N, sira beyazda, zar var
+    white.moveIfMyTurn() // oyuncu ONAYLADI -> N+1, sira siyaha gecti
+    expect(white.turn).toBe('black')
+
+    white.poll(true, inFlight, true) // ...ve ESKI yanit simdi geldi (eski subapla)
+
+    expect(white.turn).toBe('white') // hamle GERI ALINDI (yasanan bug)
+    expect(white.dice.length).toBe(2) // zar yeniden ekranda -> oyuncu tekrar oynar
+    // Tekrar onaylayinca sunucu artik siyahin turunda -> reddeder ("Sira sende degil.")
+    expect(server.move('white').ok).toBe(false)
+  })
+
+  it('DUZELTME: oda-kimligi subabi -> eski yanit yok sayilir, hamle durur', () => {
+    const { server, white } = ready()
+    const inFlight = server.view()
+    white.moveIfMyTurn()
+    const vAfterMove = white.appliedServerVersion
+
+    white.poll(true, inFlight) // ayni eski yanit, yeni subapla
+
+    expect(white.turn).toBe('black') // hamle YERINDE
+    expect(white.dice).toEqual([]) // zar tekrar gelmedi
+    expect(white.appliedServerVersion).toBe(vAfterMove) // surum geri sarmadi
+    expect(white.appliedServerRoom).toBe(server.code)
+  })
+
+  it('DUZELTME oda degisimini BOZMAZ: yeni odada ref yine sifirlanir', () => {
+    const { white } = ready()
+    const s2 = new SimServer('black', 5) // YENI oda (server_version 0dan)
+    white.enterRoomWithoutReset(s2) // resetRoomSync kacti
+    s2.roll('black') // rakip acilisi yapti -> sunucuda oyun acik
+    white.poll() // oda kimligi degisti -> ref sifirlanir -> uygulanir
+    expect(white.opening).toBe(null)
+    expect(white.appliedServerRoom).toBe(s2.code)
+  })
+
+  // Ucusta kalmis yanit KENDI turumda gelirse mid-move korumasi zaten bloklar; hamleyi
+  // onaylamadan once gelen eski yanit da tahtayi bozmamali.
+  it('onaylamadan once gelen eski yanit da mid-move korumasini asamaz', () => {
+    const { server, white } = ready()
+    const inFlight = server.view()
+    white.played = 1 // taslari oynadim, henuz Onayla'ya basmadim
+    server.move('black') // (alakasiz bir sunucu ilerlemesi olsa bile)
+    white.poll(true, inFlight)
+    expect(white.turn).toBe('white')
+    expect(white.played).toBe(1) // oynadiklarim silinmedi
   })
 })
