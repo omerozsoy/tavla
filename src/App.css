@@ -14585,6 +14585,44 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 
+/* ---- Konfeti patlamasi (odul hazir olunca + tiklayinca) ----
+   src/ui/confetti.ts body'ye .confetti-burst ekler; parcaciklar --dx/--dy/--rot
+   custom prop'lariyla disari savrulur, yer cekimiyle asagi duser ve solar. */
+.confetti-burst {
+  position: fixed;
+  z-index: 2000;
+  pointer-events: none;
+}
+.confetti-burst > i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--sz, 8px);
+  height: var(--sz, 8px);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: confetti-fly 1.15s cubic-bezier(0.2, 0.65, 0.3, 1) forwards;
+  animation-delay: var(--delay, 0ms);
+}
+@keyframes confetti-fly {
+  0% {
+    transform: translate(0, 0) rotate(0);
+    opacity: 1;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), calc(var(--dy) + 150px)) rotate(var(--rot));
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .confetti-burst {
+    display: none;
+  }
+}
+
 /* ---- Bildirim cani ---- */
 .notif {
   position: relative;
