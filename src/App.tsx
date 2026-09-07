@@ -227,6 +227,10 @@ function freshBoard(turn: Player): GameState {
   return s
 }
 
+// Taze (oyun basi) tahtanin imzasi: sonraki oyunun ZATEN kurulmus olup olmadigini anlamak icin.
+// Biten bir oyunun tahtasi (15 tas disarida) bu imzayi asla tutturamaz -> guvenli ayirt edici.
+const START_KEY = boardKey(initialState())
+
 // Basarim sinyali: bir pozisyonda oyuncunun kurdugu yapiyi tespit et.
 //  prime6  = 6 ardisik nokta, her birinde >=2 tas ("Kapici")
 //  closeout= tum ev bolgesi (6 nokta) kapali VE rakip barda tas tutuyor ("Cikabilirsen Cik")
@@ -4436,11 +4440,20 @@ export default function App() {
   }
 
   function nextGame() {
-    const m2 = setupNextGame(match)
-    const s = opponent(starter)
+    // ONLINE'da sonraki oyunu KARSI TARAF (veya otoriter sunucu) zaten kurmus olabilir: oyun
+    // bitince rakip "Sonraki Oyun"a once basar, maci ilerletip taze tahtayi bize gonderir
+    // (applyOnlineState/applyServerBoard match'i KOMPLE degistirir). Bu istemcide sonuc kutusu
+    // hala acik oldugundan kullanici da butona basar ve setupNextGame IKINCI kez calisirdi:
+    // isCrawford=true olan maci "Crawford OYNANDI" (crawfordDone=true, isCrawford=false) diye
+    // ilerletiyordu -> rakip sari CRAWFORD rozetini gorurken bu ekranda rozet YOKTU (ve kup
+    // Crawford oyununda acik kaliyordu). Tahta taze baslangic pozisyonundaysa mac ZATEN
+    // ilerlemistir (biten oyunun tahtasi asla baslangic pozisyonu olamaz) -> ilerletme.
+    const advanced = online && boardKey(turnStart) === START_KEY
+    const m2 = advanced ? match : setupNextGame(match)
+    const s = advanced ? starter : opponent(starter)
     setStarter(s)
     setMatch(m2)
-    setTurnStart(freshBoard(s))
+    if (!advanced) setTurnStart(freshBoard(s))
     resetGameUi(false) // mac-basi rezerv saati: bankayi koru, sadece hamle gecikmesini sifirla
     setMessage(m2.isCrawford ? t('msg.crawfordGame') : t('msg.nextGame'))
   }
