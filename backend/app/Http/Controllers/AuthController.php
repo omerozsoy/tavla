@@ -1067,7 +1067,9 @@ class AuthController extends Controller
         if ($hasRoom) {
             $cols[] = 'room_code';
         }
-        $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(30)->select($cols);
+        // Limit 30 -> 500: "bazi oynadigim maclar cikmiyor" sikayeti. 30 cok dusuktu; aktif
+        // oyuncuda eski maclar hic gelmiyordu. Log kolonu SECILMEDIGI icin 500 satir hafif.
+        $q = \App\Models\MatchResult::where('user_id', $me->id)->orderByDesc('id')->limit(500)->select($cols);
         if ($hasLog) {
             // has_log yalniz GERCEK karar iceren log icin true. Bos sarmalayici
             // ({"hc":"white","log":[]} ~24 karakter; online/PvP mac) yanlis pozitif vermesin.
