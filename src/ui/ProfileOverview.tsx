@@ -146,6 +146,14 @@ export default function ProfileOverview({
                     <Icon name="package" size={16} /> {t('menu.myOrders')}
                   </Button>
                 )}
+                {/* Adreslerim: sekme yerine kimlik kartı aksiyon satırında (AddressBook'u açar) */}
+                <Button
+                  variant="ghost"
+                  className={`prof-ov-addr ${tab === 'addresses' ? 'is-active' : ''}`}
+                  onClick={() => setTab('addresses')}
+                >
+                  <Icon name="pin" size={16} /> {t('prof.addresses')}
+                </Button>
                 {onLogout && (
                   <Button variant="ghost" className="prof-ov-logout" onClick={onLogout}>
                     <Icon name="logout" size={16} /> {t('auth.logout')}
@@ -207,8 +215,9 @@ export default function ProfileOverview({
           </button>
         </div>
 
-        {/* --- Sekmeler: İstatistikler · Avatarlar · Tahta Tasarımı --- */}
-        <div className="prof-ov-tabs" role="tablist">
+        {/* --- Sekmeler: İstatistikler · Avatarlar · Tahta Tasarımı · Başarılar ---
+           (Adreslerim aktifken şerit gizlenir, yerine alt başlık gösterilir) --- */}
+        <div className="prof-ov-tabs" role="tablist" hidden={tab === 'addresses'}>
           <button
             type="button"
             role="tab"
@@ -245,16 +254,20 @@ export default function ProfileOverview({
           >
             {t('ach.title')}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'addresses'}
-            className={tab === 'addresses' ? 'active' : ''}
-            onClick={() => setTab('addresses')}
-          >
-            {t('prof.addresses')}
-          </button>
+          {/* Adreslerim sekmesi kaldırıldı -> kimlik kartı aksiyon satırına taşındı */}
         </div>
+
+        {/* Adreslerim aktifken: sekme şeridi yerine geri dönüşlü başlık göster */}
+        {tab === 'addresses' && (
+          <div className="prof-ov-subhead">
+            <button type="button" className="prof-ov-subback" onClick={() => setTab('stats')}>
+              <Icon name="arrow-right" size={15} /> {t('stats.title')}
+            </button>
+            <span className="prof-ov-subtitle">
+              <Icon name="pin" size={16} /> {t('prof.addresses')}
+            </span>
+          </div>
+        )}
 
         {tab === 'frames' && (
           <section className="prof-ov-col">

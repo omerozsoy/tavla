@@ -12584,15 +12584,20 @@ button.acct-row:hover:not(:disabled) {
   gap: 10px;
 }
 .stats-box {
-  background: color-mix(in srgb, var(--text) 5%, transparent);
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 12px 6px;
+  padding: 15px 8px;
   text-align: center;
+  transition: border-color 0.15s ease;
+}
+.stats-box:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
 }
 .stats-val {
-  font-size: 1.4rem;
+  font-size: 1.7rem;
   font-weight: 400;
+  line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 .stats-val.good {
@@ -16566,6 +16571,51 @@ button.acct-row:hover:not(:disabled) {
     padding: 9px 11px;
     font-size: 0.88rem;
   }
+}
+/* Adreslerim kimlik kartı aksiyon butonu: aktifken aksan renk */
+.prof-ov-addr.is-active {
+  color: var(--accent);
+}
+/* Adreslerim aktif: sekme şeridi yerine geri-dönüşlü alt başlık */
+.prof-ov-subhead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.prof-ov-subback {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--radius-md);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.prof-ov-subback:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.prof-ov-subback > svg {
+  transform: rotate(180deg);
+}
+.prof-ov-subtitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--tv-font-display);
+  font-size: 1.05rem;
+  color: var(--text);
+}
+.prof-ov-subtitle > svg {
+  color: var(--accent);
 }
 .prof-ov-stats-tab {
   margin-top: 2px;
