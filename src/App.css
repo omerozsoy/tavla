@@ -6861,7 +6861,7 @@ html.fs-active .account-bar {
   width: 58px;
   height: 82px;
   border: none;
-  border-radius: var(--radius-lg);
+  border-radius: 12px; /* site stili: hafif yuvarlak kose (token scope'tan bagimsiz literal) */
   background: linear-gradient(135deg, var(--tv-brick-light), var(--tv-brick));
   color: var(--tv-cream);
   cursor: pointer;

@@ -9,7 +9,7 @@
   font-weight: 800;
   min-width: 112px;
   padding: 18px 12px;
-  border-radius: 14px;
+  border-radius: 12px; /* site stili: hafif yuvarlak kose */
 }
 
 /* Amber grup -> board temasina uyar: kup ile ayni renk/kontrast (--cube-bg/--cube-text).
@@ -19,7 +19,7 @@
   flex-direction: column;
   gap: 6px;
   padding: 10px;
-  border-radius: 16px;
+  border-radius: 14px; /* site stili: hafif yuvarlak kose (dis kutu skor kutulariyla uyumlu) */
   min-width: 112px;
   background: var(--cube-bg, #9c7c34);
   color: var(--cube-text, #fff);
