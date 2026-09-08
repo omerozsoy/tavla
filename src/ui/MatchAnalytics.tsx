@@ -82,7 +82,10 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [error, setError] = useState(false)
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<
-    { log: MoveLogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string } | null
+    {
+      log: MoveLogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
+      matchResult?: { winner: Player; score: { white: number; black: number } }
+    } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
   // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
@@ -109,7 +112,17 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const opp = m.opponent_name || undefined
       const whiteName = hc === 'white' ? me : opp
       const blackName = hc === 'white' ? opp : me
-      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName })
+      // OTORITER MAC SONUCU (son care sonuc satiri): kazanan renk = ben kazandiysam hc, yoksa rakip.
+      // Final skor renk bazina cevrilir (score_self = benim, score_opp = rakip).
+      let matchResult: { winner: Player; score: { white: number; black: number } } | undefined
+      if (typeof m.score_self === 'number' && typeof m.score_opp === 'number') {
+        const winner: Player = m.won ? hc : hc === 'white' ? 'black' : 'white'
+        const score = hc === 'white'
+          ? { white: m.score_self, black: m.score_opp }
+          : { white: m.score_opp, black: m.score_self }
+        matchResult = { winner, score }
+      }
+      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult })
     } catch {
       /* yoksay */
     } finally {
@@ -397,6 +410,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           matchLength={report.matchLength}
           whiteName={report.whiteName}
           blackName={report.blackName}
+          matchResult={report.matchResult}
           onClose={() => setReport(null)}
         />
       )}

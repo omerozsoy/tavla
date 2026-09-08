@@ -41,6 +41,9 @@ interface Props {
   // OTORITER oyun sonuclari (kazanan + gercek puan), oyun sirasiyla. XG disa aktariminda logdaki
   // zorunlu bitiren-hamle eksigi yuzunden tahta-tekrari sonuc bulamazsa buradan doldurulur.
   gameResults?: { winner: Player; points: number }[]
+  // OTORITER MAC SONUCU (kazanan + final skor). Son oyunun sonucu logdan cikmazsa (online rakibin
+  // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
+  matchResult?: { winner: Player; score: { white: number; black: number } }
   onClose: () => void
 }
 
@@ -67,6 +70,7 @@ export default function MatchReport({
   whiteName = 'White',
   blackName = 'Black',
   gameResults,
+  matchResult,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -157,6 +161,7 @@ export default function MatchReport({
       eventDate,
       eventTime,
       results: gameResults, // logda bitiren zorunlu hamle yoksa sonuc satiri yine de yazilsin
+      matchResult, // son care: tamamlanan mac son oyunu final skordan sonuc satiri alsin
     })
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)

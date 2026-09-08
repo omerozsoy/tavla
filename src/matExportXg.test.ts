@@ -277,6 +277,28 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toContain('5 point match')
   })
 
+  it('SON CARE: tahta+results YOKken tamamlanan mac matchResult ile final skordan sonuc alir', () => {
+    // Online rakibin kazanan hamlesi loga girmemis (terminal yok) + results yok. matchResult
+    // (otoriter final skor) verilince SON oyun puani = kazananin skoru - birikeni -> sonuc satiri.
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    const mat = buildMatXg([move(nonTerminal, 'white')], {
+      matchLength: 3, whiteName: 'A', blackName: 'B',
+      matchResult: { winner: 'black', score: { white: 0, black: 4 } }, // siyah 4 (kup) ile bitirdi
+    })
+    // kazanan SAG sutun (siyah): "  N)  Losses 4 point   Wins 4 point and the match"
+    expect(mat).toMatch(/Losses 4 point\s+Wins 4 point and the match/)
+  })
+
+  it('matchResult yalnizca SON oyunda ve sadece gerekince (tahta sonuc verirse kullanilmaz)', () => {
+    // Tahta zaten terminal -> matchResult'a DUSMEZ (gercek tahta sonucu 1 puan kalir).
+    const mat = buildMatXg([move(whiteWin(1), 'white')], {
+      matchLength: 5, whiteName: 'A', blackName: 'B',
+      matchResult: { winner: 'black', score: { white: 0, black: 99 } },
+    })
+    expect(mat).toMatch(/ {6}Wins 1 point/) // tahta otoritesi korunur
+    expect(mat).not.toContain('99')
+  })
+
   it('REGRESYON: logdaki son hamle terminal DEGILse (zorunlu bitiren-hamle atlanmis) results olmadan sonuc satiri YOK', () => {
     // Bear-off ortasi, oyun bitmemis gorunur (off.white=13<15) -> tahta-tekrari null.
     const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })

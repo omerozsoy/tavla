@@ -3258,13 +3258,17 @@ export default function App() {
     // Otoriter gecis rakibin hamlesini tek anlamli belirler: rakibin tur-basi durumu
     // (zarlariyla) + yeni tahta -> ayni tahtaya goturen legal/maksimal terminal.
     const prev = srvTurnStartRef.current
-    if (online && prev && prev.turn !== myColor && (prev.dice?.length ?? 0) > 0 && gs.turn !== prev.turn) {
+    // Rakip KAZANAN hamlesinde sunucu sirayi DEVRETMEZ (oyun bitti) -> gs.turn === prev.turn olur.
+    // O yuzden oyun-bitti (sm.done) durumunda tur-devri sartini ARAMA; aksi halde rakibin son
+    // (kazanan) toplamasi loga girmez ve .mat sonuc satiri OLMADAN kesilir (tavlatv-mac(4) bug'i).
+    const ended = !!sm?.done
+    if (online && prev && prev.turn !== myColor && (prev.dice?.length ?? 0) > 0 && (gs.turn !== prev.turn || ended)) {
       const sig = `${boardKey(prev)}|${prev.dice.join('')}|${boardKey(gs)}`
       if (sig !== oppLoggedRef.current) {
         // Dance (oynanamayan tur) bos dizi olarak doner -> o da yazilir; aksi halde
         // .mat'te tur atlanir ve sutun almasigi bozulur. Cozulemezse null -> kayit YOK
         // (uydurma satir yazmaktansa eksik birakmak yeglenir).
-        const steps = reconstructOppMove(prev, gs)
+        const steps = reconstructOppMove(prev, gs, ended)
         if (steps) {
           oppLoggedRef.current = sig
           const oc = prev.turn
@@ -6898,6 +6902,10 @@ export default function App() {
           whiteName={whiteName}
           blackName={blackName}
           gameResults={gameResultsRef.current}
+          matchResult={(() => {
+            const w = matchWinner(match)
+            return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
+          })()}
           onClose={() => setResultView(null)}
         />
       )}
