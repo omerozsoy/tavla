@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -31,23 +31,31 @@ const fmtTL = (kurus: number) =>
 export function ProductsInner({
   onAddToCart,
   onGoCart,
+  products: productsProp,
+  category,
+  onCategories,
 }: {
   onAddToCart: (line: CartAddLine) => void
   onGoCart: () => void
+  products?: Product[] | null // dışarıdan verilirse fetch etme (Mağaza kategori sekmeleri)
+  category?: string // dış kategori filtresi -> iç kategori çipleri gizlenir
+  onCategories?: (cats: { slug: string; name: string }[]) => void
 }) {
   const { t } = useT()
   const toast = useToast()
 
-  const [products, setProducts] = useState<Product[] | null>(null)
+  const [fetched, setFetched] = useState<Product[] | null>(null)
+  const products = productsProp !== undefined ? productsProp : fetched
   const [error, setError] = useState(false)
   const [selected, setSelected] = useState<Product | null>(null)
   const [cat, setCat] = useState<string>('all')
 
   useEffect(() => {
+    if (productsProp !== undefined) return
     getProducts()
-      .then(setProducts)
+      .then(setFetched)
       .catch(() => setError(true))
-  }, [])
+  }, [productsProp])
 
   const cats = useMemo(() => {
     const seen: string[] = []
@@ -60,7 +68,18 @@ export function ProductsInner({
     return m
   }, [products])
   const catLabel = (c: string) => catNames[c] ?? c
-  const visible = useMemo(() => (products ?? []).filter((p) => cat === 'all' || p.category === cat), [products, cat])
+  const onCatsRef = useRef(onCategories)
+  useEffect(() => {
+    onCatsRef.current = onCategories
+  }, [onCategories])
+  useEffect(() => {
+    if (onCatsRef.current) onCatsRef.current(cats.map((c) => ({ slug: c, name: catNames[c] ?? c })))
+  }, [cats, catNames])
+  const activeCat = category ?? cat
+  const visible = useMemo(
+    () => (products ?? []).filter((p) => activeCat === 'all' || p.category === activeCat),
+    [products, activeCat],
+  )
 
   if (selected) {
     return <ProductDetail product={selected} onAddToCart={onAddToCart} onGoCart={onGoCart} onBack={() => setSelected(null)} toast={toast} />
@@ -68,7 +87,7 @@ export function ProductsInner({
 
   return (
     <section className="products-inner">
-      {cats.length > 1 && (
+      {!category && cats.length > 1 && (
         <div className="products-cats" role="tablist">
           <button type="button" className={`products-cat-chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>
             {t('products.all')}
