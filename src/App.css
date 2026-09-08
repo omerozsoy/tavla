@@ -16690,6 +16690,27 @@ button.acct-row:hover:not(:disabled) {
   .messages-split {
     margin-top: 8px;
   }
+  /* Sohbet listesi (gelen kutusu) mobil: daha buyuk dokunma hedefi + net satirlar */
+  .messages-thread {
+    padding: 11px 12px;
+    gap: 12px;
+    border-radius: 10px;
+  }
+  .messages-thread-name {
+    font-size: 0.98rem;
+  }
+  .messages-thread-last {
+    font-size: 0.86rem;
+  }
+  /* Okunmamis rozeti saatin uzerine binmesin: alt satirda saga otursun */
+  .messages-badge {
+    align-self: flex-end;
+  }
+  /* iOS: input font-size < 16px odaklaninca sayfayi zoomlar -> 16px yap (arama + yazma) */
+  .messages-search input,
+  .messages-compose input {
+    font-size: 16px;
+  }
 }
 .coin-store-title {
   display: flex;
