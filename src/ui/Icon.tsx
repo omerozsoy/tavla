@@ -94,6 +94,7 @@ import {
   YoutubeLogo,
   WhatsappLogo,
   EnvelopeSimple,
+  SmileySad,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -185,6 +186,7 @@ export type IconName =
   | 'instagram'
   | 'youtube'
   | 'mail'
+  | 'smiley-sad'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -276,6 +278,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   youtube: YoutubeLogo,
   whatsapp: WhatsappLogo,
   mail: EnvelopeSimple,
+  'smiley-sad': SmileySad,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
