@@ -16679,6 +16679,17 @@ button.acct-row:hover:not(:disabled) {
   .messages-back {
     display: inline-flex;
   }
+  /* Dar ekranda balonlar daha genis + log kenar bosluklari kis (mesaj alani ferahlasin) */
+  .messages-log {
+    padding: 12px 12px 10px;
+  }
+  .msg-bubble {
+    max-width: 82%;
+  }
+  /* Sohbet karti tam genislik kullansin (mobil modal iç boşluğu kırp) */
+  .messages-split {
+    margin-top: 8px;
+  }
 }
 .coin-store-title {
   display: flex;
