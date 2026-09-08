@@ -14,6 +14,8 @@ import { Icon, type IconName } from './Icon'
 import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
+import { Countdown } from './Countdown'
+import { TavlaTvMark } from './TavlaTvLogo'
 import { Button } from '@/components/ui/button'
 import {
   ApiError,
@@ -157,6 +159,18 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
         toast.error(t('lw.error'))
         return
       }
+      // PARAYI ÖNCE AL: ödemeli çevirmede coin ücreti sunucuda spin anında zaten düşüldü;
+      // gösterilen bakiyeden de ÜCRETİ çark DÖNMEDEN ÖNCE hemen düş ki kullanıcı ödemeyi
+      // çevrilmeden görsün. Kazanç (ör. COIN ödülü) ve otoriter bakiye animasyon bitince
+      // uygulanır — böylece kazanç, sonuç açılmadan bakiyeyi "yukarı zıplatmaz".
+      if (res.paid && res.spinCost && res.spinCost > 0) {
+        const cost = res.spinCost
+        setCoins((c) => {
+          const next = Math.max(0, c - cost)
+          onCoinsChange?.(next)
+          return next
+        })
+      }
       // Kazanan dilimin MERKEZİ tam üstteki göstergenin altına gelsin.
       // Dilim i merkezi açısı = -90 + (i+0.5)*step (SVG'de -90 = üst). Göstergeyi (üst)
       // bu merkeze getirmek için çarkı -(i+0.5)*step kadar döndür + tam turlar.
@@ -173,6 +187,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
         setWinIdx(idx)
         setRemaining(res.remainingSpins)
         setNextFree(res.nextFreeSpinAt)
+        // Otoriter bakiye (varsa kazanç dahil) burada uygulanır.
         if (typeof res.coins === 'number') {
           setCoins(res.coins)
           onCoinsChange?.(res.coins)
@@ -209,10 +224,14 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
           <Icon name="x" size={16} />
         </Button>
 
-        <div className="lw-head">
-          <Icon name="gift" size={20} weight="fill" />
-          <span>{t('lw.title')}</span>
-        </div>
+        <header className="lw-head">
+          <div className="lw-head-text">
+            <h2>
+              <Icon name="gift" size={20} weight="fill" /> {t('lw.title')}
+            </h2>
+            <p className="lw-sub">{t('lw.freeInfo')}</p>
+          </div>
+        </header>
 
         {loading ? (
           <p className="lw-note">{t('common.loading')}</p>
@@ -311,9 +330,14 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                 <circle cx={C} cy={C} r={R} fill="url(#lw-depth)" pointerEvents="none" />
                 <circle cx={C} cy={C} r={R} fill="url(#lw-sheen)" pointerEvents="none" />
 
-                {/* Merkez göbek (hub) — ÇEVİR butonu bunun üstünde */}
+                {/* Merkez göbek (hub): altın rim + TavlaTV marka logosu (dönmez, sabit). */}
                 <circle cx={C} cy={C} r={46} fill="url(#lw-rim)" />
-                <circle cx={C} cy={C} r={41} fill="#fff" />
+                <circle cx={C} cy={C} r={42} fill="#1C1A17" />
+                <foreignObject x={C - 40} y={C - 40} width={80} height={80} pointerEvents="none">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                    <TavlaTvMark size={70} background="transparent" />
+                  </div>
+                </foreignObject>
               </svg>
 
               {/* Üst sabit gösterge (pointer) */}
@@ -323,20 +347,6 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                   <circle cx="17" cy="14" r="6" fill="#2a1a0e" />
                 </svg>
               </div>
-
-              {/* Merkezdeki ÇEVİR butonu */}
-              <button className="lw-spin-btn" onClick={handleSpin} disabled={spinning || !canSpin}>
-                {spinning ? (
-                  <Icon name="refresh" size={24} className="lw-spin-ic" />
-                ) : isPaidNext ? (
-                  <span className="lw-spin-cost">
-                    <span>{t('lw.spinFor', { n: spinCost })}</span>
-                    <Icon name="coin" size={16} />
-                  </span>
-                ) : (
-                  <span>{t('lw.spin')}</span>
-                )}
-              </button>
 
               {result && (
                 <div className="lw-win" onClick={closeWin}>
@@ -366,15 +376,31 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
               )}
             </div>
 
+            {/* ÇEVİR butonu — çarkın ALTINDA (merkezde değil), standart site butonu. */}
+            <div className="lw-actions">
+              <Button className="lw-spin-btn" onClick={handleSpin} disabled={spinning || !canSpin}>
+                {spinning ? (
+                  <>
+                    <Icon name="refresh" size={18} className="lw-spin-ic" /> {t('lw.spin')}…
+                  </>
+                ) : isPaidNext ? (
+                  <>
+                    {t('lw.spinFor', { n: spinCost })} <Icon name="coin" size={16} />
+                  </>
+                ) : (
+                  <>{t('lw.spin')}</>
+                )}
+              </Button>
+            </div>
+
             <div className="lw-meta">
               <span>
                 {t('lw.remaining')}: <strong>{remaining}</strong>
               </span>
-              {remaining <= 0 && spinCost > 0 ? (
-                <span>{t('lw.paidHint', { n: spinCost })}</span>
-              ) : remaining <= 0 && nextFree ? (
-                <span>
-                  {t('lw.nextFree')}: <strong>{new Date(nextFree).toLocaleString()}</strong>
+              {remaining <= 0 && spinCost > 0 ? <span>{t('lw.paidHint', { n: spinCost })}</span> : null}
+              {remaining <= 0 && nextFree ? (
+                <span className="lw-next">
+                  {t('lw.nextFree')}: <Countdown target={nextFree} className="lw-cd" onExpire={load} />
                 </span>
               ) : null}
               <span className="lw-coins">
@@ -384,12 +410,9 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
 
             {!loggedIn ? (
               <p className="lw-note">{t('lw.loginRequired')}</p>
-            ) : (
-              <p className="lw-note">
-                {t('lw.freeInfo')}
-                {showProb ? ' · ' + t('lw.probShown') : ''}
-              </p>
-            )}
+            ) : showProb ? (
+              <p className="lw-note">{t('lw.probShown')}</p>
+            ) : null}
           </>
         )}
       </div>
