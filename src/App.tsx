@@ -5122,6 +5122,17 @@ export default function App() {
               </span>
             </span>
           )}
+          {/* Şans Çarkı: bonusun yanında, üst barda spinner-ball ikonuyla */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="[&_svg]:size-[24px]!"
+            onClick={() => goPage(() => setLuckyWheelOpen(true))}
+            title={t('lw.menu')}
+            aria-label={t('lw.menu')}
+          >
+            <Icon name="spinner-ball" size={24} />
+          </Button>
           {/* Mesajlar: bildirim zili gibi ust barda chat ikonu + okunmamis rozeti */}
           <Button
             variant="ghost"
