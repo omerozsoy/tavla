@@ -1024,6 +1024,10 @@ export default function App() {
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
   const seenNotifRef = useRef<Set<number>>(new Set()) // toast'landi mi (yeni bildirim tespiti)
   const notifPrimedRef = useRef(false) // ilk ping'te eski bildirimleri toast'lama
+  const luckyWheelOpenRef = useRef(false) // cark modali acikken bildirim toast'unu bastir (erken gelmesin)
+  useEffect(() => {
+    luckyWheelOpenRef.current = luckyWheelOpen
+  }, [luckyWheelOpen])
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
   const [rewardCoins, setRewardCoins] = useState(25) // odul miktari (plana+admin ayarina gore; presence'tan)
@@ -3591,7 +3595,9 @@ export default function App() {
             // Ilk ping'te (primed=false) eski okunmamislari toast'lama, sadece kaydet.
             const fresh = notifs.filter((n) => !seenNotifRef.current.has(n.id))
             notifs.forEach((n) => seenNotifRef.current.add(n.id))
-            if (notifPrimedRef.current && fresh.length > 0) {
+            // Çark modalı AÇIKKEN toast'lama: kazanç bildirimi çark dönerken erken
+            // gelmesin (sonuç zaten modalda gösteriliyor). Bildirim yine kaydedilir (rozet/kutu).
+            if (notifPrimedRef.current && fresh.length > 0 && !luckyWheelOpenRef.current) {
               notify.info(fresh[0].title) // notifs newest-first -> fresh[0] en yeni
             }
             notifPrimedRef.current = true
