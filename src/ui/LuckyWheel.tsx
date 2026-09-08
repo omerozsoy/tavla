@@ -18,9 +18,9 @@ import { Countdown } from './Countdown'
 import { TavlaTvMark } from './TavlaTvLogo'
 import { Button } from '@/components/ui/button'
 import AvatarFrame from './AvatarFrame'
-import { FRAME_BY_ID } from './avatarFrames'
+import { FRAME_BY_ID, framePrice } from './avatarFrames'
 import SetupBoard from './SetupBoard'
-import { ALL_THEMES } from '../boardThemes'
+import { ALL_THEMES, boardPrice } from '../boardThemes'
 import {
   ApiError,
   getLuckyWheel,
@@ -366,6 +366,9 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                     const boardTheme = isBoard && result.reference_id ? ALL_THEMES.find((x) => x.id === result.reference_id) : undefined
                     const rewardName = frameDef?.name ?? boardTheme?.name ?? result.name
                     const rarity = frameDef?.rarity ?? boardTheme?.rarity
+                    // Kozmetik ödülün coin karşılığı (mağaza fiyatı) — kullanıcı ne değerde
+                    // bir şey kazandığını görsün. Fiyat rarity-tabanlı (bkz boardPrice/framePrice).
+                    const worth = boardTheme ? boardPrice(boardTheme) : frameDef ? framePrice(frameDef) : undefined
                     return (
                       <div className="lw-win">
                         <div className="lw-win-inner">
@@ -403,6 +406,12 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             <span className={`lw-win-rarity rar-${rarity}`}>{t(`rarity.${rarity}`)}</span>
                           ) : result.description ? (
                             <div className="lw-win-sub">{result.description}</div>
+                          ) : null}
+                          {worth != null && worth > 0 ? (
+                            <div className="lw-win-worth">
+                              <span className="lw-win-worth-label">{t('lw.worth')}</span>
+                              <Coins amount={worth} size={16} />
+                            </div>
                           ) : null}
                           {!isNoPrize && <div className="lw-win-sub">{t('lw.rewardAdded')}</div>}
                           {result.type === 'FREE_SPIN' && remaining > 0 ? (

@@ -365,6 +365,17 @@
   font-size: 0.85rem;
   color: var(--muted);
 }
+/* Kozmetik ödülün coin karşılığı (mağaza değeri) */
+.lw-win-worth {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.lw-win-worth-label {
+  color: var(--muted);
+}
 
 @keyframes lw-fade {
   from {
