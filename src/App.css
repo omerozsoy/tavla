@@ -15631,47 +15631,135 @@ button.acct-row:hover:not(:disabled) {
 }
 
 .messages-card {
-  max-width: 820px;
+  max-width: 880px;
   width: 100%;
 }
+/* Tek gövde: kenarlıklı-yuvarlak kabuk, içeride dikey ayraç (iki ayrı kutu yerine) */
 .messages-split {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 14px;
-  height: min(60vh, 520px);
-  margin-top: 8px;
+  grid-template-columns: 324px 1fr;
+  height: min(64vh, 560px);
+  margin-top: 10px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--card-bg);
 }
 .messages-threads {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: 1px solid var(--line);
+  background: var(--card-bg);
+}
+/* Arama çubuğu (listenin üstünde sabit) */
+.messages-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--muted);
+}
+.messages-search > svg {
+  flex: none;
+}
+.messages-search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  color: var(--ink);
+  padding: 4px 0;
+}
+.messages-search input:focus {
+  outline: none;
+}
+.messages-search input::placeholder {
+  color: var(--muted);
+}
+.messages-search-clear {
+  flex: none;
+  display: inline-flex;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 999px;
+}
+.messages-search-clear:hover {
+  color: var(--ink);
+}
+.messages-thread-scroll {
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  border: 1px solid var(--line);
-  border-radius: 14px;
   padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 .messages-thread {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
-  padding: 8px 10px;
+  padding: 9px 11px;
   border: none;
   background: transparent;
-  border-radius: 10px;
+  border-radius: 12px;
   cursor: pointer;
   text-align: left;
   transition: background 0.12s;
 }
 .messages-thread:hover {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
+/* Aktif satır: yumuşak dolgu + solda ince aksan çubuğu */
 .messages-thread.active {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
+.messages-thread.active::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--accent);
 }
 .messages-thread-body {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.messages-thread-top {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.messages-thread-name {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.messages-thread-time {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
 }
 .messages-thread-last {
   display: block;
@@ -15681,16 +15769,36 @@ button.acct-row:hover:not(:disabled) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* Okunmamışı olan satırda önizleme koyulaşır (dikkat çeker, bold DEĞİL) */
+.messages-thread.has-unread .messages-thread-last {
+  color: var(--ink);
+}
+.messages-thread.has-unread .messages-thread-time {
+  color: var(--accent);
+}
+/* Bildirimler satırı: yuvarlak zil rozeti */
+.messages-notif-ava {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  color: var(--accent);
+}
 .messages-badge {
   flex: none;
+  align-self: center;
   min-width: 20px;
   height: 20px;
   padding: 0 6px;
   border-radius: 999px;
   background: var(--accent);
-  color: #fff;
+  color: var(--tv-white, #fff);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 20px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -15699,10 +15807,9 @@ button.acct-row:hover:not(:disabled) {
 .messages-thread-view {
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--line);
-  border-radius: 14px;
   overflow: hidden;
   min-width: 0;
+  background: var(--bg);
 }
 .messages-placeholder {
   margin: auto;
@@ -15711,14 +15818,29 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+}
+.messages-placeholder > svg {
+  color: color-mix(in srgb, var(--accent) 55%, var(--muted));
+  opacity: 0.7;
 }
 .messages-thread-head {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
+  padding: 11px 14px;
   border-bottom: 1px solid var(--line);
+  background: var(--card-bg);
+}
+.messages-notif-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.98rem;
+}
+.messages-notif-clear {
+  margin-left: auto;
 }
 .messages-back {
   display: none;
@@ -15732,12 +15854,16 @@ button.acct-row:hover:not(:disabled) {
 .messages-log {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 16px 14px;
+  padding: 18px 18px 14px;
   display: flex;
   flex-direction: column;
   gap: 7px;
-  /* WhatsApp benzeri sabit sohbet zemini (balonlar zemine gore ayrissin) */
   background: var(--bg);
+}
+/* Bildirimler görünümü mesaj kaydı içinde: iç liste kenarlıksız aksın */
+.notif-list-inline {
+  margin: 0;
+  padding: 0;
 }
 .messages-hint {
   margin: auto;
@@ -15746,16 +15872,15 @@ button.acct-row:hover:not(:disabled) {
 }
 .msg-bubble {
   position: relative;
-  max-width: 75%;
-  padding: 7px 11px 6px;
-  border-radius: 16px;
+  max-width: 74%;
+  padding: 8px 12px 7px;
+  border-radius: 18px;
   font-size: 0.92rem;
-  line-height: 1.38;
+  line-height: 1.4;
   word-break: break-word;
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  box-shadow: 0 1px 1.5px rgba(30, 20, 15, 0.14);
 }
 /* Ardisik ayni-taraf balonlarda ust bosluk kis (WhatsApp gruplama hissi) */
 .msg-bubble.mine + .msg-bubble.mine,
@@ -15772,6 +15897,7 @@ button.acct-row:hover:not(:disabled) {
   align-self: flex-start;
   background: var(--card-bg);
   color: var(--ink);
+  border: 1px solid var(--line);
   border-bottom-left-radius: 5px;
 }
 /* WhatsApp tarzi kuyruk: balonun alt-dis kosesinde kucuk ucgen (balonla ayni renk) */
@@ -15832,10 +15958,10 @@ button.acct-row:hover:not(:disabled) {
   gap: 7px;
   padding: 8px 12px;
   margin-top: 1px;
-  border-radius: 16px;
+  border-radius: 18px;
   border-bottom-left-radius: 5px;
   background: var(--card-bg);
-  box-shadow: 0 1px 1.5px rgba(30, 20, 15, 0.14);
+  border: 1px solid var(--line);
   color: var(--muted);
   font-size: 0.8rem;
   font-style: italic;
@@ -15873,13 +15999,16 @@ button.acct-row:hover:not(:disabled) {
 .messages-compose {
   position: relative; /* emoji paleti compose'a gore SAGA hizalanabilsin */
   display: flex;
+  align-items: center;
   gap: 8px;
-  padding: 10px;
+  padding: 10px 12px;
   border-top: 1px solid var(--line);
+  background: var(--card-bg);
 }
 .messages-compose input {
   flex: 1;
-  padding: 11px 14px;
+  min-width: 0;
+  padding: 11px 15px;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg);
@@ -15895,11 +16024,11 @@ button.acct-row:hover:not(:disabled) {
   flex: none;
 }
 .emoji-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: var(--card-bg);
+  background: var(--bg);
   font-size: 20px;
   line-height: 1;
   cursor: pointer;
@@ -15947,7 +16076,10 @@ button.acct-row:hover:not(:disabled) {
 @media (max-width: 640px) {
   .messages-split {
     grid-template-columns: 1fr;
-    height: min(70vh, 560px);
+    height: min(74vh, 600px);
+  }
+  .messages-threads {
+    border-right: none;
   }
   .messages-split.show-thread .messages-threads {
     display: none;
@@ -16168,10 +16300,18 @@ button.acct-row:hover:not(:disabled) {
 }
 .prof-ov-top {
   display: grid;
-  /* 3'lu ust satir: profil | Premium | Tavla Tasarimlari */
-  grid-template-columns: 1.2fr 1fr 1fr;
+  /* Ust satir: profil | Premium (Tavla Tasarimlari alt satira alindi) */
+  grid-template-columns: 1.2fr 1fr;
   gap: 14px;
   margin: 6px 0 14px;
+  align-items: stretch;
+}
+/* Alt satir: Tavla Tasarimlari | Avatar Cercevesi (yan yana iki kutu) */
+.prof-ov-row2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 0 0 14px;
   align-items: stretch;
 }
 /* Premium karti grid icinde: alt marj yok, sutunu doldur */
@@ -16179,11 +16319,35 @@ button.acct-row:hover:not(:disabled) {
   margin: 0;
   height: 100%;
 }
-/* Orta/dar ekranda 3 kolon sikismasin -> alt alta */
+/* Orta/dar ekranda kolonlar sikismasin -> alt alta */
 @media (max-width: 980px) {
-  .prof-ov-top {
+  .prof-ov-top,
+  .prof-ov-row2 {
     grid-template-columns: 1fr;
   }
+}
+/* Avatar Cercevesi kutusu (Tavla Tasarimlari kutusuyla ayni stil) */
+.prof-ov-frame {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card-bg);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.prof-ov-frame:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.prof-ov-frame-prev {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .prof-ov-id {
   display: flex;

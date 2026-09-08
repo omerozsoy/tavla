@@ -103,6 +103,7 @@ export default function ProfileOverview({
   const country = user.country ? countryName(user.country, lang) : ''
 
   const equipped = ownedBoards.find((b) => b.id === boardTheme) ?? ownedBoards[0]
+  const equippedFrame = ownedFrames.find((f) => f.id === user.avatar_frame)
 
   const boardVars = (b: BoardOpt): CSSProperties =>
     ({
@@ -153,8 +154,12 @@ export default function ProfileOverview({
               </div>
             </div>
           </div>
-          {/* Premium karti: profil ile tahta arasinda (3'lu ust satir) */}
+          {/* Premium karti: kimlik ile ayni ust satirda */}
           <MembershipCard user={user} onRenew={onRenew} onToggleAutoRenew={onToggleAutoRenew} />
+        </div>
+
+        {/* --- Alt satir: Tavla Tasarımları + Avatar Çerçevesi kutuları --- */}
+        <div className="prof-ov-row2">
           {equipped && (
             // Tiklayinca Tavla Tasarimlari sekmesine gecer -> tahta buradan degistirilebilir.
             <button
@@ -181,6 +186,25 @@ export default function ProfileOverview({
               </div>
             </button>
           )}
+
+          {/* Avatar Çerçevesi kutusu -> tıklayınca Avatarlar sekmesi */}
+          <button
+            type="button"
+            className="prof-ov-frame"
+            onClick={() => setTab('frames')}
+            title={t('prof.changeFrame')}
+          >
+            <div className="prof-ov-frame-prev">
+              <AvatarFrame src={avatar} frame={user.avatar_frame} size={84} name={fullName} animated />
+            </div>
+            <div className="prof-ov-board-name">
+              <span className="prof-ov-board-lbl">{t('settings.tabFrame')}</span>
+              {equippedFrame?.name ?? t('prof.frameDefault')}
+              <span className="prof-ov-board-change">
+                <Icon name="settings" size={13} /> {t('prof.changeFrame')}
+              </span>
+            </div>
+          </button>
         </div>
 
         {/* --- Sekmeler: İstatistikler · Avatarlar · Tahta Tasarımı --- */}
