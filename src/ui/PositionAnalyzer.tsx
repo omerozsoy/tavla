@@ -700,12 +700,14 @@ export default function PositionAnalyzer({
               <div className="menu-targets">
                 <Button
                   variant={touchColor === 'white' ? 'secondary' : 'ghost'}
+                  aria-pressed={touchColor === 'white'}
                   onClick={() => setTouchColor('white')}
                 >
                   <Swatch color="white" /> {t('pa.white')}
                 </Button>
                 <Button
                   variant={touchColor === 'black' ? 'secondary' : 'ghost'}
+                  aria-pressed={touchColor === 'black'}
                   onClick={() => setTouchColor('black')}
                 >
                   <Swatch color="black" /> {t('pa.black')}
@@ -728,6 +730,7 @@ export default function PositionAnalyzer({
             <div className="menu-targets">
               <Button
                 variant={turn === 'white' ? 'secondary' : 'ghost'}
+                aria-pressed={turn === 'white'}
                 onClick={() => {
                   setTurn('white')
                   setResult(null)
@@ -737,6 +740,7 @@ export default function PositionAnalyzer({
               </Button>
               <Button
                 variant={turn === 'black' ? 'secondary' : 'ghost'}
+                aria-pressed={turn === 'black'}
                 onClick={() => {
                   setTurn('black')
                   setResult(null)
@@ -771,6 +775,7 @@ export default function PositionAnalyzer({
                 <Button
                   key={n}
                   variant={matchLen === n ? 'secondary' : 'ghost'}
+                  aria-pressed={matchLen === n}
                   onClick={() => setMatchLen(n)}
                 >
                   {n === 0 ? t('pa.money') : n}
@@ -808,12 +813,14 @@ export default function PositionAnalyzer({
             <div className="menu-targets">
               <Button
                 variant={boardDir === 'right' ? 'secondary' : 'ghost'}
+                aria-pressed={boardDir === 'right'}
                 onClick={() => setBoardDir('right')}
               >
                 {t('dir.right')}
               </Button>
               <Button
                 variant={boardDir === 'left' ? 'secondary' : 'ghost'}
+                aria-pressed={boardDir === 'left'}
                 onClick={() => setBoardDir('left')}
               >
                 {t('dir.left')}
@@ -826,12 +833,14 @@ export default function PositionAnalyzer({
             <div className="menu-targets">
               <Button
                 variant={ply === 1 ? 'secondary' : 'ghost'}
+                aria-pressed={ply === 1}
                 onClick={() => setPly(1)}
               >
                 {t('pa.ply1')}
               </Button>
               <Button
                 variant={ply === 2 ? 'secondary' : 'ghost'}
+                aria-pressed={ply === 2}
                 className={premium ? undefined : 'locked'}
                 onClick={() => (premium ? setPly(2) : onUpgrade?.())}
               >
