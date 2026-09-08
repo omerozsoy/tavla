@@ -16,9 +16,12 @@ class LuckyWheelController extends Controller
     }
 
     // GET /lucky-wheel — çark durumu (ödüller, kalan hak, ayarlar).
+    // ROTA HERKESE AÇIK (misafir de görebilir) -> $request->user() varsayılan guard'da null döner;
+    // token varsa SANCTUM guard'ıyla çöz ki giriş yapmış kullanıcının coin/hak bilgisi görünsün.
     public function show(Request $request)
     {
-        return response()->json($this->wheel->stateFor($request->user()));
+        $user = $request->user('sanctum') ?: $request->user();
+        return response()->json($this->wheel->stateFor($user));
     }
 
     // POST /lucky-wheel/spin — güvenli çevirme. Sonuç sunucuda seçilir.
