@@ -34,12 +34,17 @@ export function ProductsInner({
   products: productsProp,
   category,
   onCategories,
+  selectedSlug,
+  onSelect,
 }: {
   onAddToCart: (line: CartAddLine) => void
   onGoCart: () => void
   products?: Product[] | null // dışarıdan verilirse fetch etme (Mağaza kategori sekmeleri)
   category?: string // dış kategori filtresi -> iç kategori çipleri gizlenir
   onCategories?: (cats: { slug: string; name: string }[]) => void
+  // URL-otoriter secili urun (Magaza): verilirse ic state yerine bu kullanilir -> /magaza/<kat>/<slug>
+  selectedSlug?: string | null
+  onSelect?: (slug: string | null) => void
 }) {
   const { t } = useT()
   const toast = useToast()
@@ -47,8 +52,15 @@ export function ProductsInner({
   const [fetched, setFetched] = useState<Product[] | null>(null)
   const products = productsProp !== undefined ? productsProp : fetched
   const [error, setError] = useState(false)
-  const [selected, setSelected] = useState<Product | null>(null)
+  const [selInner, setSelInner] = useState<Product | null>(null)
   const [cat, setCat] = useState<string>('all')
+  // Secim URL-kontrollu mu? Magaza slug verir (deep-link); bagimsiz /urunler ic state kullanir.
+  const controlledSel = selectedSlug !== undefined
+  const selected = controlledSel ? ((products ?? []).find((p) => p.slug === selectedSlug) ?? null) : selInner
+  const select = (p: Product | null) => {
+    if (controlledSel) onSelect?.(p?.slug ?? null)
+    else setSelInner(p)
+  }
 
   useEffect(() => {
     if (productsProp !== undefined) return
@@ -82,7 +94,7 @@ export function ProductsInner({
   )
 
   if (selected) {
-    return <ProductDetail product={selected} onAddToCart={onAddToCart} onGoCart={onGoCart} onBack={() => setSelected(null)} toast={toast} />
+    return <ProductDetail product={selected} onAddToCart={onAddToCart} onGoCart={onGoCart} onBack={() => select(null)} toast={toast} />
   }
 
   return (
@@ -101,13 +113,13 @@ export function ProductsInner({
       )}
 
       {error && <p className="products-msg">{t('products.loadError')}</p>}
-      {!error && products && products.length === 0 && <p className="products-msg">{t('products.empty')}</p>}
+      {!error && products && visible.length === 0 && <p className="products-msg">{t('products.empty')}</p>}
 
       <div className="products-grid">
         {visible.map((p) => {
           const out = p.stock <= 0
           return (
-            <button key={p.id} type="button" className="product-card" disabled={out} onClick={() => setSelected(p)}>
+            <button key={p.id} type="button" className="product-card" disabled={out} onClick={() => select(p)}>
               <div className="product-thumb">
                 {p.images[0] ? <img src={imageUrl(p.images[0])} alt={p.name} /> : <Icon name="shop" size={32} />}
                 {out && <span className="product-out">{t('products.soldOut')}</span>}
@@ -213,21 +225,39 @@ function ProductDetail({
     toast.success(t('products.addedToCart'))
   }
 
+  const out = product.stock <= 0
+  const low = !out && product.stock <= 5
+  const hasImg = product.images.length > 0
+
   return (
-    <div className="product-detail">
-      <button type="button" className="checkout-back" onClick={onBack}>
-        <Icon name="arrow-right" size={16} /> {t('products.back')}
+    <div className="pdp">
+      <button type="button" className="pdp-back" onClick={onBack}>
+        <Icon name="arrow-right" size={15} /> {t('products.back')}
       </button>
 
-      <div className="product-detail-top">
-        <div className="product-gallery">
-          <div className="product-gallery-main">
-            {product.images[img] ? <img src={imageUrl(product.images[img])} alt={product.name} /> : <Icon name="shop" size={48} />}
+      <div className="pdp-grid">
+        {/* Medya: buyuk gorsel + kucuk on-izlemeler */}
+        <div className="pdp-media">
+          <div className="pdp-main">
+            {hasImg ? (
+              <img src={imageUrl(product.images[img])} alt={product.name} />
+            ) : (
+              <span className="pdp-noimg">
+                <Icon name="shop" size={72} />
+              </span>
+            )}
+            {out && <span className="pdp-flag">{t('products.soldOut')}</span>}
           </div>
           {product.images.length > 1 && (
-            <div className="product-gallery-thumbs">
+            <div className="pdp-thumbs">
               {product.images.map((im, i) => (
-                <button key={i} type="button" className={`product-gallery-thumb ${i === img ? 'active' : ''}`} onClick={() => setImg(i)}>
+                <button
+                  key={i}
+                  type="button"
+                  className={`pdp-thumb ${i === img ? 'active' : ''}`}
+                  onClick={() => setImg(i)}
+                  aria-label={`${product.name} ${i + 1}`}
+                >
                   <img src={imageUrl(im)} alt="" />
                 </button>
               ))}
@@ -235,77 +265,90 @@ function ProductDetail({
           )}
         </div>
 
-        <div className="product-detail-info">
-          <span className="product-cat">{product.category_name ?? ''}</span>
-          <h2>{product.name}</h2>
-          {product.description && <p className="product-desc">{product.description}</p>}
-          <div className="product-detail-price">
-            {canMoney && <span className="pd-price">{fmtTL(product.money_price!)}</span>}
+        {/* Satin alma paneli (masaustunde yapiskan) */}
+        <aside className="pdp-panel">
+          {product.category_name && <span className="pdp-eyebrow">{product.category_name}</span>}
+          <h2 className="pdp-title">{product.name}</h2>
+
+          <div className="pdp-price">
+            {canMoney && <span className="pdp-price-money">{fmtTL(product.money_price!)}</span>}
             {canCoin && (
-              <span className="pd-price-coin">
-                <Coins amount={product.coin_price!} size={16} />
+              <span className="pdp-price-coin">
+                <Coins amount={product.coin_price!} size={18} />
               </span>
             )}
           </div>
 
-          {colors.length > 0 && (
-            <div className="product-field">
-              <label>{t('products.color')}</label>
-              <div className="product-colors">
-                {colors.map((c) => (
-                  <button
-                    key={c.name}
-                    type="button"
-                    title={c.name}
-                    className={`product-swatch ${color === c.name ? 'active' : ''}`}
-                    style={{ background: c.hex }}
-                    onClick={() => setColor(c.name)}
-                    aria-label={c.name}
-                  />
-                ))}
-              </div>
-              {color && <span className="product-color-name">{color}</span>}
-            </div>
-          )}
-
-          <div className="product-field">
-            <label>{t('products.qty')}</label>
-            <div className="product-qty">
-              <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1}>
-                −
-              </button>
-              <span>{qty}</span>
-              <button type="button" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty}>
-                +
-              </button>
-            </div>
+          <div className={`pdp-stock ${out ? 'out' : low ? 'low' : 'in'}`}>
+            <span className="pdp-stock-dot" aria-hidden="true" />
+            {out ? t('products.soldOut') : t('products.inStock', { n: product.stock })}
           </div>
 
-          {canCoin && canMoney && (
-            <div className="product-field">
-              <label>{t('products.payWith')}</label>
-              <div className="product-pay-toggle">
-                <button type="button" className={pay === 'money' ? 'active' : ''} onClick={() => setPay('money')}>
-                  <Icon name="banknotes" size={16} /> {t('products.payMoney')}
+          {product.description && <p className="pdp-desc">{product.description}</p>}
+
+          <div className="pdp-buy">
+            {colors.length > 0 && (
+              <div className="pdp-field">
+                <label className="pdp-label">
+                  {t('products.color')}
+                  {color && <span className="pdp-label-val">{color}</span>}
+                </label>
+                <div className="pdp-swatches">
+                  {colors.map((c) => (
+                    <button
+                      key={c.name}
+                      type="button"
+                      title={c.name}
+                      className={`pdp-swatch ${color === c.name ? 'active' : ''}`}
+                      style={{ background: c.hex }}
+                      onClick={() => setColor(c.name)}
+                      aria-label={c.name}
+                      aria-pressed={color === c.name}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="pdp-field">
+              <label className="pdp-label">{t('products.qty')}</label>
+              <div className="pdp-qty">
+                <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} disabled={qty <= 1} aria-label="−">
+                  −
                 </button>
-                <button type="button" className={pay === 'coin' ? 'active' : ''} onClick={() => setPay('coin')}>
-                  <Icon name="coins" size={16} /> {t('products.payCoin')}
+                <span>{qty}</span>
+                <button type="button" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} aria-label="+">
+                  +
                 </button>
               </div>
             </div>
-          )}
 
-          <div className="product-detail-actions">
-            <Button onClick={add}>
-              <Icon name="shop" size={16} /> {t('products.addToCart')}
+            {canCoin && canMoney && (
+              <div className="pdp-field">
+                <label className="pdp-label">{t('products.payWith')}</label>
+                <div className="pdp-pay">
+                  <button type="button" className={pay === 'money' ? 'active' : ''} onClick={() => setPay('money')} aria-pressed={pay === 'money'}>
+                    <Icon name="banknotes" size={16} /> {t('products.payMoney')}
+                  </button>
+                  <button type="button" className={pay === 'coin' ? 'active' : ''} onClick={() => setPay('coin')} aria-pressed={pay === 'coin'}>
+                    <Icon name="coins" size={16} /> {t('products.payCoin')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="pdp-actions">
+            <Button className="pdp-add" onClick={add} disabled={out}>
+              <Icon name="cart" size={16} /> {out ? t('products.soldOut') : t('products.addToCart')}
             </Button>
-            {added && (
+            {added && !out && (
               <Button variant="outline" onClick={onGoCart}>
                 {t('products.goToCart')}
               </Button>
             )}
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   )

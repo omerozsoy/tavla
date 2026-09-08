@@ -31,6 +31,10 @@ interface Props {
   tab?: string
   /** Sekme degisince App'e bildir -> URL /magaza veya /magaza/<kategori> guncellenir. */
   onTabChange?: (slug: string) => void
+  /** URL-otoriter secili urun slug'i (/magaza/<kategori>/<urun>). */
+  productSlug?: string | null
+  /** Urun secilince/geri donunce App'e bildir -> URL guncellenir. */
+  onSelectProduct?: (slug: string | null) => void
   onClose: () => void
 }
 
@@ -58,6 +62,8 @@ export default function Shop({
   initialTab = 'coin',
   tab: controlledTab,
   onTabChange,
+  productSlug,
+  onSelectProduct,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -83,14 +89,21 @@ export default function Shop({
       .then(({ products: list, categories }) => {
         if (!alive) return
         setProducts(list)
-        const seen: { slug: string; name: string }[] = []
-        for (const p of list) {
-          // 'coin' kategorisi REZERVE (coin paketleri sekmesi) -> kategori sekmesi olarak tekrarlama.
-          if (p.category && !isCoinSlug(p.category) && !seen.some((c) => c.slug === p.category)) {
-            seen.push({ slug: p.category, name: p.category_name || p.category })
+        // Sekmeler: yayindaki TUM kategoriler (admin sirasiyla), coin haric (rezerve).
+        // Boylece urunu olmayan (yeni) kategoriler de sayfa olarak gorunur.
+        const fromCats = categories.filter((c) => !isCoinSlug(c.slug))
+        if (fromCats.length) {
+          setCats(fromCats)
+        } else {
+          // Eski backend (kategori listesi donmuyor) -> urunlerden turet (fallback).
+          const seen: { slug: string; name: string }[] = []
+          for (const p of list) {
+            if (p.category && !isCoinSlug(p.category) && !seen.some((c) => c.slug === p.category)) {
+              seen.push({ slug: p.category, name: p.category_name || p.category })
+            }
           }
+          setCats(seen)
         }
-        setCats(seen)
         // Rezerve coin kategorisinin admin adini bul (urunu olmasa da /products'tan gelir).
         const coinCat = categories.find((c) => isCoinSlug(c.slug))
         setCoinLabel(coinCat?.name ?? '')
@@ -201,7 +214,14 @@ export default function Shop({
 
         {/* Ürün kategorisi sekmesi -> o kategorinin ürünleri (çipler gizli, sekmeler yukarıda) */}
         {!isCoinSlug(tab) && onAddToCart && (
-          <ProductsInner products={products} category={tab} onAddToCart={onAddToCart} onGoCart={() => onOpenCart?.()} />
+          <ProductsInner
+            products={products}
+            category={tab}
+            onAddToCart={onAddToCart}
+            onGoCart={() => onOpenCart?.()}
+            selectedSlug={productSlug ?? null}
+            onSelect={onSelectProduct}
+          />
         )}
       </div>
     </div>
