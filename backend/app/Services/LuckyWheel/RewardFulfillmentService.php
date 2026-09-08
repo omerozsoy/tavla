@@ -2,6 +2,7 @@
 
 namespace App\Services\LuckyWheel;
 
+use App\Http\Controllers\ShopController;
 use App\Models\LuckyWheelReward;
 use App\Models\Notification;
 use App\Models\User;
@@ -93,6 +94,36 @@ class RewardFulfillmentService
         }
 
         return $body;
+    }
+
+    /**
+     * ŞANS ÇARKI rastgele kozmetik ödülü: kullanıcının SAHİP OLMADIĞI rastgele bir
+     * çerçeve (AVATAR) / tahta teması (BOARD_THEME) id'si seç. Hepsine sahipse yine de
+     * havuzdan birini döndür (grant addUnlock zaten dup eklemez). Boş id → null.
+     */
+    public function pickRandomCosmetic(User $u, string $type): ?string
+    {
+        $owned = $u->unlocks ?? [];
+        if ($type === LuckyWheelReward::TYPE_AVATAR) {
+            $all = ShopController::frameMotionIds();
+            $prefix = 'frame.';
+        } elseif ($type === LuckyWheelReward::TYPE_BOARD_THEME) {
+            $all = ShopController::boardThemeIds();
+            $prefix = 'theme.';
+        } else {
+            return null;
+        }
+
+        $ownedSet = array_flip($owned);
+        $candidates = array_values(array_filter($all, fn ($id) => ! isset($ownedSet[$prefix.$id])));
+        if (empty($candidates)) {
+            $candidates = $all; // hepsi zaten var -> yine de birini göster
+        }
+        if (empty($candidates)) {
+            return null;
+        }
+
+        return $candidates[random_int(0, count($candidates) - 1)];
     }
 
     /** plan_until'ı $days gün uzat (PaymentController::activateMembership mantığının gün versiyonu). */

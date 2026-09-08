@@ -333,6 +333,18 @@ class LuckyWheelService
             $winner->total_won = (int) $winner->total_won + 1;
             $winner->save();
 
+            // RASTGELE KOZMETİK: AVATAR/BOARD_THEME ödülünde reference_id boş ya da 'random'
+            // ise, kullanıcının sahip OLMADIĞI rastgele bir çerçeve/tema seç. Somut id'yi
+            // yalnız BELLEKTE winner'a yaz (KAYDETME) -> grant + snapshot bunu kullanır,
+            // ödül satırının 'random' değeri korunur (sonraki çevirişte tekrar rastgele).
+            if (in_array($winner->type, [LuckyWheelReward::TYPE_AVATAR, LuckyWheelReward::TYPE_BOARD_THEME], true)
+                && (empty($winner->reference_id) || strtolower((string) $winner->reference_id) === 'random')) {
+                $resolved = $this->fulfillment->pickRandomCosmetic($u, $winner->type);
+                if ($resolved) {
+                    $winner->reference_id = $resolved;
+                }
+            }
+
             // Ödülü dağıt. FREE_SPIN -> bonus hakkı aynı state satırına ekle.
             if ($winner->type === LuckyWheelReward::TYPE_FREE_SPIN) {
                 $state->bonus_spins = (int) $state->bonus_spins + max(1, (int) $winner->amount);

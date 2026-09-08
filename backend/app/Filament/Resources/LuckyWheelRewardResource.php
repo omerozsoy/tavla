@@ -67,14 +67,17 @@ class LuckyWheelRewardResource extends Resource
                         ->visible(fn (Get $get) => in_array($get('type'), ['COIN', 'PREMIUM_DAY', 'FREE_SPIN'], true)),
                     Forms\Components\TextInput::make('reference_id')
                         ->label(fn (Get $get) => match ($get('type')) {
-                            'AVATAR' => 'Çerçeve motion id (örn. pulse)',
-                            'BOARD_THEME' => 'Tahta tema id (örn. gold)',
+                            'AVATAR' => 'Çerçeve motion id (örn. pulse) — boş/"random" = rastgele',
+                            'BOARD_THEME' => 'Tahta tema id (örn. gold) — boş/"random" = rastgele',
                             'BADGE' => 'Rozet slug (örn. match_5)',
                             default => 'Referans id',
                         })
+                        ->placeholder(fn (Get $get) => in_array($get('type'), ['AVATAR', 'BOARD_THEME'], true) ? 'random' : null)
                         ->maxLength(60)
                         ->visible(fn (Get $get) => in_array($get('type'), ['AVATAR', 'BOARD_THEME', 'BADGE', 'CUSTOM'], true))
-                        ->helperText('Kullanıcıya verilecek kozmetik/rozet kimliği.'),
+                        ->helperText(fn (Get $get) => in_array($get('type'), ['AVATAR', 'BOARD_THEME'], true)
+                            ? 'Boş bırak ya da "random" yaz: kullanıcının sahip OLMADIĞI rastgele bir çerçeve/tema hediye edilir. Belirli bir id yazarsan daima onu verir.'
+                            : 'Kullanıcıya verilecek kozmetik/rozet kimliği.'),
                     Forms\Components\Textarea::make('description')
                         ->label('Açıklama')->rows(2)->maxLength(255)->columnSpanFull(),
                 ])->columns(2),

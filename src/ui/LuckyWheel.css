@@ -274,8 +274,10 @@
 .lw-win-inner {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  padding: 26px 24px;
-  width: min(300px, 88%);
+  padding: 24px 22px;
+  width: min(380px, 94%);
+  max-height: 90%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -291,6 +293,55 @@
   justify-content: center;
   color: #fff;
   animation: lw-badge 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+/* Kozmetik ödül vitrini — koyu (ink) zemin ki çerçeve efekti / tahta tasarımı öne çıksın */
+.lw-win-show {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: lw-badge 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
+}
+.lw-win-show.is-cosmetic {
+  width: 100%;
+  padding: 18px;
+  background: #1c1a17;
+  border: 1px solid color-mix(in srgb, #ffffff 12%, transparent);
+}
+.lw-win-board {
+  width: 100%;
+  max-width: 300px;
+}
+.lw-win-board .setup-board-svg {
+  display: block;
+}
+/* Nadirlik etiketi — renk rarity'ye göre */
+.lw-win-rarity {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 12px;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  border-radius: var(--radius-pill, 999px);
+}
+.rar-common {
+  background: #6b7280;
+}
+.rar-rare {
+  background: #2f7dd1;
+}
+.rar-epic {
+  background: #8e3fd4;
+}
+.rar-legendary {
+  background: #d98a1c;
+}
+.rar-mythic {
+  background: #d4409a;
+}
+.rar-club {
+  background: #2a9d8f;
 }
 .lw-win-title {
   font-size: 1.2rem;
