@@ -42,6 +42,8 @@ export const PAGES: PageDef[] = [
 
   // --- Hesap ---
   { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
+  // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
+  { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account', gate: 'user' },
   // Siparişlerim sol menüde DEĞİL; profil sayfasından açılır (inMenu:false -> /siparislerim yine çalışır).
   { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user', inMenu: false },
 
@@ -50,8 +52,8 @@ export const PAGES: PageDef[] = [
   { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
   { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'content', hideInGame: true },
-  // Ürünler sol menüde (fiziksel ürün mağazası). Ayrıca Mağaza içinden de açılabilir.
-  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true },
+  // Ürünler sol menüde DEĞİL (Mağaza'nın "Ürünler" sekmesine taşındı); /urunler derin-link çalışır.
+  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true, inMenu: false },
 
   // --- Araclar ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
