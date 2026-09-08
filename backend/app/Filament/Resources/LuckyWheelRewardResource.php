@@ -162,7 +162,22 @@ class LuckyWheelRewardResource extends Resource
                         }
                         $total = LuckyWheelReward::totalActiveWeight();
                         return $total > 0 ? '%'.number_format((int) $r->weight / $total * 100, 2) : '—';
-                    }),
+                    })
+                    // Alt toplam: aktif ödüllerin yüzde toplamı (weight-tabanlı -> filtresiz %100).
+                    // Filtre varsa görünür aktif ödüllerin toplam payını gösterir (payda = TÜM aktif weight).
+                    ->summarize(
+                        Tables\Columns\Summarizers\Summarizer::make()
+                            ->label('Toplam %')
+                            ->using(function (\Illuminate\Database\Query\Builder $query): string {
+                                $total = LuckyWheelReward::totalActiveWeight();
+                                if ($total <= 0) {
+                                    return '—';
+                                }
+                                $visibleActive = (float) (clone $query)->where('is_active', true)->sum('weight');
+
+                                return '%'.number_format($visibleActive / $total * 100, 2);
+                            })
+                    ),
                 Tables\Columns\TextColumn::make('stock')->label('Stok')
                     ->formatStateUsing(fn ($state) => $state === null ? '∞' : (int) $state)->toggleable(),
                 Tables\Columns\TextColumn::make('won_today')->label('Bugün')
