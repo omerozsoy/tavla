@@ -506,7 +506,7 @@ export default function App() {
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
-  const [shopTab, setShopTab] = useState<'coins' | 'board' | 'frame'>('coins') // Magaza acilis sekmesi
+  const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
@@ -659,7 +659,9 @@ export default function App() {
       : cartOpen
         ? 'sepet'
       : shopOpen
-        ? 'magaza'
+        ? shopTab && shopTab !== 'coin' && shopTab !== 'coins'
+          ? 'magaza/' + shopTab // kategori sayfasi: /magaza/<kategori-slug>
+          : 'magaza' // coin (varsayilan) sayfasi
       : luckyWheelOpen
         ? 'sans-carki'
         : frameGalleryOpen
@@ -826,9 +828,13 @@ export default function App() {
           setTournDetailSlug(tid != null ? s1 : null)
           break
         }
-        case 'magaza':
+        case 'magaza': {
+          // /magaza -> coin (paketler); /magaza/<kategori-slug> -> o kategori; /magaza/coin -> coin
+          const sub = seg[1] || ''
+          setShopTab(sub && sub !== 'coin' && sub !== 'coins' ? sub : 'coin')
           setShopOpen(true)
           break
+        }
         case 'sans-carki':
           setLuckyWheelOpen(true)
           break
@@ -911,8 +917,8 @@ export default function App() {
           setContentView('club')
           break
         case 'ayarlar':
-        case 'tahta-ayarlari': // eski slug -> Magaza'nin Tahta Rengi sekmesi
-          setShopTab('board')
+        case 'tahta-ayarlari': // eski slug -> Magaza (Tahta Rengi sekmesi kaldirildi -> coin)
+          setShopTab('coin')
           setShopOpen(true)
           break
         case 'bulmaca':
@@ -5076,10 +5082,11 @@ export default function App() {
           setEditProfile(false)
           goPage(() => setAchOpen(true))
         }}
-        onOpenShop={(shopTab) => {
+        onOpenShop={() => {
+          // (legacy; ProfileOverview'de kullanilmiyor) -> Magaza coin sayfasi
           setEditProfile(false)
           goPage(() => {
-            setShopTab(shopTab)
+            setShopTab('coin')
             setShopOpen(true)
           })
         }}
@@ -5954,7 +5961,8 @@ export default function App() {
             setMemOpen(true)
           }}
           onAddToCart={addProductToCart}
-          initialTab={shopTab}
+          tab={shopTab}
+          onTabChange={setShopTab}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={boardThemeList}
@@ -5972,7 +5980,7 @@ export default function App() {
           }
           onClose={() => {
             setShopOpen(false)
-            setShopTab('coins') // sonraki normal acilis coin sekmesinden baslasin
+            setShopTab('coin') // sonraki normal acilis coin sekmesinden baslasin
           }}
         />
       )}
@@ -5984,7 +5992,7 @@ export default function App() {
           onContinue={() => {
             // "Alışverişe devam" -> Mağaza coin sekmesi
             setCartOpen(false)
-            setShopTab('coins')
+            setShopTab('coin')
             setShopOpen(true)
           }}
           onManageAddresses={() => {
@@ -6186,10 +6194,11 @@ export default function App() {
           onSelect={setBoardTheme}
           onMore={() => {
             setBoardPickerOpen(false)
-            // Tum tahtalar + satin alma artik Magaza'nin Tahta Rengi sekmesinde
+            // Tum tahtalar + satin alma artik PROFIL "Tahtalar" sekmesinde (Magaza'dan kaldirildi)
             if (user) {
-              setShopTab('board')
-              setShopOpen(true)
+              setProfileEditMode(false)
+              setProfileTab('boards')
+              setEditProfile(true)
             } else {
               setShowAuth(true)
             }

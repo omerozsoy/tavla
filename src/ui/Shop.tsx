@@ -27,8 +27,15 @@ interface Props {
   framesSlot?: ReactNode
   onAddToCart?: (line: CartAddLine) => void // ürün -> sepete ekle
   initialTab?: string
+  /** URL-otoriter secili sekme (App shopTab): 'coin' | kategori-slug. Verilirse ic state yerine bu kullanilir. */
+  tab?: string
+  /** Sekme degisince App'e bildir -> URL /magaza veya /magaza/<kategori> guncellenir. */
+  onTabChange?: (slug: string) => void
   onClose: () => void
 }
+
+// 'coin' (ve eski 'coins') = rezerve coin-paketi sayfasi; kategori DEGIL.
+const isCoinSlug = (s: string) => s === 'coin' || s === 'coins'
 
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
@@ -48,12 +55,21 @@ export default function Shop({
   cartCount = 0,
   onOpenCart,
   onAddToCart,
-  initialTab = 'coins',
+  initialTab = 'coin',
+  tab: controlledTab,
+  onTabChange,
   onClose,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [tab, setTab] = useState<string>(initialTab === 'board' || initialTab === 'frame' ? 'coins' : initialTab)
+  const initial = initialTab === 'board' || initialTab === 'frame' ? 'coin' : initialTab
+  const [tabInner, setTabInner] = useState<string>(controlledTab ?? initial)
+  // Kontrollu (URL-otoriter) sekme varsa onu kullan; yoksa ic state. Sekme secince App'e bildir.
+  const tab = controlledTab ?? tabInner
+  const setTab = (slug: string) => {
+    setTabInner(slug)
+    onTabChange?.(slug)
+  }
 
   // Ürünleri bir kez çek; kategori sekmelerini bundan türet (ProductsInner'a da bu liste
   // geçilir -> çift fetch olmaz).
@@ -67,7 +83,8 @@ export default function Shop({
         setProducts(list)
         const seen: { slug: string; name: string }[] = []
         for (const p of list) {
-          if (p.category && !seen.some((c) => c.slug === p.category)) {
+          // 'coin' kategorisi REZERVE (coin paketleri sekmesi) -> kategori sekmesi olarak tekrarlama.
+          if (p.category && !isCoinSlug(p.category) && !seen.some((c) => c.slug === p.category)) {
             seen.push({ slug: p.category, name: p.category_name || p.category })
           }
         }
@@ -113,9 +130,9 @@ export default function Shop({
           <button
             type="button"
             role="tab"
-            aria-selected={tab === 'coins'}
-            className={`prof-tab ${tab === 'coins' ? 'active' : ''}`}
-            onClick={() => setTab('coins')}
+            aria-selected={isCoinSlug(tab)}
+            className={`prof-tab ${isCoinSlug(tab) ? 'active' : ''}`}
+            onClick={() => setTab('coin')}
           >
             <Icon name="coin" size={16} /> {t('shop.buyCoins')}
           </button>
@@ -134,8 +151,8 @@ export default function Shop({
             ))}
         </div>
 
-        {/* Coin satın al */}
-        {tab === 'coins' && (
+        {/* Coin satın al (rezerve 'coin' sayfasi) — paketler o kategorinin urunleri gibi listelenir */}
+        {isCoinSlug(tab) && (
           <section className="coin-store" aria-label={t('shop.buyCoins')}>
             <div className="coin-grid">
               {COIN_PACKAGES.map((p) => {
@@ -178,7 +195,7 @@ export default function Shop({
         )}
 
         {/* Ürün kategorisi sekmesi -> o kategorinin ürünleri (çipler gizli, sekmeler yukarıda) */}
-        {tab !== 'coins' && onAddToCart && (
+        {!isCoinSlug(tab) && onAddToCart && (
           <ProductsInner products={products} category={tab} onAddToCart={onAddToCart} onGoCart={() => onOpenCart?.()} />
         )}
       </div>
