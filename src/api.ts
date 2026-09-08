@@ -546,6 +546,16 @@ export async function getProducts(): Promise<Product[]> {
   const r = await req<{ products: Product[] }>('/products')
   return r.products
 }
+// Mağaza sekmesi adı (admin panelden); ürünü olmayan rezerve kategoriler (coin) dahil.
+export interface ShopCategory {
+  slug: string
+  name: string
+}
+// Katalog + TÜM yayın kategorileri (tek fetch). Coin sekmesi adı buradan alınır.
+export async function getShopCatalog(): Promise<{ products: Product[]; categories: ShopCategory[] }> {
+  const r = await req<{ products: Product[]; categories?: ShopCategory[] }>('/products')
+  return { products: r.products, categories: r.categories ?? [] }
+}
 export async function orderProduct(input: OrderInput): Promise<OrderResult> {
   return req('/products/order', { method: 'POST', body: JSON.stringify(input) })
 }

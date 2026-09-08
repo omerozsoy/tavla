@@ -30,7 +30,16 @@ class ProductController extends Controller
             ->map(fn (Product $p) => $p->toCatalog())
             ->values();
 
-        return response()->json(['products' => $products]);
+        // Yayindaki TUM kategoriler (urunu olmayan 'coin' gibi rezerve kategoriler dahil).
+        // Magaza coin sekmesi admin'de verilen kategori adini bundan alir.
+        $categories = \App\Models\ProductCategory::where('published', true)
+            ->orderBy('sort')
+            ->orderBy('name')
+            ->get(['slug', 'name'])
+            ->map(fn ($c) => ['slug' => $c->slug, 'name' => $c->name])
+            ->values();
+
+        return response()->json(['products' => $products, 'categories' => $categories]);
     }
 
     // GET /me/orders — kullanicinin siparisleri.
