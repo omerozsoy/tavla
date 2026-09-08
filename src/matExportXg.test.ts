@@ -259,6 +259,24 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toContain('Wins 2 point and the match')
   })
 
+  it('mac uzunlugu HARD-CODE degil: log mctx.matchLen otoriter (yanlis opts.matchLength=1 -> 3 point match)', () => {
+    // MatchAnalytics gibi caller matchLength gecmese/1 gecse bile, log'a gomulu gercek uzunluk yazilir.
+    const e: MoveLogEntry = {
+      notation: '2/off', best: '', loss: 0, player: 'white', pos: whiteWin(1), playedSteps: [], dice: [2, 1], seq: 0,
+      mctx: { score: { white: 0, black: 0 }, cube: 1, cubeOwner: null, crawford: false, matchLen: 3 },
+    }
+    const mat = buildMatXg([e], { matchLength: 1, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('3 point match')
+    expect(mat).not.toContain('1 point match')
+    // 3 puanlik macta 1 puanlik galibiyet maci BITIRMEZ -> "and the match" YOK
+    expect(mat).not.toContain('and the match')
+  })
+
+  it('mctx yoksa opts.matchLength kullanilir (geriye donuk uyum)', () => {
+    const mat = buildMatXg([move(whiteWin(1), 'white')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('5 point match')
+  })
+
   it('REGRESYON: logdaki son hamle terminal DEGILse (zorunlu bitiren-hamle atlanmis) results olmadan sonuc satiri YOK', () => {
     // Bear-off ortasi, oyun bitmemis gorunur (off.white=13<15) -> tahta-tekrari null.
     const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
