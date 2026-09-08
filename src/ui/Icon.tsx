@@ -30,6 +30,7 @@ import {
   Star,
   Flame,
   Gift,
+  SpinnerBall,
   SpeakerHigh,
   SpeakerSlash,
   GraduationCap,
@@ -117,6 +118,7 @@ export type IconName =
   | 'home'
   | 'star'
   | 'gift'
+  | 'spinner-ball'
   | 'volume'
   | 'mute'
   | 'graduation'
@@ -207,6 +209,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   home: House,
   star: Star,
   gift: Gift,
+  'spinner-ball': SpinnerBall,
   volume: SpeakerHigh,
   mute: SpeakerSlash,
   graduation: GraduationCap,
