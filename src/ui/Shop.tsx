@@ -22,7 +22,6 @@ interface Props {
   boardThemes: BoardThemeOpt[]
   onBuyItem?: (shopId: string) => void // tahta/cerceve coin ile ac ('theme.<id>')
   framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi (FrameShop/FrameGallery embed)
-  onProducts?: () => void // Fiziksel Ürünler mağazası (sol menüden kaldırıldı -> Mağaza içinden)
   initialTab?: ShopTab
   onClose: () => void
 }
@@ -42,7 +41,6 @@ export default function Shop({
   boardThemes,
   onBuyItem,
   framesSlot,
-  onProducts,
   initialTab = 'coins',
   onClose,
 }: Props) {
@@ -65,11 +63,6 @@ export default function Shop({
             <p className="shop-sub">{t('shop.subtitle')}</p>
           </div>
           <div className="shop-head-actions">
-            {onProducts && (
-              <Button variant="outline" className="shop-products-btn" onClick={onProducts} title={t('menu.products')}>
-                <Icon name="package" size={16} /> {t('menu.products')}
-              </Button>
-            )}
             {onOpenCart && cartCount > 0 && (
               <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
                 <Icon name="shop" size={16} /> {t('shop.cart')} <span className="shop-cart-count tnum">{cartCount}</span>

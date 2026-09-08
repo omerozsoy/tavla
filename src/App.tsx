@@ -5844,10 +5844,6 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
-          onProducts={() => {
-            setShopOpen(false)
-            setProductsOpen(true)
-          }}
           initialTab={shopTab}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
