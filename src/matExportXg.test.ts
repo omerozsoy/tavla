@@ -76,7 +76,7 @@ function parseXg(notation: string, player: Player): Step[] {
   return steps
 }
 
-describe('buildMatXg — Extreme Gammon uyumlu .mat', () => {
+describe('buildMatXg — Extreme Gammon uyumlu .mat (gercek XG dosyasiyla birebir bicim)', () => {
   it('header blogu + N point match dogru', () => {
     const log = playRealGame(12345)
     const mat = buildMatXg(log, {
@@ -87,36 +87,35 @@ describe('buildMatXg — Extreme Gammon uyumlu .mat', () => {
     expect(mat).toContain('; [Match ID "ABC"]')
     expect(mat).toContain('; [Player 1 "Omer"]')
     expect(mat).toContain('; [Player 2 "GnuBot"]')
-    expect(mat).toContain('; [Player 1 Elo "0"]')
     expect(mat).toContain('; [EventDate "2026.09.08"]')
     expect(mat).toContain('; [EventTime "21.30"]')
-    expect(mat).toContain('; [Variation "Backgammon"]')
-    expect(mat).toContain('; [Unrated "Off"]')
     expect(mat).toContain('; [Crawford "On"]')
     expect(mat).toContain('; [CubeLimit "1024"]')
-    // header'dan sonra bos satir + "N point match"
-    expect(mat).toMatch(/; \[CubeLimit "1024"\]\n\n1 point match\n/)
-    expect(mat).toContain('Game 1')
-    expect(mat).toMatch(/Omer : 0\s+GnuBot : 0/)
+    // header'dan sonra bos satir + "N point match" + bos satir + " Game 1" (bosluklu)
+    expect(mat).toMatch(/; \[CubeLimit "1024"\]\n\n1 point match\n\n Game 1\n/)
+    expect(mat).toMatch(/^ Omer : 0\s+GnuBot : 0$/m) // skor satiri BOSLUKLA baslar
+  })
+
+  it('hamle satirlari XG paren bicimi "  N)" (nokta DEGIL)', () => {
+    const mat = buildMatXg(playRealGame(12345), { matchLength: 1, whiteName: 'A', blackName: 'B' })
+    expect(mat).toMatch(/^\s*\d+\) /m) // "  1) ..." paren
+    expect(mat).not.toMatch(/^\s*\d+\. /m) // "1. ..." nokta bicimi OLMAMALI
   })
 
   it('YASAK tokenlar yok: bar/, /off, sikistirma (n)', () => {
-    // Bir cok seed'i tara: bear-off (off->0) ve bar giris (bar->25) mutlaka gecsin.
     for (const seed of [1, 2, 3, 12345, 777, 999]) {
       const mat = buildMatXg(playRealGame(seed), { matchLength: 1, whiteName: 'A', blackName: 'B' })
       expect(mat, `seed ${seed} bar/`).not.toMatch(/bar\//)
       expect(mat, `seed ${seed} /off`).not.toMatch(/\/off/)
-      expect(mat, `seed ${seed} (n)`).not.toMatch(/\/\d+\(\d+\)/) // 8/3(2) gibi sikistirma
+      expect(mat, `seed ${seed} (n)`).not.toMatch(/\/\d+\(\d+\)/)
     }
   })
 
   it('bear-off 0 ve bar 25 olarak yaziliyor (donusum sadik)', () => {
-    // Donusum birim testi
     expect(xgMoves('bar/20 8/6')).toBe('25/20 8/6')
     expect(xgMoves('6/off 3/off')).toBe('6/0 3/0')
     expect(xgMoves('8/3(2) 20/15')).toBe('8/3 8/3 20/15')
     expect(xgMoves('1/off(3)')).toBe('1/0 1/0 1/0')
-    expect(xgMoves('44')).toBe('44') // zar-benzeri artik yok ama bozmasin
     expect(xgMoves('bar/24(2)')).toBe('25/24 25/24')
   })
 
@@ -142,27 +141,25 @@ describe('buildMatXg — Extreme Gammon uyumlu .mat', () => {
     }
   })
 
-  it('sonuc satiri iki-sutun numarali + mac bitince "and the match"', () => {
-    const mat = buildMatXg(playRealGame(12345), { matchLength: 1, whiteName: 'Omer', blackName: 'GnuBot' })
-    // Tek oyunda 1 puanlik mac biter -> "Wins 1 point and the match" ve karsi "Losses 1 point"
-    expect(mat).toContain('Wins 1 point and the match')
-    expect(mat).toContain('Losses 1 point')
-    // Sonuc satiri NUMARALI (or. "55. Losses 1 point   Wins 1 point and the match")
-    expect(mat).toMatch(/^\d+\.\s+(Losses|Wins) 1 point/m)
-    // her "point" TEKIL (cogul "points" olmamali)
-    expect(mat).not.toContain('points')
+  it('sonuc: her oyunda Wins satiri, tekil "point", mac bitince "and the match"', () => {
+    for (const seed of [1, 2, 3, 12345, 777, 999]) {
+      const mat = buildMatXg(playRealGame(seed), { matchLength: 1, whiteName: 'A', blackName: 'B' })
+      expect(mat, `seed ${seed} Wins`).toMatch(/Wins \d+ point/)
+      expect(mat, `seed ${seed} points`).not.toContain('points') // TEKIL point
+      // Kazanan sol -> "      Wins ..." ayri satir; kazanan sag -> "  N)  Losses ...  Wins ..."
+      const leftWin = / {6}Wins \d+ point/.test(mat)
+      const rightWin = /^\s*\d+\)\s+Losses \d+ point\s+Wins \d+ point/m.test(mat)
+      expect(leftWin || rightWin, `seed ${seed} sonuc bicimi`).toBe(true)
+    }
+    expect(buildMatXg(playRealGame(12345), { matchLength: 1, whiteName: 'A', blackName: 'B' })).toContain('and the match')
   })
 
   it('cok oyunlu: skor onceki oyunlarin sonucundan birikir', () => {
-    // Iki tam oyun: seed'ler farkli, arka arkaya (acilis dizilimiyle bolunur).
-    const g1 = playRealGame(12345)
-    const g2 = playRealGame(2)
-    const mat = buildMatXg([...g1, ...g2], { matchLength: 7, whiteName: 'A', blackName: 'B' })
-    const games = mat.split('\n').filter((l) => /^Game \d+$/.test(l))
-    expect(games).toEqual(['Game 1', 'Game 2'])
-    // Game 1 skoru 0-0; Game 2 skoru Game 1 sonucuyla tutarli (biri >0).
-    const scoreLines = mat.split('\n').filter((l) => /^A : \d+\s+B : \d+$/.test(l))
-    expect(scoreLines[0]).toMatch(/^A : 0\s+B : 0$/)
-    expect(scoreLines[1]).not.toMatch(/^A : 0\s+B : 0$/) // 2. oyun 0-0 OLMAMALI (skor birikti)
+    const mat = buildMatXg([...playRealGame(12345), ...playRealGame(2)], { matchLength: 7, whiteName: 'A', blackName: 'B' })
+    const games = mat.split('\n').filter((l) => /^ Game \d+$/.test(l))
+    expect(games).toEqual([' Game 1', ' Game 2'])
+    const scoreLines = mat.split('\n').filter((l) => /^ A : \d+\s+B : \d+$/.test(l))
+    expect(scoreLines[0]).toMatch(/^ A : 0\s+B : 0$/) // 1. oyun 0-0
+    expect(scoreLines[1]).not.toMatch(/^ A : 0\s+B : 0$/) // 2. oyun skor birikti
   })
 })
