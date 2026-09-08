@@ -159,126 +159,133 @@ export default function Cart({
     }
   }
 
+  const totalItems = memItem ? 1 : coinRows.reduce((s, r) => s + r.it.qty, 0) + productRows.reduce((s, i) => s + i.qty, 0)
+  const ctaLabel = memItem || moneyTotalTL > 0 ? 'Ödemeye Geç' : 'Siparişi Tamamla'
+
+  const qtyStepper = (id: string, qty: number) => (
+    <div className="cart2-qty" aria-label="adet">
+      <button type="button" onClick={() => setQty(id, qty - 1)} aria-label="azalt">
+        −
+      </button>
+      <span className="tnum">{qty}</span>
+      <button type="button" onClick={() => setQty(id, qty + 1)} aria-label="arttır">
+        +
+      </button>
+    </div>
+  )
+
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
-      <div className="register-card cart-card" onClick={(e) => e.stopPropagation()}>
+      <div className="register-card cart2-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
-        <header className="cart-head">
+
+        <header className="cart2-head">
           <h2>
-            <Icon name="shop" size={20} /> Sepet
+            <Icon name="cart" size={22} /> Sepetim
           </h2>
-          <p className="cart-sub">
-            {memItem ? 'Üyeliğini gözden geçir ve güvenle öde. Bitiş tarihine 1 yıl eklenir.' : 'Sepetini gözden geçir ve güvenle öde.'}
-          </p>
+          {!nothingToPay && <span className="cart2-count">{totalItems} ürün</span>}
         </header>
 
-        {memItem ? (
-          /* --- Üyelik uzatma sepeti (tek urun) --- */
-          <>
-            <div className="cart-list">
-              <div className="cart-row cart-row-mem">
-                <span className="cart-row-name">
-                  <Icon name="crown" size={16} /> 1 Yıllık Premium Üyelik
-                  <b className="cart-row-gc">Üyelik bitişine +1 yıl</b>
-                </span>
-                <span className="cart-row-price tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
-                <button type="button" className="cart-row-del" onClick={() => setItems((prev) => prev.filter((p) => p.kind !== 'membership'))} aria-label="kaldır">
-                  <Icon name="x" size={14} />
-                </button>
-              </div>
+        {nothingToPay ? (
+          <div className="cart2-empty">
+            <div className="cart2-empty-ic">
+              <Icon name="cart" size={40} />
             </div>
-            <div className="cart-summary">
-              <div className="cart-sum-row cart-sum-total">
-                <span>Toplam</span>
-                <span className="cart-sum-amt tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
-              </div>
-            </div>
-            {err && <div className="cart-err">{err}</div>}
-            <div className="cart-actions">
-              <Button variant="outline" onClick={onClose}>
-                Vazgeç
-              </Button>
-              <Button variant="default" disabled={busy} onClick={checkout}>
-                <Icon name="crown" size={16} /> Ödemeye Geç
-              </Button>
-            </div>
-            <p className="cart-note">Ödeme Garanti BBVA 3D Secure ile güvenli şekilde alınır. Üyelik bitiş tarihine 1 yıl eklenir.</p>
-          </>
-        ) : nothingToPay ? (
-          <div className="cart-empty">
-            <Icon name="shop" size={34} />
-            <p>Sepetin boş.</p>
-            <Button variant="outline" onClick={onContinue}>
-              <Icon name="coin" size={16} /> Coin paketlerine dön
+            <p className="cart2-empty-t">Sepetin boş</p>
+            <p className="cart2-empty-s">Coin paketleri, tavla ürünleri, kitaplar ve daha fazlası Mağaza'da seni bekliyor.</p>
+            <Button onClick={onContinue}>
+              <Icon name="shop" size={16} /> Mağaza'ya git
             </Button>
           </div>
         ) : (
-          <>
-            <div className="cart-list">
-              {/* Coin paketleri */}
-              {coinRows.map(({ it, pkg }) => (
-                <div className="cart-row" key={it.id}>
-                  <span className="cart-row-name">
-                    <Icon name="coin" size={16} /> {pkg.name}
-                    <b className="cart-row-gc">{fmtCoin(pkg.gc)} coin</b>
-                  </span>
-                  <div className="cart-qty" aria-label="adet">
-                    <button type="button" onClick={() => setQty(it.id, it.qty - 1)} aria-label="azalt">
-                      −
-                    </button>
-                    <span className="tnum">{it.qty}</span>
-                    <button type="button" onClick={() => setQty(it.id, it.qty + 1)} aria-label="arttır">
-                      +
-                    </button>
+          <div className="cart2-grid">
+            {/* SOL: sepet öğeleri */}
+            <div className="cart2-main">
+              {memItem ? (
+                <div className="cart2-item">
+                  <div className="cart2-thumb cart2-thumb-mem">
+                    <Icon name="crown" size={26} />
                   </div>
-                  <span className="cart-row-price tnum">{fmtTL(pkg.price * it.qty)}</span>
-                  <button type="button" className="cart-row-del" onClick={() => remove(it.id)} aria-label="kaldır">
-                    <Icon name="x" size={14} />
+                  <div className="cart2-item-info">
+                    <span className="cart2-item-name">1 Yıllık Premium Üyelik</span>
+                    <span className="cart2-item-meta">Üyelik bitişine +1 yıl eklenir</span>
+                  </div>
+                  <span className="cart2-item-price tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
+                  <button
+                    type="button"
+                    className="cart2-del"
+                    onClick={() => setItems((prev) => prev.filter((p) => p.kind !== 'membership'))}
+                    aria-label="kaldır"
+                  >
+                    <Icon name="trash" size={16} />
                   </button>
                 </div>
-              ))}
-
-              {/* Fiziksel ürünler */}
-              {productRows.map((it) => {
-                const p = it.product!
-                return (
-                  <div className="cart-row cart-row-product" key={it.id}>
-                    <span className="cart-row-name">
-                      {p.image ? <img className="cart-thumb" src={imageUrl(p.image)} alt="" /> : <Icon name="package" size={16} />}
-                      <span className="cart-row-lines">
-                        <span>{p.name}</span>
-                        <b className="cart-row-gc">
-                          {p.color ? p.color + ' · ' : ''}
-                          {p.payment === 'coin' ? <>coin ile</> : <>kart ile</>}
-                        </b>
-                      </span>
-                    </span>
-                    <div className="cart-qty" aria-label="adet">
-                      <button type="button" onClick={() => setQty(it.id, it.qty - 1)} aria-label="azalt">
-                        −
-                      </button>
-                      <span className="tnum">{it.qty}</span>
-                      <button type="button" onClick={() => setQty(it.id, it.qty + 1)} aria-label="arttır">
-                        +
+              ) : (
+                <>
+                  {coinRows.map(({ it, pkg }) => (
+                    <div className="cart2-item" key={it.id}>
+                      <div className="cart2-thumb cart2-thumb-coin">
+                        <Icon name="coin" size={24} />
+                      </div>
+                      <div className="cart2-item-info">
+                        <span className="cart2-item-name">{pkg.name}</span>
+                        <span className="cart2-item-meta">{fmtCoin(pkg.gc)} jeton</span>
+                      </div>
+                      {qtyStepper(it.id, it.qty)}
+                      <span className="cart2-item-price tnum">{fmtTL(pkg.price * it.qty)}</span>
+                      <button type="button" className="cart2-del" onClick={() => remove(it.id)} aria-label="kaldır">
+                        <Icon name="trash" size={16} />
                       </button>
                     </div>
-                    <span className="cart-row-price tnum">
-                      {p.payment === 'coin' ? <Coins amount={(p.coinPrice ?? 0) * it.qty} size={14} /> : fmtTL(((p.moneyPrice ?? 0) / 100) * it.qty)}
-                    </span>
-                    <button type="button" className="cart-row-del" onClick={() => remove(it.id)} aria-label="kaldır">
-                      <Icon name="x" size={14} />
-                    </button>
-                  </div>
-                )
-              })}
+                  ))}
+
+                  {productRows.map((it) => {
+                    const p = it.product!
+                    return (
+                      <div className="cart2-item" key={it.id}>
+                        <div className="cart2-thumb">
+                          {p.image ? <img src={imageUrl(p.image)} alt="" /> : <Icon name="package" size={22} />}
+                        </div>
+                        <div className="cart2-item-info">
+                          <span className="cart2-item-name">{p.name}</span>
+                          <span className="cart2-item-meta">
+                            {p.color && <span className="cart2-chip">{p.color}</span>}
+                            <span className={`cart2-chip cart2-chip-${p.payment}`}>
+                              {p.payment === 'coin' ? 'Coin ile' : 'Kart ile'}
+                            </span>
+                          </span>
+                        </div>
+                        {qtyStepper(it.id, it.qty)}
+                        <span className="cart2-item-price tnum">
+                          {p.payment === 'coin' ? (
+                            <Coins amount={(p.coinPrice ?? 0) * it.qty} size={15} />
+                          ) : (
+                            fmtTL(((p.moneyPrice ?? 0) / 100) * it.qty)
+                          )}
+                        </span>
+                        <button type="button" className="cart2-del" onClick={() => remove(it.id)} aria-label="kaldır">
+                          <Icon name="trash" size={16} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </>
+              )}
+
+              <button type="button" className="cart2-continue" onClick={onContinue}>
+                <Icon name="caret-left" size={15} /> Alışverişe devam et
+              </button>
             </div>
 
-            {/* Adres seçimi (fiziksel ürün varsa) */}
-            {hasProducts && (
-              <div className="cart-address">
-                <div className="cart-addr-row">
+            {/* SAĞ: özet + ödeme */}
+            <aside className="cart2-summary">
+              <h3 className="cart2-summary-t">Sipariş Özeti</h3>
+
+              {/* Adres (fiziksel ürün varsa) */}
+              {hasProducts && (
+                <div className="cart2-block cart2-addr">
                   <label>Teslimat adresi</label>
                   {shippingAddrs.length > 0 ? (
                     <select value={shipId ?? ''} onChange={(e) => setShipId(e.target.value ? Number(e.target.value) : null)}>
@@ -290,10 +297,8 @@ export default function Cart({
                       ))}
                     </select>
                   ) : (
-                    <span className="cart-addr-empty">Kayıtlı adres yok</span>
+                    <span className="cart2-addr-empty">Kayıtlı adres yok</span>
                   )}
-                </div>
-                <div className="cart-addr-row">
                   <label>Fatura adresi (isteğe bağlı)</label>
                   <select value={billId ?? ''} onChange={(e) => setBillId(e.target.value ? Number(e.target.value) : null)}>
                     <option value="">Teslimat ile aynı</option>
@@ -303,90 +308,93 @@ export default function Cart({
                       </option>
                     ))}
                   </select>
+                  <button type="button" className="cart2-addr-link" onClick={onManageAddresses}>
+                    <Icon name="pin" size={13} /> Adres ekle / yönet
+                  </button>
                 </div>
-                <button type="button" className="cart-addr-manage" onClick={onManageAddresses}>
-                  <Icon name="pencil" size={13} /> Adres ekle / yönet
-                </button>
-              </div>
-            )}
+              )}
 
-            {/* Indirim kodu (yalnız coin paketi varsa) */}
-            {coinRows.length > 0 && (
-              <div className="cart-promo">
-                {applied ? (
-                  <div className="cart-promo-applied">
-                    <span className="cart-promo-ok">
-                      <Icon name="check" size={15} /> <b>{applied.code}</b> uygulandı
-                    </span>
-                    <span className="cart-promo-off tnum">−{fmtTL(discountTL)}</span>
-                    <button type="button" className="cart-promo-del" onClick={clearPromo} aria-label="kodu kaldır">
-                      <Icon name="x" size={14} />
-                    </button>
+              {/* İndirim kodu (yalnız coin paketi varsa) */}
+              {!memItem && coinRows.length > 0 && (
+                <div className="cart2-block cart2-promo">
+                  {applied ? (
+                    <div className="cart2-promo-ok">
+                      <Icon name="check" size={15} />
+                      <b>{applied.code}</b> uygulandı
+                      <span className="cart2-promo-off tnum">−{fmtTL(discountTL)}</span>
+                      <button type="button" onClick={clearPromo} aria-label="kodu kaldır">
+                        <Icon name="x" size={13} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="cart2-promo-form">
+                      <input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.toUpperCase())}
+                        placeholder="İndirim kodu"
+                        aria-label="İndirim kodu"
+                        onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
+                      />
+                      <Button variant="outline" disabled={promoBusy || !code.trim()} onClick={applyPromo}>
+                        Uygula
+                      </Button>
+                    </div>
+                  )}
+                  {promoErr && <div className="cart2-promo-err">{promoErr}</div>}
+                </div>
+              )}
+
+              {/* Toplamlar */}
+              <div className="cart2-rows">
+                {memItem ? (
+                  <div className="cart2-row cart2-row-total">
+                    <span>Toplam</span>
+                    <span className="tnum">{fmtTL(MEMBERSHIP_PRICE_TL)}</span>
                   </div>
                 ) : (
-                  <div className="cart-promo-form">
-                    <input
-                      className="cart-promo-input"
-                      value={code}
-                      onChange={(e) => setCode(e.target.value.toUpperCase())}
-                      placeholder="İndirim kodu"
-                      aria-label="İndirim kodu"
-                      onKeyDown={(e) => e.key === 'Enter' && applyPromo()}
-                    />
-                    <Button variant="outline" disabled={promoBusy || !code.trim()} onClick={applyPromo}>
-                      Uygula
-                    </Button>
-                  </div>
+                  <>
+                    {coinProductRows.length > 0 && (
+                      <div className="cart2-row">
+                        <span>Coin ile ödenecek</span>
+                        <span>
+                          <Coins amount={coinProductsCoins} size={14} />
+                        </span>
+                      </div>
+                    )}
+                    {moneyTotalTL > 0 && (
+                      <div className="cart2-row">
+                        <span>Ara toplam{totalCoinsPkg > 0 ? ` · ${fmtCoin(totalCoinsPkg)} coin` : ''}</span>
+                        <span className="tnum">{fmtTL(moneyTotalTL)}</span>
+                      </div>
+                    )}
+                    {applied && (
+                      <div className="cart2-row cart2-row-disc">
+                        <span>İndirim · {applied.code}</span>
+                        <span className="tnum">−{fmtTL(discountTL)}</span>
+                      </div>
+                    )}
+                    {moneyTotalTL > 0 && (
+                      <div className="cart2-row cart2-row-total">
+                        <span>Ödenecek tutar</span>
+                        <span className="tnum">{fmtTL(finalTL)}</span>
+                      </div>
+                    )}
+                  </>
                 )}
-                {promoErr && <div className="cart-promo-err">{promoErr}</div>}
               </div>
-            )}
 
-            <div className="cart-summary">
-              {coinProductRows.length > 0 && (
-                <div className="cart-sum-row">
-                  <span>Coin ile ödenecek</span>
-                  <span className="tnum">
-                    <Coins amount={coinProductsCoins} size={14} />
-                  </span>
-                </div>
-              )}
-              {moneyTotalTL > 0 && (
-                <div className="cart-sum-row">
-                  <span>Kart ile ara toplam</span>
-                  <span className="tnum">{fmtTL(moneyTotalTL)}</span>
-                </div>
-              )}
-              {applied && (
-                <div className="cart-sum-row cart-sum-disc">
-                  <span>İndirim · {applied.code}</span>
-                  <span className="tnum">−{fmtTL(discountTL)}</span>
-                </div>
-              )}
-              {moneyTotalTL > 0 && (
-                <div className="cart-sum-row cart-sum-total">
-                  <span>{totalCoinsPkg > 0 ? <>Kart toplam · <b className="tnum">{fmtCoin(totalCoinsPkg)}</b> coin</> : 'Kart toplam'}</span>
-                  <span className="cart-sum-amt tnum">{fmtTL(finalTL)}</span>
-                </div>
-              )}
-            </div>
+              {err && <div className="cart2-err">{err}</div>}
 
-            {err && <div className="cart-err">{err}</div>}
-
-            <div className="cart-actions">
-              <Button variant="outline" onClick={onContinue}>
-                Alışverişe devam
+              <Button className="cart2-cta" disabled={busy || shippingRequired} onClick={checkout}>
+                <Icon name={moneyTotalTL > 0 || memItem ? 'lock' : 'check'} size={16} /> {ctaLabel}
               </Button>
-              <Button variant="default" disabled={busy || shippingRequired} onClick={checkout}>
-                <Icon name={moneyTotalTL > 0 ? 'coin' : 'check'} size={16} />{' '}
-                {moneyTotalTL > 0 ? 'Ödemeye Geç' : 'Siparişi Tamamla'}
-              </Button>
-            </div>
-            <p className="cart-note">
-              {moneyTotalTL > 0 ? 'Kart ödemesi Garanti BBVA 3D Secure ile güvenle alınır. ' : ''}
-              {coinProductRows.length > 0 ? 'Coin ürünleri anında hesabından düşülür.' : ''}
-            </p>
-          </>
+
+              <p className="cart2-secure">
+                <Icon name="shield-check" size={14} />
+                {moneyTotalTL > 0 || memItem ? ' Garanti BBVA 3D Secure ile güvenli ödeme' : ' Coin ürünleri anında hesabından düşülür'}
+              </p>
+            </aside>
+          </div>
         )}
       </div>
     </div>
