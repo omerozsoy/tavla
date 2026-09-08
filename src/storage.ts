@@ -19,6 +19,10 @@ export interface MoveLogEntry {
   // dışı). prAdjustedEquityLoss = 1-puanlık maçta ×1.5 uygulanmış equity kaybı. Backend bunları toplar.
   countsForPR?: boolean
   prAdjustedEquityLoss?: number
+  // TUR-SIRASI DOLGUSU: recordPR'ın matchLog'a YAZMADIĞI turlar (zorunlu tek-hamle veya oynanamayan
+  // dance). Sadece .mat XG dışa aktarımında sıra/zar korunması için var (analiz YOK). native buildMat
+  // ve backend (MatBuilder/PR) bunları SÜZER -> gnubg luck/PR DEĞİŞMEZ; yalnız buildMatXg kullanır.
+  fill?: boolean
   // Kup (cube) karari kaydi (taş oyunu degil). Varsa bu bir kup satiridir.
   cube?: {
     win: number // karar aninda kazanma %

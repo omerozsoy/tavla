@@ -173,13 +173,40 @@ function capPoints(points: number, matchLength: number, winnerScore: number): nu
   return need > 0 ? Math.min(points, need) : points
 }
 
+// Aynı turun (aynı oyuncu + aynı seq) MÜKERRER hamle girdisini ele: online senkron çift-yazımı
+// (aynı hamle iki kez matchLog'a düşebiliyor -> XG'de aynı hamle iki satır) ya da fill/recordPR
+// örtüşmesi. Küp girdileri hamle ile AYNI seq'i taşıyabildiğinden dedup DIŞIDIR. Bir tur için birden
+// çok kayıt varsa BİLGİ taşıyanı (notation dolu) korunur. Oyun-İÇİ çağrılır (seq oyun başında sıfırlanır).
+function dedupeTurns(game: MoveLogEntry[]): MoveLogEntry[] {
+  const at = new Map<string, number>()
+  const out: MoveLogEntry[] = []
+  const info = (s?: string) => (s && s.trim() && s !== 'pas' && s !== 'pass' ? 1 : 0)
+  for (const e of game) {
+    if (e.cube || e.seq == null || !e.player) {
+      out.push(e)
+      continue
+    }
+    const key = `${e.player}:${e.seq}`
+    const prevIdx = at.get(key)
+    if (prevIdx === undefined) {
+      at.set(key, out.length)
+      out.push(e)
+    } else if (info(e.notation) > info(out[prevIdx].notation)) {
+      out[prevIdx] = e // daha bilgili kaydı tut, mükerreri düşür
+    }
+  }
+  return out
+}
+
 // ---------------------------------------------------------------------------
 // 1) gnubg NATIVE .mat  (DEGISTIRME — luck analizi buna bagli)
 // ---------------------------------------------------------------------------
 export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
   const { matchLength = 1, whiteName = 'White', blackName = 'Black' } = opts
   const COLW = 34
-  const games = splitGames(log)
+  // gnubg NATIVE .mat: yalnız analiz-değeri taşıyan girdiler (fill = XG tur-sırası dolgusu HARİÇ).
+  // Böylece luck kaynağı bugüne kadarki .mat ile BİREBİR aynı kalır (fill eklenmesi luck'ı bozmaz).
+  const games = splitGames(log.filter((e) => !e.fill))
 
   const out: string[] = [`${matchLength} point match`]
   let sw = 0
@@ -306,7 +333,10 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
 
   let sw = 0
   let sb = 0
-  games.forEach((game, gi) => {
+  games.forEach((rawGame, gi) => {
+    // XG: fill (zorunlu/dance dolgu) girdileri DAHIL (tur sırası + zar korunur) ama MÜKERRER
+    // tur (aynı oyuncu+seq) elenir -> "sol kolon sürekli boş" ve "aynı hamle iki satır" düzelir.
+    const game = dedupeTurns(rawGame)
     out.push('')
     out.push(` Game ${gi + 1}`)
     out.push(` ${`${whiteName} : ${sw}`.padEnd(COLW + 4)}${blackName} : ${sb}`)

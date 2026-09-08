@@ -4,7 +4,7 @@ import { maximalTerminals, applyStep, boardKey } from './engine/moves'
 import { moveNotation } from './engine/notation'
 import type { GameState, Player, Step } from './engine/types'
 import type { MoveLogEntry } from './storage'
-import { buildMatXg, xgMoves } from './matExport'
+import { buildMatXg, buildMat, xgMoves } from './matExport'
 
 // Sabit-seed PRNG -> tekrar-oynanabilir mac (bkz. matExport.test.ts).
 function mulberry32(seed: number) {
@@ -312,5 +312,62 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
       results: [{ winner: 'black', points: 9 }, { winner: 'white', points: 9 }],
     })
     expect(winLine(mat)).toBe(false)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// TUR-SIRASI: fill (zorunlu/dance) girdileri + mükerrer-tur dedup. tavlatv-mac(18) bug'ı:
+// bear-off sonunda benim ZORUNLU toplamalarım matchLog'a girmiyordu -> rakibin hamleleri sol
+// kolon BOŞ kalarak üst üste biniyordu ve XG son hamleleri parse edemiyordu. Ayrıca online
+// çift-yazım aynı hamleyi iki satır yapıyordu.
+// ---------------------------------------------------------------------------
+describe('buildMatXg — fill (zar korunur) + mükerrer-tur dedup; native buildMat fill\'i süzer', () => {
+  const zeros = () => new Array(24).fill(0)
+  const nonTerm: GameState = {
+    points: (() => { const p = zeros(); p[5] = 2; p[12] = -2; return p })(),
+    bar: { white: 0, black: 0 }, off: { white: 0, black: 0 }, turn: 'white', dice: [], diceUsed: [],
+  }
+  const e = (o: Partial<MoveLogEntry>): MoveLogEntry =>
+    ({ notation: '', best: '', loss: 0, pos: nonTerm, playedSteps: [], ...o })
+
+  it('fill turları XG\'de ZAR+SIRA korur (dance -> "54:", forced -> "31: 2/1"); sol kolon boş kalmaz', () => {
+    const log: MoveLogEntry[] = [
+      e({ notation: '13/8 24/22', player: 'white', dice: [5, 2], seq: 0 }),
+      e({ notation: '6/1 8/4', player: 'black', dice: [6, 1], seq: 1 }),
+      e({ notation: '', player: 'white', dice: [5, 4], seq: 2, fill: true }), // dance (oynayamadı)
+      e({ notation: '6/2 7/5', player: 'black', dice: [4, 2], seq: 3 }),
+      e({ notation: '2/1', player: 'white', dice: [3, 1], seq: 4, fill: true }), // zorunlu tek hamle
+      e({ notation: '19/16 16/10', player: 'black', dice: [3, 6], seq: 5 }),
+    ]
+    const mat = buildMatXg(log, { matchLength: 3, whiteName: 'A', blackName: 'B' })
+    // dance: sol kolonda "54:" (zar VAR, hamle YOK) — kesinlikle BOŞ değil
+    expect(mat).toMatch(/^\s*\d+\) 54: {2,}42: 6\/2 7\/5/m)
+    // forced: sol kolonda "31: 2/1"
+    expect(mat).toMatch(/^\s*\d+\) 31: 2\/1 {2,}36: 19\/16 16\/10/m)
+    // native buildMat fill'i SÜZER -> luck yolu değişmez (dance "54:" satırı native'de YOK)
+    const native = buildMat(log, { matchLength: 3, whiteName: 'A', blackName: 'B' })
+    expect(native).not.toContain('54:')
+    expect(native).not.toContain('31: 2/1')
+  })
+
+  it('mükerrer tur (aynı oyuncu+seq) TEK satıra iner (online çift-yazım / fill örtüşmesi)', () => {
+    const log: MoveLogEntry[] = [
+      e({ notation: '24/23', player: 'white', dice: [3, 1], seq: 5 }),
+      e({ notation: '24/23', player: 'white', dice: [3, 1], seq: 5 }), // DUPLICATE
+      e({ notation: '10/8 8/7', player: 'black', dice: [2, 1], seq: 6 }),
+    ]
+    const mat = buildMatXg(log, { matchLength: 3, whiteName: 'A', blackName: 'B' })
+    expect((mat.match(/31: 24\/23/g) || []).length).toBe(1) // yalnız BİR kez
+    expect(mat).toMatch(/^\s*\d+\) 31: 24\/23 {2,}21: 10\/8 8\/7/m) // sol+sağ tek satır
+  })
+
+  it('dedup BİLGİ taşıyanı korur: boş mükerrer, dolu hamleyi ezmez', () => {
+    const log: MoveLogEntry[] = [
+      e({ notation: '', player: 'white', dice: [3, 1], seq: 5, fill: true }), // önce boş fill
+      e({ notation: '24/23', player: 'white', dice: [3, 1], seq: 5 }),        // sonra gerçek hamle
+      e({ notation: '10/8', player: 'black', dice: [2, 1], seq: 6 }),
+    ]
+    const mat = buildMatXg(log, { matchLength: 3, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('31: 24/23') // dolu hamle korundu
   })
 })
