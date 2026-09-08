@@ -83,6 +83,19 @@ function polar(cx: number, cy: number, r: number, deg: number): [number, number]
   return [cx + r * Math.cos(a), cy + r * Math.sin(a)]
 }
 
+// Dilim rengine göre OKUNUR metin rengi: açık zeminde ink, koyu zeminde beyaz.
+// (Canlı palette'te sarı/amber/limon açık; beyaz metin okunmaz → ink'e düşer.)
+function readableText(bg?: string | null): string {
+  const m = /^#?([0-9a-f]{6})$/i.exec((bg ?? '').trim())
+  if (!m) return '#ffffff'
+  const num = parseInt(m[1], 16)
+  const r = (num >> 16) & 255
+  const g = (num >> 8) & 255
+  const b = num & 255
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+  return luminance > 150 ? '#1c1a17' : '#ffffff'
+}
+
 export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsChange, onUser }: Props) {
   const { t } = useT()
   const toast = useToast()
@@ -270,7 +283,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                           <text
                             x={lx.toFixed(2)}
                             y={ly.toFixed(2)}
-                            fill={rw.textColor}
+                            fill={readableText(rw.sliceColor)}
                             fontSize={n > 10 ? 10 : 12}
                             fontWeight={500}
                             textAnchor="middle"
@@ -280,7 +293,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             {rw.name.length > 16 ? rw.name.slice(0, 15) + '…' : rw.name}
                           </text>
                           <foreignObject x={ix - 10} y={iy - 10} width={20} height={20}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: rw.textColor }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: readableText(rw.sliceColor) }}>
                               <Icon name={iconFor(rw.type, rw.icon)} size={15} weight="fill" />
                             </div>
                           </foreignObject>
@@ -301,7 +314,10 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                 {result && (
                   <div className="lw-win">
                     <div className="lw-win-inner">
-                      <div className="lw-win-badge" style={{ background: result.slice_color || 'var(--accent)' }}>
+                      <div
+                        className="lw-win-badge"
+                        style={{ background: result.slice_color || 'var(--accent)', color: readableText(result.slice_color) }}
+                      >
                         <Icon name={iconFor(result.type, result.icon)} size={34} weight="fill" />
                       </div>
                       <div className="lw-win-title">{t('lw.congrats')}</div>
@@ -371,7 +387,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                 <ul className="lw-prizes">
                   {rewards.map((rw, i) => (
                     <li key={rw.id} className={`lw-prize ${winIdx === i ? 'is-win' : ''}`}>
-                      <span className="lw-prize-sw" style={{ background: rw.sliceColor, color: rw.textColor }}>
+                      <span className="lw-prize-sw" style={{ background: rw.sliceColor, color: readableText(rw.sliceColor) }}>
                         <Icon name={iconFor(rw.type, rw.icon)} size={14} weight="fill" />
                       </span>
                       <span className="lw-prize-name">{rw.name}</span>

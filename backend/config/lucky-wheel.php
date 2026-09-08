@@ -50,9 +50,11 @@ return [
     ],
 
     // Varsayılan dilim rengi paleti (admin renk seçmezse sıraya göre atanır).
+    // Canlı/festival tonları — sıcak & soğuk dönüşümlü; metin rengi ön yüzde dilim
+    // parlaklığına göre otomatik (koyu/açık) seçilir (readableText).
     'palette' => [
-        '#a83a2b', '#e6b422', '#2f6f4f', '#1f5673', '#6e3b8a',
-        '#c85a3c', '#3a7d99', '#8a6d3b', '#4a4e69', '#b5651d',
-        '#2a9d8f', '#9c2c2c', '#5f7161', '#7d4f9c', '#d08c34', '#264653',
+        '#e8412e', '#f7b500', '#1fa85c', '#159fd4', '#8e3fd4',
+        '#ff7a29', '#e01e5a', '#12b3a6', '#3b6fe0', '#d4409a',
+        '#84c318', '#f26419', '#b21fb0', '#06a8cc', '#ffb200', '#5a3fd6',
     ],
 ];
