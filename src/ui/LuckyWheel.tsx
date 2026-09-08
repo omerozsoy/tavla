@@ -239,8 +239,32 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
           <p className="lw-note">{t('lw.notReady')}</p>
         ) : (
           <div className="lw-layout">
-            {/* SOL: çark + çevir + istatistik */}
+            {/* SOL: istatistik + çark + çevir */}
             <section className="lw-wheel-panel">
+              {/* İstatistik şeridi: kalan hak · yeni hak (geri sayım) · bakiye */}
+              <div className="lw-stats">
+                <div className="lw-stat">
+                  <span className="lw-stat-label">{t('lw.remaining')}</span>
+                  <span className="lw-stat-value tnum">{remaining}</span>
+                </div>
+                <div className="lw-stat">
+                  <span className="lw-stat-label">{t('lw.nextFree')}</span>
+                  <span className="lw-stat-value">
+                    {remaining <= 0 && nextFree ? (
+                      <Countdown target={nextFree} className="lw-cd" onExpire={load} />
+                    ) : (
+                      '—'
+                    )}
+                  </span>
+                </div>
+                <div className="lw-stat">
+                  <span className="lw-stat-label">{t('shop.balance')}</span>
+                  <span className="lw-stat-value">
+                    <Coins amount={coins} size={16} />
+                  </span>
+                </div>
+              </div>
+
               <div className={`lw-stage ${spinning ? 'is-spinning' : ''}`}>
                 {/* Üst gösterge (pointer): kiremit üçgen, aşağı bakar */}
                 <div className="lw-pointer" aria-hidden="true">
@@ -353,30 +377,6 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                     <>{t('lw.spin')}</>
                   )}
                 </Button>
-              </div>
-
-              {/* İstatistik şeridi: kalan hak · yeni hak (geri sayım) · bakiye */}
-              <div className="lw-stats">
-                <div className="lw-stat">
-                  <span className="lw-stat-label">{t('lw.remaining')}</span>
-                  <span className="lw-stat-value tnum">{remaining}</span>
-                </div>
-                <div className="lw-stat">
-                  <span className="lw-stat-label">{t('lw.nextFree')}</span>
-                  <span className="lw-stat-value">
-                    {remaining <= 0 && nextFree ? (
-                      <Countdown target={nextFree} className="lw-cd" onExpire={load} />
-                    ) : (
-                      '—'
-                    )}
-                  </span>
-                </div>
-                <div className="lw-stat">
-                  <span className="lw-stat-label">{t('shop.balance')}</span>
-                  <span className="lw-stat-value">
-                    <Coins amount={coins} size={16} />
-                  </span>
-                </div>
               </div>
             </section>
 
