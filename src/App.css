@@ -17107,6 +17107,28 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   color: var(--text);
 }
+/* BoardPicker "Tahta" ic etiketi burada gereksiz (ustteki baslik zaten adliyor) */
+.prof-ov-all .setup-row {
+  margin: 0;
+}
+.prof-ov-all .setup-label {
+  display: none;
+}
+/* Mobil: tahta + cerceve galerileri her zaman 2 sutun (tek dev sutun olmasin) */
+@media (max-width: 620px) {
+  .prof-ov-all .board-previews-lg {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .prof-ov-all .shop-anim-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .prof-ov-all .bp-name,
+  .prof-ov-all .shop-anim-name {
+    font-size: 0.76rem;
+  }
+}
 .prof-ov-count {
   font-family: var(--tv-font-ui);
   font-size: 0.8rem;
@@ -20775,11 +20797,12 @@ select:-webkit-autofill {
        .avatar-preview, shadcn [data-slot=avatar] ve alt öğeleri.
      • Pill / chip / tag / badge (isminde geçen tüm öğeler) + Tailwind
        `rounded-full` (hap/daire niyeti olan her şey yuvarlak kalır).
+     • Spinner'lar ([class*=spinner]: .loading-spinner/.btn-spinner/.mm-spinner).
    Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
    sıfırlar. Tek noktadan geri alınır.
    ========================================================================= */
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"]),
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"])::before,
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"])::after {
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"]),
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"])::before,
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"])::after {
   border-radius: 0 !important;
 }
