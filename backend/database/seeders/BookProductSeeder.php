@@ -12,6 +12,9 @@ class BookProductSeeder extends Seeder
 {
     public function run(): void
     {
+        // Eski görselsiz örnek kitapları kaldır (ProductSeeder'dan gelen 2 demo).
+        Product::whereIn('slug', ['tavla-strateji-kitabi', 'tavla-acilislar-kitabi'])->delete();
+
         $cat = ProductCategory::firstOrCreate(['slug' => 'kitap'], ['name' => 'Kitap', 'sort' => 2]);
 
         // [slug-parça, ad, açıklama, görsel dosyası]

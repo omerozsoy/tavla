@@ -5001,7 +5001,7 @@ export default function App() {
         }}
         onOpenOrders={() => {
           setEditProfile(false)
-          goPage(() => setMyOrdersOpen(true))
+          setMyOrdersOpen(true)
         }}
         tab={profileTab}
         onTabChange={setProfileTab}
@@ -5673,6 +5673,8 @@ export default function App() {
     tournOpen ||
     shopOpen ||
     luckyWheelOpen ||
+    productsOpen ||
+    myOrdersOpen ||
     cartOpen ||
     checkoutOpen ||
     frameGalleryOpen ||
@@ -5842,7 +5844,10 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
-          onProducts={() => goPage(() => setProductsOpen(true))}
+          onProducts={() => {
+            setShopOpen(false)
+            setProductsOpen(true)
+          }}
           initialTab={shopTab}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
