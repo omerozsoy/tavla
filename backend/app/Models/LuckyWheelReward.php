@@ -32,7 +32,7 @@ class LuckyWheelReward extends Model
 
     protected $fillable = [
         'name', 'description', 'type', 'amount', 'reference_id', 'weight', 'icon',
-        'slice_color', 'text_color', 'sort', 'stock', 'daily_win_limit',
+        'slice_color', 'text_color', 'sort', 'wheel_order', 'stock', 'daily_win_limit',
         'per_user_daily_limit', 'per_user_lifetime_limit', 'starts_at', 'ends_at',
         'is_active', 'total_won',
     ];
@@ -49,8 +49,8 @@ class LuckyWheelReward extends Model
             if (empty($changes)) {
                 return;
             }
-            if (array_keys($changes) === ['sort']) {
-                return; // sürükle-bırak sıralama -> günlüğe yazma
+            if (empty(array_diff(array_keys($changes), ['sort', 'wheel_order']))) {
+                return; // sürükle-bırak sıralama / çark karıştırma -> günlüğe yazma
             }
             $diff = [];
             foreach ($changes as $k => $new) {
@@ -76,6 +76,7 @@ class LuckyWheelReward extends Model
             'amount' => 'integer',
             'weight' => 'integer',
             'sort' => 'integer',
+            'wheel_order' => 'integer',
             'stock' => 'integer',
             'daily_win_limit' => 'integer',
             'per_user_daily_limit' => 'integer',

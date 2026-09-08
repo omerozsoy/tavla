@@ -169,6 +169,11 @@ class LuckyWheelService
                 'spinCost' => $spinCost,
             ],
             'rewards' => $this->publicRewards($pool),
+            // Çark dilim dizilişi: wheel_order (null'lar sona -> sort'a düşer). Liste 'rewards'
+            // admin sort'unda SABİT kalır; çark bu id sırasına göre dizilir ("Çarkı Karıştır").
+            'wheelOrder' => $pool
+                ->sortBy(fn ($r) => [$r->wheel_order === null ? 1 : 0, (int) $r->wheel_order, (int) $r->sort, (int) $r->id])
+                ->pluck('id')->values()->all(),
             'sliceCount' => $pool->count(),
             'remainingSpins' => $remaining,
             'bonusSpins' => $bonus,

@@ -22,7 +22,7 @@ class ListLuckyWheelRewards extends ListRecords
                 ->color('warning')
                 ->requiresConfirmation()
                 ->modalHeading('Çarkı karıştır')
-                ->modalDescription('Tüm ödüllerin dilim sırası (sort) rastgele yeniden dağıtılacak. Kazanma ihtimalleri (weight/yüzde) DEĞİŞMEZ; yalnızca çarktaki görünüm sırası değişir.')
+                ->modalDescription('Çark üzerindeki dilim dizilişi (wheel_order) rastgele yeniden dağıtılacak. Ödüller LİSTESİ/tablo sırası (sort) ve kazanma ihtimalleri (weight/yüzde) DEĞİŞMEZ — yalnızca çarktaki görünüm sırası karışır.')
                 ->modalSubmitActionLabel('Karıştır')
                 ->action(function (): void {
                     $rewards = LuckyWheelReward::query()->get();
@@ -36,19 +36,19 @@ class ListLuckyWheelRewards extends ListRecords
                         return;
                     }
 
-                    // 0..n-1 permütasyonu -> çakışmasız benzersiz sıra numaraları.
+                    // 0..n-1 permütasyonu -> çakışmasız benzersiz dilim sırası (yalnız çark).
                     $orders = range(0, $n - 1);
                     shuffle($orders);
 
                     DB::transaction(function () use ($rewards, $orders): void {
                         foreach ($rewards->values() as $i => $reward) {
-                            $reward->update(['sort' => $orders[$i]]);
+                            $reward->update(['wheel_order' => $orders[$i]]);
                         }
                     });
 
                     Notification::make()
                         ->title('Çark karıştırıldı')
-                        ->body($n.' ödülün dilim sırası rastgele değişti.')
+                        ->body($n.' ödülün çark dizilişi rastgele değişti. (Liste sırası değişmedi.)')
                         ->success()
                         ->send();
                 }),
