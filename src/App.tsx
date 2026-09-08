@@ -1916,8 +1916,14 @@ export default function App() {
   // Maç kaydı yaşam döngüsü: aktif bir maç başladığında yeni kayıt aç (uid üret / oda kodu).
   useEffect(() => {
     if (home) {
-      gameRecordRef.current = null
-      setRecordUid(null)
+      // Aktif (oynanmış) maçı arka plana alırken/refresh'te kaydını KORU -> resume'da AYNI admin
+      // kaydına devam (yeni uid = parçalanma yok). Mount'ta applySavedGame record'u geri yükler ama
+      // home başlangıçta true; 0-tur+sonuçsuz DEĞİLSE null'lamayız (yoksa restore edilen uid hemen
+      // silinip yeniden üretilirdi -> HUD'da farklı ID). Yalnız hiç oynanmamışta sıfırla.
+      if (turnsPlayed === 0 && !gameEnd) {
+        gameRecordRef.current = null
+        setRecordUid(null)
+      }
       return
     }
     if (online) {
