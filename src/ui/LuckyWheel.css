@@ -89,8 +89,8 @@
   transition: stroke 0.2s ease;
 }
 .lw-slice.is-win {
-  stroke: var(--accent);
-  stroke-width: 4;
+  stroke: #1c1a17; /* kazanılan dilim: siyah (ink) belirgin çerçeve */
+  stroke-width: 5;
 }
 
 /* Merkez göbek: flat ink daire (üstünde TavlaTV logosu) */
