@@ -395,7 +395,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             </div>
                           )}
 
-                          <div className="lw-win-title">{t('lw.congrats')}</div>
+                          <div className="lw-win-title">{isNoPrize ? t('lw.sorry') : t('lw.congrats')}</div>
                           <div className="lw-win-reward">
                             {result.type === 'COIN' ? <Coins amount={result.amount} gain pill size={18} /> : rewardName}
                           </div>
