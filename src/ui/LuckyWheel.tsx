@@ -17,6 +17,10 @@ import { useEscape } from './useEscape'
 import { Countdown } from './Countdown'
 import { TavlaTvMark } from './TavlaTvLogo'
 import { Button } from '@/components/ui/button'
+import AvatarFrame from './AvatarFrame'
+import { FRAME_BY_ID } from './avatarFrames'
+import SetupBoard from './SetupBoard'
+import { ALL_THEMES } from '../boardThemes'
 import {
   ApiError,
   getLuckyWheel,
@@ -110,6 +114,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   const [remaining, setRemaining] = useState(0)
   const [nextFree, setNextFree] = useState<string | null>(null)
   const [coins, setCoins] = useState(0)
+  const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined) // kazanılan çerçeve önizlemesi için
 
   const timerRef = useRef<number | null>(null)
 
@@ -190,6 +195,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
         setWinIdx(idx)
         setRemaining(res.remainingSpins)
         setNextFree(res.nextFreeSpinAt)
+        setAvatarUrl(res.user?.avatar ?? undefined) // çerçeve ödülü önizlemesinde kendi avatarı
         // Otoriter bakiye (varsa kazanç dahil) burada uygulanır.
         if (typeof res.coins === 'number') {
           setCoins(res.coins)
@@ -308,8 +314,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             x={lx.toFixed(2)}
                             y={ly.toFixed(2)}
                             fill={readableText(rw.sliceColor)}
-                            fontSize={n > 10 ? 10 : 12}
-                            fontWeight={500}
+                            fontSize={n > 10 ? 8 : 9}
+                            fontWeight={400}
                             textAnchor="middle"
                             dominantBaseline="middle"
                             transform={`rotate(${(mid + 180).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})`}
@@ -335,31 +341,64 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                   </foreignObject>
                 </svg>
 
-                {result && (
-                  <div className="lw-win">
-                    <div className="lw-win-inner">
-                      <div
-                        className="lw-win-badge"
-                        style={{ background: result.slice_color || 'var(--accent)', color: readableText(result.slice_color) }}
-                      >
-                        <Icon name={iconFor(result.type, result.icon)} size={34} weight="fill" />
+                {result &&
+                  (() => {
+                    const isAvatar = result.type === 'AVATAR'
+                    const isBoard = result.type === 'BOARD_THEME'
+                    const frameDef = isAvatar && result.reference_id ? FRAME_BY_ID[result.reference_id] : undefined
+                    const boardTheme = isBoard && result.reference_id ? ALL_THEMES.find((x) => x.id === result.reference_id) : undefined
+                    const rewardName = frameDef?.name ?? boardTheme?.name ?? result.name
+                    const rarity = frameDef?.rarity ?? boardTheme?.rarity
+                    return (
+                      <div className="lw-win">
+                        <div className="lw-win-inner">
+                          {/* Kazanılan ödülün gerçek gösterimi — koyu (ink) vitrin panelinde */}
+                          {isAvatar ? (
+                            <div className="lw-win-show is-cosmetic">
+                              <AvatarFrame frame={result.reference_id} src={avatarUrl} size={132} animated />
+                            </div>
+                          ) : isBoard && boardTheme ? (
+                            <div className="lw-win-show is-cosmetic">
+                              <div className="lw-win-board">
+                                <SetupBoard
+                                  panel={boardTheme.panel ?? boardTheme.b}
+                                  a={boardTheme.a}
+                                  b={boardTheme.b}
+                                  checker={boardTheme.checker ?? boardTheme.b}
+                                  cream={boardTheme.light}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div
+                              className="lw-win-badge"
+                              style={{ background: result.slice_color || 'var(--accent)', color: readableText(result.slice_color) }}
+                            >
+                              <Icon name={iconFor(result.type, result.icon)} size={34} weight="fill" />
+                            </div>
+                          )}
+
+                          <div className="lw-win-title">{t('lw.congrats')}</div>
+                          <div className="lw-win-reward">
+                            {result.type === 'COIN' ? <Coins amount={result.amount} gain pill size={18} /> : rewardName}
+                          </div>
+                          {rarity ? (
+                            <span className={`lw-win-rarity rar-${rarity}`}>{t(`rarity.${rarity}`)}</span>
+                          ) : result.description ? (
+                            <div className="lw-win-sub">{result.description}</div>
+                          ) : null}
+                          <div className="lw-win-sub">{t('lw.rewardAdded')}</div>
+                          {result.type === 'FREE_SPIN' && remaining > 0 ? (
+                            <Button onClick={spinAgain}>
+                              <Icon name="refresh" size={16} /> {t('lw.spinAgain')}
+                            </Button>
+                          ) : (
+                            <Button onClick={closeWin}>{t('lw.great')}</Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="lw-win-title">{t('lw.congrats')}</div>
-                      <div className="lw-win-reward">
-                        {result.type === 'COIN' ? <Coins amount={result.amount} gain pill size={18} /> : result.name}
-                      </div>
-                      {result.description ? <div className="lw-win-sub">{result.description}</div> : null}
-                      <div className="lw-win-sub">{t('lw.rewardAdded')}</div>
-                      {result.type === 'FREE_SPIN' && remaining > 0 ? (
-                        <Button onClick={spinAgain}>
-                          <Icon name="refresh" size={16} /> {t('lw.spinAgain')}
-                        </Button>
-                      ) : (
-                        <Button onClick={closeWin}>{t('lw.great')}</Button>
-                      )}
-                    </div>
-                  </div>
-                )}
+                    )
+                  })()}
               </div>
 
               {/* ÇEVİR butonu — çarkın altında (standart site butonu) */}

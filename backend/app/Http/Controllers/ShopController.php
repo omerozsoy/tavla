@@ -79,6 +79,18 @@ class ShopController extends Controller
 
     private const RARITY_PRICE = ['common' => 30, 'rare' => 60, 'epic' => 120, 'legendary' => 180, 'mythic' => 250];
 
+    /** Tüm avatar çerçeve motion id'leri (Şans Çarkı rastgele ödülü bu havuzdan seçer). */
+    public static function frameMotionIds(): array
+    {
+        return array_keys(self::FRAME_MOTIONS);
+    }
+
+    /** Tüm satın alınabilir tahta tema id'leri (Şans Çarkı rastgele ödülü bu havuzdan seçer). */
+    public static function boardThemeIds(): array
+    {
+        return array_keys(self::BOARD_RARITY);
+    }
+
     // Tam katalog: tahtalar (nadirlik fiyati) + 62 cerceve (anim basina tek; id: 'frame.<motion>').
     private function catalog(): array
     {
