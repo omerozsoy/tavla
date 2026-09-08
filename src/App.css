@@ -20773,11 +20773,13 @@ select:-webkit-autofill {
      • Oyun tahtası (.board ve altı: pul/zar/küp).
      • Avatarlar: .sf (AvatarFrame + ring/glow + morph animasyonu), .avatar,
        .avatar-preview, shadcn [data-slot=avatar] ve alt öğeleri.
+     • Pill / chip / tag / badge (isminde geçen tüm öğeler) + Tailwind
+       `rounded-full` (hap/daire niyeti olan her şey yuvarlak kalır).
    Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
    sıfırlar. Tek noktadan geri alınır.
    ========================================================================= */
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *),
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *)::before,
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *)::after {
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"]),
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"])::before,
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"])::after {
   border-radius: 0 !important;
 }
