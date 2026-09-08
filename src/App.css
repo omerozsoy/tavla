@@ -15189,6 +15189,28 @@ button.acct-row:hover:not(:disabled) {
   color: var(--accent);
   flex: 0 0 auto;
 }
+/* Fiziksel ürün satırı: kare thumbnail + iki satır (ad + varyant/ödeme) */
+.cart-thumb {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 48px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+}
+.cart-row-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.cart-row-lines > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .cart-row-gc {
   color: var(--muted);
   font-weight: 400;
@@ -16648,8 +16670,32 @@ button.acct-row:hover:not(:disabled) {
   grid-template-columns: repeat(auto-fill, minmax(108px, 1fr));
   gap: 10px;
 }
+/* Tavla Tasarımları: sarmalayan grid yerine YATAY kaydırılabilir tek şerit (swipe sol/sağ).
+   7+ tasarım dikeyde yer kaplamasın; hepsi tek satırda kaydırılarak gezilir. */
 .prof-ov-grid-board {
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  display: flex;
+  grid-template-columns: none;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+  padding: 2px 2px 10px;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 45%, transparent) transparent;
+}
+.prof-ov-grid-board .prof-ov-item {
+  flex: 0 0 200px;
+  scroll-snap-align: start;
+}
+.prof-ov-grid-board::-webkit-scrollbar {
+  height: 8px;
+}
+.prof-ov-grid-board::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  border-radius: 999px;
+}
+.prof-ov-grid-board::-webkit-scrollbar-track {
+  background: transparent;
 }
 .prof-ov-item {
   position: relative;
