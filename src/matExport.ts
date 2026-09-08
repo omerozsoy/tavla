@@ -277,6 +277,11 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     crawford = true,
     results,
   } = opts
+  // MAÇ UZUNLUĞU HARD-CODE EDİLMEZ. Log'a oyun anında gömülen otoriter mctx.matchLen (match.target)
+  // varsa ONU kullan; caller yanlış/varsayılan (1) geçse bile MAT başlığı GERÇEK maç uzunluğunu
+  // yazar (ör. 3 point match). Kaynaklar çelişirse LOG otoriterdir (o maçla birlikte kaydedildi).
+  const loggedLen = log.find((e) => typeof e.mctx?.matchLen === 'number' && e.mctx.matchLen > 0)?.mctx?.matchLen
+  const effMatchLength = loggedLen ?? matchLength
   // Gercek XG dosyasiyla (BackgammonGalaxy export) BIREBIR: `  N)` (padStart 3 + paren),
   // ` Game`/` isim : skor` basinda BOSLUK, sol aksiyon COLW=28'e padlenir -> sag sutun col 33.
   const COLW = 28
@@ -296,7 +301,7 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     `; [Crawford "${crawford ? 'On' : 'Off'}"]`,
     `; [CubeLimit "1024"]`,
     '',
-    `${matchLength} point match`,
+    `${effMatchLength} point match`,
   ]
 
   let sw = 0
@@ -359,7 +364,7 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       const pts = oc.points
       if (oc.winner === 'white') sw += pts
       else sb += pts
-      const matchOver = matchLength > 0 && (oc.winner === 'white' ? sw : sb) >= matchLength
+      const matchOver = effMatchLength > 0 && (oc.winner === 'white' ? sw : sb) >= effMatchLength
       const winTxt = `Wins ${pts} point${matchOver ? ' and the match' : ''}`
       const loseTxt = `Losses ${pts} point`
       if (oc.winner === 'black') {

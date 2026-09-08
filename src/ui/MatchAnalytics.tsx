@@ -81,7 +81,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [hasMore, setHasMore] = useState(false)
   const [error, setError] = useState(false)
   const [openIdx, setOpenIdx] = useState<number | null>(null)
-  const [report, setReport] = useState<{ log: MoveLogEntry[]; hc: Player; pr: number | null } | null>(null)
+  const [report, setReport] = useState<
+    { log: MoveLogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string } | null
+  >(null)
   const [reportBusy, setReportBusy] = useState(false)
   // Varsayilan 'Tumu': "bazi maclar cikmiyor" sikayetinin bir sebebi 7g filtresiydi.
   const [period, setPeriod] = useState<EJPeriod>('all')
@@ -99,7 +101,15 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const log = parsed.log ?? []
       // Bos log (online/PvP mac -> hamle analizi tutulmaz): rapor acma, karar yok
       if (log.length === 0) return
-      setReport({ log, hc: parsed.hc ?? 'white', pr: m.pr ?? null })
+      const hc: Player = parsed.hc ?? 'white'
+      // .mat basligi/oyuncu satiri icin GERCEK mac uzunlugu + isimler (varsayilan 1'e/White'a DUSME).
+      // matchLength: kayitli maç uzunlugu (yoksa buildMatXg log'daki mctx.matchLen'den turetir).
+      const matchLength = m.match_length ?? undefined
+      const me = myName || undefined
+      const opp = m.opponent_name || undefined
+      const whiteName = hc === 'white' ? me : opp
+      const blackName = hc === 'white' ? opp : me
+      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName })
     } catch {
       /* yoksay */
     } finally {
@@ -384,6 +394,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           log={report.log}
           pr={report.pr}
           humanColor={report.hc}
+          matchLength={report.matchLength}
+          whiteName={report.whiteName}
+          blackName={report.blackName}
           onClose={() => setReport(null)}
         />
       )}
