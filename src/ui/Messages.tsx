@@ -10,14 +10,38 @@ import {
   type ChatThread,
   type ChatMessage,
   type ChatUser,
+  type AppNotification,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { Button } from '@/components/ui/button'
+import { type IconName } from './Icon'
 
 interface Props {
-  focusUserId?: number | null // acilirken dogrudan bu arkadasin konusmasini ac
+  focusUserId?: number | null // acilirken dogrudan bu arkadasin konusmasini ac (NOTIF_ID -> Bildirimler)
   onClose: () => void
   onRead?: () => void // gelenler okundu -> App rozetini tazele
+  // Bildirimler mesajlarla birlestirildi: sol listede sabit "Bildirimler" girisi.
+  notifications?: AppNotification[]
+  unreadNotif?: number
+  onNotifRead?: () => void // Bildirimler acilinca hepsini okundu isaretle
+  onNotifDelete?: (id: number) => void
+  onNotifDeleteAll?: () => void
+}
+
+// Bildirimler "sohbeti" icin ozel sentinel id (gercek kullanici id'leri pozitif).
+const NOTIF_ID = -1
+const NOTIF_ICONS: Record<string, IconName> = {
+  bell: 'bell', crown: 'crown', medal: 'medal', star: 'star', trophy: 'trophy', coin: 'coin', gift: 'gift',
+}
+function timeAgo(iso: string | null | undefined, t: (k: string, p?: Record<string, string | number>) => string): string {
+  if (!iso) return ''
+  const s = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000))
+  if (s < 60) return t('notif.now')
+  const m = Math.floor(s / 60)
+  if (m < 60) return t('notif.minAgo', { m })
+  const h = Math.floor(m / 60)
+  if (h < 24) return t('notif.hourAgo', { h })
+  return t('notif.dayAgo', { d: Math.floor(h / 24) })
 }
 
 // Sohbet icin basit emoji seti (kutuphane yok; hafif)
@@ -35,7 +59,16 @@ function fmtTime(iso?: string | null): string {
   return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function Messages({ focusUserId, onClose, onRead }: Props) {
+export default function Messages({
+  focusUserId,
+  onClose,
+  onRead,
+  notifications = [],
+  unreadNotif = 0,
+  onNotifRead,
+  onNotifDelete,
+  onNotifDeleteAll,
+}: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [threads, setThreads] = useState<ChatThread[]>([])
@@ -70,6 +103,15 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
     onReadRef.current = onRead
   }, [onRead])
 
+  // Bildirimler açılınca hepsini okundu işaretle (ref: kimlik sabit kalsın).
+  const onNotifReadRef = useRef(onNotifRead)
+  useEffect(() => {
+    onNotifReadRef.current = onNotifRead
+  }, [onNotifRead])
+  useEffect(() => {
+    if (activeId === NOTIF_ID) onNotifReadRef.current?.()
+  }, [activeId])
+
   // Aktif konusmayi yukle (gelenleri okundu isaretler)
   const loadThread = useCallback(async (uid: number, silent = false) => {
     if (!silent) setLoadingThread(true)
@@ -93,12 +135,12 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
   // Aktif konusma degisince yukle (onceki konusmanin "yaziyor" durumunu sifirla)
   useEffect(() => {
     setPartnerTyping(false)
-    if (activeId != null) loadThread(activeId)
+    if (activeId != null && activeId !== NOTIF_ID) loadThread(activeId)
   }, [activeId, loadThread])
 
   // Aktif konusma acikken 3 sn'de bir sessiz tazele (yeni mesajlar + "yaziyor…")
   useEffect(() => {
-    if (activeId == null) return
+    if (activeId == null || activeId === NOTIF_ID) return
     const id = window.setInterval(() => {
       loadThread(activeId, true)
       refreshThreads()
@@ -146,8 +188,22 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
         </h2>
 
         <div className={`messages-split ${showList ? 'show-list' : 'show-thread'}`}>
-          {/* Sol: konusma listesi (gelen kutusu) */}
+          {/* Sol: konusma listesi (gelen kutusu). En üstte sabit "Bildirimler". */}
           <div className="messages-threads">
+            <button
+              type="button"
+              className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
+              onClick={() => setActiveId(NOTIF_ID)}
+            >
+              <span className="messages-notif-ava">
+                <Icon name="bell" size={20} />
+              </span>
+              <span className="messages-thread-body">
+                <span className="messages-thread-name">{t('notif.title')}</span>
+                <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
+              </span>
+              {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+            </button>
             {loadingThreads ? (
               <div className="lb-empty">{t('dm.loading')}</div>
             ) : threads.length === 0 ? (
@@ -186,6 +242,48 @@ export default function Messages({ focusUserId, onClose, onRead }: Props) {
                 <Icon name="chat" size={40} />
                 <p>{t('dm.pick')}</p>
               </div>
+            ) : activeId === NOTIF_ID ? (
+              /* Bildirimler görünümü (mesajlarla birleşik) */
+              <>
+                <div className="messages-thread-head">
+                  <button type="button" className="messages-back" onClick={() => setActiveId(null)} aria-label={t('common.close')}>
+                    <Icon name="arrow-right" size={16} />
+                  </button>
+                  <span className="messages-notif-title">
+                    <Icon name="bell" size={18} /> {t('notif.title')}
+                  </span>
+                  {notifications.length > 0 && onNotifDeleteAll && (
+                    <button type="button" className="notif-clear messages-notif-clear" onClick={onNotifDeleteAll}>
+                      {t('notif.clearAll')}
+                    </button>
+                  )}
+                </div>
+                <div className="messages-log">
+                  {notifications.length === 0 ? (
+                    <div className="messages-hint">{t('notif.empty')}</div>
+                  ) : (
+                    <ul className="notif-list notif-list-inline">
+                      {notifications.map((n) => (
+                        <li key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
+                          <span className="notif-ic">
+                            <Icon name={NOTIF_ICONS[n.icon ?? 'bell'] ?? 'bell'} size={16} />
+                          </span>
+                          <span className="notif-txt">
+                            <span className="notif-t">{n.title}</span>
+                            {n.body && <span className="notif-b">{n.body}</span>}
+                          </span>
+                          <span className="notif-time">{timeAgo(n.created_at, t)}</span>
+                          {onNotifDelete && (
+                            <button type="button" className="notif-del" title={t('notif.delete')} aria-label={t('notif.delete')} onClick={() => onNotifDelete(n.id)}>
+                              <Icon name="x" size={14} />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
             ) : (
               <>
                 <div className="messages-thread-head">

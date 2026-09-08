@@ -128,7 +128,6 @@ import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
 import Rules from './ui/Rules'
-import NotificationBell from './ui/NotificationBell'
 import Info from './ui/Info'
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
@@ -396,7 +395,7 @@ export default function App() {
   const [editProfile, setEditProfile] = useState(false)
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
-  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'notifs' | 'addresses'>('stats')
+  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'addresses'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   const [authForgot, setAuthForgot] = useState(false) // Auth "sifremi unuttum" modu -> /sifremi-unuttum
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -642,9 +641,7 @@ export default function App() {
           ? 'profil/tahtalar'
           : profileTab === 'badges'
             ? 'profil/basarilar'
-            : profileTab === 'notifs'
-              ? 'profil/bildirimler'
-              : profileTab === 'addresses'
+            : profileTab === 'addresses'
                 ? 'profil/adreslerim'
                 : 'profil'
     : infoOpen
@@ -954,6 +951,11 @@ export default function App() {
           // Alt-yol -> profil sekmesi (kisisel yer-imi/link): /profil/avatarlar, /tahtalar, /basarilar,
           // /bildirimler, /duzenle. Alt-yol yoksa (veya bilinmeyen) İstatistikler sekmesi.
           const sub = seg[1] || ''
+          if (sub === 'bildirimler') {
+            // Bildirimler artık Mesajlar'da (birleşti) -> eski /profil/bildirimler linki Mesajlar'ı açar.
+            setMessagesOpen(true)
+            break
+          }
           if (sub === 'duzenle') {
             setProfileEditMode(true)
           } else {
@@ -965,11 +967,9 @@ export default function App() {
                   ? 'boards'
                   : sub === 'basarilar'
                     ? 'badges'
-                    : sub === 'bildirimler'
-                      ? 'notifs'
-                      : sub === 'adreslerim'
-                        ? 'addresses'
-                        : 'stats',
+                    : sub === 'adreslerim'
+                      ? 'addresses'
+                      : 'stats',
             )
           }
           setEditProfile(true)
@@ -5014,9 +5014,6 @@ export default function App() {
         onClose={() => setEditProfile(false)}
         onRenew={handleRenew}
         onToggleAutoRenew={handleToggleAutoRenew}
-        notifications={notifications}
-        onDeleteNotification={handleDeleteNotification}
-        onDeleteAllNotifications={handleDeleteAllNotifications}
         onOpenMatchHistory={(matchId) => {
           setMatchHistInitialId(matchId ?? null)
           setEditProfile(false)
@@ -5171,7 +5168,7 @@ export default function App() {
           >
             <Icon name="spinner-ball" size={24} />
           </Button>
-          {/* Mesajlar: bildirim zili gibi ust barda chat ikonu + okunmamis rozeti */}
+          {/* Mesajlar + Bildirimler tek ikonda: okunmamış mesaj + bildirim toplamı rozette */}
           <Button
             variant="ghost"
             size="icon"
@@ -5181,19 +5178,10 @@ export default function App() {
             aria-label={t('dm.title')}
           >
             <Icon name="chat" size={24} />
-            {dmUnread > 0 && <span className="notif-badge">{dmUnread > 9 ? '9+' : dmUnread}</span>}
+            {dmUnread + unreadNotif > 0 && (
+              <span className="notif-badge">{dmUnread + unreadNotif > 9 ? '9+' : dmUnread + unreadNotif}</span>
+            )}
           </Button>
-          <NotificationBell
-            items={notifications}
-            unread={unreadNotif}
-            onOpen={() => {
-              setUnreadNotif(0)
-              setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
-              markNotificationsRead().catch(() => {})
-            }}
-            onDelete={handleDeleteNotification}
-            onDeleteAll={handleDeleteAllNotifications}
-          />
           {/* Alışveriş sepeti: üst barda GİZLİ, sepete ürün eklenince görünür; tıklanınca sepet sayfası açılır */}
           {cartCount > 0 && (
             <Button
@@ -5318,29 +5306,10 @@ export default function App() {
               >
                 <Icon name="chat" size={18} className="acct-row-ic" />
                 <span className="acct-row-l">{t('dm.title')}</span>
-                {dmUnread > 0 && <span className="acct-row-v">{dmUnread > 9 ? '9+' : dmUnread}</span>}
+                {dmUnread + unreadNotif > 0 && (
+                  <span className="acct-row-v">{dmUnread + unreadNotif > 9 ? '9+' : dmUnread + unreadNotif}</span>
+                )}
               </button>
-
-              {/* Bildirimler (mevcut bell bileseni gomulu) */}
-              <div className="acct-row acct-row-embed">
-                <Icon name="bell" size={18} className="acct-row-ic" />
-                <span className="acct-row-l">{t('notif.title')}</span>
-                <span className="acct-row-embed-c">
-                  <NotificationBell
-                    items={notifications}
-                    unread={unreadNotif}
-                    onOpen={() => {
-                      // Okundu = SADECE okundu isaretle (silme YOK). Rozet 0'a duser;
-                      // bildirimler kalir -> panelden veya Profilim > Bildirimler'den silinebilir.
-                      setUnreadNotif(0)
-                      setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
-                      markNotificationsRead().catch(() => {})
-                    }}
-                    onDelete={handleDeleteNotification}
-                    onDeleteAll={handleDeleteAllNotifications}
-                  />
-                </span>
-              </div>
 
               {/* Magaza */}
               <button
@@ -5824,6 +5793,15 @@ export default function App() {
         <Messages
           focusUserId={messagesFocusId}
           onRead={() => refreshDmUnread()}
+          notifications={notifications}
+          unreadNotif={unreadNotif}
+          onNotifRead={() => {
+            setUnreadNotif(0)
+            setNotifications((ns) => ns.map((n) => ({ ...n, read: true })))
+            markNotificationsRead().catch(() => {})
+          }}
+          onNotifDelete={handleDeleteNotification}
+          onNotifDeleteAll={handleDeleteAllNotifications}
           onClose={() => {
             setMessagesOpen(false)
             setMessagesFocusId(null)
