@@ -20753,3 +20753,15 @@ select:-webkit-autofill {
   border-radius: var(--radius-pill);
   background: var(--bg);
 }
+
+/* =========================================================================
+   FLAT / KESKİN KÖŞE — site geneli (kullanıcı direktifi: yuvarlak köşe yok).
+   Oyun tahtası HARİÇ (.board ve altındaki her şey dokunulmaz: pul/zar/küp
+   yuvarlaklığı korunur). Bu blok Tailwind `rounded-*` utility'lerini ve tüm
+   sabit-kodlu border-radius değerlerini de sıfırlar. Tek noktadan geri alınır.
+   ========================================================================= */
+*:not(.board, .board *),
+*:not(.board, .board *)::before,
+*:not(.board, .board *)::after {
+  border-radius: 0 !important;
+}
