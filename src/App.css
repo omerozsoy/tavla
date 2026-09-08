@@ -20712,6 +20712,283 @@ select:-webkit-autofill {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* ================= Ürün detay sayfası (PDP redesign) ================= */
+.pdp {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.pdp-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 4px 0;
+}
+.pdp-back:hover {
+  color: var(--accent);
+}
+.pdp-back svg {
+  transform: rotate(180deg); /* arrow-right -> geri (sola) */
+}
+.pdp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(300px, 0.95fr);
+  gap: 28px;
+  align-items: start;
+}
+/* --- Medya --- */
+.pdp-media {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pdp-main {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--muted) 8%, var(--card-bg));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: var(--muted);
+}
+.pdp-main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pdp-flag {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+}
+.pdp-thumbs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.pdp-thumb {
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s ease, border-color 0.15s ease;
+}
+.pdp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pdp-thumb:hover {
+  opacity: 1;
+}
+.pdp-thumb.active {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+/* --- Satın alma paneli --- */
+.pdp-panel {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 12px;
+}
+.pdp-eyebrow {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+.pdp-title {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  color: var(--text);
+}
+.pdp-price {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.pdp-price-money {
+  font-size: 1.6rem;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.pdp-price-coin {
+  color: var(--muted);
+}
+.pdp-stock {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.pdp-stock-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+.pdp-stock.in {
+  color: #3f9d5a;
+}
+.pdp-stock.low {
+  color: #c98a2b;
+}
+.pdp-stock.out {
+  color: var(--accent);
+}
+.pdp-desc {
+  color: var(--muted);
+  line-height: 1.55;
+  font-size: 0.94rem;
+  margin: 2px 0 0;
+}
+.pdp-buy {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+  padding-top: 16px;
+}
+.pdp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.pdp-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pdp-label-val {
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9rem;
+}
+.pdp-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pdp-swatch {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  cursor: pointer;
+  border: 2px solid var(--border);
+  box-shadow: inset 0 0 0 2px var(--card-bg);
+}
+/* Renk noktalari yuvarlak kalsin (flat sharp-corner global sifirlamasini specificity ile yen) */
+.pdp-swatches .pdp-swatch {
+  border-radius: 50% !important;
+}
+.pdp-swatch.active {
+  border-color: var(--accent);
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.pdp-qty {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  width: max-content;
+}
+.pdp-qty button {
+  width: 42px;
+  height: 42px;
+  font-size: 1.25rem;
+  background: transparent;
+  color: var(--text);
+  border: none;
+  cursor: pointer;
+}
+.pdp-qty button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+.pdp-qty span {
+  min-width: 48px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.pdp-pay {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.pdp-pay button {
+  flex: 1 1 140px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 11px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+.pdp-pay button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.pdp-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.pdp-add {
+  width: 100%;
+}
+@media (max-width: 760px) {
+  .pdp-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .pdp-panel {
+    position: static;
+    padding: 18px;
+  }
+}
+/* ================= /PDP ================= */
+
 .product-shipping h3 {
   margin: 0 0 10px;
 }

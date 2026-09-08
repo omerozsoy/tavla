@@ -507,6 +507,7 @@ export default function App() {
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
+  const [shopProduct, setShopProduct] = useState<string | null>(null) // Magaza secili urun slug'i -> /magaza/<kat>/<slug>
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
@@ -660,7 +661,7 @@ export default function App() {
         ? 'sepet'
       : shopOpen
         ? shopTab && shopTab !== 'coin' && shopTab !== 'coins'
-          ? 'magaza/' + shopTab // kategori sayfasi: /magaza/<kategori-slug>
+          ? 'magaza/' + shopTab + (shopProduct ? '/' + shopProduct : '') // kategori / urun detay sayfasi
           : 'magaza' // coin (varsayilan) sayfasi
       : luckyWheelOpen
         ? 'sans-carki'
@@ -829,9 +830,11 @@ export default function App() {
           break
         }
         case 'magaza': {
-          // /magaza -> coin (paketler); /magaza/<kategori-slug> -> o kategori; /magaza/coin -> coin
+          // /magaza -> coin; /magaza/<kategori> -> o kategori; /magaza/<kategori>/<urun> -> urun detay
           const sub = seg[1] || ''
-          setShopTab(sub && sub !== 'coin' && sub !== 'coins' ? sub : 'coin')
+          const isCoin = !sub || sub === 'coin' || sub === 'coins'
+          setShopTab(isCoin ? 'coin' : sub)
+          setShopProduct(isCoin ? null : seg[2] || null)
           setShopOpen(true)
           break
         }
@@ -5962,7 +5965,12 @@ export default function App() {
           }}
           onAddToCart={addProductToCart}
           tab={shopTab}
-          onTabChange={setShopTab}
+          onTabChange={(slug) => {
+            setShopTab(slug)
+            setShopProduct(null) // sekme degisince acik urun detayini kapat
+          }}
+          productSlug={shopProduct}
+          onSelectProduct={setShopProduct}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
           boardThemes={boardThemeList}
@@ -5981,6 +5989,7 @@ export default function App() {
           onClose={() => {
             setShopOpen(false)
             setShopTab('coin') // sonraki normal acilis coin sekmesinden baslasin
+            setShopProduct(null)
           }}
         />
       )}
