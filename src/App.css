@@ -3390,6 +3390,104 @@ button[aria-disabled='true'],
   border-color: var(--accent);
   color: var(--accent);
 }
+/* Yol Tarifi + Detayli Bilgi butonlarini yan yana tasiyan aksiyon satiri. */
+.event-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}
+.event-actions .event-directions {
+  margin-top: 0;
+}
+.event-info-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.16s ease, color 0.16s ease;
+}
+.event-info-btn svg {
+  color: var(--accent);
+}
+.event-info-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Detayli Bilgi modali: standart kart + bicimlendirilmis (rich) aciklama. */
+.event-info-card {
+  width: min(620px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  text-align: left;
+}
+.event-info-head {
+  margin: 2px 0 12px;
+  padding-right: 32px;
+}
+.event-info-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground, #222);
+}
+.event-info-sub {
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  color: var(--muted-foreground, #666);
+}
+.event-info-body {
+  line-height: 1.6;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.event-info-body p {
+  margin: 0 0 0.75em;
+}
+/* RichEditor ciktisi: baslik/liste/baglanti/alinti temel bicimleri. */
+.event-info-body.rich h2,
+.event-info-body.rich h3 {
+  margin: 1em 0 0.4em;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.event-info-body.rich h2 {
+  font-size: 1.1rem;
+}
+.event-info-body.rich h3 {
+  font-size: 1rem;
+}
+.event-info-body.rich ul,
+.event-info-body.rich ol {
+  margin: 0 0 0.75em;
+  padding-left: 1.4em;
+}
+.event-info-body.rich li {
+  margin: 0.2em 0;
+}
+.event-info-body.rich a {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.event-info-body.rich blockquote {
+  margin: 0 0 0.75em;
+  padding-left: 0.9em;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+.event-body.rich {
+  margin: 10px 0 0;
+}
+.event-body.rich p {
+  margin: 0 0 0.6em;
+}
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
   .event-map-col {

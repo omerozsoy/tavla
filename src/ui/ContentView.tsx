@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
@@ -26,6 +27,10 @@ const paras = (body?: string | null) =>
     .split(/\n{1,}/)
     .map((s) => s.trim())
     .filter(Boolean)
+
+// Icerik HTML mi (RichEditor ciktisi) yoksa duz metin mi? Duz metinse paras() ile
+// paragraflara bolunur; HTML ise dogrudan (guvenli sekilde) basilir.
+const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 
 function fmtDate(s?: string | null, withTime = false): string {
   if (!s) return ''
@@ -863,6 +868,21 @@ function EventRow({
   kurum?: { image?: string; instagram?: string; youtube?: string }
   hotel?: { image?: string; place?: string; province?: string; country?: string; maps?: string }
 }) {
+  const { t } = useT()
+  const [info, setInfo] = useState(false) // "Detaylı Bilgi" modalı acik mi
+  // Esc ile kapat — CAPTURE fazi + stopImmediatePropagation ile ust ContentView'in
+  // Esc handler'inin (liste modunda sayfayi kapatan) da tetiklenmesini engelle.
+  useEffect(() => {
+    if (!info) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation()
+        setInfo(false)
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [info])
   const contacts = (ev.contacts ?? []).filter((c) => c && (c.name || c.phone))
   // Duzenleyen kurumun logosu (sol sutun) + sosyal medyasi (isim yaninda).
   const logo = kurum?.image
@@ -998,27 +1018,47 @@ function EventRow({
               })()}
           </div>
         )}
-        {/* Otel bilgisi SOL kolonda: ad -> adres -> Yol Tarifi Al (basinda pin ikonu). */}
-        {(ev.hotel || hotelPlace || ev.place || mapHref) && (
+        {/* Otel bilgisi SOL kolonda: ad -> adres -> Yol Tarifi Al + Detaylı Bilgi. */}
+        {(ev.hotel || hotelPlace || ev.place || mapHref || ev.body) && (
           <div className="event-hotel-block">
             {ev.hotel && <div className="ehc-name">{ev.hotel}</div>}
             {(hotelPlace || ev.place) && <div className="ehc-addr">{hotelPlace || ev.place}</div>}
-            {mapHref && (
-              <a
-                className="event-directions"
-                href={mapHref}
-                target="_blank"
-                rel="noreferrer"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <Icon name="pin" size={18} /> Yol Tarifi Al
-              </a>
-            )}
+            <div className="event-actions">
+              {mapHref && (
+                <a
+                  className="event-directions"
+                  href={mapHref}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Icon name="pin" size={18} /> Yol Tarifi Al
+                </a>
+              )}
+              {ev.body && (
+                <button
+                  type="button"
+                  className="event-info-btn"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setInfo(true)
+                  }}
+                >
+                  <Icon name="info" size={18} /> {t('event.moreInfo')}
+                </button>
+              )}
+            </div>
           </div>
         )}
         {/* Aciklama SADECE kurum (organizer) secilmemis etkinliklerde gosterilir.
             Kurum secilince logo + yapisal bilgiler (otel/il) yeterli -> tekrarli metin gizli. */}
-        {!ev.organizer && ev.body && <p className="event-body">{ev.body}</p>}
+        {!ev.organizer &&
+          ev.body &&
+          (isHtml(ev.body) ? (
+            <div className="event-body rich" dangerouslySetInnerHTML={{ __html: ev.body }} />
+          ) : (
+            <p className="event-body">{ev.body}</p>
+          ))}
       </div>
       {/* Sag sutun: SADECE otel gorseli (tek). */}
       {img && (
@@ -1028,6 +1068,39 @@ function EventRow({
           </div>
         </div>
       )}
+      {/* Detaylı Bilgi modalı — turnuva açıklaması (RichEditor HTML). Portal ile body'ye
+          taşınır (event-row transform'lu ata olabilir; fixed overlay kırpılmasın). */}
+      {info &&
+        ev.body &&
+        createPortal(
+          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+            <div className="register-card event-info-card">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="modal-close"
+                onClick={() => setInfo(false)}
+                aria-label={t('common.close')}
+              >
+                <Icon name="x" size={16} />
+              </Button>
+              <header className="event-info-head">
+                <h2>{ev.title}</h2>
+                {ev.organizer && <p className="event-info-sub">{ev.organizer}</p>}
+              </header>
+              {isHtml(ev.body) ? (
+                <div className="event-info-body rich" dangerouslySetInnerHTML={{ __html: ev.body }} />
+              ) : (
+                <div className="event-info-body">
+                  {paras(ev.body).map((p, i) => (
+                    <p key={i}>{p}</p>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
