@@ -182,7 +182,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Fiziksel urun magazasi: siparis (coin aninda / money -> odeme) + kullanicinin siparisleri.
     Route::post('/products/order', [\App\Http\Controllers\ProductController::class, 'order']);
+    Route::post('/products/cart/coin', [\App\Http\Controllers\ProductController::class, 'cartCoinOrder']); // sepetteki coin urunleri (aninda, cok-urun)
     Route::get('/me/orders', [\App\Http\Controllers\ProductController::class, 'myOrders']);
+
+    // Adres defteri (Adreslerim): teslimat + fatura adresleri CRUD.
+    Route::get('/addresses', [\App\Http\Controllers\AddressController::class, 'index']);
+    Route::post('/addresses', [\App\Http\Controllers\AddressController::class, 'store']);
+    Route::put('/addresses/{address}', [\App\Http\Controllers\AddressController::class, 'update'])->whereNumber('address');
+    Route::delete('/addresses/{address}', [\App\Http\Controllers\AddressController::class, 'destroy'])->whereNumber('address');
+
+    // Sepet ödemesi: para (coin paketleri + para-ürünleri) TEK Garanti ödemesi (kind='cart').
+    Route::post('/shop/cart-checkout', [\App\Http\Controllers\PaymentController::class, 'cartCheckout']);
 
     Route::get('/blunders', [BlunderController::class, 'index']);
     Route::post('/blunders', [BlunderController::class, 'store']);

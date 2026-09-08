@@ -308,6 +308,9 @@ class PaymentController extends Controller
             } elseif ($payment->kind === 'product') {
                 // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
                 $this->fulfillProductOrder($payment);
+            } elseif ($payment->kind === 'cart') {
+                // Ortak sepet: coin paketleri + birden cok fiziksel urun tek odemede.
+                $this->fulfillCart($payment);
             } else {
                 // 'subscription' (etkinlestir) veya 'renew' (uzat) — ikisi de plan_until'i buradan yonetir.
                 $this->activateMembership($u, $payment);
@@ -383,6 +386,9 @@ class PaymentController extends Controller
                     } elseif ($payment->kind === 'product') {
                         // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
                         $this->fulfillProductOrder($payment);
+                    } elseif ($payment->kind === 'cart') {
+                        // Ortak sepet: coin paketleri + birden cok fiziksel urun tek odemede.
+                        $this->fulfillCart($payment);
                     } else {
                         // Uyelik: 'subscription' -> aktive et, 'renew' -> mevcut bitise +sure EKLE.
                         $this->activateMembership($u, $payment);
@@ -406,8 +412,173 @@ class PaymentController extends Controller
         return match ($payment->kind) {
             'coins'   => number_format((int) $payment->coins, 0, ',', '.').' coin hesabına yüklendi.',
             'product' => 'Siparişin alındı. Kargo süreci başlayınca bilgilendirileceksin.',
+            'cart'    => 'Ödemen alındı. '.((int) $payment->coins > 0 ? number_format((int) $payment->coins, 0, ',', '.').' coin yüklendi; ' : '').'siparişlerin hazırlanıyor.',
             'renew'   => 'Üyeliğin uzatıldı.',
             default   => 'Üyeliğin etkinleştirildi.',
         };
+    }
+
+    // Ortak sepet ödemesi (kind='cart') fulfillment: coin paketlerini yükle + promo + tüm
+    // bağlı fiziksel sipariş satırlarını 'paid' yap ve stok düş. ATOMIK claim'in İÇİNDE (tek kez).
+    private function fulfillCart(Payment $payment): void
+    {
+        $u = $payment->user;
+        if ((int) $payment->coins > 0) {
+            $u->increment('coins', (int) $payment->coins);
+        }
+        if (! empty($payment->discount_code)) {
+            \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+        }
+        foreach ((array) ($payment->product_order_ids ?? []) as $oid) {
+            $order = \App\Models\ProductOrder::where('id', $oid)->where('status', 'pending')->first();
+            if (! $order) {
+                continue;
+            }
+            $order->status = 'paid';
+            if ($order->product_id) {
+                $dec = \App\Models\Product::where('id', $order->product_id)
+                    ->where('stock', '>=', $order->qty)
+                    ->decrement('stock', $order->qty);
+                if (! $dec) {
+                    $order->admin_note = trim(($order->admin_note ?? '')."\n[sistem] Ödeme alındı ancak stok yetersizdi; stok elle kontrol edilmeli.");
+                }
+            }
+            $order->save();
+        }
+    }
+
+    // POST /shop/cart-checkout — ortak sepetin PARA kısmı (coin paketleri + para-ürünleri)
+    // TEK Garanti ödemesi (kind='cart'). Para-ürünleri için 'pending' sipariş oluşturulur;
+    // ödeme başarılıysa callback fulfillCart ile hepsini karşılar. Fiyatlar SUNUCU-OTORİTER.
+    public function cartCheckout(Request $request, GarantiService $garanti)
+    {
+        if (! $garanti->isAvailable()) {
+            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        }
+        $data = $request->validate([
+            'coin_items'                   => ['nullable', 'array', 'max:20'],
+            'coin_items.*.id'              => ['required_with:coin_items', 'string'],
+            'coin_items.*.qty'             => ['required_with:coin_items', 'integer', 'min:1', 'max:99'],
+            'products'                     => ['nullable', 'array', 'max:20'],
+            'products.*.product_id'        => ['required_with:products', 'integer'],
+            'products.*.qty'               => ['required_with:products', 'integer', 'min:1', 'max:10'],
+            'products.*.color'             => ['nullable', 'string', 'max:40'],
+            'shipping_address_id'          => ['nullable', 'integer'],
+            'billing_address_id'           => ['nullable', 'integer'],
+            'note'                         => ['nullable', 'string', 'max:500'],
+            'code'                         => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $coinItems = $data['coin_items'] ?? [];
+        $products = $data['products'] ?? [];
+        if (empty($coinItems) && empty($products)) {
+            return $this->fail('Sepette ödenecek bir şey yok.', 422);
+        }
+
+        // Coin paketleri alt toplamı (config, client'a güvenilmez).
+        $packagesKurus = 0;
+        $packageCoins = 0;
+        $ids = [];
+        if (! empty($coinItems)) {
+            [$packagesKurus, $packageCoins, $ids, $err] = $this->coinSubtotal($coinItems);
+            if ($err) {
+                return $this->fail($err, 422);
+            }
+        }
+
+        // Para-ürünleri: adres + doğrulama gerekli.
+        $productsKurus = 0;
+        $orderIds = [];
+        if (! empty($products)) {
+            $ship = ProductController::resolveShip($request->user()->id, (int) ($data['shipping_address_id'] ?? 0), $data['note'] ?? null);
+            if (! $ship) {
+                return $this->fail('Ürünler için geçerli bir teslimat adresi seç.', 422);
+            }
+            $billNote = ProductController::billingNote($request->user()->id, $data['billing_address_id'] ?? null);
+
+            $lines = [];
+            foreach ($products as $it) {
+                $p = \App\Models\Product::where('published', true)->find($it['product_id']);
+                if (! $p) {
+                    return $this->fail('Ürün bulunamadı.', 404);
+                }
+                if (! $p->acceptsMoney()) {
+                    return $this->fail($p->name.' nakit ile satılmıyor.', 422);
+                }
+                $color = ProductController::validColor($p, $it['color'] ?? null);
+                if ($color === false) {
+                    return $this->fail($p->name.' için geçerli bir renk seç.', 422);
+                }
+                $qty = (int) $it['qty'];
+                if ((int) $p->stock < $qty) {
+                    return $this->fail($p->name.': yeterli stok yok.', 422);
+                }
+                $productsKurus += (int) $p->money_price * $qty;
+                $lines[] = ['p' => $p, 'qty' => $qty, 'color' => $color];
+            }
+            // Pending siparişleri oluştur (ödeme başarılı olunca fulfillCart 'paid' yapar).
+            foreach ($lines as $ln) {
+                $o = \App\Models\ProductOrder::create(array_merge($ship, [
+                    'user_id'      => $request->user()->id,
+                    'product_id'   => $ln['p']->id,
+                    'product_name' => $ln['p']->name,
+                    'color'        => $ln['color'],
+                    'qty'          => $ln['qty'],
+                    'payment_type' => 'money',
+                    'amount'       => (int) $ln['p']->money_price * $ln['qty'],
+                    'status'       => 'pending',
+                    'admin_note'   => $billNote,
+                ]));
+                $orderIds[] = $o->id;
+            }
+        }
+
+        $totalKurus = $packagesKurus + $productsKurus;
+        if ($totalKurus <= 0) {
+            return $this->fail('Sepet tutarı geçersiz.', 422);
+        }
+
+        // İndirim kodu (opsiyonel): tüm para toplamına uygulanır.
+        $discountKurus = 0;
+        $discountCode = null;
+        if (! empty($data['code'])) {
+            $reason = null;
+            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+            if (! $promo) {
+                return $this->fail($this->promoReason($reason), 422);
+            }
+            $discountKurus = $promo->discountKurus($totalKurus);
+            $discountCode = $promo->code;
+        }
+        $chargeKurus = max(0, $totalKurus - $discountKurus);
+        if ($chargeKurus <= 0) {
+            return $this->fail('İndirim kodu sepeti tamamen sıfırlıyor; geçersiz.', 422);
+        }
+
+        $payment = Payment::create([
+            'user_id'           => $request->user()->id,
+            'kind'              => 'cart',
+            'order_id'          => 'TK'.now()->format('ymdHis').mt_rand(100, 999),
+            'amount'            => $chargeKurus,
+            'coins'             => $packageCoins,
+            'package_id'        => implode(',', $ids) ?: 'products',
+            'product_order_ids' => $orderIds,
+            'discount_code'     => $discountCode,
+            'discount_kurus'    => $discountKurus,
+            'currency'          => '949',
+            'status'            => 'pending',
+        ]);
+
+        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
+        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
+        return response()->json([
+            'url'       => $url,
+            'submitUrl' => $submitUrl,
+            'amount'    => $chargeKurus,
+            'coins'     => $packageCoins,
+            'discount'  => $discountKurus,
+            'code'      => $discountCode,
+            'demo'      => $garanti->isDemo(),
+        ]);
     }
 }

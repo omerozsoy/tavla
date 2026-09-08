@@ -10,6 +10,7 @@ import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
 import MembershipCard from './MembershipCard'
+import AddressBook from './AddressBook'
 import { Button } from '@/components/ui/button'
 import { countryName } from '../countries'
 import { type AvatarFrameDef } from './avatarFrames'
@@ -60,7 +61,7 @@ interface Props {
   onTabChange?: (tab: ProfTab) => void
 }
 
-type ProfTab = 'frames' | 'boards' | 'stats' | 'notifs' | 'badges'
+type ProfTab = 'frames' | 'boards' | 'stats' | 'notifs' | 'badges' | 'addresses'
 
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
@@ -242,6 +243,15 @@ export default function ProfileOverview({
             {t('notif.title')}
             {unread > 0 && <span className="prof-ov-count prof-ov-count-alert">{unread}</span>}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'addresses'}
+            className={tab === 'addresses' ? 'active' : ''}
+            onClick={() => setTab('addresses')}
+          >
+            {t('prof.addresses')}
+          </button>
         </div>
 
         {tab === 'frames' && (
@@ -372,6 +382,8 @@ export default function ProfileOverview({
             )}
           </section>
         )}
+
+        {tab === 'addresses' && <AddressBook />}
       </div>
     </div>
   )

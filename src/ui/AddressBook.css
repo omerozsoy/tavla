@@ -1,0 +1,137 @@
+/* Adres defteri (Adreslerim) — profil sekmesi. */
+
+.ab-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.ab-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.ab-group-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+}
+.ab-empty {
+  color: var(--muted-foreground, #777);
+  font-size: 0.9rem;
+}
+.ab-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.ab-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  background: var(--card-bg);
+}
+.ab-card-title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.ab-default {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent, #a83a2b);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.ab-card-line {
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #666);
+  line-height: 1.4;
+}
+.ab-card-tax {
+  margin-top: 3px;
+  font-size: 0.78rem;
+}
+.ab-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ab-card-actions button {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted-foreground, #666);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.ab-card-actions button:hover {
+  color: var(--accent, #a83a2b);
+  border-color: var(--accent, #a83a2b);
+}
+
+/* Form */
+.ab-form h3 {
+  margin: 6px 0 12px;
+}
+.ab-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ab-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 0.85rem;
+}
+.ab-row > span {
+  color: var(--muted-foreground, #666);
+}
+.ab-row input,
+.ab-row select,
+.ab-row textarea {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: var(--input-bg, #fff);
+  color: var(--foreground, #1a1a1a);
+  font: inherit;
+  width: 100%;
+}
+.ab-wide {
+  grid-column: 1 / -1;
+}
+.ab-check {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.ab-check input {
+  width: auto;
+}
+.ab-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (max-width: 640px) {
+  .ab-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
