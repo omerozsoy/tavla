@@ -5194,18 +5194,20 @@ export default function App() {
             onDelete={handleDeleteNotification}
             onDeleteAll={handleDeleteAllNotifications}
           />
-          {/* Alışveriş sepeti: üst barda ikon + adet rozeti (Mağaza butonu sol menüye taşındı) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative [&_svg]:size-[24px]!"
-            onClick={() => goPage(() => setCartOpen(true))}
-            title={t('shop.cart')}
-            aria-label={t('shop.cart')}
-          >
-            <Icon name="cart" size={24} />
-            {cartCount > 0 && <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
-          </Button>
+          {/* Alışveriş sepeti: üst barda GİZLİ, sepete ürün eklenince görünür; tıklanınca sepet sayfası açılır */}
+          {cartCount > 0 && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative [&_svg]:size-[24px]!"
+              onClick={() => goPage(() => setCartOpen(true))}
+              title={t('shop.cart')}
+              aria-label={t('shop.cart')}
+            >
+              <Icon name="cart" size={24} />
+              <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>
+            </Button>
+          )}
           <span className="account-sep" />
           <Button
             variant="ghost"
