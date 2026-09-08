@@ -38,6 +38,9 @@ interface Props {
   matchLength?: number // .mat basligi icin mac hedefi ( or. "3 point match")
   whiteName?: string // .mat oyuncu adlari
   blackName?: string
+  // OTORITER oyun sonuclari (kazanan + gercek puan), oyun sirasiyla. XG disa aktariminda logdaki
+  // zorunlu bitiren-hamle eksigi yuzunden tahta-tekrari sonuc bulamazsa buradan doldurulur.
+  gameResults?: { winner: Player; points: number }[]
   onClose: () => void
 }
 
@@ -63,6 +66,7 @@ export default function MatchReport({
   matchLength = 1,
   whiteName = 'White',
   blackName = 'Black',
+  gameResults,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -152,6 +156,7 @@ export default function MatchReport({
       matchId: String(now.getTime()),
       eventDate,
       eventTime,
+      results: gameResults, // logda bitiren zorunlu hamle yoksa sonuc satiri yine de yazilsin
     })
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)

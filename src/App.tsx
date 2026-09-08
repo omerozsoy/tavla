@@ -1192,6 +1192,11 @@ export default function App() {
   // En guncel log (mac-sonu kaydi async analizler bittikten sonra bunu okur)
   const matchLogRef = useRef<MoveLogEntry[]>([])
   matchLogRef.current = matchLog
+  // OTORITER oyun sonuclari (kazanan + gercek puan), oyun sirasiyla. XG .mat disa aktariminda
+  // matchLog'un ATLADIGI zorunlu bitiren-hamle yuzunden tahta-tekrari sonuc bulamazsa buradan
+  // doldurulur (bkz. buildMatXg.results). Ayni dizi kimligi korunur (.length=0 ile temizlenir)
+  // ki MatchReport'a gecen referans daima canli kalsin.
+  const gameResultsRef = useRef<{ winner: Player; points: number }[]>([])
   // Basarim sinyalleri (mac boyunca birikir; reportRating'te okunur + sifirlanir).
   // Bunlar log'da guvenilir olmadigi icin frontend'den payload ile gonderilir.
   const achGammonRef = useRef(0) // bu macta insanin mars (gammon) galibiyeti
@@ -1954,6 +1959,7 @@ export default function App() {
           done: false,
         }
         prevGameEndRef.current = false
+        gameResultsRef.current.length = 0 // yeni mac -> otoriter sonuclari sifirla
         setRecordUid(code)
       }
     } else if (mode === 'pvb' || mode === 'pvp') {
@@ -1973,6 +1979,7 @@ export default function App() {
           done: false,
         }
         prevGameEndRef.current = false
+        gameResultsRef.current.length = 0 // yeni mac -> otoriter sonuclari sifirla
         setRecordUid(uid)
       }
     }
@@ -1983,7 +1990,11 @@ export default function App() {
   useEffect(() => {
     const has = !!gameEnd
     if (has && !prevGameEndRef.current && gameRecordRef.current) {
-      if (gameEnd) recordEndEvent(gameEnd)
+      if (gameEnd) {
+        recordEndEvent(gameEnd)
+        // XG .mat sonuc satiri icin otoriter sonucu sakla (gercek puan: gammon/backgammon × kup).
+        gameResultsRef.current.push({ winner: gameEnd.winner, points: gameEnd.points })
+      }
       flushMatchLog(false)
       gameRecordRef.current.gameNo += 1
     }
@@ -6858,6 +6869,7 @@ export default function App() {
           matchLength={match.target}
           whiteName={whiteName}
           blackName={blackName}
+          gameResults={gameResultsRef.current}
           onClose={() => setResultView(null)}
         />
       )}

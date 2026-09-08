@@ -163,3 +163,123 @@ describe('buildMatXg — Extreme Gammon uyumlu .mat (gercek XG dosyasiyla birebi
     expect(scoreLines[1]).not.toMatch(/^ A : 0\s+B : 0$/) // 2. oyun skor birikti
   })
 })
+
+// ---------------------------------------------------------------------------
+// SONUC SATIRI GARANTISI: tamamlanmis her oyun MUTLAKA Wins/Losses satiri alir,
+// gerekiyorsa "and the match". Kritik regresyon: analiz logu zorunlu (tek-legal)
+// bitiren-hamleyi ATLAR -> logdaki son hamle terminal DEGILdir -> tahta-tekrari
+// sonuc bulamaz. O bosluk otoriter `results` diziyle doldurulur (bkz. buildMatXg).
+// ---------------------------------------------------------------------------
+describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and the match"', () => {
+  const zeros = () => new Array(24).fill(0)
+  const mk = (o: Partial<GameState>): GameState => ({
+    points: o.points ?? zeros(),
+    bar: o.bar ?? { white: 0, black: 0 },
+    off: o.off ?? { white: 0, black: 0 },
+    turn: o.turn ?? 'white',
+    dice: o.dice ?? [],
+    diceUsed: o.diceUsed ?? [],
+  })
+  // Beyaz kazanan terminal tahta (off.white=15). mult: 1 normal (kaybeden 1 tas topladi),
+  // 2 gammon (hic toplamadi, bar/ev yok), 3 backgammon (barda tas var).
+  const whiteWin = (mult: 1 | 2 | 3): GameState => {
+    const points = zeros()
+    const off = { white: 15, black: mult === 1 ? 1 : 0 }
+    const bar = { white: 0, black: mult === 3 ? 1 : 0 }
+    points[12] = -(15 - off.black - bar.black) // kalan siyah taslar 13. ucgende (siyah=negatif)
+    return mk({ points, off, bar })
+  }
+  // Siyah kazanan terminal tahta (off.black=15, kaybeden beyaz 1 tas topladi -> mult 1).
+  const blackWin = (): GameState => {
+    const points = zeros()
+    points[11] = 14 // beyaz (pozitif) 12. ucgende
+    return mk({ points, off: { white: 1, black: 15 }, turn: 'black' })
+  }
+  const move = (pos: GameState, player: Player, playedSteps: Step[] = []): MoveLogEntry => ({
+    notation: '2/off', best: '', loss: 0, player, pos, playedSteps, dice: [2, 1], seq: 100,
+  })
+  const cube = (chosen: 'double' | 'take' | 'drop', player: Player, seq: number): MoveLogEntry => ({
+    notation: '', best: '', loss: 0, player, seq,
+    cube: { win: 0.5, equity: 0, recommended: chosen, chosen, correct: true },
+  })
+  const winLine = (mat: string) =>
+    / {6}Wins \d+ point/.test(mat) || /^\s*\d+\)\s+Losses \d+ point\s+Wins \d+ point/m.test(mat)
+
+  it('normal win: kazanan sol sutunda -> "      Wins 1 point"', () => {
+    const mat = buildMatXg([move(whiteWin(1), 'white')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toMatch(/ {6}Wins 1 point/)
+    expect(mat).not.toContain('and the match') // 1 < 5 -> mac bitmedi
+  })
+
+  it('gammon: kaybeden hic toplamadi -> "Wins 2 point"', () => {
+    const mat = buildMatXg([move(whiteWin(2), 'white')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Wins 2 point')
+    expect(mat).not.toContain('points') // tekil
+  })
+
+  it('backgammon: kaybedenin barda tasi -> "Wins 3 point"', () => {
+    const mat = buildMatXg([move(whiteWin(3), 'white')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Wins 3 point')
+  })
+
+  it('kup ile biten oyun: Doubles/Takes -> puan kup ile carpilir (2)', () => {
+    const log = [cube('double', 'white', 0), cube('take', 'black', 1), move(whiteWin(1), 'white')]
+    const mat = buildMatXg(log, { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Doubles => 2')
+    expect(mat).toContain('Takes')
+    expect(mat).toMatch(/ {6}Wins 2 point/) // 1 (mult) × 2 (kup)
+  })
+
+  it('kazanan SAG sutunda (siyah): "  N)  Losses 1 point   Wins 1 point"', () => {
+    const mat = buildMatXg([move(blackWin(), 'black')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(mat).toMatch(/^\s*\d+\)\s+Losses 1 point\s+Wins 1 point/m)
+  })
+
+  it('maci bitiren oyun: kazanan mac puanina ulasti -> "and the match"', () => {
+    const mat = buildMatXg([move(whiteWin(1), 'white')], { matchLength: 1, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Wins 1 point and the match')
+  })
+
+  it('gercek puan KIRPILMAZ: 1 puanlik macta gammon (2) -> "Wins 2 point and the match"', () => {
+    // Kullanici kurali: mac puani asilsa bile o oyunda kazanilan GERCEK puan yazilir.
+    const mat = buildMatXg([move(whiteWin(2), 'white')], { matchLength: 1, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Wins 2 point and the match')
+  })
+
+  it('REGRESYON: logdaki son hamle terminal DEGILse (zorunlu bitiren-hamle atlanmis) results olmadan sonuc satiri YOK', () => {
+    // Bear-off ortasi, oyun bitmemis gorunur (off.white=13<15) -> tahta-tekrari null.
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    const mat = buildMatXg([move(nonTerminal, 'white')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(winLine(mat)).toBe(false) // iste tavlatv-mac(12).mat bug'i: sonuc satiri yazilmiyordu
+  })
+
+  it('FIX: ayni terminal-olmayan log + otoriter results -> sonuc satiri MUTLAKA yazilir', () => {
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    const log = [move(nonTerminal, 'white')]
+    const mat = buildMatXg(log, {
+      matchLength: 5, whiteName: 'A', blackName: 'B',
+      results: [{ winner: 'white', points: 2 }],
+    })
+    expect(winLine(mat)).toBe(true)
+    expect(mat).toMatch(/ {6}Wins 2 point/)
+  })
+
+  it('FIX: results ile maci bitiren oyunda "and the match"', () => {
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    const mat = buildMatXg([move(nonTerminal, 'white')], {
+      matchLength: 2, whiteName: 'A', blackName: 'B',
+      results: [{ winner: 'white', points: 2 }],
+    })
+    expect(mat).toContain('Wins 2 point and the match') // sw=2 >= 2
+  })
+
+  it('results yalnizca oyun sayisiyla BIREBIR eslesirse fallback olur (kayik dizi kullanilmaz)', () => {
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    // 1 oyun ama 2 sonuc -> eslesmiyor -> fallback YOK -> sonuc satiri yok (yanlis veri riski onlenir)
+    const mat = buildMatXg([move(nonTerminal, 'white')], {
+      matchLength: 5, whiteName: 'A', blackName: 'B',
+      results: [{ winner: 'black', points: 9 }, { winner: 'white', points: 9 }],
+    })
+    expect(winLine(mat)).toBe(false)
+  })
+})
