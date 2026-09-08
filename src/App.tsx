@@ -1775,6 +1775,34 @@ export default function App() {
     void recordPR(turnStart, finalPlayed)
     // Maç kaydı: bu turu (zar + hamle) logla (turnStart = hamle ONCESI durum).
     recordMatchTurn(turnStart, finalPlayed)
+    // .mat TUR-SIRASI DOLGUSU: recordPR ZORUNLU (tek legal hamle) ve OYNANAMAYAN (dance) turlari
+    // matchLog'a YAZMAZ. O turlarin zari .mat'te kaybolursa (ozellikle bear-off sonunda benim
+    // zorunlu toplamalarim) XG sutun almasigi bozulur ve son hamleler parse edilmez. Cozum: bu
+    // turlar icin hafif "fill" girdisi ekle (analiz YOK; zar + hamle sirasi korunur). native
+    // buildMat ve backend (MatBuilder/PR) fill'i SUZER -> gnubg luck/PR DEGISMEZ; yalniz XG kullanir.
+    {
+      const mover = turnStart.turn
+      const skippedByPR = finalPlayed.length === 0 || generateMoves(turnStart).length <= 1
+      if (skippedByPR) {
+        const notation = moveNotation({ steps: finalPlayed, resultKey: '' }, mover)
+        setMatchLog((l) => [
+          ...l,
+          {
+            notation,
+            best: '',
+            loss: 0,
+            pos: cloneState(turnStart),
+            steps: finalPlayed,
+            playedSteps: finalPlayed,
+            player: mover,
+            dice: (turnStart.dice ?? []).slice(0, 2),
+            seq: turnsPlayed,
+            countsForPR: false,
+            fill: true,
+          },
+        ])
+      }
+    }
 
     // ---- OTORİTER (Faz 2): SUNUCU = tek gerçek kaynak ----
     // Hamleyi sunucuya gönder; DÖNEN otoriter durumu (turn devri + skor + küp) uygula.

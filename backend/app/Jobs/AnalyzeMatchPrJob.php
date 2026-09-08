@@ -38,7 +38,12 @@ class AnalyzeMatchPrJob implements ShouldQueue
             return;
         }
         $player = $decoded['hc'] ?? 'white';
-        $log = $decoded['log'];
+        // fill = yalnız XG .mat tur-sırası dolgusu (zorunlu/dance). PR analizine SOKMA -> davranış
+        // bugünküyle aynı (bu turlar zaten karar değildi) + gereksiz gnubg değerlendirmesi olmaz.
+        $log = array_values(array_filter(
+            is_array($decoded['log']) ? $decoded['log'] : [],
+            fn ($e) => is_array($e) && empty($e['fill'])
+        ));
         $ml = (int) ($mr->match_length ?? 0);
 
         try {

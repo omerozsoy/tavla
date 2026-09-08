@@ -70,7 +70,9 @@ class MatBuilder
         // -> eşitlik sınır sayılmaz, yalnız kesin düşüş).
         $entries = [];
         foreach ($log as $e) {
-            if (! empty($e['player'])) {
+            // fill = yalnız XG dışa aktarımı için tur-sırası dolgusu (zorunlu/dance turlar). gnubg
+            // NATIVE .mat + luck bunları İÇERMEZ -> luck bugüne kadarki değerle BİREBİR aynı kalır.
+            if (! empty($e['player']) && empty($e['fill'])) {
                 $entries[] = $e;
             }
         }

@@ -42,6 +42,9 @@ class AnalysisOrchestrator
             if (($e['player'] ?? null) !== $player) {
                 continue;
             }
+            if (! empty($e['fill'])) {
+                continue; // fill = XG .mat tur-sırası dolgusu (zorunlu/dance); karar DEĞİL, PR'a girmez
+            }
             if (! empty($e['cube'])) {
                 continue; // cube kararlari v2
             }

@@ -55,6 +55,9 @@ class ErrorJournalService
                 if (! is_array($e) || isset($e['cube'])) {
                     continue; // cube karari -> v1 disi
                 }
+                if (! empty($e['fill'])) {
+                    continue; // fill = XG .mat tur-sırası dolgusu (zorunlu/dance); karar/istatistik DEĞİL
+                }
                 $player = $e['player'] ?? null;
                 if ($player === null) {
                     continue;
