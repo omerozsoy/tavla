@@ -1,5 +1,5 @@
 import { useState, type CSSProperties } from 'react'
-import { Icon, type IconName } from './Icon'
+import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import ProfileStats from './ProfileStats'
@@ -15,12 +15,7 @@ import { Button } from '@/components/ui/button'
 import { countryName } from '../countries'
 import { type AvatarFrameDef } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
-import type { ServerUser, AppNotification } from '../api'
-
-// Bildirim ikon adi -> gecerli Icon adi (bilinmeyen -> bell)
-const NOTIF_ICON: Record<string, IconName> = {
-  bell: 'bell', crown: 'crown', medal: 'medal', star: 'star', trophy: 'trophy', coin: 'coin',
-}
+import type { ServerUser } from '../api'
 
 // Sahip olunan tahta/cerceve icin gevsek tip (App'ten gelir)
 interface BoardOpt {
@@ -46,12 +41,9 @@ interface Props {
   onSelectBoard?: (id: string) => void // profilden tahta rengi değiştir
   onSelectFrame?: (id: string | null) => void // profilden avatar çerçevesi değiştir
   onClose: () => void
-  // Uyelik karti (baslikin altinda) + Bildirimler sekmesi
+  // Uyelik karti (baslikin altinda). Bildirimler artik Mesajlar'da (birlesti).
   onRenew?: () => void
   onToggleAutoRenew?: (enabled: boolean) => void
-  notifications?: AppNotification[]
-  onDeleteNotification?: (id: number) => void
-  onDeleteAllNotifications?: () => void
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
   onOpenShop?: (tab: 'frame' | 'board') => void // Magaza (avatar/tahta sekmesi)
@@ -61,7 +53,7 @@ interface Props {
   onTabChange?: (tab: ProfTab) => void
 }
 
-type ProfTab = 'frames' | 'boards' | 'stats' | 'notifs' | 'badges' | 'addresses'
+type ProfTab = 'frames' | 'boards' | 'stats' | 'badges' | 'addresses'
 
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
@@ -87,9 +79,6 @@ export default function ProfileOverview({
   onClose,
   onRenew,
   onToggleAutoRenew,
-  notifications,
-  onDeleteNotification,
-  onDeleteAllNotifications,
   onOpenMatchHistory,
   onOpenAchievements,
   onOpenShop,
@@ -106,7 +95,6 @@ export default function ProfileOverview({
     setTabState(v)
     onTabChange?.(v)
   }
-  const unread = (notifications ?? []).filter((n) => !n.read).length
   useEscape(onClose)
 
   const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.nickname
@@ -236,16 +224,6 @@ export default function ProfileOverview({
           <button
             type="button"
             role="tab"
-            aria-selected={tab === 'notifs'}
-            className={tab === 'notifs' ? 'active' : ''}
-            onClick={() => setTab('notifs')}
-          >
-            {t('notif.title')}
-            {unread > 0 && <span className="prof-ov-count prof-ov-count-alert">{unread}</span>}
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={tab === 'addresses'}
             className={tab === 'addresses' ? 'active' : ''}
             onClick={() => setTab('addresses')}
@@ -343,44 +321,6 @@ export default function ProfileOverview({
               onOpenAchievements={onOpenAchievements}
             />
           </div>
-        )}
-
-        {tab === 'notifs' && (
-          <section className="prof-ov-col profile-notifs">
-            {(notifications?.length ?? 0) === 0 ? (
-              <p className="prof-ov-empty">{t('notif.empty')}</p>
-            ) : (
-              <>
-                <div className="pn-bar">
-                  <button type="button" className="pn-clear" onClick={onDeleteAllNotifications}>
-                    <Icon name="trash" size={15} /> {t('notif.clearAll')}
-                  </button>
-                </div>
-                <ul className="pn-list">
-                  {notifications!.map((n) => (
-                    <li key={n.id} className={`pn-item ${n.read ? '' : 'unread'}`}>
-                      <span className="pn-ic">
-                        <Icon name={NOTIF_ICON[n.icon ?? 'bell'] ?? 'bell'} size={18} />
-                      </span>
-                      <span className="pn-txt">
-                        <span className="pn-t">{n.title}</span>
-                        {n.body && <span className="pn-b">{n.body}</span>}
-                      </span>
-                      <button
-                        type="button"
-                        className="pn-del"
-                        onClick={() => onDeleteNotification?.(n.id)}
-                        title={t('notif.delete')}
-                        aria-label={t('notif.delete')}
-                      >
-                        <Icon name="x" size={16} />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            )}
-          </section>
         )}
 
         {tab === 'addresses' && <AddressBook />}
