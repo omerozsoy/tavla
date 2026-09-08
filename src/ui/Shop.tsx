@@ -7,7 +7,7 @@ import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
 import { type BoardThemeOpt } from './BoardPicker'
 import { ProductsInner, type CartAddLine } from './Products'
-import { getProducts, type Product } from '../api'
+import { getShopCatalog, type Product } from '../api'
 
 interface Props {
   coins: number
@@ -75,10 +75,12 @@ export default function Shop({
   // geçilir -> çift fetch olmaz).
   const [products, setProducts] = useState<Product[] | null>(null)
   const [cats, setCats] = useState<{ slug: string; name: string }[]>([])
+  // Coin sekmesi etiketi: admin panelde 'coin' kategorisine verilen ad (yoksa varsayilan).
+  const [coinLabel, setCoinLabel] = useState<string>('')
   useEffect(() => {
     let alive = true
-    getProducts()
-      .then((list) => {
+    getShopCatalog()
+      .then(({ products: list, categories }) => {
         if (!alive) return
         setProducts(list)
         const seen: { slug: string; name: string }[] = []
@@ -89,6 +91,9 @@ export default function Shop({
           }
         }
         setCats(seen)
+        // Rezerve coin kategorisinin admin adini bul (urunu olmasa da /products'tan gelir).
+        const coinCat = categories.find((c) => isCoinSlug(c.slug))
+        setCoinLabel(coinCat?.name ?? '')
       })
       .catch(() => setProducts([]))
     return () => {
@@ -134,7 +139,7 @@ export default function Shop({
             className={`prof-tab ${isCoinSlug(tab) ? 'active' : ''}`}
             onClick={() => setTab('coin')}
           >
-            <Icon name="coin" size={16} /> {t('shop.buyCoins')}
+            <Icon name="coin" size={16} /> {coinLabel || t('shop.buyCoins')}
           </button>
           {onAddToCart &&
             cats.map((c) => (
