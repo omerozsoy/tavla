@@ -230,20 +230,20 @@ export default function ProfileOverview({
           <button
             type="button"
             role="tab"
-            aria-selected={tab === 'frames'}
-            className={tab === 'frames' ? 'active' : ''}
-            onClick={() => setTab('frames')}
-          >
-            {t('prof.avatars')} <span className="prof-ov-count">{ownedFrames.length}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
             aria-selected={tab === 'boards'}
             className={tab === 'boards' ? 'active' : ''}
             onClick={() => setTab('boards')}
           >
             {t('menu.board')} <span className="prof-ov-count">{ownedBoards.length}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'frames'}
+            className={tab === 'frames' ? 'active' : ''}
+            onClick={() => setTab('frames')}
+          >
+            {t('prof.avatars')} <span className="prof-ov-count">{ownedFrames.length}</span>
           </button>
           <button
             type="button"
