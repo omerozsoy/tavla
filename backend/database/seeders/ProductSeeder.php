@@ -37,12 +37,7 @@ class ProductSeeder extends Seeder
             ['akrilik-zar-kulesi', 'Şeffaf Akrilik Zar Kulesi', 'zar_kulesi', 'money', 34900, null, 20,
                 [['name' => 'Şeffaf', 'hex' => '#dfeaf2']],
                 'Modern görünümlü, dağılmayı sağlayan şeffaf akrilik zar kulesi.'],
-            ['tavla-strateji-kitabi', 'Modern Tavla Stratejisi', 'kitap', 'both', 24900, 300, 50,
-                [],
-                'Açılışlardan küp kullanımına kapsamlı Türkçe strateji rehberi.'],
-            ['tavla-acilislar-kitabi', 'Açılışlar ve İlk Hamleler', 'kitap', 'coin', null, 250, 50,
-                [],
-                'En iyi açılış hamleleri ve yanıtları; örnek pozisyonlarla.'],
+            // NOT: Görselsiz örnek kitaplar kaldırıldı; kitaplar artık BookProductSeeder'dan gelir.
             ['hediyelik-set', 'Tavla + Zar + Kule Hediye Seti', 'diger', 'both', 249900, 2000, 8,
                 [['name' => 'Ceviz', 'hex' => '#5a3a22'], ['name' => 'Siyah', 'hex' => '#1a1a1a']],
                 'Tavla, turnuva zarları ve zar kulesini bir arada sunan hediye seti.'],
