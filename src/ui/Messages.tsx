@@ -7,6 +7,7 @@ import {
   getThread,
   sendMessage,
   sendTyping,
+  ApiError,
   type ChatThread,
   type ChatMessage,
   type ChatUser,
@@ -15,6 +16,7 @@ import {
 import PlayerIdentity from './PlayerIdentity'
 import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
+import { useToast } from './Toast'
 import { type IconName } from './Icon'
 
 interface Props {
@@ -78,6 +80,7 @@ export default function Messages({
   onNotifDeleteAll,
 }: Props) {
   const { t } = useT()
+  const toast = useToast()
   useEscape(onClose)
   const [threads, setThreads] = useState<ChatThread[]>([])
   const [activeId, setActiveId] = useState<number | null>(focusUserId ?? null)
@@ -179,10 +182,12 @@ export default function Messages({
       const r = await sendMessage(activeId, body)
       setMessages((m) => m.map((x) => (x.id === optimistic.id ? r.message : x)))
       refreshThreads()
-    } catch {
-      // Basarisiz -> iyimser mesaji geri al
+    } catch (err) {
+      // Basarisiz -> iyimser mesaji geri al + NEDENINI goster (eskiden sessizce yutuluyordu
+      // -> kullanici "mesaj atamiyorum" diyordu ama neden belli olmuyordu).
       setMessages((m) => m.filter((x) => x.id !== optimistic.id))
       setText(body)
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
     } finally {
       setSending(false)
     }
