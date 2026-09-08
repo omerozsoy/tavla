@@ -116,6 +116,32 @@ class GameLogTest extends TestCase
         $this->assertSame('end', $merged[2]['k']);       // en son bitiş (o=9)
     }
 
+    public function test_mat_text_built_from_compact_turns(): void
+    {
+        $this->postJson('/api/game-logs', [
+            'uid' => 'MAT001', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1,
+            'p1_name' => 'Ömer', 'p2_name' => 'Bilgisayar',
+            'status' => 'finished', 'winner' => 'white',
+            'events' => [
+                ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '3-1', 'm' => '8/5 6/5'],
+                ['g' => 1, 's' => 1, 'p' => 'B', 'd' => '4-2', 'm' => '24/20 13/11'],
+                ['g' => 1, 's' => 9, 'p' => 'W', 'o' => 9, 'k' => 'end', 'm' => 'Beyaz · Normal · 1p'],
+            ],
+        ])->assertOk();
+
+        $log = GameLog::where('uid', 'MAT001')->firstOrFail();
+        $mat = $log->matText();
+
+        $this->assertStringContainsString('; [Player 1 "Ömer"]', $mat);
+        $this->assertStringContainsString('1 point match', $mat);
+        $this->assertStringContainsString('8/5 6/5', $mat);
+        $this->assertStringContainsString('24/20 13/11', $mat);
+        $this->assertStringContainsString('Wins 1 point and the match', $mat);
+        $this->assertSame('tavlatv-MAT001.mat', $log->matFilename());
+        // pvb -> bağlı sonuç kaydı yok.
+        $this->assertTrue($log->relatedResults()->isEmpty());
+    }
+
     public function test_prune_deletes_old_pvb_only(): void
     {
         $mk = function (string $uid, string $mode, int $daysAgo) {
