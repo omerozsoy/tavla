@@ -123,7 +123,17 @@ class EventResource extends Resource
                 ->addActionLabel('Kişi ekle')
                 ->reorderable(false)
                 ->columnSpanFull(),
-            Forms\Components\Textarea::make('body')->label('Açıklama')->rows(4)->columnSpanFull(),
+            Forms\Components\RichEditor::make('body')
+                ->label('Açıklama')
+                ->toolbarButtons([
+                    'bold', 'italic', 'underline', 'strike',
+                    'h2', 'h3',
+                    'bulletList', 'orderedList',
+                    'link', 'blockquote',
+                    'redo', 'undo',
+                ])
+                ->helperText('Turnuva açıklaması — ön yüzde "Detaylı Bilgi" penceresinde biçimlendirilmiş gösterilir.')
+                ->columnSpanFull(),
             // Görsel etkinlikte yok: takvimde seçilen OTELİN görseli gösterilir (Oteller sayfasına yüklenir).
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
             // TavlaTV yayın bayrağı: açılırsa takvim kartının sağ üst köşesinde siyah TavlaTV
