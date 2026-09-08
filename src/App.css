@@ -15503,6 +15503,51 @@ button.acct-row:hover:not(:disabled) {
   max-width: 40ch;
   margin: 0 0 8px;
 }
+
+/* Mobil: özet altta akışta (sticky kapalı), öğe kartı 2 satıra reflow */
+@media (max-width: 820px) {
+  .cart2-summary {
+    position: static;
+  }
+}
+@media (max-width: 560px) {
+  .cart2-head h2 {
+    font-size: 1.2rem;
+  }
+  .cart2-item {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    grid-template-areas:
+      'thumb info del'
+      'thumb qty price';
+    column-gap: 12px;
+    row-gap: 9px;
+    align-items: center;
+    padding: 12px;
+  }
+  .cart2-item .cart2-thumb {
+    grid-area: thumb;
+    width: 52px;
+    height: 52px;
+    align-self: start;
+  }
+  .cart2-item-info {
+    grid-area: info;
+  }
+  .cart2-del {
+    grid-area: del;
+    align-self: start;
+  }
+  .cart2-qty {
+    grid-area: qty;
+    justify-self: start;
+  }
+  .cart2-item-price {
+    grid-area: price;
+    justify-self: end;
+    min-width: 0;
+  }
+}
 .shop-cart-btn {
   gap: 6px;
 }
