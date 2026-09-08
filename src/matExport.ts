@@ -36,6 +36,12 @@ export interface MatXgOptions extends MatOptions {
   eventDate?: string // ; [EventDate "..."]  "YYYY.MM.DD"
   eventTime?: string // ; [EventTime "..."]  "HH.MM"
   crawford?: boolean // ; [Crawford "On/Off"] varsayilan true (On)
+  // OTORITER oyun sonuclari (opsiyonel, oyun sirasiyla BIREBIR). Neden gerekli: analiz logu
+  // (matchLog) tek-legal (zorunlu) hamleleri ATLAR; bir oyunu bitiren son bear-off cogu zaman
+  // zorunludur -> logda YOKtur -> tahtayi tekrar oynatarak sonuc BULUNAMAZ ve "Wins/Losses"
+  // satiri yazilmadan oyun kapanir (XG dosyayi bozuk okur). App bu diziyi motorun GameEnd'inden
+  // doldurur; tahta-tekrari sonuc veremezse buradan alinir -> her tamamlanan oyun sonuc satiri alir.
+  results?: { winner: Player; points: number }[]
 }
 
 // Bir oyundaki tek eylem. e yoksa ONARILMIS (log'da eksik olup oyunun akisindan
@@ -269,6 +275,7 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     eventDate = '',
     eventTime = '',
     crawford = true,
+    results,
   } = opts
   // Gercek XG dosyasiyla (BackgammonGalaxy export) BIREBIR: `  N)` (padStart 3 + paren),
   // ` Game`/` isim : skor` basinda BOSLUK, sol aksiyon COLW=28'e padlenir -> sag sutun col 33.
@@ -338,9 +345,14 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     //    "  N)  Losses X point   Wins X point" (kaybeden solda bir bosluk girintili).
     //  • kazanan SOL sutundaysa (Player1/beyaz): ayri "      Wins X point[ and the match]" satiri.
     // Mac bitince kazanana " and the match" eklenir. (Ornek XG dosyasiyla birebir.)
-    const oc = outcomeOf(acts)
+    // Sonuc: once GERCEK tahtadan (logda bitiren hamle varsa); yoksa otoriter results'tan.
+    // results yalnizca oyun sayisiyla birebir eslesirse fallback olur (yanlis eslemeyi onle).
+    const resultsAligned = !!results && results.length === games.length
+    const oc = outcomeOf(acts) ?? (resultsAligned ? (results as { winner: Player; points: number }[])[gi] : null)
     if (oc) {
-      const pts = capPoints(oc.points, matchLength, oc.winner === 'white' ? sw : sb)
+      // XG davranisi: puan KIRPILMAZ. Mac uzunlugu asilsa bile o oyunda kazanilan GERCEK puan
+      // yazilir (gammon/backgammon × kup). "and the match" kazanan mac puanina ulastiginda eklenir.
+      const pts = oc.points
       if (oc.winner === 'white') sw += pts
       else sb += pts
       const matchOver = matchLength > 0 && (oc.winner === 'white' ? sw : sb) >= matchLength
