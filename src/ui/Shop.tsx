@@ -1,12 +1,13 @@
-import { useState, type ReactNode } from 'react'
-import { Icon } from './Icon'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
-import BoardPicker, { type BoardThemeOpt } from './BoardPicker'
+import { type BoardThemeOpt } from './BoardPicker'
 import { ProductsInner, type CartAddLine } from './Products'
+import { getProducts, type Product } from '../api'
 
 interface Props {
   coins: number
@@ -17,39 +18,66 @@ interface Props {
   cartCount?: number // sepetteki toplam adet (0 ise buton gizli)
   onOpenCart?: () => void // sepeti ac
   onMembership?: () => void // Star Uyelik kartindan uyelik ekranini ac
-  // Tahta Rengi sekmesi (Ayarlar'dan Magaza'ya tasindi)
-  boardTheme: string
-  setBoardTheme: (id: string) => void
-  boardThemes: BoardThemeOpt[]
-  onBuyItem?: (shopId: string) => void // tahta/cerceve coin ile ac ('theme.<id>')
-  framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi (FrameShop/FrameGallery embed)
-  onAddToCart?: (line: CartAddLine) => void // Ürünler sekmesi -> sepete ekle
-  initialTab?: ShopTab
+  // NOT: Tahta Rengi + Avatar Cercevesi sekmeleri Magaza'dan KALDIRILDI (profil'de yonetilir).
+  // Bu proplar geriye donuk uyum icin duruyor (App hala geciyor); Magaza'da kullanilmiyor.
+  boardTheme?: string
+  setBoardTheme?: (id: string) => void
+  boardThemes?: BoardThemeOpt[]
+  onBuyItem?: (shopId: string) => void
+  framesSlot?: ReactNode
+  onAddToCart?: (line: CartAddLine) => void // ürün -> sepete ekle
+  initialTab?: string
   onClose: () => void
 }
 
-type ShopTab = 'coins' | 'products' | 'board' | 'frame'
-
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
-// Magaza: coin (jeton) satin alma vitrini + gunluk odul. (Cerceveler artik Ayarlar'da.)
+// Ürün kategorisi slug -> ikon
+const CAT_ICON: Record<string, IconName> = {
+  tavla: 'dice',
+  zar: 'dice',
+  zar_kulesi: 'package',
+  kitap: 'book',
+  diger: 'package',
+}
+
+// Magaza: Coin (jeton) satin alma + fiziksel ürünler (kategori sekmeleri: Tavla, Zar, Kitap…).
 export default function Shop({
   coins,
   onBuyCoins,
   cartCount = 0,
   onOpenCart,
-  boardTheme,
-  setBoardTheme,
-  boardThemes,
-  onBuyItem,
-  framesSlot,
   onAddToCart,
   initialTab = 'coins',
   onClose,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
-  const [tab, setTab] = useState<ShopTab>(initialTab)
+  const [tab, setTab] = useState<string>(initialTab === 'board' || initialTab === 'frame' ? 'coins' : initialTab)
+
+  // Ürünleri bir kez çek; kategori sekmelerini bundan türet (ProductsInner'a da bu liste
+  // geçilir -> çift fetch olmaz).
+  const [products, setProducts] = useState<Product[] | null>(null)
+  const [cats, setCats] = useState<{ slug: string; name: string }[]>([])
+  useEffect(() => {
+    let alive = true
+    getProducts()
+      .then((list) => {
+        if (!alive) return
+        setProducts(list)
+        const seen: { slug: string; name: string }[] = []
+        for (const p of list) {
+          if (p.category && !seen.some((c) => c.slug === p.category)) {
+            seen.push({ slug: p.category, name: p.category_name || p.category })
+          }
+        }
+        setCats(seen)
+      })
+      .catch(() => setProducts([]))
+    return () => {
+      alive = false
+    }
+  }, [])
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -57,7 +85,7 @@ export default function Shop({
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        {/* Editoryal baslik + cuzdan: solda baslik/alt-baslik, sagda bakiye (+ sepet) */}
+        {/* Editoryal baslik + cuzdan */}
         <header className="shop-head">
           <div className="shop-head-text">
             <h2>
@@ -68,7 +96,7 @@ export default function Shop({
           <div className="shop-head-actions">
             {onOpenCart && cartCount > 0 && (
               <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
-                <Icon name="shop" size={16} /> {t('shop.cart')} <span className="shop-cart-count tnum">{cartCount}</span>
+                <Icon name="cart" size={16} /> {t('shop.cart')} <span className="shop-cart-count tnum">{cartCount}</span>
               </Button>
             )}
             <div className="shop-wallet" title={t('shop.balance')}>
@@ -80,7 +108,7 @@ export default function Shop({
           </div>
         </header>
 
-        {/* Sekmeler: Jeton Al | Tahta Rengi | Avatar Cercevesi (yatay kaydirmali, kesilmez) */}
+        {/* Sekmeler: Coin Satın Al + ürün kategorileri (Tavla · Zar · Kitap…) */}
         <div className="prof-tabs bs-tabs shop-tabs" role="tablist">
           <button
             type="button"
@@ -91,99 +119,67 @@ export default function Shop({
           >
             <Icon name="coin" size={16} /> {t('shop.buyCoins')}
           </button>
-          {onAddToCart && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'products'}
-              className={`prof-tab ${tab === 'products' ? 'active' : ''}`}
-              onClick={() => setTab('products')}
-            >
-              <Icon name="package" size={16} /> {t('menu.products')}
-            </button>
-          )}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'board'}
-            className={`prof-tab ${tab === 'board' ? 'active' : ''}`}
-            onClick={() => setTab('board')}
-          >
-            <Icon name="dice" size={16} /> {t('settings.tabBoard')}
-          </button>
-          {framesSlot && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === 'frame'}
-              className={`prof-tab ${tab === 'frame' ? 'active' : ''}`}
-              onClick={() => setTab('frame')}
-            >
-              <Icon name="crown" size={16} /> {t('settings.tabFrame')}
-            </button>
-          )}
+          {onAddToCart &&
+            cats.map((c) => (
+              <button
+                key={c.slug}
+                type="button"
+                role="tab"
+                aria-selected={tab === c.slug}
+                className={`prof-tab ${tab === c.slug ? 'active' : ''}`}
+                onClick={() => setTab(c.slug)}
+              >
+                <Icon name={CAT_ICON[c.slug] ?? 'package'} size={16} /> {c.name}
+              </button>
+            ))}
         </div>
 
-        {/* Fiziksel Ürünler sekmesi (mağaza ile birleşik) */}
-        {tab === 'products' && onAddToCart && (
-          <ProductsInner onAddToCart={onAddToCart} onGoCart={() => onOpenCart?.()} />
-        )}
-
-        {/* Tahta Rengi sekmesi */}
-        {tab === 'board' && (
-          <BoardPicker
-            boardTheme={boardTheme}
-            setBoardTheme={setBoardTheme}
-            boardThemes={boardThemes}
-            coins={coins}
-            onBuy={onBuyItem}
-          />
-        )}
-
-        {/* Avatar Cercevesi sekmesi */}
-        {tab === 'frame' && framesSlot}
-
-        {/* --- Coin satin al: gercek para ile jeton paketleri (vitrin) --- */}
+        {/* Coin satın al */}
         {tab === 'coins' && (
-        <section className="coin-store" aria-label={t('shop.buyCoins')}>
-          <div className="coin-grid">
-            {COIN_PACKAGES.map((p) => {
-              const per = (p.price / p.gc).toLocaleString('tr-TR', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  className="coin-card"
-                  data-popular={p.popular || undefined}
-                  onClick={() => onBuyCoins?.(p.id)}
-                >
-                  {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
-                  <span className="coin-card-name">{p.name}</span>
-                  <span className="coin-card-amount">
-                    <Coins amount={p.gc} size={20} suffix="coin" />
-                  </span>
-                  <span className="coin-card-price">{fmtTL(p.price)}</span>
-                  <span className="coin-card-meta">
-                    <span className="coin-card-per">
-                      {t('shop.perCoin')} {per} ₺
+          <section className="coin-store" aria-label={t('shop.buyCoins')}>
+            <div className="coin-grid">
+              {COIN_PACKAGES.map((p) => {
+                const per = (p.price / p.gc).toLocaleString('tr-TR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    className="coin-card"
+                    data-popular={p.popular || undefined}
+                    onClick={() => onBuyCoins?.(p.id)}
+                  >
+                    {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
+                    <span className="coin-card-name">{p.name}</span>
+                    <span className="coin-card-amount">
+                      <Coins amount={p.gc} size={20} suffix="coin" />
                     </span>
-                    {p.discount > 0 && (
-                      <span className="coin-card-save">
-                        %{p.discount} {t('shop.advantage')}
+                    <span className="coin-card-price">{fmtTL(p.price)}</span>
+                    <span className="coin-card-meta">
+                      <span className="coin-card-per">
+                        {t('shop.perCoin')} {per} ₺
                       </span>
-                    )}
-                  </span>
-                  <span className="coin-card-cta">
-                    {t('shop.buy')} <Icon name="arrow-right" size={14} />
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-        </section>
+                      {p.discount > 0 && (
+                        <span className="coin-card-save">
+                          %{p.discount} {t('shop.advantage')}
+                        </span>
+                      )}
+                    </span>
+                    <span className="coin-card-cta">
+                      {t('shop.buy')} <Icon name="arrow-right" size={14} />
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* Ürün kategorisi sekmesi -> o kategorinin ürünleri (çipler gizli, sekmeler yukarıda) */}
+        {tab !== 'coins' && onAddToCart && (
+          <ProductsInner products={products} category={tab} onAddToCart={onAddToCart} onGoCart={() => onOpenCart?.()} />
         )}
       </div>
     </div>
