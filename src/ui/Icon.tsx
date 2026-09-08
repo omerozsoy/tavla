@@ -81,6 +81,7 @@ import {
   LockKeyOpen,
   Fingerprint,
   Package,
+  ShoppingCart,
   Tag,
   Code,
   Copy,
@@ -170,6 +171,7 @@ export type IconName =
   | 'lock-open'
   | 'fingerprint'
   | 'package'
+  | 'cart'
   | 'tag'
   | 'code'
   | 'copy'
@@ -260,6 +262,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'lock-open': LockKeyOpen,
   fingerprint: Fingerprint,
   package: Package,
+  cart: ShoppingCart,
   tag: Tag,
   code: Code,
   copy: Copy,

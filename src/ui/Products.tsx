@@ -25,20 +25,18 @@ function imageUrl(img: string): string {
 const fmtTL = (kurus: number) =>
   `${(kurus / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`
 
-// Fiziksel urun magazasi: grid -> secili urun detayi (renk + adet + odeme yontemi) -> SEPETE EKLE.
+// Fiziksel urun magazasi — GÖMÜLEBİLİR içerik (Mağaza sekmesi olarak). Overlay YOK.
+// grid -> secili urun detayi (renk + adet + odeme yontemi) -> SEPETE EKLE.
 // Teslimat/fatura adresi sepet/odeme adiminda secilir (Adreslerim).
-export default function Products({
+export function ProductsInner({
   onAddToCart,
   onGoCart,
-  onClose,
 }: {
   onAddToCart: (line: CartAddLine) => void
   onGoCart: () => void
-  onClose: () => void
 }) {
   const { t } = useT()
   const toast = useToast()
-  useEscape(onClose)
 
   const [products, setProducts] = useState<Product[] | null>(null)
   const [error, setError] = useState(false)
@@ -62,83 +60,89 @@ export default function Products({
     return m
   }, [products])
   const catLabel = (c: string) => catNames[c] ?? c
-  const visible = useMemo(
-    () => (products ?? []).filter((p) => cat === 'all' || p.category === cat),
-    [products, cat],
-  )
+  const visible = useMemo(() => (products ?? []).filter((p) => cat === 'all' || p.category === cat), [products, cat])
 
+  if (selected) {
+    return <ProductDetail product={selected} onAddToCart={onAddToCart} onGoCart={onGoCart} onBack={() => setSelected(null)} toast={toast} />
+  }
+
+  return (
+    <section className="products-inner">
+      {cats.length > 1 && (
+        <div className="products-cats" role="tablist">
+          <button type="button" className={`products-cat-chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>
+            {t('products.all')}
+          </button>
+          {cats.map((c) => (
+            <button key={c} type="button" className={`products-cat-chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>
+              {catLabel(c)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {error && <p className="products-msg">{t('products.loadError')}</p>}
+      {!error && products && products.length === 0 && <p className="products-msg">{t('products.empty')}</p>}
+
+      <div className="products-grid">
+        {visible.map((p) => {
+          const out = p.stock <= 0
+          return (
+            <button key={p.id} type="button" className="product-card" disabled={out} onClick={() => setSelected(p)}>
+              <div className="product-thumb">
+                {p.images[0] ? <img src={imageUrl(p.images[0])} alt={p.name} /> : <Icon name="shop" size={32} />}
+                {out && <span className="product-out">{t('products.soldOut')}</span>}
+              </div>
+              <div className="product-info">
+                <span className="product-cat">{p.category_name ?? ''}</span>
+                <span className="product-name">{p.name}</span>
+                <span className="product-price">
+                  {p.money_price != null && <span>{fmtTL(p.money_price)}</span>}
+                  {p.coin_price != null && (
+                    <span className="product-price-coin">
+                      <Coins amount={p.coin_price} />
+                    </span>
+                  )}
+                </span>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+// Bağımsız (deep-link /urunler) sarmalayıcı: overlay + kapat + gömülü içerik.
+export default function Products({
+  onAddToCart,
+  onGoCart,
+  onClose,
+}: {
+  onAddToCart: (line: CartAddLine) => void
+  onGoCart: () => void
+  onClose: () => void
+}) {
+  const { t } = useT()
+  useEscape(onClose)
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card products-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-
-        {!selected ? (
-          <>
-            <div className="products-head">
-              <div>
-                <h2>
-                  <Icon name="shop" size={20} /> {t('products.title')}
-                </h2>
-                <p className="register-sub">{t('products.sub')}</p>
-              </div>
-              <Button variant="outline" onClick={onGoCart} title={t('shop.cart')}>
-                <Icon name="shop" size={16} /> {t('shop.cart')}
-              </Button>
-            </div>
-
-            {cats.length > 1 && (
-              <div className="products-cats" role="tablist">
-                <button type="button" className={`products-cat-chip ${cat === 'all' ? 'active' : ''}`} onClick={() => setCat('all')}>
-                  {t('products.all')}
-                </button>
-                {cats.map((c) => (
-                  <button key={c} type="button" className={`products-cat-chip ${cat === c ? 'active' : ''}`} onClick={() => setCat(c)}>
-                    {catLabel(c)}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {error && <p className="products-msg">{t('products.loadError')}</p>}
-            {!error && products && products.length === 0 && <p className="products-msg">{t('products.empty')}</p>}
-
-            <div className="products-grid">
-              {visible.map((p) => {
-                const out = p.stock <= 0
-                return (
-                  <button key={p.id} type="button" className="product-card" disabled={out} onClick={() => setSelected(p)}>
-                    <div className="product-thumb">
-                      {p.images[0] ? <img src={imageUrl(p.images[0])} alt={p.name} /> : <Icon name="shop" size={32} />}
-                      {out && <span className="product-out">{t('products.soldOut')}</span>}
-                    </div>
-                    <div className="product-info">
-                      <span className="product-cat">{p.category_name ?? ''}</span>
-                      <span className="product-name">{p.name}</span>
-                      <span className="product-price">
-                        {p.money_price != null && <span>{fmtTL(p.money_price)}</span>}
-                        {p.coin_price != null && (
-                          <span className="product-price-coin">
-                            <Coins amount={p.coin_price} />
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </>
-        ) : (
-          <ProductDetail
-            product={selected}
-            onAddToCart={onAddToCart}
-            onGoCart={onGoCart}
-            onBack={() => setSelected(null)}
-            toast={toast}
-          />
-        )}
+        <div className="products-head">
+          <div>
+            <h2>
+              <Icon name="shop" size={20} /> {t('products.title')}
+            </h2>
+            <p className="register-sub">{t('products.sub')}</p>
+          </div>
+          <Button variant="outline" onClick={onGoCart} title={t('shop.cart')}>
+            <Icon name="cart" size={16} /> {t('shop.cart')}
+          </Button>
+        </div>
+        <ProductsInner onAddToCart={onAddToCart} onGoCart={onGoCart} />
       </div>
     </div>
   )

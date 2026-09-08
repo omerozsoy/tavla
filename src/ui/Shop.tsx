@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import { COIN_PACKAGES } from '../coinPackages'
 import { Button } from '@/components/ui/button'
 import BoardPicker, { type BoardThemeOpt } from './BoardPicker'
+import { ProductsInner, type CartAddLine } from './Products'
 
 interface Props {
   coins: number
@@ -22,11 +23,12 @@ interface Props {
   boardThemes: BoardThemeOpt[]
   onBuyItem?: (shopId: string) => void // tahta/cerceve coin ile ac ('theme.<id>')
   framesSlot?: ReactNode // "Avatar Cercevesi" sekmesi (FrameShop/FrameGallery embed)
+  onAddToCart?: (line: CartAddLine) => void // Ürünler sekmesi -> sepete ekle
   initialTab?: ShopTab
   onClose: () => void
 }
 
-type ShopTab = 'coins' | 'board' | 'frame'
+type ShopTab = 'coins' | 'products' | 'board' | 'frame'
 
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
@@ -41,6 +43,7 @@ export default function Shop({
   boardThemes,
   onBuyItem,
   framesSlot,
+  onAddToCart,
   initialTab = 'coins',
   onClose,
 }: Props) {
@@ -88,6 +91,17 @@ export default function Shop({
           >
             <Icon name="coin" size={16} /> {t('shop.buyCoins')}
           </button>
+          {onAddToCart && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === 'products'}
+              className={`prof-tab ${tab === 'products' ? 'active' : ''}`}
+              onClick={() => setTab('products')}
+            >
+              <Icon name="package" size={16} /> {t('menu.products')}
+            </button>
+          )}
           <button
             type="button"
             role="tab"
@@ -109,6 +123,11 @@ export default function Shop({
             </button>
           )}
         </div>
+
+        {/* Fiziksel Ürünler sekmesi (mağaza ile birleşik) */}
+        {tab === 'products' && onAddToCart && (
+          <ProductsInner onAddToCart={onAddToCart} onGoCart={() => onOpenCart?.()} />
+        )}
 
         {/* Tahta Rengi sekmesi */}
         {tab === 'board' && (

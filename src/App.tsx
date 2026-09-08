@@ -621,6 +621,7 @@ export default function App() {
     })
     notify.success(t('products.addedToCart'))
   }
+  const cartCount = cartItems.reduce((s, c) => s + c.qty, 0) // üst bar sepet rozeti + Mağaza
   const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
   // --- URL yonlendirme (hash tabanli) ---
@@ -5193,8 +5194,17 @@ export default function App() {
             onDelete={handleDeleteNotification}
             onDeleteAll={handleDeleteAllNotifications}
           />
-          <Button variant="outline" className="account-shop-btn" onClick={() => goPage(() => setShopOpen(true))}>
-            <Icon name="shop" size={15} /> {t('shop.title')}
+          {/* Alışveriş sepeti: üst barda ikon + adet rozeti (Mağaza butonu sol menüye taşındı) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative [&_svg]:size-[24px]!"
+            onClick={() => goPage(() => setCartOpen(true))}
+            title={t('shop.cart')}
+            aria-label={t('shop.cart')}
+          >
+            <Icon name="cart" size={24} />
+            {cartCount > 0 && <span className="notif-badge">{cartCount > 9 ? '9+' : cartCount}</span>}
           </Button>
           <span className="account-sep" />
           <Button
@@ -5582,6 +5592,7 @@ export default function App() {
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
+    shop: menuProps.onShop,
     friends: menuProps.onFriends,
     messages: menuProps.onMessages,
     membership: menuProps.onMembership,
@@ -5877,6 +5888,7 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
+          onAddToCart={addProductToCart}
           initialTab={shopTab}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
