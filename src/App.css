@@ -17094,6 +17094,19 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   color: var(--text);
 }
+/* "Tüm Tahtalar / Tüm Avatarlar" bölümü: sahip olduklarının altında satın alınabilir galeri */
+.prof-ov-all {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.prof-ov-all-t {
+  margin: 0 0 14px;
+  font-family: var(--tv-font-display);
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--text);
+}
 .prof-ov-count {
   font-family: var(--tv-font-ui);
   font-size: 0.8rem;
