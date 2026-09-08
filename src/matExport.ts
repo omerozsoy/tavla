@@ -325,8 +325,12 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       } else {
         text = 'Drops'
       }
+      // Referans XG (BackgammonGalaxy) davranisi: SOL sutundaki kup gibi HAMLE-DISI girdiler bir
+      // bosluk girintili yazilir ("  5)  Doubles => 2", "  4)  Takes"); sag sutunda girinti YOK.
+      // Hamleler her iki sutunda da girintisiz. (Referans .mat ile birebir.)
+      const isSpecial = a.kind !== 'move'
       if (a.player === 'white') {
-        rows.push({ w: text })
+        rows.push({ w: isSpecial ? ` ${text}` : text })
       } else {
         const last = rows[rows.length - 1]
         if (last && last.w !== undefined && last.b === undefined) last.b = text
