@@ -168,14 +168,14 @@ class ProductResource extends Resource
                     ->badge()
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('payment_type')->label('Ödeme')
-                    ->formatStateUsing(fn ($s) => match ($s) {
+                    ->formatStateUsing(fn ($state) => match ($state) {
                         'coin' => 'Coin', 'both' => 'TL / Coin', default => 'TL',
                     })
                     ->badge(),
                 Tables\Columns\TextColumn::make('money_price')->label('TL')
-                    ->formatStateUsing(fn ($s) => $s ? number_format(((int) $s) / 100, 2).' ₺' : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? number_format(((int) $state) / 100, 2).' ₺' : '—'),
                 Tables\Columns\TextColumn::make('coin_price')->label('Coin')
-                    ->formatStateUsing(fn ($s) => $s ? (int) $s : '—'),
+                    ->formatStateUsing(fn ($state) => $state ? (int) $state : '—'),
                 Tables\Columns\TextColumn::make('stock')->label('Stok')
                     ->badge()
                     ->color(fn ($state) => (int) $state > 0 ? 'success' : 'danger'),
