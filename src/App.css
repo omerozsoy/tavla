@@ -16458,14 +16458,16 @@ button.acct-row:hover:not(:disabled) {
 .msg-bubble {
   position: relative;
   max-width: 74%;
-  padding: 8px 12px 7px;
+  padding: 7px 12px 5px;
   border-radius: 18px;
   font-size: 0.92rem;
   line-height: 1.4;
   word-break: break-word;
+  /* Saat metnin YANINDA degil, ALT SATIRDA (sag-alt) ve daha ufak dursun -> dikey diz. */
   display: flex;
-  align-items: flex-end;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
 /* Ardisik ayni-taraf balonlarda ust bosluk kis (WhatsApp gruplama hissi) */
 .msg-bubble.mine + .msg-bubble.mine,
@@ -16511,13 +16513,15 @@ button.acct-row:hover:not(:disabled) {
 }
 .msg-meta {
   flex: none;
+  align-self: flex-end; /* alt satirda saga yasla */
   display: flex;
   align-items: center;
   gap: 2px;
-  margin-bottom: 1px;
+  margin-top: -1px;
 }
 .msg-time {
-  font-size: 0.62rem;
+  font-size: 0.56rem; /* alt satirda daha ufak saat */
+  opacity: 0.75;
   font-variant-numeric: tabular-nums;
 }
 .msg-bubble.mine .msg-time {
