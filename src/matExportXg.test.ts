@@ -230,6 +230,19 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toMatch(/ {6}Wins 2 point/) // 1 (mult) × 2 (kup)
   })
 
+  it('kup girinti: SOL sutunda Doubles/Takes bir bosluk girintili (referans XG ile birebir)', () => {
+    // Beyaz katlar (SOL sutun) -> " Doubles => 2"; siyah kabul (SAG sutun) -> "Takes" (girintisiz).
+    const wDouble = buildMatXg([cube('double', 'white', 0), cube('take', 'black', 1), move(whiteWin(1), 'white')],
+      { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(wDouble).toMatch(/^\s*\d+\)  Doubles => 2 {2,}Takes$/m) // sol " Doubles", sag "Takes" girintisiz
+    // Siyah katlar (SAG sutun) -> "Doubles => 2" girintisiz; beyaz kabul (SOL) -> " Takes".
+    const bDouble = buildMatXg([cube('double', 'black', 0), cube('take', 'white', 1), move(whiteWin(1), 'white')],
+      { matchLength: 5, whiteName: 'A', blackName: 'B' })
+    expect(bDouble).toMatch(/^\s*\d+\)  Takes\b/m) // beyaz kabul SOL sutunda bir bosluk girintili
+    // HAMLE satiri ASLA girintili degil (sol sutun hamlesi paren+tek bosluktan hemen sonra baslar)
+    expect(bDouble).toMatch(/^\s*\d+\) \d{2}: /m)
+  })
+
   it('kazanan SAG sutunda (siyah): "  N)  Losses 1 point   Wins 1 point"', () => {
     const mat = buildMatXg([move(blackWin(), 'black')], { matchLength: 5, whiteName: 'A', blackName: 'B' })
     expect(mat).toMatch(/^\s*\d+\)\s+Losses 1 point\s+Wins 1 point/m)
