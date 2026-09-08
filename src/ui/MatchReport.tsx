@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
-import { buildMat } from '../matExport'
+import { buildMatXg } from '../matExport'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -138,10 +138,21 @@ export default function MatchReport({
     setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
-  // Maci standart .mat (Jellyfish / GNU Backgammon) formatinda disa aktar.
-  // Uretim mantigi src/matExport.ts'te (UI + testler ayni fonksiyonu kullanir).
+  // Maci Extreme Gammon (XG) uyumlu .mat formatinda disa aktar (buildMatXg).
+  // Uretim mantigi src/matExport.ts'te (bar=25, off=0, tekrarlar acik, XG header).
   function exportMat() {
-    const text = buildMat(log, { matchLength, whiteName, blackName })
+    const now = new Date()
+    const p2 = (n: number) => String(n).padStart(2, '0')
+    const eventDate = `${now.getFullYear()}.${p2(now.getMonth() + 1)}.${p2(now.getDate())}`
+    const eventTime = `${p2(now.getHours())}.${p2(now.getMinutes())}`
+    const text = buildMatXg(log, {
+      matchLength,
+      whiteName,
+      blackName,
+      matchId: String(now.getTime()),
+      eventDate,
+      eventTime,
+    })
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
