@@ -13,6 +13,7 @@ import {
   type AppNotification,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
 import { type IconName } from './Icon'
 
@@ -81,6 +82,7 @@ export default function Messages({
   const [sending, setSending] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
+  const [search, setSearch] = useState('') // sol listede sohbet arama
   const listEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
@@ -188,51 +190,68 @@ export default function Messages({
         </h2>
 
         <div className={`messages-split ${showList ? 'show-list' : 'show-thread'}`}>
-          {/* Sol: konusma listesi (gelen kutusu). En üstte sabit "Bildirimler". */}
+          {/* Sol: konusma listesi (gelen kutusu). Üstte arama, altında sabit "Bildirimler". */}
           <div className="messages-threads">
-            <button
-              type="button"
-              className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
-              onClick={() => setActiveId(NOTIF_ID)}
-            >
-              <span className="messages-notif-ava">
-                <Icon name="bell" size={20} />
-              </span>
-              <span className="messages-thread-body">
-                <span className="messages-thread-name">{t('notif.title')}</span>
-                <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
-              </span>
-              {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
-            </button>
-            {loadingThreads ? (
-              <div className="lb-empty">{t('dm.loading')}</div>
-            ) : threads.length === 0 ? (
-              <div className="lb-empty">{t('dm.empty')}</div>
-            ) : (
-              threads.map((th) => (
-                <button
-                  key={th.user.id}
-                  type="button"
-                  className={`messages-thread ${activeId === th.user.id ? 'active' : ''}`}
-                  onClick={() => setActiveId(th.user.id)}
-                >
-                  <PlayerIdentity
-                    name={th.user.name}
-                    rating={th.user.rating}
-                    avatar={th.user.avatar}
-                    frame={th.user.frame}
-                    size={38}
-                    rankSize="sm"
-                  />
-                  <span className="messages-thread-body">
-                    <span className="messages-thread-last">
-                      {th.last ? (th.last.mine ? `${t('dm.you')}: ${th.last.body}` : th.last.body) : ''}
-                    </span>
-                  </span>
-                  {th.unread > 0 && <span className="messages-badge">{th.unread}</span>}
+            <div className="messages-search">
+              <Icon name="search" size={16} />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t('dm.search')}
+                aria-label={t('dm.search')}
+              />
+              {search && (
+                <button type="button" className="messages-search-clear" onClick={() => setSearch('')} aria-label={t('common.close')}>
+                  <Icon name="x" size={14} />
                 </button>
-              ))
-            )}
+              )}
+            </div>
+            <div className="messages-thread-scroll">
+              <button
+                type="button"
+                className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
+                onClick={() => setActiveId(NOTIF_ID)}
+              >
+                <span className="messages-notif-ava">
+                  <Icon name="bell" size={18} />
+                </span>
+                <span className="messages-thread-body">
+                  <span className="messages-thread-top">
+                    <span className="messages-thread-name">{t('notif.title')}</span>
+                  </span>
+                  <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
+                </span>
+                {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+              </button>
+              {(() => {
+                const q = search.trim().toLowerCase()
+                const list = q ? threads.filter((th) => th.user.name.toLowerCase().includes(q)) : threads
+                if (loadingThreads) return <div className="lb-empty">{t('dm.loading')}</div>
+                if (threads.length === 0) return <div className="lb-empty">{t('dm.empty')}</div>
+                if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>
+                return list.map((th) => (
+                  <button
+                    key={th.user.id}
+                    type="button"
+                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''}`}
+                    onClick={() => setActiveId(th.user.id)}
+                  >
+                    <AvatarFrame src={th.user.avatar} frame={th.user.frame} size={44} name={th.user.name} />
+                    <span className="messages-thread-body">
+                      <span className="messages-thread-top">
+                        <span className="messages-thread-name">{th.user.name}</span>
+                        {th.last?.created_at && <span className="messages-thread-time">{fmtTime(th.last.created_at)}</span>}
+                      </span>
+                      <span className="messages-thread-last">
+                        {th.last ? (th.last.mine ? `${t('dm.you')}: ${th.last.body}` : th.last.body) : ''}
+                      </span>
+                    </span>
+                    {th.unread > 0 && <span className="messages-badge">{th.unread > 9 ? '9+' : th.unread}</span>}
+                  </button>
+                ))
+              })()}
+            </div>
           </div>
 
           {/* Sag: aktif konusma */}
