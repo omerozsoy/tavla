@@ -154,7 +154,9 @@ class LuckyWheelRewardResource extends Resource
                     ->formatStateUsing(fn ($state) => self::typeOptions()[$state] ?? $state),
                 Tables\Columns\TextColumn::make('amount')->label('Miktar')
                     ->formatStateUsing(fn ($state, LuckyWheelReward $r) => in_array($r->type, ['COIN', 'PREMIUM_DAY', 'FREE_SPIN'], true) ? (int) $state : ($r->reference_id ?: '—')),
-                Tables\Columns\TextColumn::make('weight')->label('Weight')->sortable(),
+                Tables\Columns\TextColumn::make('weight')->label('Weight')->sortable()
+                    // Ham toplam: görünür (filtreli) TÜM ödüllerin weight toplamı (aktif+pasif).
+                    ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Ham toplam')),
                 Tables\Columns\TextColumn::make('probability')->label('Gerçek %')
                     ->state(function (LuckyWheelReward $r): string {
                         if (! $r->is_active) {
