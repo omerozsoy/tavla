@@ -11070,6 +11070,23 @@ button.acct-row:hover:not(:disabled) {
 .analyzer-controls .setup-row:last-of-type {
   margin-bottom: 0;
 }
+/* SECILI secenek net gorunsun: shadcn "secondary" varyanti bu temada "ghost"e cok yakin
+   kaliyordu -> secilenler belli olmuyordu. aria-pressed ile kiremit (accent) vurgu ver.
+   App.css katmansiz oldugundan Tailwind utility bg'sini ezer. */
+.analyzer-controls [data-slot='button'][aria-pressed='true'] {
+  background: color-mix(in srgb, var(--accent) 15%, var(--card-bg)) !important;
+  border: 1.5px solid var(--accent) !important;
+  color: var(--accent) !important;
+  font-weight: 500;
+}
+.analyzer-controls [data-slot='button'][aria-pressed='true'] svg {
+  color: var(--accent);
+}
+/* Secili OLMAYAN segmentler ince cerceveyle "secilebilir grup" gibi dursun (ghost tamamen
+   kaybolmasin) — secili ile net kontrast. */
+.analyzer-controls .menu-targets [data-slot='button'][aria-pressed='false'] {
+  border: 1px solid var(--border) !important;
+}
 /* Kup sahibi: 3 esit segment (beyaz | ortada | siyah) -> hizali, dengeli.
    Onceki ikon-buton + genis metin-buton karisikligi giderildi. */
 .pa-owner {
@@ -20801,8 +20818,8 @@ select:-webkit-autofill {
    Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
    sıfırlar. Tek noktadan geri alınır.
    ========================================================================= */
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"]),
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"])::before,
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"])::after {
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"]),
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::before,
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::after {
   border-radius: 0 !important;
 }
