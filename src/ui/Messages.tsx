@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -84,6 +84,7 @@ export default function Messages({
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
   const listEndRef = useRef<HTMLDivElement>(null)
+  const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
   const inputRef = useRef<HTMLInputElement>(null)
   const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
 
@@ -150,10 +151,13 @@ export default function Messages({
     return () => window.clearInterval(id)
   }, [activeId, loadThread, refreshThreads])
 
-  // Yeni mesajda en alta kaydir
-  useEffect(() => {
-    listEndRef.current?.scrollIntoView({ block: 'end' })
-  }, [messages, activeId])
+  // Sohbet açılınca / yeni mesajda log'u EN ALTA indir (son mesaj görünür). Kabın kendisini
+  // kaydır (scrollTop=scrollHeight) — zero-height end-marker + scrollIntoView güvenilmezdi
+  // (yanlış ata kayabiliyor, üstte kalıyordu). layout effect: boyanmadan önce çalışır (zıplama yok).
+  useLayoutEffect(() => {
+    const el = logRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages, activeId, loadingThread])
 
   async function doSend() {
     const body = text.trim()
@@ -326,7 +330,7 @@ export default function Messages({
                   )}
                 </div>
 
-                <div className="messages-log">
+                <div className="messages-log" ref={logRef}>
                   {loadingThread ? (
                     <div className="lb-empty">{t('dm.loading')}</div>
                   ) : messages.length === 0 ? (
