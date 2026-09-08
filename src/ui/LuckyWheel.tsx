@@ -391,7 +391,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                               className="lw-win-badge"
                               style={{ background: result.slice_color || 'var(--accent)', color: readableText(result.slice_color) }}
                             >
-                              <Icon name={iconFor(result.type, result.icon)} size={34} weight="fill" />
+                              <Icon name={isNoPrize ? 'smiley-sad' : iconFor(result.type, result.icon)} size={34} weight="fill" />
                             </div>
                           )}
 
