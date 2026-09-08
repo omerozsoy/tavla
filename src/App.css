@@ -20827,3 +20827,14 @@ select:-webkit-autofill {
 .auth-logout {
   border-radius: 0 !important;
 }
+/* Sohbet balonlari YUVARLAK kalsin (keskin-kose global sifirlamasindan muaf).
+   WhatsApp tarzi: buyuk yuvarlaklik + alt-dis koseyi kis (kuyruk tarafi). */
+.msg-bubble {
+  border-radius: 16px !important;
+}
+.msg-bubble.mine {
+  border-bottom-right-radius: 5px !important;
+}
+.msg-bubble.theirs {
+  border-bottom-left-radius: 5px !important;
+}
