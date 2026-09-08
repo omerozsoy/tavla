@@ -86,6 +86,17 @@ export interface SavedGame {
   // localStorage'a da yazilir. Boyut icin son 600 girdi (rapor zaten son 1000'i gonderir).
   // NOT: yalniz YEREL kayitta bulunur; saveServerGame bunu GONDERMEZ (istek boyutu).
   log?: MoveLogEntry[]
+  // BAŞARIM SİNYALLERİ (mac boyunca biriken ref'ler): reportRating payload'ina girer.
+  // Ref olduklari icin state gibi otomatik kaydedilmez -> refresh'te sifirlanir ve o macin
+  // mars/katmerli-mars/6-prime/closeout/min-WP basarimlari EKSIK raporlanir. saveGame aninda
+  // ref degerleri buraya yazilir, applySavedGame geri yukler (matchLog fix ile ayni mantik).
+  ach?: {
+    gammons: number
+    backgammons: number
+    minWp: number // 101 = henuz yok
+    prime6: boolean
+    closeout: boolean
+  }
   // Kayit aninda kullanici OYUN gorunumunde miydi? refresh'te ana sayfadan oyuna
   // ZORLA sokmamak icin (aktif oyun "Devam Et" ile erisilebilir kalir). undefined
   // (eski kayit) -> ana sayfada kal.
