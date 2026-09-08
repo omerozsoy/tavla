@@ -1256,6 +1256,15 @@ export default function App() {
     // KARAR LOGU'nu da geri yukle -> refresh sonrasi mac bitince has_log=true olur
     // (analiz raporu acilir). prStats ile TUTARLI kalir (PR var ama log yok bug'i fix).
     if (g.log?.length) setMatchLog(g.log)
+    // BAŞARIM SİNYALLERİ'ni geri yukle -> refresh sonrasi mac bitince mars/6-prime/closeout/
+    // min-WP basarimlari eksik raporlanmaz (matchLog fix ile ayni mantik; ref'ler otomatik kaydolmaz).
+    if (g.ach) {
+      achGammonRef.current = g.ach.gammons ?? 0
+      achBgRef.current = g.ach.backgammons ?? 0
+      achMinWpRef.current = g.ach.minWp ?? 101
+      achPrime6Ref.current = !!g.ach.prime6
+      achCloseoutRef.current = !!g.ach.closeout
+    }
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
     // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse: SADECE kayit aninda kullanici
