@@ -125,13 +125,23 @@ export default function Messages({
     if (activeId === NOTIF_ID) onNotifReadRef.current?.()
   }, [activeId])
 
+  // Gonderilmis ama sunucuda henuz onaylanmamis (iyimser) mesajlar. 3sn'lik sessiz tazeleme
+  // setMessages(server) ile diziyi TAMAMEN degistirdiginden, gonderim uctugu an tazeleme
+  // araya girerse iyimser mesaj SILINIYORDU (mesaj "gonderilmiyor" gibi gorunuyordu).
+  // Cozum: her tazelemede henuz onaylanmamis iyimser mesajlari sunucu listesine EKLE.
+  const pendingRef = useRef<ChatMessage[]>([])
+  const mergePending = (server: ChatMessage[]): ChatMessage[] => {
+    const extra = pendingRef.current.filter((p) => !server.some((s) => s.id === p.id))
+    return extra.length ? [...server, ...extra] : server
+  }
+
   // Aktif konusmayi yukle (gelenleri okundu isaretler)
   const loadThread = useCallback(async (uid: number, silent = false) => {
     if (!silent) setLoadingThread(true)
     try {
       const d = await getThread(uid)
       setActiveUser(d.user)
-      setMessages(d.messages)
+      setMessages(mergePending(d.messages)) // in-flight iyimser mesajlari koru
       setPartnerTyping(!!d.typing) // karsi taraf yaziyor mu
       onReadRef.current?.() // gelenler backend'de okundu -> rozet tazele
     } catch {
@@ -145,9 +155,10 @@ export default function Messages({
     refreshThreads()
   }, [refreshThreads])
 
-  // Aktif konusma degisince yukle (onceki konusmanin "yaziyor" durumunu sifirla)
+  // Aktif konusma degisince yukle (onceki konusmanin "yaziyor" durumunu + bekleyenleri sifirla)
   useEffect(() => {
     setPartnerTyping(false)
+    pendingRef.current = [] // konusma degisti -> onceki sohbetin bekleyen iyimser mesajlari
     if (activeId != null && activeId !== NOTIF_ID) loadThread(activeId)
   }, [activeId, loadThread])
 
@@ -174,17 +185,29 @@ export default function Messages({
     if (!body || sending || activeId == null) return
     setEmojiOpen(false)
     setSending(true)
-    // Iyimser ekle
+    // Iyimser ekle (+ pendingRef: 3sn tazeleme araya girse de kaybolmasin)
     const optimistic: ChatMessage = { id: -Date.now(), body, mine: true, created_at: new Date().toISOString() }
+    pendingRef.current = [...pendingRef.current, optimistic]
     setMessages((m) => [...m, optimistic])
     setText('')
     try {
       const r = await sendMessage(activeId, body)
-      setMessages((m) => m.map((x) => (x.id === optimistic.id ? r.message : x)))
+      pendingRef.current = pendingRef.current.filter((x) => x.id !== optimistic.id)
+      setMessages((m) => {
+        const idx = m.findIndex((x) => x.id === optimistic.id)
+        if (idx >= 0) {
+          const n = m.slice()
+          n[idx] = r.message
+          return n
+        }
+        // Iyimser mesaj bir tazeleme tarafindan silinmisti -> gercek mesaji yine de ekle.
+        return m.some((x) => x.id === r.message.id) ? m : [...m, r.message]
+      })
       refreshThreads()
     } catch (err) {
       // Basarisiz -> iyimser mesaji geri al + NEDENINI goster (eskiden sessizce yutuluyordu
       // -> kullanici "mesaj atamiyorum" diyordu ama neden belli olmuyordu).
+      pendingRef.current = pendingRef.current.filter((x) => x.id !== optimistic.id)
       setMessages((m) => m.filter((x) => x.id !== optimistic.id))
       setText(body)
       toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
