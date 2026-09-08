@@ -1,48 +1,66 @@
-/* Şans Çarkı — kullanıcı arayüzü. Kumarhane tarzı çark: altın rim + ampuller, derinlik
-   gölgesi, parlak göbek, tepe göstergesi ve güvenilir yumuşak dönüş (transition daima açık). */
+/* Şans Çarkı — FLAT / editoryal redesign. Sharp corners (radius token 0), gölge yok;
+   tüm renkler tema token'larından (terracotta/ink/krem). İki kolon: çark + ödül paneli. */
 
 .lw-card {
-  width: min(560px, 96vw);
-  max-height: 92vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 14px;
-  text-align: left;
+  gap: 22px;
 }
 
-/* Başlık: standart sayfa formatı — sola dayalı h2 + alt açıklama (bkz .shop-head). */
+/* Başlık — standart sayfa başlığı tarzı (ikon + başlık + alt açıklama) */
 .lw-head {
-  width: 100%;
-  margin: 2px 0 0;
+  margin: 0;
 }
-.lw-head-text h2 {
+.lw-head h2 {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--foreground, #222);
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+.lw-head h2 svg {
+  color: var(--accent);
 }
 .lw-sub {
-  margin: 5px 0 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
-  color: var(--muted-foreground, #666);
-  max-width: 46ch;
-  text-wrap: pretty;
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 54ch;
+}
+
+/* İki kolon: sol çark paneli + sağ ödül paneli */
+.lw-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 480px) minmax(240px, 1fr);
+  gap: clamp(20px, 3vw, 44px);
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .lw-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- SOL: çark paneli ---- */
+.lw-wheel-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: clamp(18px, 2.4vw, 30px);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
 }
 
 .lw-stage {
   position: relative;
-  width: min(380px, 86vw);
+  width: min(430px, 82vw);
   aspect-ratio: 1 / 1;
-  margin: 6px auto 2px;
-  filter: drop-shadow(0 10px 24px rgba(0, 0, 0, 0.28));
 }
-
 .lw-svg {
   width: 100%;
   height: 100%;
@@ -50,71 +68,80 @@
   overflow: visible;
 }
 
-/* Dönen tekerlek grubu — transition DAİMA açık (spinning'e bağlı değil) ki
-   rotation değişince tarayıcı animasyonu güvenilir başlatsın. Merkez = viewBox 340/2. */
+/* Dönen tekerlek — transition DAİMA açık (rotation değişince güvenilir başlasın).
+   Merkez = viewBox 340/2 = 170. */
 .lw-wheel {
   transform-box: view-box;
   transform-origin: 170px 170px;
   will-change: transform;
 }
 
-/* Rim ampulleri: sıcak altın, hafif parlama; dönerken sırayla yanıp söner. */
-.lw-bulb {
-  fill: #ffe08a;
-  filter: drop-shadow(0 0 2px rgba(255, 200, 80, 0.9));
-}
-.lw-stage.is-spinning .lw-bulb {
-  animation: lw-blink 0.6s linear infinite;
-}
-.lw-stage.is-spinning .lw-bulb:nth-child(2n) {
-  animation-delay: 0.3s;
-}
-@keyframes lw-blink {
-  0%,
-  100% {
-    fill: #ffe08a;
-    opacity: 1;
-  }
-  50% {
-    fill: #b98a1e;
-    opacity: 0.55;
-  }
+/* İnce dış halka (flat, ink) */
+.lw-ring {
+  fill: var(--text);
 }
 
-/* Tepe göstergesi (pointer) — sabit, çarkın üstüne taşar. */
+/* Dilimler: ince krem ayırıcı çizgi (flat, keskin). Kazanan = kiremit vurgu. */
+.lw-slice {
+  stroke: var(--card-bg);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  transition: stroke 0.2s ease;
+}
+.lw-slice.is-win {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+
+/* Merkez göbek: flat ink daire (üstünde TavlaTV logosu) */
+.lw-hub {
+  fill: var(--text);
+}
+.lw-hub-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Üst gösterge (pointer): kiremit üçgen, aşağı bakar; çark dönerken hafif titrer */
 .lw-pointer {
   position: absolute;
-  top: -6px;
+  top: -8px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 3;
-  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.4));
+}
+.lw-pointer-tri {
+  fill: var(--accent);
 }
 .lw-stage.is-spinning .lw-pointer {
   animation: lw-tick 0.12s ease-in-out infinite alternate;
-  transform-origin: 50% 20%;
+  transform-origin: 50% 15%;
 }
 @keyframes lw-tick {
   from {
-    transform: translateX(-50%) rotate(-4deg);
+    transform: translateX(-50%) rotate(-3deg);
   }
   to {
-    transform: translateX(-50%) rotate(4deg);
+    transform: translateX(-50%) rotate(3deg);
   }
 }
 
-/* ÇEVİR butonu — çarkın ALTINDA (standart site butonu), ortalanmış ve belirgin. */
+/* ÇEVİR butonu — belirgin, geniş; standart <Button> üzerine */
 .lw-actions {
+  width: 100%;
   display: flex;
   justify-content: center;
-  margin: 2px 0;
 }
 .lw-spin-btn {
-  min-width: 220px;
-  height: 48px;
+  min-width: 240px;
+  height: 50px;
   font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .lw-spin-ic {
   animation: lw-rot 0.8s linear infinite;
@@ -125,112 +152,159 @@
   }
 }
 
-.lw-meta {
+/* İstatistik şeridi: 3 hücre, ince border ayrımı (flat) */
+.lw-stats {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--border);
+}
+.lw-stat {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: var(--muted-foreground, #666);
-}
-.lw-meta strong {
-  color: var(--foreground, #222);
-  font-weight: 600;
-}
-.lw-coins {
-  display: inline-flex;
-  align-items: center;
-}
-/* Ücretsiz hakkın yenilenmesine canlı geri sayım (24 saatlik döngü). */
-.lw-next {
-  display: inline-flex;
+  flex-direction: column;
   align-items: center;
   gap: 5px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.lw-stat + .lw-stat {
+  border-left: 1px solid var(--border);
+}
+.lw-stat-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lw-stat-value {
+  font-size: 1.1rem;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
 }
 .lw-cd {
   display: inline-flex;
   align-items: center;
   gap: 4px;
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  color: var(--foreground, #222);
+}
+
+/* ---- SAĞ: ödül listesi ---- */
+.lw-side {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lw-side-card {
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+}
+.lw-side-title {
+  margin: 0;
+  padding: 13px 16px;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+}
+.lw-prizes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lw-prize {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 16px;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+.lw-prize + .lw-prize {
+  border-top: 1px solid var(--border);
+}
+.lw-prize.is-win {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.lw-prize-sw {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.lw-prize-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lw-prize-pct {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
 }
 
 .lw-note {
-  font-size: 0.82rem;
-  color: var(--muted-foreground, #777);
-  max-width: 44ch;
-  margin: 0 auto;
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
 }
 
-/* Kazanma modalı */
+/* ---- Kazanma kartı (flat, çark üstünde) ---- */
 .lw-win {
   position: absolute;
-  inset: -8px;
+  inset: 0;
   z-index: 6;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 16px;
-  animation: lw-fade 0.2s ease;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(2px);
+  animation: lw-fade 0.18s ease;
 }
 .lw-win-inner {
-  background: var(--card, #fff);
-  color: var(--foreground, #1a1a1a);
-  border-radius: 16px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
   padding: 26px 24px;
-  width: min(340px, 90%);
+  width: min(300px, 88%);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.34);
-  animation: lw-pop 0.4s cubic-bezier(0.2, 1.35, 0.4, 1);
+  text-align: center;
+  animation: lw-pop 0.32s cubic-bezier(0.2, 1.3, 0.4, 1);
 }
 .lw-win-badge {
-  width: 78px;
-  height: 78px;
-  border-radius: 50%;
+  width: 64px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25), inset 0 2px 6px rgba(255, 255, 255, 0.35);
-  animation: lw-badge-pop 0.5s cubic-bezier(0.2, 1.5, 0.4, 1);
+  animation: lw-badge 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 .lw-win-title {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.2rem;
+  color: var(--text);
 }
 .lw-win-reward {
-  font-size: 1.06rem;
-  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--accent);
 }
 .lw-win-sub {
-  font-size: 0.9rem;
-  color: var(--muted-foreground, #666);
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
-@keyframes lw-pop {
-  from {
-    transform: scale(0.7);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-@keyframes lw-badge-pop {
-  0% {
-    transform: scale(0) rotate(-30deg);
-  }
-  100% {
-    transform: scale(1) rotate(0);
-  }
-}
 @keyframes lw-fade {
   from {
     opacity: 0;
@@ -239,10 +313,27 @@
     opacity: 1;
   }
 }
+@keyframes lw-pop {
+  from {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes lw-badge {
+  0% {
+    transform: scale(0) rotate(-20deg);
+  }
+  100% {
+    transform: scale(1) rotate(0);
+  }
+}
 
-/* Hareket azaltma tercihi: ampul/tick/ikon animasyonlarını durdur (dönüş kısalır). */
+/* Hareket azaltma: dönüş/titreme animasyonlarını durdur */
 @media (prefers-reduced-motion: reduce) {
-  .lw-stage.is-spinning .lw-bulb,
   .lw-stage.is-spinning .lw-pointer,
   .lw-spin-ic {
     animation: none;
