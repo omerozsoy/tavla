@@ -50,8 +50,8 @@ export const PAGES: PageDef[] = [
   { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
   { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'content', hideInGame: true },
-  // Ürünler sol menüde DEĞİL; Mağaza içinden açılır (inMenu:false -> /urunler yine çalışır).
-  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'shop', group: 'content', hideInGame: true, inMenu: false },
+  // Ürünler sol menüde (fiziksel ürün mağazası). Ayrıca Mağaza içinden de açılabilir.
+  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true },
 
   // --- Araclar ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
