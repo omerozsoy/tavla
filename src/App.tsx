@@ -5081,6 +5081,20 @@ export default function App() {
           setEditProfile(false)
           setMyOrdersOpen(true)
         }}
+        allBoards={boardThemeList}
+        coins={user.coins ?? 0}
+        onBuyItem={handleBuy}
+        framesSlot={
+          <FrameShop
+            coins={user.coins ?? 0}
+            unlocks={user.unlocks ?? []}
+            currentFrame={user.avatar_frame ?? null}
+            avatar={profile.avatar ?? null}
+            name={profile.nickname}
+            onBuy={handleBuy}
+            onEquip={handleEquipFrame}
+          />
+        }
         tab={profileTab}
         onTabChange={setProfileTab}
       />

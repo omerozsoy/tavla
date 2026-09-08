@@ -1,4 +1,4 @@
-import { useState, type CSSProperties } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -9,6 +9,7 @@ import AvatarFrame from './AvatarFrame'
 import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
+import BoardPicker, { type BoardThemeOpt } from './BoardPicker'
 import MembershipCard from './MembershipCard'
 import AddressBook from './AddressBook'
 import { Button } from '@/components/ui/button'
@@ -46,8 +47,13 @@ interface Props {
   onToggleAutoRenew?: (enabled: boolean) => void
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
-  onOpenShop?: (tab: 'frame' | 'board') => void // Magaza (avatar/tahta sekmesi)
+  onOpenShop?: (tab: 'frame' | 'board') => void // (kullanılmıyor; geriye dönük)
   onOpenOrders?: () => void // Siparişlerim (sol menüden kaldırıldı -> profilden açılır)
+  // "Tümü" bölümleri: profil Tahta/Avatar sekmelerinin altında TÜM tasarımlar + satın al
+  allBoards?: BoardThemeOpt[] // tüm tahtalar (owned + kilitli)
+  coins?: number
+  onBuyItem?: (shopId: string) => void // 'theme.<id>' / 'frame.<id>' satın al
+  framesSlot?: ReactNode // FrameShop: tüm çerçeveler + satın al/kuşan
   // Kontrollu sekme (URL'e yansisin diye App'ten gelir; verilmezse ic state ile calisir)
   tab?: ProfTab
   onTabChange?: (tab: ProfTab) => void
@@ -81,8 +87,11 @@ export default function ProfileOverview({
   onToggleAutoRenew,
   onOpenMatchHistory,
   onOpenAchievements,
-  onOpenShop,
   onOpenOrders,
+  allBoards,
+  coins,
+  onBuyItem,
+  framesSlot,
   tab: tabProp,
   onTabChange,
 }: Props) {
@@ -290,13 +299,14 @@ export default function ProfileOverview({
                   <span className="prof-ov-item-name">{f.name}</span>
                 </button>
               ))}
-              {onOpenShop && (
-                <button type="button" className="prof-ov-item prof-ov-more" onClick={() => onOpenShop('frame')}>
-                  <span className="prof-ov-more-ic"><Icon name="shop" size={24} /></span>
-                  <span className="prof-ov-item-name">{t('prof.moreAvatars')}</span>
-                </button>
-              )}
             </div>
+            {/* TÜM avatar çerçeveleri (satın al / kuşan) — sahip olduklarının altında */}
+            {framesSlot && (
+              <div className="prof-ov-all">
+                <h4 className="prof-ov-all-t">{t('prof.allAvatars')}</h4>
+                {framesSlot}
+              </div>
+            )}
           </section>
         )}
 
@@ -328,13 +338,20 @@ export default function ProfileOverview({
                   <span className="prof-ov-item-name">{b.name}</span>
                 </button>
               ))}
-              {onOpenShop && (
-                <button type="button" className="prof-ov-item prof-ov-more" onClick={() => onOpenShop('board')}>
-                  <span className="prof-ov-more-ic"><Icon name="shop" size={24} /></span>
-                  <span className="prof-ov-item-name">{t('prof.moreBoards')}</span>
-                </button>
-              )}
             </div>
+            {/* TÜM tahta tasarımları (satın al / kuşan) — sahip olduklarının altında */}
+            {allBoards && allBoards.length > 0 && onSelectBoard && (
+              <div className="prof-ov-all">
+                <h4 className="prof-ov-all-t">{t('prof.allBoards')}</h4>
+                <BoardPicker
+                  boardTheme={boardTheme}
+                  setBoardTheme={onSelectBoard}
+                  boardThemes={allBoards}
+                  coins={coins ?? 0}
+                  onBuy={onBuyItem}
+                />
+              </div>
+            )}
           </section>
         )}
 
