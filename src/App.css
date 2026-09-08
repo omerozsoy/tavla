@@ -20823,3 +20823,7 @@ select:-webkit-autofill {
 *:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::after {
   border-radius: 0 !important;
 }
+/* [class*=logo] yanlis-pozitifi: .auth-logout ("logout" -> "logo") keskin kalsin */
+.auth-logout {
+  border-radius: 0 !important;
+}
