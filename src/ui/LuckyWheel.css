@@ -35,7 +35,7 @@
 /* İki kolon: sol çark paneli + sağ ödül paneli */
 .lw-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 480px) minmax(240px, 1fr);
+  grid-template-columns: minmax(360px, 560px) minmax(240px, 1fr);
   gap: clamp(20px, 3vw, 44px);
   align-items: start;
 }
@@ -58,7 +58,7 @@
 
 .lw-stage {
   position: relative;
-  width: min(430px, 82vw);
+  width: min(520px, 86vw);
   aspect-ratio: 1 / 1;
 }
 .lw-svg {
