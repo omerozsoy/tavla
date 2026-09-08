@@ -21,6 +21,10 @@ interface Props {
   focusUserId?: number | null // acilirken dogrudan bu arkadasin konusmasini ac (NOTIF_ID -> Bildirimler)
   onClose: () => void
   onRead?: () => void // gelenler okundu -> App rozetini tazele
+  // Gonderenin fotografi balonun yaninda gosterilir (kendi mesajlarim icin bu bilgiler).
+  myAvatar?: string | null
+  myFrame?: string | null
+  myName?: string
   // Bildirimler mesajlarla birlestirildi: sol listede sabit "Bildirimler" girisi.
   notifications?: AppNotification[]
   unreadNotif?: number
@@ -64,6 +68,9 @@ export default function Messages({
   focusUserId,
   onClose,
   onRead,
+  myAvatar,
+  myFrame,
+  myName,
   notifications = [],
   unreadNotif = 0,
   onNotifRead,
@@ -336,23 +343,40 @@ export default function Messages({
                   ) : messages.length === 0 ? (
                     <div className="messages-hint">{t('dm.firstHint')}</div>
                   ) : (
-                    messages.map((m) => (
-                      <div key={m.id} className={`msg-bubble ${m.mine ? 'mine' : 'theirs'}`}>
-                        <span className="msg-text">{m.body}</span>
-                        <span className="msg-meta">
-                          <span className="msg-time">{fmtTime(m.created_at)}</span>
-                          {m.mine && (
-                            <span
-                              className={`msg-tick ${m.read ? 'read' : ''}`}
-                              aria-label={m.read ? t('dm.read') : t('dm.sent')}
-                              title={m.read ? t('dm.read') : t('dm.sent')}
-                            >
-                              <Icon name={m.read ? 'checks' : 'check'} size={14} />
-                            </span>
+                    messages.map((m, i, arr) => {
+                      // Gönderenin fotoğrafı: her ardışık grubun SON mesajının yanında (WhatsApp tarzı).
+                      const showAvatar = i === arr.length - 1 || arr[i + 1].mine !== m.mine
+                      return (
+                        <div key={m.id} className={`msg-row ${m.mine ? 'mine' : 'theirs'}`}>
+                          {showAvatar ? (
+                            <AvatarFrame
+                              src={m.mine ? myAvatar ?? null : activeUser?.avatar ?? null}
+                              frame={m.mine ? myFrame ?? null : activeUser?.frame ?? null}
+                              name={m.mine ? myName ?? '' : activeUser?.name ?? ''}
+                              size={30}
+                              className="msg-avatar"
+                            />
+                          ) : (
+                            <span className="msg-avatar-spacer" aria-hidden="true" />
                           )}
-                        </span>
-                      </div>
-                    ))
+                          <div className={`msg-bubble ${m.mine ? 'mine' : 'theirs'}`}>
+                            <span className="msg-text">{m.body}</span>
+                            <span className="msg-meta">
+                              <span className="msg-time">{fmtTime(m.created_at)}</span>
+                              {m.mine && (
+                                <span
+                                  className={`msg-tick ${m.read ? 'read' : ''}`}
+                                  aria-label={m.read ? t('dm.read') : t('dm.sent')}
+                                  title={m.read ? t('dm.read') : t('dm.sent')}
+                                >
+                                  <Icon name={m.read ? 'checks' : 'check'} size={14} />
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })
                   )}
                   {partnerTyping && (
                     <div className="messages-typing" aria-live="polite">
