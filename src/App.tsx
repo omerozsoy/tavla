@@ -1226,8 +1226,11 @@ export default function App() {
     if (!hydratedRef.current) return // ilk restore bitene kadar localStorage'i EZME (kritik)
     // pr/luck da kaydedilir -> refresh/resume'da PR/Sans/Seviye kaybolmaz
     // inGame: kayit aninda oyun gorunumunde miydik -> refresh'te ana sayfadan oyuna zorla sokma
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, inGame: !home })
-  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, home])
+    // log (matchLog) da kaydedilir -> refresh/resume'da KARAR LOGU kaybolmaz; yoksa mac
+    // sonu PR birikmis prStats'tan gelir ama log BOS gider (has_log=false -> "analiz cikmiyor").
+    // Boyut icin son 600 girdi (rapor zaten son 1000'i gonderir; localStorage kotasi guvenli).
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, log: matchLog.slice(-600), inGame: !home })
+  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, matchLog, home])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
@@ -1249,6 +1252,9 @@ export default function App() {
     // seviyesi/PR/sansi "—"/+0 olmaz (kayittaki birikmis degerler korunur).
     if (g.pr) setPrStats(g.pr)
     if (g.luck) setPrLuck(g.luck)
+    // KARAR LOGU'nu da geri yukle -> refresh sonrasi mac bitince has_log=true olur
+    // (analiz raporu acilir). prStats ile TUTARLI kalir (PR var ama log yok bug'i fix).
+    if (g.log?.length) setMatchLog(g.log)
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
     // Aktif (bitmemis) bot/lokal oyun geri yuklendiyse: SADECE kayit aninda kullanici
