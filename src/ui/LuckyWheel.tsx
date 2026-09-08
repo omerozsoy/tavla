@@ -270,6 +270,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                   </span>
                 </div>
               </div>
+              {/* Ücretsiz hak bitince kalan-hak şeridinin altında minik bilgi notu. */}
+              {isPaidNext && <p className="lw-free-over">{t('lw.paidHint', { n: spinCost })}</p>}
 
               <div className={`lw-stage ${spinning ? 'is-spinning' : ''}`}>
                 {/* Üst gösterge (pointer): kiremit üçgen, aşağı bakar */}
@@ -313,7 +315,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                           <text
                             x={lx.toFixed(2)}
                             y={ly.toFixed(2)}
-                            fill={readableText(rw.sliceColor)}
+                            fill="#ffffff"
                             fontSize={n > 10 ? 8 : 9}
                             fontWeight={400}
                             textAnchor="middle"
@@ -323,8 +325,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             {rw.name.length > 16 ? rw.name.slice(0, 15) + '…' : rw.name}
                           </text>
                           <foreignObject x={ix - 10} y={iy - 10} width={20} height={20}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: readableText(rw.sliceColor) }}>
-                              <Icon name={iconFor(rw.type, rw.icon)} size={15} weight="fill" />
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
+                              <Icon name={iconFor(rw.type, rw.icon)} size={15} weight="regular" />
                             </div>
                           </foreignObject>
                         </g>
@@ -426,8 +428,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                 <ul className="lw-prizes">
                   {rewards.map((rw, i) => (
                     <li key={rw.id} className={`lw-prize ${winIdx === i ? 'is-win' : ''}`}>
-                      <span className="lw-prize-sw" style={{ background: rw.sliceColor, color: readableText(rw.sliceColor) }}>
-                        <Icon name={iconFor(rw.type, rw.icon)} size={14} weight="fill" />
+                      <span className="lw-prize-sw" style={{ color: rw.sliceColor }}>
+                        <Icon name={iconFor(rw.type, rw.icon)} size={16} weight="regular" />
                       </span>
                       <span className="lw-prize-name">{rw.name}</span>
                       {showProb && rw.probability != null ? (
@@ -437,11 +439,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                   ))}
                 </ul>
               </div>
-              {!loggedIn ? (
-                <p className="lw-note">{t('lw.loginRequired')}</p>
-              ) : remaining <= 0 && spinCost > 0 ? (
-                <p className="lw-note">{t('lw.paidHint', { n: spinCost })}</p>
-              ) : null}
+              {!loggedIn ? <p className="lw-note">{t('lw.loginRequired')}</p> : null}
             </aside>
           </div>
         )}
