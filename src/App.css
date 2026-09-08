@@ -17382,6 +17382,14 @@ button.acct-row:hover:not(:disabled) {
   border-radius: var(--radius-md);
   overflow: hidden;
 }
+/* Avatar vitrini: tahta önizlemesiyle aynı kart yüksekliğinde, ortalanmış çerçeve */
+.prof-ov-item-frame {
+  width: 100%;
+  min-height: 148px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .prof-ov-item-name {
   font-size: 0.82rem;
   font-weight: 400;
