@@ -89,6 +89,15 @@ class GameLogResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('İncele'),
+                Tables\Actions\Action::make('downloadMat')
+                    ->label('.mat')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->action(fn (GameLog $record) => response()->streamDownload(
+                        fn () => print ($record->matText()),
+                        $record->matFilename(),
+                        ['Content-Type' => 'text/plain; charset=utf-8'],
+                    )),
             ]);
     }
 

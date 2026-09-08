@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\MatFromLog;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -76,5 +77,45 @@ class GameLog extends Model
         }
 
         return $out;
+    }
+
+    /**
+     * Bu maçın XG-uyumlu .mat metni (kompakt turlardan üretilir; HER modda tam çalışır).
+     * Yönetim panelinde önizleme + indirme kaynağı.
+     */
+    public function matText(): string
+    {
+        return MatFromLog::build($this->mergedTurns(), [
+            'whiteName' => $this->p1_name ?: 'Player1',
+            'blackName' => $this->p2_name ?: 'Player2',
+            'matchLength' => max(1, (int) ($this->target ?? 1)),
+            'matchId' => (string) $this->uid,
+            'eventDate' => optional($this->created_at)->format('Y.m.d') ?? '',
+            'eventTime' => optional($this->created_at)->format('H.i') ?? '',
+        ]);
+    }
+
+    /** İndirme için güvenli dosya adı: tavlatv-<uid>.mat */
+    public function matFilename(): string
+    {
+        $safe = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $this->uid) ?: 'mac';
+
+        return "tavlatv-{$safe}.mat";
+    }
+
+    /**
+     * Bu maça bağlı sonuç kayıtları (PR / şans / puan / bahis). Online'da uid == room_code
+     * ile eşleşir (her oyuncu için bir satır). pvb/local'de bağ yoktur -> boş döner.
+     */
+    public function relatedResults()
+    {
+        if ($this->mode !== 'online' || empty($this->uid)) {
+            return collect();
+        }
+
+        return MatchResult::where('room_code', $this->uid)
+            ->with(['user', 'room'])
+            ->orderBy('id')
+            ->get();
     }
 }
