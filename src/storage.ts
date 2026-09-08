@@ -97,6 +97,27 @@ export interface SavedGame {
     prime6: boolean
     closeout: boolean
   }
+  // MAÇ KAYDI (admin hamle+zar logu) kimliği + biriken olaylar. Refresh'te AYNI kayda devam
+  // edilir (yeni uid üretip admin logunu İKİYE bölmek yerine). Sunucu slot kolonunu ÜZERİNE
+  // yazdığı (GameLogController) için biriken events de saklanır; yoksa refresh sonrası ilk
+  // flush eski olayları siler. Yalnız LOKAL (pvb/pvp); online'da uid=oda kodu (sunucudan gelir).
+  record?: {
+    uid: string
+    gameNo: number
+    online: boolean
+    slot: 'p1' | 'p2'
+    mode: 'online' | 'pvb' | 'local'
+    target: number
+    done: boolean
+    events: unknown[]
+  }
+  // MAÇ-SONU SONUÇ EKRANI gösterim değerleri. Kalıcı rating/coin zaten sunucuda; bunlar yalnız
+  // o anlık "değişim" gösterimi (delta rakamı/coin animasyonu) refresh'te +0/— düşmesin diye.
+  result?: {
+    ratingChange?: { before: number; after: number } | null
+    coinDelta?: number | null
+    coinPair?: { won: number; lost: number } | null
+  }
   // Kayit aninda kullanici OYUN gorunumunde miydi? refresh'te ana sayfadan oyuna
   // ZORLA sokmamak icin (aktif oyun "Devam Et" ile erisilebilir kalir). undefined
   // (eski kayit) -> ana sayfada kal.
