@@ -5341,6 +5341,21 @@ export default function App() {
                 <span className="acct-row-l">{t('shop.title')}</span>
               </button>
 
+              {/* Sepet (üst bardaki sepet düğmesinin mobil karşılığı) */}
+              <button
+                type="button"
+                className="acct-row"
+                role="menuitem"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  goPage(() => setCartOpen(true))
+                }}
+              >
+                <Icon name="cart" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('shop.cart')}</span>
+                {cartCount > 0 && <span className="acct-row-v">{cartCount > 9 ? '9+' : cartCount}</span>}
+              </button>
+
               <div className="acct-div" />
 
               {/* Tema */}
