@@ -1047,6 +1047,10 @@ export default function App() {
     white: OVER_TOTAL,
     black: OVER_TOTAL,
   })
+  // Saat her SANIYE degisir; saveGame'i saniyede bir tetiklemesin (agir matchLog yazimi) diye
+  // ref'ten okunur -> save yalniz hamle/tur degisiminde olur, saat degeri o an gunceldir.
+  const clockStateRef = useRef(clock)
+  clockStateRef.current = clock
   // AFK (sunucu-otoriter): kayba kalan saniye (yalniz son 15sn'de dolu) + sirasi gelen renk.
   const [afkLeft, setAfkLeft] = useState<number | null>(null)
   const [srvActive, setSrvActive] = useState<Player | null>(null)
@@ -1230,8 +1234,12 @@ export default function App() {
     // sonu PR birikmis prStats'tan gelir ama log BOS gider (has_log=false -> "analiz cikmiyor").
     // Boyut icin son 600 girdi (rapor zaten son 1000'i gonderir; localStorage kotasi guvenli).
     // ach: basarim sinyalleri (ref) — refresh'te sifirlanmasin diye ref degerleri de kaydedilir.
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, log: matchLog.slice(-600), ach: { gammons: achGammonRef.current, backgammons: achBgRef.current, minWp: achMinWpRef.current, prime6: achPrime6Ref.current, closeout: achCloseoutRef.current }, inGame: !home })
-  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, matchLog, home])
+    // clock: saat/rezerv bankasi (pvb kozmetik; online sunucudan geldigi icin ezilir).
+    // record: admin mac kaydi kimligi + biriken events (refresh'te ayni kayda devam -> parcalanma yok).
+    // result: mac-sonu ekran gosterim degerleri (refresh'te delta/coin gosterimi kaybolmasin).
+    const rec = gameRecordRef.current
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, log: matchLog.slice(-600), ach: { gammons: achGammonRef.current, backgammons: achBgRef.current, minWp: achMinWpRef.current, prime6: achPrime6Ref.current, closeout: achCloseoutRef.current }, clock: clockStateRef.current, record: rec ? { uid: rec.uid, gameNo: rec.gameNo, online: rec.online, slot: rec.slot, mode: rec.mode, target: rec.target, done: rec.done, events: rec.events } : undefined, result: { ratingChange, coinDelta, coinPair }, inGame: !home })
+  }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, matchLog, ratingChange, coinDelta, coinPair, home])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
   function applySavedGame(g: SavedGame) {
@@ -1264,6 +1272,29 @@ export default function App() {
       achMinWpRef.current = g.ach.minWp ?? 101
       achPrime6Ref.current = !!g.ach.prime6
       achCloseoutRef.current = !!g.ach.closeout
+    }
+    // SAAT: pvb/pvp'de rezerv bankasi refresh'te sifirlanmasin (online'da server-sync ezer).
+    if (g.clock) setClock({ delay: g.clock.delay, white: g.clock.white ?? OVER_TOTAL, black: g.clock.black ?? OVER_TOTAL })
+    // MAÇ KAYDI: aktif LOKAL maç -> ayni admin kaydina (uid+events) devam et; yeni uid uretip
+    // logu ikiye BOLME. (Online'da uid=oda kodu; sunucudan re-derive edilir, burada dokunma.)
+    if (g.record && g.mode !== 'online') {
+      gameRecordRef.current = {
+        uid: g.record.uid,
+        online: g.record.online,
+        slot: g.record.slot,
+        mode: g.record.mode,
+        target: g.record.target,
+        gameNo: g.record.gameNo,
+        events: (g.record.events as GameLogTurn[]) ?? [],
+        done: g.record.done,
+      }
+      setRecordUid(g.record.uid)
+    }
+    // MAÇ-SONU SONUÇ EKRANI: refresh'te delta/coin gosterimi +0/— dusmesin (kalici deger sunucuda).
+    if (g.result) {
+      if (g.result.ratingChange) setRatingChange(g.result.ratingChange)
+      if (g.result.coinDelta != null) setCoinDelta(g.result.coinDelta)
+      if (g.result.coinPair) setCoinPair(g.result.coinPair)
     }
     // Bitmis mac yeniden yuklendiyse puani tekrar bildirme
     ratingReportedRef.current = !!(g.gameEnd || matchWinner(g.match))
