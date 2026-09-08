@@ -1229,7 +1229,8 @@ export default function App() {
     // log (matchLog) da kaydedilir -> refresh/resume'da KARAR LOGU kaybolmaz; yoksa mac
     // sonu PR birikmis prStats'tan gelir ama log BOS gider (has_log=false -> "analiz cikmiyor").
     // Boyut icin son 600 girdi (rapor zaten son 1000'i gonderir; localStorage kotasi guvenli).
-    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, log: matchLog.slice(-600), inGame: !home })
+    // ach: basarim sinyalleri (ref) — refresh'te sifirlanmasin diye ref degerleri de kaydedilir.
+    saveGame({ mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, pr: prStats, luck: prLuck, log: matchLog.slice(-600), ach: { gammons: achGammonRef.current, backgammons: achBgRef.current, minWp: achMinWpRef.current, prime6: achPrime6Ref.current, closeout: achCloseoutRef.current }, inGame: !home })
   }, [mode, difficulty, match, starter, turnsPlayed, turnStart, played, gameEnd, prStats, prLuck, matchLog, home])
 
   // Kaydedilmis oyunu state'e uygula (sunucudan yukleme)
