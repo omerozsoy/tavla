@@ -54,6 +54,7 @@ interface Props {
   onOpenMatchHistory?: (matchId?: number) => void // Mac Analizleri sayfasi (id verilirse o mac acilir)
   onOpenAchievements?: () => void // Basarimlar (rozet galerisi)
   onOpenShop?: (tab: 'frame' | 'board') => void // Magaza (avatar/tahta sekmesi)
+  onOpenOrders?: () => void // Siparişlerim (sol menüden kaldırıldı -> profilden açılır)
   // Kontrollu sekme (URL'e yansisin diye App'ten gelir; verilmezse ic state ile calisir)
   tab?: ProfTab
   onTabChange?: (tab: ProfTab) => void
@@ -91,6 +92,7 @@ export default function ProfileOverview({
   onOpenMatchHistory,
   onOpenAchievements,
   onOpenShop,
+  onOpenOrders,
   tab: tabProp,
   onTabChange,
 }: Props) {
@@ -149,6 +151,11 @@ export default function ProfileOverview({
                 <Button variant="secondary" className="prof-ov-edit" onClick={onEdit}>
                   <Icon name="settings" size={16} /> {t('prof.editBtn')}
                 </Button>
+                {onOpenOrders && (
+                  <Button variant="ghost" className="prof-ov-orders" onClick={onOpenOrders}>
+                    <Icon name="package" size={16} /> {t('menu.myOrders')}
+                  </Button>
+                )}
                 {onLogout && (
                   <Button variant="ghost" className="prof-ov-logout" onClick={onLogout}>
                     <Icon name="logout" size={16} /> {t('auth.logout')}

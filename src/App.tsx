@@ -4999,6 +4999,10 @@ export default function App() {
             setShopOpen(true)
           })
         }}
+        onOpenOrders={() => {
+          setEditProfile(false)
+          goPage(() => setMyOrdersOpen(true))
+        }}
         tab={profileTab}
         onTabChange={setProfileTab}
       />
@@ -5838,6 +5842,7 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
+          onProducts={() => goPage(() => setProductsOpen(true))}
           initialTab={shopTab}
           boardTheme={boardTheme}
           setBoardTheme={setBoardTheme}
