@@ -16300,8 +16300,8 @@ button.acct-row:hover:not(:disabled) {
 }
 .prof-ov-top {
   display: grid;
-  /* Ust satir: profil | Premium (Tavla Tasarimlari alt satira alindi) */
-  grid-template-columns: 1.2fr 1fr;
+  /* Ust satir: profil | Premium — %50/%50 (alt satirla dikey ayrac hizali) */
+  grid-template-columns: 1fr 1fr;
   gap: 14px;
   margin: 6px 0 14px;
   align-items: stretch;
@@ -16607,12 +16607,14 @@ button.acct-row:hover:not(:disabled) {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 12px 10px;
+  padding: 14px 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   background: var(--card-bg);
   font-family: inherit;
   cursor: pointer;
+  /* Avatar glow'u (sf-glow, inset:-6px) komsu kartlara/rozete taşmasın */
+  overflow: hidden;
   transition:
     border-color 0.14s ease,
     transform 0.14s ease,
@@ -16633,7 +16635,8 @@ button.acct-row:hover:not(:disabled) {
   position: absolute;
   top: 6px;
   right: 6px;
-  z-index: 2;
+  /* Avatar halkasi (sf-ring z-index:2) rozeti ezmesin -> daha ustte */
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   gap: 3px;
