@@ -85,6 +85,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   const [result, setResult] = useState<WheelSpinReward | null>(null)
   const [remaining, setRemaining] = useState(0)
   const [nextFree, setNextFree] = useState<string | null>(null)
+  const [coins, setCoins] = useState(0)
 
   const timerRef = useRef<number | null>(null)
 
@@ -94,6 +95,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
       setData(d)
       setRemaining(d.remainingSpins)
       setNextFree(d.nextFreeSpinAt)
+      if (typeof d.coins === 'number') setCoins(d.coins)
     } catch {
       setData(null)
     } finally {
@@ -113,13 +115,18 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   const step = n > 0 ? 360 / n : 360
   const duration = Math.max(2500, data?.settings.animationDuration ?? 5000)
   const ready = !!data?.ready
+  const spinCost = data?.spinCost ?? 0
+  // Ücretsiz/bonus hak yoksa coin ile ödemeli çevirme mümkün mü?
+  const canPaid = remaining <= 0 && spinCost > 0 && coins >= spinCost
+  const isPaidNext = remaining <= 0 && spinCost > 0
+  const canSpin = ready && (remaining > 0 || canPaid)
 
   async function handleSpin() {
     if (!loggedIn) {
       onRequireLogin()
       return
     }
-    if (spinning || !ready || remaining <= 0) return
+    if (spinning || !canSpin) return
     setResult(null)
     setSpinning(true)
     try {
@@ -144,7 +151,10 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
         setResult(res.reward)
         setRemaining(res.remainingSpins)
         setNextFree(res.nextFreeSpinAt)
-        if (typeof res.coins === 'number') onCoinsChange?.(res.coins)
+        if (typeof res.coins === 'number') {
+          setCoins(res.coins)
+          onCoinsChange?.(res.coins)
+        }
         if (res.user) onUser?.(res.user)
         setSpinning(false)
       }, duration + 200)
@@ -244,8 +254,17 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                 </g>
               </svg>
 
-              <button className="lw-spin-btn" onClick={handleSpin} disabled={spinning || remaining <= 0}>
-                {spinning ? <Icon name="refresh" size={22} /> : <span>{t('lw.spin')}</span>}
+              <button className="lw-spin-btn" onClick={handleSpin} disabled={spinning || !canSpin}>
+                {spinning ? (
+                  <Icon name="refresh" size={22} />
+                ) : isPaidNext ? (
+                  <span className="lw-spin-cost">
+                    <span>{t('lw.spinFor', { n: spinCost })}</span>
+                    <Icon name="coin" size={16} />
+                  </span>
+                ) : (
+                  <span>{t('lw.spin')}</span>
+                )}
               </button>
 
               {result && (
@@ -280,16 +299,16 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
               <span>
                 {t('lw.remaining')}: <strong>{remaining}</strong>
               </span>
-              {remaining <= 0 && nextFree ? (
+              {remaining <= 0 && spinCost > 0 ? (
+                <span>{t('lw.paidHint', { n: spinCost })}</span>
+              ) : remaining <= 0 && nextFree ? (
                 <span>
                   {t('lw.nextFree')}: <strong>{new Date(nextFree).toLocaleString()}</strong>
                 </span>
               ) : null}
-              {typeof data.coins === 'number' ? (
-                <span className="lw-coins">
-                  <Coins amount={data.coins} size={15} />
-                </span>
-              ) : null}
+              <span className="lw-coins">
+                <Coins amount={coins} size={15} />
+              </span>
             </div>
 
             {!loggedIn ? (

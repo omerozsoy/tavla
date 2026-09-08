@@ -38,6 +38,9 @@ class LuckyWheelController extends Controller
             'bonusSpins' => $result['bonusSpins'],
             'nextFreeSpinAt' => $result['nextFreeSpinAt'],
             'coins' => $result['coins'],
+            'spinCost' => $result['spinCost'] ?? 0,
+            'nextSpinPaid' => $result['nextSpinPaid'] ?? false,
+            'paid' => $result['paid'] ?? false,
             'user' => $result['user'],
         ]);
     }
@@ -49,6 +52,10 @@ class LuckyWheelController extends Controller
             'not_ready' => $this->fail('Şans Çarkı henüz hazır değil.', 422),
             'no_reward' => $this->fail('Şu an kazanılabilir ödül kalmadı, sonra tekrar dene.', 422),
             'no_spins' => $this->fail('Çevirme hakkın kalmadı.', 422, [
+                'nextFreeSpinAt' => $r['nextFreeSpinAt'] ?? null,
+            ]),
+            'need_coins' => $this->fail('Bu çevirme '.($r['cost'] ?? 0).' coin. Yeterli coin\'in yok.', 422, [
+                'cost' => $r['cost'] ?? 0,
                 'nextFreeSpinAt' => $r['nextFreeSpinAt'] ?? null,
             ]),
             'cooldown' => $this->fail('Biraz bekle, tekrar çevirebilirsin.', 429, [

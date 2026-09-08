@@ -27,6 +27,7 @@ return [
     'defaults' => [
         'enabled' => true,
         'free_spins_per_day' => 1,
+        'spin_cost' => 10,             // ücretsiz/bonus hak bitince coin ile çevirme bedeli (0 = ödemeli çevirme kapalı)
         'min_slice_count' => 4,
         'max_slice_count' => 16,
         'cooldown_minutes' => 0,       // 0 = ardışık çevirme engeli yok (yalnız günlük hak)
