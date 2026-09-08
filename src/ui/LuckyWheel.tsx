@@ -359,6 +359,9 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                   (() => {
                     const isAvatar = result.type === 'AVATAR'
                     const isBoard = result.type === 'BOARD_THEME'
+                    // "Boş / Şansını Tekrar Dene": somut ödül yok (CUSTOM, miktar 0, referans yok).
+                    // Bu durumda "Ödül hesabına eklendi." GÖSTERME ve buton "Tekrar dene" olsun.
+                    const isNoPrize = result.type === 'CUSTOM' && result.amount <= 0 && !result.reference_id
                     const frameDef = isAvatar && result.reference_id ? FRAME_BY_ID[result.reference_id] : undefined
                     const boardTheme = isBoard && result.reference_id ? ALL_THEMES.find((x) => x.id === result.reference_id) : undefined
                     const rewardName = frameDef?.name ?? boardTheme?.name ?? result.name
@@ -401,10 +404,14 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                           ) : result.description ? (
                             <div className="lw-win-sub">{result.description}</div>
                           ) : null}
-                          <div className="lw-win-sub">{t('lw.rewardAdded')}</div>
+                          {!isNoPrize && <div className="lw-win-sub">{t('lw.rewardAdded')}</div>}
                           {result.type === 'FREE_SPIN' && remaining > 0 ? (
                             <Button onClick={spinAgain}>
                               <Icon name="refresh" size={16} /> {t('lw.spinAgain')}
+                            </Button>
+                          ) : isNoPrize && canSpin ? (
+                            <Button onClick={spinAgain}>
+                              <Icon name="refresh" size={16} /> {t('lw.tryAgain')}
                             </Button>
                           ) : (
                             <Button onClick={closeWin}>{t('lw.great')}</Button>
