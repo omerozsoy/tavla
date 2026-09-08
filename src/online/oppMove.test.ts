@@ -65,6 +65,31 @@ describe('reconstructOppMove — otoriter gecisten rakip hamlesi', () => {
     expect(reconstructOppMove(prev, next)).toEqual([])
   })
 
+  it('oyun-bitiren rakip hamlesi: sunucu sirayi DEVRETMESE bile (gameEnded) kazanan toplama cozulur', () => {
+    // Siyah 14 tas toplamis, son tas 1-noktasinda (index 23). Toplayinca kazanir.
+    const prev: GameState = {
+      points: (() => { const p = new Array(24).fill(0); p[23] = -1; p[0] = 5; return p })(),
+      bar: { white: 0, black: 0 }, off: { white: 10, black: 14 },
+      turn: 'black', dice: [1, 2], diceUsed: [false, false],
+    }
+    const term = maximalTerminals(prev).find((t) => t.state.off.black === 15)
+    expect(term, 'kurulum: siyah son tasini toplayabilmeli').toBeTruthy()
+    // Sunucu oyun bitince SIRAYI DEVRETMEZ -> next.turn hala 'black' (bug'in kaynagi)
+    const next: GameState = { ...cloneState(term!.state), turn: 'black', dice: [], diceUsed: [] }
+
+    expect(reconstructOppMove(prev, next), 'gameEnded olmadan tur-devri yok -> null (eski davranis)').toBeNull()
+    const steps = reconstructOppMove(prev, next, true)
+    expect(steps, 'gameEnded=true -> kazanan hamle cozulur').not.toBeNull()
+    const replay = cloneState(prev)
+    for (const st of steps!) {
+      if (st.from === 'bar') replay.bar.black -= 1
+      else replay.points[st.from as number] -= -1
+      if (st.to === 'off') replay.off.black += 1
+      else replay.points[st.to as number] += -1
+    }
+    expect(replay.off.black, 'kazanan toplama sonrasi 15 off').toBe(15)
+  })
+
   it('tur devretmemisse ya da zar yoksa null doner', () => {
     const prev = turnOf(initialState(), 'black', [3, 1])
     const same: GameState = { ...cloneState(prev), turn: 'black' }

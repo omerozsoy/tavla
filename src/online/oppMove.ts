@@ -17,11 +17,15 @@ import type { MoveLogEntry } from '../storage'
 /**
  * @param prev Rakibin tur-basi durumu (turn = rakip, dice dolu)
  * @param next Hamle sonrasi otoriter tahta (sunucudan)
+ * @param gameEnded Bu gecis OYUNU BITIREN hamleyse true. Rakip son tasini toplayip kazandiginda
+ *   sunucu SIRAYI DEVRETMEZ (oyun bitti) -> `next.turn === prev.turn` olur ve normalde hamle
+ *   "tamamlanmamis" sanilip ATLANIR. Sonuc: rakibin KAZANAN hamlesi loga girmez, .mat sonuc satiri
+ *   olmadan kesilir. gameEnded=true iken tur-devri sarti aranmaz (oyun bitti = tur tamam).
  * @returns Oynanan adimlar (dance ise bos dizi), cozulemezse null
  */
-export function reconstructOppMove(prev: GameState | null, next: GameState): Step[] | null {
+export function reconstructOppMove(prev: GameState | null, next: GameState, gameEnded = false): Step[] | null {
   if (!prev || !prev.dice?.length) return null
-  if (next.turn === prev.turn) return null // tur devretmemis -> hamle tamamlanmamis
+  if (!gameEnded && next.turn === prev.turn) return null // tur devretmemis -> hamle tamamlanmamis
   const from: GameState = { ...cloneState(prev), diceUsed: prev.dice.map(() => false) }
   const key = boardKey(next)
   const hit = maximalTerminals(from).find((t) => boardKey(t.state) === key)

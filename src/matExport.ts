@@ -42,6 +42,11 @@ export interface MatXgOptions extends MatOptions {
   // satiri yazilmadan oyun kapanir (XG dosyayi bozuk okur). App bu diziyi motorun GameEnd'inden
   // doldurur; tahta-tekrari sonuc veremezse buradan alinir -> her tamamlanan oyun sonuc satiri alir.
   results?: { winner: Player; points: number }[]
+  // OTORITER MAC SONUCU (kazanan + final skor). SON oyunun sonucu tahtadan/results'tan
+  // ÇIKARILAMAZSA (ör. online rakibin kazanan hamlesi loga girmemiş / eski truncated log) bu
+  // kullanılır: son oyunun puanı = kazananın final skoru - önceki oyunlardan birikeni. Böylece
+  // TAMAMLANMIŞ maç DAİMA "Wins/Losses ... and the match" sonuç satırı alır.
+  matchResult?: { winner: Player; score: { white: number; black: number } }
 }
 
 // Bir oyundaki tek eylem. e yoksa ONARILMIS (log'da eksik olup oyunun akisindan
@@ -303,6 +308,7 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     eventTime = '',
     crawford = true,
     results,
+    matchResult,
   } = opts
   // MAÇ UZUNLUĞU HARD-CODE EDİLMEZ. Log'a oyun anında gömülen otoriter mctx.matchLen (match.target)
   // varsa ONU kullan; caller yanlış/varsayılan (1) geçse bile MAT başlığı GERÇEK maç uzunluğunu
@@ -387,7 +393,16 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     // Sonuc: once GERCEK tahtadan (logda bitiren hamle varsa); yoksa otoriter results'tan.
     // results yalnizca oyun sayisiyla birebir eslesirse fallback olur (yanlis eslemeyi onle).
     const resultsAligned = !!results && results.length === games.length
-    const oc = outcomeOf(acts) ?? (resultsAligned ? (results as { winner: Player; points: number }[])[gi] : null)
+    let oc = outcomeOf(acts) ?? (resultsAligned ? (results as { winner: Player; points: number }[])[gi] : null)
+    // SON CARE (yalniz SON oyun): tahta+results sonuc VERMEZSE ama MAC bitmisse (matchResult), o
+    // oyunun puanini OTORITER SON SKORDAN turet: pts = kazananin final skoru - onceki oyunlardan
+    // birikeni (sw/sb). Boylece rakibin kazanan hamlesi loga girmese/eski truncated logda bile
+    // tamamlanan mac MUTLAKA "Wins/Losses ... and the match" sonuc satiri alir.
+    if (!oc && matchResult && gi === games.length - 1) {
+      const w = matchResult.winner
+      const pts = matchResult.score[w] - (w === 'white' ? sw : sb)
+      if (pts > 0) oc = { winner: w, points: pts }
+    }
     if (oc) {
       // XG davranisi: puan KIRPILMAZ. Mac uzunlugu asilsa bile o oyunda kazanilan GERCEK puan
       // yazilir (gammon/backgammon × kup). "and the match" kazanan mac puanina ulastiginda eklenir.
