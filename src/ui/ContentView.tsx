@@ -1073,7 +1073,7 @@ function EventRow({
       {info &&
         ev.body &&
         createPortal(
-          <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <div className="register-overlay modal" role="dialog" aria-modal="true">
             <div className="register-card event-info-card">
               <Button
                 variant="ghost"

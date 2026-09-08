@@ -3424,6 +3424,7 @@ button[aria-disabled='true'],
 /* Detayli Bilgi modali: standart kart + bicimlendirilmis (rich) aciklama. */
 .event-info-card {
   width: min(620px, 96vw);
+  max-width: min(620px, 96vw); /* .register-card'in 380px cap'ini ez */
   max-height: 88vh;
   overflow-y: auto;
   text-align: left;
