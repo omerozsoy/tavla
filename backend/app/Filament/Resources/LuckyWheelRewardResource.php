@@ -151,9 +151,9 @@ class LuckyWheelRewardResource extends Resource
                 Tables\Columns\ColorColumn::make('slice_color')->label('Renk'),
                 Tables\Columns\TextColumn::make('name')->label('Ödül')->searchable()->weight('medium'),
                 Tables\Columns\TextColumn::make('type')->label('Tip')->badge()
-                    ->formatStateUsing(fn ($s) => self::typeOptions()[$s] ?? $s),
+                    ->formatStateUsing(fn ($state) => self::typeOptions()[$state] ?? $state),
                 Tables\Columns\TextColumn::make('amount')->label('Miktar')
-                    ->formatStateUsing(fn ($s, LuckyWheelReward $r) => in_array($r->type, ['COIN', 'PREMIUM_DAY', 'FREE_SPIN'], true) ? (int) $s : ($r->reference_id ?: '—')),
+                    ->formatStateUsing(fn ($state, LuckyWheelReward $r) => in_array($r->type, ['COIN', 'PREMIUM_DAY', 'FREE_SPIN'], true) ? (int) $state : ($r->reference_id ?: '—')),
                 Tables\Columns\TextColumn::make('weight')->label('Weight')->sortable(),
                 Tables\Columns\TextColumn::make('probability')->label('Gerçek %')
                     ->state(function (LuckyWheelReward $r): string {
@@ -164,7 +164,7 @@ class LuckyWheelRewardResource extends Resource
                         return $total > 0 ? '%'.number_format((int) $r->weight / $total * 100, 2) : '—';
                     }),
                 Tables\Columns\TextColumn::make('stock')->label('Stok')
-                    ->formatStateUsing(fn ($s) => $s === null ? '∞' : (int) $s)->toggleable(),
+                    ->formatStateUsing(fn ($state) => $state === null ? '∞' : (int) $state)->toggleable(),
                 Tables\Columns\TextColumn::make('won_today')->label('Bugün')
                     ->state(fn (LuckyWheelReward $r) => LuckyWheelSpin::where('reward_id', $r->id)
                         ->where('created_at', '>=', now()->startOfDay())->count())

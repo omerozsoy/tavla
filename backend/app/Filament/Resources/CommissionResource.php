@@ -54,13 +54,13 @@ class CommissionResource extends Resource
                 Tables\Columns\TextColumn::make('winner_id')->label('Kazanan #')->toggleable(),
                 Tables\Columns\TextColumn::make('loser_id')->label('Kaybeden #')->toggleable(),
                 Tables\Columns\TextColumn::make('stake')->label('Stake')
-                    ->formatStateUsing(fn ($s) => number_format((int) $s).' GC')->sortable(),
+                    ->formatStateUsing(fn ($state) => number_format((int) $state).' GC')->sortable(),
                 Tables\Columns\TextColumn::make('commission')->label('Komisyon')
-                    ->formatStateUsing(fn ($s) => number_format((int) $s).' GC')->sortable()
+                    ->formatStateUsing(fn ($state) => number_format((int) $state).' GC')->sortable()
                     ->color('success')
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Toplam komisyon')
-                        ->formatStateUsing(fn ($s) => number_format((int) $s).' GC')),
-                Tables\Columns\TextColumn::make('pct')->label('%')->formatStateUsing(fn ($s) => '%'.(int) $s),
+                        ->formatStateUsing(fn ($state) => number_format((int) $state).' GC')),
+                Tables\Columns\TextColumn::make('pct')->label('%')->formatStateUsing(fn ($state) => '%'.(int) $state),
             ])
             ->filters([
                 Tables\Filters\Filter::make('created_at')

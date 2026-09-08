@@ -86,17 +86,17 @@ class PromoCodeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('code')->label('Kod')->searchable()->copyable()->weight('medium'),
                 Tables\Columns\TextColumn::make('type')->label('Tip')
-                    ->formatStateUsing(fn ($s) => $s === 'fixed' ? 'Sabit' : 'Yüzde')
+                    ->formatStateUsing(fn ($state) => $state === 'fixed' ? 'Sabit' : 'Yüzde')
                     ->badge(),
                 Tables\Columns\TextColumn::make('value')->label('İndirim')
                     ->formatStateUsing(fn ($state, PromoCode $r) => $r->type === 'fixed'
                         ? number_format(((int) $state) / 100, 2).' ₺'
                         : '%'.(int) $state),
                 Tables\Columns\TextColumn::make('min_amount')->label('Asgari')
-                    ->formatStateUsing(fn ($s) => ((int) $s) > 0 ? number_format(((int) $s) / 100, 2).' ₺' : '—')
+                    ->formatStateUsing(fn ($state) => ((int) $state) > 0 ? number_format(((int) $state) / 100, 2).' ₺' : '—')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('used_count')->label('Kullanım')
-                    ->formatStateUsing(fn ($s, PromoCode $r) => (int) $s.($r->max_uses ? ' / '.(int) $r->max_uses : '')),
+                    ->formatStateUsing(fn ($state, PromoCode $r) => (int) $state.($r->max_uses ? ' / '.(int) $r->max_uses : '')),
                 Tables\Columns\IconColumn::make('active')->label('Aktif')->boolean(),
                 Tables\Columns\TextColumn::make('expires_at')->label('Son tarih')->dateTime('d.m.Y H:i')->placeholder('Süresiz')->toggleable(),
             ])

@@ -102,14 +102,14 @@ class ProductOrderResource extends Resource
                 Tables\Columns\TextColumn::make('qty')->label('Adet'),
                 Tables\Columns\TextColumn::make('user.name')->label('Alıcı')->searchable(),
                 Tables\Columns\TextColumn::make('payment_type')->label('Ödeme')
-                    ->formatStateUsing(fn ($s) => $s === 'coin' ? 'Coin' : 'TL')
+                    ->formatStateUsing(fn ($state) => $state === 'coin' ? 'Coin' : 'TL')
                     ->badge(),
                 Tables\Columns\TextColumn::make('bedel')->label('Bedel')
                     ->state(fn (ProductOrder $r) => $r->payment_type === 'coin'
                         ? ((int) $r->coin_cost).' coin'
                         : number_format(((int) $r->amount) / 100, 2).' ₺'),
                 Tables\Columns\TextColumn::make('status')->label('Durum')
-                    ->formatStateUsing(fn ($s) => ProductOrder::STATUSES[$s] ?? $s)
+                    ->formatStateUsing(fn ($state) => ProductOrder::STATUSES[$state] ?? $state)
                     ->badge()
                     ->color(fn ($state) => match ($state) {
                         'pending'   => 'gray',
