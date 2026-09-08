@@ -220,8 +220,9 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                     const [x1, y1] = polar(C, C, R, end)
                     const large = step > 180 ? 1 : 0
                     const mid = -90 + (i + 0.5) * step
-                    const [lx, ly] = polar(C, C, R * 0.6, mid)
-                    const [ix, iy] = polar(C, C, R * 0.82, mid)
+                    // Etiket RADYAL (dikine): dilim ekseni boyunca, dıştan içe okunur.
+                    const [lx, ly] = polar(C, C, R * 0.52, mid)
+                    const [ix, iy] = polar(C, C, R * 0.86, mid)
                     return (
                       <g key={rw.id}>
                         <path
@@ -234,13 +235,13 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                           x={lx.toFixed(2)}
                           y={ly.toFixed(2)}
                           fill={rw.textColor}
-                          fontSize={n > 10 ? 9 : 11}
+                          fontSize={n > 10 ? 10 : 12}
                           fontWeight={600}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          transform={`rotate(${(mid + 90).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})`}
+                          transform={`rotate(${(mid + 180).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})`}
                         >
-                          {rw.name.length > 14 ? rw.name.slice(0, 13) + '…' : rw.name}
+                          {rw.name.length > 16 ? rw.name.slice(0, 15) + '…' : rw.name}
                         </text>
                         <foreignObject x={ix - 11} y={iy - 11} width={22} height={22}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: rw.textColor }}>
