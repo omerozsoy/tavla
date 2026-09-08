@@ -20756,12 +20756,15 @@ select:-webkit-autofill {
 
 /* =========================================================================
    FLAT / KESKİN KÖŞE — site geneli (kullanıcı direktifi: yuvarlak köşe yok).
-   Oyun tahtası HARİÇ (.board ve altındaki her şey dokunulmaz: pul/zar/küp
-   yuvarlaklığı korunur). Bu blok Tailwind `rounded-*` utility'lerini ve tüm
-   sabit-kodlu border-radius değerlerini de sıfırlar. Tek noktadan geri alınır.
+   HARİÇ TUTULANLAR (yuvarlak KALIR):
+     • Oyun tahtası (.board ve altı: pul/zar/küp).
+     • Avatarlar: .sf (AvatarFrame + ring/glow + morph animasyonu), .avatar,
+       .avatar-preview, shadcn [data-slot=avatar] ve alt öğeleri.
+   Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
+   sıfırlar. Tek noktadan geri alınır.
    ========================================================================= */
-*:not(.board, .board *),
-*:not(.board, .board *)::before,
-*:not(.board, .board *)::after {
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *),
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *)::before,
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *)::after {
   border-radius: 0 !important;
 }
