@@ -270,7 +270,9 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     eventTime = '',
     crawford = true,
   } = opts
-  const COL = 30 // sol alan (numara + hamle) genisligi; sonra tek bosluk + sag sutun
+  // Gercek XG dosyasiyla (BackgammonGalaxy export) BIREBIR: `  N)` (padStart 3 + paren),
+  // ` Game`/` isim : skor` basinda BOSLUK, sol aksiyon COLW=28'e padlenir -> sag sutun col 33.
+  const COLW = 28
   const games = splitGames(log)
 
   const out: string[] = [
@@ -294,8 +296,8 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
   let sb = 0
   games.forEach((game, gi) => {
     out.push('')
-    out.push(`Game ${gi + 1}`)
-    out.push(`${`${whiteName} : ${sw}`.padEnd(COL + 1)}${blackName} : ${sb}`)
+    out.push(` Game ${gi + 1}`)
+    out.push(` ${`${whiteName} : ${sw}`.padEnd(COLW + 4)}${blackName} : ${sb}`)
 
     const acts = actsOf(game)
     const rows: { w?: string; b?: string }[] = []
@@ -325,14 +327,17 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       }
     }
 
-    // Hamle satirlari: "N. sol   sag" (numara noktali, tekrarlar acik).
+    // Hamle satirlari: "  N) sol   sag" (numara padStart 3 + paren, tekrarlar acik).
     rows.forEach((r, idx) => {
-      const leftFull = `${idx + 1}. ${r.w ?? ''}`
-      out.push(`${leftFull.padEnd(COL)} ${r.b ?? ''}`.trimEnd())
+      const left = (r.w ?? '').padEnd(COLW)
+      out.push(`${String(idx + 1).padStart(3)}) ${left}${r.b ?? ''}`.trimEnd())
     })
 
-    // Oyun sonu: iki-sutun NUMARALI satir. Kaybeden "Losses N point", kazanan "Wins N point"
-    // (mac bittiyse kazanana " and the match" eklenir). Sol=Player1(beyaz), sag=Player2(siyah).
+    // Oyun sonu — gercek XG davranisi:
+    //  • kazanan SAG sutundaysa (Player2/siyah): NUMARALI iki-sutun satir
+    //    "  N)  Losses X point   Wins X point" (kaybeden solda bir bosluk girintili).
+    //  • kazanan SOL sutundaysa (Player1/beyaz): ayri "      Wins X point[ and the match]" satiri.
+    // Mac bitince kazanana " and the match" eklenir. (Ornek XG dosyasiyla birebir.)
     const oc = outcomeOf(acts)
     if (oc) {
       const pts = capPoints(oc.points, matchLength, oc.winner === 'white' ? sw : sb)
@@ -341,10 +346,12 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       const matchOver = matchLength > 0 && (oc.winner === 'white' ? sw : sb) >= matchLength
       const winTxt = `Wins ${pts} point${matchOver ? ' and the match' : ''}`
       const loseTxt = `Losses ${pts} point`
-      const leftTxt = oc.winner === 'white' ? winTxt : loseTxt
-      const rightTxt = oc.winner === 'white' ? loseTxt : winTxt
-      const num = rows.length + 1
-      out.push(`${`${num}. ${leftTxt}`.padEnd(COL)} ${rightTxt}`.trimEnd())
+      if (oc.winner === 'black') {
+        const num = rows.length + 1
+        out.push(`${String(num).padStart(3)}) ${` ${loseTxt}`.padEnd(COLW)}${winTxt}`.trimEnd())
+      } else {
+        out.push(`      ${winTxt}`)
+      }
     }
   })
 
