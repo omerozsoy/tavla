@@ -5799,6 +5799,9 @@ export default function App() {
         <Messages
           focusUserId={messagesFocusId}
           onRead={() => refreshDmUnread()}
+          myAvatar={profile.avatar ?? null}
+          myFrame={user.avatar_frame ?? null}
+          myName={profile.nickname}
           notifications={notifications}
           unreadNotif={unreadNotif}
           onNotifRead={() => {
