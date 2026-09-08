@@ -110,7 +110,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   const [spinning, setSpinning] = useState(false)
   const [rotation, setRotation] = useState(0)
   const [result, setResult] = useState<WheelSpinReward | null>(null)
-  const [winIdx, setWinIdx] = useState<number | null>(null) // kazanan dilim (parlama)
+  const [winIdx, setWinIdx] = useState<number | null>(null) // kazanan dilim indeksi (çark parlaması)
+  const [winRewardId, setWinRewardId] = useState<number | null>(null) // kazanan ödül id (liste parlaması)
   const [remaining, setRemaining] = useState(0)
   const [nextFree, setNextFree] = useState<string | null>(null)
   const [coins, setCoins] = useState(0)
@@ -139,8 +140,14 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
     }
   }, [load])
 
-  const rewards: WheelReward[] = data?.rewards ?? []
-  const n = rewards.length
+  const rewards: WheelReward[] = data?.rewards ?? [] // LİSTE (admin sort — sabit)
+  // ÇARK dizilişi: wheelOrder (reward id sırası) -> ödüller; yoksa liste sırasına düşer.
+  // Liste 'rewards' sabit kalır; çark yalnız "Çarkı Karıştır" ile değişir.
+  const wheelRewards: WheelReward[] =
+    data?.wheelOrder && data.wheelOrder.length
+      ? data.wheelOrder.map((id) => rewards.find((r) => r.id === id)).filter((r): r is WheelReward => !!r)
+      : rewards
+  const n = wheelRewards.length
   const step = n > 0 ? 360 / n : 360
   const duration = Math.max(2500, data?.settings.animationDuration ?? 5000)
   const ready = !!data?.ready
@@ -157,10 +164,11 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
     if (spinning || !canSpin) return
     setResult(null)
     setWinIdx(null)
+    setWinRewardId(null)
     setSpinning(true)
     try {
       const res = await spinLuckyWheel()
-      const idx = rewards.findIndex((r) => r.id === res.winningRewardId)
+      const idx = wheelRewards.findIndex((r) => r.id === res.winningRewardId)
       if (idx < 0) {
         await load()
         setSpinning(false)
@@ -193,6 +201,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
       timerRef.current = window.setTimeout(() => {
         setResult(res.reward)
         setWinIdx(idx)
+        setWinRewardId(res.winningRewardId)
         setRemaining(res.remainingSpins)
         setNextFree(res.nextFreeSpinAt)
         setAvatarUrl(res.user?.avatar ?? undefined) // çerçeve ödülü önizlemesinde kendi avatarı
@@ -218,6 +227,7 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
   function spinAgain() {
     setResult(null)
     setWinIdx(null)
+    setWinRewardId(null)
     window.setTimeout(() => handleSpin(), 60)
   }
 
@@ -295,16 +305,21 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                       transitionTimingFunction: 'cubic-bezier(0.12, 0.75, 0.05, 1)',
                     }}
                   >
-                    {rewards.map((rw, i) => {
+                    {wheelRewards.map((rw, i) => {
                       const start = -90 + i * step
                       const end = -90 + (i + 1) * step
                       const [x0, y0] = polar(C, C, R, start)
                       const [x1, y1] = polar(C, C, R, end)
                       const large = step > 180 ? 1 : 0
                       const mid = -90 + (i + 0.5) * step
-                      const [lx, ly] = polar(C, C, R * 0.58, mid)
-                      const [ix, iy] = polar(C, C, R * 0.86, mid)
                       const isWin = winIdx === i
+                      // Radyal etiket: yarıçap boyunca yazılır, rim'e yakın uçtan İÇE doğru
+                      // okunur. Sol yarıda ters dönmesin diye 180° çevrilir (okunur çark
+                      // standardı). Uzun adlar artık dikey/çapraz sıkışmaz.
+                      const norm = ((mid % 360) + 360) % 360
+                      const flip = norm > 90 && norm < 270
+                      const labelX = C + R * 0.94
+                      const label = rw.name.length > 18 ? rw.name.slice(0, 17) + '…' : rw.name
                       return (
                         <g key={rw.id}>
                           <path
@@ -312,23 +327,20 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
                             d={`M ${C} ${C} L ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} Z`}
                             fill={rw.sliceColor}
                           />
-                          <text
-                            x={lx.toFixed(2)}
-                            y={ly.toFixed(2)}
-                            fill="#ffffff"
-                            fontSize={n > 10 ? 8 : 9}
-                            fontWeight={400}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            transform={`rotate(${(mid + 180).toFixed(1)} ${lx.toFixed(2)} ${ly.toFixed(2)})`}
-                          >
-                            {rw.name.length > 16 ? rw.name.slice(0, 15) + '…' : rw.name}
-                          </text>
-                          <foreignObject x={ix - 10} y={iy - 10} width={20} height={20}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff' }}>
-                              <Icon name={iconFor(rw.type, rw.icon)} size={15} weight="regular" />
-                            </div>
-                          </foreignObject>
+                          <g transform={`rotate(${mid.toFixed(2)} ${C} ${C})`}>
+                            <text
+                              x={labelX.toFixed(2)}
+                              y={C}
+                              transform={flip ? `rotate(180 ${labelX.toFixed(2)} ${C})` : undefined}
+                              fill={readableText(rw.sliceColor)}
+                              fontSize={n > 10 ? 9 : 10.5}
+                              fontWeight={400}
+                              textAnchor={flip ? 'start' : 'end'}
+                              dominantBaseline="middle"
+                            >
+                              {label}
+                            </text>
+                          </g>
                         </g>
                       )
                     })}
@@ -426,8 +438,8 @@ export default function LuckyWheel({ loggedIn, onClose, onRequireLogin, onCoinsC
               <div className="lw-side-card">
                 <h3 className="lw-side-title">{t('lw.rewardsTitle')}</h3>
                 <ul className="lw-prizes">
-                  {rewards.map((rw, i) => (
-                    <li key={rw.id} className={`lw-prize ${winIdx === i ? 'is-win' : ''}`}>
+                  {rewards.map((rw) => (
+                    <li key={rw.id} className={`lw-prize ${rw.id === winRewardId ? 'is-win' : ''}`}>
                       <span className="lw-prize-sw" style={{ color: rw.sliceColor }}>
                         <Icon name={iconFor(rw.type, rw.icon)} size={16} weight="regular" />
                       </span>

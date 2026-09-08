@@ -93,9 +93,11 @@
   stroke-width: 5;
 }
 
-/* Merkez göbek: flat ink daire (üstünde TavlaTV logosu) */
+/* Merkez göbek: DAİMA koyu marka zemini (TavlaTV logosu koyu-zemin için tasarlı:
+   kiremit + krem üçgen). var(--text) koyu temada KREM olup krem üçgeni yutuyordu
+   (logo "kırık kırmızı üçgen" görünüyordu) -> tema-bağımsız marka ink'i. */
 .lw-hub {
-  fill: var(--text);
+  fill: #1c1a17;
 }
 .lw-hub-logo {
   display: flex;

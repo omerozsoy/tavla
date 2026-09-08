@@ -1846,7 +1846,8 @@ export interface WheelState {
     requireLogin: boolean
     spinCost?: number
   }
-  rewards: WheelReward[]
+  rewards: WheelReward[] // LİSTE sırası (admin sort — SABİT)
+  wheelOrder?: number[] // ÇARK dilim dizilişi: reward id sırası ("Çarkı Karıştır"). Yoksa rewards sırası.
   sliceCount: number
   remainingSpins: number
   bonusSpins: number
