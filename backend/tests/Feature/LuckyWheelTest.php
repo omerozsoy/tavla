@@ -136,6 +136,7 @@ class LuckyWheelTest extends TestCase
     {
         Setting::put('lw_min_slice_count', 2);
         Setting::put('lw_free_spins_per_day', 1);
+        Setting::put('lw_spin_cost', 0); // ödemeli çevirme kapalı -> hak bitince no_spins
         $this->reward(['name' => 'C1', 'type' => 'COIN', 'amount' => 100, 'weight' => 1]);
         $this->reward(['name' => 'C2', 'type' => 'COIN', 'amount' => 100, 'weight' => 1]);
         $u = $this->user();
@@ -147,6 +148,35 @@ class LuckyWheelTest extends TestCase
 
         $r2 = $this->svc()->spin($u);
         $this->assertSame('no_spins', $r2['error']);
+    }
+
+    public function test_paid_spin_deducts_coins_when_free_exhausted(): void
+    {
+        Setting::put('lw_min_slice_count', 2);
+        Setting::put('lw_free_spins_per_day', 0);
+        Setting::put('lw_spin_cost', 10);
+        // Kazanç coin karışmasın diye ödül tipi CUSTOM (coin vermez).
+        $this->reward(['name' => 'X1', 'type' => 'CUSTOM', 'weight' => 1]);
+        $this->reward(['name' => 'X2', 'type' => 'CUSTOM', 'weight' => 1]);
+        $u = $this->user();
+        $u->coins = 25;
+        $u->save();
+
+        // Ücretsiz/bonus hak yok -> 10 coin ile ödemeli çevirir.
+        $r1 = $this->svc()->spin($u);
+        $this->assertArrayNotHasKey('error', $r1);
+        $this->assertTrue($r1['paid']);
+        $this->assertSame(15, $u->fresh()->coins);
+
+        // İkinci ödemeli çevirme -> 5 kaldı.
+        $this->svc()->spin($u);
+        $this->assertSame(5, $u->fresh()->coins);
+
+        // 5 < 10 -> yetersiz coin.
+        $r3 = $this->svc()->spin($u);
+        $this->assertSame('need_coins', $r3['error']);
+        $this->assertSame(10, $r3['cost']);
+        $this->assertSame(5, $u->fresh()->coins); // coin harcanmadı
     }
 
     public function test_free_spin_reward_adds_bonus(): void

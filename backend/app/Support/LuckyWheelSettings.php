@@ -58,7 +58,7 @@ class LuckyWheelSettings
         $out['enabled'] = self::bool('enabled');
         $out['require_login'] = self::bool('require_login');
         $out['show_probability'] = self::bool('show_probability');
-        foreach (['free_spins_per_day', 'min_slice_count', 'max_slice_count', 'cooldown_minutes', 'animation_duration', 'reset_hour'] as $k) {
+        foreach (['free_spins_per_day', 'spin_cost', 'min_slice_count', 'max_slice_count', 'cooldown_minutes', 'animation_duration', 'reset_hour'] as $k) {
             $out[$k] = (int) $out[$k];
         }
         return $out;

@@ -51,6 +51,9 @@ class LuckyWheelSettings extends Page implements HasForms
                         Toggle::make('require_login')->label('Giriş zorunlu'),
                         TextInput::make('free_spins_per_day')->label('Günlük ücretsiz hak')
                             ->numeric()->required()->minValue(0),
+                        TextInput::make('spin_cost')->label('Coin ile çevirme bedeli')
+                            ->numeric()->required()->minValue(0)->suffix('coin')
+                            ->helperText('Ücretsiz/bonus hak bitince kullanıcı bu kadar coin ödeyerek çevirir. 0 = ödemeli çevirme kapalı.'),
                         TextInput::make('cooldown_minutes')->label('Ardışık bekleme (dk)')
                             ->numeric()->required()->minValue(0)
                             ->helperText('0 = ardışık çevirmede bekleme yok (yalnız günlük hak sınırlar).'),

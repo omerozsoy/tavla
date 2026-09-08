@@ -19593,6 +19593,15 @@ select:-webkit-autofill {
   margin-bottom: 6px;
 }
 
+/* Şans Çarkı: coin ile ödemeli çevirme buton etiketi */
+.lw-spin-cost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 /* ===== Fiziksel ürün mağazası (Ürünler + Siparişlerim) ===== */
 .products-card,
 .orders-card {

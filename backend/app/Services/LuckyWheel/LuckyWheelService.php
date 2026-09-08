@@ -156,6 +156,8 @@ class LuckyWheelService
             $cooldown = $this->cooldownRemaining($state);
         }
 
+        $spinCost = max(0, LuckyWheelSettings::int('spin_cost'));
+
         return [
             'enabled' => $this->isEnabled(),
             'ready' => $ready,
@@ -164,6 +166,7 @@ class LuckyWheelService
                 'showProbability' => LuckyWheelSettings::bool('show_probability'),
                 'freeSpinsPerDay' => LuckyWheelSettings::int('free_spins_per_day'),
                 'requireLogin' => LuckyWheelSettings::bool('require_login'),
+                'spinCost' => $spinCost,
             ],
             'rewards' => $this->publicRewards($pool),
             'sliceCount' => $pool->count(),
@@ -172,6 +175,9 @@ class LuckyWheelService
             'nextFreeSpinAt' => $next,
             'cooldownSeconds' => $cooldown,
             'coins' => $coins,
+            'spinCost' => $spinCost,
+            // Sıradaki çevirme ücretsiz/bonus yoksa coin ile ödemeli olacak.
+            'nextSpinPaid' => $user ? ($remaining <= 0 && $spinCost > 0) : false,
         ];
     }
 
@@ -286,19 +292,33 @@ class LuckyWheelService
             if ($cooldown > 0) {
                 return ['error' => 'cooldown', 'seconds' => $cooldown];
             }
-            if ($this->remaining($state) <= 0) {
-                return ['error' => 'no_spins', 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
+            // Çevirme finansmanı: önce ücretsiz/bonus hak; bittiyse coin ile ödemeli çevir.
+            $cost = max(0, LuckyWheelSettings::int('spin_cost'));
+            $freeOrBonus = $this->remaining($state) > 0;
+            $paid = false;
+            if (! $freeOrBonus) {
+                if ($cost <= 0) {
+                    // Ödemeli çevirme kapalı ve ücretsiz hak yok.
+                    return ['error' => 'no_spins', 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
+                }
+                if ((int) ($u->coins ?? 0) < $cost) {
+                    return ['error' => 'need_coins', 'cost' => $cost, 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
+                }
+                $paid = true;
             }
 
-            // Kazananı seç (limit/stok kilidiyle). Hiçbiri kazanılamıyorsa hak harcanmaz.
+            // Kazananı seç (limit/stok kilidiyle). Hiçbiri kazanılamıyorsa hak/coin harcanmaz.
             $winner = $this->selectWinner($pool, $u->id);
             if (! $winner) {
                 return ['error' => 'no_reward'];
             }
 
-            // Hak tüket: önce ücretsiz, bitince bonus.
-            $useBonus = $this->freeRemaining($state) <= 0;
-            if ($useBonus) {
+            // Hak tüket: önce ücretsiz, sonra bonus, ikisi de bittiyse coin ile ödemeli.
+            if ($paid) {
+                $u->coins = max(0, (int) ($u->coins ?? 0) - $cost);
+                $u->save();
+                $spinType = 'paid';
+            } elseif ($this->freeRemaining($state) <= 0) {
                 $state->bonus_spins = max(0, (int) $state->bonus_spins - 1);
                 $spinType = 'bonus';
             } else {
@@ -334,13 +354,18 @@ class LuckyWheelService
 
             $u->refresh();
 
+            $remainingAfter = $this->remaining($state);
+
             return [
                 'reward' => $winner->snapshot() + ['description' => $winner->description],
                 'winningRewardId' => $winner->id,
-                'remainingSpins' => $this->remaining($state),
+                'remainingSpins' => $remainingAfter,
                 'bonusSpins' => (int) $state->bonus_spins,
                 'nextFreeSpinAt' => $this->nextFreeSpinAt($state),
                 'coins' => (int) ($u->coins ?? 0),
+                'spinCost' => $cost,
+                'nextSpinPaid' => $remainingAfter <= 0 && $cost > 0,
+                'paid' => $paid,
                 'user' => $u,
             ];
         });

@@ -1765,6 +1765,7 @@ export interface WheelState {
     showProbability: boolean
     freeSpinsPerDay: number
     requireLogin: boolean
+    spinCost?: number
   }
   rewards: WheelReward[]
   sliceCount: number
@@ -1773,6 +1774,8 @@ export interface WheelState {
   nextFreeSpinAt: string | null
   cooldownSeconds: number
   coins: number
+  spinCost?: number // ücretsiz/bonus hak bitince coin ile çevirme bedeli (0 = kapalı)
+  nextSpinPaid?: boolean
 }
 
 export interface WheelSpinReward {
@@ -1795,6 +1798,9 @@ export interface WheelSpinResult {
   bonusSpins: number
   nextFreeSpinAt: string | null
   coins: number
+  spinCost?: number
+  nextSpinPaid?: boolean
+  paid?: boolean
   user: ServerUser
 }
 
