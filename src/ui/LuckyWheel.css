@@ -7,18 +7,32 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 14px;
-  text-align: center;
+  text-align: left;
 }
 
+/* Başlık: standart sayfa formatı — sola dayalı h2 + alt açıklama (bkz .shop-head). */
 .lw-head {
+  width: 100%;
+  margin: 2px 0 0;
+}
+.lw-head-text h2 {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
   color: var(--foreground, #222);
+}
+.lw-sub {
+  margin: 5px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--muted-foreground, #666);
+  max-width: 46ch;
+  text-wrap: pretty;
 }
 
 .lw-stage {
@@ -89,40 +103,18 @@
   }
 }
 
-/* Merkezdeki ÇEVİR butonu (göbek üstünde bir düğme gibi) */
-.lw-spin-btn {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 4;
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  background: radial-gradient(circle at 50% 35%, var(--accent, #c1452f), var(--accent, #a83a2b) 70%);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.92rem;
-  letter-spacing: 0.02em;
-  cursor: pointer;
+/* ÇEVİR butonu — çarkın ALTINDA (standart site butonu), ortalanmış ve belirgin. */
+.lw-actions {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 2px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32), inset 0 2px 4px rgba(255, 255, 255, 0.35);
-  transition: transform 0.12s ease, filter 0.12s ease;
+  margin: 2px 0;
 }
-.lw-spin-btn:not(:disabled):hover {
-  transform: translate(-50%, -50%) scale(1.06);
-}
-.lw-spin-btn:not(:disabled):active {
-  transform: translate(-50%, -50%) scale(0.97);
-}
-.lw-spin-btn:disabled {
-  cursor: not-allowed;
-  filter: grayscale(0.3) brightness(0.94);
+.lw-spin-btn {
+  min-width: 220px;
+  height: 48px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 .lw-spin-ic {
   animation: lw-rot 0.8s linear infinite;
@@ -131,13 +123,6 @@
   to {
     transform: rotate(360deg);
   }
-}
-.lw-spin-cost {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 0.82rem;
-  line-height: 1;
 }
 
 .lw-meta {
@@ -156,6 +141,20 @@
 .lw-coins {
   display: inline-flex;
   align-items: center;
+}
+/* Ücretsiz hakkın yenilenmesine canlı geri sayım (24 saatlik döngü). */
+.lw-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.lw-cd {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--foreground, #222);
 }
 
 .lw-note {
