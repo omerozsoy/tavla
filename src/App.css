@@ -20818,9 +20818,9 @@ select:-webkit-autofill {
    Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
    sıfırlar. Tek noktadan geri alınır.
    ========================================================================= */
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"]),
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::before,
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::after {
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"]),
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::before,
+*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::after {
   border-radius: 0 !important;
 }
 /* [class*=logo] yanlis-pozitifi: .auth-logout ("logout" -> "logo") keskin kalsin */
