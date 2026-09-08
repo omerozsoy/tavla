@@ -212,4 +212,141 @@ class ProductController extends Controller
             'demo'      => $garanti->isDemo(),
         ]);
     }
+
+    // ---- SEPET (ortak sepet) yardımcıları ----
+
+    // Seçili teslimat adresini (kullanıcıya ait, type=shipping) sipariş ship_* alanlarına çevir.
+    public static function resolveShip(int $userId, int $addressId, ?string $note): ?array
+    {
+        $a = \App\Models\UserAddress::where('user_id', $userId)->where('type', 'shipping')->find($addressId);
+        if (! $a) {
+            return null;
+        }
+        return [
+            'ship_name'    => $a->name,
+            'ship_phone'   => $a->phone,
+            'ship_address' => trim($a->address.($a->district ? ', '.$a->district : '')),
+            'ship_city'    => $a->city,
+            'ship_postal'  => $a->postal,
+            'note'         => $note,
+        ];
+    }
+
+    // Fatura adresini kısa bir admin notuna çevir (ProductOrder'da ayrı fatura alanı yok).
+    public static function billingNote(int $userId, ?int $addressId): ?string
+    {
+        if (! $addressId) {
+            return null;
+        }
+        $a = \App\Models\UserAddress::where('user_id', $userId)->where('type', 'billing')->find($addressId);
+        if (! $a) {
+            return null;
+        }
+        return '[Fatura] '.($a->company ? $a->company.' — ' : '').$a->name.' | '.$a->address.' '.$a->city
+            .($a->tax_office ? ' | VD: '.$a->tax_office : '').($a->tax_number ? ' | VNo: '.$a->tax_number : '');
+    }
+
+    // Renk doğrula: üründe renk yoksa null; varsa seçilen geçerli olmalı (değilse false).
+    public static function validColor(Product $p, ?string $color)
+    {
+        $colors = collect($p->colors ?? [])->pluck('name')->filter()->values()->all();
+        if (empty($colors)) {
+            return null;
+        }
+        return ($color && in_array($color, $colors, true)) ? $color : false;
+    }
+
+    // POST /products/cart/coin — sepetteki COIN ödemeli ürünleri ATOMIK, çok-ürün, anında sipariş.
+    public function cartCoinOrder(Request $request)
+    {
+        $data = $request->validate([
+            'items'               => ['required', 'array', 'min:1', 'max:20'],
+            'items.*.product_id'  => ['required', 'integer'],
+            'items.*.qty'         => ['required', 'integer', 'min:1', 'max:10'],
+            'items.*.color'       => ['nullable', 'string', 'max:40'],
+            'shipping_address_id' => ['required', 'integer'],
+            'billing_address_id'  => ['nullable', 'integer'],
+            'note'                => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $ship = self::resolveShip($request->user()->id, $data['shipping_address_id'], $data['note'] ?? null);
+        if (! $ship) {
+            return $this->fail('Geçerli bir teslimat adresi seç.', 422);
+        }
+        $billNote = self::billingNote($request->user()->id, $data['billing_address_id'] ?? null);
+
+        // Ürün satırlarını doğrula + coin toplamını hesapla (SUNUCU fiyatı).
+        $lines = [];
+        $total = 0;
+        foreach ($data['items'] as $it) {
+            $p = Product::where('published', true)->find($it['product_id']);
+            if (! $p) {
+                return $this->fail('Ürün bulunamadı.', 404);
+            }
+            if (! $p->acceptsCoin()) {
+                return $this->fail($p->name.' coin ile satılmıyor.', 422);
+            }
+            $color = self::validColor($p, $it['color'] ?? null);
+            if ($color === false) {
+                return $this->fail($p->name.' için geçerli bir renk seç.', 422);
+            }
+            $qty = (int) $it['qty'];
+            $total += (int) $p->coin_price * $qty;
+            $lines[] = ['p' => $p, 'qty' => $qty, 'color' => $color];
+        }
+
+        $r = DB::transaction(function () use ($request, $lines, $total, $ship, $billNote) {
+            $u = User::lockForUpdate()->find($request->user()->id);
+            if (Room::userInPctStakedPlaying($u->id)) {
+                return ['pct_locked' => true];
+            }
+            if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $total) {
+                return ['insufficient' => true, 'coins' => $u->coins ?? 0];
+            }
+            // Önce TÜM stokları kilitle+doğrula (kısmi sipariş olmasın), sonra düş+oluştur.
+            $fresh = [];
+            foreach ($lines as $i => $ln) {
+                $f = Product::lockForUpdate()->find($ln['p']->id);
+                if (! $f || (int) $f->stock < $ln['qty']) {
+                    return ['no_stock' => true, 'name' => $ln['p']->name];
+                }
+                $fresh[$i] = $f;
+            }
+            $orders = [];
+            foreach ($lines as $i => $ln) {
+                $fresh[$i]->decrement('stock', $ln['qty']);
+                $orders[] = ProductOrder::create(array_merge($ship, [
+                    'user_id'      => $u->id,
+                    'product_id'   => $ln['p']->id,
+                    'product_name' => $ln['p']->name,
+                    'color'        => $ln['color'],
+                    'qty'          => $ln['qty'],
+                    'payment_type' => 'coin',
+                    'coin_cost'    => (int) $ln['p']->coin_price * $ln['qty'],
+                    'status'       => 'paid',
+                    'admin_note'   => $billNote,
+                ]));
+            }
+            $u->coins = ($u->coins ?? 0) - $total;
+            $u->save();
+            return ['orders' => $orders, 'coins' => $u->coins];
+        });
+
+        if (isset($r['pct_locked'])) {
+            return $this->fail('Yüzde bahisli maçtayken coin harcayamazsın. Maç bitince tekrar dene.', 422);
+        }
+        if (isset($r['insufficient'])) {
+            return $this->fail('Yetersiz coin.', 422, ['coins' => $r['coins']]);
+        }
+        if (isset($r['no_stock'])) {
+            return $this->fail(($r['name'] ?? 'Ürün').': yeterli stok yok.', 422);
+        }
+
+        return response()->json([
+            'ok'     => true,
+            'kind'   => 'coin',
+            'coins'  => $r['coins'],
+            'orders' => collect($r['orders'])->map(fn ($o) => $o->toArray())->values(),
+        ]);
+    }
 }

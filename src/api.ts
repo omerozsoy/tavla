@@ -554,6 +554,75 @@ export async function getMyOrders(): Promise<ProductOrder[]> {
   return r.orders
 }
 
+// ---- Adres defteri (Adreslerim) ----
+export interface Address {
+  id: number
+  type: 'shipping' | 'billing'
+  title?: string | null
+  name: string
+  phone: string
+  address: string
+  city: string
+  district?: string | null
+  postal?: string | null
+  is_default: boolean
+  company?: string | null
+  tax_office?: string | null
+  tax_number?: string | null
+}
+export type AddressInput = Omit<Address, 'id' | 'is_default'> & { is_default?: boolean }
+
+export async function getAddresses(): Promise<Address[]> {
+  const r = await req<{ addresses: Address[] }>('/addresses')
+  return r.addresses
+}
+export async function createAddress(input: AddressInput): Promise<Address> {
+  const r = await req<{ address: Address }>('/addresses', { method: 'POST', body: JSON.stringify(input) })
+  return r.address
+}
+export async function updateAddress(id: number, input: AddressInput): Promise<Address> {
+  const r = await req<{ address: Address }>(`/addresses/${id}`, { method: 'PUT', body: JSON.stringify(input) })
+  return r.address
+}
+export async function deleteAddress(id: number): Promise<void> {
+  await req(`/addresses/${id}`, { method: 'DELETE' })
+}
+
+// ---- Ortak sepet: fiziksel ürün satırları ----
+export interface CartProductLine {
+  product_id: number
+  qty: number
+  color?: string | null
+}
+// Sepetteki COIN ödemeli ürünler -> anında sipariş (çok-ürün, atomik).
+export async function cartCoinOrder(
+  items: CartProductLine[],
+  shippingAddressId: number,
+  billingAddressId?: number | null,
+  note?: string,
+): Promise<{ ok: boolean; coins: number; orders: ProductOrder[] }> {
+  return req('/products/cart/coin', {
+    method: 'POST',
+    body: JSON.stringify({
+      items,
+      shipping_address_id: shippingAddressId,
+      billing_address_id: billingAddressId ?? null,
+      note: note || undefined,
+    }),
+  })
+}
+// Sepetin PARA kısmı (coin paketleri + para-ürünleri) -> tek Garanti ödemesi.
+export async function cartCheckout(input: {
+  coin_items?: { id: string; qty: number }[]
+  products?: CartProductLine[]
+  shipping_address_id?: number | null
+  billing_address_id?: number | null
+  note?: string
+  code?: string | null
+}): Promise<{ url: string; submitUrl: string; amount: number; coins: number; discount: number; code: string | null; demo: boolean }> {
+  return req('/shop/cart-checkout', { method: 'POST', body: JSON.stringify(input) })
+}
+
 // Herkese acik oyuncu profili
 export interface PublicProfile {
   id: number

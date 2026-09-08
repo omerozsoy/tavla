@@ -137,7 +137,7 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import LuckyWheel from './ui/LuckyWheel'
-import Products from './ui/Products'
+import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import Checkout from './ui/Checkout'
@@ -186,8 +186,9 @@ import {
   setAutoRenew as apiSetAutoRenew,
   toProfile,
   getMenuConfig,
-  buyCoins,
   buyMembership,
+  cartCoinOrder,
+  cartCheckout,
   messagesUnread,
   matchPr,
   type MenuOverride,
@@ -395,7 +396,7 @@ export default function App() {
   const [editProfile, setEditProfile] = useState(false)
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
-  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'notifs'>('stats')
+  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'notifs' | 'addresses'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   const [authForgot, setAuthForgot] = useState(false) // Auth "sifremi unuttum" modu -> /sifremi-unuttum
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -592,6 +593,34 @@ export default function App() {
       /* yoksay */
     }
   }, [cartItems])
+  // Ürün -> ortak sepete ekle. Aynı ürün+renk+ödeme tek satır (adet birleşir). Üyelik ögesi
+  // varsa çıkar (üyelik sepeti tek başına). Satır kimliği: p:<id>:<renk>:<ödeme>.
+  const addProductToCart = (line: CartAddLine) => {
+    const id = `p:${line.productId}:${line.color ?? ''}:${line.payment}`
+    setCartItems((prev) => {
+      const base = prev.filter((c) => c.kind !== 'membership')
+      const ex = base.find((c) => c.id === id)
+      if (ex) return base.map((c) => (c.id === id ? { ...c, qty: Math.min(10, c.qty + line.qty) } : c))
+      return [
+        ...base,
+        {
+          id,
+          qty: line.qty,
+          kind: 'product',
+          product: {
+            id: line.productId,
+            name: line.name,
+            image: line.image,
+            color: line.color,
+            payment: line.payment,
+            coinPrice: line.coinPrice,
+            moneyPrice: line.moneyPrice,
+          },
+        },
+      ]
+    })
+    notify.success(t('products.addedToCart'))
+  }
   const [frameGalleryOpen, setFrameGalleryOpen] = useState(false) // avatar cerceve galerisi
 
   // --- URL yonlendirme (hash tabanli) ---
@@ -614,7 +643,9 @@ export default function App() {
             ? 'profil/basarilar'
             : profileTab === 'notifs'
               ? 'profil/bildirimler'
-              : 'profil'
+              : profileTab === 'addresses'
+                ? 'profil/adreslerim'
+                : 'profil'
     : infoOpen
     ? 'bilgi'
     : leaderboardOpen
@@ -935,7 +966,9 @@ export default function App() {
                     ? 'badges'
                     : sub === 'bildirimler'
                       ? 'notifs'
-                      : 'stats',
+                      : sub === 'adreslerim'
+                        ? 'addresses'
+                        : 'stats',
             )
           }
           setEditProfile(true)
@@ -5877,18 +5910,55 @@ export default function App() {
             setShopTab('coins')
             setShopOpen(true)
           }}
-          onCheckout={async (its, code) => {
-            // Odeme kaydi olustur (fiyat + indirim sunucuda), imzali submitUrl al -> odeme sayfasi.
-            // Uyelik uzatma ogesi varsa buyMembership (tek urun), degilse coin sepeti.
+          onManageAddresses={() => {
+            // Adres ekle/yönet -> profil Adreslerim sekmesi (sepet açık kalır: kapatıp profili aç).
+            setCartOpen(false)
+            setProfileEditMode(false)
+            setProfileTab('addresses')
+            setEditProfile(true)
+          }}
+          onCheckout={async (its, code, sel) => {
+            // Üyelik uzatma tek başına (mevcut akış).
             if (its.some((i) => i.kind === 'membership')) {
               const r = await buyMembership()
               setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: 0, items: its, demo: r.demo })
-            } else {
-              const r = await buyCoins(its, code)
-              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
+              setCartOpen(false)
+              setCheckoutOpen(true)
+              return
             }
-            setCartOpen(false)
-            setCheckoutOpen(true)
+            const coinProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'coin')
+            const moneyProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'money')
+            const coinPackages = its.filter((i) => i.kind === 'coins' || i.kind === undefined)
+
+            // 1) Coin ödemeli ürünler -> ANINDA sipariş (atomik). Başarınca sepetten çıkar.
+            if (coinProducts.length) {
+              const r = await cartCoinOrder(
+                coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
+                sel.shippingId as number,
+                sel.billingId,
+              )
+              setUser((u) => (u ? { ...u, coins: r.coins } : u))
+              setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))
+            }
+
+            // 2) Para kısmı (coin paketleri + para-ürünleri) -> TEK Garanti ödemesi.
+            if (coinPackages.length || moneyProducts.length) {
+              const r = await cartCheckout({
+                coin_items: coinPackages.map((i) => ({ id: i.id, qty: i.qty })),
+                products: moneyProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
+                shipping_address_id: sel.shippingId,
+                billing_address_id: sel.billingId,
+                code,
+              })
+              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
+              setCartOpen(false)
+              setCheckoutOpen(true)
+            } else {
+              // Yalnız coin ürünleri vardı -> sipariş tamam.
+              setCartOpen(false)
+              notify.success('Siparişin alındı.')
+              setMyOrdersOpen(true)
+            }
           }}
         />
       )}
@@ -5950,12 +6020,10 @@ export default function App() {
       )}
       {productsOpen && (
         <Products
-          coins={user?.coins ?? 0}
-          defaultName={profile.nickname}
-          onCoinsChange={(c) => setUser((u) => (u ? { ...u, coins: c } : u))}
-          onGoOrders={() => {
+          onAddToCart={addProductToCart}
+          onGoCart={() => {
             setProductsOpen(false)
-            if (user) setMyOrdersOpen(true)
+            setCartOpen(true)
           }}
           onClose={() => setProductsOpen(false)}
         />
