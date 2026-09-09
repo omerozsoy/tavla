@@ -3171,6 +3171,11 @@ export default function App() {
     if (mode !== 'pvb' || !user || ratingReportedRef.current) return
     const mW = matchWinner(match)
     if (!mW) return
+    // HAYALET MAÇ KORUMASI: "Maçtan Çekil" maç başında (hiç hamle yapmadan) basılınca
+    // handleQuitMatch rakibin (AI) skorunu hedefe çekip matchWinner'ı tetikliyordu ->
+    // oynanmamış bir AI KAYBI kalıcı olarak "Maç Analizleri"ne yazılıyordu. En az bir
+    // gerçek hamle olmadan (tüm-maç logu boş VE bu oyunda 0 tur) maçı KAYDETME.
+    if (matchLogRef.current.length === 0 && turnsPlayed === 0) return
     ratingReportedRef.current = true
     // Giris yapmis kullanicinin AI maci HER ZAMAN kaydedilir (misafir haric).
     // Casual'da rating degismez: ranked=false -> backend Elo/lig islemez, delta=0 kaydeder.
