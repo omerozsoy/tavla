@@ -49,10 +49,12 @@
                         <span class="text-gray-500">Herhangi üçlü zar</span>
                         <span>{{ $odds['anyTriple'] }}</span>
                     </li>
-                    <li class="flex items-center justify-between">
-                        <span class="text-gray-500">Belirli üçlü (ör. 6-6-6)</span>
-                        <span>{{ $odds['triple6'] }}</span>
-                    </li>
+                    @foreach ($odds['triples'] as $t)
+                        <li class="flex items-center justify-between">
+                            <span class="text-gray-500">Üçlü {{ $t['value'] }}-{{ $t['value'] }}-{{ $t['value'] }}</span>
+                            <span>{{ $t['odds'] }}</span>
+                        </li>
+                    @endforeach
                     <li class="flex items-center justify-between">
                         <span class="text-gray-500">Jackpot (64-64-64)</span>
                         <span>{{ $odds['jackpot'] }}</span>
