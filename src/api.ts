@@ -950,6 +950,20 @@ export async function listContents(type: ContentType): Promise<Content[]> {
   const d = await req<{ items: Content[] }>(`/contents?type=${encodeURIComponent(type)}`)
   return d.items
 }
+
+// ---- Bilgi sayfalari (/bilgi/<slug> sekmeleri; admin panelden RichEditor ile duzenlenir) ----
+export type InfoPageSlug = 'about' | 'services' | 'ranks' | 'scoring' | 'badges' | 'fair'
+export interface InfoPage {
+  slug: InfoPageSlug
+  title: string
+  body?: string | null
+  gallery?: string[] | null
+  sort: number
+}
+export async function listInfoPages(): Promise<InfoPage[]> {
+  const d = await req<{ pages: InfoPage[] }>('/info-pages')
+  return d.pages
+}
 export async function adminListContents(type?: ContentType): Promise<Content[]> {
   const q = type ? `?type=${encodeURIComponent(type)}` : ''
   const d = await req<{ items: Content[] }>(`/admin/contents${q}`)

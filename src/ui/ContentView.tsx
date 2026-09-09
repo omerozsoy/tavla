@@ -821,7 +821,7 @@ function ServiceCard({ s }: { s: Content }) {
 }
 
 // Tam ekran gorsel gosterici (lightbox): oklarla gezinme, arka plana/carpiya tikla kapat
-function Lightbox({
+export function Lightbox({
   images,
   index,
   onClose,
@@ -900,7 +900,7 @@ function Lightbox({
 }
 
 // Gorsel yolu: tam URL veya /... ise oldugu gibi; ciplak yol ise panelden yuklenmis -> /uploads/
-const mediaSrc = (img?: string | null): string | undefined => {
+export const mediaSrc = (img?: string | null): string | undefined => {
   if (!img) return undefined
   return /^(https?:|\/)/.test(img) ? img : '/uploads/' + img
 }
