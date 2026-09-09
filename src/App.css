@@ -2800,8 +2800,8 @@ button[aria-disabled='true'],
 }
 .service-gallery-thumb {
   padding: 0;
-  width: 72px;
-  height: 72px;
+  height: 144px;
+  width: auto;
   flex: 0 0 auto;
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -2809,14 +2809,15 @@ button[aria-disabled='true'],
   cursor: zoom-in;
   background: var(--panel);
   transition: border-color 0.15s ease;
+  line-height: 0;
 }
 .service-gallery-thumb:hover {
   border-color: var(--accent);
 }
+/* Kirpma YOK: gorselin tam en-boy orani korunur (object-fit yerine dogal boyut). */
 .service-gallery-thumb img {
-  width: 100%;
   height: 100%;
-  object-fit: cover;
+  width: auto;
   display: block;
 }
 .news-gallery-thumb {
