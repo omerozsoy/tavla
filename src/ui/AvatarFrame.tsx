@@ -57,7 +57,14 @@ function PremiumCrown({ size }: { size: number }) {
           strokeWidth="3"
           strokeLinejoin="round"
         />
-        <rect x="10" y="54" width="100" height="14" rx="3" fill={`url(#${id})`} stroke="#a9782a" strokeWidth="3" />
+        {/* Taban bandı: ortasına DOĞRU hafif yukarı bombe (kubbe) — düz dikdörtgen yerine zarif kavis. */}
+        <path
+          d="M10 56 Q60 50 110 56 L110 68 Q60 62 10 68 Z"
+          fill={`url(#${id})`}
+          stroke="#a9782a"
+          strokeWidth="3"
+          strokeLinejoin="round"
+        />
         <circle cx="16" cy="24" r="5.5" fill="#C9563F" />
         <circle cx="60" cy="10" r="6.5" fill="#C9563F" />
         <circle cx="104" cy="24" r="5.5" fill="#C9563F" />
