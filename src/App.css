@@ -6149,10 +6149,19 @@ button.move-row:focus-visible {
   gap: 8px;
   margin-top: 2px;
 }
-/* Premium kart butonlari SITE STANDART <Button> boyutunda/tarzinda (ozel kucultme YOK).
-   Yalnizca uzun etiket satir-ici sarmasin diye nowrap. */
+/* Premium kart butonlari: kompakt boy (kullanici istegi). Uzun etiket sarmasin diye nowrap. */
 .mem-status-actions button {
   white-space: nowrap;
+  height: 34px;
+  min-height: 34px;
+  padding-left: 12px;
+  padding-right: 12px;
+  font-size: 0.82rem;
+}
+.mem-status-actions button [class*='size-'],
+.mem-status-actions button svg {
+  width: 15px;
+  height: 15px;
 }
 
 /* Yalnizca .profile-form (editing modu) etkilenir; login/register dar kartta kalir. */
@@ -17077,6 +17086,19 @@ button.acct-row:hover:not(:disabled) {
 }
 .prof-ov-edit {
   align-self: flex-start;
+}
+/* Kimlik karti aksiyon butonlari: kompakt boy (kullanici istegi) */
+.prof-ov-actions [data-slot='button'] {
+  height: 34px;
+  min-height: 34px;
+  padding-left: 12px;
+  padding-right: 12px;
+  font-size: 0.82rem;
+}
+.prof-ov-actions [data-slot='button'] [class*='size-'],
+.prof-ov-actions [data-slot='button'] svg {
+  width: 15px;
+  height: 15px;
 }
 .prof-ov-board {
   display: flex;
