@@ -89,8 +89,8 @@
   transition: stroke 0.2s ease;
 }
 .lw-slice.is-win {
-  stroke: #1c1a17; /* kazanılan dilim: siyah (ink) belirgin çerçeve */
-  stroke-width: 3;
+  stroke: #1c1a17; /* kazanılan dilim: siyah (ink) ince çerçeve */
+  stroke-width: 1.5;
 }
 
 /* Merkez göbek: DAİMA koyu marka zemini (TavlaTV logosu koyu-zemin için tasarlı:
