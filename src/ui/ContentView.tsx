@@ -329,12 +329,7 @@ export default function ContentView({
         ) : (
           <div className="content-services">
             {items.map((s) => (
-              <section key={s.id} className="content-service">
-                <h3>{s.title}</h3>
-                {paras(s.body).map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </section>
+              <ServiceCard key={s.id} s={s} />
             ))}
           </div>
         )}
@@ -372,12 +367,7 @@ export default function ContentView({
         ) : type === 'service' ? (
           <div className="content-services">
             {items.map((s) => (
-              <section key={s.id} className="content-service">
-                <h3>{s.title}</h3>
-                {paras(s.body).map((p, i) => (
-                  <p key={i}>{p}</p>
-                ))}
-              </section>
+              <ServiceCard key={s.id} s={s} />
             ))}
           </div>
         ) : type === 'news' ? (
@@ -769,6 +759,60 @@ function NewsDetail({
         </div>
       )}
     </article>
+  )
+}
+
+// Tek hizmet karti: baslik + aciklama + (varsa) aciklamanin hemen altinda kucuk
+// galeri thumbnail'lari. Thumbnail'a tiklayinca kendi lightbox'inda buyur (oklarla gezinir).
+// Her hizmet kendi lightbox durumunu tutar (listede birden fazla hizmet vardir).
+function ServiceCard({ s }: { s: Content }) {
+  const { t } = useT()
+  const gallery = (s.gallery ?? [])
+    .map((x) => mediaSrc(x))
+    .filter((x): x is string => !!x)
+  const [lightbox, setLightbox] = useState<number | null>(null)
+  // Lightbox acikken Esc: CAPTURE fazi + stopImmediatePropagation ile ust ContentView'in
+  // Esc handler'inin (sayfayi kapatan) tetiklenmesini engelle; sadece lightbox kapansin.
+  useEffect(() => {
+    if (lightbox === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopImmediatePropagation()
+        setLightbox(null)
+      }
+    }
+    window.addEventListener('keydown', onKey, true)
+    return () => window.removeEventListener('keydown', onKey, true)
+  }, [lightbox])
+  return (
+    <section className="content-service">
+      <h3>{s.title}</h3>
+      {paras(s.body).map((p, i) => (
+        <p key={i}>{p}</p>
+      ))}
+      {gallery.length > 0 && (
+        <div className="service-gallery">
+          {gallery.map((g, i) => (
+            <button
+              key={i}
+              className="service-gallery-thumb"
+              onClick={() => setLightbox(i)}
+              aria-label={t('content.image', { n: i + 1 })}
+            >
+              <img src={g} alt="" loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+      {lightbox !== null && gallery.length > 0 && (
+        <Lightbox
+          images={gallery}
+          index={lightbox}
+          onClose={() => setLightbox(null)}
+          onIndex={setLightbox}
+        />
+      )}
+    </section>
   )
 }
 
