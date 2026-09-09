@@ -88,10 +88,21 @@ class RoomServerAuthTest extends TestCase
         $this->assertFalse($room->server_match['crawford']);
         $this->assertTrue($room->server_match['crawfordDone']);
 
-        // Küp tekrar teklif edilebilir (post-Crawford). Beyazın sırası (yeni oyun, opened).
-        $room->server_match = array_merge($room->server_match, ['opened' => true]);
-        $room->server_state = array_merge(Backgammon::initialState(), ['turn' => 'white']);
+        // Küp tekrar AKTİF (post-Crawford). Ama GERÇEK kural: white 3/4 (1 puan uzakta) -> küp
+        // white için ÖLÜ; kullanabilecek olan GERİDE olan black'tir (3 uzakta). Açılış oynandı
+        // (turns=1), sıra black'te -> black teklif edebilir; white teklif edemez (dead cube).
+        $room->server_match = array_merge($room->server_match, ['opened' => true, 'turns' => 1]);
+        $room->server_state = array_merge(Backgammon::initialState(), ['turn' => 'black']);
         $room->save();
-        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])->assertOk();
+        // 1 puan uzaktaki white için küp ÖLÜ (teklif edemez).
+        $room2 = Room::first();
+        $room2->server_state = array_merge(Backgammon::initialState(), ['turn' => 'white']);
+        $room2->save();
+        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])
+            ->assertStatus(409)->assertJsonPath('reason', 'DEAD_CUBE');
+        // Geride olan black (3 uzakta) için küp CANLI -> teklif edebilir.
+        $room2->server_state = array_merge(Backgammon::initialState(), ['turn' => 'black']);
+        $room2->save();
+        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p2'])->assertOk();
     }
 }

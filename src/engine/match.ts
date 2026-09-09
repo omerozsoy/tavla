@@ -25,24 +25,52 @@ export function newMatch(target: number): MatchState {
   }
 }
 
-// Bir oyuncu kupu teklif edebilir mi?
-// OLU KUP artik TEKLIF EDEN ACISINDAN degerlendirilir (kullanici direktifi): kupun MEVCUT
+// Kup teklif edilemiyorsa GEREKCE kodu (net neden). Backend `cubeAvailability` ile birebir
+// ayni kod kumesi -> istemci butonu ile sunucu enforce'u AYNI kurali paylasir.
+export type CubeDenyReason =
+  | 'DOUBLE_ALREADY_PENDING' // zaten bekleyen bir teklif var (cevap bekleniyor)
+  | 'CRAWFORD_GAME' // Crawford oyununda kup yasak
+  | 'ONE_POINT_MATCH' // 1 puanlik mac: kup hic yok
+  | 'CUBE_AT_MAX' // kup 64 tavanda -> daha fazla katlanamaz
+  | 'NOT_CUBE_OWNER' // kup rakibin elinde
+  | 'DEAD_CUBE' // olu kup: katlamak teklif edene puan kazandirmaz
+
+export interface CubeAvailability {
+  allowed: boolean
+  reason?: CubeDenyReason
+}
+
+// Bir oyuncu kupu teklif edebilir mi? SONUC = {allowed, reason} (net gerekce).
+// OLU KUP TEKLIF EDEN ACISINDAN degerlendirilir (kullanici direktifi): kupun MEVCUT
 // degeri, teklif edenin maci bitirmesi icin gereken puani zaten karsiliyorsa katlamak ona
 // HICBIR SEY kazandirmaz, yalniz rakibe daha buyuk bir kup verir. Or. 7'lik macta 6-1
 // ondeyken rakip katladi (kup 2): bu oyunu kazanmak maci bitiriyor -> 4'e cekmek anlamsiz,
 // buton CIKMAZ. Rakip icin (6 puan uzakta) kup hala anlamlidir, ona kapatilmaz.
 // Bot da AYNI kurala tabidir (ek kisit YOK) -> insan ve bot birebir ayni kupu kullanir.
-export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean): boolean {
-  if (awaitingResponse) return false
-  if (m.isCrawford) return false // Crawford oyununda kup yok
-  if (m.target <= 1) return false // 1 puanlik mac (tek oyun): kup HIC yok (gercek kural)
-  if (m.cube.value >= 64) return false
-  if (m.cube.owner !== null && m.cube.owner !== player) return false
+// NOT: sira/oyun-bitti/zar-atildi gibi durumlar cagiran tarafta (App handleDouble: diceRolled;
+// otoriter online'da backend cubeAvailability) kontrol edilir; burada MAC-DURUMU kurallari.
+export function cubeAvailability(
+  m: MatchState,
+  player: Player,
+  awaitingResponse: boolean,
+): CubeAvailability {
+  if (awaitingResponse) return { allowed: false, reason: 'DOUBLE_ALREADY_PENDING' }
+  if (m.isCrawford) return { allowed: false, reason: 'CRAWFORD_GAME' } // Crawford: kup yok
+  if (m.target <= 1) return { allowed: false, reason: 'ONE_POINT_MATCH' } // 1 puanlik mac: kup yok
+  if (m.cube.value >= 64) return { allowed: false, reason: 'CUBE_AT_MAX' } // 64 tavan
+  if (m.cube.owner !== null && m.cube.owner !== player) {
+    return { allowed: false, reason: 'NOT_CUBE_OWNER' } // rakip kupu tutuyor
+  }
   // OLU KUP (teklif eden icin): kup zaten teklif edenin ihtiyaci olan puani karsiliyorsa
   // katlamanin kazanci YOKTUR (oyunu kazaninca mac zaten bitiyor), riski vardir. Teklif
   // SUNULMAZ -> zar dogrudan atilir (shouldAutoRoll bunu okur).
-  if (m.cube.value >= pointsNeeded(m, player)) return false
-  return true
+  if (m.cube.value >= pointsNeeded(m, player)) return { allowed: false, reason: 'DEAD_CUBE' }
+  return { allowed: true }
+}
+
+// Boolean kisayol (mevcut cagri yerleri icin korunur). cubeAvailability'nin allowed'i.
+export function canDouble(m: MatchState, player: Player, awaitingResponse: boolean): boolean {
+  return cubeAvailability(m, player, awaitingResponse).allowed
 }
 
 // Sira gelen oyuncu icin zar otomatik atilmali mi?
