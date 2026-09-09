@@ -86,7 +86,7 @@ class LuckyWheelSettings extends Page implements HasForms
     protected function getViewData(): array
     {
         $pool = LuckyWheelReward::query()->eligible()->get();
-        $total = (int) $pool->sum(fn ($r) => max(0, (int) $r->weight));
+        $total = (float) $pool->sum(fn ($r) => max(0, (float) $r->weight));
         $palette = config('lucky-wheel.palette', []);
         $rewards = [];
         foreach ($pool->values() as $i => $r) {
@@ -94,7 +94,7 @@ class LuckyWheelSettings extends Page implements HasForms
                 'name' => $r->name,
                 'color' => $r->slice_color ?: ($palette[$i % max(1, count($palette))] ?? '#a83a2b'),
                 'textColor' => $r->text_color ?: '#ffffff',
-                'pct' => $total > 0 ? number_format(max(0, (int) $r->weight) / $total * 100, 1) : '0',
+                'pct' => $total > 0 ? number_format(max(0, (float) $r->weight) / $total * 100, 1) : '0',
             ];
         }
         return ['preview' => ['count' => $pool->count(), 'rewards' => $rewards]];

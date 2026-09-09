@@ -86,14 +86,14 @@ class LuckyWheelRewardResource extends Resource
                 ->schema([
                     Forms\Components\TextInput::make('weight')
                         ->label('Ağırlık (weight)')->numeric()->required()
-                        ->default(10)->minValue(0)->live(onBlur: true)
-                        ->helperText('Kazanma ihtimali ağırlıkla belirlenir; toplam 100 olmak ZORUNDA değil.'),
+                        ->default(10)->minValue(0)->step(0.5)->live(onBlur: true)
+                        ->helperText('Kazanma ihtimali ağırlıkla belirlenir; toplam 100 olmak ZORUNDA değil. Ondalık girilebilir (örn. 0.5).'),
                     Forms\Components\Placeholder::make('probability_preview')
                         ->label('Gerçek yüzde (canlı)')
                         ->content(function (Get $get, ?LuckyWheelReward $record): string {
-                            $w = max(0, (int) $get('weight'));
+                            $w = max(0, (float) $get('weight'));
                             // Diğer aktif ödüllerin toplam ağırlığı + bu ödül.
-                            $others = (int) LuckyWheelReward::query()
+                            $others = (float) LuckyWheelReward::query()
                                 ->where('is_active', true)
                                 ->when($record, fn ($q) => $q->where('id', '!=', $record->id))
                                 ->sum('weight');
@@ -163,7 +163,7 @@ class LuckyWheelRewardResource extends Resource
                 Tables\Columns\TextInputColumn::make('weight')->label('Weight')->sortable()
                     ->type('number')
                     ->rules(['required', 'numeric', 'min:0'])
-                    ->extraInputAttributes(['min' => 0, 'step' => 1, 'style' => 'width:5.5rem'])
+                    ->extraInputAttributes(['min' => 0, 'step' => '0.5', 'style' => 'width:5.5rem'])
                     // Ham toplam: görünür (filtreli) TÜM ödüllerin weight toplamı (aktif+pasif).
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Ham toplam')),
                 Tables\Columns\TextColumn::make('probability')->label('Gerçek %')
@@ -172,7 +172,7 @@ class LuckyWheelRewardResource extends Resource
                             return '—';
                         }
                         $total = LuckyWheelReward::totalActiveWeight();
-                        return $total > 0 ? '%'.number_format((int) $r->weight / $total * 100, 2) : '—';
+                        return $total > 0 ? '%'.number_format((float) $r->weight / $total * 100, 2) : '—';
                     })
                     // Alt toplam: aktif ödüllerin yüzde toplamı (weight-tabanlı -> filtresiz %100).
                     // Filtre varsa görünür aktif ödüllerin toplam payını gösterir (payda = TÜM aktif weight).
