@@ -787,9 +787,13 @@ function ServiceCard({ s }: { s: Content }) {
   return (
     <section className="content-service">
       <h3>{s.title}</h3>
-      {paras(s.body).map((p, i) => (
-        <p key={i}>{p}</p>
-      ))}
+      {/* Aciklama RichEditor (HTML) ise bicimlendirilmis basilir; eski duz metinler
+          paragraflara bolunur (geriye donuk uyumluluk). */}
+      {isHtml(s.body) ? (
+        <div className="service-body rich" dangerouslySetInnerHTML={{ __html: s.body ?? '' }} />
+      ) : (
+        paras(s.body).map((p, i) => <p key={i}>{p}</p>)
+      )}
       {gallery.length > 0 && (
         <div className="service-gallery">
           {gallery.map((g, i) => (

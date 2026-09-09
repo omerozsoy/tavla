@@ -40,7 +40,17 @@ class ServiceResource extends Resource
         return $form->schema([
             Forms\Components\Hidden::make('type')->default('service'),
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
-            Forms\Components\Textarea::make('body')->label('Açıklama')->rows(8)->columnSpanFull(),
+            Forms\Components\RichEditor::make('body')
+                ->label('Açıklama')
+                ->toolbarButtons([
+                    'bold', 'italic', 'underline', 'strike',
+                    'h2', 'h3',
+                    'bulletList', 'orderedList',
+                    'link', 'blockquote',
+                    'redo', 'undo',
+                ])
+                ->helperText('Biçimlendirilmiş metin — ön yüzde hizmet açıklaması olarak gösterilir.')
+                ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('hizmet')->visibility('public')
