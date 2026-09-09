@@ -160,7 +160,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
             {!embed && (
               <>
                 <div className="stats-head">
-                  <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} country={u?.country} flagInline size={60} />
+                  <PlayerIdentity lg name={name} rating={u?.rating ?? 1500} avatar={avatar} frame={frame} country={u?.country} flagInline size={60} premium={u?.plan_active !== undefined && u.plan_active !== 'free'} />
                   <div className="stats-rating">
                     {u?.rating ?? 1500}
                     <div className="stats-coins"><Coins amount={u?.coins ?? 0} size={14} /></div>
