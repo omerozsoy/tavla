@@ -10807,6 +10807,34 @@ button.acct-row:hover:not(:disabled) {
   color: var(--danger-fg);
 }
 
+/* ---- Satin alma onay modali (BuyConfirm) ---- */
+.buy-confirm-card [data-slot='button'] {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.buy-confirm-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 18px;
+  text-align: left;
+}
+.buy-confirm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  font-size: 0.92rem;
+  color: var(--muted);
+}
+.buy-confirm-row.buy-confirm-after {
+  color: var(--text);
+}
+
 /* ---- Mac kurulum ekrani ---- */
 .setup-card {
   text-align: left;

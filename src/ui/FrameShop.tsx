@@ -14,6 +14,7 @@ import {
 } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
 import { Button } from '@/components/ui/button'
+import BuyConfirm from './BuyConfirm'
 
 // 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
 const GROUP_COLOR: Record<FrameGroup, string> = RARITY_COLORS
@@ -39,7 +40,7 @@ interface CardProps {
   coins: number
   busy: string | null
   groupColor: string
-  onBuy: (sid: string) => void
+  onBuy: (sid: string, name: string, price: number) => void
   onEquip: (id: string) => void
   labels: { equip: string; equipped: string; earned: string; need: (n: number) => string; buyAria: (name: string, price: number) => string }
 }
@@ -74,7 +75,7 @@ function FrameCard(p: CardProps) {
             variant="default"
             className="w-full"
             disabled={p.busy === sid || p.coins < price}
-            onClick={() => p.onBuy(sid)}
+            onClick={() => p.onBuy(sid, p.f.name, price)}
             aria-label={p.labels.buyAria(p.f.name, price)}
           >
             <Coins amount={price} size={14} />
@@ -95,6 +96,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
   const { t } = useT()
   const [busy, setBusy] = useState<string | null>(null)
   const [buyErr, setBuyErr] = useState('')
+  // Satin alma ONAY adimi: yanlis tiklamayla coin gitmesin diye once onay iste.
+  const [pending, setPending] = useState<{ sid: string; name: string; price: number } | null>(null)
 
   const owns = (shopId: string) => unlocks.includes(shopId)
   async function buy(shopId: string) {
@@ -178,7 +181,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
                   coins={coins}
                   busy={busy}
                   groupColor={GROUP_COLOR[group]}
-                  onBuy={buy}
+                  onBuy={(sid, name, price) => setPending({ sid, name, price })}
                   onEquip={equip}
                   labels={labels}
                 />
@@ -189,6 +192,21 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
       })}
 
       <p className="shop-note">{t('shop.note')}</p>
+
+      {pending && (
+        <BuyConfirm
+          name={pending.name}
+          price={pending.price}
+          coins={coins}
+          busy={busy === pending.sid}
+          onConfirm={() => {
+            const sid = pending.sid
+            setPending(null)
+            buy(sid)
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </div>
   )
 }

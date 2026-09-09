@@ -1,9 +1,10 @@
-import { type CSSProperties } from 'react'
+import { type CSSProperties, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
+import BuyConfirm from './BuyConfirm'
 
 type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club'
 
@@ -35,6 +36,8 @@ interface Props {
 // sekmesi) hem baska yerlerde tekrar kullanilir.
 export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, coins = 0, onBuy }: Props) {
   const { t } = useT()
+  // Satin alma ONAY adimi: yanlis tiklamayla coin gitmesin diye once onay iste.
+  const [pending, setPending] = useState<BoardThemeOpt | null>(null)
   return (
     <div className="setup-row">
       <div className="setup-label">{t('menu.board')}</div>
@@ -65,7 +68,7 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                     disabled={buyable && !affordable}
                     title={buyable ? `${bt.name} — ${price} coin` : bt.name}
                     onClick={() =>
-                      owned ? setBoardTheme(bt.id) : affordable ? onBuy?.('theme.' + bt.id) : undefined
+                      owned ? setBoardTheme(bt.id) : affordable ? setPending(bt) : undefined
                     }
                   >
                     <SetupBoard
@@ -93,6 +96,18 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
           </div>
         )
       })}
+      {pending && pending.price != null && (
+        <BuyConfirm
+          name={pending.name}
+          price={pending.price}
+          coins={coins}
+          onConfirm={() => {
+            onBuy?.('theme.' + pending.id)
+            setPending(null)
+          }}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </div>
   )
 }
