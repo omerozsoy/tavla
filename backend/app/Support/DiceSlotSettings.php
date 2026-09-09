@@ -64,6 +64,7 @@ class DiceSlotSettings
             'free_spins_per_day', 'spin_cost', 'cooldown_minutes', 'reset_hour',
             'die_weight', 'cube_weight',
             'payout_1', 'payout_2', 'payout_3', 'payout_4', 'payout_5', 'payout_6',
+            'payout_straight',
             'jackpot_base', 'jackpot_increment',
         ] as $k) {
             $out[$k] = (int) $out[$k];

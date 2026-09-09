@@ -101,14 +101,21 @@ class DiceSlotService
         return $out;
     }
 
-    /** Frontend gösterimi için ödül tablosu (üçlüler + jackpot). */
+    /** Sıralama (kent) ödülü: ardışık üç farklı zar. */
+    public function straightPayout(): int
+    {
+        return max(0, DS::int('payout_straight'));
+    }
+
+    /** Frontend gösterimi için ödül tablosu (üçlüler + sıralama + jackpot). */
     public function paytable(): array
     {
         $rows = [];
         foreach ($this->payouts() as $v => $coin) {
-            $rows[] = ['code' => 'd'.$v, 'value' => $v, 'payout' => $coin, 'jackpot' => false];
+            $rows[] = ['code' => 'd'.$v, 'value' => $v, 'payout' => $coin, 'jackpot' => false, 'straight' => false];
         }
-        $rows[] = ['code' => 'c64', 'value' => 64, 'payout' => 0, 'jackpot' => true];
+        $rows[] = ['code' => 'straight', 'value' => 0, 'payout' => $this->straightPayout(), 'jackpot' => false, 'straight' => true];
+        $rows[] = ['code' => 'c64', 'value' => 64, 'payout' => 0, 'jackpot' => true, 'straight' => false];
 
         return $rows;
     }
@@ -184,6 +191,23 @@ class DiceSlotService
         }
 
         return array_key_last($weights);
+    }
+
+    /**
+     * Sıralama (kent): ardışık üç FARKLI zar, herhangi sırada (poker straight gibi).
+     * {1,2,3},{2,3,4},{3,4,5},{4,5,6}. 64 küpü dahil DEĞİL -> kent oluşturamaz.
+     */
+    private function isStraight(array $reels): bool
+    {
+        foreach ($reels as $r) {
+            if ($r === 'c64') {
+                return false;
+            }
+        }
+        $vals = array_map(fn ($r) => (int) substr($r, 1), $reels);
+        sort($vals);
+
+        return $vals[0] + 1 === $vals[1] && $vals[1] + 1 === $vals[2];
     }
 
     /** Üç makarayı BAĞIMSIZ çevir (gerçek slot: her makara ayrı). */
@@ -284,6 +308,10 @@ class DiceSlotService
                     $matchedValue = (int) substr($a, 1);
                     $payout = max(0, $this->payouts()[$matchedValue] ?? 0);
                 }
+            } elseif ($this->isStraight($reels)) {
+                // Sıralama / kent (ardışık üç farklı zar) — üçlü değilse kontrol edilir.
+                $winType = 'straight';
+                $payout = $this->straightPayout();
             }
             $jp->save();
 

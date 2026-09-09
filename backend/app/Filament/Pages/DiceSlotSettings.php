@@ -76,6 +76,12 @@ class DiceSlotSettings extends Page implements HasForms
                         TextInput::make('payout_5')->label('5 – 5 – 5')->numeric()->required()->minValue(0)->suffix('coin'),
                         TextInput::make('payout_6')->label('6 – 6 – 6')->numeric()->required()->minValue(0)->suffix('coin'),
                     ])->columns(3),
+                Section::make('Sıralama / Kent (ardışık üçlü)')
+                    ->description('Ardışık üç FARKLI zar (1-2-3, 2-3-4, 3-4-5, 4-5-6) herhangi sırada — poker straight gibi. 64 küpü dahil değil. Üçlüden daha sık gelir; sağdaki panelden olasılığı gör.')
+                    ->schema([
+                        TextInput::make('payout_straight')->label('Sıralama ödülü')
+                            ->numeric()->required()->minValue(0)->suffix('coin'),
+                    ])->columns(1),
                 Section::make('Jackpot (64 – 64 – 64)')
                     ->description('Artan havuz: her spinde büyür; biri üçlü 64 yapınca havuzu kazanır ve taban değere sıfırlanır.')
                     ->schema([
@@ -107,6 +113,7 @@ class DiceSlotSettings extends Page implements HasForms
         $pCube = $cube / $total;             // 64 küpü olasılığı
         $pTripleFace = $pFace ** 3;          // belirli bir üçlü zar (ör. 6-6-6)
         $pAnyTriple = 6 * $pTripleFace;      // herhangi bir üçlü zar
+        $pStraight = 24 * ($pFace ** 3);     // sıralama: 4 dizi × 3! sıra × pFace^3
         $pJackpot = $pCube ** 3;             // üçlü 64
 
         $fmtOdds = fn (float $p) => $p > 0 ? '1 / '.number_format(1 / $p, 0, ',', '.') : '—';
@@ -132,6 +139,7 @@ class DiceSlotSettings extends Page implements HasForms
             'lastWinner' => $lastWinner,
             'lastWonAmount' => $jp->last_won_amount ? (int) $jp->last_won_amount : null,
             'odds' => [
+                'straight' => $fmtOdds($pStraight),
                 'anyTriple' => $fmtOdds($pAnyTriple),
                 'triple6' => $fmtOdds($pTripleFace),
                 'jackpot' => $fmtOdds($pJackpot),

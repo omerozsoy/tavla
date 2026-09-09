@@ -76,14 +76,19 @@ class AchievementTest extends TestCase
         $u = $this->makeUser('c', ['coins' => 1000]);
         $svc = app(AchievementService::class);
 
-        $svc->evaluate($u); // coin_1 (1000) -> +100 coin
+        // Odul miktarini CONFIG'ten turet (tier-tabanli rescale'e dayanikli). coin_1 = bronze.
+        $coin1 = collect(config('achievements.list'))->firstWhere('slug', 'coin_1');
+        $reward = (int) $coin1['reward_coin'];
+        $this->assertGreaterThan(0, $reward); // odul tanimli olmali
+
+        $svc->evaluate($u); // coin_1 (1000 coin esigi) -> +reward coin
         $u->refresh();
-        $this->assertSame(1100, (int) $u->coins);
+        $this->assertSame(1000 + $reward, (int) $u->coins);
         $this->assertSame(1, UserAchievement::where('user_id', $u->id)->where('achievement_slug', 'coin_1')->count());
 
-        // Tekrar: coin_1 sahipli, coin_2 (5000) henuz degil -> coin degismez
+        // Tekrar: coin_1 sahipli, coin_2 (5000) henuz degil -> coin DEGISMEZ (odul bir kez).
         $svc->evaluate($u->fresh());
-        $this->assertSame(1100, (int) $u->fresh()->coins);
+        $this->assertSame(1000 + $reward, (int) $u->fresh()->coins);
     }
 
     // ==================== EVENT ====================

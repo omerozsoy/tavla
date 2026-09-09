@@ -42,6 +42,10 @@
 
                 <ul class="space-y-1 text-sm">
                     <li class="flex items-center justify-between">
+                        <span class="text-gray-500">Sıralama (kent)</span>
+                        <span>{{ $odds['straight'] }}</span>
+                    </li>
+                    <li class="flex items-center justify-between">
                         <span class="text-gray-500">Herhangi üçlü zar</span>
                         <span>{{ $odds['anyTriple'] }}</span>
                     </li>

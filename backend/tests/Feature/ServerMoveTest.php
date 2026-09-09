@@ -57,8 +57,14 @@ class ServerMoveTest extends TestCase
         $res2->assertJsonPath('reused', true);
         $this->assertSame($dice, $res2->json('dice'));
 
-        // p2 (black) sırası değil -> 409
-        $this->postJson('/api/rooms/ABCDE/roll', ['token' => 'tok-p2'])->assertStatus(409);
+        // AÇILIŞ İSTİSNASI: p2 (black) açılış sırasında (turns=0, tahta taze) roll çağırırsa
+        // sıra-dışı 409 DEĞİL, AYNI açılışı alır (opening+reused). Bu KASITLI (açılış-yarışı bug
+        // fix'i: açılış yarışını kaybeden taraf "Açılış zarı atılıyor…"da kilitlenmesin diye
+        // ikinci çağırana da açılış aynen döner; zar ÜRETİLMEZ -> idempotent + adil).
+        // Sıra-dışı roll REDDİ (409) açılış SONRASI için AuthoritativeLoopTest'te kapsanır.
+        $this->postJson('/api/rooms/ABCDE/roll', ['token' => 'tok-p2'])
+            ->assertOk()->assertJsonPath('opening', true)->assertJsonPath('reused', true);
+        $this->assertSame($dice, $this->postJson('/api/rooms/ABCDE/roll', ['token' => 'tok-p2'])->json('dice'));
     }
 
     public function test_move_validated_by_service_advances_state(): void

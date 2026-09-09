@@ -8,7 +8,7 @@ import { Icon } from './Icon'
 import Coins from './Coins'
 
 interface Props {
-  winType: 'none' | 'triple' | 'jackpot'
+  winType: 'none' | 'triple' | 'jackpot' | 'straight'
   payout: number
   matchedValue: number | null
 }
@@ -24,12 +24,14 @@ export default function SlotResult({ winType, payout, matchedValue }: Props) {
     )
   }
 
-  // triple: 6-6-6 en yüksek -> "BÜYÜK ÖDÜL!"; diğerleri "KAZANDIN!".
-  const big = matchedValue != null && matchedValue >= 5
+  // Mesaj: sıralama -> "SIRALAMA!"; 6-6-6/5-5-5 -> "BÜYÜK ÖDÜL!"; diğer üçlüler -> "KAZANDIN!".
+  const isStraight = winType === 'straight'
+  const big = !isStraight && matchedValue != null && matchedValue >= 5
+  const msg = isStraight ? t('ds.straightWin') : big ? t('ds.bigWin') : t('ds.win')
   return (
     <div className={`ds-result is-win ${big ? 'is-big' : ''}`} role="status">
-      <Icon name="trophy" size={18} weight="fill" className="ds-result-ic" />
-      <span className="ds-result-msg">{big ? t('ds.bigWin') : t('ds.win')}</span>
+      <Icon name={isStraight ? 'ranking' : 'trophy'} size={18} weight="fill" className="ds-result-ic" />
+      <span className="ds-result-msg">{msg}</span>
       <Coins amount={payout} gain pill size={16} />
     </div>
   )
