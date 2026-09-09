@@ -147,7 +147,6 @@ import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
-import PremiumPill from './ui/PremiumPill'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
@@ -5304,10 +5303,10 @@ export default function App() {
                 frame={user?.avatar_frame}
                 size={28}
                 name={profile.nickname}
+                premium={premium}
                 className="account-avf"
               />
               {profile.nickname}
-              {premium && <PremiumPill style={{ marginLeft: 6 }} />}
             </button>
             <button
               type="button"
@@ -5425,7 +5424,6 @@ export default function App() {
           >
             {/* Ad SOLDA; avatar (menu) en sagda kosede. */}
             <span className="acct-trigger-name">{profile.nickname}</span>
-            {premium && <PremiumPill style={{ marginRight: 2 }} />}
             {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
             <Icon name="chevron" size={16} className="acct-chev" />
             <AvatarFrame
@@ -5433,6 +5431,7 @@ export default function App() {
               frame={user?.avatar_frame}
               size={28}
               name={profile.nickname}
+              premium={premium}
               className="account-avf"
             />
           </button>
@@ -6540,9 +6539,8 @@ export default function App() {
                       <span className="rm-opp">
                         <span className="rm-players">
                           <span className="rm-me">
-                            <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
+                            <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} premium={premium} className="rm-avf" />
                             {myName}
-                            {premium && <PremiumPill style={{ marginLeft: 5 }} />}
                           </span>
                           <span className="rm-vs">vs</span>
                           <span className="rm-you">
@@ -6577,9 +6575,8 @@ export default function App() {
                   <span className="rm-opp">
                     <span className="rm-players">
                       <span className="rm-me">
-                        <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
+                        <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} premium={premium} className="rm-avf" />
                         {profile.nickname || t('resume.you')}
-                        {premium && <PremiumPill style={{ marginLeft: 5 }} />}
                       </span>
                       <span className="rm-vs">vs</span>
                       <span className="rm-you">
