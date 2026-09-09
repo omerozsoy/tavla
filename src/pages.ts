@@ -35,8 +35,9 @@ export const PAGES: PageDef[] = [
   // Şans Çarkı sol menüde DEĞİL; üst barda (bonusun yanında) spinner-ball ikonuyla açılır.
   // inMenu:false -> menüde gizli ama /sans-carki URL'i yine çalışır (derin-link).
   { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'compete', inMenu: false },
-  // Zar Slotu: 3 makaralı tavla zarı slot makinesi (sunucu-otoriter). Sol menüde görünür.
-  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'compete' },
+  // Zar Slotu: 3 makaralı tavla zarı slot makinesi (sunucu-otoriter).
+  // inMenu:false -> sol menüde gizli ama /zar-slotu URL'i yine çalışır (derin-link).
+  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'compete', inMenu: false },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar sol menude DEGIL; sag ust barda (bildirim gibi) chat ikonu ile acilir.
   // inMenu:false -> menude gizli ama /mesajlar URL'i yine calisir (derin-link).
