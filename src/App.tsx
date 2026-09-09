@@ -129,7 +129,16 @@ import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 import Clubs from './ui/Clubs'
 import Rules from './ui/Rules'
-import Info from './ui/Info'
+import Info, { type InfoTab } from './ui/Info'
+// Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
+const INFO_TAB_URL: Record<InfoTab, string> = {
+  about: 'hakkinda', services: 'hizmetler', ranks: 'rutbeler',
+  scoring: 'puanlama', badges: 'basarilarim', fair: 'adil-zar',
+}
+const INFO_URL_TAB: Record<string, InfoTab> = {
+  hakkinda: 'about', hizmetler: 'services', rutbeler: 'ranks',
+  puanlama: 'scoring', basarilarim: 'badges', 'adil-zar': 'fair',
+}
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
 import FriendGameSetup from './ui/FriendGameSetup'
@@ -515,7 +524,7 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
-  const [infoTab, setInfoTab] = useState<'about' | 'ranks' | 'fair' | 'services' | 'badges'>('about') // footer'dan sekme
+  const [infoTab, setInfoTab] = useState<InfoTab>('about') // aktif Bilgi sekmesi (URL'e bagli)
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
   const [achUnlocked, setAchUnlocked] = useState<UnlockedAchievement[]>([]) // mac sonu unlock kuyrugu
@@ -650,7 +659,7 @@ export default function App() {
                 ? 'profil/adreslerim'
                 : 'profil'
     : infoOpen
-    ? 'bilgi'
+    ? 'bilgi/' + INFO_TAB_URL[infoTab]
     : leaderboardOpen
     ? 'lider-tablosu'
     : ranksOpen
@@ -822,6 +831,7 @@ export default function App() {
           setRanksOpen(true)
           break
         case 'bilgi':
+          setInfoTab(INFO_URL_TAB[seg[1] ?? ''] ?? 'about') // /bilgi/<slug> -> sekme
           setInfoOpen(true)
           break
         case 'online-turnuvalar':
@@ -912,8 +922,9 @@ export default function App() {
         case 'turnuva-takvimi':
           setContentView('event')
           break
-        case 'hizmetler':
-          setContentView('service')
+        case 'hizmetler': // eski standalone Hizmetler -> Bilgi › Hizmetler sekmesine yonlendir
+          setInfoTab('services')
+          setInfoOpen(true)
           break
         case 'blog':
           setContentView('blog')
@@ -5763,7 +5774,7 @@ export default function App() {
     onCalendar: () => goPage(() => setContentView('event')),
     onClubs: () => goPage(() => setContentView('club')), // Tavla Kulupleri = il bazinda rehber (seeder)
 
-    onServices: () => goPage(() => setContentView('service')),
+    onServices: () => openInfoTab('services'), // Hizmetler = Bilgi › Hizmetler sekmesi
     onBlog: () => goPage(() => setContentView('blog')),
     onNews: () => goPage(() => setContentView('news')),
     // Belirli bir haberin detayini ac (/haberler/<slug>): liste yerine dogrudan detay.
@@ -5824,7 +5835,7 @@ export default function App() {
       })),
   }))
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar.
-  const openInfoTab = (tab: 'about' | 'ranks' | 'fair' | 'services' | 'badges') => {
+  const openInfoTab = (tab: InfoTab) => {
     setInfoTab(tab)
     goPage(() => setInfoOpen(true))
   }
@@ -5834,6 +5845,7 @@ export default function App() {
       { key: 'info-about', labelKey: 'info.tab.about', onClick: () => openInfoTab('about') },
       { key: 'info-services', labelKey: 'menu.services', onClick: () => openInfoTab('services') },
       { key: 'info-ranks', labelKey: 'menu.ranks', onClick: () => openInfoTab('ranks') },
+      { key: 'info-scoring', labelKey: 'info.tab.scoring', onClick: () => openInfoTab('scoring') },
       { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
       { key: 'info-fair', labelKey: 'fair.title', onClick: () => openInfoTab('fair') },
     ],
@@ -6040,18 +6052,7 @@ export default function App() {
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
       {infoOpen && (
-        <Info
-          onClose={() => setInfoOpen(false)}
-          currentRating={user?.rating ?? undefined}
-          loggedIn={!!user}
-          initialTab={infoTab}
-          fair={{
-            commitment: fairRef.current.commitment,
-            clientSeed: fairRef.current.clientSeed,
-            serverSeed: matchWinner(match) ? fairRef.current.serverSeed : undefined,
-            rolls: fairRef.current.nonce,
-          }}
-        />
+        <Info onClose={() => setInfoOpen(false)} tab={infoTab} onTab={setInfoTab} />
       )}
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />

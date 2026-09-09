@@ -33,6 +33,7 @@ Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
+Route::get('/info-pages', [\App\Http\Controllers\InfoPageController::class, 'index']); // /bilgi/<slug> sekmeleri (acik)
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
