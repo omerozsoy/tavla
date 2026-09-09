@@ -27,9 +27,9 @@ class LuckyWheelAdminController extends Controller
             'type' => $r->type,
             'amount' => (int) $r->amount,
             'reference_id' => $r->reference_id,
-            'weight' => (int) $r->weight,
+            'weight' => (float) $r->weight,
             'probability' => ($r->is_active && $totalActiveWeight > 0)
-                ? round((int) $r->weight / $totalActiveWeight * 100, 2) : 0.0,
+                ? round((float) $r->weight / $totalActiveWeight * 100, 2) : 0.0,
             'icon' => $r->icon,
             'slice_color' => $r->slice_color,
             'text_color' => $r->text_color,
@@ -72,8 +72,9 @@ class LuckyWheelAdminController extends Controller
             'type' => ['required', Rule::in(LuckyWheelReward::TYPES)],
             'amount' => ['nullable', 'integer', 'min:0'],
             'reference_id' => ['nullable', 'string', 'max:60'],
-            // Weight 0'dan büyük olmalı (kazanılabilir ödül). Salt-gösterim için Filament'ten 0 girilebilir.
-            'weight' => ['required', 'integer', 'min:1'],
+            // Weight 0'dan büyük olmalı (kazanılabilir ödül). Ondalık olabilir (örn. 0.5).
+            // Salt-gösterim için Filament'ten 0 girilebilir; REST ucu >0 (min 0.01) ister.
+            'weight' => ['required', 'numeric', 'min:0.01'],
             'icon' => ['nullable', 'string', 'max:60'],
             'slice_color' => ['nullable', 'string', 'max:20'],
             'text_color' => ['nullable', 'string', 'max:20'],

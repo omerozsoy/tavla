@@ -46,10 +46,10 @@ class LuckyWheelService
     /** id => gerçek yüzde (weight / toplam aktif weight * 100). Yalnız bilgi amaçlı. */
     public function percentages(Collection $pool): array
     {
-        $total = (int) $pool->sum(fn ($r) => max(0, (int) $r->weight));
+        $total = (float) $pool->sum(fn ($r) => max(0, (float) $r->weight));
         $out = [];
         foreach ($pool as $r) {
-            $out[$r->id] = $total > 0 ? round(max(0, (int) $r->weight) / $total * 100, 2) : 0.0;
+            $out[$r->id] = $total > 0 ? round(max(0, (float) $r->weight) / $total * 100, 2) : 0.0;
         }
         return $out;
     }
@@ -213,7 +213,7 @@ class LuckyWheelService
     /** Bu an bu kullanıcı bu ödülü KAZANABİLİR mi (limit/stok)? Ödül satırı kilitliyken çağrılır. */
     private function winnable(LuckyWheelReward $r, int $userId): bool
     {
-        if (! $r->is_active || (int) $r->weight <= 0) {
+        if (! $r->is_active || (float) $r->weight <= 0) {
             return false;
         }
         $now = now();
@@ -238,14 +238,25 @@ class LuckyWheelService
         return true;
     }
 
-    /** GÜVENLİ ağırlıklı seçim: random_int (CSPRNG). */
+    /**
+     * GÜVENLİ ağırlıklı seçim: random_int (CSPRNG).
+     * Ondalık ağırlık desteği: her weight 100 ile ölçeklenip tam sayıya çevrilir
+     * (2 ondalık hassasiyet) — random_int tam sayı ister. 0.5 -> 50, 1 -> 100 vb.
+     * Adaylar >0 ağırlıkla önceden süzülür; taban 1 (0.01) ile sıfıra düşmez.
+     */
     private function weightedPick(Collection $candidates): LuckyWheelReward
     {
-        $total = (int) $candidates->sum(fn ($r) => max(1, (int) $r->weight));
+        $scaled = [];
+        $total = 0;
+        foreach ($candidates as $r) {
+            $w = max(1, (int) round(max(0, (float) $r->weight) * 100));
+            $scaled[$r->id] = $w;
+            $total += $w;
+        }
         $roll = random_int(1, max(1, $total));
         $acc = 0;
         foreach ($candidates as $r) {
-            $acc += max(1, (int) $r->weight);
+            $acc += $scaled[$r->id];
             if ($roll <= $acc) {
                 return $r;
             }
@@ -259,7 +270,7 @@ class LuckyWheelService
      */
     private function selectWinner(Collection $pool, int $userId): ?LuckyWheelReward
     {
-        $candidates = $pool->filter(fn ($r) => (int) $r->weight > 0)->values();
+        $candidates = $pool->filter(fn ($r) => (float) $r->weight > 0)->values();
         while ($candidates->isNotEmpty()) {
             $pick = $this->weightedPick($candidates);
             $locked = LuckyWheelReward::where('id', $pick->id)->lockForUpdate()->first();

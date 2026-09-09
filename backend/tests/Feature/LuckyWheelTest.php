@@ -100,6 +100,28 @@ class LuckyWheelTest extends TestCase
         $this->assertGreaterThan($counts['Light'] * 4, $counts['Heavy']);
     }
 
+    public function test_decimal_weight_supported(): void
+    {
+        Setting::put('lw_min_slice_count', 2);
+        $small = $this->reward(['name' => 'Small', 'weight' => 0.5]);
+        $this->reward(['name' => 'Big', 'weight' => 4.5]);
+
+        // Ondalık DB'ye yazıldı (0'a yuvarlanmadı) — 0.5 ağırlık korunur.
+        $this->assertEqualsWithDelta(0.5, (float) $small->fresh()->weight, 0.001);
+
+        $u = $this->user();
+        $this->grantSpins($u, 3000);
+        $counts = ['Small' => 0, 'Big' => 0];
+        for ($i = 0; $i < 2000; $i++) {
+            $res = $this->svc()->spin($u);
+            $counts[$res['reward']['name']]++;
+        }
+        // 0.5 ağırlıklı ödül ASLA filtrelenmez -> kazanılabilir.
+        $this->assertGreaterThan(0, $counts['Small'], '0.5 ağırlık kazanılabilmeli');
+        // 4.5 vs 0.5 (~9:1): Big belirgin çoğunlukta.
+        $this->assertGreaterThan($counts['Small'] * 4, $counts['Big']);
+    }
+
     public function test_zero_weight_reward_shown_but_never_won(): void
     {
         Setting::put('lw_min_slice_count', 2);

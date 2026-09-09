@@ -64,17 +64,17 @@ class LuckyWheelReward extends Model
         });
     }
 
-    /** Aktif ödüllerin toplam ağırlığı (gerçek yüzde hesabı için, kısa cache). */
-    public static function totalActiveWeight(): int
+    /** Aktif ödüllerin toplam ağırlığı (gerçek yüzde hesabı için, kısa cache). Ondalık olabilir. */
+    public static function totalActiveWeight(): float
     {
-        return (int) static::query()->where('is_active', true)->sum('weight');
+        return (float) static::query()->where('is_active', true)->sum('weight');
     }
 
     protected function casts(): array
     {
         return [
             'amount' => 'integer',
-            'weight' => 'integer',
+            'weight' => 'float', // ondalık ağırlık desteği (örn. 0.5)
             'sort' => 'integer',
             'wheel_order' => 'integer',
             'stock' => 'integer',
