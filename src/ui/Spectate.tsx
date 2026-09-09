@@ -3,55 +3,60 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
-import MiniBoard from './MiniBoard'
+import Board from './Board'
+import Sidebar from './Sidebar'
+import ClockStack from './ClockStack'
 import { Die } from './Dice'
-import { showRoom } from '../api'
+import { showRoom, type RoomView, type ServerMatch } from '../api'
+import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 
-interface Snap {
+// Legacy (istemci-state) oda snapshot'i: PUT edilen state nesnesi.
+interface LegacySnap {
   turnStart?: GameState
-  match?: { target: number; score: Record<Player, number> }
+  match?: {
+    target?: number
+    score?: Record<Player, number>
+    cube?: { value: number; owner: Player | null }
+    isCrawford?: boolean
+  }
 }
 
-// Canli mac izleme: oda durumunu periyodik yoklar, pozisyonu salt-okunur gosterir.
+// Canli mac izleme: oda durumunu periyodik yoklar, GERCEK OYUN TAHTASINI (tam boy, salt-okunur)
+// oynuyormus gibi gosterir. Hem legacy (state.turnStart) hem otoriter (server_state) oda desteklenir.
 export default function Spectate({
   code,
-  p1,
-  p2,
   onClose,
 }: {
   code: string
-  p1: string
-  p2: string
+  p1?: string
+  p2?: string
   onClose: () => void
 }) {
   const { t } = useT()
   useEscape(onClose)
-  const [snap, setSnap] = useState<Snap | null>(null)
+  const [rv, setRv] = useState<RoomView | null>(null)
   const [gone, setGone] = useState(false)
   const verRef = useRef(-1)
-  // Isimler oda verisinden (deep-link /izle/<code> ile prop bos gelebilir -> poll doldurur)
-  const [names, setNames] = useState<{ p1: string; p2: string }>({ p1, p2 })
 
   useEffect(() => {
     let alive = true
     let misses = 0
     const poll = async () => {
       try {
-        const rv = await showRoom(code, verRef.current >= 0 ? verRef.current : undefined)
+        const r = await showRoom(code, verRef.current >= 0 ? verRef.current : undefined)
         if (!alive) return
-        if (rv === null) return // degismedi
-        verRef.current = rv.version
-        if (rv.p1_name || rv.p2_name) setNames({ p1: rv.p1_name || p1, p2: rv.p2_name || p2 })
-        if (rv.state) setSnap(rv.state as Snap)
-        if (rv.status === 'finished') {
+        if (r === null) return // degismedi
+        verRef.current = r.version
+        setRv(r)
+        if (r.status === 'finished') {
           misses++
           if (misses > 2) setGone(true)
         } else {
           misses = 0
         }
       } catch {
-        /* gecici */
+        /* gecici ag hatasi -> sonraki poll dener */
       }
     }
     poll()
@@ -62,48 +67,111 @@ export default function Spectate({
     }
   }, [code])
 
-  const ts = snap?.turnStart
-  const dice = ts?.dice ?? []
+  // ---- Oda verisinden tahta + maç bilgisini çıkar (otoriter veya legacy) ----
+  const authoritative = !!rv?.authoritative
+  const legacy = (rv?.state ?? null) as LegacySnap | null
+  const board: GameState | null = authoritative ? (rv?.server_state ?? null) : (legacy?.turnStart ?? null)
+  const sm: ServerMatch | null = authoritative ? (rv?.server_match ?? null) : null
+
+  const score: Record<Player, number> = sm?.score ??
+    legacy?.match?.score ?? { white: 0, black: 0 }
+  const target = rv?.target ?? sm?.target ?? legacy?.match?.target ?? 1
+  const cubeVal = sm?.cube.value ?? legacy?.match?.cube?.value ?? 1
+  const cubeOwner: Player | null = sm?.cube.owner ?? legacy?.match?.cube?.owner ?? null
+  const crawford = sm?.crawford ?? legacy?.match?.isCrawford ?? false
+
+  // Konvansiyon: p1 = beyaz (altta), p2 = siyah (üstte); izleyici beyaz bakışıyla oturur.
+  const p1Name = rv?.p1_name || t('player.white')
+  const p2Name = rv?.p2_name || t('player.black')
+
+  const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
+    const isP1 = color === 'white'
+    const name = isP1 ? p1Name : p2Name
+    return {
+      name,
+      avatar: (name || '?').slice(0, 1).toUpperCase(),
+      sub: '',
+      off: board?.off[color] ?? 0,
+      active: board?.turn === color,
+      color,
+      score: score[color] ?? 0,
+      target,
+      rating: (isP1 ? rv?.p1_rating : rv?.p2_rating) ?? null,
+      avatarUrl: (isP1 ? rv?.p1_avatar : rv?.p2_avatar) ?? null,
+      frame: (isP1 ? rv?.p1_frame : rv?.p2_frame) ?? null,
+    }
+  }
+
+  const clock = rv?.clock
+  const dice = board?.dice ?? []
+  const diceUsed = board?.diceUsed ?? []
 
   return (
-    <div className="register-overlay modal spectate-overlay">
-      <div className="spectate-card" onClick={(e) => e.stopPropagation()}>
-        <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={16} />
-        </Button>
-        <div className="spectate-head">
-          <span className="live-dot" /> <Icon name="eye" size={16} /> {t('live.watching')}
-        </div>
-
-        <div className="spectate-players">
-          <span className={`sp-player ${ts?.turn === 'white' ? 'turn' : ''}`}>
-            <span className="dot white" /> {names.p1}
-            {snap?.match && <b> {snap.match.score.white}</b>}
-          </span>
-          <span className="sp-vs">–</span>
-          <span className={`sp-player ${ts?.turn === 'black' ? 'turn' : ''}`}>
-            {snap?.match && <b>{snap.match.score.black} </b>}
-            {names.p2} <span className="dot black" />
-          </span>
-        </div>
-
-        {ts ? (
-          <>
-            <MiniBoard state={ts} steps={[]} player={ts.turn} />
-            <div className="spectate-dice">
-              {dice.length > 0 ? (
-                dice.map((d, i) => <Die key={i} value={d} owner={ts.turn} used={false} />)
-              ) : (
-                <span className="sp-roll">{t('live.rolling')}</span>
-              )}
-            </div>
-          </>
-        ) : gone ? (
-          <div className="home-panel-empty">{t('live.ended')}</div>
-        ) : (
-          <div className="home-panel-empty">{t('an.loading')}</div>
-        )}
+    <div className="app game-view spectate-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
+      {/* İzleme rozeti (sol üst) */}
+      <div className="spectate-badge">
+        <span className="live-dot" /> <Icon name="eye" size={14} /> {t('live.watching')}
       </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onClose}
+        aria-label={t('common.close')}
+        title={t('common.close')}
+        style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 120 }}
+      >
+        <Icon name="x" size={16} />
+      </Button>
+
+      <main className="main game-scene">
+        <div className="game-area">
+          {board ? (
+            <>
+              <Sidebar top={mkInfo('black')} bottom={mkInfo('white')} length={target} crawford={crawford} />
+              {clock && (
+                <ClockStack
+                  active={clock.active}
+                  delay={clock.delay}
+                  white={clock.white}
+                  black={clock.black}
+                  final={30}
+                  topScore={score.black}
+                  bottomScore={score.white}
+                />
+              )}
+              <Board
+                state={board}
+                selectableFroms={new Set()}
+                targets={new Set()}
+                selectedFrom={null}
+                onSelectFrom={() => {}}
+                onSelectTarget={() => {}}
+                onDragFrom={() => {}}
+                pipTop={pipCount(board, 'black')}
+                pipBottom={pipCount(board, 'white')}
+                cube={{ value: cubeVal, owner: cubeOwner }}
+                crawford={crawford}
+                showPip
+                centerMain={
+                  dice.length > 0 ? (
+                    <div className="board-dice">
+                      {dice.map((d, i) => (
+                        <Die key={i} value={d} owner={board.turn} used={diceUsed[i] ?? false} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="result-box">
+                      <div className="result-points">{t('live.rolling')}</div>
+                    </div>
+                  )
+                }
+              />
+            </>
+          ) : (
+            <div className="spectate-status">{gone ? t('live.ended') : t('an.loading')}</div>
+          )}
+        </div>
+      </main>
     </div>
   )
 }
