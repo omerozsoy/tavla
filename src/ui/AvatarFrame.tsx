@@ -1,5 +1,4 @@
 import type { CSSProperties } from 'react'
-import { useId } from 'react'
 import SoberFrame from './SoberFrame'
 import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
 
@@ -7,9 +6,9 @@ import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
 // secili animasyon) cizilir; kucuk/cercevesiz durumda sade dairesel avatar (cerceveliyse ince
 // rarity halkasi). Eski PremiumFrame (24 tema) kaldirildi.
 //
-// PREMIUM TAC: premium=true ise avatarin USTUNE, daire GENISLIGINDE altin klasik tac oturur
-// (kullanici secimi: "Klasik Altin Tac", tam-genislik). Tek kaynak -> PlayerIdentity uzerinden
-// tum site (liderlik, canli maclar, profil, hesap bari) ayni tac. Gradient id useId ile benzersiz.
+// PREMIUM ROZET: premium=true ise avatarin ALTINA kiremit "PREMIUM" KURDELE rozeti oturur
+// (kullanici tasarimi; renk site ana renginden var(--accent)). Tek kaynak -> PlayerIdentity
+// uzerinden tum site (liderlik, profil, hesap bari, ...) ayni rozet.
 interface Props {
   src?: string | null
   frame?: string | null
@@ -19,55 +18,54 @@ interface Props {
   className?: string
   /** false: hareket durur (yogun listeler). Varsayilan true. */
   animated?: boolean
-  /** true: premium uye -> avatar ustunde altin tac. */
+  /** true: premium uye -> avatar ALTINDA kiremit "PREMIUM" kurdele rozeti. */
   premium?: boolean
 }
 
-// Premium tac — avatar dairesiyle AYNI genislikte, tepeye oturur (klasik 3 uclu altin, kiremit tasli).
-function PremiumCrown({ size }: { size: number }) {
-  const id = useId()
+// Premium rozeti — avatarin ALTINA oturan kiremit KURDELE (uclari kivrik/centikli), uzerinde
+// "PREMIUM". Renk site ana renginden (var(--accent)); fold/stroke color-mix ile turer (sabit hex
+// YASAK direktifi). Genislik ~avatarin 1.28 kati; hafif alta biner.
+function PremiumBadge({ size }: { size: number }) {
+  const w = Math.round(size * 1.28)
+  const band: CSSProperties = { fill: 'var(--accent)', stroke: 'color-mix(in srgb, var(--accent) 55%, #000)', strokeWidth: 1 }
+  const fold: CSSProperties = { fill: 'color-mix(in srgb, var(--accent) 60%, #000)' }
   return (
     <span
       aria-hidden
-      className="avf-crown"
+      className="avf-badge"
       style={{
         position: 'absolute',
         left: '50%',
-        top: 0,
-        width: size,
-        transform: 'translate(-50%, -62%)',
+        bottom: 0,
+        width: w,
+        transform: 'translate(-50%, 42%)',
         lineHeight: 0,
         pointerEvents: 'none',
         zIndex: 3,
-        filter: 'drop-shadow(0 1.5px 2.5px rgba(0,0,0,0.22))',
+        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.28))',
       }}
     >
-      <svg viewBox="0 0 120 74" width={size} height={(size * 74) / 120} style={{ display: 'block' }}>
-        <defs>
-          <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#ffe9b0" />
-            <stop offset="0.5" stopColor="#e9be5a" />
-            <stop offset="1" stopColor="#c8962f" />
-          </linearGradient>
-        </defs>
-        <path
-          d="M8 60 L16 26 L40 48 L60 12 L80 48 L104 26 L112 60 Z"
-          fill={`url(#${id})`}
-          stroke="#a9782a"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        {/* Taban bandı: ortasına DOĞRU hafif yukarı bombe (kubbe) — düz dikdörtgen yerine zarif kavis. */}
-        <path
-          d="M10 56 Q60 50 110 56 L110 68 Q60 62 10 68 Z"
-          fill={`url(#${id})`}
-          stroke="#a9782a"
-          strokeWidth="3"
-          strokeLinejoin="round"
-        />
-        <circle cx="16" cy="24" r="5.5" fill="#C9563F" />
-        <circle cx="60" cy="10" r="6.5" fill="#C9563F" />
-        <circle cx="104" cy="24" r="5.5" fill="#C9563F" />
+      <svg viewBox="0 0 128 44" width={w} height={(w * 44) / 128} style={{ display: 'block' }}>
+        {/* arka kivrik uclar (koyu kiremit) */}
+        <path d="M6 15 L34 15 L34 33 L6 33 L15 24 Z" style={fold} />
+        <path d="M122 15 L94 15 L94 33 L122 33 L113 24 Z" style={fold} />
+        {/* ana bant */}
+        <path d="M24 10 Q64 6 104 10 L104 34 Q64 38 24 34 Z" style={band} strokeLinejoin="round" />
+        {/* ust parlama */}
+        <path d="M26 12 Q64 8.5 102 12 L102 18 Q64 15 26 18 Z" fill="rgba(255,255,255,0.18)" />
+        <text
+          x="64"
+          y="26.5"
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fontSize="12"
+          fontWeight="800"
+          letterSpacing="1.2"
+          fill="#fff"
+          fontFamily="var(--tv-font-ui, 'Segoe UI', system-ui, sans-serif)"
+        >
+          PREMIUM
+        </text>
       </svg>
     </span>
   )
@@ -136,9 +134,9 @@ export default function AvatarFrame({
   // Premium degilse dogrudan avatar; premiumsa konumlandirma sarmali + avatar ustunde altin tac.
   if (!premium) return avatarEl
   return (
-    <span className="avf-crowned" style={{ position: 'relative', display: 'inline-flex', flex: '0 0 auto' }}>
+    <span className="avf-premium" style={{ position: 'relative', display: 'inline-flex', flex: '0 0 auto' }}>
       {avatarEl}
-      <PremiumCrown size={size} />
+      <PremiumBadge size={size} />
     </span>
   )
 }
