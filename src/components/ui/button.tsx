@@ -32,9 +32,10 @@ const buttonVariants = cva(
         // outline: transparent + blue metin. Hover: acik blue tinted yuzey + blue border.
         outline:
           "border-border bg-transparent text-foreground hover:bg-tint hover:border-primary hover:text-on-hover",
-        // ghost: transparent + ink metin. Hover: Warm Sand yuzey (blue degil).
+        // ghost: transparent + ink metin. Hover: secondary/outline ile AYNI — kiremit
+        // (brick) cerceve + soft krem yuzey + brick metin. TEK TIP hover dili (kullanici istegi).
         ghost:
-          "border-border bg-transparent text-foreground hover:bg-ghost-surface hover:text-foreground",
+          "border-border bg-transparent text-foreground hover:bg-tint hover:border-primary hover:text-on-hover",
         // destructive: kirmizi -> koyu kirmizi (terracotta ile karismaz)
         destructive:
           "border-destructive bg-destructive text-destructive-foreground hover:border-destructive/90 hover:bg-destructive/90",
