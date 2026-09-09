@@ -1055,7 +1055,8 @@ class AuthController extends Controller
         $users = User::orderByDesc($sortCol)
             ->orderByDesc('wins')
             ->limit($limit)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played']);
+            // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'coins', 'total_wxp', 'wins', 'losses', 'games_played', 'plan', 'plan_until']);
 
         $rows = $users->values()->map(function ($u, $i) {
             return [
@@ -1071,6 +1072,7 @@ class AuthController extends Controller
                 'wins'    => $u->wins ?? 0,
                 'losses'  => $u->losses ?? 0,
                 'games'   => $u->games_played ?? 0,
+                'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             ];
         });
 
@@ -1098,6 +1100,7 @@ class AuthController extends Controller
             'wins' => $user->wins ?? 0,
             'losses' => $user->losses ?? 0,
             'games' => $user->games_played ?? 0,
+            'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'rank' => $rank,
             'form' => $form,
             'badges' => $user->badges ?? [],

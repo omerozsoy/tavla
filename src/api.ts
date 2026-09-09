@@ -268,6 +268,7 @@ export interface LeaderRow {
   wins: number
   losses: number
   games: number
+  premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
 }
 
 export interface ShopState {
@@ -649,6 +650,7 @@ export interface PublicProfile {
   form: boolean[] // en yeni once, true=galibiyet
   badges?: string[]
   online?: boolean // cevrimici mi (last_seen son 2 dk)
+  premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)
@@ -667,6 +669,7 @@ export interface Friend {
   country?: string | null
   rating: number
   online?: boolean
+  premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
 }
 
 export async function getFriends(): Promise<{ friends: Friend[]; incoming: Friend[] }> {
@@ -1378,6 +1381,7 @@ export interface OnlinePlayer {
   frame?: string | null
   country?: string | null
   rating: number
+  premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
 }
 export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   const data = await req<{ players: OnlinePlayer[] }>('/online-players')
