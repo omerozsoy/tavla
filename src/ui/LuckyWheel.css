@@ -86,11 +86,14 @@
   stroke: var(--card-bg);
   stroke-width: 1.5;
   stroke-linejoin: round;
-  transition: stroke 0.2s ease;
+  transition: stroke 0.2s ease, filter 0.3s ease;
 }
+/* Kazanan dilim: çerçeve YOK — kiremit (accent) yumuşak dış parlama + hafif
+   parlaklık. Ayırıcı çizgi diğer dilimlerle aynı ince krem kalır. */
 .lw-slice.is-win {
-  stroke: #1c1a17; /* kazanılan dilim: siyah (ink) ince çerçeve */
-  stroke-width: 1.5;
+  filter: drop-shadow(0 0 4px var(--accent))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 55%, transparent))
+    brightness(1.06);
 }
 
 /* Merkez göbek: DAİMA koyu marka zemini (TavlaTV logosu koyu-zemin için tasarlı:
