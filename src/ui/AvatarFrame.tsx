@@ -23,8 +23,11 @@ interface Props {
   premium?: boolean
 }
 
-// Premium halka — avatari saran SABIT kiremit cember; cember boyunca "PREMIUM · " yazisi.
-// Renk site ana renginden var(--accent) (sabit hex YOK). viewBox 200 -> width=size (kutuya sigar).
+// Premium halka — avatari saran SABIT kiremit cember; cember boyunca 6 eslit "PREMIUM" + 6 nokta
+// (kullanici SVG'si mat/premium-cember.svg). Renk token'dan koyu kiremit (var(--accent) x koyu;
+// sabit hex YOK). viewBox 200 -> width=size (kutuya sigar, tasmaz).
+const RING_WORDS = [8.333, 25, 41.667, 58.333, 75, 91.667]
+const RING_DOTS = [0, 16.667, 33.333, 50, 66.667, 83.333]
 function PremiumRing({ size }: { size: number }) {
   const id = useId()
   return (
@@ -35,22 +38,20 @@ function PremiumRing({ size }: { size: number }) {
     >
       <svg viewBox="0 0 200 200" width={size} height={size} style={{ display: 'block', overflow: 'visible' }}>
         <defs>
-          <path id={id} d="M 100,100 m -91,0 a 91,91 0 1,1 182,0 a 91,91 0 1,1 -182,0" fill="none" />
+          <path id={id} d="M 100,100 m -90,0 a 90,90 0 1,1 180,0 a 90,90 0 1,1 -180,0" fill="none" />
         </defs>
-        {/* Kiremit bant + ince koyu kontur (ust/alt) */}
-        <circle cx="100" cy="100" r="91" fill="none" stroke="var(--accent)" strokeWidth="17" />
-        <circle cx="100" cy="100" r="99.5" fill="none" stroke="color-mix(in srgb, var(--accent) 55%, #000)" strokeWidth="1" />
-        <circle cx="100" cy="100" r="82.5" fill="none" stroke="color-mix(in srgb, var(--accent) 55%, #000)" strokeWidth="1" />
-        <text
-          fill="#fff"
-          fontFamily="'Outfit', system-ui, sans-serif"
-          fontSize="9"
-          fontWeight="700"
-          letterSpacing="1.4"
-        >
-          <textPath href={`#${id}`} startOffset="0%" dominantBaseline="central">
-            PREMIUM · PREMIUM · PREMIUM · PREMIUM · PREMIUM · PREMIUM · PREMIUM · PREMIUM ·{' '}
-          </textPath>
+        <circle cx="100" cy="100" r="90" fill="none" stroke="color-mix(in srgb, var(--accent) 80%, #000)" strokeWidth="20" />
+        <text fill="#fff" fontFamily="'Outfit', system-ui, sans-serif" fontSize="12.5" fontWeight="600" letterSpacing="1.2">
+          {RING_WORDS.map((o, i) => (
+            <textPath key={`w${i}`} href={`#${id}`} startOffset={`${o}%`} textAnchor="middle" dominantBaseline="central">
+              PREMIUM
+            </textPath>
+          ))}
+          {RING_DOTS.map((o, i) => (
+            <textPath key={`d${i}`} href={`#${id}`} startOffset={`${o}%`} textAnchor="middle" dominantBaseline="central">
+              ·
+            </textPath>
+          ))}
         </text>
       </svg>
     </span>
