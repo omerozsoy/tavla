@@ -1,5 +1,4 @@
 import AvatarFrame from './AvatarFrame'
-import PremiumPill from './PremiumPill'
 import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 
@@ -41,11 +40,10 @@ export default function PlayerIdentity({
 }) {
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
-      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
+      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} premium={premium} />
       <span className="player-id-col">
         <span className="player-id-name">
           <span className="player-id-name-text">{name}</span>
-          {premium && <PremiumPill />}
           {flagInline && country && (
             <CountryFlag
               code={country}
