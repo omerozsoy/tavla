@@ -3017,6 +3017,11 @@ button[aria-disabled='true'],
 .lightbox-img {
   max-width: 100%;
   max-height: 100%;
+  /* Flexbox min-size tuzagi: flex item'in varsayilan min-width/min-height:auto degeri
+     gorselin DOGAL boyutunun altina inmesini engeller ve max-width/height:100%'i ezer;
+     buyuk (yatay) gorsel viewport'u tasip kirpilmis GORUNUR. min:0 ile duzgun sigar. */
+  min-width: 0;
+  min-height: 0;
   object-fit: contain;
   border-radius: var(--radius-sm);
   cursor: default;
