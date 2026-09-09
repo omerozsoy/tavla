@@ -6,9 +6,8 @@ import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
 // secili animasyon) cizilir; kucuk/cercevesiz durumda sade dairesel avatar (cerceveliyse ince
 // rarity halkasi). Eski PremiumFrame (24 tema) kaldirildi.
 //
-// PREMIUM ROZET: premium=true ise avatarin ALTINA kiremit "PREMIUM" KURDELE rozeti oturur
-// (kullanici tasarimi; renk site ana renginden var(--accent)). Tek kaynak -> PlayerIdentity
-// uzerinden tum site (liderlik, profil, hesap bari, ...) ayni rozet.
+// PREMIUM işareti AvatarFrame'de DEGIL: 24 animasyonlu cerceveyle cakismasin diye premium marker
+// ismin YANINA (PlayerIdentity -> PremiumPill) konur. Bu bilesen yalniz avatar/cerceve cizer.
 interface Props {
   src?: string | null
   frame?: string | null
@@ -18,57 +17,6 @@ interface Props {
   className?: string
   /** false: hareket durur (yogun listeler). Varsayilan true. */
   animated?: boolean
-  /** true: premium uye -> avatar ALTINDA kiremit "PREMIUM" kurdele rozeti. */
-  premium?: boolean
-}
-
-// Premium rozeti — avatarin ALTINA oturan kiremit KURDELE (uclari kivrik/centikli), uzerinde
-// "PREMIUM". Renk site ana renginden (var(--accent)); fold/stroke color-mix ile turer (sabit hex
-// YASAK direktifi). Genislik ~avatarin 1.28 kati; hafif alta biner.
-function PremiumBadge({ size }: { size: number }) {
-  const w = Math.round(size * 1.28)
-  const band: CSSProperties = { fill: 'var(--accent)', stroke: 'color-mix(in srgb, var(--accent) 55%, #000)', strokeWidth: 1 }
-  const fold: CSSProperties = { fill: 'color-mix(in srgb, var(--accent) 60%, #000)' }
-  return (
-    <span
-      aria-hidden
-      className="avf-badge"
-      style={{
-        position: 'absolute',
-        left: '50%',
-        bottom: 0,
-        width: w,
-        transform: 'translate(-50%, 42%)',
-        lineHeight: 0,
-        pointerEvents: 'none',
-        zIndex: 3,
-        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.28))',
-      }}
-    >
-      <svg viewBox="0 0 128 44" width={w} height={(w * 44) / 128} style={{ display: 'block' }}>
-        {/* arka kivrik uclar (koyu kiremit) */}
-        <path d="M6 15 L34 15 L34 33 L6 33 L15 24 Z" style={fold} />
-        <path d="M122 15 L94 15 L94 33 L122 33 L113 24 Z" style={fold} />
-        {/* ana bant */}
-        <path d="M24 10 Q64 6 104 10 L104 34 Q64 38 24 34 Z" style={band} strokeLinejoin="round" />
-        {/* ust parlama */}
-        <path d="M26 12 Q64 8.5 102 12 L102 18 Q64 15 26 18 Z" fill="rgba(255,255,255,0.18)" />
-        <text
-          x="64"
-          y="26.5"
-          textAnchor="middle"
-          dominantBaseline="middle"
-          fontSize="12"
-          fontWeight="800"
-          letterSpacing="1.2"
-          fill="#fff"
-          fontFamily="var(--tv-font-ui, 'Segoe UI', system-ui, sans-serif)"
-        >
-          PREMIUM
-        </text>
-      </svg>
-    </span>
-  )
 }
 
 export default function AvatarFrame({
@@ -79,7 +27,6 @@ export default function AvatarFrame({
   alt = '',
   className = '',
   animated = true,
-  premium = false,
 }: Props) {
   const def = frame ? FRAME_BY_ID[frame] : undefined
   const initial = name.trim().charAt(0).toUpperCase() || '?'
@@ -131,12 +78,5 @@ export default function AvatarFrame({
       </span>
     )
 
-  // Premium degilse dogrudan avatar; premiumsa konumlandirma sarmali + avatar ustunde altin tac.
-  if (!premium) return avatarEl
-  return (
-    <span className="avf-premium" style={{ position: 'relative', display: 'inline-flex', flex: '0 0 auto' }}>
-      {avatarEl}
-      <PremiumBadge size={size} />
-    </span>
-  )
+  return avatarEl
 }

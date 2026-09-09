@@ -11937,8 +11937,6 @@ button.acct-row:hover:not(:disabled) {
 .lb-body {
   max-height: min(60vh, 520px);
   overflow-y: auto;
-  /* Premium "PREMIUM" rozeti avatarın ALTINA taştığı için alt satırda kırpılmasın: küçük alt boşluk. */
-  padding-bottom: 14px;
 }
 .lb-div-head {
   display: flex;
