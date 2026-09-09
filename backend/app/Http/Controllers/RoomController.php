@@ -533,7 +533,13 @@ class RoomController extends Controller
         $rooms = Room::where('status', 'playing')
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')
-            ->whereNotNull('state')
+            // Tahta durumu VAR: legacy `state` (istemci PUT) VEYA `server_state` (AUTHORITATIVE).
+            // Otoriter modda istemci tam-state PUT etmez (App.tsx: authoritative -> updateRoom atlanir)
+            // -> `state` NULL kalir. Sadece whereNotNull('state') derse tum otoriter maclar listeden
+            // DUSER (ana sayfa "Canli Maclar" bombos). Ikisinden biri doluysa mac aktiftir.
+            ->where(function ($q) {
+                $q->whereNotNull('state')->orWhereNotNull('server_state');
+            })
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
