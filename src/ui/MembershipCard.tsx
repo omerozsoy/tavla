@@ -56,14 +56,14 @@ export default function MembershipCard({ user, onRenew, onToggleAutoRenew }: Pro
       {premium && (onRenew || onToggleAutoRenew) && (
         <div className="mem-status-actions">
           {onRenew && (
-            <Button type="button" variant="default" onClick={onRenew}>
+            <Button type="button" variant="ghost" onClick={onRenew}>
               <Icon name="crown" size={16} /> {t('mem.status.renew')}
             </Button>
           )}
           {onToggleAutoRenew && (
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               onClick={() => {
                 // Yalniz IPTAL ederken onay iste (acarken gerek yok). Native confirm yerine
                 // site-tasarimli in-app modal (register-overlay) -> mobil + tema tutarli.

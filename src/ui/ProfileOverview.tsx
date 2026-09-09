@@ -147,7 +147,7 @@ export default function ProfileOverview({
                 )}
               </div>
               <div className="prof-ov-actions">
-                <Button variant="secondary" className="prof-ov-edit" onClick={onEdit}>
+                <Button variant="ghost" className="prof-ov-edit" onClick={onEdit}>
                   <Icon name="settings" size={16} /> {t('prof.editBtn')}
                 </Button>
                 {onOpenOrders && (
