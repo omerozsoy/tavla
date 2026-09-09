@@ -157,7 +157,13 @@ class LuckyWheelRewardResource extends Resource
                     ->formatStateUsing(fn ($state) => self::typeOptions()[$state] ?? $state),
                 Tables\Columns\TextColumn::make('amount')->label('Miktar')
                     ->formatStateUsing(fn ($state, LuckyWheelReward $r) => in_array($r->type, ['COIN', 'PREMIUM_DAY', 'FREE_SPIN'], true) ? (int) $state : ($r->reference_id ?: '—')),
-                Tables\Columns\TextColumn::make('weight')->label('Weight')->sortable()
+                // Weight tablodan DOĞRUDAN düzenlenir (tıkla-yaz-Enter). Düzenle formuna
+                // girmeden hızlı ağırlık ayarı; blur/Enter'da anında kaydolur, "Gerçek %"
+                // sütunu (totalActiveWeight) sonraki render'da yeniden hesaplanır.
+                Tables\Columns\TextInputColumn::make('weight')->label('Weight')->sortable()
+                    ->type('number')
+                    ->rules(['required', 'numeric', 'min:0'])
+                    ->extraInputAttributes(['min' => 0, 'step' => 1, 'style' => 'width:5.5rem'])
                     // Ham toplam: görünür (filtreli) TÜM ödüllerin weight toplamı (aktif+pasif).
                     ->summarize(Tables\Columns\Summarizers\Sum::make()->label('Ham toplam')),
                 Tables\Columns\TextColumn::make('probability')->label('Gerçek %')
