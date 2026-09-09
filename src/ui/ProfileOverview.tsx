@@ -107,6 +107,7 @@ export default function ProfileOverview({
   useEscape(onClose)
 
   const fullName = `${user.first_name ?? ''} ${user.last_name ?? ''}`.trim() || user.nickname
+  const premium = user.plan_active !== 'free' // süresi geçerli ücretli plan -> avatar üstünde taç
   const age = ageFrom(user.birth_date)
   const cc = (user.country || '').toLowerCase()
   const country = user.country ? countryName(user.country, lang) : ''
@@ -133,7 +134,7 @@ export default function ProfileOverview({
         {/* --- Kimlik + kusanili tahta --- */}
         <div className="prof-ov-top">
           <div className="prof-ov-id">
-            <AvatarFrame src={avatar} frame={user.avatar_frame} size={96} name={fullName} animated />
+            <AvatarFrame src={avatar} frame={user.avatar_frame} size={96} name={fullName} premium={premium} animated />
             <div className="prof-ov-id-text">
               <div className="prof-ov-name">{fullName}</div>
               <div className="prof-ov-meta">
@@ -212,7 +213,7 @@ export default function ProfileOverview({
             title={t('prof.changeFrame')}
           >
             <div className="prof-ov-frame-prev">
-              <AvatarFrame src={avatar} frame={user.avatar_frame} size={84} name={fullName} animated />
+              <AvatarFrame src={avatar} frame={user.avatar_frame} size={84} name={fullName} premium={premium} animated />
             </div>
             <div className="prof-ov-board-name">
               <span className="prof-ov-board-lbl">{t('settings.tabFrame')}</span>

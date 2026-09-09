@@ -8187,7 +8187,7 @@ button.acct-row:hover:not(:disabled) {
      ortali. Alttaki takvim/panel/dashboard ile birebir hizali. */
   width: 100%;
   max-width: var(--lobby-w);
-  margin: 0 auto 22px;
+  margin: 0 auto; /* alt 22px margin kaldirildi (kullanici) */
   overflow: hidden;
   /* Noktalarin altindaki serit kaldirildi: gorsel viewer'i tam kaplar, alt nokta
      alani sayfa zeminine oturur (ayri gri/sand bant gorunmez). */
@@ -11937,6 +11937,8 @@ button.acct-row:hover:not(:disabled) {
 .lb-body {
   max-height: min(60vh, 520px);
   overflow-y: auto;
+  /* Premium taç avatarın üstüne taştığı için üst satırda kırpılmasın: küçük üst boşluk. */
+  padding-top: 12px;
 }
 .lb-div-head {
   display: flex;
@@ -17624,6 +17626,24 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* TÜM kartlar AYNI boy (Çerçevesiz dahil); buton en alta sabit (hizalı). */
+  min-height: 164px;
+}
+/* Al/Tak butonu kartın en altına yaslanır -> tüm butonlar aynı hizada. */
+.shop-anim > button {
+  margin-top: auto;
+}
+/* Satın alma / kuşanma butonları biraz daha KÜÇÜK (kullanıcı): 44px -> 34px. */
+.frame-shop .shop-anim > button[data-slot='button'],
+.frame-shop .shop-grid button[data-slot='button'] {
+  height: 34px;
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 0.82rem;
+}
+.frame-shop .shop-anim > button[data-slot='button'] [data-slot],
+.frame-shop .shop-anim > button[data-slot='button'] svg {
+  --coin-size: 13px;
 }
 .shop-anim-preview {
   display: flex;

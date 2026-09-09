@@ -6539,7 +6539,7 @@ export default function App() {
                       <span className="rm-opp">
                         <span className="rm-players">
                           <span className="rm-me">
-                            <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
+                            <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} premium={premium} className="rm-avf" />
                             {myName}
                           </span>
                           <span className="rm-vs">vs</span>
@@ -6575,7 +6575,7 @@ export default function App() {
                   <span className="rm-opp">
                     <span className="rm-players">
                       <span className="rm-me">
-                        <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
+                        <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} premium={premium} className="rm-avf" />
                         {profile.nickname || t('resume.you')}
                       </span>
                       <span className="rm-vs">vs</span>
