@@ -44,14 +44,21 @@ class AuthoritativeLoopTest extends TestCase
             : ['black', 'p2', 'white', 'p1'];
     }
 
+    /** Validator'ın döneceği en güncel "oynanmış" state (fakeFlip günceller, closure stub okur). */
+    private ?array $nextFlip = null;
+
     // Validator: mevcut tahtayı verilen turn'e çevirip zarı boşaltarak "oynanmış" state döndür.
+    // NOT: Http::fake() stub'ları BİRİKTİRİR ve İLK eşleşen kazanır -> aynı testte fakeFlip'i
+    // ikinci kez çağırınca yeni state ES GEÇİLİRDİ (ilk stub kalıcı). Çözüm: CLOSURE stub, her
+    // istekte $this->nextFlip'i (en güncel) okur -> kaç kez fake'lenirse fake'lensin doğru state.
     private function fakeFlip(string $toTurn, array $off = ['white' => 0, 'black' => 0]): void
     {
         $s = Backgammon::initialState();
         $s['turn'] = $toTurn;
         $s['dice'] = [];
         $s['off'] = $off;
-        Http::fake(['validator.test/validate' => Http::response(['valid' => true, 'state' => $s])]);
+        $this->nextFlip = $s;
+        Http::fake(['validator.test/validate' => fn () => Http::response(['valid' => true, 'state' => $this->nextFlip])]);
     }
 
     public function test_opening_sets_starter_and_board(): void
@@ -144,9 +151,8 @@ class AuthoritativeLoopTest extends TestCase
         // Oyun bitti (maç sürüyor) -> yeni oyunda sayaç 0'a döner: açılış eli şartı yine geçerli.
         $this->postJson('/api/rooms/LOOPX/roll', ['token' => $starterTok === 'p1' ? 'p2' : 'p1'])->assertOk();
         $this->fakeFlip($starterColor, ['white' => 0, 'black' => 0, $otherColor => 15]);
-        $mv = $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]]);
-        $mv->dump();
-        $mv->assertOk()->assertJsonPath('match_done', false);
+        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
+            ->assertOk()->assertJsonPath('match_done', false);
         $sm = Room::first()->fresh()->server_match;
         $this->assertSame(0, $sm['turns']);
         $this->assertFalse($sm['opened']); // yeni oyun -> yeni açılış eli
