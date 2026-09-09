@@ -6052,7 +6052,19 @@ export default function App() {
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
       {infoOpen && (
-        <Info onClose={() => setInfoOpen(false)} tab={infoTab} onTab={setInfoTab} />
+        <Info
+          onClose={() => setInfoOpen(false)}
+          tab={infoTab}
+          onTab={setInfoTab}
+          currentRating={user?.rating ?? undefined}
+          loggedIn={!!user}
+          fair={{
+            commitment: fairRef.current.commitment,
+            clientSeed: fairRef.current.clientSeed,
+            serverSeed: matchWinner(match) ? fairRef.current.serverSeed : undefined,
+            rolls: fairRef.current.nonce,
+          }}
+        />
       )}
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />

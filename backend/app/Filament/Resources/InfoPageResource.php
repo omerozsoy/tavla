@@ -9,11 +9,19 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
-/** Bilgi Sayfalari: /bilgi/<slug> sekmeleri. Sabit 6 sayfa; yalnizca duzenlenir. */
+/** Bilgi Sayfalari: yalnizca DUZENLENEBILIR sekmeler (Hakkinda + Hizmetler).
+ *  Rutbeler/Puanlama/Basarilarim/Adil Zar canli bilesendir (frontend), panelde yok. */
 class InfoPageResource extends Resource
 {
     protected static ?string $model = InfoPage::class;
+
+    // Yalnizca duzenlenebilir metin sayfalari; canli bilesen sekmeleri gizli.
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()->whereIn('slug', ['about', 'services']);
+    }
 
     protected static ?string $slug = 'bilgi-sayfalari';
 

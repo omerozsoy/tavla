@@ -1,9 +1,11 @@
 /**
- * Info — menüden açılan "Bilgi" sayfası. Sekmeler artık admin panelden (İçerik ›
- * Bilgi Sayfaları) RichEditor ile düzenlenen içeriklerden gelir. Her sekme kendi
- * URL'sine sahiptir: /bilgi/hakkinda, /bilgi/hizmetler, /bilgi/rutbeler, /bilgi/puanlama,
- * /bilgi/basarilarim, /bilgi/adil-zar. Eski canlı bileşenler (RankProgression/Scoring/
- * Achievements/Fairness) yerini düzenlenebilir metne bıraktı.
+ * Info — menüden açılan "Bilgi" sayfası. Sekmeler kendi URL'lerine sahiptir:
+ * /bilgi/hakkinda, /bilgi/hizmetler, /bilgi/rutbeler, /bilgi/puanlama,
+ * /bilgi/basarilarim, /bilgi/adil-zar.
+ *
+ * Hakkında ve Hizmetler admin panelden (İçerik › Bilgi Sayfaları) RichEditor ile
+ * düzenlenir (info_pages). Rütbeler/Puanlama/Başarılarım/Adil Zar ise CANLI/hesaplı
+ * bileşenlerdir (RankProgression/Scoring/Achievements/FairnessModal) — olduğu gibi korunur.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -13,10 +15,14 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { listInfoPages, type InfoPage, type InfoPageSlug } from '../api'
 import { Lightbox, mediaSrc } from './ContentView'
+import { RankProgression } from './RankProgression'
+import FairnessModal from './FairnessModal'
+import Achievements from './Achievements'
+import Scoring from './Scoring'
 
 export type InfoTab = InfoPageSlug
 
-// Sabit sekme sırası + varsayılan etiket (sayfa yüklenene kadar / başlık boşsa).
+// Sabit sekme sırası + varsayılan etiket (admin başlığı yoksa / bileşen sekmeleri için).
 const TABS: { slug: InfoTab; labelKey: string }[] = [
   { slug: 'about', labelKey: 'info.tab.about' },
   { slug: 'services', labelKey: 'menu.services' },
@@ -26,16 +32,21 @@ const TABS: { slug: InfoTab; labelKey: string }[] = [
   { slug: 'fair', labelKey: 'fair.title' },
 ]
 
+// Admin panelden düzenlenen (info_pages) rich-text sekmeler. Diğerleri canlı bileşen.
+const EDITABLE: InfoTab[] = ['about', 'services']
+
 interface Props {
   onClose: () => void
   tab: InfoTab
   onTab: (t: InfoTab) => void
+  currentRating?: number
+  loggedIn?: boolean
+  fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-export default function Info({ onClose, tab, onTab }: Props) {
+export default function Info({ onClose, tab, onTab, currentRating, loggedIn = false, fair }: Props) {
   const { t } = useT()
   const [pages, setPages] = useState<Record<string, InfoPage>>({})
-  const [loading, setLoading] = useState(true)
   useEscape(onClose)
 
   useEffect(() => {
@@ -46,10 +57,7 @@ export default function Info({ onClose, tab, onTab }: Props) {
         setPages(map)
       })
       .catch(() => {})
-      .finally(() => setLoading(false))
   }, [])
-
-  const active = pages[tab]
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -61,7 +69,7 @@ export default function Info({ onClose, tab, onTab }: Props) {
           <Icon name="info" size={20} /> {t('info.title')}
         </h2>
 
-        {/* Sekmeler (etiket = admin başlığı, yoksa i18n) */}
+        {/* Sekmeler (düzenlenebilir sekmelerde etiket = admin başlığı) */}
         <div className="prof-ov-tabs" role="tablist">
           {TABS.map(({ slug, labelKey }) => (
             <button
@@ -72,24 +80,55 @@ export default function Info({ onClose, tab, onTab }: Props) {
               className={tab === slug ? 'active' : ''}
               onClick={() => onTab(slug)}
             >
-              {pages[slug]?.title || t(labelKey)}
+              {(EDITABLE.includes(slug) && pages[slug]?.title) || t(labelKey)}
             </button>
           ))}
         </div>
 
-        <div className="info-tab-pane">
-          {loading && !active ? (
-            <div className="admin-empty">{t('admin.loading')}</div>
-          ) : (
-            <InfoPane page={active} />
-          )}
-        </div>
+        {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
+        {EDITABLE.includes(tab) && (
+          <div className="info-tab-pane">
+            <InfoPane page={pages[tab]} />
+          </div>
+        )}
+
+        {tab === 'ranks' && (
+          <div className="info-tab-pane">
+            <RankProgression currentRating={currentRating} />
+          </div>
+        )}
+
+        {tab === 'scoring' && (
+          <div className="info-tab-pane">
+            <Scoring currentRating={currentRating} />
+          </div>
+        )}
+
+        {tab === 'badges' && (
+          <div className="info-tab-pane">
+            <p className="ach-howto-intro">{t('ach.howtoIntro')}</p>
+            <Achievements embed loggedIn={loggedIn} />
+          </div>
+        )}
+
+        {tab === 'fair' && (
+          <div className="info-tab-pane">
+            <FairnessModal
+              embed
+              commitment={fair.commitment}
+              clientSeed={fair.clientSeed}
+              serverSeed={fair.serverSeed}
+              rolls={fair.rolls}
+              onClose={() => {}}
+            />
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
-// Tek bilgi sayfası: RichEditor HTML gövdesi + (varsa) altında minik galeri (lightbox).
+// Tek düzenlenebilir bilgi sayfası: RichEditor HTML gövdesi + (varsa) altında minik galeri (lightbox).
 function InfoPane({ page }: { page?: InfoPage }) {
   const { t } = useT()
   const gallery = useMemo(
@@ -111,7 +150,7 @@ function InfoPane({ page }: { page?: InfoPage }) {
     return () => window.removeEventListener('keydown', onKey, true)
   }, [lightbox])
 
-  if (!page) return <div className="admin-empty">{t('content.empty')}</div>
+  if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
 
   return (
     <>
