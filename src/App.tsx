@@ -98,6 +98,7 @@ import {
   type Slot,
   type ChatMsg,
   submitGameLog,
+  flushGameLogQueue,
   type GameLogTurn,
 } from './api'
 import Chat from './ui/Chat'
@@ -1917,7 +1918,8 @@ export default function App() {
   }
 
   // Kaydı sunucuya gönderir (en iyi çaba). final=true → maç sonu: kazanan + skor + 'finished'.
-  function flushMatchLog(final: boolean) {
+  // keepalive=true → sayfa kapanırken/gizlenirken; tarayıcı unload sonrası bile teslim eder.
+  function flushMatchLog(final: boolean, keepalive = false) {
     const log = gameRecordRef.current
     if (!log) return
     let p1: string | null
@@ -1940,19 +1942,30 @@ export default function App() {
       p2 = pName('black')
     }
     const mW = matchWinner(match)
-    void submitGameLog({
-      uid: log.uid,
-      slot: log.slot,
-      mode: log.mode,
-      target: log.target,
-      p1_name: p1,
-      p2_name: p2,
-      status: final ? 'finished' : 'playing',
-      winner: final ? (mW === 'white' || mW === 'black' ? mW : null) : null,
-      score: final ? { white: match.score.white, black: match.score.black } : null,
-      events: log.events,
-    })
+    void submitGameLog(
+      {
+        uid: log.uid,
+        slot: log.slot,
+        mode: log.mode,
+        target: log.target,
+        p1_name: p1,
+        p2_name: p2,
+        status: final ? 'finished' : 'playing',
+        winner: final ? (mW === 'white' || mW === 'black' ? mW : null) : null,
+        score: final ? { white: match.score.white, black: match.score.black } : null,
+        events: log.events,
+      },
+      { keepalive },
+    )
+    lastFlushLenRef.current = log.events.length
   }
+
+  // Son gönderilen olay sayısı (periyodik ara-flush eşiği için). Yeni kayıtta 0'lanır.
+  const lastFlushLenRef = useRef(0)
+  // flushMatchLog'un EN YENİ kapanışını tutan ref: pagehide/visibility listener'ı
+  // (mount'ta bir kez bağlanır) güncel maç durumuyla flush edebilsin diye.
+  const flushLogRef = useRef<(final: boolean, keepalive?: boolean) => void>(() => {})
+  flushLogRef.current = flushMatchLog
 
   // turnsPlayed'i ref'e yansit (commitTurn aninda ortak sira degeri icin).
   useEffect(() => {
@@ -1988,6 +2001,7 @@ export default function App() {
         }
         prevGameEndRef.current = false
         gameResultsRef.current.length = 0 // yeni mac -> otoriter sonuclari sifirla
+        lastFlushLenRef.current = 0 // yeni kayit -> periyodik ara-flush esigini sifirla
         setRecordUid(code)
       }
     } else if (mode === 'pvb' || mode === 'pvp') {
@@ -2008,6 +2022,7 @@ export default function App() {
         }
         prevGameEndRef.current = false
         gameResultsRef.current.length = 0 // yeni mac -> otoriter sonuclari sifirla
+        lastFlushLenRef.current = 0 // yeni kayit -> periyodik ara-flush esigini sifirla
         setRecordUid(uid)
       }
     }
@@ -2038,6 +2053,42 @@ export default function App() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchOver])
+
+  // PERİYODİK ARA-FLUSH: ilk oyun bitmeden TERK edilen maçlar da sunucuya düşsün.
+  // Her tur değişiminde: aktif+bitmemiş kayıt, son flush'tan bu yana >=8 yeni olay
+  // biriktiyse kısmi gönder (idempotent -> tekrar yazmak zararsız).
+  useEffect(() => {
+    const rec = gameRecordRef.current
+    if (!rec || rec.done) return
+    if (rec.events.length - lastFlushLenRef.current >= 8) {
+      flushMatchLog(false) // lastFlushLenRef flushMatchLog içinde güncellenir
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [turnsPlayed])
+
+  // Sayfa kapanışı/gizlenmesi + kuyruk kurtarma (mount'ta BİR KEZ bağlanır).
+  //  - pagehide / visibilitychange(hidden): keepalive flush -> tarayıcı unload sonrası
+  //    bile teslim eder (terk/kapatmada kayıp önlenir). flushLogRef güncel durumu tutar.
+  //  - açılışta + ağ geri geldiğinde bekleyen (başarısız) kayıt kuyruğunu yeniden dener.
+  useEffect(() => {
+    const onHide = () => {
+      const rec = gameRecordRef.current
+      if (rec && !rec.done && rec.events.length > 0) flushLogRef.current(false, true)
+    }
+    const onVis = () => {
+      if (document.visibilityState === 'hidden') onHide()
+    }
+    const onOnline = () => void flushGameLogQueue()
+    window.addEventListener('pagehide', onHide)
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('online', onOnline)
+    void flushGameLogQueue() // açılışta bekleyenleri dene
+    return () => {
+      window.removeEventListener('pagehide', onHide)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('online', onOnline)
+    }
+  }, [])
 
   function computeMoveError(finalPlayed: Step[]): MoveError | null {
     // Hata tespiti icin TUM turun siralamasini kullan (tur basinda hesaplanan)
