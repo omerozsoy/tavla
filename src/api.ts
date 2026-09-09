@@ -1805,11 +1805,83 @@ export interface GameLogPayload {
   score?: { white: number; black: number } | null
   events: GameLogTurn[]
 }
-export async function submitGameLog(payload: GameLogPayload): Promise<void> {
+// ---- Maç kaydı kuyruğu (idempotent retry) ----------------------------------
+// Başarısız gönderimler localStorage'da tutulur; mount/online/başarılı-gönderim
+// anında yeniden denenir. Backend idempotent (uid firstOrCreate + slot kolonu
+// üzerine yaz + winner/score/status yalnız verilirse) -> tekrar göndermek GÜVENLİ.
+// Anahtar uid+slot: aynı maç-slot için yalnız EN YENİ payload saklanır (dedup).
+const GAMELOG_QUEUE_KEY = 'tavla.gamelog.queue'
+const GAMELOG_QUEUE_MAX = 40 // en fazla bu kadar bekleyen (uid+slot) tut
+
+type GameLogQueue = Record<string, GameLogPayload>
+
+function readGameLogQueue(): GameLogQueue {
   try {
-    await req('/game-logs', { method: 'POST', body: JSON.stringify(payload) })
+    const raw = localStorage.getItem(GAMELOG_QUEUE_KEY)
+    return raw ? (JSON.parse(raw) as GameLogQueue) : {}
   } catch {
-    // en iyi çaba: log yazılamazsa oyun akışını bozma
+    return {}
+  }
+}
+function writeGameLogQueue(q: GameLogQueue): void {
+  try {
+    localStorage.setItem(GAMELOG_QUEUE_KEY, JSON.stringify(q))
+  } catch {
+    // kota/erişim hatası -> sessiz
+  }
+}
+function enqueueGameLog(payload: GameLogPayload): void {
+  const q = readGameLogQueue()
+  const key = `${payload.uid}:${payload.slot}`
+  delete q[key] // en yeni girdiyi SONA taşı (insertion order = yaşlanma sırası)
+  q[key] = payload
+  const keys = Object.keys(q)
+  if (keys.length > GAMELOG_QUEUE_MAX) {
+    for (const k of keys.slice(0, keys.length - GAMELOG_QUEUE_MAX)) delete q[k]
+  }
+  writeGameLogQueue(q)
+}
+
+// Bekleyen tüm kayıtları yeniden dener; başarılı olanları kuyruktan siler.
+let gameLogFlushing = false
+export async function flushGameLogQueue(): Promise<void> {
+  if (gameLogFlushing) return
+  gameLogFlushing = true
+  try {
+    const q = readGameLogQueue()
+    const keys = Object.keys(q)
+    if (!keys.length) return
+    for (const k of keys) {
+      try {
+        await req('/game-logs', { method: 'POST', body: JSON.stringify(q[k]) })
+        delete q[k]
+      } catch {
+        // hâlâ başarısız -> kuyrukta kalsın, sonraki tetiklemede tekrar denenir
+      }
+    }
+    writeGameLogQueue(q)
+  } finally {
+    gameLogFlushing = false
+  }
+}
+
+// Maç kaydını gönderir (en iyi çaba). keepalive=true -> sayfa kapanırken/gizlenirken
+// tarayıcı isteği unload sonrası bile teslim eder. Başarısızsa idempotent kuyruğa alınır.
+export async function submitGameLog(
+  payload: GameLogPayload,
+  opts: { keepalive?: boolean } = {},
+): Promise<void> {
+  try {
+    await req('/game-logs', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+      keepalive: opts.keepalive,
+    })
+    // Ağ geri gelmiş olabilir: başarılı normal gönderimde bekleyen kuyruğu da boşalt.
+    if (!opts.keepalive) void flushGameLogQueue()
+  } catch {
+    // en iyi çaba: yazılamazsa oyun akışını bozma; idempotent kuyruğa al, sonra dene.
+    enqueueGameLog(payload)
   }
 }
 
@@ -1818,6 +1890,23 @@ export async function sendChat(code: string, text: string): Promise<{ messages: 
   return req(`/rooms/${encodeURIComponent(code)}/chat`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), text }),
+  })
+}
+
+// Canlı maç İZLEME presence: izleyici. name -> giriş yoksa misafir adı. leave -> kaydı sil (sekme kapanışı).
+export interface RoomViewer {
+  name: string
+  avatar?: string | null
+  frame?: string | null
+}
+export async function watchRoom(
+  code: string,
+  name?: string,
+  leave = false,
+): Promise<{ viewers: RoomViewer[]; count: number }> {
+  return req(`/rooms/${encodeURIComponent(code)}/watch`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken(), name, leave }),
   })
 }
 

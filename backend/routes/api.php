@@ -74,6 +74,8 @@ Route::middleware('throttle:240,1')->group(function () {
 Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
 Route::middleware('throttle:600,1')->post('/rooms/{code}/live', [RoomController::class, 'live']);
+// Canli mac IZLEME presence (spectator heartbeat): izleyici kaydi + izleyen listesi/sayisi. Herkese acik.
+Route::middleware('throttle:120,1')->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
 // GEÇİCİ TEŞHİS (Faz 2): backend Node validator'a ulaşabiliyor mu? Secret/URL AÇMAZ. Sorun
 // çözülünce KALDIR. Tarayıcıda /api/validator-check açılır. Limit bol (teşhis için yenilenebilsin).
 Route::middleware('throttle:60,1')->get('/validator-check', [RoomController::class, 'validatorCheck']);

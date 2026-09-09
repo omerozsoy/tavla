@@ -7,7 +7,7 @@ import Board from './Board'
 import Sidebar from './Sidebar'
 import ClockStack from './ClockStack'
 import { Die } from './Dice'
-import { showRoom, type RoomView, type ServerMatch } from '../api'
+import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer, type ChatMsg } from '../api'
 import { pipCount } from '../engine/evaluate'
 import type { GameState, Player } from '../engine/types'
 
@@ -26,17 +26,21 @@ interface LegacySnap {
 // oynuyormus gibi gosterir. Hem legacy (state.turnStart) hem otoriter (server_state) oda desteklenir.
 export default function Spectate({
   code,
+  viewerName,
   onClose,
 }: {
   code: string
   p1?: string
   p2?: string
+  viewerName?: string // izleyicinin adı (giriş yoksa misafir); presence heartbeat için
   onClose: () => void
 }) {
   const { t } = useT()
   useEscape(onClose)
   const [rv, setRv] = useState<RoomView | null>(null)
   const [gone, setGone] = useState(false)
+  const [viewers, setViewers] = useState<RoomViewer[]>([])
+  const [viewerCount, setViewerCount] = useState(0)
   const verRef = useRef(-1)
 
   useEffect(() => {
@@ -66,6 +70,28 @@ export default function Spectate({
       window.clearInterval(id)
     }
   }, [code])
+
+  // İzleme presence heartbeat: ~5sn'de bir kendini izleyici olarak bildir + izleyen listesini al.
+  useEffect(() => {
+    let alive = true
+    const beat = async () => {
+      try {
+        const r = await watchRoom(code, viewerName)
+        if (!alive) return
+        setViewers(r.viewers)
+        setViewerCount(r.count)
+      } catch {
+        /* geçici */
+      }
+    }
+    beat()
+    const id = window.setInterval(beat, 5000)
+    return () => {
+      alive = false
+      window.clearInterval(id)
+      watchRoom(code, viewerName, true).catch(() => {}) // ayrıl (best-effort)
+    }
+  }, [code, viewerName])
 
   // ---- Oda verisinden tahta + maç bilgisini çıkar (otoriter veya legacy) ----
   const authoritative = !!rv?.authoritative
@@ -105,6 +131,7 @@ export default function Spectate({
   const clock = rv?.clock
   const dice = board?.dice ?? []
   const diceUsed = board?.diceUsed ?? []
+  const messages: ChatMsg[] = rv?.messages ?? []
 
   return (
     <div className="app game-view spectate-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
@@ -172,6 +199,46 @@ export default function Spectate({
           )}
         </div>
       </main>
+
+      {/* Sol alt: izleyenler (sayı + isimler) + maç sohbeti (salt-okunur) */}
+      <div className="spectate-side">
+        <div className="sp-viewers">
+          <div className="sp-viewers-head">
+            <Icon name="eye" size={14} /> {t('live.watchCount', { n: viewerCount })}
+          </div>
+          {viewers.length > 0 && (
+            <div className="sp-viewers-list">
+              {viewers.map((v, i) => (
+                <span key={i} className="sp-viewer" title={v.name}>
+                  {v.avatar ? (
+                    <img className="sp-viewer-av" src={v.avatar} alt="" />
+                  ) : (
+                    <span className="sp-viewer-av sp-viewer-init">{(v.name || '?').slice(0, 1).toUpperCase()}</span>
+                  )}
+                  <span className="sp-viewer-name">{v.name}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="sp-chat">
+          <div className="sp-chat-head">
+            <Icon name="chat" size={14} /> {t('chat.title')}
+          </div>
+          <div className="sp-chat-list">
+            {messages.length === 0 ? (
+              <div className="chat-empty">{t('chat.empty')}</div>
+            ) : (
+              messages.map((m) => (
+                <div key={m.id} className="chat-msg theirs">
+                  <span className="chat-name">{m.name}</span>
+                  <span className="chat-text">{m.text}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
