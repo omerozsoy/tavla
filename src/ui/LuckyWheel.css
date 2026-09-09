@@ -84,7 +84,7 @@
 /* Dilimler: ince krem ayırıcı çizgi (flat, keskin). Kazanan = kiremit vurgu. */
 .lw-slice {
   stroke: var(--card-bg);
-  stroke-width: 2.5;
+  stroke-width: 1.5;
   stroke-linejoin: round;
   transition: stroke 0.2s ease;
 }
