@@ -43,7 +43,7 @@ interface Props {
 const SIZE = 340
 const C = SIZE / 2 // 170 — merkez
 const R = 150 // dilim yarıçapı
-const RING = R + 6 // ince dış halka (flat, ink)
+const RING = R + 3 // ince dış halka (flat, ink)
 const HUB = 46 // merkez göbek yarıçapı
 
 // Backend ikon adını (Phosphor) güvenli frontend IconName'e çevir; yoksa tipe göre.
