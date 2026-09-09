@@ -1425,6 +1425,96 @@ class RoomController extends Controller
     }
 
     /**
+     * MERKEZİ KÜP KURAL KONTROLÜ (sunucu-otoriter): $color oyuncusu ŞU AN küpü teklif
+     * edebilir mi? Sonuç ['allowed'=>bool, 'reason'=>?string]. Frontend engine/match.ts
+     * `cubeAvailability` ile AYNI kural kümesi; buton ile enforce tek kaynaktan.
+     *
+     * reason kodları (net neden):
+     *  INVALID_MATCH_STATE   - oda/durum/maç yok ya da otoriter değil
+     *  GAME_FINISHED         - maç bitti
+     *  CRAWFORD_GAME         - Crawford oyunu (çift yasak)
+     *  ONE_POINT_MATCH       - 1 puanlık maç: kup hiç kullanılmaz
+     *  NOT_PLAYERS_TURN      - sıra sende değil
+     *  DICE_ALREADY_ROLLED   - zar atıldı (küp yalnız zar atmadan önce)
+     *  OPENING_NOT_PLAYED    - açılış eli oynanmadı (turns=0)
+     *  DOUBLE_ALREADY_PENDING- bekleyen bir küp teklifi var
+     *  CUBE_AT_MAX           - küp 64 tavanda (daha fazla katlanamaz)
+     *  NOT_CUBE_OWNER        - küp rakibin elinde
+     *  DEAD_CUBE             - ölü küp: katlamak teklif edene puan kazandırmaz
+     */
+    private function cubeAvailability(Room $room, string $color): array
+    {
+        $deny = fn (string $reason) => ['allowed' => false, 'reason' => $reason];
+
+        if (! $room->authoritative) {
+            return $deny('INVALID_MATCH_STATE');
+        }
+        $state = is_array($room->server_state) ? $room->server_state : null;
+        $sm = is_array($room->server_match) ? $room->server_match : null;
+        if (! $state || ! $sm) {
+            return $deny('INVALID_MATCH_STATE');
+        }
+        if (! empty($sm['done'])) {
+            return $deny('GAME_FINISHED');
+        }
+        if (! empty($sm['crawford'])) {
+            return $deny('CRAWFORD_GAME');
+        }
+        $target = (int) ($sm['target'] ?? 1);
+        if ($target <= 1) {
+            // 1 puanlık maç: tek oyun maçı bitirir -> küp anlamsız (gerçek tavla kuralı).
+            return $deny('ONE_POINT_MATCH');
+        }
+        if (($state['turn'] ?? 'white') !== $color) {
+            return $deny('NOT_PLAYERS_TURN');
+        }
+        if (! empty($state['dice'])) {
+            // Küp yalnızca sıra sahibinin zar ATMADAN önceki hakkıdır.
+            return $deny('DICE_ALREADY_ROLLED');
+        }
+        if ((int) ($sm['turns'] ?? 0) < 1) {
+            // Açılış eli oynanmadan küp teklif edilemez (turnsPlayed>0 şartı, frontend ile aynı).
+            return $deny('OPENING_NOT_PLAYED');
+        }
+        $cube = $this->cubeOf($room);
+        if ($cube['pending'] !== null) {
+            return $deny('DOUBLE_ALREADY_PENDING');
+        }
+        if ($cube['value'] >= 64) {
+            return $deny('CUBE_AT_MAX');
+        }
+        if ($cube['owner'] !== null && $cube['owner'] !== $color) {
+            return $deny('NOT_CUBE_OWNER');
+        }
+        // ÖLÜ KÜP: küpün MEVCUT değeri, teklif edenin maçı bitirmesi için gereken puanı zaten
+        // karşılıyorsa katlamak ona hiçbir şey kazandırmaz (oyunu kazanınca maç zaten biter).
+        $need = $target - (int) ($sm['score'][$color] ?? 0);
+        if ($cube['value'] >= $need) {
+            return $deny('DEAD_CUBE');
+        }
+
+        return ['allowed' => true, 'reason' => null];
+    }
+
+    /** cubeAvailability reason kodu -> kullanıcıya gösterilecek Türkçe mesaj. */
+    private function cubeDenyMessage(?string $reason): string
+    {
+        return match ($reason) {
+            'GAME_FINISHED' => 'Oyun aktif değil.',
+            'CRAWFORD_GAME' => 'Crawford oyununda küp kullanılamaz.',
+            'ONE_POINT_MATCH' => 'Tek puanlık maçta küp kullanılmaz.',
+            'NOT_PLAYERS_TURN' => 'Sıra sende değil.',
+            'DICE_ALREADY_ROLLED' => 'Zar atıldıktan sonra küp teklif edilemez.',
+            'OPENING_NOT_PLAYED' => 'Açılış eli oynanmadan küp teklif edilemez.',
+            'DOUBLE_ALREADY_PENDING' => 'Zaten bekleyen bir küp teklifi var.',
+            'CUBE_AT_MAX' => 'Küp en yüksek değerde (64) — daha fazla katlanamaz.',
+            'NOT_CUBE_OWNER' => 'Küp rakibin elinde — teklif edemezsin.',
+            'DEAD_CUBE' => 'Bu skorda küpü yükseltmenin maça etkisi yok (ölü küp).',
+            default => 'Küp teklif edilemez.',
+        };
+    }
+
+    /**
      * OYUN sonucunu maça yaz: kazananın skoruna $points ekle, gameNo++, küpü ortaya döndür,
      * maç bitti mi (target) belirle. Bitmediyse server_state'i YENİ oyuna sıfırla; bittiyse
      * dokunma (çağıran son tahtayı korur). matchDone döner. move()/drop/resign ORTAK kullanır.
@@ -1755,28 +1845,14 @@ class RoomController extends Controller
                 return $this->fail('Bu odada değilsin.', 403);
             }
             $color = $this->slotColor($slot);
-            $state = is_array($room->server_state) ? $room->server_state : null;
+            // MERKEZİ KURAL KONTROLÜ: tüm küp kuralları (sıra/Crawford/zar/açılış/sahiplik/64/
+            // ölü-küp/1-puanlık maç) tek kaynaktan. Yasak istemci isteği net reason ile reddedilir.
+            $avail = $this->cubeAvailability($room, $color);
+            if (! $avail['allowed']) {
+                return $this->fail($this->cubeDenyMessage($avail['reason']), 409, ['reason' => $avail['reason']]);
+            }
             $sm = is_array($room->server_match) ? $room->server_match : null;
-            if (! $state || ! $sm || ! empty($sm['done'])) {
-                return $this->fail('Oyun aktif değil.', 409);
-            }
-            if (($state['turn'] ?? 'white') !== $color) {
-                return $this->fail('Sıra sende değil.', 409);
-            }
-            if (! empty($sm['crawford'])) {
-                return $this->fail('Crawford oyununda küp kullanılamaz.', 409);
-            }
-            if (! empty($state['dice'])) {
-                return $this->fail('Zar atıldıktan sonra küp teklif edilemez.', 409);
-            }
             $cube = $this->cubeOf($room);
-            if ($cube['pending'] !== null) {
-                return $this->fail('Zaten bekleyen bir küp teklifi var.', 409);
-            }
-            if ($cube['owner'] !== null && $cube['owner'] !== $color) {
-                return $this->fail('Küp rakibin elinde — teklif edemezsin.', 409);
-            }
-
             $sm['cube'] = ['value' => $cube['value'], 'owner' => $cube['owner'], 'pending' => $color];
             $room->server_match = $sm;
             $room->server_version = (int) $room->server_version + 1;
@@ -1881,14 +1957,15 @@ class RoomController extends Controller
                 return $this->fail('Oyun aktif değil.', 409);
             }
             $winner = $this->otherColor($this->slotColor($slot));
-            // PES = bu OYUNU vermek; puan KONUMDAN turer: kup x carpan (1 normal, 2 gammon,
-            // 3 backgammon). Eskiden HER pes 1x kup yaziyordu -> mars/backgammon konumunda
-            // pes eden oyuncu haksiz yere ucuz kurtuluyordu (istemci de "1 puan" gosteriyordu).
-            // Carpani SUNUCU hesaplar (istemci forge edemez); istemci ayni kurali ekranda
-            // onizler (src/engine/board.ts lossMultiplier).
-            $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
-            $mult = \App\Support\Backgammon::gamePoints($state, $winner);
-            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value'] * $mult);
+            // PES = bu OYUNU vermek. Düz pes = TEK OYUN (küp değeri × 1). Gerçek tavla kuralı:
+            // gammon/backgammon ancak KAZANAN 15 taşı topladığında (bear-off) tanımlıdır; oyun
+            // ORTASINDA konumdan çarpan çıkarmak YANLIŞTIR. Ayrıca resign seviyesi taraflar
+            // ANLAŞMASIYLA belirlenir — tek "Pes" butonu single'ı ikram eder.
+            // ÖNCEKİ HATA: gamePoints($state) oyun-ortası tahtaya uygulanıyordu -> AÇILIŞ konumunda
+            // her iki oyuncunun geri taşları rakibin evinde olduğundan pes HAYALET backgammon (3×)
+            // sayılıyordu (kullanıcı şikayeti + RoomServerAuth Crawford testleri kırıktı). Doğal
+            // kazançta (move) çarpan hâlâ gamePoints iledir (orada kazanan gerçekten bitirmiştir).
+            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value']);
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur
             $room->save();

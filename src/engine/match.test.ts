@@ -3,6 +3,7 @@ import type { GameState } from './types'
 import { WHITE, BLACK, gameOutcome } from './board'
 import {
   canDouble,
+  cubeAvailability,
   matchWinner,
   newMatch,
   scoreGame,
@@ -214,4 +215,54 @@ describe('otomatik zar (kup secenegi yoksa)', () => {
     expect(shouldAutoRoll(m, WHITE, turnsPlayed)).toBe(false)
   })
 
+})
+
+// cubeAvailability: net GEREKCE (reason) kodlari — backend cubeAvailability ile ayni kume.
+describe('cubeAvailability (reason kodlari)', () => {
+  it('merkez kup teklif edilebilir -> allowed', () => {
+    expect(cubeAvailability(newMatch(7), WHITE, false)).toEqual({ allowed: true })
+  })
+
+  it('cevap beklerken -> DOUBLE_ALREADY_PENDING', () => {
+    expect(cubeAvailability(newMatch(7), WHITE, true)).toEqual({
+      allowed: false,
+      reason: 'DOUBLE_ALREADY_PENDING',
+    })
+  })
+
+  it('Crawford oyunu -> CRAWFORD_GAME', () => {
+    const m = { ...newMatch(5), isCrawford: true }
+    expect(cubeAvailability(m, WHITE, false)).toEqual({ allowed: false, reason: 'CRAWFORD_GAME' })
+  })
+
+  it('1 puanlik mac -> ONE_POINT_MATCH', () => {
+    expect(cubeAvailability(newMatch(1), WHITE, false)).toEqual({
+      allowed: false,
+      reason: 'ONE_POINT_MATCH',
+    })
+  })
+
+  it('kup 64 tavanda -> CUBE_AT_MAX', () => {
+    const m = { ...newMatch(128), cube: { value: 64, owner: null } }
+    expect(cubeAvailability(m, WHITE, false)).toEqual({ allowed: false, reason: 'CUBE_AT_MAX' })
+  })
+
+  it('kup rakibin elinde -> NOT_CUBE_OWNER', () => {
+    const m = { ...newMatch(7), cube: { value: 2, owner: 'black' as const } }
+    expect(cubeAvailability(m, WHITE, false)).toEqual({ allowed: false, reason: 'NOT_CUBE_OWNER' })
+  })
+
+  it('olu kup (deger >= gereken puan) -> DEAD_CUBE', () => {
+    // 5 puanlik mac 4-3: beyaza 1 kaldi, kup 1 -> katlamak kazanc saglamaz.
+    const m = { ...newMatch(5), score: { white: 4, black: 3 } }
+    expect(cubeAvailability(m, WHITE, false)).toEqual({ allowed: false, reason: 'DEAD_CUBE' })
+    // Geride olan (siyah, 2 uzakta) icin CANLI.
+    expect(cubeAvailability(m, BLACK, false)).toEqual({ allowed: true })
+  })
+
+  it('canDouble = cubeAvailability.allowed (birebir)', () => {
+    const m = { ...newMatch(7), cube: { value: 2, owner: 'white' as const } }
+    expect(canDouble(m, WHITE, false)).toBe(cubeAvailability(m, WHITE, false).allowed)
+    expect(canDouble(m, BLACK, false)).toBe(cubeAvailability(m, BLACK, false).allowed)
+  })
 })

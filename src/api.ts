@@ -1988,3 +1988,58 @@ export async function getLuckyWheel(): Promise<WheelState> {
 export async function spinLuckyWheel(): Promise<WheelSpinResult> {
   return req<WheelSpinResult>('/lucky-wheel/spin', { method: 'POST', body: '{}' })
 }
+
+// ---- Zar Slotu (Dice Slot) ----
+// Makara sembolleri: d1..d6 (zar yüzleri) + c64 (64 küpü -> JACKPOT).
+export type SlotSymbolCode = 'd1' | 'd2' | 'd3' | 'd4' | 'd5' | 'd6' | 'c64'
+
+export interface SlotPaytableRow {
+  code: SlotSymbolCode
+  value: number
+  payout: number
+  jackpot: boolean
+}
+
+export interface DiceSlotState {
+  enabled: boolean
+  settings: { freeSpinsPerDay: number; requireLogin: boolean; spinCost: number }
+  symbols: SlotSymbolCode[]
+  paytable: SlotPaytableRow[]
+  jackpot: number
+  jackpotBase: number
+  remainingSpins: number
+  bonusSpins: number
+  nextFreeSpinAt: string | null
+  cooldownSeconds: number
+  coins: number
+  spinCost: number
+  nextSpinPaid: boolean
+}
+
+export interface DiceSlotSpinResult {
+  success: boolean
+  reels: SlotSymbolCode[]
+  winType: 'none' | 'triple' | 'jackpot'
+  payout: number
+  matchedValue: number | null
+  jackpot: number
+  jackpotWon: boolean
+  remainingSpins: number
+  bonusSpins: number
+  nextFreeSpinAt: string | null
+  coins: number
+  spinCost?: number
+  nextSpinPaid?: boolean
+  paid?: boolean
+  user: ServerUser
+}
+
+// Slot durumu (ödül tablosu, jackpot, kalan hak). Misafir de görebilir (çevirmek giriş ister).
+export async function getDiceSlot(): Promise<DiceSlotState> {
+  return req<DiceSlotState>('/dice-slot')
+}
+
+// Güvenli çevirme: 3 sembol sunucuda seçilir; dönen reels'e makara animasyonu yapılır.
+export async function spinDiceSlot(): Promise<DiceSlotSpinResult> {
+  return req<DiceSlotSpinResult>('/dice-slot/spin', { method: 'POST', body: '{}' })
+}

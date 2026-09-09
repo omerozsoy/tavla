@@ -3,7 +3,7 @@ import './App.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
-import { cloneState, gameOutcome, lossMultiplier, opponent, winner } from './engine/board'
+import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { checkerDecision, onePointFactor } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
@@ -137,6 +137,7 @@ import LangMenu from './ui/LangMenu'
 import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import LuckyWheel from './ui/LuckyWheel'
+import DiceSlot from './ui/DiceSlot'
 import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
@@ -568,6 +569,7 @@ export default function App() {
   const mmOriginRef = useRef<'match' | 'solo'>('match') // eslesme hangi kurulumdan basladi (iptalde geri don)
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
+  const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
   // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -666,6 +668,8 @@ export default function App() {
           : 'magaza' // coin (varsayilan) sayfasi
       : luckyWheelOpen
         ? 'sans-carki'
+        : diceSlotOpen
+          ? 'zar-slotu'
         : frameGalleryOpen
           ? 'cerceveler'
           : friendsOpen
@@ -2358,16 +2362,16 @@ export default function App() {
   }
 
   // ---- Pes etme / cekilme ----
-  // PES = bu OYUNU vermek. Kaybedilen puan KONUMDAN turer: kup degeri x carpan
-  // (1 normal, 2 gammon/mars, 3 backgammon — bkz engine/board lossMultiplier).
-  // Otoriter online'da carpani SUNUCU hesaplar (Backgammon::gamePoints) -> forge edilemez;
-  // asagidaki yerel hesap yalniz pvb/pvp/legacy icin ve EKRANDA gostermek icindir.
-  // Teslim olan: online -> ben; pvb -> insan (beyaz); pvp -> sirasi gelen (cihaz basindaki) oyuncu.
+  // PES = bu OYUNU vermek. Duz pes = TEK OYUN (kup degeri x 1). Gercek tavla kurali:
+  // gammon/backgammon ancak KAZANAN 15 tasi topladiginda (bear-off) tanimlidir; oyun ORTASINDA
+  // konumdan carpan cikarmak yanlistir (acilis konumunda geri taslar rakip evinde -> HAYALET
+  // backgammon). Ayrica pes seviyesi anlasmayla belirlenir -> tek "Pes" butonu single ikram eder.
+  // Backend (otoriter online) de single yazar (RoomController::resign). resignLoser yalniz kimin
+  // teslim oldugunu belirler: online -> ben; pvb -> insan (beyaz); pvp -> sirasi gelen oyuncu.
   const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
-  const resignMult = lossMultiplier(working, resignLoser)
+  const resignMult = 1 // pes DAIMA single
   const resignPoints = match.cube.value * resignMult
-  const resignKindKey =
-    resignMult === 3 ? 'resign.tBackgammon' : resignMult === 2 ? 'resign.tGammon' : 'resign.tSingle'
+  const resignKindKey = 'resign.tSingle'
 
   function handleResign() {
     setResignOpen(false)
@@ -3871,6 +3875,19 @@ export default function App() {
     const live = room?.live
     if (!live || !Array.isArray(live.steps) || live.slot === room?.slot) return
     if (live.turn && live.turn !== turnStart.turn) return // bu turun/rengin önizlemesi değil
+    // KRİTİK: canlı önizleme YALNIZ içinde bulunulan tura ait olmalı. `room.live` sunucuda tur
+    // değişiminde TEMİZLENMEZ (yalnız yeni POST üzerine yazılır). `seq`'i (turnsPlayed) denetlemezsek,
+    // rakibin sırası tekrar geldiğinde (aynı renk, 2 ply önce) room.live hâlâ ÖNCEKİ turun adımlarını
+    // taşır ve renk eşleştiği için o adımları —özellikle bardan girişi— güncel tahtaya HAYALET
+    // animasyonla oynatıp gerçek durum gelince geri alırdık ("barda giremiyor ama sistem girmiş gibi
+    // yapıp sonra geri alıyor" — canlı izleyenlerin şikayeti). Eski/uyumsuz seq'i yok say + temizle.
+    if (typeof live.seq === 'number' && live.seq !== turnsPlayed) {
+      if (oppLiveShownRef.current.length) {
+        oppLiveShownRef.current = []
+        setOppLive([])
+      }
+      return
+    }
     const incoming = live.steps as Step[]
     const delta = liveMoveDelta(oppLiveShownRef.current, incoming)
     if (delta.reset) {
@@ -3899,7 +3916,7 @@ export default function App() {
     })
     return () => timers.forEach((t) => window.clearTimeout(t))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, myTurn, room?.live, room?.slot, turnStart, moveStyle, animOn])
+  }, [online, myTurn, room?.live, room?.slot, turnStart, turnsPlayed, moveStyle, animOn])
 
   // Rakip önizleme adımı eklendikten sonra hedef taşı kaynaktan uçur (playSteps FLIP'inin eşi).
   useLayoutEffect(() => {
@@ -5623,6 +5640,7 @@ export default function App() {
     setTournDetailSlug(null)
     setShopOpen(false)
     setLuckyWheelOpen(false)
+    setDiceSlotOpen(false)
     setCartOpen(false)
     setCheckoutOpen(false)
     setFrameGalleryOpen(false)
@@ -5716,6 +5734,7 @@ export default function App() {
       }),
     onShop: () => goPage(() => setShopOpen(true)),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
+    onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
     onMembership: premium ? undefined : () => setMemOpen(true),
@@ -5760,6 +5779,7 @@ export default function App() {
     tournaments: menuProps.onTournaments,
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
+    diceslot: menuProps.onDiceSlot,
     shop: menuProps.onShop,
     friends: menuProps.onFriends,
     messages: menuProps.onMessages,
@@ -5885,6 +5905,7 @@ export default function App() {
     tournOpen ||
     shopOpen ||
     luckyWheelOpen ||
+    diceSlotOpen ||
     productsOpen ||
     myOrdersOpen ||
     cartOpen ||
@@ -6212,6 +6233,15 @@ export default function App() {
         <LuckyWheel
           loggedIn={!!user}
           onClose={() => setLuckyWheelOpen(false)}
+          onRequireLogin={() => setShowAuth(true)}
+          onCoinsChange={(c) => setUser((u) => (u ? { ...u, coins: c } : u))}
+          onUser={(su) => setUser(su)}
+        />
+      )}
+      {diceSlotOpen && (
+        <DiceSlot
+          loggedIn={!!user}
+          onClose={() => setDiceSlotOpen(false)}
           onRequireLogin={() => setShowAuth(true)}
           onCoinsChange={(c) => setUser((u) => (u ? { ...u, coins: c } : u))}
           onUser={(su) => setUser(su)}

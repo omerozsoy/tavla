@@ -45,6 +45,9 @@ Route::get('/clubs/{club}', [ClubController::class, 'show']);
 // Şans Çarkı durumu (misafir de çarkı görebilir; çevirmek için giriş gerekir).
 Route::get('/lucky-wheel', [\App\Http\Controllers\LuckyWheelController::class, 'show']);
 
+// Zar Slotu durumu (misafir de görebilir; çevirmek için giriş gerekir).
+Route::get('/dice-slot', [\App\Http\Controllers\DiceSlotController::class, 'show']);
+
 
 // Multiplayer odalari (misafir dostu, token bazli).
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
@@ -184,6 +187,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
     Route::middleware('throttle:20,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
+
+    // Zar Slotu çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
+    Route::middleware('throttle:20,1')->post('/dice-slot/spin', [\App\Http\Controllers\DiceSlotController::class, 'spin']);
 
     // Fiziksel urun magazasi: siparis (coin aninda / money -> odeme) + kullanicinin siparisleri.
     Route::post('/products/order', [\App\Http\Controllers\ProductController::class, 'order']);
