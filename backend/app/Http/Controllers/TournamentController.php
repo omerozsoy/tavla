@@ -16,6 +16,7 @@ class TournamentController extends Controller
         // Aktif (open/running) + BİTEN (finished) turnuvalar; biten GİZLENMEZ, frontend'de
         // "Geçmiş" başlığı altında gösterilir. Aktifler önce, biten sonra (her biri yeni->eski).
         $list = Tournament::whereIn('status', ['open', 'running', 'finished'])
+            ->where('active', true) // pasif (yayindan kaldirilmis) turnuvalar sitede gorunmez
             ->with('organizer')
             ->orderByRaw("CASE WHEN status = 'finished' THEN 1 ELSE 0 END")
             ->orderByDesc('created_at')
