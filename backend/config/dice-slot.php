@@ -45,6 +45,10 @@ return [
         'payout_5' => 1500,            // 5-5-5
         'payout_6' => 3000,            // 6-6-6 (en yüksek normal ödül)
 
+        // --- Sıralama / Kent (ardışık üç FARKLI zar, herhangi sırada — poker straight gibi) ---
+        // {1,2,3}, {2,3,4}, {3,4,5}, {4,5,6}. 64 küpü dahil DEĞİL. Üçlüden daha sık gelir -> mütevazı.
+        'payout_straight' => 150,
+
         // --- Artan (progressive) jackpot: 64-64-64 ---
         'jackpot_base' => 5000,        // taban/başlangıç havuzu (kazanılınca buraya sıfırlanır)
         'jackpot_increment' => 25,     // her spinde havuza eklenen coin (havuz büyür)

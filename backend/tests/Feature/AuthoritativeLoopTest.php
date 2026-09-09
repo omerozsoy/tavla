@@ -144,8 +144,9 @@ class AuthoritativeLoopTest extends TestCase
         // Oyun bitti (maç sürüyor) -> yeni oyunda sayaç 0'a döner: açılış eli şartı yine geçerli.
         $this->postJson('/api/rooms/LOOPX/roll', ['token' => $starterTok === 'p1' ? 'p2' : 'p1'])->assertOk();
         $this->fakeFlip($starterColor, ['white' => 0, 'black' => 0, $otherColor => 15]);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
-            ->assertOk()->assertJsonPath('match_done', false);
+        $mv = $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]]);
+        $mv->dump();
+        $mv->assertOk()->assertJsonPath('match_done', false);
         $sm = Room::first()->fresh()->server_match;
         $this->assertSame(0, $sm['turns']);
         $this->assertFalse($sm['opened']); // yeni oyun -> yeni açılış eli

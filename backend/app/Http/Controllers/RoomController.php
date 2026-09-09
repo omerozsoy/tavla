@@ -1605,6 +1605,11 @@ class RoomController extends Controller
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
             }
+            // YENİ TUR = eski canlı önizleme geçersiz. `room.live` yalnız yeni POST üzerine yazıldığı
+            // için tur değişince ESKİ turun adımlarını (ör. bardan giriş) taşımaya devam ederdi; zar
+            // atan istemci onu güncel tahtaya HAYALET oynatırdı. Zar başında temizle (sunucu-tarafı
+            // sertleştirme; istemci de live.seq!==turnsPlayed ile eler). Bu save eden tüm dalları kapsar.
+            $room->live = null;
 
             // ---- BAĞIMSIZ Faz 1: yalnız ZAR sunucudan (hamle/tahta/küp LEGACY kalır) ----
             // authoritative TAM yol DEĞİL: sunucu server_state tutmaz; sadece commit-reveal zarı
@@ -1809,6 +1814,9 @@ class RoomController extends Controller
             } else {
                 $room->server_state = $new;
             }
+            // Hamle tamamlandı, sıra devredildi -> biten turun canlı önizlemesi artık geçersiz; temizle
+            // (yeni mover kendi live'ını POST edene kadar ESKİ adımlar hayalet oynatılmasın).
+            $room->live = null;
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // hamle -> tur devri saate
             $room->save();

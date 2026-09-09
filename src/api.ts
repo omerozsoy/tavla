@@ -1994,10 +1994,11 @@ export async function spinLuckyWheel(): Promise<WheelSpinResult> {
 export type SlotSymbolCode = 'd1' | 'd2' | 'd3' | 'd4' | 'd5' | 'd6' | 'c64'
 
 export interface SlotPaytableRow {
-  code: SlotSymbolCode
+  code: SlotSymbolCode | 'straight'
   value: number
   payout: number
   jackpot: boolean
+  straight: boolean
 }
 
 export interface DiceSlotState {
@@ -2019,7 +2020,7 @@ export interface DiceSlotState {
 export interface DiceSlotSpinResult {
   success: boolean
   reels: SlotSymbolCode[]
-  winType: 'none' | 'triple' | 'jackpot'
+  winType: 'none' | 'triple' | 'jackpot' | 'straight'
   payout: number
   matchedValue: number | null
   jackpot: number

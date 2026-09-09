@@ -846,6 +846,9 @@ export default function App() {
         case 'sans-carki':
           setLuckyWheelOpen(true)
           break
+        case 'zar-slotu':
+          setDiceSlotOpen(true)
+          break
         case 'urunler':
           setProductsOpen(true)
           break
