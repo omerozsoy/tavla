@@ -6,6 +6,7 @@ import ProfileStats from './ProfileStats'
 import Achievements from './Achievements'
 import { BadgeList } from './Badges'
 import AvatarFrame from './AvatarFrame'
+import PremiumPill from './PremiumPill'
 import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
@@ -134,9 +135,12 @@ export default function ProfileOverview({
         {/* --- Kimlik + kusanili tahta --- */}
         <div className="prof-ov-top">
           <div className="prof-ov-id">
-            <AvatarFrame src={avatar} frame={user.avatar_frame} size={96} name={fullName} premium={premium} animated />
+            <AvatarFrame src={avatar} frame={user.avatar_frame} size={96} name={fullName} animated />
             <div className="prof-ov-id-text">
-              <div className="prof-ov-name">{fullName}</div>
+              <div className="prof-ov-name">
+                {fullName}
+                {premium && <PremiumPill style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
+              </div>
               <div className="prof-ov-meta">
                 {cc && <Flag code={cc} size={22} />}
                 {country && <span>{country}</span>}
