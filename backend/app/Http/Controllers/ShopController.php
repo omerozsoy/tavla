@@ -53,9 +53,9 @@ class ShopController extends Controller
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).
     // 5 kademe: Standart(common) < Nadir(rare) < Epik(epic) < Efsanevi(legendary) < Mitik(mythic).
     private const FRAME_MOTIONS = [
-        // common (6)
+        // common (5) — 'floatSide' (Yana Süzülme) kaldırıldı (kullanıcı)
         'pulse' => 'common', 'heartScale' => 'common', 'static' => 'common', 'grayscale' => 'common',
-        'sepia' => 'common', 'floatSide' => 'common',
+        'sepia' => 'common',
         // rare (16)
         'float' => 'rare', 'pulseFast' => 'rare', 'levitate' => 'rare', 'wobble' => 'rare',
         'expand' => 'rare', 'seesaw' => 'rare', 'sweep' => 'rare', 'glint' => 'rare',
