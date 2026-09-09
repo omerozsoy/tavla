@@ -1251,6 +1251,55 @@ class RoomController extends Controller
         return response()->json(['messages' => $messages]);
     }
 
+    // Canlı maç İZLEME presence (spectator heartbeat). İzleyici her ~5sn'de bir çağırır; kayıt
+    // upsert edilir, bayat (>15sn) izleyiciler temizlenir. OYUNCU (slot sahibi) izleyici SAYILMAZ.
+    // Güncel izleyici listesi (isim + avatar/çerçeve) ve sayısını döner. Herkese açık.
+    public function watch(Request $request, string $code)
+    {
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['nullable', 'string', 'max:60'],
+            'leave' => ['nullable', 'boolean'],
+        ]);
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room) {
+            return $this->fail('Oda bulunamadı.', 404);
+        }
+        // Migration henüz koşmadıysa (tablo yok) sessizce boş dön -> istemci kırılmaz.
+        if (! Schema::hasTable('room_viewers')) {
+            return response()->json(['viewers' => [], 'count' => 0]);
+        }
+        $codeU = strtoupper($code);
+        $now = microtime(true);
+
+        if (! empty($data['leave'])) {
+            // Sekme kapanışı (best-effort): kaydı hemen sil.
+            DB::table('room_viewers')->where('room_code', $codeU)->where('token', $data['token'])->delete();
+        } elseif ($this->slotOf($room, $data['token']) === null) {
+            // Oyuncu değil -> izleyici olarak kaydet/tazele (upsert).
+            $user = $request->user('sanctum');
+            $name = $user?->nickname ?: ($user?->first_name ?: ($data['name'] ?: 'Misafir'));
+            DB::table('room_viewers')->updateOrInsert(
+                ['room_code' => $codeU, 'token' => $data['token']],
+                ['user_id' => $user?->id, 'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()],
+            );
+        }
+
+        // Bayat izleyicileri (>15sn görünmeyen) temizle.
+        DB::table('room_viewers')->where('room_code', $codeU)->where('last_seen', '<', $now - 15)->delete();
+
+        $rows = DB::table('room_viewers')->where('room_code', $codeU)->orderByDesc('last_seen')->limit(100)->get();
+        $uids = $rows->pluck('user_id')->filter()->unique()->values()->all();
+        $users = $uids ? User::whereIn('id', $uids)->get(['id', 'avatar', 'avatar_frame'])->keyBy('id') : collect();
+        $viewers = $rows->map(fn ($v) => [
+            'name' => $v->name,
+            'avatar' => ($v->user_id && isset($users[$v->user_id])) ? $users[$v->user_id]->avatar : null,
+            'frame' => ($v->user_id && isset($users[$v->user_id])) ? $users[$v->user_id]->avatar_frame : null,
+        ])->values();
+
+        return response()->json(['viewers' => $viewers, 'count' => $viewers->count()]);
+    }
+
     // ============ SUNUCU-OTORİTER ZAR + HAMLE (para maçı güvenliği Faz 2b) ============
     // p1 = white, p2 = black.
     private function slotColor(string $slot): string

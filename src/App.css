@@ -9936,6 +9936,90 @@ button.acct-row:hover:not(:disabled) {
   color: color-mix(in srgb, var(--tv-cream, #f4efe6) 70%, transparent);
   font-size: 1rem;
 }
+/* Sol alt izleme paneli: izleyenler + maç sohbeti (salt-okunur) */
+.spectate-side {
+  position: fixed;
+  left: 12px;
+  bottom: 12px;
+  z-index: 120;
+  width: min(280px, 42vw);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none; /* board etkilesimini engelleme; ic ogeler geri acar */
+}
+.spectate-side > * {
+  pointer-events: auto;
+}
+.sp-viewers,
+.sp-chat {
+  background: color-mix(in srgb, var(--game-scene, #06090f) 82%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-cream, #f4efe6) 16%, transparent);
+  border-radius: 12px;
+  padding: 8px 10px;
+  color: color-mix(in srgb, var(--tv-cream, #f4efe6) 90%, transparent);
+}
+.sp-viewers-head,
+.sp-chat-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  color: color-mix(in srgb, var(--tv-cream, #f4efe6) 78%, transparent);
+}
+.sp-viewers-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  margin-top: 7px;
+  max-height: 92px;
+  overflow-y: auto;
+}
+.sp-viewer {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  max-width: 120px;
+}
+.sp-viewer-av {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+.sp-viewer-init {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent, #a4432f) 55%, #000);
+  color: #fff;
+  font-size: 0.62rem;
+}
+.sp-viewer-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sp-chat-list {
+  margin-top: 7px;
+  max-height: 168px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+/* Mobil (yatay oyun): paneli daralt, board'u ezmesin */
+@media (max-width: 900px) {
+  .spectate-side {
+    width: min(210px, 46vw);
+  }
+  .sp-chat-list {
+    max-height: 96px;
+  }
+}
 .lobby-title {
   font-size: 2rem;
   font-weight: 400;
