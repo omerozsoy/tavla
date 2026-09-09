@@ -358,6 +358,11 @@ class AuthController extends Controller
                 ->where('user_id', $user->id)
                 ->first();
             if ($existing) {
+                // ZENGİNLEŞTİR: satır SUNUCU-OTORİTER YEDEK (ForfeitLoss / MatchBackstop) ise "bare"dir
+                // (log/PR yok). İstemci geç raporladıysa analiz verisini o satıra işle -> maç
+                // analiz edilebilir olsun. Rating/galibiyet/delta'ya DOKUNMAZ (çift-Elo yok).
+                $this->enrichBareRow($existing, $data);
+
                 // Rakip satırı (varsa) -> tutarlı sunucu-otoriter PR + luck çifti.
                 $oppExisting = \App\Models\MatchResult::where('room_code', $roomCode)
                     ->where('user_id', '!=', $user->id)->latest('id')->first();
@@ -765,6 +770,68 @@ class AuthController extends Controller
         \Illuminate\Support\Facades\Log::warning('reportRating: rakip satiri kesin gercekle tamamlayiciya duzeltildi', [
             'match_result_id' => $row->id, 'user_id' => $row->user_id, 'won' => $correctWon,
         ]);
+    }
+
+    /**
+     * SUNUCU-OTORİTER YEDEK satırını (ForfeitLoss / MatchBackstop tarafından yazılan "bare" satır)
+     * istemcinin GEÇ gelen raporundaki analiz verisiyle ZENGİNLEŞTİR: log + PR + luck + skor.
+     * Rating/galibiyet/delta/coins'e ASLA dokunmaz (onlar sunucu-otoriter, zaten uygulandı) ->
+     * çift-Elo yok. Yalnız satır "bare" ise (log boş) çalışır; istemcinin kendi zengin satırını
+     * (retry/normal rapor) ASLA ezmez. Böylece "kazandı ama sekmeyi kapattı" maçı analiz edilebilir.
+     */
+    private function enrichBareRow(\App\Models\MatchResult $row, array $data): void
+    {
+        if (! empty($row->log) || empty($data['log'])) {
+            return; // zaten zengin VEYA gelen raporda analiz yok -> yapacak bir şey yok
+        }
+        $dirty = false;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
+            $row->log = $data['log'];
+            $totals = $this->prTotalsFromLog($data['log']);
+            $row->pr = $this->prFromLog($data['log']) ?? ($data['pr'] ?? $row->pr);
+            if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+                $row->pr_equity_lost = $totals['loss'] ?? $row->pr_equity_lost;
+                $row->pr_decisions = $totals['decisions'] ?? $row->pr_decisions;
+            }
+            $dirty = true;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck') && $row->luck === null && isset($data['luck'])) {
+            $row->luck = $data['luck'];
+            $dirty = true;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name') && $row->opponent_pr === null && isset($data['opponent_pr'])) {
+            $row->opponent_pr = $data['opponent_pr'];
+            $dirty = true;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'score_self')) {
+            if ($row->score_self === null && isset($data['score_self'])) {
+                $row->score_self = $data['score_self'];
+                $dirty = true;
+            }
+            if ($row->score_opp === null && isset($data['score_opp'])) {
+                $row->score_opp = $data['score_opp'];
+                $dirty = true;
+            }
+        }
+        if (! $dirty) {
+            return;
+        }
+        $row->save();
+        // Artık log var -> gnubg PR/luck (V1) arka plan analizini tetikle (pr_mode açıksa).
+        if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
+            try {
+                \App\Jobs\AnalyzeMatchPrJob::dispatch($row->id)->onConnection('database');
+            } catch (\Throwable $e) {
+                // best-effort
+            }
+            if (! empty($row->room_code)) {
+                try {
+                    \App\Jobs\AnalyzeMatchLuckJob::dispatch($row->id)->onConnection('database');
+                } catch (\Throwable $e) {
+                    // best-effort
+                }
+            }
+        }
     }
 
     /**

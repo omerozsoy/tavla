@@ -30,6 +30,14 @@ Schedule::command('gamelogs:prune --days=90')
     ->name('prune-game-logs')
     ->withoutOverlapping();
 
+// SUNUCU-OTORİTER YEDEK: tamamlanmış online maçlarda istemcisi raporlayamamış (sekme kapandı/
+// ağ/başka cihaz) oyuncuların match_results satırını sunucuda tamamla -> maç HER İKİ oyuncunun
+// "Maç Analizleri" listesinde çıksın. 2 dk grace (canlı istemcinin zengin satırı önce yazsın).
+Schedule::command('matches:backstop-finished')
+    ->everyFiveMinutes()
+    ->name('backstop-finished-matches')
+    ->withoutOverlapping();
+
 // ÇALIŞAN TÜM SERVİSLERİ izle: dakikada bir kontrol; düşerse OTOMATİK yeniden başlat, kalıcıysa
 // admin e-posta + WhatsApp (CallMeBot, ayarlıysa) uyarısı. Validator + gnubg + queue + veritabanı.
 // (validator:watch komutu --test için duruyor ama zamanlama buraya birleşti -> çift-uyarı yok.)
