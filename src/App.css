@@ -2800,7 +2800,7 @@ button[aria-disabled='true'],
 }
 .service-gallery-thumb {
   padding: 0;
-  height: 108px;
+  height: 144px;
   width: auto;
   flex: 0 0 auto;
   border: 1px solid var(--border);
