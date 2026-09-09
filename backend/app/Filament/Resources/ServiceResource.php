@@ -41,6 +41,12 @@ class ServiceResource extends Resource
             Forms\Components\Hidden::make('type')->default('service'),
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
             Forms\Components\Textarea::make('body')->label('Açıklama')->rows(8)->columnSpanFull(),
+            Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
+                ->image()->multiple()->reorderable()->appendFiles()
+                ->disk('uploads')->directory('hizmet')->visibility('public')
+                ->maxSize(4096)->panelLayout('grid')
+                ->helperText('Birden fazla fotoğraf ekleyebilirsin. Hizmet açıklamasının hemen altında küçük küçük gösterilir; tıklayınca büyür (galeri). Sürükleyerek sıralayabilirsin.')
+                ->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
