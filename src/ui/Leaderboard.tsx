@@ -73,6 +73,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             frame={r.frame}
             size={30}
             rankSize="md"
+            premium={r.premium}
           />
         </span>
         <span className="lb-flag">

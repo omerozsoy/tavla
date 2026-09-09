@@ -94,6 +94,7 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
         frame={f.frame}
         size={38}
         rankSize="md"
+        premium={f.premium}
         className="friend-id"
       />
     </button>

@@ -26,7 +26,7 @@ class FriendController extends Controller
             ->values();
 
         $friends = User::whereIn('id', $friendIds)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'last_seen'])
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'last_seen', 'plan', 'plan_until'])
             ->map(fn ($u) => $this->pub($u));
 
         // Bana gelen bekleyen istekler
@@ -34,7 +34,7 @@ class FriendController extends Controller
             ->join('users', 'users.id', '=', 'friendships.user_id')
             ->where('friendships.friend_id', $me)
             ->where('friendships.status', 'pending')
-            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.avatar_frame', 'users.country', 'users.rating', 'users.last_seen'])
+            ->get(['users.id', 'users.first_name', 'users.nickname', 'users.avatar', 'users.avatar_frame', 'users.country', 'users.rating', 'users.last_seen', 'users.plan', 'users.plan_until'])
             ->map(fn ($u) => $this->pub($u));
 
         return response()->json(['friends' => $friends, 'incoming' => $incoming]);
@@ -140,6 +140,12 @@ class FriendController extends Controller
     {
         // Son 70 sn icinde gorulduyse cevrimici
         $online = $u->last_seen && \Illuminate\Support\Carbon::parse($u->last_seen)->gt(now()->subSeconds(70));
+        // Premium (suresi gecerli ucretli plan) -> avatar ustunde tac. $u User modeli VEYA
+        // DB::table stdClass'i olabilir; accessor yerine INLINE hesap (plan + plan_until).
+        $plan = $u->plan ?? 'free';
+        $until = $u->plan_until ? \Illuminate\Support\Carbon::parse($u->plan_until) : null;
+        $premium = $plan !== 'free' && $until && $until->isFuture();
+
         return [
             'id' => $u->id,
             'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
@@ -148,6 +154,7 @@ class FriendController extends Controller
             'country' => $u->country ?? null,
             'rating' => $u->rating ?? 1500,
             'online' => (bool) $online,
+            'premium' => $premium,
         ];
     }
 }

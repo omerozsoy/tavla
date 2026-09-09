@@ -5303,6 +5303,7 @@ export default function App() {
                 frame={user?.avatar_frame}
                 size={28}
                 name={profile.nickname}
+                premium={premium}
                 className="account-avf"
               />
               {profile.nickname}
@@ -5430,6 +5431,7 @@ export default function App() {
               frame={user?.avatar_frame}
               size={28}
               name={profile.nickname}
+              premium={premium}
               className="account-avf"
             />
           </button>

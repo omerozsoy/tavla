@@ -571,7 +571,7 @@ class RoomController extends Controller
             ->where('last_seen', '>', now()->subSeconds(70))
             ->orderByDesc('rating')
             ->limit(50)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating']);
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until']);
 
         $list = $users->map(fn ($u) => [
             'id'      => $u->id,
@@ -580,6 +580,7 @@ class RoomController extends Controller
             'frame'   => $u->avatar_frame,
             'country' => $u->country,
             'rating'  => $u->rating ?? 1500,
+            'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
         ]);
 
         return response()->json(['players' => $list, 'count' => $list->count()]);

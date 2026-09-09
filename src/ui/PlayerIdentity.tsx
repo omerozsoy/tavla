@@ -19,6 +19,7 @@ export default function PlayerIdentity({
   rankSize = 'md',
   animated = false,
   lg = false,
+  premium = false,
   className,
 }: {
   name: string
@@ -33,11 +34,13 @@ export default function PlayerIdentity({
   rankSize?: 'sm' | 'md'
   animated?: boolean
   lg?: boolean
+  /** true: premium uye -> avatar ustunde altin tac. */
+  premium?: boolean
   className?: string
 }) {
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
-      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
+      <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} premium={premium} />
       <span className="player-id-col">
         <span className="player-id-name">
           <span className="player-id-name-text">{name}</span>

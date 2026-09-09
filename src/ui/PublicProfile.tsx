@@ -58,6 +58,7 @@ export default function PublicProfile({
                 flagInline
                 size={64}
                 animated
+                premium={p.premium}
               />
               <div className="pp-rating">
                 {p.rating}
