@@ -9913,6 +9913,29 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted);
   font-size: 0.85rem;
 }
+/* Tam-boy canli izleme (Spectate = .app.game-view): sol ust izleme rozeti + bos durum */
+.spectate-badge {
+  position: fixed;
+  top: 10px;
+  left: 12px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--game-scene, #06090f) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-cream, #f4efe6) 20%, transparent);
+  color: color-mix(in srgb, var(--tv-cream, #f4efe6) 88%, transparent);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+.spectate-status {
+  align-self: center;
+  margin: auto;
+  color: color-mix(in srgb, var(--tv-cream, #f4efe6) 70%, transparent);
+  font-size: 1rem;
+}
 .lobby-title {
   font-size: 2rem;
   font-weight: 400;
