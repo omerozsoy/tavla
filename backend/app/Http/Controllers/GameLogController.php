@@ -89,4 +89,23 @@ class GameLogController extends Controller
 
         return response()->json(['ok' => true]);
     }
+
+    /**
+     * KANONİK XG .mat: bu maçın (uid) TEK OTORİTER kaynaktan (merged game_logs -> MatFromLog)
+     * üretilmiş .mat metni. Client "Dışa Aktar" bunu indirir -> AYNI maç DAİMA AYNI .mat
+     * (deterministik: stabil matchId=uid + created_at, iki oyuncunun küpü birleşik, kanonik zar).
+     * Kayıt yoksa (henüz flush edilmemiş) 404 -> client yerel buildMatXg'e düşer.
+     */
+    public function mat(string $uid)
+    {
+        $log = GameLog::where('uid', $uid)->first();
+        if (! $log) {
+            return response()->json(['message' => 'Kayıt bulunamadı'], 404);
+        }
+
+        return response()->json([
+            'mat' => $log->matText(),
+            'filename' => $log->matFilename(),
+        ]);
+    }
 }

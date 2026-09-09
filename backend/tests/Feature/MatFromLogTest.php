@@ -104,4 +104,67 @@ class MatFromLogTest extends TestCase
         $this->assertStringContainsString('1 point match', $mat);
         $this->assertStringNotContainsString(' Game 1', $mat);
     }
+
+    // --- Determinizm / kanonik zar / küp regresyonu (tavlatv-mac (5) vs (21) kök nedeni) ---
+
+    public function test_dice_are_canonically_normalized_high_first(): void
+    {
+        // Kaynak sırası ne olursa olsun (2-3 veya 3-2) DAİMA yüksek zar önce yazılır -> "32".
+        $this->assertSame('32', MatFromLog::xgDice('2-3'));
+        $this->assertSame('32', MatFromLog::xgDice('3-2'));
+        $this->assertSame('21', MatFromLog::xgDice('1-2'));
+        $this->assertSame('53', MatFromLog::xgDice('3-5'));
+        $this->assertSame('64', MatFromLog::xgDice('6-4')); // zaten yüksek önce
+        $this->assertSame('55', MatFromLog::xgDice('5-5')); // çift değişmez
+    }
+
+    public function test_dice_order_in_log_does_not_change_output(): void
+    {
+        $mk = fn (string $d) => [
+            ['g' => 1, 's' => 0, 'p' => 'W', 'd' => $d, 'm' => '13/11 24/21'],
+            ['g' => 1, 's' => 9, 'p' => 'W', 'k' => 'end', 'm' => 'Beyaz · Normal · 1p'],
+        ];
+        $opts = ['matchLength' => 1, 'matchId' => 'X'];
+        // Aynı hamle, zar "2-3" vs "3-2" -> BYTE-LEVEL aynı .mat (kanonik "32").
+        $this->assertSame(MatFromLog::build($mk('2-3'), $opts), MatFromLog::build($mk('3-2'), $opts));
+        $this->assertStringContainsString('32:', MatFromLog::build($mk('2-3'), $opts));
+    }
+
+    public function test_export_is_deterministic_10x(): void
+    {
+        $turns = [
+            ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '3-1', 'm' => '8/5 6/5'],
+            ['g' => 1, 's' => 1, 'o' => -3, 'k' => 'cube', 'p' => 'B', 'm' => 'Katla → 2'],
+            ['g' => 1, 's' => 1, 'o' => -2, 'k' => 'cube', 'p' => 'W', 'm' => 'Kabul (2)'],
+            ['g' => 1, 's' => 2, 'p' => 'B', 'd' => '6-4', 'm' => '24/18 13/9'],
+            ['g' => 1, 's' => 9, 'p' => 'B', 'k' => 'end', 'm' => 'Siyah · Normal · 2p'],
+        ];
+        $opts = ['matchLength' => 5, 'matchId' => 'DET', 'eventDate' => '2026.09.09', 'eventTime' => '03.32'];
+        $hashes = [];
+        for ($i = 0; $i < 10; $i++) {
+            $hashes[] = md5(MatFromLog::build($turns, $opts));
+        }
+        $this->assertCount(1, array_unique($hashes), '10 export byte-level aynı olmalı');
+    }
+
+    public function test_cube_regression_double_redouble_not_lost_and_points_correct(): void
+    {
+        // A double->2, B take, B double->4, A take, A backgammon (end event 12p).
+        // Küp eventleri KAYBOLMAMALI ve sonuç kayıtlı otoriter puanı (12) yazmalı (3 DEĞİL).
+        $turns = [
+            ['g' => 1, 's' => 0, 'o' => -3, 'k' => 'cube', 'p' => 'W', 'm' => 'Katla → 2'],
+            ['g' => 1, 's' => 0, 'o' => -2, 'k' => 'cube', 'p' => 'B', 'm' => 'Kabul (2)'],
+            ['g' => 1, 's' => 1, 'o' => -3, 'k' => 'cube', 'p' => 'B', 'm' => 'Katla → 4'],
+            ['g' => 1, 's' => 1, 'o' => -2, 'k' => 'cube', 'p' => 'W', 'm' => 'Kabul (4)'],
+            ['g' => 1, 's' => 2, 'p' => 'W', 'd' => '2-1', 'm' => '2/off 1/off'],
+            ['g' => 1, 's' => 9, 'p' => 'W', 'k' => 'end', 'm' => 'Beyaz · Çifte mars · 12p'],
+        ];
+        $mat = MatFromLog::build($turns, ['matchLength' => 3, 'matchId' => 'CUBE']);
+
+        $this->assertStringContainsString('Doubles => 2', $mat);
+        $this->assertStringContainsString('Doubles => 4', $mat);
+        $this->assertSame(2, substr_count($mat, 'Takes'));
+        $this->assertStringContainsString('Wins 12 point', $mat);
+        $this->assertStringNotContainsString('Wins 3 point', $mat); // küp kaybolsaydı 3 çıkardı
+    }
 }

@@ -297,6 +297,18 @@ export function xgMoves(notation: string): string {
     .join(' ')
 }
 
+// KANONİK ZAR NORMALİZASYONU: aynı atış her zaman AYNI yazılsın diye zar çifti DAİMA
+// yüksek-zar-önce sıralanır ("23"->"32", "12"->"21", "35"->"53"). Çiftler değişmez ("55").
+// SADECE görüntü sırası; hamle token'ları (pip mesafesiyle zarı belirler) ASLA yeniden
+// sıralanmaz. Kaynak (kendi-kayıt vs rakip-yeniden-kurulum) hangi sırada kaydetmiş olursa
+// olsun MAT çıktısı deterministik olur.
+export function xgDice(dice?: number[]): string {
+  if (!dice || dice.length < 2) return ''
+  const a = dice[0]
+  const b = dice[1]
+  return a >= b ? `${a}${b}` : `${b}${a}`
+}
+
 export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string {
   const {
     matchLength = 1,
@@ -354,7 +366,7 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       let text: string
       if (a.kind === 'move') {
         const e = a.e
-        const d = e.dice && e.dice.length >= 2 ? `${e.dice[0]}${e.dice[1]}` : ''
+        const d = xgDice(e.dice) // KANONİK: yüksek zar önce (deterministik)
         // Oynanamayan tur (dance) veya bos: sadece zar yaz, hamle token'i YOK.
         const mv = e.notation && e.notation !== 'pas' && e.notation !== 'pass' ? xgMoves(e.notation) : ''
         text = mv ? `${d}: ${mv}` : `${d}:`

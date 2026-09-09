@@ -1865,6 +1865,12 @@ export async function flushGameLogQueue(): Promise<void> {
   }
 }
 
+// KANONİK XG .mat'i sunucudan al (merged game_logs -> MatFromLog). Client "Dışa Aktar"
+// önce bunu dener -> AYNI maç DAİMA AYNI çıktı (tek kaynak). Kayıt yoksa 404 -> yerel fallback.
+export async function fetchGameLogMat(uid: string): Promise<{ mat: string; filename: string }> {
+  return req<{ mat: string; filename: string }>(`/game-logs/${encodeURIComponent(uid)}/mat`)
+}
+
 // Maç kaydını gönderir (en iyi çaba). keepalive=true -> sayfa kapanırken/gizlenirken
 // tarayıcı isteği unload sonrası bile teslim eder. Başarısızsa idempotent kuyruğa alınır.
 export async function submitGameLog(
