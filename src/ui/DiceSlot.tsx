@@ -157,7 +157,16 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
             {/* SOL: makine kabini */}
             <section className="ds-cabinet">
               <header className="ds-marquee">
-                <h2 className="ds-title">{t('ds.title')}</h2>
+                <div className="ds-lamps" aria-hidden="true">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <span key={i} className="ds-lamp" style={{ animationDelay: `${i * 0.16}s` }} />
+                  ))}
+                </div>
+                <h2 className="ds-title">
+                  <span className="ds-title-pip" aria-hidden="true" />
+                  {t('ds.title')}
+                  <span className="ds-title-pip" aria-hidden="true" />
+                </h2>
                 <p className="ds-sub">{t('ds.tagline')}</p>
               </header>
 
@@ -168,20 +177,35 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
                 </span>
               </div>
 
-              {/* EKRAN: bezel + 3 makara + payline + cam parlaması */}
-              <div className={`ds-screen ${spinning ? 'is-spinning' : ''} ${lineWin ? 'is-win' : ''}`}>
-                <div className="ds-payline" aria-hidden="true" />
-                <div className="ds-reels">
-                  {reels.map((code, i) => (
-                    <SlotReel key={i} finalCode={code} spinKey={spinKey} duration={REEL_MS[i]} win={lineWin} />
-                  ))}
-                </div>
-                <div className="ds-glass" aria-hidden="true" />
-                {result && (
-                  <div className="ds-result-slot">
-                    <SlotResult winType={result.winType} payout={result.payout} matchedValue={result.matchedValue} />
+              {/* MAKİNE: ekran (bezel + makaralar) + yandan mekanik kol */}
+              <div className="ds-machine">
+                {/* EKRAN: metalik bezel + 3 makara + payline + cam parlaması */}
+                <div className={`ds-screen ${spinning ? 'is-spinning' : ''} ${lineWin ? 'is-win' : ''}`}>
+                  <span className="ds-rivet ds-rivet-tl" aria-hidden="true" />
+                  <span className="ds-rivet ds-rivet-tr" aria-hidden="true" />
+                  <span className="ds-rivet ds-rivet-bl" aria-hidden="true" />
+                  <span className="ds-rivet ds-rivet-br" aria-hidden="true" />
+                  <div className="ds-payline" aria-hidden="true" />
+                  <div className="ds-reels">
+                    {reels.map((code, i) => (
+                      <SlotReel key={i} finalCode={code} spinKey={spinKey} duration={REEL_MS[i]} win={lineWin} />
+                    ))}
                   </div>
-                )}
+                  <div className="ds-glass" aria-hidden="true" />
+                  {result && (
+                    <div className="ds-result-slot">
+                      <SlotResult winType={result.winType} payout={result.payout} matchedValue={result.matchedValue} />
+                    </div>
+                  )}
+                </div>
+
+                {/* Mekanik kol — ÇEVİR'e basınca aşağı çekilip yayla geri döner (dekoratif). */}
+                <div className={`ds-lever ${spinning ? 'is-pull' : ''}`} aria-hidden="true">
+                  <span className="ds-lever-track" />
+                  <span className="ds-lever-arm">
+                    <span className="ds-lever-knob" />
+                  </span>
+                </div>
               </div>
 
               {/* KONTROL PANELİ: istatistik + ÇEVİR */}
