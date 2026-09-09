@@ -282,6 +282,7 @@ export default function ProfileOverview({
           <section className="prof-ov-col">
             {ownedFrames.length === 0 && <p className="prof-ov-empty">{t('prof.noAvatars')}</p>}
             {/* Sahip olunan avatarlar — Tavla Tasarımları ile AYNI yatay şerit düzeni */}
+            {ownedFrames.length > 0 && <h4 className="prof-ov-all-t">{t('prof.myCollection')}</h4>}
             <div className="prof-ov-grid prof-ov-grid-board">
               {ownedFrames.map((f) => (
                 <button
@@ -315,6 +316,7 @@ export default function ProfileOverview({
 
         {tab === 'boards' && (
           <section className="prof-ov-col">
+            {ownedBoards.length > 0 && <h4 className="prof-ov-all-t">{t('prof.myCollection')}</h4>}
             <div className="prof-ov-grid prof-ov-grid-board">
               {ownedBoards.map((b) => (
                 <button
