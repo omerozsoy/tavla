@@ -38,6 +38,29 @@ class GameLogTest extends TestCase
         $this->assertSame('playing', $log->status);
     }
 
+    public function test_mat_endpoint_returns_canonical_mat_or_404(): void
+    {
+        // Bilinmeyen uid -> 404 (client yerel fallback'e düşer).
+        $this->getJson('/api/game-logs/NOPE/mat')->assertStatus(404);
+
+        // Kayıt oluştur -> endpoint kanonik .mat + dosya adı döndürür (TEK kaynak, stabil).
+        $this->postJson('/api/game-logs', [
+            'uid' => 'MATUID', 'slot' => 'p1', 'mode' => 'pvb', 'target' => 1,
+            'p1_name' => 'Ömer', 'p2_name' => 'Bilgisayar', 'status' => 'finished', 'winner' => 'white',
+            'events' => [
+                ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '3-1', 'm' => '8/5 6/5'],
+                ['g' => 1, 's' => 9, 'p' => 'W', 'o' => 9, 'k' => 'end', 'm' => 'Beyaz · Normal · 1p'],
+            ],
+        ])->assertOk();
+
+        $res = $this->getJson('/api/game-logs/MATUID/mat')->assertOk()
+            ->assertJsonPath('filename', 'tavlatv-MATUID.mat');
+        $mat = $res->json('mat');
+        $this->assertStringContainsString('; [Match ID "MATUID"]', $mat); // stabil matchId = uid
+        $this->assertStringContainsString('1 point match', $mat);
+        $this->assertStringContainsString('Wins 1 point and the match', $mat);
+    }
+
     public function test_two_players_write_separate_columns_and_merge_by_seq(): void
     {
         // p1 kendi turlarını (seq çift), p2 kendi turlarını (seq tek) yazar.

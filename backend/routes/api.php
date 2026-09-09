@@ -84,6 +84,9 @@ Route::middleware('throttle:60,1')->get('/validator-check', [RoomController::cla
 // açık uç -> throttle + payload sınırlarıyla korunur (bkz. GameLogController validation).
 // Meşru istemci oyun/maç sonunda birkaç kez yazar; 20/dk fazlasıyla yeter.
 Route::middleware('throttle:20,1')->post('/game-logs', [\App\Http\Controllers\GameLogController::class, 'store']);
+// KANONİK .mat: client "Dışa Aktar" da bu TEK kaynağı kullanır (merged game_logs -> MatFromLog).
+// uid yeterince rastgele (yetenek anahtarı); içerik yalnız hamle kaydı -> açık uç (misafir dostu).
+Route::middleware('throttle:30,1')->get('/game-logs/{uid}/mat', [\App\Http\Controllers\GameLogController::class, 'mat']);
 
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {

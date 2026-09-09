@@ -7,6 +7,7 @@ import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
 import { buildMatXg } from '../matExport'
+import { fetchGameLogMat } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -44,6 +45,7 @@ interface Props {
   // OTORITER MAC SONUCU (kazanan + final skor). Son oyunun sonucu logdan cikmazsa (online rakibin
   // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
   matchResult?: { winner: Player; score: { white: number; black: number } }
+  matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
   onClose: () => void
 }
 
@@ -71,6 +73,7 @@ export default function MatchReport({
   blackName = 'Black',
   gameResults,
   matchResult,
+  matchUid,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -146,9 +149,34 @@ export default function MatchReport({
     setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
-  // Maci Extreme Gammon (XG) uyumlu .mat formatinda disa aktar (buildMatXg).
-  // Uretim mantigi src/matExport.ts'te (bar=25, off=0, tekrarlar acik, XG header).
-  function exportMat() {
+  // Bir metni .mat dosyası olarak indir.
+  function saveFile(text: string, name: string) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Maçı XG-uyumlu .mat olarak dışa aktar.
+  //
+  // KAYNAK MİMARİSİ (determinizm): .mat üretiminin TEK OTORİTER kaynağı sunucudaki
+  // birleşik game_logs'tur (MatFromLog). Böylece AYNI maç (uid) DAİMA AYNI .mat üretir:
+  // stabil matchId=uid + created_at, İKİ oyuncunun küpü birleşik, kanonik zar (yüksek önce).
+  // Yerel matchLog'tan üretim (buildMatXg) YALNIZCA sunucu kaydına erişilemezse FALLBACK'tir
+  // (ör. pvb offline / henüz flush edilmemiş) — bu yolda küp/zar-sırası oturuma göre oynayabilir.
+  async function exportMat() {
+    if (matchUid) {
+      try {
+        const { mat, filename } = await fetchGameLogMat(matchUid)
+        saveFile(mat, filename)
+        return
+      } catch {
+        // sunucu kaydı yok/erişilemedi -> yerel fallback (aşağıda)
+      }
+    }
     const now = new Date()
     const p2 = (n: number) => String(n).padStart(2, '0')
     const eventDate = `${now.getFullYear()}.${p2(now.getMonth() + 1)}.${p2(now.getDate())}`
@@ -157,19 +185,13 @@ export default function MatchReport({
       matchLength,
       whiteName,
       blackName,
-      matchId: String(now.getTime()),
+      matchId: matchUid ?? '0', // stabil kimlik (Date.now DEĞİL) -> fallback'te bile aynı uid=aynı header
       eventDate,
       eventTime,
       results: gameResults, // logda bitiren zorunlu hamle yoksa sonuc satiri yine de yazilsin
       matchResult, // son care: tamamlanan mac son oyunu final skordan sonuc satiri alsin
     })
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'tavlatv-mac.mat'
-    a.click()
-    URL.revokeObjectURL(url)
+    saveFile(text, 'tavlatv-mac.mat')
   }
 
   return (
@@ -388,7 +410,7 @@ export default function MatchReport({
           )}
           {log.length > 0 && (
             <div className="mt-3.5 flex justify-center">
-              <Button variant="outline" onClick={exportMat}>
+              <Button variant="outline" onClick={() => void exportMat()}>
                 <Icon name="install" size={14} /> {t('rep.export')}
               </Button>
             </div>

@@ -158,8 +158,8 @@ class MatFromLog
 
                 continue;
             }
-            // Hamle turu: zar "6-5" -> "65"; notasyon XG lehçesine çevrilir.
-            $dice = str_replace('-', '', (string) ($t['d'] ?? ''));
+            // Hamle turu: zar "6-5" -> KANONİK "65" (yüksek zar önce); notasyon XG lehçesine.
+            $dice = self::xgDice((string) ($t['d'] ?? ''));
             $note = trim((string) ($t['m'] ?? ''));
             $moves = ($note !== '' && $note !== 'pas' && $note !== 'pass') ? self::xgMoves($note) : '';
             $raw[] = ['kind' => 'move', 'player' => $player, 'dice' => $dice, 'moves' => $moves];
@@ -215,6 +215,24 @@ class MatFromLog
         }
 
         return [$out, $outcome];
+    }
+
+    /**
+     * KANONİK ZAR NORMALİZASYONU (src/matExport.ts xgDice portu): "6-5"/"56" -> DAİMA yüksek
+     * zar önce ("65"). Aynı atış her zaman aynı yazılır -> kaynaktan bağımsız deterministik.
+     * SADECE görüntü sırası; hamle token'ları yeniden sıralanmaz. 3+ haneli (dance "6-6-6-6")
+     * girdilerde ilk iki zar alınır (buildMatXg ile birebir: dice[0..1]).
+     */
+    public static function xgDice(string $raw): string
+    {
+        $digits = preg_replace('/[^1-6]/', '', $raw) ?? '';
+        if (strlen($digits) < 2) {
+            return $digits;
+        }
+        $a = (int) $digits[0];
+        $b = (int) $digits[1];
+
+        return $a >= $b ? "$a$b" : "$b$a";
     }
 
     /** Notasyonu XG lehçesine çevir + tekrarları aç (src/matExport.ts xgMoves portu). */
