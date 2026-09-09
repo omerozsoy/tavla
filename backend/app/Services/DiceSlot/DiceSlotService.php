@@ -169,13 +169,21 @@ class DiceSlotService
 
     // ---- Güvenli makara seçimi (CSPRNG) ----
 
-    /** Sembol => ağırlık. Her zar yüzü eşit; 64 küpü ayrı (nadir). */
-    private function symbolWeights(): array
+    /**
+     * Sembol => ağırlık. Her zar yüzü BAĞIMSIZ ağırlık alabilir (111 ile 666 farklı olasılık);
+     * bir yüz için özel değer girilmemişse taban die_weight kullanılır. 64 küpü ayrı (nadir).
+     */
+    public function symbolWeights(): array
     {
-        $dw = max(1, DS::int('die_weight'));
-        $cw = max(1, DS::int('cube_weight'));
+        $base = max(1, DS::int('die_weight'));
+        $w = [];
+        for ($v = 1; $v <= 6; $v++) {
+            $fw = DS::intOrNull('die_weight_'.$v);
+            $w['d'.$v] = max(1, $fw ?? $base);
+        }
+        $w['c64'] = max(1, DS::int('cube_weight'));
 
-        return ['d1' => $dw, 'd2' => $dw, 'd3' => $dw, 'd4' => $dw, 'd5' => $dw, 'd6' => $dw, 'c64' => $cw];
+        return $w;
     }
 
     /** Tek makara: ağırlıklı random_int seçimi. */

@@ -32,9 +32,17 @@ return [
         'timezone' => 'Europe/Istanbul',
 
         // --- Sembol ağırlıkları (kazanma olasılığını belirler; RTP kontrolü) ---
-        // Her zar yüzü aynı ağırlıkta -> ödül farkı miktardan gelir (klasik slot).
-        // 64 küpü daha nadir -> jackpot zor gelir.
-        'die_weight' => 100,           // her zar yüzü (1..6) ağırlığı
+        // Her zar YÜZÜ ayrı ağırlıkta olabilir -> her üçlünün (111, 222, ... 666) gelme
+        // olasılığı bağımsız ayarlanır. Ağırlık yüksek = yüz sık gelir = üçlüsü daha sık.
+        // Tipik denge: yüksek ödüllü yüzü (6) düşük ağırlık ver -> 666 nadir; 1'i yüksek -> 111 sık.
+        // Her yüz eşit ağırlıkta bırakılırsa klasik slot davranışı (ödül farkı sadece miktardan).
+        'die_weight' => 100,           // ESKİ/taban ağırlık — bir yüz için özel değer girilmezse bu kullanılır
+        'die_weight_1' => null,        // 1 yüzü ağırlığı (boş = taban die_weight)
+        'die_weight_2' => null,        // 2 yüzü ağırlığı
+        'die_weight_3' => null,        // 3 yüzü ağırlığı
+        'die_weight_4' => null,        // 4 yüzü ağırlığı
+        'die_weight_5' => null,        // 5 yüzü ağırlığı
+        'die_weight_6' => null,        // 6 yüzü ağırlığı
         'cube_weight' => 34,           // 64 küpü (c64) ağırlığı — nadir
 
         // --- Üçlü zar ödülleri (coin), küçükten büyüğe ---

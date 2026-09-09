@@ -37,6 +37,17 @@ class DiceSlotSettings
         return (int) self::raw($key);
     }
 
+    /** Ayar yoksa/boşsa null döner (per-face ağırlıkta "taban kullan" ayrımı için). */
+    public static function intOrNull(string $key): ?int
+    {
+        $v = self::raw($key);
+        if ($v === null || $v === '') {
+            return null;
+        }
+
+        return (int) $v;
+    }
+
     public static function string(string $key): string
     {
         return (string) self::raw($key);
@@ -68,6 +79,12 @@ class DiceSlotSettings
             'jackpot_base', 'jackpot_increment',
         ] as $k) {
             $out[$k] = (int) $out[$k];
+        }
+        // Per-face ağırlık: özel değer girilmemişse taban die_weight ile doldur (form geçerli sayı göstersin).
+        $base = (int) $out['die_weight'];
+        for ($v = 1; $v <= 6; $v++) {
+            $k = 'die_weight_'.$v;
+            $out[$k] = ($out[$k] === null || $out[$k] === '') ? $base : (int) $out[$k];
         }
 
         return $out;

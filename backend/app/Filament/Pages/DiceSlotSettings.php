@@ -58,14 +58,19 @@ class DiceSlotSettings extends Page implements HasForms
                             ->numeric()->required()->minValue(0)
                             ->helperText('0 = ardışık çevirmede bekleme yok.'),
                     ])->columns(2),
-                Section::make('Sembol Olasılıkları')
-                    ->description('Her zar yüzü aynı ağırlıkta; 64 küpü ayrı. 64 küpü ağırlığı düştükçe jackpot daha nadir gelir. Sağdaki panelde gerçek olasılıkları gör.')
+                Section::make('Sembol Olasılıkları (yüz bazında ağırlık)')
+                    ->description('Her zar yüzüne AYRI ağırlık verilir → her üçlünün (1-1-1, 2-2-2, … 6-6-6) gelme olasılığı bağımsızdır. Ağırlık yüksek = yüz sık gelir = üçlüsü daha sık. Örn. 6\'ya düşük ağırlık ver → 6-6-6 nadir (yüksek ödüle uygun); 1\'e yüksek ağırlık ver → 1-1-1 sık. 64 küpü ağırlığı düştükçe jackpot nadir gelir. Sağdaki panelde her üçlünün gerçek olasılığını gör.')
                     ->schema([
-                        TextInput::make('die_weight')->label('Zar yüzü ağırlığı (her 1..6)')
-                            ->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_1')->label('1 yüzü ağırlığı')->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_2')->label('2 yüzü ağırlığı')->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_3')->label('3 yüzü ağırlığı')->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_4')->label('4 yüzü ağırlığı')->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_5')->label('5 yüzü ağırlığı')->numeric()->required()->minValue(1),
+                        TextInput::make('die_weight_6')->label('6 yüzü ağırlığı')->numeric()->required()->minValue(1),
                         TextInput::make('cube_weight')->label('64 küpü ağırlığı')
-                            ->numeric()->required()->minValue(1),
-                    ])->columns(2),
+                            ->numeric()->required()->minValue(1)
+                            ->helperText('Jackpot sembolü (nadir olmalı).'),
+                    ])->columns(3),
                 Section::make('Üçlü Zar Ödülleri (coin)')
                     ->description('Aynı üç zar geldiğinde verilen coin. Küçükten büyüğe artmalı (klasik slot).')
                     ->schema([
@@ -105,16 +110,36 @@ class DiceSlotSettings extends Page implements HasForms
     // Sağ panel: güncel jackpot, gerçek olasılıklar ve son büyük kazançlar.
     protected function getViewData(): array
     {
-        $die = max(1, DSS::int('die_weight'));
+        // Yüz bazında ağırlıklar (özel değer yoksa taban die_weight).
+        $base = max(1, DSS::int('die_weight'));
+        $faceW = [];
+        for ($v = 1; $v <= 6; $v++) {
+            $fw = DSS::intOrNull('die_weight_'.$v);
+            $faceW[$v] = max(1, $fw ?? $base);
+        }
         $cube = max(1, DSS::int('cube_weight'));
-        $total = 6 * $die + $cube;
+        $total = array_sum($faceW) + $cube;
 
-        $pFace = $die / $total;              // tek zar yüzü olasılığı
-        $pCube = $cube / $total;             // 64 küpü olasılığı
-        $pTripleFace = $pFace ** 3;          // belirli bir üçlü zar (ör. 6-6-6)
-        $pAnyTriple = 6 * $pTripleFace;      // herhangi bir üçlü zar
-        $pStraight = 24 * ($pFace ** 3);     // sıralama: 4 dizi × 3! sıra × pFace^3
-        $pJackpot = $pCube ** 3;             // üçlü 64
+        $pFace = [];                          // her yüzün tek-makara olasılığı
+        foreach ($faceW as $v => $w) {
+            $pFace[$v] = $w / $total;
+        }
+        $pCube = $cube / $total;              // 64 küpü olasılığı
+
+        // Her üçlünün (v-v-v) olasılığı bağımsız: pFace[v]^3.
+        $tripleOdds = [];
+        $pAnyTriple = 0.0;
+        foreach ($pFace as $v => $p) {
+            $tripleOdds[$v] = $p ** 3;
+            $pAnyTriple += $tripleOdds[$v];
+        }
+        // Sıralama: {1,2,3},{2,3,4},{3,4,5},{4,5,6}, her biri 3! sırada.
+        $straights = [[1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6]];
+        $pStraight = 0.0;
+        foreach ($straights as [$a, $b, $c]) {
+            $pStraight += 6 * $pFace[$a] * $pFace[$b] * $pFace[$c];
+        }
+        $pJackpot = $pCube ** 3;              // üçlü 64
 
         $fmtOdds = fn (float $p) => $p > 0 ? '1 / '.number_format(1 / $p, 0, ',', '.') : '—';
 
@@ -141,7 +166,10 @@ class DiceSlotSettings extends Page implements HasForms
             'odds' => [
                 'straight' => $fmtOdds($pStraight),
                 'anyTriple' => $fmtOdds($pAnyTriple),
-                'triple6' => $fmtOdds($pTripleFace),
+                'triples' => collect($tripleOdds)->map(fn ($p, $v) => [
+                    'value' => $v,
+                    'odds' => $fmtOdds($p),
+                ])->values()->all(),
                 'jackpot' => $fmtOdds($pJackpot),
                 'cubePct' => number_format($pCube * 100, 2),
             ],
