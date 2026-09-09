@@ -59,6 +59,10 @@ class TournamentResource extends Resource
                         'finished' => 'Bitti',
                     ])
                     ->default('open'),
+                Forms\Components\Toggle::make('active')
+                    ->label('Aktif (yayında)')
+                    ->helperText('Kapatınca turnuva silinmez, sadece sitede gösterilmez (pasif). Tekrar açınca görünür olur.')
+                    ->default(true),
                 Forms\Components\DateTimePicker::make('register_until')
                     ->label('Son katılım tarihi')
                     ->helperText('Bu tarih-saatten 1 dakika sonra turnuva otomatik başlar (en az 2 oyuncu varsa). Boş bırakırsan otomatik başlama olmaz.')
@@ -151,6 +155,9 @@ class TournamentResource extends Resource
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->searchable(),
+                Tables\Columns\ToggleColumn::make('active')
+                    ->label('Aktif')
+                    ->tooltip('Kapatınca sitede gösterilmez (pasif); silmez.'),
                 Tables\Columns\TextColumn::make('register_until')
                     ->label('Son katılım')
                     ->dateTime('d.m.Y H:i')
@@ -186,7 +193,11 @@ class TournamentResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                //
+                Tables\Filters\TernaryFilter::make('active')
+                    ->label('Yayın durumu')
+                    ->placeholder('Tümü')
+                    ->trueLabel('Aktif')
+                    ->falseLabel('Pasif'),
             ])
             ->actions([
                 Tables\Actions\Action::make('start')
