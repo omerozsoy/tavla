@@ -838,7 +838,7 @@ button[aria-disabled='true'],
   overflow-y: auto;
   /* Bir ton koyu panel */
   background: color-mix(in srgb, var(--bg) 90%, #000);
-  border-radius: 0; /* Duz kose (ana sayfa) */
+  border-radius: var(--radius-xl);
   padding: 6px 10px;
 }
 /* Drawer logosu yalniz mobil drawer'da; desktop sabit yan menude gizli (ust bantta zaten var) */
@@ -7641,18 +7641,6 @@ button.acct-row:hover:not(:disabled) {
    dikey kayar -> band STICKY DEGIL, icerikle birlikte yukari kayar ve KAYBOLUR.
    Yan menu sticky (band kayinca en ustte kalir, erisilebilir). */
 .app.lobby {
-  /* Ana sayfa (lobi) DUZ KOSELI: tum kapsayici/kart/panel/menu koseleri kare.
-     Kose yaricap token'lari 0'a cekilir -> token kullanan her sey duzlesir.
-     Daireler (avatar/nokta = --radius-circle) ve pill'ler (--radius-pill)
-     kasitli sekiller olarak korunur ("yuvarlak kose" = dikdortgen kosesi). */
-  --radius-xs: 0;
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  /* Pill/rozet de kare (istek: "pill rozetleri de koseli yap").
-     Daire avatar/nokta --radius-circle ile korunur. */
-  --radius-pill: 0;
   display: grid;
   grid-template-columns: 224px minmax(0, 1fr);
   /* Bar satirini SABIT yukseklige kilitle: aksi halde auto satir, sayfaya gore
@@ -8685,7 +8673,7 @@ button.acct-row:hover:not(:disabled) {
   justify-content: center;
   width: 54px;
   height: 54px;
-  border-radius: 0; /* Ana sayfa duz kose */
+  border-radius: 15px;
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--accent);
   /* Ince ic halka: rozete derinlik/kimlik verir */
@@ -10930,40 +10918,6 @@ button.acct-row:hover:not(:disabled) {
    Solo overlay .app.lobby DISINDA (fixed modal) -> burada acikca kareler.
    Daire avatar/nokta (--radius-circle / 50%) KORUNUR.
    ============================================================ */
-.app.lobby [data-slot='button'],
-.solo-card,
-.solo-card [data-slot='button'],
-.setup-preview,
-.setup-board,
-.setup-board-svg,
-.setup-board-change,
-.setup-split [data-slot='button'],
-.solo-tile,
-.solo-board,
-.solo-lvl,
-.solo-stake,
-.solo-balance,
-.solo-preview-bar {
-  border-radius: 0 !important;
-}
-/* Home panel/turnuva rozetleri sabit 999px kullaniyor (token disi) -> kare. */
-.app.lobby :where(
-  .panel-count,
-  .tr-status,
-  .tr-status-running,
-  .tr-status-finished,
-  .tr-prize,
-  .tr-cd,
-  .tr-cd-lbl,
-  .tr-count,
-  .tr-bar,
-  .tr-bar > *,
-  .tcard-status,
-  .tcard-bar,
-  .tcard-bar > *
-) {
-  border-radius: 0 !important;
-}
 @media (max-width: 900px) {
   .setup-split {
     grid-template-columns: 1fr;
@@ -21336,34 +21290,9 @@ select:-webkit-autofill {
 }
 
 /* =========================================================================
-   FLAT / KESKİN KÖŞE — site geneli (kullanıcı direktifi: yuvarlak köşe yok).
-   HARİÇ TUTULANLAR (yuvarlak KALIR):
-     • Oyun tahtası (.board ve altı: pul/zar/küp).
-     • Avatarlar: .sf (AvatarFrame + ring/glow + morph animasyonu), .avatar,
-       .avatar-preview, shadcn [data-slot=avatar] ve alt öğeleri.
-     • Pill / chip / tag / badge (isminde geçen tüm öğeler) + Tailwind
-       `rounded-full` (hap/daire niyeti olan her şey yuvarlak kalır).
-     • Spinner'lar ([class*=spinner]: .loading-spinner/.btn-spinner/.mm-spinner).
-   Bu blok Tailwind `rounded-*` utility'lerini ve tüm sabit-kodlu radius'ları
-   sıfırlar. Tek noktadan geri alınır.
+   FLAT / keskin-kose override KALDIRILDI (kullanici istegi: eski yuvarlak
+   koseler geri getirildi). Site geneli `border-radius:0 !important` sifirlamasi
+   ve `.app.lobby` radius-token ezmeleri kaldirildi; :root radius token'lari ve
+   bilesenlerin kendi radius degerleri yeniden gecerli. Sohbet balonu
+   (.msg-bubble) kendi taniminda (18px) zaten yuvarlak.
    ========================================================================= */
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"]),
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::before,
-*:not(.board, .board *, .sf, .sf *, .avatar, .avatar *, .avatar-preview, .avatar-preview *, .avf-simple, .avf-simple *, [data-slot="avatar"], [data-slot="avatar"] *, [class*="chip"], [class*="pill"], [class*="tag"], [class*="badge"], [class*="rounded-full"], [class*="spinner"], .die-face, .die-face *, .cube, .cube *, .clock-die, .clock-die *, .turn-arcs, [class*="logo"])::after {
-  border-radius: 0 !important;
-}
-/* [class*=logo] yanlis-pozitifi: .auth-logout ("logout" -> "logo") keskin kalsin */
-.auth-logout {
-  border-radius: 0 !important;
-}
-/* Sohbet balonlari YUVARLAK kalsin (keskin-kose global sifirlamasindan muaf).
-   WhatsApp tarzi: buyuk yuvarlaklik + alt-dis koseyi kis (kuyruk tarafi). */
-.msg-bubble {
-  border-radius: 16px !important;
-}
-.msg-bubble.mine {
-  border-bottom-right-radius: 5px !important;
-}
-.msg-bubble.theirs {
-  border-bottom-left-radius: 5px !important;
-}
