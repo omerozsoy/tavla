@@ -677,20 +677,22 @@ function Board({
         onClick={() => offTarget && onSelectTarget('off')}
       >
         <div className="bearoff-slot top">
-          {topOffCount > 0 && (
-            <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
-          )}
           {Array.from({ length: topOffCount }).map((_, i) => (
             <span key={i} className={`off-checker ${topOffPlayer}`} />
           ))}
+          {/* Sayi ic (merkez) kenara: cubuklar ustten dizilir, "6" tepsinin ortasina yakin */}
+          {topOffCount > 0 && (
+            <span className={`bearoff-count ${topOffPlayer}`}>{topOffCount}</span>
+          )}
         </div>
         <div className="bearoff-slot bottom">
-          {Array.from({ length: bottomOffCount }).map((_, i) => (
-            <span key={i} className={`off-checker ${bottomOffPlayer}`} />
-          ))}
+          {/* Sayi ic (merkez) kenara: "4" tepsinin ortasina yakin, cubuklar alttan dizilir */}
           {bottomOffCount > 0 && (
             <span className={`bearoff-count ${bottomOffPlayer}`}>{bottomOffCount}</span>
           )}
+          {Array.from({ length: bottomOffCount }).map((_, i) => (
+            <span key={i} className={`off-checker ${bottomOffPlayer}`} />
+          ))}
         </div>
       </div>
 

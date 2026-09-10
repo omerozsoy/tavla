@@ -5600,6 +5600,15 @@ body.checker-dragging * {
   line-height: 1.05;
   margin: 1px 0;
 }
+/* Toplanan pul sayilari tepsinin ORTASINDA toplanir: ust sayi ust-yarinin altina,
+   alt sayi alt-yarinin ustune itilir -> ikisi merkez sinirinda bulusur (cubuklar
+   dista kalir). */
+.bearoff-slot.top .bearoff-count {
+  margin-top: auto;
+}
+.bearoff-slot.bottom .bearoff-count {
+  margin-bottom: auto;
+}
 .bearoff-count.white {
   color: var(--cream);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.75);
