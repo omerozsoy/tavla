@@ -4,7 +4,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import PremiumPill from './PremiumPill'
 import { CountryFlag } from './Flag'
@@ -311,16 +311,23 @@ export function RankingPanel({
   onOpen?: () => void // baslik -> Liderlik Tablosu sayfasi (/lider-tablosu)
 }) {
   const { t } = useT()
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
+  const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
 
   useEffect(() => {
     let alive = true
     // NOT: setRows(null) YOK -> tab degisince liste cokup sayfa kisalmaz (scroll yukari
     // atlamasin). Eski satirlar yeni veri gelene kadar durur; ilk yuklemede zaten null.
-    leaderboard(10, by) // ilk 10 (scroll yok, tam liste)
-      .then((r) => alive && setRows(r))
-      .catch(() => alive && setRows([]))
+    if (by === 'pr') {
+      prLeaderboard(10)
+        .then((r) => alive && setPrRows(r.players))
+        .catch(() => alive && setPrRows([]))
+    } else {
+      leaderboard(10, by) // ilk 10 (scroll yok, tam liste)
+        .then((r) => alive && setRows(r))
+        .catch(() => alive && setRows([]))
+    }
     return () => {
       alive = false
     }
@@ -347,8 +354,36 @@ export function RankingPanel({
         <Button type="button" variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
           {t('lb.byWxp')}
         </Button>
+        <Button type="button" variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => setBy('pr')}>
+          {t('lb.byPr')}
+        </Button>
       </div>
-      {rows === null ? (
+      {by === 'pr' ? (
+        prRows === null ? (
+          <div className="home-panel-empty">{t('common.loading')}</div>
+        ) : prRows.length === 0 ? (
+          <div className="home-panel-empty">{t('lb.prEmpty')}</div>
+        ) : (
+          <div className="rank-list">
+            {prRows.map((r) => (
+              <button
+                key={r.rank}
+                className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
+                onClick={() => r.id && onProfile(r.id)}
+              >
+                <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>{r.rank}</span>
+                <span className="rank-name">
+                  <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} />
+                </span>
+                <span className="rank-flag">
+                  <CountryFlag code={r.country} size={16} rounded={false} />
+                </span>
+                <span className="rank-val lb-pr-val">{r.career_pr.toFixed(2)}</span>
+              </button>
+            ))}
+          </div>
+        )
+      ) : rows === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
       ) : rows.length === 0 ? (
         <div className="home-panel-empty">{t('lb.empty')}</div>
