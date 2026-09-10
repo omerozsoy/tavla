@@ -54,11 +54,15 @@ export default function PlayerIdentity({
             />
           )}
         </span>
-        {/* Rütbe + PREMIUM AYNI alt satırda -> pill isim satırını daraltıp ismi kırpmaz. */}
-        {(rating != null || premium) && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-            {rating != null && <DivisionChip rating={rating} size={rankSize} />}
-            {premium && <PremiumPill />}
+        {/* Rütbe isim altında; PREMIUM pill de rütbenin TAM ALTINDA ayrı satırda. */}
+        {rating != null && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
+            <DivisionChip rating={rating} size={rankSize} />
+          </span>
+        )}
+        {premium && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0, marginTop: 3 }}>
+            <PremiumPill />
           </span>
         )}
       </span>
