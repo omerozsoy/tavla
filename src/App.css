@@ -7653,6 +7653,16 @@ html.fs-active .account-bar {
   color: var(--tv-ink);
   text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
 }
+/* Pul renkleri takasında pul arka planı ters döndüğü için içindeki SAYI (bar/yığın)
+   kontrastı da ters çevrilir, yoksa okunmaz (koyu-üstünde-koyu / açık-üstünde-açık). */
+.board.stones-swapped .checker.white .checker-count {
+  color: var(--tv-white);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+.board.stones-swapped .checker.black .checker-count {
+  color: var(--tv-ink);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
 
 .account-avatar {
   width: 22px;
