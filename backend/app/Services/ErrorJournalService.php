@@ -28,7 +28,12 @@ class ErrorJournalService
      * Bir maci analiz edip decision_analyses'i (yeniden) uretir. Idempotent.
      * @return int islenen karar sayisi
      */
-    public function analyzeMatch(MatchResult $mr, bool $force = false): int
+    /**
+     * @param  array<int,float>|null  $gnubgLoss  logIndex => gnubg equity kaybı (HAKEM=gnubg). Verilirse
+     *   o karar için wildbg loss yerine gnubg loss kullanılır + engine_version='gnubg'. Yalnız insanın
+     *   (hc) kararları için doludur; rakip/bot kararları wildbg kalır (Hata Günlüğü zaten hc-scoped).
+     */
+    public function analyzeMatch(MatchResult $mr, bool $force = false, ?array $gnubgLoss = null): int
     {
         // Zaten guncel surumle islenmisse atla.
         if (! $force && $mr->analyzed_at !== null && (int) $mr->analysis_version === Cfg::ANALYSIS_VERSION) {
@@ -45,7 +50,7 @@ class ErrorJournalService
         [$hc, $rows] = $entries;
         $playedAt = $mr->created_at ?? Carbon::now();
 
-        $count = DB::transaction(function () use ($mr, $hc, $rows, $playedAt) {
+        $count = DB::transaction(function () use ($mr, $hc, $rows, $playedAt, $gnubgLoss) {
             // Temiz yeniden uretim: bu macin eski analizlerini sil, yenilerini yaz.
             DecisionAnalysis::where('match_result_id', $mr->id)->delete();
 
@@ -70,7 +75,13 @@ class ErrorJournalService
                     continue;
                 }
 
+                // HAKEM=gnubg: bu karar için gnubg loss varsa onu kullan (wildbg loss yerine).
+                $engine = 'wildbg';
                 $loss = (float) ($e['loss'] ?? 0);
+                if ($gnubgLoss !== null && array_key_exists($i, $gnubgLoss)) {
+                    $loss = max(0.0, (float) $gnubgLoss[$i]);
+                    $engine = 'gnubg';
+                }
                 $severity = Cfg::severity($loss);        // null = hata degil
                 $isError = $severity !== null;
 
@@ -79,7 +90,8 @@ class ErrorJournalService
                 $cls = PositionClassifier::classify($f, $player, $prev);
                 $prevByPlayer[$player] = $cls['primaryCategory'];
 
-                $bestEq = isset($e['cands'][0]['equity']) ? (float) $e['cands'][0]['equity'] : null;
+                // gnubg loss kullanıldıysa wildbg cands[0] "best equity" tutarsız -> gösterme (null).
+                $bestEq = ($engine === 'wildbg' && isset($e['cands'][0]['equity'])) ? (float) $e['cands'][0]['equity'] : null;
                 $playedEq = $bestEq !== null ? $bestEq - $loss : null;
 
                 DecisionAnalysis::create([
@@ -106,7 +118,7 @@ class ErrorJournalService
                     'steps' => $isError ? json_encode($e['steps'] ?? []) : null,
                     'played_steps' => $isError ? json_encode($e['playedSteps'] ?? []) : null,
                     'cands' => $isError ? json_encode(array_slice($e['cands'] ?? [], 0, 3)) : null,
-                    'engine_version' => 'wildbg',
+                    'engine_version' => $engine,
                     'analysis_version' => Cfg::ANALYSIS_VERSION,
                 ]);
                 $n++;
