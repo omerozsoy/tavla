@@ -361,6 +361,7 @@ export default function Messages({
                       frame={activeUser.frame}
                       size={34}
                       rankSize="sm"
+                      premium={activeUser.premium}
                     />
                   )}
                 </div>

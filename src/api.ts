@@ -327,6 +327,7 @@ export interface ClubMemberRow {
   points: number
   wins: number
   losses: number
+  premium?: boolean // ücretli plan -> PREMIUM
 }
 export interface ClubFull extends ClubSummary {
   owner_id: number
@@ -757,6 +758,7 @@ export interface ChatUser {
   country?: string | null
   rating: number
   online?: boolean
+  premium?: boolean // süresi geçerli ücretli plan -> PREMIUM
 }
 export interface ChatMessage {
   id: number
@@ -800,6 +802,7 @@ export interface TPlayer {
   name: string
   rating: number
   avatar?: string | null
+  premium?: boolean // kayıt anındaki premium (snapshot) -> PREMIUM
 }
 export interface TMatch {
   key: string

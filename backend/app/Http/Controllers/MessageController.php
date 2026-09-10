@@ -37,6 +37,7 @@ class MessageController extends Controller
             'country' => $u->country ?? null,
             'rating' => $u->rating ?? 1500,
             'online' => (bool) $online,
+            'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> PREMIUM
         ];
     }
 
