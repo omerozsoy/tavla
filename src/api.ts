@@ -957,7 +957,8 @@ export interface InfoPage {
   slug: InfoPageSlug
   title: string
   body?: string | null
-  gallery?: string[] | null
+  gallery?: string[] | null // varsayilan galeri (<resimgalerisi>)
+  galleries?: { name: string; images: string[] }[] | null // isimli galeriler (<ad>)
   sort: number
 }
 export async function listInfoPages(): Promise<InfoPage[]> {

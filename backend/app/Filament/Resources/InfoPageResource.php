@@ -67,11 +67,32 @@ class InfoPageResource extends Resource
                 ->fileAttachmentsVisibility('public')
                 ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
                 ->columnSpanFull(),
-            Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
+            Forms\Components\FileUpload::make('gallery')->label('Resim galerisi (varsayılan)')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('bilgi')->visibility('public')
                 ->maxSize(4096)->panelLayout('grid')
-                ->helperText('İçeriğin altında küçük küçük gösterilir; tıklayınca büyür (galeri). Sürükleyerek sıralayabilirsin. İpucu: içerik metninde <resimgalerisi> yazarsan galeri tam o noktada gösterilir (yoksa en altta).')
+                ->helperText('Varsayılan galeri. İçeriğin altında gösterilir; tıklayınca büyür (lightbox). İpucu: metinde <resimgalerisi> yazarsan tam o noktada çıkar (yoksa en altta).')
+                ->columnSpanFull(),
+            Forms\Components\Repeater::make('galleries')
+                ->label('İsimli galeriler')
+                ->helperText('Birden fazla galeri oluşturabilirsin; her birine bir ad ver. İçerik metninde <ad> yazdığın yere o galeri gelir. Örn: ad "turnuvalar" → metinde <turnuvalar>.')
+                ->schema([
+                    Forms\Components\TextInput::make('name')
+                        ->label('Galeri adı (etiket)')
+                        ->required()
+                        ->maxLength(40)
+                        ->helperText('Sadece harf/rakam/tire kullan (örn: turnuvalar). Metinde <turnuvalar> ile çağır.'),
+                    Forms\Components\FileUpload::make('images')
+                        ->label('Resimler')
+                        ->image()->multiple()->reorderable()->appendFiles()
+                        ->disk('uploads')->directory('bilgi')->visibility('public')
+                        ->maxSize(4096)->panelLayout('grid'),
+                ])
+                ->itemLabel(fn (array $state): ?string => ! empty($state['name']) ? ('<'.$state['name'].'>') : null)
+                ->addActionLabel('Galeri ekle')
+                ->reorderable()
+                ->collapsible()
+                ->defaultItems(0)
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
