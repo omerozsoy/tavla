@@ -16807,9 +16807,16 @@ button.acct-row:hover:not(:disabled) {
 .messages-thread-view {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  /* Garantici: gerçek scroll iç .messages-thread-scroll'da (overflow-y:auto).
+     Burada overflow:hidden gereksizdi ve başlıktaki animasyonlu avatar çerçevesini
+     üstten kırpma riski taşıyordu -> visible. */
+  overflow: visible;
   min-width: 0;
   background: var(--bg);
+}
+/* Başlık kendi kutusunda da çerçeveyi kırpmasın (belt-and-suspenders). */
+.messages-thread-head {
+  overflow: visible;
 }
 .messages-placeholder {
   margin: auto;
