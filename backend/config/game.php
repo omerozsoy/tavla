@@ -27,4 +27,9 @@ return [
     // HOŞGELDİN coin'i: yeni üye (e-posta + Google) bu kadar coin ile başlar. 0 = yok.
     // NOT: bu coin bahse yatırılabilir (bedava değer) -> WELCOME_COINS env ile ayarla.
     'welcome_coins' => max(0, (int) env('WELCOME_COINS', 100)),
+
+    // HOŞGELDİN premium'u: yeni üye e-postasını DOĞRULAYINCA veya Google ile kaydolunca bu kadar
+    // AY ücretsiz Premium ('star') ile başlar. Bir kez (trial_used); zaten premium olana dokunmaz.
+    // 0 = kapalı. Değişiklik: env + config:clear + FPM restart (admin panelinden de ayarlanır).
+    'welcome_premium_months' => max(0, (int) env('WELCOME_PREMIUM_MONTHS', 3)),
 ];

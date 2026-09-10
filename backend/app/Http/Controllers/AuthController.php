@@ -168,6 +168,9 @@ class AuthController extends Controller
             $user->markEmailAsVerified(); // fillable disi, guvenli
             $this->grantWelcomeCoins($user->id); // Google = doğrulanmış -> hoşgeldin coin'i (idempotent)
         }
+        if ($isNew) {
+            $this->grantWelcomePremium($user->id); // Google ile YENİ kayıt -> 3 ay hoşgeldin Premium (bir kez)
+        }
 
         if ($user->isBanned()) {
             return $this->fail('Bu hesap askıya alınmış.', 403);
@@ -175,6 +178,7 @@ class AuthController extends Controller
 
         $user->last_login_at = now();
         $user->save();
+        $user->refresh(); // grantWelcomePremium query-builder ile yazdı -> plan_active güncel dönsün
 
         $token = $user->createToken('google')->plainTextToken;
 
@@ -1396,6 +1400,7 @@ class AuthController extends Controller
             $user->markEmailAsVerified();
             event(new \Illuminate\Auth\Events\Verified($user));
             $this->grantWelcomeCoins($user->id); // e-posta DOĞRULANDI -> hoşgeldin coin'i (idempotent)
+            $this->grantWelcomePremium($user->id); // + 3 ay hoşgeldin Premium (bir kez, idempotent)
         }
         return redirect("{$base}/?verified=1");
     }
@@ -1418,6 +1423,41 @@ class AuthController extends Controller
             'welcome_granted' => true,
             'coins' => \Illuminate\Support\Facades\DB::raw('coins + '.$amount),
         ]);
+    }
+
+    /**
+     * HOŞGELDİN premium'unu BİR KEZ ver (atomik idempotent): yeni üye e-postasını DOĞRULAYINCA veya
+     * Google ile kaydolunca N ay ücretsiz Premium ('star'). trial_used=false + süresi geçerli ücretli
+     * planı OLMAYAN (free/lapsed) kullanıcıya uygulanır -> mevcut ödemeli üyeliği KISALTMAZ, ikinci
+     * kez verilmez. Query-builder update (fillable dışı plan alanlarını güvenle yazar).
+     */
+    private function grantWelcomePremium(int $userId): void
+    {
+        if (! Schema::hasColumn('users', 'trial_used') || ! Schema::hasColumn('users', 'plan_until')) {
+            return;
+        }
+        $months = \App\Models\Setting::int('welcome_premium_months', (int) config('game.welcome_premium_months', 3));
+        if ($months <= 0) {
+            return;
+        }
+        $now = now();
+        $update = [
+            'plan' => 'star',
+            'plan_until' => $now->copy()->addMonths($months),
+            'trial_used' => true,
+        ];
+        if (Schema::hasColumn('users', 'plan_since')) {
+            $update['plan_since'] = $now;
+        }
+        // trial_used=false AND (plan free VEYA süresi geçmiş) -> yeni üyeye ver. Atomik: WHERE ile yarış yok.
+        User::where('id', $userId)
+            ->where('trial_used', false)
+            ->where(function ($q) use ($now) {
+                $q->where('plan', 'free')
+                    ->orWhereNull('plan_until')
+                    ->orWhere('plan_until', '<=', $now);
+            })
+            ->update($update);
     }
 
     // Dogrulama e-postasini tekrar gonder (giris yapmis kullanici)
