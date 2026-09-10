@@ -5,6 +5,7 @@ const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
+import { matchGnubgMove } from './engine/gnubgMove'
 import { checkerDecision, onePointFactor } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
@@ -1310,6 +1311,36 @@ export default function App() {
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
+  // ADIM 6 (HAKEM=gnubg, RAKİP kısmi): SADECE en zor seviye (Neural AI = 10) botu gnubg oynatır.
+  // gnubg en iyi hamleyi NOTASYON verir -> matchGnubgMove ile yerel Move'a GÜVENLİ eşlenir; eşleşmez/
+  // servis yok/misafir/alt seviye ise wildbg (engine.chooseMove). Böylece bot ASLA geçersiz oynamaz.
+  async function chooseBotMove(state: GameState): Promise<Move> {
+    if (difficulty >= 10 && getToken()) {
+      try {
+        const dice2 = state.dice.slice(0, 2)
+        if (dice2.length === 2) {
+          const g = await analyzePosition({
+            points: state.points,
+            bar: state.bar,
+            turn: state.turn,
+            dice: dice2,
+            cube: { value: match.cube.value, owner: match.cube.owner },
+            score: { white: match.score.white, black: match.score.black },
+            matchLength: match.target,
+            plies: 2,
+          })
+          if (g.moves && g.moves.length > 0) {
+            const mv = matchGnubgMove(state, state.turn, g.moves[0].notation)
+            if (mv) return mv // gnubg hamlesi (güvenli eşleşme)
+          }
+        }
+      } catch {
+        /* gnubg erişilemedi -> wildbg */
+      }
+    }
+    return await Promise.resolve(engine.chooseMove(state))
+  }
+
   // Refresh'te oyun kaybolmasin: saveGame, ILK restore bitene kadar localStorage'i
   // EZMEZ (hydratedRef). Boylece restore effect'i kaydi TAZE okur — StrictMode dev
   // remount'unda bile ezme olmaz. "Once useMemo ile yakala" kirilgan numarasi YOK.
@@ -2540,7 +2571,7 @@ export default function App() {
         let move: Move
         try {
           setMessage(t('msg.neuralThinking'))
-          move = await Promise.resolve(engine.chooseMove(turnStart))
+          move = await chooseBotMove(turnStart)
         } catch (e) {
           // Sinir agi yuklenemedi -> oyun takilmasin, hizli bota dus
           console.error('Sinir ağı hatası, hızlı bota geçildi:', e)
