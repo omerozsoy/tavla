@@ -22,7 +22,7 @@ class Setting extends Model
         'reward_premium' => 50,
         'commission_pct' => 5,
         'pr_min_matches' => 10,    // PR Sıralaması: minimum analiz edilmiş maç
-        'pr_min_decisions' => 500, // PR Sıralaması: minimum analiz edilmiş karar
+        'pr_min_decisions' => 200, // PR Sıralaması: minimum analiz edilmiş karar
     ];
 
     /** Tüm ayarları cache'li key=>value dizi döndür (tablo yoksa boş). */
