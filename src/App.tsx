@@ -5201,8 +5201,10 @@ export default function App() {
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
-    // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
-    pr: mode === 'pvb' && showLivePr ? (prValue ?? prLooseOf('white')) : null,
+    // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
+    // prShown -> strict/loose/0 fallback (ASLA null): oyun basinda karar yokken bile 0.0 gosterir
+    // ("PR asla bos olmasin" direktifi); eski prValue??prLoose null donup PR'i gizliyordu.
+    pr: mode === 'pvb' && showLivePr ? prShown('white') : null,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
   }
 
