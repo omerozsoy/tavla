@@ -146,6 +146,8 @@ const TR: Dict = {
   'dir.right': 'Sağa topla',
   'dir.left': 'Sola topla',
   'gm.anim': 'Animasyonlar',
+
+  'gm.livePr': 'Canlı PR',
   'gm.lobby': 'Lobi',
   'menu.myStats': 'İstatistiklerim',
   'menu.friends': 'Arkadaşlar',
@@ -1435,6 +1437,8 @@ const EN: Dict = {
   'dir.right': 'Home right',
   'dir.left': 'Home left',
   'gm.anim': 'Animations',
+
+  'gm.livePr': 'Live PR',
   'gm.lobby': 'Lobby',
   'menu.myStats': 'My Stats',
   'menu.friends': 'Friends',
@@ -2712,6 +2716,8 @@ const ES: Dict = {
   'dir.right': 'Casa a la derecha',
   'dir.left': 'Casa a la izquierda',
   'gm.anim': 'Animaciones',
+
+  'gm.livePr': 'PR en vivo',
   'gm.lobby': 'Sala',
   'menu.myStats': 'Mis Estadísticas',
   'menu.friends': 'Amigos',
@@ -3659,6 +3665,8 @@ const DE: Dict = {
   'dir.right': 'Heim rechts',
   'dir.left': 'Heim links',
   'gm.anim': 'Animationen',
+
+  'gm.livePr': 'Live-PR',
   'gm.lobby': 'Lobby',
   'menu.myStats': 'Meine Statistik',
   'menu.friends': 'Freunde',
@@ -4606,6 +4614,8 @@ const FR: Dict = {
   'dir.right': 'Maison à droite',
   'dir.left': 'Maison à gauche',
   'gm.anim': 'Animations',
+
+  'gm.livePr': 'PR en direct',
   'gm.lobby': 'Salon',
   'menu.myStats': 'Mes Statistiques',
   'menu.friends': 'Amis',
@@ -5541,6 +5551,8 @@ const EL: Dict = {
   'dir.right': 'Οικία δεξιά',
   'dir.left': 'Οικία αριστερά',
   'gm.anim': 'Κινήσεις',
+
+  'gm.livePr': 'Ζωντανό PR',
   'gm.lobby': 'Λόμπι',
   'menu.myStats': 'Τα Στατιστικά μου',
   'menu.friends': 'Φίλοι',
@@ -6742,6 +6754,8 @@ const RU: Dict = {
   'dir.right': 'Дом справа',
   'dir.left': 'Дом слева',
   'gm.anim': 'Анимации',
+
+  'gm.livePr': 'PR в реальном времени',
   'gm.lobby': 'Лобби',
   'menu.myStats': 'Моя статистика',
   'menu.friends': 'Друзья',
@@ -7943,6 +7957,8 @@ const FA: Dict = {
   'dir.right': 'خانه سمت راست',
   'dir.left': 'خانه سمت چپ',
   'gm.anim': 'انیمیشن‌ها',
+
+  'gm.livePr': 'PR زنده',
   'gm.lobby': 'لابی',
   'menu.myStats': 'آمار من',
   'menu.friends': 'دوستان',

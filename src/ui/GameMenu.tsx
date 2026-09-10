@@ -18,6 +18,9 @@ interface Props {
   setShowAnalysis: (v: boolean) => void
   learnMode: boolean
   setLearnMode: (v: boolean) => void
+  /** Canlı PR (anlık performans reytingi) sidebar'da görünsün mü — SADECE pvb. */
+  showLivePr: boolean
+  setShowLivePr: (v: boolean) => void
   animOn: boolean
   toggleAnim: () => void
   /** Oyun yonu: pullarin toplandigi taraf. Tum modlarda ayni ayar. */
@@ -43,7 +46,10 @@ export default function GameMenu(p: Props) {
     { label: t('setup.pip'), on: p.showPip, toggle: () => p.setShowPip(!p.showPip) },
     // Canlı "Analizi göster" KALDIRILDI (maç sonu analizi yeterli). Öğrenme Modu SADECE pvb.
     ...(p.canAnalyze
-      ? [{ label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) }]
+      ? [
+          { label: t('hint.learnMode'), on: p.learnMode, toggle: () => p.setLearnMode(!p.learnMode) },
+          { label: t('gm.livePr'), on: p.showLivePr, toggle: () => p.setShowLivePr(!p.showLivePr) },
+        ]
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     {
