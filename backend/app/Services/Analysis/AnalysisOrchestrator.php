@@ -38,7 +38,7 @@ class AnalysisOrchestrator
         $reasons = ['no_content' => 0, 'gnubg_null' => 0, 'no_match' => 0];
         $firstSkip = null;
 
-        foreach ($log as $e) {
+        foreach ($log as $logIndex => $e) {
             if (($e['player'] ?? null) !== $player) {
                 continue;
             }
@@ -117,6 +117,7 @@ class AnalysisOrchestrator
                 'move' => $played['move'] ?? null,
                 'loss' => round((float) $played['loss'], 4),
                 'counts' => $counts,
+                'logIndex' => $logIndex, // Hata Günlüğü: gnubg loss'unu orijinal log girdisine eşler
             ];
         }
 

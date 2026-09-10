@@ -38,12 +38,10 @@ class AnalyzeMatchPrJob implements ShouldQueue
             return;
         }
         $player = $decoded['hc'] ?? 'white';
-        // fill = yalnız XG .mat tur-sırası dolgusu (zorunlu/dance). PR analizine SOKMA -> davranış
-        // bugünküyle aynı (bu turlar zaten karar değildi) + gereksiz gnubg değerlendirmesi olmaz.
-        $log = array_values(array_filter(
-            is_array($decoded['log']) ? $decoded['log'] : [],
-            fn ($e) => is_array($e) && empty($e['fill'])
-        ));
+        // HAM log (fill DAHİL) — orchestrator fill/cube'u kendisi eler (PR sonucu değişmez). Filtreleyip
+        // reindex ETMİYORUZ ki perDecision.logIndex, mr->log indeksleriyle HİZALI kalsın (Hata Günlüğü
+        // Adım 2: gnubg loss'unu doğru karara eşler).
+        $log = is_array($decoded['log']) ? $decoded['log'] : [];
         $ml = (int) ($mr->match_length ?? 0);
 
         try {
@@ -93,6 +91,25 @@ class AnalyzeMatchPrJob implements ShouldQueue
 
         if ($upd !== []) {
             MatchResult::where('id', $mr->id)->update($upd); // query-builder -> fillable gerekmez
+        }
+
+        // ADIM 2 (HAKEM=gnubg): Hata Günlüğü'nü gnubg per-karar loss'uyla YENİDEN üret. reportRating'te
+        // senkron olarak wildbg loss'uyla üretilmişti; burada (async) gnubg loss'uyla ezilir. logIndex ->
+        // gnubg loss haritası ErrorJournal'a verilir (yalnız insanın kararları; rakip wildbg kalır).
+        try {
+            $lossByIndex = [];
+            foreach (($chk['perDecision'] ?? []) as $d) {
+                if (isset($d['logIndex'])) {
+                    $lossByIndex[(int) $d['logIndex']] = (float) $d['loss'];
+                }
+            }
+            if ($lossByIndex !== []) {
+                $freshMr = MatchResult::find($mr->id) ?? $mr;
+                app(\App\Services\ErrorJournalService::class)->analyzeMatch($freshMr, true, $lossByIndex);
+                app(\App\Services\DiceStatisticsService::class)->invalidate((int) $mr->user_id);
+            }
+        } catch (\Throwable $e) {
+            Log::warning('gnubg Hata Günlüğü re-gen hata', ['id' => $mr->id, 'err' => $e->getMessage()]);
         }
 
         Log::info('gnubg PR shadow', [

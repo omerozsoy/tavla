@@ -87,6 +87,23 @@ class ErrorJournalTest extends TestCase
         $this->assertNotNull($mr->fresh()->analyzed_at);
     }
 
+    public function test_gnubg_loss_override_used_for_human_decisions(): void
+    {
+        $u = $this->user();
+        $mr = $this->match($u);
+        // logIndex => gnubg loss (insanın kararları: 0,2,3). Rakip (1) verilmez -> wildbg kalır.
+        app(ErrorJournalService::class)->analyzeMatch($mr, true, [0 => 0.200, 2 => 0.000, 3 => 0.300]);
+
+        $d0 = DecisionAnalysis::where('match_result_id', $mr->id)->where('move_index', 0)->first();
+        $this->assertNotNull($d0);
+        $this->assertEqualsWithDelta(0.200, (float) $d0->equity_loss, 1e-6, 'insan kararı gnubg loss kullanmalı');
+        $this->assertSame('gnubg', $d0->engine_version);
+
+        // Rakip (black, index 1) gnubgLoss'ta yok -> wildbg loss (0.2) + engine wildbg.
+        $dOpp = DecisionAnalysis::where('match_result_id', $mr->id)->where('is_opponent', true)->first();
+        $this->assertSame('wildbg', $dOpp->engine_version);
+    }
+
     public function test_analyze_is_idempotent(): void
     {
         $u = $this->user();
