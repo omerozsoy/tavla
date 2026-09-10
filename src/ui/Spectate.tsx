@@ -191,12 +191,13 @@ export default function Spectate({
       <Button
         variant="ghost"
         size="icon"
+        className="spectate-close"
         onClick={onClose}
         aria-label={t('common.close')}
         title={t('common.close')}
-        style={{ position: 'fixed', top: '10px', right: '10px', zIndex: 120 }}
+        style={{ position: 'fixed', top: '14px', right: '14px', zIndex: 130 }}
       >
-        <Icon name="x" size={16} />
+        <Icon name="x" size={18} />
       </Button>
 
       <main className="main game-scene">
