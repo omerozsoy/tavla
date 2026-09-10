@@ -59,15 +59,17 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
       .catch(() => {})
   }, [])
 
+  // Tek format: modal başlığı = aktif sekmenin adı (düzenlenebilir sekmelerde admin başlığı).
+  const activeLabelKey = TABS.find((x) => x.slug === tab)?.labelKey ?? 'info.title'
+  const activeTitle = (EDITABLE.includes(tab) && pages[tab]?.title) || t(activeLabelKey)
+
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card info-card" onClick={(e) => e.stopPropagation()}>
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2>
-          <Icon name="info" size={20} /> {t('info.title')}
-        </h2>
+        <h2 className="info-title">{activeTitle}</h2>
 
         {/* Sekmeler (düzenlenebilir sekmelerde etiket = admin başlığı) */}
         <div className="prof-ov-tabs" role="tablist">

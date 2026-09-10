@@ -18283,6 +18283,17 @@ button.acct-row:hover:not(:disabled) {
   font-size: 0.95rem;
   line-height: 1.55;
 }
+/* Bilgi › Adil Zar sekmesi (embed): sola hizala (standalone /adillik merkezli kalir). */
+.fair-embed .fair-info,
+.fair-embed .fair-info-head {
+  margin-left: 0;
+  margin-right: 0;
+  text-align: left;
+}
+.fair-embed .fair-info-head p {
+  margin-left: 0;
+  max-width: none;
+}
 
 /* ---- 4 adimli akis ---- */
 .fair-steps {
