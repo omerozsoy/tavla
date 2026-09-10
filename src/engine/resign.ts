@@ -1,3 +1,6 @@
+import type { GameState, Player } from './types'
+import { WHITE, opponent, lossMultiplier } from './board'
+
 // ============================================================================
 // RESIGN / PES ETME — KESİN ve DEĞİŞMEZ kural. TEK KAYNAK (frontend + MAT + testler).
 //
@@ -59,4 +62,39 @@ export function calculateResignationPoints(type: ResignationType, cubeValue: num
     throw new Error(`Geçersiz cube değeri: ${String(cubeValue)}`)
   }
   return cubeValue * resignMultiplier(type)
+}
+
+// Kazanan bear-off (toplama) evresinde mi? off>0 VEYA tüm taşları evinde (bar'da yok). Bu evre
+// gammon/backgammon'un GERÇEKLEŞTİĞİ karar aşamasıdır; öncesinde (açılış/erken) HAYALET yok.
+function inBearingPhase(state: GameState, winner: Player): boolean {
+  if (state.off[winner] > 0) return true
+  if (state.bar[winner] > 0) return false
+  const [hs, he] = winner === WHITE ? [0, 6] : [18, 24]
+  for (let i = 0; i < 24; i++) {
+    const v = state.points[i]
+    const cnt = winner === WHITE ? Math.max(0, v) : Math.max(0, -v)
+    if (cnt > 0 && (i < hs || i >= he)) return false // ev dışında taş var -> henüz bear-off değil
+  }
+  return true
+}
+
+/**
+ * SİSTEM-belirlenen pes değeri (1/2/3): kaybedenin (pes eden) ŞU ANKİ konumundan. Kullanıcı
+ * 1/2/3 SEÇMEZ — sistem gösterir (kullanıcı kuralı). lossMultiplier standart kuralı verir; ANCAK
+ * gammon/backgammon YALNIZ oyun KARARA bağlandığında (kazanan bear-off evresinde) raporlanır ->
+ * açılış/erken konumda HAYALET backgammon OLMAZ (rule #1: normal/erken kayıp = single).
+ */
+export function resignationValue(state: GameState, loser: Player): 1 | 2 | 3 {
+  const base = lossMultiplier(state, loser)
+  if (base === 1) return 1
+  return inBearingPhase(state, opponent(loser)) ? base : 1
+}
+
+// Değer (1/2/3) -> tür (MAT/kayıt + calculateResignationPoints için).
+export function resignationTypeForValue(value: 1 | 2 | 3): ResignationType {
+  return value === 3
+    ? ResignationType.BACKGAMMON
+    : value === 2
+      ? ResignationType.GAMMON
+      : ResignationType.SINGLE
 }

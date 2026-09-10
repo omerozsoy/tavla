@@ -1990,12 +1990,12 @@ class RoomController extends Controller
                 return $this->fail('Oyun aktif değil.', 409);
             }
             $winner = $this->otherColor($this->slotColor($slot));
-            // MERKEZİ RESIGN (kesin kural): pes AYRI aksiyon; tür SEÇİLİR (single/gammon/backgammon),
-            // tahtadan TAHMİN EDİLMEZ. pointsWon = küp × çarpan (Resign::points — magic number yok).
-            // ÖNCEKİ HATA: gamePoints($state) oyun-ortası tahtaya uygulanıyordu -> HAYALET backgammon.
-            // Doğal kazançta (move) çarpan hâlâ gamePoints iledir (kazanan gerçekten bitirmiştir).
-            $type = $data['resign_type'] ?? \App\Support\Resign::SINGLE;
-            $points = \App\Support\Resign::points($type, (int) $this->cubeOf($room)['value']);
+            // SİSTEM-belirlenen pes değeri (kullanıcı kuralı): tür/puanı OYUN DURUMU belirler, istemci
+            // DEĞİL (Backgammon::resignationValue). gammon/backgammon yalnız KARAR aşamasında (kazanan
+            // bear-off) -> açılış/erken konumda HAYALET backgammon YOK. pointsWon = değer × küp.
+            $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
+            $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
+            $points = $value * (int) $this->cubeOf($room)['value'];
             $matchDone = $this->applyGameResult($room, $winner, $points);
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur

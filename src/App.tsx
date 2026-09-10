@@ -8,9 +8,10 @@ import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { matchGnubgMove } from './engine/gnubgMove'
 import {
   ResignationType,
-  RESIGNATION_TYPES,
   calculateResignationPoints,
   resignMultiplier,
+  resignationValue,
+  resignationTypeForValue,
 } from './engine/resign'
 import { checkerDecision, onePointFactor } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
@@ -52,6 +53,7 @@ import { liveMoveDelta } from './online/liveMoves'
 import { randomBotPr } from './botPr'
 import Board from './ui/Board'
 import { useBoardDir } from './ui/boardDirection'
+import { useSwapStones } from './ui/pieceColors'
 import Sidebar from './ui/Sidebar'
 import { TavlaTvLogo, TavlaTvMark } from './ui/TavlaTvLogo'
 import DiceRow, { Die } from './ui/Dice'
@@ -530,7 +532,9 @@ export default function App() {
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [showLivePr, setShowLivePr] = useState(true) // canli PR (yalniz pvb) menuden ac/kapa
-  const [swapStones, setSwapStones] = useState(false) // pul renkleri: oyuncu siyah/beyaz secebilsin (gorsel takas)
+  // Pul renkleri (oyuncu siyah/beyaz) — kalıcı + profil<->oyun senkron (boardDir gibi).
+  // Ayar PROFİLDEN yapılır; burada yalnız okunur (Board'a geçilir).
+  const [swapStones] = useSwapStones()
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
@@ -2476,13 +2480,16 @@ export default function App() {
   }
 
   // ---- Pes etme / cekilme ----
-  // PES = bu OYUNU vermek. Duz pes = TEK OYUN (kup degeri x 1). Gercek tavla kurali:
-  // gammon/backgammon ancak KAZANAN 15 tasi topladiginda (bear-off) tanimlidir; oyun ORTASINDA
-  // konumdan carpan cikarmak yanlistir (acilis konumunda geri taslar rakip evinde -> HAYALET
-  // backgammon). Ayrica pes seviyesi anlasmayla belirlenir -> tek "Pes" butonu single ikram eder.
-  // Backend (otoriter online) de single yazar (RoomController::resign). resignLoser yalniz kimin
-  // teslim oldugunu belirler: online -> ben; pvb -> insan (beyaz); pvp -> sirasi gelen oyuncu.
+  // resignLoser: kim teslim oluyor (online -> ben; pvb -> insan/beyaz; pvp -> sırası gelen).
   const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
+  // SİSTEM-belirlenen pes değeri (1/2/3): ŞU ANKİ tahtadan. Kullanıcı SEÇMEZ — sistem gösterir.
+  // gammon/backgammon yalnız KARAR aşamasında (kazanan bear-off) -> açılış/erken = single (hayalet yok).
+  const resignVal = resignationValue(turnStart, resignLoser)
+  const resignType = resignationTypeForValue(resignVal)
+  const resignPoints = calculateResignationPoints(resignType, match.cube.value)
+  const resignWinner = opponent(resignLoser)
+  // Maç kazanılıyor mu? (rakip bu puanla hedefe ulaşır) -> ekranda "Rakibin maçı kazanacak."
+  const resignWinsMatch = match.target > 0 && match.score[resignWinner] + resignPoints >= match.target
 
   // MERKEZİ RESIGN (kesin kural): oyuncu SINGLE/GAMMON/BACKGAMMON SEÇER; puan = küp × çarpan
   // (calculateResignationPoints — tek kaynak). Tahtadan TAHMİN YOK. Skor TEK KEZ güncellenir
@@ -4059,7 +4066,7 @@ export default function App() {
     }
   }, [acctMenuOpen])
   // OYUN YONU (saga/sola topla) — tek ayar, tum modlarda (ve analiz sayfasinda) gecerli.
-  const [boardDir, setBoardDir] = useBoardDir()
+  const [boardDir] = useBoardDir() // ayar PROFİLDEN; burada yalnız okunur
   const boardMirror = boardDir === 'left'
   const [animOn, setAnimOn] = useState<boolean>(() => {
     try {
@@ -7072,12 +7079,8 @@ export default function App() {
         setLearnMode={setLearnMode}
         showLivePr={showLivePr}
         setShowLivePr={setShowLivePr}
-        swapStones={swapStones}
-        setSwapStones={setSwapStones}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
-        boardDir={boardDir}
-        setBoardDir={setBoardDir}
         canAnalyze={mode === 'pvb'}
         canResign={!matchOver}
         loggedIn={!!user}
@@ -7305,38 +7308,33 @@ export default function App() {
         <div className="register-overlay modal" role="dialog" aria-modal="true">
           <div className="register-card resign-card">
             <h2><Icon name="flag" size={20} /> {t('resign.title')}</h2>
-            {/* PES = bu OYUNU vermek. Kac puan kaybettigin KONUMDAN turer: kup x carpan
-                (1 normal / 2 gammon / 3 backgammon) -> oyuncu neye imza attigini GORUR. */}
+            {/* SİSTEM pes değeri (1/2/3) OYUN DURUMUNDAN belirlenir; kullanıcı 1/2/3 SEÇMEZ.
+                Yalnız geçerli teslim sonucu + rakibin kazanacağı puan gösterilir. */}
             <div className="resign-auto">
-              {/* PVP (ayni cihaz): pes eden = sirasi gelen oyuncu -> KIM oldugu yazilsin. */}
               {mode === 'pvp' && (
                 <div className="resign-help">{t('resign.who', { name: pName(resignLoser) })}</div>
               )}
-              {/* Pes AYRI aksiyon: seviyeyi SEN seçersin (tahtadan tahmin YOK). Puan = küp × çarpan. */}
-              <div className="resign-help">{t('resign.help')}</div>
+              <div className="resign-help">{t('resign.about')}</div>
+              <b className={`resign-kind m${resignVal}`}>
+                {resignWinsMatch ? t('resign.oppWinsMatch') : t('resign.oppGets', { n: resignPoints })}
+              </b>
             </div>
-            {/* SINGLE (×1) / GAMMON (×2) / BACKGAMMON (×3) — her biri küp değeriyle çarpılır. */}
-            {RESIGNATION_TYPES.map((type) => {
-              const pts = calculateResignationPoints(type, match.cube.value)
-              return (
-                <Button
-                  key={type}
-                  variant={type === ResignationType.SINGLE ? 'secondary' : 'destructive'}
-                  className={`resign-opt m${resignMultiplier(type)}`}
-                  onClick={() => handleResign(type)}
-                >
-                  <Icon name="flag" /> {t(`resign.${type}`, { n: pts })}
-                </Button>
-              )
-            })}
-            {/* MACTAN CEKIL: skordan BAGIMSIZ — tum maci birakir, rakip maci kazanir. */}
-            <Button variant="secondary" onClick={handleQuitMatch}>
-              <Icon name="home" /> {t('resign.quitMatch')}
+            {/* TEK ana buton: geçerli teslim sonucu (küp × sistem-değeri). */}
+            <Button variant="destructive" onClick={() => handleResign(resignType)}>
+              <Icon name="flag" /> {t('resign.confirmPts', { n: resignPoints })}
             </Button>
-            <div className="resign-quit-note">{t('resign.quitMatchDesc')}</div>
             <Button variant="secondary" onClick={() => setResignOpen(false)}>
               {t('reg.cancel')}
             </Button>
+            {/* Match play: ayrı ikincil seçenek olarak "Maçtan Çekil" (skordan bağımsız). */}
+            {match.target > 1 && (
+              <>
+                <Button variant="secondary" onClick={handleQuitMatch}>
+                  <Icon name="home" /> {t('resign.quitMatch')}
+                </Button>
+                <div className="resign-quit-note">{t('resign.quitMatchDesc')}</div>
+              </>
+            )}
           </div>
         </div>
       )}

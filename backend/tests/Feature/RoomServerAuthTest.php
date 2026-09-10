@@ -73,34 +73,48 @@ class RoomServerAuthTest extends TestCase
         $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])->assertStatus(409);
     }
 
-    // ---- RESIGN TÜRLERİ (kesin kural: küp × çarpan) ----
+    // ---- RESIGN: SİSTEM-belirlenen değer (server_state'ten; istemci türüne güvenilmez) × küp ----
+    /** boş 24 nokta + bar/off/turn. */
+    private function board(array $points, array $off): array
+    {
+        return ['points' => $points, 'bar' => ['white' => 0, 'black' => 0], 'off' => $off, 'turn' => 'black'];
+    }
+
     public function test_resign_backgammon_scores_cube_times_three(): void
     {
-        // cube=2, skor 0-0, uzun maç (bitmesin). Siyah BACKGAMMON resign -> beyaz 2×3 = 6.
+        // BACKGAMMON durumu: beyaz (kazanan) bear-off (off=3), siyah (kaybeden) 0 toplamış + taşı
+        // beyazın evinde (index 2). Server 3 hesaplar; cube=2 -> 6. (istemci türü GÖNDERİLMEZ/önemsiz)
+        $p = array_fill(0, 24, 0);
+        $p[0] = 3; $p[1] = 3; $p[4] = 3; $p[5] = 3; // beyaz ev (12) + off 3 = 15
+        $p[2] = -1;   // siyah taşı beyazın evinde -> backgammon
+        $p[10] = -14; // kalan siyah dış saha
         $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
-        $this->room($sm, Backgammon::initialState(), 15);
+        $this->room($sm, $this->board($p, ['white' => 3, 'black' => 0]), 15);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2', 'resign_type' => 'backgammon'])->assertOk();
+        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
         $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
     }
 
     public function test_resign_gammon_scores_cube_times_two(): void
     {
-        // cube=1, GAMMON resign -> beyaz 1×2 = 2.
+        // GAMMON: beyaz bear-off, siyah 0 toplamış, beyaz evinde siyah taşı YOK -> 2. cube=1 -> 2.
+        $p = array_fill(0, 24, 0);
+        $p[0] = 3; $p[1] = 3; $p[4] = 3; $p[5] = 3; // beyaz ev + off 3 = 15
+        $p[10] = -15; // siyah hepsi dış saha (beyaz evi 0-5 boş)
         $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
-        $this->room($sm, Backgammon::initialState(), 15);
+        $this->room($sm, $this->board($p, ['white' => 3, 'black' => 0]), 15);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2', 'resign_type' => 'gammon'])->assertOk();
+        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
     }
 
-    public function test_resign_default_is_single(): void
+    public function test_resign_opening_is_single_no_phantom(): void
     {
-        // resign_type verilmezse SINGLE (geriye-uyum): cube=2 -> 2×1 = 2.
+        // AÇILIŞ: cube=2. Hayalet backgammon YOK -> server SINGLE hesaplar -> 2×1 = 2.
         $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
