@@ -111,8 +111,6 @@ function previewFromNotation(base: PreviewBoard, turn: Player, label: string): P
 export default function PositionAnalyzer({
   neuralEval,
   neuralAnalyze,
-  premium = true,
-  onUpgrade,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -150,7 +148,6 @@ export default function PositionAnalyzer({
   const [scoreB, setScoreB] = useState(0)
   const [result, setResult] = useState<number[] | null>(null)
   const [moveRows, setMoveRows] = useState<MoveRow[] | null>(null)
-  const [ply, setPly] = useState<1 | 2>(1) // analiz derinligi
   const [busy, setBusy] = useState(false)
   const [previewIdx, setPreviewIdx] = useState<number | null>(null) // sagdaki hamleye tiklayinca board onizlemesi
   const [limitMsg, setLimitMsg] = useState(false) // "15 tas limiti" kibar uyarisi gorunur mu
@@ -485,7 +482,7 @@ export default function PositionAnalyzer({
     setMoveRows(null)
     setPreviewIdx(null)
     try {
-      const deep = ply === 2
+      const deep = true // her zaman DERINLIKLI (2-ply) — "Yüzeysel" seçeneği kaldırıldı
       const hasDice = !!(d1 && d2)
 
       // STANDART: sunucudaki GNU Backgammon (gnubg). Giriş yapılmışsa dene; başarısız/boş olursa
@@ -824,27 +821,6 @@ export default function PositionAnalyzer({
                 onClick={() => setBoardDir('left')}
               >
                 {t('dir.left')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="setup-row">
-            <div className="setup-label">{t('pa.depth')}</div>
-            <div className="menu-targets">
-              <Button
-                variant={ply === 1 ? 'secondary' : 'ghost'}
-                aria-pressed={ply === 1}
-                onClick={() => setPly(1)}
-              >
-                {t('pa.ply1')}
-              </Button>
-              <Button
-                variant={ply === 2 ? 'secondary' : 'ghost'}
-                aria-pressed={ply === 2}
-                className={premium ? undefined : 'locked'}
-                onClick={() => (premium ? setPly(2) : onUpgrade?.())}
-              >
-                {!premium && <Icon name="crown" size={13} />} {t('pa.ply2')}
               </Button>
             </div>
           </div>
