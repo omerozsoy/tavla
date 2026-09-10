@@ -103,8 +103,8 @@ export function LegalView({
   const [before, after] = body.includes(COOKIE_TOKEN) ? body.split(COOKIE_TOKEN) : [body, null]
 
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="register-card info-card" onClick={(e) => e.stopPropagation()}>
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card info-card">
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
