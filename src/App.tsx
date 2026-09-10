@@ -5025,6 +5025,8 @@ export default function App() {
     : mode === 'pvb'
       ? myName
       : t('player.white')
+  // Kendi premium'um (const `premium` daha ASAGIDA tanimli -> burada yerel turet).
+  const isMePremium = user?.plan_active === 'star' || user?.plan_active === 'starpro'
   const topInfo = {
     name: blackName,
     avatar: '🐱',
@@ -5044,7 +5046,7 @@ export default function App() {
     avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
     isBot: !online && mode === 'pvb', // PvB'de siyah/ust oyuncu = YZ -> robot ikonu
-    premium: online ? (myColor === 'black' ? premium : (room?.oppPremium ?? false)) : false,
+    premium: online ? (myColor === 'black' ? isMePremium : (room?.oppPremium ?? false)) : false,
   }
   const bottomInfo = {
     name: whiteName,
@@ -5066,7 +5068,7 @@ export default function App() {
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
     // Anlik PR: yalniz bota karsi (pvb) goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
     pr: mode === 'pvb' ? (prValue ?? prLooseOf('white')) : null,
-    premium: online ? (myColor === 'white' ? premium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? premium : false),
+    premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
