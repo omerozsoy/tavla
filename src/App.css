@@ -13376,6 +13376,17 @@ button.acct-row:hover:not(:disabled) {
 .info-rich.rich + .service-gallery {
   margin-top: 18px;
 }
+/* RichEditor satir-ici resimleri (attachFiles): tasmasin, sik gorunsun */
+.info-rich.rich img,
+.event-info-body.rich img,
+.event-body.rich img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0.7em 0;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
 
 /* Bilgi sayfasi */
 .info-card .info-body {
