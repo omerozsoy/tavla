@@ -104,28 +104,40 @@ export default function Spectate({
   }, [code, viewerName])
 
   // ---- Oda verisinden tahta + maç bilgisini çıkar (otoriter veya legacy) ----
-  const authoritative = !!rv?.authoritative
-  const legacy = (rv?.state ?? null) as LegacySnap | null
-  // GÜNCEL tahta = turnStart + bu turda oynanan adımlar (gerçek oyuncunun gördüğü). Legacy'de
-  // `played` uygulanmazsa tahta turun BAŞINDA donar (hamleler görünmez) -> izleme "hatalı" görünür.
+  // DAYANIKLILIK: sunucu ara sıra state=null (geçici) döndürüyor -> ekranı KARARTMA. Son GEÇERLİ
+  // oda anlık görüntüsünü koru (izleme donmasın/siyah ekran gelmesin). Yalnız ilk yüklemede boş.
+  const rawAuthoritative = !!rv?.authoritative
+  const rawLegacy = (rv?.state ?? null) as LegacySnap | null
+  const rawBoard: GameState | null = rawAuthoritative
+    ? (rv?.server_state ?? null)
+    : rawLegacy?.turnStart
+      ? applyPlayed(rawLegacy.turnStart, rawLegacy.played ?? [])
+      : null
+  const lastGoodRef = useRef<RoomView | null>(null)
+  if (rawBoard && rv) lastGoodRef.current = rv
+  const eff = rawBoard ? rv : lastGoodRef.current // etkin (son geçerli) oda görüntüsü
+
+  const authoritative = !!eff?.authoritative
+  const legacy = (eff?.state ?? null) as LegacySnap | null
+  // GÜNCEL tahta = turnStart + bu turda oynanan adımlar (gerçek oyuncunun gördüğü).
   const legacyPlayed: Step[] = legacy?.played ?? []
   const board: GameState | null = authoritative
-    ? (rv?.server_state ?? null)
+    ? (eff?.server_state ?? null)
     : legacy?.turnStart
       ? applyPlayed(legacy.turnStart, legacyPlayed)
       : null
-  const sm: ServerMatch | null = authoritative ? (rv?.server_match ?? null) : null
+  const sm: ServerMatch | null = authoritative ? (eff?.server_match ?? null) : null
 
   const score: Record<Player, number> = sm?.score ??
     legacy?.match?.score ?? { white: 0, black: 0 }
-  const target = rv?.target ?? sm?.target ?? legacy?.match?.target ?? 1
+  const target = eff?.target ?? sm?.target ?? legacy?.match?.target ?? 1
   const cubeVal = sm?.cube.value ?? legacy?.match?.cube?.value ?? 1
   const cubeOwner: Player | null = sm?.cube.owner ?? legacy?.match?.cube?.owner ?? null
   const crawford = sm?.crawford ?? legacy?.match?.isCrawford ?? false
 
   // Konvansiyon: p1 = beyaz (altta), p2 = siyah (üstte); izleyici beyaz bakışıyla oturur.
-  const p1Name = rv?.p1_name || t('player.white')
-  const p2Name = rv?.p2_name || t('player.black')
+  const p1Name = eff?.p1_name || t('player.white')
+  const p2Name = eff?.p2_name || t('player.black')
 
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
@@ -139,14 +151,14 @@ export default function Spectate({
       color,
       score: score[color] ?? 0,
       target,
-      rating: (isP1 ? rv?.p1_rating : rv?.p2_rating) ?? null,
-      avatarUrl: (isP1 ? rv?.p1_avatar : rv?.p2_avatar) ?? null,
-      frame: (isP1 ? rv?.p1_frame : rv?.p2_frame) ?? null,
-      premium: (isP1 ? rv?.p1_premium : rv?.p2_premium) ?? false,
+      rating: (isP1 ? eff?.p1_rating : eff?.p2_rating) ?? null,
+      avatarUrl: (isP1 ? eff?.p1_avatar : eff?.p2_avatar) ?? null,
+      frame: (isP1 ? eff?.p1_frame : eff?.p2_frame) ?? null,
+      premium: (isP1 ? eff?.p1_premium : eff?.p2_premium) ?? false,
     }
   }
 
-  const clock = rv?.clock
+  const clock = eff?.clock
   const dice = board?.dice ?? []
   // Legacy'de diceUsed turnStart'tan gelir (hep false); oynanan adım sayısı kadar zar "kullanıldı"
   // göster (gerçek oyundaki gibi kullanılan zar grileşsin). Otoriter'de board.diceUsed doğrudur.
