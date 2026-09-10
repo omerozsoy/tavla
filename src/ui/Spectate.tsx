@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -7,7 +8,7 @@ import Board from './Board'
 import Sidebar from './Sidebar'
 import ClockStack from './ClockStack'
 import DiceRow from './Dice'
-import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer, type ChatMsg } from '../api'
+import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer } from '../api'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
 import { applyStep } from '../engine/moves'
@@ -180,9 +181,11 @@ export default function Spectate({
   // alt oyuncu -> sağ (centerRight), üst oyuncu -> sol (centerLeft). centerMain (orta) DEĞİL.
   const activeBottom = board?.turn === 'white'
   const diceRow = board && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={board.turn} /> : null
-  const messages: ChatMsg[] = rv?.messages ?? []
 
-  return (
+  // TAM EKRAN "normal sayfa": transform'lu bir ata altında render edildiğinde position:fixed
+  // KIRPILIP modal gibi kutuya sıkışıyordu (bkz fixed-portal-transform tuzağı). document.body'ye
+  // portal ederek gerçek viewport'u kaplar -> izleme normal tam-ekran sayfa gibi görünür.
+  return createPortal(
     <div className="app game-view spectate-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
       {/* İzleme rozeti (sol üst) */}
       <div className="spectate-badge">
@@ -263,24 +266,8 @@ export default function Spectate({
             </div>
           )}
         </div>
-        <div className="sp-chat">
-          <div className="sp-chat-head">
-            <Icon name="chat" size={14} /> {t('chat.title')}
-          </div>
-          <div className="sp-chat-list">
-            {messages.length === 0 ? (
-              <div className="chat-empty">{t('chat.empty')}</div>
-            ) : (
-              messages.map((m) => (
-                <div key={m.id} className="chat-msg theirs">
-                  <span className="chat-name">{m.name}</span>
-                  <span className="chat-text">{m.text}</span>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
