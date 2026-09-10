@@ -11,6 +11,7 @@ final class StatsConfig
 {
     public const MATCH_TYPE_COIN = 'coin';   // Jeton/tek-oyun coin bahsi
     public const MATCH_TYPE_MATCH = 'match'; // N-puanlik mac
+    public const MATCH_TYPE_AI = 'ai';       // Yapay zekaya karsi mac (rating/WXP/istatistik HARIC)
 
     /** Median "Medyan Hata Orani" kategorileri: anahtar => UI label. Sirali. */
     public const CATEGORIES = [
@@ -42,6 +43,9 @@ final class StatsConfig
      */
     public static function wxpForWin(string $matchType, ?int $matchLength): int
     {
+        if ($matchType === self::MATCH_TYPE_AI) {
+            return 0; // yapay zeka maci WXP vermez
+        }
         if ($matchType === self::MATCH_TYPE_COIN) {
             return self::WXP_COIN;
         }
@@ -57,6 +61,9 @@ final class StatsConfig
      */
     public static function categoryKey(string $matchType, ?int $matchLength): ?string
     {
+        if ($matchType === self::MATCH_TYPE_AI) {
+            return null; // yapay zeka maci hicbir median kategorisine girmez
+        }
         if ($matchType === self::MATCH_TYPE_COIN) {
             return 'coin';
         }

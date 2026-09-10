@@ -1439,7 +1439,7 @@ export async function reportRating(
   opponentPr?: number | null,
   log?: string | null,
   ranked = true,
-  matchType: 'coin' | 'match' = 'match', // Jeton (coin bahsi) vs N-puanlik mac
+  matchType: 'coin' | 'match' | 'ai' = 'match', // Jeton (coin) / N-puanlik / yapay zeka
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
   extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
   mat?: string | null, // .mat (gnubg NATIVE luck V1 — backend analyse match ile per-oyuncu MWC%)

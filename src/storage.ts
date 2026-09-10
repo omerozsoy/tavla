@@ -229,6 +229,7 @@ export function clearPendingReport(): void {
   }
 }
 
+
 export function savePendingSettle(code: string, won: boolean): void {
   try {
     localStorage.setItem(PENDING_SETTLE_KEY, JSON.stringify({ code, won, ts: Date.now() }))

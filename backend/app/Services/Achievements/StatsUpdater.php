@@ -256,8 +256,9 @@ final class StatsUpdater
         if ($rank <= 10) { $ctx->set('flag_top_10'); }
         if ($rank <= 1) { $ctx->set('flag_top_1'); }
 
-        // Ayni rakibe karsi nihai sayimlar: en cok yenilen/karsilasilan.
+        // Ayni rakibe karsi nihai sayimlar: en cok yenilen/karsilasilan. (yapay zeka HARIC)
         $agg = MatchResult::where('user_id', $user->id)
+            ->real()
             ->whereNotNull('opponent_name')
             ->selectRaw('opponent_name, count(*) meets, sum(case when won then 1 else 0 end) beats')
             ->groupBy('opponent_name')->get();
@@ -271,6 +272,7 @@ final class StatsUpdater
     private function socialFlags(int $userId, string $opp, bool $won, MatchContext $ctx): void
     {
         $rows = MatchResult::where('user_id', $userId)
+            ->real() // yapay zeka maclari nemesis/komsu sayimina girmez
             ->where('opponent_name', $opp)
             ->selectRaw('count(*) meets, sum(case when won then 1 else 0 end) beats, sum(case when won then 0 else 1 end) losses')
             ->first();

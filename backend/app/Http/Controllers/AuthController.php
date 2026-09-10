@@ -271,7 +271,7 @@ class AuthController extends Controller
             'opponent_name'   => ['nullable', 'string', 'max:40'],
             'opponent_pr'     => ['nullable', 'numeric', 'min:0', 'max:200'],
             'match_length'    => ['nullable', 'integer', 'min:1', 'max:25'],
-            'match_type'      => ['nullable', 'in:coin,match'], // Jeton (coin) vs N-puanlik mac
+            'match_type'      => ['nullable', 'in:coin,match,ai'], // Jeton (coin) / N-puanlik mac / yapay zeka
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -283,6 +283,11 @@ class AuthController extends Controller
         ]);
         $user = $request->user();
         $ranked = $data['ranked'] ?? true; // null/eksik -> puanli (geriye uyum)
+        // YAPAY ZEKA maci: KESINLIKLE puansiz (rating/wins/WXP DEGISMEZ). match_results satiri
+        // yine yazilir (Mac Analizleri'nde gorunur) ama istatistiklere girmez (bkz MatchResult::real).
+        if (($data['match_type'] ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI) {
+            $ranked = false;
+        }
 
         // YETKILI KURAL: oda 'friendly' (davet kodu maci) ise KESINLIKLE puansiz — istemci
         // ranked=true gonderse veya refresh/rejoin ile bayrak kaybolsa bile oda mode'u belirler.
@@ -1234,6 +1239,7 @@ class AuthController extends Controller
     {
         $me = $request->user();
         $rows = \App\Models\MatchResult::where('user_id', $me->id)
+            ->real() // yapay zeka maclari performans/rating/WXP istatistiklerine girmez
             ->orderBy('id')
             ->get(['won', 'rating_after', 'coins_after', 'match_length', 'pr', 'created_at']);
 

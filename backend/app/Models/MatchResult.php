@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\MatBuilder;
+use App\Support\StatsConfig;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -22,6 +23,15 @@ class MatchResult extends Model
         'pr_equity_lost' => 'float',
         'pr_decisions' => 'integer',
     ];
+
+    // GERCEK (puanli) maclar: yapay zeka (match_type='ai') HARIC. rating/WXP/median/basarim
+    // istatistikleri yalniz bunlardan hesaplanir. NULL match_type = eski gercek maclar -> DAHIL.
+    public function scopeReal($q)
+    {
+        return $q->where(function ($w) {
+            $w->whereNull('match_type')->orWhere('match_type', '!=', StatsConfig::MATCH_TYPE_AI);
+        });
+    }
 
     // Bu sonucun sahibi oyuncu (yonetim panelinde "Oyuncu" kolonu icin sart).
     public function user(): BelongsTo

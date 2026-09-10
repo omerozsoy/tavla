@@ -295,6 +295,35 @@ class PerformanceStatsTest extends TestCase
         $this->getJson('/api/me/performance-stats')->assertUnauthorized();
     }
 
+    // Yapay zeka (match_type='ai') maclari: "Mac Analizleri"nde GORUNUR ama median/WXP/performans
+    // istatistiklerine GIRMEZ (StatsConfig + MatchResult::real). rating de degismez.
+    public function test_ai_matches_listed_but_excluded_from_stats(): void
+    {
+        $u = $this->makeUser();
+        $real = $this->mr($u, true, 5, 'match', 10.00);
+        app(WxpService::class)->awardForMatchResult($real); // +5
+        $ai = $this->mr($u, true, 5, 'ai', 99.00);
+        app(WxpService::class)->awardForMatchResult($ai);   // yapay zeka -> 0 WXP
+
+        // Median: yalniz gercek mac (10.00); ai(99) haric.
+        $cats = app(MedianPerformanceService::class)->categoriesFor($u->id, 'all');
+        $this->assertSame(10.00, $cats['5']['median_pr']);
+        $this->assertSame(1, $cats['5']['sample_count']);
+
+        // WXP: yalniz gercek 5S = 5 (ai 0).
+        $this->assertSame(5, (int) $u->fresh()->total_wxp);
+
+        // performance-stats: toplam mac gercek (ai haric).
+        Sanctum::actingAs($u->fresh());
+        $this->getJson('/api/me/performance-stats?period=all')->assertOk()
+            ->assertJsonPath('wxp.total_matches', 1);
+
+        // ama "Mac Analizleri" listesinde ai DE gorunur.
+        $ids = collect($this->getJson('/api/me/matches')->assertOk()->json('matches'))->pluck('id');
+        $this->assertTrue($ids->contains($ai->id));
+        $this->assertTrue($ids->contains($real->id));
+    }
+
     // ==================== BACKFILL ====================
     public function test_backfill_is_correct_and_idempotent(): void
     {
