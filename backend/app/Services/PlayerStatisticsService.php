@@ -111,8 +111,9 @@ class PlayerStatisticsService
      */
     private function wxpBlock(User $user): array
     {
-        $wins = (int) MatchResult::where('user_id', $user->id)->where('won', true)->count();
-        $losses = (int) MatchResult::where('user_id', $user->id)->where('won', false)->count();
+        // Yapay zeka (match_type='ai') maclari HARIC: G/M/kazanma% yalniz gercek maclardan.
+        $wins = (int) MatchResult::where('user_id', $user->id)->real()->where('won', true)->count();
+        $losses = (int) MatchResult::where('user_id', $user->id)->real()->where('won', false)->count();
         $total = $wins + $losses;
         $winRate = $total > 0 ? round($wins / $total * 100, 2) : 0.0;
 

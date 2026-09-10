@@ -3214,7 +3214,9 @@ export default function App() {
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
       const logNow = matchLogRef.current
-      reportRating(
+      // match_type='ai' -> "Mac Analizleri"nde gorunur AMA rating/WXP/median/performans
+      // istatistiklerine GIRMEZ (backend ranked=false zorlar + MatchResult::real haric tutar).
+      const args = [
         won,
         botRating,
         match.target,
@@ -3226,18 +3228,29 @@ export default function App() {
         botPrRef.current ?? prRef('black'), // bot PR: seviyeye uygun sabit-rastgele (bkz botPr.ts)
         JSON.stringify({ hc: 'white', log: logNow.slice(-1000) }),
         rankedMatch,
-        'match', // match_type (pvb her zaman N-puanlik)
+        'ai', // match_type -> yapay zeka
         null, // room_code yok
         buildAchExtra(), // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
-      )
-        .then((r) => {
-          setRatingChange({ before, after: r.rating })
-          setUser((u) => (u ? { ...u, rating: r.rating } : u))
-          if (r.achievements?.length) setAchUnlocked(r.achievements)
-          // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
-          setServerPr({ self: r.pr_self ?? null, opp: null })
-        })
-        .catch(() => {})
+      ]
+      // ONLINE ile AYNI DAYANIKLILIK: 3 deneme + basarisizsa pending-retry (acilis/online'da
+      // tekrar denenir). Onceki `.catch(()=>{})` ag hatasinda AI macini SESSIZCE kaybediyordu.
+      let r: Awaited<ReturnType<typeof reportRating>> | null = null
+      for (let attempt = 1; attempt <= 3 && !r; attempt++) {
+        try {
+          r = await reportRating(...(args as Parameters<typeof reportRating>))
+        } catch {
+          if (attempt < 3) await new Promise((res) => setTimeout(res, 800 * attempt))
+        }
+      }
+      if (!r) {
+        savePendingReport(args as unknown[]) // sonra (acilis/online) tekrar denenir (idempotent)
+      } else {
+        setRatingChange({ before, after: r.rating })
+        setUser((u) => (u ? { ...u, rating: r!.rating } : u))
+        if (r.achievements?.length) setAchUnlocked(r.achievements)
+        // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
+        setServerPr({ self: r.pr_self ?? null, opp: null })
+      }
 
       // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
       const ctx = {

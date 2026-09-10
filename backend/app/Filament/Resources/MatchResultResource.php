@@ -65,6 +65,9 @@ class MatchResultResource extends Resource
         if ($type === 'coin') {
             return 'Jeton (para)';
         }
+        if ($type === 'ai') {
+            return 'Yapay Zeka';
+        }
 
         return ((int) $matchLength) > 1 ? ((int) $matchLength).' puanlık maç' : 'Tek oyun';
     }
@@ -154,6 +157,7 @@ class MatchResultResource extends Resource
                 Tables\Filters\SelectFilter::make('match_type')->label('Tür')->options([
                     'coin' => 'Jeton (para maçı)',
                     'match' => 'Puanlık maç',
+                    'ai' => 'Yapay Zeka',
                 ]),
                 Tables\Filters\Filter::make('created_at')
                     ->form([
