@@ -7068,8 +7068,8 @@ html.fs-active .account-bar {
 }
 
 /* ---- Oyun-ici menu (Galaxy tarzi, sagda) ---- */
-/* Oyun-içi menü açma düğmesi: koyu sahneye uyan cam efektli, ince kare düğme
-   (eski kocaman turuncu blok yerine). Hover'da aksan dolgu. */
+/* Oyun-içi menü açma düğmesi: koyu sahnede BELİRGİN aksan FAB (eski kocaman turuncu
+   blok değil, silik koyu-cam da değil -> temiz, görünür kare düğme). */
 .game-ham {
   flex: none;
   align-self: center;
@@ -7077,20 +7077,19 @@ html.fs-active .account-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 46px;
-  height: 46px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  width: 48px;
+  height: 48px;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, #000);
   border-radius: 13px;
-  background: rgba(18, 22, 40, 0.62);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  color: var(--tv-cream);
+  background: var(--accent);
+  color: var(--on-accent);
   cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 6px 18px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
-    color 0.18s ease,
+    filter 0.18s ease,
+    box-shadow 0.18s ease,
     transform 0.18s ease;
 }
 /* Mobilde (game-area kolon olabilir) hamburger board altina yigilmasin -> fixed */
@@ -7103,9 +7102,10 @@ html.fs-active .account-bar {
   }
 }
 .game-ham:hover {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  filter: brightness(1.08);
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
   transform: translateY(-1px);
 }
 @media (max-width: 900px) {
