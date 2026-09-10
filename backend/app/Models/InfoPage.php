@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Model;
  *  Her biri admin panelden RichEditor ile duzenlenir. Sabit 6 satir (slug degismez). */
 class InfoPage extends Model
 {
-    protected $fillable = ['slug', 'title', 'body', 'gallery', 'sort', 'published'];
+    protected $fillable = ['slug', 'title', 'body', 'gallery', 'galleries', 'sort', 'published'];
 
     protected $casts = [
         'gallery' => 'array',
+        'galleries' => 'array',
         'published' => 'boolean',
     ];
 }

@@ -8,7 +8,7 @@
  * bileşenlerdir (RankProgression/Scoring/Achievements/FairnessModal) — olduğu gibi korunur.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
@@ -130,15 +130,10 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
   )
 }
 
-// Tek düzenlenebilir bilgi sayfası: RichEditor HTML gövdesi + (varsa) altında minik galeri (lightbox).
-function InfoPane({ page }: { page?: InfoPage }) {
+// Tek galeri bloğu: küçük thumbnail'lar + kendi lightbox'ı (her galeri bağımsız).
+function GalleryBlock({ images }: { images: string[] }) {
   const { t } = useT()
-  const gallery = useMemo(
-    () => (page?.gallery ?? []).map((x) => mediaSrc(x)).filter((x): x is string => !!x),
-    [page],
-  )
   const [lightbox, setLightbox] = useState<number | null>(null)
-
   // Lightbox açıkken Esc sayfayı kapatmasın (capture + stopImmediatePropagation).
   useEffect(() => {
     if (lightbox === null) return
@@ -152,20 +147,11 @@ function InfoPane({ page }: { page?: InfoPage }) {
     return () => window.removeEventListener('keydown', onKey, true)
   }, [lightbox])
 
-  if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
-
-  // Galeri yer tutucu: editörde <resimgalerisi> yazılan yere galeri konur (yoksa en altta).
-  // RichEditor metni escape ederek saklar -> hem <resimgalerisi> hem &lt;resimgalerisi&gt;
-  // (ayrıca tek başına bir paragrafsa çevreleyen <p>...</p>) yakalanır.
-  const body = page.body ?? ''
-  const token =
-    /<p>\s*(?:&lt;|<)\s*resimgalerisi\s*(?:&gt;|>)\s*<\/p>|(?:&lt;|<)\s*resimgalerisi\s*(?:&gt;|>)/i
-  const m = token.exec(body)
-
-  const galleryEl =
-    gallery.length > 0 ? (
+  if (!images.length) return null
+  return (
+    <>
       <div className="service-gallery">
-        {gallery.map((g, i) => (
+        {images.map((g, i) => (
           <button
             key={i}
             className="service-gallery-thumb"
@@ -176,33 +162,70 @@ function InfoPane({ page }: { page?: InfoPage }) {
           </button>
         ))}
       </div>
-    ) : null
-
-  return (
-    <>
-      {m ? (
-        <>
-          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body.slice(0, m.index) }} />
-          {galleryEl}
-          <div
-            className="info-rich rich"
-            dangerouslySetInnerHTML={{ __html: body.slice(m.index + m[0].length) }}
-          />
-        </>
-      ) : (
-        <>
-          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body }} />
-          {galleryEl}
-        </>
-      )}
-      {lightbox !== null && gallery.length > 0 && (
-        <Lightbox
-          images={gallery}
-          index={lightbox}
-          onClose={() => setLightbox(null)}
-          onIndex={setLightbox}
-        />
+      {lightbox !== null && (
+        <Lightbox images={images} index={lightbox} onClose={() => setLightbox(null)} onIndex={setLightbox} />
       )}
     </>
   )
+}
+
+// Regex özel karakterlerini kaçır (galeri adı token'ı için).
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+// Düzenlenebilir bilgi sayfası: RichEditor HTML + isimli/varsayılan galeriler.
+// İçerikte <ad> (veya varsayılan <resimgalerisi>) yazılan yere ilgili galeri serpiştirilir;
+// referans verilmeyen varsayılan galeri en alta eklenir (geriye dönük uyum).
+function InfoPane({ page }: { page?: InfoPage }) {
+  const { t } = useT()
+  if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
+
+  const body = page.body ?? ''
+  const named = (page.galleries ?? [])
+    .map((g) => ({
+      token: (g.name || '').trim().toLowerCase(),
+      images: (g.images ?? []).map((x) => mediaSrc(x)).filter((x): x is string => !!x),
+    }))
+    .filter((g) => g.token && g.images.length > 0)
+  const legacy = (page.gallery ?? []).map((x) => mediaSrc(x)).filter((x): x is string => !!x)
+  const all = [...named]
+  if (legacy.length) all.push({ token: 'resimgalerisi', images: legacy })
+
+  // Galeri yoksa düz gövde.
+  if (all.length === 0) {
+    return <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body }} />
+  }
+
+  // <ad> / &lt;ad&gt; (tek başına paragrafsa çevreleyen <p> dahil) tüm token'ları yakala.
+  const alt = all
+    .map((g) => escapeRe(g.token))
+    .sort((a, b) => b.length - a.length)
+    .join('|')
+  const re = new RegExp(
+    `<p>\\s*(?:&lt;|<)\\s*(${alt})\\s*(?:&gt;|>)\\s*</p>|(?:&lt;|<)\\s*(${alt})\\s*(?:&gt;|>)`,
+    'gi',
+  )
+
+  const nodes: ReactNode[] = []
+  const used = new Set<string>()
+  let last = 0
+  let mm: RegExpExecArray | null
+  let k = 0
+  while ((mm = re.exec(body)) !== null) {
+    const name = (mm[1] ?? mm[2] ?? '').toLowerCase()
+    const seg = body.slice(last, mm.index)
+    if (seg) nodes.push(<div key={`h${k}`} className="info-rich rich" dangerouslySetInnerHTML={{ __html: seg }} />)
+    const g = all.find((x) => x.token === name)
+    if (g) {
+      nodes.push(<GalleryBlock key={`g${k}`} images={g.images} />)
+      used.add(name)
+    }
+    last = mm.index + mm[0].length
+    k++
+  }
+  const tail = body.slice(last)
+  if (tail) nodes.push(<div key="ht" className="info-rich rich" dangerouslySetInnerHTML={{ __html: tail }} />)
+  // Referans verilmeyen varsayılan galeri en alta (geriye dönük uyum).
+  if (legacy.length && !used.has('resimgalerisi')) nodes.push(<GalleryBlock key="glegacy" images={legacy} />)
+
+  return <>{nodes}</>
 }

@@ -11,7 +11,7 @@ class InfoPageController extends Controller
     {
         $pages = InfoPage::where('published', true)
             ->orderBy('sort')->orderBy('id')
-            ->get(['slug', 'title', 'body', 'gallery', 'sort']);
+            ->get(['slug', 'title', 'body', 'gallery', 'galleries', 'sort']);
         return response()->json(['pages' => $pages]);
     }
 }
