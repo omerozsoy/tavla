@@ -9,17 +9,27 @@ import ClockStack from './ClockStack'
 import { Die } from './Dice'
 import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer, type ChatMsg } from '../api'
 import { pipCount } from '../engine/evaluate'
-import type { GameState, Player } from '../engine/types'
+import { cloneState } from '../engine/board'
+import { applyStep } from '../engine/moves'
+import type { GameState, Player, Step } from '../engine/types'
 
 // Legacy (istemci-state) oda snapshot'i: PUT edilen state nesnesi.
 interface LegacySnap {
   turnStart?: GameState
+  played?: Step[] // bu turda oynanan adımlar (turnStart'a uygulanır -> GÜNCEL tahta)
   match?: {
     target?: number
     score?: Record<Player, number>
     cube?: { value: number; owner: Player | null }
     isCrawford?: boolean
   }
+}
+
+// turnStart + oynanan adımlar -> GÜNCEL tahta (gerçek oyuncu ne görüyorsa o). App.applyPlayed ile aynı.
+function applyPlayed(base: GameState, played: Step[]): GameState {
+  const s = cloneState(base)
+  for (const step of played) applyStep(s, step, base.turn)
+  return s
 }
 
 // Canli mac izleme: oda durumunu periyodik yoklar, GERCEK OYUN TAHTASINI (tam boy, salt-okunur)
@@ -96,7 +106,14 @@ export default function Spectate({
   // ---- Oda verisinden tahta + maç bilgisini çıkar (otoriter veya legacy) ----
   const authoritative = !!rv?.authoritative
   const legacy = (rv?.state ?? null) as LegacySnap | null
-  const board: GameState | null = authoritative ? (rv?.server_state ?? null) : (legacy?.turnStart ?? null)
+  // GÜNCEL tahta = turnStart + bu turda oynanan adımlar (gerçek oyuncunun gördüğü). Legacy'de
+  // `played` uygulanmazsa tahta turun BAŞINDA donar (hamleler görünmez) -> izleme "hatalı" görünür.
+  const legacyPlayed: Step[] = legacy?.played ?? []
+  const board: GameState | null = authoritative
+    ? (rv?.server_state ?? null)
+    : legacy?.turnStart
+      ? applyPlayed(legacy.turnStart, legacyPlayed)
+      : null
   const sm: ServerMatch | null = authoritative ? (rv?.server_match ?? null) : null
 
   const score: Record<Player, number> = sm?.score ??
@@ -131,7 +148,11 @@ export default function Spectate({
 
   const clock = rv?.clock
   const dice = board?.dice ?? []
-  const diceUsed = board?.diceUsed ?? []
+  // Legacy'de diceUsed turnStart'tan gelir (hep false); oynanan adım sayısı kadar zar "kullanıldı"
+  // göster (gerçek oyundaki gibi kullanılan zar grileşsin). Otoriter'de board.diceUsed doğrudur.
+  const diceUsed = authoritative
+    ? board?.diceUsed ?? []
+    : dice.map((_, i) => i < legacyPlayed.length)
   const messages: ChatMsg[] = rv?.messages ?? []
 
   return (
@@ -155,6 +176,7 @@ export default function Spectate({
         <div className="game-area">
           {board ? (
             <>
+              {/* p1 = beyaz (altta): 1. oyuncunun gördüğü perspektif. flip=false. */}
               <Sidebar top={mkInfo('black')} bottom={mkInfo('white')} length={target} crawford={crawford} />
               {clock && (
                 <ClockStack
@@ -163,6 +185,7 @@ export default function Spectate({
                   white={clock.white}
                   black={clock.black}
                   final={30}
+                  flip={false}
                   topScore={score.black}
                   bottomScore={score.white}
                 />
@@ -179,6 +202,7 @@ export default function Spectate({
                 pipBottom={pipCount(board, 'white')}
                 cube={{ value: cubeVal, owner: cubeOwner }}
                 crawford={crawford}
+                flip={false}
                 showPip
                 centerMain={
                   dice.length > 0 ? (
