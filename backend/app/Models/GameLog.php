@@ -103,14 +103,37 @@ class GameLog extends Model
      */
     public function matText(): string
     {
-        return MatFromLog::build($this->mergedTurns(), [
-            'whiteName' => $this->p1_name ?: 'Player1',
-            'blackName' => $this->p2_name ?: 'Player2',
-            'matchLength' => max(1, (int) ($this->target ?? 1)),
-            'matchId' => (string) $this->uid,
-            'eventDate' => optional($this->created_at)->format('Y.m.d') ?? '',
-            'eventTime' => optional($this->created_at)->format('H.i') ?? '',
-        ]);
+        // Segmentasyon `g`'ye GÜVENMEZ: iki istemcinin HAM (append-sıralı) dizisinden gerçek oyun
+        // sınırları YENİDEN türetilir (bkz. MatFromLog sınıf başı — DROP'ta kazananın gameEnd'i
+        // tetiklenmeyip `g` kaydığı için mergedTurns() birleştirmesi oyunları iç içe geçiriyordu).
+        return MatFromLog::buildFromEvents(
+            is_array($this->p1_events) ? $this->p1_events : [],
+            is_array($this->p2_events) ? $this->p2_events : [],
+            [
+                'whiteName' => $this->p1_name ?: 'Player1',
+                'blackName' => $this->p2_name ?: 'Player2',
+                'matchLength' => max(1, (int) ($this->target ?? 1)),
+                'matchId' => $this->matchIdForMat(),
+                'eventDate' => optional($this->created_at)->format('Y.m.d') ?? '',
+                'eventTime' => optional($this->created_at)->format('H.i') ?? '',
+            ]
+        );
+    }
+
+    /**
+     * .mat başlığındaki "Match ID". OTORİTER kaynak uid'dir (online: oda kodu; pvb/local: yerel
+     * uid). uid boşsa SESSİZCE "0" ÜRETME — kararlı DB anahtarına ('gl'<id>) düş ve uyar. Böylece
+     * "Match ID 0" ile kayıtları ayırt edememe (segmentasyon teşhisini zorlaştıran) durumu biter.
+     */
+    private function matchIdForMat(): string
+    {
+        $uid = trim((string) ($this->uid ?? ''));
+        if ($uid !== '') {
+            return $uid;
+        }
+        \Illuminate\Support\Facades\Log::warning('GameLog matText: uid boş, DB id kullanılıyor', ['id' => $this->id]);
+
+        return $this->id ? 'gl'.$this->id : '0';
     }
 
     /** İndirme dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç). */
