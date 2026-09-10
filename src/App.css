@@ -9318,10 +9318,17 @@ button.acct-row:hover:not(:disabled) {
   align-items: center;
   gap: 7px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* overflow:hidden animasyonlu avatar çerçevesinin sol halkasını kırpıyordu
+     ("sol düz kesik"). İsim zaten .player-id-name-text içinde kendi ellipsis'ini
+     yapar → burada visible bırak, çerçeve tam görünsün. */
+  overflow: visible;
   white-space: nowrap;
   font-weight: 400;
+}
+/* Avatar çerçevesi rank numarasına/isme bitişmesin -> hem sağ hem sol nefes. */
+.rank-name .avf-sober,
+.rank-name .avf-simple {
+  margin: 0 3px;
 }
 .rank-val {
   font-weight: 400;

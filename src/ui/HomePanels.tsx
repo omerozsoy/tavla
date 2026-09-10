@@ -265,7 +265,7 @@ export function OnlinePlayersPanel({
                 <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
                   <span className="online-pdot" title={t('online.title')} />
                   <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
-                    <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} />
+                    <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated />
                   </button>
                   <span className="rank-flag">
                     <CountryFlag code={p.country} size={16} rounded={false} />
@@ -373,7 +373,7 @@ export function RankingPanel({
               >
                 <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>{r.rank}</span>
                 <span className="rank-name">
-                  <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} />
+                  <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
                 </span>
                 <span className="rank-flag">
                   <CountryFlag code={r.country} size={16} rounded={false} />
@@ -399,7 +399,7 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} />
+                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
               </span>
               <span className="rank-flag">
                 <CountryFlag code={r.country} size={16} rounded={false} />
