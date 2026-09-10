@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { GameState, Player } from '../engine/types'
 import type { RankedMove } from '../engine/neuralBot'
+import type { GnuMove } from '../api'
 import { equityFrom } from '../engine/encoding'
 import { moveNotation } from '../engine/notation'
 import { useT } from '../i18n'
@@ -18,6 +19,7 @@ interface Props {
   loading: boolean
   currentProbs: number[] | null
   ranked: RankedMove[] | null
+  gnubgMoves?: GnuMove[] | null // HAKEM=gnubg: doluysa hamle listesi gnubg'den (notasyon+equity)
   player: Player
   lastError: MoveError | null
   boardState: GameState | null // hamlelerin uygulandigi konum (mini board icin)
@@ -27,6 +29,7 @@ export default function AnalysisPanel({
   loading,
   currentProbs,
   ranked,
+  gnubgMoves,
   player,
   lastError,
   boardState,
@@ -35,7 +38,9 @@ export default function AnalysisPanel({
   const [selected, setSelected] = useState(0)
   // Yeni pozisyon analiz edildiginde en iyi hamleye don
   useEffect(() => setSelected(0), [boardState])
-  const bestEq = ranked && ranked.length > 0 ? ranked[0].equity : 0
+  // gnubg listesi varsa onu kullan (notasyon string; Move nesnesi yok -> tikla-onizleme wildbg'de).
+  const useGnubg = !!(gnubgMoves && gnubgMoves.length > 0)
+  const bestEq = useGnubg ? gnubgMoves![0].equity : ranked && ranked.length > 0 ? ranked[0].equity : 0
   const sel = ranked && ranked.length > 0 ? ranked[Math.min(selected, ranked.length - 1)] : null
 
   return (
@@ -81,7 +86,23 @@ export default function AnalysisPanel({
         <MiniBoard state={boardState} steps={sel.move.steps} player={player} />
       )}
 
-      {!loading && ranked && ranked.length > 0 && (
+      {/* HAKEM=gnubg: gnubg hamle listesi (notasyon+equity). Move nesnesi olmadığından satırlar
+          tıkla-önizleme yapmaz; MiniBoard yukarıda wildbg en iyi hamlesini gösterir (kozmetik). */}
+      {!loading && useGnubg && (
+        <div className="move-list">
+          <div className="move-list-head">{t('an.bestMoves')}</div>
+          {gnubgMoves!.slice(0, 6).map((m, i) => (
+            <div key={`${m.notation}-${i}`} className={`move-row ${i === 0 ? 'best' : ''}`}>
+              <span className="rank">{i + 1}.</span>
+              <span className="notation">{m.notation}</span>
+              <span className="eq">{m.equity.toFixed(3)}</span>
+              <span className="diff">{i === 0 ? '' : (m.equity - bestEq).toFixed(3)}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && !useGnubg && ranked && ranked.length > 0 && (
         <div className="move-list">
           <div className="move-list-head">{t('an.bestMoves')}</div>
           {ranked.slice(0, 6).map((r, i) => (

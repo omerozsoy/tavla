@@ -206,6 +206,8 @@ import {
   messagesUnread,
   matchPr,
   matchGnubgPr,
+  analyzePosition,
+  type GnuMove,
   type MenuOverride,
   type ServerUser,
 } from './api'
@@ -1189,6 +1191,8 @@ export default function App() {
   const [analysisLoading, setAnalysisLoading] = useState(false)
   const [currentProbs, setCurrentProbs] = useState<number[] | null>(null)
   const [ranked, setRanked] = useState<RankedMove[] | null>(null)
+  // HAKEM=gnubg: panel açıkken gösterilen hamle listesi gnubg'den (varsa). null -> wildbg ranked.
+  const [gnubgMoves, setGnubgMoves] = useState<GnuMove[] | null>(null)
   const [analysisBoard, setAnalysisBoard] = useState<GameState | null>(null) // mini board pozisyonu
   // Ipucu / Ogrenme modu: mevcut konumdaki en iyi hamle + gerekceleri (ekstra ag cagrisi yok)
   const [curBest, setCurBest] = useState<{ notation: string; equity: number; reasons: Reason[] } | null>(null)
@@ -2662,8 +2666,39 @@ export default function App() {
           }
           if (showAnalysis) {
             setRanked(r)
+            setGnubgMoves(null) // gnubg hazır olana kadar wildbg listesi (aşağıda override edilir)
             setCurrentProbs(cp)
             setAnalysisBoard(analysisState)
+          }
+        }
+        // HAKEM=gnubg: panel açık/öğrenme modunda GÖSTERİLEN ipucu+liste+equity gnubg'den olsun
+        // (giriş yapılmış + servis erişilebilir). wildbg turnRankedRef (PR arka planı) korunur;
+        // gnubg move nesnesi vermediğinden MiniBoard oku wildbg en iyi hamlesinde kalır (kozmetik).
+        if (!cancelled && (showAnalysis || (learnMode && played.length === 0)) && mode === 'pvb' && getToken()) {
+          const dice2 = analysisState.dice.slice(0, 2)
+          if (dice2.length === 2) {
+            try {
+              const g = await analyzePosition({
+                points: analysisState.points,
+                bar: analysisState.bar,
+                turn: analysisState.turn,
+                dice: dice2,
+                cube: { value: match.cube.value, owner: match.cube.owner },
+                score: { white: match.score.white, black: match.score.black },
+                matchLength: match.target,
+                plies: 2,
+              })
+              if (!cancelled && g.moves && g.moves.length > 0) {
+                const gb = g.moves[0]
+                setCurBest({ notation: gb.notation, equity: gb.equity, reasons: [] })
+                if (showAnalysis) {
+                  setGnubgMoves(g.moves)
+                  if (gb.probs && gb.probs.length >= 6) setCurrentProbs(gb.probs)
+                }
+              }
+            } catch {
+              /* gnubg erişilemedi -> wildbg gösterimi kalır */
+            }
           }
         }
       } catch (e) {
@@ -7043,6 +7078,7 @@ export default function App() {
             loading={analysisLoading}
             currentProbs={currentProbs}
             ranked={ranked}
+            gnubgMoves={gnubgMoves}
             player={turnStart.turn}
             lastError={lastError}
             boardState={analysisBoard}
