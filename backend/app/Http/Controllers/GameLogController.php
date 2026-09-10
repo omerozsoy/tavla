@@ -103,6 +103,28 @@ class GameLogController extends Controller
             return response()->json(['message' => 'Kayıt bulunamadı'], 404);
         }
 
+        // YARIM KAYIT KORUMASI: online maçta bir oyuncunun istemcisi kendi turlarını hiç
+        // yükleyemediyse (tek-yazar kolon boş kaldı) birleşik .mat'te o rengin sütunu BOMBOŞ
+        // olur -> XG geçersiz sayar. Böyle yarım kaydı KANONİK diye sunmak yerine 404 ver;
+        // istemci maçın tamamını gördüğü YEREL yedeğe düşsün (iki oyuncu da TAM .mat alır).
+        if ($log->mode === 'online') {
+            $w = 0;
+            $b = 0;
+            foreach ($log->mergedTurns() as $t) {
+                if (($t['k'] ?? null) === 'end') {
+                    continue; // sonuç satırı tek renkli sayılmaz
+                }
+                if (($t['p'] ?? '') === 'W') {
+                    $w++;
+                } elseif (($t['p'] ?? '') === 'B') {
+                    $b++;
+                }
+            }
+            if (($w === 0) !== ($b === 0)) { // tam biri 0, diğeri > 0 -> yarım kayıt
+                return response()->json(['message' => 'Kayıt eksik'], 404);
+            }
+        }
+
         return response()->json([
             'mat' => $log->matText(),
             'filename' => $log->matFilename(),

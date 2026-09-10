@@ -62,8 +62,13 @@ class GameLog extends Model
             return (int) ($a['o'] ?? 0) <=> (int) ($b['o'] ?? 0);
         });
 
-        // Oyun sonu olaylarını oyun başına tekilleştir (iki istemci de yazmış olabilir).
+        // TEKİLLEŞTİRME. Artık her istemci RAKİBİN hamlelerini de kendi kolonuna yazabildiği
+        // için (tek flush'ta tam .mat), iki kolon aynı turu içerebilir:
+        //  - Oyun sonu (k='end'): oyun (g) başına tekilleştir (seq iki istemcide farklı olabilir).
+        //  - Hamle/küp: (g, s, o) ile tekilleştir — bu üçlü bir turu BENZERSİZ belirler (seq=ortak
+        //    sıra; o aynı seq'te küp<hamle ayrımı). Boş 'm' yerine dolu kaydı tercih et.
         $seenEnd = [];
+        $byKey = [];
         $out = [];
         foreach ($turns as $t) {
             if (($t['k'] ?? null) === 'end') {
@@ -72,7 +77,20 @@ class GameLog extends Model
                     continue;
                 }
                 $seenEnd[$g] = true;
+                $out[] = $t;
+
+                continue;
             }
+            $key = (int) ($t['g'] ?? 0).':'.(int) ($t['s'] ?? 0).':'.(int) ($t['o'] ?? 0);
+            if (isset($byKey[$key])) {
+                $i = $byKey[$key];
+                if (($out[$i]['m'] ?? '') === '' && ($t['m'] ?? '') !== '') {
+                    $out[$i] = $t; // daha bilgili (dolu hamle) kaydı koru
+                }
+
+                continue;
+            }
+            $byKey[$key] = count($out);
             $out[] = $t;
         }
 

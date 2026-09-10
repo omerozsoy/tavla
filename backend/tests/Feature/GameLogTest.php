@@ -139,6 +139,46 @@ class GameLogTest extends TestCase
         $this->assertSame('end', $merged[2]['k']);       // en son bitiş (o=9)
     }
 
+    public function test_full_log_from_both_clients_dedupes_moves(): void
+    {
+        // Yeni davranış: her istemci RAKİBİN hamlelerini de kendi kolonuna yazar (tek flush =
+        // tam .mat). İki kolon aynı turu içerse bile (g,s,o) ile tekilleşir -> çiftlenme YOK.
+        $full = [
+            ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '6-5', 'm' => '24/18 13/8', 'o' => 0],
+            ['g' => 1, 's' => 1, 'p' => 'B', 'd' => '5-3', 'm' => '12/17 12/15', 'o' => 0],
+            ['g' => 1, 's' => 2, 'p' => 'W', 'd' => '4-2', 'm' => '13/9 13/11', 'o' => 0],
+        ];
+        $this->postJson('/api/game-logs', [
+            'uid' => 'FULL01', 'slot' => 'p1', 'mode' => 'online', 'target' => 3, 'events' => $full,
+        ])->assertOk();
+        $this->postJson('/api/game-logs', [
+            'uid' => 'FULL01', 'slot' => 'p2', 'mode' => 'online', 'target' => 3, 'events' => $full,
+        ])->assertOk();
+
+        $merged = GameLog::where('uid', 'FULL01')->firstOrFail()->mergedTurns();
+        $this->assertCount(3, $merged); // 6 ham -> 3 (tekilleşti)
+        $this->assertSame(['W', 'B', 'W'], array_column($merged, 'p'));
+        // İki renk de var -> kanonik .mat sunulur.
+        $this->getJson('/api/game-logs/FULL01/mat')->assertOk();
+    }
+
+    public function test_mat_endpoint_404_on_half_recorded_online_match(): void
+    {
+        // Bir oyuncunun istemcisi kendi turlarını HİÇ yüklemediyse birleşik kayıt YARIM kalır
+        // (bir renk hiç yok) -> kanonik .mat bozuk olur. Endpoint 404 ver ki istemci maçın
+        // TAMAMINI gördüğü yerel yedeğe düşsün (iki oyuncu da tam .mat alsın).
+        $this->postJson('/api/game-logs', [
+            'uid' => 'HALF01', 'slot' => 'p2', 'mode' => 'online', 'target' => 3,
+            'status' => 'finished', 'winner' => 'black',
+            'events' => [
+                ['g' => 1, 's' => 1, 'p' => 'B', 'd' => '5-3', 'm' => '12/17 12/15', 'o' => 0],
+                ['g' => 1, 's' => 3, 'p' => 'B', 'd' => '6-1', 'm' => '24/18 18/17', 'o' => 0],
+            ],
+        ])->assertOk();
+
+        $this->getJson('/api/game-logs/HALF01/mat')->assertStatus(404);
+    }
+
     public function test_mat_text_built_from_compact_turns(): void
     {
         $this->postJson('/api/game-logs', [
