@@ -72,6 +72,25 @@ class AnalyzeMatchPrJob implements ShouldQueue
         if (Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
         }
+
+        // ANA KURAL (A→Z gnubg): pr_mode=authoritative ise GOSTERILEN/OTORITER PR = gnubg (cubeful
+        // EMG, match-aware) olur; istemci wildbg (kübsüz para, 1-ply) PR'i EZILIR. Boylece "Maç
+        // Analizleri"ndeki PR + kariyer havuzu (pr_equity_lost/pr_decisions) XG ile ayni sınıf motordan
+        // gelir. gnubg gercekten karar degerlendirdiyse (totDec>0) yaz; degilse istemci PR'i kalir
+        // (servis down -> zaten yukarida return; graceful fallback). Rating/Elo win/loss'tan gelir,
+        // PR degismesinden ETKILENMEZ.
+        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
+            foreach ([
+                'pr' => round((float) $overall, 2),
+                'pr_equity_lost' => round((float) $totLoss, 6),
+                'pr_decisions' => $totDec,
+            ] as $col => $val) {
+                if (Schema::hasColumn('match_results', $col)) {
+                    $upd[$col] = $val;
+                }
+            }
+        }
+
         if ($upd !== []) {
             MatchResult::where('id', $mr->id)->update($upd); // query-builder -> fillable gerekmez
         }
