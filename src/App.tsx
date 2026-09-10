@@ -193,7 +193,6 @@ import {
   type SavedGame,
   type MoveLogEntry,
 } from './storage'
-import { buildMat } from './matExport'
 import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
 import { Button } from '@/components/ui/button'
@@ -3146,17 +3145,9 @@ export default function App() {
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
       }
       const achExtra = buildAchExtra()
-      // Tavlai Luck V1: TAM maç .mat'i (gnubg NATIVE luck kaynağı — backend analyse match).
-      // TAM log (luck bütün oyunları ister); PR log'u ayrı 250-slice. Üretilemezse null (fallback).
-      let matText: string | null = null
-      try {
-        matText = buildMat(matchLogRef.current, {
-          matchLength: match.target,
-          results: gameResultsRef.current, // PES/terk oyunları da doğru sonuç satırı alsın (merkezi puan)
-        })
-      } catch {
-        matText = null
-      }
+      // Tavlai Luck V1: .mat TEK KAYNAKTAN backend'de kurulur (stored log -> MatBuilder ->
+      // MatSerializer). İstemcinin ürettiği .mat SUNUCUDA KULLANILMAZ (istemci kısmi-log'una
+      // güvenilmez, "biri 0" bug'ı) -> boşa istemci-taraflı .mat üretmeyiz; yalnız TAM log gider.
       const doReport = () =>
         reportRating(
           won,
@@ -3176,7 +3167,7 @@ export default function App() {
           stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
           room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
           achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
-          matText, // .mat -> gnubg native luck (V1)
+          null, // .mat: backend stored log'dan (MatBuilder) kurar; istemci .mat'i kullanılmaz
         )
       // Gecici ag/sunucu hatasi tek denemede "puanin kaydedilemedi" gostermesin -> 3 kez dene.
       let r: Awaited<ReturnType<typeof reportRating>> | null = null
@@ -3207,7 +3198,7 @@ export default function App() {
           stakeRef.current > 0 ? 'coin' : 'match',
           room?.code ?? null,
           achExtra,
-          matText, // .mat -> gnubg native luck (V1); pending retry de gönderir
+          null, // .mat: backend stored log'dan kurar; istemci .mat'i kullanılmaz
         ])
       } else {
         setRatingChange({ before, after: r.rating })
