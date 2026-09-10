@@ -94,6 +94,7 @@ interface BoardProps {
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
   mirror?: boolean // true: oyun yonu "sola topla" (tahta yatay aynalanir, tepsi solda)
+  swapStones?: boolean // true: pul renkleri takas (oyuncu siyah/beyaz secer) — gorsel, motor etkilenmez
   showPip?: boolean // pip sayilari gorunur mu
   watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
 }
@@ -216,6 +217,7 @@ function Board({
   centerMain,
   flip = false,
   mirror = false,
+  swapStones = false,
   showPip = true,
   watermark,
 }: BoardProps) {
@@ -555,7 +557,10 @@ function Board({
   const bottomOffCount = flip ? state.off.black : state.off.white
 
   return (
-    <div className={`board${mirror ? ' mirror' : ''}${drag ? ' dragging' : ''}`} ref={boardElRef}>
+    <div
+      className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}`}
+      ref={boardElRef}
+    >
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
         {L.topNums[0].map((n) => (
