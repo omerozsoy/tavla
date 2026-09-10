@@ -1568,9 +1568,15 @@ export async function reportRating(
 
 // HAKEM=gnubg: canlı sonuç ekranı, maç sonrası gnubg PR (async) hazır olana kadar bunu poll'lar.
 // ready=false iken "analiz ediliyor" gösterilir; ready=true olunca gösterilen PR gnubg olur.
-export async function matchGnubgPr(
-  id: number,
-): Promise<{ ready: boolean; pr: number | null; checker_pr: number | null; cube_pr: number | null }> {
+export async function matchGnubgPr(id: number): Promise<{
+  ready: boolean
+  pr: number | null
+  checker_pr: number | null
+  cube_pr: number | null
+  luck_ready: boolean
+  luck_mwc: number | null // insan (satır sahibi) gnubg NATIVE şans %
+  opponent_luck_mwc: number | null // bot gnubg NATIVE şans %
+}> {
   return req(`/me/match-pr-gnubg/${id}`)
 }
 

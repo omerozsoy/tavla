@@ -3282,13 +3282,15 @@ export default function App() {
   async function pollGnubgPr(id: number) {
     const token = ++prPollRef.current
     setPrAnalyzing(true)
-    for (let i = 0; i < 25; i++) {
+    let prDone = false
+    let luckDone = false
+    for (let i = 0; i < 25 && !(prDone && luckDone); i++) {
       await new Promise((res) => setTimeout(res, 2000))
       if (prPollRef.current !== token) return // iptal edildi (yeni maç/rapor)
       try {
         const g = await matchGnubgPr(id)
         if (prPollRef.current !== token) return
-        if (g.ready) {
+        if (!prDone && g.ready) {
           setServerPr((prev) => ({
             self: g.pr,
             opp: prev?.opp ?? null,
@@ -3298,7 +3300,12 @@ export default function App() {
             cubeOpp: prev?.cubeOpp ?? null,
           }))
           setPrAnalyzing(false)
-          return
+          prDone = true
+        }
+        // ADIM 4: gnubg NATIVE şans (Luck V1) hazır olunca swap. pvb: insan=beyaz, bot=siyah.
+        if (!luckDone && g.luck_ready) {
+          setServerLuckMwc({ white: g.luck_mwc, black: g.opponent_luck_mwc })
+          luckDone = true
         }
       } catch {
         /* geçici hata -> tekrar dene */
