@@ -39,12 +39,13 @@ class CareerPrService
     /** Bir oyuncunun aggregate Career PR degerlerini maçlarindan YENIDEN hesapla + kaydet. */
     public function recalc(User $user): void
     {
+        // NOT: 'dec' MariaDB'de rezerve kelime -> alias 'decs' (SQLite'ta sorun degil ama MySQL patlar).
         $agg = $this->eligibleMatches($user->id)
-            ->selectRaw('COALESCE(SUM(pr_equity_lost),0) as loss, COALESCE(SUM(pr_decisions),0) as dec, COUNT(*) as m')
+            ->selectRaw('COALESCE(SUM(pr_equity_lost),0) as loss, COALESCE(SUM(pr_decisions),0) as decs, COUNT(*) as m')
             ->first();
 
         $loss = (float) ($agg->loss ?? 0);
-        $dec = (int) ($agg->dec ?? 0);
+        $dec = (int) ($agg->decs ?? 0);
         $m = (int) ($agg->m ?? 0);
         $pr = $dec > 0 ? ($loss / $dec) * self::SCALE : null;
 
