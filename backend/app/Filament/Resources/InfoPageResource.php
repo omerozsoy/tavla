@@ -58,15 +58,20 @@ class InfoPageResource extends Resource
                     'h2', 'h3',
                     'bulletList', 'orderedList',
                     'link', 'blockquote',
+                    'attachFiles', // metin içine resim ekle
                     'redo', 'undo',
                 ])
-                ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir.')
+                // Satır içi resimler public/uploads/bilgi altına -> <img src="/uploads/bilgi/..">
+                ->fileAttachmentsDisk('uploads')
+                ->fileAttachmentsDirectory('bilgi')
+                ->fileAttachmentsVisibility('public')
+                ->helperText('Biçimlendirilmiş metin — /bilgi/<sayfa> içeriği olarak gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
                 ->columnSpanFull(),
             Forms\Components\FileUpload::make('gallery')->label('Resim galerisi')
                 ->image()->multiple()->reorderable()->appendFiles()
                 ->disk('uploads')->directory('bilgi')->visibility('public')
                 ->maxSize(4096)->panelLayout('grid')
-                ->helperText('İçeriğin altında küçük küçük gösterilir; tıklayınca büyür (galeri). Sürükleyerek sıralayabilirsin.')
+                ->helperText('İçeriğin altında küçük küçük gösterilir; tıklayınca büyür (galeri). Sürükleyerek sıralayabilirsin. İpucu: içerik metninde <resimgalerisi> yazarsan galeri tam o noktada gösterilir (yoksa en altta).')
                 ->columnSpanFull(),
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),

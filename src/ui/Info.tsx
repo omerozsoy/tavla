@@ -152,22 +152,46 @@ function InfoPane({ page }: { page?: InfoPage }) {
 
   if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
 
+  // Galeri yer tutucu: editörde <resimgalerisi> yazılan yere galeri konur (yoksa en altta).
+  // RichEditor metni escape ederek saklar -> hem <resimgalerisi> hem &lt;resimgalerisi&gt;
+  // (ayrıca tek başına bir paragrafsa çevreleyen <p>...</p>) yakalanır.
+  const body = page.body ?? ''
+  const token =
+    /<p>\s*(?:&lt;|<)\s*resimgalerisi\s*(?:&gt;|>)\s*<\/p>|(?:&lt;|<)\s*resimgalerisi\s*(?:&gt;|>)/i
+  const m = token.exec(body)
+
+  const galleryEl =
+    gallery.length > 0 ? (
+      <div className="service-gallery">
+        {gallery.map((g, i) => (
+          <button
+            key={i}
+            className="service-gallery-thumb"
+            onClick={() => setLightbox(i)}
+            aria-label={t('content.image', { n: i + 1 })}
+          >
+            <img src={g} alt="" loading="lazy" />
+          </button>
+        ))}
+      </div>
+    ) : null
+
   return (
     <>
-      <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: page.body ?? '' }} />
-      {gallery.length > 0 && (
-        <div className="service-gallery">
-          {gallery.map((g, i) => (
-            <button
-              key={i}
-              className="service-gallery-thumb"
-              onClick={() => setLightbox(i)}
-              aria-label={t('content.image', { n: i + 1 })}
-            >
-              <img src={g} alt="" loading="lazy" />
-            </button>
-          ))}
-        </div>
+      {m ? (
+        <>
+          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body.slice(0, m.index) }} />
+          {galleryEl}
+          <div
+            className="info-rich rich"
+            dangerouslySetInnerHTML={{ __html: body.slice(m.index + m[0].length) }}
+          />
+        </>
+      ) : (
+        <>
+          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: body }} />
+          {galleryEl}
+        </>
       )}
       {lightbox !== null && gallery.length > 0 && (
         <Lightbox

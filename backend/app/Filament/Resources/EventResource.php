@@ -130,9 +130,13 @@ class EventResource extends Resource
                     'h2', 'h3',
                     'bulletList', 'orderedList',
                     'link', 'blockquote',
+                    'attachFiles', // metin içine resim ekle
                     'redo', 'undo',
                 ])
-                ->helperText('Turnuva açıklaması — ön yüzde "Detaylı Bilgi" penceresinde biçimlendirilmiş gösterilir.')
+                ->fileAttachmentsDisk('uploads')
+                ->fileAttachmentsDirectory('etkinlik')
+                ->fileAttachmentsVisibility('public')
+                ->helperText('Turnuva açıklaması — ön yüzde "Detaylı Bilgi" penceresinde biçimlendirilmiş gösterilir. Ataç ikonu ile metnin içine resim ekleyebilirsin.')
                 ->columnSpanFull(),
             // Görsel etkinlikte yok: takvimde seçilen OTELİN görseli gösterilir (Oteller sayfasına yüklenir).
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
