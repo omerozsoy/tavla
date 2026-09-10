@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Premium işareti — tasarım galerisi</title>
+<style>
+  :root{--accent:#C9563F}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Segoe UI',system-ui,sans-serif;background:#F4EFE6;color:#1C1A17;padding:28px}
+  h1{font-size:22px;font-weight:700;margin:0 0 4px}
+  .lead{color:#8a7f72;font-size:13px;margin:0 0 20px;font-weight:400}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;max-width:1000px}
+  .card{background:#fbf7f0;border:1px solid #e6ddcf;border-radius:14px;padding:6px 12px 10px;display:flex;flex-direction:column}
+  .card.dark{background:linear-gradient(180deg,#1b2436,#0e1420);border-color:#26324a}
+  .hd{font-size:12px;font-weight:700;margin:10px 4px 4px;display:flex;gap:8px;align-items:baseline}
+  .num{color:var(--accent);font-weight:800}
+  .card.dark .hd{color:#dfe6f2}.card.dark .desc{color:#9fb0c9}
+  .desc{font-size:11px;color:#8a7f72;font-weight:400}
+  .row{display:flex;align-items:center;gap:11px;padding:8px 4px}.row+.row{border-top:1px solid #efe7d9}
+  .card.dark .row+.row{border-top-color:#26324a}
+  .rank{width:14px;color:#8a7f72;font-weight:400;font-size:13px}
+  .rating{margin-left:auto;color:var(--accent);font-weight:600;font-size:13px}
+  .av{width:40px;height:40px;border-radius:50%;overflow:hidden;background:radial-gradient(60% 55% at 50% 38%,#5b6c8f,#22283a);display:flex;align-items:center;justify-content:center;color:#dfe6f2;font-weight:700;font-size:15px;flex:0 0 auto}
+  .av.b{background:radial-gradient(60% 55% at 50% 38%,#c98a63,#7a4a34)}
+  .av.fr{box-shadow:0 0 0 3px #7c5cff,0 0 8px 2px rgba(124,92,255,.5)}
+  .av.fr2{box-shadow:0 0 0 3px #22c55e,0 0 8px 2px rgba(34,197,94,.45)}
+  .nl{display:inline-flex;align-items:center;gap:7px;min-width:0}
+  .name{font-weight:500;font-size:14px}.card.dark .name{color:#eef2fb}
+  /* marker taban */
+  .mk{display:inline-flex;align-items:center;gap:5px;font-size:10px;line-height:1;letter-spacing:.08em;text-transform:uppercase;flex:0 0 auto;font-weight:400;color:var(--accent)}
+  .mk.bold{font-weight:800}
+  .mk.med{font-weight:500}   /* 1 tık kalın (medium) */
+  .mk.sb{font-weight:600}    /* 2 tık (semibold) */
+  .mk svg{width:13px;height:13px}
+  .pill{padding:1px 9px 1px 7px;border-radius:999px;border:1px solid color-mix(in srgb,var(--accent) 38%,transparent);background:color-mix(in srgb,var(--accent) 10%,transparent)}
+  .pill.solid{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .pill.gold{background:linear-gradient(180deg,#ffe6a8,#d7a63f);color:#5a3d12;border-color:#c8962f}
+  /* koyu kiremit (~#A83A2B) uzerine BEYAZ yazi */
+  .pill.dark2{background:color-mix(in srgb,var(--accent) 80%,#000);color:#fff;border-color:color-mix(in srgb,var(--accent) 60%,#000)}
+  .mk.wht{color:#fff}
+  .foot{margin-top:26px;color:#8a7f72;font-size:12px}
+</style></head><body>
+  <h1>Premium işareti — tasarım galerisi</h1>
+  <p class="lead">Hepsi ismin yanında (avatar animasyonundan bağımsız). Mor/yeşil parlayan avatarlar = animasyonlu çerçeve (çakışma testi). Beğendiğinin <b>numarasını</b> bana söyle.</p>
+  <div class="grid" id="root"></div>
+  <p class="foot">Bu dosya salt önizleme; kod değişikliği yapmaz. Karar verince uygularım.</p>
+<script>
+const CR_OUT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M4 8.5l3.5 2.5L12 5.5l4.5 5.5L20 8.5l-1.4 9H5.4L4 8.5z"/></svg>';
+const CR_FILL='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 8l3.6 2.7L12 5l5.4 5.7L21 8l-1.6 9.4H4.6L3 8z"/></svg>';
+const DIA_OUT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M6.5 3.5h11l3.5 5.5-9 11-9-11 3.5-5.5z"/></svg>';
+const STAR='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l2.5 5.4 5.9.6-4.4 4 1.2 5.8L12 21l-5.2 2.8 1.2-5.8-4.4-4 5.9-.6z"/></svg>';
+
+const opts=[
+ {n:1,t:'İnce soft taç pill',d:' MEVCUT · outline taç + ince PREMIUM',m:`<span class="mk pill">${CR_OUT}PREMIUM</span>`},
+ {n:2,t:'İnce · pill yok',d:'çerçevesiz, outline taç + ince PREMIUM',m:`<span class="mk">${CR_OUT}PREMIUM</span>`},
+ {n:3,t:'İnce yalnız yazı',d:'ikon yok, ince PREMIUM',m:`<span class="mk">PREMIUM</span>`},
+ {n:4,t:'İnce soft, yazısız taç',d:'sadece outline taç, pill',m:`<span class="mk pill" style="padding:2px 6px">${CR_OUT}</span>`},
+ {n:5,t:'Dolu kiremit (kalın)',d:'solid pill, beyaz taç + PREMIUM',m:`<span class="mk bold pill solid">${CR_FILL}PREMIUM</span>`},
+ {n:6,t:'Altın gradient',d:'gold pill, taç + PREMIUM',m:`<span class="mk bold pill gold">${CR_FILL}PREMIUM</span>`},
+ {n:7,t:'İnce elmas',d:'çerçevesiz, outline elmas + PREMIUM',m:`<span class="mk">${DIA_OUT}PREMIUM</span>`},
+ {n:8,t:'Yıldız · Pro',d:'çerçevesiz, yıldız + PRO',m:`<span class="mk">${STAR}PRO</span>`},
+ {n:9,t:'Sadece ikon',d:'küçük outline taç, yazısız',m:`<span class="mk" style="font-size:15px">${CR_OUT}</span>`},
+ {n:10,t:'Koyu kiremit (#A83A2B) · beyaz',d:'dolu koyu pill, beyaz ince taç + PREMIUM',m:`<span class="mk med wht pill dark2">${CR_OUT}PREMIUM</span>`},
+ {n:11,t:'Koyu kiremit · beyaz DOLU taç',d:'#A83A2B, beyaz dolu taç + PREMIUM',m:`<span class="mk wht pill dark2">${CR_FILL}PREMIUM</span>`},
+ {n:'A',t:'AĞIRLIK · 400 (mevcut ince)',d:'soft pill, regular 400',m:`<span class="mk pill">${CR_OUT}PREMIUM</span>`},
+ {n:'B',t:'AĞIRLIK · 500 (1 tık kalın) ★',d:'soft pill, medium 500 — önerilen',m:`<span class="mk med pill">${CR_OUT}PREMIUM</span>`},
+ {n:'C',t:'AĞIRLIK · 600 (2 tık, semibold)',d:'soft pill, semibold 600',m:`<span class="mk sb pill">${CR_OUT}PREMIUM</span>`},
+];
+const rows=(m,dark)=>`
+ <div class="row"><span class="rank">1</span><span class="av${dark?' b':''}">C</span><span class="nl"><span class="name">Caner ÇELİK</span>${m}</span><span class="rating">1850</span></div>
+ <div class="row"><span class="rank">2</span><span class="av ${dark?'fr2':'fr'}${dark?' b':''}">Ö</span><span class="nl"><span class="name">Ömer DOĞAN</span>${m}</span><span class="rating">1800</span></div>`;
+document.getElementById('root').innerHTML = opts.map((o,i)=>
+ `<div class="card${i%3===2?' dark':''}"><div class="hd"><span class="num">${o.n}</span> ${o.t} <span class="desc">${o.d}</span></div>${rows(o.m,i%3===2)}</div>`
+).join('');
+</script></body></html>

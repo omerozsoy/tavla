@@ -21528,3 +21528,38 @@ select:-webkit-autofill {
    bilesenlerin kendi radius degerleri yeniden gecerli. Sohbet balonu
    (.msg-bubble) kendi taniminda (18px) zaten yuvarlak.
    ========================================================================= */
+
+/* =========================================================================
+   PREMIUM PILL — isim yaninda ince marka isareti (tac + PREMIUM).
+   TEMA-DUYARLI (kullanici): acik temada dolu koyu kiremit pill + beyaz yazi
+   (galeri secenek 10, daha okunur); koyu temada ince soft pill (secenek B).
+   Renk site ana rengi var(--accent) uzerinden; sabit hex YOK (dark2 = accent+#000).
+   ========================================================================= */
+.premium-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 18px;
+  padding: 0 9px 0 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 500; /* 1 tik kalin (medium) — bold degil */
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1;
+  white-space: nowrap;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  /* Varsayilan = ACIK tema (secenek 10): dolu koyu kiremit pill + beyaz yazi */
+  background: color-mix(in srgb, var(--accent) 80%, #000);
+  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, #000);
+}
+.premium-pill svg { width: 13px; height: 13px; }
+
+/* KOYU tema (secenek B): ince soft pill — accent tint zemin + accent yazi */
+:root[data-theme='dark'] .premium-pill {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+}
