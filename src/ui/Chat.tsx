@@ -10,6 +10,8 @@ interface Props {
   onSend: (text: string) => void
   canText?: boolean // serbest yazili sohbet (premium); false ise sadece emoji
   onUpgrade?: () => void
+  loggedIn?: boolean // MISAFIR sohbet edemez -> false ise giris prompt'u gosterilir
+  onLogin?: () => void // giris modalini ac
 }
 
 // Yaygin emojiler (hazir panel)
@@ -20,7 +22,7 @@ const EMOJIS = [
   '😏', '🫡', '👋', '🍀', '⭐', '💯', '😤', '🙈',
 ]
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
@@ -64,7 +66,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
             )}
           </div>
 
-          {emojiOpen && (
+          {loggedIn && emojiOpen && (
             <div className="chat-emojis">
               {EMOJIS.map((e) => (
                 <button
@@ -80,33 +82,42 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
           )}
 
           <div className="chat-input">
-            <Button
-              variant="ghost"
-              size="icon"
-              type="button"
-              className="shrink-0"
-              onClick={() => setEmojiOpen((v) => !v)}
-              title="Emoji"
-            >
-              😊
-            </Button>
-            {canText ? (
-              <>
-                <input
-                  value={text}
-                  maxLength={280}
-                  placeholder={t('chat.placeholder')}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') submit()
-                  }}
-                />
-                <Button variant="default" className="shrink-0" onClick={submit}>{t('chat.send')}</Button>
-              </>
-            ) : (
-              <Button variant="secondary" className="flex-1" onClick={onUpgrade}>
-                <Icon name="crown" size={14} /> {t('chat.premium')}
+            {!loggedIn ? (
+              // MİSAFİR: sohbet edemez -> giriş prompt'u (emoji/yazma yok).
+              <Button variant="secondary" className="flex-1" onClick={onLogin}>
+                <Icon name="user" size={14} /> {t('auth.doLogin')}
               </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  className="shrink-0"
+                  onClick={() => setEmojiOpen((v) => !v)}
+                  title="Emoji"
+                >
+                  😊
+                </Button>
+                {canText ? (
+                  <>
+                    <input
+                      value={text}
+                      maxLength={280}
+                      placeholder={t('chat.placeholder')}
+                      onChange={(e) => setText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') submit()
+                      }}
+                    />
+                    <Button variant="default" className="shrink-0" onClick={submit}>{t('chat.send')}</Button>
+                  </>
+                ) : (
+                  <Button variant="secondary" className="flex-1" onClick={onUpgrade}>
+                    <Icon name="crown" size={14} /> {t('chat.premium')}
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </>

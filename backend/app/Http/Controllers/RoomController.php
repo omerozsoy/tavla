@@ -1246,6 +1246,11 @@ class RoomController extends Controller
             'text' => ['required', 'string', 'max:280'],
         ]);
 
+        // MİSAFİR SOHBET EDEMEZ: yalnızca giriş yapmış kullanıcı mesaj gönderebilir.
+        if (! $request->user('sanctum')) {
+            return $this->fail('Sohbet için giriş yapmalısın.', 401);
+        }
+
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
