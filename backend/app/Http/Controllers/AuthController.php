@@ -598,8 +598,9 @@ class AuthController extends Controller
         // hesapla. Job İKİ oyuncunun stored logunu BİRLEŞTİRİP tam .mat kurar (istemci kısmi .mat'ine
         // GÜVENMEZ -> "biri 0" bug'ı çözülür). Yalnız online (room_code) + log varsa. matchPr %'yi
         // döndürür (hazır olunca); istemci ONNX fallback kalır. pr_mode gate.
+        // ADIM 4: online (room_code -> iki-log birleştir) VEYA pvb (tek-log iki renk -> job pvb dalı).
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log']) && ! empty($data['room_code'])) {
+            && ! empty($mr['log'])) {
             try {
                 \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
@@ -741,11 +742,19 @@ class AuthController extends Controller
         $ready = $has && $match->gnubg_pr !== null;
         $num = fn ($v) => $v !== null ? (float) $v : null;
 
+        // ADIM 4: gnubg NATIVE şans (Luck V1) hazır mı? Ayrı (async) job -> PR'dan farklı zamanda dolar.
+        $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
+        $luckReady = $hasMwc && $match->luck_mwc !== null;
+        $hasOppMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
+
         return response()->json([
             'ready' => $ready,
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
+            'luck_ready' => $luckReady,
+            'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
+            'opponent_luck_mwc' => ($luckReady && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot
         ]);
     }
 
@@ -1225,6 +1234,7 @@ class AuthController extends Controller
         $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
         $hasOppLuck = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck');
+        $hasOppLuckMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
@@ -1238,6 +1248,9 @@ class AuthController extends Controller
         }
         if ($hasOppLuck) {
             $cols[] = 'opponent_luck'; // PvB: rakip (bot) ham luck'i satirin kendisinde
+        }
+        if ($hasOppLuckMwc) {
+            $cols[] = 'opponent_luck_mwc'; // PvB: rakip (bot) gnubg NATIVE MWC-luck'i (Luck V1)
         }
         if ($hasRoom) {
             $cols[] = 'room_code';
@@ -1312,7 +1325,10 @@ class AuthController extends Controller
                     ? $m->opponent_luck
                     : (($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null),
                 'luck_mwc' => $hasMwc ? $m->luck_mwc : null,
-                'opponent_luck_mwc' => ($hasRoom && $hasMwc && $m->room_code) ? ($oppLuckMwcByRoom[$m->room_code] ?? null) : null,
+                // Rakip gnubg MWC-luck: PvB'de satırın kendi kolonu (bot); online'da karşı satır (room).
+                'opponent_luck_mwc' => ($hasOppLuckMwc && $m->opponent_luck_mwc !== null)
+                    ? $m->opponent_luck_mwc
+                    : (($hasRoom && $hasMwc && $m->room_code) ? ($oppLuckMwcByRoom[$m->room_code] ?? null) : null),
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
                 'has_log' => $hasLog ? (bool) $m->has_log : false,

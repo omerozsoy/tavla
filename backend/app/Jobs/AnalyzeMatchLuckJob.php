@@ -37,8 +37,14 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             return; // migration yoksa sessiz geç
         }
         $mr = MatchResult::find($this->matchResultId);
-        if (! $mr || empty($mr->room_code)) {
-            return; // online (room_code) değilse birleştirilecek rakip yok
+        if (! $mr) {
+            return;
+        }
+        // ADIM 4 (HAKEM=gnubg): pvb (room_code YOK) -> tek log iki rengi de içerir; doğrudan .mat kur.
+        if (empty($mr->room_code)) {
+            $this->handlePvb($gnubg, $mr);
+
+            return;
         }
         $oppRow = MatchResult::where('room_code', $mr->room_code)
             ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
@@ -108,6 +114,49 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             'room' => $mr->room_code, 'merged' => count($merged),
             'white_mwc' => $white['mwc_total'] ?? null, 'black_mwc' => $black['mwc_total'] ?? null,
         ]);
+    }
+
+    /**
+     * pvb (AI) maçı: tek log İKİ rengin de hamlelerini içerir (insan + bot recordPR'a yazar) ->
+     * doğrudan .mat kur (matText ile aynı yol), gnubg matchluck ile p0(beyaz)+p1(siyah) native luck.
+     * İnsanın luck_mwc'si + botun opponent_luck_mwc'si yazılır -> sonuç ekranı + Maç Analizleri gnubg şans.
+     */
+    private function handlePvb(GnuBgClient $gnubg, MatchResult $mr): void
+    {
+        if ($mr->luck_mwc !== null && ($mr->opponent_luck_mwc ?? null) !== null) {
+            return; // zaten dolu (idempotent)
+        }
+        $decoded = json_decode((string) $mr->log, true);
+        if (! is_array($decoded)) {
+            return;
+        }
+        $hc = $decoded['hc'] ?? 'white';
+        $log = is_array($decoded['log'] ?? null) ? $decoded['log'] : [];
+        if (count($log) < 2) {
+            return;
+        }
+        $matchLen = max(1, (int) ($mr->match_length ?? 1));
+        $mat = MatBuilder::build($log, $matchLen, 'White', 'Black');
+        if ($mat === '') {
+            return;
+        }
+        $res = $gnubg->matchluck($mat);
+        $luck = is_array($res) ? ($res['luck'] ?? null) : null;
+        if (! is_array($luck) || ! isset($luck['p0'], $luck['p1'])) {
+            Log::warning('gnubg luck (pvb): parse yok', ['id' => $mr->id, 'mat_len' => strlen($mat)]);
+
+            return;
+        }
+        // .mat sol sütun = white (p0). pvb'de insan genelde beyaz; yine de hc'ye göre self/opp ata.
+        [$selfLuck, $oppLuck] = $hc === 'black' ? [$luck['p1'], $luck['p0']] : [$luck['p0'], $luck['p1']];
+        $suspicious = fn ($l) => ! is_array($l) || ! isset($l['emg_total']) || abs((float) $l['emg_total']) < 1e-9;
+        if (! $suspicious($selfLuck)) {
+            $this->write($mr->id, $selfLuck); // insanın gnubg luck_mwc'si
+        }
+        if (! $suspicious($oppLuck) && Schema::hasColumn('match_results', 'opponent_luck_mwc') && isset($oppLuck['mwc_total'])) {
+            MatchResult::where('id', $mr->id)->update(['opponent_luck_mwc' => round((float) $oppLuck['mwc_total'], 3)]);
+        }
+        Log::info('gnubg luck V1 (pvb)', ['id' => $mr->id, 'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null]);
     }
 
     /** Query-builder update (fillable gerekmez); yalnız var olan kolonlara yaz. */
