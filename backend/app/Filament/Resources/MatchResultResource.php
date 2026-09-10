@@ -170,6 +170,18 @@ class MatchResultResource extends Resource
             ])
             ->actions([
                 Tables\Actions\ViewAction::make()->label('Detay'),
+                // Satır başına .mat indir (XG uyumlu; online'da iki oyuncunun logu birleşir).
+                // pvb/log'suz maçta matText boş -> buton gizlenir.
+                Tables\Actions\Action::make('downloadMat')
+                    ->label('.mat')
+                    ->icon('heroicon-o-arrow-down-tray')
+                    ->color('gray')
+                    ->visible(fn (MatchResult $record) => ! empty($record->log)) // ucuz kapı (matText satır-başı üretilmez)
+                    ->action(fn (MatchResult $record) => response()->streamDownload(
+                        fn () => print ($record->matText()),
+                        $record->matFilename(),
+                        ['Content-Type' => 'text/plain; charset=utf-8'],
+                    )),
             ]);
     }
 
