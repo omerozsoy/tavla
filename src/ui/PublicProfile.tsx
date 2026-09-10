@@ -4,9 +4,8 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
 import PlayerIdentity from './PlayerIdentity'
-import { BadgeList } from './Badges'
 import { Button } from '@/components/ui/button'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 
 // Herkese acik oyuncu profili karti (liderlik/rakip isminden acilir)
 // onAddFriend: giris yapmis + baskasinin profili ise arkadaslik istegi (App wire'lar).
@@ -119,7 +118,22 @@ export default function PublicProfile({
               </div>
             )}
 
-            <BadgeList ids={p.badges} />
+            {/* Yalnız oyuncunun ÖNE ÇIKARDIĞI (seçtiği) başarımlar; seçmediyse bölüm hiç gösterilmez. */}
+            {p.featured && p.featured.length > 0 && (
+              <div className="badge-section">
+                <div className="badge-head">
+                  <Icon name="medal" size={15} /> {t('badges.title')}
+                </div>
+                <div className="badge-grid">
+                  {p.featured.map((b) => (
+                    <span key={b.slug} className="badge-item" title={b.name}>
+                      <Icon name={b.icon as IconName} size={18} />
+                      <span className="badge-name">{b.name}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
