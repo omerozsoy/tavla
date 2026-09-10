@@ -42,7 +42,8 @@ class AchievementController extends Controller
                 'desc' => $hidden ? '???' : $def['desc'],
                 'icon' => $hidden ? 'lock-key' : $def['icon'],
                 'tier' => $def['tier'],
-                'rarity' => AchievementCatalog::rarityForRatio($ratio),
+                // Gorunen rarity = SABIT zorluk sinifi (bkz config 'rarity'); canli oran DEGIL.
+                'rarity' => $def['rarity'],
                 'rarityPct' => round($ratio * 100, $ratio < 0.01 ? 2 : 1),
                 'rewardCoin' => (int) ($def['reward_coin'] ?? 0),
                 'hidden' => $hidden,
