@@ -6090,7 +6090,45 @@ button.move-row:focus-visible {
   font-weight: 700;
   color: var(--accent);
 }
-/* Profil "Kariyer PR" kartı */
+/* Profil "Kariyer PR" belirgin kartı (üst özetin altında, yatay) */
+.career-pr-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 12px 0;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.career-pr-card-l {
+  min-width: 0;
+}
+.career-pr-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  color: var(--text);
+  font-size: var(--fs-md, 1rem);
+}
+.career-pr-card-sub {
+  font-size: var(--fs-xs, 0.8rem);
+  color: var(--muted);
+  margin-top: 2px;
+}
+.career-pr-card-r {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex: none;
+}
+.career-pr-card .career-pr-hint {
+  text-align: left;
+  margin-top: 6px;
+}
+/* Profil "Kariyer PR" (dikey — eski kullanım) */
 .career-pr {
   display: flex;
   flex-direction: column;
