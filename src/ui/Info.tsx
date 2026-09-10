@@ -69,9 +69,7 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2 className="info-title">{activeTitle}</h2>
-
-        {/* Sekmeler (düzenlenebilir sekmelerde etiket = admin başlığı) */}
+        {/* Sekmeler ÜSTTE (başlıktan önce); başlık altında gösterilir. */}
         <div className="prof-ov-tabs" role="tablist">
           {TABS.map(({ slug, labelKey }) => (
             <button
@@ -86,6 +84,8 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
             </button>
           ))}
         </div>
+
+        <h2 className="info-title">{activeTitle}</h2>
 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
         {EDITABLE.includes(tab) && (

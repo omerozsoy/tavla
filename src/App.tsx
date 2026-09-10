@@ -6049,6 +6049,7 @@ export default function App() {
     achOpen ||
     friendSetupOpen ||
     editProfile ||
+    !!legalSlug || // hukuki sayfalar (KVKK/gizlilik/...) normal sayfa olarak page-host'ta acilir
     // Giris/Kayit (/giris) ve Sifremi Unuttum (/sifremi-unuttum): auth sayfasi da diger menu
     // sayfalari gibi page-host icinde acilsin -> ust hesap bari (header) gorunur kalir (aksi
     // halde standalone .register-overlay.page fixed overlay header'i orterdi).
@@ -6172,6 +6173,8 @@ export default function App() {
       {ranksOpen && (
         <RankInfo currentRating={user?.rating ?? undefined} onClose={() => setRanksOpen(false)} />
       )}
+      {/* Hukuki sayfalar (KVKK/gizlilik/cerez/kullanim/uyelik) — NORMAL sayfa (page-host) */}
+      {legalSlug && <LegalView slug={legalSlug} onClose={() => setLegalSlug(null)} />}
       {/* Istatistiklerim ayri sayfa DEGIL -> Profilim "Istatistiklerim" sekmesine gomulu */}
       {fairOpen && (
         <FairnessModal
@@ -6779,8 +6782,7 @@ export default function App() {
         <EntryPopupModal loggedIn={!!user} />
         {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
         <CookieConsent />
-        {/* Hukuki sayfa (KVKK/gizlilik/cerez/kullanim/uyelik) — footer/banner ile acilir */}
-        {legalSlug && <LegalView slug={legalSlug} onClose={() => setLegalSlug(null)} />}
+        {/* Hukuki sayfalar artik NORMAL sayfa: menuPages (page-host) icinde render edilir. */}
       </>
     )
   }
@@ -7031,6 +7033,8 @@ export default function App() {
           onSend={handleSendChat}
           canText={premium}
           onUpgrade={() => setMemOpen(true)}
+          loggedIn={!!user}
+          onLogin={() => setShowAuth(true)}
         />
       )}
       {authModal}
