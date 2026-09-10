@@ -17918,7 +17918,7 @@ button.acct-row:hover:not(:disabled) {
   scrollbar-color: color-mix(in srgb, var(--accent) 45%, transparent) transparent;
 }
 .prof-ov-grid-board .prof-ov-item {
-  flex: 0 0 200px;
+  flex: 0 0 148px;
   scroll-snap-align: start;
 }
 .prof-ov-grid-board::-webkit-scrollbar {
@@ -17990,7 +17990,7 @@ button.acct-row:hover:not(:disabled) {
 /* Avatar vitrini: tahta önizlemesiyle aynı kart yüksekliğinde, ortalanmış çerçeve */
 .prof-ov-item-frame {
   width: 100%;
-  min-height: 148px;
+  min-height: 108px;
   display: flex;
   align-items: center;
   justify-content: center;
