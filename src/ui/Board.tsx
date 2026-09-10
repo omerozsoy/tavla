@@ -1,4 +1,13 @@
-import { memo, type ReactNode } from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+  type ReactNode,
+} from 'react'
+import { createPortal } from 'react-dom'
 import type { GameState, Player } from '../engine/types'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { useT } from '../i18n'
@@ -56,6 +65,14 @@ const mirrorOf = (L: Layout): Layout => ({
 })
 const MIRROR = { normal: mirrorOf(LAYOUT.normal), flipped: mirrorOf(LAYOUT.flipped) }
 
+type DropKey = number | 'off'
+type FromKey = number | 'bar'
+
+// Surukleme callback'i: hedefe birakildi. srcRect = birakilan anki tasin (proxy) ekran
+// dikdortgeni -> hedef tas bu konumdan yerine "akar" (flyChecker), boylece tas parmaktan
+// kopmadan yerine oturur.
+type DragDrop = (to: DropKey, srcRect: DOMRect) => void
+
 interface BoardProps {
   state: GameState
   selectableFroms: Set<number | 'bar'>
@@ -64,6 +81,10 @@ interface BoardProps {
   onSelectFrom: (from: number | 'bar') => void
   onSelectTarget: (to: number | 'off') => void
   onDragFrom: (from: number | 'bar') => void
+  // Pointer-tabanli surukle-birak YALNIZCA bu prop verilirse etkin olur (ana oyun).
+  // PositionAnalyzer gibi kendi surukleme sistemi olan tuketiciler bunu vermez -> pullar
+  // etkilesimsiz kalir, catisma olmaz.
+  onDragDrop?: DragDrop
   pipTop: number
   pipBottom: number
   cube: { value: number; owner: Player | null }
@@ -83,33 +104,26 @@ function checkersOf(state: GameState, index: number): { player: Player; count: n
   return { player: v > 0 ? 'white' : 'black', count: Math.abs(v) }
 }
 
+// Tek tas. Native HTML5 drag KULLANILMAZ (ghost/opacity/kutu/cursor sorunlari onun yuzundendi).
+// Surukleme pointer event'leri ile ust bilesende yonetilir; burada yalniz onPointerDown tetikler.
 function Checker({
   player,
   draggable,
-  onDragStart,
+  onPointerDown,
   label,
+  lifted,
 }: {
   player: Player
   draggable?: boolean
-  onDragStart?: () => void
+  onPointerDown?: (e: ReactPointerEvent) => void
   label?: number // 5'ten fazla tasta ustteki tasa toplam sayi yazilir
+  lifted?: boolean // surukleme sirasinda kaynaktaki ust tas gizlenir (tek tas hissi)
 }) {
   return (
     <div
-      className={`checker ${player} ${draggable ? 'draggable' : ''}`}
-      draggable={draggable}
-      onDragStart={
-        onDragStart
-          ? (e) => {
-              e.dataTransfer.effectAllowed = 'move'
-              e.dataTransfer.setData('text/plain', 'checker')
-              // Surukleme hayaleti = YUVARLAK tasin kendisi (varsayilan gri kare kutu yerine).
-              const el = e.currentTarget as HTMLElement
-              e.dataTransfer.setDragImage(el, el.offsetWidth / 2, el.offsetHeight / 2)
-              onDragStart()
-            }
-          : undefined
-      }
+      className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}`}
+      draggable={false}
+      onPointerDown={onPointerDown}
     >
       {label != null && <span className="checker-count">{label}</span>}
     </div>
@@ -123,9 +137,10 @@ function Point({
   selectable,
   isTarget,
   selected,
+  lift,
   onSelectFrom,
   onSelectTarget,
-  onDragFrom,
+  onCheckerDown,
 }: {
   index: number
   top: boolean
@@ -133,9 +148,10 @@ function Point({
   selectable: boolean
   isTarget: boolean
   selected: boolean
+  lift: boolean // bu noktadan tas suruklenirken ust tas gizlensin
   onSelectFrom: (from: number) => void
   onSelectTarget: (to: number) => void
-  onDragFrom: (from: number) => void
+  onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -157,23 +173,26 @@ function Point({
 
   const visible = stack ? Math.min(stack.count, 5) : 0
   return (
-    <div
-      className={classes}
-      data-point={index}
-      onClick={handleClick}
-      onDragOver={isTarget ? (e) => e.preventDefault() : undefined}
-      onDrop={isTarget ? () => onSelectTarget(index) : undefined}
-    >
+    <div className={classes} data-point={index} onClick={handleClick}>
       <div className="checkers">
-        {Array.from({ length: visible }).map((_, i) => (
-          <Checker
-            key={i}
-            player={stack!.player}
-            draggable={selectable}
-            onDragStart={selectable ? () => onDragFrom(index) : undefined}
-            label={stack!.count > 5 && i === visible - 1 ? stack!.count : undefined}
-          />
-        ))}
+        {Array.from({ length: visible }).map((_, i) => {
+          const isTop = i === visible - 1 // sourceRect() ile ayni: ust/secilebilir tas = son cocuk
+          const label = stack!.count > 5 && isTop ? stack!.count : undefined
+          return (
+            <Checker
+              key={i}
+              player={stack!.player}
+              draggable={selectable}
+              lifted={lift && isTop}
+              onPointerDown={
+                selectable && onCheckerDown && isTop
+                  ? (e) => onCheckerDown(e, index, stack!.player, label)
+                  : undefined
+              }
+              label={label}
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -187,6 +206,7 @@ function Board({
   onSelectFrom,
   onSelectTarget,
   onDragFrom,
+  onDragDrop,
   pipTop,
   pipBottom,
   cube,
@@ -208,6 +228,301 @@ function Board({
       ? LAYOUT.flipped
       : LAYOUT.normal
 
+  // ---------------------------------------------------------------------------
+  // Pointer-tabanli surukle-birak (native HTML5 DnD DEGIL).
+  // - draggable/dragstart/drop yok -> ghost image, opacity solmasi, not-allowed/copy
+  //   cursorlari, secim kutusu olusmaz.
+  // - Tas parmagi/fareyi birebir (setPointerCapture + pointermove) takip eder.
+  // - Hareket transform:translate3d ile (layout reflow yok); rAF'te tek yazim -> 60fps.
+  // - Proxy document.body'ye portal edilir; tema (data-board/checker) <html>'de oldugundan
+  //   tasin rengi/dokusu aynen korunur. z-index yuksek + pointer-events:none.
+  // - Desktop mouse ve mobil touch ayni kod yolunu kullanir.
+  // ---------------------------------------------------------------------------
+  const dragEnabled = !!onDragDrop
+
+  type DragInfo = {
+    from: FromKey
+    player: Player
+    label?: number
+    pointerId: number
+    startX: number
+    startY: number
+    offsetX: number // pointer'in tas icindeki yakalama noktasi -> surukleme boyunca korunur
+    offsetY: number
+    w: number
+    h: number
+    el: HTMLElement
+    active: boolean // esik asildi -> gercek surukleme basladi
+  }
+
+  const [drag, setDrag] = useState<{ from: FromKey; player: Player; label?: number; w: number; h: number } | null>(
+    null,
+  )
+  const boardElRef = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<DragInfo | null>(null)
+  const proxyRef = useRef<HTMLDivElement | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const posRef = useRef({ x: 0, y: 0 })
+  const hoverElRef = useRef<HTMLElement | null>(null)
+
+  // En guncel prop/callback'leri ref'te tut: window listener'lari stabil (useCallback []) kalsin,
+  // bayat closure olusmasin.
+  const targetsRef = useRef(targets)
+  targetsRef.current = targets
+  const cbRef = useRef({ onDragFrom, onSelectTarget, onDragDrop })
+  cbRef.current = { onDragFrom, onSelectTarget, onDragDrop }
+
+  const DRAG_THRESHOLD = 5 // px: altinda -> tik (tap-to-move), ustunde -> surukleme
+
+  const clearHover = useCallback(() => {
+    hoverElRef.current?.classList.remove('drop-hover')
+    hoverElRef.current = null
+  }, [])
+
+  // Hangi gecerli hedef pointer'in altinda? Comert hitbox: once elementFromPoint ile
+  // nokta/tepsinin TUM kolonu; olmazsa gecerli hedeflerin genisletilmis dikdortgenlerinden
+  // en yakin merkez. Boylece pikselini tutturmak gerekmez.
+  const resolveTarget = useCallback((x: number, y: number): DropKey | null => {
+    const valid = targetsRef.current
+    if (valid.size === 0) return null
+    const board = boardElRef.current
+    const hostEl = document.elementFromPoint(x, y) as HTMLElement | null
+    const host = hostEl?.closest('[data-point],[data-slot="off"]') as HTMLElement | null
+    if (host) {
+      if (host.dataset.point != null) {
+        const idx = Number(host.dataset.point)
+        if (valid.has(idx)) return idx
+      } else if (host.dataset.slot === 'off' && valid.has('off')) {
+        return 'off'
+      }
+    }
+    if (!board) return null
+    // Fallback: genisletilmis dikdortgen icinde en yakin merkez
+    let best: DropKey | null = null
+    let bestDist = Infinity
+    valid.forEach((tg) => {
+      const tEl =
+        tg === 'off'
+          ? board.querySelector<HTMLElement>('.bearoff')
+          : board.querySelector<HTMLElement>(`.point[data-point="${tg}"]`)
+      if (!tEl) return
+      const r = tEl.getBoundingClientRect()
+      const mx = r.width * 0.5 // yatay comertlik: yarim kolon
+      const my = r.height * 0.2
+      if (x >= r.left - mx && x <= r.right + mx && y >= r.top - my && y <= r.bottom + my) {
+        const cx = r.left + r.width / 2
+        const cy = r.top + r.height / 2
+        const d = Math.hypot(x - cx, y - cy)
+        if (d < bestDist) {
+          bestDist = d
+          best = tg
+        }
+      }
+    })
+    return best
+  }, [])
+
+  const updateHover = useCallback(
+    (x: number, y: number) => {
+      const board = boardElRef.current
+      const to = resolveTarget(x, y)
+      let el: HTMLElement | null = null
+      if (to != null && board) {
+        el =
+          to === 'off'
+            ? board.querySelector<HTMLElement>('.bearoff')
+            : board.querySelector<HTMLElement>(`.point[data-point="${to}"]`)
+      }
+      if (el !== hoverElRef.current) {
+        hoverElRef.current?.classList.remove('drop-hover')
+        el?.classList.add('drop-hover')
+        hoverElRef.current = el
+      }
+    },
+    [resolveTarget],
+  )
+
+  // rAF'te tek transform yazimi -> her pikselde React render YOK, reflow YOK.
+  const flushMove = useCallback(() => {
+    rafRef.current = null
+    const d = dragRef.current
+    const p = proxyRef.current
+    if (!d || !d.active || !p) return
+    const x = posRef.current.x - d.offsetX
+    const y = posRef.current.y - d.offsetY
+    p.style.transform = `translate3d(${x}px, ${y}px, 0)`
+    updateHover(posRef.current.x, posRef.current.y)
+  }, [updateHover])
+
+  const removeWinListeners = useCallback(() => {
+    window.removeEventListener('pointermove', onWinMove)
+    window.removeEventListener('pointerup', onWinUp)
+    window.removeEventListener('pointercancel', onWinCancel)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const endCommon = useCallback(() => {
+    removeWinListeners()
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current)
+      rafRef.current = null
+    }
+    clearHover()
+    document.body.classList.remove('checker-dragging')
+  }, [removeWinListeners, clearHover])
+
+  // Gecersiz birakma: proxy kaynaga akici geri doner, sonra kaynak geri acilir.
+  const snapBack = useCallback((d: DragInfo) => {
+    const proxy = proxyRef.current
+    const finish = () => {
+      dragRef.current = null
+      setDrag(null) // proxy kalkar + kaynak ust tas geri gorunur (AYNI frame)
+    }
+    if (!proxy) {
+      finish()
+      return
+    }
+    const sr = d.el.getBoundingClientRect() // kaynak tas (gizli ama DOM'da, rect gecerli)
+    const curX = posRef.current.x - d.offsetX
+    const curY = posRef.current.y - d.offsetY
+    const anim = proxy.animate(
+      [
+        { transform: `translate3d(${curX}px, ${curY}px, 0)` },
+        { transform: `translate3d(${sr.left}px, ${sr.top}px, 0)` },
+      ],
+      { duration: 160, easing: 'cubic-bezier(0.22, 1, 0.36, 1)', fill: 'forwards' },
+    )
+    anim.onfinish = finish
+    anim.oncancel = finish
+  }, [])
+
+  const finishDrag = useCallback(
+    (to: DropKey | null) => {
+      const d = dragRef.current
+      if (!d) return
+      if (to != null && targetsRef.current.has(to)) {
+        // Gecerli: hedef tas, BIRAKILAN konumdan yerine aksin (flyChecker icin srcRect=proxy).
+        const pr = proxyRef.current?.getBoundingClientRect() ?? null
+        dragRef.current = null
+        setDrag(null) // proxy kalkar; hamle render'i ayni frame'de kaynak/hedefi gunceller
+        const drop = cbRef.current.onDragDrop
+        if (drop && pr) drop(to, pr)
+        else cbRef.current.onSelectTarget(to)
+      } else {
+        snapBack(d)
+      }
+    },
+    [snapBack],
+  )
+
+  const onWinMove = useCallback(
+    (e: PointerEvent) => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      posRef.current = { x: e.clientX, y: e.clientY }
+      if (!d.active) {
+        if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) < DRAG_THRESHOLD) return
+        // Esik asildi -> gercek surukleme basliyor
+        d.active = true
+        try {
+          d.el.setPointerCapture(d.pointerId)
+        } catch {
+          /* yoksay */
+        }
+        document.body.classList.add('checker-dragging')
+        cbRef.current.onDragFrom(d.from) // yesil hedefleri goster (selectedFrom set)
+        setDrag({ from: d.from, player: d.player, label: d.label, w: d.w, h: d.h }) // proxy + lift
+      }
+      if (rafRef.current == null) rafRef.current = requestAnimationFrame(flushMove)
+    },
+    [flushMove],
+  )
+
+  const onWinUp = useCallback(
+    (e: PointerEvent) => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      endCommon()
+      if (!d.active) {
+        // Tik (surukleme degil): native click -> Point.onClick kaynagi secsin (tap-to-move).
+        dragRef.current = null
+        return
+      }
+      const to = resolveTarget(e.clientX, e.clientY)
+      finishDrag(to)
+      // Surukleme sonrasi olusan sentetik click'i yut (cift secim/kaynak degisimi olmasin).
+      const swallow = (ev: Event) => {
+        ev.stopPropagation()
+        ev.preventDefault()
+      }
+      window.addEventListener('click', swallow, { capture: true, once: true })
+      window.setTimeout(() => window.removeEventListener('click', swallow, true), 350)
+    },
+    [endCommon, resolveTarget, finishDrag],
+  )
+
+  const onWinCancel = useCallback(
+    (e: PointerEvent) => {
+      const d = dragRef.current
+      if (!d || e.pointerId !== d.pointerId) return
+      endCommon()
+      if (d.active) snapBack(d)
+      else dragRef.current = null
+    },
+    [endCommon, snapBack],
+  )
+
+  const startDrag = useCallback(
+    (e: ReactPointerEvent, from: FromKey, player: Player, label?: number) => {
+      if (!dragEnabled) return
+      if (e.pointerType === 'mouse' && e.button !== 0) return // yalniz sol tus
+      const el = e.currentTarget as HTMLElement
+      const rect = el.getBoundingClientRect()
+      dragRef.current = {
+        from,
+        player,
+        label,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        offsetX: e.clientX - rect.left,
+        offsetY: e.clientY - rect.top,
+        w: rect.width,
+        h: rect.height,
+        el,
+        active: false,
+      }
+      posRef.current = { x: e.clientX, y: e.clientY }
+      window.addEventListener('pointermove', onWinMove)
+      window.addEventListener('pointerup', onWinUp)
+      window.addEventListener('pointercancel', onWinCancel)
+    },
+    [dragEnabled, onWinMove, onWinUp, onWinCancel],
+  )
+
+  // Proxy mount olunca hemen dogru konuma yerlestir (0,0'da flash olmasin).
+  const setProxyNode = useCallback((node: HTMLDivElement | null) => {
+    proxyRef.current = node
+    if (node) {
+      const d = dragRef.current
+      if (d) {
+        const x = posRef.current.x - d.offsetX
+        const y = posRef.current.y - d.offsetY
+        node.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      }
+    }
+  }, [])
+
+  // Unmount temizligi: askida kalan listener/sinif/raf birakma.
+  useEffect(() => {
+    return () => {
+      removeWinListeners()
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current)
+      document.body.classList.remove('checker-dragging')
+      hoverElRef.current?.classList.remove('drop-hover')
+    }
+  }, [removeWinListeners])
+
   const renderPoint = (index: number, top: boolean) => (
     <Point
       key={index}
@@ -217,9 +532,10 @@ function Board({
       selectable={selectableFroms.has(index)}
       isTarget={targets.has(index)}
       selected={selectedFrom === index}
+      lift={drag?.from === index}
       onSelectFrom={onSelectFrom}
       onSelectTarget={onSelectTarget}
-      onDragFrom={onDragFrom}
+      onCheckerDown={dragEnabled ? startDrag : undefined}
     />
   )
 
@@ -239,7 +555,7 @@ function Board({
   const bottomOffCount = flip ? state.off.black : state.off.white
 
   return (
-    <div className={`board${mirror ? ' mirror' : ''}`}>
+    <div className={`board${mirror ? ' mirror' : ''}${drag ? ' dragging' : ''}`} ref={boardElRef}>
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
         {L.topNums[0].map((n) => (
@@ -284,7 +600,12 @@ function Board({
               <Checker
                 player={topBarPlayer}
                 draggable={barSelectable}
-                onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
+                lifted={drag?.from === 'bar'}
+                onPointerDown={
+                  barSelectable && dragEnabled
+                    ? (e) => startDrag(e, 'bar', topBarPlayer, topBarCount > 1 ? topBarCount : undefined)
+                    : undefined
+                }
                 label={topBarCount > 1 ? topBarCount : undefined}
               />
             )}
@@ -307,7 +628,13 @@ function Board({
               <Checker
                 player={bottomBarPlayer}
                 draggable={barSelectable}
-                onDragStart={barSelectable ? () => onDragFrom('bar') : undefined}
+                lifted={drag?.from === 'bar'}
+                onPointerDown={
+                  barSelectable && dragEnabled
+                    ? (e) =>
+                        startDrag(e, 'bar', bottomBarPlayer, bottomBarCount > 1 ? bottomBarCount : undefined)
+                    : undefined
+                }
                 label={bottomBarCount > 1 ? bottomBarCount : undefined}
               />
             )}
@@ -348,8 +675,6 @@ function Board({
         className={`bearoff ${offTarget ? 'target' : ''}`}
         data-slot="off"
         onClick={() => offTarget && onSelectTarget('off')}
-        onDragOver={offTarget ? (e) => e.preventDefault() : undefined}
-        onDrop={offTarget ? () => onSelectTarget('off') : undefined}
       >
         <div className="bearoff-slot top">
           {topOffCount > 0 && (
@@ -368,6 +693,23 @@ function Board({
           )}
         </div>
       </div>
+
+      {/* Surukleme proxy'si: document.body'ye portal (tema <html>'de -> gorunum korunur).
+          position:fixed + translate3d ile parmagi birebir takip eder; pointer-events:none. */}
+      {drag &&
+        createPortal(
+          <div className="drag-layer" aria-hidden="true">
+            <div
+              ref={setProxyNode}
+              className={`checker ${drag.player} dragging`}
+              draggable={false}
+              style={{ width: drag.w, height: drag.h }}
+            >
+              {drag.label != null && <span className="checker-count">{drag.label}</span>}
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   )
 }
