@@ -4987,6 +4987,12 @@ button[aria-disabled='true'],
   border-radius: var(--radius-circle);
   /* Her tas hafif "yerlesme" animasyonuyla belirir (yeni konan taslar) */
   animation: checker-place 0.22s ease-out;
+  /* Pointer-tabanli surukleme: native drag/ghost/secim DEVRE DISI. Tarayicinin
+     resim-surukleme hayaleti, metin secimi ve dokunmatik kaydirma olusmaz. */
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
 /* FLAT pul (#6): kubbe/gloss/ic halka YOK. Poker chip degil, premium duz disk. */
 .checker::before {
@@ -5000,6 +5006,49 @@ button[aria-disabled='true'],
 }
 .checker.draggable:active {
   cursor: grabbing;
+}
+/* Surukleme sirasinda kaynaktaki ust tas gizlenir -> ekranda TEK tas (proxy) hareket
+   ediyormus hissi; orijinal yerde soluk kopya KALMAZ (opacity degil, tamamen gizli). */
+.checker.lifted {
+  visibility: hidden;
+}
+
+/* ---- Surukleme proxy katmani (document.body'ye portal) ----
+   Tema data-attribute'lari <html>'de oldugundan buradaki .checker rengi/dokusu aynen
+   gecerli kalir. Parmagi translate3d ile birebir takip eder; layout reflow yok. */
+.drag-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+}
+.drag-layer .checker {
+  position: fixed;
+  top: 0;
+  left: 0;
+  margin: 0;
+  animation: none; /* "yerlesme" dusme efekti suruklemede calismasin */
+  will-change: transform;
+  cursor: grabbing;
+  /* Hafif "kaldirilmis" golge (opacity/renk DEGISMEZ; yalniz altina golge). */
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.45));
+}
+
+/* Surukleme boyunca tum imleci "grabbing"e sabitle: tarayicinin native
+   not-allowed / move / copy / alias imlecleri GORUNMEZ. */
+body.checker-dragging,
+body.checker-dragging * {
+  cursor: grabbing !important;
+}
+
+/* Pointer'in uzerinde oldugu gecerli hedef -> belirgin vurgu (comert hitbox geri bildirimi) */
+.point.drop-hover::after {
+  background: #4cff9a;
+  box-shadow: 0 0 14px rgba(76, 255, 154, 0.95);
+  height: calc(var(--checker) * 0.16);
+}
+.bearoff.drop-hover {
+  box-shadow: inset 0 0 0 3px #4cff9a;
 }
 /* ProsedÃ¼rel mermer damari (SVG feTurbulence; harici dosya yok, tema-tintable) */
 :root {
@@ -7815,10 +7864,38 @@ button.acct-row:hover:not(:disabled) {
 /* Logo + slogan kilidi: genisligi WORDMARK'a buzulur; slogan (SVG textLength=100%)
    TEK SATIR halinde tam logo genisliginde yaslanir. (Footer'daki .foot-brandlock esi.) */
 .ab-brandlock {
+  position: relative; /* .ab-beta rozeti sag-ust koseye gore konumlanir */
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
+}
+/* Gecici BETA rozeti: logonun (wordmark) bittigi yerin sag ustunde kucuk pill.
+   .ab-brandlock fit-content -> sag kenari = logonun bitis noktasi. */
+.ab-beta {
+  position: absolute;
+  top: -3px;
+  left: 100%;
+  transform: translateX(-4px);
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: 'Outfit', system-ui, sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1.4;
+  text-transform: uppercase;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .ab-beta {
+    font-size: 8px;
+    padding: 1px 5px;
+    transform: translateX(-2px);
+  }
 }
 .ab-tag {
   display: block;

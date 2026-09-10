@@ -4630,7 +4630,10 @@ export default function App() {
   }
 
   // Bir step dizisini oyna. Tur otomatik BITMEZ (Onayla gerekir).
-  function playSteps(seq: Step[]) {
+  // srcRectOverride: suruklemede tasin BIRAKILDIGI konum -> hedef tas oradan akar (parmaktan
+  // kopmadan yerine oturur). undefined = tik/otomatik hamle (kaynak noktadan ucur). null =
+  // ucus yok.
+  function playSteps(seq: Step[], srcRectOverride?: DOMRect | null) {
     // Tas hareket animasyonu: state guncellenmeden ONCE kaynak konumunu yakala.
     // Birlesik hamlede (seq>1) tek ucus: ilk adimin kaynagi -> son adimin hedefi.
     if (
@@ -4639,7 +4642,7 @@ export default function App() {
       seq.length > 0 &&
       !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     ) {
-      const r = sourceRect(seq[0].from)
+      const r = srcRectOverride !== undefined ? srcRectOverride : sourceRect(seq[0].from)
       if (r) pendingFlightRef.current = { to: seq[seq.length - 1].to, srcRect: r }
     }
     setPlayed([...played, ...seq])
@@ -4687,6 +4690,14 @@ export default function App() {
     const seq = dragTargets.get(to)
     if (!seq || seq.length === 0) return
     playSteps(seq)
+  }
+
+  // Pointer surukleme birakimi: tas BIRAKILAN konumdan (srcRect) yerine akar.
+  function handleDragDrop(to: number | 'off', srcRect: DOMRect) {
+    if (!interactive || selectedFrom === null) return
+    const seq = dragTargets.get(to)
+    if (!seq || seq.length === 0) return
+    playSteps(seq, srcRect)
   }
 
   // Zar sirasini degistir (2-1 -> 1-2): once oynanacak zari sec
@@ -5331,6 +5342,8 @@ export default function App() {
         <span className="ab-logo-full">
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
+            {/* Gecici BETA rozeti: logonun bittigi yerin sag ustunde kucuk pill. */}
+            <span className="ab-beta" aria-hidden="true">beta</span>
             {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
                 bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
             <span className="ab-tag">{t('foot.tag')}</span>
@@ -6906,6 +6919,7 @@ export default function App() {
           onSelectFrom={handleSelectFrom}
           onSelectTarget={handleSelectTarget}
           onDragFrom={handleDragFrom}
+          onDragDrop={handleDragDrop}
           pipTop={pipTop}
           pipBottom={pipBottom}
           cube={match.cube}
