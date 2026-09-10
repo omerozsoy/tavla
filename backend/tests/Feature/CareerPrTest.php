@@ -19,6 +19,14 @@ class CareerPrTest extends TestCase
 
     private int $room = 0;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // Testler 500 karar / 10 maç esigine gore yazildi; varsayilan degisse de sabitle.
+        Setting::put('pr_min_matches', 10);
+        Setting::put('pr_min_decisions', 500);
+    }
+
     private function user(string $nick): User
     {
         return User::create([

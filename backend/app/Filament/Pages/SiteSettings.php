@@ -44,7 +44,7 @@ class SiteSettings extends Page implements HasForms
             'reward_premium' => Setting::int('reward_premium', 50),
             'commission_pct' => Setting::int('commission_pct', 5),
             'pr_min_matches' => Setting::int('pr_min_matches', 10),
-            'pr_min_decisions' => Setting::int('pr_min_decisions', 500),
+            'pr_min_decisions' => Setting::int('pr_min_decisions', 200),
         ]);
     }
 
@@ -85,7 +85,7 @@ class SiteSettings extends Page implements HasForms
                             ->helperText('Varsayılan 10. Tek iyi maçla zirveye çıkmayı engeller.'),
                         TextInput::make('pr_min_decisions')->label('Minimum analiz edilmiş karar')
                             ->numeric()->required()->minValue(1)->maxValue(100000)
-                            ->helperText('Varsayılan 500. Yeterli karar örneklemi olmadan sıralamaya girilmez.'),
+                            ->helperText('Varsayılan 200. Yeterli karar örneklemi olmadan sıralamaya girilmez.'),
                     ])->columns(2),
             ])
             ->statePath('data');

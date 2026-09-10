@@ -114,6 +114,6 @@ class CareerPrService
 
     public static function minDecisions(): int
     {
-        return Setting::int('pr_min_decisions', 500);
+        return Setting::int('pr_min_decisions', 200);
     }
 }
