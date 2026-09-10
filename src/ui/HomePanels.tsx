@@ -318,7 +318,7 @@ export function RankingPanel({
     let alive = true
     // NOT: setRows(null) YOK -> tab degisince liste cokup sayfa kisalmaz (scroll yukari
     // atlamasin). Eski satirlar yeni veri gelene kadar durur; ilk yuklemede zaten null.
-    leaderboard(15, by)
+    leaderboard(10, by) // ilk 10 (scroll yok, tam liste)
       .then((r) => alive && setRows(r))
       .catch(() => alive && setRows([]))
     return () => {
