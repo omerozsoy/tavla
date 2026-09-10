@@ -1063,6 +1063,18 @@ export default function App() {
     }
   }, [currentSlug])
 
+  // Sayfa acilinca EN USTE kaydir: footer'dan (asagidan) bir linke tiklayinca sayfa ustte
+  // acilir ama scroll asagida (footer'da) kaliyordu -> kullanici acilan sayfayi gormuyordu.
+  // Scroll container'i kesin bilmedigimiz icin olasi tum kaplari (+ pencere) tepeye al.
+  useEffect(() => {
+    if (!currentSlug) return
+    for (const sel of ['.app.lobby', '.lobby-main', '.page-host', '.main', '.register-card']) {
+      const el = document.querySelector(sel) as HTMLElement | null
+      if (el) el.scrollTop = 0
+    }
+    window.scrollTo(0, 0)
+  }, [currentSlug])
+
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
