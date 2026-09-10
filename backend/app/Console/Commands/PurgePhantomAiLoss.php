@@ -15,7 +15,11 @@ use Illuminate\Support\Facades\DB;
  * Hedefleme (dar ve guvenli):
  *   - room_code IS NULL  -> yalniz pvb/offline (online maclara DOKUNMAZ)
  *   - won = false        -> yalniz kayip (kazanilmis maclara DOKUNMAZ)
- *   - LENGTH(log) <= 40  -> bos/analizsiz log = hic oynanmamis (gercek AI maci daima loglu)
+ *   - log'da INSAN hamlesi YOK -> hic oynanmamis. Insan rengi = log.hc (pvb'de 'white').
+ *     Log'da player===hc olan HIC girdi yoksa insan tek hamle bile yapmamistir.
+ *     NOT: Eski "LENGTH(log)<=40" sezgisi YETERSIZDI: acilis zari bota (siyah) baslama
+ *     hakki verirse bot ONCE oynar -> log botun hamlesiyle DOLAR (>40) ama insan yine hic
+ *     oynamamistir. JSON parse ile bu durum da yakalanir (bos-log durumunun ust kumesi).
  *
  * Kullanim (sunucuda):
  *   php artisan tavla:purge-phantom-ai --email=kisi@site.com            # siler
@@ -49,13 +53,12 @@ class PurgePhantomAiLoss extends Command
             return self::FAILURE;
         }
 
-        // Dar filtre: yalniz pvb (room_code NULL) + kayip + bos/analizsiz log.
-        // --all degilse tek kullaniciya kisitla.
-        $base = function () use ($all, $userId) {
+        // Dar SQL on-filtresi: yalniz pvb (room_code NULL) + kayip. Kesin hayalet karari
+        // (log'da insan hamlesi yok) JSON parse ile PHP'de verilir -> tek DELETE portable degil.
+        $sql = function () use ($all, $userId) {
             $q = DB::table('match_results')
                 ->whereNull('room_code')
-                ->where('won', false)
-                ->whereRaw("LENGTH(COALESCE(log, '')) <= 40");
+                ->where('won', false);
             if (! $all) {
                 $q->where('user_id', $userId);
             }
@@ -64,8 +67,16 @@ class PurgePhantomAiLoss extends Command
         };
 
         $scope = $all ? 'TUM SITE' : 'user_id='.$userId;
-        $count = $base()->count();
 
+        // Aday satirlari cek, log'u parse et: INSAN (player===hc) hic oynamamissa hayalet.
+        $phantoms = [];
+        foreach ($sql()->select('id', 'user_id', 'created_at', 'opponent_name', 'log')->orderByDesc('id')->get() as $r) {
+            if ($this->humanNeverMoved($r->log)) {
+                $phantoms[] = $r;
+            }
+        }
+
+        $count = count($phantoms);
         if ($count === 0) {
             $this->info("Hayalet AI kaybi kaydi bulunmadi ({$scope}).");
 
@@ -73,8 +84,7 @@ class PurgePhantomAiLoss extends Command
         }
 
         $this->info("Hayalet AI kaybi adaylari ({$scope}): {$count} kayit");
-        // Cok sayida olabilecegi icin en fazla 20 ornek goster.
-        foreach ($base()->orderByDesc('id')->limit(20)->get() as $r) {
+        foreach (array_slice($phantoms, 0, 20) as $r) {
             $this->line(sprintf(
                 '  id=%d | user=%d | created=%s | opp=%s | loglen=%d',
                 $r->id,
@@ -94,9 +104,32 @@ class PurgePhantomAiLoss extends Command
             return self::SUCCESS;
         }
 
-        $deleted = $base()->delete();
+        $ids = array_map(fn ($r) => $r->id, $phantoms);
+        $deleted = DB::table('match_results')->whereIn('id', $ids)->delete();
         $this->info("Silindi: {$deleted} hayalet AI kaybi kaydi ({$scope}).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Log JSON'unda INSAN (player === hc) HIC hamle yapmamis mi? Insan rengi = log.hc
+     * (pvb'de daima 'white'). Bir tek insan girdisi bile varsa hayalet DEGILDIR (guvenli).
+     * Bozuk/eksik log = insan yok say -> hayalet (bos-log durumu da buraya duser).
+     */
+    private function humanNeverMoved(?string $log): bool
+    {
+        $data = json_decode((string) $log, true);
+        if (! is_array($data)) {
+            return true; // parse edilemeyen/bos log = oynanmamis
+        }
+        $hc = in_array($data['hc'] ?? null, ['white', 'black'], true) ? $data['hc'] : 'white';
+        $entries = is_array($data['log'] ?? null) ? $data['log'] : [];
+        foreach ($entries as $e) {
+            if (is_array($e) && ($e['player'] ?? null) === $hc) {
+                return false; // insan en az bir tur oynamis -> gercek mac
+            }
+        }
+
+        return true;
     }
 }
