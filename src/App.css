@@ -6079,6 +6079,43 @@ button.move-row:focus-visible {
 .spectate-close:hover {
   background: var(--border) !important;
 }
+/* PR Sıralaması: bilgi notu + PR değeri vurgusu */
+.lb-pr-note {
+  margin: 2px 0 10px;
+  font-size: var(--fs-xs, 0.8rem);
+  line-height: 1.5;
+  color: var(--muted);
+}
+.lb-pr-val {
+  font-weight: 700;
+  color: var(--accent);
+}
+/* Profil "Kariyer PR" kartı */
+.career-pr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 0 4px;
+}
+.career-pr-val {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.career-pr-meta {
+  font-size: var(--fs-xs, 0.8rem);
+  color: var(--muted);
+}
+.career-pr-hint {
+  margin-top: 6px;
+  font-size: var(--fs-2xs, 0.72rem);
+  line-height: 1.45;
+  color: var(--muted);
+  text-align: center;
+}
 .register-card {
   width: 100%;
   max-width: 380px;

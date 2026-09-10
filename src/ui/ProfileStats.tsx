@@ -302,6 +302,42 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                   />
                 )}
               </div>
+
+              {/* Kariyer PR (PR Sıralaması): havuzlanmis PR + uygunluk */}
+              <div className="sd-card">
+                <div className="sd-head">
+                  <span className="sd-ic"><Icon name="target" size={18} /></span>
+                  <div className="sd-head-txt">
+                    <div className="sd-title">{t('stats.careerPr')}</div>
+                    <div className="sd-sub">{t('med.lowGood')}</div>
+                  </div>
+                </div>
+                {perfErr ? (
+                  <div className="lb-empty small">{t('lb.error')}</div>
+                ) : !perf ? (
+                  <div aria-busy="true"><Skeleton w="100%" h={90} r={8} /></div>
+                ) : (
+                  <div className="career-pr">
+                    <div className="career-pr-val">
+                      {perf.career?.pr != null ? perf.career.pr.toFixed(2) : '–'}
+                    </div>
+                    <div className="career-pr-meta">
+                      {t('stats.careerMeta', {
+                        m: perf.career?.matches ?? 0,
+                        d: (perf.career?.decisions ?? 0).toLocaleString('tr-TR'),
+                      })}
+                    </div>
+                    {perf.career && perf.career.pr != null && !perf.career.eligible && (
+                      <div className="career-pr-hint">
+                        {t('stats.careerNeed', {
+                          mm: perf.career.matches_needed,
+                          dd: perf.career.decisions_needed.toLocaleString('tr-TR'),
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* ===== Alt satır: WXP + Toplam Kaz.% + Zar Ortalamaları ===== */}

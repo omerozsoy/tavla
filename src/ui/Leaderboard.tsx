@@ -3,7 +3,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { leaderboard, wxpBreakdown, type LeaderRow, type WxpBreakdown } from '../api'
+import { leaderboard, prLeaderboard, wxpBreakdown, type LeaderRow, type PrLeaderRow, type WxpBreakdown } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import { CountryFlag } from './Flag'
 import PublicProfile from './PublicProfile'
@@ -19,15 +19,31 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [error, setError] = useState(false)
-  const [by, setBy] = useState<'rating' | 'coins' | 'wxp'>('rating')
+  const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
+  const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
+  const [prMeta, setPrMeta] = useState<{ minMatches: number; minDecisions: number } | null>(null)
   const [profileId, setProfileId] = useState<number | null>(null)
   const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
   const [wxpOpen, setWxpOpen] = useState(false) // "WXP nasil hesaplanir?" varsayilan kapali
 
   useEffect(() => {
     let alive = true
-    setRows(null)
     setError(false)
+    if (by === 'pr') {
+      setPrRows(null)
+      // PR Sıralaması (Career PR): ilk 10 uygun oyuncu
+      prLeaderboard(10)
+        .then((r) => {
+          if (!alive) return
+          setPrRows(r.players)
+          setPrMeta({ minMatches: r.minMatches, minDecisions: r.minDecisions })
+        })
+        .catch(() => alive && setError(true))
+      return () => {
+        alive = false
+      }
+    }
+    setRows(null)
     // Her tab: ilk 10 oyuncu (scroll yok, tam liste görünür)
     leaderboard(10, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
@@ -116,6 +132,9 @@ export default function Leaderboard({ currentName, onClose }: Props) {
           <Button variant={by === 'wxp' ? 'default' : 'ghost'} aria-pressed={by === 'wxp'} onClick={() => setBy('wxp')}>
             <Icon name="trophy" size={16} /> {t('lb.byWxp')}
           </Button>
+          <Button variant={by === 'pr' ? 'default' : 'ghost'} aria-pressed={by === 'pr'} onClick={() => setBy('pr')}>
+            <Icon name="target" size={16} /> {t('lb.byPr')}
+          </Button>
         </div>
 
         {by === 'wxp' && (
@@ -162,7 +181,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         )}
 
         {error && <div className="lb-empty">{t('lb.error')}</div>}
-        {!error && rows === null && (
+        {by !== 'pr' && !error && rows === null && (
           <div className="lb-table" aria-busy="true" aria-live="polite">
             <div className="lb-head">
               <span className="lb-rank">#</span>
@@ -193,11 +212,11 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             </div>
           </div>
         )}
-        {!error && rows !== null && rows.length === 0 && (
+        {by !== 'pr' && !error && rows !== null && rows.length === 0 && (
           <div className="lb-empty">{t('lb.empty')}</div>
         )}
 
-        {rows !== null && rows.length > 0 && (
+        {by !== 'pr' && rows !== null && rows.length > 0 && (
           <div className="lb-table">
             <div className="lb-head">
               <span className="lb-rank">#</span>
@@ -212,6 +231,87 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             </div>
             <div className="lb-body">{rows.map(renderRow)}</div>
           </div>
+        )}
+
+        {/* PR Sıralaması (Career PR): düşük PR üstte. Sütunlar: Maç / Karar / PR */}
+        {by === 'pr' && (
+          <>
+            {prMeta && (
+              <p className="lb-pr-note">
+                {t('lb.prNote', { m: String(prMeta.minMatches), d: prMeta.minDecisions.toLocaleString('tr-TR') })}
+              </p>
+            )}
+            {!error && prRows === null && (
+              <div className="lb-table lb-pr" aria-busy="true">
+                <div className="lb-head">
+                  <span className="lb-rank">#</span>
+                  <span className="lb-name">{t('lb.player')}</span>
+                  <span className="lb-flag" aria-hidden="true" />
+                  <span className="lb-games">{t('lb.prMatches')}</span>
+                  <span className="lb-wl">{t('lb.prDecisions')}</span>
+                  <span className="lb-wr" aria-hidden="true" />
+                  <span className="lb-rating">PR</span>
+                </div>
+                <div className="lb-body">
+                  {Array.from({ length: 10 }).map((_, i) => (
+                    <div key={i} className="lb-row">
+                      <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
+                      <span className="lb-name">
+                        <Skeleton w={22} h={22} r="50%" /> <Skeleton w={90 + ((i * 17) % 50)} h={12} />
+                      </span>
+                      <span className="lb-flag" aria-hidden="true" />
+                      <span className="lb-games"><Skeleton w={36} h={12} /></span>
+                      <span className="lb-wl"><Skeleton w={48} h={12} /></span>
+                      <span className="lb-wr" aria-hidden="true" />
+                      <span className="lb-rating"><Skeleton w={36} h={12} /></span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {!error && prRows !== null && prRows.length === 0 && (
+              <div className="lb-empty">{t('lb.prEmpty')}</div>
+            )}
+            {prRows !== null && prRows.length > 0 && (
+              <div className="lb-table lb-pr">
+                <div className="lb-head">
+                  <span className="lb-rank">#</span>
+                  <span className="lb-name">{t('lb.player')}</span>
+                  <span className="lb-flag" aria-hidden="true" />
+                  <span className="lb-games">{t('lb.prMatches')}</span>
+                  <span className="lb-wl">{t('lb.prDecisions')}</span>
+                  <span className="lb-wr" aria-hidden="true" />
+                  <span className="lb-rating">PR</span>
+                </div>
+                <div className="lb-body">
+                  {prRows.map((r) => {
+                    const mine = currentName && r.name === currentName
+                    return (
+                      <div
+                        key={r.rank}
+                        className={`lb-row ${mine ? 'mine' : ''} ${r.rank <= 3 ? 'top' : ''} ${r.id ? 'clickable' : ''}`}
+                        onClick={() => r.id && setProfileId(r.id)}
+                      >
+                        <span className="lb-rank">{medal(r.rank) || r.rank}</span>
+                        <span className="lb-name">
+                          <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} />
+                        </span>
+                        <span className="lb-flag">
+                          <CountryFlag code={r.country} size={16} rounded={false} />
+                        </span>
+                        <span className="lb-games">
+                          {r.matches} <small>{t('lb.gamesUnit')}</small>
+                        </span>
+                        <span className="lb-wl">{r.decisions.toLocaleString('tr-TR')}</span>
+                        <span className="lb-wr" aria-hidden="true" />
+                        <span className="lb-rating lb-pr-val">{r.career_pr.toFixed(2)}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
       {profileId !== null && (
