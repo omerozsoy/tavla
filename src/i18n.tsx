@@ -145,6 +145,10 @@ const TR: Dict = {
   'gm.boardDir': 'Oyun yönü',
   'dir.right': 'Sağa topla',
   'dir.left': 'Sola topla',
+
+  'dir.rightShort': 'Sağ',
+
+  'dir.leftShort': 'Sol',
   'gm.anim': 'Animasyonlar',
 
   'gm.livePr': 'Canlı PR',
@@ -1436,6 +1440,10 @@ const EN: Dict = {
   'gm.boardDir': 'Board direction',
   'dir.right': 'Home right',
   'dir.left': 'Home left',
+
+  'dir.rightShort': 'Right',
+
+  'dir.leftShort': 'Left',
   'gm.anim': 'Animations',
 
   'gm.livePr': 'Live PR',
@@ -2715,6 +2723,10 @@ const ES: Dict = {
   'gm.boardDir': 'Dirección del tablero',
   'dir.right': 'Casa a la derecha',
   'dir.left': 'Casa a la izquierda',
+
+  'dir.rightShort': 'Derecha',
+
+  'dir.leftShort': 'Izquierda',
   'gm.anim': 'Animaciones',
 
   'gm.livePr': 'PR en vivo',
@@ -3664,6 +3676,10 @@ const DE: Dict = {
   'gm.boardDir': 'Spielrichtung',
   'dir.right': 'Heim rechts',
   'dir.left': 'Heim links',
+
+  'dir.rightShort': 'Rechts',
+
+  'dir.leftShort': 'Links',
   'gm.anim': 'Animationen',
 
   'gm.livePr': 'Live-PR',
@@ -4613,6 +4629,10 @@ const FR: Dict = {
   'gm.boardDir': 'Sens du jeu',
   'dir.right': 'Maison à droite',
   'dir.left': 'Maison à gauche',
+
+  'dir.rightShort': 'Droite',
+
+  'dir.leftShort': 'Gauche',
   'gm.anim': 'Animations',
 
   'gm.livePr': 'PR en direct',
@@ -5550,6 +5570,10 @@ const EL: Dict = {
   'gm.boardDir': 'Κατεύθυνση ταβλιού',
   'dir.right': 'Οικία δεξιά',
   'dir.left': 'Οικία αριστερά',
+
+  'dir.rightShort': 'Δεξιά',
+
+  'dir.leftShort': 'Αριστερά',
   'gm.anim': 'Κινήσεις',
 
   'gm.livePr': 'Ζωντανό PR',
@@ -6753,6 +6777,10 @@ const RU: Dict = {
   'gm.boardDir': 'Направление доски',
   'dir.right': 'Дом справа',
   'dir.left': 'Дом слева',
+
+  'dir.rightShort': 'Вправо',
+
+  'dir.leftShort': 'Влево',
   'gm.anim': 'Анимации',
 
   'gm.livePr': 'PR в реальном времени',
@@ -7956,6 +7984,10 @@ const FA: Dict = {
   'gm.boardDir': 'جهت تخته',
   'dir.right': 'خانه سمت راست',
   'dir.left': 'خانه سمت چپ',
+
+  'dir.rightShort': 'راست',
+
+  'dir.leftShort': 'چپ',
   'gm.anim': 'انیمیشن‌ها',
 
   'gm.livePr': 'PR زنده',

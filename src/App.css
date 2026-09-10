@@ -7212,6 +7212,20 @@ html.fs-active .account-bar {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* Switch + yanında kısa durum metni (or. Oyun Yönü: Sağ/Sol) */
+.gm-toggle {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+}
+.gm-hint {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  min-width: 26px;
+  text-align: right;
+}
 /* Aç/Kapa -> gerçek toggle switch */
 .gm-switch {
   flex: none;

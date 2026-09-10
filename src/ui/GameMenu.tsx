@@ -8,6 +8,8 @@ interface Row {
   toggle: () => void
   /** Ac/Kapa yerine metin gosteren satirlar (or. Oyun Yonu: Saga/Sola topla). */
   value?: string
+  /** Switch'in YANINDA gosterilecek kisa durum metni (or. Oyun Yonu: Sag/Sol). */
+  hint?: string
 }
 
 interface Props {
@@ -53,9 +55,10 @@ export default function GameMenu(p: Props) {
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     {
-      // Oyun yönü de switch: ON = sağa topla, OFF = sola topla (diğer satırlarla tutarlı).
+      // Oyun yönü de switch: ON = sağa topla, OFF = sola topla; yanında kısa Sağ/Sol metni.
       label: t('gm.boardDir'),
       on: p.boardDir === 'right',
+      hint: t(p.boardDir === 'right' ? 'dir.rightShort' : 'dir.leftShort'),
       toggle: () => p.setBoardDir(p.boardDir === 'left' ? 'right' : 'left'),
     },
   ]
@@ -76,8 +79,11 @@ export default function GameMenu(p: Props) {
               {r.value != null ? (
                 <span className="gm-chip">{r.value}</span>
               ) : (
-                <span className={`gm-switch ${r.on ? 'on' : 'off'}`} aria-hidden="true">
-                  <span className="gm-knob" />
+                <span className="gm-toggle">
+                  {r.hint && <span className="gm-hint">{r.hint}</span>}
+                  <span className={`gm-switch ${r.on ? 'on' : 'off'}`} aria-hidden="true">
+                    <span className="gm-knob" />
+                  </span>
                 </span>
               )}
             </button>
