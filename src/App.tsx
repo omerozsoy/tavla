@@ -6,6 +6,12 @@ import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
 import { matchGnubgMove } from './engine/gnubgMove'
+import {
+  ResignationType,
+  RESIGNATION_TYPES,
+  calculateResignationPoints,
+  resignMultiplier,
+} from './engine/resign'
 import { checkerDecision, onePointFactor } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
@@ -371,6 +377,7 @@ interface GameEnd {
   dropped: boolean
   timeout?: boolean // sure bitiminden dolayi kayip
   resigned?: boolean // pes etme/cekilme
+  resignType?: ResignationType // pes türü (single/gammon/backgammon) — MAT + kayıt için
 }
 
 // Kup danismani ipucu: ya roll-oncesi teklif tavsiyesi (offer) ya da take/drop (respond)
@@ -2477,22 +2484,27 @@ export default function App() {
   // Backend (otoriter online) de single yazar (RoomController::resign). resignLoser yalniz kimin
   // teslim oldugunu belirler: online -> ben; pvb -> insan (beyaz); pvp -> sirasi gelen oyuncu.
   const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
-  const resignMult = 1 // pes DAIMA single
-  const resignPoints = match.cube.value * resignMult
-  const resignKindKey = 'resign.tSingle'
 
-  function handleResign() {
+  // MERKEZİ RESIGN (kesin kural): oyuncu SINGLE/GAMMON/BACKGAMMON SEÇER; puan = küp × çarpan
+  // (calculateResignationPoints — tek kaynak). Tahtadan TAHMİN YOK. Skor TEK KEZ güncellenir
+  // (setMatch + gameEnd birlikte); gameEnd -> interactive false -> sonrasında hamle YAPILAMAZ.
+  function handleResign(type: ResignationType) {
     setResignOpen(false)
-    // OTORİTER (Faz 2): pes SUNUCUYA -> rakip küp x konum çarpanı kadar kazanır; poll senkronlar.
+    // OTORİTER online: pes SUNUCUYA (tür ile) -> sunucu küp × çarpan uygular; poll senkronlar.
     if (online && authoritativeRef.current) {
-      if (room?.code) void serverResign(room.code).catch((e) => notify.error(srvErr(e)))
+      if (room?.code) void serverResign(room.code, type).catch((e) => notify.error(srvErr(e)))
       return
     }
     const w = opponent(resignLoser)
-    const mult = resignMult
-    const points = match.cube.value * mult
-    setMatch((m) => scoreGame(m, w, m.cube.value * mult))
-    setGameEnd({ winner: w, points, mult, dropped: false, resigned: true })
+    setMatch((m) => scoreGame(m, w, calculateResignationPoints(type, m.cube.value)))
+    setGameEnd({
+      winner: w,
+      points: calculateResignationPoints(type, match.cube.value),
+      mult: resignMultiplier(type),
+      dropped: false,
+      resigned: true,
+      resignType: type,
+    })
   }
 
   // MAÇTAN ÇEKIL: skordan BAGIMSIZ — tum maci birakirsin, rakip maci kazanir.
@@ -3138,7 +3150,10 @@ export default function App() {
       // TAM log (luck bütün oyunları ister); PR log'u ayrı 250-slice. Üretilemezse null (fallback).
       let matText: string | null = null
       try {
-        matText = buildMat(matchLogRef.current, { matchLength: match.target })
+        matText = buildMat(matchLogRef.current, {
+          matchLength: match.target,
+          results: gameResultsRef.current, // PES/terk oyunları da doğru sonuç satırı alsın (merkezi puan)
+        })
       } catch {
         matText = null
       }
@@ -7306,16 +7321,23 @@ export default function App() {
               {mode === 'pvp' && (
                 <div className="resign-help">{t('resign.who', { name: pName(resignLoser) })}</div>
               )}
-              <div className="resign-help">{t('resign.autoHelp')}</div>
-              <div className={`resign-kind m${resignMult}`}>{t(resignKindKey)}</div>
-              <div className="resign-calc">
-                {t('resign.calc', { cube: match.cube.value, mult: resignMult, n: resignPoints })}
-              </div>
-              <b>{t('resign.losePts', { n: resignPoints })}</b>
+              {/* Pes AYRI aksiyon: seviyeyi SEN seçersin (tahtadan tahmin YOK). Puan = küp × çarpan. */}
+              <div className="resign-help">{t('resign.help')}</div>
             </div>
-            <Button variant="destructive" onClick={handleResign}>
-              <Icon name="flag" /> {t('resign.confirmPts', { n: resignPoints })}
-            </Button>
+            {/* SINGLE (×1) / GAMMON (×2) / BACKGAMMON (×3) — her biri küp değeriyle çarpılır. */}
+            {RESIGNATION_TYPES.map((type) => {
+              const pts = calculateResignationPoints(type, match.cube.value)
+              return (
+                <Button
+                  key={type}
+                  variant={type === ResignationType.SINGLE ? 'secondary' : 'destructive'}
+                  className={`resign-opt m${resignMultiplier(type)}`}
+                  onClick={() => handleResign(type)}
+                >
+                  <Icon name="flag" /> {t(`resign.${type}`, { n: pts })}
+                </Button>
+              )
+            })}
             {/* MACTAN CEKIL: skordan BAGIMSIZ — tum maci birakir, rakip maci kazanir. */}
             <Button variant="secondary" onClick={handleQuitMatch}>
               <Icon name="home" /> {t('resign.quitMatch')}

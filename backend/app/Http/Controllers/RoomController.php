@@ -1967,7 +1967,11 @@ class RoomController extends Controller
      */
     public function resign(Request $request, string $code)
     {
-        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            // Pes türü: SINGLE(×1)/GAMMON(×2)/BACKGAMMON(×3). Yoksa geriye-uyum: single.
+            'resign_type' => ['nullable', 'in:single,gammon,backgammon'],
+        ]);
 
         return DB::transaction(function () use ($data, $code) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
@@ -1986,15 +1990,13 @@ class RoomController extends Controller
                 return $this->fail('Oyun aktif değil.', 409);
             }
             $winner = $this->otherColor($this->slotColor($slot));
-            // PES = bu OYUNU vermek. Düz pes = TEK OYUN (küp değeri × 1). Gerçek tavla kuralı:
-            // gammon/backgammon ancak KAZANAN 15 taşı topladığında (bear-off) tanımlıdır; oyun
-            // ORTASINDA konumdan çarpan çıkarmak YANLIŞTIR. Ayrıca resign seviyesi taraflar
-            // ANLAŞMASIYLA belirlenir — tek "Pes" butonu single'ı ikram eder.
-            // ÖNCEKİ HATA: gamePoints($state) oyun-ortası tahtaya uygulanıyordu -> AÇILIŞ konumunda
-            // her iki oyuncunun geri taşları rakibin evinde olduğundan pes HAYALET backgammon (3×)
-            // sayılıyordu (kullanıcı şikayeti + RoomServerAuth Crawford testleri kırıktı). Doğal
-            // kazançta (move) çarpan hâlâ gamePoints iledir (orada kazanan gerçekten bitirmiştir).
-            $matchDone = $this->applyGameResult($room, $winner, $this->cubeOf($room)['value']);
+            // MERKEZİ RESIGN (kesin kural): pes AYRI aksiyon; tür SEÇİLİR (single/gammon/backgammon),
+            // tahtadan TAHMİN EDİLMEZ. pointsWon = küp × çarpan (Resign::points — magic number yok).
+            // ÖNCEKİ HATA: gamePoints($state) oyun-ortası tahtaya uygulanıyordu -> HAYALET backgammon.
+            // Doğal kazançta (move) çarpan hâlâ gamePoints iledir (kazanan gerçekten bitirmiştir).
+            $type = $data['resign_type'] ?? \App\Support\Resign::SINGLE;
+            $points = \App\Support\Resign::points($type, (int) $this->cubeOf($room)['value']);
+            $matchDone = $this->applyGameResult($room, $winner, $points);
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur
             $room->save();

@@ -73,6 +73,43 @@ class RoomServerAuthTest extends TestCase
         $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])->assertStatus(409);
     }
 
+    // ---- RESIGN TÜRLERİ (kesin kural: küp × çarpan) ----
+    public function test_resign_backgammon_scores_cube_times_three(): void
+    {
+        // cube=2, skor 0-0, uzun maç (bitmesin). Siyah BACKGAMMON resign -> beyaz 2×3 = 6.
+        $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
+            'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
+            'crawford' => false, 'crawfordDone' => false, 'opened' => true];
+        $this->room($sm, Backgammon::initialState(), 15);
+
+        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2', 'resign_type' => 'backgammon'])->assertOk();
+        $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
+    }
+
+    public function test_resign_gammon_scores_cube_times_two(): void
+    {
+        // cube=1, GAMMON resign -> beyaz 1×2 = 2.
+        $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
+            'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+            'crawford' => false, 'crawfordDone' => false, 'opened' => true];
+        $this->room($sm, Backgammon::initialState(), 15);
+
+        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2', 'resign_type' => 'gammon'])->assertOk();
+        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
+    }
+
+    public function test_resign_default_is_single(): void
+    {
+        // resign_type verilmezse SINGLE (geriye-uyum): cube=2 -> 2×1 = 2.
+        $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
+            'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
+            'crawford' => false, 'crawfordDone' => false, 'opened' => true];
+        $this->room($sm, Backgammon::initialState(), 15);
+
+        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
+        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
+    }
+
     public function test_after_crawford_game_doubling_resumes(): void
     {
         // Crawford oyunu şu an oynanıyor; beyaz 3/4. Beyaz resign -> siyah kazanır (1), maç sürer.
