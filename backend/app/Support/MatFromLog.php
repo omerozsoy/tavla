@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Log;
+
 /**
  * game_logs KOMPAKT tur kaydından ( {g,s,p,d,m,o,k} ) XG-uyumlu .mat metni üretir.
  *
@@ -11,6 +13,22 @@ namespace App\Support;
  * TAMDIR (online: p1_events[beyaz]+p2_events[siyah] birleşir; pvb/local: tek istemci ikisini de
  * yazar). Böylece yönetim panelinde HER maç için (eski kayıtlar dahil) .mat üretilebilir.
  *
+ * OYUN SEGMENTASYONU — KÖK NEDEN DÜZELTMESİ (2026-09-11):
+ * Eskiden oyunlar TURLARIN TAŞIDIĞI `g` alanına göre bölünüyordu. `g` her istemcide YEREL bir
+ * sayaçtır (App: gameEnd kenarında ++). Online'da bir oyun DROP (küp pas) ile bitince KAZANANIN
+ * istemcisinde yerel gameEnd TETİKLENMEZ (sunucu yalnız MAÇ bitişini gameEnd yapar) -> kazananın
+ * `g` sayacı ARTMAZ -> sonraki oyunun hamleleri hâlâ g=1 etiketiyle yazılır. İki istemcinin `g`'si
+ * KAYAR; (g,s,o) ile birleştirme farklı oyunları İÇ İÇE geçirir (DROP'tan sonra hamle, tek-sütun
+ * "oyun", tek gerçek oyunun 3-4 parçaya bölünmesi, sonuçsuz oyun).
+ *
+ * ÇÖZÜM: `g`'ye GÜVENME. Her istemcinin KENDİ dizisi (p1_events / p2_events) EKLENME SIRASINDA
+ * gerçek kronolojik sıradadır; `s` (turnsPlayed) sunucu-otoriterdir ve HER OYUNDA 0'a sıfırlanır.
+ * Bu yüzden her diziyi tek tek yürüyüp gerçek oyun indeksini `s`-reset + terminal (end/drop) ile
+ * YENİDEN türetiriz (kazananın kaçırdığı gameEnd'e rağmen `s`=0 reset'i sınırı yakalar). Sonra iki
+ * dizi (rg, s, o) ile birleşir, içerikçe tekilleşir. Terminal (drop/end) oyunu DERHAL kapatır ->
+ * DROP'tan sonra AYNI oyuna hamle yazılmaz. MatBuilder'ın tahta-reset (isOpening) segmentasyonunun
+ * kompakt-log karşılığıdır ve tahta pozisyonu gerektirmez.
+ *
  * Çıktı src/matExport.ts buildMatXg ile aynı XG lehçesini kullanır: `; [Site ...]` başlığı,
  * `bar->25`, `off->0`, tekrarlar açık (parantez yok), oyun sonu numaralı iki-sütun
  * "Losses/Wins X point" satırı, maç bitince "and the match". gnubg NATIVE .mat DEĞİLDİR
@@ -18,11 +36,280 @@ namespace App\Support;
  */
 class MatFromLog
 {
+    private const COLW = 28; // buildMatXg ile birebir (sol aksiyon 28'e padlenir -> sağ sütun col 33)
+
     /**
-     * @param  array  $turns  GameLog::mergedTurns() çıktısı (g,s ye göre sıralı kompakt turlar)
+     * İKİ oyuncunun HAM (append-sıralı) dizisinden .mat üretir. matText'in tercih ettiği yol:
+     * `g` KAYMASINA dayanıklı segmentasyon (bkz. sınıf başı). Tek istemci (pvb/local) durumunda
+     * ikinci dizi boş geçilir.
+     *
+     * @param  array  $p1Events  slot-p1 istemcisinin turları (append sırası)
+     * @param  array  $p2Events  slot-p2 istemcisinin turları (append sırası)
      * @param  array{whiteName?:string,blackName?:string,matchLength?:int,site?:string,matchId?:string,eventDate?:string,eventTime?:string,crawford?:bool}  $opts
      */
+    public static function buildFromEvents(array $p1Events, array $p2Events, array $opts = []): string
+    {
+        return self::renderGames(self::segmentGames($p1Events, $p2Events), $opts);
+    }
+
+    /**
+     * GERİYE UYUMLU giriş: TEK, önceden birleştirilmiş/sıralı tur dizisi (GameLog::mergedTurns()
+     * çıktısı ya da test fixture'ı). Segmentasyon yine `g`'ye KÖRÜ KÖRÜNE güvenmez; verilen SIRA
+     * korunarak terminal (end/drop) + `g` değişimi + `s`-reset ile durum-makinesiyle bölünür.
+     *
+     * @param  array  $turns  kronolojik sıralı kompakt turlar
+     * @param  array  $opts
+     */
     public static function build(array $turns, array $opts = []): string
+    {
+        return self::renderGames(self::stateMachineSplit($turns), $opts);
+    }
+
+    // -----------------------------------------------------------------------
+    // SEGMENTASYON
+    // -----------------------------------------------------------------------
+
+    /**
+     * İki HAM diziden gerçek oyunlara böl. Her dizi kendi içinde append-sıralı (kronolojik)
+     * kabul edilir; oyun indeksi `s`-reset + terminal ile YENİDEN türetilir (stored `g` YOK SAYILIR),
+     * iki dizi (rg, s, o) ile birleşip içerikçe tekilleşir.
+     *
+     * @return list<list<array>>  oyun-başına tur listesi (oyun sırasıyla)
+     */
+    private static function segmentGames(array $p1Events, array $p2Events): array
+    {
+        $tagged = array_merge(
+            self::tagByRealGame($p1Events, 0),
+            self::tagByRealGame($p2Events, 1),
+        );
+        if (! $tagged) {
+            return [];
+        }
+
+        // (rg, s, o) sırala; eşitlikte kaynak sırası (istikrarlı).
+        usort($tagged, function ($a, $b) {
+            return ($a['_rg'] <=> $b['_rg'])
+                ?: (($a['_s'] <=> $b['_s'])
+                ?: (($a['_o'] <=> $b['_o'])
+                ?: (($a['_src'] <=> $b['_src'])
+                ?: ($a['_idx'] <=> $b['_idx']))));
+        });
+
+        // İçerik tekilleştirme: aynı gerçek tur İKİ diziye de yazılmış olabilir (her istemci
+        // rakibin hamlesini de KENDİ koluna yazar). end oyun başına tekil; küp tek-yazar.
+        $seen = [];
+        $deduped = [];
+        foreach ($tagged as $t) {
+            $key = self::dedupKey($t);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $deduped[] = $t;
+        }
+
+        // rg -> ardışık oyunlara böl (rg zaten segment sırasını verir; terminal sonrası artık
+        // aynı rg'de olamaz çünkü tag terminal'de rg'yi artırdı).
+        $games = [];
+        $curRg = null;
+        foreach ($deduped as $t) {
+            if ($t['_rg'] !== $curRg) {
+                $curRg = $t['_rg'];
+                $games[] = [];
+            }
+            $games[count($games) - 1][] = $t;
+        }
+
+        self::validate($games);
+
+        return $games;
+    }
+
+    /**
+     * TEK dizi durum-makinesi bölme (geriye uyumlu build()). Verilen SIRA korunur; yeni oyun:
+     * (1) terminal (end / küp drop) sonrası, (2) `g` değişince, (3) `s` düşünce (turnsPlayed reset).
+     *
+     * @return list<list<array>>
+     */
+    private static function stateMachineSplit(array $turns): array
+    {
+        $games = [];
+        $curG = null;      // stored g
+        $lastSeq = -1;     // bu oyundaki son HAMLE seq'i
+        $seenMove = false;
+        $afterTerminal = false;
+
+        foreach ($turns as $t) {
+            $kind = $t['k'] ?? null;
+            $isEnd = $kind === 'end';
+            $isDrop = $kind === 'cube' && self::cubeChoice($t) === 'drop';
+            $isMove = ! $isEnd && $kind !== 'cube';
+            $g = (int) ($t['g'] ?? 1);
+            $s = (int) ($t['s'] ?? 0);
+
+            // Yeni oyun YALNIZCA bir HAMLE ile başlar (ardışık terminaller — drop + end — AYNI
+            // oyuna aittir; end drop'tan sonra gelse bile oyun 1'in sonucudur). Küp asla oyunun
+            // ilk eylemi olamaz (önce zar atılır), bu yüzden hamle-kapısı güvenlidir.
+            $newGame = false;
+            if (empty($games)) {
+                $newGame = true;
+            } elseif ($isMove && $afterTerminal) {
+                $newGame = true;
+            } elseif ($isMove && $curG !== null && $g !== $curG) {
+                $newGame = true;
+            } elseif ($isMove && $seenMove && $s <= 1 && $s < $lastSeq) {
+                $newGame = true;
+            }
+
+            if ($newGame) {
+                $games[] = [];
+                $lastSeq = -1;
+                $seenMove = false;
+            }
+            $games[count($games) - 1][] = $t;
+
+            $curG = $g;
+            if ($isMove) {
+                $lastSeq = $s;
+                $seenMove = true;
+            }
+            $afterTerminal = $isEnd || $isDrop;
+        }
+
+        self::validate($games);
+
+        return $games;
+    }
+
+    /**
+     * Bir dizinin turlarına GERÇEK oyun indeksi (`_rg`) ata. Append sırası kronolojiktir; oyun
+     * sınırı `s`-reset (turnsPlayed 0/1'e döner) veya terminal (end/drop) ile bulunur — stored `g`
+     * YOK SAYILIR. Küp/end turları da içinde bulundukları gerçek oyunun rg'sini alır. `_s`/`_o`
+     * birleştirme sıralaması için normalize edilir.
+     *
+     * @return list<array>  girdiler + {_rg,_s,_o,_src,_idx}
+     */
+    private static function tagByRealGame(array $arr, int $src): array
+    {
+        $out = [];
+        $rg = 0;
+        $lastSeq = -1;
+        $seenMove = false;
+        $afterTerminal = false;
+
+        foreach (array_values($arr) as $idx => $e) {
+            $kind = $e['k'] ?? null;
+            $isEnd = $kind === 'end';
+            $isDrop = $kind === 'cube' && self::cubeChoice($e) === 'drop';
+            $isMove = ! $isEnd && $kind !== 'cube';
+            $s = (int) ($e['s'] ?? 0);
+
+            // Yeni oyun YALNIZCA bir HAMLE ile başlar: ardışık terminaller (drop + end) AYNI oyunun
+            // kapanışıdır -> end, drop'tan sonra gelse bile oyun 1'in rg'sinde kalır.
+            if ($isMove && $afterTerminal) {
+                $rg++;
+                $lastSeq = -1;
+                $seenMove = false;
+                $afterTerminal = false;
+            } elseif ($isMove && $seenMove && $s <= 1 && $s < $lastSeq) {
+                $rg++;
+                $lastSeq = -1;
+                $seenMove = false;
+            }
+
+            $e['_rg'] = $rg;
+            $e['_s'] = $s;
+            // Aynı seq içinde: küp teklif(-3) < küp yanıt(-2) < hamle(0) < bitiş(9).
+            $e['_o'] = $isEnd ? 9 : (int) ($e['o'] ?? ($kind === 'cube' ? -2 : 0));
+            $e['_src'] = $src;
+            $e['_idx'] = $idx;
+            $out[] = $e;
+
+            if ($isMove) {
+                $lastSeq = $s;
+                $seenMove = true;
+            }
+            if ($isEnd || $isDrop) {
+                $afterTerminal = true;
+            }
+        }
+
+        return $out;
+    }
+
+    /** Birleştirmede tekilleştirme anahtarı (gerçek-oyun bazlı; seq'e GÜVENMEZ — off-by-one recon'a dayanıklı). */
+    private static function dedupKey(array $t): string
+    {
+        $rg = $t['_rg'];
+        $kind = $t['k'] ?? null;
+        if ($kind === 'end') {
+            return "end:$rg"; // oyun başına tek sonuç
+        }
+        $p = (string) ($t['p'] ?? '');
+        if ($kind === 'cube') {
+            return "cube:$rg:$p:".self::cubeChoice($t);
+        }
+        // hamle: renk + kanonik zar + notasyon (seq HARİÇ)
+        return "mv:$rg:$p:".self::xgDice((string) ($t['d'] ?? '')).':'.trim((string) ($t['m'] ?? ''));
+    }
+
+    /** Küp turunun seçimi: take / drop / double (m metni + o'dan). */
+    private static function cubeChoice(array $t): string
+    {
+        if (($t['k'] ?? null) !== 'cube') {
+            return '';
+        }
+        $m = (string) ($t['m'] ?? '');
+        if (str_contains($m, 'Kabul')) {
+            return 'take';
+        }
+        if (str_contains($m, 'Pas')) {
+            return 'drop';
+        }
+
+        return ((int) ($t['o'] ?? 0)) === -2 ? 'take' : 'double';
+    }
+
+    /**
+     * EXPORT ÖNCESİ DENETİM (assertion). Bozuk segmentasyonu ÜRETMEYE devam etmek yerine LOG'la
+     * (indirmeyi bozmamak için exception atmaz; kanıt bırakır). Kurallar sınıf başında listelenen
+     * state-machine'in korumalarıyla örtüşür.
+     *
+     * @param  list<list<array>>  $games
+     */
+    private static function validate(array $games): void
+    {
+        $warn = [];
+        foreach ($games as $gi => $rows) {
+            $terminalAt = null;
+            foreach ($rows as $ri => $t) {
+                $kind = $t['k'] ?? null;
+                $isEnd = $kind === 'end';
+                $isDrop = $kind === 'cube' && self::cubeChoice($t) === 'drop';
+                $isMove = ! $isEnd && $kind !== 'cube';
+                // (1) DROP/END'den sonra AYNI oyunda hamle olmamalı.
+                if ($terminalAt !== null && $isMove) {
+                    $warn[] = "game $gi: terminal(#$terminalAt) sonrası hamle(#$ri)";
+                }
+                if ($isEnd || $isDrop) {
+                    $terminalAt = $ri;
+                }
+            }
+        }
+        if ($warn) {
+            Log::warning('MatFromLog segmentasyon uyarısı', ['issues' => $warn]);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // SERİLEŞTİRME (oyun listesi -> .mat metni)
+    // -----------------------------------------------------------------------
+
+    /**
+     * @param  list<list<array>>  $games  segmente edilmiş oyunlar (tur listeleri)
+     * @param  array{whiteName?:string,blackName?:string,matchLength?:int,site?:string,matchId?:string,eventDate?:string,eventTime?:string,crawford?:bool}  $opts
+     */
+    private static function renderGames(array $games, array $opts): string
     {
         $whiteName = $opts['whiteName'] ?? 'Player1';
         $blackName = $opts['blackName'] ?? 'Player2';
@@ -32,15 +319,7 @@ class MatFromLog
         $eventDate = $opts['eventDate'] ?? '';
         $eventTime = $opts['eventTime'] ?? '';
         $crawford = ($opts['crawford'] ?? true) ? 'On' : 'Off';
-        $COLW = 28; // buildMatXg ile birebir (sol aksiyon 28'e padlenir -> sağ sütun col 33)
-
-        // Oyunlara böl (kompakt log otoriter oyun numarası g taşır -> seq tahminine gerek yok).
-        $games = [];
-        foreach ($turns as $t) {
-            $g = (int) ($t['g'] ?? 1);
-            $games[$g][] = $t;
-        }
-        ksort($games);
+        $COLW = self::COLW;
 
         $out = [
             "; [Site \"$site\"]",
@@ -150,10 +429,7 @@ class MatFromLog
                 continue;
             }
             if ($kind === 'cube') {
-                $m = (string) ($t['m'] ?? '');
-                $chosen = str_contains($m, 'Kabul') ? 'take'
-                    : (str_contains($m, 'Pas') ? 'drop'
-                    : (((int) ($t['o'] ?? 0)) === -2 ? 'take' : 'double'));
+                $chosen = self::cubeChoice($t);
                 $raw[] = ['kind' => $chosen, 'player' => $player];
 
                 continue;
