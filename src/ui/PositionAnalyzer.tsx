@@ -111,6 +111,8 @@ function previewFromNotation(base: PreviewBoard, turn: Player, label: string): P
 export default function PositionAnalyzer({
   neuralEval,
   neuralAnalyze,
+  premium = false, // fail-closed: premium bilinmiyorsa analiz kapalı
+  onUpgrade,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -477,6 +479,11 @@ export default function PositionAnalyzer({
   }
 
   async function analyze() {
+    // Pozisyon Analizi PREMIUM'a özel: premium olmayan kullanıcı analiz yapamaz -> üyelik modalı.
+    if (!premium) {
+      onUpgrade?.()
+      return
+    }
     setBusy(true)
     setResult(null)
     setMoveRows(null)
@@ -852,12 +859,21 @@ export default function PositionAnalyzer({
             </div>
           </div>
 
-          <Button variant="default" className="pa-analyze" disabled={busy} onClick={analyze}>
+          <Button
+            variant="default"
+            className={`pa-analyze${premium ? '' : ' locked'}`}
+            disabled={busy}
+            onClick={analyze}
+          >
             {busy ? (
               t('an.loading')
-            ) : (
+            ) : premium ? (
               <>
                 <Icon name="search" size={16} /> {t('pa.analyze')}
+              </>
+            ) : (
+              <>
+                <Icon name="crown" size={15} /> {t('pa.analyze')}
               </>
             )}
           </Button>
