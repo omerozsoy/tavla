@@ -2764,17 +2764,42 @@ export default function App() {
       return
     }
     let cancelled = false
-    neuralRef.current
-      .evalPosition(turnStart, humanColor)
-      .then((probs) => {
-        if (cancelled || (probs?.length ?? 0) < 6) return
-        const hint: CubeHint = onRollCanDouble
-          ? { kind: 'offer', ...cubeAdvice(probs) }
-          : { kind: 'respond', ...takeDecision(probs) }
-        setCubeHint(hint)
-        cubeHintRef.current = hint
-      })
-      .catch(() => {})
+    // ADIM 5 (HAKEM=gnubg): küp danışmanı probs'u gnubg /analyze-position'dan (pvb + giriş + servis);
+    // erişilemezse wildbg evalPosition fallback. Öneri mantığı (cubeAdvice/takeDecision) aynı kalır,
+    // yalnız değerlendirme (kazanma%/gammon) gnubg olur.
+    ;(async () => {
+      let probs: number[] | null = null
+      if (getToken()) {
+        try {
+          const g = await analyzePosition({
+            points: turnStart.points,
+            bar: turnStart.bar,
+            turn: humanColor,
+            dice: [],
+            cube: { value: match.cube.value, owner: match.cube.owner },
+            score: { white: match.score.white, black: match.score.black },
+            matchLength: match.target,
+            plies: 2,
+          })
+          if (g.probs && g.probs.length >= 6) probs = g.probs
+        } catch {
+          /* gnubg erişilemedi -> wildbg */
+        }
+      }
+      if (!probs) {
+        try {
+          probs = await neuralRef.current.evalPosition(turnStart, humanColor)
+        } catch {
+          return
+        }
+      }
+      if (cancelled || (probs?.length ?? 0) < 6) return
+      const hint: CubeHint = onRollCanDouble
+        ? { kind: 'offer', ...cubeAdvice(probs) }
+        : { kind: 'respond', ...takeDecision(probs) }
+      setCubeHint(hint)
+      cubeHintRef.current = hint
+    })()
     return () => {
       cancelled = true
     }
