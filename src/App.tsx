@@ -121,6 +121,7 @@ import Lessons from './ui/Lessons'
 import Tournaments from './ui/Tournaments'
 import BannerSlider from './ui/BannerSlider'
 import { AdStrip } from './ui/AdStrip'
+import { EntryPopupModal } from './ui/EntryPopupModal'
 import SoloStakes from './ui/SoloStakes'
 import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
@@ -6719,6 +6720,8 @@ export default function App() {
         {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
             (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
         {menuOverlays}
+        {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
+        <EntryPopupModal loggedIn={!!user} />
       </>
     )
   }
