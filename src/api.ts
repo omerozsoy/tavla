@@ -1221,10 +1221,12 @@ export interface RoomView {
   p1_rating: number | null
   p1_avatar: string | null
   p1_frame?: string | null
+  p1_premium?: boolean
   p2_name: string | null
   p2_rating: number | null
   p2_avatar: string | null
   p2_frame?: string | null
+  p2_premium?: boolean
   state: unknown
   messages: ChatMsg[]
   version: number
@@ -1378,9 +1380,11 @@ export interface LiveMatch {
   p1_name: string
   p1_rating?: number | null
   p1_avatar?: string | null
+  p1_premium?: boolean
   p2_name: string
   p2_rating?: number | null
   p2_avatar?: string | null
+  p2_premium?: boolean
   stake: number
   bet_pct: number
   target?: number | null
@@ -1413,6 +1417,7 @@ export interface ActiveRoom {
   opp_name: string | null
   opp_rating: number | null
   opp_avatar: string | null
+  opp_premium?: boolean
   target: number | null
   score: { white: number; black: number } | null
 }

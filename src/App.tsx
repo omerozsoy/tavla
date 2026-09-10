@@ -309,6 +309,7 @@ interface RoomState {
   oppRating: number | null
   oppAvatar: string | null
   oppFrame: string | null
+  oppPremium?: boolean // rakip premium mi -> isim yaninda PREMIUM
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   // Sunucu-otoriter mod (para maçı güvenliği Faz 2c). true iken istemci zar/hamleyi
   // SUNUCUDAN alır (serverRoll/serverMove). Şu an hiçbir oda için true değil (gated).
@@ -3484,6 +3485,7 @@ export default function App() {
                 oppRating: r.slot === 'p1' ? rv.p2_rating : rv.p1_rating,
                 oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
                 oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
+                oppPremium: r.slot === 'p1' ? rv.p2_premium : rv.p1_premium,
                 status: rv.status,
                 authoritative: rv.authoritative ?? r.authoritative,
                 dice_authority: rv.dice_authority ?? r.dice_authority,
@@ -5042,6 +5044,7 @@ export default function App() {
     avatarUrl: online ? (myColor === 'black' ? profile.avatar : (room?.oppAvatar ?? null)) : null,
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
     isBot: !online && mode === 'pvb', // PvB'de siyah/ust oyuncu = YZ -> robot ikonu
+    premium: online ? (myColor === 'black' ? premium : (room?.oppPremium ?? false)) : false,
   }
   const bottomInfo = {
     name: whiteName,
@@ -5063,6 +5066,7 @@ export default function App() {
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
     // Anlik PR: yalniz bota karsi (pvb) goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
     pr: mode === 'pvb' ? (prValue ?? prLooseOf('white')) : null,
+    premium: online ? (myColor === 'white' ? premium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? premium : false),
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
@@ -6561,6 +6565,7 @@ export default function App() {
                           <span className="rm-you">
                             <AvatarFrame src={r.opp_avatar} size={26} name={oppName} className="rm-avf" />
                             {oppName}
+                            {r.opp_premium && <PremiumPill style={{ marginLeft: 5 }} />}
                             {typeof r.opp_rating === 'number' && (
                               <span className="rm-rat"> {r.opp_rating}</span>
                             )}

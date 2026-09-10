@@ -543,16 +543,23 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(3)) // sadece gercekten aktif maclar
             ->orderByDesc('updated_at')
             ->limit(30)
-            ->get(['code', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode']);
+            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'stake', 'bet_pct', 'target', 'mode']);
+
+        // Premium: iki oyuncunun user_id'lerinden TEK sorguyla plan lookup (süresi geçerli ücretli).
+        $uids = $rooms->flatMap(fn ($r) => [$r->p1_user_id, $r->p2_user_id])->filter()->unique()->values();
+        $premiumMap = $uids->isEmpty() ? [] : User::whereIn('id', $uids)->get(['id', 'plan', 'plan_until'])
+            ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
 
         $list = $rooms->map(fn ($r) => [
             'code' => $r->code,
             'p1_name' => $r->p1_name,
             'p1_rating' => $r->p1_rating,
             'p1_avatar' => $r->p1_avatar,
+            'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
             'p2_name' => $r->p2_name,
             'p2_rating' => $r->p2_rating,
             'p2_avatar' => $r->p2_avatar,
+            'p2_premium' => $premiumMap[$r->p2_user_id] ?? false,
             'stake' => (int) $r->stake,
             'bet_pct' => (int) $r->bet_pct,
             'target' => $r->target !== null ? (int) $r->target : null,
@@ -601,10 +608,17 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(4))
             ->orderByDesc('updated_at')
             ->limit(10)
-            ->get(['code', 'p1_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'target', 'state']);
+            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'target', 'state']);
 
-        $list = $rooms->map(function ($r) use ($me) {
+        // Rakip premium: rakip user_id'lerinden TEK sorguyla plan lookup.
+        $oppIds = $rooms->map(fn ($r) => (int) $r->p1_user_id === (int) $me->id ? $r->p2_user_id : $r->p1_user_id)
+            ->filter()->unique()->values();
+        $premiumMap = $oppIds->isEmpty() ? [] : User::whereIn('id', $oppIds)->get(['id', 'plan', 'plan_until'])
+            ->mapWithKeys(fn ($u) => [$u->id => $u->plan_active !== 'free'])->all();
+
+        $list = $rooms->map(function ($r) use ($me, $premiumMap) {
             $mine = ((int) $r->p1_user_id === (int) $me->id) ? 'p1' : 'p2';
+            $oppId = $mine === 'p1' ? $r->p2_user_id : $r->p1_user_id;
             $score = $r->state['match']['score'] ?? null;
             return [
                 'code' => $r->code,
@@ -612,6 +626,7 @@ class RoomController extends Controller
                 'opp_name' => $mine === 'p1' ? $r->p2_name : $r->p1_name,
                 'opp_rating' => $mine === 'p1' ? $r->p2_rating : $r->p1_rating,
                 'opp_avatar' => $mine === 'p1' ? $r->p2_avatar : $r->p1_avatar,
+                'opp_premium' => $premiumMap[$oppId] ?? false,
                 'target' => $r->target,
                 'score' => $score,
             ];
