@@ -17666,23 +17666,87 @@ button.acct-row:hover:not(:disabled) {
   width: 15px;
   height: 15px;
 }
+/* Kart konteyner: sol = tıklanabilir önizleme/isim, sağ = kalıcı oyun ayarları. */
 .prof-ov-board {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
+  align-items: stretch;
+  gap: 14px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: var(--card-bg);
-  /* Tiklanabilir: tahtayi degistirmek icin Tavla Tasarimlari sekmesine gecer */
   width: 100%;
+}
+/* Sol tıklanabilir bölge (tahta değiştir -> Tavla Tasarımları sekmesi) */
+.prof-ov-board-open {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+  padding: 4px;
+  border: none;
+  background: none;
   text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: background 0.15s;
+}
+.prof-ov-board-open:hover {
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+/* Sağ: oyun yönü + pul renkleri switch'leri (eskiden oyun menüsündeydi) */
+.prof-ov-board-opts {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  flex: none;
+  min-width: 190px;
+  padding-left: 14px;
+  border-left: 1px solid var(--border);
+}
+.prof-ov-opt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 3%, var(--card-bg));
   cursor: pointer;
   transition: border-color 0.15s, background 0.15s;
 }
-.prof-ov-board:hover {
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--accent) 5%, var(--card-bg));
+.prof-ov-opt:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.prof-ov-opt-lbl {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--text);
+}
+.prof-ov-opt-ctl {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  flex: none;
+}
+/* .prof-ov-opt içindeki .gm-hint profil (açık) zemininde okunur olsun */
+.prof-ov-opt .gm-hint {
+  color: color-mix(in srgb, var(--accent) 78%, var(--text));
+}
+@media (max-width: 560px) {
+  .prof-ov-board {
+    flex-direction: column;
+  }
+  .prof-ov-board-opts {
+    min-width: 0;
+    padding-left: 0;
+    padding-top: 12px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
 }
 /* "Tahtayi degistir" ipucu (isim altinda, kiremit) */
 .prof-ov-board-change {
@@ -17700,6 +17764,16 @@ button.acct-row:hover:not(:disabled) {
   flex: none;
   border-radius: var(--radius-md);
   overflow: hidden;
+  /* Oyun yönü değişince yatay FLIP animasyonu (sağa/sola topla). */
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.prof-ov-board-prev.flip {
+  transform: scaleX(-1);
+}
+/* Pul rengi değişince önizlemedeki pul/zar fill'i yumuşak geçsin (anlık değil). */
+.prof-ov-board-prev svg circle,
+.prof-ov-board-prev svg rect {
+  transition: fill 0.4s ease;
 }
 .prof-ov-board-name {
   display: flex;
