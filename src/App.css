@@ -4626,6 +4626,11 @@ button[aria-disabled='true'],
 @media (min-width: 901px) {
   .main.game-scene {
     padding-top: 12px;
+    /* Oyun sahnesi masaüstünde viewport'a SIĞACAK şekilde boyutlanır (board-h = min(100dvh-92, ...)).
+       .main'in genel overflow-y:auto kuralı burada, board+sayı-satırları+gap toplamı client
+       yüksekliğini birkaç px aştığında (misafirde bile ~4px) HAYALET bir dikey scrollbar
+       gösteriyordu. Oyun sahnesi kaymamalı -> gizle (birkaç px sadece alt gap/yuvarlama). */
+    overflow-y: hidden;
   }
 }
 /* Board ekrana TAM otursun: oyun ekraninda ust hesap bari gizli oldugundan board
