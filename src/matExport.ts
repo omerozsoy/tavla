@@ -1,3 +1,10 @@
+// NOT (2026-09-11): Bu dosya artik UYGULAMA RUNTIME'inda KULLANILMAZ. .mat'in TEK OTORITER
+// ureticisi SUNUCUDUR (backend/app/Support/MatSerializer.php; MatBuilder=gnubg/luck, MatFromLog=xg/
+// indirme). Burasi yalnizca TEST/SPEC oracle'idir: matExport.botcheck.test.ts bu buildMat ile
+// commit'li fixture (bot-match.mat) uretir; PHP MatBuilder o fixture ile BYTE-BYTE karsilastirilir
+// (MatBuilderTest = luck regresyon kalkani). Yani buildMat, PHP luck ciktisinin DOGRULANMIS
+// referans spesifikasyonudur — silme; degistirirsen once PHP paritesini (MatBuilderTest) guncelle.
+//
 // Mac kaydini .mat formatinda uret. IKI hedef var, IKI ayri fonksiyon:
 //
 //  1) buildMat()   -> GNU Backgammon (gnubg) NATIVE .mat. Sunucudaki luck analizi (Tavlai
