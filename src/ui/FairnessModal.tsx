@@ -68,13 +68,16 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
     <>
         {/* ==================== INFOGRAFİK ==================== */}
         <section className="fair-info" aria-label={t('fair.howTitle')}>
-          <div className="fair-info-head">
-            <span className="fair-info-ic" aria-hidden="true">
-              <Icon name="dice" size={26} />
-            </span>
-            <h3>{t('fair.howTitle')}</h3>
-            <p>{t('fair.howSub')}</p>
-          </div>
+          {/* Bilgi sekmesinde (embed) sayfa başlığı zaten "Adil Zar" -> iç başlık gizli. */}
+          {!embed && (
+            <div className="fair-info-head">
+              <span className="fair-info-ic" aria-hidden="true">
+                <Icon name="dice" size={26} />
+              </span>
+              <h3>{t('fair.howTitle')}</h3>
+              <p>{t('fair.howSub')}</p>
+            </div>
+          )}
 
           {/* 4 adimli akis */}
           <ol className="fair-steps">
@@ -147,6 +150,10 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
           </div>
         </section>
 
+        {/* Bilgi sekmesinde (embed) teknik detay + doğrulama aracı gizli:
+            bunlar canlı bir maçın seed'lerini gerektirir, bilgi sayfasında anlamsız. */}
+        {!embed && (
+          <>
         {/* ==================== TEKNİK DETAYLAR (accordion) ==================== */}
         <div className={`fair-tech ${showTech ? 'open' : ''}`}>
           <button
@@ -243,6 +250,8 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
             </div>
           )}
         </section>
+          </>
+        )}
     </>
   )
 

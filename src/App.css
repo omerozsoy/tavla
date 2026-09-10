@@ -18294,6 +18294,11 @@ button.acct-row:hover:not(:disabled) {
   margin-left: 0;
   max-width: none;
 }
+/* Bilgi sekmesinde iç bileşen başlığı gizli — sayfa başlığı (üstte) zaten var.
+   Rütbeler'de "Rütbe İlerlemen" başlığı, sayfa başlığı "Rütbeler" ile çakışıyordu. */
+.info-tab-pane .rank-prog__head {
+  display: none;
+}
 
 /* ---- 4 adimli akis ---- */
 .fair-steps {
