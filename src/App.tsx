@@ -3362,6 +3362,20 @@ export default function App() {
               seq: turnsPlayedRef.current,
             },
           ])
+          // MAÇ KAYDI (game_logs): rakibin turunu KENDİ kolonuma da yaz. Böylece TEK istemcinin
+          // flush'ı bile sunucuda TAM .mat üretir (yarım-kolon "rakip sütunu boş" bug'ı çözülür).
+          // seq matchLog ile AYNI (ortak sıra); sunucu merge (g,s,o) ile tekilleştirir -> iki
+          // istemci de yazınca çiftlenme olmaz. (Küp kararı hâlâ tek-yazar; hamleler artık iki-taraflı.)
+          const rec = gameRecordRef.current
+          if (rec && !rec.done) {
+            rec.events.push({
+              g: rec.gameNo,
+              s: turnsPlayedRef.current,
+              p: oc === 'white' ? 'W' : 'B',
+              d: (prev.dice ?? []).join('-'),
+              m: turnNotation(steps, oc),
+            })
+          }
         }
       }
     }
