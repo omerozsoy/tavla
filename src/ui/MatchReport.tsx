@@ -191,7 +191,15 @@ export default function MatchReport({
       results: gameResults, // logda bitiren zorunlu hamle yoksa sonuc satiri yine de yazilsin
       matchResult, // son care: tamamlanan mac son oyunu final skordan sonuc satiri alsin
     })
-    saveFile(text, 'tavlatv-mac.mat')
+    // Dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç).
+    const clean = (s: string | undefined, fb: string) =>
+      ((s ?? '').replace(/\s+/g, '').replace(/[^\p{L}\p{N}_-]/gu, '') || fb)
+    const fileDate = `${p2(now.getDate())}-${p2(now.getMonth() + 1)}-${now.getFullYear()}`
+    const fname =
+      [clean(whiteName, 'Player1'), clean(blackName, 'Player2'), fileDate, clean(matchUid ?? '', 'mac')]
+        .filter(Boolean)
+        .join('_') + '.mat'
+    saveFile(text, fname)
   }
 
   return (

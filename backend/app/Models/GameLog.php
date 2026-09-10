@@ -113,12 +113,23 @@ class GameLog extends Model
         ]);
     }
 
-    /** İndirme için güvenli dosya adı: tavlatv-<uid>.mat */
+    /** İndirme dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç). */
     public function matFilename(): string
     {
-        $safe = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $this->uid) ?: 'mac';
+        $clean = static function (?string $s, string $fb): string {
+            $s = str_replace(' ', '', (string) ($s ?? ''));
+            // Nokta/güvensiz karakterleri at; harf/rakam/_/- kalır (Türkçe harfler korunur).
+            $s = preg_replace('/[^\p{L}\p{N}_-]/u', '', $s) ?? '';
 
-        return "tavlatv-{$safe}.mat";
+            return $s !== '' ? $s : $fb;
+        };
+        $p1 = $clean($this->p1_name, 'Player1');
+        $p2 = $clean($this->p2_name, 'Player2');
+        $date = optional($this->created_at)->format('d-m-Y');
+        $id = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $this->uid) ?: 'mac';
+        $parts = array_filter([$p1, $p2, $date, $id]);
+
+        return implode('_', $parts).'.mat';
     }
 
     /**
