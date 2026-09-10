@@ -28,8 +28,8 @@ export default function Leaderboard({ currentName, onClose }: Props) {
     let alive = true
     setRows(null)
     setError(false)
-    // Her tab: top 30 oyuncu
-    leaderboard(30, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
+    // Her tab: ilk 10 oyuncu (scroll yok, tam liste görünür)
+    leaderboard(10, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
@@ -176,7 +176,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               </span>
             </div>
             <div className="lb-body">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="lb-row">
                   <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
                   <span className="lb-name">
