@@ -17,7 +17,7 @@ const PILL_STYLE: CSSProperties = {
   color: 'var(--accent)',
   border: '1px solid color-mix(in srgb, var(--accent) 38%, transparent)',
   fontSize: 10,
-  fontWeight: 400, // İNCE — bold yok (kullanıcı direktifi)
+  fontWeight: 500, // İnce ama 1 tık kalın (medium) — bold değil (kullanıcı)
   letterSpacing: '0.08em',
   textTransform: 'uppercase',
   lineHeight: 1,
