@@ -4,18 +4,41 @@ namespace App\Filament\Resources\MatchResultResource\Pages;
 
 use App\Filament\Resources\MatchResultResource;
 use App\Models\MatchResult;
+use Filament\Actions\Action;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
 use Filament\Infolists\Infolist;
 use Filament\Resources\Pages\ViewRecord;
 
 /**
  * Tek bir maç sonucunun tüm detayı (salt-okunur): kim–kim, ne zaman, ne tür, nesine
- * (bahis coin), sonuç, skor, iki tarafın PR'ı, şans, rating değişimi.
+ * (bahis coin), sonuç, skor, iki tarafın PR'ı, şans, rating değişimi + XG .mat dosyası.
  */
 class ViewMatchResult extends ViewRecord
 {
     protected static string $resource = MatchResultResource::class;
+
+    /** Başlıkta ".mat indir" — maçın log'undan üretilen XG uyumlu dosyayı stream indirir. */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('downloadMat')
+                ->label('.mat indir')
+                ->icon('heroicon-o-arrow-down-tray')
+                ->color('gray')
+                ->visible(fn () => trim($this->getRecord()->matText()) !== '')
+                ->action(function () {
+                    /** @var MatchResult $record */
+                    $record = $this->getRecord();
+                    $mat = $record->matText();
+
+                    return response()->streamDownload(function () use ($mat) {
+                        echo $mat;
+                    }, $record->matFilename(), ['Content-Type' => 'text/plain; charset=utf-8']);
+                }),
+        ];
+    }
 
     public function infolist(Infolist $infolist): Infolist
     {
@@ -69,6 +92,13 @@ class ViewMatchResult extends ViewRecord
                     TextEntry::make('opponent_rating')->label('Rakip puanı')->default('—'),
                 ])
                 ->columns(4),
+            Section::make('.mat Dosyası (XG uyumlu)')
+                ->description('Maçın hamle/zar kaydından üretilir; Extreme Gammon ile açılır. Başlıktaki “.mat indir” ile dosyayı kaydedin. (Online maçta iki oyuncunun logu birleştirilerek tam .mat üretilir.)')
+                ->schema([
+                    ViewEntry::make('mat')->hiddenLabel()
+                        ->view('filament.match-result-mat')->columnSpanFull(),
+                ])
+                ->collapsible(),
         ]);
     }
 }
