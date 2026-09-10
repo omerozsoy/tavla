@@ -188,9 +188,13 @@ function CookiePreferences({
     { key: 'marketing', name: 'Pazarlama Çerezleri', desc: cats.marketing, val: marketing, set: setMarketing },
   ]
 
+  // NORMAL SAYFA kabugu (LegalView ile AYNI): .register-card.info-card. ESKI HALI bozuktu ->
+  // (1) `.page` overlay'e backdrop `onClick={onClose}` verilmisti (page-modal tuzagi #2),
+  // (2) `.cc-prefs-card` sinifinin HIC CSS'i yoktu -> kart bicimsiz/kirik cikiyordu.
+  // Kapatma: X butonu + Escape (useEscape). Backdrop tiklamasi KAPATMAZ (bkz memory).
   return (
-    <div className="register-overlay modal page" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="register-card cc-prefs-card" onClick={(e) => e.stopPropagation()}>
+    <div className="register-overlay modal page" role="dialog" aria-modal="true">
+      <div className="register-card info-card">
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
           <Icon name="x" size={16} />
         </Button>
