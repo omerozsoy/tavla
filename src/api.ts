@@ -1906,10 +1906,14 @@ export async function serverCubeRespond(
 }
 
 // Pes et (resign): rakip mevcut küp değerinde kazanır. Sunucu maç bitişini yönetir.
-export async function serverResign(code: string): Promise<{ match: ServerMatch; winner: string; version: number; match_done: boolean }> {
+// resignType: 'single' | 'gammon' | 'backgammon' — sunucu küp × çarpan (1/2/3) uygular (merkezi kural).
+export async function serverResign(
+  code: string,
+  resignType: 'single' | 'gammon' | 'backgammon' = 'single',
+): Promise<{ match: ServerMatch; winner: string; version: number; match_done: boolean }> {
   return req(`/rooms/${encodeURIComponent(code)}/resign`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken() }),
+    body: JSON.stringify({ token: playerToken(), resign_type: resignType }),
   })
 }
 

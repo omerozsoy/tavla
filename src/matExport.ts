@@ -27,6 +27,9 @@ export interface MatOptions {
   matchLength?: number // .mat basligi ( or. "3 point match")
   whiteName?: string
   blackName?: string
+  // OTORİTER oyun sonuçları (oyun sırasıyla). Tahta-tekrarı sonuç veremezse (zorunlu son bear-off
+  // logda yok VEYA oyun PES/terk ile bitti) buradan alınır -> her tamamlanan oyun sonuç satırı alır.
+  results?: { winner: Player; points: number }[]
 }
 
 // XG header'i icin ek alanlar. Verilmezse makul varsayilanlar kullanilir.
@@ -252,7 +255,9 @@ export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
       out.push(`${String(idx + 1).padStart(3)}) ${left}${r.b ?? ''}`.trimEnd())
     })
 
-    const oc = outcomeOf(acts)
+    // Tahta-tekrarı sonuç veremezse (zorunlu son bear-off logda yok VEYA oyun PES/terk ile bitti)
+    // otoriter results[gi]'ye düş -> resigned oyunlar da "Wins N points" satırı + doğru skor alır.
+    const oc = outcomeOf(acts) ?? (opts.results ? (opts.results[gi] ?? null) : null)
     if (oc) {
       const pts = capPoints(oc.points, matchLength, oc.winner === 'white' ? sw : sb)
       const winTxt = `Wins ${pts} point${pts === 1 ? '' : 's'}`
