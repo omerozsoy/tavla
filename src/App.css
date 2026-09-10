@@ -5531,6 +5531,14 @@ body.checker-dragging * {
 .die-face.black .pip-dot {
   background: #f2f3f7;
 }
+/* Pul renkleri takasında zar arka planı da (pul rengini aldığından) ters döner ->
+   pip kontrastını da ters çevir, yoksa koyu-üstünde-koyu / açık-üstünde-açık okunmaz. */
+.board.stones-swapped .die-face.white .pip-dot {
+  background: #f2f3f7;
+}
+.board.stones-swapped .die-face.black .pip-dot {
+  background: #18181b;
+}
 .die-face.used {
   opacity: 0.35;
 }
