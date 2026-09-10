@@ -53,9 +53,9 @@ export default function GameMenu(p: Props) {
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
     {
+      // Oyun yönü de switch: ON = sağa topla, OFF = sola topla (diğer satırlarla tutarlı).
       label: t('gm.boardDir'),
       on: p.boardDir === 'right',
-      value: t(p.boardDir === 'left' ? 'dir.left' : 'dir.right'),
       toggle: () => p.setBoardDir(p.boardDir === 'left' ? 'right' : 'left'),
     },
   ]
