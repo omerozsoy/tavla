@@ -45,7 +45,6 @@ export default function PlayerIdentity({
       <span className="player-id-col">
         <span className="player-id-name">
           <span className="player-id-name-text">{name}</span>
-          {premium && <PremiumPill />}
           {flagInline && country && (
             <CountryFlag
               code={country}
@@ -55,7 +54,13 @@ export default function PlayerIdentity({
             />
           )}
         </span>
-        {rating != null && <DivisionChip rating={rating} size={rankSize} />}
+        {/* Rütbe + PREMIUM AYNI alt satırda -> pill isim satırını daraltıp ismi kırpmaz. */}
+        {(rating != null || premium) && (
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+            {rating != null && <DivisionChip rating={rating} size={rankSize} />}
+            {premium && <PremiumPill />}
+          </span>
+        )}
       </span>
     </span>
   )
