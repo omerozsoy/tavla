@@ -1249,6 +1249,12 @@ export default function App() {
   }
   // Bekleyen (async) hamle analizi sayaci: online mac-sonu kaydi bunlar bitene kadar bekler
   const pendingAnalysisRef = useRef(0)
+  // pvb HAYALET-MAC KALKANI: bu macta INSANIN (beyaz) commit ettigi tur sayisi. Acilis zari
+  // rakibe (bot=siyah) baslama hakki verirse bot ONCE oynar -> turnsPlayed>0 + matchLog dolu
+  // OLUR ama insan HIC hamle yapmamistir. Insan bu noktada "Mactan Cekil" derse eski guard
+  // (matchLog bos && turnsPlayed==0) yetmez -> oynanmamis AI KAYBI yazilirdi. Bu sayac yalniz
+  // insan turlarini sayar; 0 iken maci KAYDETME. Yeni macta sifirlanir (bkz handleNewMatch).
+  const humanTurnsRef = useRef(0)
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
@@ -1303,6 +1309,9 @@ export default function App() {
     // KARAR LOGU'nu da geri yukle -> refresh sonrasi mac bitince has_log=true olur
     // (analiz raporu acilir). prStats ile TUTARLI kalir (PR var ama log yok bug'i fix).
     if (g.log?.length) setMatchLog(g.log)
+    // Hayalet-mac kalkani: refresh oncesi insanin (beyaz) OYNADIGI turlar korunsun; aksi halde
+    // resume sonrasi insan hamle yapmadan cikarsa gercek mac "hic oynanmadi" sanilip kaybolurdu.
+    humanTurnsRef.current = g.log?.filter((e) => e.player === 'white').length ?? 0
     // BAŞARIM SİNYALLERİ'ni geri yukle -> refresh sonrasi mac bitince mars/6-prime/closeout/
     // min-WP basarimlari eksik raporlanmaz (matchLog fix ile ayni mantik; ref'ler otomatik kaydolmaz).
     if (g.ach) {
@@ -1792,6 +1801,9 @@ export default function App() {
   }
 
   function commitTurn(finalPlayed: Step[]) {
+    // pvb: INSAN (beyaz) bu turu commit etti -> hayalet-mac kalkani sayaci. Bot (siyah) turlari
+    // ve online sayilmaz. 0 iken mac-sonu kaydi maci YAZMAZ (bkz humanTurnsRef aciklamasi).
+    if (mode === 'pvb' && turnStart.turn === 'white') humanTurnsRef.current += 1
     // Her oyuncunun hamlesini PR'a ekle (online'da sadece kendi hamlelerim gecer)
     void recordPR(turnStart, finalPlayed)
     // Maç kaydı: bu turu (zar + hamle) logla (turnStart = hamle ONCESI durum).
@@ -3191,11 +3203,12 @@ export default function App() {
     if (mode !== 'pvb' || !user || ratingReportedRef.current) return
     const mW = matchWinner(match)
     if (!mW) return
-    // HAYALET MAÇ KORUMASI: "Maçtan Çekil" maç başında (hiç hamle yapmadan) basılınca
-    // handleQuitMatch rakibin (AI) skorunu hedefe çekip matchWinner'ı tetikliyordu ->
-    // oynanmamış bir AI KAYBI kalıcı olarak "Maç Analizleri"ne yazılıyordu. En az bir
-    // gerçek hamle olmadan (tüm-maç logu boş VE bu oyunda 0 tur) maçı KAYDETME.
-    if (matchLogRef.current.length === 0 && turnsPlayed === 0) return
+    // HAYALET MAÇ KORUMASI: "Maçtan Çekil" INSAN daha HIC hamle yapmadan basılınca oynanmamış
+    // bir AI KAYBI "Maç Analizleri"ne yazılıyordu. ONEMLI: açılış zarı BOTA (siyah) başlama
+    // hakkı verirse bot ÖNCE oynar -> turnsPlayed>0 + matchLog dolu olur ama insan hâlâ hiç
+    // oynamamıştır; bu yüzden (matchLog boş && turnsPlayed==0) guard'ı YETMEZ. İnsanın (beyaz)
+    // commit ettiği tur sayısı 0 ise maçı KAYDETME (bkz humanTurnsRef).
+    if (humanTurnsRef.current === 0) return
     ratingReportedRef.current = true
     // Giris yapmis kullanicinin AI maci HER ZAMAN kaydedilir (misafir haric).
     // Casual'da rating degismez: ranked=false -> backend Elo/lig islemez, delta=0 kaydeder.
@@ -4707,6 +4720,7 @@ export default function App() {
     setCoinDelta(null)
     setCoinPair(null)
     setMatchLog([])
+    humanTurnsRef.current = 0 // yeni mac -> hayalet-mac kalkani sayaci sifirla
     oppLoggedRef.current = ''
     setRatingChange(null) // yeni mac -> PR sifirla
     setMessage(t('msg.newMatch'))
