@@ -61,7 +61,7 @@ export default function PlayerIdentity({
           </span>
         )}
         {premium && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0, marginTop: 3 }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0, marginTop: 1 }}>
             <PremiumPill />
           </span>
         )}
