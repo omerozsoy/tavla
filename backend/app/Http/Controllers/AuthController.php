@@ -708,6 +708,10 @@ class AuthController extends Controller
             'rating' => $newRating,
             'user' => $user,
             'achievements' => $unlocked,
+            'match_result_id' => $result->id, // canlı ekran gnubg PR'ını bununla poll'lar (/me/match-pr-gnubg)
+            // HAKEM=gnubg: authoritative modda gösterilen PR gnubg olacak (async). Client wildbg PR'ı
+            // yalnız fallback; ekran "analiz ediliyor" gösterip gnubg gelince yerine koyar.
+            'gnubg_authoritative' => (string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($mr['log']),
             'pr_self' => $selfPr,          // sunucu-otoriter kendi PR (kendi log'undan)
             'pr_opponent' => $opponentPr,  // rakibin sunucu-otoriter PR'i (varsa)
             'pr_checker_self' => $selfCheckerPr,          // XG kirilimi: pul-yalniz
@@ -718,6 +722,27 @@ class AuthController extends Controller
             'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
             'luck_mwc_self' => $result->luck_mwc,       // gnubg V1 (async -> ilkin null, matchPr poll'lar)
             'luck_mwc_opp' => $opponentLuckMwc,         // rakibin gnubg MWC%'si (varsa)
+        ]);
+    }
+
+    /**
+     * HAKEM=gnubg: canlı sonuç ekranı, maç bitince gnubg PR'ı (async job) hazır olana kadar bu ucu
+     * poll'lar. Hazır olunca gösterilen PR wildbg yerine gnubg olur. Yalnız KENDİ maçın (pvb/online).
+     */
+    public function matchGnubgPr(Request $request, \App\Models\MatchResult $match)
+    {
+        if ((int) $match->user_id !== (int) $request->user()->id) {
+            abort(403);
+        }
+        $has = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr');
+        $ready = $has && $match->gnubg_pr !== null;
+        $num = fn ($v) => $v !== null ? (float) $v : null;
+
+        return response()->json([
+            'ready' => $ready,
+            'pr' => $ready ? $num($match->gnubg_pr) : null,
+            'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
+            'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
         ]);
     }
 

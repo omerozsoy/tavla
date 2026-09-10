@@ -15,6 +15,7 @@ interface Props {
   loserScore: number
   winnerPr: number | null
   loserPr: number | null
+  analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
   // XG kırılım: checker-yalnız + küp-yalnız PR (overall = winnerPr/loserPr). null -> —.
   winnerCheckerPr?: number | null
   winnerCubePr?: number | null
@@ -73,6 +74,7 @@ export default function MatchResult({
   loserScore,
   winnerPr,
   loserPr,
+  analyzing = false,
   winnerCheckerPr,
   winnerCubePr,
   loserCheckerPr,
@@ -113,6 +115,11 @@ export default function MatchResult({
           ? 'asked'
           : 'idle'
   const fmtPr = (p: number | null) => (p == null ? '—' : p.toFixed(2))
+  // İnsan tarafı: ratingIsWinner ? kazanan(mr-a) : kaybeden(mr-b). Analiz sürerken o tarafın PR
+  // hücrelerinde sayı yerine nabızlı "…" gösterilir (wildbg sayısı ASLA gösterilmez).
+  const aAnalyzing = analyzing && ratingIsWinner
+  const bAnalyzing = analyzing && !ratingIsWinner
+  const dots = () => <span className="mr-analyzing" aria-label="analiz ediliyor">…</span>
   // Dusuk PR daha iyi -> tac dusuk olanda
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
   const lBetter = winnerPr != null && loserPr != null && loserPr < winnerPr
@@ -209,25 +216,25 @@ export default function MatchResult({
           </div>
           <div className="mr-row">
             <span className="mr-a">
-              {fmtPr(winnerPr)} {wBetter && <Icon name="crown" size={14} />}
+              {aAnalyzing ? dots() : <>{fmtPr(winnerPr)} {wBetter && <Icon name="crown" size={14} />}</>}
             </span>
             <span className="mr-label">{t('mr.errorRate')}</span>
             <span className="mr-b">
-              {fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}
+              {bAnalyzing ? dots() : <>{fmtPr(loserPr)} {lBetter && <Icon name="crown" size={14} />}</>}
             </span>
           </div>
           {/* Pul Oyunu PR + Küp PR HER MAÇTA gösterilir (tek oyun dahil) — kullanıcı direktifi.
               Küp kararı yoksa Pul PR = Hata Oranı (App tarafı bunu aynı değere sabitler); Küp PR
               ise "—" olur (hiç sayılan küp kararı yok -> uydurma 0.00 yazılmaz). */}
           <div className="mr-row mr-sub">
-            <span className="mr-a">{fmtPr(winnerCheckerPr ?? null)}</span>
+            <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCheckerPr ?? null)}</span>
             <span className="mr-label">{t('mr.checkerPr')}</span>
-            <span className="mr-b">{fmtPr(loserCheckerPr ?? null)}</span>
+            <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCheckerPr ?? null)}</span>
           </div>
           <div className="mr-row mr-sub">
-            <span className="mr-a">{fmtPr(winnerCubePr ?? null)}</span>
+            <span className="mr-a">{aAnalyzing ? dots() : fmtPr(winnerCubePr ?? null)}</span>
             <span className="mr-label">{t('mr.cubePr')}</span>
-            <span className="mr-b">{fmtPr(loserCubePr ?? null)}</span>
+            <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
           </div>
           <div className="mr-row">
             <span className="mr-a">{ratingText(true)}</span>
