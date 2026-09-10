@@ -13291,6 +13291,92 @@ button.acct-row:hover:not(:disabled) {
   text-align: center;
   padding: 12px;
 }
+/* Bilgi sayfasi — kart genisligi (dar 380px yerine rahat okuma genisligi).
+   Hakkinda/Hizmetler ozellik grid'i icin yer acar; canli sekmeler de merkezlenir. */
+.info-card {
+  width: min(760px, 96vw);
+  max-width: min(760px, 96vw);
+}
+
+/* ---- Hakkinda / Hizmetler (info_pages) redesign: RichEditor cikti bicimlendirmesi ---- */
+.info-rich.rich {
+  max-width: 100%;
+  line-height: 1.72;
+  color: var(--text);
+}
+/* Giris (ilk paragraf): buyuk, yumusak "lead" */
+.info-rich.rich > p:first-child {
+  font-size: 1.14rem;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 0 0 0.4em;
+}
+/* Bolum basligi: sol accent cubuk (kiremit token), sade */
+.info-rich.rich h2,
+.info-rich.rich h3 {
+  position: relative;
+  margin: 1.7em 0 0.75em;
+  padding-left: 13px;
+  font-size: 1.16rem;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+.info-rich.rich h2::before,
+.info-rich.rich h3::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+/* Ozellik listesi (ul): 2-kolon responsive kart grid + accent onay ikonu.
+   ol (sirali) etkilenmez -> yalniz isaretsiz listeler kartlasir. */
+.info-rich.rich ul {
+  list-style: none;
+  margin: 0.6em 0 1.1em;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(258px, 1fr));
+  gap: 10px;
+}
+.info-rich.rich ul li {
+  position: relative;
+  margin: 0;
+  padding: 12px 14px 12px 42px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text);
+  font-size: 0.93rem;
+  line-height: 1.5;
+  transition: border-color 0.15s ease;
+}
+.info-rich.rich ul li:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.info-rich.rich ul li::before {
+  content: '✓';
+  position: absolute;
+  left: 12px;
+  top: 11px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+/* Galeri ile icerik arasi hava */
+.info-rich.rich + .service-gallery {
+  margin-top: 18px;
+}
+
 /* Bilgi sayfasi */
 .info-card .info-body {
   max-width: 720px;
