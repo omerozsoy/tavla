@@ -95,12 +95,25 @@ class MatchResult extends Model
         return MatBuilder::build($myLog, $matchLen, $whiteName, $blackName);
     }
 
-    /** İndirme için güvenli dosya adı: tavlatv-<oda|mac-id>.mat */
+    /** İndirme dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; ext hariç). */
     public function matFilename(): string
     {
-        $base = $this->room_code ?: ('mac-'.$this->id);
-        $safe = preg_replace('/[^A-Za-z0-9_-]/', '', (string) $base) ?: 'mac';
+        $clean = static function (?string $s, string $fb): string {
+            $s = str_replace(' ', '', (string) ($s ?? ''));
+            $s = preg_replace('/[^\p{L}\p{N}_-]/u', '', $s) ?? '';
 
-        return "tavlatv-{$safe}.mat";
+            return $s !== '' ? $s : $fb;
+        };
+        $mine = json_decode((string) $this->log, true);
+        $myHc = is_array($mine) ? ($mine['hc'] ?? null) : null;
+        $self = $clean($this->user?->nickname, 'Oyuncu');
+        $opp = $clean($this->opponent_name, 'Rakip');
+        // p1=beyaz, p2=siyah sirasi (GameLog ile ayni mantik).
+        [$p1, $p2] = $myHc === 'black' ? [$opp, $self] : [$self, $opp];
+        $date = optional($this->created_at)->format('d-m-Y');
+        $id = preg_replace('/[^A-Za-z0-9_-]/', '', (string) ($this->room_code ?: ('mac-'.$this->id))) ?: 'mac';
+        $parts = array_filter([$p1, $p2, $date, $id]);
+
+        return implode('_', $parts).'.mat';
     }
 }

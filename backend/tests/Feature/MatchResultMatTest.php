@@ -40,7 +40,11 @@ class MatchResultMatTest extends TestCase
         $this->assertStringContainsString('1 point match', $mat);
         $this->assertStringContainsString('8/5 6/5', $mat);
         $this->assertStringContainsString('24/21 13/11', $mat);
-        $this->assertStringContainsString('tavlatv-mac-'.$mr->id.'.mat', $mr->matFilename());
+        // Dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (nokta yok; tarih dinamik).
+        $fn = $mr->matFilename();
+        $this->assertStringContainsString('_Rakip_', $fn);
+        $this->assertStringEndsWith('_mac-'.$mr->id.'.mat', $fn);
+        $this->assertStringNotContainsString('tavlatv', $fn);
     }
 
     public function test_mattext_empty_when_no_log(): void

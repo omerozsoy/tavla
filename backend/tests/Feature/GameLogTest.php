@@ -53,8 +53,12 @@ class GameLogTest extends TestCase
             ],
         ])->assertOk();
 
-        $res = $this->getJson('/api/game-logs/MATUID/mat')->assertOk()
-            ->assertJsonPath('filename', 'tavlatv-MATUID.mat');
+        $res = $this->getJson('/api/game-logs/MATUID/mat')->assertOk();
+        // Dosya adı: <oyuncu1>_<oyuncu2>_<GG-AA-YYYY>_<oyunid>.mat (tarih dinamik).
+        $fn = $res->json('filename');
+        $this->assertStringStartsWith('Ömer_Bilgisayar_', $fn);
+        $this->assertStringEndsWith('_MATUID.mat', $fn);
+        $this->assertStringNotContainsString('tavlatv', $fn);
         $mat = $res->json('mat');
         $this->assertStringContainsString('; [Match ID "MATUID"]', $mat); // stabil matchId = uid
         $this->assertStringContainsString('1 point match', $mat);
@@ -200,7 +204,10 @@ class GameLogTest extends TestCase
         $this->assertStringContainsString('8/5 6/5', $mat);
         $this->assertStringContainsString('24/20 13/11', $mat);
         $this->assertStringContainsString('Wins 1 point and the match', $mat);
-        $this->assertSame('tavlatv-MAT001.mat', $log->matFilename());
+        $fn = $log->matFilename();
+        $this->assertStringStartsWith('Ömer_Bilgisayar_', $fn);
+        $this->assertStringEndsWith('_MAT001.mat', $fn);
+        $this->assertStringContainsString('_'.$log->created_at->format('d-m-Y').'_', $fn);
         // pvb -> bağlı sonuç kaydı yok.
         $this->assertTrue($log->relatedResults()->isEmpty());
     }
