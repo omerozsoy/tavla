@@ -17,10 +17,12 @@ class InfoPageResource extends Resource
 {
     protected static ?string $model = InfoPage::class;
 
-    // Yalnizca duzenlenebilir metin sayfalari; canli bilesen sekmeleri gizli.
+    // Duzenlenebilir metin sayfalari: Bilgi sekmeleri (Hakkinda/Hizmetler) + HUKUKI sayfalar
+    // (KVKK/gizlilik/cerez/kullanim/uyelik). Canli bilesen sekmeleri (rutbeler vb.) gizli.
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->whereIn('slug', ['about', 'services']);
+        return parent::getEloquentQuery()
+            ->whereIn('slug', array_merge(InfoPage::INFO_TAB_SLUGS, InfoPage::LEGAL_SLUGS));
     }
 
     protected static ?string $slug = 'bilgi-sayfalari';
@@ -47,9 +49,19 @@ class InfoPageResource extends Resource
     {
         return $form->schema([
             Forms\Components\TextInput::make('title')
-                ->label('Sekme başlığı')
-                ->helperText('Bilgi sayfasındaki sekme etiketi ve sayfa başlığı olarak kullanılır.')
+                ->label('Başlık')
+                ->helperText('Sayfa/sekme başlığı olarak kullanılır.')
                 ->required()
+                ->columnSpanFull(),
+            Forms\Components\TextInput::make('seo_title')
+                ->label('SEO Başlığı (opsiyonel)')
+                ->maxLength(160)
+                ->helperText('Arama sonuçlarında ve sekme başlığında görünür. Boşsa başlık kullanılır. (Özellikle hukuki sayfalar için.)')
+                ->columnSpanFull(),
+            Forms\Components\Textarea::make('seo_description')
+                ->label('SEO Açıklaması (opsiyonel)')
+                ->maxLength(320)->rows(2)
+                ->helperText('Arama sonuçlarındaki kısa açıklama (meta description).')
                 ->columnSpanFull(),
             Forms\Components\RichEditor::make('body')
                 ->label('İçerik')
@@ -106,7 +118,9 @@ class InfoPageResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')->label('Başlık')->searchable(),
                 Tables\Columns\TextColumn::make('slug')->label('Adres')
-                    ->formatStateUsing(fn ($state) => '/bilgi/'.self::urlSlug($state))
+                    ->formatStateUsing(fn ($state) => in_array($state, InfoPage::LEGAL_SLUGS, true)
+                        ? '/'.$state // hukuki sayfa kendi rotasinda (/bilgi ONEKI YOK)
+                        : '/bilgi/'.self::urlSlug($state))
                     ->badge(),
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),

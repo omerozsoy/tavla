@@ -2,25 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\LegalPage;
+use App\Models\InfoPage;
 
+// Hukuki sayfalar (KVKK/gizlilik/cerez/kullanim/uyelik) info_pages tablosunda tutulur ve
+// admin panelde "Bilgi Sayfalari" altindan duzenlenir. Bu controller yalniz hukuki slug'lari
+// (InfoPage::LEGAL_SLUGS) herkese acik olarak servis eder.
 class LegalPageController extends Controller
 {
-    // Herkese acik: aktif hukuki sayfalarin listesi (footer/menu icin — slug + baslik).
     public function index()
     {
-        $pages = LegalPage::where('active', true)
+        $pages = InfoPage::whereIn('slug', InfoPage::LEGAL_SLUGS)
+            ->where('published', true)
             ->orderBy('sort')->orderBy('id')
             ->get(['slug', 'title'])
-            ->map(fn (LegalPage $p) => ['slug' => $p->slug, 'title' => $p->title]);
+            ->map(fn (InfoPage $p) => ['slug' => $p->slug, 'title' => $p->title]);
 
         return response()->json(['pages' => $pages]);
     }
 
-    // Herkese acik: tek hukuki sayfa (aktifse). Govde HTML + SEO alanlari.
     public function show(string $slug)
     {
-        $p = LegalPage::where('slug', $slug)->where('active', true)->first();
+        if (! in_array($slug, InfoPage::LEGAL_SLUGS, true)) {
+            return response()->json(['page' => null], 404);
+        }
+        $p = InfoPage::where('slug', $slug)->where('published', true)->first();
         if (! $p) {
             return response()->json(['page' => null], 404);
         }
