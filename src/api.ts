@@ -890,6 +890,49 @@ export async function getEntryPopup(): Promise<EntryPopup | null> {
   return d.popup
 }
 
+// ---- Hukuki sayfalar + cerez (KVKK/gizlilik/cerez/kullanim/uyelik) ----
+export interface LegalPageRef {
+  slug: string
+  title: string
+}
+export interface LegalPage {
+  slug: string
+  title: string
+  seo_title?: string | null
+  seo_description?: string | null
+  body?: string | null
+}
+export async function listLegalPages(): Promise<LegalPageRef[]> {
+  const d = await req<{ pages: LegalPageRef[] }>('/legal-pages')
+  return d.pages
+}
+export async function getLegalPage(slug: string): Promise<LegalPage | null> {
+  try {
+    const d = await req<{ page: LegalPage | null }>(`/legal-pages/${encodeURIComponent(slug)}`)
+    return d.page
+  } catch {
+    return null
+  }
+}
+
+export interface CookieRow {
+  name: string
+  provider?: string | null
+  purpose?: string | null
+  category: 'necessary' | 'functional' | 'analytics' | 'marketing'
+  duration?: string | null
+}
+export async function getCookies(): Promise<CookieRow[]> {
+  const d = await req<{ cookies: CookieRow[] }>('/cookies')
+  return d.cookies
+}
+
+// Cerez onay yapilandirmasi (banner/modal metin + surum + script ID'leri). Bkz src/consent.ts
+export async function getCookieConsent(): Promise<import('./consent').ConsentConfig> {
+  const d = await req<{ consent: import('./consent').ConsentConfig }>('/cookie-consent')
+  return d.consent
+}
+
 // ---- Yonetim paneli (admin) ----
 export interface AdminUser {
   id: number
@@ -1458,6 +1501,7 @@ export async function reportRating(
   roomCode?: string | null, // online oda kodu -> backend friendly odayi kesin puansiz yapar
   extra?: { gammons?: number; backgammons?: number; min_win_prob?: number | null; ach_flags?: string[] },
   mat?: string | null, // .mat (gnubg NATIVE luck V1 — backend analyse match ile per-oyuncu MWC%)
+  opponentLuck?: number | null, // rakibin HAM luck'i (yalniz PvB: bot; online'da rakip kendi satirini yazar)
 ): Promise<{
   rating: number
   achievements?: UnlockedAchievement[]
@@ -1482,6 +1526,7 @@ export async function reportRating(
       match_type: matchType,
       pr: pr ?? null,
       luck: luck ?? null,
+      opponent_luck: opponentLuck ?? null,
       score_self: scoreSelf ?? null,
       score_opp: scoreOpp ?? null,
       opponent_name: opponentName ?? null,
