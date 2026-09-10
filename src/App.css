@@ -11970,7 +11970,8 @@ button.acct-row:hover:not(:disabled) {
   grid-template-columns: 38px minmax(72px, 170px) 1fr 66px 74px 48px 62px;
   align-items: center;
   gap: 6px;
-  padding: 8px 10px;
+  /* İlk 10 tek ekrana sığsın diye satırlar kompakt (scroll yok). */
+  padding: 5px 10px;
 }
 /* Bayrak hucresi: isim kolonu SABIT genislikte -> bayraklar tum satirlarda ayni
    kolonda hizalanir; isimden sonra tutarli bir bosluk kalir. Ic bayrak null olsa

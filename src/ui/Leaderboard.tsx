@@ -71,8 +71,8 @@ export default function Leaderboard({ currentName, onClose }: Props) {
             rating={r.rating}
             avatar={r.avatar}
             frame={r.frame}
-            size={30}
-            rankSize="md"
+            size={26}
+            rankSize="sm"
             premium={r.premium}
           />
         </span>
