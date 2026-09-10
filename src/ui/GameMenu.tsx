@@ -1,7 +1,6 @@
 import { useT } from '../i18n'
 import type { BoardDir } from './boardDirection'
 import { Icon } from './Icon'
-import { Button } from '@/components/ui/button'
 
 interface Row {
   label: string
@@ -57,15 +56,25 @@ export default function GameMenu(p: Props) {
   return (
     <>
       {p.open && <div className="gm-backdrop" onClick={p.onClose} />}
-      <div className={`game-menu ${p.open ? 'open' : ''}`}>
+      <div className={`game-menu ${p.open ? 'open' : ''}`} role="dialog" aria-modal="true">
+        <div className="gm-head">
+          <span className="gm-title">{t('gm.title')}</span>
+          <button className="gm-close" onClick={p.onClose} aria-label={t('common.close')}>
+            <Icon name="x" size={18} />
+          </button>
+        </div>
         <div className="gm-rows">
           {rows.map((r) => (
-            <Button key={r.label} variant="ghost" className="w-full justify-between" onClick={r.toggle}>
+            <button key={r.label} type="button" className="gm-row" onClick={r.toggle}>
               <span className="gm-label">{r.label}</span>
-              <span className={`gm-state ${r.value ? 'val' : r.on ? 'on' : 'off'}`}>
-                {r.value ?? (r.on ? t('setup.on') : t('setup.off'))}
-              </span>
-            </Button>
+              {r.value != null ? (
+                <span className="gm-chip">{r.value}</span>
+              ) : (
+                <span className={`gm-switch ${r.on ? 'on' : 'off'}`} aria-hidden="true">
+                  <span className="gm-knob" />
+                </span>
+              )}
+            </button>
           ))}
         </div>
         {/* Turnuvalar/Arkadaşlar/Mağaza KALDIRILDI — oyun sırasında navigasyon yok */}
@@ -77,7 +86,7 @@ export default function GameMenu(p: Props) {
               p.onLobby()
             }}
           >
-            <span className="gm-circle-ic"><Icon name="home" size={22} /></span>
+            <span className="gm-circle-ic"><Icon name="home" size={18} /></span>
             <span className="gm-circle-lbl">{t('gm.lobby')}</span>
           </button>
           {p.canResign && (
@@ -88,7 +97,7 @@ export default function GameMenu(p: Props) {
                 p.onResign()
               }}
             >
-              <span className="gm-circle-ic"><Icon name="flag" size={22} /></span>
+              <span className="gm-circle-ic"><Icon name="flag" size={18} /></span>
               <span className="gm-circle-lbl">{t('resign.button')}</span>
             </button>
           )}

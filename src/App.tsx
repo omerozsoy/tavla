@@ -7016,7 +7016,7 @@ export default function App() {
           aria-label={t('gm.title')}
           title={t('gm.title')}
         >
-          <Icon name="menu" size={30} />
+          <Icon name="menu" size={22} />
         </button>
       </div>
 

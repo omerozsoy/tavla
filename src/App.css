@@ -7068,6 +7068,8 @@ html.fs-active .account-bar {
 }
 
 /* ---- Oyun-ici menu (Galaxy tarzi, sagda) ---- */
+/* Oyun-içi menü açma düğmesi: koyu sahneye uyan cam efektli, ince kare düğme
+   (eski kocaman turuncu blok yerine). Hover'da aksan dolgu. */
 .game-ham {
   flex: none;
   align-self: center;
@@ -7075,16 +7077,23 @@ html.fs-active .account-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 58px;
-  height: 82px;
-  border: none;
-  border-radius: 12px; /* site stili: hafif yuvarlak kose (token scope'tan bagimsiz literal) */
-  background: linear-gradient(135deg, var(--tv-brick-light), var(--tv-brick));
+  width: 46px;
+  height: 46px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 13px;
+  background: rgba(18, 22, 40, 0.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   color: var(--tv-cream);
   cursor: pointer;
-  box-shadow: none; /* flat */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
 }
-/* Mobilde (game-area kolon olabilir) hamburger board altÄ±na yÄ±ÄŸÄ±lmasÄ±n -> fixed */
+/* Mobilde (game-area kolon olabilir) hamburger board altina yigilmasin -> fixed */
 @media (max-width: 900px) {
   .game-ham {
     position: fixed;
@@ -7094,7 +7103,15 @@ html.fs-active .account-bar {
   }
 }
 .game-ham:hover {
-  filter: brightness(1.08);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  transform: translateY(-1px);
+}
+@media (max-width: 900px) {
+  .game-ham:hover {
+    transform: translateY(-50%);
+  }
 }
 .gm-backdrop {
   position: fixed;
@@ -7102,57 +7119,142 @@ html.fs-active .account-bar {
   z-index: 120;
   background: rgba(0, 0, 0, 0.35);
 }
+/* Oyun-içi menü: koyu sahneye uyan cam efektli sağ drawer (eski tek-renk kırmızı
+   slab yerine). Başlık + kapat, kart-satır toggle'lar, altta aksiyonlar. */
 .game-menu {
   position: fixed;
   top: 0;
   right: 0;
   height: 100%;
-  width: min(360px, 88vw);
+  width: min(340px, 88vw);
   z-index: 130;
-  background: linear-gradient(180deg, var(--tv-brick), #7a2a20);
-  box-shadow: -8px 0 28px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, rgba(20, 24, 40, 0.97), rgba(12, 15, 26, 0.98));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: -14px 0 40px rgba(0, 0, 0, 0.55);
   transform: translateX(102%);
-  transition: transform 0.25s ease;
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 22px 18px;
+  gap: 16px;
+  padding: 16px 15px calc(16px + env(safe-area-inset-bottom));
   overflow-y: auto;
 }
 .game-menu.open {
   transform: translateX(0);
 }
+/* Başlık şeridi */
+.gm-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 2px 13px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.gm-title {
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  color: var(--tv-white);
+}
+.gm-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+.gm-close:hover {
+  background: rgba(255, 255, 255, 0.13);
+  color: #fff;
+}
 .gm-rows {
   display: flex;
   flex-direction: column;
+  gap: 8px;
 }
+/* Ayar satırı: koyu yüzeyli kart (native buton — yapısal kontrol) */
 .gm-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 15px 6px;
-  background: none;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
   color: var(--tv-white);
   cursor: pointer;
-  font-size: 1.05rem;
+  text-align: left;
+  font-size: 0.98rem;
   font-weight: 400;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
 }
-.gm-state {
-  font-weight: 400;
-  font-size: 0.95rem;
+.gm-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.13);
 }
-/* Ac/Kapa disi (metin) satirlar: Oyun Yonu gibi deger gosterenler */
-.gm-state.val {
-  color: var(--accent);
-  font-weight: 600;
+.gm-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.gm-state.on {
-  color: #8effb0;
+/* Aç/Kapa -> gerçek toggle switch */
+.gm-switch {
+  flex: none;
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease;
 }
-.gm-state.off {
-  color: var(--muted);
+.gm-switch .gm-knob {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  transition: left 0.18s ease;
+}
+.gm-switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.gm-switch.on .gm-knob {
+  left: 21px;
+}
+/* Değer satırı (Oyun Yönü gibi): aksan chip */
+.gm-chip {
+  flex: none;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: color-mix(in srgb, var(--accent) 45%, #ffffff);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
 }
 /* Oyun-ici hizli navigasyon koprusu (Turnuva / Arkadas / Magaza) â€” drawer kiremit
    zeminde beyaz metin/ikon (accent kiremit zemine karisir). Overlay olarak acilir,
@@ -7183,11 +7285,12 @@ html.fs-active .account-bar {
 .gm-nav-btn:hover {
   opacity: 0.82;
 }
-/* Alt aksiyonlar: Lobi + Pes Et â€” temiz PILL dÃ¼ÄŸmeler (bÃ¼yÃ¼k daireler kaldÄ±rÄ±ldÄ±) */
+/* Alt aksiyonlar: Lobi (birincil aksan) + Pes Et (nötr, hover'da destructive) */
 .gm-actions {
   display: flex;
-  gap: 12px;
-  padding-top: 16px;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 6px;
 }
 .gm-circle {
   flex: 1;
@@ -7196,27 +7299,40 @@ html.fs-active .account-bar {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 50px;
-  border-radius: var(--radius-lg);
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.24);
+  min-height: 48px;
+  padding: 0 12px;
+  border-radius: 12px;
+  border: 1px solid transparent;
   color: var(--tv-white);
   cursor: pointer;
-  font-weight: 400;
-  font-size: 1rem;
-  transition: filter 0.15s, background 0.15s;
+  font-weight: 500;
+  font-size: 0.95rem;
+  transition:
+    filter 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.1s ease;
+}
+.gm-circle:active {
+  transform: translateY(1px);
 }
 .gm-circle.lobby {
-  background: var(--tv-cream);
+  background: var(--accent);
   border-color: transparent;
-  color: var(--tv-brick);
+  color: var(--on-accent);
 }
 .gm-circle.resign {
-  background: rgba(0, 0, 0, 0.26);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.9);
 }
-.gm-circle:hover {
+.gm-circle.lobby:hover {
   filter: brightness(1.06);
+}
+.gm-circle.resign:hover {
+  background: rgba(214, 64, 52, 0.16);
+  border-color: rgba(214, 64, 52, 0.45);
+  color: #ff9a90;
 }
 .gm-circle-ic {
   display: inline-flex;
