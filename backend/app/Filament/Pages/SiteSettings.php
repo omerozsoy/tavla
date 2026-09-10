@@ -43,6 +43,8 @@ class SiteSettings extends Page implements HasForms
             'reward_normal' => Setting::int('reward_normal', 25),
             'reward_premium' => Setting::int('reward_premium', 50),
             'commission_pct' => Setting::int('commission_pct', 5),
+            'pr_min_matches' => Setting::int('pr_min_matches', 10),
+            'pr_min_decisions' => Setting::int('pr_min_decisions', 500),
         ]);
     }
 
@@ -75,6 +77,16 @@ class SiteSettings extends Page implements HasForms
                             ->numeric()->required()->minValue(0)->maxValue(90)->suffix('%')
                             ->helperText('Kazanan stake × (1 − oran) alır; fark platforma (Komisyonlar ledger). 0 = kapalı.'),
                     ]),
+                Section::make('PR Sıralaması (Career PR)')
+                    ->description('Bir oyuncunun PR Sıralaması leaderboard’una girebilmesi için gereken asgari koşullar. İKİ şart da sağlanmalı.')
+                    ->schema([
+                        TextInput::make('pr_min_matches')->label('Minimum analiz edilmiş maç')
+                            ->numeric()->required()->minValue(1)->maxValue(1000)
+                            ->helperText('Varsayılan 10. Tek iyi maçla zirveye çıkmayı engeller.'),
+                        TextInput::make('pr_min_decisions')->label('Minimum analiz edilmiş karar')
+                            ->numeric()->required()->minValue(1)->maxValue(100000)
+                            ->helperText('Varsayılan 500. Yeterli karar örneklemi olmadan sıralamaya girilmez.'),
+                    ])->columns(2),
             ])
             ->statePath('data');
     }
@@ -82,7 +94,7 @@ class SiteSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct'] as $k) {
+        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'pr_min_matches', 'pr_min_decisions'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }

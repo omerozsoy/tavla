@@ -40,6 +40,35 @@ class PlayerStatisticsService
                 'categories' => $this->safePooled($user->id, $period),
             ],
             'wxp' => $this->wxpBlock($user),
+            // Career PR (PR Sıralaması): oyuncunun havuzlanmis kariyer PR'ı + leaderboard uygunlugu.
+            'career' => $this->careerBlock($user),
+        ];
+    }
+
+    /**
+     * Career PR bloğu: havuzlanmis kariyer PR (tam hassasiyet) + analiz edilmis maç/karar +
+     * PR Sıralaması uygunluk durumu ve eksik miktar. Aggregate users kolonlarindan (cache) okunur.
+     *
+     * @return array{pr: ?float, matches: int, decisions: int, min_matches: int, min_decisions: int, eligible: bool, matches_needed: int, decisions_needed: int}
+     */
+    private function careerBlock(User $user): array
+    {
+        $hasCol = \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr');
+        $pr = $hasCol ? $user->career_pr : null;
+        $m = (int) ($user->career_pr_matches ?? 0);
+        $d = (int) ($user->career_pr_decisions ?? 0);
+        $minM = CareerPrService::minMatches();
+        $minD = CareerPrService::minDecisions();
+
+        return [
+            'pr' => $pr !== null ? (float) $pr : null,
+            'matches' => $m,
+            'decisions' => $d,
+            'min_matches' => $minM,
+            'min_decisions' => $minD,
+            'eligible' => $pr !== null && $m >= $minM && $d >= $minD,
+            'matches_needed' => max(0, $minM - $m),
+            'decisions_needed' => max(0, $minD - $d),
         ];
     }
 

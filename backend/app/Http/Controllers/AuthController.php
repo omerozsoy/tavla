@@ -635,6 +635,16 @@ class AuthController extends Controller
             ]);
         }
 
+        // Career PR (PR Sıralaması) aggregate'ini bu oyuncu icin GÜNCELLE (tek gruplu sorgu;
+        // maç PR'larini ortalamaz, ham havuzlar -> bkz CareerPrService). Best-effort.
+        try {
+            app(\App\Services\CareerPrService::class)->recalc($user);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Career PR recalc failed', [
+                'user_id' => $user->id, 'err' => $e->getMessage(),
+            ]);
+        }
+
         // Basarim (achievement) motoru — ayri, bagimsiz akis. Sayaclari gunceller + hak
         // edilen rozetleri acar. Analiz sonrasi calisir (log parse edilmis olur). Asla
         // mac akisini kirmaz: hata olursa sessizce yut + logla. Yeni acilanlar UI'a doner.
@@ -832,6 +842,14 @@ class AuthController extends Controller
             return;
         }
         $row->save();
+        // PR totalleri degisti -> bu oyuncunun Career PR aggregate'ini yenile (best-effort).
+        try {
+            if ($u = User::find($row->user_id)) {
+                app(\App\Services\CareerPrService::class)->recalc($u);
+            }
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Career PR recalc (enrich) failed', ['user_id' => $row->user_id, 'err' => $e->getMessage()]);
+        }
         // Artık log var -> gnubg PR/luck (V1) arka plan analizini tetikle (pr_mode açıksa).
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)) {
             try {
@@ -1094,6 +1112,42 @@ class AuthController extends Controller
         return response()->json(['players' => $rows]);
     }
 
+    // Herkese acik: PR SIRALAMASI (Career PR). Havuzlanmis PR (dusuk=iyi). Asgari maç + karar
+    // sartini saglayan oyuncular; career_pr ASC (tam hassasiyet), esitlikte cok karar/maç önce.
+    public function prLeaderboard(Request $request)
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
+            return response()->json(['players' => [], 'min_matches' => 0, 'min_decisions' => 0]);
+        }
+        $limit = min(100, max(1, (int) $request->query('limit', 10)));
+        $minM = \App\Services\CareerPrService::minMatches();
+        $minD = \App\Services\CareerPrService::minDecisions();
+
+        $users = User::whereNotNull('career_pr')
+            ->where('career_pr_matches', '>=', $minM)
+            ->where('career_pr_decisions', '>=', $minD)
+            ->orderBy('career_pr', 'asc')                 // dusuk PR = iyi -> 1. sira
+            ->orderByDesc('career_pr_decisions')          // esitlik: daha cok karar
+            ->orderByDesc('career_pr_matches')            // sonra daha cok maç
+            ->limit($limit)
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'career_pr', 'career_pr_matches', 'career_pr_decisions', 'plan', 'plan_until']);
+
+        $rows = $users->values()->map(fn ($u, $i) => [
+            'rank' => $i + 1,
+            'id' => $u->id,
+            'name' => $u->nickname ?: $u->first_name ?: 'Oyuncu',
+            'avatar' => $u->avatar,
+            'frame' => $u->avatar_frame,
+            'country' => $u->country,
+            'career_pr' => $u->career_pr, // TAM hassasiyet (UI 2 ondalik gosterir; siralama full)
+            'matches' => (int) $u->career_pr_matches,
+            'decisions' => (int) $u->career_pr_decisions,
+            'premium' => $u->plan_active !== 'free',
+        ]);
+
+        return response()->json(['players' => $rows, 'min_matches' => $minM, 'min_decisions' => $minD]);
+    }
+
     // Herkese acik oyuncu profili: temel istatistik + son mac formu (W/L)
     public function publicProfile(Request $request, User $user)
     {
@@ -1117,6 +1171,10 @@ class AuthController extends Controller
             'games' => $user->games_played ?? 0,
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'rank' => $rank,
+            // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
+            'career_pr' => \Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr') ? $user->career_pr : null,
+            'career_pr_matches' => (int) ($user->career_pr_matches ?? 0),
+            'career_pr_decisions' => (int) ($user->career_pr_decisions ?? 0),
             'form' => $form,
             'badges' => $user->badges ?? [],
             'featured' => app(\App\Services\Achievements\AchievementService::class)->resolveFeatured($user->featured_badges),

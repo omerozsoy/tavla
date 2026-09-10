@@ -292,6 +292,24 @@ export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 
   return data.players
 }
 
+// PR Sıralaması (Career PR): havuzlanmis PR (dusuk=iyi) + analiz edilmis maç/karar.
+export interface PrLeaderRow {
+  rank: number
+  id?: number
+  name: string
+  avatar?: string | null
+  frame?: string | null
+  country?: string | null
+  career_pr: number // TAM hassasiyet (UI 2 ondalik gosterir)
+  matches: number
+  decisions: number
+  premium?: boolean
+}
+export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[]; minMatches: number; minDecisions: number }> {
+  const d = await req<{ players: PrLeaderRow[]; min_matches: number; min_decisions: number }>(`/leaderboard/pr?limit=${limit}`)
+  return { players: d.players, minMatches: d.min_matches, minDecisions: d.min_decisions }
+}
+
 // ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk) ----
 export interface MenuOverride {
   key: string
@@ -1694,6 +1712,17 @@ export interface PerformanceStats {
     losses: number
     total_matches: number
     win_rate: number
+  }
+  // Career PR (PR Sıralaması): havuzlanmis kariyer PR + leaderboard uygunlugu.
+  career?: {
+    pr: number | null
+    matches: number
+    decisions: number
+    min_matches: number
+    min_decisions: number
+    eligible: boolean
+    matches_needed: number
+    decisions_needed: number
   }
 }
 export async function performanceStats(period: MedianFilter = 'all'): Promise<PerformanceStats> {
