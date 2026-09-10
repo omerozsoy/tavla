@@ -14,6 +14,7 @@ import {
   type ClubFull,
 } from '../api'
 import AvatarFrame from './AvatarFrame'
+import PremiumPill from './PremiumPill'
 import PublicProfile from './PublicProfile'
 import { Button } from '@/components/ui/button'
 
@@ -151,6 +152,7 @@ export default function Clubs({ onClose }: Props) {
                     <span className="ct-name">
                       {m.nickname}
                       {m.role === 'owner' && <Icon name="crown" size={12} />}
+                      {m.premium && <PremiumPill style={{ marginLeft: 5 }} />}
                     </span>
                   </button>
                 </td>

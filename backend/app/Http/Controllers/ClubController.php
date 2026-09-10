@@ -147,6 +147,7 @@ class ClubController extends Controller
                 'nickname' => $u?->nickname ?? '—',
                 'avatar' => $u?->avatar,
                 'rating' => $u?->rating ?? 1500,
+                'premium' => $u ? $u->plan_active !== 'free' : false, // ücretli plan -> PREMIUM
                 'role' => $m->role,
                 'points' => $m->points,
                 'wins' => $m->wins,

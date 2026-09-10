@@ -592,6 +592,7 @@ class TournamentController extends Controller
             'name' => $user->nickname ?: $user->first_name ?: 'Oyuncu',
             'rating' => $user->rating ?? 1500,
             'avatar' => $user->avatar,
+            'premium' => $user->plan_active !== 'free', // kayıt anındaki premium (snapshot)
         ];
         $t->players = $players;
         $t->save();

@@ -300,7 +300,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
             {active.players && active.players.length > 0 ? (
               active.players.map((p) => (
                 <div key={p.id} className="tourn-prow">
-                  <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" />
+                  <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} size={30} rankSize="md" premium={p.premium} />
                   <b>{p.rating}</b>
                 </div>
               ))
