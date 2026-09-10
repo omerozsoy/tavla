@@ -875,6 +875,21 @@ export async function listAdSlots(): Promise<AdSlot[]> {
   return d.ads
 }
 
+// Siteye ilk girildiginde gosterilen KARE pop-up ("Giris Kare Banner"). Yayindaki ilki doner.
+export interface EntryPopup {
+  id: number
+  image: string
+  image_mobile?: string | null
+  link?: string | null
+  frequency: 'session' | 'daily' | 'always' // gosterim sikligi (frontend gate)
+  audience: 'all' | 'guest' | 'member' // hedef kitle (login durumuna gore gate)
+  v: number // surum (updated_at ts) — gorsel degisince yeniden goster
+}
+export async function getEntryPopup(): Promise<EntryPopup | null> {
+  const d = await req<{ popup: EntryPopup | null }>('/entry-popup')
+  return d.popup
+}
+
 // ---- Yonetim paneli (admin) ----
 export interface AdminUser {
   id: number

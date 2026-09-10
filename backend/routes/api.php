@@ -38,6 +38,7 @@ Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index'
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri
+Route::get('/entry-popup', [\App\Http\Controllers\EntryPopupController::class, 'index']); // siteye ilk giriste kare pop-up
 Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index']); // fiziksel magaza katalogu (acik)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
