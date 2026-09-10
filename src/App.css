@@ -8236,13 +8236,10 @@ button.acct-row:hover:not(:disabled) {
      surukleme sirasinda metin secilmesin. */
   touch-action: pan-y;
   user-select: none;
-  /* TUM slaytlar icin TEK sabit yukseklik. Yazili/yazisiz banner ve farkli metin
-     uzunlugu fark etmez -> slider hep ayni boyda, gecislerde ziplama olmaz. */
-  --bs-h: clamp(460px, 62vh, 680px);
-  /* Site genisligiyle ayni: edge-to-edge DEGIL, icerik kolonu (--lobby-w) kadar,
-     ortali. Alttaki takvim/panel/dashboard ile birebir hizali. */
+  /* Genislik max 1120px, ortali. Yukseklik SABIT DEGIL: viewer 163:67 en-boy oranini
+     korur (bkz .bs-viewer aspect-ratio) -> 1120px'de ~460px; gorsel crop/stretch olmaz. */
   width: 100%;
-  max-width: var(--lobby-w);
+  max-width: 1120px;
   margin: 0 auto; /* alt 22px margin kaldirildi (kullanici) */
   overflow: hidden;
   /* Noktalarin altindaki serit kaldirildi: gorsel viewer'i tam kaplar, alt nokta
@@ -8257,7 +8254,10 @@ button.acct-row:hover:not(:disabled) {
    ustune mutlak biner. Yatay kayma .banner-slider overflow:hidden ile kirpilir. */
 .bs-viewer {
   position: relative;
-  height: var(--bs-h);
+  /* Yukseklik GENISLIGE gore otomatik: banner en-boy orani 163:67 korunur.
+     1120px genislikte 1120 x 67/163 ≈ 460px. Sabit yukseklik yok -> crop/stretch yok. */
+  width: 100%;
+  aspect-ratio: 163 / 67;
 }
 .bs-slide {
   width: 100%;
@@ -8292,7 +8292,9 @@ button.acct-row:hover:not(:disabled) {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* Crop YOK: gorsel tam sigar (163:67 gorsel 163:67 viewer'i birebir doldurur,
+     farkli oranda ise letterbox olur ama asla kesilmez/stretch olmaz). */
+  object-fit: contain;
 }
 
 /* Sol metin paneli (duz sicak zemin, koyu ink metin) */
@@ -8412,7 +8414,7 @@ button.acct-row:hover:not(:disabled) {
 /* Sag-sol oklar: HALKASIZ, beyaz, buyuk (gorsel uzerine biner) */
 .bs-arrow {
   position: absolute;
-  top: calc(var(--bs-h) / 2); /* oklarÄ± GORSEL merkezine hizala (alttaki noktalar sayilmaz) */
+  top: 50%; /* viewer icinde dikeyde ortali (viewer = 163:67 gorsel alani) */
   transform: translateY(-50%);
   z-index: 3;
   display: flex;

@@ -186,23 +186,23 @@ export default function BannerSlider({ onOpen }: Props) {
       onPointerUp={onPointerUp}
       onPointerCancel={() => (dragX.current = null)}
     >
-      {/* Gorus penceresi: mevcut slayt akista (yuksekligi verir), giren slayt ustune mutlak biner */}
+      {/* Gorus penceresi: 163:67 aspect-ratio ile yuksekligi verir; giren slayt ustune mutlak biner */}
       <div className="bs-viewer">
         {renderSlide(banners[current], 'current')}
         {anim && renderSlide(banners[anim.to], 'incoming')}
-      </div>
 
-      {/* Sag-sol beyaz oklar (halkasiz) */}
-      {multi && (
-        <>
-          <button type="button" className="bs-arrow bs-arrow-prev" onClick={prev} aria-label="Önceki banner">
-            <Icon name="caret-left" size={46} weight="bold" />
-          </button>
-          <button type="button" className="bs-arrow bs-arrow-next" onClick={next} aria-label="Sonraki banner">
-            <Icon name="caret-right" size={46} weight="bold" />
-          </button>
-        </>
-      )}
+        {/* Sag-sol beyaz oklar (halkasiz) — viewer icinde, dikeyde ortali */}
+        {multi && (
+          <>
+            <button type="button" className="bs-arrow bs-arrow-prev" onClick={prev} aria-label="Önceki banner">
+              <Icon name="caret-left" size={46} weight="bold" />
+            </button>
+            <button type="button" className="bs-arrow bs-arrow-next" onClick={next} aria-label="Sonraki banner">
+              <Icon name="caret-right" size={46} weight="bold" />
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Noktalar: slider'in ALTINDA (ortali) */}
       {multi && (
