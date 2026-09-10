@@ -122,6 +122,8 @@ import Tournaments from './ui/Tournaments'
 import BannerSlider from './ui/BannerSlider'
 import { AdStrip } from './ui/AdStrip'
 import { EntryPopupModal } from './ui/EntryPopupModal'
+import { CookieConsent, OPEN_LEGAL, OPEN_COOKIE_PREFS } from './ui/CookieConsent'
+import { LegalView } from './ui/LegalView'
 import SoloStakes from './ui/SoloStakes'
 import ErrorJournal from './ui/ErrorJournal'
 import MatchAnalytics from './ui/MatchAnalytics'
@@ -526,6 +528,7 @@ export default function App() {
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
+  const [legalSlug, setLegalSlug] = useState<string | null>(null) // hukuki sayfa (KVKK/gizlilik/...)
   const [infoTab, setInfoTab] = useState<InfoTab>('about') // aktif Bilgi sekmesi (URL'e bagli)
   const [achOpen, setAchOpen] = useState(false) // Basarimlar (rozet galerisi)
   const [friendSetupOpen, setFriendSetupOpen] = useState(false) // "Ozel Oyun Olustur" (arkadasinla oyna)
@@ -642,7 +645,9 @@ export default function App() {
   // --- URL yonlendirme (hash tabanli) ---
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
-  const currentSlug = showAuth
+  const currentSlug = legalSlug // hukuki sayfa (slug == URL: kvkk, gizlilik-politikasi, ...)
+    ? legalSlug
+    : showAuth
     ? authForgot
       ? 'sifremi-unuttum'
       : 'giris'
@@ -801,6 +806,17 @@ export default function App() {
       window.removeEventListener('online', onOnline)
     }
   }, [user?.id]) // stabil kimlik -> döngü yok (bkz heartbeat-ping-kacak-dongu)
+
+  // Çerez banner'ı / hukuki sayfalar: "tavla:open-legal" olayı -> hukuki sayfayı aç
+  // (App'e state eklemeden footer/banner bağlantılarından tetiklenir).
+  useEffect(() => {
+    const onOpenLegal = (e: Event) => {
+      const slug = (e as CustomEvent<{ slug?: string }>).detail?.slug
+      if (slug) setLegalSlug(slug)
+    }
+    window.addEventListener(OPEN_LEGAL, onOpenLegal)
+    return () => window.removeEventListener(OPEN_LEGAL, onOpenLegal)
+  }, [])
 
   // popstate closure'i icin GUNCEL "aktif oyun var mi" (hasActiveGame render-sonrasi
   // hesaplaniyor; ref ile son degeri applyFromPath'e tasiyoruz).
@@ -1017,6 +1033,13 @@ export default function App() {
         case 'sifremi-unuttum': // Sifremi unuttum = Auth'un forgot alt-modu, artik kendi URL'si
           setShowAuth(true)
           setAuthForgot(true)
+          break
+        case 'kvkk':
+        case 'gizlilik-politikasi':
+        case 'cerez-politikasi':
+        case 'kullanim-kosullari':
+        case 'uyelik-sozlesmesi':
+          setLegalSlug(root) // hukuki sayfa (slug == URL)
           break
         default:
           break // ana sayfa (bos path)
@@ -3235,7 +3258,10 @@ export default function App() {
         botRating,
         match.target,
         prRef('white'),
-        prLuckRef.current.white - prLuckRef.current.black, // goreceli sans (zero-sum)
+        // MUTLAK kendi-renk (insan=beyaz) HAM luck'i -> MatchResult ekraniyla AYNI semantik.
+        // (Eskiden white-black goreceli gonderiliyordu; bot luck'i hicbir yere yazilmadigindan
+        //  "Mac Analizleri"nde AI'nin sansi HIC gozukmuyordu.)
+        prLuckRef.current.white,
         match.score.white,
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
@@ -3245,6 +3271,8 @@ export default function App() {
         'ai', // match_type -> yapay zeka
         null, // room_code yok
         buildAchExtra(), // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
+        null, // mat yok (pvb'de gnubg NATIVE MWC job'i calismaz -> ham luck gosterilir)
+        prLuckRef.current.black, // rakip (bot) HAM luck'i -> opponent_luck kolonuna yazilir
       ]
       // ONLINE ile AYNI DAYANIKLILIK: 3 deneme + basarisizsa pending-retry (acilis/online'da
       // tekrar denenir). Onceki `.catch(()=>{})` ag hatasinda AI macini SESSIZCE kaybediyordu.
@@ -5748,6 +5776,7 @@ export default function App() {
   function closeAllPages() {
     closeMenuPages()
     setSetup(null)
+    setLegalSlug(null)
   }
   const goPage = (open: () => void) => {
     // Aktif oyundayken menu sayfalari (Magaza, Turnuvalar, Liderlik, Cerceve Galerisi
@@ -5909,6 +5938,19 @@ export default function App() {
       { key: 'info-scoring', labelKey: 'info.tab.scoring', onClick: () => openInfoTab('scoring') },
       { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
       { key: 'info-fair', labelKey: 'fair.title', onClick: () => openInfoTab('fair') },
+    ],
+  })
+  // 5. kolon: "Yasal" — hukuki sayfalar (DB'den) + Cerez Tercihleri (banner/modal).
+  const openLegalPage = (slug: string) => goPage(() => setLegalSlug(slug))
+  footerColumns.push({
+    titleKey: 'foot.legal',
+    items: [
+      { key: 'legal-kvkk', labelKey: '', label: 'KVKK Aydınlatma Metni', onClick: () => openLegalPage('kvkk') },
+      { key: 'legal-gizlilik', labelKey: '', label: 'Gizlilik Politikası', onClick: () => openLegalPage('gizlilik-politikasi') },
+      { key: 'legal-cerez', labelKey: '', label: 'Çerez Politikası', onClick: () => openLegalPage('cerez-politikasi') },
+      { key: 'legal-kullanim', labelKey: '', label: 'Kullanım Koşulları', onClick: () => openLegalPage('kullanim-kosullari') },
+      { key: 'legal-uyelik', labelKey: '', label: 'Üyelik Sözleşmesi', onClick: () => openLegalPage('uyelik-sozlesmesi') },
+      { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
   })
 
@@ -6735,6 +6777,10 @@ export default function App() {
         {menuOverlays}
         {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
         <EntryPopupModal loggedIn={!!user} />
+        {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
+        <CookieConsent />
+        {/* Hukuki sayfa (KVKK/gizlilik/cerez/kullanim/uyelik) — footer/banner ile acilir */}
+        {legalSlug && <LegalView slug={legalSlug} onClose={() => setLegalSlug(null)} />}
       </>
     )
   }

@@ -274,6 +274,8 @@ class AuthController extends Controller
             'match_type'      => ['nullable', 'in:coin,match,ai'], // Jeton (coin) / N-puanlik mac / yapay zeka
             'pr'              => ['nullable', 'numeric', 'min:0', 'max:200'],
             'luck'            => ['nullable', 'numeric', 'min:-100', 'max:100'],
+            // Rakibin HAM luck'i (yalniz tek-istemcili PvB'de dolu; online'da rakip kendi satirini yazar)
+            'opponent_luck'   => ['nullable', 'numeric', 'min:-100', 'max:100'],
             'score_self'      => ['nullable', 'integer', 'min:0', 'max:100'],
             'score_opp'       => ['nullable', 'integer', 'min:0', 'max:100'],
             'log'             => ['nullable', 'string', 'max:1200000'], // tam analiz JSON
@@ -539,6 +541,10 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
             $mr['opponent_pr'] = $data['opponent_pr'] ?? null;
+        }
+        // Rakip (bot) ham luck'i: PvB'de karsi satir olmadigindan dogrudan bu satira yazilir.
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck')) {
+            $mr['opponent_luck'] = $data['opponent_luck'] ?? null;
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
             $mr['room_code'] = $data['room_code'] ?? null;
@@ -1132,6 +1138,7 @@ class AuthController extends Controller
         $hasLog = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log');
         $hasRoom = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code');
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
+        $hasOppLuck = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
@@ -1142,6 +1149,9 @@ class AuthController extends Controller
         }
         if ($hasOpp) {
             $cols = array_merge($cols, ['opponent_name', 'opponent_pr']);
+        }
+        if ($hasOppLuck) {
+            $cols[] = 'opponent_luck'; // PvB: rakip (bot) ham luck'i satirin kendisinde
         }
         if ($hasRoom) {
             $cols[] = 'room_code';
@@ -1210,7 +1220,11 @@ class AuthController extends Controller
                 'pr' => $m->pr,
                 'coins_after' => $m->coins_after,
                 'luck' => $hasNew ? $m->luck : null,
-                'opponent_luck' => ($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null,
+                // Rakip luck: PvB'de satirin kendi opponent_luck kolonu (bot); online'da karsi
+                // satirdan (room_code) okunan deger. Once dogrudan kolon, yoksa oda-eslesmesi.
+                'opponent_luck' => ($hasOppLuck && $m->opponent_luck !== null)
+                    ? $m->opponent_luck
+                    : (($hasRoom && $m->room_code) ? ($oppLuckByRoom[$m->room_code] ?? null) : null),
                 'luck_mwc' => $hasMwc ? $m->luck_mwc : null,
                 'opponent_luck_mwc' => ($hasRoom && $hasMwc && $m->room_code) ? ($oppLuckMwcByRoom[$m->room_code] ?? null) : null,
                 'score_self' => $hasNew ? $m->score_self : null,
