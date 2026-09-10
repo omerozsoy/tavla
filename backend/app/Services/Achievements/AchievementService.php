@@ -115,7 +115,10 @@ class AchievementService
                 'desc' => $def['desc'],
                 'icon' => $def['icon'],
                 'tier' => $def['tier'],
-                'rarity' => AchievementCatalog::rarityForRatio($ratio),
+                // Gorunen rarity = SABIT zorluk sinifi (config'deki 'rarity'). Eskiden canli
+                // unlock oranindan turetiliyordu -> kucuk kullanici tabaninda her sey 'mythic'
+                // cikiyordu ("50 mac oyna" mitik). rarityPct yine gercek unlock %'sini gosterir.
+                'rarity' => $def['rarity'],
                 'rarityPct' => round($ratio * 100, $ratio < 0.01 ? 2 : 1),
                 'rewardCoin' => (int) ($def['reward_coin'] ?? 0),
                 'hidden' => (bool) ($def['hidden'] ?? false),
