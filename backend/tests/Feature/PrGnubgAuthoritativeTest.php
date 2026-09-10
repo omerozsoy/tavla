@@ -73,6 +73,29 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_pr, 1e-6);
     }
 
+    public function test_match_pr_gnubg_endpoint_ready_flag(): void
+    {
+        $u = User::factory()->create();
+        $mr = MatchResult::create([
+            'user_id' => $u->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 3, 'match_type' => 'match', 'pr' => 12.0,
+        ]);
+
+        // gnubg_pr yok -> ready=false
+        $this->actingAs($u)->getJson("/api/me/match-pr-gnubg/{$mr->id}")
+            ->assertOk()->assertJson(['ready' => false, 'pr' => null]);
+
+        // gnubg analiz bitti -> ready=true + gnubg degerleri
+        MatchResult::where('id', $mr->id)->update(['gnubg_pr' => 2.85, 'gnubg_checker_pr' => 2.6, 'gnubg_cube_pr' => 4.0]);
+        $this->actingAs($u)->getJson("/api/me/match-pr-gnubg/{$mr->id}")
+            ->assertOk()->assertJson(['ready' => true, 'pr' => 2.85, 'checker_pr' => 2.6, 'cube_pr' => 4.0]);
+
+        // baskasinin maci -> 403
+        $other = User::factory()->create();
+        $this->actingAs($other)->getJson("/api/me/match-pr-gnubg/{$mr->id}")->assertStatus(403);
+    }
+
     public function test_shadow_does_not_touch_authoritative_pr(): void
     {
         config(['gnubg.pr_mode' => 'shadow']);

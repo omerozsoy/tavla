@@ -1524,6 +1524,8 @@ export async function reportRating(
 ): Promise<{
   rating: number
   achievements?: UnlockedAchievement[]
+  match_result_id?: number // canlı ekran gnubg PR'ını bununla poll'lar (matchGnubgPr)
+  gnubg_authoritative?: boolean // true -> gösterilen PR gnubg olacak (async); ekran "analiz ediliyor" gösterir
   pr_self?: number | null // sunucu-otoriter kendi PR (kendi log'undan)
   pr_opponent?: number | null // rakibin sunucu-otoriter PR'i (varsa)
   // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — ayni log'dan pul/kup ayri havuzlanir.
@@ -1562,6 +1564,14 @@ export async function reportRating(
       ach_flags: extra?.ach_flags ?? [],
     }),
   })
+}
+
+// HAKEM=gnubg: canlı sonuç ekranı, maç sonrası gnubg PR (async) hazır olana kadar bunu poll'lar.
+// ready=false iken "analiz ediliyor" gösterilir; ready=true olunca gösterilen PR gnubg olur.
+export async function matchGnubgPr(
+  id: number,
+): Promise<{ ready: boolean; pr: number | null; checker_pr: number | null; cube_pr: number | null }> {
+  return req(`/me/match-pr-gnubg/${id}`)
 }
 
 // Online mac PR cifti (sunucu-otoriter): iki oyuncu ayni degerleri gorsun diye

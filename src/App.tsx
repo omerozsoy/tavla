@@ -205,6 +205,7 @@ import {
   cartCheckout,
   messagesUnread,
   matchPr,
+  matchGnubgPr,
   type MenuOverride,
   type ServerUser,
 } from './api'
@@ -1234,6 +1235,10 @@ export default function App() {
     cubeSelf?: number | null
     cubeOpp?: number | null
   } | null>(null)
+  // HAKEM=gnubg: maç bitince gösterilen PR gnubg (async job) ile hesaplanır. Hazır olana kadar
+  // sonuç ekranı insan PR'ında "…" gösterir (wildbg sayısı gösterilmez); gnubg gelince swap edilir.
+  const [prAnalyzing, setPrAnalyzing] = useState(false)
+  const prPollRef = useRef(0) // aktif poll oturumu (yeni maç/yeni rapor eski poll'u iptal eder)
   // Sunucu-otoriter SANS (luck): iki oyuncu da backend'den AYNI beyaz+siyah HAM luck çiftini
   // okur (her biri kendi renginin ham luck'ını raporlar) -> net (kazanan−kaybeden) TUTARLI.
   // Renk-anahtarlı (peer snapshot'a güvenmez). null iken lokal prLuck'a düşer.
@@ -1612,6 +1617,8 @@ export default function App() {
     }
     ratingReportedRef.current = false // yeni mac -> puan tekrar islenebilir
     setServerPr(null) // yeni mac -> onceki sunucu-PR'i gosterme
+    prPollRef.current++ // aktif gnubg PR poll'unu iptal et
+    setPrAnalyzing(false)
     setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
   }
@@ -3233,6 +3240,37 @@ export default function App() {
   const botPrRef = useRef<number | null>(null)
   botPrRef.current = botPr
 
+  // HAKEM=gnubg: maç sonrası gnubg PR (async job) hazır olana kadar poll'la; hazır olunca
+  // gösterilen PR'ı gnubg ile DEĞİŞTİR (wildbg sayısı asla kalıcı gösterilmez). Servis yavaş/kapalı
+  // ise ~50sn sonra fallback (istemci değeri serverPr'da zaten var). Yeni rapor/maç eski poll'u iptal.
+  async function pollGnubgPr(id: number) {
+    const token = ++prPollRef.current
+    setPrAnalyzing(true)
+    for (let i = 0; i < 25; i++) {
+      await new Promise((res) => setTimeout(res, 2000))
+      if (prPollRef.current !== token) return // iptal edildi (yeni maç/rapor)
+      try {
+        const g = await matchGnubgPr(id)
+        if (prPollRef.current !== token) return
+        if (g.ready) {
+          setServerPr((prev) => ({
+            self: g.pr,
+            opp: prev?.opp ?? null,
+            checkerSelf: g.checker_pr,
+            checkerOpp: prev?.checkerOpp ?? null,
+            cubeSelf: g.cube_pr,
+            cubeOpp: prev?.cubeOpp ?? null,
+          }))
+          setPrAnalyzing(false)
+          return
+        }
+      } catch {
+        /* geçici hata -> tekrar dene */
+      }
+    }
+    if (prPollRef.current === token) setPrAnalyzing(false) // timeout -> istemci fallback
+  }
+
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).
   // Casual (rankedMatch=false) macta puana/lig'e etki yok; PR + hata gunlugu kalir.
   useEffect(() => {
@@ -3304,6 +3342,9 @@ export default function App() {
         if (r.achievements?.length) setAchUnlocked(r.achievements)
         // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
         setServerPr({ self: r.pr_self ?? null, opp: null })
+        // HAKEM=gnubg: gösterilen PR gnubg olsun. Job async -> "…" göster, gnubg gelince swap.
+        if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
+        else setPrAnalyzing(false)
       }
 
       // Hata gunlugu: bu macin en kotu hamlelerini kaydet (yalnizca insan; bot degil)
@@ -7065,6 +7106,7 @@ export default function App() {
           loserScore={match.score[opponent(mWinner)]}
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
+          analyzing={prAnalyzing}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
           loserCheckerPr={prCheckerShown(opponent(mWinner))}

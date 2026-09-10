@@ -11095,6 +11095,16 @@ button.acct-row:hover:not(:disabled) {
 .mr-row:not(:last-child) {
   border-bottom: 1px solid var(--border);
 }
+/* HAKEM=gnubg: insan PR'ı gnubg ile hesaplanırken sayı yerine nabızlı "…" (wildbg gösterilmez). */
+.mr-analyzing {
+  color: var(--muted);
+  letter-spacing: 0.15em;
+  animation: mr-pulse 1.1s ease-in-out infinite;
+}
+@keyframes mr-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
 .mr-label {
   color: var(--muted);
   font-weight: 400;
