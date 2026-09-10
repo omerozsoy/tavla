@@ -12046,7 +12046,7 @@ button.acct-row:hover:not(:disabled) {
 .player-id-col {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 3px; /* isim / rütbe / PREMIUM arası nefes (1px çok sıkışıktı) */
   min-width: 0;
 }
 /* Isim satiri: metin + (varsa) satir-ici ulke bayragi yan yana. */
@@ -12057,6 +12057,7 @@ button.acct-row:hover:not(:disabled) {
   min-width: 0;
   color: var(--text);
   font-weight: 400;
+  line-height: 1.25;
 }
 .player-id-name-text {
   overflow: hidden;
