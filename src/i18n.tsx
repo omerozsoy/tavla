@@ -152,6 +152,8 @@ const TR: Dict = {
   'gm.anim': 'Animasyonlar',
 
   'gm.livePr': 'Canlı PR',
+
+  'gm.pieceColors': 'Pul renkleri',
   'gm.lobby': 'Lobi',
   'menu.myStats': 'İstatistiklerim',
   'menu.friends': 'Arkadaşlar',
@@ -1447,6 +1449,8 @@ const EN: Dict = {
   'gm.anim': 'Animations',
 
   'gm.livePr': 'Live PR',
+
+  'gm.pieceColors': 'Checker colors',
   'gm.lobby': 'Lobby',
   'menu.myStats': 'My Stats',
   'menu.friends': 'Friends',
@@ -2730,6 +2734,8 @@ const ES: Dict = {
   'gm.anim': 'Animaciones',
 
   'gm.livePr': 'PR en vivo',
+
+  'gm.pieceColors': 'Colores de fichas',
   'gm.lobby': 'Sala',
   'menu.myStats': 'Mis Estadísticas',
   'menu.friends': 'Amigos',
@@ -3683,6 +3689,8 @@ const DE: Dict = {
   'gm.anim': 'Animationen',
 
   'gm.livePr': 'Live-PR',
+
+  'gm.pieceColors': 'Steinfarben',
   'gm.lobby': 'Lobby',
   'menu.myStats': 'Meine Statistik',
   'menu.friends': 'Freunde',
@@ -4636,6 +4644,8 @@ const FR: Dict = {
   'gm.anim': 'Animations',
 
   'gm.livePr': 'PR en direct',
+
+  'gm.pieceColors': 'Couleurs des pions',
   'gm.lobby': 'Salon',
   'menu.myStats': 'Mes Statistiques',
   'menu.friends': 'Amis',
@@ -5577,6 +5587,8 @@ const EL: Dict = {
   'gm.anim': 'Κινήσεις',
 
   'gm.livePr': 'Ζωντανό PR',
+
+  'gm.pieceColors': 'Χρώματα πουλιών',
   'gm.lobby': 'Λόμπι',
   'menu.myStats': 'Τα Στατιστικά μου',
   'menu.friends': 'Φίλοι',
@@ -6784,6 +6796,8 @@ const RU: Dict = {
   'gm.anim': 'Анимации',
 
   'gm.livePr': 'PR в реальном времени',
+
+  'gm.pieceColors': 'Цвета шашек',
   'gm.lobby': 'Лобби',
   'menu.myStats': 'Моя статистика',
   'menu.friends': 'Друзья',
@@ -7991,6 +8005,8 @@ const FA: Dict = {
   'gm.anim': 'انیمیشن‌ها',
 
   'gm.livePr': 'PR زنده',
+
+  'gm.pieceColors': 'رنگ مهره‌ها',
   'gm.lobby': 'لابی',
   'menu.myStats': 'آمار من',
   'menu.friends': 'دوستان',

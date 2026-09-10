@@ -5067,6 +5067,18 @@ body.checker-dragging * {
    taslarin okunmasina yardim eder. */
 /* Cift-ton halka: ic kenar + ZIT dis hairline (0 0 0 1px) -> tas hangi zeminde
    olursa olsun (mor/altin/koyu bar) net okunur. Renk degismez, sadece kontur. */
+/* Pul renkleri takası (oyuncu siyah/beyaz seçer): tema renklerini .game-area'da
+   YAKALA (döngü olmasın diye üst elemanda), sonra .board.stones-swapped'te --cream
+   ve --navy'yi ters ata. Tüm pul skinleri + off-checker + zar (pul rengini alır)
+   tutarlı çevrilir; motor/mantık etkilenmez (yalnız görsel). */
+.game-area {
+  --stone-light: var(--cream);
+  --stone-dark: var(--navy);
+}
+.board.stones-swapped {
+  --cream: var(--stone-dark);
+  --navy: var(--stone-light);
+}
 .checker.white {
   background: var(--cream);
   border: 2px solid rgba(0, 0, 0, 0.32);

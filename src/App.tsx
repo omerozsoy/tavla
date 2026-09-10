@@ -524,6 +524,7 @@ export default function App() {
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [showLivePr, setShowLivePr] = useState(true) // canli PR (yalniz pvb) menuden ac/kapa
+  const [swapStones, setSwapStones] = useState(false) // pul renkleri: oyuncu siyah/beyaz secebilsin (gorsel takas)
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
@@ -7065,6 +7066,8 @@ export default function App() {
         setLearnMode={setLearnMode}
         showLivePr={showLivePr}
         setShowLivePr={setShowLivePr}
+        swapStones={swapStones}
+        setSwapStones={setSwapStones}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
         boardDir={boardDir}
@@ -7133,6 +7136,7 @@ export default function App() {
           centerMain={centerMain}
           flip={flipBoard}
           mirror={boardMirror}
+          swapStones={swapStones}
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
         />
