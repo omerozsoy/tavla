@@ -11991,8 +11991,8 @@ button.acct-row:hover:not(:disabled) {
   border-bottom: 1px solid var(--border);
 }
 .lb-body {
-  max-height: min(60vh, 520px);
-  overflow-y: auto;
+  /* İlk 10 oyuncu tam gösterilir; scroll bar yok. */
+  overflow: visible;
 }
 .lb-div-head {
   display: flex;
@@ -21555,16 +21555,16 @@ select:-webkit-autofill {
   white-space: nowrap;
   flex: 0 0 auto;
   vertical-align: middle;
-  /* Varsayilan = ACIK tema (secenek 10): dolu koyu kiremit pill + beyaz yazi */
-  background: color-mix(in srgb, var(--accent) 80%, #000);
+  /* Varsayilan = ACIK tema: dolu kiremit pill (var(--accent) = #C9563F) + beyaz yazi */
+  background: var(--accent);
   color: #fff;
-  border: 1px solid color-mix(in srgb, var(--accent) 60%, #000);
+  border: 1px solid color-mix(in srgb, var(--accent) 75%, #000);
 }
 .premium-pill svg { width: 13px; height: 13px; }
 
-/* KOYU tema (secenek B): ince soft pill — accent tint zemin + accent yazi */
+/* KOYU tema (secenek B): krem zemin (#F4EFE6, kullanici) + kiremit yazi/taç */
 :root[data-theme='dark'] .premium-pill {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: #f4efe6;
   color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 38%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
 }
