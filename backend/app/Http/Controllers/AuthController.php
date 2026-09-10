@@ -483,7 +483,10 @@ class AuthController extends Controller
         // TAM SUNUCU-OTORITER PR: validator her karari motorla yeniden degerlendirir -> istemci
         // sahte dusuk-hata uyduramaz. 'shadow' fark loglar (kaydetmez), 'authoritative' kaydeder.
         $prMode = (string) config('validator.pr_mode', 'off');
-        if ($prMode !== 'off' && ! empty($data['log'])) {
+        // HAKEM=gnubg (ANA KURAL): gnubg otoriter iken wildbg validator (sunucu-taraflı anti-cheat PR
+        // yeniden hesabı) GEREKSİZDİR — nihai PR'ı zaten AnalyzeMatchPrJob (gnubg) yazar. Bu yüzden
+        // authoritative modda validator'ı HİÇ çalıştırma (wildbg motoru bu yoldan tamamen çıkar).
+        if ($prMode !== 'off' && (string) config('gnubg.pr_mode', 'off') !== 'authoritative' && ! empty($data['log'])) {
             // BEST-EFFORT: validator (harici servis) yavaş/hatalı olsa bile reportRating'i ASLA
             // düşürme (aksi halde "puanın kaydedilemedi" + rating kaydolmaz). Hata -> logla, geç.
             try {
