@@ -6,7 +6,7 @@ import { useEscape } from './useEscape'
 import Board from './Board'
 import Sidebar from './Sidebar'
 import ClockStack from './ClockStack'
-import { Die } from './Dice'
+import DiceRow from './Dice'
 import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer, type ChatMsg } from '../api'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
@@ -159,12 +159,27 @@ export default function Spectate({
   }
 
   const clock = eff?.clock
-  const dice = board?.dice ?? []
-  // Legacy'de diceUsed turnStart'tan gelir (hep false); oynanan adım sayısı kadar zar "kullanıldı"
-  // göster (gerçek oyundaki gibi kullanılan zar grileşsin). Otoriter'de board.diceUsed doğrudur.
-  const diceUsed = authoritative
-    ? board?.diceUsed ?? []
-    : dice.map((_, i) => i < legacyPlayed.length)
+  // Zar yüzleri: GERÇEK oyunla AYNI mantık (çift zarda 2 göster; oynanan adımlara göre 'kullanıldı'
+  // grileşir). Kaynak: turnStart.dice (=board.dice; applyStep dice'ı değiştirmez) + oynanan adımlar.
+  const diceFaces: { value: number; used: boolean }[] = (() => {
+    const d = board?.dice ?? []
+    if (d.length === 0) return []
+    if (d.length === 4) {
+      const faded = Math.floor(legacyPlayed.length / 2) // çift: her zar 2 hamle
+      return [{ value: d[0], used: faded >= 1 }, { value: d[0], used: faded >= 2 }]
+    }
+    const used = [false, false]
+    for (const st of legacyPlayed) {
+      for (let i = 0; i < d.length; i++) {
+        if (!used[i] && d[i] === st.die) { used[i] = true; break }
+      }
+    }
+    return d.slice(0, 2).map((v, i) => ({ value: v, used: used[i] ?? false }))
+  })()
+  // Aktif oyuncu ALTTA mı? (beyaz=alt, flip=false). Zarlar gerçek oyundaki gibi onun TARAFINDA:
+  // alt oyuncu -> sağ (centerRight), üst oyuncu -> sol (centerLeft). centerMain (orta) DEĞİL.
+  const activeBottom = board?.turn === 'white'
+  const diceRow = board && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={board.turn} /> : null
   const messages: ChatMsg[] = rv?.messages ?? []
 
   return (
@@ -216,19 +231,8 @@ export default function Spectate({
                 crawford={crawford}
                 flip={false}
                 showPip
-                centerMain={
-                  dice.length > 0 ? (
-                    <div className="board-dice">
-                      {dice.map((d, i) => (
-                        <Die key={i} value={d} owner={board.turn} used={diceUsed[i] ?? false} />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="result-box">
-                      <div className="result-points">{t('live.rolling')}</div>
-                    </div>
-                  )
-                }
+                centerLeft={activeBottom ? null : diceRow}
+                centerRight={activeBottom ? diceRow : null}
               />
             </>
           ) : (
