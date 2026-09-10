@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './sidebar.css'
 import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
+import PremiumPill from './PremiumPill'
 import { useT } from '../i18n'
 
 // Anlik PR degisim yonu: son harekette PR yukseldi (kotu) mi dustu (iyi) mi?
@@ -43,6 +44,7 @@ interface PlayerInfo {
   frame?: string | null
   isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
   pr?: number | null // anlik PR (performans reytingi); null ise gizli
+  premium?: boolean // süresi geçerli ücretli plan -> isim yaninda PREMIUM
 }
 
 interface SidebarProps {
@@ -94,7 +96,10 @@ function Name({ p }: { p: PlayerInfo }) {
   const trend = usePrTrend(p.pr)
   return (
     <div className="player-name-wrap">
-      <div className="player-name">{p.name}</div>
+      <div className="player-name">
+        {p.name}
+        {p.premium && <PremiumPill style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
+      </div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
       {/* Anlik PR (performans reytingi) — dusuk = iyi. Yanlis hamlede kirmizi oklar

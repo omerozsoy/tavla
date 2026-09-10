@@ -125,6 +125,7 @@ export default function Spectate({
       rating: (isP1 ? rv?.p1_rating : rv?.p2_rating) ?? null,
       avatarUrl: (isP1 ? rv?.p1_avatar : rv?.p2_avatar) ?? null,
       frame: (isP1 ? rv?.p1_frame : rv?.p2_frame) ?? null,
+      premium: (isP1 ? rv?.p1_premium : rv?.p2_premium) ?? false,
     }
   }
 

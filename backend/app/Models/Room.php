@@ -98,22 +98,26 @@ class Room extends Model
     // Istemciye donen guvenli gorunum (token'lar gizli)
     public function toClient(): array
     {
-        // Iki oyuncunun cercevesini TEK sorguda cek (onceki hali 2 ayri sorgu = N+1).
+        // Iki oyuncunun cerceve + premium'unu TEK sorguda cek (N+1 yok). plan+plan_until ->
+        // plan_active accessor -> premium (isim yaninda PREMIUM; oyun-ici rakip + Spectate).
         $ids = array_values(array_filter([$this->p1_user_id, $this->p2_user_id]));
-        $frames = $ids
-            ? User::whereIn('id', $ids)->pluck('avatar_frame', 'id')
+        $users = $ids
+            ? User::whereIn('id', $ids)->get(['id', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id')
             : collect();
+        $prem = fn ($uid) => $uid && isset($users[$uid]) ? $users[$uid]->plan_active !== 'free' : false;
 
         return [
             'code' => $this->code,
             'p1_name' => $this->p1_name,
             'p1_rating' => $this->p1_rating,
             'p1_avatar' => $this->p1_avatar,
-            'p1_frame' => $this->p1_user_id ? ($frames[$this->p1_user_id] ?? null) : null,
+            'p1_frame' => $this->p1_user_id && isset($users[$this->p1_user_id]) ? $users[$this->p1_user_id]->avatar_frame : null,
+            'p1_premium' => $prem($this->p1_user_id),
             'p2_name' => $this->p2_name,
             'p2_rating' => $this->p2_rating,
             'p2_avatar' => $this->p2_avatar,
-            'p2_frame' => $this->p2_user_id ? ($frames[$this->p2_user_id] ?? null) : null,
+            'p2_frame' => $this->p2_user_id && isset($users[$this->p2_user_id]) ? $users[$this->p2_user_id]->avatar_frame : null,
+            'p2_premium' => $prem($this->p2_user_id),
             'state' => $this->state,
             'messages' => $this->messages ?? [],
             'version' => $this->version,
