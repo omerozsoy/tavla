@@ -10,6 +10,8 @@ import PremiumPill from './PremiumPill'
 import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
+import { useBoardDir } from './boardDirection'
+import { useSwapStones } from './pieceColors'
 import BoardPicker, { type BoardThemeOpt } from './BoardPicker'
 import MembershipCard from './MembershipCard'
 import AddressBook from './AddressBook'
@@ -97,6 +99,9 @@ export default function ProfileOverview({
   onTabChange,
 }: Props) {
   const { t, lang } = useT()
+  // Oyun yönü + pul renkleri: kalıcı ayar (localStorage) profilden değişir, oyun senkron.
+  const [boardDir, setBoardDir] = useBoardDir()
+  const [swapStones, setSwapStones] = useSwapStones()
   // Profil açılışında İstatistikler sekmesi varsayılan seçili. Kontrollu (App'ten tab)
   // veya kontrolsuz (ic state) — her iki durumda setTab hem ici hem App'i gunceller.
   const [tabState, setTabState] = useState<ProfTab>('stats')
@@ -183,30 +188,69 @@ export default function ProfileOverview({
         {/* --- Alt satir: Tavla Tasarımları + Avatar Çerçevesi kutuları --- */}
         <div className="prof-ov-row2">
           {equipped && (
-            // Tiklayinca Tavla Tasarimlari sekmesine gecer -> tahta buradan degistirilebilir.
-            <button
-              type="button"
-              className="prof-ov-board"
-              onClick={() => setTab('boards')}
-              title={t('prof.changeBoard')}
-            >
-              <div className="prof-ov-board-prev" style={boardVars(equipped)}>
-                <SetupBoard
-                  panel={equipped.panel ?? equipped.b}
-                  a={equipped.a}
-                  b={equipped.b}
-                  checker={equipped.checker ?? equipped.b}
-                  cream={equipped.light}
-                />
+            <div className="prof-ov-board">
+              {/* Sol: canlı önizleme + tema adı; tıklayınca Tavla Tasarımları sekmesine geçer. */}
+              <button
+                type="button"
+                className="prof-ov-board-open"
+                onClick={() => setTab('boards')}
+                title={t('prof.changeBoard')}
+              >
+                {/* Önizleme oyun yönü (flip) + pul rengi (takas) ayarlarını CANLI ve
+                    ANIMASYONLU yansıtır: yön -> yatay flip geçişi, renk -> pul/zar fill geçişi. */}
+                <div
+                  className={`prof-ov-board-prev${boardDir === 'left' ? ' flip' : ''}${swapStones ? ' swap' : ''}`}
+                  style={boardVars(equipped)}
+                >
+                  <SetupBoard
+                    panel={equipped.panel ?? equipped.b}
+                    a={equipped.a}
+                    b={equipped.b}
+                    checker={swapStones ? (equipped.light ?? '#f4efe6') : (equipped.checker ?? equipped.b)}
+                    cream={swapStones ? (equipped.checker ?? equipped.b) : equipped.light}
+                  />
+                </div>
+                <div className="prof-ov-board-name">
+                  <span className="prof-ov-board-lbl">{t('menu.board')}</span>
+                  {equipped.name}
+                  <span className="prof-ov-board-change">
+                    <Icon name="settings" size={13} /> {t('prof.changeBoard')}
+                  </span>
+                </div>
+              </button>
+
+              {/* Sağ: oyunu etkileyen kalıcı ayarlar (eskiden oyun menüsündeydi). */}
+              <div className="prof-ov-board-opts">
+                <button
+                  type="button"
+                  className="prof-ov-opt"
+                  onClick={() => setBoardDir(boardDir === 'left' ? 'right' : 'left')}
+                >
+                  <span className="prof-ov-opt-lbl">{t('gm.boardDir')}</span>
+                  <span className="prof-ov-opt-ctl">
+                    <span className="gm-hint">
+                      {t(boardDir === 'right' ? 'dir.rightShort' : 'dir.leftShort')}
+                    </span>
+                    <span className={`gm-switch ${boardDir === 'right' ? 'on' : 'off'}`} aria-hidden="true">
+                      <span className="gm-knob" />
+                    </span>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="prof-ov-opt"
+                  onClick={() => setSwapStones(!swapStones)}
+                >
+                  <span className="prof-ov-opt-lbl">{t('gm.pieceColors')}</span>
+                  <span className="prof-ov-opt-ctl">
+                    <span className="gm-hint">{t(swapStones ? 'player.black' : 'player.white')}</span>
+                    <span className={`gm-switch ${swapStones ? 'on' : 'off'}`} aria-hidden="true">
+                      <span className="gm-knob" />
+                    </span>
+                  </span>
+                </button>
               </div>
-              <div className="prof-ov-board-name">
-                <span className="prof-ov-board-lbl">{t('menu.board')}</span>
-                {equipped.name}
-                <span className="prof-ov-board-change">
-                  <Icon name="settings" size={13} /> {t('prof.changeBoard')}
-                </span>
-              </div>
-            </button>
+            </div>
           )}
 
           {/* Avatar Çerçevesi kutusu -> tıklayınca Avatarlar sekmesi */}

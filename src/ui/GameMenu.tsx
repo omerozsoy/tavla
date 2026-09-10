@@ -1,5 +1,4 @@
 import { useT } from '../i18n'
-import type { BoardDir } from './boardDirection'
 import { Icon } from './Icon'
 
 interface Row {
@@ -23,14 +22,8 @@ interface Props {
   /** Canlı PR (anlık performans reytingi) sidebar'da görünsün mü — SADECE pvb. */
   showLivePr: boolean
   setShowLivePr: (v: boolean) => void
-  /** Pul renkleri takas: oyuncu kendi pullarını siyah/beyaz seçer (görsel). */
-  swapStones: boolean
-  setSwapStones: (v: boolean) => void
   animOn: boolean
   toggleAnim: () => void
-  /** Oyun yonu: pullarin toplandigi taraf. Tum modlarda ayni ayar. */
-  boardDir: BoardDir
-  setBoardDir: (d: BoardDir) => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -57,20 +50,8 @@ export default function GameMenu(p: Props) {
         ]
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
-    {
-      // Pul renkleri: ON = oyuncu siyah pullar, OFF = beyaz; yanında renk metni.
-      label: t('gm.pieceColors'),
-      on: p.swapStones,
-      hint: t(p.swapStones ? 'player.black' : 'player.white'),
-      toggle: () => p.setSwapStones(!p.swapStones),
-    },
-    {
-      // Oyun yönü de switch: ON = sağa topla, OFF = sola topla; yanında kısa Sağ/Sol metni.
-      label: t('gm.boardDir'),
-      on: p.boardDir === 'right',
-      hint: t(p.boardDir === 'right' ? 'dir.rightShort' : 'dir.leftShort'),
-      toggle: () => p.setBoardDir(p.boardDir === 'left' ? 'right' : 'left'),
-    },
+    // NOT: "Oyun yönü" (Sağa/Sola) ve "Pul renkleri" (Siyah/Beyaz) buradan KALDIRILDI —
+    // artık PROFİL > Tavla Tasarımları kartından ayarlanır (kalıcı, canlı önizlemeli).
   ]
   return (
     <>
