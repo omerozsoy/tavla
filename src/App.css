@@ -8692,9 +8692,18 @@ button.acct-row:hover:not(:disabled) {
   align-items: center;
   gap: 6px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* overflow:hidden animasyonlu avatar çerçevesinin halkasını (sol + üst/alt glow)
+     kırpıyordu. İsimler kısa nickname'ler; mobil zaten visible. Tek satır kalsın
+     diye white-space:nowrap korunur. */
+  overflow: visible;
   white-space: nowrap;
+}
+/* Avatar çerçevesi bitişik durmasın -> hafif yatay nefes. */
+.rm-me .avf-sober,
+.rm-me .avf-simple,
+.rm-you .avf-sober,
+.rm-you .avf-simple {
+  margin-right: 2px;
 }
 .rm-me,
 .rm-you {
