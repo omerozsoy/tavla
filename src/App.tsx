@@ -520,6 +520,7 @@ export default function App() {
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
+  const [showLivePr, setShowLivePr] = useState(true) // canli PR (yalniz pvb) menuden ac/kapa
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
@@ -5200,8 +5201,8 @@ export default function App() {
     rating: online ? (myColor === 'white' ? (user?.rating ?? null) : room?.oppRating ?? null) : null,
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
-    // Anlik PR: yalniz bota karsi (pvb) goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
-    pr: mode === 'pvb' ? (prValue ?? prLooseOf('white')) : null,
+    // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli). strict -> loose fallback.
+    pr: mode === 'pvb' && showLivePr ? (prValue ?? prLooseOf('white')) : null,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
   }
 
@@ -6962,6 +6963,8 @@ export default function App() {
         setShowAnalysis={setShowAnalysis}
         learnMode={learnMode}
         setLearnMode={setLearnMode}
+        showLivePr={showLivePr}
+        setShowLivePr={setShowLivePr}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
         boardDir={boardDir}
