@@ -312,6 +312,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Garantici: animasyonlu avatar çerçevesinin taşan halka/glow'u kırpılmasın. */
+  overflow: visible;
   animation: lw-badge 0.4s cubic-bezier(0.2, 1.5, 0.4, 1);
 }
 .lw-win-show.is-cosmetic {
