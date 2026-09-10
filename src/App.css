@@ -12201,6 +12201,14 @@ button.acct-row:hover:not(:disabled) {
   align-items: center;
   min-width: 0;
   font-weight: 400;
+  /* Avatar çerçevesi (animasyonlu halka/glow) rank rozetiyle bitişip kırpık/düz durmasın:
+     sol tarafa nefes ver. */
+  padding-left: 5px;
+}
+/* Avatarın HEM sağına HEM soluna boşluk -> çerçeve animasyonu tam görünür (kesik değil). */
+.lb-name .avf-sober,
+.lb-name .avf-simple {
+  margin: 0 4px;
 }
 
 /* ---- Global oyuncu kimlik blogu: avatar + isim (ustte) + rutbe (altta, ince) ----
