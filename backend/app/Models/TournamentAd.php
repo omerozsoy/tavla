@@ -49,7 +49,8 @@ class TournamentAd extends Model
 
     protected static function booted(): void
     {
-        // Gorsel degistiginde (ya da palet bossa) baskin renkleri cikar ve sessizce sakla.
+        // Gorsel degistiginde: once optimize et (kucult + WebP'ye sikistir), sonra
+        // baskin renkleri cikar. Ikisi de sessiz (updateQuietly) -> event dongusu yok.
         static::saved(function (TournamentAd $ad): void {
             if (! $ad->image) {
                 return;
@@ -57,12 +58,115 @@ class TournamentAd extends Model
             if (! $ad->wasChanged('image') && ! empty($ad->palette)) {
                 return;
             }
+
+            // Yeni yuklenen gorsel mi? Ise once dosyayi optimize et. Uzanti degisirse
+            // ( or. .jpg -> .webp) DB'deki yolu sessizce guncelle ve eski dosyayi sil.
+            if ($ad->wasChanged('image')) {
+                $optimized = self::optimizeImage($ad->image);
+                if ($optimized !== null && $optimized !== $ad->image) {
+                    $old = $ad->image;
+                    $ad->image = $optimized;
+                    $ad->updateQuietly(['image' => $optimized]);
+                    @unlink(public_path('uploads/'.ltrim($old, '/')));
+                }
+            }
+
             $abs = public_path('uploads/'.ltrim($ad->image, '/'));
             $colors = self::extractPalette($abs);
             if (! empty($colors)) {
                 $ad->updateQuietly(['palette' => $colors]);
             }
         });
+    }
+
+    /**
+     * Yuklenen banner gorselini optimize eder: en fazla MAX_W genise kucultur ve
+     * (destekleniyorsa) WebP'ye sikistirir. Banner ana sayfada en fazla ~1200px
+     * gosterildigi icin retina payiyla 1920px ustu boyut boşuna yer kaplar.
+     *
+     * Yeni (goreli) dosya yolunu dondurur; degistiremezse orijinal yolu, GD/format
+     * desteklenmiyorsa null doner. GIF (animasyon) ve SVG dokunulmaz.
+     */
+    public static function optimizeImage(string $rel): ?string
+    {
+        $abs = public_path('uploads/'.ltrim($rel, '/'));
+        if (! is_file($abs) || ! function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        $info = @getimagesize($abs);
+        if ($info === false) {
+            return null; // gorsel degil / okunamaz
+        }
+        // Yalnizca JPEG/PNG/WEBP islenir; GIF (animasyon bozulmasin) ve digerleri atlanir.
+        $type = $info[2];
+        if (! in_array($type, [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP], true)) {
+            return null;
+        }
+
+        $data = @file_get_contents($abs);
+        if ($data === false) {
+            return null;
+        }
+        $src = @imagecreatefromstring($data);
+        if (! $src) {
+            return null;
+        }
+
+        $w = imagesx($src);
+        $h = imagesy($src);
+        $maxW = 1920; // retina payiyla hero genisligi
+        $quality = 82;
+
+        // Kaynak hedeften kucuk VE dosya zaten kucuk (<300KB) ise yeniden kodlamaya deger yok.
+        $alreadySmall = $w <= $maxW && strlen($data) < 300 * 1024;
+
+        if ($w > $maxW) {
+            $nh = max(1, (int) round($h * $maxW / $w));
+            $dst = imagecreatetruecolor($maxW, $nh);
+            // PNG/WebP saydamligini koru.
+            imagealphablending($dst, false);
+            imagesavealpha($dst, true);
+            $transparent = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+            imagefilledrectangle($dst, 0, 0, $maxW, $nh, $transparent);
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $maxW, $nh, $w, $h);
+            imagedestroy($src);
+            $src = $dst;
+        } elseif ($alreadySmall) {
+            imagedestroy($src);
+            return $rel; // dokunma
+        }
+
+        // WebP destekleniyorsa ona cevir (en iyi sikistirma), degilse ayni formatta yeniden kodla.
+        $dir = trim(dirname($rel), '/.');
+        $base = pathinfo($rel, PATHINFO_FILENAME);
+        $useWebp = function_exists('imagewebp');
+        $newRel = ($dir !== '' ? $dir.'/' : '').$base.'.'.($useWebp ? 'webp' : pathinfo($rel, PATHINFO_EXTENSION));
+        $newAbs = public_path('uploads/'.$newRel);
+
+        $ok = false;
+        if ($useWebp) {
+            $ok = @imagewebp($src, $newAbs, $quality);
+        } elseif ($type === IMAGETYPE_PNG) {
+            imagesavealpha($src, true);
+            $ok = @imagepng($src, $newAbs, 8); // 0-9 sikistirma
+        } else {
+            $ok = @imagejpeg($src, $newAbs, $quality);
+        }
+        imagedestroy($src);
+
+        if (! $ok) {
+            return $rel;
+        }
+
+        // Yeni dosya orijinalden buyuk cikarsa (kucuk/optimize gorsel) yenisini sil, orijinali koru.
+        if ($newRel !== $rel && is_file($newAbs) && filesize($newAbs) >= strlen($data)) {
+            @unlink($newAbs);
+
+            return $rel;
+        }
+
+        return $newRel;
     }
 
     /**
