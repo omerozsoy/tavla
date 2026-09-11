@@ -4,7 +4,8 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { analyzeMat, reviewMat, type MatAnalysis, type MatPlayerSummary } from '../api'
-import MatchReport, { type LogEntry } from './MatchReport'
+import type { LogEntry } from './MatchReport'
+import MatReview from './MatReview'
 
 // Mat Analiz sayfasi: kullanici .mat maci yukler -> gnubg TAM analiz eder -> ozet gosterilir
 // (HedgeHog "Analysis Complete" benzeri: rating + blunder/hata/kesinsizlik + oyuncu tablosu).
@@ -201,15 +202,12 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
         </Button>
       </div>
 
-      {/* Faz 2: hamle-hamle inceleme (MatchReport analiz görünümü, tam-ekran modal) */}
+      {/* Faz 2: hamle-hamle inceleme (HedgeHog benzeri tam-ekran üç panel) */}
       {reviewLog && (
-        <MatchReport
-          mode="analysis"
+        <MatReview
           log={reviewLog}
-          pr={null}
-          matchLength={result?.matchLength ?? 1}
-          whiteName={result?.names?.[0] ?? 'White'}
-          blackName={result?.names?.[1] ?? 'Black'}
+          names={result?.names ?? null}
+          matchLength={result?.matchLength ?? null}
           onClose={() => setReviewLog(null)}
         />
       )}
