@@ -14,13 +14,8 @@ interface Props {
   onLogin?: () => void // giris modalini ac
 }
 
-// Yaygin emojiler (hazir panel)
-const EMOJIS = [
-  '😀', '😂', '😉', '😎', '😍', '🤔', '😅', '😴',
-  '😢', '😡', '👍', '👎', '👏', '🙏', '💪', '🔥',
-  '🎲', '🎉', '❤️', '💔', '😱', '🤯', '🥳', '🤝',
-  '😏', '🫡', '👋', '🍀', '⭐', '💯', '😤', '🙈',
-]
+// En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
+const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
 export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin }: Props) {
   const { t } = useT()
@@ -29,6 +24,22 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   const [open, setOpen] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
+
+  // Okunmamis mesaj sayaci: sohbet KAPALIYKEN rakipten (slot !== mySlot) gelen mesajlari
+  // say -> baslikta kirmizi rozet goster. Acilinca sifirlanir (kullanici gordu).
+  const [unread, setUnread] = useState(0)
+  const prevLenRef = useRef(messages.length)
+  useEffect(() => {
+    const prev = prevLenRef.current
+    if (messages.length > prev) {
+      const incoming = messages.slice(prev).filter((m) => m.slot !== mySlot).length
+      if (!open && incoming > 0) setUnread((u) => u + incoming)
+    }
+    prevLenRef.current = messages.length
+  }, [messages, open, mySlot])
+  useEffect(() => {
+    if (open) setUnread(0)
+  }, [open])
 
   // Yeni mesajda en alta kaydir
   useEffect(() => {
@@ -46,9 +57,12 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
 
   return (
     <div className={`chat-panel ${open ? 'open' : 'closed'}`}>
-      <button className="chat-head" onClick={() => setOpen((v) => !v)}>
+      <button className={`chat-head ${!open && unread > 0 ? 'has-unread' : ''}`} onClick={() => setOpen((v) => !v)}>
         <span><Icon name="chat" size={16} /> {t('chat.title')}</span>
-        <span className="chat-toggle">{open ? '▾' : '▴'}</span>
+        <span className="chat-head-right">
+          {!open && unread > 0 && <span className="chat-unread">{unread > 9 ? '9+' : unread}</span>}
+          <span className="chat-toggle">{open ? '▾' : '▴'}</span>
+        </span>
       </button>
 
       {open && (
