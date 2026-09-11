@@ -42,6 +42,7 @@ import {
   Coin,
   Money,
   Crown,
+  CrownSimple,
   Ticket,
   Bell,
   Eye,
@@ -133,6 +134,7 @@ export type IconName =
   | 'coin'
   | 'banknotes'
   | 'crown'
+  | 'crown-simple'
   | 'ticket'
   | 'bell'
   | 'eye'
@@ -228,6 +230,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   coin: Coin,
   banknotes: Money,
   crown: Crown,
+  'crown-simple': CrownSimple,
   ticket: Ticket,
   bell: Bell,
   eye: Eye,

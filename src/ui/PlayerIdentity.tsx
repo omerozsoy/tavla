@@ -1,5 +1,5 @@
 import AvatarFrame from './AvatarFrame'
-import PremiumPill from './PremiumPill'
+import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 
@@ -45,6 +45,8 @@ export default function PlayerIdentity({
       <span className="player-id-col">
         <span className="player-id-name">
           <span className="player-id-name-text">{name}</span>
+          {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
+          {premium && <PremiumCrown size={lg ? 17 : 14} style={{ marginLeft: 4 }} />}
           {flagInline && country && (
             <CountryFlag
               code={country}
@@ -54,15 +56,10 @@ export default function PlayerIdentity({
             />
           )}
         </span>
-        {/* Rütbe isim altında; PREMIUM pill de rütbenin TAM ALTINDA ayrı satırda. */}
+        {/* Rütbe isim altında. */}
         {rating != null && (
           <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0 }}>
             <DivisionChip rating={rating} size={rankSize} />
-          </span>
-        )}
-        {premium && (
-          <span style={{ display: 'inline-flex', alignItems: 'center', minWidth: 0, marginTop: 1 }}>
-            <PremiumPill />
           </span>
         )}
       </span>

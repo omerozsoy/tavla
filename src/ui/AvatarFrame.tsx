@@ -7,7 +7,7 @@ import { FRAME_BY_ID, FRAME_RARITY_COLOR } from './avatarFrames'
 // rarity halkasi). Eski PremiumFrame (24 tema) kaldirildi.
 //
 // PREMIUM isareti AvatarFrame'de DEGIL: 24 animasyonlu cerceveyle cakismasin diye premium marker
-// ismin YANINA (PlayerIdentity -> PremiumPill: tac + "PREMIUM") konur. Bu bilesen yalniz avatar cizer.
+// ismin SONUNA (PlayerIdentity -> PremiumCrown: altın taç) konur. Bu bilesen yalniz avatar cizer.
 interface Props {
   src?: string | null
   frame?: string | null

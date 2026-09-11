@@ -6,7 +6,7 @@ import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
-import PremiumPill from './PremiumPill'
+import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
@@ -193,11 +193,11 @@ export function LiveMatchesPanel({
               <span className="lm-side lm-p1">
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>
-                {m.p1_premium && <PremiumPill />}
+                {m.p1_premium && <PremiumCrown />}
               </span>
               <span className="lm-vs">vs</span>
               <span className="lm-side lm-p2">
-                {m.p2_premium && <PremiumPill />}
+                {m.p2_premium && <PremiumCrown />}
                 <span className="lm-name">{m.p2_name}</span>
                 <Avatar url={m.p2_avatar} name={m.p2_name} />
               </span>
