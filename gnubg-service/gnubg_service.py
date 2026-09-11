@@ -706,6 +706,156 @@ def _parse_luck_stats(stats):
     return out
 
 
+# ---- Mat Analiz (tam maç analizi: özet istatistikler) --------------------------------
+_MATCHLEN_RE = re.compile(r"(\d+)\s+point\s+match", re.I)
+
+
+def _first_float(s):
+    """Bir değer hücresinden ilk sayıyı çıkar ('-0.383 (-3.829%)' -> -0.383)."""
+    m = re.search(r"[+-]?\d+(?:\.\d+)?", s or "")
+    return float(m.group(0)) if m else None
+
+
+def _parse_match_stats(stats):
+    """gnubg 'show statistics match' metnini SÜRÜM-BAĞIMSIZ 2-sütunlu tablo olarak ayrıştır.
+    Doner: {names:[p0,p1], sections:[{title, rows:[{label, values:[v0,v1]}]}]}. Etiketleri
+    sabit-kodlamaz; başlıklar '... statistics:' satırlarıdır, veri satırları 2+ boşlukla ayrık."""
+    out = {"names": None, "sections": []}
+    if not stats:
+        return out
+    ph = _PLAYER_HDR_RE.search(stats)
+    if ph:
+        out["names"] = [ph.group(1), ph.group(2)]
+    cur = None
+    for raw in stats.splitlines():
+        s = raw.strip()
+        if not s:
+            continue
+        # Bölüm başlığı: 'Chequerplay statistics:', 'Cube statistics:', 'Overall statistics:' ...
+        if re.match(r"(?i)^[a-z][a-z /]*statistics:?$", s):
+            cur = {"title": s.rstrip(":"), "rows": []}
+            out["sections"].append(cur)
+            continue
+        parts = re.split(r"\s{2,}", s)
+        if len(parts) >= 2:
+            if cur is None:
+                cur = {"title": "", "rows": []}
+                out["sections"].append(cur)
+            cur["rows"].append({"label": parts[0], "values": parts[1:3]})
+    return out
+
+
+def _row_values(parsed, label_sub):
+    """İlk etiketinde label_sub (küçük harf, contains) geçen satırın iki sütununu döndür."""
+    ls = label_sub.lower()
+    for sec in parsed.get("sections", []):
+        for r in sec.get("rows", []):
+            if ls in r["label"].lower():
+                v = r.get("values", [])
+                return [v[0] if len(v) > 0 else None, v[1] if len(v) > 1 else None]
+    return [None, None]
+
+
+def _sum_rows(parsed, label_sub):
+    """label_sub ile başlayan/içeren TÜM satırların ilk sayısını per-oyuncu topla (Missed doubles)."""
+    ls = label_sub.lower()
+    tot = [0.0, 0.0]
+    found = False
+    for sec in parsed.get("sections", []):
+        for r in sec.get("rows", []):
+            if ls in r["label"].lower():
+                v = r.get("values", [])
+                for i in (0, 1):
+                    f = _first_float(v[i]) if i < len(v) else None
+                    if f is not None:
+                        tot[i] += f
+                        found = True
+    return tot if found else [None, None]
+
+
+def _player_summary(parsed, idx):
+    """Bir oyuncu için özet metrikler (HedgeHog benzeri kartlar)."""
+    def val(sub):
+        return _first_float(_row_values(parsed, sub)[idx])
+
+    blunders = val("marked very bad")
+    errors = val("marked bad")
+    inacc = val("marked doubtful")
+    missed = _sum_rows(parsed, "missed double")
+    return {
+        "name": (parsed.get("names") or [None, None])[idx],
+        "blunders": int(blunders) if blunders is not None else None,
+        "errors": int(errors) if errors is not None else None,
+        "inaccuracies": int(inacc) if inacc is not None else None,
+        "missedDoubles": int(missed[idx]) if missed[idx] is not None else None,
+        # Error rate (total) = kaybedilen eşitlik (EMG mutlak); (per move) = ER mEMG
+        "equityLost": val("error rate (total)"),
+        "erPerMove": val("error rate (per move)"),
+        "snowieErrorRate": val("snowie error rate"),
+        # Kategori dereceleri (kelime) — ham sütun (sayı değil)
+        "chequerRating": _row_values(parsed, "chequerplay rating")[idx],
+        "cubeRating": _row_values(parsed, "cube decision rating")[idx],
+        "overallRating": _row_values(parsed, "overall rating")[idx],
+    }
+
+
+def _analyzematch(mat_text, plies=2):
+    """Yüklenen .mat maçını gnubg ile TAM analiz edip özet istatistikleri döndürür.
+    Doner: {ok, matchLength, names, players:[p0,p1 özet], stats:{sections}, statistics_match(raw)}."""
+    out = {"ok": False, "import_cmd": None}
+    if not mat_text or not mat_text.strip():
+        out["error"] = "empty-mat"
+        return out
+    tmp = "/tmp/tavlai_analyze.mat"
+    try:
+        ml = _MATCHLEN_RE.search(mat_text)
+        out["matchLength"] = int(ml.group(1)) if ml else None
+        with open(tmp, "w") as f:
+            f.write(mat_text)
+        imported = False
+        last_err = None
+        for cmd in ("import mat " + tmp, "load match " + tmp):
+            try:
+                gnubg.command("new match 1")
+            except Exception:
+                pass
+            try:
+                gnubg.command(cmd)
+                imported = True
+                out["import_cmd"] = cmd
+                break
+            except Exception as e:
+                last_err = str(e)
+        if not imported:
+            out["error"] = "import-failed"
+            out["import_err"] = last_err
+            return out
+        # Analiz ayarları: hamle + küp + şans; derinlik (ply) iste.
+        for c in (
+            "set analysis moves on",
+            "set analysis cube on",
+            "set analysis luck on",
+            "set analysis chequerplay evaluation plies %d" % int(plies),
+            "set analysis cubedecision evaluation plies %d" % int(plies),
+        ):
+            try:
+                gnubg.command(c)
+            except Exception:
+                pass
+        gnubg.command("analyse match")
+        stats = _capture_command("show statistics match")
+        parsed = _parse_match_stats(stats)
+        out["names"] = parsed.get("names")
+        out["players"] = [_player_summary(parsed, 0), _player_summary(parsed, 1)]
+        out["stats"] = {"sections": parsed.get("sections", [])}
+        out["statistics_match"] = stats
+        out["plies"] = int(plies)
+        out["ok"] = True
+    except Exception as e:
+        out["error"] = str(e)
+    return out
+
+
 def _matchluck(mat_text=None, selftest=False, points_match=1):
     """.mat maçının gnubg NATIVE luck'ını (per-oyuncu MWC% + EMG) döndürür — Tavlai Luck V1 kaynağı.
     mat_text verilmezse (selftest) gnubg kendi maçını oynar+export eder+reimport eder -> import+
@@ -956,6 +1106,12 @@ class Handler(BaseHTTPRequestHandler):
                     mat_text=data.get("mat"),
                     selftest=bool(data.get("selftest", False)),
                     points_match=int(data.get("points_match", 1))))
+            if self.path == "/analyzematch":
+                if not data.get("mat"):
+                    return self._send(400, {"error": "mat gerekli (.mat metni)"})
+                return self._send(200, _analyzematch(
+                    mat_text=data.get("mat"),
+                    plies=int(data.get("plies", 2))))
             self._send(404, {"error": "not-found"})
         except Exception as e:
             self._send(500, {"error": "gnubg-error", "detail": str(e)})

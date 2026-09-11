@@ -1634,6 +1634,44 @@ export async function analyzePosition(body: {
   })
 }
 
+// ---- Mat Analiz: yuklenen .mat maci gnubg ile TAM analiz (ozet istatistikler) ----
+export interface MatPlayerSummary {
+  name: string | null
+  blunders: number | null // "very bad" isaretli hamleler
+  errors: number | null // "bad" isaretli hamleler
+  inaccuracies: number | null // "doubtful" isaretli hamleler
+  missedDoubles: number | null
+  equityLost: number | null // Error rate (total) EMG
+  erPerMove: number | null // Error rate (per move) mEMG
+  snowieErrorRate: number | null
+  chequerRating: string | null
+  cubeRating: string | null
+  overallRating: string | null
+}
+export interface MatStatRow {
+  label: string
+  values: (string | null)[]
+}
+export interface MatStatSection {
+  title: string
+  rows: MatStatRow[]
+}
+export interface MatAnalysis {
+  ok: boolean
+  matchLength: number | null
+  names: string[] | null
+  players: MatPlayerSummary[]
+  stats: { sections: MatStatSection[] }
+  statistics_match: string // gnubg ham 'show statistics match' metni (detay/yedek)
+  plies?: number
+}
+export async function analyzeMat(mat: string, plies = 2): Promise<MatAnalysis> {
+  return req<MatAnalysis>('/analyze-mat', {
+    method: 'POST',
+    body: JSON.stringify({ mat, plies }),
+  })
+}
+
 // ==================== BASARIMLAR (ACHIEVEMENTS) ====================
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'diamond' | null
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'
