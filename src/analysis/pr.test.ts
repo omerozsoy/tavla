@@ -5,6 +5,7 @@ import {
   cubeDecision,
   onePointFactor,
   pooledPR,
+  prMatchEquity,
   prValue,
   summarize,
   type PrDecision,
@@ -61,6 +62,20 @@ describe('XG-style PR — spec test cases', () => {
     const d = checkerDecision(0.04, 0.0, -0.2, 5, 1, true) // isMoney=true
     expect(d.prAdjustedEquityLoss).toBeCloseTo(0.04, 10)
     expect(onePointFactor(1, true)).toBe(1)
+  })
+
+  it('prMatchEquity — 1-puanlık maçta win-prob (gammon HARİÇ), çok-puanlıkta money equity', () => {
+    // probs = [wn, wg, wb, ln, lg, lb]. Gammon şansı olan bir konum:
+    const probs = [0.5, 0.2, 0.05, 0.15, 0.08, 0.02] // P(kazan)=0.75, P(kaybet)=0.25
+    const money = probs[0] - probs[3] + 2 * (probs[1] - probs[4]) + 3 * (probs[2] - probs[5]) // ~0.68
+    // 1-puanlık: gammon SAYILMAZ -> Σwin − Σlose = 0.75 − 0.25 = 0.50 (2p−1)
+    expect(prMatchEquity(probs, money, 1, false)).toBeCloseTo(0.5, 10)
+    // Çok-puanlık maç: money equity (gammon dahil) korunur
+    expect(prMatchEquity(probs, money, 3, false)).toBeCloseTo(money, 10)
+    // Money oyunu: 1 hedef olsa bile money equity (para oyununda gammon sayılır)
+    expect(prMatchEquity(probs, money, 1, true)).toBeCloseTo(money, 10)
+    // probs yoksa money'ye düş
+    expect(prMatchEquity(undefined, money, 1, false)).toBeCloseTo(money, 10)
   })
 
   it('TEST F — agregasyon: (0.1+1.0)/(10+100)×500 = 5.0', () => {

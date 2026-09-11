@@ -49,6 +49,23 @@ export function onePointFactor(_matchLength: number, _isMoney = false): number {
   return 1
 }
 
+// 1-PUANLIK MAÇ EQUITY (XG hizalama): 1-puanlık maçta gammon/backgammon ALAKASIZ (yalnız kazan/kaybet
+// sayılır). Bu yüzden PR equity kaybı MONEY equity (win−lose + 2·gammon + 3·bg) DEĞİL, saf kazanma
+// equity'si = Σwin − Σlose = (wn+wg+wb) − (ln+lg+lb) = 2·P(kazan)−1 (∈[-1,1]) ile ölçülmeli. XG de
+// böyle yapar; money equity kullanmak gammon terimleriyle 1-puanlık PR'ı sistematik ŞİŞİRİR.
+// probs: mover perspektifi [wn,wg,wb,ln,lg,lb]. Yoksa/1-puanlık değilse money equity'ye düş.
+export function prMatchEquity(
+  probs: number[] | undefined,
+  moneyEquity: number,
+  matchLength: number,
+  isMoney = false,
+): number {
+  if (matchLength === 1 && !isMoney && probs && probs.length >= 6) {
+    return probs[0] + probs[1] + probs[2] - (probs[3] + probs[4] + probs[5])
+  }
+  return moneyEquity
+}
+
 // PR = (equityLost / decisions) × 500; karar yoksa null (§10-12: asla 0 döndürme). Tam hassasiyet;
 // yalnızca GÖSTERİMDE yuvarla (§16).
 export function prValue(equityLost: number, decisions: number): number | null {
