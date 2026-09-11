@@ -142,6 +142,24 @@ class MatFromLogSegmentationTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/^\s*\d+\)\s{20,}\S/m', $mat, 'sol sütun boş (rakip art arda) satır olmamalı');
     }
 
+    /**
+     * REGRESYON (OmerOzsoy_NeuralAI 1-point dosyası): 1-point match'te oyun puanı maç hedefini
+     * AŞAMAZ. Gammon (end event 2p) bile "Wins 1 point and the match" olmalı; ASLA "Wins 2 point".
+     * (Otoriter gammon sonucu korunur; yalnız MAÇA yazılan puan hedefe kırpılır — gnubg gibi.)
+     */
+    public function test_one_point_match_caps_gammon_to_single(): void
+    {
+        $turns = [
+            ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '6-5', 'm' => '24/18 13/8'],
+            ['g' => 1, 's' => 1, 'p' => 'B', 'd' => '4-2', 'm' => '24/20 13/11'],
+            ['g' => 1, 's' => 9, 'o' => 9, 'k' => 'end', 'p' => 'W', 'm' => 'Beyaz · Mars · 2p'], // gammon=2
+        ];
+        $mat = MatFromLog::build($turns, ['matchLength' => 1, 'matchId' => 'ONE']);
+
+        $this->assertStringContainsString('Wins 1 point and the match', $mat);
+        $this->assertStringNotContainsString('Wins 2 point', $mat); // 1-point match'te 2 puan YAZILMAZ
+    }
+
     /** TEST 3 — MULTI GAME: 3 oyunlu maçta hiçbir hamle yanlış oyuna kaymaz. */
     public function test_multi_game_no_cross_contamination(): void
     {

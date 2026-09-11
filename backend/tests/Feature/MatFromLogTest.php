@@ -151,6 +151,8 @@ class MatFromLogTest extends TestCase
     {
         // A double->2, B take, B double->4, A take, A backgammon (end event 12p).
         // Küp eventleri KAYBOLMAMALI ve sonuç kayıtlı otoriter puanı (12) yazmalı (3 DEĞİL).
+        // NOT: matchLength 12'den KÜÇÜK olsaydı puan maç hedefine KIRPILIRDI (match play) -> küp
+        // korumasını ölçemezdik; bu yüzden hedef 15 (12'yi kapsar, kırpma no-op).
         $turns = [
             ['g' => 1, 's' => 0, 'o' => -3, 'k' => 'cube', 'p' => 'W', 'm' => 'Katla → 2'],
             ['g' => 1, 's' => 0, 'o' => -2, 'k' => 'cube', 'p' => 'B', 'm' => 'Kabul (2)'],
@@ -159,7 +161,7 @@ class MatFromLogTest extends TestCase
             ['g' => 1, 's' => 2, 'p' => 'W', 'd' => '2-1', 'm' => '2/off 1/off'],
             ['g' => 1, 's' => 9, 'p' => 'W', 'k' => 'end', 'm' => 'Beyaz · Çifte mars · 12p'],
         ];
-        $mat = MatFromLog::build($turns, ['matchLength' => 3, 'matchId' => 'CUBE']);
+        $mat = MatFromLog::build($turns, ['matchLength' => 15, 'matchId' => 'CUBE']);
 
         $this->assertStringContainsString('Doubles => 2', $mat);
         $this->assertStringContainsString('Doubles => 4', $mat);

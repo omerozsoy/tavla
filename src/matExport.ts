@@ -430,9 +430,10 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       if (pts > 0) oc = { winner: w, points: pts }
     }
     if (oc) {
-      // XG davranisi: puan KIRPILMAZ. Mac uzunlugu asilsa bile o oyunda kazanilan GERCEK puan
-      // yazilir (gammon/backgammon × kup). "and the match" kazanan mac puanina ulastiginda eklenir.
-      const pts = oc.points
+      // PUAN MAC HEDEFINI ASAMAZ -> kalan puana KIRP (capPoints): 1-point match'te gammon/backgammon
+      // (2/3) yalniz 1 sayilir. Match play'de hedefin otesine puan yazilmaz (gnubg ile tutarli).
+      // Otoriter oyun sonucu korunur; yalniz MACA yazilan puan kirpilir. "and the match" ile birlikte.
+      const pts = capPoints(oc.points, effMatchLength, oc.winner === 'white' ? sw : sb)
       if (oc.winner === 'white') sw += pts
       else sb += pts
       const matchOver = effMatchLength > 0 && (oc.winner === 'white' ? sw : sb) >= effMatchLength

@@ -7299,7 +7299,7 @@ export default function App() {
             const w = matchWinner(match)
             return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
           })()}
-          matchUid={recordUid ?? undefined}
+          matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
           onClose={() => setResultView(null)}
         />
       )}
