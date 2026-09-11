@@ -48,17 +48,18 @@ describe('XG-style PR — spec test cases', () => {
     expect(s.overall.pr).toBe(0)
   })
 
-  it('TEST E — 1-puanlık maç: raw 0.04 -> ×1.5 = 0.06 katkı', () => {
+  it('TEST E — 1-puanlık maç: ×1.5 KALDIRILDI, prAdjusted = raw (XG/gnubg ile tutarlı)', () => {
+    // 2026-09-11: eski ×1.5 faktörü XG'de/gnubg yolunda yoktu ve 1-puanlık PR'ı %50 şişiriyordu.
     const d = checkerDecision(0.04, 0.0, -0.2, 5, 1)
     expect(d.normalizedEquityLoss).toBeCloseTo(0.04, 10)
-    expect(d.prAdjustedEquityLoss).toBeCloseTo(0.06, 10)
-    expect(onePointFactor(1)).toBe(1.5)
+    expect(d.prAdjustedEquityLoss).toBeCloseTo(0.04, 10) // faktör yok -> raw ile aynı
+    expect(onePointFactor(1)).toBe(1)
     expect(onePointFactor(3)).toBe(1)
   })
 
-  it('MONEY oyunu: target=1 olsa bile ×1.5 UYGULANMAZ (§15)', () => {
+  it('MONEY oyunu: target=1 (faktör nötr; para oyununda da 1)', () => {
     const d = checkerDecision(0.04, 0.0, -0.2, 5, 1, true) // isMoney=true
-    expect(d.prAdjustedEquityLoss).toBeCloseTo(0.04, 10) // faktör yok
+    expect(d.prAdjustedEquityLoss).toBeCloseTo(0.04, 10)
     expect(onePointFactor(1, true)).toBe(1)
   })
 
