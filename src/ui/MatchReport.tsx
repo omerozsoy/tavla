@@ -19,9 +19,10 @@ export interface LogEntry {
   player?: Player
   dice?: number[]
   playedSteps?: Step[]
-  cands?: { notation: string; equity: number; steps: Step[] }[]
+  cands?: { notation: string; equity: number; steps: Step[]; probs?: number[] | null }[]
   probs?: number[]
   seq?: number
+  game?: number // Mat Analiz FAZ 2: hangi oyun (game index) — hamle listesinde GAME ayirici icin
   cube?: {
     win: number
     equity: number
