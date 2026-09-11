@@ -115,6 +115,33 @@ class MatFromLogSegmentationTest extends TestCase
         $this->assertDoesNotMatchRegularExpression('/63:\s*\S/', substr($mat, strpos($mat, '63:'), 6)); // hamle token yok
     }
 
+    /**
+     * REGRESYON (ÖmerDOĞAN_NeuralAI dosyası): AYNI ZARLI iki FARKLI no-move (dance) turu
+     * KAYBOLMAMALI. Eski dedup içerik-tabanlıydı (dice+notation); dance'te notation boş olduğundan
+     * aynı zarlı iki dance çakışıp siliniyordu -> tur kaybı + rakip art arda zar atmış görünümü.
+     * Kimlik-tabanlı dedup (rg,player,seq,o) her iki dance'i de korur.
+     */
+    public function test_duplicate_dice_dances_not_deduped(): void
+    {
+        // pvb (tek istemci): W iki kez '52' ile dans eder (s0 ve s4). Aralarda gerçek turlar.
+        $p1 = [
+            ['g' => 1, 's' => 0, 'p' => 'W', 'd' => '5-2', 'm' => ''],                 // W dance #1 (52)
+            ['g' => 1, 's' => 1, 'p' => 'B', 'd' => '3-1', 'm' => '24/21 13/12'],      // B hamle
+            ['g' => 1, 's' => 2, 'p' => 'W', 'd' => '6-4', 'm' => '13/7 13/9'],        // W hamle
+            ['g' => 1, 's' => 3, 'p' => 'B', 'd' => '2-2', 'm' => '24/22 24/22 6/4 6/4'], // B hamle
+            ['g' => 1, 's' => 4, 'p' => 'W', 'd' => '5-2', 'm' => ''],                 // W dance #2 (52) — AYNI ZAR
+            ['g' => 1, 's' => 5, 'p' => 'B', 'd' => '6-5', 'm' => '13/7 13/8'],        // B hamle
+            ['g' => 1, 's' => 9, 'o' => 9, 'k' => 'end', 'p' => 'B', 'm' => 'Siyah · Normal · 1p'],
+        ];
+        $mat = MatFromLog::buildFromEvents($p1, [], ['whiteName' => 'W', 'blackName' => 'B', 'matchLength' => 1]);
+
+        // İki '52:' dance de görünmeli (biri silinmemeli).
+        $this->assertSame(2, substr_count($mat, '52:'), 'aynı zarlı iki dance de korunmalı');
+        // Rakip (B) art arda görünmemeli: her B hamlesinin solunda bir W girdisi olmalı ->
+        // sağ-sütun-yalnız satır (numara + boşluk + sağ) OLUŞMAMALI.
+        $this->assertDoesNotMatchRegularExpression('/^\s*\d+\)\s{20,}\S/m', $mat, 'sol sütun boş (rakip art arda) satır olmamalı');
+    }
+
     /** TEST 3 — MULTI GAME: 3 oyunlu maçta hiçbir hamle yanlış oyuna kaymaz. */
     public function test_multi_game_no_cross_contamination(): void
     {

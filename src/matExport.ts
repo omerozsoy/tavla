@@ -1,9 +1,11 @@
-// NOT (2026-09-11): Bu dosya artik UYGULAMA RUNTIME'inda KULLANILMAZ. .mat'in TEK OTORITER
-// ureticisi SUNUCUDUR (backend/app/Support/MatSerializer.php; MatBuilder=gnubg/luck, MatFromLog=xg/
-// indirme). Burasi yalnizca TEST/SPEC oracle'idir: matExport.botcheck.test.ts bu buildMat ile
-// commit'li fixture (bot-match.mat) uretir; PHP MatBuilder o fixture ile BYTE-BYTE karsilastirilir
-// (MatBuilderTest = luck regresyon kalkani). Yani buildMat, PHP luck ciktisinin DOGRULANMIS
-// referans spesifikasyonudur — silme; degistirirsen once PHP paritesini (MatBuilderTest) guncelle.
+// NOT (2026-09-11): .mat'in OTORITER ureticisi SUNUCUDUR (backend/app/Support/MatSerializer.php;
+// MatBuilder=gnubg/luck, MatFromLog=xg/indirme). Buradaki iki fonksiyonun rolu:
+//  - buildMat (gnubg NATIVE): UYGULAMADA KULLANILMAZ; yalniz TEST/SPEC oracle. matExport.botcheck.
+//    test.ts bununla commit'li fixture (bot-match.mat) uretir; PHP MatBuilder o fixture ile BYTE-BYTE
+//    karsilastirilir (MatBuilderTest = luck regresyon kalkani). buildMat = PHP luck'in DOGRULANMIS
+//    referans spesifikasyonu; silme, degistirmeden once PHP paritesini guncelle.
+//  - buildMatXg (XG): yalniz SESSIZ INDIRME YEDEGI (MatchReport). Sunucu kaydi henuz flush olmadi/
+//    erisemedi ise istemci bir .mat uretebilsin diye; normalde sunucudan indirilir.
 //
 // Mac kaydini .mat formatinda uret. IKI hedef var, IKI ayri fonksiyon:
 //
