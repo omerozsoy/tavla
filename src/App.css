@@ -4167,9 +4167,6 @@ button[aria-disabled='true'],
   border-radius: 0;
   box-shadow: none;
   overflow-y: auto;
-  /* Dokunmatikte en uste varinca overscroll'un tarayici "asagi cek-yenile"sini
-     tetiklemesini engelle (pozisyon analizinde tahtayi sifirliyordu). */
-  overscroll-behavior-y: contain;
   z-index: 50;
 }
 /* Oyun ekraninda SOL menu yoktur -> 254px bosluk koyu oyun zeminini gosteriyordu.
@@ -4376,7 +4373,6 @@ button[aria-disabled='true'],
   padding-top: calc(var(--header-h) + 6px); /* ust hesap bari + ust sayilar icin kucuk pay */
   overflow-x: hidden;
   overflow-y: auto;
-  overscroll-behavior-y: contain; /* dokunmatik "asagi cek-yenile" reload'unu engelle */
 }
 
 /* ---- Ust bar ---- */
