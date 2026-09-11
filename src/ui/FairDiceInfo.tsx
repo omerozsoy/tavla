@@ -15,6 +15,7 @@ import { Icon, type IconName } from './Icon'
 import { useT } from '../i18n'
 import { secureDie } from '../engine/game'
 import { summarize, type DiceTestResult } from '../engine/diceStats'
+import { FairDice, sha256Hex, verifyRoll } from '../engine/fairDice'
 
 const PRESETS = [100, 1000, 10000, 100000]
 const MAX_ROLLS = 1_000_000
@@ -55,6 +56,33 @@ export default function FairDiceInfo() {
   const [showDetail, setShowDetail] = useState(false)
   const [showTech, setShowTech] = useState(false)
   const runIdRef = useRef(0)
+
+  // ---- Tohumla dogrulama (provably-fair) state ----
+  // Ornek bir mac: tarayicida serverSeed/clientSeed uretilir, commitment=SHA256(serverSeed).
+  // Kullanici bir zar sirasini (nonce) dogrulayip taahhut<->tohum eslesmesini gorebilir;
+  // degeri kurcalayinca eslesme bozulur (adilligin somut kaniti). Canli mac gerektirmez.
+  const [seed, setSeed] = useState(() => {
+    const fd = new FairDice()
+    return { serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 }
+  })
+  const [vServer, setVServer] = useState(seed.serverSeed)
+  const [vClient, setVClient] = useState(seed.clientSeed)
+  const [vNonce, setVNonce] = useState(0)
+  const [vResult, setVResult] = useState<{ dice: number[]; match: boolean } | null>(null)
+
+  function verifySeed() {
+    const dice = verifyRoll(vServer.trim(), vClient.trim(), vNonce)
+    const match = sha256Hex(vServer.trim()) === seed.commitment
+    setVResult({ dice, match })
+  }
+  function regenSeed() {
+    const fd = new FairDice()
+    setSeed({ serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 })
+    setVServer(fd.serverSeed)
+    setVClient(fd.clientSeed)
+    setVNonce(0)
+    setVResult(null)
+  }
 
   // Unmount'ta bekleyen batch'i iptal et (setState-after-unmount onlenir).
   useEffect(() => () => void (runIdRef.current++), [])
@@ -169,6 +197,74 @@ export default function FairDiceInfo() {
             <Icon name="code" size={16} /> {t('fairp.s4.cta')}
           </a>
         </Button>
+      </section>
+
+      {/* ==================== 5 · Tohumlarla dogrulama (provably-fair deneme) ==================== */}
+      <section className="fairp-card fairp-verify">
+        <h4 className="fairp-card-title">
+          <span aria-hidden="true">🔑</span> {t('fairp.verify.title')}
+        </h4>
+        <p className="fairp-test-sub">{t('fairp.verify.sub')}</p>
+
+        <label className="fairp-vlabel">
+          <span className="fairp-vlabel-head">
+            <span>{t('fairp.verify.commitment')}</span>
+            <span className="fairp-vtech">commitment</span>
+          </span>
+          <input value={seed.commitment} readOnly aria-readonly="true" />
+        </label>
+        <label className="fairp-vlabel">
+          <span className="fairp-vlabel-head">
+            <span>{t('fairp.verify.serverLabel')}</span>
+            <span className="fairp-vtech">serverSeed</span>
+          </span>
+          <input value={vServer} onChange={(e) => setVServer(e.target.value)} />
+        </label>
+        <label className="fairp-vlabel">
+          <span className="fairp-vlabel-head">
+            <span>{t('fairp.verify.clientLabel')}</span>
+            <span className="fairp-vtech">clientSeed</span>
+          </span>
+          <input value={vClient} onChange={(e) => setVClient(e.target.value)} />
+        </label>
+        <label className="fairp-vlabel">
+          <span className="fairp-vlabel-head">
+            <span>{t('fairp.verify.nonceLabel')}</span>
+            <span className="fairp-vtech">nonce · 0…{Math.max(0, seed.rolls - 1)}</span>
+          </span>
+          <input
+            type="number"
+            min={0}
+            value={vNonce}
+            onChange={(e) => setVNonce(Math.max(0, Number(e.target.value)))}
+          />
+        </label>
+
+        <div className="fairp-vactions">
+          <Button variant="default" onClick={verifySeed}>
+            <Icon name="shield-check" size={16} /> {t('fairp.verify.cta')}
+          </Button>
+          <Button variant="ghost" onClick={regenSeed}>
+            <Icon name="refresh" size={16} /> {t('fairp.verify.regen')}
+          </Button>
+        </div>
+
+        {vResult && (
+          <div className={`fairp-dist ${vResult.match ? 'ok' : 'warn'}`}>
+            <div className="fairp-dist-head">
+              <Icon name={vResult.match ? 'shield-check' : 'warning-circle'} size={20} />
+              <b>{vResult.match ? t('fairp.verify.okTitle') : t('fairp.verify.badTitle')}</b>
+            </div>
+            <p className="fairp-dist-desc">{vResult.match ? t('fairp.verify.okDesc') : t('fairp.verify.badDesc')}</p>
+            <div className="fairp-vdice" aria-hidden="true">
+              {vResult.dice.slice(0, vResult.dice.length === 4 ? 4 : 2).map((d, i) => (
+                <Icon key={i} name={dieIcon(d)} size={34} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        <p className="fairp-note fairp-vnote">{t('fairp.verify.note')}</p>
       </section>
 
       {/* ==================== Teknik detaylar (accordion) ==================== */}

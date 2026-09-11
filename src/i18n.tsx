@@ -841,6 +841,22 @@ const TR: Dict = {
   'fairp.test.dist.p': 'p-değeri',
   'fairp.test.infobox':
     'Buradaki test, zarların dağılımını görmenizi sağlar. Rastgele sistemlerde kısa süreli farklılıklar normaldir. Asıl önemli olan, çok sayıda atışta sonuçların dengeli bir dağılıma yaklaşmasıdır.',
+  'fairp.verify.title': 'Tohumlarla Bir Zarı Doğrula',
+  'fairp.verify.sub':
+    'Aşağıda örnek bir maç için oluşturulmuş tohumlar var. "Doğrula"ya bas: taahhüdün (parmak izi) tohumla eşleştiğini ve zarın bu tohumdan hesaplandığını gör. Bir değeri değiştirirsen eşleşme bozulur.',
+  'fairp.verify.commitment': 'Taahhüt (SHA-256 parmak izi)',
+  'fairp.verify.serverLabel': 'Sunucu Tohumu',
+  'fairp.verify.clientLabel': 'İstemci Tohumu',
+  'fairp.verify.nonceLabel': 'Zar Sırası',
+  'fairp.verify.cta': 'Doğrula',
+  'fairp.verify.regen': 'Yeni örnek oluştur',
+  'fairp.verify.okTitle': 'Doğrulandı',
+  'fairp.verify.okDesc': 'Tohum, baştaki taahhütle birebir eşleşiyor ve zar bu tohumdan hesaplandı.',
+  'fairp.verify.badTitle': 'Eşleşmedi',
+  'fairp.verify.badDesc':
+    'Değerler değiştirildi; artık baştaki taahhütle eşleşmiyor. Gerçek bir maçta bu, zarlara dokunulduğu anlamına gelir.',
+  'fairp.verify.note':
+    'Bu tohumlar tarayıcında oluşturulan bir örnektir. Gerçek maçlarda, maç bittiğinde kendi tohumlarını görüp aynı yöntemle doğrulayabilirsin.',
   'stats.title': 'İstatistiklerim',
   'stats.rank': 'Sıralama: {r}. / {n} oyuncu',
   'stats.games': 'Maç',
@@ -2205,6 +2221,22 @@ const EN: Dict = {
   'fairp.test.dist.p': 'p-value',
   'fairp.test.infobox':
     'This test lets you see how the dice are distributed. Short-term differences are normal in random systems. What matters is that, over many rolls, the results approach a balanced distribution.',
+  'fairp.verify.title': 'Verify a Roll With the Seeds',
+  'fairp.verify.sub':
+    'Below are seeds generated for an example match. Press “Verify”: see that the commitment (fingerprint) matches the seed and that the roll was computed from it. Change any value and the match breaks.',
+  'fairp.verify.commitment': 'Commitment (SHA-256 fingerprint)',
+  'fairp.verify.serverLabel': 'Server Seed',
+  'fairp.verify.clientLabel': 'Client Seed',
+  'fairp.verify.nonceLabel': 'Roll Number',
+  'fairp.verify.cta': 'Verify',
+  'fairp.verify.regen': 'Generate new example',
+  'fairp.verify.okTitle': 'Verified',
+  'fairp.verify.okDesc': 'The seed matches the original commitment exactly, and the roll was computed from that seed.',
+  'fairp.verify.badTitle': 'No Match',
+  'fairp.verify.badDesc':
+    'The values were changed, so they no longer match the original commitment. In a real match this would mean the dice were tampered with.',
+  'fairp.verify.note':
+    'These seeds are an example generated in your browser. In real matches, when the match ends you can see your own seeds and verify them the same way.',
   'stats.title': 'My Stats',
   'stats.rank': 'Rank: {r} / {n} players',
   'stats.games': 'Games',

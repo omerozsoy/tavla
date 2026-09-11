@@ -19559,6 +19559,50 @@ button.acct-row:hover:not(:disabled) {
   flex: 0 0 auto;
   margin-top: 2px;
 }
+/* Tohumla dogrulama (provably-fair deneme) */
+.fairp-vlabel {
+  display: block;
+  margin-bottom: 12px;
+}
+.fairp-vlabel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-size: 0.86rem;
+  color: var(--text);
+}
+.fairp-vtech {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-family: var(--tv-font-mono);
+}
+.fairp-vlabel input {
+  width: 100%;
+  font-family: var(--tv-font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.fairp-vlabel input[readonly] {
+  opacity: 0.85;
+  cursor: default;
+}
+.fairp-vactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+.fairp-vdice {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+  color: var(--text);
+}
+.fairp-vnote {
+  margin-top: 14px !important;
+}
 @media (max-width: 560px) {
   .fairp-hero-title {
     font-size: 1.28rem;
