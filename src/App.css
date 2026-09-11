@@ -13815,7 +13815,9 @@ button.acct-row:hover:not(:disabled) {
   position: relative;
   margin: 0;
   padding: 12px 14px 12px 42px;
-  background: var(--panel);
+  /* --card-bg (tema-uyumlu UI yüzeyi) kullan; --panel BOARD rengidir ve koyu temada bile
+     krem kalıp beyaz metinle okunmuyordu (kontrast bug). --card-bg --text ile daima kontrast. */
+  background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   color: var(--text);
