@@ -39,11 +39,14 @@ export interface PrSummary {
   overall: PrCategory
 }
 
-// 1-puanlık maç faktörü (§14): XG tek-puanlık MAÇTA hataları ×1.5 ölçekler. Merkezî.
-// isMoney=true (kübsüz para/coin oyunu) -> faktör UYGULANMAZ (§15); para oyunu maç-equity
-// çarpıtması taşımaz. Yalnız gerçek 1-puanlık MAÇ (match play, target=1) ×1.5 alır.
-export function onePointFactor(matchLength: number, isMoney = false): number {
-  return !isMoney && matchLength === 1 ? 1.5 : 1
+// 1-puanlık maç faktörü — ARTIK NÖTR (her zaman 1). 2026-09-11: XG "Performance Rating" 1-puanlık
+// maçta hataları ×1.5 ÖLÇEKLEMEZ; sunucu-otoriter gnubg yolu (AnalysisOrchestrator) da uygulamıyordu.
+// Eski ×1.5 wildbg yolunu gnubg/XG ile TUTARSIZ yapıp 1-puanlık PR'ı %50 ŞİŞİRİYORDU (kullanıcı:
+// "TavlaTV PR XG'den yüksek"). Faktör kaldırıldı; imza korunur (log şeması + geriye uyum). XG'nin
+// 1-puanlık maçta doğru davranışı zaten match-aware equity'den gelir (gnubg yolu); wildbg kübsüz
+// money-equity kullandığı için TAM parite iddia edilmez (§11) ama bu ×1.5 artık farkı büyütmez.
+export function onePointFactor(_matchLength: number, _isMoney = false): number {
+  return 1
 }
 
 // PR = (equityLost / decisions) × 500; karar yoksa null (§10-12: asla 0 döndürme). Tam hassasiyet;
