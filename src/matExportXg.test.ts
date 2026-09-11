@@ -222,6 +222,14 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toContain('Wins 3 point')
   })
 
+  // REGRESYON (OmerOzsoy 1-point dosyasi): 1-point match'te gammon (2) MAC HEDEFINI asamaz ->
+  // "Wins 1 point and the match". ASLA "Wins 2 point" (match play'de hedefin otesine puan yazilmaz).
+  it('1-point match: gammon bile 1 puana kirpilir -> "Wins 1 point and the match"', () => {
+    const mat = buildMatXg([move(whiteWin(2), 'white')], { matchLength: 1, whiteName: 'A', blackName: 'B' })
+    expect(mat).toContain('Wins 1 point and the match')
+    expect(mat).not.toContain('Wins 2 point')
+  })
+
   it('kup ile biten oyun: Doubles/Takes -> puan kup ile carpilir (2)', () => {
     const log = [cube('double', 'white', 0), cube('take', 'black', 1), move(whiteWin(1), 'white')]
     const mat = buildMatXg(log, { matchLength: 5, whiteName: 'A', blackName: 'B' })
@@ -253,12 +261,6 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toContain('Wins 1 point and the match')
   })
 
-  it('gercek puan KIRPILMAZ: 1 puanlik macta gammon (2) -> "Wins 2 point and the match"', () => {
-    // Kullanici kurali: mac puani asilsa bile o oyunda kazanilan GERCEK puan yazilir.
-    const mat = buildMatXg([move(whiteWin(2), 'white')], { matchLength: 1, whiteName: 'A', blackName: 'B' })
-    expect(mat).toContain('Wins 2 point and the match')
-  })
-
   it('mac uzunlugu HARD-CODE degil: log mctx.matchLen otoriter (yanlis opts.matchLength=1 -> 3 point match)', () => {
     // MatchAnalytics gibi caller matchLength gecmese/1 gecse bile, log'a gomulu gercek uzunluk yazilir.
     const e: MoveLogEntry = {
@@ -285,8 +287,9 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
       matchLength: 3, whiteName: 'A', blackName: 'B',
       matchResult: { winner: 'black', score: { white: 0, black: 4 } }, // siyah 4 (kup) ile bitirdi
     })
-    // kazanan SAG sutun (siyah): "  N)  Losses 4 point   Wins 4 point and the match"
-    expect(mat).toMatch(/Losses 4 point\s+Wins 4 point and the match/)
+    // matchResult'tan sonuc turetildi; puan MAC HEDEFINE (3) kirpilir -> "Losses 3 / Wins 3"
+    // (match play'de hedefin otesine puan yazilmaz; 3-point macta 4 puan olmaz).
+    expect(mat).toMatch(/Losses 3 point\s+Wins 3 point and the match/)
   })
 
   it('matchResult yalnizca SON oyunda ve sadece gerekince (tahta sonuc verirse kullanilmaz)', () => {

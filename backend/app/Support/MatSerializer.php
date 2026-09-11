@@ -118,8 +118,17 @@ class MatSerializer
                         $sb += $pts;
                     }
                 } else {
-                    // XG: puan KIRPILMAZ; "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
+                    // XG: "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
+                    // PUAN MAÇ HEDEFİNİ AŞAMAZ -> kalan puana KIRP: 1-point match'te gammon/backgammon
+                    // (2/3) yalnız 1 sayılır (küp+gammon match play'de hedefin ötesine puan yazmaz).
+                    // Otoriter oyun sonucu (gammon) korunur; yalnız MAÇA yazılan puan kırpılır (gnubg ile
+                    // tutarlı). Kaybeden taş topladıysa zaten motor single verir; bu kırpma 1-pt/tavan durumu.
+                    $before = $oc['winner'] === 'white' ? $sw : $sb;
                     $pts = $oc['points'];
+                    $need = $matchLength - $before;
+                    if ($need > 0) {
+                        $pts = min($pts, $need);
+                    }
                     if ($oc['winner'] === 'white') {
                         $sw += $pts;
                     } else {
