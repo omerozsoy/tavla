@@ -3,20 +3,16 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
-import { startTrial, subscribe, type ServerUser } from '../api'
+import { subscribe } from '../api'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 
 export default function Membership({
   current,
-  trialUsed,
-  onUpgraded,
   onClose,
   onExtend,
 }: {
   current: PlanId
-  trialUsed: boolean
-  onUpgraded: (u: ServerUser) => void
   onClose: () => void
   onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
 }) {
@@ -25,23 +21,6 @@ export default function Membership({
   useEscape(onClose)
   const [busy, setBusy] = useState<PlanId | null>(null)
   const [err, setErr] = useState('')
-
-  async function trial(plan: 'star' | 'starpro') {
-    setErr('')
-    setBusy(plan)
-    try {
-      const r = await startTrial(plan)
-      onUpgraded(r.user)
-      onClose()
-    } catch (e) {
-      const m = e as { message?: string }
-      const msg = m?.message || t('mem.err')
-      setErr(msg)
-      notify.error(msg)
-    } finally {
-      setBusy(null)
-    }
-  }
 
   async function pay(plan: 'star' | 'starpro') {
     setErr('')
@@ -114,30 +93,16 @@ export default function Membership({
                   ) : p.id === 'free' ? (
                     <span className="mem-free-note">—</span>
                   ) : (
-                    <>
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        disabled={busy !== null || trialUsed}
-                        onClick={() => trial(p.id as 'star' | 'starpro')}
-                      >
-                        {busy === p.id ? (
-                          <span className="btn-spinner" aria-hidden="true" />
-                        ) : trialUsed ? (
-                          t('mem.trialUsed')
-                        ) : (
-                          t('mem.tryFree')
-                        )}
-                      </Button>
-                      <Button
-                        variant="secondary"
-                        className="w-full"
-                        disabled={busy !== null}
-                        onClick={() => pay(p.id as 'star' | 'starpro')}
-                      >
-                        {t('mem.subscribe')}
-                      </Button>
-                    </>
+                    // NOT: "7 gün ücretsiz dene" (trial) butonu KALDIRILDI — sitede gerçek bir
+                    // deneme süreci yok, yanıltıcıydı. Yalnız doğrudan abonelik bırakıldı.
+                    <Button
+                      variant="default"
+                      className="w-full"
+                      disabled={busy !== null}
+                      onClick={() => pay(p.id as 'star' | 'starpro')}
+                    >
+                      {busy === p.id ? <span className="btn-spinner" aria-hidden="true" /> : t('mem.subscribe')}
+                    </Button>
                   )}
                 </div>
               </div>

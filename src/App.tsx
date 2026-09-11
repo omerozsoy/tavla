@@ -169,7 +169,7 @@ import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
 import FrameGallery from './ui/FrameGallery'
 import AvatarFrame from './ui/AvatarFrame'
-import PremiumPill from './ui/PremiumPill'
+import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
@@ -5666,7 +5666,7 @@ export default function App() {
                 className="account-avf"
               />
               {profile.nickname}
-              {premium && <PremiumPill style={{ marginLeft: 6 }} />}
+              {premium && <PremiumCrown style={{ marginLeft: 6 }} />}
             </button>
             <button
               type="button"
@@ -5784,7 +5784,7 @@ export default function App() {
           >
             {/* Ad SOLDA; avatar (menu) en sagda kosede. */}
             <span className="acct-trigger-name">{profile.nickname}</span>
-            {premium && <PremiumPill style={{ marginRight: 2 }} />}
+            {premium && <PremiumCrown style={{ marginRight: 2 }} />}
             {rewardReady && <span className="acct-trigger-dot" aria-hidden="true" />}
             <Icon name="chevron" size={16} className="acct-chev" />
             <AvatarFrame
@@ -6767,8 +6767,6 @@ export default function App() {
       {memOpen && user && (
         <Membership
           current={(user.plan_active ?? 'free') as PlanId}
-          trialUsed={!!user.trial_used}
-          onUpgraded={(u) => setUser(u)}
           onClose={() => setMemOpen(false)}
           onExtend={() => {
             // "Üyeliğini Uzat": 1 yillik premium tek urun sepeti -> /sepet -> odeme
@@ -6931,13 +6929,13 @@ export default function App() {
                           <span className="rm-me">
                             <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={myName} className="rm-avf" />
                             {myName}
-                            {premium && <PremiumPill style={{ marginLeft: 5 }} />}
+                            {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
                           </span>
                           <span className="rm-vs">vs</span>
                           <span className="rm-you">
                             <AvatarFrame src={r.opp_avatar} size={26} name={oppName} className="rm-avf" />
                             {oppName}
-                            {r.opp_premium && <PremiumPill style={{ marginLeft: 5 }} />}
+                            {r.opp_premium && <PremiumCrown style={{ marginLeft: 5 }} />}
                             {typeof r.opp_rating === 'number' && (
                               <span className="rm-rat"> {r.opp_rating}</span>
                             )}
@@ -6969,7 +6967,7 @@ export default function App() {
                       <span className="rm-me">
                         <AvatarFrame src={profile.avatar} frame={user?.avatar_frame} size={26} name={profile.nickname || t('resume.you')} className="rm-avf" />
                         {profile.nickname || t('resume.you')}
-                        {premium && <PremiumPill style={{ marginLeft: 5 }} />}
+                        {premium && <PremiumCrown style={{ marginLeft: 5 }} />}
                       </span>
                       <span className="rm-vs">vs</span>
                       <span className="rm-you">
