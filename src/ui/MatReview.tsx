@@ -4,11 +4,14 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import MiniBoard from './MiniBoard'
+import Board from './Board'
+import DiceRow from './Dice'
+import { useBoardDir } from './boardDirection'
+import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
 import type { LogEntry } from './MatchReport'
-import type { Step } from '../engine/types'
+import type { GameState, Step } from '../engine/types'
 
 // Mat Analiz FAZ 2: yüklenen .mat maçının HAMLE-HAMLE görüntüleyicisi (HedgeHog benzeri
 // tam-ekran üç panel): sol = hamle listesi (oyuncu + hata filtreli), orta = tahta + oyuncu
@@ -87,6 +90,9 @@ export default function MatReview({
 
   const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('all')
   const [who, setWho] = useState<'both' | 'white' | 'black'>('both')
+  // Kullanıcının board yönü + taş rengi tercihleri (gerçek Board ile birebir aynı görünüm)
+  const [boardDir] = useBoardDir()
+  const [swapStones] = useSwapStones()
 
   // İlk analiz edilebilir (pos'lu) hamle seçili gelsin.
   const firstIdx = useMemo(() => log.findIndex((e) => e.pos && !e.cube), [log])
@@ -123,6 +129,22 @@ export default function MatReview({
   // Sağ panel olasılıkları: seçili adayın (yoksa oynanan) 6'lı [wn,wg,wb,ln,lg,lb].
   const probs = (candIdx >= 0 && cur?.cands?.[candIdx]?.probs) || cur?.probs || null
   const win = probs ? probs[0] + probs[1] + probs[2] : null
+
+  // Gerçek Board için: GameState + seçili hamlenin kaynak/hedef vurgusu + zar satırı.
+  const boardState: GameState | null = cur?.pos
+    ? { points: cur.pos.points, bar: cur.pos.bar, off: cur.pos.off,
+        turn: (cur.player ?? cur.pos.turn) as GameState['turn'], dice: cur.dice ?? [], diceUsed: [] }
+    : null
+  const froms = new Set<number | 'bar'>()
+  const tos = new Set<number | 'off'>()
+  for (const s of viewSteps) {
+    froms.add(s.from)
+    tos.add(s.to)
+  }
+  const diceFaces = (cur?.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
+  const diceRow =
+    boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
+  const whiteBottom = cur?.player === 'white' // beyaz altta (flip yok)
 
   // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
@@ -199,21 +221,36 @@ export default function MatReview({
           </div>
         </aside>
 
-        {/* ---- ORTA: tahta ---- */}
+        {/* ---- ORTA: GERÇEK site tahtası (tema + gerçek zarlar) ---- */}
         <main className="mr-board">
           <div className="mr-player mr-player-top">
-            <span className="mr-score">
-              {log[sel]?.pos ? '' : ''}
-              {matchLength ? `0/${matchLength}` : ''}
-            </span>
+            <span className="mr-score">{matchLength ? `0/${matchLength}` : ''}</span>
             <span className="mr-pname">
               {cur?.player === 'black' && <span className="mr-turn">▶</span>} {nameB}
             </span>
-            {cur?.pos && <span className="mr-pip">{pipCount(cur.pos, 'black')}</span>}
+            {boardState && <span className="mr-pip">{pipCount(boardState, 'black')}</span>}
           </div>
 
-          {cur?.pos && cur.player ? (
-            <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} />
+          {boardState ? (
+            <div className="mr-board-stage">
+              <Board
+                state={boardState}
+                selectableFroms={froms}
+                targets={tos}
+                selectedFrom={null}
+                onSelectFrom={() => {}}
+                onSelectTarget={() => {}}
+                onDragFrom={() => {}}
+                pipTop={pipCount(boardState, 'black')}
+                pipBottom={pipCount(boardState, 'white')}
+                cube={{ value: 1, owner: null }}
+                flip={false}
+                mirror={boardDir === 'left'}
+                swapStones={swapStones}
+                centerLeft={whiteBottom ? null : diceRow}
+                centerRight={whiteBottom ? diceRow : null}
+              />
+            </div>
           ) : (
             <div className="mr-noboard">{t('mrv.selectMove')}</div>
           )}
@@ -223,7 +260,7 @@ export default function MatReview({
             <span className="mr-pname">
               {cur?.player === 'white' && <span className="mr-turn">▶</span>} {nameW}
             </span>
-            {cur?.pos && <span className="mr-pip">{pipCount(cur.pos, 'white')}</span>}
+            {boardState && <span className="mr-pip">{pipCount(boardState, 'white')}</span>}
           </div>
         </main>
 
