@@ -5130,6 +5130,11 @@ export default function App() {
   // "Küp PR": sunucu kırılımı -> lokal küp ölçümü. Hiç SAYILAN küp kararı yoksa null -> "—"
   // (satır her maçta görünür; uydurma 0.00 YAZMAYIZ).
   const prCubeShown = (c: Player): number | null => {
+    // pvb bot: TÜM PR'ları sentetik (seviyeye uygun) -> Küp PR de genel/Pul ile TUTARLI kalsın.
+    // (Eskiden burada bot override YOKTU -> bot genel/Pul PR sentetik 0.10 iken Küp PR GERÇEK
+    // ölçüm 17.47 çıkıyor, "botun küp PR'ı genele katılmamış" tutarsızlığı oluşuyordu. Az sayıda
+    // küp kararında ölçülen küp PR gürültülüdür; bot gücünü sentetik değer temsil eder.)
+    if (!online && botPr != null && c !== prHumanColor) return botPr
     const srv = serverPr ? (c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) : null
     if (srv != null) return srv
     return prCubeOf(c)
