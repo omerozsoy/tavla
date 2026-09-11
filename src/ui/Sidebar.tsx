@@ -85,12 +85,13 @@ function Avatar({ p }: { p: PlayerInfo }) {
     </div>
   )
   // Sira gostergesi: avatarin iki yaninda parantez benzeri iki yay, yanip soner (net "sira kimde")
-  // onOpenProfile varsa (rakip): avatar tıklanabilir + hover'da profil modalı açılır.
+  // onOpenProfile varsa (rakip): avatar TIKLANINCA herkese açık profil modalı açılır.
+  // (Eskiden onMouseEnter de modalı açıyordu -> hover'da açılıp mouse ayrılınca KAPANMIYORDU;
+  //  modal mouse-leave ile kapanmaz. Hover'da zaten native `title` ipucu var -> yalnız tık.)
   return (
     <div
       className={`pc-avatar ${p.active ? 'active' : ''} ${p.onOpenProfile ? 'clickable' : ''}`}
       onClick={p.onOpenProfile}
-      onMouseEnter={p.onOpenProfile}
       role={p.onOpenProfile ? 'button' : undefined}
       tabIndex={p.onOpenProfile ? 0 : undefined}
       onKeyDown={p.onOpenProfile ? (e) => (e.key === 'Enter' || e.key === ' ') && p.onOpenProfile!() : undefined}
