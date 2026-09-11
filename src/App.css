@@ -17997,6 +17997,12 @@ button.acct-row:hover:not(:disabled) {
 .prof-ov-all .setup-label {
   display: none;
 }
+/* "Tüm Tahta Tasarımları" kartları üstteki "Koleksiyonum" şeridiyle AYNI (küçük) boyda
+   olsun: büyük -lg (minmax 210px) yerine koleksiyon kartı (~148px) ölçüsü. */
+.prof-ov-all .board-previews-lg {
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 12px;
+}
 /* Mobil: tahta + cerceve galerileri her zaman 2 sutun (tek dev sutun olmasin) */
 @media (max-width: 620px) {
   .prof-ov-all .board-previews-lg {
@@ -19773,7 +19779,9 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  z-index: 50;
+  /* fs-toggle (120/121) ve olasi kose FAB'lerinin ÜSTÜNDE olsun ki "Gönder" butonu
+     hicbir oyun tipinde (eslesme/arkadas/turnuva) baska bir elemanla ORTULMESIN. */
+  z-index: 130;
 }
 .chat-head {
   display: flex;
@@ -19787,8 +19795,42 @@ button.acct-row:hover:not(:disabled) {
   font-weight: 400;
   font-size: 14px;
 }
+.chat-head-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
 .chat-toggle {
   opacity: 0.85;
+}
+/* Okunmamis mesaj rozeti (kapali sohbet basliginda) — bildirim rozeti gibi kirmizi sayac.
+   Baslik zaten accent (kiremit) oldugu icin rozet BEYAZ zemin + accent metin -> okunur. */
+.chat-unread {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+/* Yeni mesaj gelince baslik hafifce nabiz atsin (dikkat cek); reduced-motion'da kapali. */
+.chat-head.has-unread {
+  animation: chat-pulse 1.6s ease-in-out infinite;
+}
+@keyframes chat-pulse {
+  0%, 100% { background: var(--accent); }
+  50% { background: var(--accent-hover, color-mix(in srgb, var(--accent) 80%, #000)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-head.has-unread {
+    animation: none;
+  }
 }
 .chat-list {
   display: flex;
@@ -19921,13 +19963,11 @@ button.acct-row:hover:not(:disabled) {
 }
 .chat-emojis {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   padding: 8px;
   border-top: 1px solid var(--border);
   background: var(--bg);
-  max-height: 132px;
-  overflow-y: auto;
 }
 .emoji-btn {
   border: none;
