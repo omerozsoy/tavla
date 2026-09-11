@@ -60,6 +60,8 @@ export const PAGES: PageDef[] = [
 
   // --- Araclar ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
+  // Mat Analiz: kullanici .mat maci yukler, gnubg tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
+  { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'analyze', group: 'tools' },
   { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools', inMenu: false },
   { key: 'blunders', slug: 'hata-gunlugu', labelKey: 'menu.blunders', icon: 'warning-circle', group: 'tools' },
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },

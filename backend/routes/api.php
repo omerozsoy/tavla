@@ -115,6 +115,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/match-pr-gnubg/{match}', [AuthController::class, 'matchGnubgPr']); // canli ekran: gnubg PR hazir mi (HAKEM=gnubg poll)
     // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
     Route::middleware('throttle:30,1')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
+    // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
+    // analyse match COK agir (dakikalar surebilir) -> siki throttle.
+    Route::middleware('throttle:8,1')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —

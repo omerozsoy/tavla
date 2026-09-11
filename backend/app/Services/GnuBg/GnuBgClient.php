@@ -139,6 +139,25 @@ class GnuBgClient
         }
     }
 
+    /**
+     * Yüklenen .mat maçını gnubg ile TAM analiz eder (Mat Analiz sayfası).
+     * Doner: ['ok'=>bool, 'matchLength'=>?int, 'names'=>[..], 'players'=>[p0,p1 özet],
+     *        'stats'=>['sections'=>[..]], 'statistics_match'=>raw] veya hata.
+     */
+    public function analyzeMatch(string $mat, int $plies = 2): ?array
+    {
+        try {
+            $resp = Http::timeout(240) // import + analyse match (uzun sürebilir)
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/analyzematch'), ['mat' => $mat, 'plies' => $plies]);
+
+            return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;

@@ -115,6 +115,7 @@ import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
 import PositionAnalyzer from './ui/PositionAnalyzer'
+import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
 import { PAGES, PAGE_BY_KEY, type MenuGroup } from './pages'
@@ -541,6 +542,7 @@ export default function App() {
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
   const [shopProduct, setShopProduct] = useState<string | null>(null) // Magaza secili urun slug'i -> /magaza/<kat>/<slug>
   const [analyzerOpen, setAnalyzerOpen] = useState(false) // pozisyon analiz modulu
+  const [matAnalyzerOpen, setMatAnalyzerOpen] = useState(false) // Mat Analiz: .mat yukle + gnubg tam analiz
   const [leaderboardOpen, setLeaderboardOpen] = useState(false) // liderlik tablosu modali
   const [ranksOpen, setRanksOpen] = useState(false) // "Rutbeler" (RankProgression) modali
   const [infoOpen, setInfoOpen] = useState(false) // "Bilgi" sayfasi
@@ -747,6 +749,8 @@ export default function App() {
                                     ? 'nasil-oynanir'
                                     : analyzerOpen
                                       ? 'pozisyon-analizi'
+                                      : matAnalyzerOpen
+                                        ? 'mat-analiz'
                                       : achOpen
                                         ? 'basarimlar'
                                       : friendSetupOpen
@@ -989,6 +993,9 @@ export default function App() {
           break
         case 'pozisyon-analizi':
           setAnalyzerOpen(true)
+          break
+        case 'mat-analiz':
+          setMatAnalyzerOpen(true)
           break
         case 'basarimlar':
           setAchOpen(true)
@@ -5995,6 +6002,7 @@ export default function App() {
     setClubsOpen(false)
     setRulesOpen(false)
     setAnalyzerOpen(false)
+    setMatAnalyzerOpen(false)
     setEditProfile(false)
     setSpectate(null) // /izle URL sayfasi: menu/logo navigasyonu izlemeyi de kapatir
   }
@@ -6082,6 +6090,7 @@ export default function App() {
     onFriends: () => goPage(() => setFriendsOpen(true)),
     onMessages: () => goPage(() => { setMessagesFocusId(null); setMessagesOpen(true) }),
     onAnalyzer: () => goPage(() => setAnalyzerOpen(true)),
+    onMatAnalyzer: () => (user ? goPage(() => setMatAnalyzerOpen(true)) : setShowAuth(true)),
     // Premium arac: uye/premium OLMAYAN da menude GORUR; tiklayinca uyelik ekrani acilir
     onBlunders: () => (premium ? goPage(() => setBlunderOpen(true)) : setMemOpen(true)),
     onMatchHistory: () => (user ? goPage(() => setMatchHistOpen(true)) : setShowAuth(true)),
@@ -6124,6 +6133,7 @@ export default function App() {
     products: menuProps.onProducts,
     myOrders: menuProps.onMyOrders,
     analyzer: menuProps.onAnalyzer,
+    matAnalyzer: menuProps.onMatAnalyzer,
     blunders: menuProps.onBlunders,
     matchHistory: menuProps.onMatchHistory,
     info: menuProps.onInfo,
@@ -6272,6 +6282,7 @@ export default function App() {
     clubsOpen ||
     rulesOpen ||
     analyzerOpen ||
+    matAnalyzerOpen ||
     achOpen ||
     friendSetupOpen ||
     editProfile ||
@@ -6306,6 +6317,8 @@ export default function App() {
                     ? 'solo'
                     : analyzerOpen
                       ? 'analyzer'
+                      : matAnalyzerOpen
+                        ? 'matAnalyzer'
                       : friendSetupOpen
                         ? 'playFriend'
                       : clubsOpen
@@ -6671,6 +6684,11 @@ export default function App() {
             }}
             onClose={() => setAnalyzerOpen(false)}
           />
+        </div>
+      )}
+      {matAnalyzerOpen && (
+        <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <MatAnalyzer onClose={() => setMatAnalyzerOpen(false)} />
         </div>
       )}
     </>
