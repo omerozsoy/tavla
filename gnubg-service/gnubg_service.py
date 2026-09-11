@@ -386,13 +386,17 @@ def _points_to_boards(pts, bar):
 
 
 def _gnubg_point_to_index(turn, tok):
-    """gnubg mover-noktasi (1-24, 'bar', 'off') -> bizim ucgen index (0-23) / 'bar' / 'off'.
-    Beyaz: gnubg P -> index P-1. Siyah: gnubg P -> index 24-P (ayna)."""
+    """gnubg/mat mover-noktasi -> bizim ucgen index (0-23) / 'bar' / 'off'.
+    'bar'/'off' string VEYA sayisal dialect: 25=bar, 0=off (XG/.mat). 1-24: beyaz P-1, siyah 24-P."""
     if tok == "bar":
         return "bar"
     if tok == "off":
         return "off"
     p = int(tok)
+    if p == 25:  # sayisal dialect: 25 = bar (giris noktasi)
+        return "bar"
+    if p == 0:   # sayisal dialect: 0 = off (toplama)
+        return "off"
     return (p - 1) if turn == "white" else (24 - p)
 
 
@@ -1000,118 +1004,145 @@ def _find_move_list(game):
     return best
 
 
+def _mat_entry(text):
+    """.mat satirinin bir sutununu karara cevir: move / cube / result / None."""
+    t = (text or "").strip()
+    if not t:
+        return None
+    low = t.lower()
+    _CUBE = {"doubles": "double", "takes": "take", "drops": "drop", "beavers": "beaver",
+             "accepts": "take", "rejects": "drop"}
+    for k, act in _CUBE.items():
+        if low.startswith(k):
+            return ("cube", act)
+    if low.startswith("wins") or low.startswith("losses"):
+        return ("result", None)
+    m = re.match(r"^(\d+):\s*(.*)$", t)
+    if m:
+        d = m.group(1)
+        dice = [int(d[0]), int(d[1])] if len(d) >= 2 else []
+        return ("move", {"dice": dice, "notation": m.group(2).strip()})
+    return None
+
+
+_MAT_P1_RE = re.compile(r'Player\s*1\s*"([^"]*)"')
+_MAT_P2_RE = re.compile(r'Player\s*2\s*"([^"]*)"')
+_MAT_ROW_RE = re.compile(r"^\s*(\d+)\)(.*)$")
+_MAT_GAME_RE = re.compile(r"^\s*Game\s+(\d+)\s*$", re.I)
+
+
+def _parse_mat_games(mat_text):
+    """.mat METNINI dogrudan ayristir (gnubg.match()'e GUVENME): iki sutun (sol=oyuncu1/beyaz,
+    sag=oyuncu2/siyah); her karar dosya sirasinda. Doner (match_len, names, games) — games her
+    oyun icin [(color, kind, data)] listesi. Bar=25/off=0 sayisal dialect _gnubg_point_to_index'te."""
+    names = None
+    p1 = _MAT_P1_RE.search(mat_text)
+    p2 = _MAT_P2_RE.search(mat_text)
+    if p1 and p2:
+        names = [p1.group(1).strip() or "White", p2.group(1).strip() or "Black"]
+    ml = _MATCHLEN_RE.search(mat_text)
+    match_len = int(ml.group(1)) if ml else 0
+    games = []
+    cur = None
+    col = None  # sag sutun mutlak karakter ofseti (her oyun basligindan tespit)
+    for line in mat_text.splitlines():
+        if _MAT_GAME_RE.match(line):
+            cur = []
+            games.append(cur)
+            col = None
+            continue
+        # Oyun basligi "P1 : skor   P2 : skor" -> sag sutun ofsetini (col) ver (isim uzunlugu farki icin)
+        if cur is not None and col is None:
+            hm = re.match(r"^(\s*\S.*?:\s*-?\d+)\s{2,}(\S.*?:\s*-?\d+)\s*$", line)
+            if hm:
+                col = hm.start(2)
+                continue
+        rm = _MAT_ROW_RE.match(line)
+        if not rm or cur is None:
+            continue
+        if col is not None and 0 < col <= len(line):
+            # Mutlak sutun bolme (dinamik) — sol="N) <p1>" -> "N)" soyulur, sag=p2
+            left = re.sub(r"^\s*\d+\)\s*", "", line[:col]).strip()
+            right = line[col:].strip()
+        else:
+            # Yedek heuristik: 3+ bosluk bol + esik
+            body = rm.group(2)
+            lead = len(body) - len(body.lstrip())
+            parts = re.split(r"\s{3,}", body.strip())
+            if len(parts) >= 2:
+                left, right = parts[0], parts[1]
+            elif len(parts) == 1:
+                left, right = ("", parts[0]) if lead >= 25 else (parts[0], "")
+            else:
+                left, right = "", ""
+        le = _mat_entry(left)
+        if le:
+            cur.append(("white",) + le)
+        rre = _mat_entry(right)
+        if rre:
+            cur.append(("black",) + rre)
+    return match_len, names, games
+
+
 def _reviewmatch(mat_text, plies=2):
-    """Yüklenen .mat maçını HAMLE-HAMLE analiz eder (Faz 2 görüntüleyici için LogEntry[] üretir).
-    Yaklaşım: gnubg import mat -> gnubg.match() ile hamle DİZİSİNİ al -> her oyunu başlangıçtan
-    replay ederek pozisyonları kur -> her taş-hamlesini gnubg hint ile YENİDEN analiz et (aday
-    listesi + oynanan kaybı). gnubg.match() iç yapısı sürüme göre değişebilir -> savunmacı +
-    _debug ile ilk oyunun ham kayıtları döner (sunucuda doğrulama/ince ayar için)."""
-    out = {"ok": False, "log": [], "import_cmd": None}
+    """Yuklenen .mat macini HAMLE-HAMLE analiz eder (Faz 2 goruntuleyici icin LogEntry[]).
+    .mat METNINI dogrudan ayristirir (gnubg.match() yapisina bagli DEGIL); her oyunu baslangictan
+    replay eder; her tas-hamlesini gnubg hint ile analiz eder (setgnubgid+hint; import gerekmez).
+    Bozuk .mat'ta (tas sayisi != 15) o oyunu durdurup gecerli kismi tutar (cokme yok)."""
+    out = {"ok": False, "log": []}
     if not mat_text or not mat_text.strip():
         out["error"] = "empty-mat"
         return out
-    tmp = "/tmp/tavlai_review.mat"
     try:
-        ml = _MATCHLEN_RE.search(mat_text)
-        match_len = int(ml.group(1)) if ml else 0
+        match_len, names, games = _parse_mat_games(mat_text)
         out["matchLength"] = match_len or None
-        with open(tmp, "w") as f:
-            f.write(mat_text)
-        imported = False
-        last_err = None
-        for cmd in ("import mat " + tmp, "load match " + tmp):
-            try:
-                gnubg.command("new match 1")
-            except Exception:
-                pass
-            try:
-                gnubg.command(cmd)
-                imported = True
-                out["import_cmd"] = cmd
-                break
-            except Exception as e:
-                last_err = str(e)
-        if not imported:
-            out["error"] = "import-failed"
-            out["import_err"] = last_err
-            return out
-        m = gnubg.match(1)  # 1 = analiz dahil (kanıtlı lucktest çağrısıyla aynı)
-        if not isinstance(m, dict):
-            out["error"] = "match-struct"
-            out["match_struct_type"] = str(type(m))
-            return out
-        out["names"] = None
-        info = m.get("match-info") or m.get("info") or m.get("matchinfo")
-        if isinstance(info, dict):
-            players = info.get("players") or info.get("player")
-            if isinstance(players, list) and len(players) == 2:
-                out["names"] = [str(_record_field(players[0], "name") or "White"),
-                                str(_record_field(players[1], "name") or "Black")]
-        games = m.get("games") if isinstance(m, dict) else None
-        debug = []
+        out["names"] = names
         log = []
-        if isinstance(games, list):
-            for gi, game in enumerate(games):
-                moves = _find_move_list(game)
-                if gi == 0:
-                    out["_debug_game_type"] = str(type(game))
-                    if isinstance(game, dict):
-                        out["_debug_game_keys"] = list(game.keys())
-                    out["_debug_movelist_len"] = len(moves) if isinstance(moves, list) else None
-                if not isinstance(moves, list):
+        for gi, g in enumerate(games):
+            pos = _initial_pos()
+            for (color, kind, data) in g:
+                if kind == "cube":
+                    log.append({"player": color, "cube": {"chosen": data, "win": 0, "equity": 0,
+                                "recommended": data, "correct": True}, "notation": data,
+                                "best": data, "loss": 0.0, "seq": len(log), "game": gi})
                     continue
-                # Her oyun başlangıç konumundan replay edilir. Oyuncu 'player' yoksa alternasyonla.
-                pos = _initial_pos()
-                alt_turn = None  # 'player' hiç yoksa ilk hamleden başlayıp değiştir
-                for ri, rec in enumerate(moves):
-                    if gi == 0 and ri < 6:
-                        debug.append(_safe(rec))
-                    if not isinstance(rec, dict):
-                        continue
-                    action = str(_record_field(rec, "action", "type", "movetype") or "").lower()
-                    pl = _record_field(rec, "player", "fmove", "fturn")
-                    if pl in (0, "0", 1, "1"):
-                        turn = "white" if pl in (0, "0") else "black"
-                        alt_turn = turn
-                    elif alt_turn is not None:
-                        turn = alt_turn
-                    else:
-                        turn = "white"
-                    # Küp kararları (double/take/drop/resign) — board değişmez; listede minimal.
-                    if action in ("double", "take", "drop", "reject", "accept", "resign", "beaver"):
-                        log.append({"player": turn, "cube": {"chosen": action, "win": 0,
-                                    "equity": 0, "recommended": action, "correct": True},
-                                    "notation": action, "best": action, "loss": 0.0, "seq": len(log), "game": gi})
-                        alt_turn = "black" if turn == "white" else "white"
-                        continue
-                    dice_raw = _record_field(rec, "dice") or []
-                    dice = [int(x) for x in dice_raw if int(x) > 0][:2] if isinstance(dice_raw, (list, tuple)) else []
-                    notation = _record_move_to_notation(rec, turn)
-                    steps = _parse_gnubg_move_to_steps(turn, notation) if notation else []
-                    if len(dice) >= 2 and steps:
-                        e = _review_decision(pos["points"], pos["bar"], pos["off"], turn, dice,
-                                             steps, match_len, plies)
-                        e["seq"] = len(log)
-                        e["game"] = gi
-                        log.append(e)
-                        try:
-                            pts, bar = _apply_our_steps(pos["points"], pos["bar"], steps, turn)
-                            pos["points"] = pts
-                            pos["bar"] = bar
-                            pos["off"][turn] += sum(1 for s in steps if s.get("to") == "off")
-                        except Exception:
-                            pass
-                        alt_turn = "black" if turn == "white" else "white"
-                    elif len(dice) >= 2:
-                        # Zar var ama hamle yok (dance / no move) -> listeye ekle, sıra geçer
-                        log.append({"player": turn, "dice": dice, "notation": "(no move)",
-                                    "best": None, "loss": 0.0, "seq": len(log), "game": gi})
-                        alt_turn = "black" if turn == "white" else "white"
+                if kind != "move":
+                    continue
+                notation = data["notation"]
+                dice = data["dice"]
+                if not notation:  # dance / no move (zar var, hamle yok)
+                    log.append({"player": color, "dice": dice, "notation": "(no move)",
+                                "best": None, "loss": 0.0, "seq": len(log), "game": gi})
+                    continue
+                try:
+                    steps = _parse_gnubg_move_to_steps(color, notation)
+                except Exception:
+                    break  # bozuk notasyon -> bu oyunu durdur
+                if len(dice) < 2 or not steps:
+                    continue
+                # Konumu ilerlet + gecerlilik denetimi (analizden ONCE; bozuksa hamleyi ATLA+dur)
+                try:
+                    pts, bar = _apply_our_steps(pos["points"], pos["bar"], steps, color)
+                except Exception:
+                    break
+                off = dict(pos["off"])
+                off[color] += sum(1 for s in steps if s.get("to") == "off")
+                w = sum(x for x in pts if x > 0) + bar["white"] + off["white"]
+                b = sum(-x for x in pts if x < 0) + bar["black"] + off["black"]
+                if w != 15 or b != 15:
+                    break  # bozuk .mat -> bu oyunu durdur (gecerli kisim korunur)
+                # Analiz: karar ONCESI pozisyon
+                e = _review_decision(pos["points"], pos["bar"], pos["off"], color, dice,
+                                     steps, match_len, plies)
+                e["seq"] = len(log)
+                e["game"] = gi
+                log.append(e)
+                pos["points"] = pts
+                pos["bar"] = bar
+                pos["off"] = off
         out["log"] = log
-        out["_debug_records"] = debug
-        out["_debug_match_keys"] = list(m.keys())
         out["decisions"] = len([e for e in log if e.get("pos")])
-        out["ok"] = len([e for e in log if e.get("pos")]) > 0
+        out["ok"] = out["decisions"] > 0
         if not out["ok"]:
             out["error"] = "no-moves-extracted"
     except Exception as e:
