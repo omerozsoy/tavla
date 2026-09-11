@@ -4,7 +4,6 @@ import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
-import { PR_TARGET_LABELS } from '../botPr'
 
 export type TimeControl = 'casual' | 'normal' | 'speed'
 export type SetupMode = 'pvb' | 'online'
@@ -49,10 +48,8 @@ const AI_LEVELS = [
   'Neural AI',
 ]
 
-// Her seviyenin hedef PR (performans reytingi) araligi — dusuk = daha iyi oyun.
-// Seviye butonlarinin altinda muted olarak gosterilir ("Hedef PR 35–50" gibi).
-// TEK KAYNAK: src/botPr.ts (bot-sonu PR uretimiyle ayni araliklar).
-const PR_TARGETS = PR_TARGET_LABELS
+// NOT: "Hedef PR 35–50" seviye vaadi etiketleri KALDIRILDI (kullanıcı kararı) — bot artık
+// insan gibi GERÇEK ölçülen PR gösterir, sabit seviye aralığı vaat edilmez.
 
 interface BoardColors {
   panel: string
@@ -141,7 +138,6 @@ export default function MatchSetup({
                   onClick={() => setDifficulty(i + 1)}
                 >
                   <span className="level-chip-name">{i + 1}. {name}</span>
-                  <span className="level-chip-pr">{t('setup.targetPr')} {PR_TARGETS[i]}</span>
                 </button>
               ))}
             </div>

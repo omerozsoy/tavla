@@ -116,12 +116,45 @@ class AnalysisController extends Controller
 
         $res = $this->gnubg->analyzeMatch($data['mat'], (int) ($data['plies'] ?? 2));
         if (! is_array($res) || empty($res['ok'])) {
-            $detail = is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null;
-
-            return response()->json(['ok' => false, 'error' => 'analyze-failed', 'detail' => $detail], 503);
+            return response()->json([
+                'ok' => false, 'error' => 'analyze-failed',
+                'message' => $this->gnubgFailMessage($res),
+                'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
+                'gnubg' => is_array($res) ? $res : null,
+            ], 503);
         }
 
         return response()->json($res);
+    }
+
+    /** gnubg başarısız sonucundan kullanıcıya gösterilecek anlamlı Türkçe mesaj üret (teşhis). */
+    private function gnubgFailMessage(mixed $res): string
+    {
+        if (! is_array($res)) {
+            return 'Analiz motoruna ulaşılamadı.';
+        }
+        $status = $res['http_status'] ?? null;
+        if ($status === 404) {
+            return 'Analiz motoru güncel değil: sunucuda gnubg servisi (gnubg-analysis.service) yeniden başlatılmalı.';
+        }
+        if (! empty($res['exception'])) {
+            return 'Analiz motoruna bağlanılamadı: '.(string) $res['exception'];
+        }
+        $err = (string) ($res['error'] ?? '');
+        $map = [
+            'import-failed' => '.mat dosyası gnubg tarafından içe aktarılamadı (format/uyumluluk).',
+            'empty-mat' => 'Boş .mat dosyası.',
+            'match-struct' => 'gnubg maç yapısı okunamadı.',
+            'no-moves-extracted' => 'Maçtan hamleler çıkarılamadı (gnubg yapı farkı).',
+        ];
+        if (isset($map[$err])) {
+            return $map[$err];
+        }
+        if ($status) {
+            return 'Analiz motoru hatası (HTTP '.$status.').';
+        }
+
+        return $err !== '' ? ('Analiz hatası: '.$err) : 'Analiz başarısız oldu.';
     }
 
     /**
@@ -140,9 +173,12 @@ class AnalysisController extends Controller
 
         $res = $this->gnubg->reviewMatch($data['mat'], (int) ($data['plies'] ?? 2));
         if (! is_array($res) || empty($res['ok'])) {
-            $detail = is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null;
-
-            return response()->json(['ok' => false, 'error' => 'review-failed', 'detail' => $detail], 503);
+            return response()->json([
+                'ok' => false, 'error' => 'review-failed',
+                'message' => $this->gnubgFailMessage($res),
+                'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
+                'gnubg' => is_array($res) ? $res : null,
+            ], 503);
         }
 
         return response()->json($res);
