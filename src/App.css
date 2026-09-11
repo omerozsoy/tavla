@@ -6705,6 +6705,17 @@ button.move-row:focus-visible {
   }
 }
 
+/* Mobil DIKEY oyun: board yatay bir nesne oldugu icin genislikle sinirli -> tahtanin
+   ALTINDA buyuk bir bosluk kaliyor ve "tam oturmuyor" gibi duruyordu. Oyun icerigini
+   dikeyde ORTALA ki board bosluga dengeli otursun (board boyutu ayni, sadece konum).
+   Yalniz oyun-view'i etkiler; lobi/menu akisina dokunmaz. */
+@media (max-width: 900px) and (orientation: portrait) {
+  .game-view .main {
+    justify-content: center;
+    padding-top: 0;
+  }
+}
+
 /* Yatay cevirme uyarisi (mobil dikey) */
 .rotate-hint {
   position: fixed;
@@ -6957,10 +6968,14 @@ html.fs-active .account-bar {
 .fs-toggle:active {
   transform: scale(0.94);
 }
-/* Mobil yatay/dar: gizle (zaten tam ekrana yakin, kose butonlariyla cakismasin) */
+/* Mobil yatay: tam ekran butonu GORUNSUN (kullanici istegi). Sag ust kose; hamburger
+   sag-ortada oldugu icin cakismaz. Biraz kucultuldu ki board kosesine az binsin. */
 @media (max-height: 560px) and (orientation: landscape) {
   .fs-toggle {
-    display: none;
+    width: 32px;
+    height: 32px;
+    top: calc(6px + env(safe-area-inset-top));
+    right: calc(8px + env(safe-area-inset-right));
   }
 }
 
