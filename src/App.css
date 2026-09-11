@@ -5556,9 +5556,10 @@ body.checker-dragging * {
   flex-direction: column;
   gap: 1px;
 }
+/* Bar'daki (kırık) taş NORMAL pul boyutunda olmalı — eskiden bar-w×0.82 = ~1.15×pul (büyüktü). */
 .bar-checkers .checker {
-  width: calc(var(--bar-w) * 0.82);
-  height: calc(var(--bar-w) * 0.82);
+  width: var(--checker);
+  height: var(--checker);
   border-width: 1px;
 }
 /* Bar'daki kirik tas adedi cok az daha buyuk okunsun (0.9rem -> 1.1rem) */
@@ -22678,33 +22679,16 @@ select:-webkit-autofill {
    (galeri secenek 10, daha okunur); koyu temada ince soft pill (secenek B).
    Renk site ana rengi var(--accent) uzerinden; sabit hex YOK (dark2 = accent+#000).
    ========================================================================= */
-.premium-pill {
+/* PremiumCrown — ismin SONUNDA duran küçük ALTIN taç (pill DEĞİL). Renk var(--coin-gold);
+   sabit hex YOK. Avatar dekorasyonundan bağımsız, isim satırına inline. Her iki temada aynı. */
+.premium-crown {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 18px;
-  padding: 0 9px 0 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 500; /* 1 tik kalin (medium) — bold degil */
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  line-height: 1;
-  white-space: nowrap;
   flex: 0 0 auto;
   vertical-align: middle;
-  /* Varsayilan = ACIK tema: dolu kiremit pill (var(--accent) = #C9563F) + beyaz yazi */
-  background: var(--accent);
-  color: #fff;
-  border: 1px solid color-mix(in srgb, var(--accent) 75%, #000);
-}
-.premium-pill svg { width: 13px; height: 13px; }
-
-/* KOYU tema (secenek B): krem zemin (#F4EFE6, kullanici) + kiremit yazi/taç */
-:root[data-theme='dark'] .premium-pill {
-  background: #f4efe6;
-  color: var(--accent);
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--coin-gold);
+  /* okunurluk: koyu isimlerin yanında altın ince bir kontur hissi */
+  filter: drop-shadow(0 0 0.5px color-mix(in srgb, var(--coin-gold) 60%, #000));
 }
 
 /* ==================== Mat Analiz (MatAnalyzer) ==================== */

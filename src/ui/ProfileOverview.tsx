@@ -6,7 +6,7 @@ import ProfileStats from './ProfileStats'
 import Achievements from './Achievements'
 import { BadgeList } from './Badges'
 import AvatarFrame from './AvatarFrame'
-import PremiumPill from './PremiumPill'
+import PremiumCrown from './PremiumCrown'
 import './profileShopLink.css'
 import { Flag } from './Flag'
 import SetupBoard from './SetupBoard'
@@ -144,7 +144,7 @@ export default function ProfileOverview({
             <div className="prof-ov-id-text">
               <div className="prof-ov-name">
                 {fullName}
-                {premium && <PremiumPill style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
+                {premium && <PremiumCrown style={{ marginLeft: 8, verticalAlign: 'middle' }} />}
               </div>
               <div className="prof-ov-meta">
                 {cc && <Flag code={cc} size={22} />}

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './sidebar.css'
 import { Icon } from './Icon'
 import AvatarFrame from './AvatarFrame'
-import PremiumPill from './PremiumPill'
+import PremiumCrown from './PremiumCrown'
 import { useT } from '../i18n'
 
 // Anlik PR degisim yonu: son harekette PR yukseldi (kotu) mi dustu (iyi) mi?
@@ -110,7 +110,7 @@ function Name({ p }: { p: PlayerInfo }) {
     <div className="player-name-wrap">
       <div className="player-name">
         {p.name}
-        {p.premium && <PremiumPill style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
+        {p.premium && <PremiumCrown style={{ marginLeft: 6, verticalAlign: 'middle' }} />}
       </div>
       {/* Botla oynarken botun seviyesi (isim altinda ince alt satir) */}
       {p.isBot && p.sub ? <div className="player-sub pc-bot-lvl">{p.sub}</div> : null}
