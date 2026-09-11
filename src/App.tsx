@@ -50,7 +50,6 @@ import {
   serverSyncRoomChanged,
 } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
-import { randomBotPr } from './botPr'
 import Board from './ui/Board'
 import { useBoardDir } from './ui/boardDirection'
 import { useSwapStones } from './ui/pieceColors'
@@ -3346,18 +3345,8 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, user, match, myColor, room])
 
-  // pvb: bot rakibin PR'ini seviyeye uygun SABIT-RASTGELE goster. NeuralBot neredeyse-optimal
-  // oynadigi icin olculen bot PR'i ~0.0 cikar ve "0.0" itici gorunur. Mac bitince bir kez
-  // hesaplanir (useMemo -> render icinde stabil); hem sonuc ekraninda hem reportRating kaydinda
-  // AYNI deger kullanilir. bkz src/botPr.ts
-  const botMatchDone = mode === 'pvb' && !!matchWinner(match)
-  const botPr = useMemo(
-    () => (botMatchDone ? randomBotPr(difficulty) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [botMatchDone, difficulty],
-  )
-  const botPrRef = useRef<number | null>(null)
-  botPrRef.current = botPr
+  // pvb: bot PR'ı artık SENTETİK değil — insan gibi GERÇEK ölçülür (prStats[black] pool'u).
+  // (Kullanıcı kararı: bot da aynı cetvelle ölçülsün; "Hedef PR" seviye vaadleri kaldırıldı.)
 
   // HAKEM=gnubg: maç sonrası gnubg PR (async job) hazır olana kadar poll'la; hazır olunca
   // gösterilen PR'ı gnubg ile DEĞİŞTİR (wildbg sayısı asla kalıcı gösterilmez). Servis yavaş/kapalı
@@ -3441,7 +3430,7 @@ export default function App() {
         match.score.white,
         match.score.black,
         `${AI_LEVELS[difficulty - 1]}`,
-        botPrRef.current ?? prRef('black'), // bot PR: seviyeye uygun sabit-rastgele (bkz botPr.ts)
+        prRef('black'), // bot PR: GERÇEK ölçüm (sentetik seviye değeri kaldırıldı)
         JSON.stringify({ hc: 'white', log: logNow.slice(-1000) }),
         rankedMatch,
         'ai', // match_type -> yapay zeka
@@ -5109,32 +5098,24 @@ export default function App() {
     return ad > 0 ? ((prStats[c].allLoss ?? 0) / ad) * 500 : null
   }
   const prShown = (c: Player): number => {
-    // pvb: bot rakibin PR'i seviyeye uygun sabit-rastgele deger (gercek olculen ~0.0 itici).
-    if (!online && botPr != null && c !== prHumanColor) return botPr
+    // Bot dahil GERÇEK ölçüm (sentetik seviye değeri kaldırıldı — insanla aynı cetvel).
     if (serverPr) {
       const v = c === prHumanColor ? serverPr.self : serverPr.opp
       if (v != null) return v
     }
     return prOf(c) ?? prLooseOf(c) ?? 0
   }
-  // Sonuç ekranındaki "Pul Oyunu PR". Öncelik: pvb bot (sentetik PR ile TUTARLI kal) ->
-  // SUNUCU-otoriter kırılım (iki oyuncuda özdeş) -> lokal ölçüm. Küp kararı YOKSA Pul PR =
-  // genel PR -> "Hata Oranı" satırıyla AYNI kaynağı kullan; aksi halde iki satır farklı
-  // çıkıyordu (ör. bot: Hata Oranı 8.4 ama Pul PR 0.12).
+  // Sonuç ekranındaki "Pul Oyunu PR". SUNUCU-otoriter kırılım (iki oyuncuda özdeş) -> lokal
+  // ölçüm. Küp kararı YOKSA Pul PR = genel PR -> "Hata Oranı" satırıyla AYNI kaynak (aksi halde
+  // iki satır farklı çıkardı). Bot dahil gerçek ölçüm (sentetik kaldırıldı).
   const prCheckerShown = (c: Player): number | null => {
-    if (!online && botPr != null && c !== prHumanColor) return botPr
     const srv = serverPr ? (c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) : null
     if (srv != null) return srv
     return (prStats[c].cubeDecisions ?? 0) > 0 ? prCheckerOf(c) : prShown(c)
   }
   // "Küp PR": sunucu kırılımı -> lokal küp ölçümü. Hiç SAYILAN küp kararı yoksa null -> "—"
-  // (satır her maçta görünür; uydurma 0.00 YAZMAYIZ).
+  // (satır her maçta görünür; uydurma 0.00 YAZMAYIZ). Bot dahil gerçek ölçüm.
   const prCubeShown = (c: Player): number | null => {
-    // pvb bot: TÜM PR'ları sentetik (seviyeye uygun) -> Küp PR de genel/Pul ile TUTARLI kalsın.
-    // (Eskiden burada bot override YOKTU -> bot genel/Pul PR sentetik 0.10 iken Küp PR GERÇEK
-    // ölçüm 17.47 çıkıyor, "botun küp PR'ı genele katılmamış" tutarsızlığı oluşuyordu. Az sayıda
-    // küp kararında ölçülen küp PR gürültülüdür; bot gücünü sentetik değer temsil eder.)
-    if (!online && botPr != null && c !== prHumanColor) return botPr
     const srv = serverPr ? (c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) : null
     if (srv != null) return srv
     return prCubeOf(c)
