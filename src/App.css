@@ -179,12 +179,14 @@
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
-  --bar-w: calc(var(--checker) * 1.24); /* orta bar: eskisinin ~2 kati (genis) */
+  --bar-w: calc(var(--checker) * 1.4); /* orta bar: biraz genisletildi (kup rahat sigsin) */
   --bearoff-w: var(--tray-w);
   --tri-h: calc(var(--board-h) * 0.35); /* KISA + genis taban ucgen (guclu geometri) */
   --point-h: var(--tri-h);
   --dice-size: calc(var(--checker) * 0.82);
-  --cube-size: clamp(62px, calc(var(--checker) * 1.28), 84px); /* buyutulmus kup */
+  /* Kup (doubling cube) HER ZAMAN bardan KUCUK olsun (bara sigsin, iki yanda pay kalsin).
+     Referans oran ~0.62 x bar; clamp okunabilirlik icin min/max verir. */
+  --cube-size: clamp(26px, calc(var(--bar-w) * 0.62), 58px);
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -11637,9 +11639,9 @@ button.acct-row:hover:not(:disabled) {
   justify-self: start;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
-  /* Kup orta bara gore olceklenir: bar genisligine (= pul capi) oranli, icine
-     kucuk bir bosluk birakarak otursun. */
-  --cube-size: calc(var(--bar-w) * 0.88);
+  /* Kup orta bara gore olceklenir: bardan KUCUK, iki yanda pay kalacak sekilde
+     (ana board ile ayni ~0.62 oran -> tum site boardlarinda tutarli). */
+  --cube-size: calc(var(--bar-w) * 0.62);
 }
 /* 15 tas limiti: board ustunde kibar, gecici uyari */
 .pa-limit-toast {
