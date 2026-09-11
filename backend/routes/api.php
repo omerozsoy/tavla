@@ -118,6 +118,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
     // analyse match COK agir (dakikalar surebilir) -> siki throttle.
     Route::middleware('throttle:8,1')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
+    // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin gnubg hint) -> COK agir, en siki throttle.
+    Route::middleware('throttle:5,1')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —

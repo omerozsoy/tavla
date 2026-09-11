@@ -158,6 +158,24 @@ class GnuBgClient
         }
     }
 
+    /**
+     * Mat Analiz FAZ 2: yüklenen .mat maçını HAMLE-HAMLE analiz eder (görüntüleyici için).
+     * Doner: ['ok'=>bool, 'matchLength'=>?int, 'names'=>[..], 'log'=>[LogEntry-uyumlu...]] veya hata.
+     */
+    public function reviewMatch(string $mat, int $plies = 2): ?array
+    {
+        try {
+            $resp = Http::timeout(600) // hamle-hamle hint çok uzun sürebilir (maç boyu × oyuncu)
+                ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
+                ->acceptJson()
+                ->post($this->url('/reviewmatch'), ['mat' => $mat, 'plies' => $plies]);
+
+            return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
+        } catch (\Throwable $e) {
+            return ['ok' => false, 'exception' => $e->getMessage()];
+        }
+    }
+
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
