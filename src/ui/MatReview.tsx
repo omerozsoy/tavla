@@ -33,8 +33,8 @@ export default function MatReview({
 }) {
   const { t } = useT()
   useEscape(onClose)
-  const nameW = names?.[0] || t('mr.white') // white = gnubg player0
-  const nameB = names?.[1] || t('mr.black')
+  const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
+  const nameB = names?.[1] || t('mrv.black')
 
   const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('all')
   const [who, setWho] = useState<'both' | 'white' | 'black'>('both')
@@ -79,7 +79,7 @@ export default function MatReview({
     <div className="mr-overlay">
       <div className="mr-top">
         <span className="mr-title">
-          <Icon name="analyze" size={18} /> {t('mr.title')}
+          <Icon name="analyze" size={18} /> {t('mrv.title')}
           {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
         </span>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')}>
@@ -91,13 +91,13 @@ export default function MatReview({
         {/* ---- SOL: hamle listesi ---- */}
         <aside className="mr-list">
           <div className="mr-list-head">
-            <span className="mr-list-lbl">{t('mr.moves')}</span>
+            <span className="mr-list-lbl">{t('mrv.moves')}</span>
             <div className="mr-seg">
               <button className={who === 'white' ? 'on' : ''} onClick={() => setWho('white')} title={nameW}>
                 {nameW}
               </button>
               <button className={who === 'both' ? 'on' : ''} onClick={() => setWho('both')}>
-                {t('mr.both')}
+                {t('mrv.both')}
               </button>
               <button className={who === 'black' ? 'on' : ''} onClick={() => setWho('black')} title={nameB}>
                 {nameB}
@@ -106,13 +106,13 @@ export default function MatReview({
           </div>
           <div className="mr-seg mr-seg-filter">
             <button className={filter === 'all' ? 'on' : ''} onClick={() => setFilter('all')}>
-              {t('mr.all')}
+              {t('mrv.all')}
             </button>
             <button className={filter === 'errors' ? 'on' : ''} onClick={() => setFilter('errors')}>
-              {t('mr.errors')}
+              {t('mrv.errors')}
             </button>
             <button className={filter === 'blunders' ? 'on' : ''} onClick={() => setFilter('blunders')}>
-              {t('mr.blunders')}
+              {t('mrv.blunders')}
             </button>
           </div>
           <div className="mr-rows">
@@ -122,7 +122,7 @@ export default function MatReview({
               const b = e.cube ? 'good' : band(e.loss)
               return (
                 <div key={i}>
-                  {showGame && <div className="mr-game-sep">{t('mr.game', { n: (e.game ?? 0) + 1 })}</div>}
+                  {showGame && <div className="mr-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
                   <button className={`mr-row ${sel === i ? 'sel' : ''}`} onClick={() => select(i)} disabled={!e.pos && !e.cube}>
                     <span className={`mr-dot ${b}`} />
                     <span className="mr-no">{i + 1}.</span>
@@ -144,7 +144,7 @@ export default function MatReview({
                 </div>
               )
             })}
-            {rows.length === 0 && <div className="mr-empty">{t('mr.none')}</div>}
+            {rows.length === 0 && <div className="mr-empty">{t('mrv.none')}</div>}
           </div>
         </aside>
 
@@ -164,7 +164,7 @@ export default function MatReview({
           {cur?.pos && cur.player ? (
             <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} />
           ) : (
-            <div className="mr-noboard">{t('mr.selectMove')}</div>
+            <div className="mr-noboard">{t('mrv.selectMove')}</div>
           )}
 
           <div className="mr-player mr-player-bot">
@@ -178,34 +178,34 @@ export default function MatReview({
 
         {/* ---- SAĞ: analiz ---- */}
         <aside className="mr-analysis">
-          <div className="mr-ply">{t('mr.ply', { n: 2 })}</div>
+          <div className="mr-ply">{t('mrv.ply', { n: 2 })}</div>
           <div className="mr-prob-head">
             <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mr.win')}</span>
+              <span className="mr-prob-lbl">{t('mrv.win')}</span>
               <span className="mr-prob-val">{win != null ? pct(win) : '—'}</span>
             </div>
             <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mr.wg')}</span>
+              <span className="mr-prob-lbl">{t('mrv.wg')}</span>
               <span className="mr-prob-val">{probs ? pct(probs[1] + probs[2]) : '—'}</span>
             </div>
             <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mr.wbg')}</span>
+              <span className="mr-prob-lbl">{t('mrv.wbg')}</span>
               <span className="mr-prob-val">{probs ? pct(probs[2]) : '—'}</span>
             </div>
             <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mr.lg')}</span>
+              <span className="mr-prob-lbl">{t('mrv.lg')}</span>
               <span className="mr-prob-val">{probs ? pct(probs[4] + probs[5]) : '—'}</span>
             </div>
             <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mr.lbg')}</span>
+              <span className="mr-prob-lbl">{t('mrv.lbg')}</span>
               <span className="mr-prob-val">{probs ? pct(probs[5]) : '—'}</span>
             </div>
           </div>
 
           <div className="mr-cands-head">
             <span className="mr-ch-no">#</span>
-            <span className="mr-ch-move">{t('mr.move')}</span>
-            <span className="mr-ch-eq">{t('mr.equity')}</span>
+            <span className="mr-ch-move">{t('mrv.move')}</span>
+            <span className="mr-ch-eq">{t('mrv.equity')}</span>
           </div>
           <div className="mr-cands">
             {(cur?.cands ?? []).map((c, ci) => {
@@ -226,7 +226,7 @@ export default function MatReview({
               )
             })}
             {(!cur?.cands || cur.cands.length === 0) && cur?.pos && (
-              <div className="mr-empty">{t('mr.noCands')}</div>
+              <div className="mr-empty">{t('mrv.noCands')}</div>
             )}
           </div>
         </aside>
