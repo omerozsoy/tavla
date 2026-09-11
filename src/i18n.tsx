@@ -776,6 +776,16 @@ const TR: Dict = {
   'fair.verify.okDesc': 'Bu zar, maç sırasında kullanılan bilgilerle birebir eşleşiyor.',
   'fair.verify.badTitle': 'Eşleşmedi',
   'fair.verify.badDesc': 'Girilen bilgiler bu maçın kayıtlarıyla eşleşmiyor.',
+  'fair.demo.title': 'Kendin Dene',
+  'fair.demo.sub':
+    'Aşağıdaki değerler tarayıcında oluşturulmuş örnek bir maçtır. "Zarı Kontrol Et"e basarak taahhüdün tohumla eşleştiğini ve zarların bu tohumdan hesaplandığını kendin görebilirsin. Bir değeri değiştirirsen eşleşme bozulur — işte adilliğin kanıtı bu.',
+  'fair.demo.regen': 'Yeni örnek oluştur',
+  'fair.demo.okDesc':
+    'Tohum, baştaki taahhütle (SHA-256) birebir eşleşiyor ve zarlar bu tohumdan hesaplandı.',
+  'fair.demo.badDesc':
+    'Değerler değiştirildi; artık baştaki taahhütle eşleşmiyor. Gerçek bir maçta bu, zarlara dokunulduğu anlamına gelir.',
+  'fair.demo.note':
+    'Bu tohumlar yalnızca örnek amaçlıdır ve senin tarayıcında üretilir. Gerçek maçlarda da tam olarak aynı yöntem kullanılır.',
   'stats.title': 'İstatistiklerim',
   'stats.rank': 'Sıralama: {r}. / {n} oyuncu',
   'stats.games': 'Maç',
@@ -2076,6 +2086,16 @@ const EN: Dict = {
   'fair.verify.okDesc': 'This roll matches exactly the information used during the match.',
   'fair.verify.badTitle': 'No Match',
   'fair.verify.badDesc': 'The information entered does not match this match’s records.',
+  'fair.demo.title': 'Try It Yourself',
+  'fair.demo.sub':
+    'The values below are an example match generated in your browser. Press “Check the Dice” to see the commitment match the seed and the dice computed from it. Change any value and the match breaks — that is the proof of fairness.',
+  'fair.demo.regen': 'Generate new example',
+  'fair.demo.okDesc':
+    'The seed matches the original commitment (SHA-256) exactly, and the dice were computed from that seed.',
+  'fair.demo.badDesc':
+    'The values were changed, so they no longer match the original commitment. In a real match this would mean the dice were tampered with.',
+  'fair.demo.note':
+    'These seeds are for demonstration only and are generated in your browser. Real matches use exactly the same method.',
   'stats.title': 'My Stats',
   'stats.rank': 'Rank: {r} / {n} players',
   'stats.games': 'Games',

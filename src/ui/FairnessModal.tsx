@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import { sha256Hex, verifyRoll } from '../engine/fairDice'
+import { sha256Hex, verifyRoll, FairDice } from '../engine/fairDice'
 
 interface Props {
   commitment: string
@@ -38,11 +38,39 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
   const [showTech, setShowTech] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
 
+  // Bilgi sayfasi (embed) icin kendi-kendine yeten DENEME: tarayicida ornek tohumlar
+  // uretilir; kullanici gercek bir dogrulama calistirip eslesmeyi gorebilir, degeri
+  // kurcalayinca eslesmenin bozuldugunu gorur (adilligin somut kaniti). Canli mac
+  // seed'i gerektirmez; bu yuzden bilgi sayfasinda anlamli.
+  const [demo, setDemo] = useState(() => {
+    const fd = new FairDice()
+    return { serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 }
+  })
+  const [dServer, setDServer] = useState(demo.serverSeed)
+  const [dClient, setDClient] = useState(demo.clientSeed)
+  const [dNonce, setDNonce] = useState(0)
+  const [dResult, setDResult] = useState<{ dice: number[]; match: boolean } | null>(null)
+
   // DEGISTIRME: mevcut dogrulama (SHA-256 commitment + verifyRoll) aynen korunur.
   function doVerify() {
     const dice = verifyRoll(vServer.trim(), vClient.trim(), vNonce)
     const match = sha256Hex(vServer.trim()) === commitment
     setResult({ dice, match })
+  }
+
+  function doVerifyDemo() {
+    const dice = verifyRoll(dServer.trim(), dClient.trim(), dNonce)
+    const match = sha256Hex(dServer.trim()) === demo.commitment
+    setDResult({ dice, match })
+  }
+
+  function regenDemo() {
+    const fd = new FairDice()
+    setDemo({ serverSeed: fd.serverSeed, clientSeed: fd.clientSeed, commitment: fd.commitment, rolls: 8 })
+    setDServer(fd.serverSeed)
+    setDClient(fd.clientSeed)
+    setDNonce(0)
+    setDResult(null)
   }
 
   function copy(text: string, key: string) {
@@ -251,6 +279,77 @@ export default function FairnessModal({ commitment, clientSeed, serverSeed, roll
           )}
         </section>
           </>
+        )}
+
+        {/* ==================== DENEME ARACI (yalnizca Bilgi sayfasi / embed) ====================
+            Kendi-kendine yeten ornek: tarayicida uretilen tohumlarla canli dogrulama. */}
+        {embed && (
+          <section className="fair-verify fair-demo">
+            <h3>{t('fair.demo.title')}</h3>
+            <p className="fair-verify-sub">{t('fair.demo.sub')}</p>
+
+            <label className="fair-vlabel">
+              <span className="fair-vlabel-head">
+                <span className="fair-vlabel-main">{t('fair.commitment')}</span>
+                <span className="fair-vlabel-tech">commitment</span>
+              </span>
+              <input value={demo.commitment} readOnly aria-readonly="true" />
+            </label>
+            <label className="fair-vlabel">
+              <span className="fair-vlabel-head">
+                <span className="fair-vlabel-main">{t('fair.verify.serverLabel')}</span>
+                <span className="fair-vlabel-tech">serverSeed</span>
+              </span>
+              <input value={dServer} onChange={(e) => setDServer(e.target.value)} />
+            </label>
+            <label className="fair-vlabel">
+              <span className="fair-vlabel-head">
+                <span className="fair-vlabel-main">{t('fair.verify.clientLabel')}</span>
+                <span className="fair-vlabel-tech">clientSeed</span>
+              </span>
+              <input value={dClient} onChange={(e) => setDClient(e.target.value)} />
+            </label>
+            <label className="fair-vlabel">
+              <span className="fair-vlabel-head">
+                <span className="fair-vlabel-main">{t('fair.verify.nonceLabel')}</span>
+                <span className="fair-vlabel-tech">nonce · 0…{Math.max(0, demo.rolls - 1)}</span>
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={dNonce}
+                onChange={(e) => setDNonce(Math.max(0, Number(e.target.value)))}
+              />
+            </label>
+
+            <div className="fair-demo-actions">
+              <Button variant="default" className="fair-verify-cta" onClick={doVerifyDemo}>
+                <Icon name="search" size={16} /> {t('fair.verify.cta')}
+              </Button>
+              <Button variant="ghost" className="fair-demo-regen" onClick={regenDemo}>
+                <Icon name="refresh" size={16} /> {t('fair.demo.regen')}
+              </Button>
+            </div>
+
+            {dResult && (
+              <div className={`fair-vresult ${dResult.match ? 'ok' : 'bad'}`}>
+                <div className="fair-vresult-head">
+                  <Icon name={dResult.match ? 'shield-check' : 'warning-circle'} size={20} />
+                  <b>{dResult.match ? t('fair.verify.okTitle') : t('fair.verify.badTitle')}</b>
+                </div>
+                <p className="fair-vresult-desc">
+                  {dResult.match ? t('fair.demo.okDesc') : t('fair.demo.badDesc')}
+                </p>
+                <div className="fair-vdice" aria-hidden="true">
+                  {dResult.dice.slice(0, dResult.dice.length === 4 ? 4 : 2).map((d, i) => (
+                    <Icon key={i} name={dieIcon(d)} size={38} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <p className="fair-demo-note">{t('fair.demo.note')}</p>
+          </section>
         )}
     </>
   )
