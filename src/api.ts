@@ -1672,6 +1672,21 @@ export async function analyzeMat(mat: string, plies = 2): Promise<MatAnalysis> {
   })
 }
 
+// ---- Mat Analiz FAZ 2: hamle-hamle inceleme (MatchReport görüntüleyici için LogEntry[]) ----
+export interface MatReview {
+  ok: boolean
+  matchLength: number | null
+  names: string[] | null
+  decisions: number
+  log: import('./ui/MatchReport').LogEntry[]
+}
+export async function reviewMat(mat: string, plies = 2): Promise<MatReview> {
+  return req<MatReview>('/review-mat', {
+    method: 'POST',
+    body: JSON.stringify({ mat, plies }),
+  })
+}
+
 // ==================== BASARIMLAR (ACHIEVEMENTS) ====================
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'diamond' | null
 export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic'

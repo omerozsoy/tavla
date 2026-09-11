@@ -22780,7 +22780,14 @@ select:-webkit-autofill {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
   margin-bottom: 16px;
+}
+.ma-result-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 .ma-badge-len {
   display: inline-flex;

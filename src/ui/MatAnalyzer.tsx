@@ -3,7 +3,8 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
-import { analyzeMat, type MatAnalysis, type MatPlayerSummary } from '../api'
+import { analyzeMat, reviewMat, type MatAnalysis, type MatPlayerSummary } from '../api'
+import MatchReport, { type LogEntry } from './MatchReport'
 
 // Mat Analiz sayfasi: kullanici .mat maci yukler -> gnubg TAM analiz eder -> ozet gosterilir
 // (HedgeHog "Analysis Complete" benzeri: rating + blunder/hata/kesinsizlik + oyuncu tablosu).
@@ -18,6 +19,9 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<MatAnalysis | null>(null)
   const [showRaw, setShowRaw] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  // Faz 2: hamle-hamle inceleme (MatchReport görüntüleyici)
+  const [reviewing, setReviewing] = useState(false)
+  const [reviewLog, setReviewLog] = useState<LogEntry[] | null>(null)
 
   function readFile(f: File) {
     if (f.size > 500_000) {
@@ -52,11 +56,27 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
     }
   }
 
+  async function review() {
+    if (!matText.trim()) return
+    setReviewing(true)
+    try {
+      const r = await reviewMat(matText, 2)
+      if (!r || !r.ok || !Array.isArray(r.log) || r.log.length === 0) throw new Error('failed')
+      setReviewLog(r.log)
+    } catch (e) {
+      const m = e as { message?: string }
+      notify.error(m?.message || t('ma.reviewErr'))
+    } finally {
+      setReviewing(false)
+    }
+  }
+
   function reset() {
     setResult(null)
     setMatText('')
     setFileName('')
     setShowRaw(false)
+    setReviewLog(null)
     if (fileRef.current) fileRef.current.value = ''
   }
 
@@ -118,9 +138,15 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
             <span className="ma-badge-len">
               {result.matchLength ? t('ma.pointMatch', { n: result.matchLength }) : t('ma.moneyGame')}
             </span>
-            <Button variant="secondary" onClick={reset}>
-              <Icon name="arrow-up" size={14} /> {t('ma.newFile')}
-            </Button>
+            <div className="ma-result-actions">
+              <Button onClick={review} disabled={reviewing}>
+                {reviewing ? <span className="btn-spinner" aria-hidden="true" /> : <Icon name="search" size={14} />}
+                {reviewing ? t('ma.reviewing') : t('ma.review')}
+              </Button>
+              <Button variant="secondary" onClick={reset}>
+                <Icon name="arrow-up" size={14} /> {t('ma.newFile')}
+              </Button>
+            </div>
           </div>
 
           <div className="ma-players">
@@ -174,6 +200,19 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
           {t('common.close')}
         </Button>
       </div>
+
+      {/* Faz 2: hamle-hamle inceleme (MatchReport analiz görünümü, tam-ekran modal) */}
+      {reviewLog && (
+        <MatchReport
+          mode="analysis"
+          log={reviewLog}
+          pr={null}
+          matchLength={result?.matchLength ?? 1}
+          whiteName={result?.names?.[0] ?? 'White'}
+          blackName={result?.names?.[1] ?? 'Black'}
+          onClose={() => setReviewLog(null)}
+        />
+      )}
     </div>
   )
 }

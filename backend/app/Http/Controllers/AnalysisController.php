@@ -125,6 +125,30 @@ class AnalysisController extends Controller
     }
 
     /**
+     * Mat Analiz FAZ 2: yüklenen .mat maçını HAMLE-HAMLE analiz eder (görüntüleyici).
+     * Frontend .mat metnini POST eder; gnubg her hamleyi analiz edip LogEntry[] döndürür.
+     */
+    public function matchReview(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'mat' => 'required|string|min:8|max:500000',
+            'plies' => 'integer|min:0|max:3',
+        ]);
+        if (! preg_match('/point\s+match/i', $data['mat']) && ! preg_match('/\bGame\s+1\b/i', $data['mat'])) {
+            return $this->fail('invalid-mat', 422);
+        }
+
+        $res = $this->gnubg->reviewMatch($data['mat'], (int) ($data['plies'] ?? 2));
+        if (! is_array($res) || empty($res['ok'])) {
+            $detail = is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null;
+
+            return response()->json(['ok' => false, 'error' => 'review-failed', 'detail' => $detail], 503);
+        }
+
+        return response()->json($res);
+    }
+
+    /**
      * gnubg 5'li KÜMÜLATIF (W, WG, WB, LG, LB) -> frontend 6'lı DIŞLAYAN [wn, wg, wb, ln, lg, lb].
      * equityFrom() (src/engine/encoding.ts) ve gösterim bu dışlayan biçimi bekler.
      */

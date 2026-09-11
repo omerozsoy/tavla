@@ -856,6 +856,229 @@ def _analyzematch(mat_text, plies=2):
     return out
 
 
+def _probs6_from_cumulative(p):
+    """gnubg 5'li KÜMÜLATIF (win, wg, wb, lg, lb) -> frontend 6'lı DIŞLAYAN [wn,wg,wb,ln,lg,lb].
+    AnalysisController::probs6 ile birebir (Mat Analiz hamle görüntüleyici aynı gösterimi kullanır)."""
+    if not p or len(p) < 5:
+        return None
+    w, wg, wb, lg, lb = float(p[0]), float(p[1]), float(p[2]), float(p[3]), float(p[4])
+    lose_any = max(0.0, 1.0 - w)
+    return [max(0.0, w - wg), max(0.0, wg - wb), max(0.0, wb),
+            max(0.0, lose_any - lg), max(0.0, lg - lb), max(0.0, lb)]
+
+
+def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, plies):
+    """Tek bir taş-hamlesi kararını analiz et -> LogEntry-uyumlu dict (frontend MatchReport için).
+    pos = analiz ÖNCESİ konum; played_steps = gerçekten oynanan adımlar. hint (gnubg) ile
+    aday listesi + oynanan adayın kaybı hesaplanır (PR çekirdeğiyle aynı yol)."""
+    entry = {
+        "player": turn,
+        "pos": {"points": list(pos_points), "bar": dict(bar), "off": dict(off), "turn": turn},
+        "dice": list(dice),
+        "playedSteps": played_steps,
+        "notation": None, "best": None, "loss": 0.0, "cands": [], "probs": None,
+    }
+    try:
+        gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": turn,
+                                     "dice": dice, "matchLength": match_len})
+        gnubg.setgnubgid(gid)
+        _set_plies(plies)
+        h = gnubg.hint()
+        cand = h.get("hint") if isinstance(h, dict) else None
+    except Exception as e:
+        entry["error"] = str(e)
+        cand = None
+    if not cand:
+        return entry
+    best_eq = cand[0].get("equity") or 0.0
+    cands = []
+    for c in cand[:8]:
+        mv = c.get("move") or ""
+        cands.append({
+            "notation": mv,
+            "equity": float(c.get("equity") or 0.0),
+            "steps": _parse_gnubg_move_to_steps(turn, mv),
+            "probs": _probs6_from_cumulative((c.get("details") or {}).get("probs")),
+        })
+    entry["cands"] = cands
+    entry["best"] = cands[0]["notation"] if cands else None
+    entry["probs"] = cands[0]["probs"] if cands else None
+    # Oynanan adayı sonuç-tahtası eşleşmesiyle bul (PR çekirdeği _match_played).
+    try:
+        white_after, black_after = _boards_after(
+            {"points": pos_points, "bar": bar, "turn": turn}, played_steps)
+        matched = _match_played({"points": pos_points, "bar": bar, "turn": turn},
+                                cand, white_after, black_after)
+    except Exception:
+        matched = None
+    if matched is not None:
+        peq = matched.get("equity") or 0.0
+        entry["notation"] = matched.get("move")
+        entry["loss"] = max(0.0, (best_eq or 0.0) - peq)
+        # Oynanan konumun kazanma olasılığı (probs): eşleşen adayınki
+        entry["probs"] = _probs6_from_cumulative((matched.get("details") or {}).get("probs")) or entry["probs"]
+    else:
+        # Oynanan hamle top-8 dışında (büyük blunder) — notasyonu adımlardan üret (kaba) + kayıp bilinmiyor
+        entry["notation"] = _steps_to_notation(turn, played_steps)
+        entry["loss"] = 0.0
+    return entry
+
+
+def _steps_to_notation(turn, steps):
+    """Bizim Step[] -> kaba gnubg-benzeri notasyon (yalnız oynanan hamle top listede yokken gösterim)."""
+    def loc(idx):
+        if idx == "bar":
+            return "bar"
+        if idx == "off":
+            return "off"
+        p = int(idx)
+        return str(p + 1) if turn == "white" else str(24 - p)
+    parts = ["%s/%s" % (loc(s.get("from")), loc(s.get("to"))) for s in (steps or [])]
+    return " ".join(parts) if parts else "(pas)"
+
+
+def _record_field(rec, *keys):
+    """Bir gnubg.match() hamle kaydından ilk mevcut anahtarı döndür (sürüm alan-adı farkları için)."""
+    if not isinstance(rec, dict):
+        return None
+    for k in keys:
+        if k in rec and rec[k] is not None:
+            return rec[k]
+    return None
+
+
+def _record_move_to_notation(rec, turn):
+    """gnubg.match() hamle kaydındaki oynanan hamleyi notasyona çevir. 'move' str ise aynen;
+    (from,to) çiftleri dizisi ise gnubg nokta no'suyla (25=bar, 0=off, 1-24 nokta) notasyon kur."""
+    mv = _record_field(rec, "move", "moves", "action_move")
+    if isinstance(mv, str):
+        return mv
+    if isinstance(mv, (list, tuple)) and mv:
+        toks = []
+        for pair in mv:
+            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                continue
+            a, b = pair[0], pair[1]
+
+            def gp(n):
+                n = int(n)
+                if n >= 25:
+                    return "bar"
+                if n <= 0:
+                    return "off"
+                return str(n)
+            toks.append("%s/%s" % (gp(a), gp(b)))
+        return " ".join(toks)
+    return None
+
+
+def _reviewmatch(mat_text, plies=2):
+    """Yüklenen .mat maçını HAMLE-HAMLE analiz eder (Faz 2 görüntüleyici için LogEntry[] üretir).
+    Yaklaşım: gnubg import mat -> gnubg.match() ile hamle DİZİSİNİ al -> her oyunu başlangıçtan
+    replay ederek pozisyonları kur -> her taş-hamlesini gnubg hint ile YENİDEN analiz et (aday
+    listesi + oynanan kaybı). gnubg.match() iç yapısı sürüme göre değişebilir -> savunmacı +
+    _debug ile ilk oyunun ham kayıtları döner (sunucuda doğrulama/ince ayar için)."""
+    out = {"ok": False, "log": [], "import_cmd": None}
+    if not mat_text or not mat_text.strip():
+        out["error"] = "empty-mat"
+        return out
+    tmp = "/tmp/tavlai_review.mat"
+    try:
+        ml = _MATCHLEN_RE.search(mat_text)
+        match_len = int(ml.group(1)) if ml else 0
+        out["matchLength"] = match_len or None
+        with open(tmp, "w") as f:
+            f.write(mat_text)
+        imported = False
+        last_err = None
+        for cmd in ("import mat " + tmp, "load match " + tmp):
+            try:
+                gnubg.command("new match 1")
+            except Exception:
+                pass
+            try:
+                gnubg.command(cmd)
+                imported = True
+                out["import_cmd"] = cmd
+                break
+            except Exception as e:
+                last_err = str(e)
+        if not imported:
+            out["error"] = "import-failed"
+            out["import_err"] = last_err
+            return out
+        m = gnubg.match(0)  # 0 = analizsiz ham yapı (hızlı); hint'i biz yeniden çağırıyoruz
+        if not isinstance(m, dict):
+            out["error"] = "match-struct"
+            out["match_struct_type"] = str(type(m))
+            return out
+        out["names"] = None
+        info = m.get("match-info") or m.get("info")
+        if isinstance(info, dict):
+            players = info.get("players")
+            if isinstance(players, list) and len(players) == 2:
+                out["names"] = [str(_record_field(players[0], "name") or "White"),
+                                str(_record_field(players[1], "name") or "Black")]
+        games = m.get("games") if isinstance(m, dict) else None
+        debug = []
+        log = []
+        if isinstance(games, list):
+            for gi, game in enumerate(games):
+                moves = None
+                if isinstance(game, dict):
+                    moves = game.get("game") or game.get("moves") or game.get("analysis")
+                if not isinstance(moves, list):
+                    continue
+                # Her oyun başlangıç konumundan replay edilir.
+                pos = _initial_pos()
+                for ri, rec in enumerate(moves):
+                    if gi == 0 and ri < 4:
+                        debug.append(_safe(rec))
+                    if not isinstance(rec, dict):
+                        continue
+                    action = str(_record_field(rec, "action", "type") or "").lower()
+                    pl = _record_field(rec, "player", "fmove")
+                    turn = "white" if (pl in (0, "0", None)) else "black"
+                    # Küp kararları (double/take/drop/resign) — board değişmez; v1'de listede minimal.
+                    if action in ("double", "take", "drop", "reject", "accept", "resign"):
+                        log.append({"player": turn, "cube": {"chosen": action, "win": 0,
+                                    "equity": 0, "recommended": action, "correct": True},
+                                    "notation": action, "best": action, "loss": 0.0, "seq": len(log)})
+                        continue
+                    dice_raw = _record_field(rec, "dice") or []
+                    dice = [int(x) for x in dice_raw if int(x) > 0][:2] if isinstance(dice_raw, (list, tuple)) else []
+                    notation = _record_move_to_notation(rec, turn)
+                    steps = _parse_gnubg_move_to_steps(turn, notation) if notation else []
+                    if len(dice) >= 2 and steps:
+                        e = _review_decision(pos["points"], pos["bar"], pos["off"], turn, dice,
+                                             steps, match_len, plies)
+                        e["seq"] = len(log)
+                        e["game"] = gi
+                        log.append(e)
+                        # Konumu ilerlet
+                        try:
+                            pts, bar = _apply_our_steps(pos["points"], pos["bar"], steps, turn)
+                            pos["points"] = pts
+                            pos["bar"] = bar
+                            pos["off"][turn] += sum(1 for s in steps if s.get("to") == "off")
+                        except Exception:
+                            pass
+                    elif notation is not None:
+                        # Zar yok / hamle yok (dance / no move) -> sadece listeye ekle
+                        log.append({"player": turn, "dice": dice, "notation": notation or "(pas)",
+                                    "best": None, "loss": 0.0, "seq": len(log), "game": gi})
+        out["log"] = log
+        out["_debug_records"] = debug
+        out["_debug_match_keys"] = list(m.keys())
+        out["decisions"] = len([e for e in log if e.get("pos")])
+        out["ok"] = len(log) > 0
+        if not out["ok"]:
+            out["error"] = "no-moves-extracted"
+    except Exception as e:
+        out["error"] = str(e)
+    return out
+
+
 def _matchluck(mat_text=None, selftest=False, points_match=1):
     """.mat maçının gnubg NATIVE luck'ını (per-oyuncu MWC% + EMG) döndürür — Tavlai Luck V1 kaynağı.
     mat_text verilmezse (selftest) gnubg kendi maçını oynar+export eder+reimport eder -> import+
@@ -1110,6 +1333,12 @@ class Handler(BaseHTTPRequestHandler):
                 if not data.get("mat"):
                     return self._send(400, {"error": "mat gerekli (.mat metni)"})
                 return self._send(200, _analyzematch(
+                    mat_text=data.get("mat"),
+                    plies=int(data.get("plies", 2))))
+            if self.path == "/reviewmatch":
+                if not data.get("mat"):
+                    return self._send(400, {"error": "mat gerekli (.mat metni)"})
+                return self._send(200, _reviewmatch(
                     mat_text=data.get("mat"),
                     plies=int(data.get("plies", 2))))
             self._send(404, {"error": "not-found"})
