@@ -16991,11 +16991,16 @@ button.acct-row:hover:not(:disabled) {
 .messages-thread-view {
   display: flex;
   flex-direction: column;
-  /* Garantici: gerçek scroll iç .messages-thread-scroll'da (overflow-y:auto).
+  /* Garantici: gerçek scroll iç .messages-log'da (overflow-y:auto).
      Burada overflow:hidden gereksizdi ve başlıktaki animasyonlu avatar çerçevesini
-     üstten kırpma riski taşıyordu -> visible. */
+     üstten kırpma riski taşıyordu -> visible.
+     ANCAK overflow:hidden aynı zamanda grid item'in örtük min-height:0'ını sağlıyordu;
+     visible'a geçince min-height:auto geri geldi -> thread-view içeriğe göre büyüdü,
+     .messages-log flex:1 sınırlanmadı ve sohbet KAYDIRMA ÇUBUĞU kayboldu (mesajlar
+     .messages-split overflow:hidden ile alttan kırpılıyordu). Fix: min-height:0 açıkça. */
   overflow: visible;
   min-width: 0;
+  min-height: 0;
   background: var(--bg);
 }
 /* Başlık kendi kutusunda da çerçeveyi kırpmasın (belt-and-suspenders). */
