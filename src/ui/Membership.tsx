@@ -23,7 +23,6 @@ export default function Membership({
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
-  const [yearly, setYearly] = useState(true)
   const [busy, setBusy] = useState<PlanId | null>(null)
   const [err, setErr] = useState('')
 
@@ -48,7 +47,7 @@ export default function Membership({
     setErr('')
     setBusy(plan)
     try {
-      const r = await subscribe(plan, yearly ? 'yearly' : 'monthly')
+      const r = await subscribe(plan, 'yearly')
       window.location.href = r.url // Garanti kart sayfasina yonlendir
     } catch (e) {
       const m = e as { message?: string }
@@ -67,37 +66,14 @@ export default function Membership({
         </Button>
         <h2 className="mem-title">{t('mem.title')}</h2>
 
-        <div className="mem-toggle" role="tablist" aria-label={t('mem.title')}>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={yearly}
-            className={yearly ? 'active' : ''}
-            onClick={() => setYearly(true)}
-          >
-            {t('mem.yearly')}
-            <span className="mem-toggle-badge">{t('mem.saveShort')}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={!yearly}
-            className={!yearly ? 'active' : ''}
-            onClick={() => setYearly(false)}
-          >
-            {t('mem.monthly')}
-          </button>
-        </div>
-
         {err && <div className="register-error mem-err">{err}</div>}
 
         <div className="mem-grid">
           {PLANS.map((p) => {
             const isCurrent = current === p.id
-            const price = yearly ? p.yearly : p.monthly
+            const price = p.yearly
             return (
               <div key={p.id} className={`mem-plan ${p.id !== 'free' ? 'paid' : ''}`}>
-                {yearly && p.id !== 'free' && <span className="mem-save">{t('mem.save')}</span>}
                 <div className="mem-plan-name" style={{ color: p.color }}>
                   {t(p.nameKey)}
                 </div>
@@ -110,7 +86,7 @@ export default function Membership({
                     })}{' '}
                     ₺
                   </span>
-                  <span className="mem-price-per">/{yearly ? t('mem.perYear') : t('mem.perMonth')}</span>
+                  <span className="mem-price-per">/{t('mem.perYear')}</span>
                 </div>
                 <ul className="mem-feats">
                   {p.features.map((f) => (

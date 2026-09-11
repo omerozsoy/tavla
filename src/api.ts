@@ -459,7 +459,7 @@ export async function setAutoRenew(enabled: boolean): Promise<{ user: ServerUser
 // Abonelik odemesi baslat (Garanti 3D). Kart sayfasi URL'si doner.
 export async function subscribe(
   plan: 'star' | 'starpro',
-  period: 'yearly' | 'monthly',
+  period: 'yearly' = 'yearly', // yalnız yıllık üyelik (aylık kaldırıldı)
 ): Promise<{ url: string }> {
   return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period }) })
 }

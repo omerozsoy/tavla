@@ -945,6 +945,11 @@ button[aria-disabled='true'],
 }
 .board-prev.locked .bp-svg {
   opacity: 0.42;
+  transition: opacity 0.18s ease;
+}
+.board-prev.locked:hover .bp-svg,
+.board-prev.locked:focus-visible .bp-svg {
+  opacity: 1;
 }
 .board-prev.locked .bp-name > svg,
 .bp-lock {
@@ -1052,6 +1057,12 @@ button[aria-disabled='true'],
 }
 .board-prev.locked .setup-board {
   opacity: 0.42;
+  transition: opacity 0.18s ease;
+}
+/* Mouse ile uzerine gelince kilitli (satin alinabilir) board'i tam renkli goster */
+.board-prev.locked:hover .setup-board,
+.board-prev.locked:focus-visible .setup-board {
+  opacity: 1;
 }
 
 /* ===== Avatar cerceve galerisi (showcase) ===== */

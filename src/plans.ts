@@ -10,8 +10,7 @@ export interface Plan {
   id: PlanId
   nameKey: string
   color: string
-  yearly: number // $/yil
-  monthly: number // $/ay
+  yearly: number // $/yil (yalnız yıllık üyelik)
   features: Feature[]
 }
 
@@ -21,7 +20,6 @@ export const PLANS: Plan[] = [
     nameKey: 'plan.free',
     color: 'var(--muted)',
     yearly: 0,
-    monthly: 0,
     features: [
       { key: 'feat.surfaceAnalysis', on: true }, // yuzeysel analiz
       { key: 'feat.bonus25', on: true }, // gunluk 25 bonus
@@ -37,7 +35,6 @@ export const PLANS: Plan[] = [
     nameKey: 'plan.star',
     color: '#a06bd4',
     yearly: 499, // TL/yil
-    monthly: 49, // TL/ay
     features: [
       { key: 'feat.deepAnalysis', on: true }, // derin analiz
       { key: 'feat.bonus50', on: true }, // gunluk 50 bonus
