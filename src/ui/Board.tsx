@@ -708,7 +708,12 @@ function Board({
           <div className="drag-layer" aria-hidden="true">
             <div
               ref={setProxyNode}
-              className={`checker ${drag.player} dragging`}
+              // Drag proxy document.body'e PORTAL edilir -> .board.stones-swapped
+              // değişken takasını MİRAS ALMAZ. Takas açıkken TERS renk sınıfını ver ki
+              // sürüklenen pul (ve içindeki sayı) board'daki takaslı renkle eşleşsin.
+              className={`checker ${
+                swapStones ? (drag.player === 'white' ? 'black' : 'white') : drag.player
+              } dragging`}
               draggable={false}
               style={{ width: drag.w, height: drag.h }}
             >
