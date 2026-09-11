@@ -83,7 +83,7 @@ class AnalysisController extends Controller
             }
 
             return response()->json([
-                'engine' => 'gnubg',
+                'engine' => 'tavlatv',
                 'gnubgid' => $res['gnubgid'] ?? null,
                 'moves' => $moves,
             ]);
@@ -91,7 +91,7 @@ class AnalysisController extends Controller
 
         // ZARSIZ -> pozisyon değerlendirmesi (kazanma%/gammon/bg) + gnubg küp analizi (ham).
         return response()->json([
-            'engine' => 'gnubg',
+            'engine' => 'tavlatv',
             'gnubgid' => $res['gnubgid'] ?? null,
             'probs' => $this->probs6($res['evaluate'] ?? null),
             'cube' => $res['cube'] ?? null,
@@ -118,34 +118,31 @@ class AnalysisController extends Controller
         if (! is_array($res) || empty($res['ok'])) {
             return response()->json([
                 'ok' => false, 'error' => 'analyze-failed',
-                'message' => $this->gnubgFailMessage($res),
+                'message' => $this->engineFailMessage($res),
                 'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
-                'gnubg' => is_array($res) ? $res : null,
+                'debug' => is_array($res) ? $res : null,
             ], 503);
         }
 
         return response()->json($res);
     }
 
-    /** gnubg başarısız sonucundan kullanıcıya gösterilecek anlamlı Türkçe mesaj üret (teşhis). */
-    private function gnubgFailMessage(mixed $res): string
+    /** Analiz motoru başarısız sonucundan kullanıcıya anlamlı Türkçe mesaj üret (marka gizli). */
+    private function engineFailMessage(mixed $res): string
     {
         if (! is_array($res)) {
             return 'Analiz motoruna ulaşılamadı.';
         }
         $status = $res['http_status'] ?? null;
-        if ($status === 404) {
-            return 'Analiz motoru güncel değil: sunucuda gnubg servisi (gnubg-analysis.service) yeniden başlatılmalı.';
-        }
-        if (! empty($res['exception'])) {
-            return 'Analiz motoruna bağlanılamadı: '.(string) $res['exception'];
+        if ($status === 404 || $status === 503) {
+            return 'Analiz motoru şu an hazır değil (güncelleniyor olabilir). Lütfen birazdan tekrar deneyin.';
         }
         $err = (string) ($res['error'] ?? '');
         $map = [
-            'import-failed' => '.mat dosyası gnubg tarafından içe aktarılamadı (format/uyumluluk).',
+            'import-failed' => '.mat dosyası içe aktarılamadı (biçim/uyumluluk sorunu).',
             'empty-mat' => 'Boş .mat dosyası.',
-            'match-struct' => 'gnubg maç yapısı okunamadı.',
-            'no-moves-extracted' => 'Maçtan hamleler çıkarılamadı (gnubg yapı farkı).',
+            'match-struct' => 'Maç yapısı okunamadı.',
+            'no-moves-extracted' => 'Maçtan hamleler çıkarılamadı. Farklı bir .mat dosyası deneyin.',
         ];
         if (isset($map[$err])) {
             return $map[$err];
@@ -154,7 +151,7 @@ class AnalysisController extends Controller
             return 'Analiz motoru hatası (HTTP '.$status.').';
         }
 
-        return $err !== '' ? ('Analiz hatası: '.$err) : 'Analiz başarısız oldu.';
+        return 'Analiz başarısız oldu.';
     }
 
     /**
@@ -175,9 +172,9 @@ class AnalysisController extends Controller
         if (! is_array($res) || empty($res['ok'])) {
             return response()->json([
                 'ok' => false, 'error' => 'review-failed',
-                'message' => $this->gnubgFailMessage($res),
+                'message' => $this->engineFailMessage($res),
                 'detail' => is_array($res) ? ($res['error'] ?? $res['import_err'] ?? $res['exception'] ?? null) : null,
-                'gnubg' => is_array($res) ? $res : null,
+                'debug' => is_array($res) ? $res : null,
             ], 503);
         }
 
