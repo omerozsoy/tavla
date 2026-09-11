@@ -19120,6 +19120,24 @@ button.acct-row:hover:not(:disabled) {
   margin-top: 12px;
   color: var(--text);
 }
+/* Deneme aracı (Bilgi › Adil Zar): aksiyon satırı + açıklama notu */
+.fair-demo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+.fair-demo-note {
+  margin: 14px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.fair-demo input[readonly] {
+  opacity: 0.85;
+  cursor: default;
+}
 
 /* ---- Responsive: mobilde adimlar/kutu alt alta, dikey baglayici ---- */
 @media (max-width: 720px) {
