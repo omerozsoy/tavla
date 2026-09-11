@@ -319,20 +319,24 @@ class MatFromLog
         return $out;
     }
 
-    /** Birleştirmede tekilleştirme anahtarı (gerçek-oyun bazlı; seq'e GÜVENMEZ — off-by-one recon'a dayanıklı). */
+    /**
+     * Birleştirmede tekilleştirme anahtarı = TUR KİMLİĞİ (gerçek-oyun + oyuncu + seq + o), İÇERİK
+     * DEĞİL. Online'da aynı gerçek turu iki istemci de yazar (own + recon) ve İKİSİ de aynı seq'i
+     * okur (recordMatchTurn / applyServerBoard, hamle-ÖNCESİ turnsPlayed) -> aynı (rg,p,s,o) ->
+     * tekilleşir. KRİTİK: içerik-tabanlı anahtar (dice+notation), AYNI ZARLI iki FARKLI no-move
+     * (dance) turunu -> notation ikisinde de boş -> YANLIŞLIKLA çakıştırıp SİLİYORDU (turn history
+     * kaybı, rakip art arda zar atmış görünümü). seq her turda benzersiz olduğundan kimlik-anahtarı
+     * bu kaybı önler. (end oyun başına tekil; iki istemci de yazabilir.)
+     */
     private static function dedupKey(array $t): string
     {
         $rg = $t['_rg'];
-        $kind = $t['k'] ?? null;
-        if ($kind === 'end') {
+        if (($t['k'] ?? null) === 'end') {
             return "end:$rg"; // oyun başına tek sonuç
         }
         $p = (string) ($t['p'] ?? '');
-        if ($kind === 'cube') {
-            return "cube:$rg:$p:".self::cubeChoice($t);
-        }
 
-        return "mv:$rg:$p:".MatSerializer::xgDice((string) ($t['d'] ?? '')).':'.trim((string) ($t['m'] ?? ''));
+        return "$rg:$p:".((int) ($t['_s'] ?? 0)).':'.((int) ($t['_o'] ?? 0));
     }
 
     /** Küp turunun seçimi: take / drop / double (m metni + o'dan). */

@@ -6,6 +6,7 @@ import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
+import { buildMatXg } from '../matExport'
 import { fetchGameLogMat } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 
@@ -67,6 +68,11 @@ export default function MatchReport({
   log,
   pr,
   humanColor,
+  matchLength = 1,
+  whiteName = 'White',
+  blackName = 'Black',
+  gameResults,
+  matchResult,
   matchUid,
   onClose,
 }: Props) {
@@ -143,9 +149,6 @@ export default function MatchReport({
     setCandIdx(playedCandIdx(log[i])) // acilista senin oynadigin hamle gosterilir
   }
 
-  const [exporting, setExporting] = useState(false) // .mat sunucudan indiriliyor
-  const [exportErr, setExportErr] = useState(false) // sunucu kaydı henüz hazır değil
-
   // Bir metni .mat dosyası olarak indir.
   function saveFile(text: string, name: string) {
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
@@ -159,32 +162,45 @@ export default function MatchReport({
 
   // Maçı XG-uyumlu .mat olarak dışa aktar.
   //
-  // TEK KAYNAK: .mat YALNIZCA sunucuda üretilir (game_logs -> MatFromLog -> MatSerializer). İstemci
-  // .mat ÜRETMEZ (eski buildMatXg fallback kaldırıldı) -> AYNI maç (uid) DAİMA AYNI dosya: stabil
-  // matchId=uid + created_at, iki oyuncunun küpü birleşik, kanonik zar. Kayıt best-effort flush
-  // edildiğinden henüz düşmemiş olabilir -> kısa retry; hâlâ yoksa "hazırlanıyor" uyarısı.
+  // OTORİTER KAYNAK: sunucu (.mat = birleşik game_logs -> MatFromLog -> MatSerializer) -> AYNI maç
+  // (uid) DAİMA AYNI deterministik dosya. Kayıt best-effort flush edildiğinden henüz düşmemiş
+  // olabilir -> kısa retry. Sunucu hâlâ veremezse (flush yarışı/erişim) SESSİZ yerel yedek
+  // (buildMatXg) devreye girer -> buton ASLA boşa düşmez, "hazırlanıyor" uyarısı GÖSTERİLMEZ.
   async function exportMat() {
-    if (!matchUid) {
-      setExportErr(true)
-      return
-    }
-    if (exporting) return
-    setExportErr(false)
-    setExporting(true)
-    try {
-      for (let attempt = 0; attempt < 4; attempt++) {
+    if (matchUid) {
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const { mat, filename } = await fetchGameLogMat(matchUid)
           saveFile(mat, filename)
           return
         } catch {
-          if (attempt < 3) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)))
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
         }
       }
-      setExportErr(true) // 4 denemede de sunucu kaydı hazır değil
-    } finally {
-      setExporting(false)
     }
+    // Sessiz yerel yedek: sunucu kaydı henüz hazır değil/erişilemedi (uyarı gösterme).
+    const now = new Date()
+    const p2 = (n: number) => String(n).padStart(2, '0')
+    const eventDate = `${now.getFullYear()}.${p2(now.getMonth() + 1)}.${p2(now.getDate())}`
+    const eventTime = `${p2(now.getHours())}.${p2(now.getMinutes())}`
+    const text = buildMatXg(log, {
+      matchLength,
+      whiteName,
+      blackName,
+      matchId: matchUid ?? '0', // stabil kimlik (Date.now DEĞİL) -> yedek bile aynı uid=aynı header
+      eventDate,
+      eventTime,
+      results: gameResults,
+      matchResult,
+    })
+    const clean = (s: string | undefined, fb: string) =>
+      (s ?? '').replace(/\s+/g, '').replace(/[^\p{L}\p{N}_-]/gu, '') || fb
+    const fileDate = `${p2(now.getDate())}-${p2(now.getMonth() + 1)}-${now.getFullYear()}`
+    const fname =
+      [clean(whiteName, 'Player1'), clean(blackName, 'Player2'), fileDate, clean(matchUid ?? '', 'mac')]
+        .filter(Boolean)
+        .join('_') + '.mat'
+    saveFile(text, fname)
   }
 
   return (
@@ -402,11 +418,10 @@ export default function MatchReport({
             </div>
           )}
           {log.length > 0 && (
-            <div className="mt-3.5 flex flex-col items-center gap-1.5">
-              <Button variant="outline" disabled={exporting} onClick={() => void exportMat()}>
+            <div className="mt-3.5 flex justify-center">
+              <Button variant="outline" onClick={() => void exportMat()}>
                 <Icon name="install" size={14} /> {t('rep.export')}
               </Button>
-              {exportErr && <span className="register-sub">{t('rep.exportPending')}</span>}
             </div>
           )}
         </div>
