@@ -1,16 +1,19 @@
 import { useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { pipCount } from '../engine/evaluate'
+import { divisionOfPR } from '../badges'
 import type { LogEntry } from './MatchReport'
 import type { Step } from '../engine/types'
 
 // Mat Analiz FAZ 2: yüklenen .mat maçının HAMLE-HAMLE görüntüleyicisi (HedgeHog benzeri
 // tam-ekran üç panel): sol = hamle listesi (oyuncu + hata filtreli), orta = tahta + oyuncu
 // adları + pip + zar, sağ = kazanma olasılıkları + sıralı aday hamleler.
+// Üstünde açılışta "Analiz Tamamlandı" özet popup'ı (kapatınca görüntüleyici kalır).
 
 function band(loss: number): 'good' | 'ok' | 'bad' | 'blunder' {
   if (loss < 0.02) return 'good'
@@ -20,19 +23,65 @@ function band(loss: number): 'good' | 'ok' | 'bad' | 'blunder' {
 }
 const pct = (v: number) => (v * 100).toFixed(1)
 
+// ---- Özet (popup): hamle-inceleme log'undan per-oyuncu hata istatistikleri ----
+export interface MatSummaryPlayer {
+  name: string
+  blunders: number
+  errors: number
+  inaccuracies: number
+  equityLost: number
+  erMemg: number // (kayıp/karar)×1000
+  xr: number // (kayıp/karar)×500 = XG PR
+  missedDoubles: number
+  decisions: number
+}
+export interface MatSummary {
+  players: MatSummaryPlayer[] // [0]=beyaz (names[0]), [1]=siyah (names[1])
+  durationMs: number
+}
+export function computeSummary(log: LogEntry[], names: string[] | null, durationMs: number): MatSummary {
+  const colors: Array<'white' | 'black'> = ['white', 'black']
+  const players = colors.map((c, i) => {
+    const es = log.filter((e) => e.pos && e.player === c && !e.cube)
+    const decisions = es.length
+    const equityLost = es.reduce((s, e) => s + (e.loss || 0), 0)
+    const blunders = es.filter((e) => e.loss >= 0.08).length
+    const errors = es.filter((e) => e.loss >= 0.04 && e.loss < 0.08).length
+    const inaccuracies = es.filter((e) => e.loss >= 0.02 && e.loss < 0.04).length
+    const erMemg = decisions ? (equityLost / decisions) * 1000 : 0
+    return {
+      name: names?.[i] || (i === 0 ? 'White' : 'Black'),
+      blunders,
+      errors,
+      inaccuracies,
+      equityLost,
+      erMemg,
+      xr: erMemg / 2,
+      missedDoubles: 0,
+      decisions,
+    }
+  })
+  return { players, durationMs }
+}
+// ER (mEMG) -> yaklaşık performans yüzdesi (düşük hata = yüksek %).
+const perfPct = (erMemg: number) => Math.max(0, Math.min(100, 100 - erMemg * 1.2))
+
 export default function MatReview({
   log,
   names,
   matchLength,
+  summary,
   onClose,
 }: {
   log: LogEntry[]
   names: string[] | null
   matchLength: number | null
+  summary?: MatSummary | null
   onClose: () => void
 }) {
   const { t } = useT()
   useEscape(onClose)
+  const [showSum, setShowSum] = useState(!!summary)
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
   const nameB = names?.[1] || t('mrv.black')
 
@@ -75,7 +124,9 @@ export default function MatReview({
   const probs = (candIdx >= 0 && cur?.cands?.[candIdx]?.probs) || cur?.probs || null
   const win = probs ? probs[0] + probs[1] + probs[2] : null
 
-  return (
+  // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
+  // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
+  return createPortal(
     <div className="mr-overlay">
       <div className="mr-top">
         <span className="mr-title">
@@ -230,6 +281,98 @@ export default function MatReview({
             )}
           </div>
         </aside>
+      </div>
+
+      {/* ---- Açılış özet popup'ı ("Analiz Tamamlandı") ---- */}
+      {summary && showSum && <SummaryPopup summary={summary} names={names} onClose={() => setShowSum(false)} />}
+    </div>,
+    document.body,
+  )
+}
+
+// "Analiz Tamamlandı" popup: birincil oyuncu rating% + Blunder/Hata/Kesinsizlik + oyuncu
+// karşılaştırma tablosu + Derinlik/Motor/Süre + "Hataları İncele" (kapat).
+function SummaryPopup({ summary, names, onClose }: { summary: MatSummary; names: string[] | null; onClose: () => void }) {
+  const { t } = useT()
+  const p0 = summary.players[0]
+  const p1 = summary.players[1]
+  const pctVal = perfPct(p0.erMemg)
+  const div = divisionOfPR(p0.xr)
+  const n = (v: number, d = 2) => (Number.isFinite(v) ? v.toFixed(d) : '—')
+  return (
+    <div className="mrv-sum-backdrop" onClick={onClose}>
+      <div className="mrv-sum" onClick={(e) => e.stopPropagation()}>
+        <button className="mrv-sum-x" onClick={onClose} aria-label={t('common.close')}>
+          <Icon name="x" size={16} />
+        </button>
+        <h2 className="mrv-sum-title">{t('mrv.sumTitle')}</h2>
+        <div className="mrv-sum-name">{p0.name}</div>
+        <div className="mrv-sum-pct">{pctVal.toFixed(1)}%</div>
+        <div className="mrv-sum-rating" style={{ color: div.color }}>
+          {t(div.key)}
+        </div>
+        <div className="mrv-sum-boxes">
+          <div className="mrv-sum-box">
+            <b className="blunder">{p0.blunders}</b>
+            <span>{t('ma.blunders')}</span>
+          </div>
+          <div className="mrv-sum-box">
+            <b className="error">{p0.errors}</b>
+            <span>{t('ma.errors')}</span>
+          </div>
+          <div className="mrv-sum-box">
+            <b className="inacc">{p0.inaccuracies}</b>
+            <span>{t('ma.inaccuracies')}</span>
+          </div>
+        </div>
+        <table className="mrv-sum-table">
+          <thead>
+            <tr>
+              <th />
+              <th>{names?.[0] || p0.name}</th>
+              <th>{names?.[1] || p1.name}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>{t('ma.missedDoubles')}</td>
+              <td>{p0.missedDoubles}</td>
+              <td>{p1.missedDoubles}</td>
+            </tr>
+            <tr>
+              <td>{t('ma.equityLost')}</td>
+              <td>{n(p0.equityLost, 3)}</td>
+              <td>{n(p1.equityLost, 3)}</td>
+            </tr>
+            <tr>
+              <td>{t('mrv.erMemg')}</td>
+              <td>{n(p0.erMemg, 1)}</td>
+              <td>{n(p1.erMemg, 1)}</td>
+            </tr>
+            <tr>
+              <td>{t('mrv.xr')}</td>
+              <td>{n(p0.xr, 2)}</td>
+              <td>{n(p1.xr, 2)}</td>
+            </tr>
+          </tbody>
+        </table>
+        <div className="mrv-sum-meta">
+          <div>
+            <span>{t('mrv.depth')}</span>
+            <span>{t('mrv.ply', { n: 2 })}</span>
+          </div>
+          <div>
+            <span>{t('mrv.engine')}</span>
+            <span>TavlaTV</span>
+          </div>
+          <div>
+            <span>{t('mrv.duration')}</span>
+            <span>{(summary.durationMs / 1000).toFixed(1)}s</span>
+          </div>
+        </div>
+        <Button className="mrv-sum-btn" onClick={onClose}>
+          {t('mrv.reviewMistakes')}
+        </Button>
       </div>
     </div>
   )
