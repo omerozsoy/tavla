@@ -73,4 +73,29 @@ fi
 $PHP artisan news:import --file=database/data/news.json || echo "UYARI: news:import atlandi."
 $PHP artisan magazine:import --file=database/data/magazine.json || echo "UYARI: magazine:import atlandi."
 
-echo "Deploy tamam: migrate + cache + haber importu."
+# --- gnubg analiz motoru + queue worker: kod degisince YENIDEN BASLAT --------------
+# SORUN: gnubg motoru /opt/gnubg-service/gnubg_service.py'yi (ayri kopya) uzun-omurlu
+# systemd servisinde calistirir; queue worker de eski PHP kodunu tutar. Deploy'da bunlar
+# YENILENMEZSE "analiz motoru guncel degil" olur. Best-effort: sudo -n yetkisi varsa
+# gnubg_service.py'yi senkronla + servisi restart et; yoksa SESSIZCE gecip elle komutu yaz.
+# (cwd = backend/ -> repo koku = ..)
+if [ -f ../gnubg-service/gnubg_service.py ]; then
+  sudo -n cp ../gnubg-service/gnubg_service.py /opt/gnubg-service/gnubg_service.py 2>/dev/null \
+    && echo "gnubg: gnubg_service.py /opt/gnubg-service'e senkronlandi."
+  if sudo -n systemctl restart gnubg-analysis.service 2>/dev/null; then
+    echo "gnubg: gnubg-analysis servisi yeniden baslatildi."
+  else
+    echo "UYARI: gnubg-analysis restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis.service"
+  fi
+fi
+# Queue worker (gnubg PR shadow) eski kodu calistirir -> her deploy'da yenile (bkz deploy/README).
+if sudo -n systemctl restart tavla-queue 2>/dev/null; then
+  echo "tavla-queue yeniden baslatildi."
+else
+  $PHP artisan queue:restart >/dev/null 2>&1 \
+    && echo "queue:restart sinyali gonderildi (worker sonraki job'da yeni kodu alir)." \
+    || echo "UYARI: tavla-queue yenilenemedi -> ELLE: sudo systemctl restart tavla-queue"
+fi
+# -----------------------------------------------------------------------------
+
+echo "Deploy tamam: migrate + cache + haber importu + gnubg/queue restart."
