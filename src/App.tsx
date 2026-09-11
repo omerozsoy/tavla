@@ -13,7 +13,7 @@ import {
   resignationValue,
   resignationTypeForValue,
 } from './engine/resign'
-import { checkerDecision, onePointFactor } from './analysis/pr'
+import { checkerDecision, onePointFactor, prMatchEquity } from './analysis/pr'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
   initialState,
@@ -1688,11 +1688,14 @@ export default function App() {
         .then((ranks) => {
           if (ranks.length === 0) return
           const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
-          // XG-style: obvious eleme + 1pt faktoru; PR yalniz sayilan kararlardan.
+          // XG-style: obvious eleme; PR yalniz sayilan kararlardan. 1-puanlik macta equity =
+          // win-prob (gammon alakasiz) -> best/worst win-prob'a gore (prMatchEquity). Cok-puanlik/
+          // money'de money equity (ranks zaten money'ye gore sirali -> davranis AYNI).
+          const prEqB = (r: RankedMove) => prMatchEquity(r.probs, r.equity, match.target, isMoney)
           const dec = checkerDecision(
-            ranks[0].equity,
-            pl.equity,
-            ranks[ranks.length - 1].equity,
+            Math.max(...ranks.map(prEqB)),
+            prEqB(pl),
+            Math.min(...ranks.map(prEqB)),
             moves.length,
             match.target,
             isMoney,
@@ -1764,11 +1767,14 @@ export default function App() {
       // Eskiden probs<6 ise TUM kayit dusuyordu -> analiz eksikse PR "—", luck 0 kaliyordu.
       if (ranks.length === 0) return
       const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
-      // XG-style karar: best/worst spread -> obvious eleme, 1pt ×1.5 (src/analysis/pr TEK KAYNAK).
+      // XG-style karar: obvious eleme (src/analysis/pr TEK KAYNAK). 1-puanlik macta equity =
+      // win-prob (gammon alakasiz; prMatchEquity) -> XG hizalama; cok-puanlik/money'de money equity
+      // (ranks money'ye gore sirali -> best=ranks[0], worst=ranks[last]; davranis AYNI).
+      const prEqH = (r: RankedMove) => prMatchEquity(r.probs, r.equity, match.target, isMoney)
       const dec = checkerDecision(
-        ranks[0].equity,
-        pl.equity,
-        ranks[ranks.length - 1].equity,
+        Math.max(...ranks.map(prEqH)),
+        prEqH(pl),
+        Math.min(...ranks.map(prEqH)),
         moves.length,
         match.target,
         isMoney,
