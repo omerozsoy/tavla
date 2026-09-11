@@ -116,10 +116,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
     Route::middleware('throttle:30,1')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
     // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
-    // analyse match COK agir (dakikalar surebilir) -> siki throttle.
-    Route::middleware('throttle:8,1')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
-    // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin gnubg hint) -> COK agir, en siki throttle.
-    Route::middleware('throttle:5,1')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
+    // analyse match agir; yine de test/kullanim icin makul limit.
+    Route::middleware('throttle:30,1')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
+    // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit.
+    Route::middleware('throttle:30,1')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —

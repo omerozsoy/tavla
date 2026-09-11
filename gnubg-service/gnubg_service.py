@@ -950,26 +950,54 @@ def _record_field(rec, *keys):
 def _record_move_to_notation(rec, turn):
     """gnubg.match() hamle kaydındaki oynanan hamleyi notasyona çevir. 'move' str ise aynen;
     (from,to) çiftleri dizisi ise gnubg nokta no'suyla (25=bar, 0=off, 1-24 nokta) notasyon kur."""
-    mv = _record_field(rec, "move", "moves", "action_move")
+    mv = _record_field(rec, "move", "moves", "action_move", "play")
     if isinstance(mv, str):
-        return mv
-    if isinstance(mv, (list, tuple)) and mv:
-        toks = []
-        for pair in mv:
-            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
-                continue
-            a, b = pair[0], pair[1]
+        return mv.strip() or None
 
-            def gp(n):
-                n = int(n)
-                if n >= 25:
-                    return "bar"
-                if n <= 0:
-                    return "off"
-                return str(n)
+    def gp(n):
+        n = int(n)
+        if n >= 25:
+            return "bar"
+        if n <= 0:
+            return "off"
+        return str(n)
+
+    if isinstance(mv, (list, tuple)) and mv:
+        # (from,to) çiftleri dizisi VEYA düz [from,to,from,to,...] tamsayı dizisi
+        pairs = []
+        if all(isinstance(x, (list, tuple)) and len(x) >= 2 for x in mv):
+            pairs = [(x[0], x[1]) for x in mv]
+        else:
+            flat = [x for x in mv if isinstance(x, (int, float))]
+            for i in range(0, len(flat) - 1, 2):
+                pairs.append((flat[i], flat[i + 1]))
+        toks = []
+        for a, b in pairs:
+            if int(a) == 0 and int(b) == 0:
+                continue  # gnubg dolgu (0,0) = kullanılmayan zar
             toks.append("%s/%s" % (gp(a), gp(b)))
-        return " ".join(toks)
+        return " ".join(toks) or None
     return None
+
+
+def _find_move_list(game):
+    """gnubg.match() bir oyunundaki hamle-kayıt listesini SÜRÜM-BAĞIMSIZ bul. game bir liste ise
+    doğrudan; dict ise bilinen anahtarları dene, yoksa dict-listesi olan en uzun değeri kullan."""
+    if isinstance(game, list):
+        return game
+    if not isinstance(game, dict):
+        return None
+    for k in ("game", "moves", "plays", "analysis", "records", "moveRecords"):
+        v = game.get(k)
+        if isinstance(v, list) and v:
+            return v
+    # Fallback: dict-öğeli en uzun liste değeri
+    best = None
+    for v in game.values():
+        if isinstance(v, list) and v and any(isinstance(x, dict) for x in v):
+            if best is None or len(v) > len(best):
+                best = v
+    return best
 
 
 def _reviewmatch(mat_text, plies=2):
@@ -1007,15 +1035,15 @@ def _reviewmatch(mat_text, plies=2):
             out["error"] = "import-failed"
             out["import_err"] = last_err
             return out
-        m = gnubg.match(0)  # 0 = analizsiz ham yapı (hızlı); hint'i biz yeniden çağırıyoruz
+        m = gnubg.match(1)  # 1 = analiz dahil (kanıtlı lucktest çağrısıyla aynı)
         if not isinstance(m, dict):
             out["error"] = "match-struct"
             out["match_struct_type"] = str(type(m))
             return out
         out["names"] = None
-        info = m.get("match-info") or m.get("info")
+        info = m.get("match-info") or m.get("info") or m.get("matchinfo")
         if isinstance(info, dict):
-            players = info.get("players")
+            players = info.get("players") or info.get("player")
             if isinstance(players, list) and len(players) == 2:
                 out["names"] = [str(_record_field(players[0], "name") or "White"),
                                 str(_record_field(players[1], "name") or "Black")]
@@ -1024,26 +1052,37 @@ def _reviewmatch(mat_text, plies=2):
         log = []
         if isinstance(games, list):
             for gi, game in enumerate(games):
-                moves = None
-                if isinstance(game, dict):
-                    moves = game.get("game") or game.get("moves") or game.get("analysis")
+                moves = _find_move_list(game)
+                if gi == 0:
+                    out["_debug_game_type"] = str(type(game))
+                    if isinstance(game, dict):
+                        out["_debug_game_keys"] = list(game.keys())
+                    out["_debug_movelist_len"] = len(moves) if isinstance(moves, list) else None
                 if not isinstance(moves, list):
                     continue
-                # Her oyun başlangıç konumundan replay edilir.
+                # Her oyun başlangıç konumundan replay edilir. Oyuncu 'player' yoksa alternasyonla.
                 pos = _initial_pos()
+                alt_turn = None  # 'player' hiç yoksa ilk hamleden başlayıp değiştir
                 for ri, rec in enumerate(moves):
-                    if gi == 0 and ri < 4:
+                    if gi == 0 and ri < 6:
                         debug.append(_safe(rec))
                     if not isinstance(rec, dict):
                         continue
-                    action = str(_record_field(rec, "action", "type") or "").lower()
-                    pl = _record_field(rec, "player", "fmove")
-                    turn = "white" if (pl in (0, "0", None)) else "black"
-                    # Küp kararları (double/take/drop/resign) — board değişmez; v1'de listede minimal.
-                    if action in ("double", "take", "drop", "reject", "accept", "resign"):
+                    action = str(_record_field(rec, "action", "type", "movetype") or "").lower()
+                    pl = _record_field(rec, "player", "fmove", "fturn")
+                    if pl in (0, "0", 1, "1"):
+                        turn = "white" if pl in (0, "0") else "black"
+                        alt_turn = turn
+                    elif alt_turn is not None:
+                        turn = alt_turn
+                    else:
+                        turn = "white"
+                    # Küp kararları (double/take/drop/resign) — board değişmez; listede minimal.
+                    if action in ("double", "take", "drop", "reject", "accept", "resign", "beaver"):
                         log.append({"player": turn, "cube": {"chosen": action, "win": 0,
                                     "equity": 0, "recommended": action, "correct": True},
-                                    "notation": action, "best": action, "loss": 0.0, "seq": len(log)})
+                                    "notation": action, "best": action, "loss": 0.0, "seq": len(log), "game": gi})
+                        alt_turn = "black" if turn == "white" else "white"
                         continue
                     dice_raw = _record_field(rec, "dice") or []
                     dice = [int(x) for x in dice_raw if int(x) > 0][:2] if isinstance(dice_raw, (list, tuple)) else []
@@ -1055,7 +1094,6 @@ def _reviewmatch(mat_text, plies=2):
                         e["seq"] = len(log)
                         e["game"] = gi
                         log.append(e)
-                        # Konumu ilerlet
                         try:
                             pts, bar = _apply_our_steps(pos["points"], pos["bar"], steps, turn)
                             pos["points"] = pts
@@ -1063,15 +1101,17 @@ def _reviewmatch(mat_text, plies=2):
                             pos["off"][turn] += sum(1 for s in steps if s.get("to") == "off")
                         except Exception:
                             pass
-                    elif notation is not None:
-                        # Zar yok / hamle yok (dance / no move) -> sadece listeye ekle
-                        log.append({"player": turn, "dice": dice, "notation": notation or "(pas)",
+                        alt_turn = "black" if turn == "white" else "white"
+                    elif len(dice) >= 2:
+                        # Zar var ama hamle yok (dance / no move) -> listeye ekle, sıra geçer
+                        log.append({"player": turn, "dice": dice, "notation": "(no move)",
                                     "best": None, "loss": 0.0, "seq": len(log), "game": gi})
+                        alt_turn = "black" if turn == "white" else "white"
         out["log"] = log
         out["_debug_records"] = debug
         out["_debug_match_keys"] = list(m.keys())
         out["decisions"] = len([e for e in log if e.get("pos")])
-        out["ok"] = len(log) > 0
+        out["ok"] = len([e for e in log if e.get("pos")]) > 0
         if not out["ok"]:
             out["error"] = "no-moves-extracted"
     except Exception as e:
