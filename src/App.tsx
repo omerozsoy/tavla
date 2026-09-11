@@ -4482,6 +4482,15 @@ export default function App() {
     oppLoggedRef.current = ''
     setRatingChange(null)
       setClock(freshMatchClock(onlineTargetRef.current))
+      setMatch(newMatch(onlineTargetRef.current))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
       setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
       // Kod GECERLI -> simdi online oyuna gec (kurulum ekranindan gelindiyse). Room ile
       // ayni tik'te ayarlanir (React batch) -> araya bogus board render'i girmez.
@@ -4526,6 +4535,11 @@ export default function App() {
       fairRef.current = new FairDice()
       setOppStarted(false)
       setChat([])
+      // Yeni oda = TAMAMEN temiz maç durumu. (Bu resetler eksikti -> koda katılınca ÖNCEKİ
+      // maçın matchOver/gameEnd'i taşınıp yeni tahtanın üstünde ESKİ sonuç ekranı ["Siyah
+      // kazandı … Sonraki Oyun"] gösteriliyordu. enterOnlineByCode/turnuva ile aynı sıfırlama.)
+      setRematch({ mine: null, theirs: null, code: null })
+      rematchSentRef.current = null
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
