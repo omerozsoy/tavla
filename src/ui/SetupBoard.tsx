@@ -134,8 +134,11 @@ export default function SetupBoard({
         <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
         {tris}
         {discs}
+        {/* İki zar da AYNI: gövde=cream, pip=checker. (Eskiden sağ zarın pip'i üçgen rengi
+            'a' idi -> Siyah pul takasında koyu zar üstünde kırmızı pip okunmuyordu/uyumsuzdu.
+            checker ile cream daima zıt iki pul rengi -> pip her durumda okunur.) */}
         {die(W * 0.28, H / 2, 5, checker)}
-        {die(W * 0.72, H / 2, 3, a)}
+        {die(W * 0.72, H / 2, 3, checker)}
       </svg>
       {onChangeBoard && (
         <button type="button" className="setup-board-change" onClick={onChangeBoard}>
