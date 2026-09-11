@@ -16,7 +16,7 @@ import { useT } from '../i18n'
 import { listInfoPages, type InfoPage, type InfoPageSlug } from '../api'
 import { Lightbox, mediaSrc } from './ContentView'
 import { RankProgression } from './RankProgression'
-import FairnessModal from './FairnessModal'
+import FairDiceInfo from './FairDiceInfo'
 import Achievements from './Achievements'
 import Scoring from './Scoring'
 
@@ -44,7 +44,7 @@ interface Props {
   fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-export default function Info({ onClose, tab, onTab, currentRating, loggedIn = false, fair }: Props) {
+export default function Info({ onClose, tab, onTab, currentRating, loggedIn = false }: Props) {
   const { t } = useT()
   const [pages, setPages] = useState<Record<string, InfoPage>>({})
   useEscape(onClose)
@@ -115,14 +115,7 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
 
         {tab === 'fair' && (
           <div className="info-tab-pane">
-            <FairnessModal
-              embed
-              commitment={fair.commitment}
-              clientSeed={fair.clientSeed}
-              serverSeed={fair.serverSeed}
-              rolls={fair.rolls}
-              onClose={() => {}}
-            />
+            <FairDiceInfo />
           </div>
         )}
       </div>

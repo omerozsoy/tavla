@@ -19121,6 +19121,460 @@ button.acct-row:hover:not(:disabled) {
   color: var(--text);
 }
 
+/* ==================== Bilgi › Adil Zar (yeniden tasarim: FairDiceInfo) ==================== */
+.fairp {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: var(--tv-font-ui);
+}
+.fairp p {
+  margin: 0 0 10px;
+  line-height: 1.6;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.fairp p:last-child {
+  margin-bottom: 0;
+}
+/* Hero */
+.fairp-hero {
+  padding: 22px 22px 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  border-radius: var(--radius-lg, 14px);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+}
+.fairp-hero-title {
+  margin: 0 0 12px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+.fairp-hero-p {
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+.fairp-quote {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 600;
+}
+.fairp-quote svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+}
+/* Kartlar */
+.fairp-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-bg);
+}
+.fairp-card-title {
+  margin: 0 0 12px;
+  font-size: 1.12rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.fairp-answer {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px !important;
+}
+.fairp-list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 18px;
+}
+.fairp-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.93rem;
+  color: var(--text);
+}
+.fairp-list li svg {
+  color: var(--muted);
+  flex: 0 0 auto;
+}
+.fairp-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  font-weight: 600;
+  color: var(--tv-green, #3f9e6a);
+}
+.fairp-gh {
+  margin-top: 14px;
+}
+/* Teknik accordion */
+.fairp-tech {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+.fairp-tech-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  text-align: left;
+}
+.fairp-tech-toggle > span {
+  flex: 1;
+}
+.fairp-tech-chev {
+  transition: transform 0.18s var(--ease-out, ease);
+  color: var(--muted);
+}
+.fairp-tech.open .fairp-tech-chev,
+.fairp-tech-chev.open {
+  transform: rotate(180deg);
+}
+.fairp-tech-body {
+  padding: 0 18px 16px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+/* Test alani */
+.fairp-test {
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-bg);
+}
+.fairp-test-sub {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 16px !important;
+}
+.fairp-test-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.fairp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fairp-chip {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg, transparent);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+.fairp-chip:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.fairp-chip.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.fairp-chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.fairp-custom-input {
+  margin-top: 10px;
+  width: 100%;
+  max-width: 220px;
+  font-family: var(--tv-font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.fairp-run {
+  margin-top: 16px;
+  width: 100%;
+}
+.fairp-spin {
+  animation: fairp-spin 0.9s linear infinite;
+}
+@keyframes fairp-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+/* Sonuclar */
+.fairp-results {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+/* Grafik */
+.fairp-chart {
+  margin-bottom: 18px;
+}
+.fairp-chart-plot {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  height: 190px;
+  padding-top: 18px;
+}
+.fairp-chart-exp {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 2px dashed color-mix(in srgb, var(--accent) 65%, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+.fairp-chart-exp-lbl {
+  position: absolute;
+  right: 0;
+  top: -9px;
+  padding: 0 6px;
+  font-size: 0.7rem;
+  color: var(--accent);
+  background: var(--card-bg);
+  font-variant-numeric: tabular-nums;
+}
+.fairp-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  height: 100%;
+}
+.fairp-bar-val {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.fairp-bar-track {
+  width: 100%;
+  max-width: 46px;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.fairp-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(to top, var(--accent), color-mix(in srgb, var(--accent) 62%, transparent));
+  transition: height 0.5s var(--ease-out, ease);
+}
+.fairp-chart-axis {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+.fairp-axis-face {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  color: var(--text);
+}
+/* Tablo */
+.fairp-table {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 16px;
+  margin-bottom: 16px;
+}
+.fairp-trow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+.fairp-tface {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+.fairp-tcount {
+  flex: 1;
+  text-align: right;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.fairp-tpct {
+  min-width: 64px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+/* Ozet istatistikler */
+.fairp-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.fairp-stat {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg, transparent);
+  text-align: center;
+}
+.fairp-stat-k {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.fairp-stat-v {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.fairp-summary {
+  font-weight: 600;
+}
+.fairp-note {
+  color: var(--muted) !important;
+  font-size: 0.88rem !important;
+}
+/* Dagilim (Ki-Kare) testi */
+.fairp-dist {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-bg);
+}
+.fairp-dist.ok {
+  border-color: color-mix(in srgb, var(--tv-green, #3f9e6a) 40%, var(--border));
+  background: color-mix(in srgb, var(--tv-green, #3f9e6a) 7%, var(--card-bg));
+}
+.fairp-dist.warn {
+  border-color: color-mix(in srgb, var(--danger-fg, #e0455e) 38%, var(--border));
+  background: color-mix(in srgb, var(--danger-fg, #e0455e) 6%, var(--card-bg));
+}
+.fairp-dist-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1rem;
+}
+.fairp-dist.ok .fairp-dist-head {
+  color: var(--tv-green, #3f9e6a);
+}
+.fairp-dist.warn .fairp-dist-head {
+  color: var(--danger-fg, #e0455e);
+}
+.fairp-dist-desc {
+  margin: 8px 0 0 !important;
+  font-size: 0.86rem !important;
+  color: var(--muted) !important;
+}
+.fairp-dist-caveat {
+  margin: 6px 0 0 !important;
+  font-size: 0.82rem !important;
+  color: var(--muted) !important;
+  font-style: italic;
+}
+.fairp-dist-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.fairp-dist-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.fairp-dist-detail code {
+  font-family: var(--tv-font-mono);
+  color: var(--text);
+}
+.fairp-again {
+  width: 100%;
+}
+/* Bilgi kutusu */
+.fairp-infobox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.fairp-infobox svg {
+  color: var(--accent);
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+@media (max-width: 560px) {
+  .fairp-hero-title {
+    font-size: 1.28rem;
+  }
+  .fairp-table {
+    grid-template-columns: 1fr;
+  }
+  .fairp-chart-plot {
+    height: 160px;
+    gap: 6px;
+  }
+  .fairp-bar-val {
+    font-size: 0.62rem;
+  }
+}
+
 /* ---- Responsive: mobilde adimlar/kutu alt alta, dikey baglayici ---- */
 @media (max-width: 720px) {
   .fair-steps {
