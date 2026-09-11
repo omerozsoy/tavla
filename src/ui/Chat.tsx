@@ -89,16 +89,15 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
               </Button>
             ) : (
               <>
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <button
                   type="button"
-                  className="shrink-0"
+                  className={`chat-icon-btn ${emojiOpen ? 'active' : ''}`}
                   onClick={() => setEmojiOpen((v) => !v)}
+                  aria-label="Emoji"
                   title="Emoji"
                 >
-                  😊
-                </Button>
+                  <Icon name="smiley" size={18} />
+                </button>
                 {canText ? (
                   <>
                     <input
@@ -110,10 +109,19 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
                         if (e.key === 'Enter') submit()
                       }}
                     />
-                    <Button variant="default" className="shrink-0" onClick={submit}>{t('chat.send')}</Button>
+                    <button
+                      type="button"
+                      className="chat-icon-btn chat-send"
+                      onClick={submit}
+                      disabled={!text.trim()}
+                      aria-label={t('chat.send')}
+                      title={t('chat.send')}
+                    >
+                      <Icon name="paper-plane-right" size={18} />
+                    </button>
                   </>
                 ) : (
-                  <Button variant="secondary" className="flex-1" onClick={onUpgrade}>
+                  <Button variant="secondary" className="flex-1 chat-premium" onClick={onUpgrade}>
                     <Icon name="crown" size={14} /> {t('chat.premium')}
                   </Button>
                 )}

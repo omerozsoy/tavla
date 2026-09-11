@@ -95,6 +95,8 @@ import {
   WhatsappLogo,
   EnvelopeSimple,
   SmileySad,
+  Smiley,
+  PaperPlaneRight,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -166,6 +168,8 @@ export type IconName =
   | 'warning-circle'
   | 'chart-line'
   | 'info'
+  | 'smiley'
+  | 'paper-plane-right'
   | 'shield-check'
   | 'clock'
   | 'lock-key'
@@ -279,6 +283,8 @@ const MAP: Record<IconName, PhosphorIcon> = {
   whatsapp: WhatsappLogo,
   mail: EnvelopeSimple,
   'smiley-sad': SmileySad,
+  smiley: Smiley,
+  'paper-plane-right': PaperPlaneRight,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
