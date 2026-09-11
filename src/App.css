@@ -6742,6 +6742,72 @@ button.move-row:focus-visible {
   margin-top: 4px;
 }
 
+/* Mobil DIKEY "telefonu yan cevir" ipucu (non-blocking pill).
+   Varsayilan gizli; YALNIZ mobil-portre'de gorunur. Kullanici telefonu yatay
+   cevirince orientation:landscape ile otomatik kaybolur (oyun yatay acilir). */
+.rotate-tip {
+  display: none;
+}
+@media (max-width: 900px) and (orientation: portrait) {
+  .rotate-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 54px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    max-width: min(92vw, 420px);
+    padding: 7px 8px 7px 12px;
+    border-radius: var(--radius-pill, 999px);
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+    color: var(--text);
+    font-size: 0.82rem;
+    line-height: 1.25;
+    animation: rotate-tip-in 0.3s ease both;
+  }
+  .rotate-tip-icon {
+    display: inline-flex;
+    flex: 0 0 auto;
+    color: var(--accent);
+    transform: rotate(90deg);
+    animation: rotate-wiggle 1.8s ease-in-out infinite;
+  }
+  .rotate-tip-text {
+    flex: 1 1 auto;
+  }
+  .rotate-tip-x {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-radius: var(--radius-circle, 50%);
+  }
+  .rotate-tip-x:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text);
+  }
+}
+@keyframes rotate-tip-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 /* Manuel yatay: cihazin donme kilidi acikken gorunumu 90 dondur.
    #root'a transform verildiginde tum position:fixed ogeler bu ataya gore
    konumlanir -> hesap bari, saat, menu her sey birlikte doner. */
