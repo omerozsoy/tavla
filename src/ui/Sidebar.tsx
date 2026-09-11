@@ -45,6 +45,7 @@ interface PlayerInfo {
   isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
   pr?: number | null // anlik PR (performans reytingi); null ise gizli
   premium?: boolean // süresi geçerli ücretli plan -> isim yaninda PREMIUM
+  onOpenProfile?: () => void // varsa: avatara tıkla/hover -> herkese açık profil modalı (rakip)
 }
 
 interface SidebarProps {
@@ -63,6 +64,7 @@ function fmtK(n: number): string {
 }
 
 function Avatar({ p }: { p: PlayerInfo }) {
+  const { t } = useT()
   const inner = p.frame ? (
     <AvatarFrame
       src={p.avatarUrl}
@@ -83,8 +85,17 @@ function Avatar({ p }: { p: PlayerInfo }) {
     </div>
   )
   // Sira gostergesi: avatarin iki yaninda parantez benzeri iki yay, yanip soner (net "sira kimde")
+  // onOpenProfile varsa (rakip): avatar tıklanabilir + hover'da profil modalı açılır.
   return (
-    <div className={`pc-avatar ${p.active ? 'active' : ''}`}>
+    <div
+      className={`pc-avatar ${p.active ? 'active' : ''} ${p.onOpenProfile ? 'clickable' : ''}`}
+      onClick={p.onOpenProfile}
+      onMouseEnter={p.onOpenProfile}
+      role={p.onOpenProfile ? 'button' : undefined}
+      tabIndex={p.onOpenProfile ? 0 : undefined}
+      onKeyDown={p.onOpenProfile ? (e) => (e.key === 'Enter' || e.key === ' ') && p.onOpenProfile!() : undefined}
+      title={p.onOpenProfile ? t('menu.viewProfile') : undefined}
+    >
       {p.active && <span className="turn-arcs" aria-hidden="true" />}
       {inner}
     </div>

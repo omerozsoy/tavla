@@ -54,6 +54,20 @@
 .pc-avatar .avatar {
   margin: 0;
 }
+/* Rakip avatarı tıklanabilir (profil modalı): imleç + hafif vurgu */
+.pc-avatar.clickable {
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+.pc-avatar.clickable:hover {
+  transform: scale(1.04);
+  filter: brightness(1.06);
+}
+.pc-avatar.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
 /* Iki yay (sol+sag) = parantez: buyuk bir halkanin ust/alt kenari saydam -> yalniz yanlar gorunur.
    "sira kimde" NET olsun diye yanip soner. Renk site aksani (token); sabit hex YOK. */
 .turn-arcs {
