@@ -17,7 +17,7 @@ class PaymentController extends Controller
         }
         $data = $request->validate([
             'plan'   => ['required', 'in:star,starpro'],
-            'period' => ['required', 'in:yearly,monthly'],
+            'period' => ['required', 'in:yearly'], // yalnız yıllık üyelik (aylık kaldırıldı)
         ]);
         $amount = config("garanti.prices.{$data['plan']}.{$data['period']}");
         if (! $amount) {
