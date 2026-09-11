@@ -4727,6 +4727,34 @@ export default function App() {
     setHome(true)
   }
 
+  // Oyun bitti (ozellikle ZAMAN ASIMI) ve sonuc ekrani yok -> ESKI "Online Oyun" secim
+  // ekranina (Rakip Bul/Oyun Olustur/Oda Kodu) DUSME; oyuncuyu GIRDIGI menuye (origin) don.
+  function returnToOrigin() {
+    handleLeaveRoom() // tum online/board/sonuc state'ini temizler + setHome(true)
+    setMode('pvb')
+    if (friendlyRef.current) setFriendSetupOpen(true)
+    else if (mmOriginRef.current === 'solo') setSoloOpen(true)
+    else setSetup('online')
+  }
+
+  // Online oda 'finished' + maç-sonu ekranı (matchOver) yok + rövanş akışı YOK ise: seçim
+  // ekranına düşmeden origine dön. Rövanş sürerken (buton/istek/giriş) DOKUNMA -> aksi halde
+  // "Sonraki Oyun" akışını iptal ederdi.
+  useEffect(() => {
+    if (
+      mode === 'online' &&
+      !matchOver &&
+      room?.status === 'finished' &&
+      !rematch.code &&
+      !rematch.mine &&
+      !rematch.theirs &&
+      !rematchEnteringRef.current
+    ) {
+      returnToOrigin()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, matchOver, room?.status, rematch.code, rematch.mine, rematch.theirs])
+
   // Devam eden online maca GERI DON: odayi kur; poll (room.code'a bagli) sunucudaki
   // guncel state'i applyOnlineState ile geri yukler ve senkronu acar.
   function rejoinRoom(r: ActiveRoom) {
@@ -6993,7 +7021,14 @@ export default function App() {
   // gir. Aksi halde (bayat mode==='online' + room=null, orn. iptal/hata sonrasi) burasi
   // devreye girip KULLANILMAYAN "Online Oyun" secim ekranini gosteriyordu (sorunlarin
   // koku). Artik o ekran hicbir akista gorunmez; setup/solo/home dallari devralir.
-  if (mode === 'online' && !matchOver && (room !== null || roomBusy) && (!room || room.status !== 'playing')) {
+  // YALNIZ gerçek bekleme/arama durumları Lobby'yi (embed) render eder: arama spinner'ı
+  // (roomBusy), davet bekleme (waiting) veya hızlı eşleşme (mm_waiting). 'finished'/bayat
+  // durumlar ESKİ seçim ekranını açmasın -> returnToOrigin effect'i origine götürür.
+  if (
+    mode === 'online' &&
+    !matchOver &&
+    (roomBusy || room?.status === 'waiting' || room?.status === 'mm_waiting')
+  ) {
     // Oda olustur/bekle/arama: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
     // menu) icinde GOMULU goster -> menu/logo/sayfa kaybolmaz (kullanici geri bildirimi).
     return (
@@ -7042,7 +7077,10 @@ export default function App() {
   // yalnız geçiş/bayat kare düşer -> board YERİNE boş bırak (bir sonraki render arama/home devralır).
   // NOT: room===null'a daralt -> 'waiting'/'playing'/'finished' odalar (arama dalı + sonuç ekranı)
   // ETKİLENMEZ; yalnız oda YOKKEN (Start geçişi / bayat online) board flash'ı engellenir.
-  if (mode === 'online' && !matchOver && room === null) {
+  // Online ama GERÇEK oynanan oyun yok (room null VEYA 'finished'/bayat) + sonuç yok:
+  // board FLASH etme. Bekleme/arama üstteki Lobby dalında; buraya yalnız geçiş karesi düşer
+  // (returnToOrigin effect'i bir sonraki tick'te origine/kuruluma götürür).
+  if (mode === 'online' && !matchOver && room?.status !== 'playing') {
     return <div className="app game-view" aria-hidden />
   }
 

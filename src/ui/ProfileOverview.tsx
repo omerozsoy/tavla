@@ -332,7 +332,7 @@ export default function ProfileOverview({
             {ownedFrames.length === 0 && <p className="prof-ov-empty">{t('prof.noAvatars')}</p>}
             {/* Sahip olunan avatarlar — Tavla Tasarımları ile AYNI yatay şerit düzeni */}
             {ownedFrames.length > 0 && <h4 className="prof-ov-all-t">{t('prof.myCollection')}</h4>}
-            <div className="prof-ov-grid prof-ov-grid-board">
+            <div className="prof-ov-grid prof-ov-grid-board prof-ov-grid-frames">
               {ownedFrames.map((f) => (
                 <button
                   type="button"
@@ -347,7 +347,7 @@ export default function ProfileOverview({
                     <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
                   )}
                   <div className="prof-ov-item-frame">
-                    <AvatarFrame src={avatar} frame={f.id} size={92} name={fullName} animated />
+                    <AvatarFrame src={avatar} frame={f.id} size={78} name={fullName} animated />
                   </div>
                   <span className="prof-ov-item-name">{f.name}</span>
                 </button>

@@ -18196,13 +18196,22 @@ button.acct-row:hover:not(:disabled) {
   border-radius: var(--radius-md);
   overflow: hidden;
 }
-/* Avatar vitrini: tahta önizlemesiyle aynı kart yüksekliğinde, ortalanmış çerçeve */
+/* Avatar vitrini: tahta önizlemesiyle aynı kart yüksekliğinde, ortalanmış çerçeve.
+   (Avatar kartları biraz küçültüldü — kullanıcı isteği: işaretli STANDART boyu.) */
 .prof-ov-item-frame {
   width: 100%;
-  min-height: 108px;
+  min-height: 88px;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* Avatar KOLEKSİYON şeridi kartları board şeridinden biraz DAR (küçük avatarlar). */
+.prof-ov-grid-frames .prof-ov-item {
+  flex: 0 0 130px;
+}
+/* Profil "Tüm Avatar Çerçeveleri" (catalog) kartları da aynı ölçüde küçülür. */
+.prof-ov-all .shop-anim-grid {
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
 }
 .prof-ov-item-name {
   font-size: 0.82rem;
