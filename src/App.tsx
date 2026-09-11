@@ -14,6 +14,7 @@ import {
   resignationTypeForValue,
 } from './engine/resign'
 import { checkerDecision, onePointFactor, prMatchEquity } from './analysis/pr'
+import { prDebugRecord, prDebugSummary, prDebugEnabled } from './analysis/prDebug'
 import { offerLoss, takeLoss } from './engine/cubeEquity'
 import {
   initialState,
@@ -324,6 +325,7 @@ interface RoomState {
   oppAvatar: string | null
   oppFrame: string | null
   oppPremium?: boolean // rakip premium mi -> isim yaninda PREMIUM
+  oppId?: number | null // rakip user id (herkese açık profil modalı için; misafir=null)
   status: 'waiting' | 'mm_waiting' | 'playing' | 'finished'
   // Sunucu-otoriter mod (para maçı güvenliği Faz 2c). true iken istemci zar/hamleyi
   // SUNUCUDAN alır (serverRoll/serverMove). Şu an hiçbir oda için true değil (gated).
@@ -1681,8 +1683,16 @@ export default function App() {
     if (steps.length === 0) return
     const mover = before.turn
     const moves = generateMoves(before)
-    if (moves.length <= 1) return // zorunlu/tek hamle -> karar sayilmaz
     const seq = turnsPlayed // bu turun sirasi (async bot kaydinda korunur)
+    if (moves.length <= 1) {
+      // Zorunlu/tek hamle -> karar SAYILMAZ (PR paydasına girmez). Debug modunda yine de logla
+      // ki "forced rolls" sayısı görünsün (§13; kapalıyken sıfır maliyet).
+      if (prDebugEnabled()) {
+        const n = moveNotation({ steps, resultKey: '' }, mover)
+        prDebugRecord({ player: mover, turn: seq, dice: [...(before.dice ?? [])], played: n, best: n, bestEquity: 0, playedEquity: 0, equityLoss: 0, forced: true, countedInPR: false })
+      }
+      return
+    }
     // Money (coin) oyunu -> 1-puanlik maç ×1.5 faktörü UYGULANMAZ (yalniz gerçek 1-puanlik MAÇ).
     const isMoney = stakeRef.current > 0
     // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (XG-style, analiz .then icinde)
@@ -1706,6 +1716,14 @@ export default function App() {
             match.target,
             isMoney,
           )
+          if (prDebugEnabled()) {
+            prDebugRecord({
+              player: mover, turn: seq, dice: [...before.dice],
+              played: moveNotation(pl.move, mover), best: moveNotation(ranks[0].move, mover),
+              bestEquity: prEqB(ranks[0]), playedEquity: prEqB(pl),
+              equityLoss: dec.normalizedEquityLoss, forced: false, countedInPR: dec.countsForPR,
+            })
+          }
           setPrStats((s) => ({
             ...s,
             black: {
@@ -1786,6 +1804,14 @@ export default function App() {
         isMoney,
       )
       const loss = dec.normalizedEquityLoss // log/error-journal ham (1pt faktörsüz) equity kaybı
+      if (prDebugEnabled()) {
+        prDebugRecord({
+          player: mover, turn: seq, dice: [...before.dice],
+          played: moveNotation(pl.move, mover), best: moveNotation(ranks[0].move, mover),
+          bestEquity: prEqH(ranks[0]), playedEquity: prEqH(pl),
+          equityLoss: loss, forced: false, countedInPR: dec.countsForPR,
+        })
+      }
       // PR yalnız SAYILAN kararlardan (zorunlu/obvious hariç); loss = prAdjusted (1pt faktörlü).
       // STRICT (countsForPR) PR'a girer; ANCAK her non-forced karar all*'a girer (PR "—" olmasın
       // diye garanti yedeği: strict 0 çıkarsa loose kullanılır).
@@ -3159,6 +3185,7 @@ export default function App() {
       // Son setPrStats'lerin flush olması için kısa bekleme; sonra EN GUNCEL prStatsRef'ten
       // oku (rapor closure'undaki stale prStats degil) -> kendi PR'im "—" dusmesin.
       await new Promise((res) => setTimeout(res, 200))
+      prDebugSummary() // PR DEBUG (§13): açıksa karar tablosu + toplam/PR konsola (online)
       const prRef = (c: Player): number | null => {
         const s = prStatsRef.current[c]
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
@@ -3411,6 +3438,7 @@ export default function App() {
         await new Promise((res) => setTimeout(res, 100))
       }
       await new Promise((res) => setTimeout(res, 200)) // son setPrStats/setPrLuck flush'i
+      prDebugSummary() // PR DEBUG (§13): açıksa karar tablosu + toplam/PR konsola (pvb)
       const prRef = (c: Player): number | null => {
         const s = prStatsRef.current[c]
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
@@ -3723,6 +3751,7 @@ export default function App() {
                 oppAvatar: r.slot === 'p1' ? rv.p2_avatar : rv.p1_avatar,
                 oppFrame: r.slot === 'p1' ? (rv.p2_frame ?? null) : (rv.p1_frame ?? null),
                 oppPremium: r.slot === 'p1' ? rv.p2_premium : rv.p1_premium,
+                oppId: r.slot === 'p1' ? (rv.p2_user_id ?? null) : (rv.p1_user_id ?? null),
                 status: rv.status,
                 authoritative: rv.authoritative ?? r.authoritative,
                 dice_authority: rv.dice_authority ?? r.dice_authority,
@@ -4308,6 +4337,7 @@ export default function App() {
         oppRating: null,
         oppAvatar: null,
         oppFrame: null,
+        oppId: null,
         status: res.room.status,
       })
     } catch {
@@ -4413,6 +4443,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
         // KRİTİK: authoritative'i İLK POLL'U BEKLEMEDEN kur. Eşleşen oyuncu (p2) status='playing'
         // ile hemen açılışa girer; authoritativeRef henüz false ise açılış seededOpening'e (legacy)
@@ -4479,6 +4510,11 @@ export default function App() {
       fairRef.current = new FairDice()
       setOppStarted(false)
       setChat([])
+      // Yeni oda = TAMAMEN temiz maç durumu. (Bu resetler eksikti -> koda katılınca ÖNCEKİ
+      // maçın matchOver/gameEnd'i taşınıp yeni tahtanın üstünde ESKİ sonuç ekranı ["Siyah
+      // kazandı … Sonraki Oyun"] gösteriliyordu. enterOnlineByCode/turnuva ile aynı sıfırlama.)
+      setRematch({ mine: null, theirs: null, code: null })
+      rematchSentRef.current = null
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
@@ -4510,6 +4546,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
       })
     } catch (e) {
@@ -4541,11 +4578,6 @@ export default function App() {
       fairRef.current = new FairDice()
       setOppStarted(false)
       setChat([])
-      // Yeni oda = TAMAMEN temiz maç durumu. (Bu resetler eksikti -> koda katılınca ÖNCEKİ
-      // maçın matchOver/gameEnd'i taşınıp yeni tahtanın üstünde ESKİ sonuç ekranı ["Siyah
-      // kazandı … Sonraki Oyun"] gösteriliyordu. enterOnlineByCode/turnuva ile aynı sıfırlama.)
-      setRematch({ mine: null, theirs: null, code: null })
-      rematchSentRef.current = null
       ratingReportedRef.current = false
       setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
     setPrLuck({ white: 0, black: 0 })
@@ -4576,6 +4608,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
       })
     } catch {
@@ -4634,6 +4667,7 @@ export default function App() {
         oppRating: res.slot === 'p2' ? res.room.p1_rating : res.room.p2_rating,
         oppAvatar: res.slot === 'p2' ? res.room.p1_avatar : res.room.p2_avatar,
         oppFrame: res.slot === 'p2' ? (res.room.p1_frame ?? null) : (res.room.p2_frame ?? null),
+        oppId: res.slot === 'p2' ? (res.room.p1_user_id ?? null) : (res.room.p2_user_id ?? null),
         status: res.room.status,
       })
       return true
@@ -5345,6 +5379,9 @@ export default function App() {
     frame: online ? (myColor === 'black' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : null,
     isBot: !online && mode === 'pvb', // PvB'de siyah/ust oyuncu = YZ -> robot ikonu
     premium: online ? (myColor === 'black' ? isMePremium : (room?.oppPremium ?? false)) : false,
+    // Rakip (siyah/ust, ben beyazsam) avatarina tikla/hover -> herkese acik profil modali.
+    onOpenProfile:
+      online && myColor === 'white' && room?.oppId ? () => setHomeProfileId(room.oppId!) : undefined,
   }
   const bottomInfo = {
     name: whiteName,
@@ -5369,6 +5406,9 @@ export default function App() {
     // ("PR asla bos olmasin" direktifi); eski prValue??prLoose null donup PR'i gizliyordu.
     pr: mode === 'pvb' && showLivePr ? prShown('white') : null,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
+    // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
+    onOpenProfile:
+      online && myColor === 'black' && room?.oppId ? () => setHomeProfileId(room.oppId!) : undefined,
   }
 
   // Sifre sifirlama ekrani (e-postadaki linkten gelince)
