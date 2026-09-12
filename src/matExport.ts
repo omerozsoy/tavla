@@ -273,7 +273,7 @@ function resolveGameResult(acts: Act[], authoritative: GameResultInput | null): 
     terminationType = 'drop'
   }
 
-  if (winner === null || mult === null || !Number.isInteger(mult) || !(mult in MULT_TO_WINTYPE)) {
+  if (winner === null || mult === null || terminationType === null || !Number.isInteger(mult) || !(mult in MULT_TO_WINTYPE)) {
     return null // türetilemedi VEYA geçersiz çarpan (İMKÂNSIZ puan) -> reddet
   }
   return {
