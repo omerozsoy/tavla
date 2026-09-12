@@ -9,9 +9,10 @@ import DiceRow from './Dice'
 import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
+import { applyStep } from '../engine/moves'
 import { divisionOfPR } from '../badges'
 import type { LogEntry } from './MatchReport'
-import type { GameState, Step } from '../engine/types'
+import type { GameState, Step, Player } from '../engine/types'
 
 // Mat Analiz FAZ 2: yüklenen .mat maçının HAMLE-HAMLE görüntüleyicisi (HedgeHog benzeri
 // tam-ekran üç panel): sol = hamle listesi (oyuncu + hata filtreli), orta = tahta + oyuncu
@@ -45,7 +46,9 @@ export interface MatSummary {
 export function computeSummary(log: LogEntry[], names: string[] | null, durationMs: number): MatSummary {
   const colors: Array<'white' | 'black'> = ['white', 'black']
   const players = colors.map((c, i) => {
-    const es = log.filter((e) => e.pos && e.player === c && !e.cube)
+    // "(no move)" artık pos taşır (tahta gösterimi için) ama ZORUNLU non-karardır -> sayma;
+    // yoksa payda şişip erMemg/XR (PR) yanlış düşerdi.
+    const es = log.filter((e) => e.pos && e.player === c && !e.cube && e.notation !== '(no move)')
     const decisions = es.length
     const equityLost = es.reduce((s, e) => s + (e.loss || 0), 0)
     const blunders = es.filter((e) => e.loss >= 0.08).length
@@ -130,11 +133,57 @@ export default function MatReview({
   const probs = (candIdx >= 0 && cur?.cands?.[candIdx]?.probs) || cur?.probs || null
   const win = probs ? probs[0] + probs[1] + probs[2] : null
 
+  // Küp kararı (double/take/drop) ve "(no move)" girdileri backend'de tahta konumu OLMADAN
+  // üretilir -> tahta kaybolurdu. O anki tahtayı yine de göster: küp/no-move tahtayı DEĞİŞTİRMEZ,
+  // yani aynı oyundaki BİR SONRAKİ hamlenin "önce" pozisyonu = bu kararın anındaki tahtadır.
+  // Sonraki hamle yoksa (oyun-sonu drop) ÖNCEKİ hamlenin adımlarını uygulayıp SONRA konumunu türet.
+  const boardPos = (() => {
+    if (cur?.pos) return cur.pos
+    if (!cur) return null
+    for (let j = sel + 1; j < log.length; j++) {
+      const n = log[j]
+      if (n.game !== cur.game) break
+      if (n.pos) return n.pos
+    }
+    for (let k = sel - 1; k >= 0; k--) {
+      const p = log[k]
+      if (p.game !== cur.game) break
+      if (p.pos && p.playedSteps && p.player) {
+        const st: GameState = {
+          points: [...p.pos.points], bar: { ...p.pos.bar }, off: { ...p.pos.off },
+          turn: p.player as GameState['turn'], dice: [], diceUsed: [],
+        }
+        for (const s of p.playedSteps) applyStep(st, s, p.player as Player)
+        return { points: st.points, bar: st.bar, off: st.off } as GameState
+      }
+    }
+    return null
+  })()
+
   // Gerçek Board için: GameState + seçili hamlenin kaynak/hedef vurgusu + zar satırı.
-  const boardState: GameState | null = cur?.pos
-    ? { points: cur.pos.points, bar: cur.pos.bar, off: cur.pos.off,
-        turn: (cur.player ?? cur.pos.turn) as GameState['turn'], dice: cur.dice ?? [], diceUsed: [] }
+  const boardState: GameState | null = boardPos
+    ? { points: boardPos.points, bar: boardPos.bar, off: boardPos.off,
+        turn: (cur?.player ?? boardPos.turn ?? 'white') as GameState['turn'], dice: cur?.dice ?? [], diceUsed: [] }
     : null
+
+  // Tahtadaki küp: backend pos'a küp iliştirirse onu kullan; yoksa bu oyunun küp geçmişini
+  // tekrar oynat (kabul edilen her "take" -> ×2, sahip=alıcı). Böylece küp kararında + double
+  // sonrası hamlelerde tahtada doğru küp görünür.
+  const cubeForBoard: { value: number; owner: Player | null } = (() => {
+    const pc = (boardPos as unknown as { cube?: { value?: number; owner?: Player | null } } | null)?.cube
+    if (pc && pc.value) return { value: pc.value, owner: pc.owner ?? null }
+    let value = 1
+    let owner: Player | null = null
+    for (let j = 0; j < sel; j++) {
+      const e = log[j]
+      if (e.game !== cur?.game) continue
+      if (e.cube?.chosen === 'take' && e.player) {
+        value *= 2
+        owner = e.player as Player
+      }
+    }
+    return { value, owner }
+  })()
   const froms = new Set<number | 'bar'>()
   const tos = new Set<number | 'off'>()
   for (const s of viewSteps) {
@@ -196,7 +245,13 @@ export default function MatReview({
               return (
                 <div key={i}>
                   {showGame && <div className="mrv-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
-                  <button className={`mrv-row ${sel === i ? 'sel' : ''}`} onClick={() => select(i)} disabled={!e.pos && !e.cube}>
+                  <button
+                    className={`mrv-row ${sel === i ? 'sel' : ''}`}
+                    onClick={() => select(i)}
+                    /* Küp kararı + "(no move)" (zar var, hamle yok) da tıklanabilir: tahta + zar/küp
+                       gösterilir (pos yoksa komşu hamleden ölçülür). Yalnız tamamen boş satır pasif. */
+                    disabled={!e.pos && !e.cube && !(e.dice && e.dice.length)}
+                  >
                     <span className={`mrv-dot ${b}`} />
                     <span className="mrv-no">{i + 1}.</span>
                     {e.dice && e.dice.length >= 2 ? (
@@ -243,7 +298,7 @@ export default function MatReview({
                 onDragFrom={() => {}}
                 pipTop={pipCount(boardState, 'black')}
                 pipBottom={pipCount(boardState, 'white')}
-                cube={{ value: 1, owner: null }}
+                cube={cubeForBoard}
                 flip={false}
                 mirror={boardDir === 'left'}
                 swapStones={swapStones}

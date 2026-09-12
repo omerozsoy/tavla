@@ -1100,19 +1100,33 @@ def _reviewmatch(mat_text, plies=2):
         log = []
         for gi, g in enumerate(games):
             pos = _initial_pos()
+            cube_val = 1          # bu oyunun o anki küp değeri (kabul edilen her double -> ×2)
+            cube_owner = None     # küp sahibi ('white'/'black'/None=merkez)
             for (color, kind, data) in g:
                 if kind == "cube":
-                    log.append({"player": color, "cube": {"chosen": data, "win": 0, "equity": 0,
+                    # Küp kararında da o anki tahta gösterilsin (frontend MatReview boardu):
+                    # pos = karar ANINDAKİ tahta (küp tahtayı değiştirmez); küp değeri/sahibi iliştir.
+                    snap = {"points": list(pos["points"]), "bar": dict(pos["bar"]),
+                            "off": dict(pos["off"]), "turn": color,
+                            "cube": {"value": cube_val, "owner": cube_owner}}
+                    log.append({"player": color, "pos": snap,
+                                "cube": {"chosen": data, "win": 0, "equity": 0,
                                 "recommended": data, "correct": True}, "notation": data,
                                 "best": data, "loss": 0.0, "seq": len(log), "game": gi})
+                    if data == "take":  # double kabul edildi -> küp ikiye katlanır, alıcı sahibi
+                        cube_val *= 2
+                        cube_owner = color
                     continue
                 if kind != "move":
                     continue
                 notation = data["notation"]
                 dice = data["dice"]
-                if not notation:  # dance / no move (zar var, hamle yok)
+                if not notation:  # dance / no move (zar var, hamle yok) -> tahta + zar gösterilsin
+                    snap = {"points": list(pos["points"]), "bar": dict(pos["bar"]),
+                            "off": dict(pos["off"]), "turn": color,
+                            "cube": {"value": cube_val, "owner": cube_owner}}
                     log.append({"player": color, "dice": dice, "notation": "(no move)",
-                                "best": None, "loss": 0.0, "seq": len(log), "game": gi})
+                                "pos": snap, "best": None, "loss": 0.0, "seq": len(log), "game": gi})
                     continue
                 try:
                     steps = _parse_gnubg_move_to_steps(color, notation)
@@ -1134,6 +1148,8 @@ def _reviewmatch(mat_text, plies=2):
                 # Analiz: karar ONCESI pozisyon
                 e = _review_decision(pos["points"], pos["bar"], pos["off"], color, dice,
                                      steps, match_len, plies)
+                if isinstance(e.get("pos"), dict):  # tahtada doğru küp görünsün (double sonrası)
+                    e["pos"]["cube"] = {"value": cube_val, "owner": cube_owner}
                 e["seq"] = len(log)
                 e["game"] = gi
                 log.append(e)
@@ -1141,7 +1157,10 @@ def _reviewmatch(mat_text, plies=2):
                 pos["bar"] = bar
                 pos["off"] = off
         out["log"] = log
-        out["decisions"] = len([e for e in log if e.get("pos")])
+        # decisions = yalnız GERÇEK analiz edilen taş-hamleleri (küp/no-move artık pos taşıyor;
+        # sayıma girmesinler -> "no-moves-extracted" ok kontrolü ve özet bozulmasın).
+        out["decisions"] = len([e for e in log if e.get("pos") and not e.get("cube")
+                                and e.get("notation") != "(no move)"])
         out["ok"] = out["decisions"] > 0
         if not out["ok"]:
             out["error"] = "no-moves-extracted"
