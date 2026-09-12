@@ -78,7 +78,6 @@ export default function MatchReport({
   whiteName = 'White',
   blackName = 'Black',
   gameResults,
-  matchResult,
   matchUid,
   onClose,
 }: Props) {
