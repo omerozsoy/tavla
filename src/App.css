@@ -12426,8 +12426,9 @@ button.acct-row:hover:not(:disabled) {
 .lb-head,
 .lb-row {
   display: grid;
-  /* # | oyuncu (sabit) | bayrak (isimden hemen sonra, hizali) | MaÃ§ | G/M | % | deger */
-  grid-template-columns: 38px minmax(72px, 170px) 1fr 66px 74px 48px 62px;
+  /* # | oyuncu (isim KIRPILMASIN, ~15 karaktere kadar) | bayrak | Maç | G/M | % | deger.
+     İsim kolonu 170->230 genişletildi; sayı kolonları hafif daraltıldı ki 560px karta sığsın. */
+  grid-template-columns: 32px minmax(120px, 230px) 1fr 56px 66px 42px 56px;
   align-items: center;
   gap: 6px;
   /* İlk 10 tek ekrana sığsın diye satırlar kompakt (scroll yok). */
@@ -23126,6 +23127,11 @@ select:-webkit-autofill {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Board `stones-swapped` iken --cream/--navy'yi --stone-light/dark'tan okur; bu yakalama
+     normalde .game-area'da yapılır. MatReview .game-area ile sarmadığından burada yakalanmazsa
+     swap'ta --cream/--navy GEÇERSİZ olur -> pullar VE zarlar ŞEFFAF görünür (kök neden). */
+  --stone-light: var(--cream);
+  --stone-dark: var(--navy);
 }
 .mr-board-stage .board {
   margin: 0;
