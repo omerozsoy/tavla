@@ -195,6 +195,12 @@ export default function MatReview({
     boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
   const whiteBottom = cur?.player === 'white' // beyaz altta (flip yok)
 
+  // Küp ÇEKME (double) girdisinde: küpü çeken oyuncudan rakibine (küpün önerildiği kişi)
+  // doğru kibar bir ok. Tahta hep beyaz altta / siyah üstte (flip yok); alıcı = çekenin
+  // rakibi -> beyaz çekince alıcı siyah (üst) = ok YUKARI, siyah çekince alıcı beyaz (alt) = AŞAĞI.
+  const cubeArrowDir: 'up' | 'down' | null =
+    cur?.cube?.chosen === 'double' && cur?.player ? (cur.player === 'white' ? 'up' : 'down') : null
+
   // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
   return createPortal(
@@ -311,6 +317,8 @@ export default function MatReview({
                 steps={viewSteps}
                 dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
               />
+              {/* Küp çekildiyse: küpten alıcıya (rakibe) doğru kibar ok. */}
+              {cubeArrowDir && <CubeArrow dir={cubeArrowDir} dep={`${sel}:${boardDir}:${cubeArrowDir}`} />}
             </div>
           ) : (
             <div className="mrv-noboard">{t('mrv.selectMove')}</div>
@@ -513,6 +521,81 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
               </text>
             </g>
           ))}
+        </svg>
+      )}
+    </div>
+  )
+}
+
+// Küp oku: küp ÇEKİLDİĞİNDE (double) tahtadaki küpten alıcıya (rakibe) doğru kibar bir ok.
+// Küpün GERÇEK ekran konumu (.cube) ölçülür; ok, küpün alıcıya bakan kenarından çıkıp o yöne
+// (yukarı=siyah/üst oyuncu, aşağı=beyaz/alt oyuncu) uzanır. "64" sayısı görünür kalsın diye
+// küpün ortasından değil kenarından başlar. Stil MoveArrows ile aynı (altın çekirdek + koyu casing).
+function CubeArrow({ dir, dep }: { dir: 'up' | 'down'; dep: string }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [seg, setSeg] = useState<{ x: number; y1: number; y2: number } | null>(null)
+  const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
+  const [r, setRad] = useState(12)
+
+  useLayoutEffect(() => {
+    const host = hostRef.current
+    const stage = host?.parentElement
+    const board = stage?.querySelector('.board') as HTMLElement | null
+    const cube = board?.querySelector('.cube') as HTMLElement | null
+    if (!host || !stage || !board || !cube) {
+      setSeg(null)
+      return
+    }
+    const measure = () => {
+      const sr = stage.getBoundingClientRect()
+      const cr = cube.getBoundingClientRect()
+      const cx = cr.left + cr.width / 2 - sr.left
+      const topY = cr.top - sr.top
+      const botY = cr.bottom - sr.top
+      const h = cr.height
+      const rad = Math.max(7, h * 0.44)
+      const gap = h * 0.22
+      const len = h * 1.7
+      const y1 = dir === 'up' ? topY - gap : botY + gap // küpün alıcıya bakan kenarı
+      const y2 = dir === 'up' ? y1 - len : y1 + len
+      setRad(rad)
+      setSize({ w: sr.width, h: sr.height })
+      setSeg({ x: cx, y1, y2 })
+    }
+    measure()
+    const raf = requestAnimationFrame(measure)
+    const ro = new ResizeObserver(measure)
+    ro.observe(board)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dep])
+
+  const ah = r * 1.16
+  return (
+    <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
+      {seg && size.w > 0 && (
+        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`}>
+          <defs>
+            <marker
+              id="mrv-cah"
+              viewBox="0 0 11 11"
+              markerUnits="userSpaceOnUse"
+              markerWidth={ah}
+              markerHeight={ah}
+              refX="8.4"
+              refY="5.5"
+              orient="auto"
+            >
+              <path d="M1.6,1.4 L9,5.5 L1.6,9.6 L3.9,5.5 Z" fill={ARROW} stroke={ARROW_EDGE} strokeWidth="0.9" strokeLinejoin="round" />
+            </marker>
+          </defs>
+          {/* koyu casing */}
+          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.484} strokeLinecap="round" opacity={0.7} />
+          {/* parlak çekirdek + zarif uç */}
+          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW} strokeWidth={r * 0.232} strokeLinecap="round" markerEnd="url(#mrv-cah)" />
         </svg>
       )}
     </div>
