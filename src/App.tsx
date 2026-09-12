@@ -3057,10 +3057,13 @@ export default function App() {
     // hatasına/409'a/uçuş kilidine takılırsa hiçbir şey tekrar denemiyordu; overlay durdukça
     // periyodik yeniden dene. Sunucu açılışı IDEMPOTENT'tir (opened=true ise ikinci çağrı yeni
     // zar üretmez, reused/409 döner) -> tekrar güvenli. Overlay kalkınca effect temizlenir.
-    const retry = online ? window.setInterval(fire, 2500) : null
+    // Retry HEM online HEM pvb (canlı bug: pvb'de sonraki oyun "Açılış zarı atılıyor…"da
+    // takılıyordu — tek atış iptal olursa pvb'nin kurtarıcısı yoktu). fire() opening'i 'reveal'e
+    // çevirince effect yeniden çalışır, guard erken döner, interval temizlenir -> güvenli.
+    const retry = window.setInterval(fire, 2500)
     return () => {
       window.clearTimeout(id)
-      if (retry !== null) window.clearInterval(retry)
+      window.clearInterval(retry)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
