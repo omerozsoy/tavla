@@ -3068,6 +3068,22 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
 
+  // SELF-HEAL ("Acilis zari atiliyor" kilidi kalkani): opening==='roll' + hala duran gameEnd/
+  // cubePending = GECERSIZ kombinasyon. Bu, onceki oyun daha bitis-sonucu beklerken acilisin
+  // ERKEN tetiklendigi anlamina gelir (race). Iki sonuc birden olur ve KILITLENIR:
+  //   1) render acilis overlay'ini gameEnd'den ONCE cizer -> "Sonraki Oyun" kutusu gizlenir,
+  //   2) otomatik-acilis effect'i guard'da gameEnd gorup timer'i bile kurmadan cikar -> zar hic
+  //      atilmaz (retry de kurulmaz) -> SONSUZ takilma (kullanici raporu: "gene burda takildi").
+  // Cozum: gameEnd'i SILME (bear-off effect'i yeniden tetikleyip CIFTE SKORLAR); bunun yerine
+  // erken acilisi IPTAL et (opening=null). Boylece bekleyen oyun-sonu kutusu gorunur ve kullanicinin
+  // "Sonraki Oyun"u (nextGame) TAM temiz reset yapar. Refresh'te applySavedGame'in yaptigi
+  // (opening=null) ile ayni kurtarma; artik refresh gerekmez. Happy-path'te (gameEnd zaten null) no-op.
+  useEffect(() => {
+    if (opening === 'roll' && !matchOver && (gameEnd || cubePending)) {
+      setOpening(null)
+    }
+  }, [opening, gameEnd, cubePending, matchOver])
+
   // Oyun durumunun imzasi (sadece oyunu ilgilendiren alanlar) -> echo tespiti
   function stateSig(
     m: MatchState,
