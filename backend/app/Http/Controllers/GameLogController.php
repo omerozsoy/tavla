@@ -125,8 +125,17 @@ class GameLogController extends Controller
             }
         }
 
+        // matText, sonuçsuz bir ARA oyun bulursa (previousGame.result=null) BOZUK .mat sunmak yerine
+        // RuntimeException fırlatır (bkz. MatSerializer). Kanonik kaynak bunu üretemiyorsa 422 ver;
+        // istemci yerel yedeğe düşer (o da imkânsız değer yazmaz -> kullanıcı sessiz bozuk dosya almaz).
+        try {
+            $mat = $log->matText();
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => 'Kayıt tutarsız: '.$e->getMessage()], 422);
+        }
+
         return response()->json([
-            'mat' => $log->matText(),
+            'mat' => $mat,
             'filename' => $log->matFilename(),
         ]);
     }

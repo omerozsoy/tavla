@@ -2,6 +2,9 @@
 
 namespace App\Support;
 
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
+
 /**
  * .mat SERİLEŞTİRİCİ — TEK KAYNAK (single source of truth).
  *
@@ -70,6 +73,7 @@ class MatSerializer
         $sw = 0;
         $sb = 0;
         $gi = 0;
+        $gameCount = count($games);
         foreach ($games as $game) {
             $gi++;
             $out[] = '';
@@ -102,44 +106,68 @@ class MatSerializer
             }
 
             $oc = $game['outcome'] ?? null;
-            if ($oc) {
-                // ---- Oyun puanı (ÖLÜ-KÜP kuralı; KIRPMA YOK) ----
-                // ESKİ HATA: $pts = min(cube×winType, matchLength - score) -> gammon×4=8, need=7 iken
-                // "Wins 7 point" GEÇERSİZ değer üretiyordu (7 hiçbir cube×winType değildir). XG/gnubg
-                // ham oyun puanını yazar. DOĞRU kural: tek galibiyet (cube) zaten maçı alıyorsa
-                // (cube >= kalan_puan) gammon/bg fazladan sayılmaz -> tekli (cube); aksi halde ham
-                // cube×winType. Böylece Game 3 -> 8, 1-puanlık maç gammon -> 1 (ikisi de GEÇERLİ).
-                $rawPts = (int) $oc['points'];
-                $cube = (int) ($oc['cube'] ?? 0);
-                $before = $oc['winner'] === 'white' ? $sw : $sb;
-                // HAM oyun puanı (cube×winType); KIRPMA YOK. Tek istisna: 1-PUANLIK maç —
-                // gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube (=1). Diğer tüm
-                // maçlarda ham puan yazılır (overshoot dahil): 7-maç gammon×4 -> 8 (7 DEĞİL).
-                $pts = $rawPts;
-                if ($matchLength === 1) {
-                    $pts = $cube > 0 ? $cube : 1;
+            if (! $oc) {
+                // SON-OLMAYAN oyun sonuçsuzsa: bir sonraki oyun başlıyor ama önceki oyunun sonucu
+                // yok (ÖmerDOĞAN_NeuralAI Game 1-3 bug'ı). User direktifi: "hata logla ve export'u
+                // DURDUR." Bu yalnız XG (kullanıcı indirmesi) için geçerlidir -> sessizce sonuçsuz
+                // .mat sunmak yerine LOUD fail. gnubg NATIVE .mat (Tavlai Luck V1) analiz logunun
+                // ATLADIĞI zorunlu bitiren-hamle yüzünden ara oyunda sonuç bulamayabilir; luck yolu
+                // bunu tarihsel olarak TOLERE eder ve byte-identity kalkanı vardır -> gnubg'de ATMA.
+                // SON oyun her iki lehçede de sonuçsuz olabilir (maç henüz bitmemiş) -> satır yazma.
+                if ($dialect === 'xg' && $gi < $gameCount) {
+                    $msg = "MAT export durduruldu: Game $gi sonuçsuz (previousGame.result=null); "
+                        .'bir sonraki oyun başlıyor. Bitiren hamle/otoriter sonuç eksik.';
+                    Log::error($msg, ['dialect' => $dialect, 'gameCount' => $gameCount]);
+                    throw new RuntimeException($msg);
                 }
 
-                if ($dialect === 'gnubg') {
-                    // "Wins N point(s)" çoğul; numaralı satır YOK.
-                    $winTxt = "Wins $pts point".($pts === 1 ? '' : 's');
-                    $out[] = $oc['winner'] === 'white' ? "      $winTxt" : '      '.str_pad('', $COLW).$winTxt;
+                continue;
+            }
+
+            // ---- Oyun puanı: gamePointsWon = cubeValue × winMultiplier ----
+            // Alanlar AYRI tutulur + winMultiplier DOĞRULANIR. ESKİ HATA (frontend): puan maç-skoru
+            // FARKINDAN türetiliyordu -> "Wins 8 point" (cube×winType OLMAYAN İMKÂNSIZ değer). Burada
+            // rawPts otoriter (gameEnd/tahta), yine de küpe göre çarpanı doğrularız: mult ∉ {1,2,3}
+            // ise bozuk kayıt -> [1,3]'e kırp ve düzeltmeyi logla (İMKÂNSIZ değer ASLA yazılmaz).
+            $rawPts = (int) $oc['points'];
+            $cube = (int) ($oc['cube'] ?? 0);
+            $cubeValue = $cube > 0 ? $cube : 1;
+            $winMultiplier = (int) round($rawPts / $cubeValue);
+            if ($winMultiplier < 1 || $winMultiplier > 3) {
+                Log::warning('MAT export: geçersiz winMultiplier düzeltildi', [
+                    'game' => $gi, 'rawPts' => $rawPts, 'cube' => $cubeValue, 'mult' => $winMultiplier,
+                ]);
+                $winMultiplier = max(1, min(3, $winMultiplier));
+            }
+            $gamePointsWon = $cubeValue * $winMultiplier;
+            // Tek istisna: 1-PUANLIK maç — gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube.
+            if ($matchLength === 1) {
+                $gamePointsWon = $cubeValue;
+            }
+            $before = $oc['winner'] === 'white' ? $sw : $sb;
+            // matchScoreAfter = min(matchLength, before + gamePointsWon): dahili skor hedefi aşamaz.
+            // MAT satırına YAZILAN değer DAİMA gerçek gamePointsWon'dur (matchScoreAfter/kalan DEĞİL).
+            $matchScoreAfter = min($matchLength, $before + $gamePointsWon);
+            $matchOver = $matchScoreAfter >= $matchLength;
+
+            if ($dialect === 'gnubg') {
+                // "Wins N point(s)" çoğul; numaralı satır YOK.
+                $winTxt = "Wins $gamePointsWon point".($gamePointsWon === 1 ? '' : 's');
+                $out[] = $oc['winner'] === 'white' ? "      $winTxt" : '      '.str_pad('', $COLW).$winTxt;
+            } else {
+                // XG: "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
+                $winTxt = "Wins $gamePointsWon point".($matchOver ? ' and the match' : '');
+                if ($oc['winner'] === 'black') {
+                    $num = count($lines) + 1;
+                    $out[] = rtrim(sprintf('%3d) %s%s', $num, str_pad(' Losses '.$gamePointsWon.' point', $COLW), $winTxt));
                 } else {
-                    // XG: "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
-                    $matchOver = ($before + $pts) >= $matchLength;
-                    $winTxt = "Wins $pts point".($matchOver ? ' and the match' : '');
-                    if ($oc['winner'] === 'black') {
-                        $num = count($lines) + 1;
-                        $out[] = rtrim(sprintf('%3d) %s%s', $num, str_pad(' Losses '.$pts.' point', $COLW), $winTxt));
-                    } else {
-                        $out[] = "      $winTxt";
-                    }
+                    $out[] = "      $winTxt";
                 }
-                if ($oc['winner'] === 'white') {
-                    $sw += $pts;
-                } else {
-                    $sb += $pts;
-                }
+            }
+            if ($oc['winner'] === 'white') {
+                $sw = $matchScoreAfter;
+            } else {
+                $sb = $matchScoreAfter;
             }
         }
 
