@@ -103,38 +103,30 @@ class MatSerializer
 
             $oc = $game['outcome'] ?? null;
             if ($oc) {
+                // ---- Oyun puanı (ÖLÜ-KÜP kuralı; KIRPMA YOK) ----
+                // ESKİ HATA: $pts = min(cube×winType, matchLength - score) -> gammon×4=8, need=7 iken
+                // "Wins 7 point" GEÇERSİZ değer üretiyordu (7 hiçbir cube×winType değildir). XG/gnubg
+                // ham oyun puanını yazar. DOĞRU kural: tek galibiyet (cube) zaten maçı alıyorsa
+                // (cube >= kalan_puan) gammon/bg fazladan sayılmaz -> tekli (cube); aksi halde ham
+                // cube×winType. Böylece Game 3 -> 8, 1-puanlık maç gammon -> 1 (ikisi de GEÇERLİ).
+                $rawPts = (int) $oc['points'];
+                $cube = (int) ($oc['cube'] ?? 0);
+                $before = $oc['winner'] === 'white' ? $sw : $sb;
+                // HAM oyun puanı (cube×winType); KIRPMA YOK. Tek istisna: 1-PUANLIK maç —
+                // gammon/backgammon SAYILMAZ (kural), galibiyet tekli = cube (=1). Diğer tüm
+                // maçlarda ham puan yazılır (overshoot dahil): 7-maç gammon×4 -> 8 (7 DEĞİL).
+                $pts = $rawPts;
+                if ($matchLength === 1) {
+                    $pts = $cube > 0 ? $cube : 1;
+                }
+
                 if ($dialect === 'gnubg') {
-                    // Puan maç uzunluğuna KIRP (kalan puana); "Wins N point(s)" çoğul; numaralı satır YOK.
-                    $pts = $oc['points'];
-                    $need = $matchLength - ($oc['winner'] === 'white' ? $sw : $sb);
-                    if ($need > 0) {
-                        $pts = min($pts, $need);
-                    }
+                    // "Wins N point(s)" çoğul; numaralı satır YOK.
                     $winTxt = "Wins $pts point".($pts === 1 ? '' : 's');
                     $out[] = $oc['winner'] === 'white' ? "      $winTxt" : '      '.str_pad('', $COLW).$winTxt;
-                    if ($oc['winner'] === 'white') {
-                        $sw += $pts;
-                    } else {
-                        $sb += $pts;
-                    }
                 } else {
                     // XG: "and the match" hedefe ulaşınca; siyah kazanınca numaralı iki-sütun.
-                    // PUAN MAÇ HEDEFİNİ AŞAMAZ -> kalan puana KIRP: 1-point match'te gammon/backgammon
-                    // (2/3) yalnız 1 sayılır (küp+gammon match play'de hedefin ötesine puan yazmaz).
-                    // Otoriter oyun sonucu (gammon) korunur; yalnız MAÇA yazılan puan kırpılır (gnubg ile
-                    // tutarlı). Kaybeden taş topladıysa zaten motor single verir; bu kırpma 1-pt/tavan durumu.
-                    $before = $oc['winner'] === 'white' ? $sw : $sb;
-                    $pts = $oc['points'];
-                    $need = $matchLength - $before;
-                    if ($need > 0) {
-                        $pts = min($pts, $need);
-                    }
-                    if ($oc['winner'] === 'white') {
-                        $sw += $pts;
-                    } else {
-                        $sb += $pts;
-                    }
-                    $matchOver = ($oc['winner'] === 'white' ? $sw : $sb) >= $matchLength;
+                    $matchOver = ($before + $pts) >= $matchLength;
                     $winTxt = "Wins $pts point".($matchOver ? ' and the match' : '');
                     if ($oc['winner'] === 'black') {
                         $num = count($lines) + 1;
@@ -142,6 +134,11 @@ class MatSerializer
                     } else {
                         $out[] = "      $winTxt";
                     }
+                }
+                if ($oc['winner'] === 'white') {
+                    $sw += $pts;
+                } else {
+                    $sb += $pts;
                 }
             }
         }
