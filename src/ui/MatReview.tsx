@@ -333,9 +333,13 @@ export default function MatReview({
           </div>
         </main>
 
-        {/* ---- SAĞ: analiz ---- */}
+        {/* ---- SAĞ: analiz (küp kararında küp analizi, aksi halde hamle analizi) ---- */}
         <aside className="mrv-analysis">
           <div className="mrv-ply">{t('mrv.ply', { n: 2 })}</div>
+          {cur?.cube ? (
+            <CubeAnalysis cube={cur.cube} />
+          ) : (
+          <>
           <div className="mrv-prob-head">
             <div className="mrv-prob-cell">
               <span className="mrv-prob-lbl">{t('mrv.win')}</span>
@@ -386,6 +390,8 @@ export default function MatReview({
               <div className="mrv-empty">{t('mrv.noCands')}</div>
             )}
           </div>
+          </>
+          )}
         </aside>
       </div>
 
@@ -598,6 +604,56 @@ function CubeArrow({ dir, dep }: { dir: 'up' | 'down'; dep: string }) {
           <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW} strokeWidth={r * 0.232} strokeLinecap="round" markerEnd="url(#mrv-cah)" />
         </svg>
       )}
+    </div>
+  )
+}
+
+// Küp analizi paneli (sağ sütun): küp kararında XG-benzeri aksiyon equity tablosu
+// (Katlama yok / Katla,Pas / Katla,Kabul) + doğru aksiyon vurgusu + kazanma% + oynananın kaybı.
+function CubeAnalysis({ cube }: { cube: NonNullable<LogEntry['cube']> }) {
+  const { t } = useT()
+  const eqs = cube.equities || {}
+  const rows: Array<{ k: 'noDouble' | 'doublePass' | 'doubleTake'; lbl: string }> = [
+    { k: 'noDouble', lbl: t('mrv.cActNoDouble') },
+    { k: 'doublePass', lbl: t('mrv.cActDoublePass') },
+    { k: 'doubleTake', lbl: t('mrv.cActDoubleTake') },
+  ]
+  const fmt = (v: number | undefined) => (v == null ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(3)}`)
+  return (
+    <div className="mrv-cube">
+      <div className="mrv-cube-title">{cube.isResponse ? t('mrv.cResponse') : t('mrv.cOffer')}</div>
+      <div className="mrv-cube-win">
+        <span>{t('mrv.win')}</span>
+        <b>{cube.win != null ? `${cube.win.toFixed(1)}%` : '—'}</b>
+      </div>
+      <div className="mrv-cube-eqs">
+        {rows.map(({ k, lbl }) => {
+          const best = cube.highlight === k
+          return (
+            <div key={k} className={`mrv-cube-eq ${best ? 'best' : ''}`}>
+              <span className="mrv-ce-lbl">{lbl}</span>
+              <span className="mrv-ce-val">{fmt(eqs[k])}</span>
+              {best ? <Icon name="check" size={13} /> : <span className="mrv-ce-sp" />}
+            </div>
+          )
+        })}
+      </div>
+      <div className={`mrv-cube-verdict ${cube.correct ? 'ok' : 'bad'}`}>
+        <span className="mrv-cv-played">
+          {t('mrv.cPlayed')}: {t(`cube.chose.${cube.chosen}`)}
+        </span>
+        <span className="mrv-cv-tag">
+          {cube.correct ? (
+            <>
+              <Icon name="check" size={13} /> {t('cube.correct')}
+            </>
+          ) : (
+            <>
+              {t('cube.wrong')} · −{(cube.loss ?? 0).toFixed(3)}
+            </>
+          )}
+        </span>
+      </div>
     </div>
   )
 }
