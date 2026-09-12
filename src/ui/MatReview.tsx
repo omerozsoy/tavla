@@ -149,9 +149,9 @@ export default function MatReview({
   // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
   return createPortal(
-    <div className="mr-overlay">
-      <div className="mr-top">
-        <span className="mr-title">
+    <div className="mrv-overlay">
+      <div className="mrv-top">
+        <span className="mrv-title">
           <Icon name="analyze" size={18} /> {t('mrv.title')}
           {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
         </span>
@@ -160,12 +160,12 @@ export default function MatReview({
         </Button>
       </div>
 
-      <div className="mr-grid">
+      <div className="mrv-grid">
         {/* ---- SOL: hamle listesi ---- */}
-        <aside className="mr-list">
-          <div className="mr-list-head">
-            <span className="mr-list-lbl">{t('mrv.moves')}</span>
-            <div className="mr-seg">
+        <aside className="mrv-list">
+          <div className="mrv-list-head">
+            <span className="mrv-list-lbl">{t('mrv.moves')}</span>
+            <div className="mrv-seg">
               <button className={who === 'white' ? 'on' : ''} onClick={() => setWho('white')} title={nameW}>
                 {nameW}
               </button>
@@ -177,7 +177,7 @@ export default function MatReview({
               </button>
             </div>
           </div>
-          <div className="mr-seg mr-seg-filter">
+          <div className="mrv-seg mrv-seg-filter">
             <button className={filter === 'all' ? 'on' : ''} onClick={() => setFilter('all')}>
               {t('mrv.all')}
             </button>
@@ -188,51 +188,51 @@ export default function MatReview({
               {t('mrv.blunders')}
             </button>
           </div>
-          <div className="mr-rows">
+          <div className="mrv-rows">
             {rows.map(({ e, i }, ri) => {
               const prevGame = ri > 0 ? rows[ri - 1].e.game : undefined
               const showGame = e.game != null && e.game !== prevGame
               const b = e.cube ? 'good' : band(e.loss)
               return (
                 <div key={i}>
-                  {showGame && <div className="mr-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
-                  <button className={`mr-row ${sel === i ? 'sel' : ''}`} onClick={() => select(i)} disabled={!e.pos && !e.cube}>
-                    <span className={`mr-dot ${b}`} />
-                    <span className="mr-no">{i + 1}.</span>
+                  {showGame && <div className="mrv-game-sep">{t('mrv.game', { n: (e.game ?? 0) + 1 })}</div>}
+                  <button className={`mrv-row ${sel === i ? 'sel' : ''}`} onClick={() => select(i)} disabled={!e.pos && !e.cube}>
+                    <span className={`mrv-dot ${b}`} />
+                    <span className="mrv-no">{i + 1}.</span>
                     {e.dice && e.dice.length >= 2 ? (
-                      <span className="mr-dice">
+                      <span className="mrv-dice">
                         {e.dice[0]}
                         {e.dice[1]}
                       </span>
                     ) : (
-                      <span className="mr-dice mr-dice-empty" />
+                      <span className="mrv-dice mrv-dice-empty" />
                     )}
-                    <span className="mr-move">{e.notation}</span>
+                    <span className="mrv-move">{e.notation}</span>
                     {!e.cube && e.loss >= 0.08 ? (
-                      <span className="mr-mark blunder">⁉</span>
+                      <span className="mrv-mark blunder">⁉</span>
                     ) : !e.cube && e.loss >= 0.02 ? (
-                      <span className="mr-mark err">?</span>
+                      <span className="mrv-mark err">?</span>
                     ) : null}
                   </button>
                 </div>
               )
             })}
-            {rows.length === 0 && <div className="mr-empty">{t('mrv.none')}</div>}
+            {rows.length === 0 && <div className="mrv-empty">{t('mrv.none')}</div>}
           </div>
         </aside>
 
         {/* ---- ORTA: GERÇEK site tahtası (tema + gerçek zarlar) ---- */}
-        <main className="mr-board">
-          <div className="mr-player mr-player-top">
-            <span className="mr-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            <span className="mr-pname">
-              {cur?.player === 'black' && <span className="mr-turn">▶</span>} {nameB}
+        <main className="mrv-board">
+          <div className="mrv-player mrv-player-top">
+            <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
+            <span className="mrv-pname">
+              {cur?.player === 'black' && <span className="mrv-turn">▶</span>} {nameB}
             </span>
-            {boardState && <span className="mr-pip">{pipCount(boardState, 'black')}</span>}
+            {boardState && <span className="mrv-pip">{pipCount(boardState, 'black')}</span>}
           </div>
 
           {boardState ? (
-            <div className="mr-board-stage">
+            <div className="mrv-board-stage">
               <Board
                 state={boardState}
                 selectableFroms={froms}
@@ -252,69 +252,69 @@ export default function MatReview({
               />
             </div>
           ) : (
-            <div className="mr-noboard">{t('mrv.selectMove')}</div>
+            <div className="mrv-noboard">{t('mrv.selectMove')}</div>
           )}
 
-          <div className="mr-player mr-player-bot">
-            <span className="mr-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            <span className="mr-pname">
-              {cur?.player === 'white' && <span className="mr-turn">▶</span>} {nameW}
+          <div className="mrv-player mrv-player-bot">
+            <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
+            <span className="mrv-pname">
+              {cur?.player === 'white' && <span className="mrv-turn">▶</span>} {nameW}
             </span>
-            {boardState && <span className="mr-pip">{pipCount(boardState, 'white')}</span>}
+            {boardState && <span className="mrv-pip">{pipCount(boardState, 'white')}</span>}
           </div>
         </main>
 
         {/* ---- SAĞ: analiz ---- */}
-        <aside className="mr-analysis">
-          <div className="mr-ply">{t('mrv.ply', { n: 2 })}</div>
-          <div className="mr-prob-head">
-            <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mrv.win')}</span>
-              <span className="mr-prob-val">{win != null ? pct(win) : '—'}</span>
+        <aside className="mrv-analysis">
+          <div className="mrv-ply">{t('mrv.ply', { n: 2 })}</div>
+          <div className="mrv-prob-head">
+            <div className="mrv-prob-cell">
+              <span className="mrv-prob-lbl">{t('mrv.win')}</span>
+              <span className="mrv-prob-val">{win != null ? pct(win) : '—'}</span>
             </div>
-            <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mrv.wg')}</span>
-              <span className="mr-prob-val">{probs ? pct(probs[1] + probs[2]) : '—'}</span>
+            <div className="mrv-prob-cell">
+              <span className="mrv-prob-lbl">{t('mrv.wg')}</span>
+              <span className="mrv-prob-val">{probs ? pct(probs[1] + probs[2]) : '—'}</span>
             </div>
-            <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mrv.wbg')}</span>
-              <span className="mr-prob-val">{probs ? pct(probs[2]) : '—'}</span>
+            <div className="mrv-prob-cell">
+              <span className="mrv-prob-lbl">{t('mrv.wbg')}</span>
+              <span className="mrv-prob-val">{probs ? pct(probs[2]) : '—'}</span>
             </div>
-            <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mrv.lg')}</span>
-              <span className="mr-prob-val">{probs ? pct(probs[4] + probs[5]) : '—'}</span>
+            <div className="mrv-prob-cell">
+              <span className="mrv-prob-lbl">{t('mrv.lg')}</span>
+              <span className="mrv-prob-val">{probs ? pct(probs[4] + probs[5]) : '—'}</span>
             </div>
-            <div className="mr-prob-cell">
-              <span className="mr-prob-lbl">{t('mrv.lbg')}</span>
-              <span className="mr-prob-val">{probs ? pct(probs[5]) : '—'}</span>
+            <div className="mrv-prob-cell">
+              <span className="mrv-prob-lbl">{t('mrv.lbg')}</span>
+              <span className="mrv-prob-val">{probs ? pct(probs[5]) : '—'}</span>
             </div>
           </div>
 
-          <div className="mr-cands-head">
-            <span className="mr-ch-no">#</span>
-            <span className="mr-ch-move">{t('mrv.move')}</span>
-            <span className="mr-ch-eq">{t('mrv.equity')}</span>
+          <div className="mrv-cands-head">
+            <span className="mrv-ch-no">#</span>
+            <span className="mrv-ch-move">{t('mrv.move')}</span>
+            <span className="mrv-ch-eq">{t('mrv.equity')}</span>
           </div>
-          <div className="mr-cands">
+          <div className="mrv-cands">
             {(cur?.cands ?? []).map((c, ci) => {
               const diff = c.equity - (cur!.cands![0]?.equity ?? c.equity)
               const isPlayed = ci === playedIdx
               return (
                 <button
                   key={ci}
-                  className={`mr-cand ${candIdx === ci ? 'sel' : ''} ${isPlayed ? 'played' : ''}`}
+                  className={`mrv-cand ${candIdx === ci ? 'sel' : ''} ${isPlayed ? 'played' : ''}`}
                   onClick={() => setCandIdx(ci)}
                 >
-                  <span className="mr-c-no">{ci + 1}</span>
-                  <span className="mr-c-move">{c.notation}</span>
-                  <span className="mr-c-eq">
+                  <span className="mrv-c-no">{ci + 1}</span>
+                  <span className="mrv-c-move">{c.notation}</span>
+                  <span className="mrv-c-eq">
                     {ci === 0 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}` : `(${diff.toFixed(3)})`}
                   </span>
                 </button>
               )
             })}
             {(!cur?.cands || cur.cands.length === 0) && cur?.pos && (
-              <div className="mr-empty">{t('mrv.noCands')}</div>
+              <div className="mrv-empty">{t('mrv.noCands')}</div>
             )}
           </div>
         </aside>
