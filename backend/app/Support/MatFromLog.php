@@ -124,20 +124,22 @@ class MatFromLog
 
         $acts = MatSerializer::pairCube($raw);
 
-        // Küp pas -> teklifi kabul etmeyen kaybeder; sonuç 'end' yoksa bundan türetilir.
-        if (! $outcome) {
-            $cube = 1;
-            $dropWinner = null;
-            foreach ($acts as $a) {
-                if ($a['kind'] === 'take') {
-                    $cube *= 2;
-                } elseif ($a['kind'] === 'drop') {
-                    $dropWinner = $a['player'] === 'white' ? 'black' : 'white';
-                }
+        // Kabul edilen küp değeri (her TAKE küpü 2'ye katlar). Ölü-küp kuralı için MatSerializer'a
+        // taşınır (cube >= kalan_puan -> gammon/bg tekli). Puan-kırpma yerine BU kullanılır.
+        $cube = 1;
+        $dropWinner = null;
+        foreach ($acts as $a) {
+            if ($a['kind'] === 'take') {
+                $cube *= 2;
+            } elseif ($a['kind'] === 'drop') {
+                $dropWinner = $a['player'] === 'white' ? 'black' : 'white';
             }
-            if ($dropWinner) {
-                $outcome = ['winner' => $dropWinner, 'points' => $cube];
-            }
+        }
+        if ($outcome) {
+            $outcome['cube'] = $cube; // bear-off/normal bitiş: oyunun oynandığı küp
+        } elseif ($dropWinner) {
+            // Küp pas -> teklifi kabul etmeyen kaybeder; drop = tekli (küp×1).
+            $outcome = ['winner' => $dropWinner, 'points' => $cube, 'cube' => $cube];
         }
 
         return ['acts' => $acts, 'outcome' => $outcome];

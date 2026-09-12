@@ -200,7 +200,7 @@ class MatBuilder
             return null;
         }
 
-        return ['winner' => $w, 'points' => $cube * Backgammon::gamePoints($state, $w)];
+        return ['winner' => $w, 'points' => $cube * Backgammon::gamePoints($state, $w), 'cube' => $cube];
     }
 
     private static function opp(string $p): string

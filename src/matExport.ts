@@ -166,7 +166,7 @@ function actsOf(game: MoveLogEntry[]): Act[] {
 
 // Bir oyunun sonucu: kup drop'ta teklifi kabul etmeyen kaybeder; yoksa son hamleyi kendi
 // pos'una uygulayip gammon/backgammon carpanini gercek tahtadan hesapla.
-function outcomeOf(acts: Act[]): { winner: Player; points: number } | null {
+function outcomeOf(acts: Act[]): { winner: Player; points: number; cube: number } | null {
   let cube = 1
   let dropWinner: Player | null = null
   let last: MoveLogEntry | undefined
@@ -175,19 +175,21 @@ function outcomeOf(acts: Act[]): { winner: Player; points: number } | null {
     else if (a.kind === 'take') cube *= 2
     else if (a.kind === 'move') last = a.e
   }
-  if (dropWinner) return { winner: dropWinner, points: cube }
+  if (dropWinner) return { winner: dropWinner, points: cube, cube }
   if (!last?.player || !last.pos) return null
   const s = cloneState(last.pos)
   for (const st of last.playedSteps ?? last.steps ?? []) applyStep(s, st, last.player)
   const oc = gameOutcome(s)
-  return oc ? { winner: oc.winner, points: cube * oc.multiplier } : null
+  return oc ? { winner: oc.winner, points: cube * oc.multiplier, cube } : null
 }
 
-// Mac oyununda puan mac uzunlugunu asamaz: kalan puana kirp.
-function capPoints(points: number, matchLength: number, winnerScore: number): number {
-  if (matchLength <= 0) return points
-  const need = matchLength - winnerScore
-  return need > 0 ? Math.min(points, need) : points
+// Oyun puani: HAM cube×winType (KIRPMA YOK). ESKI HATA: min(puan, kalan_puan) -> gammon×4=8,
+// need=7 iken "Wins 7 point" GECERSIZ (7 hicbir cube×winType degil). Tek istisna: 1-PUANLIK maç —
+// gammon/bg SAYILMAZ (kural), galibiyet tekli = cube (=1). Diger maclarda ham puan (overshoot dahil).
+// (winnerScore param'i imza uyumu icin korunur; artik kirpmada kullanilmaz.)
+function capPoints(points: number, matchLength: number, _winnerScore: number, cube = 0): number {
+  if (matchLength === 1) return cube > 0 ? cube : 1 // 1-puanlik mac: tekli
+  return points
 }
 
 // Aynı turun (aynı oyuncu + aynı seq) MÜKERRER hamle girdisini ele: online senkron çift-yazımı
@@ -268,7 +270,7 @@ export function buildMat(log: MoveLogEntry[], opts: MatOptions = {}): string {
     // otoriter results[gi]'ye düş -> resigned oyunlar da "Wins N points" satırı + doğru skor alır.
     const oc = outcomeOf(acts) ?? (opts.results ? (opts.results[gi] ?? null) : null)
     if (oc) {
-      const pts = capPoints(oc.points, matchLength, oc.winner === 'white' ? sw : sb)
+      const pts = capPoints(oc.points, matchLength, oc.winner === 'white' ? sw : sb, (oc as { cube?: number }).cube ?? 0)
       const winTxt = `Wins ${pts} point${pts === 1 ? '' : 's'}`
       out.push(oc.winner === 'white' ? `      ${winTxt}` : `      ${''.padEnd(COLW)}${winTxt}`)
       if (oc.winner === 'white') sw += pts
@@ -430,10 +432,9 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
       if (pts > 0) oc = { winner: w, points: pts }
     }
     if (oc) {
-      // PUAN MAC HEDEFINI ASAMAZ -> kalan puana KIRP (capPoints): 1-point match'te gammon/backgammon
-      // (2/3) yalniz 1 sayilir. Match play'de hedefin otesine puan yazilmaz (gnubg ile tutarli).
-      // Otoriter oyun sonucu korunur; yalniz MACA yazilan puan kirpilir. "and the match" ile birlikte.
-      const pts = capPoints(oc.points, effMatchLength, oc.winner === 'white' ? sw : sb)
+      // Oyun puani: OLU-KUP kurali (cube>=need -> tekli), aksi HAM puan. KIRPMA YOK -> "Wins 7 point"
+      // gibi GECERSIZ deger uretmez (gammon×cube4=8, 1-puan match gammon=1; ikisi de gecerli).
+      const pts = capPoints(oc.points, effMatchLength, oc.winner === 'white' ? sw : sb, (oc as { cube?: number }).cube ?? 0)
       if (oc.winner === 'white') sw += pts
       else sb += pts
       const matchOver = effMatchLength > 0 && (oc.winner === 'white' ? sw : sb) >= effMatchLength
