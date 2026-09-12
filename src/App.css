@@ -22983,10 +22983,12 @@ select:-webkit-autofill {
   background: color-mix(in srgb, var(--card-bg) 60%, var(--bg));
 }
 .mrv-list-head {
+  /* Dar sütun (288px): başlık üstte, oyuncu segment kontrolü tam genişlik altta
+     (space-between ile yan yana sıkışınca uzun adlar taşıp kırılıyordu). */
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   padding: 10px 12px 6px;
 }
 .mrv-list-lbl {
@@ -22994,19 +22996,20 @@ select:-webkit-autofill {
   color: var(--muted);
 }
 .mrv-seg {
-  display: inline-flex;
+  display: flex;
   border: 1px solid var(--border);
   border-radius: var(--radius-pill, 999px);
   overflow: hidden;
 }
 .mrv-seg button {
+  flex: 1 1 0;
+  min-width: 0; /* flex içinde ellipsis çalışsın */
   border: none;
   background: transparent;
   color: var(--muted);
   padding: 4px 10px;
   font-size: 0.78rem;
   cursor: pointer;
-  max-width: 90px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
