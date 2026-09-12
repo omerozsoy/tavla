@@ -23132,9 +23132,42 @@ select:-webkit-autofill {
      swap'ta --cream/--navy GEÇERSİZ olur -> pullar VE zarlar ŞEFFAF görünür (kök neden). */
   --stone-light: var(--cream);
   --stone-dark: var(--navy);
+  position: relative; /* hamle oku overlay'i (.mrv-arrows) buna göre konumlanır */
 }
 .mrv-board-stage .board {
   margin: 0;
+}
+/* Hamle okları (Hamle İnceleme): kaynak -> hedef, kibar/ince, kiremit; taşların ÜSTÜNDE
+   ama tıklamayı engellemez. Konumlar JS ile ölçülür (bkz MatReview MoveArrows). */
+.mrv-arrows-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mrv-arrows {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+  color: var(--accent);
+  z-index: 6;
+}
+.mrv-arrow-line {
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+.mrv-arrow-badge {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: var(--accent);
+  stroke-width: 3px;
+  font-family: var(--tv-font-ui);
 }
 .mrv-player {
   display: flex;

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -250,6 +250,12 @@ export default function MatReview({
                 centerLeft={whiteBottom ? null : diceRow}
                 centerRight={whiteBottom ? diceRow : null}
               />
+              {/* Hamleyi kibar oklarla göster (kaynak -> hedef). Gerçek nokta konumları
+                  ÖLÇÜLÜR (flip/mirror/tema fark etmez). */}
+              <MoveArrows
+                steps={viewSteps}
+                dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+              />
             </div>
           ) : (
             <div className="mrv-noboard">{t('mrv.selectMove')}</div>
@@ -324,6 +330,121 @@ export default function MatReview({
       {summary && showSum && <SummaryPopup summary={summary} names={names} onClose={() => setShowSum(false)} />}
     </div>,
     document.body,
+  )
+}
+
+// Hamle okları: seçili hamlenin her adımını (kaynak -> hedef) tahtanın üstüne KİBAR bir ok
+// olarak çizer. Nokta/bar/off elemanlarının GERÇEK ekran konumlarını ölçer (flip/mirror/tema
+// fark etmez); Board'a dokunmadan salt-okuma overlay. Çift hamle (ör. 8/4(2)) tek ok + "×2".
+type ArrowLine = { x1: number; y1: number; x2: number; y2: number; n: number }
+
+function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const [arrows, setArrows] = useState<ArrowLine[]>([])
+  const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
+
+  useLayoutEffect(() => {
+    const host = hostRef.current
+    const stage = host?.parentElement
+    const board = stage?.querySelector('.board') as HTMLElement | null
+    if (!host || !stage || !board) {
+      setArrows([])
+      return
+    }
+    const measure = () => {
+      const sr = stage.getBoundingClientRect()
+      const centerOf = (el: Element | null): { x: number; y: number } | null => {
+        if (!el) return null
+        const r = el.getBoundingClientRect()
+        return { x: r.left + r.width / 2 - sr.left, y: r.top + r.height / 2 - sr.top }
+      }
+      const elFor = (p: number | 'bar' | 'off', fromY: number | null): Element | null => {
+        if (p === 'bar') return board.querySelector('[data-slot="bar"]')
+        if (p === 'off') {
+          const trays = Array.from(board.querySelectorAll('.bearoff'))
+          if (trays.length <= 1) return trays[0] ?? null
+          if (fromY == null) return trays[0]
+          // Bearing off -> kaynağa en yakın tepsi (ev tahtası tarafı).
+          let best = trays[0]
+          let bd = Infinity
+          for (const tray of trays) {
+            const r = tray.getBoundingClientRect()
+            const cy = r.top + r.height / 2 - sr.top
+            const d = Math.abs(cy - fromY)
+            if (d < bd) {
+              bd = d
+              best = tray
+            }
+          }
+          return best
+        }
+        return board.querySelector(`[data-point="${p}"]`)
+      }
+      // Aynı kaynak->hedef adımlarını birleştir (ör. 8/4(2) -> tek ok, n=2).
+      const dedup = new Map<string, { from: Step['from']; to: Step['to']; n: number }>()
+      for (const s of steps) {
+        const k = `${s.from}>${s.to}`
+        const e = dedup.get(k)
+        if (e) e.n++
+        else dedup.set(k, { from: s.from, to: s.to, n: 1 })
+      }
+      const out: ArrowLine[] = []
+      for (const { from, to, n } of dedup.values()) {
+        const a = centerOf(elFor(from, null))
+        if (!a) continue
+        const b = centerOf(elFor(to, a.y))
+        if (!b) continue
+        const dx = b.x - a.x
+        const dy = b.y - a.y
+        const len = Math.hypot(dx, dy) || 1
+        const ux = dx / len
+        const uy = dy / len
+        const pad = Math.min(16, len / 2 - 2) // uçları kısalt -> ok taş altına gömülmesin
+        out.push({ x1: a.x + ux * pad, y1: a.y + uy * pad, x2: b.x - ux * pad, y2: b.y - uy * pad, n })
+      }
+      setSize({ w: sr.width, h: sr.height })
+      setArrows(out)
+    }
+    measure()
+    const raf = requestAnimationFrame(measure) // yerleşim otursun (font/tema) diye bir kez daha
+    const ro = new ResizeObserver(measure)
+    ro.observe(board)
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dep])
+
+  return (
+    <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
+      {arrows.length > 0 && size.w > 0 && (
+        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`}>
+          <defs>
+            <marker id="mrv-ah" markerWidth="8" markerHeight="8" refX="5.6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L6.5,3 L0,6 Z" fill="currentColor" />
+            </marker>
+          </defs>
+          {arrows.map((a, i) => (
+            <g key={i}>
+              <line
+                className="mrv-arrow-line"
+                x1={a.x1}
+                y1={a.y1}
+                x2={a.x2}
+                y2={a.y2}
+                markerEnd="url(#mrv-ah)"
+              />
+              {a.n > 1 && (
+                <text className="mrv-arrow-badge" x={(a.x1 + a.x2) / 2} y={(a.y1 + a.y2) / 2 - 5} textAnchor="middle">
+                  ×{a.n}
+                </text>
+              )}
+            </g>
+          ))}
+        </svg>
+      )}
+    </div>
   )
 }
 
