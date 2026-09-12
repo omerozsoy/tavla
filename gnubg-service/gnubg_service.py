@@ -928,6 +928,72 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
     return entry
 
 
+def _review_cube(pos_points, bar, off, decider, chosen, cube_val, cube_owner, match_len, plies, score=None):
+    """Küp kararını analiz et (frontend MatReview sağ paneli için XG-benzeri küp analizi).
+    gnubg 'hint' KÜP metnini çalıştırıp aksiyon equity'lerini (No double / Double,pass / Double,take)
+    + doğru aksiyonu + kazanma%'yi + oynananın KAYBINI üretir.
+      chosen: 'double' (teklif) | 'take'/'drop' (cevap).
+      Teklif: mover = decider (teklif eden). Cevap: mover = teklif EDEN = rakip; analiz onun
+      perspektifinden alınıp cevap (take/pass) perspektifine çevrilir.
+    NOT: skor 0–0 (maç başı) varsayılır; oyun-oyun skor takibi ileride (game 1 için tam doğru)."""
+    is_response = chosen in ("take", "drop")
+    mover = ("black" if decider == "white" else "white") if is_response else decider
+    snap = {"points": list(pos_points), "bar": dict(bar), "off": dict(off), "turn": decider,
+            "cube": {"value": cube_val, "owner": cube_owner}}
+    cube = {"chosen": chosen, "isResponse": is_response, "win": 0.0, "equity": 0.0,
+            "equities": {}, "highlight": None, "recommended": chosen, "recommendedText": None,
+            "correct": True, "loss": 0.0}
+    entry = {"player": decider, "pos": snap, "notation": chosen, "best": chosen,
+             "loss": 0.0, "cube": cube}
+    try:
+        gid = structured_to_gnubgid({"points": pos_points, "bar": bar, "turn": mover,
+                                     "cube": {"value": cube_val, "owner": cube_owner},
+                                     "matchLength": match_len, "score": score or {}})
+        gnubg.setgnubgid(gid)
+        _set_plies(plies)
+        parsed = _parse_cube_text(_capture_command("hint"))
+        eq = parsed.get("equities") or {}
+        cube["equities"] = eq
+        cube["recommendedText"] = parsed.get("proper")
+        try:
+            p6 = _probs6_from_cumulative(gnubg.evaluate())
+        except Exception:
+            p6 = None
+        mover_win = (p6[0] + p6[1] + p6[2]) * 100.0 if p6 else 0.0
+    except Exception as e:
+        cube["error"] = str(e)
+        return entry
+
+    noD, dbP, dbT = eq.get("noDouble"), eq.get("doublePass"), eq.get("doubleTake")
+    if is_response:
+        cube["win"] = max(0.0, 100.0 - mover_win)  # cevap veren = teklif edenin rakibi
+        # Cevap verenin perspektifi: take = -doubleTake, pass = -doublePass (mover perspektifinden çevir)
+        if dbT is not None and dbP is not None:
+            take_v, pass_v = -dbT, -dbP
+            best = max(take_v, pass_v)
+            rec = "take" if take_v >= pass_v else "drop"
+            chosen_v = take_v if chosen == "take" else pass_v
+            cube["recommended"] = rec
+            cube["highlight"] = "doubleTake" if rec == "take" else "doublePass"
+            cube["equity"] = best
+            cube["loss"] = max(0.0, best - chosen_v)
+            cube["correct"] = cube["loss"] < 0.001
+    else:
+        cube["win"] = mover_win
+        if noD is not None and dbT is not None and dbP is not None:
+            double_v = min(dbT, dbP)  # rakip kendi lehine seçer = teklif edenin en kötü dalı
+            best = max(noD, double_v)
+            rec = "double" if double_v > noD else "no-double"
+            chosen_v = double_v if chosen == "double" else noD
+            cube["recommended"] = rec
+            cube["highlight"] = "noDouble" if rec == "no-double" else ("doubleTake" if dbT <= dbP else "doublePass")
+            cube["equity"] = best
+            cube["loss"] = max(0.0, best - chosen_v)
+            cube["correct"] = cube["loss"] < 0.001
+    entry["loss"] = cube["loss"]
+    return entry
+
+
 def _steps_to_notation(turn, steps):
     """Bizim Step[] -> kaba gnubg-benzeri notasyon (yalnız oynanan hamle top listede yokken gösterim)."""
     def loc(idx):
@@ -1104,15 +1170,22 @@ def _reviewmatch(mat_text, plies=2):
             cube_owner = None     # küp sahibi ('white'/'black'/None=merkez)
             for (color, kind, data) in g:
                 if kind == "cube":
-                    # Küp kararında da o anki tahta gösterilsin (frontend MatReview boardu):
-                    # pos = karar ANINDAKİ tahta (küp tahtayı değiştirmez); küp değeri/sahibi iliştir.
-                    snap = {"points": list(pos["points"]), "bar": dict(pos["bar"]),
-                            "off": dict(pos["off"]), "turn": color,
-                            "cube": {"value": cube_val, "owner": cube_owner}}
-                    log.append({"player": color, "pos": snap,
-                                "cube": {"chosen": data, "win": 0, "equity": 0,
-                                "recommended": data, "correct": True}, "notation": data,
-                                "best": data, "loss": 0.0, "seq": len(log), "game": gi})
+                    # Küp kararı: o anki tahta + GERÇEK küp analizi (No double / Double,pass /
+                    # Double,take equity'leri + doğru aksiyon + kazanma% + oynananın kaybı).
+                    if data in ("double", "take", "drop"):
+                        e = _review_cube(pos["points"], pos["bar"], pos["off"], color, data,
+                                         cube_val, cube_owner, match_len, plies)
+                    else:  # beaver vb. — analizsiz yer tutucu (tahta yine gösterilir)
+                        snap = {"points": list(pos["points"]), "bar": dict(pos["bar"]),
+                                "off": dict(pos["off"]), "turn": color,
+                                "cube": {"value": cube_val, "owner": cube_owner}}
+                        e = {"player": color, "pos": snap,
+                             "cube": {"chosen": data, "win": 0, "equity": 0,
+                                      "recommended": data, "correct": True},
+                             "notation": data, "best": data, "loss": 0.0}
+                    e["seq"] = len(log)
+                    e["game"] = gi
+                    log.append(e)
                     if data == "take":  # double kabul edildi -> küp ikiye katlanır, alıcı sahibi
                         cube_val *= 2
                         cube_owner = color

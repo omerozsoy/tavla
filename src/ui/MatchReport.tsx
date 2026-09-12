@@ -29,6 +29,11 @@ export interface LogEntry {
     recommended: string
     chosen: string
     correct: boolean
+    isResponse?: boolean
+    equities?: { noDouble?: number; doublePass?: number; doubleTake?: number }
+    highlight?: string | null
+    recommendedText?: string | null
+    loss?: number
   }
 }
 
