@@ -279,27 +279,40 @@ describe('buildMatXg — oyun sonu (Wins/Losses) garantisi + gercek puan + "and 
     expect(mat).toContain('5 point match')
   })
 
-  it('SON CARE: tahta+results YOKken tamamlanan mac matchResult ile final skordan sonuc alir', () => {
-    // Online rakibin kazanan hamlesi loga girmemis (terminal yok) + results yok. matchResult
-    // (otoriter final skor) verilince SON oyun puani = kazananin skoru - birikeni -> sonuc satiri.
+  // REGRESYON (ÖmerDOĞAN_NeuralAI "Wins 8 point" bug'ı): matchResult (maç-skoru farkı) ARTIK
+  // puan üretmez. Tahta+results YOKken SON oyun sonuçsuz kalır ama ASLA imkânsız/keyfi bir puan
+  // yazılmaz. Eski davranış (finalScore − birikeni) 7-puanlık küpsüz maçta "Wins 8 point" gibi
+  // cube×winType OLMAYAN değerler üretiyordu.
+  it('matchResult (skor farkı) ile İMKÂNSIZ puan ÜRETİLMEZ (Wins 8 point regresyonu)', () => {
     const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
     const mat = buildMatXg([move(nonTerminal, 'white')], {
       matchLength: 3, whiteName: 'A', blackName: 'B',
-      matchResult: { winner: 'black', score: { white: 0, black: 4 } }, // siyah 4 (kup) ile bitirdi
+      matchResult: { winner: 'black', score: { white: 0, black: 4 } }, // eskiden "Wins 4 point" (İMKÂNSIZ)
     })
-    // matchResult'tan sonuc turetildi; puan MAC HEDEFINE (3) kirpilir -> "Losses 3 / Wins 3"
-    // (match play'de hedefin otesine puan yazilmaz; 3-point macta 4 puan olmaz).
-    expect(mat).toMatch(/Losses 3 point\s+Wins 3 point and the match/)
+    expect(winLine(mat)).toBe(false) // keyfi puan yerine sonuç satırı YOK
+    expect(mat).not.toMatch(/Wins 4 point/)
   })
 
-  it('matchResult yalnizca SON oyunda ve sadece gerekince (tahta sonuc verirse kullanilmaz)', () => {
-    // Tahta zaten terminal -> matchResult'a DUSMEZ (gercek tahta sonucu 1 puan kalir).
+  it('matchResult tümüyle YOK SAYILIR: tahta otoritesi puanı belirler (skor farkı sızmaz)', () => {
+    // Tahta terminal -> gerçek sonuç (1 puan). matchResult ne derse desin okunmaz.
     const mat = buildMatXg([move(whiteWin(1), 'white')], {
       matchLength: 5, whiteName: 'A', blackName: 'B',
       matchResult: { winner: 'black', score: { white: 0, black: 99 } },
     })
     expect(mat).toMatch(/ {6}Wins 1 point/) // tahta otoritesi korunur
     expect(mat).not.toContain('99')
+  })
+
+  // KÖK-NEDEN GARANTİSİ (ÖmerDOĞAN_NeuralAI Game 1-3): son-OLMAYAN bir oyun sonuçsuz kalırsa
+  // (bir sonraki oyun başlıyor ama önceki sonuç null) export SESSİZCE bozuk .mat üretmez —
+  // HATA fırlatır (user direktifi: "hata logla ve export'u durdur").
+  it('son-olmayan oyun sonuçsuzsa export DURUR (hata fırlatır)', () => {
+    const nonTerminal = mk({ points: (() => { const p = zeros(); p[3] = 2; p[12] = -14; return p })(), off: { white: 13, black: 1 } })
+    const twoGames: MoveLogEntry[] = [
+      move(nonTerminal, 'white'), // Game 1: bitiren hamle logda yok + results yok -> null
+      { ...move(nonTerminal, 'white'), pos: initialState() }, // Game 2: açılış tahtası -> yeni oyun
+    ]
+    expect(() => buildMatXg(twoGames, { matchLength: 5, whiteName: 'A', blackName: 'B' })).toThrow(/Game 1 sonuçsuz/)
   })
 
   it('REGRESYON: logdaki son hamle terminal DEGILse (zorunlu bitiren-hamle atlanmis) results olmadan sonuc satiri YOK', () => {

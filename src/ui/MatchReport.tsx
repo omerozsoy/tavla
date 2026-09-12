@@ -6,7 +6,7 @@ import { useT } from '../i18n'
 import MiniBoard from './MiniBoard'
 import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
-import { buildMatXg } from '../matExport'
+import { buildMatXg, type GameResultInput } from '../matExport'
 import { fetchGameLogMat } from '../api'
 import type { GameState, Player, Step } from '../engine/types'
 
@@ -47,7 +47,7 @@ interface Props {
   blackName?: string
   // OTORITER oyun sonuclari (kazanan + gercek puan), oyun sirasiyla. XG disa aktariminda logdaki
   // zorunlu bitiren-hamle eksigi yuzunden tahta-tekrari sonuc bulamazsa buradan doldurulur.
-  gameResults?: { winner: Player; points: number }[]
+  gameResults?: GameResultInput[]
   // OTORITER MAC SONUCU (kazanan + final skor). Son oyunun sonucu logdan cikmazsa (online rakibin
   // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
   matchResult?: { winner: Player; score: { white: number; black: number } }
@@ -189,16 +189,24 @@ export default function MatchReport({
     const p2 = (n: number) => String(n).padStart(2, '0')
     const eventDate = `${now.getFullYear()}.${p2(now.getMonth() + 1)}.${p2(now.getDate())}`
     const eventTime = `${p2(now.getHours())}.${p2(now.getMinutes())}`
-    const text = buildMatXg(log, {
-      matchLength,
-      whiteName,
-      blackName,
-      matchId: matchUid ?? '0', // stabil kimlik (Date.now DEĞİL) -> yedek bile aynı uid=aynı header
-      eventDate,
-      eventTime,
-      results: gameResults,
-      matchResult,
-    })
+    // buildMatXg, sonuçsuz bir ARA oyun bulursa (previousGame.result=null) BOZUK .mat üretmek
+    // yerine HATA fırlatır (bkz. matExport.resolveGameResult). Yerel yedek bu durumda dosya
+    // yazamaz -> logla ve sessizce çık (kanonik kaynak sunucudur; yedek imkânsız değeri yazmaz).
+    let text: string
+    try {
+      text = buildMatXg(log, {
+        matchLength,
+        whiteName,
+        blackName,
+        matchId: matchUid ?? '0', // stabil kimlik (Date.now DEĞİL) -> yedek bile aynı uid=aynı header
+        eventDate,
+        eventTime,
+        results: gameResults,
+      })
+    } catch (err) {
+      console.error('MAT yerel yedek üretilemedi (sonuçsuz oyun) — dışa aktarma durduruldu:', err)
+      return
+    }
     const clean = (s: string | undefined, fb: string) =>
       (s ?? '').replace(/\s+/g, '').replace(/[^\p{L}\p{N}_-]/gu, '') || fb
     const fileDate = `${p2(now.getDate())}-${p2(now.getMonth() + 1)}-${now.getFullYear()}`

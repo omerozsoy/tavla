@@ -174,6 +174,7 @@ import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport from './ui/MatchReport'
+import type { GameResultInput } from './matExport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
@@ -1284,7 +1285,7 @@ export default function App() {
   // matchLog'un ATLADIGI zorunlu bitiren-hamle yuzunden tahta-tekrari sonuc bulamazsa buradan
   // doldurulur (bkz. buildMatXg.results). Ayni dizi kimligi korunur (.length=0 ile temizlenir)
   // ki MatchReport'a gecen referans daima canli kalsin.
-  const gameResultsRef = useRef<{ winner: Player; points: number }[]>([])
+  const gameResultsRef = useRef<GameResultInput[]>([])
   // Basarim sinyalleri (mac boyunca birikir; reportRating'te okunur + sifirlanir).
   // Bunlar log'da guvenilir olmadigi icin frontend'den payload ile gonderilir.
   const achGammonRef = useRef(0) // bu macta insanin mars (gammon) galibiyeti
@@ -2200,8 +2201,19 @@ export default function App() {
     if (has && !prevGameEndRef.current && gameRecordRef.current) {
       if (gameEnd) {
         recordEndEvent(gameEnd)
-        // XG .mat sonuc satiri icin otoriter sonucu sakla (gercek puan: gammon/backgammon × kup).
-        gameResultsRef.current.push({ winner: gameEnd.winner, points: gameEnd.points })
+        // XG .mat sonuc satiri icin OTORİTER sonucu sakla. gamePointsWon = cube × winMultiplier;
+        // ayrıca çarpanı ve bitiş türünü de taşı (exporter DOĞRULAMA + izleme için kullanır —
+        // bkz. matExport.resolveGameResult; "Wins 8 point" gibi imkânsız değerlerin önlenmesi).
+        const terminationType = gameEnd.resigned
+          ? 'resignation'
+          : gameEnd.timeout
+            ? 'timeout'
+            : gameEnd.dropped
+              ? 'drop'
+              : 'bearoff'
+        const winMultiplier =
+          gameEnd.mult === 1 || gameEnd.mult === 2 || gameEnd.mult === 3 ? gameEnd.mult : undefined
+        gameResultsRef.current.push({ winner: gameEnd.winner, points: gameEnd.points, winMultiplier, terminationType })
       }
       flushMatchLog(false)
       gameRecordRef.current.gameNo += 1
