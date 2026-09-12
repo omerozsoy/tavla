@@ -345,6 +345,7 @@ import {
   PREMIUM_THEMES,
   RARITY_THEMES,
   CLUB_THEMES,
+  COUNTRY_THEMES,
   GALAXY_EXTRA_THEMES,
   ALL_THEMES,
   BOARD_ID_MIGRATE,
@@ -1559,10 +1560,14 @@ export default function App() {
     root.setAttribute('data-checker', bt.checkerStyle ?? 'flat')
     root.setAttribute('data-surface', bt.surface ?? 'plain')
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
-    // Watermark rengi: board zemini acik -> koyu logo, koyu -> acik logo (0.05-0.09 alfa)
+    // Watermark rengi: board zemini acik -> koyu yazi, koyu -> acik yazi. Ulke boardlarinda
+    // orta yazi (ulke adi) TASARIMIN merkezi -> biraz daha belirgin (~%16, yine taslari engellemez);
+    // digerlerinde cok soluk (0.075-0.09). Isik/koyu esigi panel luminance'ina gore.
+    const wmLight = hexLum(bt.panel) > 150
+    const wmAlpha = bt.rarity === 'country' ? (wmLight ? '0.16' : '0.15') : wmLight ? '0.09' : '0.075'
     root.style.setProperty(
       '--wm-color',
-      hexLum(bt.panel) > 150 ? 'rgba(12,18,45,0.09)' : 'rgba(255,255,255,0.075)',
+      wmLight ? `rgba(12,18,45,${wmAlpha})` : `rgba(255,255,255,${wmAlpha})`,
     )
     try {
       localStorage.setItem('tavla.theme', theme)
@@ -5544,6 +5549,12 @@ export default function App() {
       price: boardPrice(tt),
       owned: boardOwned(tt.id),
     })),
+    ...COUNTRY_THEMES.map((tt) => ({
+      ...tt,
+      rarity: 'country' as const,
+      price: boardPrice(tt),
+      owned: boardOwned(tt.id),
+    })),
   ]
 
   // Profilim "Istatistiklerim" sekmesine gomulu detayli istatistik sayfasi
@@ -7302,6 +7313,7 @@ export default function App() {
           swapStones={swapStones}
           showPip={showPip}
           watermark={ALL_THEMES.find((x) => x.id === boardTheme)?.watermark}
+          showLogo={ALL_THEMES.find((x) => x.id === boardTheme)?.rarity !== 'country'}
         />
         {showAnalysis && mode === 'pvb' && (
           <AnalysisPanel

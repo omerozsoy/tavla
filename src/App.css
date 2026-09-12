@@ -4910,6 +4910,20 @@ button[aria-disabled='true'],
   white-space: nowrap;
   opacity: 0.8; /* takim adi TavlaTV'den bir tik daha soluk */
 }
+/* Ulke boardlari: logo yok -> ulke adi tek merkez ogesi. Yuzeye ISLENMIS/gomulu his:
+   daha buyuk ama baskin degil, genis harf araligi, --wm-color alfasi (%~16) tam uygulansin
+   (opacity 1). Yazi taslarin ALTINDA (board-watermark z-index) -> okunabilirligi engellemez. */
+.wm-text-only .wm-team {
+  font-size: calc(var(--col) * 0.44);
+  letter-spacing: 0.22em;
+  opacity: 1;
+}
+/* Board secim kartinda ulke bayragi (isim onunde kucuk emoji) */
+.bp-flag {
+  margin-right: 0.35em;
+  font-size: 1.05em;
+  line-height: 1;
+}
 .half {
   flex: 1;
   display: flex;

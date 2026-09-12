@@ -6,7 +6,7 @@ import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
 import BuyConfirm from './BuyConfirm'
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club'
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country'
 
 export interface BoardThemeOpt {
   id: string
@@ -19,9 +19,10 @@ export interface BoardThemeOpt {
   price?: number // coin fiyati (nadirlik bazli); ucretsiz/kulup -> undefined
   rarity?: Rarity
   owned?: boolean // sahip mi (ucretsiz/kulup/satin alinmis)
+  flag?: string // ulke boardu kart bayragi (emoji)
 }
 
-const RARITY_ORDER: Rarity[] = ['club', 'common', 'rare', 'epic', 'legendary', 'mythic']
+const RARITY_ORDER: Rarity[] = ['club', 'country', 'common', 'rare', 'epic', 'legendary', 'mythic']
 const RARITY_COLOR: Record<Rarity, string> = RARITY_COLORS
 
 interface Props {
@@ -83,7 +84,10 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                         <Icon name="check" size={12} /> {t('shop.selected')}
                       </span>
                     )}
-                    <span className="bp-name">{bt.name}</span>
+                    <span className="bp-name">
+                      {bt.flag && <span className="bp-flag" aria-hidden="true">{bt.flag}</span>}
+                      {bt.name}
+                    </span>
                     {buyable && (
                       <span className="bp-price">
                         <Coins amount={price} size={12} />

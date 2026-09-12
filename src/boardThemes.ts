@@ -11,7 +11,8 @@ export interface BoardTheme {
   frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
   light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' // nadirlik sinifi (kart cercevesi + gruplama)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country' // nadirlik/kategori (kart cercevesi + gruplama)
+  flag?: string // ulke boardlari icin kart bayrak emojisi (🇹🇷 vb.) — gorsel etiket, boarda BASILMAZ
   // Kulup temalari icin ozel zar/kup renkleri (yoksa marka varsayilanina duser).
   // dice1 = acik zar (beyaz oyuncu), dice2 = koyu zar (siyah oyuncu).
   d1Bg?: string
@@ -165,6 +166,67 @@ export const CLUB_THEMES: BoardTheme[] = [
     cubeBg: '#0E4C92', cubeText: '#F5DCE2', watermark: 'TRABZONSPOR',
   },
 ]
+// Ulke Temali Board Koleksiyonu: her ulkenin BAYRAK RENKLERINDEN turetilmis premium/sade tavla.
+// Bayrak gorseli KULLANILMAZ; renkler yuzey (panel) + iki ucgen (a/b) + cerceve (frame) + pul
+// (light/checker) + zar/kup'e islenir. Orta yazi = watermark (ulke adi, cok soluk, taslarin
+// ALTINDA; logo/arma DEGIL). Ayni tasarim sistemi (BoardTheme) — yeni ulke = sadece yeni obje.
+// Pul okunabilirligi tasarimdan ONCELIKLI: light (acik pul) + checker (koyu pul) her ucgen +
+// zemine karsi kontrast olacak sekilde secildi.
+export const COUNTRY_THEMES: BoardTheme[] = [
+  {
+    id: 'turkey', name: 'Türkiye', rarity: 'country', flag: '🇹🇷', watermark: 'TÜRKİYE',
+    panel: '#5A0A11', a: '#B90814', b: '#F2EAD9', checker: '#2A0A0C', light: '#F7F1E6', frame: '#3A0509',
+    d1Bg: '#F7F1E6', d1Pip: '#2A0A0C', d2Bg: '#E30A17', d2Pip: '#FFFFFF', cubeBg: '#E30A17', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'usa', name: 'USA', rarity: 'country', flag: '🇺🇸', watermark: 'USA',
+    panel: '#1C1B38', a: '#3C3B6E', b: '#ECEDF4', checker: '#121030', light: '#F5F6FB', frame: '#0E0C22',
+    d1Bg: '#F5F6FB', d1Pip: '#121030', d2Bg: '#B22234', d2Pip: '#FFFFFF', cubeBg: '#B22234', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'uk', name: 'United Kingdom', rarity: 'country', flag: '🇬🇧', watermark: 'UNITED KINGDOM',
+    panel: '#08123A', a: '#012169', b: '#ECEEF5', checker: '#0A0E28', light: '#F4F6FB', frame: '#050A22',
+    d1Bg: '#F4F6FB', d1Pip: '#0A0E28', d2Bg: '#C8102E', d2Pip: '#FFFFFF', cubeBg: '#012169', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'germany', name: 'Deutschland', rarity: 'country', flag: '🇩🇪', watermark: 'DEUTSCHLAND',
+    panel: '#17171A', a: '#B31217', b: '#D9A400', checker: '#0B0B0C', light: '#F4F2EC', frame: '#000000',
+    d1Bg: '#F4F2EC', d1Pip: '#0B0B0C', d2Bg: '#B31217', d2Pip: '#FFFFFF', cubeBg: '#E8B800', cubeText: '#17171A',
+  },
+  {
+    id: 'greece', name: 'Ελλάδα', rarity: 'country', flag: '🇬🇷', watermark: 'ΕΛΛΑΔΑ',
+    panel: '#07345C', a: '#0D5EAF', b: '#EEF3F8', checker: '#062441', light: '#F5F9FD', frame: '#04223F',
+    d1Bg: '#F5F9FD', d1Pip: '#062441', d2Bg: '#0D5EAF', d2Pip: '#FFFFFF', cubeBg: '#0D5EAF', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'italy', name: 'Italia', rarity: 'country', flag: '🇮🇹', watermark: 'ITALIA',
+    panel: '#0A3A21', a: '#009246', b: '#EEF2ED', checker: '#0A2917', light: '#F5F8F3', frame: '#062616',
+    d1Bg: '#F5F8F3', d1Pip: '#0A2917', d2Bg: '#CE2B37', d2Pip: '#FFFFFF', cubeBg: '#CE2B37', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'france', name: 'France', rarity: 'country', flag: '🇫🇷', watermark: 'FRANCE',
+    panel: '#0A1440', a: '#002395', b: '#EDEFF6', checker: '#080E2A', light: '#F4F6FB', frame: '#050A26',
+    d1Bg: '#F4F6FB', d1Pip: '#080E2A', d2Bg: '#ED2939', d2Pip: '#FFFFFF', cubeBg: '#002395', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'spain', name: 'España', rarity: 'country', flag: '🇪🇸', watermark: 'ESPAÑA',
+    panel: '#58090D', a: '#AA151B', b: '#E0AE00', checker: '#360406', light: '#FBF3DA', frame: '#2A0507',
+    d1Bg: '#FBF3DA', d1Pip: '#360406', d2Bg: '#AA151B', d2Pip: '#FFF0C0', cubeBg: '#E0AE00', cubeText: '#58090D',
+  },
+  {
+    // Japonya: acik/sade premium (beyaz zemin), pullar kirmizi + sumi-siyah -> beyaz uzerinde
+    // guclu kontrast; ucgenler soluk gul + acik gri (bayragin beyaz/kirmizisindan turetildi).
+    id: 'japan', name: '日本', rarity: 'country', flag: '🇯🇵', watermark: '日本',
+    panel: '#F0EEEA', a: '#E7C3C9', b: '#E2E2E2', checker: '#1A1A1A', light: '#BC002D', frame: '#7A0A1E',
+    d1Bg: '#BC002D', d1Pip: '#FFFFFF', d2Bg: '#1A1A1A', d2Pip: '#FFFFFF', cubeBg: '#BC002D', cubeText: '#FFFFFF',
+  },
+  {
+    id: 'brazil', name: 'Brasil', rarity: 'country', flag: '🇧🇷', watermark: 'BRASIL',
+    panel: '#0A3D1E', a: '#E3C200', b: '#16407F', checker: '#0A2912', light: '#F4F7EC', frame: '#05240F',
+    checkerStyle: 'gloss',
+    d1Bg: '#F4F7EC', d1Pip: '#0A2912', d2Bg: '#16407F', d2Pip: '#FFDF00', cubeBg: '#E3C200', cubeText: '#06240F',
+  },
+]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
 export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
@@ -196,7 +258,7 @@ export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
   { id: 'bazaar', name: 'Bazaar', rarity: 'common', panel: '#7a4a30', a: '#9a5a3a', b: '#5a3420', checker: '#1a120a', light: '#e8d8c0', frame: '#3a2414' },
   { id: 'miami', name: 'Miami', rarity: 'common', panel: '#e8709a', a: '#f0a84a', b: '#4fd0c0', checker: '#2f5ad0', light: '#f0e8d8', frame: '#18d0e8', checkerStyle: 'gloss' },
 ]
-export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...GALAXY_EXTRA_THEMES]
+export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...COUNTRY_THEMES, ...GALAXY_EXTRA_THEMES]
 
 // Tahta nadirlik -> coin fiyati (backend ShopController BOARD_RARITY ile BIREBIR).
 export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary' | 'mythic', number> = {
@@ -210,15 +272,18 @@ export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary'
 export const FREE_BOARDS = new Set<string>(['standart'])
 // Kulup temasi fiyati (nadirlik ladder'inda degil; sabit).
 export const CLUB_BOARD_PRICE = 100
+// Ulke boardu fiyati (nadirlik ladder'inda degil; sabit — kulup gibi kategori fiyati).
+export const COUNTRY_BOARD_PRICE = 100
 // Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
 export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
   return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
 }
-// Coin fiyati: 'standart' ucretsiz -> undefined; kulup -> sabit; digerleri nadirlik fiyati.
+// Coin fiyati: 'standart' ucretsiz -> undefined; kulup/ulke -> sabit kategori fiyati; digerleri nadirlik fiyati.
 export function boardPrice(t: BoardTheme): number | undefined {
   if (FREE_BOARDS.has(t.id)) return undefined
   const r = boardRarityOf(t)
   if (r === 'club') return CLUB_BOARD_PRICE
+  if (r === 'country') return COUNTRY_BOARD_PRICE
   return BOARD_RARITY_PRICE[r]
 }
 
