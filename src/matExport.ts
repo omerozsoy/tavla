@@ -32,13 +32,24 @@ import type { Player } from './engine/types'
 import { initialState, cloneState, gameOutcome, opponent } from './engine/board'
 import { applyStep } from './engine/moves'
 
+// OTORİTER per-oyun sonucu (gameEnd'den). points = cubeValue × winMultiplier'dır (gameEnd.points).
+// cube/winMultiplier/terminationType OPSİYONEL doğrulama+izleme alanlarıdır (verilirse points
+// yerine winMultiplier kullanılır; MAT satırı DAİMA cube×mult yazar, asla skor farkı).
+export interface GameResultInput {
+  winner: Player
+  points: number
+  cube?: number
+  winMultiplier?: 1 | 2 | 3
+  terminationType?: TerminationType
+}
+
 export interface MatOptions {
   matchLength?: number // .mat basligi ( or. "3 point match")
   whiteName?: string
   blackName?: string
   // OTORİTER oyun sonuçları (oyun sırasıyla). Tahta-tekrarı sonuç veremezse (zorunlu son bear-off
   // logda yok VEYA oyun PES/terk ile bitti) buradan alınır -> her tamamlanan oyun sonuç satırı alır.
-  results?: { winner: Player; points: number }[]
+  results?: GameResultInput[]
 }
 
 // XG header'i icin ek alanlar. Verilmezse makul varsayilanlar kullanilir.
@@ -53,11 +64,12 @@ export interface MatXgOptions extends MatOptions {
   // zorunludur -> logda YOKtur -> tahtayi tekrar oynatarak sonuc BULUNAMAZ ve "Wins/Losses"
   // satiri yazilmadan oyun kapanir (XG dosyayi bozuk okur). App bu diziyi motorun GameEnd'inden
   // doldurur; tahta-tekrari sonuc veremezse buradan alinir -> her tamamlanan oyun sonuc satiri alir.
-  results?: { winner: Player; points: number }[]
-  // OTORITER MAC SONUCU (kazanan + final skor). SON oyunun sonucu tahtadan/results'tan
-  // ÇIKARILAMAZSA (ör. online rakibin kazanan hamlesi loga girmemiş / eski truncated log) bu
-  // kullanılır: son oyunun puanı = kazananın final skoru - önceki oyunlardan birikeni. Böylece
-  // TAMAMLANMIŞ maç DAİMA "Wins/Losses ... and the match" sonuç satırı alır.
+  results?: GameResultInput[]
+  // KULLANIMDAN KALDIRILDI (2026-09-13). Eskiden SON oyunun puanı maç-skoru FARKINDAN
+  // (finalScore − birikeni) türetiliyordu; bu bir cube×winType DEĞİL, keyfi bir kalıntıydı ve
+  // "Wins 8 point" gibi İMKÂNSIZ değerler üretiyordu (bkz. resolveGameResult). Puanlar artık
+  // yalnız tahta-tekrarından veya per-oyun `results`'tan gelir. Alan imza uyumu için korunur ama
+  // ARTIK OKUNMAZ.
   matchResult?: { winner: Player; score: { white: number; black: number } }
 }
 
@@ -190,6 +202,88 @@ function outcomeOf(acts: Act[]): { winner: Player; points: number; cube: number 
 function capPoints(points: number, matchLength: number, _winnerScore: number, cube = 0): number {
   if (matchLength === 1) return cube > 0 ? cube : 1 // 1-puanlik mac: tekli
   return points
+}
+
+// ---------------------------------------------------------------------------
+// OYUN SONUCU — OTORİTER + DOĞRULANMIŞ türetme (kök-neden düzeltmesi 2026-09-13)
+// ---------------------------------------------------------------------------
+// SORUN (ÖmerDOĞAN_NeuralAI .mat): Game 1-3 sonuçsuz kaldı, Game 5 "Wins 8 point" (7-puanlık
+// maçta, küpsüz → İMKÂNSIZ) yazdı. Neden: (a) tahta-tekrarı (outcomeOf) yalnız LOGDAKİ SON hamle
+// oyunu bitiren hamleyse sonuç bulur; zorunlu bitiren bear-off matchLog'a girmediğinden Game 1-3-5
+// için null döndü; (b) eski SON-ÇARE "matchResult" yolu SON oyunun puanını maç-skoru FARKINDAN
+// (finalScore − birikeni) hesaplıyordu → bu bir cube×winType DEĞİL, keyfi bir kalıntı → "8".
+//
+// DÜZELTME: her oyun sonucu DAİMA gamePointsWon = cubeValue × winMultiplier (winMultiplier ∈ 1/2/3)
+// olmalı. Alanlar AYRI tutulur, çarpan DOĞRULANIR; hiçbir yol maç-skoru farkı üretemez. Sonuç
+// yalnız iki OTORİTER kaynaktan gelir: (1) tahta-tekrarı, (2) oyun sonu (gameEnd) per-oyun kaydı.
+export type WinType = 'single' | 'gammon' | 'backgammon'
+export type TerminationType =
+  | 'bearoff'
+  | 'resignation'
+  | 'drop'
+  | 'timeout'
+  | 'disconnect'
+  | 'forfeit'
+
+export interface ResolvedGameResult {
+  winner: Player
+  cubeValue: number
+  winMultiplier: 1 | 2 | 3
+  gamePointsWon: number // = cubeValue × winMultiplier (ASLA skor farkı / kalan hedef)
+  winType: WinType
+  terminationType: TerminationType
+}
+
+const MULT_TO_WINTYPE: Record<number, WinType> = { 1: 'single', 2: 'gammon', 3: 'backgammon' }
+
+// Bir oyunun kabul edilmiş küp değeri (her "take" 2 katı) + drop kazananı (varsa) acts'ten.
+function cubeAndDrop(acts: Act[]): { cube: number; dropWinner: Player | null } {
+  let cube = 1
+  let dropWinner: Player | null = null
+  for (const a of acts) {
+    if (a.kind === 'take') cube *= 2
+    else if (a.kind === 'drop') dropWinner = opponent(a.player)
+  }
+  return { cube, dropWinner }
+}
+
+// Sonucu OTORİTER + DOĞRULANMIŞ üret. Kaynak sırası: (1) tahta-tekrarı (logda bitiren hamle varsa),
+// (2) otoriter per-oyun kaydı (gameEnd → results[gi]). Küp-pas (drop) tek başına da sonuç verir.
+// gamePointsWon DAİMA cube×mult; mult ∉ {1,2,3} olan (ör. skor-farkından gelen 8) OTORİTER değer
+// REDDEDİLİR (null döner) → export "İMKÂNSIZ puan" yazmaz.
+function resolveGameResult(acts: Act[], authoritative: GameResultInput | null): ResolvedGameResult | null {
+  const { cube, dropWinner } = cubeAndDrop(acts)
+  let winner: Player | null = null
+  let mult: number | null = null
+  let terminationType: TerminationType | null = null
+
+  const board = outcomeOf(acts) // {winner, points: cube×mult, cube} | null
+  if (board) {
+    winner = board.winner
+    mult = Math.round(board.points / board.cube)
+    terminationType = dropWinner ? 'drop' : 'bearoff'
+  } else if (authoritative) {
+    winner = authoritative.winner
+    terminationType = authoritative.terminationType ?? (dropWinner ? 'drop' : 'bearoff')
+    // points = cube × mult -> mult TÜRET ve DOĞRULA (skor farkı gibi geçersiz değeri ele).
+    mult = authoritative.winMultiplier ?? authoritative.points / cube
+  } else if (dropWinner) {
+    winner = dropWinner
+    mult = 1
+    terminationType = 'drop'
+  }
+
+  if (winner === null || mult === null || !Number.isInteger(mult) || !(mult in MULT_TO_WINTYPE)) {
+    return null // türetilemedi VEYA geçersiz çarpan (İMKÂNSIZ puan) -> reddet
+  }
+  return {
+    winner,
+    cubeValue: cube,
+    winMultiplier: mult as 1 | 2 | 3,
+    gamePointsWon: cube * mult,
+    winType: MULT_TO_WINTYPE[mult],
+    terminationType,
+  }
 }
 
 // Aynı turun (aynı oyuncu + aynı seq) MÜKERRER hamle girdisini ele: online senkron çift-yazımı
@@ -336,7 +430,6 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     eventTime = '',
     crawford = true,
     results,
-    matchResult,
   } = opts
   // MAÇ UZUNLUĞU HARD-CODE EDİLMEZ. Log'a oyun anında gömülen otoriter mctx.matchLen (match.target)
   // varsa ONU kullan; caller yanlış/varsayılan (1) geçse bile MAT başlığı GERÇEK maç uzunluğunu
@@ -418,34 +511,45 @@ export function buildMatXg(log: MoveLogEntry[], opts: MatXgOptions = {}): string
     //    "  N)  Losses X point   Wins X point" (kaybeden solda bir bosluk girintili).
     //  • kazanan SOL sutundaysa (Player1/beyaz): ayri "      Wins X point[ and the match]" satiri.
     // Mac bitince kazanana " and the match" eklenir. (Ornek XG dosyasiyla birebir.)
-    // Sonuc: once GERCEK tahtadan (logda bitiren hamle varsa); yoksa otoriter results'tan.
-    // results yalnizca oyun sayisiyla birebir eslesirse fallback olur (yanlis eslemeyi onle).
+    //
+    // Sonuc OTORİTER + DOĞRULANMIŞ türetilir (bkz. resolveGameResult): gamePointsWon = cubeValue ×
+    // winMultiplier. Kaynak: tahta-tekrarı veya per-oyun otoriter `results` (yalnız oyun sayısıyla
+    // BİREBİR eşleşirse — yanlış eşlemeyi önler). Maç-skoru farkı (eski matchResult yolu) ARTIK
+    // KULLANILMAZ → "Wins 8 point" gibi imkânsız değer üretilemez.
     const resultsAligned = !!results && results.length === games.length
-    let oc = outcomeOf(acts) ?? (resultsAligned ? (results as { winner: Player; points: number }[])[gi] : null)
-    // SON CARE (yalniz SON oyun): tahta+results sonuc VERMEZSE ama MAC bitmisse (matchResult), o
-    // oyunun puanini OTORITER SON SKORDAN turet: pts = kazananin final skoru - onceki oyunlardan
-    // birikeni (sw/sb). Boylece rakibin kazanan hamlesi loga girmese/eski truncated logda bile
-    // tamamlanan mac MUTLAKA "Wins/Losses ... and the match" sonuc satiri alir.
-    if (!oc && matchResult && gi === games.length - 1) {
-      const w = matchResult.winner
-      const pts = matchResult.score[w] - (w === 'white' ? sw : sb)
-      if (pts > 0) oc = { winner: w, points: pts }
-    }
-    if (oc) {
-      // Oyun puani: OLU-KUP kurali (cube>=need -> tekli), aksi HAM puan. KIRPMA YOK -> "Wins 7 point"
-      // gibi GECERSIZ deger uretmez (gammon×cube4=8, 1-puan match gammon=1; ikisi de gecerli).
-      const pts = capPoints(oc.points, effMatchLength, oc.winner === 'white' ? sw : sb, (oc as { cube?: number }).cube ?? 0)
-      if (oc.winner === 'white') sw += pts
-      else sb += pts
-      const matchOver = effMatchLength > 0 && (oc.winner === 'white' ? sw : sb) >= effMatchLength
-      const winTxt = `Wins ${pts} point${matchOver ? ' and the match' : ''}`
-      const loseTxt = `Losses ${pts} point`
-      if (oc.winner === 'black') {
-        const num = rows.length + 1
-        out.push(`${String(num).padStart(3)}) ${` ${loseTxt}`.padEnd(COLW)}${winTxt}`.trimEnd())
-      } else {
-        out.push(`      ${winTxt}`)
+    const authoritative = resultsAligned ? (results as GameResultInput[])[gi] : null
+    const res = resolveGameResult(acts, authoritative)
+    const isLast = gi === games.length - 1
+
+    if (!res) {
+      // Sonuç türetilemedi. SON-OLMAYAN oyun için bu KESİN hatadır: bir sonraki oyun başlıyor ama
+      // önceki oyunun sonucu yok (user direktifi: "previousGame.result null ise hata logla ve
+      // export'u durdur"). Silent bozuk .mat (sonuçsuz Game 1-3) yerine LOUD fail.
+      if (!isLast) {
+        const msg = `MAT export durduruldu: Game ${gi + 1} sonuçsuz (previousGame.result=null); bir sonraki oyun başlıyor. Bitiren hamle/otoriter sonuç eksik.`
+        console.error(msg)
+        throw new Error(msg)
       }
+      // SON oyun sonuçsuz olabilir (maç henüz bitmemiş) -> sessizce sonuç satırı yazma.
+      return
+    }
+
+    // gamePointsWon: 1-puanlık maçta gammon/bg sayılmaz (tekli = cube). Diğer maçlarda cube×mult.
+    const matchScoreBefore = res.winner === 'white' ? sw : sb
+    const gamePointsWon = capPoints(res.gamePointsWon, effMatchLength, matchScoreBefore, res.cubeValue)
+    // matchScoreAfter = min(matchLength, before + gamePointsWon): dahili skor DAİMA hedefle sınırlı
+    // (bir sonraki oyunun başlık skoru hedefi aşamaz). MAT satırına YAZILAN değer gamePointsWon'dur.
+    const matchScoreAfter = Math.min(effMatchLength, matchScoreBefore + gamePointsWon)
+    if (res.winner === 'white') sw = matchScoreAfter
+    else sb = matchScoreAfter
+    const matchOver = effMatchLength > 0 && matchScoreAfter >= effMatchLength
+    const winTxt = `Wins ${gamePointsWon} point${matchOver ? ' and the match' : ''}`
+    const loseTxt = `Losses ${gamePointsWon} point`
+    if (res.winner === 'black') {
+      const num = rows.length + 1
+      out.push(`${String(num).padStart(3)}) ${` ${loseTxt}`.padEnd(COLW)}${winTxt}`.trimEnd())
+    } else {
+      out.push(`      ${winTxt}`)
     }
   })
 
