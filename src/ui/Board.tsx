@@ -97,6 +97,7 @@ interface BoardProps {
   swapStones?: boolean // true: pul renkleri takas (oyuncu siyah/beyaz secer) — gorsel, motor etkilenmez
   showPip?: boolean // pip sayilari gorunur mu
   watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
+  showLogo?: boolean // false: TavlaTV wordmark'i gizle (ulke boardlari yalniz ulke adini gosterir)
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -220,6 +221,7 @@ function Board({
   swapStones = false,
   showPip = true,
   watermark,
+  showLogo = true,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -575,13 +577,17 @@ function Board({
       <div className="board-inner">
         {/* TavlaTV watermark: her yarinin merkezinde, taslarin/zarin/kupun ALTINDA,
             pointlerin USTUNDE. Logo/arma DEGIL; sadece yazi. Kulup temasinda takim adi. */}
-        <div className="board-watermark" aria-hidden="true">
+        <div className={`board-watermark${showLogo ? '' : ' wm-text-only'}`} aria-hidden="true">
           <div className="wm-cell">
-            <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
+            {showLogo && (
+              <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
+            )}
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
           <div className="wm-cell">
-            <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
+            {showLogo && (
+              <TavlaTvLogo color="var(--wm-color)" size="calc(var(--col) * 0.62)" className="wm-logo" />
+            )}
             {watermark && <span className="wm-team">{watermark}</span>}
           </div>
         </div>

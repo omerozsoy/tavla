@@ -10,6 +10,7 @@ export type RarityKey =
   | 'legendary'
   | 'mythic'
   | 'club'
+  | 'country'
   | 'prestige'
   | 'tavla'
   | 'achievement'
@@ -21,6 +22,7 @@ export const RARITY_COLORS: Record<RarityKey, string> = {
   legendary: '#c2a15f', // luxury gold (premium)
   mythic: '#c0616b', // deep rose/garnet - yakut (luks, neon degil)
   club: '#4e9e75', // muted emerald
+  country: '#c0724a', // warm terracotta/bronze — ulke koleksiyonu (site aksanina yakin, kulupten ayri)
   prestige: '#d2b36e', // bright antique gold
   tavla: '#4e9e9e', // muted teal
   achievement: '#e0c57a', // soft gold
