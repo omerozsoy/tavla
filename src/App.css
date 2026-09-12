@@ -23133,6 +23133,9 @@ select:-webkit-autofill {
   --stone-light: var(--cream);
   --stone-dark: var(--navy);
   position: relative; /* hamle oku overlay'i (.mrv-arrows) buna göre konumlanır */
+  /* Kendi stacking context'i: .mrv-arrows z-index:6 tahta alanına HAPSOLSUN, yoksa
+     "Analiz Tamamlandı" özet popup'ının (.mrv-sum-backdrop z-index:5) ÜSTÜNE çıkar. */
+  isolation: isolate;
 }
 .mrv-board-stage .board {
   margin: 0;
