@@ -333,30 +333,36 @@ export default function MatReview({
   )
 }
 
-// Hamle okları: seçili hamlenin her adımını (kaynak -> hedef) tahtanın üstüne KİBAR bir ok
-// olarak çizer. Nokta/bar/off elemanlarının GERÇEK ekran konumlarını ölçer (flip/mirror/tema
-// fark etmez); Board'a dokunmadan salt-okuma overlay. Çift hamle (ör. 8/4(2)) tek ok + "×2".
-type ArrowLine = { x1: number; y1: number; x2: number; y2: number; n: number }
+// Hamle okları: seçili hamlenin her adımını (kaynak -> hedef) tahtanın üstüne çizer.
+// "Hamle Analizi" (MiniBoard) ile AYNI ok stili: parlak altın çekirdek + koyu casing +
+// zarif chevron uç + sıra numarası rozeti. Renkler MiniBoard ile birebir (tema-bağımsız;
+// casing her boardda seçtirir). Nokta/bar/off GERÇEK ekran konumları ÖLÇÜLÜR (flip/mirror/
+// tema/pul-rengi fark etmez); Board'a dokunmadan salt-okuma overlay. Boyutlar noktanın
+// ölçülen genişliğinden (R = COL_W*0.43) MiniBoard oranlarıyla türetilir.
+const ARROW = '#f0a500' // MiniBoard ile aynı: parlak/doygun altın çekirdek
+const ARROW_EDGE = '#2a1206' // MiniBoard ile aynı: koyu casing/kontur
+type ArrowSeg = { x1: number; y1: number; x2: number; y2: number; n: number }
 
 function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
   const hostRef = useRef<HTMLDivElement>(null)
-  const [arrows, setArrows] = useState<ArrowLine[]>([])
+  const [segs, setSegs] = useState<ArrowSeg[]>([])
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
+  const [r, setRad] = useState(10) // taş yarıçapı ~ (MiniBoard R eşdeğeri)
 
   useLayoutEffect(() => {
     const host = hostRef.current
     const stage = host?.parentElement
     const board = stage?.querySelector('.board') as HTMLElement | null
     if (!host || !stage || !board) {
-      setArrows([])
+      setSegs([])
       return
     }
     const measure = () => {
       const sr = stage.getBoundingClientRect()
       const centerOf = (el: Element | null): { x: number; y: number } | null => {
         if (!el) return null
-        const r = el.getBoundingClientRect()
-        return { x: r.left + r.width / 2 - sr.left, y: r.top + r.height / 2 - sr.top }
+        const rc = el.getBoundingClientRect()
+        return { x: rc.left + rc.width / 2 - sr.left, y: rc.top + rc.height / 2 - sr.top }
       }
       const elFor = (p: number | 'bar' | 'off', fromY: number | null): Element | null => {
         if (p === 'bar') return board.querySelector('[data-slot="bar"]')
@@ -368,8 +374,8 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
           let best = trays[0]
           let bd = Infinity
           for (const tray of trays) {
-            const r = tray.getBoundingClientRect()
-            const cy = r.top + r.height / 2 - sr.top
+            const rc = tray.getBoundingClientRect()
+            const cy = rc.top + rc.height / 2 - sr.top
             const d = Math.abs(cy - fromY)
             if (d < bd) {
               bd = d
@@ -380,30 +386,23 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
         }
         return board.querySelector(`[data-point="${p}"]`)
       }
-      // Aynı kaynak->hedef adımlarını birleştir (ör. 8/4(2) -> tek ok, n=2).
-      const dedup = new Map<string, { from: Step['from']; to: Step['to']; n: number }>()
-      for (const s of steps) {
-        const k = `${s.from}>${s.to}`
-        const e = dedup.get(k)
-        if (e) e.n++
-        else dedup.set(k, { from: s.from, to: s.to, n: 1 })
-      }
-      const out: ArrowLine[] = []
-      for (const { from, to, n } of dedup.values()) {
-        const a = centerOf(elFor(from, null))
-        if (!a) continue
-        const b = centerOf(elFor(to, a.y))
-        if (!b) continue
-        const dx = b.x - a.x
-        const dy = b.y - a.y
-        const len = Math.hypot(dx, dy) || 1
-        const ux = dx / len
-        const uy = dy / len
-        const pad = Math.min(16, len / 2 - 2) // uçları kısalt -> ok taş altına gömülmesin
-        out.push({ x1: a.x + ux * pad, y1: a.y + uy * pad, x2: b.x - ux * pad, y2: b.y - uy * pad, n })
-      }
+      // MiniBoard oranı: R = kolon genişliği * 0.43 (ölçülen nokta genişliğinden).
+      const p0 = board.querySelector('[data-point="0"]') as HTMLElement | null
+      const colW = p0 ? p0.getBoundingClientRect().width : 24
+      const rad = Math.max(5, colW * 0.43)
+      // "Hamle Analizi" gibi: adımları SIRAYLA numaralandır (birleştirme yok; çift hamlede
+      // aynı yere iki numaralı ok — MiniBoard ile aynı davranış).
+      const out: ArrowSeg[] = []
+      steps.forEach((s, i) => {
+        const a = centerOf(elFor(s.from, null))
+        if (!a) return
+        const b = centerOf(elFor(s.to, a.y))
+        if (!b) return
+        out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, n: i + 1 })
+      })
+      setRad(rad)
       setSize({ w: sr.width, h: sr.height })
-      setArrows(out)
+      setSegs(out)
     }
     measure()
     const raf = requestAnimationFrame(measure) // yerleşim otursun (font/tema) diye bir kez daha
@@ -416,30 +415,47 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dep])
 
+  const ah = r * 1.16 // chevron ok ucu boyutu (MiniBoard 11u ~ 1.16R)
   return (
     <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
-      {arrows.length > 0 && size.w > 0 && (
+      {segs.length > 0 && size.w > 0 && (
         <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`}>
           <defs>
-            <marker id="mrv-ah" markerWidth="8" markerHeight="8" refX="5.6" refY="3" orient="auto" markerUnits="userSpaceOnUse">
-              <path d="M0,0 L6.5,3 L0,6 Z" fill="currentColor" />
+            <marker
+              id="mrv-ah"
+              viewBox="0 0 11 11"
+              markerUnits="userSpaceOnUse"
+              markerWidth={ah}
+              markerHeight={ah}
+              refX="8.4"
+              refY="5.5"
+              orient="auto"
+            >
+              <path d="M1.6,1.4 L9,5.5 L1.6,9.6 L3.9,5.5 Z" fill={ARROW} stroke={ARROW_EDGE} strokeWidth="0.9" strokeLinejoin="round" />
             </marker>
           </defs>
-          {arrows.map((a, i) => (
+          {segs.map((s, i) => (
             <g key={i}>
-              <line
-                className="mrv-arrow-line"
-                x1={a.x1}
-                y1={a.y1}
-                x2={a.x2}
-                y2={a.y2}
-                markerEnd="url(#mrv-ah)"
-              />
-              {a.n > 1 && (
-                <text className="mrv-arrow-badge" x={(a.x1 + a.x2) / 2} y={(a.y1 + a.y2) / 2 - 5} textAnchor="middle">
-                  ×{a.n}
-                </text>
-              )}
+              {/* koyu casing */}
+              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.484} strokeLinecap="round" opacity={0.7} />
+              {/* parlak çekirdek + zarif uç */}
+              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW} strokeWidth={r * 0.232} strokeLinecap="round" markerEnd="url(#mrv-ah)" />
+              {/* sıra numarası rozeti (kaynak ucunda) */}
+              <circle cx={s.x1} cy={s.y1} r={r * 0.42} fill={ARROW_EDGE} opacity={0.55} />
+              <text
+                x={s.x1}
+                y={s.y1 + r * 0.3}
+                fontSize={r * 0.86}
+                fontWeight="900"
+                textAnchor="middle"
+                fill={ARROW}
+                stroke={ARROW_EDGE}
+                strokeWidth={r * 0.09}
+                paintOrder="stroke"
+                style={{ strokeLinejoin: 'round' }}
+              >
+                {s.n}
+              </text>
             </g>
           ))}
         </svg>
