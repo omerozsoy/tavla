@@ -574,11 +574,6 @@ function SummaryPopup({ summary, names, onClose }: { summary: MatSummary; names:
               <td>{n(p1.equityLost, 3)}</td>
             </tr>
             <tr>
-              <td>{t('mrv.erMemg')}</td>
-              <td>{n(p0.erMemg, 1)}</td>
-              <td>{n(p1.erMemg, 1)}</td>
-            </tr>
-            <tr>
               <td>{t('mrv.xr')}</td>
               <td>{n(p0.xr, 2)}</td>
               <td>{n(p1.xr, 2)}</td>
