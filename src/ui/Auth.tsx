@@ -414,10 +414,13 @@ export default function Auth({
         <Input
           id="pf-nickname"
           value={nickname}
-          onChange={(e) => setNickname(e.target.value)}
+          // En fazla 15 karakter (isimlerin liderlik/kimlik bloklarında kırpılmadan okunması için).
+          maxLength={15}
+          onChange={(e) => setNickname(e.target.value.slice(0, 15))}
           autoComplete="username"
           aria-invalid={nickStatus === 'taken'}
         />
+        <span className="nick-counter text-xs text-muted-foreground">{nickname.length}/15</span>
         {nickStatus === 'checking' && (
           <span className="text-xs text-muted-foreground">{t('reg.nickChecking')}</span>
         )}
