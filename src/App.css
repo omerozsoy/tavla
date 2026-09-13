@@ -5358,30 +5358,47 @@ body.checker-dragging * {
    / arkadan çıkan üçgen" izlenimi. Renk çifti KOLON KONUMUNA (nth-child) göre 6'lı döner: yeşil
    ailesi (1,3,5) ile sarı-turuncu ailesi (2,4,6) dönüşümlü. Konum tabanlı olduğundan flip/mirror'da
    desen sabit kalır. html[...] öneki [data-surface='wood'] hane kuralını specificity ile geçer. */
+/* Premium Maple ahşap damarı: prosedürel SVG feTurbulence (grayscale, ~0.5 merkezli DÜŞÜK kontrast)
+   -> maple zemine background-blend-mode:soft-light ile bindirilir. Harici asset/network YOK; tek
+   data-URI, tüm board (zemin + bar + haneler) AYNI malzeme. Uzun/ince dikey lifler (baseFrequency
+   yatay yüksek, dikey düşük) + hafif organik dalgalanma (fy>0, 4 oktav). Kontrast bilinçli düşük:
+   taşlar/üçgenler DAİMA önde, plastik/yapay değil. background-size 100% -> tile/tekrar hissi yok. */
+html[data-board='citrus-wood'] {
+  --maple-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'300'%20height%3D'440'%3E%3Cfilter%20id%3D'w'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.06%200.015'%20numOctaves%3D'4'%20seed%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncG%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncB%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncA%20type%3D'linear'%20slope%3D'0'%20intercept%3D'1'%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23w)'%2F%3E%3C%2Fsvg%3E");
+}
 html[data-board='citrus-wood'] .quadrant .point:nth-child(1) { --c1: #4e9b45; --c2: #91c75b; --cdir: 118deg; }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(2) { --c1: #f6c62f; --c2: #f39a0a; --cdir: 62deg; }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(3) { --c1: #91c75b; --c2: #4e9b45; --cdir: 62deg; }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(4) { --c1: #e8b51e; --c2: #f6c62f; --cdir: 118deg; }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(5) { --c1: #4e9b45; --c2: #b6d75b; --cdir: 118deg; }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(6) { --c1: #f39a0a; --c2: #e8b51e; --cdir: 62deg; }
+/* Haneler: çift-tonlu citrus renk + ÜZERİNE aynı maple damarı (soft-light) -> painted-on-wood.
+   Damar üçgende de var ama düşük kontrast + soft-light ile ÇOK hafif; citrus renk baskın kalır. */
 html[data-board='citrus-wood'] .point.top::before,
 html[data-board='citrus-wood'] .point.bottom::before {
   height: calc(var(--board-h) * 0.40); /* referanstaki uzun haneler (yalnız görsel; --col değişmez) */
-  background:
-    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.09) 0 1px, rgba(255, 255, 255, 0.05) 1px 2px, transparent 2px 5px),
+  background-image:
+    var(--maple-grain),
     linear-gradient(var(--cdir, 110deg), var(--c1, #4e9b45) 0 48%, var(--c2, #91c75b) 52% 100%);
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
 }
-/* Açık akçaağaç zemin: çok hafif doğal damar (taşların görünürlüğünü azaltmaz, kirli değil) */
+/* Açık akçaağaç zemin: prosedürel maple damarı (soft-light) -> gerçek ahşap yüzey, tile yok */
 html[data-board='citrus-wood'] .half {
   background-color: var(--panel);
-  background-image:
-    repeating-linear-gradient(90deg, rgba(120, 86, 40, 0.05) 0 1px, transparent 1px 7px),
-    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 13px);
+  background-image: var(--maple-grain);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: soft-light;
 }
-/* Açık ahşap orta bar (frame=--bar): sade, ince damar */
+/* Açık ahşap orta bar (frame=--bar): aynı damar (tek malzeme hissi) */
 html[data-board='citrus-wood'] .bar {
   background-color: var(--bar);
-  background-image: repeating-linear-gradient(90deg, rgba(120, 86, 40, 0.06) 0 1px, transparent 1px 6px);
+  background-image: var(--maple-grain);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: soft-light;
 }
 /* Pip sayıları açık bar üzerinde koyu okunur */
 html[data-board='citrus-wood'] .pip {
