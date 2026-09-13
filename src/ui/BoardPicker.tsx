@@ -22,7 +22,8 @@ export interface BoardThemeOpt {
   flag?: string // ulke boardu kart bayragi (emoji)
 }
 
-const RARITY_ORDER: Rarity[] = ['club', 'country', 'common', 'rare', 'epic', 'legendary', 'mythic']
+// Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
+const RARITY_ORDER: Rarity[] = ['common', 'club', 'country', 'rare', 'epic', 'legendary', 'mythic']
 const RARITY_COLOR: Record<Rarity, string> = RARITY_COLORS
 
 interface Props {
