@@ -10,8 +10,27 @@ interface Props {
   b: string
   checker: string
   cream?: string
+  pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak damla = TavlaTV Özel)
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood' // agac damari vb.
   onChangeBoard?: () => void
   changeLabel?: string
+}
+
+// Ucu yuvarlak uzun damla (teardrop) hane yolu. baseY = genis uc, tipY = sivri (yuvarlatilmis) uc.
+// Ust/alt icin ayni fonksiyon (yon baseY->tipY isaretinden gelir). bw = yarim taban genisligi.
+function teardropPath(cx: number, baseY: number, tipY: number, bw: number): string {
+  const dir = tipY > baseY ? 1 : -1
+  const midY = baseY + (tipY - baseY) * 0.5
+  const round = bw * 0.18 // taban kose yuvarlama
+  return [
+    `M ${cx - bw} ${baseY + dir * round}`,
+    `Q ${cx - bw} ${baseY} ${cx - bw * 0.68} ${baseY}`,
+    `L ${cx + bw * 0.68} ${baseY}`,
+    `Q ${cx + bw} ${baseY} ${cx + bw} ${baseY + dir * round}`,
+    `C ${cx + bw} ${midY} ${cx + bw * 0.34} ${tipY - dir * bw * 0.55} ${cx} ${tipY}`,
+    `C ${cx - bw * 0.34} ${tipY - dir * bw * 0.55} ${cx - bw} ${midY} ${cx - bw} ${baseY + dir * round}`,
+    'Z',
+  ].join(' ')
 }
 
 // Standart baslangic dizilisi: {yari, satir, kolon(0-5), adet, beyaz?}
@@ -39,6 +58,8 @@ export default function SetupBoard({
   b,
   checker,
   cream = '#f4efe6',
+  pointStyle = 'sharp',
+  surface = 'plain',
   onChangeBoard,
   changeLabel,
 }: Props) {
@@ -53,26 +74,38 @@ export default function SetupBoard({
   const halfX = (half: 'L' | 'R') => (half === 'L' ? PAD : PAD + halfW + GAP)
   const colCx = (half: 'L' | 'R', col: number) => halfX(half) + colW * (col + 0.5)
 
+  const rounded = pointStyle === 'rounded'
+  const wood = surface === 'wood'
+  const bw = colW / 2 - 1 // yarim taban genisligi
+  const trTriH = rounded ? triH * 1.28 : triH // yuvarlak haneler biraz daha uzun (referans gibi)
+  // Bir hane sekli: yuvarlak -> teardrop path; klasik -> sivri ucgen polygon.
+  const shape = (key: string, cx: number, baseY: number, tipY: number, fill: string) =>
+    rounded ? (
+      <path key={key} d={teardropPath(cx, baseY, tipY, bw)} fill={fill} opacity="0.97" />
+    ) : (
+      <polygon
+        key={key}
+        points={`${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`}
+        fill={fill}
+        opacity="0.95"
+      />
+    )
   const tris = []
   for (const half of ['L', 'R'] as const) {
     for (let col = 0; col < 6; col++) {
       const cx = colCx(half, col)
       const light = col % 2 === 0
-      // ust ve alt ucgen ters renk (gercek tahta gibi)
-      tris.push(
-        <polygon
-          key={`t-${half}-${col}`}
-          points={`${cx - colW / 2 + 1},${PAD} ${cx + colW / 2 - 1},${PAD} ${cx},${PAD + triH}`}
-          fill={light ? a : b}
-          opacity="0.95"
-        />,
-        <polygon
-          key={`btm-${half}-${col}`}
-          points={`${cx - colW / 2 + 1},${H - PAD} ${cx + colW / 2 - 1},${H - PAD} ${cx},${H - PAD - triH}`}
-          fill={light ? b : a}
-          opacity="0.95"
-        />,
-      )
+      // ust ve alt hane ters renk (gercek tahta gibi)
+      tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, light ? a : b))
+      tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, light ? b : a))
+      // Agac damari: hane uzerine ince dikey damar (aynı teardrop/ucgen sekle klipli degil,
+      // path'i pattern ile ikinci kez cizerek) — yalniz wood board.
+      if (wood && rounded) {
+        tris.push(
+          <path key={`tg-${half}-${col}`} d={teardropPath(cx, PAD, PAD + trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
+          <path key={`bg-${half}-${col}`} d={teardropPath(cx, H - PAD, H - PAD - trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
+        )
+      }
     }
   }
 
@@ -128,7 +161,18 @@ export default function SetupBoard({
   return (
     <div className="setup-board">
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="setup-board-svg">
+        {/* Agac damari deseni (wood): ince dikey damar cizgileri. Zemin + haneler bunu kullanir. */}
+        {wood && (
+          <defs>
+            <pattern id="sb-wood" width="6" height="8" patternUnits="userSpaceOnUse">
+              <rect width="1" height="8" fill="rgba(0,0,0,0.22)" />
+              <rect x="3" width="0.7" height="8" fill="rgba(255,255,255,0.06)" />
+            </pattern>
+          </defs>
+        )}
         <rect x="0" y="0" width={W} height={H} rx="16" fill={panel} />
+        {/* Zemin agac damari (kullanicinin okla gosterdigi: haneler ARASI koyu zemin dokulu) */}
+        {wood && <rect x="0" y="0" width={W} height={H} rx="16" fill="url(#sb-wood)" />}
         <rect x="0" y="0" width={W} height={H} rx="16" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" />
         {/* orta bar */}
         <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />

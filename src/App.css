@@ -4995,6 +4995,46 @@ button[aria-disabled='true'],
   );
 }
 
+/* ============ TavlaTV Özel (ahsap referans): yuvarlak hane + agac damari ============ */
+/* (1) YUVARLAK HANE (teardrop): sivri polygon yerine ucu yuvarlak uzun damla. Sekil
+   Board.tsx'teki objectBoundingBox clipPath'lerinden gelir (url), boyut biraz uzatilir.
+   --col DEGISMEZ (tas yerlesimi korunur); yalniz ::before yuksekligi/genisligi ayarlanir. */
+[data-point-style='rounded'] .point::before {
+  height: calc(var(--board-h) * 0.44);
+  width: calc(var(--col) * 0.9);
+}
+[data-point-style='rounded'] .point.top::before {
+  clip-path: url(#tv-point-top);
+}
+[data-point-style='rounded'] .point.bottom::before {
+  clip-path: url(#tv-point-bottom);
+}
+/* (2) AGAC DAMARI (wood grain): zemin + haneler + orta bar dikey ince damarli. Duz renk
+   uzerine yari-saydam dikey cizgi katmanlari -> ahsap doku hissi (renkler korunur). */
+[data-surface='wood'] .half {
+  background-color: var(--panel);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.24) 0, rgba(0, 0, 0, 0) 1.5px, rgba(255, 255, 255, 0.05) 3px, rgba(0, 0, 0, 0) 5.5px),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.14) 0, rgba(0, 0, 0, 0.14) 1px, rgba(0, 0, 0, 0) 4px, rgba(0, 0, 0, 0) 12px);
+}
+[data-surface='wood'] .bar {
+  background-color: var(--bar);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.2) 0, rgba(0, 0, 0, 0) 1.5px, rgba(255, 255, 255, 0.06) 3px, rgba(0, 0, 0, 0) 6px);
+}
+[data-surface='wood'] .point.top::before,
+[data-surface='wood'] .point.bottom::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.17) 0, rgba(0, 0, 0, 0.17) 1px, rgba(255, 255, 255, 0.07) 2px, rgba(0, 0, 0, 0) 4.5px),
+    var(--tri-a);
+}
+[data-surface='wood'] .point.shade-b.top::before,
+[data-surface='wood'] .point.shade-b.bottom::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.15) 0, rgba(0, 0, 0, 0.15) 1px, rgba(255, 255, 255, 0.09) 2px, rgba(0, 0, 0, 0) 4.5px),
+    var(--tri-b);
+}
+
 .checkers {
   position: relative;
   z-index: 2; /* watermark (z1) ustunde */

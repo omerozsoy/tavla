@@ -56,6 +56,8 @@ interface BoardColors {
   a: string
   b: string
   checker: string
+  pointStyle?: 'sharp' | 'rounded'
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
 
 interface Props {
@@ -252,6 +254,8 @@ export default function MatchSetup({
           a={board.a}
           b={board.b}
           checker={board.checker}
+          pointStyle={board.pointStyle}
+          surface={board.surface}
           onChangeBoard={onChangeBoard}
           changeLabel={t('setup.changeBoard')}
         />

@@ -32,6 +32,8 @@ interface BoardOpt {
   light?: string
   price?: number
   rarity?: string
+  pointStyle?: 'sharp' | 'rounded'
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
 
 interface Props {
@@ -208,6 +210,8 @@ export default function ProfileOverview({
                     b={equipped.b}
                     checker={swapStones ? (equipped.light ?? '#f4efe6') : (equipped.checker ?? equipped.b)}
                     cream={swapStones ? (equipped.checker ?? equipped.b) : equipped.light}
+                    pointStyle={equipped.pointStyle}
+                    surface={equipped.surface}
                   />
                 </div>
                 <div className="prof-ov-board-name">
@@ -387,6 +391,8 @@ export default function ProfileOverview({
                       b={b.b}
                       checker={b.checker ?? b.b}
                       cream={b.light}
+                      pointStyle={b.pointStyle}
+                      surface={b.surface}
                     />
                   </div>
                   <span className="prof-ov-item-name">{b.name}</span>

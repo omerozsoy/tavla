@@ -20,6 +20,8 @@ export interface BoardThemeOpt {
   rarity?: Rarity
   owned?: boolean // sahip mi (ucretsiz/kulup/satin alinmis)
   flag?: string // ulke boardu kart bayragi (emoji)
+  pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak = TavlaTV Özel)
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood' // yuzey (agac damari vb.)
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
@@ -79,6 +81,8 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       b={bt.b}
                       checker={bt.checker ?? bt.b}
                       cream={bt.light}
+                      pointStyle={bt.pointStyle}
+                      surface={bt.surface}
                     />
                     {boardTheme === bt.id && (
                       <span className="bp-selected">

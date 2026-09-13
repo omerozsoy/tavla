@@ -25,8 +25,11 @@ export interface BoardTheme {
   // Pul stili: referans board'un pul karakteri (flat disk / parlak / buz-kristal /
   // halka / neon). Renkler yine --cream/--navy'den gelir; stil sadece finish/efekt.
   checkerStyle?: 'flat' | 'gloss' | 'ice' | 'ring' | 'neon'
-  // Yuzey finish'i: duz / dikey gradyan derinlik / kumas (felt) dokusu.
-  surface?: 'plain' | 'gradient' | 'felt'
+  // Yuzey finish'i: duz / dikey gradyan derinlik / kumas (felt) / AGAC DAMARI (wood) dokusu.
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
+  // Hane (point) sekli: 'sharp' = klasik sivri ucgen (varsayilan); 'rounded' = ucu yuvarlak
+  // uzun damla (teardrop) — ahsap referans boardu icin (TavlaTV Özel).
+  pointStyle?: 'sharp' | 'rounded'
 }
 // UI/UX Pro Max renk paletlerinden 20 tahta. Isimler paletlerden alindi.
 // id 'tavla' varsayilan capa olarak kalir (eski kayitlar/geri uyumluluk).
@@ -241,7 +244,7 @@ export const TAVLATV_THEMES: BoardTheme[] = [
   {
     id: 'tavlatv-special', name: 'TavlaTV Özel', rarity: 'tavlatv',
     panel: '#2b2824', a: '#e08a2e', b: '#d8c5a0', checker: '#5a3d26', light: '#efe6cc', frame: '#6d4a2c',
-    checkerStyle: 'gloss', surface: 'gradient',
+    checkerStyle: 'gloss', surface: 'wood', pointStyle: 'rounded',
     d1Bg: '#efe6cc', d1Pip: '#5a3d26', d2Bg: '#5a3d26', d2Pip: '#efe6cc', cubeBg: '#6d4a2c', cubeText: '#efe6cc',
   },
 ]
