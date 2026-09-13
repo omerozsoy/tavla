@@ -5457,6 +5457,22 @@ html[data-board='tavlatv-special'] .point.shade-b.bottom::before {
   background-repeat: no-repeat, no-repeat;
   background-blend-mode: soft-light, normal;
 }
+/* KRİTİK: yuvarlak hane ::before (üçgen gövde) + ::after (yarım-daire cap) İKİ parçadan oluşur.
+   Sadece gövdeyi grainlemek cap ile doku UYUMSUZLUĞU -> yuvarlak omuzlar "şişkin/bozuk" görünür
+   (bkz. kullanıcı ekran görüntüsü). Cap'e de AYNI grain'i uygula -> tek parça temiz teardrop.
+   Çift-attribute [data-board][data-point-style] specificity, wood+rounded cap kuralını geçer. */
+html[data-board='tavlatv-special'][data-point-style='rounded'] .point::after {
+  background-image: var(--maple-grain), linear-gradient(var(--tri-a), var(--tri-a));
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
+}
+html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::after {
+  background-image: var(--maple-grain), linear-gradient(var(--tri-b), var(--tri-b));
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
+}
 
 @keyframes checker-place {
   0% {
