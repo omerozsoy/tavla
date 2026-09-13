@@ -16,21 +16,14 @@ interface Props {
   changeLabel?: string
 }
 
-// Ucu yuvarlak uzun damla (teardrop) hane yolu. baseY = genis uc, tipY = sivri (yuvarlatilmis) uc.
-// Ust/alt icin ayni fonksiyon (yon baseY->tipY isaretinden gelir). bw = yarim taban genisligi.
-function teardropPath(cx: number, baseY: number, tipY: number, bw: number): string {
+// Hane yolu: TABAN = TAM YARIM DAİRE (yaricap r), govde = daralan sivri uc (referans ahsap board).
+// baseY = tabanin oldugu kenar (rail), tipY = sivri uc (merkeze dogru). En genis cizgi (cember capi)
+// rail'den r iceride; cap oradan rail'e dogru yarim daire yapar, kenarlar oradan uca daralir.
+function bulletPath(cx: number, baseY: number, tipY: number, r: number): string {
   const dir = tipY > baseY ? 1 : -1
-  const midY = baseY + (tipY - baseY) * 0.5
-  const round = bw * 0.18 // taban kose yuvarlama
-  return [
-    `M ${cx - bw} ${baseY + dir * round}`,
-    `Q ${cx - bw} ${baseY} ${cx - bw * 0.68} ${baseY}`,
-    `L ${cx + bw * 0.68} ${baseY}`,
-    `Q ${cx + bw} ${baseY} ${cx + bw} ${baseY + dir * round}`,
-    `C ${cx + bw} ${midY} ${cx + bw * 0.34} ${tipY - dir * bw * 0.55} ${cx} ${tipY}`,
-    `C ${cx - bw * 0.34} ${tipY - dir * bw * 0.55} ${cx - bw} ${midY} ${cx - bw} ${baseY + dir * round}`,
-    'Z',
-  ].join(' ')
+  const yW = baseY + dir * r // en genis cizgi (yarim dairenin capi = cember merkezi)
+  const sweep = dir > 0 ? 0 : 1 // cap rail'e dogru bombelensin
+  return `M ${cx - r} ${yW} A ${r} ${r} 0 0 ${sweep} ${cx + r} ${yW} L ${cx} ${tipY} Z`
 }
 
 // Standart baslangic dizilisi: {yari, satir, kolon(0-5), adet, beyaz?}
@@ -78,10 +71,10 @@ export default function SetupBoard({
   const wood = surface === 'wood'
   const bw = colW / 2 - 1 // yarim taban genisligi
   const trTriH = rounded ? triH * 1.28 : triH // yuvarlak haneler biraz daha uzun (referans gibi)
-  // Bir hane sekli: yuvarlak -> teardrop path; klasik -> sivri ucgen polygon.
+  // Bir hane sekli: yuvarlak -> yarim-daire tabanli bullet path; klasik -> sivri ucgen polygon.
   const shape = (key: string, cx: number, baseY: number, tipY: number, fill: string) =>
     rounded ? (
-      <path key={key} d={teardropPath(cx, baseY, tipY, bw)} fill={fill} opacity="0.97" />
+      <path key={key} d={bulletPath(cx, baseY, tipY, bw)} fill={fill} opacity="0.97" />
     ) : (
       <polygon
         key={key}
@@ -102,8 +95,8 @@ export default function SetupBoard({
       // path'i pattern ile ikinci kez cizerek) — yalniz wood board.
       if (wood && rounded) {
         tris.push(
-          <path key={`tg-${half}-${col}`} d={teardropPath(cx, PAD, PAD + trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
-          <path key={`bg-${half}-${col}`} d={teardropPath(cx, H - PAD, H - PAD - trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
+          <path key={`tg-${half}-${col}`} d={bulletPath(cx, PAD, PAD + trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
+          <path key={`bg-${half}-${col}`} d={bulletPath(cx, H - PAD, H - PAD - trTriH, bw)} fill="url(#sb-wood)" opacity="0.5" />,
         )
       }
     }

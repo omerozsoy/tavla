@@ -563,19 +563,6 @@ function Board({
       className={`board${mirror ? ' mirror' : ''}${swapStones ? ' stones-swapped' : ''}${drag ? ' dragging' : ''}`}
       ref={boardElRef}
     >
-      {/* Yuvarlak hane (teardrop) clip-path tanimlari — pointStyle:'rounded' boardlar (TavlaTV Özel)
-          icin. objectBoundingBox: 0-1 normalize -> her boyuta olceklenir. CSS .point::before bunu
-          url(#tv-point-*) ile kullanir. Sivri boardlarda kullanilmaz (etkisiz). */}
-      <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>
-        <defs>
-          <clipPath id="tv-point-top" clipPathUnits="objectBoundingBox">
-            <path d="M0.12 0.02 C0.30 -0.02 0.70 -0.02 0.88 0.02 C0.92 0.28 0.62 0.66 0.53 0.94 C0.515 0.99 0.485 0.99 0.47 0.94 C0.38 0.66 0.08 0.28 0.12 0.02 Z" />
-          </clipPath>
-          <clipPath id="tv-point-bottom" clipPathUnits="objectBoundingBox">
-            <path d="M0.12 0.98 C0.30 1.02 0.70 1.02 0.88 0.98 C0.92 0.72 0.62 0.34 0.53 0.06 C0.515 0.01 0.485 0.01 0.47 0.06 C0.38 0.34 0.08 0.72 0.12 0.98 Z" />
-          </clipPath>
-        </defs>
-      </svg>
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
         {L.topNums[0].map((n) => (
