@@ -94,6 +94,11 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
     () => (items ?? []).filter((i) => cat === 'all' || i.category === cat),
     [items, cat],
   )
+  // Öne çıkarılan (featured) rozetler: "Rozetler" showcase'i SADECE bunlari gosterir.
+  const featuredItems = useMemo(
+    () => featured.map((s) => (items ?? []).find((i) => i.slug === s)).filter(Boolean) as AchievementItem[],
+    [featured, items],
+  )
 
   async function toggleFeatured(slug: string) {
     const isOn = featured.includes(slug)
@@ -149,6 +154,33 @@ export default function Achievements({ onClose, embed = false, loggedIn = true }
 
   const body = (
     <>
+      {/* Rozetler showcase: SADECE öne çıkarılan (featured) rozetler burada gösterilir. */}
+      {loggedIn && (
+        <div className="badge-section ach-featured">
+          <div className="badge-head">
+            <Icon name="medal" size={15} /> {t('badges.title')}
+          </div>
+          {featuredItems.length === 0 ? (
+            <div className="badge-empty">{t('ach.noFeatured')}</div>
+          ) : (
+            <div className="badge-grid">
+              {featuredItems.map((a) => (
+                <button
+                  key={a.slug}
+                  type="button"
+                  className="badge-item ach-featured-item"
+                  title={a.name}
+                  onClick={() => setSel(a)}
+                >
+                  <Icon name={(a.icon as IconName) || 'medal'} size={18} />
+                  <span className="badge-name">{a.name}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {loggedIn && (
         <div className="ach-summary">
           <div className="ach-sum-total">
