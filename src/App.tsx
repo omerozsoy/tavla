@@ -87,6 +87,8 @@ import {
   type AppNotification,
   type TournNotice as TournNoticeT,
   showRoom,
+  watchRoom,
+  type RoomViewer,
   updateRoom,
   serverRoll,
   serverMove,
@@ -111,6 +113,7 @@ import {
   type GameLogTurn,
 } from './api'
 import Chat from './ui/Chat'
+import ViewersBadge from './ui/ViewersBadge'
 import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
@@ -534,6 +537,8 @@ export default function App() {
   const [roomError, setRoomError] = useState('')
   const [oppStarted, setOppStarted] = useState(false) // p2: ilk snapshot geldi mi
   const [chat, setChat] = useState<ChatMsg[]>([]) // online sohbet mesajlari
+  const [roomViewers, setRoomViewers] = useState<RoomViewer[]>([]) // maçı izleyenler (oyuncular da görsün)
+  const [viewerCount, setViewerCount] = useState(0)
   const [showPip, setShowPip] = useState(true) // pip sayilari gorunur mu
   const [showLivePr, setShowLivePr] = useState(true) // canli PR (yalniz pvb) menuden ac/kapa
   // Pul renkleri (oyuncu siyah/beyaz) — kalıcı + profil<->oyun senkron (boardDir gibi).
@@ -3922,6 +3927,36 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.code])
 
+  // İzleyenler: oyuncular da maçı kimlerin izlediğini + sayıyı görsün. watch endpoint'i
+  // oyuncuyu izleyici olarak KAYDETMEZ (token slot'la eşleşir) ama listeyi+sayıyı döndürür.
+  // Yalnız oynanan online maçta ~5sn'de bir yokla; bittiğinde temizle.
+  useEffect(() => {
+    if (!online || !room?.code || roomStatus !== 'playing') {
+      setRoomViewers([])
+      setViewerCount(0)
+      return
+    }
+    let cancelled = false
+    const code = room.code
+    const beat = async () => {
+      try {
+        const r = await watchRoom(code)
+        if (cancelled) return
+        setRoomViewers(r.viewers)
+        setViewerCount(r.count)
+      } catch {
+        /* geçici ağ hatası -> sonraki yoklama dener */
+      }
+    }
+    beat()
+    const id = window.setInterval(beat, 5000)
+    return () => {
+      cancelled = true
+      window.clearInterval(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [online, room?.code, roomStatus])
+
   // Dogrulama sonucu (link'ten ?verified=1/0): birlesik toast olarak goster ve
   // URL'den parametreyi temizle (refresh'te tekrar cikmasin). Tek sefer tetiklenir.
   const verifyNotifiedRef = useRef(false)
@@ -7182,6 +7217,13 @@ export default function App() {
       >
         <Icon name={isFullscreen ? 'minimize' : 'maximize'} size={16} />
       </button>
+      {/* İzleyenler (oynayan oyuncular da kimlerin izlediğini + sayıyı görsün) — yalnız online
+          maçta izleyici varken; izleyicilerin gördüğü panelin aynısı (bkz Spectate). */}
+      {online && viewerCount > 0 && (
+        <div className="spectate-side viewers-float">
+          <ViewersBadge viewers={roomViewers} count={viewerCount} />
+        </div>
+      )}
       {/* Mobil DIKEY ipucu: "telefonu yan cevir". .rotate-tip CSS'i yalniz mobil-portre'de
           gosterir; yatay cevrilince kaybolur. Kapatilinca oturum boyu gizlenir. */}
       {!rotateTipHidden && (
