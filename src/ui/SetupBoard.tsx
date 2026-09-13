@@ -12,9 +12,15 @@ interface Props {
   cream?: string
   pointStyle?: 'sharp' | 'rounded' // hane sekli (yuvarlak damla = TavlaTV Özel)
   surface?: 'plain' | 'gradient' | 'felt' | 'wood' // agac damari vb.
+  themeId?: string // ozel cok-renkli desenli boardlar icin (or. 'citrus-wood')
   onChangeBoard?: () => void
   changeLabel?: string
 }
+
+// Citrus Wood: hane renkleri kolon konumuna gore 6'li doner (gercek boarddaki nth-child deseniyle
+// ayni his). Onizleme kucuk oldugundan cift-ton yerine per-kolon TEK renk yeter (yesil/lime/sari/
+// altin/turuncu cok-renkliligi acikca okunur).
+const CITRUS_POINTS = ['#4e9b45', '#f6c62f', '#91c75b', '#e8b51e', '#b6d75b', '#f39a0a']
 
 // Hane yolu: TABAN = TAM YARIM DAİRE (yaricap r), govde = daralan sivri uc (referans ahsap board).
 // baseY = tabanin oldugu kenar (rail), tipY = sivri uc (merkeze dogru). En genis cizgi (cember capi)
@@ -22,7 +28,7 @@ interface Props {
 function bulletPath(cx: number, baseY: number, tipY: number, r: number): string {
   const dir = tipY > baseY ? 1 : -1
   const yW = baseY + dir * r // en genis cizgi (yarim dairenin capi = cember merkezi)
-  const sweep = dir > 0 ? 0 : 1 // cap rail'e dogru bombelensin
+  const sweep = dir > 0 ? 1 : 0 // cap rail'e dogru KONVEKS bombelensin (ters sweep = ice oyuk lale)
   return `M ${cx - r} ${yW} A ${r} ${r} 0 0 ${sweep} ${cx + r} ${yW} L ${cx} ${tipY} Z`
 }
 
@@ -53,6 +59,7 @@ export default function SetupBoard({
   cream = '#f4efe6',
   pointStyle = 'sharp',
   surface = 'plain',
+  themeId,
   onChangeBoard,
   changeLabel,
 }: Props) {
@@ -83,14 +90,18 @@ export default function SetupBoard({
         opacity="0.95"
       />
     )
+  const citrus = themeId === 'citrus-wood'
   const tris = []
   for (const half of ['L', 'R'] as const) {
     for (let col = 0; col < 6; col++) {
       const cx = colCx(half, col)
       const light = col % 2 === 0
-      // ust ve alt hane ters renk (gercek tahta gibi)
-      tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, light ? a : b))
-      tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, light ? b : a))
+      // Citrus: kolon konumuna gore cok-renkli (yesil/lime/sari/altin/turuncu); ust/alt farkli ton.
+      // Digerleri: ust ve alt hane ters renk (gercek tahta gibi).
+      const topFill = citrus ? CITRUS_POINTS[col] : light ? a : b
+      const botFill = citrus ? CITRUS_POINTS[(col + 3) % 6] : light ? b : a
+      tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, topFill))
+      tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, botFill))
       // Agac damari: hane uzerine ince dikey damar (aynı teardrop/ucgen sekle klipli degil,
       // path'i pattern ile ikinci kez cizerek) — yalniz wood board.
       if (wood && rounded) {
@@ -118,8 +129,8 @@ export default function SetupBoard({
           cy={cy}
           r={r}
           fill={s.w ? cream : checker}
-          stroke="rgba(0,0,0,0.28)"
-          strokeWidth="1"
+          stroke={citrus ? '#e5d6bc' : 'rgba(0,0,0,0.28)'}
+          strokeWidth={citrus ? 2 : 1}
         />,
       )
     }
