@@ -167,60 +167,68 @@ export const CLUB_THEMES: BoardTheme[] = [
   },
 ]
 // Ulke Temali Board Koleksiyonu: her ulkenin BAYRAK RENKLERINDEN turetilmis premium/sade tavla.
-// Bayrak gorseli KULLANILMAZ; renkler yuzey (panel) + iki ucgen (a/b) + cerceve (frame) + pul
-// (light/checker) + zar/kup'e islenir. Orta yazi = watermark (ulke adi, cok soluk, taslarin
-// ALTINDA; logo/arma DEGIL). Ayni tasarim sistemi (BoardTheme) — yeni ulke = sadece yeni obje.
-// Pul okunabilirligi tasarimdan ONCELIKLI: light (acik pul) + checker (koyu pul) her ucgen +
-// zemine karsi kontrast olacak sekilde secildi.
+// KURAL: SADECE o bayragin renkleri (ve tonlari) kullanilir — bayrakta OLMAYAN renk ( or. Turk
+// bayraginda siyah) YASAK. Ucdeki her ana bayrak rengi board'da GORUNUR olmali: ana renk=zemin
+// (panel), ikinci=bir ucgen (b), vurgu=DIGER ucgen (a) -> ucu de yuzeyde. Koyu pul (checker) o
+// bayragin KOYU TONU olur (siyah degil; siyah yalniz Almanya'da — bayraginda var). Bayrak gorseli
+// KULLANILMAZ. Orta yazi=watermark (ulke adi, soluk, taslarin ALTINDA). Yeni ulke=yeni obje.
 export const COUNTRY_THEMES: BoardTheme[] = [
   {
+    // Turkiye: SADECE kirmizi + beyaz (siyah YOK). Koyu pul = koyu KIRMIZI (bordo), siyah degil.
     id: 'turkey', name: 'Türkiye', rarity: 'country', flag: '🇹🇷', watermark: 'TÜRKİYE',
-    panel: '#5A0A11', a: '#B90814', b: '#F2EAD9', checker: '#2A0A0C', light: '#F7F1E6', frame: '#3A0509',
-    d1Bg: '#F7F1E6', d1Pip: '#2A0A0C', d2Bg: '#E30A17', d2Pip: '#FFFFFF', cubeBg: '#E30A17', cubeText: '#FFFFFF',
+    panel: '#8E0A12', a: '#E30A17', b: '#F4EDDF', checker: '#5A070E', light: '#FFFFFF', frame: '#4A060B',
+    d1Bg: '#FFFFFF', d1Pip: '#5A070E', d2Bg: '#E30A17', d2Pip: '#FFFFFF', cubeBg: '#E30A17', cubeText: '#FFFFFF',
   },
   {
+    // USA: lacivert zemin + KIRMIZI ucgen + beyaz ucgen -> ucu de gorunur. Koyu pul = lacivert.
     id: 'usa', name: 'USA', rarity: 'country', flag: '🇺🇸', watermark: 'USA',
-    panel: '#1C1B38', a: '#3C3B6E', b: '#ECEDF4', checker: '#121030', light: '#F5F6FB', frame: '#0E0C22',
-    d1Bg: '#F5F6FB', d1Pip: '#121030', d2Bg: '#B22234', d2Pip: '#FFFFFF', cubeBg: '#B22234', cubeText: '#FFFFFF',
+    panel: '#20204A', a: '#B22234', b: '#ECEDF4', checker: '#171742', light: '#F5F6FB', frame: '#12122E',
+    d1Bg: '#F5F6FB', d1Pip: '#171742', d2Bg: '#B22234', d2Pip: '#FFFFFF', cubeBg: '#3C3B6E', cubeText: '#FFFFFF',
   },
   {
+    // UK: lacivert zemin + KIRMIZI ucgen + beyaz ucgen -> mavi+kirmizi+beyaz hepsi board'da.
     id: 'uk', name: 'United Kingdom', rarity: 'country', flag: '🇬🇧', watermark: 'UNITED KINGDOM',
-    panel: '#08123A', a: '#012169', b: '#ECEEF5', checker: '#0A0E28', light: '#F4F6FB', frame: '#050A22',
-    d1Bg: '#F4F6FB', d1Pip: '#0A0E28', d2Bg: '#C8102E', d2Pip: '#FFFFFF', cubeBg: '#012169', cubeText: '#FFFFFF',
+    panel: '#08123A', a: '#C8102E', b: '#EBEDF4', checker: '#0A1330', light: '#F4F6FB', frame: '#050A22',
+    d1Bg: '#F4F6FB', d1Pip: '#0A1330', d2Bg: '#C8102E', d2Pip: '#FFFFFF', cubeBg: '#012169', cubeText: '#FFFFFF',
   },
   {
+    // Germany: siyah zemin + KIRMIZI ucgen + ALTIN ucgen (siyah bayrakta VAR — buradaki siyah dogru).
     id: 'germany', name: 'Deutschland', rarity: 'country', flag: '🇩🇪', watermark: 'DEUTSCHLAND',
     panel: '#17171A', a: '#B31217', b: '#D9A400', checker: '#0B0B0C', light: '#F4F2EC', frame: '#000000',
     d1Bg: '#F4F2EC', d1Pip: '#0B0B0C', d2Bg: '#B31217', d2Pip: '#FFFFFF', cubeBg: '#E8B800', cubeText: '#17171A',
   },
   {
+    // Greece: SADECE mavi + beyaz. Koyu pul = koyu MAVI (siyah degil). [kullanici onayli — DOKUNMA]
     id: 'greece', name: 'Ελλάδα', rarity: 'country', flag: '🇬🇷', watermark: 'ΕΛΛΑΔΑ',
     panel: '#07345C', a: '#0D5EAF', b: '#EEF3F8', checker: '#062441', light: '#F5F9FD', frame: '#04223F',
     d1Bg: '#F5F9FD', d1Pip: '#062441', d2Bg: '#0D5EAF', d2Pip: '#FFFFFF', cubeBg: '#0D5EAF', cubeText: '#FFFFFF',
   },
   {
+    // Italy: yesil zemin + KIRMIZI ucgen + beyaz ucgen -> yesil+kirmizi+beyaz hepsi board'da. Koyu pul = koyu yesil.
     id: 'italy', name: 'Italia', rarity: 'country', flag: '🇮🇹', watermark: 'ITALIA',
-    panel: '#0A3A21', a: '#009246', b: '#EEF2ED', checker: '#0A2917', light: '#F5F8F3', frame: '#062616',
-    d1Bg: '#F5F8F3', d1Pip: '#0A2917', d2Bg: '#CE2B37', d2Pip: '#FFFFFF', cubeBg: '#CE2B37', cubeText: '#FFFFFF',
+    panel: '#0A3A21', a: '#CE2B37', b: '#EAF0EA', checker: '#0B3018', light: '#F5F8F3', frame: '#062616',
+    d1Bg: '#F5F8F3', d1Pip: '#0B3018', d2Bg: '#CE2B37', d2Pip: '#FFFFFF', cubeBg: '#009246', cubeText: '#FFFFFF',
   },
   {
+    // France: mavi zemin + KIRMIZI ucgen + beyaz ucgen -> mavi+kirmizi+beyaz hepsi board'da. Koyu pul = koyu mavi.
     id: 'france', name: 'France', rarity: 'country', flag: '🇫🇷', watermark: 'FRANCE',
-    panel: '#0A1440', a: '#002395', b: '#EDEFF6', checker: '#080E2A', light: '#F4F6FB', frame: '#050A26',
-    d1Bg: '#F4F6FB', d1Pip: '#080E2A', d2Bg: '#ED2939', d2Pip: '#FFFFFF', cubeBg: '#002395', cubeText: '#FFFFFF',
+    panel: '#0A1440', a: '#ED2939', b: '#EBEDF4', checker: '#0A1236', light: '#F4F6FB', frame: '#050A26',
+    d1Bg: '#F4F6FB', d1Pip: '#0A1236', d2Bg: '#ED2939', d2Pip: '#FFFFFF', cubeBg: '#002395', cubeText: '#FFFFFF',
   },
   {
+    // Spain: SADECE kirmizi + altin. [kullanici onayli — DOKUNMA]
     id: 'spain', name: 'España', rarity: 'country', flag: '🇪🇸', watermark: 'ESPAÑA',
     panel: '#58090D', a: '#AA151B', b: '#E0AE00', checker: '#360406', light: '#FBF3DA', frame: '#2A0507',
     d1Bg: '#FBF3DA', d1Pip: '#360406', d2Bg: '#AA151B', d2Pip: '#FFF0C0', cubeBg: '#E0AE00', cubeText: '#58090D',
   },
   {
-    // Japonya: acik/sade premium (beyaz zemin), pullar kirmizi + sumi-siyah -> beyaz uzerinde
-    // guclu kontrast; ucgenler soluk gul + acik gri (bayragin beyaz/kirmizisindan turetildi).
+    // Japonya: beyaz zemin + kirmizi. [kullanici onayli — DOKUNMA]
     id: 'japan', name: '日本', rarity: 'country', flag: '🇯🇵', watermark: '日本',
     panel: '#F0EEEA', a: '#E7C3C9', b: '#E2E2E2', checker: '#1A1A1A', light: '#BC002D', frame: '#7A0A1E',
     d1Bg: '#BC002D', d1Pip: '#FFFFFF', d2Bg: '#1A1A1A', d2Pip: '#FFFFFF', cubeBg: '#BC002D', cubeText: '#FFFFFF',
   },
   {
+    // Brazil: yesil zemin + ALTIN ucgen + MAVI ucgen. [kullanici onayli — DOKUNMA]
     id: 'brazil', name: 'Brasil', rarity: 'country', flag: '🇧🇷', watermark: 'BRASIL',
     panel: '#0A3D1E', a: '#E3C200', b: '#16407F', checker: '#0A2912', light: '#F4F7EC', frame: '#05240F',
     checkerStyle: 'gloss',
