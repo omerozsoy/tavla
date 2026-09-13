@@ -4,7 +4,6 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import ProfileStats from './ProfileStats'
 import Achievements from './Achievements'
-import { BadgeList } from './Badges'
 import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import './profileShopLink.css'
@@ -417,8 +416,8 @@ export default function ProfileOverview({
 
         {tab === 'badges' && (
           <section className="prof-ov-col">
-            {/* Rozetler (eski badge listesi) — istatistik sekmesinden buraya tasindi */}
-            <BadgeList ids={user.badges} />
+            {/* "Rozetler" showcase artik Achievements icinde EN USTTE ve SADECE öne çıkarılan
+                (featured) rozetleri gosterir (eski otomatik BadgeList kaldirildi). */}
             <Achievements embed loggedIn />
           </section>
         )}
