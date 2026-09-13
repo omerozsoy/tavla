@@ -166,73 +166,72 @@ export const CLUB_THEMES: BoardTheme[] = [
     cubeBg: '#0E4C92', cubeText: '#F5DCE2', watermark: 'TRABZONSPOR',
   },
 ]
-// Ulke Temali Board Koleksiyonu: her ulkenin BAYRAK RENKLERINDEN turetilmis premium/sade tavla.
-// KURAL: SADECE o bayragin renkleri (ve tonlari) kullanilir — bayrakta OLMAYAN renk ( or. Turk
-// bayraginda siyah) YASAK. Ucdeki her ana bayrak rengi board'da GORUNUR olmali: ana renk=zemin
-// (panel), ikinci=bir ucgen (b), vurgu=DIGER ucgen (a) -> ucu de yuzeyde. Koyu pul (checker) o
-// bayragin KOYU TONU olur (siyah degil; siyah yalniz Almanya'da — bayraginda var). Bayrak gorseli
-// KULLANILMAZ. Orta yazi=watermark (ulke adi, soluk, taslarin ALTINDA). Yeni ulke=yeni obje.
+// Ulke Temali Board Koleksiyonu: her ulkenin RESMI BAYRAK RENKLERINDEN turetilmis sade tavla.
+// KURAL: renkler o bayragin RESMI hex degerleridir; zemin (panel) = bayragin baskin/alan rengi,
+// iki ucgen (a, b) = diger iki bayrak rengi -> ucu de yuzeyde. Koyu pul (checker) = bayragin EN
+// KOYU tonu; acik pul (light) = oynanabilirlik icin beyaz/krem (2-renkli bayrakta zorunlu). Bayrak
+// gorseli KULLANILMAZ; orta yazi=watermark (ulke adi). Resmi hex kaynaklari asagida yorumda.
 export const COUNTRY_THEMES: BoardTheme[] = [
   {
-    // Turkiye: SADECE kirmizi + beyaz (siyah YOK). Koyu pul = koyu KIRMIZI (bordo), siyah degil.
+    // Türkiye 🇹🇷 — Resmi: Kırmızı #E30A17 + Beyaz (siyah YOK). Koyu pul = koyu kırmızı tonu.
     id: 'turkey', name: 'Türkiye', rarity: 'country', flag: '🇹🇷', watermark: 'TÜRKİYE',
-    panel: '#8E0A12', a: '#E30A17', b: '#F4EDDF', checker: '#5A070E', light: '#FFFFFF', frame: '#4A060B',
-    d1Bg: '#FFFFFF', d1Pip: '#5A070E', d2Bg: '#E30A17', d2Pip: '#FFFFFF', cubeBg: '#E30A17', cubeText: '#FFFFFF',
+    panel: '#E30A17', a: '#F4EDDF', b: '#B70810', checker: '#6E0910', light: '#FFFFFF', frame: '#4A060B',
+    d1Bg: '#FFFFFF', d1Pip: '#E30A17', d2Bg: '#E30A17', d2Pip: '#FFFFFF', cubeBg: '#E30A17', cubeText: '#FFFFFF',
   },
   {
-    // USA: lacivert zemin + KIRMIZI ucgen + beyaz ucgen -> ucu de gorunur. Koyu pul = lacivert.
+    // USA 🇺🇸 — Resmi: Old Glory Blue #0A3161, Old Glory Red #B31942, Beyaz #FFFFFF.
     id: 'usa', name: 'USA', rarity: 'country', flag: '🇺🇸', watermark: 'USA',
-    panel: '#20204A', a: '#B22234', b: '#ECEDF4', checker: '#171742', light: '#F5F6FB', frame: '#12122E',
-    d1Bg: '#F5F6FB', d1Pip: '#171742', d2Bg: '#B22234', d2Pip: '#FFFFFF', cubeBg: '#3C3B6E', cubeText: '#FFFFFF',
+    panel: '#0A3161', a: '#B31942', b: '#F4F5FA', checker: '#0A1F45', light: '#FFFFFF', frame: '#071733',
+    d1Bg: '#FFFFFF', d1Pip: '#0A3161', d2Bg: '#B31942', d2Pip: '#FFFFFF', cubeBg: '#0A3161', cubeText: '#FFFFFF',
   },
   {
-    // UK: lacivert zemin + KIRMIZI ucgen + beyaz ucgen -> mavi+kirmizi+beyaz hepsi board'da.
+    // UK 🇬🇧 — Resmi: Mavi #012169, Kırmızı #C8102E, Beyaz #FFFFFF.
     id: 'uk', name: 'United Kingdom', rarity: 'country', flag: '🇬🇧', watermark: 'UNITED KINGDOM',
-    panel: '#08123A', a: '#C8102E', b: '#EBEDF4', checker: '#0A1330', light: '#F4F6FB', frame: '#050A22',
-    d1Bg: '#F4F6FB', d1Pip: '#0A1330', d2Bg: '#C8102E', d2Pip: '#FFFFFF', cubeBg: '#012169', cubeText: '#FFFFFF',
+    panel: '#012169', a: '#C8102E', b: '#F4F6FB', checker: '#011543', light: '#FFFFFF', frame: '#010F30',
+    d1Bg: '#FFFFFF', d1Pip: '#012169', d2Bg: '#C8102E', d2Pip: '#FFFFFF', cubeBg: '#012169', cubeText: '#FFFFFF',
   },
   {
-    // Germany: siyah zemin + KIRMIZI ucgen + ALTIN ucgen (siyah bayrakta VAR — buradaki siyah dogru).
+    // Almanya 🇩🇪 — Resmi: Siyah #000000, Kırmızı #DD0000, Altın #FFCE00.
     id: 'germany', name: 'Deutschland', rarity: 'country', flag: '🇩🇪', watermark: 'DEUTSCHLAND',
-    panel: '#17171A', a: '#B31217', b: '#D9A400', checker: '#0B0B0C', light: '#F4F2EC', frame: '#000000',
-    d1Bg: '#F4F2EC', d1Pip: '#0B0B0C', d2Bg: '#B31217', d2Pip: '#FFFFFF', cubeBg: '#E8B800', cubeText: '#17171A',
+    panel: '#151515', a: '#DD0000', b: '#FFCE00', checker: '#0A0A0A', light: '#F4EFDD', frame: '#000000',
+    d1Bg: '#FFCE00', d1Pip: '#111111', d2Bg: '#DD0000', d2Pip: '#FFFFFF', cubeBg: '#000000', cubeText: '#FFCE00',
   },
   {
-    // Greece: SADECE mavi + beyaz. Koyu pul = koyu MAVI (siyah degil). [kullanici onayli — DOKUNMA]
+    // Yunanistan 🇬🇷 — Resmi: Mavi #0D5EAF + Beyaz #FFFFFF.
     id: 'greece', name: 'Ελλάδα', rarity: 'country', flag: '🇬🇷', watermark: 'ΕΛΛΑΔΑ',
-    panel: '#07345C', a: '#0D5EAF', b: '#EEF3F8', checker: '#062441', light: '#F5F9FD', frame: '#04223F',
-    d1Bg: '#F5F9FD', d1Pip: '#062441', d2Bg: '#0D5EAF', d2Pip: '#FFFFFF', cubeBg: '#0D5EAF', cubeText: '#FFFFFF',
+    panel: '#0D5EAF', a: '#F4F6FB', b: '#0A4E93', checker: '#062A50', light: '#FFFFFF', frame: '#04223F',
+    d1Bg: '#FFFFFF', d1Pip: '#0D5EAF', d2Bg: '#0D5EAF', d2Pip: '#FFFFFF', cubeBg: '#0D5EAF', cubeText: '#FFFFFF',
   },
   {
-    // Italy: yesil zemin + KIRMIZI ucgen + beyaz ucgen -> yesil+kirmizi+beyaz hepsi board'da. Koyu pul = koyu yesil.
+    // İtalya 🇮🇹 — Resmi: Yeşil #008C45, Beyaz #F1F2F1, Kırmızı #CD212A. Koyu pul = koyu yeşil.
     id: 'italy', name: 'Italia', rarity: 'country', flag: '🇮🇹', watermark: 'ITALIA',
-    panel: '#0A3A21', a: '#CE2B37', b: '#EAF0EA', checker: '#0B3018', light: '#F5F8F3', frame: '#062616',
-    d1Bg: '#F5F8F3', d1Pip: '#0B3018', d2Bg: '#CE2B37', d2Pip: '#FFFFFF', cubeBg: '#009246', cubeText: '#FFFFFF',
+    panel: '#008C45', a: '#CD212A', b: '#F1F2F1', checker: '#054F29', light: '#FFFFFF', frame: '#053C20',
+    d1Bg: '#FFFFFF', d1Pip: '#008C45', d2Bg: '#CD212A', d2Pip: '#FFFFFF', cubeBg: '#008C45', cubeText: '#FFFFFF',
   },
   {
-    // France: mavi zemin + KIRMIZI ucgen + beyaz ucgen -> mavi+kirmizi+beyaz hepsi board'da. Koyu pul = koyu mavi.
+    // Fransa 🇫🇷 — Resmi: Mavi #0055A4, Beyaz #FFFFFF, Kırmızı #EF4135. Koyu pul = koyu mavi.
     id: 'france', name: 'France', rarity: 'country', flag: '🇫🇷', watermark: 'FRANCE',
-    panel: '#0A1440', a: '#ED2939', b: '#EBEDF4', checker: '#0A1236', light: '#F4F6FB', frame: '#050A26',
-    d1Bg: '#F4F6FB', d1Pip: '#0A1236', d2Bg: '#ED2939', d2Pip: '#FFFFFF', cubeBg: '#002395', cubeText: '#FFFFFF',
+    panel: '#0055A4', a: '#EF4135', b: '#F4F6FB', checker: '#00306A', light: '#FFFFFF', frame: '#00234A',
+    d1Bg: '#FFFFFF', d1Pip: '#0055A4', d2Bg: '#EF4135', d2Pip: '#FFFFFF', cubeBg: '#0055A4', cubeText: '#FFFFFF',
   },
   {
-    // Spain: SADECE kirmizi + altin. [kullanici onayli — DOKUNMA]
+    // İspanya 🇪🇸 — Resmi: Kırmızı #AA151B, Altın #F1BF00 (rojigualda). Koyu pul = koyu kırmızı.
     id: 'spain', name: 'España', rarity: 'country', flag: '🇪🇸', watermark: 'ESPAÑA',
-    panel: '#58090D', a: '#AA151B', b: '#E0AE00', checker: '#360406', light: '#FBF3DA', frame: '#2A0507',
-    d1Bg: '#FBF3DA', d1Pip: '#360406', d2Bg: '#AA151B', d2Pip: '#FFF0C0', cubeBg: '#E0AE00', cubeText: '#58090D',
+    panel: '#AA151B', a: '#F1BF00', b: '#8E1116', checker: '#4E080C', light: '#FBF3DA', frame: '#2A0507',
+    d1Bg: '#FBF3DA', d1Pip: '#AA151B', d2Bg: '#AA151B', d2Pip: '#F1BF00', cubeBg: '#F1BF00', cubeText: '#AA151B',
   },
   {
-    // Japonya: beyaz zemin + kirmizi. [kullanici onayli — DOKUNMA]
+    // Japonya 🇯🇵 — Resmi: Beyaz #FFFFFF + Kırmızı #BC002D. Koyu pul = koyu kırmızı (siyah YOK).
     id: 'japan', name: '日本', rarity: 'country', flag: '🇯🇵', watermark: '日本',
-    panel: '#F0EEEA', a: '#E7C3C9', b: '#E2E2E2', checker: '#1A1A1A', light: '#BC002D', frame: '#7A0A1E',
-    d1Bg: '#BC002D', d1Pip: '#FFFFFF', d2Bg: '#1A1A1A', d2Pip: '#FFFFFF', cubeBg: '#BC002D', cubeText: '#FFFFFF',
+    panel: '#F2EFEA', a: '#BC002D', b: '#E7CDD1', checker: '#7A0018', light: '#FFFFFF', frame: '#7A0A1E',
+    d1Bg: '#BC002D', d1Pip: '#FFFFFF', d2Bg: '#F2EFEA', d2Pip: '#BC002D', cubeBg: '#BC002D', cubeText: '#FFFFFF',
   },
   {
-    // Brazil: yesil zemin + ALTIN ucgen + MAVI ucgen. [kullanici onayli — DOKUNMA]
+    // Brezilya 🇧🇷 — Resmi: Yeşil #009C3B, Altın #FFDF00, Mavi #002776. Koyu pul = koyu yeşil.
     id: 'brazil', name: 'Brasil', rarity: 'country', flag: '🇧🇷', watermark: 'BRASIL',
-    panel: '#0A3D1E', a: '#E3C200', b: '#16407F', checker: '#0A2912', light: '#F4F7EC', frame: '#05240F',
+    panel: '#009C3B', a: '#FFDF00', b: '#002776', checker: '#064A22', light: '#F5F8EE', frame: '#05341A',
     checkerStyle: 'gloss',
-    d1Bg: '#F4F7EC', d1Pip: '#0A2912', d2Bg: '#16407F', d2Pip: '#FFDF00', cubeBg: '#E3C200', cubeText: '#06240F',
+    d1Bg: '#FFDF00', d1Pip: '#009C3B', d2Bg: '#002776', d2Pip: '#FFDF00', cubeBg: '#FFDF00', cubeText: '#002776',
   },
 ]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
