@@ -10528,6 +10528,11 @@ button.acct-row:hover:not(:disabled) {
   flex-direction: column;
   gap: 4px;
 }
+/* Oyun ekranında (oynayan oyuncular için) izleyenler rozeti: spectate paneliyle aynı,
+   biraz daha dar dursun ki board'u ezmesin. */
+.viewers-float {
+  width: min(240px, 40vw);
+}
 /* Mobil (yatay oyun): paneli daralt, board'u ezmesin */
 @media (max-width: 900px) {
   .spectate-side {

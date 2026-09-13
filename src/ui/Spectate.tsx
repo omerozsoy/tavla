@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import Board from './Board'
 import Sidebar from './Sidebar'
+import ViewersBadge from './ViewersBadge'
 import ClockStack from './ClockStack'
 import DiceRow from './Dice'
 import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer } from '../api'
@@ -245,27 +246,9 @@ export default function Spectate({
         </div>
       </main>
 
-      {/* Sol alt: izleyenler (sayı + isimler) + maç sohbeti (salt-okunur) */}
+      {/* Sol alt: izleyenler (sayı + isimler) — oyuncularla AYNI rozet (bkz ViewersBadge) */}
       <div className="spectate-side">
-        <div className="sp-viewers">
-          <div className="sp-viewers-head">
-            <Icon name="eye" size={14} /> {t('live.watchCount', { n: viewerCount })}
-          </div>
-          {viewers.length > 0 && (
-            <div className="sp-viewers-list">
-              {viewers.map((v, i) => (
-                <span key={i} className="sp-viewer" title={v.name}>
-                  {v.avatar ? (
-                    <img className="sp-viewer-av" src={v.avatar} alt="" />
-                  ) : (
-                    <span className="sp-viewer-av sp-viewer-init">{(v.name || '?').slice(0, 1).toUpperCase()}</span>
-                  )}
-                  <span className="sp-viewer-name">{v.name}</span>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        <ViewersBadge viewers={viewers} count={viewerCount} />
       </div>
     </div>,
     document.body,
