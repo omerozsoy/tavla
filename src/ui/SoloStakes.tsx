@@ -31,6 +31,7 @@ export const SOLO_LEVELS: SoloLevel[] = [
 ]
 
 interface BoardColors {
+  id?: string // ozel desenli boardlar (or. 'citrus-wood') onizlemesi icin
   panel: string
   a: string
   b: string

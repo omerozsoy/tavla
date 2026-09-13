@@ -83,6 +83,7 @@ export default function BoardPicker({ boardTheme, setBoardTheme, boardThemes, co
                       cream={bt.light}
                       pointStyle={bt.pointStyle}
                       surface={bt.surface}
+                      themeId={bt.id}
                     />
                     {boardTheme === bt.id && (
                       <span className="bp-selected">
