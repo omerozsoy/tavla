@@ -4347,6 +4347,15 @@ export default function App() {
       document.documentElement.requestFullscreen?.().catch(() => {})
     }
   }
+  // Oyundan lobiye/ana sayfaya dönünce TAM EKRANI KAPAT. Tam ekran yalnız oyun ekranında (fs-toggle)
+  // açılır; home'a dönerken html fullscreen + html.fs-active kalırsa .app.lobby düzeni bozuluyordu
+  // (account-bar gizli kalıp footer/sidebar üst üste biniyor, menü soluk görünüyordu — kullanıcı
+  // şikayeti). home true olunca (menü→Lobi, maç sonu, resign, URL geri) fullscreen'den çık.
+  useEffect(() => {
+    if (home && document.fullscreenElement) {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }, [home])
 
   // (Kaldirildi) Ozel "asagi cek-yenile" (pull-to-refresh): overlay'lerde (analiz vb.) kazara
   // reload tetikleyip sayfayi/dizilimi sifirliyordu. Tamamen kaldirildi; kullanici tarayicidan yeniler.
@@ -7314,7 +7323,11 @@ export default function App() {
         onTournaments={online && !matchOver ? undefined : menuProps.onTournaments}
         onFriends={online && !matchOver ? undefined : menuProps.onFriends}
         onShop={online && !matchOver ? undefined : menuProps.onShop}
-        onLobby={() => (online ? handleLeaveRoom() : setHome(true))}
+        onLobby={() => {
+          if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {})
+          if (online) handleLeaveRoom()
+          else setHome(true)
+        }}
         onResign={() => setResignOpen(true)}
         onClose={() => setGameMenuOpen(false)}
       />
