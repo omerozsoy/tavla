@@ -13208,6 +13208,10 @@ button.acct-row:hover:not(:disabled) {
 .badge-item > svg {
   color: var(--accent);
 }
+/* Featured "Rozetler" showcase: altindaki "Toplam Rozet" ozetiyle yapisik durmasin */
+.ach-featured {
+  margin-bottom: 18px;
+}
 /* Featured showcase chip (buton): .badge-item stilini alir, buton default'larini notrler + tiklanabilir */
 .ach-featured-item {
   cursor: pointer;
