@@ -19,6 +19,10 @@ class ShopController extends Controller
     // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
     private const BOARD_RARITY = [
         // common (1000)
+        // NOT: 'standart' ÜCRETSİZ (FREE_BOARDS) -> katalogda YOK. 'tavla' (Latte) + 'galaxy' eski
+        // varsayilan boardlar; artik ucretli (frontend boardPrice -> common). Kataloga eklenmezse
+        // frontend 50 coin gosterip satin alma sunucuda REDDEDILIYORDU (bkz. citrus-wood bug'i).
+        'tavla' => 'common', 'galaxy' => 'common',
         'pumpkin' => 'common', 'marrakesh' => 'common', 'bosphorus' => 'common', 'manhattan' => 'common',
         'redplanet' => 'common', 'glacier' => 'common', 'atlantis' => 'common', 'amethyst' => 'common',
         'radioactive' => 'common', 'gaia' => 'common', 'lunar' => 'common', 'monaco' => 'common',
@@ -51,8 +55,8 @@ class ShopController extends Controller
         // country (Ulke Temali Board Koleksiyonu — src/boardThemes.ts COUNTRY_THEMES ile senkron)
         'turkey' => 'country', 'usa' => 'country', 'uk' => 'country', 'germany' => 'country', 'greece' => 'country',
         'italy' => 'country', 'france' => 'country', 'spain' => 'country', 'japan' => 'country', 'brazil' => 'country',
-        // tavlatv (TavlaTV Özel — tek özel board, en ust kademe; src/boardThemes.ts TAVLATV_THEMES ile senkron)
-        'tavlatv-special' => 'tavlatv',
+        // tavlatv (TavlaTV özel boardlar, en ust kademe; src/boardThemes.ts TAVLATV_THEMES ile senkron)
+        'tavlatv-special' => 'tavlatv', 'citrus-wood' => 'tavlatv',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).
