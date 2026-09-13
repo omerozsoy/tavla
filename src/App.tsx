@@ -350,6 +350,7 @@ import {
   RARITY_THEMES,
   CLUB_THEMES,
   COUNTRY_THEMES,
+  TAVLATV_THEMES,
   GALAXY_EXTRA_THEMES,
   ALL_THEMES,
   BOARD_ID_MIGRATE,
@@ -5599,6 +5600,12 @@ export default function App() {
     ...COUNTRY_THEMES.map((tt) => ({
       ...tt,
       rarity: 'country' as const,
+      price: boardPrice(tt),
+      owned: boardOwned(tt.id),
+    })),
+    ...TAVLATV_THEMES.map((tt) => ({
+      ...tt,
+      rarity: 'tavlatv' as const,
       price: boardPrice(tt),
       owned: boardOwned(tt.id),
     })),

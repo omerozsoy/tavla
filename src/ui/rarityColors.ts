@@ -11,6 +11,7 @@ export type RarityKey =
   | 'mythic'
   | 'club'
   | 'country'
+  | 'tavlatv'
   | 'prestige'
   | 'tavla'
   | 'achievement'
@@ -23,6 +24,7 @@ export const RARITY_COLORS: Record<RarityKey, string> = {
   mythic: '#c0616b', // deep rose/garnet - yakut (luks, neon degil)
   club: '#4e9e75', // muted emerald
   country: '#c0724a', // warm terracotta/bronze — ulke koleksiyonu (site aksanina yakin, kulupten ayri)
+  tavlatv: '#c98a3c', // sicak amber/bal — TavlaTV Özel (ahsap+turuncu board'a uygun, en ust kademe)
   prestige: '#d2b36e', // bright antique gold
   tavla: '#4e9e9e', // muted teal
   achievement: '#e0c57a', // soft gold

@@ -11,7 +11,7 @@ export interface BoardTheme {
   frame?: string // cerceve/orta bar rengi (--bar). yoksa varsayilan koyu
   light?: string // acik pul rengi (--cream). yoksa varsayilan krem
   price?: number // coin ile acilan premium tema (yoksa ucretsiz)
-  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country' // nadirlik/kategori (kart cercevesi + gruplama)
+  rarity?: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country' | 'tavlatv' // nadirlik/kategori (kart cercevesi + gruplama)
   flag?: string // ulke boardlari icin kart bayrak emojisi (🇹🇷 vb.) — gorsel etiket, boarda BASILMAZ
   // Kulup temalari icin ozel zar/kup renkleri (yoksa marka varsayilanina duser).
   // dice1 = acik zar (beyaz oyuncu), dice2 = koyu zar (siyah oyuncu).
@@ -234,6 +234,17 @@ export const COUNTRY_THEMES: BoardTheme[] = [
     d1Bg: '#FFDF00', d1Pip: '#009C3B', d2Bg: '#002776', d2Pip: '#FFDF00', cubeBg: '#FFDF00', cubeText: '#002776',
   },
 ]
+// TavlaTV Özel: ahsap kutu tavla referansindan (kullanici gorseli) birebir palet — ebony
+// (koyu abanoz) oyun alani, turuncu + acik akcaagac ucgenler, ceviz cerceve/bar, koyu ceviz
+// (deri) + fildisi pullar. TEK ozel board; en alt kademe (mythic'ten sonra).
+export const TAVLATV_THEMES: BoardTheme[] = [
+  {
+    id: 'tavlatv-special', name: 'TavlaTV Özel', rarity: 'tavlatv',
+    panel: '#2b2824', a: '#e08a2e', b: '#d8c5a0', checker: '#5a3d26', light: '#efe6cc', frame: '#6d4a2c',
+    checkerStyle: 'gloss', surface: 'gradient',
+    d1Bg: '#efe6cc', d1Pip: '#5a3d26', d2Bg: '#5a3d26', d2Pip: '#efe6cc', cubeBg: '#6d4a2c', cubeText: '#efe6cc',
+  },
+]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
 export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
@@ -265,7 +276,7 @@ export const GALAXY_EXTRA_THEMES: BoardTheme[] = [
   { id: 'bazaar', name: 'Bazaar', rarity: 'common', panel: '#7a4a30', a: '#9a5a3a', b: '#5a3420', checker: '#1a120a', light: '#e8d8c0', frame: '#3a2414' },
   { id: 'miami', name: 'Miami', rarity: 'common', panel: '#e8709a', a: '#f0a84a', b: '#4fd0c0', checker: '#2f5ad0', light: '#f0e8d8', frame: '#18d0e8', checkerStyle: 'gloss' },
 ]
-export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...COUNTRY_THEMES, ...GALAXY_EXTRA_THEMES]
+export const ALL_THEMES: BoardTheme[] = [...BOARD_THEMES, ...PREMIUM_THEMES, ...RARITY_THEMES, ...CLUB_THEMES, ...COUNTRY_THEMES, ...TAVLATV_THEMES, ...GALAXY_EXTRA_THEMES]
 
 // Tahta nadirlik -> coin fiyati (backend ShopController BOARD_RARITY ile BIREBIR).
 export const BOARD_RARITY_PRICE: Record<'common' | 'rare' | 'epic' | 'legendary' | 'mythic', number> = {
@@ -281,6 +292,8 @@ export const FREE_BOARDS = new Set<string>(['standart'])
 export const CLUB_BOARD_PRICE = 100
 // Ulke boardu fiyati (nadirlik ladder'inda degil; sabit — kulup gibi kategori fiyati).
 export const COUNTRY_BOARD_PRICE = 100
+// TavlaTV Özel board fiyati (en ust kademe, tek özel board).
+export const TAVLATV_BOARD_PRICE = 500
 // Bir temanin etkin nadirligi (kendi alani -> THEME_RARITY -> 'common').
 export function boardRarityOf(t: BoardTheme): NonNullable<BoardTheme['rarity']> {
   return t.rarity ?? THEME_RARITY[t.id] ?? 'common'
@@ -291,6 +304,7 @@ export function boardPrice(t: BoardTheme): number | undefined {
   const r = boardRarityOf(t)
   if (r === 'club') return CLUB_BOARD_PRICE
   if (r === 'country') return COUNTRY_BOARD_PRICE
+  if (r === 'tavlatv') return TAVLATV_BOARD_PRICE
   return BOARD_RARITY_PRICE[r]
 }
 

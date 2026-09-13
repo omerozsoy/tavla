@@ -13,7 +13,7 @@ class ShopController extends Controller
     // Gorsel tanimlar (renkler vb.) frontend'de; burada yalnizca id -> fiyat.
 
     // Tahta nadirlik -> coin fiyati (frontend boardThemes.ts BOARD_RARITY_PRICE + CLUB_BOARD_PRICE ile BIREBIR).
-    private const BOARD_PRICE = ['common' => 50, 'rare' => 90, 'epic' => 150, 'legendary' => 250, 'mythic' => 400, 'club' => 100, 'country' => 100];
+    private const BOARD_PRICE = ['common' => 50, 'rare' => 90, 'epic' => 150, 'legendary' => 250, 'mythic' => 400, 'club' => 100, 'country' => 100, 'tavlatv' => 500];
 
     // Satin alinabilir tahta id -> nadirlik. Kaynak: src/boardThemes.ts (senkron tut).
     // Ucretsiz olanlar (standart/tavla/galaxy + kulup temalari) BURADA YOK.
@@ -51,6 +51,8 @@ class ShopController extends Controller
         // country (Ulke Temali Board Koleksiyonu — src/boardThemes.ts COUNTRY_THEMES ile senkron)
         'turkey' => 'country', 'usa' => 'country', 'uk' => 'country', 'germany' => 'country', 'greece' => 'country',
         'italy' => 'country', 'france' => 'country', 'spain' => 'country', 'japan' => 'country', 'brazil' => 'country',
+        // tavlatv (TavlaTV Özel — tek özel board, en ust kademe; src/boardThemes.ts TAVLATV_THEMES ile senkron)
+        'tavlatv-special' => 'tavlatv',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).

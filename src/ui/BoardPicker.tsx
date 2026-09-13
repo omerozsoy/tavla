@@ -6,7 +6,7 @@ import SetupBoard from './SetupBoard'
 import { RARITY_COLORS } from './rarityColors'
 import BuyConfirm from './BuyConfirm'
 
-type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country'
+type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic' | 'club' | 'country' | 'tavlatv'
 
 export interface BoardThemeOpt {
   id: string
@@ -23,7 +23,7 @@ export interface BoardThemeOpt {
 }
 
 // Sıra: Standart (common) üstte, sonra Kulüpler, Ülke Boardları, ardından nadirlik artışı.
-const RARITY_ORDER: Rarity[] = ['common', 'club', 'country', 'rare', 'epic', 'legendary', 'mythic']
+const RARITY_ORDER: Rarity[] = ['common', 'club', 'country', 'rare', 'epic', 'legendary', 'mythic', 'tavlatv']
 const RARITY_COLOR: Record<Rarity, string> = RARITY_COLORS
 
 interface Props {
