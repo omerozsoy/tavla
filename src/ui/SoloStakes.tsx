@@ -35,6 +35,8 @@ interface BoardColors {
   a: string
   b: string
   checker: string
+  pointStyle?: 'sharp' | 'rounded'
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
 
 interface Props {

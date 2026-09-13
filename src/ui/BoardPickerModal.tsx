@@ -16,6 +16,8 @@ interface BoardOpt {
   b: string
   checker?: string
   owned?: boolean
+  pointStyle?: 'sharp' | 'rounded'
+  surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
 
 interface Props {
@@ -61,7 +63,7 @@ export default function BoardPickerModal({ current, boards, onSelect, onMore, on
               }}
               title={b.name}
             >
-              <SetupBoard panel={b.panel ?? b.b} a={b.a} b={b.b} checker={b.checker ?? b.b} />
+              <SetupBoard panel={b.panel ?? b.b} a={b.a} b={b.b} checker={b.checker ?? b.b} pointStyle={b.pointStyle} surface={b.surface} />
               <span className="board-picker-name">
                 {current === b.id && <Icon name="check" size={14} />} {b.name}
               </span>
