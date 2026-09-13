@@ -5350,6 +5350,59 @@ body.checker-dragging * {
   box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.28), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
+/* ===== Citrus Wood (Timber Biscuit açık akçaağaç referansı) bespoke =====
+   Açık maple zemin + çok katmanlı YEŞİL/LİME/SARI/ALTIN/TURUNCU geometrik haneler + açık ahşap
+   çerçeve/bar + fildişi ahşap çerçeveli yeşil/turuncu pullar. Saf CSS (harici asset yok).
+   OYUN GEOMETRİSİ DEĞİŞMEZ: yalnız ::before dolgusu, renk ve pul finish'i temaya bağlanır. */
+/* Her hane ÇİFT-TONLU (çapraz sert bölme): tek üçgen içinde iki renk = referanstaki "üst üste binen
+   / arkadan çıkan üçgen" izlenimi. Renk çifti KOLON KONUMUNA (nth-child) göre 6'lı döner: yeşil
+   ailesi (1,3,5) ile sarı-turuncu ailesi (2,4,6) dönüşümlü. Konum tabanlı olduğundan flip/mirror'da
+   desen sabit kalır. html[...] öneki [data-surface='wood'] hane kuralını specificity ile geçer. */
+html[data-board='citrus-wood'] .quadrant .point:nth-child(1) { --c1: #4e9b45; --c2: #91c75b; --cdir: 118deg; }
+html[data-board='citrus-wood'] .quadrant .point:nth-child(2) { --c1: #f6c62f; --c2: #f39a0a; --cdir: 62deg; }
+html[data-board='citrus-wood'] .quadrant .point:nth-child(3) { --c1: #91c75b; --c2: #4e9b45; --cdir: 62deg; }
+html[data-board='citrus-wood'] .quadrant .point:nth-child(4) { --c1: #e8b51e; --c2: #f6c62f; --cdir: 118deg; }
+html[data-board='citrus-wood'] .quadrant .point:nth-child(5) { --c1: #4e9b45; --c2: #b6d75b; --cdir: 118deg; }
+html[data-board='citrus-wood'] .quadrant .point:nth-child(6) { --c1: #f39a0a; --c2: #e8b51e; --cdir: 62deg; }
+html[data-board='citrus-wood'] .point.top::before,
+html[data-board='citrus-wood'] .point.bottom::before {
+  height: calc(var(--board-h) * 0.40); /* referanstaki uzun haneler (yalnız görsel; --col değişmez) */
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.09) 0 1px, rgba(255, 255, 255, 0.05) 1px 2px, transparent 2px 5px),
+    linear-gradient(var(--cdir, 110deg), var(--c1, #4e9b45) 0 48%, var(--c2, #91c75b) 52% 100%);
+}
+/* Açık akçaağaç zemin: çok hafif doğal damar (taşların görünürlüğünü azaltmaz, kirli değil) */
+html[data-board='citrus-wood'] .half {
+  background-color: var(--panel);
+  background-image:
+    repeating-linear-gradient(90deg, rgba(120, 86, 40, 0.05) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 13px);
+}
+/* Açık ahşap orta bar (frame=--bar): sade, ince damar */
+html[data-board='citrus-wood'] .bar {
+  background-color: var(--bar);
+  background-image: repeating-linear-gradient(90deg, rgba(120, 86, 40, 0.06) 0 1px, transparent 1px 6px);
+}
+/* Pip sayıları açık bar üzerinde koyu okunur */
+html[data-board='citrus-wood'] .pip {
+  color: rgba(70, 50, 26, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+/* Fildişi ahşap çerçeveli fiziksel pul: solid renk (--cream yeşil / --navy turuncu) + açık ahşap
+   rim + iç aydınlık/koyu + dış hairline + kontak gölgesi (referanstaki ahşap-rimli disk hissi).
+   --cream/--navy kullanıldığından pul-takası (swapStones) tutarlı çalışır; boyut/hitbox değişmez. */
+html[data-board='citrus-wood'] .checker.white,
+html[data-board='citrus-wood'] .checker.black {
+  border: 3px solid #e5d6bc;
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.30),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(120, 86, 40, 0.30),
+    0 2px 4px rgba(0, 0, 0, 0.34);
+}
+html[data-board='citrus-wood'] .checker.white { background: var(--cream); }
+html[data-board='citrus-wood'] .checker.black { background: var(--navy); }
+
 @keyframes checker-place {
   0% {
     transform: translateY(-18%) scale(0.86);

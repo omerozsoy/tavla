@@ -52,10 +52,12 @@ const AI_LEVELS = [
 // insan gibi GERÇEK ölçülen PR gösterir, sabit seviye aralığı vaat edilmez.
 
 interface BoardColors {
+  id?: string // ozel desenli boardlar (or. 'citrus-wood') onizlemesi icin
   panel: string
   a: string
   b: string
   checker: string
+  light?: string // acik pul rengi (onizleme gercek tahta ile ayni pulu gostersin)
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
@@ -254,8 +256,10 @@ export default function MatchSetup({
           a={board.a}
           b={board.b}
           checker={board.checker}
+          cream={board.light}
           pointStyle={board.pointStyle}
           surface={board.surface}
+          themeId={board.id}
           onChangeBoard={onChangeBoard}
           changeLabel={t('setup.changeBoard')}
         />

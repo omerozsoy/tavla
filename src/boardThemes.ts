@@ -247,6 +247,17 @@ export const TAVLATV_THEMES: BoardTheme[] = [
     checkerStyle: 'gloss', surface: 'wood', pointStyle: 'rounded',
     d1Bg: '#efe6cc', d1Pip: '#5a3d26', d2Bg: '#5a3d26', d2Pip: '#efe6cc', cubeBg: '#6d4a2c', cubeText: '#efe6cc',
   },
+  {
+    // Citrus Wood — Timber Biscuit tarzı açık akçaağaç (maple) referansından: sıcak kırık-beyaz
+    // ahsap zemin, YEŞİL+LİME+SARI+ALTIN+TURUNCU çok katmanlı geometrik haneler (çift-ton çapraz
+    // bölme, per-kolon renk döngüsü — bespoke CSS [data-board='citrus-wood']), açık ahşap çerçeve/bar,
+    // fildişi ahşap çerçeveli yeşil (oyuncu1) + turuncu (oyuncu2) pullar. Haneler standart SİVRİ
+    // üçgen (pointStyle 'sharp'); a/b yalnız fallback/önizleme rengidir (gerçek boardda 6 renk).
+    id: 'citrus-wood', name: 'Citrus Wood', rarity: 'tavlatv',
+    panel: '#E8D7BC', a: '#4E9B45', b: '#F39A0A', checker: '#FF9800', light: '#3F9146', frame: '#DDC59E',
+    surface: 'wood', pointStyle: 'sharp', checkerStyle: 'flat',
+    d1Bg: '#3F9146', d1Pip: '#ffffff', d2Bg: '#F39A0A', d2Pip: '#ffffff', cubeBg: '#4E9B45', cubeText: '#ffffff',
+  },
 ]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.

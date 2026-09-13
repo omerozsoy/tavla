@@ -17,10 +17,12 @@ const CLOCKS: { id: TimeControl; key: string }[] = [
 const LENGTHS = [3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25]
 
 interface BoardColors {
+  id?: string // ozel desenli boardlar (or. 'citrus-wood') onizlemesi icin
   panel: string
   a: string
   b: string
   checker: string
+  light?: string // acik pul rengi (onizleme gercek tahta ile ayni pulu gostersin)
   pointStyle?: 'sharp' | 'rounded'
   surface?: 'plain' | 'gradient' | 'felt' | 'wood'
 }
@@ -139,8 +141,10 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             a={board.a}
             b={board.b}
             checker={board.checker}
+            cream={board.light}
             pointStyle={board.pointStyle}
             surface={board.surface}
+            themeId={board.id}
             onChangeBoard={onChangeBoard}
             changeLabel={t('setup.changeBoard')}
           />
