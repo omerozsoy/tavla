@@ -4996,18 +4996,64 @@ button[aria-disabled='true'],
 }
 
 /* ============ TavlaTV Özel (ahsap referans): yuvarlak hane + agac damari ============ */
-/* (1) YUVARLAK HANE (teardrop): sivri polygon yerine ucu yuvarlak uzun damla. Sekil
-   Board.tsx'teki objectBoundingBox clipPath'lerinden gelir (url), boyut biraz uzatilir.
-   --col DEGISMEZ (tas yerlesimi korunur); yalniz ::before yuksekligi/genisligi ayarlanir. */
+/* (1) YUVARLAK HANE: taban TAM YARIM DAİRE + daralan govde (referans ahsap board).
+   objectBoundingBox clip-path dar/uzun kutuda daireyi ezip SIVRI gosteriyordu -> yontem
+   degisti: ::after = tabanda TAM CEMBER (ust yarisi = yarim daire cap), ::before = daralan
+   ucgen govde (tabani cap merkezine oturur). Cap yaricapi = hane genisliginin yarisi (--col/2).
+   --col DEGISMEZ (tas yerlesimi korunur). */
 [data-point-style='rounded'] .point::before {
-  height: calc(var(--board-h) * 0.44);
-  width: calc(var(--col) * 0.9);
+  width: var(--col);
+  height: calc(var(--board-h) * 0.4);
 }
 [data-point-style='rounded'] .point.top::before {
-  clip-path: url(#tv-point-top);
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+  top: calc(var(--col) / 2 - 1px); /* ucgen tabani cap merkezine otursun (kusursuz birlesim) */
 }
 [data-point-style='rounded'] .point.bottom::before {
-  clip-path: url(#tv-point-bottom);
+  clip-path: polygon(50% 0, 0 100%, 100% 100%);
+  bottom: calc(var(--col) / 2 - 1px);
+}
+/* Taban yarim-daire capi (::after = tam cember; gorunur ust/alt yarisi yarim daire). */
+[data-point-style='rounded'] .point::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: var(--col);
+  height: var(--col);
+  border-radius: 50%;
+  z-index: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tri-a) 94%, #fff) 0%,
+    var(--tri-a) 48%,
+    color-mix(in srgb, var(--tri-a) 90%, #000) 100%
+  );
+}
+[data-point-style='rounded'] .point.top::after {
+  top: 0;
+}
+[data-point-style='rounded'] .point.bottom::after {
+  bottom: 0;
+}
+[data-point-style='rounded'] .point.shade-b::after {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--tri-b) 94%, #fff) 0%,
+    var(--tri-b) 48%,
+    color-mix(in srgb, var(--tri-b) 90%, #000) 100%
+  );
+}
+/* Wood + rounded: cap uzerine de ayni dikey agac damari */
+[data-surface='wood'][data-point-style='rounded'] .point::after {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.17) 0, rgba(0, 0, 0, 0.17) 1px, rgba(255, 255, 255, 0.07) 2px, rgba(0, 0, 0, 0) 4.5px),
+    var(--tri-a);
+}
+[data-surface='wood'][data-point-style='rounded'] .point.shade-b::after {
+  background:
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.15) 0, rgba(0, 0, 0, 0.15) 1px, rgba(255, 255, 255, 0.09) 2px, rgba(0, 0, 0, 0) 4.5px),
+    var(--tri-b);
 }
 /* (2) AGAC DAMARI (wood grain): zemin + haneler + orta bar dikey ince damarli. Duz renk
    uzerine yari-saydam dikey cizgi katmanlari -> ahsap doku hissi (renkler korunur). */
