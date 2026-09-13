@@ -5359,11 +5359,13 @@ body.checker-dragging * {
    ailesi (1,3,5) ile sarı-turuncu ailesi (2,4,6) dönüşümlü. Konum tabanlı olduğundan flip/mirror'da
    desen sabit kalır. html[...] öneki [data-surface='wood'] hane kuralını specificity ile geçer. */
 /* Premium Maple ahşap damarı: prosedürel SVG feTurbulence (grayscale, ~0.5 merkezli DÜŞÜK kontrast)
-   -> maple zemine background-blend-mode:soft-light ile bindirilir. Harici asset/network YOK; tek
-   data-URI, tüm board (zemin + bar + haneler) AYNI malzeme. Uzun/ince dikey lifler (baseFrequency
-   yatay yüksek, dikey düşük) + hafif organik dalgalanma (fy>0, 4 oktav). Kontrast bilinçli düşük:
-   taşlar/üçgenler DAİMA önde, plastik/yapay değil. background-size 100% -> tile/tekrar hissi yok. */
-html[data-board='citrus-wood'] {
+   -> zemine background-blend-mode:soft-light ile bindirilir. Harici asset/network YOK; tek data-URI,
+   tüm board (zemin + bar + haneler) AYNI malzeme. Uzun/ince dikey lifler (baseFrequency yatay yüksek,
+   dikey düşük) + hafif organik dalgalanma (fy>0, 4 oktav). Kontrast bilinçli düşük: taşlar/üçgenler
+   DAİMA önde, plastik/yapay değil. background-size 100% -> tile/tekrar hissi yok. Grain RENK-BAĞIMSIZ
+   (yalnız luminance) -> hem citrus (açık maple) hem TavlaTV Özel (koyu ceviz/ebony) PAYLAŞIR; renk
+   zeminden (--panel/--tri/--bar) gelir. Bu yüzden [data-surface='wood'] üzerinde tanımlı. */
+[data-surface='wood'] {
   --maple-grain: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'300'%20height%3D'440'%3E%3Cfilter%20id%3D'w'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.06%200.015'%20numOctaves%3D'4'%20seed%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3CfeComponentTransfer%3E%3CfeFuncR%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncG%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncB%20type%3D'linear'%20slope%3D'0.42'%20intercept%3D'0.29'%2F%3E%3CfeFuncA%20type%3D'linear'%20slope%3D'0'%20intercept%3D'1'%2F%3E%3C%2FfeComponentTransfer%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%23w)'%2F%3E%3C%2Fsvg%3E");
 }
 html[data-board='citrus-wood'] .quadrant .point:nth-child(1) { --c1: #4e9b45; --c2: #91c75b; --cdir: 118deg; }
@@ -5419,6 +5421,42 @@ html[data-board='citrus-wood'] .checker.black {
 }
 html[data-board='citrus-wood'] .checker.white { background: var(--cream); }
 html[data-board='citrus-wood'] .checker.black { background: var(--navy); }
+
+/* ===== TavlaTV Özel: aynı prosedürel Premium ahşap damarı (--maple-grain, soft-light) =====
+   Koyu ceviz/ebony board; grain RENK-BAĞIMSIZ luminance -> ebony zemin, ceviz bar ve turuncu/maple
+   YUVARLAK haneler AYNI malzemeden ahşap hissi alır. Renkler (--panel/--tri-a/--tri-b/--bar) ve
+   yuvarlak hane clip-path'i (data-point-style='rounded') DEĞİŞMEZ; sadece sahte repeating-linear
+   damar yerine feTurbulence. Koyu zeminde grain doğal olarak daha soluk (gerçek koyu ahşap gibi). */
+html[data-board='tavlatv-special'] .half {
+  background-color: var(--panel);
+  background-image: var(--maple-grain);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: soft-light;
+}
+html[data-board='tavlatv-special'] .bar {
+  background-color: var(--bar);
+  background-image: var(--maple-grain);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: soft-light;
+}
+/* Yuvarlak haneler: solid tema rengi (shade-a=--tri-a / shade-b=--tri-b) + üzerine grain (soft-light).
+   clip-path + yükseklik data-point-style='rounded' kuralından gelir (override edilmez). */
+html[data-board='tavlatv-special'] .point.top::before,
+html[data-board='tavlatv-special'] .point.bottom::before {
+  background-image: var(--maple-grain), linear-gradient(var(--tri-a), var(--tri-a));
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
+}
+html[data-board='tavlatv-special'] .point.shade-b.top::before,
+html[data-board='tavlatv-special'] .point.shade-b.bottom::before {
+  background-image: var(--maple-grain), linear-gradient(var(--tri-b), var(--tri-b));
+  background-size: 100% 100%, 100% 100%;
+  background-repeat: no-repeat, no-repeat;
+  background-blend-mode: soft-light, normal;
+}
 
 @keyframes checker-place {
   0% {
