@@ -75,7 +75,15 @@ Route::get('/pay/onizleme', fn () => view('pay.card', [
 Route::fallback(function () {
     $index = public_path('index.html');
     if (file_exists($index)) {
-        return response()->file($index);
+        // index.html ASLA cache'lenmemeli: her deploy asset hash'lerini degistirir ve
+        // eskileri silinir. Tarayici bayat index.html tutarsa silinmis chunk'lara istek
+        // atar -> ChunkLoadError -> "sayfa acilmiyor/refresh edilemiyor". Hash'li /assets
+        // ise icerik-adresli oldugundan uzun cache'te kalir (web sunucusu/htaccess).
+        return response()->file($index, [
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
     }
     return response(
         'Frontend build not found. Build React and copy dist/* into backend/public/.',
