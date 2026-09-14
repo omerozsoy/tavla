@@ -204,8 +204,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
     Route::middleware('throttle:20,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
 
-    // Zar Slotu çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
-    Route::middleware('throttle:20,1')->post('/dice-slot/spin', [\App\Http\Controllers\DiceSlotController::class, 'spin']);
+    // Zar Slotu çevirme: sonuç SUNUCU-OTORİTER (weighted random). Flood/bot koruması THROTTLE ile;
+    // asıl kötüye-kullanım koruması ekonomidedir (günlük ücretsiz hak + coin bedeli + atomik sunucu
+    // kontrolü). Limit hızlı ELLE oynamaya yetecek kadar geniş (buton her spinde ~2.3s kilitli →
+    // en fazla ~26/dk); 20/dk "Too Many Attempts" veriyordu, 60/dk'ya çıkarıldı.
+    Route::middleware('throttle:60,1')->post('/dice-slot/spin', [\App\Http\Controllers\DiceSlotController::class, 'spin']);
 
     // Fiziksel urun magazasi: siparis (coin aninda / money -> odeme) + kullanicinin siparisleri.
     Route::post('/products/order', [\App\Http\Controllers\ProductController::class, 'order']);
