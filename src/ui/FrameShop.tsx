@@ -53,7 +53,7 @@ function FrameCard(p: CardProps) {
     <div className="shop-anim" style={{ ['--rarity-color']: p.groupColor } as CSSProperties}>
       <div className="shop-anim-preview">
         {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
-        <AvatarFrame src={p.avatar} frame={p.f.id} size={82} name={p.name} animated />
+        <AvatarFrame src={p.avatar} frame={p.f.id} size={50} name={p.name} animated />
       </div>
       <div className="shop-anim-name" title={p.f.name}>
         {p.f.name}
