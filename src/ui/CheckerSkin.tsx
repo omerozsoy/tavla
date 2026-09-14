@@ -17,7 +17,7 @@ export default function CheckerSkin({
 }: {
   skin: Skin
   tone: 'dark' | 'light'
-  size?: number
+  size?: number | string // sayı=px; '100%' = kabı doldur (Board içinde)
   seed?: number
   className?: string
 }) {

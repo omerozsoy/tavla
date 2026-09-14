@@ -11,6 +11,8 @@ import { createPortal } from 'react-dom'
 import type { GameState, Player } from '../engine/types'
 import { TavlaTvLogo } from './TavlaTvLogo'
 import { useT } from '../i18n'
+import CheckerSkin from './CheckerSkin'
+import type { CheckerSkin as CheckerSkinDef } from '../checkers'
 
 // Ucgen index dizilimleri (index = ucgen numarasi - 1)
 // normal = beyazin bakisi (kendi evi sag-alt). flipped = siyahin bakisi (180 cevrilmis).
@@ -114,19 +116,25 @@ function Checker({
   onPointerDown,
   label,
   lifted,
+  skin,
 }: {
   player: Player
   draggable?: boolean
   onPointerDown?: (e: ReactPointerEvent) => void
   label?: number // 5'ten fazla tasta ustteki tasa toplam sayi yazilir
   lifted?: boolean // surukleme sirasinda kaynaktaki ust tas gizlenir (tek tas hissi)
+  skin?: CheckerSkinDef | null // secili dijital pul materyali (yoksa CSS gradyani)
 }) {
   return (
     <div
-      className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}`}
+      className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}${skin ? ' skinned' : ''}`}
       draggable={false}
       onPointerDown={onPointerDown}
     >
+      {skin && (
+        // Materyal SVG kabı doldurur; beyaz oyuncu=ivory(light), siyah=birincil(dark).
+        <CheckerSkin skin={skin} tone={player === 'white' ? 'light' : 'dark'} size="100%" className="checker-skin-fill" />
+      )}
       {label != null && <span className="checker-count">{label}</span>}
     </div>
   )
@@ -143,6 +151,7 @@ function Point({
   onSelectFrom,
   onSelectTarget,
   onCheckerDown,
+  checkerSkin,
 }: {
   index: number
   top: boolean
@@ -154,6 +163,7 @@ function Point({
   onSelectFrom: (from: number) => void
   onSelectTarget: (to: number) => void
   onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
+  checkerSkin?: CheckerSkinDef | null
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -192,6 +202,7 @@ function Point({
                   : undefined
               }
               label={label}
+              skin={checkerSkin}
             />
           )
         })}

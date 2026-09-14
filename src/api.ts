@@ -62,6 +62,7 @@ export interface ServerUser {
   coins?: number
   unlocks?: string[]
   avatar_frame?: string | null
+  checker?: string | null
   badges?: string[]
   plan?: string
   plan_active?: 'free' | 'star' | 'starpro'
@@ -275,6 +276,7 @@ export interface ShopState {
   catalog: Record<string, number>
   unlocks: string[]
   avatar_frame: string | null
+  checker: string | null
   coins: number
 }
 export async function getShop(): Promise<ShopState> {
@@ -285,6 +287,9 @@ export async function buyItem(id: string): Promise<{ unlocks: string[]; coins: n
 }
 export async function selectFrame(id: string | null): Promise<{ avatar_frame: string | null }> {
   return req('/shop/frame', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
+}
+export async function selectChecker(id: string | null): Promise<{ checker: string | null }> {
+  return req('/shop/checker', { method: 'POST', body: JSON.stringify({ id: id ?? 'none' }) })
 }
 
 export async function leaderboard(limit = 100, by: 'rating' | 'coins' | 'wxp' = 'rating'): Promise<LeaderRow[]> {
