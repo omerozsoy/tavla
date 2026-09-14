@@ -24,7 +24,7 @@ export default function CheckerShop({
   unlocks: string[]
   selected: string | null
   coins: number
-  onBuy: (fullId: string) => Promise<{ owned?: boolean; insufficient?: boolean } | void>
+  onBuy: (fullId: string) => Promise<unknown> // basarisizda throw eder (yetersiz coin vb.)
   onSelect: (id: string | null) => void
   onClose: () => void
 }) {
@@ -37,11 +37,10 @@ export default function CheckerShop({
     if (busy) return
     setBusy(id)
     try {
-      const r = await onBuy('checker.' + id)
-      if (r && 'insufficient' in r && r.insufficient) toast.error('Yetersiz coin.')
-      else onSelect(id) // aldıktan sonra otomatik seç
+      await onBuy('checker.' + id)
+      onSelect(id) // aldıktan sonra otomatik seç
     } catch {
-      toast.error('Satın alınamadı.')
+      toast.error('Yetersiz coin veya satın alınamadı.')
     } finally {
       setBusy(null)
     }
