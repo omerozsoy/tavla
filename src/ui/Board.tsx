@@ -100,6 +100,7 @@ interface BoardProps {
   showPip?: boolean // pip sayilari gorunur mu
   watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
   showLogo?: boolean // false: TavlaTV wordmark'i gizle (ulke boardlari yalniz ulke adini gosterir)
+  checkerSkin?: CheckerSkinDef | null // secili dijital pul materyali (yoksa CSS gradyani)
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -233,6 +234,7 @@ function Board({
   showPip = true,
   watermark,
   showLogo = true,
+  checkerSkin = null,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -551,6 +553,7 @@ function Board({
       onSelectFrom={onSelectFrom}
       onSelectTarget={onSelectTarget}
       onCheckerDown={dragEnabled ? startDrag : undefined}
+      checkerSkin={checkerSkin}
     />
   )
 
@@ -629,6 +632,7 @@ function Board({
                     : undefined
                 }
                 label={topBarCount > 1 ? topBarCount : undefined}
+                skin={checkerSkin}
               />
             )}
           </div>
@@ -658,6 +662,7 @@ function Board({
                     : undefined
                 }
                 label={bottomBarCount > 1 ? bottomBarCount : undefined}
+                skin={checkerSkin}
               />
             )}
           </div>

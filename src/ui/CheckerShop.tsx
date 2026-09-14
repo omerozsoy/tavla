@@ -86,14 +86,14 @@ export default function CheckerShop({
                     {owned ? (
                       <Button
                         variant={active ? 'secondary' : 'default'}
-                        size="sm"
+                        size="default"
                         disabled={active}
                         onClick={() => onSelect(s.id)}
                       >
                         {active ? 'Seçili ✓' : 'Seç'}
                       </Button>
                     ) : (
-                      <Button variant="outline" size="sm" disabled={busy === s.id} onClick={() => buy(s.id)}>
+                      <Button variant="outline" size="default" disabled={busy === s.id} onClick={() => buy(s.id)}>
                         <Coins amount={checkerPrice(s)} size={14} />
                       </Button>
                     )}
