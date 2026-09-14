@@ -3,6 +3,8 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { getAddresses, createAddress, updateAddress, deleteAddress, type Address, type AddressInput } from '../api'
+import { PROVINCES } from '../provinces'
+import { districtsOf } from '../districts'
 import './AddressBook.css'
 
 type Editing = { mode: 'new'; type: 'shipping' | 'billing' } | { mode: 'edit'; addr: Address } | null
@@ -133,6 +135,12 @@ function AddressForm({
   const [f, setF] = useState<AddressInput>(initial)
   const [busy, setBusy] = useState(false)
   const set = (k: keyof AddressInput, v: string | boolean) => setF((p) => ({ ...p, [k]: v }))
+  // İl değişince ilçe SIFIRLANIR (eski ilin ilçesi yeni ilde geçersiz). Atomik: tek setF.
+  const onCity = (v: string) => setF((p) => ({ ...p, city: v, district: '' }))
+  const ilceler = districtsOf(f.city) // seçili ilin ilçeleri (81 ilin tamamı dolu; boşsa metin girişine düşer)
+  // Düzenlemede kayıtlı ilçe listede yoksa (eski serbest-metin) kaybolmasın diye seçeneğe ekle.
+  const ilceOpts = f.district && !ilceler.includes(f.district) ? [f.district, ...ilceler] : ilceler
+  const cityOpts = f.city && !PROVINCES.includes(f.city) ? [f.city, ...PROVINCES] : PROVINCES
   const isBilling = f.type === 'billing'
   const valid = f.name.trim() && f.phone.trim() && f.address.trim() && f.city.trim()
 
@@ -186,17 +194,33 @@ function AddressForm({
           <span>Telefon</span>
           <input value={f.phone} onChange={(e) => set('phone', e.target.value)} maxLength={40} inputMode="tel" />
         </label>
-        <label className="ab-row ab-wide">
-          <span>Adres</span>
-          <textarea value={f.address} onChange={(e) => set('address', e.target.value)} rows={2} maxLength={1000} />
+        {/* Sıra: önce İl, sonra İlçe (ile bağlı), sonra Adres. */}
+        <label className="ab-row">
+          <span>İl</span>
+          <select value={f.city} onChange={(e) => onCity(e.target.value)}>
+            <option value="">Seçin…</option>
+            {cityOpts.map((p) => (
+              <option key={p} value={p}>{p}</option>
+            ))}
+          </select>
         </label>
         <label className="ab-row">
           <span>İlçe</span>
-          <input value={f.district ?? ''} onChange={(e) => set('district', e.target.value)} maxLength={80} />
+          {ilceler.length > 0 || !f.city ? (
+            <select value={f.district ?? ''} onChange={(e) => set('district', e.target.value)} disabled={!f.city}>
+              <option value="">{f.city ? 'Seçin…' : 'Önce il seçin'}</option>
+              {ilceOpts.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          ) : (
+            // İl seçili ama ilçe verisi yoksa (beklenmez; 81 il dolu) serbest metne düş.
+            <input value={f.district ?? ''} onChange={(e) => set('district', e.target.value)} maxLength={80} />
+          )}
         </label>
-        <label className="ab-row">
-          <span>İl</span>
-          <input value={f.city} onChange={(e) => set('city', e.target.value)} maxLength={80} />
+        <label className="ab-row ab-wide">
+          <span>Adres</span>
+          <textarea value={f.address} onChange={(e) => set('address', e.target.value)} rows={2} maxLength={1000} placeholder="Mahalle, sokak, kapı/daire no" />
         </label>
         <label className="ab-row">
           <span>Posta kodu</span>
