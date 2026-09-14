@@ -28,6 +28,11 @@
 .cshop-prev { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
 .cshop-nm { font-size: 12px; text-align: center; line-height: 1.2; min-height: 2.4em; display: flex; align-items: center; }
 
+/* Profil sekmesinde inline (overlay yok): başlık sekme adıyla çakışır -> gizle, bakiyeyi sağa al. */
+.cshop-embed { width: 100%; }
+.cshop-embed .cshop-head { justify-content: flex-end; }
+.cshop-embed .cshop-head h2 { display: none; }
+
 @media (max-width: 620px) {
   .cshop-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 }
