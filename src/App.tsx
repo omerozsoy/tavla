@@ -655,6 +655,7 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
+  const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
   // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
   const [checkoutOpen, setCheckoutOpen] = useState(false)
@@ -759,6 +760,8 @@ export default function App() {
         ? 'sans-carki'
         : diceSlotOpen
           ? 'zar-slotu'
+        : checkerShopOpen
+          ? 'pul-tasarimlari'
         : frameGalleryOpen
           ? 'cerceveler'
           : friendsOpen
@@ -952,6 +955,9 @@ export default function App() {
           break
         case 'zar-slotu':
           setDiceSlotOpen(true)
+          break
+        case 'pul-tasarimlari':
+          setCheckerShopOpen(true)
           break
         case 'urunler':
           setProductsOpen(true)
@@ -6184,6 +6190,7 @@ export default function App() {
     setShopOpen(false)
     setLuckyWheelOpen(false)
     setDiceSlotOpen(false)
+    setCheckerShopOpen(false)
     setCartOpen(false)
     setCheckoutOpen(false)
     setFrameGalleryOpen(false)
@@ -6280,6 +6287,7 @@ export default function App() {
     onShop: () => goPage(() => setShopOpen(true)),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
+    onCheckers: () => goPage(() => setCheckerShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
     onMembership: premium ? undefined : () => setMemOpen(true),
@@ -6331,6 +6339,7 @@ export default function App() {
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
     diceslot: menuProps.onDiceSlot,
+    checkers: menuProps.onCheckers,
     shop: menuProps.onShop,
     friends: menuProps.onFriends,
     messages: menuProps.onMessages,
