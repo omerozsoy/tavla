@@ -118,7 +118,7 @@ import ViewersBadge from './ui/ViewersBadge'
 import ClockStack from './ui/ClockStack'
 import BoardPickerModal from './ui/BoardPickerModal'
 import { sourceRect, destEl, flyChecker, type MoveStyle } from './ui/moveAnim'
-import PositionAnalyzer from './ui/PositionAnalyzer'
+const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
@@ -131,21 +131,21 @@ import RankInfo from './ui/RankInfo'
 import FairnessModal from './ui/FairnessModal'
 import Friends from './ui/Friends'
 import Messages from './ui/Messages'
-import Lessons from './ui/Lessons'
-import Tournaments from './ui/Tournaments'
+const Lessons = lazy(() => import('./ui/Lessons'))
+const Tournaments = lazy(() => import('./ui/Tournaments'))
 import BannerSlider from './ui/BannerSlider'
 import { AdStrip } from './ui/AdStrip'
 import { EntryPopupModal } from './ui/EntryPopupModal'
 import { CookieConsent, OPEN_LEGAL, OPEN_COOKIE_PREFS } from './ui/CookieConsent'
 import { LegalView } from './ui/LegalView'
 import SoloStakes from './ui/SoloStakes'
-import ErrorJournal from './ui/ErrorJournal'
-import MatchAnalytics from './ui/MatchAnalytics'
+const ErrorJournal = lazy(() => import('./ui/ErrorJournal'))
+const MatchAnalytics = lazy(() => import('./ui/MatchAnalytics'))
 import GamePreview from './ui/GamePreview'
 import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
-import Clubs from './ui/Clubs'
-import Rules from './ui/Rules'
+const Clubs = lazy(() => import('./ui/Clubs'))
+const Rules = lazy(() => import('./ui/Rules'))
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
@@ -6585,7 +6585,11 @@ export default function App() {
           onClose={() => setFairOpen(false)}
         />
       )}
-      {lessonsOpen && <Lessons onClose={() => setLessonsOpen(false)} />}
+      {lessonsOpen && (
+        <Suspense fallback={null}>
+          <Lessons onClose={() => setLessonsOpen(false)} />
+        </Suspense>
+      )}
       {shopOpen && user && (
         <Shop
           coins={user.coins ?? 0}
@@ -6728,6 +6732,7 @@ export default function App() {
         />
       )}
       {tournOpen && (
+        <Suspense fallback={null}>
         <Tournaments
           myId={user?.id ?? null}
           onPlayMatch={handlePlayTournamentMatch}
@@ -6742,6 +6747,7 @@ export default function App() {
             setTournDetailSlug(null)
           }}
         />
+        </Suspense>
       )}
       {soloOpen && (
         <SoloStakes
@@ -6791,8 +6797,13 @@ export default function App() {
           }}
         />
       )}
-      {blunderOpen && user && premium && <ErrorJournal onClose={() => setBlunderOpen(false)} />}
+      {blunderOpen && user && premium && (
+        <Suspense fallback={null}>
+          <ErrorJournal onClose={() => setBlunderOpen(false)} />
+        </Suspense>
+      )}
       {matchHistOpen && user && (
+        <Suspense fallback={null}>
         <MatchAnalytics
           myName={profile.nickname}
           myAvatar={profile.avatar ?? null}
@@ -6802,6 +6813,7 @@ export default function App() {
             setMatchHistInitialId(null)
           }}
         />
+        </Suspense>
       )}
       {frameAnimOpen && (
         // Kritik olmayan sus animasyon: chunk yuklenemezse (deploy sonrasi bayat) tum
@@ -6830,10 +6842,19 @@ export default function App() {
         />
       )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
-      {clubsOpen && user && <Clubs onClose={() => setClubsOpen(false)} />}
-      {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}
+      {clubsOpen && user && (
+        <Suspense fallback={null}>
+          <Clubs onClose={() => setClubsOpen(false)} />
+        </Suspense>
+      )}
+      {rulesOpen && (
+        <Suspense fallback={null}>
+          <Rules onClose={() => setRulesOpen(false)} />
+        </Suspense>
+      )}
       {analyzerOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
+          <Suspense fallback={null}>
           <PositionAnalyzer
             neuralEval={(s, p, deep) =>
               deep ? neuralRef.current.eval2ply(s, p) : neuralRef.current.evalPosition(s, p)
@@ -6849,6 +6870,7 @@ export default function App() {
             }}
             onClose={() => setAnalyzerOpen(false)}
           />
+          </Suspense>
         </div>
       )}
       {matAnalyzerOpen && (
