@@ -54,6 +54,24 @@ class MenuGroupTest extends TestCase
         $this->assertSame('fun', MenuItem::where('key', 'tournaments')->first()->group);
     }
 
+    public function test_collapsed_default_seeds_and_admin_override_flows_to_menu_config(): void
+    {
+        MenuGroup::syncCatalog();
+
+        // Varsayilan: play/compete ACIK (collapsed=false), fun/content KAPALI (collapsed=true).
+        $this->assertFalse((bool) MenuGroup::where('key', 'play')->first()->collapsed);
+        $this->assertTrue((bool) MenuGroup::where('key', 'fun')->first()->collapsed);
+
+        // Admin play'i "kapali basla" yapti.
+        MenuGroup::where('key', 'play')->update(['collapsed' => true]);
+
+        $groups = collect($this->getJson('/api/menu-config')->assertOk()->json('groups'))
+            ->keyBy('key');
+        $this->assertTrue($groups['play']['collapsed']);   // admin override yansidi
+        $this->assertFalse($groups['compete']['collapsed']); // degismedi
+        $this->assertTrue($groups['content']['collapsed']);  // varsayilan kapali
+    }
+
     public function test_empty_group_label_nulls_all_translations(): void
     {
         $g = MenuGroup::create(['key' => 'ozel', 'label_tr' => 'Özel', 'sort' => 9]);
