@@ -201,8 +201,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/shop/checker', [ShopController::class, 'selectChecker']);
     Route::post('/shop/daily', [ShopController::class, 'daily']);
 
-    // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Çift-istek/flood koruması.
-    Route::middleware('throttle:20,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
+    // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Flood/bot koruması THROTTLE ile;
+    // asıl koruma ekonomidedir (günlük ücretsiz hak + limit + atomik sunucu kontrolü). 20/dk hızlı
+    // seri çevirmede "Too Many Attempts" veriyordu → 60/dk (bkz Zar Slotu ile aynı düzeltme).
+    Route::middleware('throttle:60,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
 
     // Zar Slotu çevirme: sonuç SUNUCU-OTORİTER (weighted random). Flood/bot koruması THROTTLE ile;
     // asıl kötüye-kullanım koruması ekonomidedir (günlük ücretsiz hak + coin bedeli + atomik sunucu
