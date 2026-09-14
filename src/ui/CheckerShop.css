@@ -1,0 +1,33 @@
+/* Pul Tasarımları mağazası (CheckerShop) — 30 skin galeri + al/seç. */
+.cshop-card { max-width: 880px; width: 100%; }
+.cshop-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cshop-bal { font-size: 14px; color: var(--muted, #8a7a68); display: inline-flex; align-items: center; gap: 6px; }
+.cshop-sub { margin: 4px 0 14px; font-size: 13px; line-height: 1.45; color: var(--muted, #8a7a68); }
+
+.cshop-default {
+  display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px;
+  border-radius: var(--radius-pill, 999px); border: 1px solid var(--border);
+  background: transparent; color: inherit; cursor: pointer; margin-bottom: 8px; font-size: 13px;
+}
+.cshop-default.active { border-color: var(--accent); color: var(--accent); }
+.cshop-default-dot { width: 16px; height: 16px; border-radius: 50%; background: linear-gradient(135deg, #eee, #999); }
+.cshop-badge { margin-left: 6px; font-size: 11px; color: var(--accent); }
+
+.cshop-fam h3 {
+  font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--accent); margin: 18px 0 8px; padding-bottom: 6px;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+}
+.cshop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(122px, 1fr)); gap: 12px; }
+.cshop-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px;
+  border-radius: var(--radius-md, 12px); border: 1px solid var(--border);
+  background: color-mix(in srgb, currentColor 4%, transparent);
+}
+.cshop-item.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.cshop-prev { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+.cshop-nm { font-size: 12px; text-align: center; line-height: 1.2; min-height: 2.4em; display: flex; align-items: center; }
+
+@media (max-width: 620px) {
+  .cshop-grid { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+}
