@@ -78,14 +78,14 @@ class ServiceStatus extends Widget
     {
         $url = (string) config('gnubg.url', '');
         if ($url === '') {
-            return $this->svc('gnubg', 'gnubg Analiz Servisi', false, null, 'GNUBG_URL boş');
+            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', false, null, 'GNUBG_URL boş');
         }
         try {
             $up = app(GnuBgClient::class)->health();
 
-            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, $up, $url, true);
+            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, $up, $url, true);
         } catch (\Throwable $e) {
-            return $this->svc('gnubg', 'gnubg Analiz Servisi', true, false, 'İstisna: '.$e->getMessage(), true);
+            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, false, 'İstisna: '.$e->getMessage(), true);
         }
     }
 

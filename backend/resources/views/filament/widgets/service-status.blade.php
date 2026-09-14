@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">Servis Durumu</x-slot>
-        <x-slot name="description">Çalışan tüm servisler (validator · gnubg · veritabanı · queue) + otorite/PR/luck modu</x-slot>
+        <x-slot name="description">Çalışan tüm servisler (validator · TavlaTV · veritabanı · queue) + otorite/PR/luck modu</x-slot>
 
         @php($s = $this->status())
 
@@ -54,7 +54,7 @@
                     </span>
                 </div>
                 <div class="flex items-center gap-2">
-                    <span class="text-gray-500">gnubg PR/Luck:</span>
+                    <span class="text-gray-500">TavlaTV PR/Luck:</span>
                     <span class="font-medium">
                         {{ $s['gnubg_pr_mode'] === 'authoritative' ? 'AUTHORITATIVE' : ($s['gnubg_pr_mode'] === 'shadow' ? 'SHADOW' : 'Kapalı') }}
                     </span>
