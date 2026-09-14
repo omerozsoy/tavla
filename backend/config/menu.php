@@ -41,8 +41,13 @@ return [
         // --- HESAP ---
         ['key' => 'membership', 'group' => 'account', 'label' => 'Üyelik'],
 
-        // --- Bilgi (en altta) ---
-        ['key' => 'info', 'group' => 'info', 'label' => 'Bilgi'],
+        // --- BİLGİ: tek tek alt sayfalar (tek "Bilgi" ogesi yerine) ---
+        ['key' => 'info-about', 'group' => 'info', 'label' => 'Hakkımızda'],
+        ['key' => 'info-services', 'group' => 'info', 'label' => 'Hizmetler'],
+        ['key' => 'info-ranks', 'group' => 'info', 'label' => 'Rütbeler'],
+        ['key' => 'info-scoring', 'group' => 'info', 'label' => 'Puanlama'],
+        ['key' => 'info-badges', 'group' => 'info', 'label' => 'Rozetler'],
+        ['key' => 'info-fair', 'group' => 'info', 'label' => 'Adil Zar'],
     ],
 
     /*
@@ -57,6 +62,6 @@ return [
         ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3],
         ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4],
         ['key' => 'account', 'label' => 'Hesap', 'sort' => 5],
-        ['key' => 'info', 'label' => '', 'sort' => 6], // basliksiz (Bilgi tek oge)
+        ['key' => 'info', 'label' => 'Bilgi', 'sort' => 6], // "Bilgi" basligi (altinda alt sayfalar)
     ],
 ];
