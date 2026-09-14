@@ -91,6 +91,10 @@ class ShopController extends Controller
     // Dijital checker (pul) materyalleri -> rarity (frontend src/checkers.ts CHECKER_SKINS ile BIREBIR).
     // Fiyat: RARITY_PRICE (rare 60 / epic 120 / legendary 180). unlock id: 'checker.<id>'.
     private const CHECKER_RARITY = [
+        // FINISH'ler (renk seçtirmez; aktif tahtanın pul rengine uyar) — SATILAN ürünler.
+        'finish-pearl' => 'rare', 'finish-marble' => 'epic', 'finish-crystal' => 'epic',
+        'finish-resin' => 'rare', 'finish-metallic' => 'legendary',
+        // Eski sabit-renkli 30 skin: geriye dönük uyum (satın alınmış olabilir; mağazada gösterilmez).
         'pearl-purple' => 'rare', 'pearl-blue' => 'rare', 'pearl-emerald' => 'rare',
         'pearl-rose' => 'rare', 'pearl-gold' => 'rare', 'pearl-black' => 'rare',
         'marble-graphite' => 'epic', 'marble-green' => 'epic', 'marble-blue' => 'epic',

@@ -5,7 +5,7 @@ import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
 import CheckerSkin from './CheckerSkin'
-import { CHECKER_SKINS, CHECKER_FAMILIES, checkerPrice } from '../checkers'
+import { CHECKER_FINISHES, checkerPrice } from '../checkers'
 import './CheckerShop.css'
 
 /**
@@ -54,7 +54,7 @@ export default function CheckerShop({
           <h2><Icon name="palette" size={20} /> Pul Tasarımları</h2>
           <div className="cshop-bal">Bakiye <Coins amount={coins} size={16} /></div>
         </div>
-        <p className="cshop-sub">Gerçek reçine/sedef/cam/metalik dokulu premium puller. Al, seç; oyunda pulların bu tasarımla görünür.</p>
+        <p className="cshop-sub">Bir malzeme (pul tarzı) seç; renk seçmene gerek yok — seçtiğin doku, kullandığın tahtanın kendi pul renklerine otomatik uyar. Oyunda pulların bu malzemeyle görünür.</p>
 
         {/* Varsayılan (board pulu) */}
         <button
@@ -62,44 +62,39 @@ export default function CheckerShop({
           className={`cshop-default ${selected == null ? 'active' : ''}`}
           onClick={() => onSelect(null)}
         >
-          <span className="cshop-default-dot" /> Varsayılan (tahta pulu)
+          <span className="cshop-default-dot" /> Varsayılan (düz tahta pulu)
           {selected == null && <span className="cshop-badge">Seçili</span>}
         </button>
 
-        {CHECKER_FAMILIES.map((fam) => (
-          <section key={fam.key} className="cshop-fam">
-            <h3>{fam.label}</h3>
-            <div className="cshop-grid">
-              {CHECKER_SKINS.filter((s) => s.family === fam.key).map((s) => {
-                const owned = owns(s.id)
-                const active = selected === s.id
-                return (
-                  <div key={s.id} className={`cshop-item ${active ? 'active' : ''}`}>
-                    <div className="cshop-prev">
-                      <CheckerSkin skin={s} tone="dark" size={56} />
-                      <CheckerSkin skin={s} tone="light" size={44} />
-                    </div>
-                    <div className="cshop-nm">{s.name}</div>
-                    {owned ? (
-                      <Button
-                        variant={active ? 'secondary' : 'default'}
-                        size="default"
-                        disabled={active}
-                        onClick={() => onSelect(s.id)}
-                      >
-                        {active ? 'Seçili ✓' : 'Seç'}
-                      </Button>
-                    ) : (
-                      <Button variant="outline" size="default" disabled={busy === s.id} onClick={() => buy(s.id)}>
-                        <Coins amount={checkerPrice(s)} size={14} />
-                      </Button>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </section>
-        ))}
+        <div className="cshop-grid">
+          {CHECKER_FINISHES.map((s) => {
+            const owned = owns(s.id)
+            const active = selected === s.id
+            return (
+              <div key={s.id} className={`cshop-item ${active ? 'active' : ''}`}>
+                <div className="cshop-prev">
+                  <CheckerSkin skin={s} tone="dark" size={56} />
+                  <CheckerSkin skin={s} tone="light" size={44} />
+                </div>
+                <div className="cshop-nm">{s.name}</div>
+                {owned ? (
+                  <Button
+                    variant={active ? 'secondary' : 'default'}
+                    size="default"
+                    disabled={active}
+                    onClick={() => onSelect(s.id)}
+                  >
+                    {active ? 'Seçili ✓' : 'Seç'}
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="default" disabled={busy === s.id} onClick={() => buy(s.id)}>
+                    <Coins amount={checkerPrice(s)} size={14} />
+                  </Button>
+                )}
+              </div>
+            )
+          })}
+        </div>
     </>
   )
   if (embedded) return <div className="cshop-embed">{body}</div>
