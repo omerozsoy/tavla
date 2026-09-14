@@ -6284,6 +6284,11 @@ export default function App() {
   // Sol menu ogeleri MERKEZI SAYFA KAYDINDAN (pages.ts) turetilir. Handler'lar menuProps'tan
   // eslenir; gorunurluk: inMenu + handler tanimli mi ( or. premium'da onMembership undefined)
   // + gate ('user' -> giris). hideInGame filtresini SideMenu kendi inGame'ine gore uygular.
+  // "Bilgi" alt sayfasini ilgili sekmede acar (menu + footer ortak).
+  const openInfoTab = (tab: InfoTab) => {
+    setInfoTab(tab)
+    goPage(() => setInfoOpen(true))
+  }
   const pageHandlers: Record<string, (() => void) | undefined> = {
     solo: menuProps.onSolo,
     match: menuProps.onNewGame,
@@ -6308,6 +6313,13 @@ export default function App() {
     blunders: menuProps.onBlunders,
     matchHistory: menuProps.onMatchHistory,
     info: menuProps.onInfo,
+    // "Bilgi" basligi altindaki tek tek sayfalar (Info'yu ilgili sekmede acar)
+    'info-about': () => openInfoTab('about'),
+    'info-services': () => openInfoTab('services'),
+    'info-ranks': () => openInfoTab('ranks'),
+    'info-scoring': () => openInfoTab('scoring'),
+    'info-badges': () => openInfoTab('badges'),
+    'info-fair': () => openInfoTab('fair'),
   }
   // Admin panelden (menu_items) override'lar: ozel ad (o dilde), gorunurluk, sira.
   const menuLabel = (key: string): string | undefined => menuOverrides[key]?.labels?.[lang]
@@ -6331,11 +6343,7 @@ export default function App() {
         onClick: pageHandlers[pg.key]!,
       })),
   }))
-  // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar.
-  const openInfoTab = (tab: InfoTab) => {
-    setInfoTab(tab)
-    goPage(() => setInfoOpen(true))
-  }
+  // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
   footerColumns.push({
     titleKey: 'menu.info',
     items: [
@@ -6493,7 +6501,7 @@ export default function App() {
 
   // Sidebar aktif-sayfa gostergesi: acik olan sayfanin menu anahtari (navy highlight)
   const activeKey = infoOpen
-    ? 'info'
+    ? 'info-' + infoTab // acik Bilgi sekmesine gore alt-oge vurgusu (info-about, info-fair...)
     : ranksOpen
     ? 'ranks'
     : leaderboardOpen

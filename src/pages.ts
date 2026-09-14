@@ -66,8 +66,16 @@ export const PAGES: PageDef[] = [
   // Siparişlerim sol menüde DEĞİL; profil sayfasından açılır (inMenu:false -> /siparislerim yine çalışır).
   { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user', inMenu: false },
 
-  // --- Bilgi (en altta, basliksiz) ---
-  { key: 'info', slug: 'bilgi', labelKey: 'menu.info', icon: 'info', group: 'info' },
+  // --- BİLGİ: sabit 6 alt sayfa (icerik admin-duzenlenebilir; /bilgi/<slug> derin-link).
+  // Tek "Bilgi" ogesi yerine sayfalar TEK TEK "Bilgi" basligi altinda listelenir.
+  // 'info' anahtari menude gizli (inMenu:false) ama /bilgi bare + onInfo handler icin kalir.
+  { key: 'info', slug: 'bilgi', labelKey: 'menu.info', icon: 'info', group: 'info', inMenu: false },
+  { key: 'info-about', slug: 'bilgi/hakkinda', labelKey: 'info.tab.about', icon: 'info', group: 'info', hideInGame: true },
+  { key: 'info-services', slug: 'bilgi/hizmetler', labelKey: 'menu.services', icon: 'briefcase', group: 'info', hideInGame: true },
+  { key: 'info-ranks', slug: 'bilgi/rutbeler', labelKey: 'menu.ranks', icon: 'ranking', group: 'info', hideInGame: true },
+  { key: 'info-scoring', slug: 'bilgi/puanlama', labelKey: 'info.tab.scoring', icon: 'chart-line', group: 'info', hideInGame: true },
+  { key: 'info-badges', slug: 'bilgi/basarilarim', labelKey: 'ach.title', icon: 'medal', group: 'info', hideInGame: true },
+  { key: 'info-fair', slug: 'bilgi/adil-zar', labelKey: 'fair.title', icon: 'dice', group: 'info', hideInGame: true },
 ]
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
@@ -83,5 +91,5 @@ export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
   content: 'menu.group.content',
   tools: 'menu.group.tools',
   account: 'menu.group.account',
-  info: null,
+  info: 'menu.info', // "Bilgi" basligi (altinda 6 alt sayfa)
 }
