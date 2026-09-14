@@ -23,7 +23,7 @@
                         <th class="px-3 py-2">Oyuncu</th>
                         <th class="px-3 py-2">Sonuç</th>
                         <th class="px-3 py-2">PR</th>
-                        <th class="px-3 py-2">gnubg PR</th>
+                        <th class="px-3 py-2">TavlaTV PR</th>
                         <th class="px-3 py-2">Şans %</th>
                         <th class="px-3 py-2">Puan</th>
                         <th class="px-3 py-2">Δ</th>

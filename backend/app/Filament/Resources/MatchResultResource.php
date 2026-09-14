@@ -112,31 +112,31 @@ class MatchResultResource extends Resource
                     ->toggleable(),
                 // GNU Backgammon (shadow) PR — sunucu-otoriter analiz. GNUBG_PR_MODE=shadow ile dolar.
                 // Client PR ile karşılaştır (Δ); güvenilir farksa authoritative'e geçilebilir.
-                Tables\Columns\TextColumn::make('gnubg_pr')->label('gnubg PR')
+                Tables\Columns\TextColumn::make('gnubg_pr')->label('TavlaTV PR')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->color(fn ($state) => $state === null ? 'gray' : ($state <= 5 ? 'success' : ($state <= 10 ? 'warning' : 'danger')))
-                    ->tooltip('GNU Backgammon (shadow) — sunucu-otoriter; client PR ile kıyasla')
+                    ->tooltip('TavlaTV (shadow) — sunucu-otoriter; client PR ile kıyasla')
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('pr_diff')->label('Δ (client−gnubg)')
+                Tables\Columns\TextColumn::make('pr_diff')->label('Δ (client−TavlaTV)')
                     ->state(fn (MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
                         ? '—' : number_format((float) $r->pr - (float) $r->gnubg_pr, 2))
                     ->color(fn ($state, MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
                         ? 'gray' : (abs((float) $r->pr - (float) $r->gnubg_pr) > 10 ? 'danger' : 'gray'))
                     ->toggleable(),
-                Tables\Columns\TextColumn::make('gnubg_checker_pr')->label('gnubg checker')
+                Tables\Columns\TextColumn::make('gnubg_checker_pr')->label('TavlaTV checker')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('gnubg_cube_pr')->label('gnubg cube')
+                Tables\Columns\TextColumn::make('gnubg_cube_pr')->label('TavlaTV cube')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('luck')->label('Şans')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2))
                     ->toggleable(isToggledHiddenByDefault: true),
                 // Tavlai Luck V1 (gnubg NATIVE MWC-luck, YÜZDE). GNUBG_PR_MODE=shadow + istemci .mat ile dolar.
-                Tables\Columns\TextColumn::make('luck_mwc')->label('gnubg Şans %')
+                Tables\Columns\TextColumn::make('luck_mwc')->label('TavlaTV Şans %')
                     ->formatStateUsing(fn ($state) => $state === null ? '—' : sprintf('%+.1f%%', (float) $state))
                     ->color(fn ($state) => $state === null ? 'gray' : ((float) $state >= 0 ? 'success' : 'danger'))
-                    ->tooltip('GNU Backgammon native luck (MWC%) — bağımsız per-oyuncu, sıfır-toplam değil')
+                    ->tooltip('TavlaTV native luck (MWC%) — bağımsız per-oyuncu, sıfır-toplam değil')
                     ->toggleable(),
                 Tables\Columns\TextColumn::make('rating_after')->label('Puan')->sortable(),
                 Tables\Columns\TextColumn::make('delta')->label('Δ')
