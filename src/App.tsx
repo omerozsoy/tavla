@@ -6418,6 +6418,9 @@ export default function App() {
   const groupOrder: string[] = []
   for (const { pg } of orderedPages) {
     const gkey = itemGroupKey(pg)
+    // "Menüde göster" kapalıysa (visible=false) grubun BAŞLIĞI + ÖĞELERİ tamamen gizlenir
+    // (öncesi: yalnız başlık kalkıp öğeler başlıksız kalıyordu). Grup öğesiz kalınca render edilmez.
+    if (menuGroupCfg[gkey]?.visible === false) continue
     if (!bucket.has(gkey)) {
       bucket.set(gkey, [])
       groupOrder.push(gkey)
