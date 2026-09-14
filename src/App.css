@@ -5624,6 +5624,14 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
 .point.bottom.target::after {
   bottom: 3px;
 }
+/* Analiz İncelemesi (MatReview): hamle KİBAR OKLARLA gösterilir; oyun-içi "gidilebilir
+   nokta" yeşil vurgusu burada gereksiz + üst kenarda sızıntı gibi durur (tasarım hatası) -> kapat. */
+.mrv-board-stage .point.target::after {
+  display: none;
+}
+.mrv-board-stage .bearoff.target {
+  box-shadow: none;
+}
 /* secili tas - hafif parlaklik (cerceve yok) */
 .point.selected .checkers {
   filter: brightness(1.15);
