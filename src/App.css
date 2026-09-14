@@ -1343,10 +1343,10 @@ button[aria-disabled='true'],
   /* shadcn Button base'i h-[42px] SABIT verir; min-height onu ezmez -> height'i override et
      ki menu satirlari kompakt olsun (ogeler arasi bosluk cok fazlaydi). Mobilde media-query
      min-height:44px devrede kalir (dokunma hedefi korunur; max(32,44)=44). */
-  height: 32px;
-  min-height: 32px;
+  height: 28px;
+  min-height: 28px;
   padding-block: 0;
-  border-radius: 10px;
+  border-radius: 9px;
   position: relative;
   isolation: isolate; /* stacking context -> ::before hane z-index:-1 iÃ§erikte KALIR */
   transition:
