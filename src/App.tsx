@@ -7513,6 +7513,7 @@ export default function App() {
           onUpgrade={() => setMemOpen(true)}
           loggedIn={!!user}
           onLogin={() => setShowAuth(true)}
+          behindMenu={gameMenuOpen}
         />
       )}
       {authModal}
