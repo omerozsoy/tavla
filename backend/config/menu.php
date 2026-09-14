@@ -22,6 +22,7 @@ return [
         ['key' => 'tournaments', 'group' => 'compete', 'label' => 'Online Turnuvalar'],
         ['key' => 'leaderboard', 'group' => 'compete', 'label' => 'Liderlik Tablosu'],
         ['key' => 'friends', 'group' => 'compete', 'label' => 'Arkadaşlar'],
+        ['key' => 'messages', 'group' => 'compete', 'label' => 'Mesajlar'],
 
         // --- EGLENCE: sans/ekonomi oyunlari ---
         ['key' => 'luckywheel', 'group' => 'fun', 'label' => 'Şans Çarkı'],
