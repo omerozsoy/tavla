@@ -1,7 +1,18 @@
+import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { TavlaTvLogo } from './TavlaTvLogo'
+
+// Katlanabilir grup durumu (localStorage'da kalici). Anahtar -> kapali mi.
+const COLLAPSE_KEY = 'menuCollapsed'
+const loadCollapsed = (): Record<string, boolean> => {
+  try {
+    return JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}')
+  } catch {
+    return {}
+  }
+}
 
 // Ana sayfa ve oyun ekraninda ortak tek menu. Ogeler MERKEZI SAYFA KAYDINDAN (pages.ts)
 // turetilir; bu bilesen yalnizca RENDER eder. Yeni menu sayfasi = pages.ts'e bir giris.
@@ -36,12 +47,29 @@ export interface SideMenuProps {
 
 export default function SideMenu(p: SideMenuProps) {
   const { t } = useT()
+  // Katlanabilir gruplar: varsayilan ilk 2 grup acik, gerisi kapali; kullanici degistirince
+  // localStorage'da saklanir (grup anahtarina gore override).
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed)
+  const isCollapsed = (key: string, gi: number) => collapsed[key] ?? gi >= 2
+  const toggleGroup = (key: string, gi: number) => {
+    setCollapsed((c) => {
+      const next = { ...c, [key]: !(c[key] ?? gi >= 2) }
+      try {
+        localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next))
+      } catch {
+        /* yok say */
+      }
+      return next
+    })
+  }
   return (
     <aside
       className={`side-menu ${p.mobileOpen ? 'open' : ''}`}
       onClickCapture={(e) => {
-        // Mobilde bir menu ogesine dokununca drawer'i kapat
-        if (p.onCloseMobile && (e.target as HTMLElement).closest('button')) p.onCloseMobile()
+        // Mobilde bir menu ogesine dokununca drawer'i kapat — ama grup basligina (accordion
+        // ac/kapa) dokununca KAPATMA.
+        const btn = (e.target as HTMLElement).closest('button')
+        if (p.onCloseMobile && btn && !btn.classList.contains('menu-group-title')) p.onCloseMobile()
       }}
     >
       {/* Mobil drawer basligi: TavlaTV logosu (desktop sabit yan menude CSS ile gizli).
@@ -80,25 +108,41 @@ export default function SideMenu(p: SideMenuProps) {
         if (items.length === 0 && !showResume) return null
         // Grup basligi: admin cozumlemesi (g.label) varsa + oyun disinda + gercekten oge varsa.
         const showTitle = !!g.label && !p.inGame && items.length > 0
+        // Katlama yalnizca basligi olan (oyun disi) gruplarda; oyun ekraninda hep acik.
+        const collapsedNow = showTitle && isCollapsed(g.group, gi)
+        // Kapali grupta gizli kalan rozetleri baslikta topla (or. okunmamis mesaj kaybolmasin).
+        const groupBadge = collapsedNow ? items.reduce((s, it) => s + (p.badges?.[it.key] ?? 0), 0) : 0
         return (
-          <div className="menu-group" key={`${g.group}-${gi}`}>
-            {showTitle && <div className="menu-group-title">{g.label}</div>}
-            {items.map((it) => {
-              const badge = p.badges?.[it.key] ?? 0
-              return (
-              <Button
-                key={it.key}
-                variant="ghost"
-                className={NAV}
-                data-active={p.active === it.key || undefined}
-                onClick={it.onClick}
+          <div className={`menu-group ${collapsedNow ? 'collapsed' : ''}`} key={`${g.group}-${gi}`}>
+            {showTitle && (
+              <button
+                type="button"
+                className="menu-group-title"
+                onClick={() => toggleGroup(g.group, gi)}
+                aria-expanded={!collapsedNow}
               >
-                <Icon name={it.icon} size={24} /> <span className="nav-label">{it.label ?? t(it.labelKey)}</span>
-                {badge > 0 && <span className="menu-badge">{badge > 99 ? '99+' : badge}</span>}
-              </Button>
-              )
-            })}
-            {showResume && (
+                <span className="menu-group-label">{g.label}</span>
+                {groupBadge > 0 && <span className="menu-badge">{groupBadge > 99 ? '99+' : groupBadge}</span>}
+                <Icon name="chevron" size={13} className={`menu-group-caret ${collapsedNow ? 'closed' : ''}`} />
+              </button>
+            )}
+            {!collapsedNow &&
+              items.map((it) => {
+                const badge = p.badges?.[it.key] ?? 0
+                return (
+                  <Button
+                    key={it.key}
+                    variant="ghost"
+                    className={NAV}
+                    data-active={p.active === it.key || undefined}
+                    onClick={it.onClick}
+                  >
+                    <Icon name={it.icon} size={24} /> <span className="nav-label">{it.label ?? t(it.labelKey)}</span>
+                    {badge > 0 && <span className="menu-badge">{badge > 99 ? '99+' : badge}</span>}
+                  </Button>
+                )
+              })}
+            {!collapsedNow && showResume && (
               <Button variant="secondary" className={NAV} onClick={p.onResume}>
                 <Icon name="live" size={24} /> {t('menu.activeGames')}
               </Button>

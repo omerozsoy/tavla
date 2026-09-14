@@ -1246,20 +1246,53 @@ button[aria-disabled='true'],
 .menu-group:empty {
   display: none;
 }
-/* Sol menu grup basligi (OYNA / YARIŞMA / EĞLENCE / KEŞFET / ARAÇLAR / HESAP) —
-   silik, buyuk-harf, harf araligi genis. Ilk gruptaysa ust bosluk verme. */
+/* Sol menu grup basligi (OYNA / TURNUVALAR / EĞLENCE / ...) — silik buyuk-harf; artik
+   KATLANABILIR buton (tikla ac/kapa). Native buton gorunumu sifirlanir. */
 .menu-group-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
   color: color-mix(in srgb, var(--muted) 78%, transparent);
   font-size: 0.66rem;
   font-weight: 400;
+  font-family: inherit;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  padding: 0 12px;
-  margin: 12px 0 5px;
+  text-align: left;
+  padding: 6px 12px;
+  margin: 6px 0 2px;
   user-select: none;
+  transition: color 0.15s ease;
 }
 .menu-group:first-of-type .menu-group-title {
   margin-top: 2px;
+}
+.menu-group-title:hover {
+  color: color-mix(in srgb, var(--accent) 55%, var(--muted));
+}
+.menu-group-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.menu-group-caret {
+  flex: none;
+  opacity: 0.55;
+  transition: transform 0.18s ease;
+}
+.menu-group-caret.closed {
+  transform: rotate(-90deg);
+}
+/* Kapali grup basligindaki toplam rozet biraz kuculsun (baslik satiri kompakt) */
+.menu-group-title .menu-badge {
+  position: static;
+  transform: none;
 }
 .menu-label {
   color: color-mix(in srgb, var(--muted) 85%, transparent);
