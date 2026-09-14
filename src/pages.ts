@@ -8,7 +8,7 @@ import type { IconName } from './ui/Icon'
  * NOT: Oyun akisi (home/setup/online/game) BURAYA GIRMEZ — onlar sayfa degil, oyun durumu.
  */
 
-export type MenuGroup = 'play' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
+export type MenuGroup = 'play' | 'compete' | 'fun' | 'tools' | 'account' | 'info'
 
 export interface PageDef {
   key: string // aktif-vurgu + binding anahtari
@@ -31,30 +31,28 @@ export const PAGES: PageDef[] = [
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
 
-  // --- YARISMA: rekabet + sosyal ---
+  // --- TURNUVALAR: rekabet + sosyal + icerik (YARISMA ve KESFET birlestirildi) ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar sol menude DEGIL; sag ust barda (bildirim gibi) chat ikonu ile acilir.
   // inMenu:false -> menude gizli ama /mesajlar URL'i yine calisir (derin-link).
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user', inMenu: false },
+  { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'compete', hideInGame: true },
+  { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'compete', hideInGame: true },
+  { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'compete', hideInGame: true },
+  { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'compete', hideInGame: true },
+  // Ürünler sol menüde DEĞİL (Mağaza'nın "Ürünler" sekmesine taşındı); /urunler derin-link çalışır.
+  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'compete', hideInGame: true, inMenu: false },
 
   // --- EGLENCE: sans/ekonomi oyunlari (sol menude gorunur; ust barda da erisim var) ---
   { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true },
   { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'fun', hideInGame: true },
 
-  // --- KESFET: bilgi / icerik (herkese acik) ---
-  { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
-  { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
-  { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
-  { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'content', hideInGame: true },
-  // Ürünler sol menüde DEĞİL (Mağaza'nın "Ürünler" sekmesine taşındı); /urunler derin-link çalışır.
-  { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true, inMenu: false },
-
   // --- ARACLAR: analiz araclari ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
   // Mat Analiz: kullanici .mat maci yukler, motor tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
-  { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'analyze', group: 'tools' },
+  { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'file-magnifying-glass', group: 'tools' },
   { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools', inMenu: false },
   { key: 'blunders', slug: 'hata-gunlugu', labelKey: 'menu.blunders', icon: 'warning-circle', group: 'tools' },
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },
@@ -72,14 +70,14 @@ export const PAGES: PageDef[] = [
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'compete', 'fun', 'content', 'tools', 'account', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'compete', 'fun', 'tools', 'account', 'info']
 
 // Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
+// NOT: 'compete' grubu artik YARISMA+KESFET birlesigi -> etiketi "Turnuvalar".
 export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
   play: 'menu.group.play',
   compete: 'menu.group.compete',
   fun: 'menu.group.fun',
-  content: 'menu.group.content',
   tools: 'menu.group.tools',
   account: 'menu.group.account',
   info: null,

@@ -87,6 +87,7 @@ import {
   Code,
   Copy,
   Bank,
+  FileMagnifyingGlass,
   DiceOne,
   DiceTwo,
   DiceThree,
@@ -184,6 +185,7 @@ export type IconName =
   | 'code'
   | 'copy'
   | 'bank'
+  | 'file-magnifying-glass'
   | 'die-1'
   | 'die-2'
   | 'die-3'
@@ -278,6 +280,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   code: Code,
   copy: Copy,
   bank: Bank,
+  'file-magnifying-glass': FileMagnifyingGlass,
   'die-1': DiceOne,
   'die-2': DiceTwo,
   'die-3': DiceThree,
