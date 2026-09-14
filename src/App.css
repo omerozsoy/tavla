@@ -20327,6 +20327,13 @@ button.acct-row:hover:not(:disabled) {
 .chat-panel.closed {
   width: 200px;
 }
+/* Oyun-ici menu (sag drawer) acikken: sohbeti menu backdrop'unun (z-index 120) ALTINA
+   indir + tiklamayi kapat -> menunun alt aksiyonlarini (Lobi / Pes Et) ORTMESIN.
+   Mount kalir; menu kapaninca z-index 130'a geri doner (okunmamis sayaci sürer). */
+.chat-panel.behind-menu {
+  z-index: 110;
+  pointer-events: none;
+}
 
 @media (max-width: 720px) {
   .chat-panel {

@@ -12,12 +12,15 @@ interface Props {
   onUpgrade?: () => void
   loggedIn?: boolean // MISAFIR sohbet edemez -> false ise giris prompt'u gosterilir
   onLogin?: () => void // giris modalini ac
+  /** Oyun-ici menu (sag drawer) acikken TRUE: sohbeti menu backdrop'unun arkasina indir
+      ki menunun alt aksiyonlarini (Lobi / Pes Et) ORTMESIN. Mount kalir -> okunmamis surer. */
+  behindMenu?: boolean
 }
 
 // En cok kullanilan 12 emoji (az tutuldu -> panel tasmaz/bozulmaz).
 const EMOJIS = ['😀', '😂', '😍', '😎', '🤔', '😢', '👍', '👎', '🙏', '🔥', '🎲', '🎉']
 
-export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin }: Props) {
+export default function Chat({ messages, mySlot, onSend, canText = true, onUpgrade, loggedIn = true, onLogin, behindMenu = false }: Props) {
   const { t } = useT()
   const [text, setText] = useState('')
   // Maca girince sohbet KAPALI baslar; baslikla acilir.
@@ -56,7 +59,7 @@ export default function Chat({ messages, mySlot, onSend, canText = true, onUpgra
   }
 
   return (
-    <div className={`chat-panel ${open ? 'open' : 'closed'}`}>
+    <div className={`chat-panel ${open ? 'open' : 'closed'} ${behindMenu ? 'behind-menu' : ''}`}>
       <button className={`chat-head ${!open && unread > 0 ? 'has-unread' : ''}`} onClick={() => setOpen((v) => !v)}>
         <span><Icon name="chat" size={16} /> {t('chat.title')}</span>
         <span className="chat-head-right">
