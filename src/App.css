@@ -6355,6 +6355,37 @@ button.move-row:focus-visible {
   overscroll-behavior-y: contain; /* dokunmatik "asagi cek-yenile" reload'unu engelle */
   z-index: 100;
 }
+/* Özel pull-to-refresh göstergesi (sabit-kabuk SPA'da native PTR çalışmaz -> kendi jestimiz).
+   Üstte ortada, aşağı çekilince belirir; eşiği geçince/dönerken accent. */
+.ptr {
+  position: fixed;
+  top: max(6px, env(safe-area-inset-top));
+  left: 50%;
+  z-index: 5000;
+  pointer-events: none;
+}
+.ptr-ring {
+  display: block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-top-color: var(--accent);
+  background: var(--card-bg, #fff);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+}
+.ptr-ring.ready {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  border-top-color: var(--accent);
+}
+.ptr-ring.spin {
+  animation: ptr-spin 0.7s linear infinite;
+}
+@keyframes ptr-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 /* Modal: arka plan yari saydam, arkadaki ekran gorunur */
 /* Karartma sadece ortalanmis modallara (mac sonucu, profil vb.); saga yasli
    sayfalar (.page) kendi kart zeminini kullanir -> koyu gri scrim olmaz. */

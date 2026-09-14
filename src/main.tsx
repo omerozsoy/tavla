@@ -8,6 +8,7 @@ import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
+import PullToRefresh from './ui/PullToRefresh.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -17,6 +18,8 @@ createRoot(document.getElementById('root')!).render(
           <App />
           {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
           <GatePrompt />
+          {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
+          <PullToRefresh />
         </ToastProvider>
       </LangProvider>
     </ErrorBoundary>
