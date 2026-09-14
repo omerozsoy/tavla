@@ -33,8 +33,9 @@ export interface SideMenuProps {
   hasActiveGame: boolean
   showAnalysis?: boolean
   canResign?: boolean
-  // Gruplar admin panelinden yonetilir: group=anahtar, label=cozumlenmis baslik (null=basliksiz).
-  groups: { group: string; label: string | null; items: NavItem[] }[]
+  // Gruplar admin panelinden yonetilir: group=anahtar, label=cozumlenmis baslik (null=basliksiz),
+  // defaultCollapsed=baslangicta katli mi (admin ayari; kullanici tiklamasi uzerine yazar).
+  groups: { group: string; label: string | null; defaultCollapsed: boolean; items: NavItem[] }[]
   onResume: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
@@ -50,10 +51,11 @@ export default function SideMenu(p: SideMenuProps) {
   // Katlanabilir gruplar: varsayilan ilk 2 grup acik, gerisi kapali; kullanici degistirince
   // localStorage'da saklanir (grup anahtarina gore override).
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed)
-  const isCollapsed = (key: string, gi: number) => collapsed[key] ?? gi >= 2
-  const toggleGroup = (key: string, gi: number) => {
+  // Baslangic durumu admin ayarindan (def); kullanicinin kendi tiklamasi (localStorage) uzerine yazar.
+  const isCollapsed = (key: string, def: boolean) => collapsed[key] ?? def
+  const toggleGroup = (key: string, def: boolean) => {
     setCollapsed((c) => {
-      const next = { ...c, [key]: !(c[key] ?? gi >= 2) }
+      const next = { ...c, [key]: !(c[key] ?? def) }
       try {
         localStorage.setItem(COLLAPSE_KEY, JSON.stringify(next))
       } catch {
@@ -109,7 +111,7 @@ export default function SideMenu(p: SideMenuProps) {
         // Grup basligi: admin cozumlemesi (g.label) varsa + oyun disinda + gercekten oge varsa.
         const showTitle = !!g.label && !p.inGame && items.length > 0
         // Katlama yalnizca basligi olan (oyun disi) gruplarda; oyun ekraninda hep acik.
-        const collapsedNow = showTitle && isCollapsed(g.group, gi)
+        const collapsedNow = showTitle && isCollapsed(g.group, g.defaultCollapsed)
         // Kapali grupta gizli kalan rozetleri baslikta topla (or. okunmamis mesaj kaybolmasin).
         const groupBadge = collapsedNow ? items.reduce((s, it) => s + (p.badges?.[it.key] ?? 0), 0) : 0
         return (
@@ -118,7 +120,7 @@ export default function SideMenu(p: SideMenuProps) {
               <button
                 type="button"
                 className="menu-group-title"
-                onClick={() => toggleGroup(g.group, gi)}
+                onClick={() => toggleGroup(g.group, g.defaultCollapsed)}
                 aria-expanded={!collapsedNow}
               >
                 <span className="menu-group-label">{g.label}</span>

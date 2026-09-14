@@ -323,6 +323,7 @@ export interface MenuGroupCfg {
   key: string
   sort: number
   visible: boolean
+  collapsed?: boolean // grup menude katli (kapali) mi baslar (varsayilan; kullanici override eder)
   labels: Record<string, string>
 }
 // Halka acik; hata olursa bos -> frontend pages.ts + i18n varsayilanlarina duser.

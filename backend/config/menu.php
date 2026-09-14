@@ -56,13 +56,14 @@ return [
      * 'key' item'lardaki group ile eslesir; 'label' Turkce VARSAYILAN baslik (bos = basliksiz);
      * 'sort' bolum sirasi. Admin ad/sira/gorunurluk override edebilir + yeni grup ekleyebilir.
      */
+    // 'collapsed' => grup menude KATLI (kapali) baslar mi (admin override edebilir).
     'groups' => [
-        ['key' => 'play', 'label' => 'Oyna', 'sort' => 0],
-        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1],
-        ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2],
-        ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3],
-        ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4],
-        ['key' => 'account', 'label' => 'Hesap', 'sort' => 5],
-        ['key' => 'info', 'label' => 'Bilgi', 'sort' => 6], // "Bilgi" basligi (altinda alt sayfalar)
+        ['key' => 'play', 'label' => 'Oyna', 'sort' => 0, 'collapsed' => false],
+        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1, 'collapsed' => false],
+        ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2, 'collapsed' => true],
+        ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3, 'collapsed' => true],
+        ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4, 'collapsed' => true],
+        ['key' => 'account', 'label' => 'Hesap', 'sort' => 5, 'collapsed' => true],
+        ['key' => 'info', 'label' => 'Bilgi', 'sort' => 6, 'collapsed' => true],
     ],
 ];

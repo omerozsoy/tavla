@@ -46,6 +46,7 @@ class MenuController extends Controller
                 'key' => $g->key,
                 'sort' => $g->sort,
                 'visible' => (bool) $g->visible,
+                'collapsed' => (bool) $g->collapsed, // menude katli mi baslar (varsayilan)
                 'labels' => (object) $labels,
             ];
         });
