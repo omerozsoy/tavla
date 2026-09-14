@@ -155,6 +155,38 @@ const INFO_URL_TAB: Record<string, InfoTab> = {
   hakkinda: 'about', hizmetler: 'services', rutbeler: 'ranks',
   puanlama: 'scoring', basarilarim: 'badges', 'adil-zar': 'fair',
 }
+
+// Rota bazli sekme/SEO basligi. Ana sayfa (bos slug) index.html'deki varsayilana doner.
+// Hukuki sayfalarin basligini LegalView (page.seo_title) yonetir -> LEGAL_SLUGS atlanir.
+const DEFAULT_DOC_TITLE = 'TavlaTv - Ücretsiz Online Tavla Oyna & Bedava Tavla'
+const LEGAL_SLUGS = new Set([
+  'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
+  'uyelik-sozlesmesi', 'sifre-sifirla',
+])
+const SEO_TITLES: Record<string, string> = {
+  'tek-oyun': 'Tek Oyun Tavla | TavlaTv',
+  'yeni-oyun': 'Online Tavla Maçı Oyna | TavlaTv',
+  'yz-ile-oyna': 'Yapay Zekâya Karşı Tavla Oyna | TavlaTv',
+  'arkadasinla-oyna': 'Arkadaşınla Tavla Oyna | TavlaTv',
+  'online-turnuvalar': 'Online Tavla Turnuvaları | TavlaTv',
+  'lider-tablosu': 'Lider Tablosu — En İyi Tavla Oyuncuları | TavlaTv',
+  'uyelik': 'Üyelik ve Premium | TavlaTv',
+  'magaza': 'Mağaza | TavlaTv',
+  'turnuva-takvimi': 'Tavla Turnuva Takvimi | TavlaTv',
+  'kulupler': 'Tavla Kulüpleri | TavlaTv',
+  'haberler': 'Tavla Haberleri | TavlaTv',
+  'tavla-magazin': 'Tavla Magazin | TavlaTv',
+  'pozisyon-analizi': 'Tavla Pozisyon Analizi | TavlaTv',
+  'mat-analiz': 'Tavla Maç Analizi (.mat) | TavlaTv',
+  'mac-analizleri': 'Maç Analizlerim | TavlaTv',
+  'hata-gunlugu': 'Hata Günlüğü | TavlaTv',
+  'bilgi/hakkinda': 'Hakkımızda | TavlaTv',
+  'bilgi/hizmetler': 'Hizmetler | TavlaTv',
+  'bilgi/rutbeler': 'Tavla Rütbeleri | TavlaTv',
+  'bilgi/puanlama': 'Puanlama ve PR (Performans) | TavlaTv',
+  'bilgi/basarilarim': 'Rozetler ve Başarımlar | TavlaTv',
+  'bilgi/adil-zar': 'Adil Zar — Kanıtlanabilir Rastgelelik | TavlaTv',
+}
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
 import FriendGameSetup from './ui/FriendGameSetup'
@@ -1093,6 +1125,14 @@ export default function App() {
     } else {
       window.history.replaceState(null, '', '/' + search)
     }
+  }, [currentSlug])
+
+  // Rota bazli sekme basligi. Hukuki sayfalar LegalView'de yonetilir (atla).
+  // React effect'leri alttan-uste calisir -> child LegalView cleanup'i bu parent
+  // effect'ten ONCE calisir, boylece legal->diger gecisinde son sozu bu effect soyler.
+  useEffect(() => {
+    if (currentSlug && LEGAL_SLUGS.has(currentSlug)) return
+    document.title = (currentSlug && SEO_TITLES[currentSlug]) || DEFAULT_DOC_TITLE
   }, [currentSlug])
 
   // Sayfa acilinca EN USTE kaydir: footer'dan (asagidan) bir linke tiklayinca sayfa ustte
