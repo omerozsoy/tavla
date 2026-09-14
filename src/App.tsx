@@ -77,6 +77,7 @@ import {
   type Tournament,
   buyItem,
   selectFrame,
+  selectChecker,
   claimDaily,
   ping,
   markNotificationsRead,
@@ -196,6 +197,8 @@ import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import LuckyWheel from './ui/LuckyWheel'
 import DiceSlot from './ui/DiceSlot'
+import CheckerShop from './ui/CheckerShop'
+import { CHECKER_BY_ID } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
@@ -4168,6 +4171,14 @@ export default function App() {
       /* yoksay */
     }
   }
+  async function handleEquipChecker(id: string | null) {
+    try {
+      const r = await selectChecker(id)
+      setUser((u) => (u ? { ...u, checker: r.checker } : u))
+    } catch {
+      /* yoksay */
+    }
+  }
   async function handleDaily() {
     try {
       const r = await claimDaily()
@@ -6909,6 +6920,20 @@ export default function App() {
           onUser={(su) => setUser(su)}
         />
       )}
+      {checkerShopOpen && user && (
+        <CheckerShop
+          unlocks={user.unlocks ?? []}
+          selected={user.checker ?? null}
+          coins={user.coins ?? 0}
+          onBuy={async (fid) => {
+            const r = await buyItem(fid)
+            setUser((u) => (u ? { ...u, coins: r.coins, unlocks: r.unlocks } : u))
+            return r
+          }}
+          onSelect={handleEquipChecker}
+          onClose={() => setCheckerShopOpen(false)}
+        />
+      )}
       {productsOpen && (
         <Products
           onAddToCart={addProductToCart}
@@ -7576,6 +7601,7 @@ export default function App() {
         )}
         <Board
           state={boardDisplay}
+          checkerSkin={user?.checker ? (CHECKER_BY_ID[user.checker] ?? null) : null}
           selectableFroms={selectableFroms}
           targets={targets}
           selectedFrom={selectedFrom}
