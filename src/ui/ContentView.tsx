@@ -32,6 +32,14 @@ const paras = (body?: string | null) =>
 // paragraflara bolunur; HTML ise dogrudan (guvenli sekilde) basilir.
 const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 
+// Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
+// target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
+const linksBlank = (html?: string | null): string =>
+  (html ?? '').replace(
+    /<a\b(?![^>]*\btarget=)([^>]*)>/gi,
+    '<a target="_blank" rel="noopener noreferrer"$1>',
+  )
+
 function fmtDate(s?: string | null, withTime = false): string {
   if (!s) return ''
   const d = new Date(s)
@@ -1103,7 +1111,7 @@ function EventRow({
         {!ev.organizer &&
           ev.body &&
           (isHtml(ev.body) ? (
-            <div className="event-body rich" dangerouslySetInnerHTML={{ __html: ev.body }} />
+            <div className="event-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(ev.body) }} />
           ) : (
             <p className="event-body">{ev.body}</p>
           ))}
@@ -1137,7 +1145,7 @@ function EventRow({
                 {ev.organizer && <p className="event-info-sub">{ev.organizer}</p>}
               </header>
               {isHtml(ev.body) ? (
-                <div className="event-info-body rich" dangerouslySetInnerHTML={{ __html: ev.body }} />
+                <div className="event-info-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(ev.body) }} />
               ) : (
                 <div className="event-info-body">
                   {paras(ev.body).map((p, i) => (
