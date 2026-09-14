@@ -161,20 +161,24 @@ class RoomCubeTest extends TestCase
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['black']);
     }
 
-    // Pes DAİMA single'dır: kaybeden hiç taş toplamamış (gammon-görünümlü) bir konumda bile
-    // rakip yalnız küp × 1 alır (hayalet gammon/backgammon YOK).
-    public function test_resign_is_always_single_even_in_gammon_looking_position(): void
+    // Pes değeri KAZANANIN konumuna bağlıdır (sistem-belirli, FE resign.ts ile BE
+    // Backgammon::resignationValue BİREBİR aynı): kazanan bear-off evresindeyse (off>0 veya tüm
+    // taşları evde) VE kaybeden hiç toplamamışsa GAMMON (×2). Erken/açılış konumunda single
+    // kalır (bkz test_resign_awards_current_cube_value_single). "Hayalet gammon" = kazanan
+    // HENÜZ bear-off evresinde DEĞİLKEN gammon; o engellenir — burada kazanan (siyah) off=5 ile
+    // gerçekten bear-off evresinde, dolayısıyla gammon MEŞRU.
+    public function test_resign_is_gammon_when_winner_in_bearing_phase(): void
     {
         $gammonish = [
             'points' => array_fill(0, 24, 0),
             'bar' => ['white' => 0, 'black' => 0],
-            'off' => ['white' => 0, 'black' => 5], // siyah topluyor, beyaz hiç toplamadı
+            'off' => ['white' => 0, 'black' => 5], // siyah (kazanan) TOPLUYOR -> bear-off evresi; beyaz hiç toplamadı
             'turn' => 'white', 'dice' => [], 'diceUsed' => [],
         ];
-        $gammonish['points'][8] = 15; // beyaz 15 taş ortada
+        $gammonish['points'][8] = 15; // beyaz 15 taş ortada (gammon: hiç toplamadı, bar/rakip-ev yok)
         $this->room(target: 5, cube: ['value' => 2, 'owner' => 'black', 'pending' => null], stateOverride: $gammonish);
         $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])->assertOk();
-        $this->assertSame(2, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 1 = 2 (single)
+        $this->assertSame(4, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 2 (gammon) = 4
     }
 
     // ---- geriye uyum: authoritative olmayan odada küp uçları reddedilir ----
