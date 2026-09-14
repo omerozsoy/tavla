@@ -1251,7 +1251,7 @@ button[aria-disabled='true'],
 .menu-group-title {
   color: color-mix(in srgb, var(--muted) 78%, transparent);
   font-size: 0.66rem;
-  font-weight: 600;
+  font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   padding: 0 12px;
