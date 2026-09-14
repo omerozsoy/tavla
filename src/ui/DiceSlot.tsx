@@ -1,15 +1,16 @@
 /**
- * ZAR SLOTU — 3 makaralı klasik slot makinesi, tavla zarlarıyla (meyve/BAR/7 yerine d1..d6
- * + 64 küpü). İlk bakışta standart bir slot gibi anlaşılır; görsel dil tamamen siteye özel.
+ * ZAR SLOTU — gerçek fiziksel casino slot makinesinin Tavlai için premium dijital versiyonu.
+ * 3 makaralı klasik slot; tavla zarlarıyla (d1..d6 + 64 küpü jackpot). Royal Navy kasa +
+ * altın/krom trim, ışıklı marquee, yandan fiziksel kol, gömülü silindirik makaralar.
  *
- * SUNUCU-OTORİTER: 3 sembolü DAİMA backend seçer (spinDiceSlot). Makaralar yalnızca dönen
- * sonuca iner (SlotReel). Kazanç/kayıp, sıralama (kent), jackpot ve coin sunucudan gelir.
+ * SUNUCU-OTORİTER (DEĞİŞMEDİ): 3 sembolü DAİMA backend seçer (spinDiceSlot). Makaralar yalnız
+ * dönen sonuca iner (SlotReel). Kazanç/kayıp, sıralama, jackpot ve coin sunucudan gelir.
+ * Frontend KENDİ sonucunu üretmez — yalnız sunucunun sonucunu görsel gösterir.
  *
- * Kazanç tipleri: üçlü zar (d{v} -> payout_{v}), sıralama/kent (ardışık üç farklı zar ->
- * payout_straight), üçlü 64 -> artan JACKPOT. Makara duruşu sıralı: sol<orta<sağ.
+ * Bu dosya = mantık + veri katmanı (state, spin akışı). Sunum tamamen alt componentlerde:
+ * SlotMachine / SlotMarquee / SlotLever / SlotControls / WinEffect / SlotReel / SlotSymbol.
  *
- * Tasarım: koyu "kabin" (oyun sahnesi gibi kasıtlı koyu), kiremit bezel + marquee; refresh'te
- * /zar-slotu derin-link ile geri açılır (App.tsx applyFromPath). Modal değil, kalıcı sayfa hissi.
+ * Refresh'te /zar-slotu derin-link ile geri açılır (App.tsx applyFromPath).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useT } from '../i18n'
@@ -17,11 +18,10 @@ import { Icon, type IconName } from './Icon'
 import Coins from './Coins'
 import { useToast } from './Toast'
 import { useEscape } from './useEscape'
-import { Countdown } from './Countdown'
 import { Button } from '@/components/ui/button'
-import SlotReel from './SlotReel'
-import SlotResult from './SlotResult'
-import JackpotAnimation from './JackpotAnimation'
+import SlotMachine from './SlotMachine'
+import SlotControls from './SlotControls'
+import WinEffect from './WinEffect'
 import { ApiError, getDiceSlot, spinDiceSlot, type DiceSlotState, type SlotSymbolCode, type ServerUser } from '../api'
 import './DiceSlot.css'
 
@@ -33,7 +33,7 @@ interface Props {
   onUser?: (u: ServerUser) => void
 }
 
-// Makara durma süreleri (ms) — sırayla dursun: sol < orta < sağ.
+// Makara durma süreleri (ms) — sırayla dursun: sol < orta < sağ (stagger).
 const REEL_MS = [1200, 1600, 2000]
 const FINALIZE_MS = REEL_MS[2] + 320 // son makara + snap tamamlandıktan sonra sonucu aç
 
@@ -95,7 +95,7 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
       onRequireLogin()
       return
     }
-    if (spinning || !canSpin) return
+    if (spinning || !canSpin) return // çoklu/rapid-click spin engeli
     setResult(null)
     setJackpotActive(false)
     setLineWin(false)
@@ -153,153 +153,94 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
         ) : !data || !data.enabled ? (
           <p className="ds-note">{t('ds.disabled')}</p>
         ) : (
-          <div className="ds-layout">
-            {/* SOL: makine kabini */}
-            <section className="ds-cabinet">
-              <header className="ds-marquee">
-                <div className="ds-lamps" aria-hidden="true">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <span key={i} className="ds-lamp" style={{ animationDelay: `${i * 0.16}s` }} />
-                  ))}
-                </div>
-                <h2 className="ds-title">
-                  <span className="ds-title-pip" aria-hidden="true" />
-                  {t('ds.title')}
-                  <span className="ds-title-pip" aria-hidden="true" />
-                </h2>
-                <p className="ds-sub">{t('ds.tagline')}</p>
-              </header>
-
-              <div className="ds-jp-banner">
-                <span className="ds-jp-label">{t('ds.jackpot')}</span>
-                <span className="ds-jp-value">
-                  <Coins amount={jackpot} size={22} />
-                </span>
+          <div className="ds-stage">
+            {/* ÜST: başlık + slogan + bakiye pill */}
+            <header className="ds-head">
+              <div className="ds-head-text">
+                <h1 className="ds-head-title">{t('ds.title')}</h1>
+                <p className="ds-head-sub">{t('ds.tagline')}</p>
               </div>
+              <span className="ds-balance-pill">
+                <Coins amount={coins} size={18} />
+              </span>
+            </header>
 
-              {/* MAKİNE: ekran (bezel + makaralar) + yandan mekanik kol */}
-              <div className="ds-machine">
-                {/* EKRAN: metalik bezel + 3 makara + payline + cam parlaması */}
-                <div className={`ds-screen ${spinning ? 'is-spinning' : ''} ${lineWin ? 'is-win' : ''}`}>
-                  <span className="ds-rivet ds-rivet-tl" aria-hidden="true" />
-                  <span className="ds-rivet ds-rivet-tr" aria-hidden="true" />
-                  <span className="ds-rivet ds-rivet-bl" aria-hidden="true" />
-                  <span className="ds-rivet ds-rivet-br" aria-hidden="true" />
-                  <div className="ds-payline" aria-hidden="true" />
-                  <div className="ds-reels">
-                    {reels.map((code, i) => (
-                      <SlotReel key={i} finalCode={code} spinKey={spinKey} duration={REEL_MS[i]} win={lineWin} />
-                    ))}
-                  </div>
-                  <div className="ds-glass" aria-hidden="true" />
-                  {result && (
-                    <div className="ds-result-slot">
-                      <SlotResult winType={result.winType} payout={result.payout} matchedValue={result.matchedValue} />
-                    </div>
-                  )}
-                </div>
+            {/* ORTA: fiziksel slot makinesi */}
+            <SlotMachine
+              reels={reels}
+              spinKey={spinKey}
+              reelDurations={REEL_MS}
+              spinning={spinning}
+              lineWin={lineWin}
+              jackpot={jackpot}
+              result={result}
+              canSpin={canSpin}
+              celebrate={jackpotActive}
+              onLever={handleSpin}
+            />
 
-                {/* Mekanik kol — ÇEVİR'e basınca aşağı çekilip yayla geri döner (dekoratif). */}
-                <div className={`ds-lever ${spinning ? 'is-pull' : ''}`} aria-hidden="true">
-                  <span className="ds-lever-track" />
-                  <span className="ds-lever-arm">
-                    <span className="ds-lever-knob" />
-                  </span>
-                </div>
-              </div>
+            {/* KONTROL PANELİ */}
+            <SlotControls
+              remaining={remaining}
+              nextFree={nextFree}
+              spinCost={spinCost}
+              isPaidNext={isPaidNext}
+              coins={coins}
+              spinning={spinning}
+              canSpin={canSpin}
+              onSpin={handleSpin}
+              onCooldownExpire={load}
+            />
 
-              {/* KONTROL PANELİ: istatistik + ÇEVİR */}
-              <div className="ds-deck">
-                <div className="ds-stats">
-                  <div className="ds-stat">
-                    <span className="ds-stat-label">{t('ds.remaining')}</span>
-                    <span className="ds-stat-value tnum">{remaining}</span>
-                  </div>
-                  <div className="ds-stat">
-                    <span className="ds-stat-label">{t('ds.nextFree')}</span>
-                    <span className="ds-stat-value">
-                      {remaining <= 0 && nextFree ? <Countdown target={nextFree} onExpire={load} /> : '—'}
+            {/* ALT: ödül tablosu */}
+            <aside className="ds-paytable">
+              <h3 className="ds-paytable-title">{t('ds.paytable')}</h3>
+              <ul className="ds-paytable-list">
+                {paytable.map((row) => (
+                  <li
+                    key={row.code}
+                    className={`ds-pt-row ${row.jackpot ? 'is-jackpot' : ''} ${row.straight ? 'is-straight' : ''}`}
+                  >
+                    <span className="ds-pt-combo" aria-hidden="true">
+                      {row.jackpot ? (
+                        <>
+                          <span className="ds-pt-cube">64</span>
+                          <span className="ds-pt-cube">64</span>
+                          <span className="ds-pt-cube">64</span>
+                        </>
+                      ) : row.straight ? (
+                        <>
+                          <Icon name="die-1" size={20} weight="fill" />
+                          <Icon name="die-2" size={20} weight="fill" />
+                          <Icon name="die-3" size={20} weight="fill" />
+                        </>
+                      ) : (
+                        <>
+                          <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
+                          <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
+                          <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
+                        </>
+                      )}
                     </span>
-                  </div>
-                  <div className="ds-stat">
-                    <span className="ds-stat-label">{t('ds.cost')}</span>
-                    <span className="ds-stat-value">
-                      {isPaidNext ? <Coins amount={spinCost} size={16} /> : <span className="ds-free">{t('ds.free')}</span>}
+                    <span className="ds-pt-meta">
+                      {row.straight ? <span className="ds-pt-tag">{t('ds.straightLabel')}</span> : null}
+                      {row.jackpot ? (
+                        <span className="ds-pt-jackpot">{t('ds.jackpot')}</span>
+                      ) : (
+                        <Coins amount={row.payout} size={15} />
+                      )}
                     </span>
-                  </div>
-                  <div className="ds-stat">
-                    <span className="ds-stat-label">{t('ds.balance')}</span>
-                    <span className="ds-stat-value">
-                      <Coins amount={coins} size={16} />
-                    </span>
-                  </div>
-                </div>
-
-                <Button className="ds-spin-btn" onClick={handleSpin} disabled={spinning || !canSpin}>
-                  {spinning ? (
-                    <>{t('ds.spinning')}…</>
-                  ) : isPaidNext ? (
-                    <>
-                      {t('ds.spinFor', { n: spinCost })} <Icon name="coin" size={18} />
-                    </>
-                  ) : (
-                    <>{t('ds.spin')}</>
-                  )}
-                </Button>
-              </div>
-            </section>
-
-            {/* SAĞ: ödül tablosu + bilgi */}
-            <aside className="ds-side">
-              <div className="ds-paytable">
-                <h3 className="ds-paytable-title">{t('ds.paytable')}</h3>
-                <ul className="ds-paytable-list">
-                  {paytable.map((row) => (
-                    <li
-                      key={row.code}
-                      className={`ds-pt-row ${row.jackpot ? 'is-jackpot' : ''} ${row.straight ? 'is-straight' : ''}`}
-                    >
-                      <span className="ds-pt-combo" aria-hidden="true">
-                        {row.jackpot ? (
-                          <>
-                            <span className="ds-pt-cube">64</span>
-                            <span className="ds-pt-cube">64</span>
-                            <span className="ds-pt-cube">64</span>
-                          </>
-                        ) : row.straight ? (
-                          <>
-                            <Icon name="die-1" size={20} weight="fill" />
-                            <Icon name="die-2" size={20} weight="fill" />
-                            <Icon name="die-3" size={20} weight="fill" />
-                          </>
-                        ) : (
-                          <>
-                            <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
-                            <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
-                            <Icon name={`die-${row.value}` as IconName} size={20} weight="fill" />
-                          </>
-                        )}
-                      </span>
-                      <span className="ds-pt-meta">
-                        {row.straight ? <span className="ds-pt-tag">{t('ds.straightLabel')}</span> : null}
-                        {row.jackpot ? (
-                          <span className="ds-pt-jackpot">{t('ds.jackpot')}</span>
-                        ) : (
-                          <Coins amount={row.payout} size={15} />
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <p className="ds-pt-note">{t('ds.straightHint')}</p>
-              </div>
+                  </li>
+                ))}
+              </ul>
+              <p className="ds-pt-note">{t('ds.straightHint')}</p>
               {!loggedIn ? <p className="ds-note ds-note-side">{t('ds.loginRequired')}</p> : null}
             </aside>
           </div>
         )}
 
         {/* JACKPOT kutlama katmanı — tüm kartı kaplar */}
-        {jackpotActive && <JackpotAnimation amount={jackpotAmount} onClose={() => setJackpotActive(false)} />}
+        {jackpotActive && <WinEffect variant="jackpot" amount={jackpotAmount} onClose={() => setJackpotActive(false)} />}
       </div>
     </div>
   )
