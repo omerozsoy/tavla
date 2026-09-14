@@ -18,18 +18,20 @@ return [
         ['key' => 'aiGame', 'group' => 'play', 'label' => 'YZ ile Oyna'],
         ['key' => 'playFriend', 'group' => 'play', 'label' => 'Arkadaşınla Oyna'],
 
-        // --- TURNUVALAR: rekabet + sosyal + icerik (YARISMA ve KESFET birlesigi) ---
+        // --- TURNUVALAR: rekabet + sosyal ---
         ['key' => 'tournaments', 'group' => 'compete', 'label' => 'Online Turnuvalar'],
         ['key' => 'leaderboard', 'group' => 'compete', 'label' => 'Liderlik Tablosu'],
         ['key' => 'friends', 'group' => 'compete', 'label' => 'Arkadaşlar'],
-        ['key' => 'calendar', 'group' => 'compete', 'label' => 'Turnuva Takvimi'],
-        ['key' => 'clubs', 'group' => 'compete', 'label' => 'Tavla Kulüpleri'],
-        ['key' => 'news', 'group' => 'compete', 'label' => 'Haberler'],
-        ['key' => 'magazine', 'group' => 'compete', 'label' => 'TavlaTV'],
 
         // --- EGLENCE: sans/ekonomi oyunlari ---
         ['key' => 'luckywheel', 'group' => 'fun', 'label' => 'Şans Çarkı'],
         ['key' => 'diceslot', 'group' => 'fun', 'label' => 'Zar Slotu'],
+
+        // --- KESFET: bilgi / icerik ---
+        ['key' => 'calendar', 'group' => 'content', 'label' => 'Turnuva Takvimi'],
+        ['key' => 'clubs', 'group' => 'content', 'label' => 'Tavla Kulüpleri'],
+        ['key' => 'news', 'group' => 'content', 'label' => 'Haberler'],
+        ['key' => 'magazine', 'group' => 'content', 'label' => 'TavlaTV'],
 
         // --- ARACLAR ---
         ['key' => 'analyzer', 'group' => 'tools', 'label' => 'Pozisyon Analizi'],
