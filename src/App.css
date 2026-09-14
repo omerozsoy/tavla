@@ -24022,6 +24022,18 @@ select:-webkit-autofill {
 }
 
 /* ---- Dijital checker (pul) materyali: seçiliyken CSS gradyanı yerine SVG doldurur ---- */
-.checker.skinned { background: none !important; box-shadow: none !important; position: relative; }
+/* Dijital pul (skin) seçiliyken: .checker'ın KENDİ görsel katmanını (dolgu + koyu 2px kontur +
+   dış beyaz hairline halkası + kontak gölgesi) TAMAMEN kaldır. SVG kendi kubbe/rim/gölgesini
+   çizer; aksi halde SVG diskinin (viewBox'ta ~%10 içeride) etrafında .checker konturu BOŞ bir
+   halka/çerçeve gibi görünüyordu (club boardlarda da). !important club border kuralını da ezer. */
+.checker.skinned {
+  background: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  position: relative;
+}
+/* SVG diski viewBox'ta r54/60 (kenardan ~%10 boşluk: gölge+rim payı). Fill'i hafif taşırarak
+   diski kabın tamamına oturt (varsayılan pul boyutuyla eşleş, çevrede boşluk kalmasın). */
+.checker.skinned .checker-skin-fill { inset: -7% !important; }
 .checker .checker-skin-fill { position: absolute; inset: 0; pointer-events: none; }
-.checker .checker-skin-fill svg { width: 100%; height: 100%; display: block; }
+.checker .checker-skin-fill svg { width: 100%; height: 100%; display: block; overflow: visible; }
