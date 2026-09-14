@@ -1,65 +1,73 @@
-/* ZAR SLOTU — PREMIUM KOYU KABİN. Gerçek high-end slot makinesi hissi: derin ceviz/ink
-   gövde, ALTIN hairline trim (--coin-gold) + kiremit (--accent) aksan, metalik bezel + perçin,
-   yandan mekanik KOL, yanan marquee ampulleri. Renkler token'lardan; kabin SAHNEDİR (chrome değil)
-   -> derinlik/glow burada serbest (oyun sahnesi gibi). Makara geometrisi (--slot-row + 1.6 oranı)
-   DOKUNULMAZ (SlotReel transform matematiği ona bağlı). */
+/* ================================================================================
+   ZAR SLOTU — GERÇEK FİZİKSEL CASINO SLOT MAKİNESİ (Tavlai premium dijital versiyon)
+   Royal Navy kasa + altın (--coin-gold) trim + krom detay + casino-kırmızı topuz +
+   sıcak ampuller. Kasa SAHNEDİR (chrome değil) -> derinlik/gölge/glow burada serbest.
+
+   DOKUNULMAZ: makara geometrisi .sr / .sr-window / .sr-strip / .sr-cell / .sr-fade ve
+   --slot-row + 1.6 oranı (SlotReel transform matematiği buna bağlı). Yalnız --slot-row'un
+   SAYISAL değeri (ölçek) breakpoint'lerde değişir; oran/sınıf adları sabit.
+   ============================================================================== */
 
 .ds-overlay {
-  /* modal backdrop zaten .register-overlay'den gelir */
+  /* modal backdrop .register-overlay'den gelir */
 }
 
+/* ---- Kabin-odası kartı (koyu casino atmosferi) ---- */
 .ds-card {
-  max-width: 820px;
+  max-width: 880px;
   width: 100%;
   padding: 0;
   gap: 0;
   overflow: hidden;
   position: relative;
-  /* Koyu kabin gövdesi — üstte sıcak radial ışık + ince ceviz doku hissi */
-  background:
-    radial-gradient(140% 70% at 50% -12%, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 55%),
-    linear-gradient(180deg, var(--med-navy-800), var(--med-navy-900));
+  color: var(--med-ivory);
   border: none;
   border-radius: var(--radius-xl);
-  color: var(--med-ivory);
-  /* ALTIN hairline + kiremit dış kenar + dış gölge (kabin çerçevesi) */
+  /* Çok koyu Royal Navy + merkezde çok hafif radial ışık (casino ambience) */
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--med-navy-700) 60%, transparent) 0%, transparent 58%),
+    radial-gradient(90% 55% at 50% 42%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 60%),
+    linear-gradient(180deg, var(--med-navy-800), var(--med-navy-900));
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--gold) 55%, transparent),
-    inset 0 0 0 4px color-mix(in srgb, var(--accent) 32%, #000),
-    0 24px 60px -18px rgba(0, 0, 0, 0.7);
-  /* Makara satır yüksekliği — tüm geometri buna bağlı (transform math dahil). */
+    inset 0 0 0 1px color-mix(in srgb, var(--coin-gold) 40%, transparent),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75);
+
+  /* Ölçek knob'ları (tek kaynak) */
   --slot-row: 92px;
   --gold: var(--coin-gold);
+  --gold-deep: color-mix(in srgb, var(--coin-gold) 55%, #000);
+  --navy-hi: color-mix(in srgb, var(--med-navy-700) 78%, #fff 6%);
+  --chrome-hi: #eef3f8;
+  --chrome-mid: #c3ccd6;
+  --chrome-lo: #7c8794;
+  --red-knob: var(--accent);
+  --red-knob-hi: color-mix(in srgb, var(--accent) 55%, #ff9d7e);
   --ivory-dim: color-mix(in srgb, var(--med-ivory) 62%, transparent);
-  --panel-ink: color-mix(in srgb, #000 32%, transparent);
 }
 
-/* KRİTİK: .ds-card, .register-overlay.page full-page reset'i (App.css ~4195
-   `.register-overlay.page > *:not(.register-overlay)`, specificity 0,3,0) tarafından
-   background:transparent + box-shadow:none + radius:0 + max-width:1400 ile EZİLİYOR ->
-   koyu kabin + altın çerçeve + kapsayıcı kutu KAYBOLUYOR (slot "açık sayfada kutular" gibi
-   görünüyordu). Aşağıdaki (0,4,0) selektör onu yener; kabini geri yükler ve 820px ORTALANMIŞ
-   hero yapar. Değerler yukarıdaki .ds-card ile aynı (tek kaynak niyeti korunur). */
+/* KRİTİK: .register-overlay.page full-page reset'i (App.css) .ds-card'ın koyu kabin bg'sini,
+   altın çerçevesini ve max-width'ini EZER -> "açık sayfada dağınık kutular" görünür. Aşağıdaki
+   (0,4,0) seçici onu yener; değerler yukarıdaki .ds-card ile birebir (tek kaynak niyeti). */
 .register-overlay.page.ds-overlay > .ds-card {
-  max-width: 820px;
+  max-width: 880px;
   margin: 0 auto;
   min-height: 0;
   padding: 0;
   border-radius: var(--radius-xl);
   background:
-    radial-gradient(140% 70% at 50% -12%, color-mix(in srgb, var(--accent) 26%, transparent) 0%, transparent 55%),
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--med-navy-700) 60%, transparent) 0%, transparent 58%),
+    radial-gradient(90% 55% at 50% 42%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 60%),
     linear-gradient(180deg, var(--med-navy-800), var(--med-navy-900));
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--coin-gold) 55%, transparent),
-    inset 0 0 0 4px color-mix(in srgb, var(--accent) 32%, #000),
-    0 24px 60px -18px rgba(0, 0, 0, 0.7);
+    inset 0 0 0 1px color-mix(in srgb, var(--coin-gold) 40%, transparent),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75);
 }
 
 .ds-close {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 25;
+  z-index: 40;
   color: var(--med-ivory) !important;
   background: color-mix(in srgb, #000 34%, transparent) !important;
   border-color: color-mix(in srgb, var(--gold) 40%, transparent) !important;
@@ -76,92 +84,212 @@
   text-align: left;
 }
 
-/* İki kolon: sol kabin + sağ ödül tablosu */
-.ds-layout {
-  display: grid;
-  grid-template-columns: 1fr 268px;
-  gap: 0;
-}
-
-/* ---- Sol: KABİN ---- */
-.ds-cabinet {
-  padding: 24px 24px 22px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-width: 0;
-}
-
-/* ---- Marquee (üst tabela): yanan ampuller + altın başlık ---- */
-.ds-marquee {
-  text-align: center;
+/* ---- Sahne: dikey yığın (baş + makine + kontrol + ödül tablosu) ---- */
+.ds-stage {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 20px;
+  padding: 26px 28px 30px;
 }
-.ds-lamps {
+
+/* ---- ÜST: başlık + slogan + bakiye pill ---- */
+.ds-head {
+  width: 100%;
   display: flex;
-  justify-content: center;
-  gap: 11px;
-  margin-bottom: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
-.ds-lamp {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--gold) 26%, #000);
-  animation: ds-lamp 1.7s ease-in-out infinite;
-}
-@keyframes ds-lamp {
-  0%,
-  100% {
-    background: color-mix(in srgb, var(--gold) 24%, #000);
-    box-shadow: none;
-  }
-  50% {
-    background: var(--gold);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--gold) 85%, transparent);
-  }
-}
-.ds-title {
+.ds-head-title {
   margin: 0;
+  font-family: var(--tv-font-display);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--med-ivory);
+}
+.ds-head-sub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: var(--ivory-dim);
+}
+.ds-balance-pill {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(180deg, color-mix(in srgb, #000 22%, transparent), color-mix(in srgb, #000 40%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 42%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 24%, transparent);
+}
+
+/* ================================================================================
+   SLOT MAKİNESİ (SlotMachine)
+   ============================================================================== */
+.sm-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  /* Sağda kola yer aç (kol kasanın sağ yanından dışarı taşar) */
+  padding: 6px 52px 6px 8px;
+}
+
+/* ---- Kasa gövdesi: Royal Navy + altın trim + hafif 3D hacim ---- */
+.sm-cabinet {
+  position: relative;
+  width: 100%;
+  max-width: 540px;
+  padding: 14px 18px 20px;
+  border-radius: 30px;
+  background:
+    radial-gradient(120% 60% at 50% -6%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--navy-hi) 0%, var(--med-navy-800) 42%, var(--med-navy-900) 100%);
+  /* Çok katlı çerçeve: altın hairline + krom bevel + koyu dış + ambient ground shadow */
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--gold) 60%, transparent),
+    inset 0 0 0 5px color-mix(in srgb, var(--med-navy-900) 80%, #000),
+    inset 0 2px 0 color-mix(in srgb, #fff 16%, transparent),
+    inset 0 -18px 30px -18px rgba(0, 0, 0, 0.7),
+    0 26px 40px -20px rgba(0, 0, 0, 0.7),
+    0 40px 60px -30px rgba(0, 0, 0, 0.55);
+  /* Hafif 3D perspektif: makineye biraz yukarıdan bakıyoruz */
+  transform: perspective(1600px) rotateX(3deg);
+  transform-origin: center 34%;
+  transition: box-shadow 0.3s ease;
+}
+/* Üst rim (kasa kalınlığı highlight'ı) */
+.sm-top-face {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: 4px;
+  height: 10px;
+  border-radius: 30px 30px 12px 12px / 20px 20px 8px 8px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 40%, transparent), transparent);
+  opacity: 0.6;
+  pointer-events: none;
+}
+/* Sağ yan bevel (yan yüzey kalınlığı) */
+.sm-side-face {
+  position: absolute;
+  top: 20px;
+  bottom: 20px;
+  right: 3px;
+  width: 6px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+}
+.sm-cabinet.is-win {
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--gold) 85%, transparent),
+    inset 0 0 0 5px color-mix(in srgb, var(--med-navy-900) 80%, #000),
+    inset 0 2px 0 color-mix(in srgb, #fff 16%, transparent),
+    inset 0 -18px 30px -18px rgba(0, 0, 0, 0.7),
+    0 0 34px color-mix(in srgb, var(--gold) 26%, transparent),
+    0 26px 40px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* ---- Marquee (üst ışıklı tabela) ---- */
+.sm-marquee {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.sm-marquee-sign {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 7px 22px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, #000 30%, transparent), color-mix(in srgb, #000 52%, transparent));
+  border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 22%, transparent), 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+.sm-marquee-title {
+  margin: 0;
   font-family: var(--tv-font-display);
-  font-size: 32px;
+  font-size: 27px;
   font-weight: 800;
-  letter-spacing: 0.22em;
-  /* Altın işlemeli metal harf */
-  background: linear-gradient(180deg, #ffeaba 0%, var(--gold) 52%, color-mix(in srgb, var(--gold) 60%, #000) 100%);
+  letter-spacing: 0.2em;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #fff2cf 0%, var(--gold) 50%, var(--gold-deep) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.5)) drop-shadow(0 0 16px color-mix(in srgb, var(--gold) 32%, transparent));
+  filter: drop-shadow(0 1px 0 rgba(0, 0, 0, 0.5)) drop-shadow(0 0 14px color-mix(in srgb, var(--gold) 34%, transparent));
 }
-.ds-title-pip {
-  width: 8px;
-  height: 8px;
+.sm-marquee-pip {
+  width: 9px;
+  height: 9px;
   border-radius: 2px;
   background: var(--accent);
-  margin: 0 14px;
-  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 65%, transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent);
   transform: rotate(45deg);
 }
-.ds-sub {
-  margin: 0;
-  font-size: 12.5px;
-  letter-spacing: 0.04em;
-  color: var(--ivory-dim);
+
+/* ---- Ampuller (SlotLights) ---- */
+.sl-lights {
+  display: flex;
+  align-items: center;
+}
+.sm-marquee-lamps {
+  width: 90%;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.sl-bulb {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff6d8, color-mix(in srgb, var(--gold) 60%, #000) 78%);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--gold) 45%, transparent);
+  animation: sl-pulse 2.4s ease-in-out infinite;
+}
+.sl-lights.is-active .sl-bulb {
+  animation-duration: 1.5s;
+}
+.sl-lights.is-chase .sl-bulb {
+  animation: sl-chase 1s linear infinite;
+}
+@keyframes sl-pulse {
+  0%,
+  100% {
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--gold) 46%, #000), #100c07 82%);
+    box-shadow: none;
+  }
+  50% {
+    background: radial-gradient(circle at 35% 30%, #fff6d8, var(--gold) 76%);
+    box-shadow: 0 0 9px color-mix(in srgb, var(--gold) 85%, transparent);
+  }
+}
+@keyframes sl-chase {
+  0%,
+  70%,
+  100% {
+    background: radial-gradient(circle at 35% 30%, color-mix(in srgb, var(--gold) 40%, #000), #100c07 82%);
+    box-shadow: none;
+  }
+  20% {
+    background: radial-gradient(circle at 35% 30%, #fff6d8, var(--gold) 76%);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--gold) 95%, transparent);
+  }
 }
 
-/* ---- JACKPOT bandı — altın/kiremit metal pill, shimmer + nabız ---- */
-.ds-jp-banner {
+/* ---- JACKPOT bandı ---- */
+.sm-jackpot-banner {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  padding: 11px 18px;
+  margin: 0 auto 14px;
+  padding: 9px 20px;
   border-radius: var(--radius-pill);
   background: linear-gradient(
     180deg,
@@ -169,36 +297,34 @@
     color-mix(in srgb, var(--accent) 14%, #120c08)
   );
   border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
-  box-shadow:
-    inset 0 1px 0 color-mix(in srgb, var(--gold) 30%, transparent),
-    0 0 26px color-mix(in srgb, var(--accent) 26%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 30%, transparent), 0 0 24px color-mix(in srgb, var(--accent) 24%, transparent);
   position: relative;
   overflow: hidden;
 }
-.ds-jp-banner::after {
+.sm-jackpot-banner::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, transparent 34%, color-mix(in srgb, var(--gold) 32%, transparent) 50%, transparent 66%);
+  background: linear-gradient(100deg, transparent 34%, color-mix(in srgb, var(--gold) 30%, transparent) 50%, transparent 66%);
   transform: translateX(-100%);
-  animation: ds-shimmer 3.4s ease-in-out infinite;
+  animation: sm-shimmer 3.6s ease-in-out infinite;
 }
-.ds-jp-label {
+.sm-jackpot-label {
   font-family: var(--tv-font-display);
   font-weight: 800;
   letter-spacing: 0.26em;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--gold);
   text-shadow: 0 0 12px color-mix(in srgb, var(--gold) 45%, transparent);
   position: relative;
 }
-.ds-jp-value {
-  font-size: 23px;
+.sm-jackpot-value {
+  font-size: 22px;
   font-weight: 700;
   color: var(--med-ivory);
   position: relative;
 }
-@keyframes ds-shimmer {
+@keyframes sm-shimmer {
   0%,
   58% {
     transform: translateX(-100%);
@@ -208,179 +334,126 @@
   }
 }
 
-/* ---- MAKİNE: ekran + yandan kol ---- */
-.ds-machine {
-  display: flex;
-  align-items: stretch;
-  gap: 10px;
-}
-
-/* EKRAN (metalik bezel + makaralar) */
-.ds-screen {
+/* ---- EKRAN: gömülü metal bezel + cam + makaralar ---- */
+.sm-screen {
   position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
   border-radius: var(--radius-lg);
-  padding: 18px;
-  background: linear-gradient(180deg, #15110d, #0a0806);
-  /* Çok katlı bezel: altın iç halka + kiremit + ink dış */
+  padding: 20px 18px;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #1b1611, #0a0806 70%),
+    linear-gradient(180deg, #14100c, #070605);
+  /* Çok katlı bezel: krom iç halka + altın + kiremit + ink derinlik */
   box-shadow:
-    inset 0 0 0 2px color-mix(in srgb, var(--gold) 42%, transparent),
-    inset 0 0 0 5px color-mix(in srgb, var(--accent) 30%, #000),
-    inset 0 4px 16px rgba(0, 0, 0, 0.7),
-    0 2px 0 color-mix(in srgb, var(--med-ivory) 6%, transparent);
+    inset 0 0 0 2px color-mix(in srgb, var(--chrome-mid) 55%, transparent),
+    inset 0 0 0 4px color-mix(in srgb, var(--gold) 46%, transparent),
+    inset 0 0 0 7px color-mix(in srgb, var(--accent) 26%, #000),
+    inset 0 6px 20px rgba(0, 0, 0, 0.8);
   transition: box-shadow 0.3s ease;
 }
-.ds-screen.is-win {
+.sm-screen.is-win {
   box-shadow:
-    inset 0 0 0 2px color-mix(in srgb, var(--gold) 75%, transparent),
-    inset 0 0 0 5px color-mix(in srgb, var(--accent) 45%, #000),
-    inset 0 4px 16px rgba(0, 0, 0, 0.6),
-    0 0 30px color-mix(in srgb, var(--gold) 30%, transparent);
+    inset 0 0 0 2px color-mix(in srgb, var(--chrome-hi) 60%, transparent),
+    inset 0 0 0 4px color-mix(in srgb, var(--gold) 80%, transparent),
+    inset 0 0 0 7px color-mix(in srgb, var(--accent) 42%, #000),
+    inset 0 6px 20px rgba(0, 0, 0, 0.7),
+    0 0 30px color-mix(in srgb, var(--gold) 26%, transparent);
 }
-/* Köşe perçinleri (altın nokta) — metal panel hissi */
-.ds-rivet {
+/* Krom iç bezel highlight (üst ışık yansıması) */
+.sm-bezel {
   position: absolute;
-  width: 7px;
-  height: 7px;
+  inset: 3px;
+  border-radius: calc(var(--radius-lg) - 3px);
+  pointer-events: none;
+  z-index: 6;
+  background: linear-gradient(180deg, color-mix(in srgb, #fff 14%, transparent) 0%, transparent 10%);
+}
+/* Köşe perçinleri (krom nokta) */
+.sm-rivet {
+  position: absolute;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  z-index: 5;
-  background: radial-gradient(circle at 35% 30%, #ffe9b0, var(--gold) 65%, color-mix(in srgb, var(--gold) 40%, #000));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  z-index: 7;
+  background: radial-gradient(circle at 34% 28%, var(--chrome-hi), var(--chrome-mid) 55%, var(--chrome-lo));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.6), inset 0 -1px 1px rgba(0, 0, 0, 0.4);
 }
-.ds-rivet-tl {
-  top: 7px;
-  left: 7px;
-}
-.ds-rivet-tr {
-  top: 7px;
-  right: 7px;
-}
-.ds-rivet-bl {
-  bottom: 7px;
-  left: 7px;
-}
-.ds-rivet-br {
-  bottom: 7px;
-  right: 7px;
-}
-.ds-reels {
+.sm-rivet-tl { top: 8px; left: 8px; }
+.sm-rivet-tr { top: 8px; right: 8px; }
+.sm-rivet-bl { bottom: 8px; left: 8px; }
+.sm-rivet-br { bottom: 8px; right: 8px; }
+
+.sm-reels {
   display: flex;
   justify-content: center;
   gap: 12px;
   position: relative;
   z-index: 1;
 }
-
-/* Cam parlaması (gloss + vignette) */
-.ds-glass {
-  position: absolute;
-  inset: 18px;
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  z-index: 2;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--med-ivory) 14%, transparent) 0%, transparent 24%),
-    radial-gradient(120% 60% at 50% 120%, rgba(0, 0, 0, 0.45), transparent 60%);
+.sm-reel-col {
+  position: relative;
+  /* makaralar arası ince ayraç (metal çıta) */
+  border-radius: calc(var(--radius-md) + 2px);
+  padding: 0;
 }
 
 /* Payline — ekran ortasından geçen altın/kiremit çizgi */
-.ds-payline {
+.sm-payline {
   position: absolute;
-  left: 16px;
-  right: 16px;
+  left: 20px;
+  right: 20px;
   top: 50%;
   height: 2px;
   transform: translateY(-50%);
   background: linear-gradient(90deg, transparent, var(--gold), var(--accent), var(--gold), transparent);
-  opacity: 0.55;
+  opacity: 0.5;
   z-index: 3;
   pointer-events: none;
   transition: opacity 0.25s ease, box-shadow 0.25s ease;
 }
-.ds-screen.is-win .ds-payline {
+.sm-screen.is-win .sm-payline {
   opacity: 1;
   box-shadow: 0 0 14px 1px color-mix(in srgb, var(--gold) 70%, transparent);
 }
 
+/* Cam parlaması (gloss + alt vignette) */
+.sm-glass {
+  position: absolute;
+  inset: 12px;
+  border-radius: var(--radius-md);
+  pointer-events: none;
+  z-index: 4;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--med-ivory) 12%, transparent) 0%, transparent 22%),
+    radial-gradient(120% 60% at 50% 124%, rgba(0, 0, 0, 0.5), transparent 60%);
+}
+
 /* Sonuç şeridi — ekranın altına yaslı overlay */
-.ds-result-slot {
+.sm-result-slot {
   position: absolute;
   left: 18px;
   right: 18px;
-  bottom: 18px;
-  z-index: 4;
+  bottom: 16px;
+  z-index: 8;
   display: flex;
   justify-content: center;
 }
 
-/* ---- Yandan mekanik KOL ---- */
-.ds-lever {
-  position: relative;
-  flex: 0 0 30px;
-  display: flex;
-  justify-content: center;
-}
-.ds-lever-track {
-  position: absolute;
-  top: 14px;
-  bottom: 14px;
-  width: 8px;
-  border-radius: 5px;
-  background: linear-gradient(180deg, #2b2620, #100d0a);
-  box-shadow:
-    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 2px color-mix(in srgb, var(--gold) 14%, transparent);
-}
-.ds-lever-arm {
-  position: absolute;
-  top: 16px;
-  width: 9px;
-  height: 42%;
-  border-radius: 6px;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 85%, #000), color-mix(in srgb, var(--accent) 55%, #000));
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-  transform-origin: 50% 100%;
-}
-.ds-lever-knob {
-  position: absolute;
-  top: -13px;
-  left: 50%;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  transform: translateX(-50%);
-  background: radial-gradient(circle at 35% 28%, #ff9878, var(--accent) 58%, var(--med-terracotta-dark));
-  border: 2px solid color-mix(in srgb, var(--gold) 68%, #000);
-  box-shadow: 0 3px 9px rgba(0, 0, 0, 0.55), inset 0 -2px 4px rgba(0, 0, 0, 0.4);
-}
-.ds-lever.is-pull .ds-lever-arm {
-  animation: ds-pull 0.62s cubic-bezier(0.3, 1.25, 0.4, 1);
-}
-@keyframes ds-pull {
-  0% {
-    transform: translateY(0);
-  }
-  38% {
-    transform: translateY(58%);
-  }
-  100% {
-    transform: translateY(0);
-  }
-}
-
-/* ---- Tek makara (GEOMETRİ DOKUNULMAZ: width/height/cell = --slot-row) ---- */
+/* ================================================================================
+   TEK MAKARA (GEOMETRİ DOKUNULMAZ: width/height/cell = --slot-row, oran 1.6)
+   ============================================================================== */
 .sr {
   position: relative;
   width: var(--slot-row);
   height: calc(var(--slot-row) * 1.6);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: linear-gradient(180deg, #f6efe0 0%, #e7dcc5 50%, #d8caae 100%);
+  /* Beyaz/kırık beyaz fiziksel makara: ortası aydınlık, üst/alt hafif karanlık (silindir) */
+  background: linear-gradient(180deg, #efe6d3 0%, #fbf6ec 32%, #fff 50%, #f4ecdb 68%, #e2d5bd 100%);
   box-shadow:
-    inset 0 0 0 1px color-mix(in srgb, var(--gold) 45%, transparent),
-    inset 0 0 0 2px rgba(0, 0, 0, 0.35),
-    inset 0 8px 14px -8px rgba(0, 0, 0, 0.35);
+    inset 0 0 0 1px color-mix(in srgb, var(--gold) 40%, transparent),
+    inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+    inset 0 10px 16px -10px rgba(0, 0, 0, 0.4),
+    inset 0 -10px 16px -10px rgba(0, 0, 0, 0.4);
 }
 .sr-window {
   position: absolute;
@@ -406,8 +479,9 @@
   height: 100%;
   display: block;
 }
+/* Dönüş sırasında motion blur (dikey) */
 .sr-strip.is-motion {
-  filter: blur(0.6px);
+  filter: blur(0.7px);
 }
 .sr.is-win {
   box-shadow:
@@ -415,24 +489,24 @@
     0 0 0 2px color-mix(in srgb, var(--gold) 55%, transparent),
     0 0 20px color-mix(in srgb, var(--gold) 48%, transparent);
 }
-/* Üst/alt silindirik gölge + hafif iç sheen */
+/* Üst/alt silindirik gölge maskesi (makaranın yuvarlaklığı) + yan sheen */
 .sr-fade {
   position: absolute;
   inset: 0;
   pointer-events: none;
   z-index: 2;
   background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0%, transparent 18%, transparent 82%, rgba(0, 0, 0, 0.12) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.28) 0%, transparent 16%, transparent 84%, rgba(0, 0, 0, 0.14) 100%),
     linear-gradient(
       180deg,
-      rgba(10, 8, 6, 0.42) 0%,
-      rgba(10, 8, 6, 0) 26%,
-      rgba(10, 8, 6, 0) 74%,
-      rgba(10, 8, 6, 0.42) 100%
+      rgba(8, 6, 4, 0.55) 0%,
+      rgba(8, 6, 4, 0) 30%,
+      rgba(8, 6, 4, 0) 70%,
+      rgba(8, 6, 4, 0.55) 100%
     );
 }
 
-/* ---- Sonuç banner (SlotResult) ---- */
+/* ---- Sonuç banner (SlotResult) — DEĞİŞMEZ sınıf adları ---- */
 .ds-result {
   display: flex;
   align-items: center;
@@ -445,7 +519,7 @@
   animation: ds-result-in 0.25s ease both;
 }
 .ds-result.is-lose {
-  background: color-mix(in srgb, #000 50%, transparent);
+  background: color-mix(in srgb, #000 52%, transparent);
   border: 1px solid color-mix(in srgb, var(--med-ivory) 16%, transparent);
   color: var(--ivory-dim);
 }
@@ -479,18 +553,127 @@
   }
 }
 
-/* ---- Kontrol paneli ---- */
-.ds-deck {
+/* ================================================================================
+   FİZİKSEL KOL (SlotLever) — kasanın sağ yanına biner
+   ============================================================================== */
+/* Kol kasanın sağ yanından dışarı taşar (cabinet'e göre konumlanır, onunla birlikte hafif tilt) */
+.sm-lever {
+  position: absolute;
+  right: -40px;
+  top: 38%;
+  height: 168px;
+  width: 46px;
+  z-index: 12;
+}
+/* Kasaya bağlanan krom taban diski (kolun kasaya girdiği nokta) */
+.sm-lever-base {
+  position: absolute;
+  left: -6px;
+  bottom: 8px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 30%, var(--chrome-hi), var(--chrome-mid) 52%, var(--chrome-lo) 100%);
+  box-shadow: 0 3px 7px rgba(0, 0, 0, 0.5), inset 0 -2px 3px rgba(0, 0, 0, 0.4);
+}
+.sm-lever-btn {
+  position: absolute;
+  inset: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.sm-lever-btn:disabled {
+  cursor: default;
+}
+/* Mil kılavuzu */
+.sm-lever-track {
+  position: absolute;
+  left: 12px;
+  top: 8px;
+  bottom: 6px;
+  width: 6px;
+  border-radius: 4px;
+  background: linear-gradient(180deg, #2c2721, #110d0a);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+}
+/* Kol kolu (krom mil) — dipten döner */
+.sm-lever-arm {
+  position: absolute;
+  left: 8px;
+  bottom: 4px;
+  width: 12px;
+  height: 74%;
+  border-radius: 8px;
+  transform-origin: 50% 100%;
+  background: linear-gradient(90deg, var(--chrome-lo), var(--chrome-hi) 45%, var(--chrome-mid) 60%, var(--chrome-lo));
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+/* Topuz altındaki krom bilezik */
+.sm-lever-collar {
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  width: 16px;
+  height: 10px;
+  border-radius: 4px;
+  transform: translateX(-50%);
+  background: linear-gradient(180deg, var(--chrome-hi), var(--chrome-lo));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+/* Casino kırmızısı parlak topuz */
+.sm-lever-knob {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translateX(-50%);
+  background: radial-gradient(circle at 34% 28%, var(--red-knob-hi), var(--red-knob) 54%, var(--med-terracotta-dark) 100%);
+  border: 2px solid color-mix(in srgb, var(--gold) 62%, #000);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55), inset 0 -3px 6px rgba(0, 0, 0, 0.4), inset 0 3px 5px rgba(255, 255, 255, 0.35);
+}
+.sm-lever-btn:not(:disabled):hover ~ * .sm-lever-knob,
+.sm-lever-btn:not(:disabled):hover .sm-lever-knob {
+  filter: brightness(1.08);
+}
+/* Çekme animasyonu: aşağı çekilme -> kısa bekleme -> spring ile yukarı dönüş */
+.sm-lever.is-pull .sm-lever-arm {
+  animation: sm-pull 0.7s cubic-bezier(0.3, 1.3, 0.4, 1);
+}
+@keyframes sm-pull {
+  0% {
+    transform: translateY(0) scaleY(1);
+  }
+  30% {
+    transform: translateY(30%) scaleY(0.86);
+  }
+  46% {
+    transform: translateY(30%) scaleY(0.86);
+  }
+  100% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+/* ================================================================================
+   KONTROL PANELİ (SlotControls)
+   ============================================================================== */
+.sm-deck {
+  width: 100%;
+  max-width: 540px;
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
-.ds-stats {
+.sm-gauges {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 8px;
 }
-.ds-stat {
+.sm-gauge {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -498,29 +681,29 @@
   padding: 10px 4px;
   border-radius: var(--radius-md);
   border: 1px solid color-mix(in srgb, var(--gold) 18%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, #000 20%, transparent), color-mix(in srgb, #000 34%, transparent));
+  background: linear-gradient(180deg, color-mix(in srgb, #000 22%, transparent), color-mix(in srgb, #000 36%, transparent));
   box-shadow: inset 0 1px 0 color-mix(in srgb, var(--med-ivory) 6%, transparent);
 }
-.ds-stat-label {
+.sm-gauge-label {
   font-size: 10.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ivory-dim);
 }
-.ds-stat-value {
+.sm-gauge-value {
   font-size: 15px;
   font-weight: 600;
   color: var(--med-ivory);
 }
-.ds-free {
+.sm-free {
   color: color-mix(in srgb, var(--color-success) 72%, var(--med-ivory));
   font-size: 13px;
 }
-.ds-spin-btn {
+.sm-spin-btn {
   width: 100%;
-  height: 56px !important;
+  height: 58px !important;
   font-family: var(--tv-font-display) !important;
-  font-size: 18px !important;
+  font-size: 19px !important;
   font-weight: 800 !important;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -530,31 +713,33 @@
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--gold) 55%, transparent),
     0 8px 22px color-mix(in srgb, var(--accent) 36%, transparent) !important;
-  transition: transform 0.12s ease, box-shadow 0.2s ease;
+  transition: transform 0.12s ease, box-shadow 0.2s ease, filter 0.2s ease;
 }
-.ds-spin-btn:not(:disabled):hover {
+.sm-spin-btn:not(:disabled):hover {
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, var(--gold) 70%, transparent),
     0 10px 28px color-mix(in srgb, var(--accent) 46%, transparent) !important;
 }
-.ds-spin-btn:not(:disabled):active {
+.sm-spin-btn:not(:disabled):active {
   transform: translateY(1px);
 }
-.ds-spin-btn:disabled {
+.sm-spin-btn:disabled {
   opacity: 0.5;
 }
 
-/* ---- Sağ: ödül tablosu ---- */
-.ds-side {
-  padding: 24px 20px 20px;
-  border-left: 1px solid color-mix(in srgb, var(--gold) 16%, transparent);
-  background: linear-gradient(180deg, color-mix(in srgb, #000 20%, transparent), color-mix(in srgb, #000 10%, transparent));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ================================================================================
+   ÖDÜL TABLOSU (alt bölüm)
+   ============================================================================== */
+.ds-paytable {
+  width: 100%;
+  max-width: 620px;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--gold) 18%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, #000 18%, transparent), color-mix(in srgb, #000 8%, transparent));
 }
 .ds-paytable-title {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -567,9 +752,9 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px 10px;
 }
 .ds-pt-row {
   display: flex;
@@ -597,11 +782,11 @@
   width: 22px;
   height: 22px;
   border-radius: 6px;
-  background: linear-gradient(140deg, var(--accent), var(--med-terracotta-dark));
-  border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent);
-  color: #fff;
+  background: linear-gradient(140deg, #f0c04e, #a9741a);
+  border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+  color: #4a2f08;
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
 }
 .ds-pt-meta {
   display: inline-flex;
@@ -614,11 +799,13 @@
   letter-spacing: 0.04em;
 }
 .ds-pt-row.is-straight {
+  grid-column: 1 / -1;
   border-top: 1px dashed color-mix(in srgb, var(--gold) 22%, transparent);
   border-bottom: 1px dashed color-mix(in srgb, var(--gold) 22%, transparent);
   margin: 3px 0;
 }
 .ds-pt-row.is-jackpot {
+  grid-column: 1 / -1;
   background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--gold) 12%, transparent));
   border: 1px solid color-mix(in srgb, var(--gold) 32%, transparent);
   margin-top: 6px;
@@ -638,26 +825,62 @@
   color: var(--ivory-dim);
 }
 
-/* ---- JACKPOT kutlama katmanı (JackpotAnimation) ---- */
-.ds-jackpot {
+/* ================================================================================
+   KAZANÇ EFEKTLERİ (WinEffect)
+   ============================================================================== */
+/* Normal kazanç: ekran üzerinde yükselen coin kıvılcımları (bir kez) */
+.we-sparks {
   position: absolute;
   inset: 0;
-  z-index: 30;
+  z-index: 7;
+  pointer-events: none;
+  overflow: hidden;
+}
+.we-spark {
+  position: absolute;
+  bottom: 30%;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe27a, var(--coin-gold) 70%);
+  border: 1px solid color-mix(in srgb, var(--coin-gold) 60%, #000);
+  opacity: 0;
+  animation: we-rise 0.85s ease-out forwards;
+}
+@keyframes we-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.6);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-70px) scale(1);
+  }
+}
+
+/* JACKPOT: tam kart kutlaması */
+.we-jackpot {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: inherit;
   overflow: hidden;
-  background: color-mix(in srgb, var(--med-navy-900) 86%, transparent);
-  animation: ds-jp-flash 0.5s ease both;
+  background: color-mix(in srgb, var(--med-navy-900) 88%, transparent);
+  animation: we-flash 0.5s ease both;
 }
-.ds-jackpot-glow {
+.we-glow {
   position: absolute;
   inset: -20%;
-  background: radial-gradient(circle at center, color-mix(in srgb, var(--gold) 40%, transparent), transparent 62%);
-  animation: ds-jp-pulse 1.8s ease-in-out infinite;
+  background: radial-gradient(circle at center, color-mix(in srgb, var(--gold) 42%, transparent), transparent 62%);
+  animation: we-pulse 1.8s ease-in-out infinite;
 }
-.ds-jackpot-inner {
+.we-inner {
   position: relative;
   text-align: center;
   display: flex;
@@ -666,49 +889,50 @@
   gap: 14px;
   padding: 20px;
 }
-.ds-jackpot-cubes {
+.we-cubes {
   display: flex;
   gap: 10px;
 }
-.ds-jp-cube {
+.we-cube {
   width: 56px;
   height: 56px;
   display: block;
-  animation: ds-jp-cube 0.9s ease-in-out infinite;
+  animation: we-cube 0.9s ease-in-out infinite;
 }
-.ds-jp-cube:nth-child(2) {
+.we-cube:nth-child(2) {
   animation-delay: 0.15s;
 }
-.ds-jp-cube:nth-child(3) {
+.we-cube:nth-child(3) {
   animation-delay: 0.3s;
 }
-.ds-jackpot-word {
+.we-word {
   font-family: var(--tv-font-display);
   font-size: 46px;
   font-weight: 800;
   letter-spacing: 0.16em;
-  background: linear-gradient(180deg, #ffeaba, var(--gold));
+  background: linear-gradient(180deg, #fff2cf, var(--gold));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
   filter: drop-shadow(0 0 24px color-mix(in srgb, var(--gold) 70%, transparent));
-  animation: ds-jp-word 0.5s cubic-bezier(0.18, 1.3, 0.4, 1) both;
+  animation: we-word 0.5s cubic-bezier(0.18, 1.3, 0.4, 1) both;
 }
-.ds-jackpot-amount {
+.we-amount {
   font-size: 36px;
   font-weight: 700;
   color: var(--med-ivory);
 }
-.ds-jackpot-btn {
+.we-claim {
   margin-top: 4px;
 }
-.ds-coinfall {
+.we-coinfall,
+.we-confetti {
   position: absolute;
   inset: 0;
   pointer-events: none;
   overflow: hidden;
 }
-.ds-coin {
+.we-coin {
   position: absolute;
   top: -18px;
   width: 14px;
@@ -716,105 +940,140 @@
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #ffe27a, var(--coin-gold) 70%);
   border: 1px solid color-mix(in srgb, var(--coin-gold) 60%, #000);
-  animation: ds-coin-fall 1.5s linear infinite;
+  animation: we-coin-fall 1.5s linear infinite;
 }
-@keyframes ds-coin-fall {
+.we-conf {
+  position: absolute;
+  top: -16px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  animation: we-conf-fall 1.7s linear infinite;
+}
+.we-conf-0 { background: var(--gold); }
+.we-conf-1 { background: var(--accent); }
+.we-conf-2 { background: var(--chrome-hi); }
+.we-conf-3 { background: color-mix(in srgb, var(--gold) 50%, #fff); }
+@keyframes we-coin-fall {
   0% {
     transform: translateY(-20px) rotate(0deg);
     opacity: 0;
   }
-  10% {
+  12% {
     opacity: 1;
   }
   100% {
-    transform: translateY(420px) rotate(220deg);
+    transform: translateY(460px) rotate(220deg);
     opacity: 0;
   }
 }
-@keyframes ds-jp-flash {
-  from {
+@keyframes we-conf-fall {
+  0% {
+    transform: translateY(-16px) rotate(0deg);
     opacity: 0;
   }
-  to {
+  12% {
     opacity: 1;
   }
-}
-@keyframes ds-jp-pulse {
-  0%,
   100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-@keyframes ds-jp-cube {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.16);
-  }
-}
-@keyframes ds-jp-word {
-  from {
+    transform: translateY(460px) rotate(540deg);
     opacity: 0;
-    transform: scale(0.6);
   }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+}
+@keyframes we-flash {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes we-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes we-cube {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.16); }
+}
+@keyframes we-word {
+  from { opacity: 0; transform: scale(0.6); }
+  to { opacity: 1; transform: scale(1); }
 }
 
+/* ================================================================================
+   REDUCED MOTION — sürekli/kutlama animasyonlarını durdur
+   ============================================================================== */
 @media (prefers-reduced-motion: reduce) {
-  .ds-jackpot-glow,
-  .ds-jp-cube,
-  .ds-coin,
-  .ds-jp-banner::after,
-  .ds-lamp,
-  .ds-lever.is-pull .ds-lever-arm {
-    animation: none;
+  .sm-cabinet {
+    transform: none;
+  }
+  .sl-bulb,
+  .sm-jackpot-banner::after,
+  .sm-lever.is-pull .sm-lever-arm,
+  .we-glow,
+  .we-cube,
+  .we-coin,
+  .we-conf,
+  .we-spark {
+    animation: none !important;
   }
 }
 
-/* ---- Mobil: tek kolon, makaralar yine 3 yan yana ---- */
-@media (max-width: 620px) {
+/* ================================================================================
+   RESPONSIVE — tek component ölçeklenir (breakpoint'te yeniden çizilmez)
+   ============================================================================== */
+@media (max-width: 720px) {
+  .ds-stage {
+    padding: 20px 16px 24px;
+    gap: 16px;
+  }
   .ds-card {
-    --slot-row: 74px;
+    --slot-row: 78px;
   }
-  .ds-layout {
-    grid-template-columns: 1fr;
+  .sm-wrap {
+    padding: 6px 44px 6px 4px;
   }
-  .ds-cabinet {
-    padding: 18px 14px 16px;
+  .sm-marquee-title {
+    font-size: 23px;
+    letter-spacing: 0.16em;
   }
-  .ds-side {
-    border-left: none;
-    border-top: 1px solid color-mix(in srgb, var(--gold) 16%, transparent);
-    padding: 16px 14px;
+  .sm-lever {
+    width: 40px;
+    right: -34px;
+    height: 148px;
   }
-  .ds-title {
-    font-size: 26px;
+  .sm-lever-knob {
+    width: 26px;
+    height: 26px;
+    top: -26px;
   }
-  .ds-reels {
-    gap: 8px;
-  }
-  /* Kol dar ekranda gizli (yer açar) */
-  .ds-lever {
-    display: none;
-  }
-  .ds-jackpot-word {
+  .we-word {
     font-size: 34px;
   }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 460px) {
   .ds-card {
     --slot-row: 62px;
   }
-  .ds-stats {
+  .ds-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .sm-gauges {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .sm-wrap {
+    padding: 6px 38px 6px 2px;
+  }
+  .sm-lever {
+    right: -30px;
+    width: 36px;
+    height: 132px;
+  }
+  .sm-cabinet {
+    padding: 12px 12px 16px;
+    border-radius: 22px;
+  }
+  .sm-reels {
+    gap: 8px;
   }
 }
