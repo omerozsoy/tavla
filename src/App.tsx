@@ -474,7 +474,7 @@ export default function App() {
   const [editProfile, setEditProfile] = useState(false)
   const [profileEditMode, setProfileEditMode] = useState(false) // Profil: false=genel bakis, true=duzenleme formu
   // Profil genel-bakis aktif sekmesi — URL'e yansir (kisisel yer-imi/link: /profil/avatarlar vb.)
-  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'badges' | 'addresses'>('stats')
+  const [profileTab, setProfileTab] = useState<'stats' | 'frames' | 'boards' | 'checkers' | 'badges' | 'addresses'>('stats')
   const [showAuth, setShowAuth] = useState(false) // giris/kayit modali acik mi
   const [authForgot, setAuthForgot] = useState(false) // Auth "sifremi unuttum" modu -> /sifremi-unuttum
   // Sifre sifirlama: link'ten ?action=reset&token=&email= geldiyse
@@ -735,6 +735,8 @@ export default function App() {
           ? 'profil/tahtalar'
           : profileTab === 'badges'
             ? 'profil/basarilar'
+            : profileTab === 'checkers'
+              ? 'profil/pul-tasarimlari'
             : profileTab === 'addresses'
                 ? 'profil/adreslerim'
                 : 'profil'
@@ -1098,6 +1100,8 @@ export default function App() {
                   ? 'boards'
                   : sub === 'basarilar'
                     ? 'badges'
+                    : sub === 'pul-tasarimlari'
+                      ? 'checkers'
                     : sub === 'adreslerim'
                       ? 'addresses'
                       : 'stats',
@@ -5754,6 +5758,20 @@ export default function App() {
             name={profile.nickname}
             onBuy={handleBuy}
             onEquip={handleEquipFrame}
+          />
+        }
+        checkersSlot={
+          <CheckerShop
+            embedded
+            unlocks={user.unlocks ?? []}
+            selected={user.checker ?? null}
+            coins={user.coins ?? 0}
+            onBuy={async (fid) => {
+              const r = await buyItem(fid)
+              setUser((u) => (u ? { ...u, coins: r.coins, unlocks: r.unlocks } : u))
+              return r
+            }}
+            onSelect={handleEquipChecker}
           />
         }
         tab={profileTab}

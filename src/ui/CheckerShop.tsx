@@ -20,16 +20,18 @@ export default function CheckerShop({
   onBuy,
   onSelect,
   onClose,
+  embedded = false,
 }: {
   unlocks: string[]
   selected: string | null
   coins: number
   onBuy: (fullId: string) => Promise<unknown> // basarisizda throw eder (yetersiz coin vb.)
   onSelect: (id: string | null) => void
-  onClose: () => void
+  onClose?: () => void
+  embedded?: boolean // true: profil sekmesinde inline (overlay/kapatma yok)
 }) {
   const toast = useToast()
-  useEscape(onClose)
+  useEscape(() => onClose?.())
   const [busy, setBusy] = useState<string | null>(null)
   const owns = (id: string) => unlocks.includes('checker.' + id)
 
@@ -46,13 +48,9 @@ export default function CheckerShop({
     }
   }
 
-  return (
-    <div className="register-overlay modal page cshop-overlay" role="dialog" aria-modal="true">
-      <div className="register-card cshop-card" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose} aria-label="Kapat">
-          <Icon name="x" size={16} />
-        </button>
-        <div className="cshop-head">
+  const body = (
+    <>
+      <div className="cshop-head">
           <h2><Icon name="palette" size={20} /> Pul Tasarımları</h2>
           <div className="cshop-bal">Bakiye <Coins amount={coins} size={16} /></div>
         </div>
@@ -102,6 +100,16 @@ export default function CheckerShop({
             </div>
           </section>
         ))}
+    </>
+  )
+  if (embedded) return <div className="cshop-embed">{body}</div>
+  return (
+    <div className="register-overlay modal page cshop-overlay" role="dialog" aria-modal="true">
+      <div className="register-card cshop-card" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={() => onClose?.()} aria-label="Kapat">
+          <Icon name="x" size={16} />
+        </button>
+        {body}
       </div>
     </div>
   )
