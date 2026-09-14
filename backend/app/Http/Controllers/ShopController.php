@@ -88,6 +88,27 @@ class ShopController extends Controller
 
     private const RARITY_PRICE = ['common' => 30, 'rare' => 60, 'epic' => 120, 'legendary' => 180, 'mythic' => 250];
 
+    // Dijital checker (pul) materyalleri -> rarity (frontend src/checkers.ts CHECKER_SKINS ile BIREBIR).
+    // Fiyat: RARITY_PRICE (rare 60 / epic 120 / legendary 180). unlock id: 'checker.<id>'.
+    private const CHECKER_RARITY = [
+        'pearl-purple' => 'rare', 'pearl-blue' => 'rare', 'pearl-emerald' => 'rare',
+        'pearl-rose' => 'rare', 'pearl-gold' => 'rare', 'pearl-black' => 'rare',
+        'marble-graphite' => 'epic', 'marble-green' => 'epic', 'marble-blue' => 'epic',
+        'marble-rose' => 'epic', 'marble-amber' => 'epic', 'marble-wine' => 'epic',
+        'crystal-blue' => 'epic', 'crystal-red' => 'epic', 'crystal-amber' => 'epic',
+        'crystal-emerald' => 'epic', 'crystal-violet' => 'epic', 'crystal-aqua' => 'epic',
+        'resin-brown' => 'rare', 'resin-red' => 'rare', 'resin-blue' => 'rare',
+        'resin-orange' => 'rare', 'resin-teal' => 'rare', 'resin-plum' => 'rare',
+        'metallic-silver' => 'legendary', 'metallic-gold' => 'legendary', 'metallic-bronze' => 'legendary',
+        'metallic-gunmetal' => 'legendary', 'metallic-rosegold' => 'legendary', 'metallic-sapphire' => 'legendary',
+    ];
+
+    /** Tüm checker skin id'leri (Şans Çarkı rastgele ödülü bu havuzdan da seçebilir). */
+    public static function checkerIds(): array
+    {
+        return array_keys(self::CHECKER_RARITY);
+    }
+
     /** Tüm avatar çerçeve motion id'leri (Şans Çarkı rastgele ödülü bu havuzdan seçer). */
     public static function frameMotionIds(): array
     {
@@ -110,6 +131,9 @@ class ShopController extends Controller
         foreach (self::FRAME_MOTIONS as $motion => $rarity) {
             $c["frame.$motion"] = self::RARITY_PRICE[$rarity];
         }
+        foreach (self::CHECKER_RARITY as $id => $rarity) {
+            $c["checker.$id"] = self::RARITY_PRICE[$rarity];
+        }
 
         return $c;
     }
@@ -121,6 +145,7 @@ class ShopController extends Controller
             'catalog' => $this->catalog(),
             'unlocks' => $u->unlocks ?? [],
             'avatar_frame' => $u->avatar_frame,
+            'checker' => $u->checker ?? null,
             'coins' => $u->coins ?? 0,
         ]);
     }
@@ -226,5 +251,22 @@ class ShopController extends Controller
         $u->avatar_frame = ($id === 'none') ? null : $id;
         $u->save();
         return response()->json(['avatar_frame' => $u->avatar_frame]);
+    }
+
+    // Dijital checker (pul) materyalini seç (sahip olunmalı; 'none' = varsayılan board pulu).
+    public function selectChecker(Request $request)
+    {
+        $data = $request->validate(['id' => ['nullable', 'string', 'max:40']]);
+        $id = $data['id'] ?? null;
+        $u = $request->user();
+        if ($id && $id !== 'none') {
+            $unlocks = $u->unlocks ?? [];
+            if (! in_array('checker.'.$id, $unlocks, true)) {
+                return $this->fail('Bu pul tasarımına sahip değilsin.', 403);
+            }
+        }
+        $u->checker = ($id === 'none') ? null : $id;
+        $u->save();
+        return response()->json(['checker' => $u->checker]);
     }
 }
