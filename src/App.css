@@ -7474,19 +7474,19 @@ html.fs-active .account-bar {
   display: none;
   position: fixed;
   z-index: 110;
-  /* Yatay: sag kose. Dikey ORTALAMA: buton yuksekligi = bant yuksekligi (~56px) ve
-     top:0 -> ikon flex ile bantta tam ortalanir (bant boyu degisse de bozulmaz). */
+  /* Yatay: SOL kose (Boyner tarzi -> hamburger en solda, sagina logo). Dikey ORTALAMA:
+     buton yuksekligi = bant yuksekligi (~56px) ve top:0 -> ikon flex ile bantta ortalanir. */
   top: env(safe-area-inset-top);
-  right: env(safe-area-inset-right);
+  left: env(safe-area-inset-left);
   width: 52px;
   height: calc(56px + env(safe-area-inset-top));
   align-items: center;
   justify-content: center;
-  /* Cerceve YOK (kullanici istegi): border/golge yok. Zemin bant rengiyle ayni ->
-     bantta gorunmez ("cercevesiz"), icerige kayinca ikon okunur kalir. */
+  /* Cerceve/kutu YOK (kullanici istegi): border/golge/zemin yok -> yalniz ikon, bantla
+     tam kaynasir (etrafinda beyaz kutu gorunmez). */
   border: none;
   border-radius: var(--radius-lg);
-  background: var(--card-bg);
+  background: transparent;
   color: var(--text);
   cursor: pointer;
   box-shadow: none;
@@ -7886,10 +7886,10 @@ html.fs-active .account-bar {
   .account-bar {
     min-height: 48px;
     gap: 6px;
-    /* Sag: sabit hamburger (52px) icin pay birak -> band ogeleri altina girmesin. */
-    padding: 6px 60px 6px 12px;
+    /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar. */
+    padding: 6px 12px 6px 60px;
   }
-  /* Hamburger artik SAGDA -> logo en solda gorunsun (bosluk yok). */
+  /* Hamburger en SOLDA -> logo hemen sagina yaslansin. */
   .ab-brand {
     margin-left: 0;
   }
@@ -8802,8 +8802,9 @@ button.acct-row:hover:not(:disabled) {
   .account-bar {
     min-height: 48px;
     gap: 4px;
-    /* Sag: sabit hamburger (52px) icin pay birak -> hesap tetigi altina girmesin. */
-    padding: max(4px, env(safe-area-inset-top)) calc(64px + env(safe-area-inset-right)) 4px 10px;
+    /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar
+       (Boyner tarzi). Sag normal; hesap kontrolleri saga yaslanir. */
+    padding: max(4px, env(safe-area-inset-top)) 10px 4px calc(64px + env(safe-area-inset-left));
     flex-wrap: nowrap;
   }
   /* Dar telefon: ad kisalsin (logo ile bindirmesin) */
