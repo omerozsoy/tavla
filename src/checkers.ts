@@ -16,8 +16,9 @@ export interface CheckerSkin {
   name: string
   family: CheckerFamily
   rarity: CheckerRarity
-  dark: string // birincil renk (oyuncunun pulları)
-  light: string // eş açık renk (rakip pulları) — aile finish'i korunur
+  dark: string // birincil renk (oyuncunun pulları); adaptive'te SADECE önizleme/fallback rengi
+  light: string // eş açık renk (rakip pulları); adaptive'te SADECE önizleme/fallback rengi
+  adaptive?: boolean // true: renk seçtirmez; oyunda AKTİF TAHTANIN pul renklerine (--cream/--navy) uyar
 }
 
 // rarity -> coin fiyatı (backend RARITY_PRICE ile aynı; frame'lerle ortak kademe)
@@ -82,7 +83,25 @@ export const CHECKER_SKINS: CheckerSkin[] = [
   skin('metallic-sapphire', 'Sapphire Metallic', 'metallic', 'legendary', '#2f5fb0'),
 ]
 
-export const CHECKER_BY_ID: Record<string, CheckerSkin> = Object.fromEntries(CHECKER_SKINS.map((s) => [s.id, s]))
+// ---- FINISH'LER (renk seçtirmez; aktif tahtanın pul rengine uyar) — SATILAN ürünler ----
+// Kullanıcı yalnız MALZEME/tarz seçer; renk sabit değil, oyunda kullandığı tahtanın kendi
+// pul renklerine (açık/koyu taş) uygulanır. dark/light burada SADECE mağaza önizleme rengidir.
+function finish(id: string, name: string, family: CheckerFamily, rarity: CheckerRarity, dark: string): CheckerSkin {
+  return { id, name, family, rarity, dark, light: IVORY[family], adaptive: true }
+}
+
+export const CHECKER_FINISHES: CheckerSkin[] = [
+  finish('finish-pearl', 'Pearl', 'pearl', 'rare', '#6d5bd0'),
+  finish('finish-marble', 'Marble', 'marble', 'epic', '#37506b'),
+  finish('finish-crystal', 'Crystal', 'crystal', 'epic', '#2b6fe0'),
+  finish('finish-resin', 'Premium Resin', 'resin', 'rare', '#7a3b28'),
+  finish('finish-metallic', 'Metallic Pearl', 'metallic', 'legendary', '#c9a34a'),
+]
+
+// CHECKER_BY_ID: finish'ler + eski 30 sabit-renkli skin (geriye dönük uyum: satın alınmış olabilir).
+export const CHECKER_BY_ID: Record<string, CheckerSkin> = Object.fromEntries(
+  [...CHECKER_FINISHES, ...CHECKER_SKINS].map((s) => [s.id, s]),
+)
 export const CHECKER_FAMILIES: { key: CheckerFamily; label: string }[] = [
   { key: 'pearl', label: 'Pearl' },
   { key: 'marble', label: 'Marble' },
