@@ -58,12 +58,13 @@ interface Props {
   coins?: number
   onBuyItem?: (shopId: string) => void // 'theme.<id>' / 'frame.<id>' satın al
   framesSlot?: ReactNode // FrameShop: tüm çerçeveler + satın al/kuşan
+  checkersSlot?: ReactNode // CheckerShop (embedded): pul tasarımları + satın al/seç
   // Kontrollu sekme (URL'e yansisin diye App'ten gelir; verilmezse ic state ile calisir)
   tab?: ProfTab
   onTabChange?: (tab: ProfTab) => void
 }
 
-type ProfTab = 'frames' | 'boards' | 'stats' | 'badges' | 'addresses'
+type ProfTab = 'frames' | 'boards' | 'checkers' | 'stats' | 'badges' | 'addresses'
 
 function ageFrom(birth?: string | null): number | null {
   if (!birth) return null
@@ -96,6 +97,7 @@ export default function ProfileOverview({
   coins,
   onBuyItem,
   framesSlot,
+  checkersSlot,
   tab: tabProp,
   onTabChange,
 }: Props) {
@@ -300,6 +302,15 @@ export default function ProfileOverview({
           <button
             type="button"
             role="tab"
+            aria-selected={tab === 'checkers'}
+            className={tab === 'checkers' ? 'active' : ''}
+            onClick={() => setTab('checkers')}
+          >
+            {t('menu.checkers')}
+          </button>
+          <button
+            type="button"
+            role="tab"
             aria-selected={tab === 'frames'}
             className={tab === 'frames' ? 'active' : ''}
             onClick={() => setTab('frames')}
@@ -411,6 +422,12 @@ export default function ProfileOverview({
                 />
               </div>
             )}
+          </section>
+        )}
+
+        {tab === 'checkers' && (
+          <section className="prof-ov-col">
+            {checkersSlot}
           </section>
         )}
 

@@ -64,8 +64,9 @@ export const PAGES: PageDef[] = [
   // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
   // SAG UST bara tasindi (storefront ikonu); sol menude GIZLI (inMenu:false) ama /magaza URL'i + top-bar ikonu calisir.
   { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account', gate: 'user', inMenu: false },
-  // Pul Tasarımları: ücretli dijital checker materyalleri (coin ile), ayrı sayfa.
-  { key: 'checkers', slug: 'pul-tasarimlari', labelKey: 'menu.checkers', icon: 'palette', group: 'account', gate: 'user' },
+  // Pul Tasarımları: ücretli dijital checker materyalleri (coin ile). Sol menüde GIZLI (inMenu:false);
+  // PROFIL sekmesi olarak açılır (/profil/pul-tasarimlari). Standalone /pul-tasarimlari URL'i de çalışır.
+  { key: 'checkers', slug: 'pul-tasarimlari', labelKey: 'menu.checkers', icon: 'palette', group: 'account', gate: 'user', inMenu: false },
   // Siparişlerim sol menüde DEĞİL; profil sayfasından açılır (inMenu:false -> /siparislerim yine çalışır).
   { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user', inMenu: false },
 
