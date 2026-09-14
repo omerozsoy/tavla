@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -6,6 +6,7 @@ import { TavlaTvLogo } from './TavlaTvLogo'
 
 // Katlanabilir grup durumu (localStorage'da kalici). Anahtar -> kapali mi.
 const COLLAPSE_KEY = 'menuCollapsed'
+const SIG_KEY = 'menuCollapsedSig' // admin varsayilan imzasi (degisince override sifirlanir)
 const loadCollapsed = (): Record<string, boolean> => {
   try {
     return JSON.parse(localStorage.getItem(COLLAPSE_KEY) || '{}')
@@ -36,6 +37,8 @@ export interface SideMenuProps {
   // Gruplar admin panelinden yonetilir: group=anahtar, label=cozumlenmis baslik (null=basliksiz),
   // defaultCollapsed=baslangicta katli mi (admin ayari; kullanici tiklamasi uzerine yazar).
   groups: { group: string; label: string | null; defaultCollapsed: boolean; items: NavItem[] }[]
+  // Admin katlama-varsayilanlarinin imzasi; degisince kullanici override'lari sifirlanir.
+  groupSig?: string
   onResume: () => void
   onToggleAnalysis?: () => void
   onResign?: () => void
@@ -51,6 +54,26 @@ export default function SideMenu(p: SideMenuProps) {
   // Katlanabilir gruplar: varsayilan ilk 2 grup acik, gerisi kapali; kullanici degistirince
   // localStorage'da saklanir (grup anahtarina gore override).
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>(loadCollapsed)
+  // Admin katlama-varsayilanlari degisince (groupSig) kullanici override'larini SIFIRLA ->
+  // admin panelinden yapilan degisiklik her tarayicida gecerli olur (localStorage tuzagi biter).
+  useEffect(() => {
+    if (!p.groupSig) return
+    let stored = ''
+    try {
+      stored = localStorage.getItem(SIG_KEY) || ''
+    } catch {
+      /* yok say */
+    }
+    if (stored !== p.groupSig) {
+      setCollapsed({})
+      try {
+        localStorage.setItem(COLLAPSE_KEY, '{}')
+        localStorage.setItem(SIG_KEY, p.groupSig)
+      } catch {
+        /* yok say */
+      }
+    }
+  }, [p.groupSig])
   // Baslangic durumu admin ayarindan (def); kullanicinin kendi tiklamasi (localStorage) uzerine yazar.
   const isCollapsed = (key: string, def: boolean) => collapsed[key] ?? def
   const toggleGroup = (key: string, def: boolean) => {

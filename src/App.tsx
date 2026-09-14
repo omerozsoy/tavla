@@ -5876,6 +5876,17 @@ export default function App() {
           >
             <Icon name="spinner-ball" size={24} />
           </Button>
+          {/* Zar Slotu: Şans Çarkı'nın yanında, üst barda dice ikonuyla (sol menüden taşındı) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="[&_svg]:size-[24px]!"
+            onClick={() => goPage(() => setDiceSlotOpen(true))}
+            title={t('ds.menu')}
+            aria-label={t('ds.menu')}
+          >
+            <Icon name="dice" size={24} />
+          </Button>
           {/* Mesajlar + Bildirimler tek ikonda: okunmamış mesaj + bildirim toplamı rozette */}
           <Button
             variant="ghost"
@@ -6429,6 +6440,14 @@ export default function App() {
       defaultCollapsed: menuGroupCfg[gkey]?.collapsed ?? gi >= 2,
       items: bucket.get(gkey)!,
     }))
+  // Admin katlama-varsayilanlarinin imzasi: DEGISIRSE SideMenu kullanici override'larini
+  // sifirlar (admin otoritesi) -> "admin'de degistirdim ama tarayicim eski gosteriyor" tuzagi biter.
+  const groupCollapseSig = Object.values(menuGroupCfg).length
+    ? Object.values(menuGroupCfg)
+        .map((g) => `${g.key}:${g.collapsed ? 1 : 0}`)
+        .sort()
+        .join(',')
+    : ''
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0
@@ -7039,6 +7058,7 @@ export default function App() {
             inGame={false}
             hasActiveGame={hasActiveGame}
             groups={menuGroups}
+            groupSig={groupCollapseSig}
             onResume={menuProps.onResume}
             active={activeKey}
             badges={{ messages: dmUnread }}
@@ -7087,6 +7107,7 @@ export default function App() {
             inGame={false}
             hasActiveGame={hasActiveGame}
             groups={menuGroups}
+            groupSig={groupCollapseSig}
             onResume={menuProps.onResume}
             active={activeKey}
             badges={{ messages: dmUnread }}
@@ -7142,6 +7163,7 @@ export default function App() {
             inGame={false}
             hasActiveGame={hasActiveGame}
             groups={menuGroups}
+            groupSig={groupCollapseSig}
             onResume={menuProps.onResume}
             active={activeKey}
             badges={{ messages: dmUnread }}
@@ -7330,6 +7352,7 @@ export default function App() {
             inGame={false}
             hasActiveGame={hasActiveGame}
             groups={menuGroups}
+            groupSig={groupCollapseSig}
             onResume={menuProps.onResume}
             active={activeKey}
             badges={{ messages: dmUnread }}
