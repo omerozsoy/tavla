@@ -57,6 +57,23 @@ class MenuGroup extends Model
     }
 
     /**
+     * config/menu.php kataloğunda tanımlı YAPISAL grup mu? Katalog grupları SILINEMEZ —
+     * syncCatalog() onları her liste açılışında yeniden ekler (silme etkisiz kalır, "silemedim"
+     * tuzağı). Bunlar yalnızca gizlenir (visible=false) veya öğeleri taşınınca frontend'de
+     * otomatik kaybolur. Yalnız admin-oluşturduğu (katalog-dışı) gruplar gerçekten silinebilir.
+     */
+    public function isCatalog(): bool
+    {
+        foreach (config('menu.groups', []) as $g) {
+            if (($g['key'] ?? null) === $this->key) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * config/menu.php 'groups' katalogundaki her grup icin satir oldugundan emin ol
      * (idempotent). Eksikler eklenir; mevcutlarin ad/sira/gorunurlugu KORUNUR. Etiketler
      * bos (null) tohumlanir -> bilinen gruplar frontend i18n varsayilanina duser (API yok).

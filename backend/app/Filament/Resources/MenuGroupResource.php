@@ -74,9 +74,14 @@ class MenuGroupResource extends Resource
                 Tables\Columns\ToggleColumn::make('visible')->label('Başlığı göster'),
             ])
             ->actions([
+                // Katalog (yapisal) gruplar SILINEMEZ: syncCatalog() liste her acildiginda onlari
+                // yeniden ekler -> silme etkisiz ("silemedim"). Yalniz admin-olusturdugu gruplar
+                // silinir. Katalog grubunu menuden kaldirmak icin: "Baslik goster"i kapat veya
+                // Sol Menu'den ogelerini baska gruba tasi (bosalinca frontend'de otomatik kaybolur).
                 Tables\Actions\DeleteAction::make()
                     ->label('')
                     ->tooltip('Grubu sil')
+                    ->visible(fn (MenuGroup $r) => ! $r->isCatalog())
                     ->modalHeading('Grubu sil')
                     ->modalDescription('Bu gruptaki öğeler varsayılan grubuna döner. Emin misin?'),
             ]);
