@@ -122,7 +122,7 @@ const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
-import { PAGES, PAGE_BY_KEY, type MenuGroup } from './pages'
+import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
 import { Icon } from './ui/Icon'
 import { burstConfettiAt } from './ui/confetti'
 import GameMenu from './ui/GameMenu'
@@ -259,6 +259,7 @@ import {
   analyzePosition,
   type GnuMove,
   type MenuOverride,
+  type MenuGroupCfg,
   type ServerUser,
 } from './api'
 
@@ -461,8 +462,10 @@ export default function App() {
   const pName = (p: Player) => t(p === 'white' ? 'player.white' : 'player.black')
   const [saved] = useState(() => loadGame())
   const [user, setUser] = useState<ServerUser | null>(null)
-  // Sol menu override'lari (admin panelden: sira/ad/gorunurluk). Anahtar -> override.
+  // Sol menu override'lari (admin panelden: sira/ad/gorunurluk/grup). Anahtar -> override.
   const [menuOverrides, setMenuOverrides] = useState<Record<string, MenuOverride>>({})
+  // Grup basligi override'lari (admin "Menü Grupları"). Grup anahtari -> config.
+  const [menuGroupCfg, setMenuGroupCfg] = useState<Record<string, MenuGroupCfg>>({})
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
@@ -826,9 +829,10 @@ export default function App() {
   // Sol menu yapilandirmasini (admin panelden sira/ad/gorunurluk) acilista bir kez cek.
   useEffect(() => {
     let alive = true
-    getMenuConfig().then((items) => {
+    getMenuConfig().then(({ items, groups }) => {
       if (!alive) return
       setMenuOverrides(Object.fromEntries(items.map((it) => [it.key, it])))
+      setMenuGroupCfg(Object.fromEntries(groups.map((g) => [g.key, g])))
     })
     return () => {
       alive = false
@@ -6357,9 +6361,11 @@ export default function App() {
     ],
   })
 
-  // Sol menu: admin sirasi (menu_items.sort) global uygulanir -> pages.ts genelinde tek
-  // duz liste sirala, sonra ARDISIK ayni-grup kosularina bol (divider'lar korunur). Ozel
-  // ad varsa i18n'i ezer; gorunurlugu kapali ogeler dusurulur. Override yoksa pages.ts sirasi.
+  // Sol menu: item SIRASI/GORUNURLUGU/ADI + GRUP admin panelinden yonetilir. Her item bir
+  // gruba aittir (admin override menuOverrides.group, yoksa pages.ts group). Item'lar grup
+  // icinde menu_items.sort ile; gruplar menuGroupCfg.sort (yoksa MENU_GROUP_ORDER) ile siralanir.
+  // Override yoksa pages.ts + i18n varsayilanlarina duser (davranis degismez).
+  const itemGroupKey = (pg: (typeof PAGES)[number]): string => menuOverrides[pg.key]?.group || pg.group
   const orderedPages = PAGES.map((pg, i) => ({ pg, i }))
     .filter(
       ({ pg }) =>
@@ -6370,20 +6376,45 @@ export default function App() {
     )
     .sort((a, b) => menuSort(a.pg.key, a.i) - menuSort(b.pg.key, b.i))
 
-  const menuGroups: { group: MenuGroup; items: NavItem[] }[] = []
+  // Grup basligi: admin adi (dile gore) -> i18n varsayilani (bilinen grup) -> yok (null=basliksiz).
+  const resolveGroupLabel = (gkey: string): string | null => {
+    const cfg = menuGroupCfg[gkey]
+    if (cfg) {
+      if (!cfg.visible) return null
+      const l = cfg.labels?.[lang] || cfg.labels?.tr
+      if (l) return l
+    }
+    const dk = (MENU_GROUP_LABELS as Record<string, string | null>)[gkey]
+    return dk ? t(dk) : null
+  }
+  const groupSort = (gkey: string): number => {
+    const s = menuGroupCfg[gkey]?.sort
+    if (typeof s === 'number') return s
+    const i = MENU_GROUP_ORDER.indexOf(gkey as MenuGroup)
+    return i >= 0 ? i : 999
+  }
+
+  // Item'lari gruplara topla (item sirasi korunur), sonra gruplari sirala + basligi cozumle.
+  const bucket = new Map<string, NavItem[]>()
+  const groupOrder: string[] = []
   for (const { pg } of orderedPages) {
-    const item: NavItem = {
+    const gkey = itemGroupKey(pg)
+    if (!bucket.has(gkey)) {
+      bucket.set(gkey, [])
+      groupOrder.push(gkey)
+    }
+    bucket.get(gkey)!.push({
       key: pg.key,
       labelKey: pg.labelKey,
       label: menuLabel(pg.key),
       icon: pg.icon,
       onClick: pageHandlers[pg.key]!,
       hideInGame: pg.hideInGame,
-    }
-    const last = menuGroups[menuGroups.length - 1]
-    if (last && last.group === pg.group) last.items.push(item)
-    else menuGroups.push({ group: pg.group, items: [item] })
+    })
   }
+  const menuGroups: { group: string; label: string | null; items: NavItem[] }[] = groupOrder
+    .sort((a, b) => groupSort(a) - groupSort(b))
+    .map((gkey) => ({ group: gkey, label: resolveGroupLabel(gkey), items: bucket.get(gkey)! }))
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0

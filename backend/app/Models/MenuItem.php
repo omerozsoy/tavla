@@ -70,10 +70,8 @@ class MenuItem extends Model
                 continue;
             }
             if (in_array($key, $existing, true)) {
-                // Grup degismis olabilir (config guncellenirse) — divider dogru kalsin.
-                static::where('key', $key)->where('group', '!=', $item['group'] ?? null)
-                    ->update(['group' => $item['group'] ?? null]);
-
+                // Mevcut item'in GRUBU admin'e aittir (Sol Menu'den degistirilebilir) ->
+                // config degisse bile EZME. Yalnizca eksik anahtarlar asagida eklenir.
                 continue;
             }
             static::create([

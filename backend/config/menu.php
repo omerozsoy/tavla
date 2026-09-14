@@ -44,4 +44,19 @@ return [
         // --- Bilgi (en altta) ---
         ['key' => 'info', 'group' => 'info', 'label' => 'Bilgi'],
     ],
+
+    /*
+     * GRUP KATALOGU — sol menu bolum basliklari (admin "Menu Gruplari" ile yonetir).
+     * 'key' item'lardaki group ile eslesir; 'label' Turkce VARSAYILAN baslik (bos = basliksiz);
+     * 'sort' bolum sirasi. Admin ad/sira/gorunurluk override edebilir + yeni grup ekleyebilir.
+     */
+    'groups' => [
+        ['key' => 'play', 'label' => 'Oyna', 'sort' => 0],
+        ['key' => 'compete', 'label' => 'Turnuvalar', 'sort' => 1],
+        ['key' => 'fun', 'label' => 'Eğlence', 'sort' => 2],
+        ['key' => 'content', 'label' => 'Keşfet', 'sort' => 3],
+        ['key' => 'tools', 'label' => 'Araçlar', 'sort' => 4],
+        ['key' => 'account', 'label' => 'Hesap', 'sort' => 5],
+        ['key' => 'info', 'label' => '', 'sort' => 6], // basliksiz (Bilgi tek oge)
+    ],
 ];
