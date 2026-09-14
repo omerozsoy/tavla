@@ -6592,6 +6592,14 @@ export default function App() {
       {friendsOpen && user && (
         <Friends
           onInvite={handleInviteFriend}
+          onTab={(tab) => {
+            // Sekme tıklaması: Mesajlar'a geç (karşılıklı-dışlar; URL de /mesajlar olur).
+            if (tab === 'messages') {
+              setFriendsOpen(false)
+              setMessagesFocusId(null)
+              setMessagesOpen(true)
+            }
+          }}
           onMessage={(uid) => {
             setFriendsOpen(false)
             setMessagesFocusId(uid)
@@ -6603,6 +6611,14 @@ export default function App() {
       {messagesOpen && user && (
         <Messages
           focusUserId={messagesFocusId}
+          onTab={(tab) => {
+            // Sekme tıklaması: Arkadaşlar'a geç (karşılıklı-dışlar; URL de /arkadaslar olur).
+            if (tab === 'friends') {
+              setMessagesOpen(false)
+              setMessagesFocusId(null)
+              setFriendsOpen(true)
+            }
+          }}
           onRead={() => refreshDmUnread()}
           myAvatar={profile.avatar ?? null}
           myFrame={user.avatar_frame ?? null}

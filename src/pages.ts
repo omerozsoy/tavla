@@ -38,9 +38,10 @@ export const PAGES: PageDef[] = [
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },
 
-  // --- EGLENCE: sans/ekonomi oyunlari (sol menude gorunur; ust barda da erisim var) ---
-  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true },
-  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'fun', hideInGame: true },
+  // --- EGLENCE: sans/ekonomi oyunlari — SAG UST bara tasindi (account-bar ikonlari);
+  // sol menude GIZLI (inMenu:false) ama /sans-carki + /zar-slotu URL'leri + top-bar ikonlari calisir. ---
+  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true, inMenu: false },
+  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'fun', hideInGame: true, inMenu: false },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },

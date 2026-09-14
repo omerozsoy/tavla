@@ -18,6 +18,7 @@ import AvatarFrame from './AvatarFrame'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 import { type IconName } from './Icon'
+import SocialTabs, { type SocialTab } from './SocialTabs'
 
 interface Props {
   focusUserId?: number | null // acilirken dogrudan bu arkadasin konusmasini ac (NOTIF_ID -> Bildirimler)
@@ -33,6 +34,8 @@ interface Props {
   onNotifRead?: () => void // Bildirimler acilinca hepsini okundu isaretle
   onNotifDelete?: (id: number) => void
   onNotifDeleteAll?: () => void
+  // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
+  onTab?: (t: SocialTab) => void
 }
 
 // Bildirimler "sohbeti" icin ozel sentinel id (gercek kullanici id'leri pozitif).
@@ -78,6 +81,7 @@ export default function Messages({
   onNotifRead,
   onNotifDelete,
   onNotifDeleteAll,
+  onTab,
 }: Props) {
   const { t } = useT()
   const toast = useToast()
@@ -224,9 +228,13 @@ export default function Messages({
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
-        <h2>
-          <Icon name="chat" size={20} /> {t('dm.title')}
-        </h2>
+        {onTab ? (
+          <SocialTabs active="messages" onTab={onTab} messagesBadge={unreadNotif} />
+        ) : (
+          <h2>
+            <Icon name="chat" size={20} /> {t('dm.title')}
+          </h2>
+        )}
 
         <div className={`messages-split ${showList ? 'show-list' : 'show-thread'}`}>
           {/* Sol: konusma listesi (gelen kutusu). Üstte arama, altında sabit "Bildirimler". */}
