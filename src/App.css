@@ -24019,3 +24019,8 @@ select:-webkit-autofill {
 .mrv-sum-btn {
   width: 100%;
 }
+
+/* ---- Dijital checker (pul) materyali: seçiliyken CSS gradyanı yerine SVG doldurur ---- */
+.checker.skinned { background: none !important; box-shadow: none !important; position: relative; }
+.checker .checker-skin-fill { position: absolute; inset: 0; pointer-events: none; }
+.checker .checker-skin-fill svg { width: 100%; height: 100%; display: block; }

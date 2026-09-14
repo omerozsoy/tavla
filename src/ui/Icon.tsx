@@ -38,6 +38,7 @@ import {
   MagnifyingGlass,
   Info,
   ChatCircle,
+  Palette,
   User,
   Coin,
   Money,
@@ -169,6 +170,7 @@ export type IconName =
   | 'newspaper'
   | 'briefcase'
   | 'monitor-play'
+  | 'palette'
   | 'warning-circle'
   | 'chart-line'
   | 'info'
@@ -266,6 +268,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   newspaper: Newspaper,
   briefcase: Briefcase,
   'monitor-play': MonitorPlay,
+  palette: Palette,
   'warning-circle': WarningCircle,
   'chart-line': ChartLine,
   info: Info,

@@ -305,6 +305,7 @@ const TR: Dict = {
   'menu.magazine': 'TavlaTV',
   'menu.products': 'Ürünler',
   'menu.myOrders': 'Siparişlerim',
+  'menu.checkers': 'Pul Tasarımları',
   // Fiziksel urun magazasi
   'products.title': 'Ürünler',
   'products.sub': 'Tavla, zar, kitap, zar kulesi ve daha fazlası.',
@@ -1757,6 +1758,7 @@ const EN: Dict = {
   'menu.magazine': 'TavlaTV',
   'menu.products': 'Products',
   'menu.myOrders': 'My Orders',
+  'menu.checkers': 'Checker Designs',
   // Physical product store
   'products.title': 'Products',
   'products.sub': 'Backgammon boards, dice, books, dice towers and more.',
