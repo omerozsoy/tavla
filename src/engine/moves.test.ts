@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GameState } from './types'
 import { initialState, WHITE, BLACK } from './board'
-import { generateMoves, hasNoMove, singleDieSteps } from './moves'
+import { applyStep, generateMoves, hasNoMove, singleDieSteps } from './moves'
 
 // Bos tahta iskeleti olustur (test kurulumu icin)
 function emptyState(turn: GameState['turn'] = WHITE): GameState {
@@ -101,22 +101,91 @@ describe('maksimum zar kullanimi', () => {
     expect(moves.every((m) => m.steps.length === 2)).toBe(true)
   })
 
-  it('sadece tek zar oynanabiliyorsa buyuk zar tercih edilir', () => {
+  it('sadece tek zar oynanabildiginde buyuk zar zorunlu', () => {
+    // Tek beyaz tas index 7'de. zar [6,1].
+    //   6 ile 7->1 (bos, gecerli), sonra 1 ile 1->0 -> index 0 BLOKE (siyah 2 tas) -> durur (1 step)
+    //   1 ile 7->6 (bos, gecerli), sonra 6 ile 6->0 -> index 0 BLOKE -> durur (1 step)
+    // Yani iki zardan yalnizca BIRI oynanabilir; kural geregi buyuk (6) zorunlu.
     const s = emptyState(WHITE)
-    // Kurgu: bir tas index 5'te. zar [6,1].
-    // zar 6 -> index -1 (bear off degil cunku ev degil digerleri yok... hepsi evde -> aslinda bear off olur)
-    // Bunu net kurgulayalim: tas index 10'da, [6,1].
-    // 6 ile 10->4, 1 ile 10->9. ikisi de mumkun ve pespese oynanabilir -> 2 step.
-    // Tek-zar senaryosu icin ozel kurulum:
-    s.points[7] = 1 // index 7
-    s.points[1] = -2 // index 1 bloke (7-6=1)
-    s.points[6] = -2 // index 6 bloke (7-1=6)
-    // Simdi ne 6 ne 1 index 7'den oynanamaz. Baska tas ekleyelim ki sadece biri oynansin.
-    s.points[20] = 1 // index 20: 20-6=14 ok, 20-1=19 ok
-    // Aslinda burada iki zar da oynanabilir. Testi basitlestir:
+    s.points[7] = 1
+    s.points[0] = -2 // index 0 bloke: her iki tek-zar yolu da ikinci adimda durur
     s.dice = [6, 1]
     const moves = generateMoves(s)
+    expect(moves.length).toBe(1)
+    expect(moves[0].steps.length).toBe(1)
+    expect(moves[0].steps[0].die).toBe(6) // kucuk (1) degil, buyuk (6) oynanmali
+    expect(moves[0].steps[0]).toEqual({ from: 7, to: 1, die: 6 })
+  })
+
+  it('buyuk zar oynanamiyorsa kucuk zara dusulur', () => {
+    // Tek beyaz tas index 4'te. zar [6,3].
+    //   6 ile 4->-2 (tahta disi, ev degil -> bear off yok) -> oynanamaz
+    //   3 ile 4->1 (bos, gecerli), sonra 6 index 1'den oynanamaz (evde ama pip 2<6 ve daha uzak tas yok -> bear off... )
+    // Bear off karismasin diye ev disi ek tas koyalim:
+    const s = emptyState(WHITE)
+    s.points[4] = 1
+    s.points[15] = 1 // ev disinda tas -> bear off engellenir, boylece 6 hicbir yere oynanamaz*
+    // *not: index 15'ten 6 ile 15->9 mumkun. Bunu bloke edelim ki yalniz kucuk zar senaryosu kalsin.
+    s.points[9] = -2 // 15-6=9 bloke
+    s.points[12] = -2 // 15-3=12 bloke -> index 15 tasi hic oynanamaz
+    // Simdi yalniz index 4 tasi: 6 ile disari (bear off yok cunku ev disi tas var) -> gecersiz; 3 ile 4->1 gecerli.
+    s.dice = [6, 3]
+    const moves = generateMoves(s)
+    expect(moves.length).toBe(1)
+    expect(moves[0].steps.length).toBe(1)
+    expect(moves[0].steps[0].die).toBe(3) // buyuk (6) oynanamaz -> kucuk (3) oynanir
+    expect(moves[0].steps[0]).toEqual({ from: 4, to: 1, die: 3 })
+  })
+})
+
+describe('cift zar (double) - dort hamle', () => {
+  it('4-4 tek tasla dort adet 4 hamlesi uretir', () => {
+    // Cift zar motora [d,d,d,d] olarak gelir.
+    const s = emptyState(WHITE)
+    s.points[20] = 1 // yol acik: 20->16->12->8->4
+    s.dice = [4, 4, 4, 4]
+    const moves = generateMoves(s)
     expect(moves.length).toBeGreaterThan(0)
+    // Maksimum kullanim: dort step zorunlu
+    expect(moves.every((m) => m.steps.length === 4)).toBe(true)
+    // Tek tas oldugundan sonuc index 4'te olmali
+    const seq = moves[0].steps
+    expect(seq[seq.length - 1].to).toBe(4)
+    expect(seq.every((st) => st.die === 4)).toBe(true)
+  })
+
+  it('cift zarda blok sadece oynanabilen kadarini zorlar', () => {
+    // Tek tas index 20; 20->16->12 sonra 12->8 BLOKE -> en fazla 2 step.
+    const s = emptyState(WHITE)
+    s.points[20] = 1
+    s.points[8] = -2 // 12-4=8 bloke
+    s.dice = [4, 4, 4, 4]
+    const moves = generateMoves(s)
+    expect(moves.every((m) => m.steps.length === 2)).toBe(true)
+    expect(moves[0].steps[moves[0].steps.length - 1].to).toBe(12)
+  })
+})
+
+describe('vurma (hit)', () => {
+  it('tek rakip tas (blot) vurulur ve bara gonderilir', () => {
+    const s = emptyState(WHITE)
+    s.points[7] = 1
+    s.points[5] = -1 // siyah blot (index 5)
+    const steps = singleDieSteps(s, WHITE, 2)
+    const hit = steps.find((st) => st.to === 5)
+    expect(hit).toBeDefined()
+    applyStep(s, hit!, WHITE)
+    expect(s.bar.black).toBe(1) // vurulan siyah tas bara
+    expect(s.points[5]).toBe(1) // beyaz tas noktaya yerlesti
+    expect(s.points[7]).toBe(0) // kaynak bosaldi
+  })
+
+  it('rakibin 2+ tasi olan nokta bloke, vurulamaz', () => {
+    const s = emptyState(WHITE)
+    s.points[7] = 1
+    s.points[5] = -2 // siyah 2 tas -> bloke
+    const steps = singleDieSteps(s, WHITE, 2)
+    expect(steps.find((st) => st.to === 5)).toBeUndefined()
   })
 })
 
