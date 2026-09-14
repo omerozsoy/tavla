@@ -42,7 +42,10 @@ class MenuGroupResource extends Resource
                 ->required()
                 ->maxLength(80)
                 ->helperText('Türkçe yaz; diğer diller otomatik çevrilir. Sonra Sol Menü’den öğeleri bu gruba taşı.'),
-            Forms\Components\Toggle::make('visible')->label('Başlığı göster')->default(true),
+            Forms\Components\Toggle::make('visible')
+                ->label('Menüde göster')
+                ->helperText('Kapalıysa grup (başlık + tüm öğeleri) sol menüde HİÇ görünmez.')
+                ->default(true),
         ]);
     }
 
@@ -71,7 +74,9 @@ class MenuGroupResource extends Resource
                 Tables\Columns\ToggleColumn::make('collapsed')
                     ->label('Kapalı başlasın')
                     ->tooltip('Açıkken grup menüde katlı (kapalı) başlar; kullanıcı tıklayınca açılır.'),
-                Tables\Columns\ToggleColumn::make('visible')->label('Başlığı göster'),
+                Tables\Columns\ToggleColumn::make('visible')
+                    ->label('Menüde göster')
+                    ->tooltip('Kapalıysa grup (başlık + tüm öğeleri) sol menüde hiç görünmez.'),
             ])
             ->actions([
                 // Katalog (yapisal) gruplar SILINEMEZ: syncCatalog() liste her acildiginda onlari
