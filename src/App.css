@@ -5236,16 +5236,20 @@ body.checker-dragging * {
   --cream: var(--stone-dark);
   --navy: var(--stone-light);
 }
+/* İKİ RENK AYNI TASARIM: eskiden beyaz koyu-kenar (düz disk), siyah açık-kenar
+   (parlak kürecik) gibi farklı görünüyordu. Artık ikisi de AYNI simetrik düz disk
+   (koyu ince kenar + dış açık hairline ayrışma); yalnız dolgu rengi (--cream/--navy)
+   değişir. Hem açık hem koyu zeminde okunur; swapStones etkilenmez. */
+.checker.white,
+.checker.black {
+  border: 2px solid rgba(0, 0, 0, 0.28);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.30), 0 1px 3px rgba(0, 0, 0, 0.32);
+}
 .checker.white {
   background: var(--cream);
-  border: 2px solid rgba(0, 0, 0, 0.32);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22), 0 1px 3px rgba(0, 0, 0, 0.32);
 }
 .checker.black {
   background: var(--navy);
-  /* Acik ic hairline + koyu dis halka: koyu/mor zeminde belirgin ayrisim */
-  border: 2px solid rgba(255, 255, 255, 0.42);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.35);
 }
 
 /* Kirik tas (bar'daki vurulmus tas) en koyu alanda (orta bar) durur -> zor
