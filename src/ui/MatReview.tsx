@@ -410,7 +410,7 @@ export default function MatReview({
 // ölçülen genişliğinden (R = COL_W*0.43) MiniBoard oranlarıyla türetilir.
 const ARROW = '#f0a500' // MiniBoard ile aynı: parlak/doygun altın çekirdek
 const ARROW_EDGE = '#2a1206' // MiniBoard ile aynı: koyu casing/kontur
-type ArrowSeg = { x1: number; y1: number; x2: number; y2: number; n: number }
+type ArrowSeg = { x1: number; y1: number; x2: number; y2: number; n: number; bx: number; by: number }
 
 function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -467,8 +467,31 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
         if (!a) return
         const b = centerOf(elFor(s.to, a.y))
         if (!b) return
-        out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, n: i + 1 })
+        out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, n: i + 1, bx: a.x, by: a.y })
       })
+      // Aynı kaynaktan çıkan oklarda (çift zar: 11/6(2) gibi) numara rozetleri ÜST ÜSTE
+      // biner -> "4 yazmıyor" bug'ı. Aynı kaynağı paylaşan rozetleri okun DİKİNE yay.
+      const groups = new Map<string, number[]>()
+      out.forEach((s, idx) => {
+        const k = `${Math.round(s.x1)},${Math.round(s.y1)}`
+        const arr = groups.get(k)
+        if (arr) arr.push(idx)
+        else groups.set(k, [idx])
+      })
+      for (const idxs of groups.values()) {
+        if (idxs.length < 2) continue
+        idxs.forEach((idx, j) => {
+          const s = out[idx]
+          const dx = s.x2 - s.x1
+          const dy = s.y2 - s.y1
+          const len = Math.hypot(dx, dy) || 1
+          const px = -dy / len // okun dikine birim vektör
+          const py = dx / len
+          const off = (j - (idxs.length - 1) / 2) * rad * 0.98
+          s.bx = s.x1 + px * off
+          s.by = s.y1 + py * off
+        })
+      }
       setRad(rad)
       setSize({ w: sr.width, h: sr.height })
       setSegs(out)
@@ -488,7 +511,8 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
   return (
     <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
       {segs.length > 0 && size.w > 0 && (
-        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`}>
+        // Silik/şeffaf ok katmanı: tahtayı boğmayacak kadar soluk (kullanıcı isteği).
+        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`} style={{ opacity: 0.66 }}>
           <defs>
             <marker
               id="mrv-ah"
@@ -505,15 +529,15 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
           </defs>
           {segs.map((s, i) => (
             <g key={i}>
-              {/* koyu casing */}
-              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.484} strokeLinecap="round" opacity={0.7} />
-              {/* parlak çekirdek + zarif uç */}
-              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW} strokeWidth={r * 0.232} strokeLinecap="round" markerEnd="url(#mrv-ah)" />
-              {/* sıra numarası rozeti (kaynak ucunda) */}
-              <circle cx={s.x1} cy={s.y1} r={r * 0.42} fill={ARROW_EDGE} opacity={0.55} />
+              {/* ince koyu casing (soft) */}
+              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.4} strokeLinecap="round" opacity={0.4} />
+              {/* altın çekirdek + zarif uç */}
+              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW} strokeWidth={r * 0.2} strokeLinecap="round" markerEnd="url(#mrv-ah)" />
+              {/* sıra numarası rozeti (kaynak ucunda; çift zarda dikine yayılır) */}
+              <circle cx={s.bx} cy={s.by} r={r * 0.42} fill={ARROW_EDGE} opacity={0.62} />
               <text
-                x={s.x1}
-                y={s.y1 + r * 0.3}
+                x={s.bx}
+                y={s.by + r * 0.3}
                 fontSize={r * 0.86}
                 fontWeight="900"
                 textAnchor="middle"
