@@ -46,6 +46,7 @@ Route::get('/legal-pages/{slug}', [\App\Http\Controllers\LegalPageController::cl
 Route::get('/cookies', [\App\Http\Controllers\CookieController::class, 'entries']); // Cerez Politikasi tablosu
 Route::get('/cookie-consent', [\App\Http\Controllers\CookieController::class, 'consent']); // banner/modal metin + surum + script ID
 Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index']); // fiziksel magaza katalogu (acik)
+Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
 Route::get('/clubs/{club}', [ClubController::class, 'show']);

@@ -23,6 +23,12 @@ class Setting extends Model
         'commission_pct' => 5,
         'pr_min_matches' => 10,    // PR Sıralaması: minimum analiz edilmiş maç
         'pr_min_decisions' => 200, // PR Sıralaması: minimum analiz edilmiş karar
+        // Havale/EFT ödemesi (admin panel: Ayarlar > Havale/EFT). Kapalıyken checkout'ta gösterilmez.
+        'bank_transfer_enabled' => 0,
+        'bank_transfer_iban' => '',
+        'bank_transfer_name' => '',  // hesap sahibi / ünvan
+        'bank_transfer_bank' => '',  // banka adı
+        'bank_transfer_note' => '',  // müşteriye açıklama/talimat
     ];
 
     /** Tüm ayarları cache'li key=>value dizi döndür (tablo yoksa boş). */
@@ -47,6 +53,30 @@ class Setting extends Model
         }
 
         return (int) $v;
+    }
+
+    /** Metin ayar (kayıt yoksa/boşsa default; DEFAULTS'a düşer). */
+    public static function get(string $key, ?string $default = null): string
+    {
+        $all = static::map();
+        $v = $all[$key] ?? null;
+        if ($v === null || $v === '') {
+            return (string) ($default ?? (self::DEFAULTS[$key] ?? ''));
+        }
+
+        return (string) $v;
+    }
+
+    /** Boolean ayar ('1'/'0'/'true'/'false' -> bool). */
+    public static function bool(string $key, bool $default = false): bool
+    {
+        $all = static::map();
+        $v = $all[$key] ?? null;
+        if ($v === null || $v === '') {
+            return $default;
+        }
+
+        return in_array(strtolower((string) $v), ['1', 'true', 'on', 'yes'], true);
     }
 
     /** Ayar yaz + cache temizle. */

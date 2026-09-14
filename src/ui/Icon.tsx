@@ -86,6 +86,7 @@ import {
   Tag,
   Code,
   Copy,
+  Bank,
   DiceOne,
   DiceTwo,
   DiceThree,
@@ -182,6 +183,7 @@ export type IconName =
   | 'tag'
   | 'code'
   | 'copy'
+  | 'bank'
   | 'die-1'
   | 'die-2'
   | 'die-3'
@@ -275,6 +277,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   tag: Tag,
   code: Code,
   copy: Copy,
+  bank: Bank,
   'die-1': DiceOne,
   'die-2': DiceTwo,
   'die-3': DiceThree,

@@ -3,41 +3,119 @@
 namespace App\Http\Controllers;
 
 use App\Models\Payment;
+use App\Models\Setting;
 use App\Services\GarantiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 
 class PaymentController extends Controller
 {
-    // SPA: abonelik baslat -> odeme kaydi olustur, kart sayfasi (imzali) linki don.
+    // ---- Havale/EFT (admin panel: Ayarlar > Havale/EFT) ----
+
+    /** Havale bilgileri (IBAN + hesap sahibi + banka + müşteri açıklaması). */
+    public static function bankTransferInfo(): array
+    {
+        return [
+            'enabled' => Setting::bool('bank_transfer_enabled', false),
+            'iban'    => Setting::get('bank_transfer_iban'),
+            'name'    => Setting::get('bank_transfer_name'),
+            'bank'    => Setting::get('bank_transfer_bank'),
+            'note'    => Setting::get('bank_transfer_note'),
+        ];
+    }
+
+    /** Havale açık VE IBAN dolu mu (checkout için kullanılabilir olması şart). */
+    public static function bankEnabled(): bool
+    {
+        return Setting::bool('bank_transfer_enabled', false) && trim(Setting::get('bank_transfer_iban')) !== '';
+    }
+
+    // GET /pay/bank-transfer — halka açık havale bilgisi (frontend ödeme yöntemi seçimi için).
+    // Kapalıysa {enabled:false} döner (IBAN sızdırmaz).
+    public function bankInfo()
+    {
+        if (! self::bankEnabled()) {
+            return response()->json(['enabled' => false]);
+        }
+        $i = self::bankTransferInfo();
+
+        return response()->json([
+            'enabled' => true,
+            'iban'    => $i['iban'],
+            'name'    => $i['name'],
+            'bank'    => $i['bank'],
+            'note'    => $i['note'],
+        ]);
+    }
+
+    // Checkout ön-kontrol: havale -> açık olmalı; kart -> Garanti hazır olmalı. Uygunsa null.
+    private function checkoutGuard(string $method, GarantiService $garanti)
+    {
+        if ($method === 'bank_transfer') {
+            return self::bankEnabled() ? null : $this->fail('Havale/EFT ödemesi şu an kapalı.', 503);
+        }
+
+        return $garanti->isAvailable() ? null : $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+    }
+
+    // Ödeme kaydı oluşturulduktan sonra dönen JSON: havale -> IBAN + referans; kart -> imzalı
+    // kart/submit URL + demo. $extra: akışa özel alanlar (coins, discount, code...).
+    private function checkoutResponse(Payment $payment, string $method, GarantiService $garanti, array $extra = [])
+    {
+        if ($method === 'bank_transfer') {
+            $i = self::bankTransferInfo();
+
+            return response()->json(array_merge([
+                'bankTransfer' => true,
+                'reference'    => $payment->order_id,
+                'amount'       => (int) $payment->amount,
+                'iban'         => $i['iban'],
+                'name'         => $i['name'],
+                'bank'         => $i['bank'],
+                'note'         => $i['note'],
+            ], $extra));
+        }
+        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
+        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
+
+        return response()->json(array_merge([
+            'url'       => $url,
+            'submitUrl' => $submitUrl,
+            'amount'    => (int) $payment->amount,
+            'demo'      => $garanti->isDemo(),
+        ], $extra));
+    }
+
+    // SPA: abonelik baslat -> odeme kaydi olustur, kart sayfasi (imzali) linki / havale bilgisi don.
     public function subscribe(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isAvailable()) {
-            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
-        }
         $data = $request->validate([
             'plan'   => ['required', 'in:star,starpro'],
             'period' => ['required', 'in:yearly'], // yalnız yıllık üyelik (aylık kaldırıldı)
+            'method' => ['nullable', 'in:card,bank_transfer'],
         ]);
+        $method = $data['method'] ?? 'card';
+        if ($guard = $this->checkoutGuard($method, $garanti)) {
+            return $guard;
+        }
         $amount = config("garanti.prices.{$data['plan']}.{$data['period']}");
         if (! $amount) {
             return $this->fail('Geçersiz plan.', 422);
         }
 
         $payment = Payment::create([
-            'user_id'  => $request->user()->id,
-            'kind'     => 'subscription',
-            'order_id' => 'TV'.now()->format('ymdHis').mt_rand(100, 999),
-            'plan'     => $data['plan'],
-            'period'   => $data['period'],
-            'amount'   => $amount,
-            'currency' => '949',
-            'status'   => 'pending',
+            'user_id'        => $request->user()->id,
+            'kind'           => 'subscription',
+            'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
+            'order_id'       => 'TV'.now()->format('ymdHis').mt_rand(100, 999),
+            'plan'           => $data['plan'],
+            'period'         => $data['period'],
+            'amount'         => $amount,
+            'currency'       => '949',
+            'status'         => 'pending',
         ]);
 
-        // Kart sayfasi imzali (oturum gerekmeden guvenli, 30 dk)
-        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        return response()->json(['url' => $url]);
+        return $this->checkoutResponse($payment, $method, $garanti);
     }
 
     // SPA: sepetteki coin paketlerini satin al -> tek odeme kaydi, kart sayfasi linki don.
@@ -45,15 +123,17 @@ class PaymentController extends Controller
     // frontend'den gelen tutara ASLA guvenilmez.
     public function buyCoins(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isAvailable()) {
-            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
-        }
         $data = $request->validate([
             'items'          => ['required', 'array', 'min:1', 'max:20'],
             'items.*.id'     => ['required', 'string'],
             'items.*.qty'    => ['required', 'integer', 'min:1', 'max:99'],
             'code'           => ['nullable', 'string', 'max:40'],
+            'method'         => ['nullable', 'in:card,bank_transfer'],
         ]);
+        $method = $data['method'] ?? 'card';
+        if ($guard = $this->checkoutGuard($method, $garanti)) {
+            return $guard;
+        }
 
         [$totalKurus, $totalCoins, $ids, $err] = $this->coinSubtotal($data['items']);
         if ($err) {
@@ -83,6 +163,7 @@ class PaymentController extends Controller
         $payment = Payment::create([
             'user_id'        => $request->user()->id,
             'kind'           => 'coins',
+            'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
             'order_id'       => 'TC'.now()->format('ymdHis').mt_rand(100, 999),
             'amount'         => $chargeKurus,
             'coins'          => $totalCoins,
@@ -93,18 +174,13 @@ class PaymentController extends Controller
             'status'         => 'pending',
         ]);
 
-        // url: eski akis (ayri kart sayfasi). submitUrl: uygulama-ici kart formu bu imzali
-        // uca POST eder (SPA'da kredi karti sayfasi) -> Garanti 3D. amount kurus, coins jeton.
-        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
-        return response()->json([
-            'url'       => $url,
-            'submitUrl' => $submitUrl,
-            'amount'    => $chargeKurus,
-            'coins'     => $totalCoins,
-            'discount'  => $discountKurus,
-            'code'      => $discountCode,
-            'demo'      => $garanti->isDemo(), // true: gercek tahsilat yok, kart sayfasi onizleme
+        // Kart: url (eski ayrı sayfa) + submitUrl (uygulama-içi form) -> Garanti 3D.
+        // Havale: IBAN + referans (order_id) döner; ödeme admin panelden elle onaylanır.
+        return $this->checkoutResponse($payment, $method, $garanti, [
+            'amount'   => $chargeKurus,
+            'coins'    => $totalCoins,
+            'discount' => $discountKurus,
+            'code'     => $discountCode,
         ]);
     }
 
@@ -114,8 +190,12 @@ class PaymentController extends Controller
     // callback'te plan_until'a +1 yil EKLENIR (sifirlanmaz).
     public function buyMembership(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isAvailable()) {
-            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
+        $data = $request->validate([
+            'method' => ['nullable', 'in:card,bank_transfer'],
+        ]);
+        $method = $data['method'] ?? 'card';
+        if ($guard = $this->checkoutGuard($method, $garanti)) {
+            return $guard;
         }
         $amount = (int) config('garanti.renew.yearly', 49900);
         if ($amount <= 0) {
@@ -123,24 +203,18 @@ class PaymentController extends Controller
         }
 
         $payment = Payment::create([
-            'user_id'  => $request->user()->id,
-            'kind'     => 'renew',
-            'order_id' => 'TM'.now()->format('ymdHis').mt_rand(100, 999),
-            'plan'     => 'star',
-            'period'   => 'yearly',
-            'amount'   => $amount,
-            'currency' => '949',
-            'status'   => 'pending',
+            'user_id'        => $request->user()->id,
+            'kind'           => 'renew',
+            'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
+            'order_id'       => 'TM'.now()->format('ymdHis').mt_rand(100, 999),
+            'plan'           => 'star',
+            'period'         => 'yearly',
+            'amount'         => $amount,
+            'currency'       => '949',
+            'status'         => 'pending',
         ]);
 
-        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
-        return response()->json([
-            'url'       => $url,
-            'submitUrl' => $submitUrl,
-            'amount'    => $amount,
-            'demo'      => $garanti->isDemo(),
-        ]);
+        return $this->checkoutResponse($payment, $method, $garanti);
     }
 
     // kind='product' odemesi basariliysa bagli siparisi 'paid' yap + stok dus (idempotent:
@@ -252,6 +326,7 @@ class PaymentController extends Controller
     // Kart giris sayfasi (imzali). Kart verisi sunucuda saklanmaz; dogrudan bankaya gider.
     public function card(Request $request, Payment $payment)
     {
+        abort_if($payment->payment_method === 'bank_transfer', 404); // havale kart sayfasıyla ödenmez
         abort_unless($request->hasValidSignature() && $payment->status === 'pending', 403);
         // Form submit URL'i de imzali uretilir (bu sayfa zaten imza dogruladi) -> yalnizca
         // bu odemenin sahibi submit edebilir; baskasinin pending odemesine POST engellenir.
@@ -262,6 +337,7 @@ class PaymentController extends Controller
     // Kart formu -> Garanti 3D formunu olustur ve bankaya auto-submit et.
     public function submit(Request $request, Payment $payment, GarantiService $garanti)
     {
+        abort_if($payment->payment_method === 'bank_transfer', 404); // havale kart formuyla ödenmez
         abort_unless($payment->status === 'pending', 403);
         $card = $request->validate([
             'number' => ['required', 'string', 'max:25'],
@@ -452,9 +528,6 @@ class PaymentController extends Controller
     // ödeme başarılıysa callback fulfillCart ile hepsini karşılar. Fiyatlar SUNUCU-OTORİTER.
     public function cartCheckout(Request $request, GarantiService $garanti)
     {
-        if (! $garanti->isAvailable()) {
-            return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
-        }
         $data = $request->validate([
             'coin_items'                   => ['nullable', 'array', 'max:20'],
             'coin_items.*.id'              => ['required_with:coin_items', 'string'],
@@ -467,7 +540,12 @@ class PaymentController extends Controller
             'billing_address_id'           => ['nullable', 'integer'],
             'note'                         => ['nullable', 'string', 'max:500'],
             'code'                         => ['nullable', 'string', 'max:40'],
+            'method'                       => ['nullable', 'in:card,bank_transfer'],
         ]);
+        $method = $data['method'] ?? 'card';
+        if ($guard = $this->checkoutGuard($method, $garanti)) {
+            return $guard;
+        }
 
         $coinItems = $data['coin_items'] ?? [];
         $products = $data['products'] ?? [];
@@ -519,15 +597,16 @@ class PaymentController extends Controller
             // Pending siparişleri oluştur (ödeme başarılı olunca fulfillCart 'paid' yapar).
             foreach ($lines as $ln) {
                 $o = \App\Models\ProductOrder::create(array_merge($ship, [
-                    'user_id'      => $request->user()->id,
-                    'product_id'   => $ln['p']->id,
-                    'product_name' => $ln['p']->name,
-                    'color'        => $ln['color'],
-                    'qty'          => $ln['qty'],
-                    'payment_type' => 'money',
-                    'amount'       => (int) $ln['p']->money_price * $ln['qty'],
-                    'status'       => 'pending',
-                    'admin_note'   => $billNote,
+                    'user_id'        => $request->user()->id,
+                    'product_id'     => $ln['p']->id,
+                    'product_name'   => $ln['p']->name,
+                    'color'          => $ln['color'],
+                    'qty'            => $ln['qty'],
+                    'payment_type'   => 'money',
+                    'payment_method' => $method === 'bank_transfer' ? 'bank_transfer' : null,
+                    'amount'         => (int) $ln['p']->money_price * $ln['qty'],
+                    'status'         => 'pending',
+                    'admin_note'     => $billNote,
                 ]));
                 $orderIds[] = $o->id;
             }
@@ -558,6 +637,7 @@ class PaymentController extends Controller
         $payment = Payment::create([
             'user_id'           => $request->user()->id,
             'kind'              => 'cart',
+            'payment_method'    => $method === 'bank_transfer' ? 'bank_transfer' : null,
             'order_id'          => 'TK'.now()->format('ymdHis').mt_rand(100, 999),
             'amount'            => $chargeKurus,
             'coins'             => $packageCoins,
@@ -569,16 +649,11 @@ class PaymentController extends Controller
             'status'            => 'pending',
         ]);
 
-        $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
-        $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);
-        return response()->json([
-            'url'       => $url,
-            'submitUrl' => $submitUrl,
-            'amount'    => $chargeKurus,
-            'coins'     => $packageCoins,
-            'discount'  => $discountKurus,
-            'code'      => $discountCode,
-            'demo'      => $garanti->isDemo(),
+        return $this->checkoutResponse($payment, $method, $garanti, [
+            'amount'   => $chargeKurus,
+            'coins'    => $packageCoins,
+            'discount' => $discountKurus,
+            'code'     => $discountCode,
         ]);
     }
 }

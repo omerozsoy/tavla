@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { COIN_PACKAGES } from '../coinPackages'
-import { validatePromo, getAddresses, type PromoResult, type Address } from '../api'
+import { validatePromo, getAddresses, getBankTransferInfo, type PromoResult, type Address, type BankInfo, type PayMethod } from '../api'
 import { Coins } from './Coins'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
@@ -48,7 +48,7 @@ export default function Cart({
   setItems: (updater: (prev: CartItem[]) => CartItem[]) => void
   onClose: () => void
   onContinue: () => void
-  onCheckout: (items: CartItem[], code: string | null, sel: CartAddressSel) => Promise<void>
+  onCheckout: (items: CartItem[], code: string | null, sel: CartAddressSel, method: PayMethod) => Promise<void>
   onManageAddresses: () => void // "Adres ekle/yönet" -> profil Adreslerim
 }) {
   useEscape(onClose)
@@ -64,6 +64,10 @@ export default function Cart({
   const [addresses, setAddresses] = useState<Address[]>([])
   const [shipId, setShipId] = useState<number | null>(null)
   const [billId, setBillId] = useState<number | null>(null)
+
+  // Ödeme yöntemi: kart (Garanti 3D) veya havale/EFT. Havale yalnız admin açtıysa gösterilir.
+  const [bankInfo, setBankInfo] = useState<BankInfo | null>(null)
+  const [payMethod, setPayMethod] = useState<PayMethod>('card')
 
   const memItem = items.find((i) => i.kind === 'membership')
   const coinRows = items
@@ -93,6 +97,17 @@ export default function Cart({
       alive = false
     }
   }, [hasProducts])
+
+  // Havale bilgisini bir kez yükle (kapalıysa enabled:false döner -> seçenek gizli kalır).
+  useEffect(() => {
+    let alive = true
+    getBankTransferInfo()
+      .then((info) => alive && setBankInfo(info))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   // Para toplamı (TL): coin paketleri (pkg.price TL) + para-ürünleri (moneyPrice kuruş/100).
   const packagesTL = coinRows.reduce((s, r) => s + r.pkg.price * r.it.qty, 0)
@@ -150,7 +165,8 @@ export default function Cart({
     setErr('')
     setBusy(true)
     try {
-      await onCheckout(items, applied?.code ?? null, { shippingId: shipId, billingId: billId })
+      const moneyDue = !!memItem || moneyTotalTL > 0
+      await onCheckout(items, applied?.code ?? null, { shippingId: shipId, billingId: billId }, moneyDue ? payMethod : 'card')
     } catch (e) {
       const m = (e as { message?: string })?.message || 'Ödeme başlatılamadı.'
       setErr(m)
@@ -383,6 +399,35 @@ export default function Cart({
                 )}
               </div>
 
+              {/* Ödeme yöntemi (yalnız para ödemesi varsa ve havale açıksa) */}
+              {(memItem || moneyTotalTL > 0) && bankInfo?.enabled && (
+                <div className="cart2-block cart2-paymethod" role="radiogroup" aria-label="Ödeme yöntemi">
+                  <label className="cart2-paymethod-t">Ödeme yöntemi</label>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={payMethod === 'card'}
+                    className={`cart2-pm ${payMethod === 'card' ? 'on' : ''}`}
+                    onClick={() => setPayMethod('card')}
+                  >
+                    <Icon name="star" size={16} />
+                    <span>Kredi / Banka Kartı</span>
+                    <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={payMethod === 'bank_transfer'}
+                    className={`cart2-pm ${payMethod === 'bank_transfer' ? 'on' : ''}`}
+                    onClick={() => setPayMethod('bank_transfer')}
+                  >
+                    <Icon name="bank" size={16} />
+                    <span>Havale / EFT</span>
+                    <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+                  </button>
+                </div>
+              )}
+
               {err && <div className="cart2-err">{err}</div>}
 
               <Button className="cart2-cta" disabled={busy || shippingRequired} onClick={checkout}>
@@ -391,7 +436,11 @@ export default function Cart({
 
               <p className="cart2-secure">
                 <Icon name="shield-check" size={14} />
-                {moneyTotalTL > 0 || memItem ? ' Garanti BBVA 3D Secure ile güvenli ödeme' : ' Coin ürünleri anında hesabından düşülür'}
+                {moneyTotalTL > 0 || memItem
+                  ? payMethod === 'bank_transfer' && bankInfo?.enabled
+                    ? ' Havale/EFT bilgileri sonraki adımda; ödemen onaylanınca işleme alınır'
+                    : ' Garanti BBVA 3D Secure ile güvenli ödeme'
+                  : ' Coin ürünleri anında hesabından düşülür'}
               </p>
             </aside>
           </div>

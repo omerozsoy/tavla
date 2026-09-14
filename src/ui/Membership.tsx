@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { PLANS, type PlanId } from '../plans'
-import { subscribe } from '../api'
+import { subscribe, getBankTransferInfo, isBankTransfer, type BankTransferResult, type PayMethod } from '../api'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
 
@@ -11,23 +11,41 @@ export default function Membership({
   current,
   onClose,
   onExtend,
+  onBankTransfer,
 }: {
   current: PlanId
   onClose: () => void
   onExtend?: () => void // "Üyeliğini Uzat" -> 1 yillik premium sepete eklenir (odeme akisi)
+  onBankTransfer?: (r: BankTransferResult) => void // havale seçildiğinde talimat ekranını aç
 }) {
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
   const [busy, setBusy] = useState<PlanId | null>(null)
   const [err, setErr] = useState('')
+  const [bankEnabled, setBankEnabled] = useState(false)
+  const [method, setMethod] = useState<PayMethod>('card')
+
+  useEffect(() => {
+    let alive = true
+    getBankTransferInfo()
+      .then((info) => alive && setBankEnabled(!!info.enabled))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   async function pay(plan: 'star' | 'starpro') {
     setErr('')
     setBusy(plan)
     try {
-      const r = await subscribe(plan, 'yearly')
-      window.location.href = r.url // Garanti kart sayfasina yonlendir
+      const r = await subscribe(plan, 'yearly', method)
+      if (isBankTransfer(r)) {
+        onBankTransfer?.(r) // havale: kart yerine IBAN talimat ekranı
+        return
+      }
+      window.location.href = (r as { url: string }).url // Garanti kart sayfasina yonlendir
     } catch (e) {
       const m = e as { message?: string }
       const msg = m?.message || t('mem.err')
@@ -46,6 +64,33 @@ export default function Membership({
         <h2 className="mem-title">{t('mem.title')}</h2>
 
         {err && <div className="register-error mem-err">{err}</div>}
+
+        {bankEnabled && (
+          <div className="mem-paymethod" role="radiogroup" aria-label="Ödeme yöntemi">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={method === 'card'}
+              className={`cart2-pm ${method === 'card' ? 'on' : ''}`}
+              onClick={() => setMethod('card')}
+            >
+              <Icon name="star" size={16} />
+              <span>Kart</span>
+              <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={method === 'bank_transfer'}
+              className={`cart2-pm ${method === 'bank_transfer' ? 'on' : ''}`}
+              onClick={() => setMethod('bank_transfer')}
+            >
+              <Icon name="bank" size={16} />
+              <span>Havale / EFT</span>
+              <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
+            </button>
+          </div>
+        )}
 
         <div className="mem-grid">
           {PLANS.map((p) => {

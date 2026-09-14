@@ -200,6 +200,7 @@ import Products, { type CartAddLine } from './ui/Products'
 import MyOrders from './ui/MyOrders'
 import Cart, { type CartItem, MEMBERSHIP_ITEM_ID } from './ui/Cart'
 import Checkout from './ui/Checkout'
+import BankTransfer from './ui/BankTransfer'
 import FrameShop from './ui/FrameShop'
 import ProfileOverview from './ui/ProfileOverview'
 import { AVATAR_FRAMES } from './ui/avatarFrames'
@@ -249,6 +250,9 @@ import {
   buyMembership,
   cartCoinOrder,
   cartCheckout,
+  isBankTransfer,
+  type BankTransferResult,
+  type PayMethod,
   messagesUnread,
   matchPr,
   matchGnubgPr,
@@ -655,6 +659,8 @@ export default function App() {
     items: CartItem[]
     demo?: boolean
   } | null>(null)
+  // Havale/EFT talimat ekranı (kart yerine). cartCheckout/buyMembership havale dönerse dolar.
+  const [bankData, setBankData] = useState<BankTransferResult | null>(null)
   // Sepet: coin paketleri. localStorage'da tutulur (yenilemede/odeme donusunde korunur).
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
     try {
@@ -6428,6 +6434,7 @@ export default function App() {
     myOrdersOpen ||
     cartOpen ||
     checkoutOpen ||
+    !!bankData ||
     frameGalleryOpen ||
     friendsOpen ||
     messagesOpen ||
@@ -6666,13 +6673,19 @@ export default function App() {
             setProfileTab('addresses')
             setEditProfile(true)
           }}
-          onCheckout={async (its, code, sel) => {
+          onCheckout={async (its, code, sel, method: PayMethod) => {
             // Üyelik uzatma tek başına (mevcut akış).
             if (its.some((i) => i.kind === 'membership')) {
-              const r = await buyMembership()
-              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: 0, items: its, demo: r.demo })
+              const r = await buyMembership(method)
               setCartOpen(false)
-              setCheckoutOpen(true)
+              if (isBankTransfer(r)) {
+                // Havale: sipariş sunucuda oluştu (pending) -> üyelik öğesini sepetten çıkar.
+                setCartItems((prev) => prev.filter((i) => i.kind !== 'membership'))
+                setBankData(r)
+              } else {
+                setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: 0, items: its, demo: r.demo })
+                setCheckoutOpen(true)
+              }
               return
             }
             const coinProducts = its.filter((i) => i.kind === 'product' && i.product?.payment === 'coin')
@@ -6690,7 +6703,7 @@ export default function App() {
               setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))
             }
 
-            // 2) Para kısmı (coin paketleri + para-ürünleri) -> TEK Garanti ödemesi.
+            // 2) Para kısmı (coin paketleri + para-ürünleri) -> TEK ödeme (kart veya havale).
             if (coinPackages.length || moneyProducts.length) {
               const r = await cartCheckout({
                 coin_items: coinPackages.map((i) => ({ id: i.id, qty: i.qty })),
@@ -6698,10 +6711,20 @@ export default function App() {
                 shipping_address_id: sel.shippingId,
                 billing_address_id: sel.billingId,
                 code,
+                method,
               })
-              setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins, items: its, demo: r.demo })
               setCartOpen(false)
-              setCheckoutOpen(true)
+              if (isBankTransfer(r)) {
+                // Havale: para siparişleri sunucuda oluştu (pending) -> sepetten çıkar
+                // (coin ürünleri zaten anında işlendi ve yukarıda çıkarıldı).
+                setCartItems((prev) =>
+                  prev.filter((i) => !(i.kind === 'coins' || i.kind === undefined) && !(i.kind === 'product' && i.product?.payment === 'money')),
+                )
+                setBankData(r)
+              } else {
+                setCheckoutData({ submitUrl: r.submitUrl, amount: r.amount, coins: r.coins ?? 0, items: its, demo: r.demo })
+                setCheckoutOpen(true)
+              }
             } else {
               // Yalnız coin ürünleri vardı -> sipariş tamam.
               setCartOpen(false)
@@ -6721,6 +6744,20 @@ export default function App() {
           onBack={() => {
             setCheckoutOpen(false)
             setCartOpen(true)
+          }}
+        />
+      )}
+      {bankData && (
+        <BankTransfer
+          reference={bankData.reference}
+          amount={bankData.amount}
+          iban={bankData.iban}
+          name={bankData.name}
+          bank={bankData.bank}
+          note={bankData.note}
+          onDone={() => {
+            setBankData(null)
+            setMyOrdersOpen(true)
           }}
         />
       )}
@@ -6934,6 +6971,11 @@ export default function App() {
             setCartItems([{ id: MEMBERSHIP_ITEM_ID, qty: 1, kind: 'membership' }])
             setMemOpen(false)
             goPage(() => setCartOpen(true))
+          }}
+          onBankTransfer={(r) => {
+            // Havale seçildi: modalı kapat, IBAN talimat ekranını aç.
+            setMemOpen(false)
+            setBankData(r)
           }}
         />
       )}
