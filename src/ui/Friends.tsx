@@ -14,14 +14,17 @@ import PlayerIdentity from './PlayerIdentity'
 import PublicProfile from './PublicProfile'
 import { CountryFlag } from './Flag'
 import { Button } from '@/components/ui/button'
+import SocialTabs, { type SocialTab } from './SocialTabs'
 
 interface Props {
   onInvite: (userId: number) => void
   onMessage?: (userId: number) => void
   onClose: () => void
+  // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
+  onTab?: (t: SocialTab) => void
 }
 
-export default function Friends({ onInvite, onMessage, onClose }: Props) {
+export default function Friends({ onInvite, onMessage, onClose, onTab }: Props) {
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
@@ -107,7 +110,11 @@ export default function Friends({ onInvite, onMessage, onClose }: Props) {
         <button className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </button>
-        <h2><Icon name="users" size={20} /> {t('friends.title')}</h2>
+        {onTab ? (
+          <SocialTabs active="friends" onTab={onTab} />
+        ) : (
+          <h2><Icon name="users" size={20} /> {t('friends.title')}</h2>
+        )}
 
         <div className="friends-add">
           <input
