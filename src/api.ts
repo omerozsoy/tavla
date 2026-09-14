@@ -310,20 +310,28 @@ export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[
   return { players: d.players, minMatches: d.min_matches, minDecisions: d.min_decisions }
 }
 
-// ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk) ----
+// ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk/grup) ----
 export interface MenuOverride {
   key: string
   sort: number
   visible: boolean
+  group?: string | null // admin grup atamasi (null/undefined -> pages.ts varsayilani)
   labels: Record<string, string> // dil kodu -> ozel ad (bos ise i18n kullanilir)
 }
-// Halka acik; hata olursa bos dizi -> frontend pages.ts varsayilanlarina duser.
-export async function getMenuConfig(): Promise<MenuOverride[]> {
+// Grup basligi override'i (admin "Menü Grupları"). labels bos -> i18n varsayilani (bilinen gruplar).
+export interface MenuGroupCfg {
+  key: string
+  sort: number
+  visible: boolean
+  labels: Record<string, string>
+}
+// Halka acik; hata olursa bos -> frontend pages.ts + i18n varsayilanlarina duser.
+export async function getMenuConfig(): Promise<{ items: MenuOverride[]; groups: MenuGroupCfg[] }> {
   try {
-    const d = await req<{ items: MenuOverride[] }>('/menu-config')
-    return d.items || []
+    const d = await req<{ items: MenuOverride[]; groups?: MenuGroupCfg[] }>('/menu-config')
+    return { items: d.items || [], groups: d.groups || [] }
   } catch {
-    return []
+    return { items: [], groups: [] }
   }
 }
 

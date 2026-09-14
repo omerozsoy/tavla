@@ -3,6 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\MenuItemResource\Pages;
+use App\Models\MenuGroup;
 use App\Models\MenuItem;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -10,7 +11,8 @@ use Filament\Tables\Table;
 
 /**
  * SOL MENU DUZENLEME. Satirlari SURUKLE-BIRAK ile sirala (sort), "Görünen ad" alanina
- * Turkce yaz (diger diller otomatik cevrilir) ve "Menüde" anahtariyla goster/gizle.
+ * Turkce yaz (diger diller otomatik cevrilir), "Grup" ile bir bolume tasi ve "Menüde"
+ * anahtariyla goster/gizle. Gruplarin ADI/SIRASI "Menü Grupları" sayfasindan yonetilir.
  * Katalog config/menu.php'den gelir; frontend /api/menu-config ile okur.
  *
  * Not: Sabit katalog -> ekleme/silme yok. Yeni sayfa pages.ts + config/menu.php ile gelir
@@ -39,25 +41,25 @@ class MenuItemResource extends Resource
 
     public static function table(Table $table): Table
     {
-        $groupLabels = [
-            'play' => 'Oyna',
-            'compete' => 'Rekabet',
-            'account' => 'Hesap',
-            'content' => 'İçerik',
-            'tools' => 'Araçlar',
-            'info' => 'Bilgi',
-        ];
+        // Grup secenekleri (Menü Grupları'ndan). Ad: admin label_tr -> config varsayilani -> key.
+        $groupOptions = MenuGroup::orderBy('sort')->orderBy('id')->get()
+            ->mapWithKeys(fn (MenuGroup $g) => [$g->key => ($g->label_tr ?: ($g->defaultLabel() ?: $g->key))])
+            ->all();
 
         return $table
-            ->reorderable('sort')   // surukle-birak -> sort gunceller
+            ->reorderable('sort')   // surukle-birak -> sort gunceller (grup icinde sira)
             ->defaultSort('sort')
             ->paginated(false)      // tum menu tek sayfada, siralama net gorunur
             ->columns([
                 Tables\Columns\TextColumn::make('default_name')
                     ->label('Sayfa')
                     ->getStateUsing(fn (MenuItem $r) => $r->defaultLabel())
-                    ->description(fn (MenuItem $r) => $groupLabels[$r->group] ?? $r->group)
                     ->weight('bold'),
+                Tables\Columns\SelectColumn::make('group')
+                    ->label('Grup')
+                    ->options($groupOptions)
+                    ->selectablePlaceholder(false)
+                    ->rules(['required']),
                 Tables\Columns\TextInputColumn::make('label_tr')
                     ->label('Görünen ad (boş = otomatik)')
                     ->placeholder(fn (MenuItem $r) => $r->defaultLabel()),
