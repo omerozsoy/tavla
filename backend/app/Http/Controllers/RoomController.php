@@ -1804,10 +1804,22 @@ class RoomController extends Controller
             if (! empty($result['unreachable'])) {
                 // FAIL-CLOSED: doğrulama yapılamadıysa hamleyi reddet (güvenli taraf).
                 if (config('validator.required', true)) {
+                    // GÖZLEMLENEBİLİRLİK: otoriter mod canlıda; validator erişilemezse gerçek
+                    // oyuncu hamleleri reddediliyor demektir. tavla:auth-health bunu sayar.
+                    \Illuminate\Support\Facades\Log::warning('authoritative.move-rejected', [
+                        'reason' => 'validator-unreachable', 'room' => $room->code, 'slot' => $slot,
+                    ]);
+
                     return $this->fail('Doğrulama servisi kullanılamıyor, hamle reddedildi.', 503);
                 }
             }
             if (empty($result['valid']) || empty($result['state'])) {
+                // GÖZLEMLENEBİLİRLİK: validator ayakta ama hamleyi geçersiz buldu -> istemci
+                // desync'i VEYA validator↔motor uyumsuzluğu sinyali (canlı otoriter modda önemli).
+                \Illuminate\Support\Facades\Log::warning('authoritative.move-rejected', [
+                    'reason' => $result['reason'] ?? 'invalid', 'room' => $room->code, 'slot' => $slot,
+                ]);
+
                 return $this->fail('Geçersiz hamle.', 422, ['reason' => $result['reason'] ?? 'invalid']);
             }
 
