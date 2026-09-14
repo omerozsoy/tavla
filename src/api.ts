@@ -456,32 +456,70 @@ export async function setAutoRenew(enabled: boolean): Promise<{ user: ServerUser
   return req('/membership/auto-renew', { method: 'POST', body: JSON.stringify({ enabled }) })
 }
 
-// Abonelik odemesi baslat (Garanti 3D). Kart sayfasi URL'si doner.
-export async function subscribe(
-  plan: 'star' | 'starpro',
-  period: 'yearly' = 'yearly', // yalnız yıllık üyelik (aylık kaldırıldı)
-): Promise<{ url: string }> {
-  return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period }) })
-}
-// Sepetteki coin paketlerini satin al -> odeme kaydi olusur.
-// submitUrl: uygulama-ici kredi karti formu bu imzali uca POST eder (Garanti 3D).
-// url: eski ayri kart sayfasi (yedek). amount: kurus, coins: toplam jeton.
-export async function buyCoins(
-  items: { id: string; qty: number }[],
-  code?: string | null,
-): Promise<{ url: string; submitUrl: string; amount: number; coins: number; discount?: number; code?: string | null; demo?: boolean }> {
-  return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items, code: code || undefined }) })
-}
+// Ödeme yöntemi: kart (Garanti 3D) veya havale/EFT (IBAN'a manuel gönderim).
+export type PayMethod = 'card' | 'bank_transfer'
 
-// "Üyeliğini Uzat" -> 1 yillik Premium uzatma satin al. Fiyat SUNUCUDA (config/garanti.renew).
-// buyCoins ile ayni odeme akisi (submitUrl -> uygulama-ici kart formu). amount: kurus.
-export async function buyMembership(): Promise<{
+// Havale ödemesi dönüşü (kart URL'si YERİNE): IBAN + referans (açıklamaya yazılır).
+// Ödeme 'pending' kalır; admin dekontu görüp panelden elle onaylar.
+export interface BankTransferResult {
+  bankTransfer: true
+  reference: string // ödeme açıklamasına yazılacak sipariş no
+  amount: number // kurus
+  iban: string
+  name: string
+  bank: string
+  note?: string
+  coins?: number
+}
+// Kart ödemesi dönüşü (uygulama-içi kart formu -> Garanti 3D).
+export interface CardCheckoutResult {
   url: string
   submitUrl: string
   amount: number
+  coins?: number
+  discount?: number
+  code?: string | null
   demo?: boolean
-}> {
-  return req('/shop/membership', { method: 'POST', body: JSON.stringify({}) })
+}
+export type CheckoutResult = CardCheckoutResult | BankTransferResult
+export function isBankTransfer(r: CheckoutResult | { url?: string }): r is BankTransferResult {
+  return (r as BankTransferResult).bankTransfer === true
+}
+
+// Havale/EFT bilgisi (halka açık). Kapalıysa {enabled:false}.
+export interface BankInfo {
+  enabled: boolean
+  iban?: string
+  name?: string
+  bank?: string
+  note?: string
+}
+export async function getBankTransferInfo(): Promise<BankInfo> {
+  return req('/pay/bank-transfer')
+}
+
+// Abonelik odemesi baslat. Kart: {url} doner. Havale: BankTransferResult doner.
+export async function subscribe(
+  plan: 'star' | 'starpro',
+  period: 'yearly' = 'yearly', // yalnız yıllık üyelik (aylık kaldırıldı)
+  method: PayMethod = 'card',
+): Promise<{ url: string } | BankTransferResult> {
+  return req('/subscribe', { method: 'POST', body: JSON.stringify({ plan, period, method }) })
+}
+// Sepetteki coin paketlerini satin al -> odeme kaydi olusur.
+// Kart: submitUrl (uygulama-ici form) + url (yedek). Havale: IBAN + referans.
+export async function buyCoins(
+  items: { id: string; qty: number }[],
+  code?: string | null,
+  method: PayMethod = 'card',
+): Promise<CheckoutResult> {
+  return req('/shop/coins', { method: 'POST', body: JSON.stringify({ items, code: code || undefined, method }) })
+}
+
+// "Üyeliğini Uzat" -> 1 yillik Premium uzatma satin al. Fiyat SUNUCUDA (config/garanti.renew).
+// Kart: submitUrl -> uygulama-ici kart formu. Havale: IBAN + referans. amount: kurus.
+export async function buyMembership(method: PayMethod = 'card'): Promise<CheckoutResult> {
+  return req('/shop/membership', { method: 'POST', body: JSON.stringify({ method }) })
 }
 
 // Indirim kodu dogrula (odeme baslatmadan): sunucu sepet toplamindan indirimi hesaplar.
@@ -649,7 +687,8 @@ export async function cartCheckout(input: {
   billing_address_id?: number | null
   note?: string
   code?: string | null
-}): Promise<{ url: string; submitUrl: string; amount: number; coins: number; discount: number; code: string | null; demo: boolean }> {
+  method?: PayMethod
+}): Promise<CheckoutResult> {
   return req('/shop/cart-checkout', { method: 'POST', body: JSON.stringify(input) })
 }
 

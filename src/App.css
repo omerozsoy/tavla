@@ -16554,6 +16554,167 @@ button.acct-row:hover:not(:disabled) {
   color: var(--muted-foreground, #888);
 }
 
+/* Ödeme yöntemi seçici (Kart / Havale) — sepet özeti + üyelik modalı ortak */
+.cart2-paymethod,
+.mem-paymethod {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mem-paymethod {
+  flex-direction: row;
+  justify-content: center;
+  margin: 0 auto 14px;
+  max-width: 420px;
+}
+.cart2-paymethod-t {
+  font-size: 0.82rem;
+  color: var(--muted-foreground, #888);
+}
+.cart2-pm {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.92rem;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+.mem-paymethod .cart2-pm {
+  width: auto;
+  flex: 1;
+  justify-content: center;
+}
+.cart2-pm:hover {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+.cart2-pm.on {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+.cart2-pm > span:first-of-type {
+  flex: 1;
+}
+.cart2-pm-tick {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: transparent;
+}
+.cart2-pm.on .cart2-pm-tick {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Havale / EFT talimat ekranı */
+.bt-card {
+  max-width: 560px;
+  width: min(560px, 96vw);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bt-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.bt-intro {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: var(--text);
+}
+.bt-box {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.bt-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 13px;
+  border-bottom: 1px solid var(--border);
+}
+.bt-row:last-child {
+  border-bottom: none;
+}
+.bt-label {
+  flex: 0 0 140px;
+  font-size: 0.82rem;
+  color: var(--muted-foreground, #888);
+}
+.bt-value {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+  color: var(--text);
+  word-break: break-all;
+}
+.bt-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+.bt-copy {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--muted-foreground, #888);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.bt-copy:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.bt-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--text);
+}
+.bt-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--muted-foreground, #888);
+}
+.bt-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* Boş sepet */
 .cart2-empty {
   display: flex;

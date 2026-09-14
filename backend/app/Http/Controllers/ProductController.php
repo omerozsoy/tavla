@@ -62,6 +62,7 @@ class ProductController extends Controller
             'qty'          => ['required', 'integer', 'min:1', 'max:10'],
             'color'        => ['nullable', 'string', 'max:40'],
             'payment_type' => ['required', 'in:coin,money'],
+            'method'       => ['nullable', 'in:card,bank_transfer'],
             'ship_name'    => ['required', 'string', 'max:120'],
             'ship_phone'   => ['required', 'string', 'max:40'],
             'ship_address' => ['required', 'string', 'max:1000'],
@@ -110,7 +111,7 @@ class ProductController extends Controller
 
         return $paymentType === 'coin'
             ? $this->orderWithCoins($request, $product, $qty, $color, $ship)
-            : $this->orderWithMoney($request, $product, $qty, $color, $ship, $garanti);
+            : $this->orderWithMoney($request, $product, $qty, $color, $ship, $garanti, $data['method'] ?? 'card');
     }
 
     // Coin ile: ATOMIK stok + coin dusumu, siparis aninda 'paid'. ShopController::buy ile ayni
@@ -173,9 +174,14 @@ class ProductController extends Controller
 
     // Gercek para ile: siparis 'pending' + Payment kind='product'; kart sayfasi/submit imzali
     // URL doner (buyCoins ile ayni akis). Odeme basariliysa callback/demo siparisi 'paid' yapar.
-    private function orderWithMoney(Request $request, Product $product, int $qty, ?string $color, array $ship, GarantiService $garanti)
+    private function orderWithMoney(Request $request, Product $product, int $qty, ?string $color, array $ship, GarantiService $garanti, string $method = 'card')
     {
-        if (! $garanti->isAvailable()) {
+        $bank = $method === 'bank_transfer';
+        if ($bank) {
+            if (! PaymentController::bankEnabled()) {
+                return $this->fail('Havale/EFT ödemesi şu an kapalı.', 503);
+            }
+        } elseif (! $garanti->isAvailable()) {
             return $this->fail('Ödeme sistemi henüz yapılandırılmadı.', 503);
         }
 
@@ -185,19 +191,21 @@ class ProductController extends Controller
         }
 
         $order = ProductOrder::create(array_merge($ship, [
-            'user_id'      => $request->user()->id,
-            'product_id'   => $product->id,
-            'product_name' => $product->name,
-            'color'        => $color,
-            'qty'          => $qty,
-            'payment_type' => 'money',
-            'amount'       => $amount,
-            'status'       => 'pending',
+            'user_id'        => $request->user()->id,
+            'product_id'     => $product->id,
+            'product_name'   => $product->name,
+            'color'          => $color,
+            'qty'            => $qty,
+            'payment_type'   => 'money',
+            'payment_method' => $bank ? 'bank_transfer' : null,
+            'amount'         => $amount,
+            'status'         => 'pending',
         ]));
 
         $payment = Payment::create([
             'user_id'          => $request->user()->id,
             'kind'             => 'product',
+            'payment_method'   => $bank ? 'bank_transfer' : null,
             'order_id'         => 'TP'.now()->format('ymdHis').mt_rand(100, 999),
             'amount'           => $amount,
             'package_id'       => $product->slug.'x'.$qty,
@@ -207,6 +215,24 @@ class ProductController extends Controller
         ]);
         $order->payment_id = $payment->id;
         $order->save();
+
+        // Havale: IBAN + referans döner; sipariş 'pending' kalır, admin elle onaylar.
+        if ($bank) {
+            $i = PaymentController::bankTransferInfo();
+
+            return response()->json([
+                'ok'           => true,
+                'kind'         => 'money',
+                'bankTransfer' => true,
+                'reference'    => $payment->order_id,
+                'amount'       => $amount,
+                'order_id'     => $order->id,
+                'iban'         => $i['iban'],
+                'name'         => $i['name'],
+                'bank'         => $i['bank'],
+                'note'         => $i['note'],
+            ]);
+        }
 
         $url = URL::temporarySignedRoute('pay.card', now()->addMinutes(30), ['payment' => $payment->id]);
         $submitUrl = URL::temporarySignedRoute('pay.submit', now()->addMinutes(30), ['payment' => $payment->id]);

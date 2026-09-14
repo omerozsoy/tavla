@@ -10,7 +10,7 @@ class ProductOrder extends Model
 {
     protected $fillable = [
         'user_id', 'product_id', 'product_name', 'color', 'qty',
-        'payment_type', 'coin_cost', 'amount', 'payment_id', 'status',
+        'payment_type', 'payment_method', 'coin_cost', 'amount', 'payment_id', 'status',
         'ship_name', 'ship_phone', 'ship_address', 'ship_city', 'ship_postal',
         'note', 'tracking', 'admin_note',
     ];

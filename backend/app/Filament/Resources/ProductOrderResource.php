@@ -102,8 +102,11 @@ class ProductOrderResource extends Resource
                 Tables\Columns\TextColumn::make('qty')->label('Adet'),
                 Tables\Columns\TextColumn::make('user.name')->label('Alıcı')->searchable(),
                 Tables\Columns\TextColumn::make('payment_type')->label('Ödeme')
-                    ->formatStateUsing(fn ($state) => $state === 'coin' ? 'Coin' : 'TL')
-                    ->badge(),
+                    ->formatStateUsing(fn ($state, ProductOrder $r) => $state === 'coin'
+                        ? 'Coin'
+                        : ($r->payment_method === 'bank_transfer' ? 'Havale' : 'Kart'))
+                    ->badge()
+                    ->color(fn ($state, ProductOrder $r) => $r->payment_method === 'bank_transfer' ? 'warning' : 'gray'),
                 Tables\Columns\TextColumn::make('bedel')->label('Bedel')
                     ->state(fn (ProductOrder $r) => $r->payment_type === 'coin'
                         ? ((int) $r->coin_cost).' coin'
@@ -126,6 +129,8 @@ class ProductOrderResource extends Resource
                 Tables\Filters\SelectFilter::make('status')->label('Durum')->options(ProductOrder::STATUSES),
                 Tables\Filters\SelectFilter::make('payment_type')->label('Ödeme')
                     ->options(['coin' => 'Coin', 'money' => 'TL']),
+                Tables\Filters\SelectFilter::make('payment_method')->label('Yöntem')
+                    ->options(['bank_transfer' => 'Havale']),
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Yönet'),
