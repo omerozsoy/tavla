@@ -682,6 +682,15 @@ class RoomController extends Controller
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;
             $room->status = 'playing';
+            // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
+            // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
+            // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
+            // authoritative=true. Böylece arkadaş + turnuva maçlarında da zar/hamle/skor sunucuda.
+            if (Schema::hasColumn('rooms', 'authoritative')
+                && $this->shouldAuthoritative($room->p1_user_id, $room->p2_user_id, false)) {
+                $room->authoritative = true;
+                $room->dice_authority = false;
+            }
             $room->save();
             $slot = 'p2';
         }
@@ -727,6 +736,15 @@ class RoomController extends Controller
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;
             $room->status = 'playing';
+            // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
+            // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
+            // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
+            // authoritative=true. Böylece arkadaş + turnuva maçlarında da zar/hamle/skor sunucuda.
+            if (Schema::hasColumn('rooms', 'authoritative')
+                && $this->shouldAuthoritative($room->p1_user_id, $room->p2_user_id, false)) {
+                $room->authoritative = true;
+                $room->dice_authority = false;
+            }
             $room->save();
             $slot = 'p2';
         }
