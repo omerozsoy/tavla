@@ -68,7 +68,10 @@ class MenuGroupResource extends Resource
                     ->color('gray')
                     ->wrap()
                     ->toggleable(),
-                Tables\Columns\ToggleColumn::make('visible')->label('Göster'),
+                Tables\Columns\ToggleColumn::make('collapsed')
+                    ->label('Kapalı başlasın')
+                    ->tooltip('Açıkken grup menüde katlı (kapalı) başlar; kullanıcı tıklayınca açılır.'),
+                Tables\Columns\ToggleColumn::make('visible')->label('Başlığı göster'),
             ])
             ->actions([
                 Tables\Actions\DeleteAction::make()

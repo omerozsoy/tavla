@@ -14,11 +14,12 @@ use Illuminate\Database\Eloquent\Model;
 class MenuGroup extends Model
 {
     protected $fillable = [
-        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible',
+        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'collapsed',
     ];
 
     protected $casts = [
         'visible' => 'boolean',
+        'collapsed' => 'boolean', // true -> grup menude KATLI (kapali) baslar
         'sort' => 'integer',
     ];
 
@@ -74,6 +75,7 @@ class MenuGroup extends Model
                 'key' => $key,
                 'sort' => (int) ($g['sort'] ?? 0),
                 'visible' => true,
+                'collapsed' => ! empty($g['collapsed']), // config'te isaretliyse katli baslar
                 'created_at' => now(),
                 'updated_at' => now(),
             ];

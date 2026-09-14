@@ -6420,9 +6420,15 @@ export default function App() {
       hideInGame: pg.hideInGame,
     })
   }
-  const menuGroups: { group: string; label: string | null; items: NavItem[] }[] = groupOrder
+  const menuGroups: { group: string; label: string | null; defaultCollapsed: boolean; items: NavItem[] }[] = groupOrder
     .sort((a, b) => groupSort(a) - groupSort(b))
-    .map((gkey) => ({ group: gkey, label: resolveGroupLabel(gkey), items: bucket.get(gkey)! }))
+    .map((gkey, gi) => ({
+      group: gkey,
+      label: resolveGroupLabel(gkey),
+      // Baslangic katlama durumu: admin (menuGroupCfg.collapsed) -> yoksa ilk 2 grup acik.
+      defaultCollapsed: menuGroupCfg[gkey]?.collapsed ?? gi >= 2,
+      items: bucket.get(gkey)!,
+    }))
 
   // Gelen oyun davetleri + sirasi gelen turnuva maclari (sabit, ust uste)
   const showTournNotices = home && tournNotices.length > 0
