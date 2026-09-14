@@ -350,7 +350,7 @@ export default function ProfileOverview({
                     <span className="prof-ov-sel"><Icon name="check" size={12} /> {t('prof.selected')}</span>
                   )}
                   <div className="prof-ov-item-frame">
-                    <AvatarFrame src={avatar} frame={f.id} size={78} name={fullName} animated />
+                    <AvatarFrame src={avatar} frame={f.id} size={50} name={fullName} animated />
                   </div>
                   <span className="prof-ov-item-name">{f.name}</span>
                 </button>
