@@ -4182,11 +4182,15 @@ export default function App() {
     }
   }
   async function handleEquipChecker(id: string | null) {
+    // Optimistik: seçimi HEMEN uygula (board resin/finish'i anında gösterir, tahta rengine uyar).
+    // Sunucu kalıcılaştıramazsa (örn. users.checker kolonu migration'ı henüz koşmadıysa) istemci
+    // tarafında yine görünür; kalıcılık için sunucuda migrate şart.
+    setUser((u) => (u ? { ...u, checker: id } : u))
     try {
       const r = await selectChecker(id)
       setUser((u) => (u ? { ...u, checker: r.checker } : u))
     } catch {
-      /* yoksay */
+      /* sunucu yazamadı: istemci-taraflı seçim korunur */
     }
   }
   async function handleDaily() {
