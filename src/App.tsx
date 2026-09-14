@@ -5865,6 +5865,17 @@ export default function App() {
               </span>
             </span>
           )}
+          {/* Mağaza: sol menüden SAĞ ÜST bara taşındı, storefront ikonuyla (/magaza) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="[&_svg]:size-[24px]!"
+            onClick={() => goPage(() => setShopOpen(true))}
+            title={t('shop.title')}
+            aria-label={t('shop.title')}
+          >
+            <Icon name="shop" size={24} />
+          </Button>
           {/* Şans Çarkı: bonusun yanında, üst barda spinner-ball ikonuyla */}
           <Button
             variant="ghost"
