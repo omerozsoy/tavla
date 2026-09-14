@@ -2,7 +2,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { TavlaTvLogo } from './TavlaTvLogo'
-import type { MenuGroup } from '../pages'
+import { type MenuGroup, MENU_GROUP_LABELS } from '../pages'
 
 // Ana sayfa ve oyun ekraninda ortak tek menu. Ogeler MERKEZI SAYFA KAYDINDAN (pages.ts)
 // turetilir; bu bilesen yalnizca RENDER eder. Yeni menu sayfasi = pages.ts'e bir giris.
@@ -78,8 +78,15 @@ export default function SideMenu(p: SideMenuProps) {
         const items = g.items.filter((it) => !(it.hideInGame && p.inGame))
         const showResume = gi === firstPlayIdx && !p.inGame && p.hasActiveGame
         if (items.length === 0 && !showResume) return null
+        // Grup basligi: yalnizca etiketli grupta + oyun disinda + gercekten oge varsa goster
+        // (oyun ekraninda menu kompakt; ayrica ayni grup admin siralamasiyla bolununce ilk
+        //  blokta cizilir, tekrar etmesin diye onceki blogun grubuyla kiyasla).
+        const prevGroup = gi > 0 ? p.groups[gi - 1].group : null
+        const labelKey = MENU_GROUP_LABELS[g.group]
+        const showTitle = !!labelKey && !p.inGame && items.length > 0 && prevGroup !== g.group
         return (
           <div className="menu-group" key={`${g.group}-${gi}`}>
+            {showTitle && <div className="menu-group-title">{t(labelKey!)}</div>}
             {items.map((it) => {
               const badge = p.badges?.[it.key] ?? 0
               return (

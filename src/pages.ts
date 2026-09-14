@@ -8,7 +8,7 @@ import type { IconName } from './ui/Icon'
  * NOT: Oyun akisi (home/setup/online/game) BURAYA GIRMEZ — onlar sayfa degil, oyun durumu.
  */
 
-export type MenuGroup = 'play' | 'compete' | 'account' | 'content' | 'tools' | 'info'
+export type MenuGroup = 'play' | 'compete' | 'fun' | 'content' | 'tools' | 'account' | 'info'
 
 export interface PageDef {
   key: string // aktif-vurgu + binding anahtari
@@ -21,36 +21,29 @@ export interface PageDef {
   inMenu?: boolean // false ise sol menude gorunmez (yalnizca routable). Varsayilan true.
 }
 
-// Sira = menude gorunum sirasi. Grup basliklari CSS'te .menu-group ile ayrilir.
+// Sira = menude gorunum sirasi. Ardisik ayni-grup ogeleri tek blok olur; her blogun
+// ustune MENU_GROUP_LABELS'tan gorunur baslik cizilir (SideMenu). Grup sirasi = OYNA,
+// YARISMA, EGLENCE, KESFET, ARACLAR, HESAP, Bilgi.
 export const PAGES: PageDef[] = [
-  // --- Oyun baslatma ---
+  // --- OYNA: oyun baslatma ---
   { key: 'solo', slug: 'tek-oyun', labelKey: 'menu.solo', icon: 'coins', group: 'play', hideInGame: true },
   { key: 'match', slug: 'yeni-oyun', labelKey: 'menu.match', icon: 'ranking', group: 'play', hideInGame: true },
   { key: 'aiGame', slug: 'yz-ile-oyna', labelKey: 'menu.aiGame', icon: 'robot', group: 'play', hideInGame: true },
   { key: 'playFriend', slug: 'arkadasinla-oyna', labelKey: 'menu.playFriend', icon: 'users', group: 'play', hideInGame: true },
 
-  // --- Rekabet + sosyal ---
+  // --- YARISMA: rekabet + sosyal ---
   { key: 'tournaments', slug: 'online-turnuvalar', labelKey: 'menu.tournaments', icon: 'trophy', group: 'compete' },
   { key: 'leaderboard', slug: 'lider-tablosu', labelKey: 'menu.leaderboard', icon: 'crown', group: 'compete' },
-  // Şans Çarkı sol menüde DEĞİL; üst barda (bonusun yanında) spinner-ball ikonuyla açılır.
-  // inMenu:false -> menüde gizli ama /sans-carki URL'i yine çalışır (derin-link).
-  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'compete', inMenu: false },
-  // Zar Slotu: 3 makaralı tavla zarı slot makinesi (sunucu-otoriter).
-  // inMenu:false -> sol menüde gizli ama /zar-slotu URL'i yine çalışır (derin-link).
-  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'compete', inMenu: false },
   { key: 'friends', slug: 'arkadaslar', labelKey: 'menu.friends', icon: 'users', group: 'compete', gate: 'user' },
   // Mesajlar sol menude DEGIL; sag ust barda (bildirim gibi) chat ikonu ile acilir.
   // inMenu:false -> menude gizli ama /mesajlar URL'i yine calisir (derin-link).
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user', inMenu: false },
 
-  // --- Hesap ---
-  { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
-  // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
-  { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account', gate: 'user' },
-  // Siparişlerim sol menüde DEĞİL; profil sayfasından açılır (inMenu:false -> /siparislerim yine çalışır).
-  { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user', inMenu: false },
+  // --- EGLENCE: sans/ekonomi oyunlari (sol menude gorunur; ust barda da erisim var) ---
+  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true },
+  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'fun', hideInGame: true },
 
-  // --- Bilgi / icerik (herkese acik) ---
+  // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
   { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
@@ -58,18 +51,36 @@ export const PAGES: PageDef[] = [
   // Ürünler sol menüde DEĞİL (Mağaza'nın "Ürünler" sekmesine taşındı); /urunler derin-link çalışır.
   { key: 'products', slug: 'urunler', labelKey: 'menu.products', icon: 'package', group: 'content', hideInGame: true, inMenu: false },
 
-  // --- Araclar ---
+  // --- ARACLAR: analiz araclari ---
   { key: 'analyzer', slug: 'pozisyon-analizi', labelKey: 'pa.title', icon: 'search', group: 'tools' },
-  // Mat Analiz: kullanici .mat maci yukler, gnubg tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
+  // Mat Analiz: kullanici .mat maci yukler, motor tam analiz eder (ozet: PR/blunder/hata/kesinsizlik).
   { key: 'matAnalyzer', slug: 'mat-analiz', labelKey: 'ma.title', icon: 'analyze', group: 'tools' },
   { key: 'achievements', slug: 'basarimlar', labelKey: 'ach.title', icon: 'medal', group: 'tools', inMenu: false },
   { key: 'blunders', slug: 'hata-gunlugu', labelKey: 'menu.blunders', icon: 'warning-circle', group: 'tools' },
   { key: 'matchHistory', slug: 'mac-analizleri', labelKey: 'menu.matchHistory', icon: 'chart-line', group: 'tools' },
 
-  // --- Bilgi (en altta) ---
+  // --- HESAP ---
+  { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
+  // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
+  { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account', gate: 'user' },
+  // Siparişlerim sol menüde DEĞİL; profil sayfasından açılır (inMenu:false -> /siparislerim yine çalışır).
+  { key: 'myOrders', slug: 'siparislerim', labelKey: 'menu.myOrders', icon: 'package', group: 'account', gate: 'user', inMenu: false },
+
+  // --- Bilgi (en altta, basliksiz) ---
   { key: 'info', slug: 'bilgi', labelKey: 'menu.info', icon: 'info', group: 'info' },
 ]
 
 export const PAGE_BY_KEY: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.key, p]))
 export const PAGE_BY_SLUG: Record<string, PageDef> = Object.fromEntries(PAGES.map((p) => [p.slug, p]))
-export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'compete', 'account', 'content', 'tools', 'info']
+export const MENU_GROUP_ORDER: MenuGroup[] = ['play', 'compete', 'fun', 'content', 'tools', 'account', 'info']
+
+// Grup basligi i18n anahtari (sol menude gorunur, silik buyuk-harf). null -> baslik cizilmez.
+export const MENU_GROUP_LABELS: Record<MenuGroup, string | null> = {
+  play: 'menu.group.play',
+  compete: 'menu.group.compete',
+  fun: 'menu.group.fun',
+  content: 'menu.group.content',
+  tools: 'menu.group.tools',
+  account: 'menu.group.account',
+  info: null,
+}
