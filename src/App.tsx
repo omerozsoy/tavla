@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState }
 import './App.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
+import { ErrorBoundary } from './ui/ErrorBoundary'
 import type { GameState, Move, Player, Step } from './engine/types'
 import { cloneState, gameOutcome, opponent, winner } from './engine/board'
 import { applyStep, boardKey, generateMoves, hasNoMove } from './engine/moves'
@@ -6803,9 +6804,13 @@ export default function App() {
         />
       )}
       {frameAnimOpen && (
-        <Suspense fallback={null}>
-          <CerceveAnim onClose={() => setFrameAnimOpen(false)} />
-        </Suspense>
+        // Kritik olmayan sus animasyon: chunk yuklenemezse (deploy sonrasi bayat) tum
+        // uygulama cokmesin -> lokal sinir, fallback=null (sessizce kapan).
+        <ErrorBoundary name="frame-anim" fallback={null}>
+          <Suspense fallback={null}>
+            <CerceveAnim onClose={() => setFrameAnimOpen(false)} />
+          </Suspense>
+        </ErrorBoundary>
       )}
       {gamePreviewOpen && <GamePreview onClose={() => setGamePreviewOpen(false)} />}
       {contentView && (
