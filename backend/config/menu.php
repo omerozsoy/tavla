@@ -12,30 +12,34 @@
  */
 return [
     'items' => [
-        // --- Oyun baslatma ---
+        // --- OYNA: oyun baslatma ---
         ['key' => 'solo', 'group' => 'play', 'label' => 'Tek Oyun'],
         ['key' => 'match', 'group' => 'play', 'label' => 'Maç Oyunu'],
         ['key' => 'aiGame', 'group' => 'play', 'label' => 'YZ ile Oyna'],
         ['key' => 'playFriend', 'group' => 'play', 'label' => 'Arkadaşınla Oyna'],
 
-        // --- Rekabet + sosyal ---
+        // --- YARISMA: rekabet + sosyal ---
         ['key' => 'tournaments', 'group' => 'compete', 'label' => 'Online Turnuvalar'],
         ['key' => 'leaderboard', 'group' => 'compete', 'label' => 'Liderlik Tablosu'],
         ['key' => 'friends', 'group' => 'compete', 'label' => 'Arkadaşlar'],
 
-        // --- Hesap ---
-        ['key' => 'membership', 'group' => 'account', 'label' => 'Üyelik'],
+        // --- EGLENCE: sans/ekonomi oyunlari ---
+        ['key' => 'luckywheel', 'group' => 'fun', 'label' => 'Şans Çarkı'],
+        ['key' => 'diceslot', 'group' => 'fun', 'label' => 'Zar Slotu'],
 
-        // --- Bilgi / icerik ---
+        // --- KESFET: bilgi / icerik ---
         ['key' => 'calendar', 'group' => 'content', 'label' => 'Turnuva Takvimi'],
         ['key' => 'clubs', 'group' => 'content', 'label' => 'Tavla Kulüpleri'],
         ['key' => 'news', 'group' => 'content', 'label' => 'Haberler'],
         ['key' => 'magazine', 'group' => 'content', 'label' => 'TavlaTV'],
 
-        // --- Araclar ---
+        // --- ARACLAR ---
         ['key' => 'analyzer', 'group' => 'tools', 'label' => 'Pozisyon Analizi'],
         ['key' => 'blunders', 'group' => 'tools', 'label' => 'Hata Günlüğü'],
         ['key' => 'matchHistory', 'group' => 'tools', 'label' => 'Maç Analizleri'],
+
+        // --- HESAP ---
+        ['key' => 'membership', 'group' => 'account', 'label' => 'Üyelik'],
 
         // --- Bilgi (en altta) ---
         ['key' => 'info', 'group' => 'info', 'label' => 'Bilgi'],

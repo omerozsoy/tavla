@@ -1246,6 +1246,21 @@ button[aria-disabled='true'],
 .menu-group:empty {
   display: none;
 }
+/* Sol menu grup basligi (OYNA / YARIŞMA / EĞLENCE / KEŞFET / ARAÇLAR / HESAP) —
+   silik, buyuk-harf, harf araligi genis. Ilk gruptaysa ust bosluk verme. */
+.menu-group-title {
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 0 12px;
+  margin: 12px 0 5px;
+  user-select: none;
+}
+.menu-group:first-of-type .menu-group-title {
+  margin-top: 2px;
+}
 .menu-label {
   color: color-mix(in srgb, var(--muted) 85%, transparent);
   font-size: 0.68rem;
