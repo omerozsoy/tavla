@@ -604,6 +604,12 @@ class RoomController extends Controller
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
+            // Terminal sinyali alan odalar "devam eden" DEGILDIR: status henuz 'finished'e
+            // donmemis olsa bile (settle pending / client status gonderemedi) bir bitis isareti
+            // varsa banner'da gosterme -> "maci bitti ama hala devam eden mac gozukuyor" fix.
+            ->whereNull('end_reason')       // resign/timeout/abandon etiketlenmis
+            ->whereNull('p1_result')        // taraflardan biri mac sonucu beyan etmis (won/lost)
+            ->whereNull('p2_result')
             // Yalnizca GERCEKTEN canli maclar: son 4 dk icinde guncellenmis (terk/timeout eleme)
             ->where('updated_at', '>', now()->subMinutes(4))
             ->orderByDesc('updated_at')
