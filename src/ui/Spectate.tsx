@@ -141,6 +141,23 @@ export default function Spectate({
   const p1Name = eff?.p1_name || t('player.white')
   const p2Name = eff?.p2_name || t('player.black')
 
+  // MAÇ BİTTİ mi? Oda 'finished' (kazananın client'ı final-push eder) VEYA >2 poll boyunca
+  // finished (gone). Board frozen kalmasın; net sonuç göster. Kazanan: skor hedefe ulaşan;
+  // skor belirsizse tahtayı bitiren (off===15). Böylece izleyici sonucu görür + kapatabilir.
+  const matchDone = eff?.status === 'finished' || gone
+  const winnerColor: Player | null = !matchDone
+    ? null
+    : score.white >= target
+      ? 'white'
+      : score.black >= target
+        ? 'black'
+        : board && board.off.white >= 15
+          ? 'white'
+          : board && board.off.black >= 15
+            ? 'black'
+            : null
+  const winnerName = winnerColor === 'white' ? p1Name : winnerColor === 'black' ? p2Name : null
+
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
     const name = isP1 ? p1Name : p2Name
@@ -245,6 +262,35 @@ export default function Spectate({
           )}
         </div>
       </main>
+
+      {/* MAÇ SONU sonuç kartı: board frozen kalmasın, izleyici kazananı + skoru görsün + kapatsın. */}
+      {matchDone && (
+        <div className="spectate-result" role="dialog" aria-modal="true">
+          <div className="spectate-result-card">
+            <span className="sr-ic" aria-hidden="true">
+              <Icon name="trophy" size={30} />
+            </span>
+            <h3>{t('live.matchEnded')}</h3>
+            {winnerName ? (
+              <div className="sr-winner">{t('live.winnerIs', { name: winnerName })}</div>
+            ) : (
+              <div className="sr-winner sr-muted">{t('live.ended')}</div>
+            )}
+            <div className="sr-score">
+              <span className="sr-side">
+                <b>{p1Name}</b> {score.white}
+              </span>
+              <span className="sr-dash">–</span>
+              <span className="sr-side">
+                {score.black} <b>{p2Name}</b>
+              </span>
+            </div>
+            <Button variant="default" className="sr-close" onClick={onClose}>
+              {t('common.close')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Sol alt: izleyenler (sayı + isimler) — oyuncularla AYNI rozet (bkz ViewersBadge) */}
       <div className="spectate-side">

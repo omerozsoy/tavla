@@ -401,7 +401,12 @@ class RoomController extends Controller
         // Kazanan belli -> mac bitti: odayi 'finished' isaretle (Canli Maclar'da gorunmesin;
         // client status gonderemese bile guvenlik agi).
         if ($room->status !== 'finished') {
-            Room::where('code', $code)->update(['status' => 'finished']);
+            // version'i da ARTIR: izleyicinin version-kapili poll'u 'finished'i yakalasin
+            // (yoksa version degismezse showRoom 'degismedi' donup izleyici DONAR).
+            Room::where('code', $code)->update([
+                'status' => 'finished',
+                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
+            ]);
         }
 
         // ATOMIK: "settled" iddiasi + coin transferi TEK transaction, kullanicilar kilitli.

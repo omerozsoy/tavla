@@ -10801,6 +10801,65 @@ button.acct-row:hover:not(:disabled) {
   color: color-mix(in srgb, var(--tv-cream, #f4efe6) 70%, transparent);
   font-size: 1rem;
 }
+/* İzleyici MAÇ SONU sonuç kartı (board üstünde ortalı overlay) */
+.spectate-result {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(4, 6, 22, 0.55);
+  backdrop-filter: blur(3px);
+  padding: 20px;
+}
+.spectate-result-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 26px 30px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 380px;
+  box-shadow: var(--shadow-lg);
+}
+.spectate-result-card .sr-ic {
+  color: var(--coin-gold, #d9a441);
+}
+.spectate-result-card h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 400;
+  color: var(--text);
+}
+.spectate-result-card .sr-winner {
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+.spectate-result-card .sr-winner.sr-muted {
+  color: var(--muted);
+}
+.spectate-result-card .sr-score {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.spectate-result-card .sr-side b {
+  font-weight: 500;
+}
+.spectate-result-card .sr-dash {
+  color: var(--muted);
+}
+.spectate-result-card .sr-close {
+  margin-top: 8px;
+  min-width: 120px;
+}
 /* Sol alt izleme paneli: izleyenler + maç sohbeti (salt-okunur) */
 .spectate-side {
   position: fixed;

@@ -3843,6 +3843,40 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, roomCode, roomStatus, match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd])
 
+  // Online MAÇ SONU: son tahtayı + 'finished'i ODAYA GARANTİ yaz (izleyiciler donmasın).
+  // SORUN: yukarıdaki sync 200ms debounce'lu + yalnız status==='playing' iken çalışır; maç
+  // bitince (matchOver) istemci MatchResult'a geçip sync'i kapatınca son push İPTAL olabiliyor
+  // -> izleyici son-öncesi karede DONUYOR ve 'finished' hiç gelmiyor (sonuç görünmez). Burada
+  // matchOver olur olmaz ANINDA (debounce yok) tek sefer final snapshot + 'finished' gönderilir.
+  const finalPushedRef = useRef(false)
+  useEffect(() => {
+    if (!matchOver) {
+      finalPushedRef.current = false // yeni maç/rövanş için sıfırla
+      return
+    }
+    if (finalPushedRef.current || !online || !roomCode || authoritativeRef.current) return
+    finalPushedRef.current = true
+    const snap = {
+      mode,
+      difficulty,
+      match,
+      starter,
+      turnsPlayed,
+      turnStart,
+      played,
+      clock: { delay: clock.delay, white: clock.white, black: clock.black },
+      gameEnd,
+      cubePending,
+      pr: prStats,
+      luck: prLuck,
+      moves: matchLog.filter((e) => e.player === myColor).slice(-80),
+    }
+    updateRoom(roomCode, snap, 'finished').catch(() => {
+      finalPushedRef.current = false // hata -> tekrar denenebilsin
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [matchOver, online, roomCode])
+
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
     if (!online || !room) return
