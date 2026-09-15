@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\BugReport;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -46,7 +48,58 @@ class BugReportController extends Controller
             'status'     => 'new',
         ]);
 
+        // Yeni bildirimi yoneticiye e-posta ile ilet (best-effort: mail patlarsa
+        // kullanicinin bildirimi yine kaydedilir; hatayi yalniz logla).
+        $this->notifyAdmin($report);
+
         return response()->json(['ok' => true, 'id' => $report->id], 201);
+    }
+
+    // Bildirimi config('mail.bug_report_to') adres(ler)ine gonder; ekran goruntusu varsa ekle.
+    private function notifyAdmin(BugReport $report): void
+    {
+        $to = config('mail.bug_report_to');
+        if (empty($to)) {
+            return;
+        }
+        $recipients = collect(explode(',', (string) $to))
+            ->map(fn ($e) => trim($e))
+            ->filter()
+            ->all();
+        if (empty($recipients)) {
+            return;
+        }
+
+        $reporter = $report->name
+            ? $report->name.($report->email ? ' <'.$report->email.'>' : '')
+            : 'Misafir'.($report->email ? ' <'.$report->email.'>' : '');
+        $adminUrl = rtrim((string) config('app.url'), '/').'/admin/bug-reports/'.$report->id.'/edit';
+
+        $body = "Yeni hata bildirimi (#{$report->id})\n\n"
+            ."Sayfa: ".($report->page ?: '—')."\n"
+            ."Adres: ".($report->url ?: '—')."\n"
+            ."Bildiren: {$reporter}\n"
+            ."Tarih: ".$report->created_at->toDateTimeString()."\n"
+            ."Tarayıcı: ".($report->user_agent ?: '—')."\n\n"
+            ."Açıklama:\n{$report->message}\n\n"
+            ."Yönetim panelinde görüntüle:\n{$adminUrl}\n";
+
+        // Ekran goruntusunun tam yolu (uploads diski = public/uploads).
+        $shotPath = $report->screenshot ? Storage::disk('uploads')->path($report->screenshot) : null;
+
+        try {
+            Mail::raw($body, function ($m) use ($recipients, $report, $shotPath) {
+                $m->to($recipients)->subject('TavlaTv — Yeni Hata Bildirimi #'.$report->id);
+                if ($report->email) {
+                    $m->replyTo($report->email, $report->name ?: $report->email);
+                }
+                if ($shotPath && is_file($shotPath)) {
+                    $m->attach($shotPath);
+                }
+            });
+        } catch (\Throwable $e) {
+            Log::warning('Hata bildirimi e-postasi gonderilemedi: '.$e->getMessage(), ['report_id' => $report->id]);
+        }
     }
 
     // base64 data-URL -> uploads diskinde dosya. Yalniz gercek gorsel MIME'lerini kabul et.

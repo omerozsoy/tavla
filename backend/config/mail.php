@@ -120,4 +120,16 @@ return [
         'name' => env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel')),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Hata Bildirimi Alıcısı
+    |--------------------------------------------------------------------------
+    |
+    | "Hata Bildir" formundan gelen her bildirim bu adrese e-posta ile iletilir.
+    | .env'de BUG_REPORT_TO ile değiştirilebilir (virgülle birden çok adres).
+    |
+    */
+
+    'bug_report_to' => env('BUG_REPORT_TO', 'omerozsoy@gmail.com'),
+
 ];
