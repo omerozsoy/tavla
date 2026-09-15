@@ -14,12 +14,13 @@ use Illuminate\Database\Eloquent\Model;
 class MenuGroup extends Model
 {
     protected $fillable = [
-        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'collapsed',
+        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'collapsed', 'removed',
     ];
 
     protected $casts = [
         'visible' => 'boolean',
         'collapsed' => 'boolean', // true -> grup menude KATLI (kapali) baslar
+        'removed' => 'boolean',   // true -> yapisal grup "silindi" (tombstone): admin+menude gizli, syncCatalog geri eklemez
         'sort' => 'integer',
     ];
 
