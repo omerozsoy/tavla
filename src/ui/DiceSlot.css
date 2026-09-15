@@ -756,8 +756,8 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 4px 10px;
+  grid-template-columns: repeat(auto-fill, minmax(172px, 1fr));
+  gap: 6px 12px;
 }
 .ds-pt-row {
   display: flex;
@@ -782,13 +782,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: linear-gradient(140deg, #f0c04e, #a9741a);
   border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
   color: #4a2f08;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 800;
 }
 .ds-pt-meta {
@@ -797,7 +797,7 @@
   gap: 8px;
 }
 .ds-pt-tag {
-  font-size: 10px;
+  font-size: 12px;
   color: var(--ivory-dim);
   letter-spacing: 0.04em;
 }
@@ -819,7 +819,7 @@
   letter-spacing: 0.12em;
   color: var(--gold);
   text-shadow: 0 0 10px color-mix(in srgb, var(--gold) 40%, transparent);
-  font-size: 13px;
+  font-size: 16px;
 }
 .ds-pt-note {
   margin: 8px 0 0;
