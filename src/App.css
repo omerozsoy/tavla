@@ -23635,13 +23635,17 @@ select:-webkit-autofill {
 }
 .mrv-dice {
   flex: 0 0 auto;
-  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 36px;
+}
+.mrv-die {
+  flex: none;
   color: var(--accent);
-  min-width: 20px;
-  letter-spacing: 1px;
 }
 .mrv-dice-empty {
-  min-width: 20px;
+  min-width: 36px;
 }
 .mrv-move {
   flex: 1 1 auto;
@@ -23823,6 +23827,30 @@ select:-webkit-autofill {
 }
 .mrv-cand.played .mrv-c-move {
   color: var(--accent);
+}
+/* Oynanan hamle satiri: secili degilken bile hafif vurgu (hangi hamleyi oynadigin belli olsun) */
+.mrv-cand.played:not(.sel) {
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+/* Notasyon + "Senin hamlen" rozeti tek satirda */
+.mrv-c-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  overflow: hidden;
+}
+.mrv-c-you {
+  flex: none;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 400;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
 }
 .mrv-c-no {
   color: var(--muted);

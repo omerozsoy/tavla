@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
@@ -262,8 +262,8 @@ export default function MatReview({
                     <span className="mrv-no">{i + 1}.</span>
                     {e.dice && e.dice.length >= 2 ? (
                       <span className="mrv-dice">
-                        {e.dice[0]}
-                        {e.dice[1]}
+                        <Icon name={`die-${e.dice[0]}` as IconName} size={15} weight="fill" className="mrv-die" />
+                        <Icon name={`die-${e.dice[1]}` as IconName} size={15} weight="fill" className="mrv-die" />
                       </span>
                     ) : (
                       <span className="mrv-dice mrv-dice-empty" />
@@ -379,7 +379,10 @@ export default function MatReview({
                   onClick={() => setCandIdx(ci)}
                 >
                   <span className="mrv-c-no">{ci + 1}</span>
-                  <span className="mrv-c-move">{c.notation}</span>
+                  <span className="mrv-c-move">
+                    {c.notation}
+                    {isPlayed && <span className="mrv-c-you">{t('mrv.yourMove')}</span>}
+                  </span>
                   <span className="mrv-c-eq">
                     {ci === 0 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}` : `(${diff.toFixed(3)})`}
                   </span>
