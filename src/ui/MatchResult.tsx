@@ -119,7 +119,9 @@ export default function MatchResult({
   // hücrelerinde sayı yerine nabızlı "…" gösterilir (wildbg sayısı ASLA gösterilmez).
   const aAnalyzing = analyzing && ratingIsWinner
   const bAnalyzing = analyzing && !ratingIsWinner
-  const dots = () => <span className="mr-analyzing" aria-label="analiz ediliyor">…</span>
+  // gnubg (sunucu) PR hesaplanana kadar DÖNEN loader; wildbg sayısı ASLA gösterilmez.
+  const dots = () => <span className="mr-pr-loader" role="status" aria-label={t('mr.prCalculating')} />
+
   // Dusuk PR daha iyi -> tac dusuk olanda
   const wBetter = winnerPr != null && loserPr != null && winnerPr <= loserPr
   const lBetter = winnerPr != null && loserPr != null && loserPr < winnerPr
