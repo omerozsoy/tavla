@@ -9913,6 +9913,13 @@ button.acct-row:hover:not(:disabled) {
 .rank-row:active {
   scale: 0.985;
 }
+/* Liderlik Tablosu (ana sayfa paneli): oyuncu adlari KESILMESIN. Kullanici adlari en fazla
+   15 karakter -> hepsi tam gorunsun. Isim kolonu icerige gore buyur (max-content: 148px
+   cap'i kaldirir), dar ekranda yine kucuur (min 56px). Grid kolonu ortak oldugundan
+   bayraklar hizali kalir. Online-row kendi grid'ini ayrica tanimlar (etkilenmez). */
+.rank-panel .rank-row:not(.online-row) {
+  grid-template-columns: 26px minmax(56px, max-content) 1fr auto;
+}
 @media (hover: hover) and (pointer: fine) {
   .rank-row:hover {
     border-color: var(--accent);
