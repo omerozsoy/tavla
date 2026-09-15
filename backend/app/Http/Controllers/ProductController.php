@@ -53,16 +53,19 @@ class ProductController extends Controller
             ->map(fn (ProductOrder $o) => $o->toArray())
             ->all();
 
-        // Coin paketi HAVALE odemeleri de "siparis" olarak gorunsun: kart aninda biter (Garanti
-        // callback -> coin hemen yuklenir) ama havale admin onayi bekler; Payment(kind='coins')
-        // bir ProductOrder OLMADIGI icin listede cikmiyordu -> kullanici "siparisim yok" saniyordu.
+        // Coin HAVALE odemeleri de "siparis" olarak gorunsun: kart aninda biter (Garanti callback
+        // -> coin hemen yuklenir) ama havale admin onayi bekler; coin odemesi bir ProductOrder
+        // OLMADIGI icin listede cikmiyordu -> kullanici "siparisim yok" saniyordu.
+        // İKİ YOL: buyCoins (kind='coins') VE sepet coin paketi (kind='cart', coins>0). Sepette
+        // fiziksel urun de varsa onun ProductOrder'i AYRICA gorunur; burada yalniz coin kismi.
         $coinLabel = [
             'pending' => 'Havale onayı bekleniyor',
             'paid'    => 'Ödendi · coin yüklendi',
         ];
         $coinOrders = Payment::where('user_id', $userId)
-            ->where('kind', 'coins')
+            ->whereIn('kind', ['coins', 'cart'])
             ->where('payment_method', 'bank_transfer')
+            ->where('coins', '>', 0) // fiziksel-only sepet (coins=0) haric; onlar zaten ProductOrder
             ->whereIn('status', ['pending', 'paid'])
             ->orderByDesc('id')
             ->get()
