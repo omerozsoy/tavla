@@ -18,17 +18,17 @@ use Illuminate\Support\Facades\Route;
 
 // Halka acik — kimlik dogrulama uclari kaba kuvvete karsi hiz sinirli (IP basi/dk)
 // Sifre/token brute-force hedefleri daha siki (10/dk); digerleri 20/dk.
-Route::middleware('throttle:10,1')->group(function () {
+Route::middleware('throttle:10,1,auth-login')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 });
-Route::middleware('throttle:20,1')->group(function () {
+Route::middleware('throttle:20,1,auth-register')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/auth/google', [AuthController::class, 'googleLogin']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 });
 // Kullanici numaralama (enumeration) yavaslatma: halka acik + hiz sinirli
-Route::middleware('throttle:30,1')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
+Route::middleware('throttle:30,1,nickname')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/leaderboard/pr', [AuthController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
 Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
@@ -62,7 +62,7 @@ Route::get('/dice-slot', [\App\Http\Controllers\DiceSlotController::class, 'show
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
 // 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
 // genisligi tuketimi) durdurur. Sohbet spam'i icin ayrica daha siki 40/dk.
-Route::middleware('throttle:240,1')->group(function () {
+Route::middleware('throttle:240,1,rooms')->group(function () {
     Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
     Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
@@ -83,22 +83,22 @@ Route::middleware('throttle:240,1')->group(function () {
     Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond']);
     Route::post('/rooms/{code}/resign', [RoomController::class, 'resign']);
 });
-Route::middleware('throttle:40,1')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
+Route::middleware('throttle:40,1,chat')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
-Route::middleware('throttle:600,1')->post('/rooms/{code}/live', [RoomController::class, 'live']);
+Route::middleware('throttle:600,1,live')->post('/rooms/{code}/live', [RoomController::class, 'live']);
 // Canli mac IZLEME presence (spectator heartbeat): izleyici kaydi + izleyen listesi/sayisi. Herkese acik.
-Route::middleware('throttle:120,1')->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
+Route::middleware('throttle:120,1,watch')->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
 // GEÇİCİ TEŞHİS (Faz 2): backend Node validator'a ulaşabiliyor mu? Secret/URL AÇMAZ. Sorun
 // çözülünce KALDIR. Tarayıcıda /api/validator-check açılır. Limit bol (teşhis için yenilenebilsin).
-Route::middleware('throttle:60,1')->get('/validator-check', [RoomController::class, 'validatorCheck']);
+Route::middleware('throttle:60,1,validator')->get('/validator-check', [RoomController::class, 'validatorCheck']);
 
 // Maç kaydı (hamle+zar): TÜM maçlar (pvb/online/local) loglanır. Misafir dostu (auth yok),
 // açık uç -> throttle + payload sınırlarıyla korunur (bkz. GameLogController validation).
 // Meşru istemci oyun/maç sonunda birkaç kez yazar; 20/dk fazlasıyla yeter.
-Route::middleware('throttle:20,1')->post('/game-logs', [\App\Http\Controllers\GameLogController::class, 'store']);
+Route::middleware('throttle:20,1,game-logs')->post('/game-logs', [\App\Http\Controllers\GameLogController::class, 'store']);
 // KANONİK .mat: client "Dışa Aktar" da bu TEK kaynağı kullanır (merged game_logs -> MatFromLog).
 // uid yeterince rastgele (yetenek anahtarı); içerik yalnız hamle kaydı -> açık uç (misafir dostu).
-Route::middleware('throttle:30,1')->get('/game-logs/{uid}/mat', [\App\Http\Controllers\GameLogController::class, 'mat']);
+Route::middleware('throttle:30,1,game-logs-mat')->get('/game-logs/{uid}/mat', [\App\Http\Controllers\GameLogController::class, 'mat']);
 
 // Giris gerektiren
 Route::middleware('auth:sanctum')->group(function () {
@@ -115,12 +115,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
     Route::get('/me/match-pr-gnubg/{match}', [AuthController::class, 'matchGnubgPr']); // canli ekran: gnubg PR hazir mi (HAKEM=gnubg poll)
     // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
-    Route::middleware('throttle:30,1')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
+    // ÖNEMLİ: throttle'a AYRI PREFIX ver -> Laravel'de isimsiz throttle anahtari sha1(userId) ile
+    // TÜM throttled route'lar arasinda PAYLASILIR (rota anahtara girmez). Prefix olmadan; oyun-logu,
+    // çark/slot, rating gibi diger aktiviteler ortak sayaci sisirir ve DÜŞÜK limitli bu agir uçlar
+    // ilk istekte bile "Too Many Attempts" verir. Prefix her uca KENDI kovasini verir.
+    Route::middleware('throttle:30,1,analyze-position')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
     // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
     // analyse match agir; yine de test/kullanim icin makul limit.
-    Route::middleware('throttle:30,1')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
+    Route::middleware('throttle:30,1,analyze-mat')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
     // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit.
-    Route::middleware('throttle:30,1')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
+    Route::middleware('throttle:30,1,review-mat')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —
@@ -129,7 +133,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // duser. Throttle: mesru mac dakikalar surer ama 2 istemci x 3 retry + arka arkaya
     // test maclari 12/dk'yi asip 429 -> "puanin kaydedilemedi" verebiliyordu; 30/dk yeterli
     // headroom (reportRating oda+kullanici basi IDEMPOTENT -> yuksek limit guvenli).
-    Route::middleware('throttle:30,1')->post('/rating/report', [AuthController::class, 'reportRating']);
+    Route::middleware('throttle:30,1,rating-report')->post('/rating/report', [AuthController::class, 'reportRating']);
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
@@ -148,9 +152,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/messages/unread', [\App\Http\Controllers\MessageController::class, 'unread']);
     Route::get('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'thread'])->whereNumber('userId');
     Route::post('/messages/{userId}', [\App\Http\Controllers\MessageController::class, 'send'])
-        ->whereNumber('userId')->middleware('throttle:30,1'); // spam/flood korumasi
+        ->whereNumber('userId')->middleware('throttle:30,1,msg-send'); // spam/flood korumasi
     Route::post('/messages/{userId}/typing', [\App\Http\Controllers\MessageController::class, 'typing'])
-        ->whereNumber('userId')->middleware('throttle:60,1'); // "yaziyor…" nabzi
+        ->whereNumber('userId')->middleware('throttle:60,1,msg-typing'); // "yaziyor…" nabzi
 
     Route::post('/ping', [PresenceController::class, 'ping']);
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
@@ -204,13 +208,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // Şans Çarkı çevirme: sonuç SUNUCU-OTORİTER (weighted random). Flood/bot koruması THROTTLE ile;
     // asıl koruma ekonomidedir (günlük ücretsiz hak + limit + atomik sunucu kontrolü). 20/dk hızlı
     // seri çevirmede "Too Many Attempts" veriyordu → 60/dk (bkz Zar Slotu ile aynı düzeltme).
-    Route::middleware('throttle:60,1')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
+    Route::middleware('throttle:60,1,lucky-wheel')->post('/lucky-wheel/spin', [\App\Http\Controllers\LuckyWheelController::class, 'spin']);
 
     // Zar Slotu çevirme: sonuç SUNUCU-OTORİTER (weighted random). Flood/bot koruması THROTTLE ile;
     // asıl kötüye-kullanım koruması ekonomidedir (günlük ücretsiz hak + coin bedeli + atomik sunucu
     // kontrolü). Limit hızlı ELLE oynamaya yetecek kadar geniş (buton her spinde ~2.3s kilitli →
     // en fazla ~26/dk); 20/dk "Too Many Attempts" veriyordu, 60/dk'ya çıkarıldı.
-    Route::middleware('throttle:60,1')->post('/dice-slot/spin', [\App\Http\Controllers\DiceSlotController::class, 'spin']);
+    Route::middleware('throttle:60,1,dice-slot')->post('/dice-slot/spin', [\App\Http\Controllers\DiceSlotController::class, 'spin']);
 
     // Fiziksel urun magazasi: siparis (coin aninda / money -> odeme) + kullanicinin siparisleri.
     Route::post('/products/order', [\App\Http\Controllers\ProductController::class, 'order']);
@@ -238,6 +242,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me/achievements/unseen', [\App\Http\Controllers\AchievementController::class, 'unseen']);
 
     Route::get('/game', [GameController::class, 'show']);
-    Route::middleware('throttle:60,1')->put('/game', [GameController::class, 'save']);
+    Route::middleware('throttle:60,1,game-save')->put('/game', [GameController::class, 'save']);
     Route::delete('/game', [GameController::class, 'clear']);
 });
