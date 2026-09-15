@@ -1,0 +1,120 @@
+/* Hata Bildir — sağ kenar sabit sekme butonu + kompakt bildirim formu.
+   Buton ekranın sağ kenarına yapışır (dikey sekme); OYUN ekranında App render
+   etmez (üstte kalmaz). Modal, ortak .register-card sistemini yeniden kullanır. */
+
+.bug-fab {
+  position: fixed;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90; /* header (500) / overlay (100) altında; içerik üstünde */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px;
+  border: none;
+  border-top-left-radius: var(--radius-md);
+  border-bottom-left-radius: var(--radius-md);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  box-shadow: var(--shadow-md);
+  transition: padding 0.15s ease, filter 0.15s ease;
+}
+.bug-fab:hover {
+  filter: brightness(1.06);
+  padding-right: 9px;
+}
+.bug-fab-txt {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+/* Mobilde daha küçük, alt-orta yerine kenarda kalsın; metni gizle (yalnız ikon) */
+@media (max-width: 640px) {
+  .bug-fab {
+    top: auto;
+    bottom: 84px; /* alttaki olası çubukların üstünde */
+    transform: none;
+    padding: 10px 8px;
+  }
+  .bug-fab-txt {
+    display: none;
+  }
+}
+
+/* --- Form --- */
+.bug-card {
+  max-width: 440px;
+}
+.bug-sub {
+  color: var(--muted);
+  margin: -2px 0 6px;
+  font-size: 0.88rem;
+}
+.bug-label span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Ekran görüntüsü yükleme */
+.bug-file-input {
+  display: none;
+}
+.bug-shot-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--btn-border);
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.bug-shot-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.bug-shot-preview {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--input-bg);
+}
+.bug-shot-preview img {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+}
+.bug-shot-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-circle);
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+}
+
+.bug-send {
+  margin-top: 6px;
+  width: 100%;
+  gap: 8px;
+}
