@@ -5317,55 +5317,20 @@ export default function App() {
   const pipTop = pipCount(boardDisplay, 'black')
   const pipBottom = pipCount(boardDisplay, 'white')
 
-  // PR (Performans Reytingi): karar basina ortalama equity kaybi x 500 (dusuk = iyi)
-  const prOf = (c: Player): number | null =>
-    prStats[c].decisions > 0 ? (prStats[c].loss / prStats[c].decisions) * 500 : null
-  // Kırılım: küp-yalnız ve checker (= overall − küp). decisions 0 -> null (0.00 değil).
-  const prCubeOf = (c: Player): number | null => {
-    const cd = prStats[c].cubeDecisions ?? 0
-    return cd > 0 ? ((prStats[c].cubeLoss ?? 0) / cd) * 500 : null
-  }
-  const prCheckerOf = (c: Player): number | null => {
-    const cd = prStats[c].cubeDecisions ?? 0
-    const chkDec = prStats[c].decisions - cd
-    const chkLoss = prStats[c].loss - (prStats[c].cubeLoss ?? 0)
-    return chkDec > 0 ? (chkLoss / chkDec) * 500 : null
-  }
-  // PR -> seviye unvani (9 kademeli standart tavla tablosu; badges.ts)
+  // PR (Performans Reytingi) GÖSTERİMİ: YALNIZ sunucu (gnubg) otoriter değeri gösterilir.
+  // wildbg (istemci) PR'ı KULLANICIYA HİÇBİR YERDE gösterilmez (direktif). gnubg hazır değilse
+  // null -> ekranda gizlenir / loader. NOT: istemci prStats hâlâ SUNUCUYA raporlanır (prRef);
+  // sunucu ilk değeri saklar, gnubg job'ı authoritative'de EZER. Ekranda ise yalnız gnubg görünür.
   const prBand = (p: number | null): string => (p == null ? '' : divisionOfPR(p).key)
   const prHumanColor: Player = online ? myColor : 'white'
-  const prValue = prOf(prHumanColor)
+  const prShown = (c: Player): number | null =>
+    serverPr ? ((c === prHumanColor ? serverPr.self : serverPr.opp) ?? null) : null
+  const prCheckerShown = (c: Player): number | null =>
+    serverPr ? ((c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) ?? null) : null
+  const prCubeShown = (c: Player): number | null =>
+    serverPr ? ((c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) ?? null) : null
+  const prValue = prShown(prHumanColor)
   const prBandKey = prBand(prValue)
-  // GARANTİ: sonuç ekranında PR ASLA "—" olmasın (kullanıcı direktifi). Öncelik: SUNUCU-otoriter
-  // (iki oyuncuda tutarlı) -> STRICT lokal XG -> LOOSE (obvious dahil tüm non-forced) -> 0.00.
-  // 0'a düşme yalnızca hiç ölçülebilir karar yoksa (ör. hamlesiz timeout) olur.
-  const prLooseOf = (c: Player): number | null => {
-    const ad = prStats[c].allDecisions ?? 0
-    return ad > 0 ? ((prStats[c].allLoss ?? 0) / ad) * 500 : null
-  }
-  const prShown = (c: Player): number => {
-    // Bot dahil GERÇEK ölçüm (sentetik seviye değeri kaldırıldı — insanla aynı cetvel).
-    if (serverPr) {
-      const v = c === prHumanColor ? serverPr.self : serverPr.opp
-      if (v != null) return v
-    }
-    return prOf(c) ?? prLooseOf(c) ?? 0
-  }
-  // Sonuç ekranındaki "Pul Oyunu PR". SUNUCU-otoriter kırılım (iki oyuncuda özdeş) -> lokal
-  // ölçüm. Küp kararı YOKSA Pul PR = genel PR -> "Hata Oranı" satırıyla AYNI kaynak (aksi halde
-  // iki satır farklı çıkardı). Bot dahil gerçek ölçüm (sentetik kaldırıldı).
-  const prCheckerShown = (c: Player): number | null => {
-    const srv = serverPr ? (c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) : null
-    if (srv != null) return srv
-    return (prStats[c].cubeDecisions ?? 0) > 0 ? prCheckerOf(c) : prShown(c)
-  }
-  // "Küp PR": sunucu kırılımı -> lokal küp ölçümü. Hiç SAYILAN küp kararı yoksa null -> "—"
-  // (satır her maçta görünür; uydurma 0.00 YAZMAYIZ). Bot dahil gerçek ölçüm.
-  const prCubeShown = (c: Player): number | null => {
-    const srv = serverPr ? (c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) : null
-    if (srv != null) return srv
-    return prCubeOf(c)
-  }
   // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
   // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
   // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
@@ -5614,8 +5579,9 @@ export default function App() {
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
     // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
-    // prShown -> strict/loose/0 fallback (ASLA null): oyun basinda karar yokken bile 0.0 gosterir
-    // ("PR asla bos olmasin" direktifi); eski prValue??prLoose null donup PR'i gizliyordu.
+    // Anlık PR: artık YALNIZ gnubg (sunucu). gnubg maç-sonu (async) olduğundan oyun İÇİNDE
+    // prShown null döner -> canlı PR GİZLİ (wildbg SAYISI gösterilmez). Maç bitince sidebar'da
+    // gnubg değeri görünür. (showLivePr toggle'ı korunur ama in-game etkisiz.)
     pr: mode === 'pvb' && showLivePr ? prShown('white') : null,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
     // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
@@ -7902,7 +7868,7 @@ export default function App() {
         <MatchReport
           mode={resultView}
           log={matchLog}
-          pr={prOf(prHumanColor)}
+          pr={prShown(prHumanColor)}
           humanColor={prHumanColor}
           matchLength={match.target}
           whiteName={whiteName}
