@@ -88,9 +88,20 @@
 .ds-stage {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch; /* icerik SOLA dayali (title + makine) */
   gap: 20px;
   padding: 26px 28px 30px;
+}
+.ds-title {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font-family: var(--tv-font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent);
 }
 
 /* (Üst başlık/slogan/bakiye pill KALDIRILDI — marquee zaten "ZAR SLOTU" gösterir,
