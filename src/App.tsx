@@ -3383,6 +3383,9 @@ export default function App() {
           cubeSelf: r.pr_cube_self ?? null,
           cubeOpp: r.pr_cube_opponent ?? null,
         })
+        // HAKEM=gnubg (online): kendi PR'ımı da gnubg gelene kadar LOADER göster, gnubg gelince
+        // değiştir (wildbg sayısı gösterilmez). Rakip PR aşağıdaki matchPr poll'undan (o da gnubg).
+        if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
         // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
         // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
         const setLuckPair = (selfL?: number | null, oppL?: number | null) =>
@@ -3505,7 +3508,8 @@ export default function App() {
     setPrAnalyzing(true)
     let prDone = false
     let luckDone = false
-    for (let i = 0; i < 25 && !(prDone && luckDone); i++) {
+    // gnubg hazır olana kadar poll et (~3 dk). wildbg'ye ASLA düşme; hazır değilse LOADER kalır.
+    for (let i = 0; i < 90 && !(prDone && luckDone); i++) {
       await new Promise((res) => setTimeout(res, 2000))
       if (prPollRef.current !== token) return // iptal edildi (yeni maç/rapor)
       try {
@@ -3532,7 +3536,8 @@ export default function App() {
         /* geçici hata -> tekrar dene */
       }
     }
-    if (prPollRef.current === token) setPrAnalyzing(false) // timeout -> istemci fallback
+    // TIMEOUT (gnubg ~3dk gelmedi): wildbg SAYISINI GÖSTERME (kullanıcı direktifi: yalnız gnubg PR).
+    // Loader kalır; kesin gnubg PR "Maç Analizleri"nde görünür. (prDone olduysa zaten kapandı.)
   }
 
   // Bota karsi mac bitince de puan islensin (bot puani zorluga gore).

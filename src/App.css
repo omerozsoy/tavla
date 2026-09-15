@@ -11667,6 +11667,23 @@ button.acct-row:hover:not(:disabled) {
   0%, 100% { opacity: 0.35; }
   50% { opacity: 1; }
 }
+/* gnubg PR hesaplanana kadar dönen küçük loader (sonuç ekranı PR hücresi). */
+.mr-pr-loader {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-top-color: var(--accent);
+  animation: mr-spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes mr-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mr-pr-loader { animation-duration: 1.6s; }
+}
 .mr-label {
   color: var(--muted);
   font-weight: 400;
