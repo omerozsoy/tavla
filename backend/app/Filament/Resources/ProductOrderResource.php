@@ -145,6 +145,15 @@ class ProductOrderResource extends Resource
             ])
             ->actions([
                 Tables\Actions\EditAction::make()->label('Yönet'),
+                Tables\Actions\DeleteAction::make()->label('Sil')
+                    ->requiresConfirmation()
+                    ->modalHeading('Siparişi sil')
+                    ->modalDescription('Bu sipariş kaydı kalıcı olarak silinecek. Coin/ödeme bakiyesi etkilenmez (yalnızca kayıt).'),
+            ])
+            ->bulkActions([
+                Tables\Actions\BulkActionGroup::make([
+                    Tables\Actions\DeleteBulkAction::make()->label('Seçilenleri sil'),
+                ]),
             ]);
     }
 
