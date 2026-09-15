@@ -67,7 +67,7 @@ class ValidatorWatch extends Command
                 $auto = $autoRestarted ? 'Otomatik yeniden başlatma denendi ama düzelmedi. ' : '';
                 $this->dispatchAlert(
                     "🔴 TAVLA VALIDATOR DÜŞTÜ\n{$auto}Sunucu-otoriter maçlarda hamleler REDDEDİLİYOR. ".
-                    "Lütfen validator.tavlai.com Node uygulamasını elle yeniden başlat (admin panel > Servis Durumu > Yeniden Başlat)."
+                    "Lütfen validator.tavlatv.com Node uygulamasını elle yeniden başlat (admin panel > Servis Durumu > Yeniden Başlat)."
                 );
                 Cache::put(self::LAST_ALERT_KEY, $now, now()->addDay());
             }
