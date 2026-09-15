@@ -57,14 +57,10 @@ export const FRAME_GROUP_ORDER: FrameGroup[] = [
 // Kademe yukseldikce gorsel etki/karmasiklik/premium his artar.
 type AnimDef = { motion: SoberMotion; name: string; rarity: FrameRarity }
 const ANIMS: AnimDef[] = [
-  // ===== Standart (250) — 5 =====
-  { motion: 'pulse', name: 'Nabız', rarity: 'common' },
-  { motion: 'heartScale', name: 'Kalp Ölçek', rarity: 'common' },
-  { motion: 'static', name: 'Sabit', rarity: 'common' },
-  { motion: 'grayscale', name: 'Gri Ton', rarity: 'common' },
-  { motion: 'sepia', name: 'Sepya', rarity: 'common' },
-  // 'Yana Süzülme' (floatSide) kaldırıldı (kullanıcı).
-  // ===== Nadir (500) — 16 =====
+  // ===== Standart: BOŞ — Sabit/Gri Ton/Sepya kaldırıldı; Nabız + Kalp Ölçek Nadir'e taşındı (kullanıcı) =====
+  // ===== Nadir (500) =====
+  { motion: 'pulse', name: 'Nabız', rarity: 'rare' },
+  { motion: 'heartScale', name: 'Kalp Ölçek', rarity: 'rare' },
   { motion: 'float', name: 'Süzülme', rarity: 'rare' },
   { motion: 'pulseFast', name: 'Hızlı Nabız', rarity: 'rare' },
   { motion: 'levitate', name: 'Havalanma', rarity: 'rare' },
