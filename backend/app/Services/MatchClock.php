@@ -217,33 +217,32 @@ class MatchClock
         if (! empty($clock['end'])) {
             return $clock;
         }
+
+        // ---- VARLIK (presence): TERK EDEN KAYBEDER — saat CALISMASA da gecerli ----
+        // KOK FIX: presence-abandon eskiden yalnizca saat calisirken (running) isliyordu.
+        // Acilis / 0-0 / oyunlar-arasi gibi saatin durdugu anlarda bir oyuncu terk edince
+        // mac HIC finalize edilmiyor, oda 'playing'de asili kaliyor ve poll updated_at'i
+        // tazeledigi icin "Devam Eden Maç" + "Canli Maclar"da HAYALET olarak gorunuyordu.
+        // Artik running fark etmeksizin: bir oyuncu once gorunup (seen damgasi VAR) sonra
+        // PRESENCE_TIMEOUT+GRACE boyunca kaybolduysa terk etmis sayilir -> rakip kazanir.
+        // Damga yoksa (hic poll etmedi -> "yuklenmedi mi/terk mi" ayrilamaz) presence ATLANIR.
+        $p1s = $clock['p1_seen'] ?? null;
+        $p2s = $clock['p2_seen'] ?? null;
+        $limit = self::PRESENCE_TIMEOUT + self::GRACE;
+        $p1Gone = $p1s !== null && ($now - (float) $p1s) > $limit;
+        $p2Gone = $p2s !== null && ($now - (float) $p2s) > $limit;
+        if ($p1Gone !== $p2Gone) {
+            // TAM OLARAK biri terk (ikisi de degil) -> terk eden kaybeder, rakip kazanir.
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => $p1Gone ? 'p2' : 'p1'];
+            return $clock;
+        }
+        // Ikisi de terk (veya ikisi de present) -> presence KARAR VERMEZ; asagida saat/AFK isler.
+
         if (! ($clock['running'] ?? false)) {
             return $clock;
         }
         $active = $clock['turn_slot'] ?? null;
         if ($active === null) {
-            return $clock;
-        }
-
-        // ---- VARLIK (presence): TERK EDEN KAYBEDER; SIRA SAHIBI KORUNUR ----
-        // _seen yalnizca controller poll/update ile damgalanir. Bir oyuncu
-        // PRESENCE_TIMEOUT (+GRACE) sn boyunca hic gorunmezse "terk etmis" sayilir.
-        // Rakip terk ettiyse sira sahibi haksiz AFK'ya DUSMEZ (once burada karar).
-        $other = self::other($active);
-        $sa = $clock[$active.'_seen'] ?? null;
-        $so = $clock[$other.'_seen'] ?? null;
-        $limit = self::PRESENCE_TIMEOUT + self::GRACE;
-        $activeGone = $sa !== null && ($now - (float) $sa) > $limit;
-        $otherGone = $so !== null && ($now - (float) $so) > $limit;
-        if ($activeGone || $otherGone) {
-            if ($otherGone && ! $activeGone) {
-                // Rakip poll'u kesti (terk) -> rakip kaybeder; sira sahibi korunur.
-                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $active];
-            } elseif ($activeGone && ! $otherGone) {
-                // Sira sahibi poll'u kesti (terk) -> terk eden kaybeder.
-                $clock['end'] = ['reason' => 'ABANDON', 'winner' => $other];
-            }
-            // Ikisi de gitmisse: kimse yok -> haksiz kayip yazma (karar verme).
             return $clock;
         }
 
