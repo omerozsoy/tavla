@@ -14929,6 +14929,38 @@ button.acct-row:hover:not(:disabled) {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+/* PR (Career PR) satırı: sol etiket (hedef ikon + PR), sağda değer + kaç maç. */
+.pp-pr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+.pp-pr-lbl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.pp-pr-val {
+  font-size: 1.05rem;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.pp-pr-sub {
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
 .pp-form {
   display: flex;
   align-items: center;
