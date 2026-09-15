@@ -39,7 +39,8 @@ return [
     'google' => [
         'client_id' => env(
             'GOOGLE_CLIENT_ID',
-            '306143287506-u64icc2893q517phi6oi7089eicru801.apps.googleusercontent.com',
+            // Yeni "tavla" projesi (proje no 164766354103) OAuth istemcisi — tavlatv.com.
+            '164766354103-tnibk42t91nng26tehvbpjejks3mt5v5.apps.googleusercontent.com',
         ),
     ],
 
