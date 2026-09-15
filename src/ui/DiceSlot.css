@@ -93,37 +93,8 @@
   padding: 26px 28px 30px;
 }
 
-/* ---- ÜST: başlık + slogan + bakiye pill ---- */
-.ds-head {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-.ds-head-title {
-  margin: 0;
-  font-family: var(--tv-font-display);
-  font-size: 26px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  color: var(--med-ivory);
-}
-.ds-head-sub {
-  margin: 2px 0 0;
-  font-size: 13px;
-  color: var(--ivory-dim);
-}
-.ds-balance-pill {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 14px;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(180deg, color-mix(in srgb, #000 22%, transparent), color-mix(in srgb, #000 40%, transparent));
-  border: 1px solid color-mix(in srgb, var(--gold) 42%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--gold) 24%, transparent);
-}
+/* (Üst başlık/slogan/bakiye pill KALDIRILDI — marquee zaten "ZAR SLOTU" gösterir,
+   bakiye BAKİYE göstergesinde. Sayfa doğrudan makineyle başlar, sola dayalı.) */
 
 /* ================================================================================
    SLOT MAKİNESİ (SlotMachine)
@@ -132,9 +103,9 @@
   position: relative;
   width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start; /* makine SOLA dayalı */
   /* Sağda kola yer aç (kol kasanın sağ yanından dışarı taşar) */
-  padding: 6px 52px 6px 8px;
+  padding: 6px 52px 6px 0;
 }
 
 /* ---- Kasa gövdesi: Royal Navy + altın trim + hafif 3D hacim ---- */
@@ -754,7 +725,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start; /* slot SOLA dayalı */
   gap: 20px;
 }
 @media (min-width: 880px) {
