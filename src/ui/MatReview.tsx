@@ -1,11 +1,11 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Icon, type IconName } from './Icon'
+import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import Board from './Board'
-import DiceRow from './Dice'
+import DiceRow, { Die } from './Dice'
 import { useBoardDir } from './boardDirection'
 import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
@@ -260,10 +260,12 @@ export default function MatReview({
                   >
                     <span className={`mrv-dot ${b}`} />
                     <span className="mrv-no">{i + 1}.</span>
-                    {e.dice && e.dice.length >= 2 ? (
+                    {e.dice && e.dice.length >= 2 && e.player ? (
+                      // Oyuncuya göre RENKLİ zar (beyaz oyuncu=açık, siyah oyuncu=koyu) ->
+                      // benim hamlelerim ile rakibinki AYNI renk olmaz. Board'daki Die ile aynı.
                       <span className="mrv-dice">
-                        <Icon name={`die-${e.dice[0]}` as IconName} size={15} weight="fill" className="mrv-die" />
-                        <Icon name={`die-${e.dice[1]}` as IconName} size={15} weight="fill" className="mrv-die" />
+                        <Die value={e.dice[0]} owner={e.player} used={false} />
+                        <Die value={e.dice[1]} owner={e.player} used={false} />
                       </span>
                     ) : (
                       <span className="mrv-dice mrv-dice-empty" />
