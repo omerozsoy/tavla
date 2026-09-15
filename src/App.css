@@ -12779,6 +12779,50 @@ button.acct-row:hover:not(:disabled) {
 .lb-table {
   margin-top: 8px;
 }
+/* Liderlik sayfalama: ‹ 1 2 3 … › — rakamlar + iki yanda ok tuslari (kibar). */
+.lb-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 16px auto 4px;
+  flex-wrap: wrap;
+}
+.lb-pg-num,
+.lb-pg-arrow {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.lb-pg-num:hover:not(.active),
+.lb-pg-arrow:not(:disabled):hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.lb-pg-num.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 500;
+}
+.lb-pg-arrow {
+  padding: 0;
+}
+.lb-pg-arrow:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
 .lb-head,
 .lb-row {
   display: grid;

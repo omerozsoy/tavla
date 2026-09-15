@@ -25,14 +25,19 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const [profileId, setProfileId] = useState<number | null>(null)
   const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
   const [wxpOpen, setWxpOpen] = useState(false) // "WXP nasil hesaplanir?" varsayilan kapali
+  const [page, setPage] = useState(0) // 0-tabanli sayfa; her 10 kisi bir sayfa (en fazla 100 kisi = 10 sayfa)
+
+  const PAGE_SIZE = 10
+  const MAX_PAGES = 10 // en fazla 100 kisi göster
 
   useEffect(() => {
     let alive = true
     setError(false)
+    setPage(0) // sekme degisince ilk sayfaya dön
     if (by === 'pr') {
       setPrRows(null)
-      // PR Sıralaması (Career PR): ilk 10 uygun oyuncu
-      prLeaderboard(10)
+      // PR Sıralaması (Career PR): ilk 100 uygun oyuncu (10'ar sayfalanir)
+      prLeaderboard(100)
         .then((r) => {
           if (!alive) return
           setPrRows(r.players)
@@ -44,8 +49,8 @@ export default function Leaderboard({ currentName, onClose }: Props) {
       }
     }
     setRows(null)
-    // Her tab: ilk 10 oyuncu (scroll yok, tam liste görünür)
-    leaderboard(10, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
+    // Her tab: ilk 100 oyuncu (10'ar sayfalanir)
+    leaderboard(100, by === 'coins' ? 'coins' : by === 'wxp' ? 'wxp' : 'rating')
       .then((r) => alive && setRows(r))
       .catch(() => alive && setError(true))
     return () => {
@@ -70,6 +75,48 @@ export default function Leaderboard({ currentName, onClose }: Props) {
 
   const medal = (rank: number) => (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : '')
   const wxpCatLabel = (key: string) => (key === 'coin' ? t('wxpbd.coin') : `${key} ${t('wxpbd.point')}`)
+
+  // Toplam kayittan sayfa sayisi (en fazla MAX_PAGES).
+  const pageCount = (total: number) => Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / PAGE_SIZE)))
+
+  // Kibar sayfalama: ‹ 1 2 3 … › — rakamlar + iki yanda ok tuslari.
+  const renderPager = (total: number) => {
+    const pages = pageCount(total)
+    if (pages <= 1) return null
+    return (
+      <nav className="lb-pager" aria-label={t('lb.pager')}>
+        <button
+          type="button"
+          className="lb-pg-arrow"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          aria-label={t('lb.prev')}
+        >
+          <Icon name="caret-left" size={16} />
+        </button>
+        {Array.from({ length: pages }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`lb-pg-num ${i === page ? 'active' : ''}`}
+            aria-current={i === page ? 'page' : undefined}
+            onClick={() => setPage(i)}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="lb-pg-arrow"
+          disabled={page >= pages - 1}
+          onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+          aria-label={t('lb.next')}
+        >
+          <Icon name="caret-right" size={16} />
+        </button>
+      </nav>
+    )
+  }
 
   const renderRow = (r: LeaderRow) => {
     const wr = r.games > 0 ? Math.round((r.wins / r.games) * 100) : 0
@@ -230,9 +277,10 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                 {by === 'coins' ? <Icon name="coin" size={14} /> : by === 'wxp' ? t('lb.byWxp') : t('lb.rating')}
               </span>
             </div>
-            <div className="lb-body">{rows.map(renderRow)}</div>
+            <div className="lb-body">{rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map(renderRow)}</div>
           </div>
         )}
+        {by !== 'pr' && rows !== null && rows.length > 0 && renderPager(rows.length)}
 
         {/* PR Sıralaması (Career PR): düşük PR üstte. Sütunlar: Maç / Karar / PR */}
         {by === 'pr' && (
@@ -285,7 +333,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                   <span className="lb-rating">PR</span>
                 </div>
                 <div className="lb-body">
-                  {prRows.map((r) => {
+                  {prRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => {
                     const mine = currentName && r.name === currentName
                     return (
                       <div
@@ -312,6 +360,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                 </div>
               </div>
             )}
+            {prRows !== null && prRows.length > 0 && renderPager(prRows.length)}
           </>
         )}
       </div>
