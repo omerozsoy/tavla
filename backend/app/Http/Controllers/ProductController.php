@@ -42,16 +42,53 @@ class ProductController extends Controller
         return response()->json(['products' => $products, 'categories' => $categories]);
     }
 
-    // GET /me/orders — kullanicinin siparisleri.
+    // GET /me/orders — kullanicinin siparisleri (fiziksel urunler + coin havale odemeleri).
     public function myOrders(Request $request)
     {
-        $orders = ProductOrder::where('user_id', $request->user()->id)
+        $userId = $request->user()->id;
+
+        $orders = ProductOrder::where('user_id', $userId)
             ->orderByDesc('id')
             ->get()
             ->map(fn (ProductOrder $o) => $o->toArray())
+            ->all();
+
+        // Coin paketi HAVALE odemeleri de "siparis" olarak gorunsun: kart aninda biter (Garanti
+        // callback -> coin hemen yuklenir) ama havale admin onayi bekler; Payment(kind='coins')
+        // bir ProductOrder OLMADIGI icin listede cikmiyordu -> kullanici "siparisim yok" saniyordu.
+        $coinLabel = [
+            'pending' => 'Havale onayı bekleniyor',
+            'paid'    => 'Ödendi · coin yüklendi',
+        ];
+        $coinOrders = Payment::where('user_id', $userId)
+            ->where('kind', 'coins')
+            ->where('payment_method', 'bank_transfer')
+            ->whereIn('status', ['pending', 'paid'])
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn (Payment $p) => [
+                'id'           => -$p->id, // ProductOrder id'leriyle (pozitif) cakismasin
+                'product_name' => (int) ($p->coins ?? 0).' Jeton',
+                'color'        => null,
+                'qty'          => 1,
+                'payment_type' => 'money',
+                'coin_cost'    => null,
+                'amount'       => $p->amount !== null ? (int) $p->amount : null,
+                'status'       => $p->status,
+                'status_label' => $coinLabel[$p->status] ?? $p->status,
+                'tracking'     => null,
+                'ship_name'    => '',
+                'ship_city'    => '',
+                'created_at'   => optional($p->created_at)->toIso8601String(),
+            ])
+            ->all();
+
+        // Birlestir + tarihe gore (yeni once) sirala.
+        $all = collect(array_merge($orders, $coinOrders))
+            ->sortByDesc(fn ($o) => (string) ($o['created_at'] ?? ''))
             ->values();
 
-        return response()->json(['orders' => $orders]);
+        return response()->json(['orders' => $all]);
     }
 
     // POST /products/order — tek urun + adet + secili renk siparisi. Odeme tipi 'coin' | 'money'.
