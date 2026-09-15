@@ -224,6 +224,7 @@ import ResetPassword from './ui/ResetPassword'
 import MatchSetup, { type MatchOptions, type SetupMode } from './ui/MatchSetup'
 import {
   loadGame,
+  clearGame,
   loadProfile,
   saveGame,
   saveProfile,
@@ -6193,6 +6194,20 @@ export default function App() {
   const hasActiveGame = !matchOver && (turnsPlayed > 0 || !!gameEnd)
   hasActiveGameRef.current = hasActiveGame // popstate/URL navigasyonu guncel degeri okusun
 
+  // Yerel (bota/2-kişi) "Devam eden maç" fantom veya bozuksa (ör. "Maça dön" boş sayfa açıyorsa),
+  // kullanıcı bardaki × ile bu maçı ATABİLİR: kayıt silinir + taze match -> hasActiveGame false olur,
+  // refresh'te de geri gelmez. (Terk edilen lokal oyun clearGame ile hiç temizlenmiyordu -> fantom.)
+  const discardLocalGame = () => {
+    clearGame()
+    setGameEnd(null)
+    setOpening(null)
+    setOpeningResult(null)
+    setPlayed([])
+    setTurnsPlayed(0)
+    setMatch(newMatch(match.target || 1))
+    setHome(true)
+  }
+
   // Menuden acilan TUM sayfa overlaylerini kapat (setup HARIC). Ayni anda page-host
   // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
   function closeMenuPages() {
@@ -7314,8 +7329,9 @@ export default function App() {
                 online maçta yalnız "Geri Dön" kalsın, "Oyuna Devam Et" gizli. */}
             {hasActiveGame && activeRooms.length === 0 && (
               // Yerel (bota karsi / pass-and-play) devam eden mac: online resume karti
-              // ile ayni belirgin tam-genislik tasarim (kucuk dugme yerine).
-              <div className="resume-match-bar">
+              // ile ayni belirgin tam-genislik tasarim (kucuk dugme yerine). resume-local ->
+              // bar yatay: [maça dön butonu | × at] (online bar dikey coklu buton kalir).
+              <div className="resume-match-bar resume-local">
                 <button className="resume-match-btn" onClick={() => setHome(false)}>
                   <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
                   <span className="rm-opp">
@@ -7344,6 +7360,16 @@ export default function App() {
                     ) : null}
                   </span>
                   <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
+                </button>
+                {/* × : fantom/bozuk lokal maçı at (kayıt sil + state sıfırla) */}
+                <button
+                  type="button"
+                  className="resume-discard"
+                  onClick={discardLocalGame}
+                  title={t('resume.discard')}
+                  aria-label={t('resume.discard')}
+                >
+                  <Icon name="x" size={16} />
                 </button>
               </div>
             )}
