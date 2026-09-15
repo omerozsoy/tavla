@@ -5975,7 +5975,7 @@ export default function App() {
           >
             <Icon name="spinner-ball" size={24} />
           </Button>
-          {/* Zar Slotu: Şans Çarkı'nın yanında, üst barda dice ikonuyla (sol menüden taşındı) */}
+          {/* Zar Slotu: Şans Çarkı'nın yanında, üst barda slot (kiraz) ikonuyla (sol menüden taşındı) */}
           <Button
             variant="ghost"
             size="icon"
@@ -5984,7 +5984,7 @@ export default function App() {
             title={t('ds.menu')}
             aria-label={t('ds.menu')}
           >
-            <Icon name="dice" size={24} />
+            <Icon name="slot" size={24} />
           </Button>
           {/* Mesajlar + Bildirimler tek ikonda: okunmamış mesaj + bildirim toplamı rozette */}
           <Button

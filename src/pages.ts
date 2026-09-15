@@ -41,7 +41,7 @@ export const PAGES: PageDef[] = [
   // --- EGLENCE: sans/ekonomi oyunlari — SAG UST bara tasindi (account-bar ikonlari);
   // sol menude GIZLI (inMenu:false) ama /sans-carki + /zar-slotu URL'leri + top-bar ikonlari calisir. ---
   { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true, inMenu: false },
-  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'dice', group: 'fun', hideInGame: true, inMenu: false },
+  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'slot', group: 'fun', hideInGame: true, inMenu: false },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
