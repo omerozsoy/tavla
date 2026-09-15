@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>TavlaTV — Bakım Çalışması</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{
+      --bg:#efeae1;        /* krem zemin */
+      --card:#ffffff;
+      --ink:#1c1a17;       /* metin */
+      --muted:#5e574c;     /* ikincil metin */
+      --brick:#c9563f;     /* kiremit aksan */
+      --brick-dark:#a83a2b;
+      --line:#ded7ca;
+    }
+    @media (prefers-color-scheme: dark){
+      :root{ --bg:#181511; --card:#221e19; --ink:#f4efe6; --muted:#b8ab98; --line:#332c24; }
+    }
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; }
+    body{
+      background:var(--bg); color:var(--ink);
+      font-family:'Outfit',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+      display:flex; align-items:center; justify-content:center; padding:24px;
+      -webkit-font-smoothing:antialiased;
+    }
+    .card{
+      width:100%; max-width:520px; background:var(--card);
+      border:1px solid var(--line); border-radius:18px;
+      padding:44px 36px; text-align:center;
+    }
+    .mark{ width:76px; height:76px; margin:0 auto 20px; display:block; }
+    /* Wordmark: A = yukarı üçgen (kiremit), V = aşağı üçgen (ink) */
+    .word{
+      display:inline-flex; align-items:baseline; gap:.10em;
+      font-weight:700; letter-spacing:.02em; line-height:1;
+      font-size:34px; margin-bottom:6px;
+    }
+    .tri{ flex:none; width:.53em; height:.71em; }
+    .tri.up{ background:var(--brick); clip-path:polygon(50% 0,100% 100%,0 100%); }
+    .tri.down{ background:var(--ink); clip-path:polygon(50% 100%,100% 0,0 0); }
+    .tag{ color:var(--muted); font-size:.82rem; letter-spacing:.14em; text-transform:uppercase; margin-bottom:28px; }
+    h1{ font-size:1.5rem; font-weight:600; margin:0 0 12px; }
+    p{ color:var(--muted); font-size:1rem; line-height:1.6; margin:0 auto; max-width:400px; }
+    .dots{ margin-top:26px; display:flex; gap:7px; justify-content:center; }
+    .dots i{ width:9px; height:9px; border-radius:50%; background:var(--brick); opacity:.35; animation:b 1.2s infinite ease-in-out; }
+    .dots i:nth-child(2){ animation-delay:.2s; } .dots i:nth-child(3){ animation-delay:.4s; }
+    @keyframes b{ 0%,80%,100%{opacity:.25;transform:translateY(0)} 40%{opacity:1;transform:translateY(-4px)} }
+    @media (prefers-reduced-motion: reduce){ .dots i{ animation:none; } }
+    .foot{ margin-top:30px; font-size:.8rem; color:var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <!-- Marka sembolü (favicon ile aynı) -->
+    <svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="TavlaTV">
+      <rect width="64" height="64" rx="14" fill="#A83A2B"/>
+      <path d="M22.5 20 L31 43 L14 43 Z" fill="#F4EFE6"/>
+      <path d="M33 20 L50 20 L41.5 43 Z" fill="#1C1A17"/>
+    </svg>
+
+    <div class="word" role="img" aria-label="TavlaTV">
+      <span>T</span><span class="tri up"></span><span class="tri down"></span><span>L</span><span class="tri up"></span><span>T</span><span class="tri down"></span>
+    </div>
+    <div class="tag">Türkiye'nin Tavla Portalı</div>
+
+    <h1>Kısa bir bakım çalışmasındayız</h1>
+    <p>Siteyi daha iyi hâle getirmek için kısa süreli bakımdayız. Çok yakında yeniden buradayız — anlayışınız için teşekkürler.</p>
+
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+
+    <div class="foot">TavlaTV · tavlatv.com</div>
+  </main>
+</body>
+</html>

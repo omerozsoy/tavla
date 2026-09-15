@@ -19,12 +19,26 @@ AddType application/wasm .wasm
 # /api/* yine Laravel'e gider.
 DirectoryIndex index.html index.php
 
+# ================== BAKIM MODU ==================
+# Aktif etmek: backend/public/maintenance.on adli BOS dosyayi olustur.
+# Kapatmak: o dosyayi SIL. (Deploy/kod gerekmez; aninda etkili.)
+# Bayrak varken /admin, /panel ve bakim sayfasi HARIC tum istekler -> 503 + logolu maintenance.html.
+ErrorDocument 503 /maintenance.html
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
     </IfModule>
 
     RewriteEngine On
+
+    # --- Bakim modu bayrak-kurali (maintenance.on varsa) ---
+    RewriteCond %{DOCUMENT_ROOT}/maintenance.on -f
+    RewriteCond %{REQUEST_URI} !^/maintenance\.html$
+    RewriteCond %{REQUEST_URI} !^/favicon\.
+    RewriteCond %{REQUEST_URI} !^/admin
+    RewriteCond %{REQUEST_URI} !^/panel
+    RewriteRule ^ - [R=503,L]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
