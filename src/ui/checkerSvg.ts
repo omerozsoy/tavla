@@ -95,10 +95,14 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
     // sedef / metalik: geniş açık akış (screen) + koyu derinlik (multiply) + parıltı
     const bf1 = family === 'metallic' ? '0.008 0.06' : '0.012 0.045'
     const bf2 = family === 'metallic' ? '0.02 0.12' : '0.013 0.05'
-    const liteOpacity = family === 'metallic' ? 0.9 : 0.78
-    const sparkleOpacity = family === 'metallic' ? 0.55 : 0.45
-    const lc = hexToRgb(veinLite).map((v) => (v / 255).toFixed(3))
-    const dc = hexToRgb(veinDark).map((v) => (v / 255).toFixed(3))
+    // Metalik: açık parıltı taban rengi GÜMÜŞE boğmasın — screen opaklığı düşük, açık damar
+    // daha az beyaz (+0.42), koyu multiply daha güçlü -> yüksek kontrastlı METAL görünüm + tema
+    // rengi net okunur. Pearl daha yumuşak/açık kalır.
+    const liteOpacity = family === 'metallic' ? 0.58 : 0.78
+    const sparkleOpacity = family === 'metallic' ? 0.42 : 0.45
+    const metalDark = family === 'metallic' ? shade(color, -0.62) : veinDark
+    const lc = hexToRgb(family === 'metallic' ? shade(color, 0.42) : veinLite).map((v) => (v / 255).toFixed(3))
+    const dc = hexToRgb(metalDark).map((v) => (v / 255).toFixed(3))
     defs = `
       <filter id="${P}-fl" x="-25%" y="-25%" width="150%" height="150%">
         <feTurbulence type="fractalNoise" baseFrequency="${bf1}" numOctaves="4" seed="${s}" result="n"/>
@@ -115,8 +119,9 @@ export function buildCheckerSvg({ family, color, id, seed }: CheckerSvgOpts): st
         <feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.7 0 0 0 -0.95"/>
         <feGaussianBlur stdDeviation="0.25"/>
       </filter>`
+    const darkOpacity = family === 'metallic' ? 0.72 : 0.6
     finish = `
-      <rect x="6" y="6" width="108" height="108" filter="url(#${P}-fd)" opacity="0.6" style="mix-blend-mode:multiply"/>
+      <rect x="6" y="6" width="108" height="108" filter="url(#${P}-fd)" opacity="${darkOpacity}" style="mix-blend-mode:multiply"/>
       <rect x="6" y="6" width="108" height="108" filter="url(#${P}-fl)" opacity="${liteOpacity}" style="mix-blend-mode:screen"/>
       <rect x="6" y="6" width="108" height="108" filter="url(#${P}-fs)" opacity="${sparkleOpacity}" style="mix-blend-mode:screen"/>
       ${topSheen}`
