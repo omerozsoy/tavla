@@ -151,9 +151,10 @@ export async function register(
   return data.user
 }
 
-// Google Sign-In istemci kimligi (gizli degil)
+// Google Sign-In istemci kimligi (gizli degil). tavlatv.com'a tasindiginda yeni "tavla"
+// Google Cloud projesinde (proje no 164766354103) yeni OAuth istemcisi olusturuldu.
 export const GOOGLE_CLIENT_ID =
-  '306143287506-u64icc2893q517phi6oi7089eicru801.apps.googleusercontent.com'
+  '164766354103-tnibk42t91nng26tehvbpjejks3mt5v5.apps.googleusercontent.com'
 
 // Google ID token'i ile giris/kayit. isNew=true ise takma isim secmesi istenir.
 export async function googleLogin(
