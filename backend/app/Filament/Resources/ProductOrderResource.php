@@ -100,7 +100,18 @@ class ProductOrderResource extends Resource
                 Tables\Columns\TextColumn::make('product_name')->label('Ürün')->searchable()
                     ->description(fn (ProductOrder $r) => $r->color ? 'Renk: '.$r->color : null),
                 Tables\Columns\TextColumn::make('qty')->label('Adet'),
-                Tables\Columns\TextColumn::make('user.name')->label('Alıcı')->searchable(),
+                // Alıcı: User'da 'name' YOK -> nickname (yoksa ad-soyad, yoksa e-posta). Açıklamada
+                // teslim adı + şehir ("nerede"). Boş görünme bug'ı: eski 'user.name' hep null'du.
+                Tables\Columns\TextColumn::make('user.nickname')
+                    ->label('Alıcı')
+                    ->searchable()
+                    ->formatStateUsing(fn ($state, ProductOrder $r) => (string) ($state
+                        ?: trim((($r->user?->first_name ?? '').' '.($r->user?->last_name ?? '')))
+                        ?: ($r->user?->email ?? '')
+                        ?: ($r->ship_name ?? '—')))
+                    ->description(fn (ProductOrder $r) => $r->ship_name
+                        ? 'Teslim: '.$r->ship_name.($r->ship_city ? ' · '.$r->ship_city : '')
+                        : null),
                 Tables\Columns\TextColumn::make('payment_type')->label('Ödeme')
                     ->formatStateUsing(fn ($state, ProductOrder $r) => $state === 'coin'
                         ? 'Coin'
