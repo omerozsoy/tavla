@@ -20651,8 +20651,11 @@ button.acct-row:hover:not(:disabled) {
 }
 .chat-msg.theirs {
   align-self: flex-start;
-  background: var(--panel);
-  color: var(--tv-white);
+  /* Karttan hafif KOYU nötr balon + OKUNUR ink metin (eskiden --panel krem + --tv-white beyaz
+     ->  soluk/okunmuyordu). color-mix ile her temada (açık: koyu metin / koyu: açık metin) kontrast. */
+  background: color-mix(in srgb, var(--text) 10%, var(--card-bg));
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
   border-bottom-left-radius: 3px;
 }
 .chat-name {
