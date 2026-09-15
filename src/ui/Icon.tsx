@@ -28,6 +28,7 @@ import {
   SignOut,
   House,
   Star,
+  CreditCard,
   Flame,
   Gift,
   SpinnerBall,
@@ -125,6 +126,8 @@ export type IconName =
   | 'logout'
   | 'home'
   | 'star'
+  | 'credit-card'
+  | 'money'
   | 'gift'
   | 'spinner-ball'
   | 'volume'
@@ -224,6 +227,8 @@ const MAP: Record<IconName, PhosphorIcon> = {
   logout: SignOut,
   home: House,
   star: Star,
+  'credit-card': CreditCard,
+  money: Money,
   gift: Gift,
   'spinner-ball': SpinnerBall,
   volume: SpeakerHigh,

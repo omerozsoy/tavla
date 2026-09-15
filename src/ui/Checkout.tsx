@@ -107,7 +107,7 @@ export default function Checkout({
         {/* Sağ: kredi kartı formu (native POST -> Garanti 3D) */}
         <form className="register-card checkout-card" method="post" action={submitUrl} autoComplete="on">
           <h2>
-            <Icon name="star" size={20} /> Kredi Kartı ile Öde
+            <Icon name="credit-card" size={20} /> Kredi Kartı ile Öde
           </h2>
 
           {demo && (

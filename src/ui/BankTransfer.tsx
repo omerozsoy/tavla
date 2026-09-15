@@ -61,7 +61,7 @@ export default function BankTransfer({
           <Icon name="arrow-right" size={16} /> Kapat
         </button>
         <h2 className="bt-title">
-          <Icon name="bank" size={20} /> Havale / EFT ile Ödeme
+          <Icon name="money" size={20} /> Havale / EFT ile Ödeme
         </h2>
         <p className="bt-intro">
           Aşağıdaki hesaba <b>{fmtTL(amount)}</b> tutarında havale/EFT gönder. <b>Açıklama</b> kısmına mutlaka
