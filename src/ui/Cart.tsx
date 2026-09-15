@@ -410,7 +410,7 @@ export default function Cart({
                     className={`cart2-pm ${payMethod === 'card' ? 'on' : ''}`}
                     onClick={() => setPayMethod('card')}
                   >
-                    <Icon name="star" size={16} />
+                    <Icon name="credit-card" size={16} />
                     <span>Kredi / Banka Kartı</span>
                     <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
                   </button>
@@ -421,7 +421,7 @@ export default function Cart({
                     className={`cart2-pm ${payMethod === 'bank_transfer' ? 'on' : ''}`}
                     onClick={() => setPayMethod('bank_transfer')}
                   >
-                    <Icon name="bank" size={16} />
+                    <Icon name="money" size={16} />
                     <span>Havale / EFT</span>
                     <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
                   </button>

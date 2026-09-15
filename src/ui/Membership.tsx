@@ -74,7 +74,7 @@ export default function Membership({
               className={`cart2-pm ${method === 'card' ? 'on' : ''}`}
               onClick={() => setMethod('card')}
             >
-              <Icon name="star" size={16} />
+              <Icon name="credit-card" size={16} />
               <span>Kart</span>
               <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
             </button>
@@ -85,7 +85,7 @@ export default function Membership({
               className={`cart2-pm ${method === 'bank_transfer' ? 'on' : ''}`}
               onClick={() => setMethod('bank_transfer')}
             >
-              <Icon name="bank" size={16} />
+              <Icon name="money" size={16} />
               <span>Havale / EFT</span>
               <span className="cart2-pm-tick"><Icon name="check" size={14} /></span>
             </button>
