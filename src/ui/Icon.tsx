@@ -102,6 +102,7 @@ import {
   SmileySad,
   Smiley,
   PaperPlaneRight,
+  Cherries,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -130,6 +131,7 @@ export type IconName =
   | 'money'
   | 'gift'
   | 'spinner-ball'
+  | 'slot'
   | 'volume'
   | 'mute'
   | 'graduation'
@@ -231,6 +233,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   money: Money,
   gift: Gift,
   'spinner-ball': SpinnerBall,
+  slot: Cherries,
   volume: SpeakerHigh,
   mute: SpeakerSlash,
   graduation: GraduationCap,
