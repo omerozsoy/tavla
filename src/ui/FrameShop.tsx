@@ -13,7 +13,6 @@ import {
   type AvatarFrameDef,
 } from './avatarFrames'
 import { RARITY_COLORS } from './rarityColors'
-import { Button } from '@/components/ui/button'
 import BuyConfirm from './BuyConfirm'
 
 // 5 kademe grup rengi -> merkezi rarity paletinden (rarityColors.ts)
@@ -30,7 +29,9 @@ interface Props {
   onEquip: (frameId: string | null) => Promise<void>
 }
 
-// --- Tek cerceve karti: onizleme (rarity renkli halka) + ad + al/tak ---
+// --- Tek cerceve karti = TIKLANABILIR TILE (tahta tasarimlariyla AYNI akis; ayri dugme YOK) ---
+// Sahipse tiklayinca kusanir; sahip degil + alinabilirse tiklayinca ONAY (BuyConfirm) acilir;
+// fiyat kart uzerinde kucuk rozette (.bp-price). Kazanimla acilanlar (fiyatsiz) "kazan" etiketi.
 interface CardProps {
   f: AvatarFrameDef
   avatar?: string | null
@@ -38,19 +39,35 @@ interface CardProps {
   currentFrame: string | null
   owns: (sid: string) => boolean
   coins: number
-  busy: string | null
   groupColor: string
   onBuy: (sid: string, name: string, price: number) => void
   onEquip: (id: string) => void
-  labels: { equip: string; equipped: string; earned: string; need: (n: number) => string; buyAria: (name: string, price: number) => string }
+  labels: { equipped: string; earned: string; buyAria: (name: string, price: number) => string }
 }
 function FrameCard(p: CardProps) {
   const sid = 'frame.' + p.f.id
   const owned = p.owns(sid)
   const equipped = p.currentFrame === p.f.id
   const price = framePrice(p.f)
+  const buyable = !owned && price != null
+  const affordable = buyable && p.coins >= price
+  const earnOnly = !owned && price == null
   return (
-    <div className="shop-anim" style={{ ['--rarity-color']: p.groupColor } as CSSProperties}>
+    <button
+      type="button"
+      className={`shop-anim ${equipped ? 'active' : ''} ${buyable ? 'locked' : ''}`}
+      style={{ ['--rarity-color']: p.groupColor } as CSSProperties}
+      disabled={buyable && !affordable}
+      title={buyable && price != null ? `${p.f.name} — ${fmtCoin(price)} coin` : p.f.name}
+      aria-label={buyable && price != null ? p.labels.buyAria(p.f.name, price) : p.f.name}
+      onClick={() => {
+        if (owned) {
+          if (!equipped) p.onEquip(p.f.id)
+        } else if (affordable && price != null) {
+          p.onBuy(sid, p.f.name, price)
+        }
+      }}
+    >
       <div className="shop-anim-preview">
         {/* Animasyon dogrudan oynar (reduced-motion'da SoberFrame zaten durdurur) */}
         <AvatarFrame src={p.avatar} frame={p.f.id} size={50} name={p.name} animated />
@@ -58,40 +75,26 @@ function FrameCard(p: CardProps) {
       <div className="shop-anim-name" title={p.f.name}>
         {p.f.name}
       </div>
-      {owned ? (
-        <Button
-          type="button"
-          variant={equipped ? 'secondary' : 'default'}
-          className="w-full"
-          disabled={equipped}
-          onClick={() => p.onEquip(p.f.id)}
-        >
-          {equipped ? p.labels.equipped : p.labels.equip}
-        </Button>
-      ) : price != null ? (
-        <>
-          <Button
-            type="button"
-            variant="default"
-            className="w-full"
-            disabled={p.busy === sid || p.coins < price}
-            onClick={() => p.onBuy(sid, p.f.name, price)}
-            aria-label={p.labels.buyAria(p.f.name, price)}
-          >
-            <Coins amount={price} size={14} />
-          </Button>
-          {p.coins < price && <div className="shop-need">{p.labels.need(price - p.coins)}</div>}
-        </>
-      ) : (
+      {equipped && (
+        <span className="bp-selected">
+          <Icon name="check" size={12} /> {p.labels.equipped}
+        </span>
+      )}
+      {buyable && price != null && (
+        <span className="bp-price">
+          <Coins amount={price} size={12} />
+        </span>
+      )}
+      {earnOnly && (
         <span className="shop-earn">
           <Icon name="trophy" size={12} /> {p.labels.earned}
         </span>
       )}
-    </div>
+    </button>
   )
 }
 
-// Cerceve magazasi: satin alma + kusanma. Ayarlar "Avatar Cercevesi" sekmesine gomulu.
+// Cerceve magazasi: satin alma + kusanma. Tahta tasarimlariyla AYNI etkilesim (tile tiklamasi).
 export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, onBuy, onEquip }: Props) {
   const { t } = useT()
   const [busy, setBusy] = useState<string | null>(null)
@@ -121,10 +124,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
   }
 
   const labels = {
-    equip: t('shop.equip'),
     equipped: t('shop.equipped'),
     earned: t('frames.earned'),
-    need: (n: number) => t('shop.need', { n }),
     buyAria: (nm: string, price: number) => `${nm} — ${fmtCoin(price)} coin ile al`,
   }
 
@@ -137,23 +138,26 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
         </div>
       )}
 
-      {/* Cercevesiz */}
-      <div className="shop-grid shop-grid-top">
-        <div className="shop-anim">
+      {/* Cercevesiz — tıklanabilir tile (tıklayınca çerçeveyi kaldırır) */}
+      <div className="shop-anim-grid shop-grid-top">
+        <button
+          type="button"
+          className={`shop-anim ${!currentFrame ? 'active' : ''}`}
+          onClick={() => {
+            if (currentFrame) equip(null)
+          }}
+          title={t('shop.noFrame')}
+        >
           <div className="shop-anim-preview">
-            <AvatarFrame src={avatar} frame={null} size={82} name={name} />
+            <AvatarFrame src={avatar} frame={null} size={50} name={name} />
           </div>
           <div className="shop-anim-name">{t('shop.noFrame')}</div>
-          <Button
-            type="button"
-            variant={!currentFrame ? 'secondary' : 'default'}
-            className="w-full"
-            disabled={!currentFrame}
-            onClick={() => equip(null)}
-          >
-            {!currentFrame ? t('shop.equipped') : t('shop.equip')}
-          </Button>
-        </div>
+          {!currentFrame && (
+            <span className="bp-selected">
+              <Icon name="check" size={12} /> {t('shop.equipped')}
+            </span>
+          )}
+        </button>
       </div>
 
       {FRAME_GROUP_ORDER.map((group) => {
@@ -179,7 +183,6 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
                   currentFrame={currentFrame}
                   owns={owns}
                   coins={coins}
-                  busy={busy}
                   groupColor={GROUP_COLOR[group]}
                   onBuy={(sid, name, price) => setPending({ sid, name, price })}
                   onEquip={equip}
