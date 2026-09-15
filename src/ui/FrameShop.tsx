@@ -129,6 +129,31 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
     buyAria: (nm: string, price: number) => `${nm} — ${fmtCoin(price)} coin ile al`,
   }
 
+  // "Çerçevesiz" (çerçeveyi kaldır) tile'ı AYRI lonely satır yerine ilk (dolu) grubun gridine
+  // ilk tile olarak girer -> "Tüm Avatar Çerçeveler" altında tek başına kopuk durmaz.
+  const firstGroup = FRAME_GROUP_ORDER.find((g) => AVATAR_FRAMES.some((f) => f.group === g))
+  const noneTile = (
+    <button
+      type="button"
+      className={`shop-anim ${!currentFrame ? 'active' : ''}`}
+      onClick={() => {
+        if (currentFrame) equip(null)
+      }}
+      title={t('shop.noFrame')}
+    >
+      <div className="shop-anim-preview">
+        {/* Çerçevesiz avatar, çerçeveli tile'larla AYNI dış çap (50px) -> daire footprint'i eşit. */}
+        <AvatarFrame src={avatar} frame={null} size={50} name={name} />
+      </div>
+      <div className="shop-anim-name">{t('shop.noFrame')}</div>
+      {!currentFrame && (
+        <span className="bp-selected">
+          <Icon name="check" size={12} /> {t('shop.equipped')}
+        </span>
+      )}
+    </button>
+  )
+
   return (
     <div className="frame-shop">
       {/* Bakiye ust magaza basliginda zaten var -> burada tekrar gosterme (mukerrer). */}
@@ -137,30 +162,6 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
           <Icon name="alert" size={15} /> {buyErr}
         </div>
       )}
-
-      {/* Cercevesiz — tıklanabilir tile (tıklayınca çerçeveyi kaldırır) */}
-      <div className="shop-anim-grid shop-grid-top">
-        <button
-          type="button"
-          className={`shop-anim ${!currentFrame ? 'active' : ''}`}
-          onClick={() => {
-            if (currentFrame) equip(null)
-          }}
-          title={t('shop.noFrame')}
-        >
-          <div className="shop-anim-preview">
-            {/* Çerçevesiz avatar, çerçeveli tile'larla AYNI dış çap (50px): çerçeveli SoberFrame
-                de --sf-size=50 kullanır (halka bu 50'nin içinde). Böylece daire footprint'i eşit. */}
-            <AvatarFrame src={avatar} frame={null} size={50} name={name} />
-          </div>
-          <div className="shop-anim-name">{t('shop.noFrame')}</div>
-          {!currentFrame && (
-            <span className="bp-selected">
-              <Icon name="check" size={12} /> {t('shop.equipped')}
-            </span>
-          )}
-        </button>
-      </div>
 
       {FRAME_GROUP_ORDER.map((group) => {
         const frames = AVATAR_FRAMES.filter((f) => f.group === group)
@@ -176,6 +177,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
               <span className="rarity-count">{frames.length}</span>
             </div>
             <div className="shop-anim-grid">
+              {/* İlk grubun başına "Çerçevesiz" (kaldır) tile'ı -> ayrı kopuk satır olmaz */}
+              {group === firstGroup && noneTile}
               {frames.map((f) => (
                 <FrameCard
                   key={f.id}
