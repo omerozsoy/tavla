@@ -60,9 +60,16 @@ class MenuGroupResource extends Resource
                     ->label('Başlık (boş = varsayılan)')
                     ->placeholder(fn (MenuGroup $r) => $r->defaultLabel() ?: '— başlıksız —'),
                 Tables\Columns\TextColumn::make('items_count')
-                    ->label('Öğe')
+                    ->label('İçindeki sayfalar')
                     ->badge()
-                    ->getStateUsing(fn (MenuGroup $r) => MenuItem::where('group', $r->key)->count()),
+                    ->color('gray')
+                    ->getStateUsing(fn (MenuGroup $r) => MenuItem::where('group', $r->key)->count().' sayfa')
+                    // Grubun altinda: iceren sayfa adlari (label_tr override yoksa config varsayilani), minik gri.
+                    ->description(fn (MenuGroup $r) => MenuItem::where('group', $r->key)
+                        ->orderBy('sort')->get()
+                        ->map(fn (MenuItem $m) => $m->label_tr ?: $m->defaultLabel())
+                        ->implode(' · ') ?: '— (boş grup)')
+                    ->wrap(),
                 Tables\Columns\TextColumn::make('label_en')
                     ->label('Çeviriler')
                     ->getStateUsing(fn (MenuGroup $r) => collect([
