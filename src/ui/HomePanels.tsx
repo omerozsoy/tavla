@@ -314,17 +314,22 @@ export function RankingPanel({
   const [by, setBy] = useState<'rating' | 'coins' | 'wxp' | 'pr'>('rating')
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
   const [prRows, setPrRows] = useState<PrLeaderRow[] | null>(null)
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (en fazla 100 = 10 sayfa)
+
+  const PAGE_SIZE = 10
+  const MAX_PAGES = 10 // en fazla 100 kisi
 
   useEffect(() => {
     let alive = true
+    setPage(0) // sekme degisince ilk sayfaya dön
     // NOT: setRows(null) YOK -> tab degisince liste cokup sayfa kisalmaz (scroll yukari
     // atlamasin). Eski satirlar yeni veri gelene kadar durur; ilk yuklemede zaten null.
     if (by === 'pr') {
-      prLeaderboard(10)
+      prLeaderboard(100) // ilk 100 (10'ar sayfalanir)
         .then((r) => alive && setPrRows(r.players))
         .catch(() => alive && setPrRows([]))
     } else {
-      leaderboard(10, by) // ilk 10 (scroll yok, tam liste)
+      leaderboard(100, by) // ilk 100 (10'ar sayfalanir)
         .then((r) => alive && setRows(r))
         .catch(() => alive && setRows([]))
     }
@@ -332,6 +337,47 @@ export function RankingPanel({
       alive = false
     }
   }, [by])
+
+  // Toplam kayittan sayfa sayisi (en fazla MAX_PAGES).
+  const pageCount = (total: number) => Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / PAGE_SIZE)))
+  // Modal Liderlik Tablosu ile AYNI pager (lb-pager sinifi + ayni ceviri anahtarlari).
+  const renderPager = (total: number) => {
+    const pages = pageCount(total)
+    if (pages <= 1) return null
+    return (
+      <nav className="lb-pager" aria-label={t('lb.pager')}>
+        <button
+          type="button"
+          className="lb-pg-arrow"
+          disabled={page === 0}
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          aria-label={t('lb.prev')}
+        >
+          <Icon name="caret-left" size={16} />
+        </button>
+        {Array.from({ length: pages }).map((_, i) => (
+          <button
+            key={i}
+            type="button"
+            className={`lb-pg-num ${i === page ? 'active' : ''}`}
+            aria-current={i === page ? 'page' : undefined}
+            onClick={() => setPage(i)}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          type="button"
+          className="lb-pg-arrow"
+          disabled={page >= pages - 1}
+          onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
+          aria-label={t('lb.next')}
+        >
+          <Icon name="caret-right" size={16} />
+        </button>
+      </nav>
+    )
+  }
 
   return (
     <div className="home-panel rank-panel">
@@ -364,8 +410,9 @@ export function RankingPanel({
         ) : prRows.length === 0 ? (
           <div className="home-panel-empty">{t('lb.prEmpty')}</div>
         ) : (
+          <>
           <div className="rank-list">
-            {prRows.map((r) => (
+            {prRows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => (
               <button
                 key={r.rank}
                 className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
@@ -382,14 +429,17 @@ export function RankingPanel({
               </button>
             ))}
           </div>
+          {renderPager(prRows.length)}
+          </>
         )
       ) : rows === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
       ) : rows.length === 0 ? (
         <div className="home-panel-empty">{t('lb.empty')}</div>
       ) : (
+        <>
         <div className="rank-list">
-          {rows.map((r) => (
+          {rows.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE).map((r) => (
             <button
               key={r.rank}
               className={`rank-row ${currentName && r.name === currentName ? 'mine' : ''}`}
@@ -416,6 +466,8 @@ export function RankingPanel({
             </button>
           ))}
         </div>
+        {renderPager(rows.length)}
+        </>
       )}
     </div>
   )
