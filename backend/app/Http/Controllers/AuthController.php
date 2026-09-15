@@ -1188,10 +1188,21 @@ class AuthController extends Controller
     // Herkese acik oyuncu profili: temel istatistik + son mac formu (W/L)
     public function publicProfile(Request $request, User $user)
     {
-        $recent = \App\Models\MatchResult::where('user_id', $user->id)
+        // Public profil kaydi = GERCEK maclar (real scope: yapay zeka pratigi HARIC).
+        // Form seridi ile MAÇ/GALİBİYET/MAĞLUBİYET AYNI kumeden turetilir -> "kayip formda
+        // gorunuyor ama MAĞLUBİYET 0" tutarsizligi biter. (User.wins/losses/games_played
+        // sayaclari yalniz PUANLI maci sayar; arkadaslik/AI maci satir yazar ama sayaci
+        // artirmaz -> form ile celisiyordu.)
+        $agg = \App\Models\MatchResult::where('user_id', $user->id)->real()
+            ->selectRaw('COUNT(*) as g, COALESCE(SUM(won), 0) as w')
+            ->first();
+        $games = (int) ($agg->g ?? 0);
+        $wins = (int) ($agg->w ?? 0);
+        $losses = max(0, $games - $wins);
+        $recent = \App\Models\MatchResult::where('user_id', $user->id)->real()
             ->orderByDesc('id')
             ->limit(10)
-            ->get(['won', 'delta', 'created_at']);
+            ->get(['won']);
         $form = $recent->map(fn ($m) => (bool) $m->won)->all(); // en yeni once
         $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
 
@@ -1203,9 +1214,9 @@ class AuthController extends Controller
             'country' => $user->country,
             'rating' => $user->rating ?? 1500,
             'coins' => $user->coins ?? 0,
-            'wins' => $user->wins ?? 0,
-            'losses' => $user->losses ?? 0,
-            'games' => $user->games_played ?? 0,
+            'wins' => $wins,
+            'losses' => $losses,
+            'games' => $games,
             'premium' => $user->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
             'rank' => $rank,
             // Career PR (PR Sıralaması): havuzlanmis PR + analiz edilmis maç/karar (null=veri yok).
