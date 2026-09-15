@@ -149,6 +149,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
           title={t('shop.noFrame')}
         >
           <div className="shop-anim-preview">
+            {/* Çerçevesiz avatar, çerçeveli tile'larla AYNI dış çap (50px): çerçeveli SoberFrame
+                de --sf-size=50 kullanır (halka bu 50'nin içinde). Böylece daire footprint'i eşit. */}
             <AvatarFrame src={avatar} frame={null} size={50} name={name} />
           </div>
           <div className="shop-anim-name">{t('shop.noFrame')}</div>
