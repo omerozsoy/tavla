@@ -129,9 +129,7 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
     buyAria: (nm: string, price: number) => `${nm} — ${fmtCoin(price)} coin ile al`,
   }
 
-  // "Çerçevesiz" (çerçeveyi kaldır) tile'ı AYRI lonely satır yerine ilk (dolu) grubun gridine
-  // ilk tile olarak girer -> "Tüm Avatar Çerçeveler" altında tek başına kopuk durmaz.
-  const firstGroup = FRAME_GROUP_ORDER.find((g) => AVATAR_FRAMES.some((f) => f.group === g))
+  // "Çerçevesiz" (çerçeveyi kaldır) tile'ı "Standart" (common) grubunun İÇİNDE gösterilir.
   const noneTile = (
     <button
       type="button"
@@ -165,7 +163,8 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
 
       {FRAME_GROUP_ORDER.map((group) => {
         const frames = AVATAR_FRAMES.filter((f) => f.group === group)
-        if (frames.length === 0) return null
+        const isStandart = group === 'common' // Standart grubu boş olsa da "Çerçevesiz" için gösterilir
+        if (frames.length === 0 && !isStandart) return null
         return (
           <div
             className="rarity-group"
@@ -174,11 +173,11 @@ export default function FrameShop({ coins, unlocks, currentFrame, avatar, name, 
           >
             <div className="rarity-title">
               <span className="rarity-dot" /> {t(FRAME_GROUP_LABEL[group])}
-              <span className="rarity-count">{frames.length}</span>
+              <span className="rarity-count">{frames.length + (isStandart ? 1 : 0)}</span>
             </div>
             <div className="shop-anim-grid">
-              {/* İlk grubun başına "Çerçevesiz" (kaldır) tile'ı -> ayrı kopuk satır olmaz */}
-              {group === firstGroup && noneTile}
+              {/* Standart grubunun içinde "Çerçevesiz" (çerçeveyi kaldır) tile'ı */}
+              {isStandart && noneTile}
               {frames.map((f) => (
                 <FrameCard
                   key={f.id}
