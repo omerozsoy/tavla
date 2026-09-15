@@ -189,4 +189,30 @@ class ProductOrderTest extends TestCase
         $this->assertCount(1, $orders);
         $this->assertSame('Ödendi', $orders[0]['status_label']);
     }
+
+    // Coin paketi HAVALE odemesi "Siparislerim"de bekleyen siparis olarak gorunmeli (kart aninda
+    // biter -> gorunmez). buyCoins bunu Payment(kind=coins, method=bank_transfer, pending) yapar.
+    public function test_my_orders_includes_pending_coin_bank_transfer(): void
+    {
+        $u = User::factory()->create(['coins' => 0]);
+        Sanctum::actingAs($u);
+
+        \App\Models\Payment::create([
+            'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => 'bank_transfer',
+            'order_id' => 'TCTEST1', 'amount' => 10000, 'coins' => 100, 'currency' => '949', 'status' => 'pending',
+        ]);
+        // Kart ile coin odemesi (aninda biter) listede GORUNMEMELI.
+        \App\Models\Payment::create([
+            'user_id' => $u->id, 'kind' => 'coins', 'payment_method' => null,
+            'order_id' => 'TCTEST2', 'amount' => 5000, 'coins' => 50, 'currency' => '949', 'status' => 'paid',
+        ]);
+
+        $orders = $this->getJson('/api/me/orders')->assertOk()->json('orders');
+        $this->assertCount(1, $orders); // yalnizca havale coin odemesi
+        $this->assertSame('100 Jeton', $orders[0]['product_name']);
+        $this->assertSame('money', $orders[0]['payment_type']);
+        $this->assertSame('pending', $orders[0]['status']);
+        $this->assertSame(10000, $orders[0]['amount']);
+        $this->assertSame('Havale onayı bekleniyor', $orders[0]['status_label']);
+    }
 }
