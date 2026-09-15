@@ -1558,6 +1558,19 @@ export default function App() {
         const u = await apiMe()
         if (cancelled) return
         setUser(u)
+        // Online oyundayken F5: lobiye düşürme; sunucuda HÂLÂ aktif olan odaya OTOMATİK dön
+        // (inGame=true -> gerçekten oyun görünümündeydi; record.uid=oda kodu, record.online=true).
+        // Aktif değilse (maç bitti/terk) normal akışa düşer -> lobi. rejoinRoom banner ile aynı yol.
+        if (local && local.mode === 'online' && local.inGame === true && local.record && local.record.online && local.record.uid) {
+          const code = local.record.uid
+          const rooms = await myActiveRooms().catch(() => [] as ActiveRoom[])
+          if (cancelled) return
+          const rm = rooms.find((r) => r.code === code)
+          if (rm) {
+            rejoinRoom(rm)
+            return
+          }
+        }
         if (localActive) {
           applySavedGame(local!) // taze yerel aktif oyun -> sunucuyu bekleme/ezdirme
           return
