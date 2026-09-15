@@ -139,13 +139,13 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
     }
   }
 
-  // Ödül tablosu: önce üçlü zarları ÖDENEN COIN'e göre artan sırala, sonra STRAIGHT ve
-  // JACKPOT özel satırları en sona (sunucu sırasından bağımsız, tutarlı gösterim).
+  // Ödül tablosu: TÜM ödenen ödülleri (üçlü zar + STRAIGHT) ÖDENEN COIN'e göre artan sırala
+  // (straight kendi payout'una göre araya girer, dibe pinlenmez). Yalnız JACKPOT en sonda kalır
+  // (ödülü sabit değil, artan havuz).
   const paytable = data?.paytable ?? []
-  const triples = paytable.filter((r) => !r.jackpot && !r.straight).sort((a, b) => a.payout - b.payout)
-  const straightRow = paytable.find((r) => r.straight)
+  const paidRows = paytable.filter((r) => !r.jackpot).sort((a, b) => a.payout - b.payout)
   const jackpotRow = paytable.find((r) => r.jackpot)
-  const orderedPaytable = [...triples, ...(straightRow ? [straightRow] : []), ...(jackpotRow ? [jackpotRow] : [])]
+  const orderedPaytable = [...paidRows, ...(jackpotRow ? [jackpotRow] : [])]
 
   return (
     <div className="register-overlay modal page ds-overlay" role="dialog" aria-modal="true">
@@ -160,18 +160,8 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
           <p className="ds-note">{t('ds.disabled')}</p>
         ) : (
           <div className="ds-stage">
-            {/* ÜST: başlık + slogan + bakiye pill */}
-            <header className="ds-head">
-              <div className="ds-head-text">
-                <h1 className="ds-head-title">{t('ds.title')}</h1>
-                <p className="ds-head-sub">{t('ds.tagline')}</p>
-              </div>
-              <span className="ds-balance-pill">
-                <Coins amount={coins} size={18} />
-              </span>
-            </header>
-
-            {/* ORTA: makine (+ kontrol) SOLDA, ödül tablosu SAĞDA */}
+            {/* ÜST BAŞLIK YOK (marquee zaten "ZAR SLOTU" gösterir; bakiye BAKİYE göstergesinde). */}
+            {/* ORTA: makine (+ kontrol) SOLA DAYALI, ödül tablosu SAĞDA */}
             <div className="ds-main">
               <div className="ds-main-left">
                 {/* fiziksel slot makinesi */}
