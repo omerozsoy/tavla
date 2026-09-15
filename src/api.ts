@@ -2289,3 +2289,21 @@ export async function getDiceSlot(): Promise<DiceSlotState> {
 export async function spinDiceSlot(): Promise<DiceSlotSpinResult> {
   return req<DiceSlotSpinResult>('/dice-slot/spin', { method: 'POST', body: '{}' })
 }
+
+// Hata Bildir: sağ kenar formundan gönderilen kullanıcı hata bildirimi. HALKA AÇIK
+// (misafir de gönderebilir); giriş yapmışsa req() Bearer token'ı ekler, sunucu kullanıcıyı
+// otomatik ilişkilendirir. Ekran görüntüsü base64 data-URL olarak gönderilir (opsiyonel).
+export interface BugReportInput {
+  message: string
+  page?: string | null
+  url?: string | null
+  name?: string | null
+  email?: string | null
+  screenshot?: string | null // data:image/...;base64,...
+}
+export async function reportBug(input: BugReportInput): Promise<{ ok: boolean; id: number }> {
+  return req<{ ok: boolean; id: number }>('/bug-report', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}

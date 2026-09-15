@@ -1,0 +1,68 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\BugReport;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+// "Hata Bildir": sayfanin sag kenarindaki butondan gonderilen kullanici hata bildirimi.
+// HALKA ACIK (misafir de bildirebilir) ama giris yapmissa otomatik iliskilendirilir.
+// Ekran goruntusu base64 data-URL olarak gelir (avatar akisiyla ayni sadelik); burada
+// cozup public/uploads/bug-reports altina dosya olarak yazariz (DB'de yalniz yol kalir).
+class BugReportController extends Controller
+{
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'page'       => ['nullable', 'string', 'max:300'],
+            'url'        => ['nullable', 'string', 'max:500'],
+            'message'    => ['required', 'string', 'min:3', 'max:5000'],
+            'name'       => ['nullable', 'string', 'max:120'],
+            'email'      => ['nullable', 'email', 'max:190'],
+            // Ekran goruntusu: data:image/...;base64,... (opsiyonel). ~8 MB base64 tavani.
+            'screenshot' => ['nullable', 'string', 'max:11000000'],
+        ]);
+
+        // Giris yapmissa (Bearer token varsa) kullaniciyi iliskilendir; yoksa misafir.
+        $user = $request->user() ?? auth('sanctum')->user();
+
+        $screenshotPath = null;
+        if (! empty($data['screenshot'])) {
+            $screenshotPath = $this->saveScreenshot($data['screenshot']);
+        }
+
+        $report = BugReport::create([
+            'user_id'    => $user?->id,
+            'name'       => $data['name'] ?? ($user?->nickname),
+            'email'      => $data['email'] ?? ($user?->email),
+            'page'       => $data['page'] ?? null,
+            'url'        => $data['url'] ?? null,
+            'message'    => $data['message'],
+            'screenshot' => $screenshotPath,
+            'user_agent' => substr((string) $request->userAgent(), 0, 400),
+            'status'     => 'new',
+        ]);
+
+        return response()->json(['ok' => true, 'id' => $report->id], 201);
+    }
+
+    // base64 data-URL -> uploads diskinde dosya. Yalniz gercek gorsel MIME'lerini kabul et.
+    private function saveScreenshot(string $dataUrl): ?string
+    {
+        if (! preg_match('/^data:image\/(png|jpe?g|webp|gif);base64,(.+)$/s', $dataUrl, $m)) {
+            return null; // gecersiz/desteklenmeyen format -> sessizce atla (bildirim yine kaydedilir)
+        }
+        $ext = $m[1] === 'jpeg' ? 'jpg' : $m[1];
+        $binary = base64_decode($m[2], true);
+        if ($binary === false || strlen($binary) > 8 * 1024 * 1024) {
+            return null; // bozuk veya 8 MB'tan buyuk -> atla
+        }
+        $path = 'bug-reports/'.date('Y-m').'/'.Str::random(24).'.'.$ext;
+        Storage::disk('uploads')->put($path, $binary);
+
+        return $path;
+    }
+}

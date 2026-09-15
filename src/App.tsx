@@ -240,6 +240,7 @@ import {
 } from './storage'
 import { useT, LANGS } from './i18n'
 import { useToast } from './ui/Toast'
+import BugReport from './ui/BugReport'
 import { Button } from '@/components/ui/button'
 import {
   getToken,
@@ -7147,6 +7148,10 @@ export default function App() {
     </>
   )
 
+  // "Hata Bildir": sağ kenar sabit sekme butonu + form (kendi portalıyla body'ye taşınır).
+  // OYUN görünümünde (game-view return'ü) RENDER ETMEYİZ -> oyun sırasında üstte kalmaz.
+  const bugReport = <BugReport currentPage={activeKey ? menuLabel(activeKey) : undefined} loggedIn={!!user} />
+
   // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz).
   // Diger menu sayfalari gibi: sol menu gorunur kalir, kurulum icerik alaninda acilir.
   if (setup) {
@@ -7192,6 +7197,7 @@ export default function App() {
         {menuPages}
         {authModal}
         {menuOverlays}
+        {bugReport}
       </>
     )
   }
@@ -7248,6 +7254,7 @@ export default function App() {
         {menuPages}
         {authModal}
         {menuOverlays}
+        {bugReport}
       </>
     )
   }
@@ -7428,6 +7435,7 @@ export default function App() {
         {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
             (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
         {menuOverlays}
+        {bugReport}
         {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
         <EntryPopupModal loggedIn={!!user} />
         {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
@@ -7490,6 +7498,7 @@ export default function App() {
         </div>
         {authModal}
         {menuOverlays}
+        {bugReport}
       </>
     )
   }

@@ -46,6 +46,10 @@ Route::get('/legal-pages/{slug}', [\App\Http\Controllers\LegalPageController::cl
 Route::get('/cookies', [\App\Http\Controllers\CookieController::class, 'entries']); // Cerez Politikasi tablosu
 Route::get('/cookie-consent', [\App\Http\Controllers\CookieController::class, 'consent']); // banner/modal metin + surum + script ID
 Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index']); // fiziksel magaza katalogu (acik)
+// Hata Bildir: sag kenar butonundan gonderilen kullanici hata bildirimi. HALKA ACIK
+// (misafir de bildirebilir); giris yapmissa BugReportController Bearer token'dan kullaniciyi
+// iliskilendirir. Spam/flood korumasi icin IP basi 6/dk (ekran goruntusu 8 MB'a kadar).
+Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Controllers\BugReportController::class, 'store']);
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);
