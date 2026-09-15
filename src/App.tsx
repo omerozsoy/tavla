@@ -6209,6 +6209,14 @@ export default function App() {
     setHome(true)
   }
 
+  // Online "Devam Eden Maç" banner'ini kullanici elle kapatabilsin (fantom/bitmis oda
+  // hala gozukuyorsa). Once bar'dan cikar (aninda kaybolur), sonra sunucuya leave gonder:
+  // oda gercekten bitmisse leave no-op'tur, hala 'playing' ise ABANDON ile kapanir.
+  const dismissActiveRoom = (code: string) => {
+    setActiveRooms((rs) => rs.filter((x) => x.code !== code))
+    void leaveRoom(code).catch(() => {})
+  }
+
   // Menuden acilan TUM sayfa overlaylerini kapat (setup HARIC). Ayni anda page-host
   // icinde birden fazla '.page' acik kalirsa yigilirlar (bkz Magaza+Ayarlar bug'i).
   function closeMenuPages() {
@@ -7300,7 +7308,8 @@ export default function App() {
                   const myName = profile.nickname || t('resume.you')
                   const oppName = r.opp_name || t('mp.title')
                   return (
-                    <button key={r.code} className="resume-match-btn" onClick={() => rejoinRoom(r)}>
+                    <div key={r.code} className="resume-match-row">
+                    <button className="resume-match-btn" onClick={() => rejoinRoom(r)}>
                       <span className="rm-live"><span className="live-dot" /> {t('resume.active')}</span>
                       <span className="rm-opp">
                         <span className="rm-players">
@@ -7328,6 +7337,17 @@ export default function App() {
                       </span>
                       <span className="rm-cta"><Icon name="play" size={14} /> {t('resume.return')}</span>
                     </button>
+                    {/* × : bitmis/fantom online maci banner'dan kaldir (leave -> ABANDON/no-op) */}
+                    <button
+                      type="button"
+                      className="resume-discard"
+                      onClick={() => dismissActiveRoom(r.code)}
+                      title={t('resume.discard')}
+                      aria-label={t('resume.discard')}
+                    >
+                      <Icon name="x" size={16} />
+                    </button>
+                    </div>
                   )
                 })}
               </div>

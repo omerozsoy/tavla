@@ -9243,6 +9243,17 @@ button.acct-row:hover:not(:disabled) {
   flex: 1 1 auto;
   width: auto;
 }
+/* Online devam eden mac satiri YATAY: [Maça dön butonu | × kapat]. Bar dikey kalir,
+   her oda kendi satirinda buton + kapat ile hizalanir. */
+.resume-match-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.resume-match-row .resume-match-btn {
+  flex: 1 1 auto;
+  width: auto;
+}
 /* × : fantom/bozuk lokal maçı atma butonu */
 .resume-discard {
   flex: 0 0 auto;
