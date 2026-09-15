@@ -32,6 +32,11 @@ ErrorDocument 503 /maintenance.html
 
     RewriteEngine On
 
+    # --- Eski domain -> yeni domain (kalici 301): tavlai.com / www.tavlai.com -> www.tavlatv.com ---
+    # Geciste eski adrese gelen tum istekler (SEO + yer imleri) yeni domaine tasinir.
+    RewriteCond %{HTTP_HOST} ^(www\.)?tavlai\.com$ [NC]
+    RewriteRule ^ https://www.tavlatv.com%{REQUEST_URI} [L,R=301]
+
     # --- Bakim modu bayrak-kurali (maintenance.on varsa) ---
     RewriteCond %{DOCUMENT_ROOT}/maintenance.on -f
     RewriteCond %{REQUEST_URI} !^/maintenance\.html$

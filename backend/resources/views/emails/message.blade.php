@@ -71,7 +71,7 @@
           <!-- Footer -->
           <tr>
             <td align="center" style="padding-top:18px;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:{{ $muted }};">
-              © {{ date('Y') }} TavlaTV · tavlai.com
+              © {{ date('Y') }} TavlaTV · tavlatv.com
             </td>
           </tr>
         </table>

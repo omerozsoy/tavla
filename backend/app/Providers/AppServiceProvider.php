@@ -67,7 +67,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Sifre sifirlama linki SPA'ya (kok sayfaya) gitsin
         ResetPassword::createUrlUsing(function ($notifiable, string $token) {
-            $base = rtrim((string) config('app.frontend_url', 'https://tavlai.com'), '/');
+            $base = rtrim((string) config('app.frontend_url', 'https://www.tavlatv.com'), '/');
             $email = urlencode($notifiable->getEmailForPasswordReset());
             return "{$base}/sifre-sifirla?token={$token}&email={$email}";
         });
@@ -87,7 +87,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Sifre sifirlama e-postasi: markali HTML sablon
         ResetPassword::toMailUsing(function ($notifiable, string $token) {
-            $base = rtrim((string) config('app.frontend_url', 'https://tavlai.com'), '/');
+            $base = rtrim((string) config('app.frontend_url', 'https://www.tavlatv.com'), '/');
             $email = urlencode($notifiable->getEmailForPasswordReset());
             $url = "{$base}/sifre-sifirla?token={$token}&email={$email}";
 

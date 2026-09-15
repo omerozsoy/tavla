@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://tavlai.com/sitemap.xml
+Sitemap: https://www.tavlatv.com/sitemap.xml

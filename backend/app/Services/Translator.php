@@ -29,7 +29,7 @@ class Translator
             $res = Http::timeout(8)->get('https://api.mymemory.translated.net/get', [
                 'q' => $text,
                 'langpair' => $from.'|'.$to,
-                'de' => config('mail.from.address', 'info@tavlai.com'), // kota artirir
+                'de' => config('mail.from.address', 'info@tavlatv.com'), // kota artirir
             ]);
             if (! $res->ok()) {
                 return null;
