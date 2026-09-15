@@ -23637,15 +23637,19 @@ select:-webkit-autofill {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  min-width: 36px;
+  gap: 3px;
+  min-width: 46px;
 }
-.mrv-die {
-  flex: none;
-  color: var(--accent);
+/* Hamle listesi zarları: BÜYÜK + oyuncuya göre renkli (Die: white=açık, black=koyu).
+   Liste her seçimde yeniden render olduğu için zar-atma animasyonunu KAPAT (flash olmasın). */
+.mrv-dice .die-face {
+  width: 20px;
+  height: 20px;
+  animation: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
 }
 .mrv-dice-empty {
-  min-width: 36px;
+  min-width: 46px;
 }
 .mrv-move {
   flex: 1 1 auto;
