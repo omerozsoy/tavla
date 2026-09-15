@@ -107,6 +107,25 @@ export default function PublicProfile({
               </div>
             </div>
 
+            {/* PR (Career PR): analiz edilmiş maçlardan havuzlanan hata oranı (düşük=iyi) + kaç maç
+                sayıldığı. Henüz analiz edilmiş maç yoksa "henüz yok" gösterilir. */}
+            <div className="pp-pr">
+              <span className="pp-pr-lbl">
+                <Icon name="target" size={14} /> {t('lb.byPr')}
+              </span>
+              {p.career_pr != null && (p.career_pr_matches ?? 0) > 0 ? (
+                <span className="pp-pr-val">
+                  {p.career_pr.toFixed(2)}
+                  <span className="pp-pr-sub">
+                    {' · '}
+                    {t('pp.prMatches', { n: String(p.career_pr_matches ?? 0) })}
+                  </span>
+                </span>
+              ) : (
+                <span className="pp-pr-sub">{t('pp.prNone')}</span>
+              )}
+            </div>
+
             {p.form.length > 0 && (
               <div className="pp-form">
                 <span className="pp-form-lbl">{t('stats.form')}</span>

@@ -720,6 +720,9 @@ export interface PublicProfile {
   losses: number
   games: number
   rank: number
+  career_pr?: number | null // Career PR (dusuk=iyi); null/0 maç = veri yok
+  career_pr_matches?: number // PR'a sayilan (analiz edilmis) maç sayisi
+  career_pr_decisions?: number
   form: boolean[] // en yeni once, true=galibiyet
   badges?: string[]
   featured?: FeaturedBadge[] // oyuncunun ÖNE ÇIKARDIĞI (seçtiği) başarımlar (max 3); seçmediyse boş
