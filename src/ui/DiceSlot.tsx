@@ -160,7 +160,7 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
           <p className="ds-note">{t('ds.disabled')}</p>
         ) : (
           <div className="ds-stage">
-            {/* ÜST BAŞLIK YOK (marquee zaten "ZAR SLOTU" gösterir; bakiye BAKİYE göstergesinde). */}
+            <h2 className="ds-title">{t('ds.menu')}</h2>
             {/* ORTA: makine (+ kontrol) SOLA DAYALI, ödül tablosu SAĞDA */}
             <div className="ds-main">
               <div className="ds-main-left">
