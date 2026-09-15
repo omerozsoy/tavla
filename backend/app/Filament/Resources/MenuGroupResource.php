@@ -85,17 +85,51 @@ class MenuGroupResource extends Resource
                     ->label('Menüde göster')
                     ->tooltip('Kapalıysa grup (başlık + tüm öğeleri) sol menüde hiç görünmez.'),
             ])
+            ->filters([
+                // Varsayilan: aktif gruplar. "Kaldirilanlar"a gecince tombstone'lananlari gorup geri getir.
+                Tables\Filters\TernaryFilter::make('removed')
+                    ->label('Görünüm')
+                    ->placeholder('Aktif gruplar')
+                    ->trueLabel('Kaldırılanlar (geri getir)')
+                    ->falseLabel('Aktif gruplar')
+                    ->default(false)
+                    ->queries(
+                        true: fn ($q) => $q->where('removed', true),
+                        false: fn ($q) => $q->where('removed', false),
+                        blank: fn ($q) => $q->where('removed', false),
+                    ),
+            ])
             ->actions([
-                // Katalog (yapisal) gruplar SILINEMEZ: syncCatalog() liste her acildiginda onlari
-                // yeniden ekler -> silme etkisiz ("silemedim"). Yalniz admin-olusturdugu gruplar
-                // silinir. Katalog grubunu menuden kaldirmak icin: "Baslik goster"i kapat veya
-                // Sol Menu'den ogelerini baska gruba tasi (bosalinca frontend'de otomatik kaybolur).
+                // YAPISAL (katalog) grup: hard-delete syncCatalog() yuzunden geri gelir ("silemedim").
+                // Bu yuzden "sil" = SOFT tombstone (removed=true): satir kalir ama admin+menude gizli,
+                // syncCatalog geri EKLEMEZ. Icindeki sayfalar da (grup gorunmez oldugu icin) menuden kalkar.
+                Tables\Actions\Action::make('softRemove')
+                    ->label('')
+                    ->icon('heroicon-o-trash')
+                    ->color('danger')
+                    ->tooltip('Grubu sil (kaldır)')
+                    ->visible(fn (MenuGroup $r) => $r->isCatalog() && ! $r->removed)
+                    ->requiresConfirmation()
+                    ->modalHeading('Yapısal grubu kaldır')
+                    ->modalDescription('Bu grup ve içindeki sayfalar menüden kaldırılır. İstediğinde "Görünüm → Kaldırılanlar" filtresinden geri getirebilirsin.')
+                    ->action(fn (MenuGroup $r) => $r->update(['removed' => true, 'visible' => false])),
+
+                // ADMIN-olusturdugu (katalog-disi) grup: gercek silme (syncCatalog geri eklemez).
                 Tables\Actions\DeleteAction::make()
                     ->label('')
                     ->tooltip('Grubu sil')
-                    ->visible(fn (MenuGroup $r) => ! $r->isCatalog())
+                    ->visible(fn (MenuGroup $r) => ! $r->isCatalog() && ! $r->removed)
                     ->modalHeading('Grubu sil')
                     ->modalDescription('Bu gruptaki öğeler varsayılan grubuna döner. Emin misin?'),
+
+                // Kaldirilmis (tombstone) grubu geri getir.
+                Tables\Actions\Action::make('restore')
+                    ->label('')
+                    ->icon('heroicon-o-arrow-uturn-left')
+                    ->color('gray')
+                    ->tooltip('Geri getir')
+                    ->visible(fn (MenuGroup $r) => (bool) $r->removed)
+                    ->action(fn (MenuGroup $r) => $r->update(['removed' => false, 'visible' => true])),
             ]);
     }
 

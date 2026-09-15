@@ -45,7 +45,8 @@ class MenuController extends Controller
             return [
                 'key' => $g->key,
                 'sort' => $g->sort,
-                'visible' => (bool) $g->visible,
+                // removed (tombstone) -> menude gorunmez; frontend visible=false'ta grup+ogeleri gizler.
+                'visible' => (bool) $g->visible && ! $g->removed,
                 'collapsed' => (bool) $g->collapsed, // menude katli mi baslar (varsayilan)
                 'labels' => (object) $labels,
             ];
