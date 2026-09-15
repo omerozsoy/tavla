@@ -210,20 +210,19 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
                         </>
                       ) : row.straight ? (
                         <>
-                          <Icon name="die-1" size={26} weight="fill" />
-                          <Icon name="die-2" size={26} weight="fill" />
-                          <Icon name="die-3" size={26} weight="fill" />
+                          <Icon name="die-1" size={32} weight="fill" />
+                          <Icon name="die-2" size={32} weight="fill" />
+                          <Icon name="die-3" size={32} weight="fill" />
                         </>
                       ) : (
                         <>
-                          <Icon name={`die-${row.value}` as IconName} size={26} weight="fill" />
-                          <Icon name={`die-${row.value}` as IconName} size={26} weight="fill" />
-                          <Icon name={`die-${row.value}` as IconName} size={26} weight="fill" />
+                          <Icon name={`die-${row.value}` as IconName} size={32} weight="fill" />
+                          <Icon name={`die-${row.value}` as IconName} size={32} weight="fill" />
+                          <Icon name={`die-${row.value}` as IconName} size={32} weight="fill" />
                         </>
                       )}
                     </span>
                     <span className="ds-pt-meta">
-                      {row.straight ? <span className="ds-pt-tag">{t('ds.straightLabel')}</span> : null}
                       {row.jackpot ? (
                         <span className="ds-pt-jackpot">{t('ds.jackpot')}</span>
                       ) : (
