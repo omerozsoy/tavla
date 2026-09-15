@@ -99,6 +99,14 @@ class MatchResultResource extends Resource
                 Tables\Columns\TextColumn::make('match_type')->label('Tür')->badge()
                     ->formatStateUsing(fn ($state, MatchResult $r) => static::matchTypeLabel($state, $r->match_length))
                     ->color(fn ($state) => $state === 'coin' ? 'warning' : 'info'),
+                // TERK / YEDEK KAYIT: oyuncu raporlamadan ayrildiginda (terk/kopma) sunucu yalniz
+                // sonuc+puani "yedek satir" (MatchBackstop) olarak yazar; PR/sans/skor/log HESAPLANMAZ
+                // -> o kolonlar bos (—) kalir. PR asla-bos-olmasin direktifi geregi gercek raporlanan
+                // macta pr HER ZAMAN dolu; dolayisiyla pr === null = raporlanmamis (terk) kayit.
+                Tables\Columns\TextColumn::make('forfeit_flag')->label('Kayıt')
+                    ->state(fn (MatchResult $r) => $r->pr === null ? 'Terk / Yedek' : null)
+                    ->badge()->color('warning')->icon('heroicon-o-exclamation-triangle')
+                    ->tooltip('Terk/kopma ile bitti: oyuncu raporlamadan ayrıldı. Sunucu sonucu + puanı sakladı; PR / şans / skor hesaplanmadığı için boş (—) görünür. Veri kaybı değildir.'),
                 Tables\Columns\TextColumn::make('room.stake')->label('Bahis (coin)')
                     ->formatStateUsing(fn ($state) => $state ? number_format((int) $state).' coin' : '—')
                     ->color(fn ($state) => $state ? 'warning' : 'gray')
