@@ -542,6 +542,18 @@
   font-weight: 800;
   letter-spacing: 0.06em;
 }
+/* Kazanılan coin pill'i: genel .coins--pill AÇIK tema (card-bg krem) bg kullanır +
+   banner metin rengi (ivory) miras alınır -> koyu kabinde AÇIK-üstüne-AÇIK = OKUNMAZ.
+   Burada koyu pill + net beyaz rakam + altın çerçeveyle görünür kıl. */
+.ds-result .coins--pill {
+  background: color-mix(in srgb, #000 46%, transparent);
+  border: 1px solid color-mix(in srgb, var(--gold) 60%, transparent);
+  color: #fff;
+  font-weight: 700;
+}
+.ds-result .coins--pill .coins-val {
+  color: #fff;
+}
 @keyframes ds-result-in {
   from {
     opacity: 0;
@@ -730,9 +742,29 @@
 /* ================================================================================
    ÖDÜL TABLOSU (alt bölüm)
    ============================================================================== */
+/* Orta blok: makine (+ kontrol) SOLDA, ödül tablosu SAĞDA. Dar ekranda tek kolon (tablo alta). */
+.ds-main {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 22px;
+  align-items: start;
+}
+.ds-main-left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+@media (min-width: 880px) {
+  .ds-main {
+    grid-template-columns: minmax(0, 1fr) 250px;
+  }
+}
+
 .ds-paytable {
   width: 100%;
-  max-width: 620px;
   padding: 16px 18px;
   border-radius: var(--radius-lg);
   border: 1px solid color-mix(in srgb, var(--gold) 18%, transparent);

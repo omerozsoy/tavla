@@ -139,7 +139,13 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
     }
   }
 
+  // Ödül tablosu: önce üçlü zarları ÖDENEN COIN'e göre artan sırala, sonra STRAIGHT ve
+  // JACKPOT özel satırları en sona (sunucu sırasından bağımsız, tutarlı gösterim).
   const paytable = data?.paytable ?? []
+  const triples = paytable.filter((r) => !r.jackpot && !r.straight).sort((a, b) => a.payout - b.payout)
+  const straightRow = paytable.find((r) => r.straight)
+  const jackpotRow = paytable.find((r) => r.jackpot)
+  const orderedPaytable = [...triples, ...(straightRow ? [straightRow] : []), ...(jackpotRow ? [jackpotRow] : [])]
 
   return (
     <div className="register-overlay modal page ds-overlay" role="dialog" aria-modal="true">
@@ -165,38 +171,42 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
               </span>
             </header>
 
-            {/* ORTA: fiziksel slot makinesi */}
-            <SlotMachine
-              reels={reels}
-              spinKey={spinKey}
-              reelDurations={REEL_MS}
-              spinning={spinning}
-              lineWin={lineWin}
-              jackpot={jackpot}
-              result={result}
-              canSpin={canSpin}
-              celebrate={jackpotActive}
-              onLever={handleSpin}
-            />
+            {/* ORTA: makine (+ kontrol) SOLDA, ödül tablosu SAĞDA */}
+            <div className="ds-main">
+              <div className="ds-main-left">
+                {/* fiziksel slot makinesi */}
+                <SlotMachine
+                  reels={reels}
+                  spinKey={spinKey}
+                  reelDurations={REEL_MS}
+                  spinning={spinning}
+                  lineWin={lineWin}
+                  jackpot={jackpot}
+                  result={result}
+                  canSpin={canSpin}
+                  celebrate={jackpotActive}
+                  onLever={handleSpin}
+                />
 
-            {/* KONTROL PANELİ */}
-            <SlotControls
-              remaining={remaining}
-              nextFree={nextFree}
-              spinCost={spinCost}
-              isPaidNext={isPaidNext}
-              coins={coins}
-              spinning={spinning}
-              canSpin={canSpin}
-              onSpin={handleSpin}
-              onCooldownExpire={load}
-            />
+                {/* KONTROL PANELİ */}
+                <SlotControls
+                  remaining={remaining}
+                  nextFree={nextFree}
+                  spinCost={spinCost}
+                  isPaidNext={isPaidNext}
+                  coins={coins}
+                  spinning={spinning}
+                  canSpin={canSpin}
+                  onSpin={handleSpin}
+                  onCooldownExpire={load}
+                />
+              </div>
 
-            {/* ALT: ödül tablosu */}
-            <aside className="ds-paytable">
-              <h3 className="ds-paytable-title">{t('ds.paytable')}</h3>
-              <ul className="ds-paytable-list">
-                {paytable.map((row) => (
+              {/* SAĞ: ödül tablosu (coine göre sıralı) */}
+              <aside className="ds-paytable">
+                <h3 className="ds-paytable-title">{t('ds.paytable')}</h3>
+                <ul className="ds-paytable-list">
+                  {orderedPaytable.map((row) => (
                   <li
                     key={row.code}
                     className={`ds-pt-row ${row.jackpot ? 'is-jackpot' : ''} ${row.straight ? 'is-straight' : ''}`}
@@ -233,9 +243,10 @@ export default function DiceSlot({ loggedIn, onClose, onRequireLogin, onCoinsCha
                   </li>
                 ))}
               </ul>
-              <p className="ds-pt-note">{t('ds.straightHint')}</p>
-              {!loggedIn ? <p className="ds-note ds-note-side">{t('ds.loginRequired')}</p> : null}
-            </aside>
+                <p className="ds-pt-note">{t('ds.straightHint')}</p>
+                {!loggedIn ? <p className="ds-note ds-note-side">{t('ds.loginRequired')}</p> : null}
+              </aside>
+            </div>
           </div>
         )}
 
