@@ -964,7 +964,11 @@ class RoomController extends Controller
         }
         $clock = is_array($room->clock) ? $room->clock : [];
         $ended = ! empty($clock['end']) || $room->status === 'finished';
-        if ($room->status === 'playing' && ! $ended) {
+        // KORUMA: maç ODA DURUMUNDA (oynanışta) zaten sonuçlandıysa (kazanan belli) geç gelen
+        // terk sinyali sonucu EZMESIN. Aksi halde KAZANAN sekmeyi kapatınca winner=other(leaver)
+        // ile kazanan ters çevriliyor, kazanan "terk edip kaybetti" gibi yazılıyordu (DrBakır bug'ı).
+        $decided = $this->decidedWinnerColor($room) !== null;
+        if ($room->status === 'playing' && ! $ended && ! $decided) {
             // Terk eden = $slot -> rakip kazanir. applyClockEnd skoru/gameEnd'i yazar,
             // p{slot}_result + end_reason'i set eder (istemci sync'te otoriter sonucu gorur).
             $clock['end'] = ['reason' => 'ABANDON', 'winner' => MatchClock::other($slot)];
@@ -1167,6 +1171,42 @@ class RoomController extends Controller
         return MatchClock::clientView($clock, microtime(true));
     }
 
+    /**
+     * Maç ODA DURUMUNDA (oynanışta) zaten sonuçlandı mı? Sonuçlandıysa kazananın rengini
+     * ('white'|'black') döndürür, yoksa null. Geç gelen terk/timeout sinyali BUNU EZMEMELİ
+     * (kazananı ters çevirmesin). Öncelik: authoritative server_match -> maç skoru (hedef) ->
+     * tek-oyun gameEnd.winner. p{slot}_result KULLANILMAZ (onu forfeit'in kendisi set eder ->
+     * yalnızca GERÇEK oynanış sonucuna bakılır).
+     */
+    private function decidedWinnerColor(Room $room): ?string
+    {
+        if ($room->authoritative && is_array($room->server_match)) {
+            $sm = $room->server_match;
+            if (! empty($sm['done']) && in_array($sm['winner'] ?? null, ['white', 'black'], true)) {
+                return $sm['winner'];
+            }
+
+            return null; // authoritative ama bitmemiş -> karar yok
+        }
+        $state = is_array($room->state) ? $room->state : [];
+        $match = is_array($state['match'] ?? null) ? $state['match'] : [];
+        $score = is_array($match['score'] ?? null) ? $match['score'] : null;
+        $target = (int) ($room->target ?? ($match['target'] ?? 1));
+        if ($score !== null && isset($score['white'], $score['black']) && $target > 0) {
+            $w = (int) $score['white'];
+            $b = (int) $score['black'];
+            if ($w !== $b && ($w >= $target || $b >= $target)) {
+                return $w > $b ? 'white' : 'black';
+            }
+        }
+        $ge = is_array($state['gameEnd'] ?? null) ? $state['gameEnd'] : null;
+        if ($target <= 1 && $ge !== null && in_array($ge['winner'] ?? null, ['white', 'black'], true)) {
+            return $ge['winner'];
+        }
+
+        return null;
+    }
+
     // Saat kaybini (TIMEOUT/AFK_TIMEOUT) mac sonucuna yansit: forfeit + karsilikli sonuc + end_reason.
     // Saat sahiplik-korumali oldugu icin sunucunun belirledigi kazanan guvenlidir (forge-korumasi).
     private function applyClockEnd(Room $room, array $clock): void
@@ -1174,6 +1214,13 @@ class RoomController extends Controller
         $end = $clock['end'];
         $winnerSlot = $end['winner']; // 'p1'|'p2'
         $reason = $end['reason'];     // TIMEOUT|AFK_TIMEOUT
+        // KORUMA: maç oynanışta zaten sonuçlandıysa geç timeout/AFK sinyali kazananı TERS
+        // çeviremez -> GERÇEK kazananı kullan (ForfeitLoss yanlış kaybedeni yazmasın). Karar yoksa
+        // (henüz bitmemiş meşru timeout) saatin belirlediği kazanan geçerli kalır.
+        $decidedColor = $this->decidedWinnerColor($room);
+        if ($decidedColor !== null) {
+            $winnerSlot = $decidedColor === 'white' ? 'p1' : 'p2';
+        }
         $winnerColor = $winnerSlot === 'p1' ? 'white' : 'black';
 
         // AUTHORITATIVE (Faz 2): timeout/AFK forfeit'i server_match'e YANSIT (RoomResult/settle
