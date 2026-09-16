@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent as RPointerEvent, MouseEvent as RMouseEvent } from 'react'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import type { GameState, Player } from '../engine/types'
+import type { GameState, Player, Step } from '../engine/types'
 import { initialState } from '../engine/game'
 import { pipCount } from '../engine/evaluate'
 import { equityFrom } from '../engine/encoding'
@@ -10,6 +10,7 @@ import { moveNotation } from '../engine/notation'
 import type { RankedMove } from '../engine/neuralBot'
 import Board from './Board'
 import { Die } from './Dice'
+import { MoveArrows } from './MatReview'
 import { useBoardDir } from './boardDirection'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
@@ -68,17 +69,11 @@ function Swatch({ color }: { color: Player }) {
 // uygulayip ONIZLEME board dondurur. gnubg + wildbg sonuclari ortak moveNotation formatinda
 // gelir. Notasyon oyuncu-perspektifi (moveNotation'in tersi): beyaz=num-1, siyah=24-num.
 // Board temsili: pts[24] (beyaz +, siyah -), bar/off {white,black}. Kirilma (vurus) islenir.
-type PreviewBoard = {
-  pts: number[]
-  bar: { white: number; black: number }
-  off: { white: number; black: number }
-}
-function previewFromNotation(base: PreviewBoard, turn: Player, label: string): PreviewBoard {
-  const pts = base.pts.slice()
-  const bar = { ...base.bar }
-  const off = { ...base.off }
-  const sign = turn === 'white' ? 1 : -1
-  const opp: Player = turn === 'white' ? 'black' : 'white'
+// Notasyondan (or. "13/9 24/21", "bar/20 6/1*(2)") hamlenin ADIMLARINI (Step[]) turet.
+// Board'a UYGULAMAZ; sadece kaynak->hedef cizgilerini (MoveArrows) cizmek icin. locName ->
+// dahili index: beyaz n-1, siyah 24-n. Vurus (*) ve cift (n) desteklenir. die onemsiz (ok
+// konumu DOM'dan olculur) -> 0.
+function stepsFromNotation(turn: Player, label: string): Step[] {
   const toLoc = (tok: string): number | 'bar' | 'off' | null => {
     if (tok === 'bar') return 'bar'
     if (tok === 'off') return 'off'
@@ -86,26 +81,22 @@ function previewFromNotation(base: PreviewBoard, turn: Player, label: string): P
     if (!Number.isFinite(n) || n < 1 || n > 24) return null
     return turn === 'white' ? n - 1 : 24 - n
   }
-  const stepOnce = (from: number | 'bar' | 'off' | null, to: number | 'bar' | 'off' | null) => {
-    if (from === null || to === null) return
-    if (from === 'bar') bar[turn] = Math.max(0, bar[turn] - 1)
-    else if (from !== 'off') pts[from] -= sign
-    if (to === 'off') off[turn] += 1
-    else if (to !== 'bar') {
-      if (pts[to] === -sign) { pts[to] = 0; bar[opp] += 1 } // tek rakip pul -> kirilir
-      pts[to] += sign
-    }
-  }
+  const out: Step[] = []
   for (const part of label.trim().split(/\s+/)) {
     if (!part || part === 'pas' || part === 'pass') continue
     const cm = part.match(/\((\d+)\)\s*$/)
     const count = cm ? parseInt(cm[1], 10) : 1
     const locs = part.replace(/\((\d+)\)\s*$/, '').replace(/\*/g, '').split('/')
     for (let c = 0; c < count; c++) {
-      for (let i = 0; i < locs.length - 1; i++) stepOnce(toLoc(locs[i]), toLoc(locs[i + 1]))
+      for (let i = 0; i < locs.length - 1; i++) {
+        const from = toLoc(locs[i])
+        const to = toLoc(locs[i + 1])
+        if (from === null || to === null || from === 'off' || to === 'bar') continue
+        out.push({ from: from as number | 'bar', to: to as number | 'off', die: 0 })
+      }
     }
   }
-  return { pts, bar, off }
+  return out
 }
 
 export default function PositionAnalyzer({
@@ -157,16 +148,12 @@ export default function PositionAnalyzer({
 
   const state: GameState = { points: pts, bar, off, turn, dice: [], diceUsed: [] }
 
-  // Onizleme: sagdaki hamleye tiklandiginda o hamle uygulanmis SALT-GORUNUM board.
-  // Editable dizilim (pts/bar/off) DEGISMEZ; board'a tiklayinca duzenlemeye geri donulur.
-  const previewState: GameState | null =
-    previewIdx != null && moveRows?.[previewIdx]
-      ? (() => {
-          const pv = previewFromNotation({ pts, bar, off }, turn, moveRows[previewIdx].label)
-          return { points: pv.pts, bar: pv.bar, off: pv.off, turn, dice: [], diceUsed: [] }
-        })()
-      : null
-  const displayState = previewState ?? state
+  // Onizleme: sagdaki hamleye tiklandiginda o hamle ORIJINAL board uzerinde OK + HAYALET PUL
+  // ile gosterilir (MatReview/MatchReport/Hata Gunlugu ile ayni sistem). Pullar OYNATILMAZ;
+  // editable dizilim (pts/bar/off) DEGISMEZ; board'a tiklayinca duzenlemeye geri donulur.
+  const isPreview = previewIdx != null && !!moveRows?.[previewIdx]
+  const previewSteps: Step[] = isPreview ? stepsFromNotation(turn, moveRows![previewIdx!].label) : []
+  const displayState = state
 
   // Dizilim degistikce kalici kaydet (analyzer kapanip acilinca / yenilenince korunur).
   useEffect(() => {
@@ -659,7 +646,7 @@ export default function PositionAnalyzer({
 
       <div className="analyzer-body">
         <div
-          className={`analyzer-board${previewState ? ' pa-previewing' : ''}`}
+          className={`analyzer-board${isPreview ? ' pa-previewing' : ''}`}
           onPointerDown={onBoardPointerDown}
           onClickCapture={onBoardClickCapture}
           onContextMenu={onBoardContextMenu}
@@ -670,14 +657,14 @@ export default function PositionAnalyzer({
               <Icon name="alert" size={15} /> {t('pa.limitWarn')}
             </div>
           )}
-          {previewState && (
+          {isPreview && (
             <div className="pa-preview-toast" role="status">
               <Icon name="eye" size={14} /> {t('pa.previewOn')}
             </div>
           )}
           <Board
             state={displayState}
-            selectableFroms={previewState ? new Set() : allFroms}
+            selectableFroms={isPreview ? new Set() : allFroms}
             targets={new Set()}
             selectedFrom={null}
             onSelectFrom={handleFrom}
@@ -691,6 +678,13 @@ export default function PositionAnalyzer({
             centerRight={diceOnRight ? boardDice : undefined}
             showPip
           />
+          {/* Secili hamle: ORIJINAL board uzerinde kaynak->hedef kavisli ok + hayalet pul. */}
+          {isPreview && (
+            <MoveArrows
+              steps={previewSteps}
+              dep={`${previewIdx}:${boardDir}:${previewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+            />
+          )}
         </div>
 
         <div className="analyzer-controls">
