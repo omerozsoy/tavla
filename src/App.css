@@ -7871,8 +7871,11 @@ html.fs-active .account-bar {
     display: flex;
     align-items: center;
     width: 100%;
-    padding: 4px 6px 12px;
+    /* SOL: sabit hamburger (52px) ile bindirmesin -> logo onun sagindan baslar
+       (drawer padding-left 12px + 46px = 58px > 52px hamburger). */
+    padding: 4px 6px 12px 46px;
     margin-bottom: 6px;
+    min-height: 44px;
     border: none;
     border-bottom: 1px solid var(--border);
     background: none;
@@ -8600,6 +8603,9 @@ button.acct-row:hover:not(:disabled) {
     grid-template-areas:
       'bar'
       'main';
+    /* Mobilde bar ile icerik arasindaki 36px desktop boslugu (base .app.lobby
+       row-gap) kompakt bar altinda "aciklanamayan bosluk" gibi duruyordu -> kucult. */
+    row-gap: 10px;
   }
   /* Mobilde de TAM wordmark gozuksun (kompakt sembol degil); sigmasi icin
      inline font-size'i (38px) ez -> daha kucuk olcek. */
@@ -9633,6 +9639,55 @@ button.acct-row:hover:not(:disabled) {
   width: 100%;
   max-width: var(--lobby-w);
   margin: 10px auto 0;
+}
+
+/* Bahane Makinesi — ana sayfa CTA (salt eğlence). Kiremit (var(--accent)) token'lı. */
+.home-excuse-cta {
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 6px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+}
+.home-excuse-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+}
+.home-excuse-btn:hover {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: 0 4px 16px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+  transform: translateY(-1px);
+}
+.home-excuse-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.hx-hint {
+  font-size: 13px;
+  color: color-mix(in srgb, var(--text, currentColor) 55%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-excuse-btn {
+    transition: none;
+  }
+  .home-excuse-btn:hover {
+    transform: none;
+  }
 }
 @media (max-width: 720px) {
   .home-panels {
@@ -11344,6 +11399,14 @@ button.acct-row:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  /* Tam-tahta (MatReview sistemi) analiz kolonuna göre ölçülsün diye query-container. */
+  container-type: inline-size;
+}
+/* Hamle Analizi tahtası: MatReview'deki Board + ok + hayalet. Board genişliği ~ --board-h*1.4;
+   --board-h global (viewport) olduğu için dar kolonda taşardı -> kolona göre (cqw) küçült. */
+.analysis-detail .an-board-stage {
+  --board-h: max(180px, min(calc((100cqw - 8px) / 1.55), calc(100vh - 240px)));
+  width: 100%;
 }
 .an-winbar {
   position: relative;

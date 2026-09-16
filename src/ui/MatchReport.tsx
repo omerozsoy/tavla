@@ -3,8 +3,12 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
-import MiniBoard from './MiniBoard'
-import { Die } from './Dice'
+import Board from './Board'
+import DiceRow, { Die } from './Dice'
+import { MoveArrows } from './MatReview'
+import { useBoardDir } from './boardDirection'
+import { useSwapStones } from './pieceColors'
+import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
 import { buildMatXg, type GameResultInput } from '../matExport'
 import { fetchGameLogMat } from '../api'
@@ -112,6 +116,8 @@ export default function MatchReport({
   // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
   // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
   const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
+  const [boardDir] = useBoardDir()
+  const [swapStones] = useSwapStones()
 
   // Kup kararlari ayri gosterilir; tas oyunu istatistigi/listesi kup satirlarini haric tutar
   const cubeLog = effHuman
@@ -148,6 +154,43 @@ export default function MatchReport({
   }, [cur, candIdx])
   // Oynanan hamlenin aday listesindeki yeri (-1: top listede yok -> ayri "Senin hamlen" satiri)
   const playedIdx = cur?.cands?.findIndex((c) => c.notation === cur.notation) ?? -1
+
+  // Tam-tahta gösterimi (MatReview ile aynı sistem: Board + kaynak→hedef okları + hayalet pullar).
+  // Tahta yönü/pul rengi kullanıcı ayarından; oklar gerçek DOM konumlarını ölçer (tema-bağımsız).
+  const boardState: GameState | null = cur?.pos
+    ? {
+        points: cur.pos.points,
+        bar: cur.pos.bar,
+        off: cur.pos.off,
+        turn: (cur.player ?? cur.pos.turn ?? 'white') as GameState['turn'],
+        dice: cur.dice ?? [],
+        diceUsed: [],
+      }
+    : null
+  // Tahtadaki küp: bu oyunun küp geçmişini (kabul edilen her "take" -> ×2, sahip=alıcı) tekrar oynat.
+  const cubeForBoard: { value: number; owner: Player | null } = (() => {
+    let value = 1
+    let owner: Player | null = null
+    for (let j = 0; j < sel; j++) {
+      const e = log[j]
+      if (e.game !== cur?.game) continue
+      if (e.cube?.chosen === 'take' && e.player) {
+        value *= 2
+        owner = e.player as Player
+      }
+    }
+    return { value, owner }
+  })()
+  const froms = new Set<number | 'bar'>()
+  const tos = new Set<number | 'off'>()
+  for (const s of viewSteps) {
+    froms.add(s.from)
+    tos.add(s.to)
+  }
+  const diceFaces = (cur?.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
+  const diceRow =
+    boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
+  const whiteBottom = cur?.player === 'white' // beyaz altta (flip yok; MatReview ile aynı)
 
   function selectMove(i: number) {
     setSel(i)
@@ -361,7 +404,29 @@ export default function MatchReport({
               <div className="analysis-detail">
                 {cur?.pos && cur.player ? (
                   <>
-                    <MiniBoard state={cur.pos} steps={viewSteps} player={cur.player} dice={cur.dice} flip={effHuman === 'black'} />
+                    <div className="mrv-board-stage an-board-stage">
+                      <Board
+                        state={boardState!}
+                        selectableFroms={froms}
+                        targets={tos}
+                        selectedFrom={null}
+                        onSelectFrom={() => {}}
+                        onSelectTarget={() => {}}
+                        onDragFrom={() => {}}
+                        pipTop={pipCount(boardState!, 'black')}
+                        pipBottom={pipCount(boardState!, 'white')}
+                        cube={cubeForBoard}
+                        flip={false}
+                        mirror={boardDir === 'left'}
+                        swapStones={swapStones}
+                        centerLeft={whiteBottom ? null : diceRow}
+                        centerRight={whiteBottom ? diceRow : null}
+                      />
+                      <MoveArrows
+                        steps={viewSteps}
+                        dep={`${sel}:${candIdx}:${boardDir}:${swapStones}:${viewSteps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+                      />
+                    </div>
                     {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
                     <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
                       {candIdx < 0 || candIdx === playedIdx
