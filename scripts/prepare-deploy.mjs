@@ -1,20 +1,25 @@
 // React'i derleyip Laravel'in public/ klasorune kopyalar (tek-domain deploy).
 // Laravel'in index.php ve .htaccess dosyalarina DOKUNMAZ.
 // Kullanim: node scripts/prepare-deploy.mjs
-import { cpSync, rmSync, existsSync } from 'node:fs'
+import { cpSync, existsSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 
 console.log('1) React derleniyor…')
 execSync('npm run build', { stdio: 'inherit' })
 
 const dest = 'backend/public'
-console.log('2) dist -> backend/public kopyalaniyor…')
+console.log('2) dist -> backend/public kopyalaniyor (ADDITIVE)…')
 
-// Eski frontend asset'lerini temizle (Laravel'e ait degil)
-rmSync(`${dest}/assets`, { recursive: true, force: true })
-rmSync(`${dest}/models`, { recursive: true, force: true })
+// ADDITIVE DEPLOY: eski hash'li asset'ler (assets/*, models/*) SILINMEZ. cpSync varsayilan
+// force:true ile ayni isimdekileri (index.html vb.) uzerine yazar, YENI hash'li chunk'lari
+// ekler, ESKI hash'li chunk'lari KORUR. Neden: deploy sonrasi sekmesi acik kullanicinin
+// tarayicisi hala eski chunk'i (lazy import) ister; dosya dururse ChunkLoadError OLMAZ, "bir
+// seyler ters gitti" flash + otomatik reload gerekmez. (Bkz ErrorBoundary chunk fix + memory
+// ters-gitti-chunk-flash.) Bedeli: backend/public/assets zamanla buyur -> gerekince ELLE
+// budanabilir (cok eski, artik referans edilmeyen hash'ler). rmSync KASITLI kaldirildi.
 
-// Sadece frontend ciktilarini kopyala (.htaccess ve index.php haric)
+// Sadece frontend ciktilarini kopyala (.htaccess ve index.php haric); index.html DAIMA
+// ustune yazilir (en guncel giris) — cpSync force:true.
 for (const item of [
   'index.html',
   'favicon.svg',
