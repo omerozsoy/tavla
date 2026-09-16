@@ -1457,76 +1457,54 @@ button[aria-disabled='true'],
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
+/* Tek Oyun seviye karti (tasarim: "TavlaTV Seviye Kartlari v2") */
 .solo-tile {
+  position: relative;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 8px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  gap: 7px;
+  padding: 9px 9px 8px;
+  background: #fffdf9;
+  border: 1px solid rgba(58, 44, 32, 0.07);
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(58, 44, 32, 0.05);
   cursor: pointer;
   transition:
-    border-color 0.12s,
-    transform 0.12s;
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 .solo-tile:hover:not(:disabled) {
-  border-color: var(--accent);
   transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(58, 44, 32, 0.12);
 }
 .solo-tile.locked {
   cursor: not-allowed;
-  opacity: 0.55;
 }
 .solo-lvl {
-  font-size: 0.72rem;
-  font-weight: 400;
+  text-align: center;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--muted);
+  color: #9a8f84;
 }
-.solo-board {
-  position: relative;
+/* Mini-sahne (dangerouslySetInnerHTML ile enjekte edilen gradient kutu) */
+.solo-scene {
+  display: block;
   width: 100%;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
 }
-.solo-dots {
-  display: flex;
-  gap: 4px;
-}
-.solo-dots > i {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-circle);
-  background: rgba(255, 255, 255, 0.85);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-.solo-lock {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.45);
-  color: var(--tv-white);
+.solo-scene > div {
+  width: 100%;
 }
 .solo-stake {
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-weight: 400;
-  font-size: 0.9rem;
-  color: var(--text);
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #2e2721;
   font-variant-numeric: tabular-nums;
-}
-.solo-stake > svg {
-  color: var(--accent);
 }
 /* Mac Oyunu kurulum tile'lari (saat / maks bahis) */
 .setup-tiles {
@@ -12015,40 +11993,16 @@ button.acct-row:hover:not(:disabled) {
 .setup-split .solo-grid {
   grid-template-columns: repeat(3, 1fr); /* 9 seviye -> 3'lu yan yana, 3 satir */
 }
-/* Secili bahis NET gorunsun: kalin aksan cerceve + aksan halkasi + aksan-tonlu zemin. */
+/* Secili bahis: aksan cerceve + yumusak aksan halkasi (tasarim v2) */
 .solo-tile.selected {
   border-color: var(--accent);
-  border-width: 2px;
-  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
-  box-shadow:
-    0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent),
-    0 4px 14px color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
 }
-/* Secili kart etiket/tutar da aksana donsun (secim vurgusu artar). */
-.solo-tile.selected .solo-lvl,
-.solo-tile.selected .solo-stake {
-  color: var(--accent);
-}
-/* Secilmemis (kilitsiz) kartlar hafif geri cekilsin -> secililer daha da one ciksin. */
-.solo-tile:not(.selected):not(.locked) {
-  opacity: 0.72;
-}
-.solo-tile:not(.selected):not(.locked):hover {
-  opacity: 1;
-}
-/* Onay rozeti daha belirgin: beyaz cerceveli aksan disk. */
-.solo-check {
-  border: 2px solid var(--card-bg);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
-}
-/* Coklu secim onay rozeti (sag ust) — birden fazla bahis secilebildigi belli olsun */
-.solo-tile {
-  position: relative;
-}
+/* Coklu secim onay rozeti: kartin sag-ust kosesinden hafif disari tasan aksan disk */
 .solo-check {
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: -5px;
+  right: -5px;
   width: 18px;
   height: 18px;
   display: inline-flex;
@@ -12057,7 +12011,8 @@ button.acct-row:hover:not(:disabled) {
   border-radius: var(--radius-circle);
   background: var(--accent);
   color: #fff;
-  z-index: 2;
+  box-shadow: 0 2px 4px rgba(58, 44, 32, 0.25);
+  z-index: 3;
 }
 .solo-preview-bar {
   display: flex;
@@ -12119,29 +12074,22 @@ button.acct-row:hover:not(:disabled) {
     gap: 6px;
   }
   .solo-tile {
-    padding: 6px 4px;
-    gap: 3px;
+    padding: 6px 5px 6px;
+    gap: 5px;
   }
   .solo-lvl {
-    font-size: 0.58rem;
-    letter-spacing: 0.03em;
+    font-size: 8px;
+    letter-spacing: 0.1em;
   }
   .solo-stake {
-    font-size: 0.72rem;
-    gap: 2px;
-  }
-  .solo-dots {
-    gap: 2px;
-  }
-  .solo-dots > i {
-    width: 5px;
-    height: 5px;
+    font-size: 12px;
+    gap: 4px;
   }
   .solo-check {
-    top: 3px;
-    right: 3px;
-    width: 14px;
-    height: 14px;
+    top: -4px;
+    right: -4px;
+    width: 15px;
+    height: 15px;
   }
 }
 

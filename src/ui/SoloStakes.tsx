@@ -5,7 +5,7 @@ import { Coins } from './Coins'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import SetupBoard from './SetupBoard'
-import LevelChecker from './LevelChecker'
+import { soloScene } from './soloScenes'
 
 // Tek Oyun = money game: her zaman TEK oyun (1 puan). Puan/uzunluk secimi YOK.
 
@@ -112,18 +112,9 @@ export default function SoloStakes({ coins, board, onPick, onClose }: Props) {
                   )}
                   <span className="solo-lvl">{t('solo.level', { n: lv.level })}</span>
                   <span
-                    className="solo-board"
-                    style={{
-                      background: `linear-gradient(135deg, ${lv.a} 0%, ${lv.panel} 50%, ${lv.b} 100%)`,
-                    }}
-                  >
-                    <LevelChecker level={lv.level} light={lv.a} dark={lv.b} locked={locked} />
-                    {locked && (
-                      <span className="solo-lock">
-                        <Icon name="lock" size={18} />
-                      </span>
-                    )}
-                  </span>
+                    className="solo-scene"
+                    dangerouslySetInnerHTML={{ __html: soloScene(lv.level, locked) }}
+                  />
                   <span className="solo-stake">
                     <Coins amount={lv.stake} size={14} />
                   </span>
