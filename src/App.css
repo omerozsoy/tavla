@@ -19567,13 +19567,15 @@ button.acct-row:hover:not(:disabled) {
    aksiyon (oyna/sil) butonlarini kirpiyordu. Kimligi esnek+kucultulebilir yap (isim
    ellipsis'e duser), aksiyonlar hep gorunur kalsin. Sadece mobil; masaustu degismez. */
 @media (max-width: 640px) {
-  .friend-id-btn {
+  /* (0,2,0) ozgulluk: asagidaki base `.friend-id-btn{flex:0 0 210px}` kaynak-sirasi
+     geregi (0,1,0) esitlikte kazaniyordu -> .friend-row ile yenelim (siradan bagimsiz). */
+  .friend-row .friend-id-btn {
     flex: 1 1 auto;
   }
-  .friend-actions {
+  .friend-row .friend-actions {
     min-width: 0;
   }
-  .friend-flag {
+  .friend-row .friend-flag {
     padding-left: 6px;
   }
 }
