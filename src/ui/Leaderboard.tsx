@@ -25,10 +25,10 @@ export default function Leaderboard({ currentName, onClose }: Props) {
   const [profileId, setProfileId] = useState<number | null>(null)
   const [wxpInfo, setWxpInfo] = useState<WxpBreakdown | null>(null)
   const [wxpOpen, setWxpOpen] = useState(false) // "WXP nasil hesaplanir?" varsayilan kapali
-  const [page, setPage] = useState(0) // 0-tabanli sayfa; her 10 kisi bir sayfa (en fazla 100 kisi = 10 sayfa)
+  const [page, setPage] = useState(0) // 0-tabanli sayfa; her 20 kisi bir sayfa (en fazla 100 kisi = 5 sayfa)
 
-  const PAGE_SIZE = 10
-  const MAX_PAGES = 10 // en fazla 100 kisi göster
+  const PAGE_SIZE = 20
+  const MAX_PAGES = 10 // en fazla 200 kisi göster (su an 100 cekiliyor = 5 sayfa)
 
   useEffect(() => {
     let alive = true
@@ -243,7 +243,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
               </span>
             </div>
             <div className="lb-body">
-              {Array.from({ length: 10 }).map((_, i) => (
+              {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                 <div key={i} className="lb-row">
                   <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
                   <span className="lb-name">
@@ -302,7 +302,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                   <span className="lb-rating">PR</span>
                 </div>
                 <div className="lb-body">
-                  {Array.from({ length: 10 }).map((_, i) => (
+                  {Array.from({ length: PAGE_SIZE }).map((_, i) => (
                     <div key={i} className="lb-row">
                       <span className="lb-rank"><Skeleton w={16} h={16} r={4} /></span>
                       <span className="lb-name">
