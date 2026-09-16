@@ -19563,6 +19563,20 @@ button.acct-row:hover:not(:disabled) {
   min-width: 84px;
   margin-left: auto;
 }
+/* MOBIL: kimlik blogu SABIT 210px (asagida flex:0 0 210px) dar ekranda satiri tasirip
+   aksiyon (oyna/sil) butonlarini kirpiyordu. Kimligi esnek+kucultulebilir yap (isim
+   ellipsis'e duser), aksiyonlar hep gorunur kalsin. Sadece mobil; masaustu degismez. */
+@media (max-width: 640px) {
+  .friend-id-btn {
+    flex: 1 1 auto;
+  }
+  .friend-actions {
+    min-width: 0;
+  }
+  .friend-flag {
+    padding-left: 6px;
+  }
+}
 /* PlayerIdentity blogu (avatar + isim + altinda rutbe) satirin genisligini alsin */
 .friend-id {
   flex: 0 0 auto;
