@@ -7888,8 +7888,13 @@ html.fs-active .account-bar {
   .side-menu.open {
     transform: translateX(0);
   }
-  /* Mobil: ust band akista, olcegi kucult. */
+  /* Mobil: ust band SABIT tepede (sticky) -> kaydirinca hamburger tek basina zeminSIZ
+     kalmasin; bar zemini+logo hamburger'la birlikte pinlenir. (.app.lobby scroll kabi;
+     top:0 -> viewport tepesi = fixed hamburger ile hizali.) */
   .account-bar {
+    position: sticky;
+    top: 0;
+    z-index: 105; /* hamburger 110 -> ustte kalir; icerik altta */
     min-height: 48px;
     gap: 6px;
     /* SOL: sabit hamburger (52px) icin pay birak -> logo hamburger'in sagindan baslar. */
