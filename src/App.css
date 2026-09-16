@@ -12052,9 +12052,22 @@ button.acct-row:hover:not(:disabled) {
   .setup-split {
     grid-template-columns: 1fr;
   }
+  /* Mobil dizilim (kullanici istegi): TAHTA en ustte -> bahis kartlari (solo-card) ortada
+     -> "Seviye · Basla" cubugu (solo-preview-bar) EN ALTA. setup-preview'i display:contents
+     ile duzlestir ki icindeki tahta + baslat cubugu grid'e AYRI ogeler olarak katilsin ve
+     ayri ayri siralanabilsin. */
   .setup-preview {
-    position: static;
+    display: contents;
+  }
+  .setup-board {
     order: -1;
+  }
+  .solo-card {
+    order: 0;
+  }
+  .solo-preview-bar {
+    order: 1;
+    max-width: none;
   }
 }
 @media (max-width: 560px) {
