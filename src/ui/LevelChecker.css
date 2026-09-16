@@ -1,0 +1,76 @@
+/* LevelChecker — component-scoped. Tavla pulunun 1..9 evrimi. */
+.level-checker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+  box-sizing: border-box;
+}
+.level-checker svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible; /* hover scale + sparkle/aura taşması kırpılmasın */
+  transition: transform 0.16s ease;
+  will-change: transform;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
+}
+/* Hover: çok hafif büyüme (kart hover'ı ile) */
+.solo-tile:hover:not(:disabled) .level-checker svg {
+  transform: scale(1.045);
+}
+/* Kilitli seviye: pul soluk/gri (lock overlay zaten üstte) */
+.level-checker.is-locked svg {
+  filter: grayscale(0.85) brightness(0.9);
+}
+
+/* --- kontrollü, yavaş animasyonlar (üst seviyeler) --- */
+@keyframes lc-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); }
+}
+.lc-glow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lc-glow 3.4s ease-in-out infinite;
+}
+@keyframes lc-aura {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.05); }
+}
+.lc-aura {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lc-aura 4.6s ease-in-out infinite;
+}
+@keyframes lc-spin {
+  to { transform: rotate(360deg); }
+}
+.lc-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lc-spin 18s linear infinite;
+}
+@keyframes lc-tw {
+  0%, 100% { opacity: 0.15; transform: scale(0.6); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.lc-spark {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: lc-tw 2.6s ease-in-out infinite;
+  animation-delay: var(--d, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .level-checker svg,
+  .lc-glow,
+  .lc-aura,
+  .lc-ring,
+  .lc-spark {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+}
