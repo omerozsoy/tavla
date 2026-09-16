@@ -128,7 +128,7 @@ export default function BugReport({ currentPage, loggedIn }: Props) {
       {/* Sağ kenar sabit sekme butonu — oyun ekranında render EDİLMEZ (App gizler). */}
       {!open && (
         <button className="bug-fab" onClick={openForm} aria-label={t('bug.button')} title={t('bug.button')}>
-          <Icon name="flag" size={16} />
+          <Icon name="flag" size={20} />
           <span className="bug-fab-txt">{t('bug.button')}</span>
         </button>
       )}
