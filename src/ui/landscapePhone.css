@@ -53,16 +53,24 @@
 }
 
 /* Yan menü -> soldan kayan drawer (grid akışından çıkar) */
+/* Sticky account-bar (z-index:105) drawer'i (z-index:100) altinda birakiyordu.
+   Landscape'te drawer BARIN ALTINDAN baslasin (bar ustte gorunur kalir, tum menu gorunur);
+   portrede ise drawer barin USTUNE ciksin (kendi logosuyla -> z-index yeter). */
+@media (max-width: 900px) {
+  .side-menu {
+    z-index: 106;
+  }
+}
 #root.lsphone .side-menu {
   position: fixed;
   left: 0;
-  top: 0;
-  height: 100%;
+  top: 51px; /* ince bar yuksekligi -> drawer barin ALTINDA, tepesi kirpilmaz */
+  height: calc(100% - 51px);
   width: 248px;
   max-width: 86vw;
-  z-index: 100;
+  z-index: 106;
   background: var(--card-bg);
-  padding: 14px 12px 12px;
+  padding: 10px 12px 12px;
   box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
   transform: translateX(-102%);
   transition: transform 0.25s ease;
@@ -71,9 +79,9 @@
 #root.lsphone .side-menu.open {
   transform: translateX(0);
 }
-/* Drawer başlığındaki logo görünür (mobil drawer gibi) */
+/* Bar logosu zaten ustte gorunur -> drawer'da tekrar logo gosterme */
 #root.lsphone .side-menu-brand {
-  display: flex;
+  display: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
