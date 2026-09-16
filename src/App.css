@@ -7063,6 +7063,7 @@ button.move-row:focus-visible {
     width: 100%;
     flex-direction: row;
     justify-content: space-around;
+    --pc-av: 66px; /* portre: avatarlar yan yana -> daha kompakt */
   }
   /* Guvenlik: hicbir sey yatay kaydirma yaratmasin */
   .app,
@@ -7256,10 +7257,9 @@ button.move-row:focus-visible {
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
+  --pc-av: 50px; /* kompakt yatay: kap + ic avatar + turn-arcs halkasi birlikte kuculur */
 }
 #root.force-landscape .avatar {
-  width: 46px;
-  height: 46px;
   font-size: 24px;
   margin-bottom: 3px;
   border-width: 2px;
@@ -8030,10 +8030,9 @@ html.fs-active .account-bar {
     width: 104px;
     flex-direction: column;
     justify-content: space-between;
+    --pc-av: 50px; /* kompakt yatay: kap + ic avatar + turn-arcs halkasi birlikte kuculur */
   }
   .avatar {
-    width: 46px;
-    height: 46px;
     font-size: 24px;
     margin-bottom: 3px;
     border-width: 2px;

@@ -41,18 +41,27 @@
   gap: 6px;
 }
 
-/* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir. */
+/* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir.
+   TEK BOYUT KAYNAGI: --pc-av (varsayilan 84px, var() FALLBACK ile — .sidebar'a taban DEGER
+   YAZMIYORUZ ki App.css'teki kompakt @media override'lari kaynak-sirasi yuzunden EZILMESIN).
+   Kap + ic avatar + turn-arcs halkasi HEP bundan turer -> kucultunce hepsi birlikte kuculur
+   (eski hata: yalniz .avatar 46'ya inip kap 104 + halka 126 "dev gibi" kaliyordu). */
 .pc-avatar {
   position: relative;
-  width: 104px;
-  height: 104px;
-  margin: 0 auto 10px;
+  width: var(--pc-av, 84px);
+  height: var(--pc-av, 84px);
+  margin: 0 auto 8px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.pc-avatar .avatar {
+/* Ic avatar (bot robot .avatar VEYA kullanici .avf-sober/.avf-simple) kabi TAM doldurur */
+.pc-avatar .avatar,
+.pc-avatar .avf-sober,
+.pc-avatar .avf-simple {
   margin: 0;
+  width: var(--pc-av, 84px) !important;
+  height: var(--pc-av, 84px) !important;
 }
 /* Rakip avatarı tıklanabilir (profil modalı): imleç + hafif vurgu */
 .pc-avatar.clickable {
@@ -74,10 +83,10 @@
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 126px;
-  height: 126px;
+  width: calc(var(--pc-av, 84px) + 20px);
+  height: calc(var(--pc-av, 84px) + 20px);
   transform: translate(-50%, -50%);
-  border: 6px solid var(--accent);
+  border: 5px solid var(--accent);
   border-top-color: transparent;
   border-bottom-color: transparent;
   border-radius: var(--radius-circle);
