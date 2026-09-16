@@ -3,8 +3,8 @@ import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
-import { myMatches, matchLogById, type MyMatch, type EJPeriod } from '../api'
-import MatchReport from './MatchReport'
+import { myMatches, matchLogById, matchGnubgReview, type MyMatch, type EJPeriod } from '../api'
+import MatchReport, { type LogEntry } from './MatchReport'
 import type { MoveLogEntry } from '../storage'
 import type { Player } from '../engine/types'
 
@@ -83,7 +83,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<
     {
-      log: MoveLogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
+      log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
       matchResult?: { winner: Player; score: { white: number; black: number } }
     } | null
   >(null)
@@ -101,10 +101,14 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const raw = await matchLogById(m.id)
       if (!raw) return
       const parsed = JSON.parse(raw) as { hc?: Player; log?: MoveLogEntry[] }
-      const log = parsed.log ?? []
+      const clientLog = (parsed.log ?? []) as unknown as LogEntry[]
       // Bos log (online/PvP mac -> hamle analizi tutulmaz): rapor acma, karar yok
-      if (log.length === 0) return
+      if (clientLog.length === 0) return
       const hc: Player = parsed.hc ?? 'white'
+      // HAKEM=gnubg: hamle-hamle analizi GNUBG'den (per-karar loss/best/equity). Ağır (~saniyeler);
+      // reportBusy loader gösterir. Servis yok/başarısızsa YEREL log'a düş (analiz yine açılır).
+      const gr = await matchGnubgReview(m.id).catch(() => null)
+      const log: LogEntry[] = gr?.ok && gr.log && gr.log.length > 0 ? gr.log : clientLog
       // .mat basligi/oyuncu satiri icin GERCEK mac uzunlugu + isimler (varsayilan 1'e/White'a DUSME).
       // matchLength: kayitli maç uzunlugu (yoksa buildMatXg log'daki mctx.matchLen'den turetir).
       const matchLength = m.match_length ?? undefined

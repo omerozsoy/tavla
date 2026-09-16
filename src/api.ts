@@ -1903,6 +1903,13 @@ export async function matchLogById(id: number): Promise<string | null> {
   return data.log
 }
 
+// HAKEM=gnubg: bir maçın hamle-hamle analizini GNUBG ile getir (MatchReport'un yediği LogEntry[]).
+// Sunucu .mat'i kurup gnubg reviewMatch çalıştırır. Ağır (~saniyeler) -> çağıran loader gösterir.
+// ok=false ise (servis yok / log yok) çağıran eski yerel-log yoluna düşebilir.
+export async function matchGnubgReview(id: number, plies = 2): Promise<MatReview> {
+  return req<MatReview>(`/me/matches/${id}/gnubg-review?plies=${plies}`)
+}
+
 // Poll: since verilirse degismemisse null doner
 export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
   const token = getToken()
