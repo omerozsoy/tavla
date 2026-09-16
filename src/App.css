@@ -8438,6 +8438,23 @@ button.acct-row:hover:not(:disabled) {
   color: var(--accent);
   font-weight: 600;
 }
+/* Cikis Yap satiri: ustte ayirici + danger tonu */
+.acct-row-logout {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  color: var(--danger-fg);
+}
+.acct-row-logout .acct-row-ic {
+  color: var(--danger-fg);
+}
+button.acct-row-logout:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger-fg) 12%, transparent);
+}
+/* Desktop ust bar cikis ikonu */
+.acct-logout-btn:hover {
+  color: var(--danger-fg);
+}
 .acct-div {
   height: 1px;
   margin: 5px 8px;
