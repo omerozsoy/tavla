@@ -38,10 +38,10 @@ export const PAGES: PageDef[] = [
   // Mesajlar (Sohbet): sol menude gorunur + sag ust barda da chat ikonu var. /mesajlar'a gider.
   { key: 'messages', slug: 'mesajlar', labelKey: 'dm.title', icon: 'chat', group: 'compete', gate: 'user' },
 
-  // --- EGLENCE: sans/ekonomi oyunlari — SAG UST bara tasindi (account-bar ikonlari);
-  // sol menude GIZLI (inMenu:false) ama /sans-carki + /zar-slotu URL'leri + top-bar ikonlari calisir. ---
-  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true, inMenu: false },
-  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'slot', group: 'fun', hideInGame: true, inMenu: false },
+  // --- EGLENCE: sans/ekonomi oyunlari. Sol menude EĞLENCE grubunda GORUNUR (kullanici istegi);
+  // ayrica SAG UST bar ikonlari + /sans-carki + /zar-slotu URL'leri de calisir (ikisi birden). ---
+  { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true },
+  { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'slot', group: 'fun', hideInGame: true },
   // Bahane Makinesi: salt eğlence (coin/ödül yok, giriş gerekmez). Sol menüde GÖRÜNÜR
   // (bu sayede "EĞLENCE" grup başlığı çizilir); /bahane-makinesi derin-link + tam-ekran modal.
   { key: 'excuses', slug: 'bahane-makinesi', labelKey: 'exc.menu', icon: 'megaphone', group: 'fun', hideInGame: true },
