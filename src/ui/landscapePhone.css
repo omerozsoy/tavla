@@ -30,13 +30,23 @@
   display: inline-flex;
 }
 
-/* Bar sabit tepede + hamburger için sol pay */
+/* Bar sabit tepede + hamburger için sol pay + İNCE (yatayda dikey alan değerli) */
 #root.lsphone .app.lobby > .account-bar {
   position: sticky;
   top: 0;
   z-index: 105;
-  min-height: 48px;
+  min-height: 44px;
+  padding-top: 4px;
+  padding-bottom: 4px;
   padding-left: 60px;
+}
+/* Logo kompakt: portre-mobildeki gibi küçük wordmark + slogan gizli (bar kalınlaşmasın).
+   Bu kurallar max-width:900 media'sında; 956px landscape'te tetiklenmiyordu -> burada uygula. */
+#root.lsphone .ab-wordmark {
+  font-size: 26px !important;
+}
+#root.lsphone .ab-tag {
+  display: none;
 }
 
 /* Yan menü -> soldan kayan drawer (grid akışından çıkar) */
