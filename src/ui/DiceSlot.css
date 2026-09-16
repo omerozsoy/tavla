@@ -50,7 +50,7 @@
    (0,4,0) seçici onu yener; değerler yukarıdaki .ds-card ile birebir (tek kaynak niyeti). */
 .register-overlay.page.ds-overlay > .ds-card {
   max-width: 880px;
-  margin: 0 auto;
+  margin: 0; /* SOLA dayali (ortalanmaz) — diger sayfalarla ayni */
   min-height: 0;
   padding: 0;
   border-radius: var(--radius-xl);
