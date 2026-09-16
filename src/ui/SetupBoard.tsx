@@ -65,7 +65,7 @@ export default function SetupBoard({
 }: Props) {
   const W = 400
   const H = 264
-  const PAD = 12
+  const PAD = 14 // dis cerceve (rail) kalinligi -> ic oyun alani icerden acilir
   const GAP = 18 // orta bar
   const halfW = (W - 2 * PAD - GAP) / 2
   const colW = halfW / 6
@@ -177,14 +177,18 @@ export default function SetupBoard({
               Aksi halde sivri hane tabanlari dis (yuvarlak) cerceve koselerine tasip
               "kotu kose" veriyordu -> klip ile alan koseleri cerceveyle uyumlu yuvarlanir. */}
           <clipPath id="sb-field">
-            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="9" />
+            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="12" />
           </clipPath>
         </defs>
-        <rect x="0" y="0" width={W} height={H} rx="16" fill={panel} />
+        {/* Dis cerceve (rail) */}
+        <rect x="0" y="0" width={W} height={H} rx="18" fill={panel} />
         {/* Zemin agac damari (kullanicinin okla gosterdigi: haneler ARASI koyu zemin dokulu) */}
-        {wood && <rect x="0" y="0" width={W} height={H} rx="16" fill="url(#sb-wood)" />}
-        {/* Ic alan icerigi (haneler + orta bar) yuvarlak-kose alana klipli */}
+        {wood && <rect x="0" y="0" width={W} height={H} rx="18" fill="url(#sb-wood)" />}
+        {/* Ic alan icerigi yuvarlak-kose alana klipli */}
         <g clipPath="url(#sb-field)">
+          {/* Ic oyun alani: cerceveden AYRISIN diye hafif koyulastir (tema-bagimsiz overlay;
+              acik+koyu tum boardlarda "cukur alan" hissi -> kenar/kose net). */}
+          <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} fill="rgba(0,0,0,0.07)" />
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}
@@ -195,12 +199,13 @@ export default function SetupBoard({
           y={PAD}
           width={W - 2 * PAD}
           height={H - 2 * PAD}
-          rx="9"
+          rx="12"
           fill="none"
-          stroke="rgba(0,0,0,0.14)"
+          stroke="rgba(0,0,0,0.22)"
           strokeWidth="1.5"
         />
-        <rect x="0" y="0" width={W} height={H} rx="16" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" />
+        {/* Dis cerceve kenar cizgisi (1px iceri -> kirpilmaz) */}
+        <rect x="1" y="1" width={W - 2} height={H - 2} rx="17" fill="none" stroke="rgba(0,0,0,0.32)" strokeWidth="2" />
         {discs}
         {/* İki zar da AYNI: gövde=cream, pip=checker. (Eskiden sağ zarın pip'i üçgen rengi
             'a' idi -> Siyah pul takasında koyu zar üstünde kırmızı pip okunmuyordu/uyumsuzdu.
