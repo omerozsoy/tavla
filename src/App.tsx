@@ -1404,11 +1404,12 @@ export default function App() {
   neuralRef.current.level = difficulty // AI seviyesini uygula
   const engine = neuralRef.current // tum seviyeler sinir agi (seviyeye gore gurultu)
 
-  // ADIM 6 (HAKEM=gnubg, RAKİP kısmi): SADECE en zor seviye (Neural AI = 10) botu gnubg oynatır.
-  // gnubg en iyi hamleyi NOTASYON verir -> matchGnubgMove ile yerel Move'a GÜVENLİ eşlenir; eşleşmez/
-  // servis yok/misafir/alt seviye ise wildbg (engine.chooseMove). Böylece bot ASLA geçersiz oynamaz.
+  // HAKEM=gnubg: bot TÜM SEVİYELERDE gnubg oynar (girişli + servis). gnubg sıralı aday hamleleri
+  // (equity'li) döner; seviye 10 -> en iyi, seviye<10 -> wildbg ile AYNI Gauss gürültü modeliyle
+  // equity'ye rastgele ekleyip suboptimal seçilir (seviye/zorluk korunur). Eşleşmez/servis yok/
+  // misafir/çift değil ise wildbg (engine.chooseMove) FALLBACK -> bot ASLA geçersiz/donuk kalmaz.
   async function chooseBotMove(state: GameState): Promise<Move> {
-    if (difficulty >= 10 && getToken()) {
+    if (getToken()) {
       try {
         const dice2 = state.dice.slice(0, 2)
         if (dice2.length === 2) {
@@ -1423,12 +1424,25 @@ export default function App() {
             plies: 2,
           })
           if (g.moves && g.moves.length > 0) {
-            const mv = matchGnubgMove(state, state.turn, g.moves[0].notation)
+            // Seviye zayıflatması: gnubg listesine wildbg ile aynı gürültü (sigma) uygulanır.
+            let pick = g.moves[0]
+            if (difficulty < 10 && g.moves.length > 1) {
+              const sigma = 0.45 * Math.pow((10 - difficulty) / 9, 1.4)
+              let bestNoisy = -Infinity
+              for (const m of g.moves) {
+                const noisy = m.equity + (Math.random() * 2 - 1) * sigma
+                if (noisy > bestNoisy) {
+                  bestNoisy = noisy
+                  pick = m
+                }
+              }
+            }
+            const mv = matchGnubgMove(state, state.turn, pick.notation)
             if (mv) return mv // gnubg hamlesi (güvenli eşleşme)
           }
         }
       } catch {
-        /* gnubg erişilemedi -> wildbg */
+        /* gnubg erişilemedi -> wildbg fallback */
       }
     }
     return await Promise.resolve(engine.chooseMove(state))
