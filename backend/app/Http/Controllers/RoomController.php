@@ -1126,6 +1126,57 @@ class RoomController extends Controller
     }
 
     /**
+     * ZAMANLANMIS SÜPÜRME: kimsenin poll etmediği (updated_at BAYAT) 'playing' odaları finalize
+     * eder -> oda bir gün 'playing'de asılı kalmaz, hayalet "Devam Eden Maç" + izleyici DONMASI
+     * üretmez. Poll yolundakiyle AYNI mantık (MatchClock presence/timeout); ek olarak _seen
+     * damgası hiç oluşmamış (never-polled) ya da sonucu belli olup finalize edilmemiş odalar için
+     * yedek. Çağıran YALNIZ bayat (canlı olmayan) odaları vermeli -> canlı maçı yanlışlıkla
+     * bitirmez (canlı maç ~1.5sn'de bir poll eder, updated_at hiç bayatlamaz). Değişiklik -> true.
+     */
+    public function reapStaleRoom(Room $room): bool
+    {
+        if ($room->status !== 'playing') {
+            return false;
+        }
+        // 1) presence/saat/AFK: ikisi-de-terk (no-contest) / biri-terk / timeout -> applyClockEnd.
+        $this->tickClock($room, null);
+        if ($room->status === 'finished') {
+            return true;
+        }
+        // 2) Sonuç BELLİ (hedefe ulaşılmış skor / tek-oyun) ama istemci finalize edememiş ->
+        //    'finished' işaretle + karşılıklı sonuç yaz. Puan satırlarını backstop (idempotent)
+        //    tamamlar; burada ForfeitLoss ÇAĞIRMA (normal galibiyet, terk değil).
+        $color = $this->decidedWinnerColor($room);
+        if ($color !== null) {
+            $winnerSlot = $color === 'white' ? 'p1' : 'p2';
+            if ($room->p1_result === null) {
+                $room->p1_result = $winnerSlot === 'p1' ? 'won' : 'lost';
+            }
+            if ($room->p2_result === null) {
+                $room->p2_result = $winnerSlot === 'p2' ? 'won' : 'lost';
+            }
+            if ($room->end_reason === null) {
+                $room->end_reason = 'NORMAL_WIN';
+            }
+            $room->status = 'finished';
+            $room->version = $room->version + 1;
+            $room->save();
+
+            return true;
+        }
+        // 3) Sonuçsuz + uzun süredir bayat (never-polled dahil): no-contest ABANDON ile bitir
+        //    (puan/coin YOK). Çağıran yalnız updated_at bayat odaları verir -> canlı maç değil.
+        $room->status = 'finished';
+        if ($room->end_reason === null) {
+            $room->end_reason = 'ABANDON';
+        }
+        $room->version = $room->version + 1;
+        $room->save();
+
+        return true;
+    }
+
+    /**
      * AUTHORITATIVE saat: legacy update() çağrılmadığı için saati server_state/server_match'ten
      * SÜR. İlk çağrıda init; her aksiyonda (roll/move/cube/resign) segment ilerler. turnsPlayed
      * yerine server_version (monotonik) -> imza her aksiyonda değişir; onUpdate delay+bankayı
@@ -1220,6 +1271,19 @@ class RoomController extends Controller
         $decidedColor = $this->decidedWinnerColor($room);
         if ($decidedColor !== null) {
             $winnerSlot = $decidedColor === 'white' ? 'p1' : 'p2';
+        }
+        // NO-CONTEST: iki taraf da terk etmis + sonuc BELLI DEGIL (winner=null) -> kimse
+        // kazanmaz/kaybetmez (puan/coin YOK, ForfeitLoss YOK). Yalnizca odayi 'finished'
+        // isaretle ki hayalet "Devam Eden Maç" + izleyici donmasi bitsin. version'i ARTIR ki
+        // izleyicinin surum-kapili poll'u 'finished'i yakalasin.
+        if ($winnerSlot === null) {
+            $room->status = 'finished';
+            if ($room->end_reason === null) {
+                $room->end_reason = $reason ?? 'ABANDON';
+            }
+            $room->version = $room->version + 1;
+
+            return;
         }
         $winnerColor = $winnerSlot === 'p1' ? 'white' : 'black';
 
