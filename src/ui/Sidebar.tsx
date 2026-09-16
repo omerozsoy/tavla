@@ -70,7 +70,7 @@ function Avatar({ p }: { p: PlayerInfo }) {
     <AvatarFrame
       src={p.avatarUrl}
       frame={p.frame}
-      size={104}
+      size={84}
       name={p.name}
       className={`pc-avf ${p.active ? 'active' : ''}`}
     />
