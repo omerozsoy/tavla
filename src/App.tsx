@@ -213,7 +213,7 @@ import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
-import MatchReport from './ui/MatchReport'
+import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
@@ -261,6 +261,7 @@ import {
   messagesUnread,
   matchPr,
   matchGnubgPr,
+  matchGnubgReview,
   analyzePosition,
   type GnuMove,
   type MenuOverride,
@@ -1396,6 +1397,33 @@ export default function App() {
   // insan turlarini sayar; 0 iken maci KAYDETME. Yeni macta sifirlanir (bkz handleNewMatch).
   const humanTurnsRef = useRef(0)
   const [resultView, setResultView] = useState<null | 'stats' | 'analysis'>(null) // rapor modali
+  const matchResultIdRef = useRef<number | null>(null) // reportRating'ten dönen id (gnubg analiz için)
+  const [analysisGnubgLog, setAnalysisGnubgLog] = useState<LogEntry[] | null>(null) // maç-sonu gnubg analizi
+  const [analysisBusy, setAnalysisBusy] = useState(false)
+  // Maç-sonu rapor (stats/analysis) açılınca: hamle-hamle analizi GNUBG'den çek (loader). Yoksa/
+  // başarısızsa yerel matchLog'a düşülür. Kapanınca sıfırla. (HAKEM=gnubg: analizde wildbg gösterme.)
+  useEffect(() => {
+    if (!resultView) {
+      setAnalysisGnubgLog(null)
+      return
+    }
+    const id = matchResultIdRef.current
+    if (!id) return
+    let alive = true
+    setAnalysisBusy(true)
+    matchGnubgReview(id)
+      .then((gr) => {
+        if (alive && gr?.ok && gr.log && gr.log.length > 0) setAnalysisGnubgLog(gr.log)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (alive) setAnalysisBusy(false)
+      })
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resultView])
   const [lastError, setLastError] = useState<MoveError | null>(null)
   const heuristicRef = useRef(new HeuristicBot())
   const neuralRef = useRef(new NeuralBot())
@@ -3399,6 +3427,7 @@ export default function App() {
         })
         // HAKEM=gnubg (online): kendi PR'ımı da gnubg gelene kadar LOADER göster, gnubg gelince
         // değiştir (wildbg sayısı gösterilmez). Rakip PR aşağıdaki matchPr poll'undan (o da gnubg).
+        if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
         // Sunucu-otoriter SANS: self/opp HAM luck'ı renge (white/black) eşle -> iki istemci
         // AYNI çifti tutar -> net TUTARLI. Gelmeyen (null) değeri önceki değeri korur (merge).
@@ -3627,6 +3656,7 @@ export default function App() {
         // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
         setServerPr({ self: r.pr_self ?? null, opp: null })
         // HAKEM=gnubg: gösterilen PR gnubg olsun. Job async -> "…" göster, gnubg gelince swap.
+        if (r.match_result_id) matchResultIdRef.current = r.match_result_id
         if (r.gnubg_authoritative && r.match_result_id) void pollGnubgPr(r.match_result_id)
         else setPrAnalyzing(false)
       }
@@ -7887,10 +7917,19 @@ export default function App() {
         />
       )}
 
-      {resultView && (
+      {/* HAKEM=gnubg: gnubg analizi gelene kadar loader (wildbg log GÖSTERME). gnubg yoksa/
+          başarısızsa yerel matchLog'a düşülür (analiz yine açılır). */}
+      {resultView && analysisBusy && !analysisGnubgLog && (
+        <div className="register-overlay modal" role="dialog" aria-modal="true">
+          <div className="register-card" style={{ textAlign: 'center', padding: '30px' }}>
+            <span className="btn-spinner" aria-hidden="true" /> {t('mr.prCalculating')}
+          </div>
+        </div>
+      )}
+      {resultView && !(analysisBusy && !analysisGnubgLog) && (
         <MatchReport
           mode={resultView}
-          log={matchLog}
+          log={analysisGnubgLog ?? (matchLog as unknown as LogEntry[])}
           pr={prShown(prHumanColor)}
           humanColor={prHumanColor}
           matchLength={match.target}
