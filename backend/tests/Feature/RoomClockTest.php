@@ -163,6 +163,43 @@ class RoomClockTest extends TestCase
         $this->assertSame('black', $room->state['gameEnd']['winner']);
     }
 
+    // ---- KORUMA: maç ZATEN sonuçlandıysa geç terk KAZANANI ters çevirmesin (DrBakır bug'ı) ----
+    public function test_leave_does_not_overturn_decided_match(): void
+    {
+        $winner = \App\Models\User::create([
+            'first_name' => 'Win', 'last_name' => 'T', 'country' => '', 'nickname' => 'Winner',
+            'email' => 'win@t.co', 'password' => bcrypt('secret123'),
+        ]);
+        $loser = \App\Models\User::create([
+            'first_name' => 'Los', 'last_name' => 'T', 'country' => '', 'nickname' => 'Loser',
+            'email' => 'los@t.co', 'password' => bcrypt('secret123'),
+        ]);
+        $winner->forceFill(['rating' => 1500])->save();
+        $loser->forceFill(['rating' => 1500])->save();
+        $room = $this->playingRoom('CLKD', 'normal', 1);
+        $room->p1_user_id = $winner->id;
+        $room->p2_user_id = $loser->id;
+        $room->p1_rating = 1500;
+        $room->p2_rating = 1500;
+        $room->save();
+
+        // Tek oyun ZATEN kazanıldı: beyaz (p1 = winner) hedefe ulaştı + gameEnd.winner=white.
+        $state = $this->state(1);
+        $state['match']['score'] = ['white' => 1, 'black' => 0];
+        $state['gameEnd'] = ['winner' => 'white'];
+        $this->putJson('/api/rooms/CLKD', ['token' => 't1', 'state' => $state])->assertOk();
+
+        // KAZANAN (p1/beyaz) sekmeyi kapatır (leave). Sonuç TERS ÇEVRİLMEMELİ.
+        $this->postJson('/api/rooms/CLKD/leave', ['token' => 't1'])->assertOk();
+
+        $room->refresh();
+        // Kazanan "terk edip kaybetti" olarak yazılmadı: p1_result 'lost' + ABANDON OLMAMALI.
+        $this->assertNotSame('lost', $room->p1_result);
+        $this->assertNotSame('ABANDON', $room->end_reason);
+        // ForfeitLoss KAZANANI (p1) kaybeden olarak yazmadı -> onun için terk-kayıp satırı yok.
+        $this->assertDatabaseMissing('match_results', ['user_id' => $winner->id, 'room_code' => 'CLKD']);
+    }
+
     // ---- show (poll): rakip poll'u kesince (terk) o kaybeder; SIRA SAHIBI KORUNUR ----
     public function test_show_forfeits_absent_opponent_protecting_turn_owner(): void
     {
