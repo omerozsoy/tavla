@@ -5850,9 +5850,9 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
   height: var(--checker);
   border-width: 1px;
 }
-/* Bar'daki kirik tas adedi cok az daha buyuk okunsun (0.9rem -> 1.1rem) */
+/* Bar'daki kirik tas adedi: yigin sayisindan biraz daha buyuk, pul capina oranli okunsun. */
 .bar-checkers .checker-count {
-  font-size: 1.1rem;
+  font-size: calc(var(--checker) * 0.48);
 }
 
 /* ---- Bear-off tepsisi (#10): board cerceve ailesinden, kopuk siyah kutu DEGIL ---- */
@@ -8055,7 +8055,9 @@ html.fs-active .account-bar {
   justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: 0.9rem;
+  /* Yığın (>5 pul) üzerindeki toplam sayı: sabit 0.9rem büyük board'da ÇOK KÜÇÜK kalıyordu.
+     Pul çapına orantılı yap -> her board boyutunda okunaklı. */
+  font-size: calc(var(--checker) * 0.42);
   font-weight: 400;
   color: var(--tv-white);
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
