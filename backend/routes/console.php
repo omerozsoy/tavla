@@ -38,6 +38,14 @@ Schedule::command('matches:backstop-finished')
     ->name('backstop-finished-matches')
     ->withoutOverlapping();
 
+// BAYAT "playing" ODA SÜPÜRME: kimsenin poll etmediği (oyuncu+izleyici yok) yarım kalan/terk
+// edilmiş online odaları 'finished' işaretle -> "Devam Eden Maç" hayaleti + izleyici DONMASI
+// bir gün beklemeden temizlensin. 3 dk grace: canlı maç ~1.5sn'de bir poll eder -> asla değmez.
+Schedule::command('matches:reap-stale')
+    ->everyFiveMinutes()
+    ->name('reap-stale-rooms')
+    ->withoutOverlapping();
+
 // ÇALIŞAN TÜM SERVİSLERİ izle: dakikada bir kontrol; düşerse OTOMATİK yeniden başlat, kalıcıysa
 // admin e-posta + WhatsApp (CallMeBot, ayarlıysa) uyarısı. Validator + gnubg + queue + veritabanı.
 // (validator:watch komutu --test için duruyor ama zamanlama buraya birleşti -> çift-uyarı yok.)

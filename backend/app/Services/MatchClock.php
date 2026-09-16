@@ -236,7 +236,18 @@ class MatchClock
             $clock['end'] = ['reason' => 'ABANDON', 'winner' => $p1Gone ? 'p2' : 'p1'];
             return $clock;
         }
-        // Ikisi de terk (veya ikisi de present) -> presence KARAR VERMEZ; asagida saat/AFK isler.
+        if ($p1Gone && $p2Gone) {
+            // IKISI DE terk -> eskiden presence KARAR VERMEZDI ve saat de durmussa (acilis / 0-0 /
+            // oyunlar-arasi / kup-bekleme) mac HIC finalize edilmiyordu: oda 'playing'de asili kalir,
+            // poll updated_at'i tazeledikce "Devam Eden Maç" HAYALETI + izleyici DONMASI olusur.
+            // KOK FIX: sonuc BELLI DEGILSE no-contest (winner=null) ile bitir -> applyClockEnd
+            // puan/coin ISLEMEZ, yalniz odayi 'finished' isaretler (decided ise gercek kazanan
+            // orada uygulanir). Boylece hem banner hem izleyici temizlenir.
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => null];
+
+            return $clock;
+        }
+        // Ikisi de present -> presence KARAR VERMEZ; asagida saat/AFK isler.
 
         if (! ($clock['running'] ?? false)) {
             return $clock;

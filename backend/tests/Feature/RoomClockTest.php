@@ -224,4 +224,71 @@ class RoomClockTest extends TestCase
         $this->assertSame('won', $room->p1_result);  // sira sahibi korundu + kazandi
         $this->assertSame('lost', $room->p2_result); // terk eden kaybetti
     }
+
+    // ---- IKISI DE terk (saat durmus / acilis 0-0): NO-CONTEST ile finalize (hayalet mac fix) ----
+    // Eskiden presence yalniz "tam biri terk" iken karar veriyordu; ikisi de gidince mac HIC
+    // bitmiyor, oda 'playing'de asili kaliyordu -> "Devam Eden Maç" hayaleti + izleyici DONMASI.
+    public function test_show_finalizes_when_both_players_abandoned_no_contest(): void
+    {
+        $room = $this->playingRoom('CLKB', 'casual', 5);
+        $this->putJson('/api/rooms/CLKB', ['token' => 't1', 'state' => $this->state(5)])->assertOk();
+
+        $room->refresh();
+        $clock = $room->clock;
+        $now = microtime(true);
+        $clock['started_at'] = $now - 5;
+        $clock['p1_seen'] = $now - 70; // ikisi de terk (70 > 60+3)
+        $clock['p2_seen'] = $now - 80;
+        $room->clock = $clock;
+        $verBefore = (int) $room->version;
+        $room->save();
+
+        // Izleyici (token yok) poll eder -> ikisi-de-terk no-contest ile finalize edilir
+        $this->getJson('/api/rooms/CLKB')->assertOk();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        // NO-CONTEST: kimse kazanmaz/kaybetmez -> sonuc kolonlari null (puan/coin islenmez)
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+        // Surum ARTMALI -> izleyicinin surum-kapili poll'u 'finished'i yakalayip donmaktan cikar
+        $this->assertGreaterThan($verBefore, (int) $room->version);
+    }
+
+    // ---- Zamanlanmis supurme: kimsenin poll etmedigi bayat 'playing' oda -> finalize ----
+    public function test_reap_stale_finalizes_untouched_playing_room(): void
+    {
+        $room = $this->playingRoom('CLKR', 'normal', 5);
+        $this->putJson('/api/rooms/CLKR', ['token' => 't1', 'state' => $this->state(5)])->assertOk();
+        // 5 dk dokunulmamis (bayat: canli olsa updated_at ~1.5sn'de tazelenirdi) yap
+        Room::where('code', 'CLKR')->update(['updated_at' => now()->subMinutes(5)]);
+
+        $this->artisan('matches:reap-stale')->assertSuccessful();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        $this->assertNull($room->p1_result);
+        $this->assertNull($room->p2_result);
+    }
+
+    // ---- Zamanlanmis supurme: SONUCU BELLI ama finalize edilmemis oda -> gercek kazanani korur ----
+    public function test_reap_stale_preserves_decided_winner(): void
+    {
+        $room = $this->playingRoom('CLKW', 'normal', 1);
+        $state = $this->state(1);
+        $state['match']['score'] = ['white' => 1, 'black' => 0];
+        $state['gameEnd'] = ['winner' => 'white'];
+        $this->putJson('/api/rooms/CLKW', ['token' => 't1', 'state' => $state])->assertOk();
+        Room::where('code', 'CLKW')->update(['updated_at' => now()->subMinutes(5)]);
+
+        $this->artisan('matches:reap-stale')->assertSuccessful();
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('won', $room->p1_result);   // beyaz(p1) hedefe ulasti
+        $this->assertSame('lost', $room->p2_result);
+        $this->assertNotSame('ABANDON', $room->end_reason); // no-contest DEGIL: gercek galibiyet
+    }
 }
