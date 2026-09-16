@@ -23883,6 +23883,12 @@ select:-webkit-autofill {
 .mrv-board-stage .board {
   margin: 0;
 }
+/* Hane numaraları (1-24): oyun sahnesinde beyaz; MatReview overlay AÇIK (--bg) zeminde
+   o beyaz GÖRÜNMÜYORDU. Tema metin rengine çevir -> açık/koyu her temada okunur
+   (Pozisyon Analizi .analyzer-board ile aynı mantık). */
+.mrv-board-stage .pt-numbers {
+  color: var(--text);
+}
 /* Hamle okları (Hamle İnceleme): kaynak -> hedef, kibar/ince, kiremit; taşların ÜSTÜNDE
    ama tıklamayı engellemez. Konumlar JS ile ölçülür (bkz MatReview MoveArrows). */
 .mrv-arrows-host {
@@ -23930,10 +23936,20 @@ select:-webkit-autofill {
   font-variant-numeric: tabular-nums;
 }
 .mrv-pname {
-  font-size: 1.1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 1.3rem;
+}
+/* Sırası gelen oyuncu: ismi accent renk + bold + büyük ok -> kimin sırası olduğu NET belli. */
+.mrv-pname.turn {
+  color: var(--accent);
+  font-weight: 700;
 }
 .mrv-turn {
   color: var(--accent);
+  font-size: 1.55rem;
+  line-height: 1;
 }
 .mrv-pip {
   margin-left: auto;

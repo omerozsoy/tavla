@@ -288,10 +288,10 @@ export default function MatReview({
         <main className="mrv-board">
           <div className="mrv-player mrv-player-top">
             <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            <span className="mrv-pname">
-              {cur?.player === 'black' && <span className="mrv-turn">▶</span>} {nameB}
+            <span className={`mrv-pname ${cur?.player === 'black' ? 'turn' : ''}`}>
+              {cur?.player === 'black' && <span className="mrv-turn">▶</span>}
+              {nameB}
             </span>
-            {boardState && <span className="mrv-pip">{pipCount(boardState, 'black')}</span>}
           </div>
 
           {boardState ? (
@@ -328,10 +328,10 @@ export default function MatReview({
 
           <div className="mrv-player mrv-player-bot">
             <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            <span className="mrv-pname">
-              {cur?.player === 'white' && <span className="mrv-turn">▶</span>} {nameW}
+            <span className={`mrv-pname ${cur?.player === 'white' ? 'turn' : ''}`}>
+              {cur?.player === 'white' && <span className="mrv-turn">▶</span>}
+              {nameW}
             </span>
-            {boardState && <span className="mrv-pip">{pipCount(boardState, 'white')}</span>}
           </div>
         </main>
 
