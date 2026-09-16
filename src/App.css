@@ -5640,9 +5640,12 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
 .mrv-board-stage .bearoff.target {
   box-shadow: none;
 }
-/* secili tas - hafif parlaklik (cerceve yok) */
+/* secili tas - hafif parlama + yumusak glow (cerceve yok). NOT: eski brightness(1.15) skinli
+   pulun (marble/pearl) SVG dokusunu YIKAYIP duz beyaz gosteriyordu (surukleyince kaynak hane
+   "bozuluyor" sikayeti). Cozum: cok hafif brightness + beyaz drop-shadow -> hem vurgu var
+   hem doku korunur. */
 .point.selected .checkers {
-  filter: brightness(1.15);
+  filter: brightness(1.06) drop-shadow(0 0 6px color-mix(in srgb, #fff 55%, transparent));
 }
 
 /* ---- Bar ---- */
