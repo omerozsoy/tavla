@@ -735,10 +735,24 @@ function Board({
               // sürüklenen pul (ve içindeki sayı) board'daki takaslı renkle eşleşsin.
               className={`checker ${
                 swapStones ? (drag.player === 'white' ? 'black' : 'white') : drag.player
-              } dragging`}
+              } dragging${checkerSkin ? ' skinned' : ''}`}
               draggable={false}
               style={{ width: drag.w, height: drag.h }}
             >
+              {/* Seçili pul materyali sürüklerken de korunsun (board'daki Checker ile aynı;
+                  yoksa havada taşınan pul düz gradyana düşüyordu). Ton = görünen renge göre. */}
+              {checkerSkin && (
+                <CheckerSkin
+                  skin={checkerSkin}
+                  tone={
+                    (swapStones ? (drag.player === 'white' ? 'black' : 'white') : drag.player) === 'white'
+                      ? 'light'
+                      : 'dark'
+                  }
+                  size="100%"
+                  className="checker-skin-fill"
+                />
+              )}
               {drag.label != null && <span className="checker-count">{drag.label}</span>}
             </div>
           </div>,

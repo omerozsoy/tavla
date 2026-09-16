@@ -26,6 +26,21 @@
 }
 .cshop-item.active { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .cshop-prev { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+/* Varsayılan kart önizlemesi: düz (skinsiz) koyu+açık pul temsili. */
+.cshop-def-checker {
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  box-shadow: inset 0 2px 5px rgba(255, 255, 255, 0.35), inset 0 -4px 7px rgba(0, 0, 0, 0.28);
+}
+.cshop-def-checker.dark {
+  width: 56px; height: 56px;
+  background: radial-gradient(circle at 38% 30%, #6d6d6d, #262626 78%);
+}
+.cshop-def-checker.light {
+  width: 44px; height: 44px;
+  background: radial-gradient(circle at 38% 30%, #ffffff, #d6d1c7 80%);
+}
 .cshop-nm { font-size: 12px; text-align: center; line-height: 1.2; min-height: 2.4em; display: flex; align-items: center; }
 
 /* Profil sekmesinde inline (overlay yok): başlık sekme adıyla çakışır -> gizle, bakiyeyi sağa al. */

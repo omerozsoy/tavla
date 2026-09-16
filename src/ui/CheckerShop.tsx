@@ -56,17 +56,23 @@ export default function CheckerShop({
         </div>
         <p className="cshop-sub">Bir malzeme (pul tarzı) seç; renk seçmene gerek yok — seçtiğin doku, kullandığın tahtanın kendi pul renklerine otomatik uyar. Oyunda pulların bu malzemeyle görünür.</p>
 
-        {/* Varsayılan (board pulu) */}
-        <button
-          type="button"
-          className={`cshop-default ${selected == null ? 'active' : ''}`}
-          onClick={() => onSelect(null)}
-        >
-          <span className="cshop-default-dot" /> Varsayılan (düz tahta pulu)
-          {selected == null && <span className="cshop-badge">Seçili</span>}
-        </button>
-
         <div className="cshop-grid">
+          {/* Varsayılan (düz tahta pulu) — İLK kart; skin yok, board'un kendi pul rengi kullanılır. */}
+          <div className={`cshop-item ${selected == null ? 'active' : ''}`}>
+            <div className="cshop-prev cshop-prev-default">
+              <span className="cshop-def-checker dark" />
+              <span className="cshop-def-checker light" />
+            </div>
+            <div className="cshop-nm">Varsayılan</div>
+            <Button
+              variant={selected == null ? 'secondary' : 'default'}
+              size="default"
+              disabled={selected == null}
+              onClick={() => onSelect(null)}
+            >
+              {selected == null ? 'Seçili ✓' : 'Seç'}
+            </Button>
+          </div>
           {CHECKER_FINISHES.map((s) => {
             const owned = owns(s.id)
             const active = selected === s.id
