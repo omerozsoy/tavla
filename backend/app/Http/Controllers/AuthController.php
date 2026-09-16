@@ -1361,6 +1361,41 @@ class AuthController extends Controller
         return response()->json(['log' => $match->log]); // JSON string (istemci parse eder)
     }
 
+    /**
+     * HAKEM=gnubg: bir maçın hamle-hamle analizini GNUBG ile üretir (MatchReport/MatReview'in
+     * yediği LogEntry[] biçiminde). Sunucu maçın .mat'ini (match_results.log -> matText) kurar,
+     * gnubg reviewMatch ile per-karar loss/best/equity çıkarır. Böylece "Analiz" ekranları
+     * wildbg yerine gnubg gösterir. İstemci gnubg gelene kadar loader gösterir; hata olursa
+     * (servis yok / log yok) istemci eski (yerel log) yola düşebilir.
+     */
+    public function matchGnubgReview(Request $request, \App\Models\MatchResult $match)
+    {
+        if ($match->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+        $plies = max(0, min(3, (int) $request->query('plies', 2)));
+        if (empty($match->log)) {
+            return response()->json(['ok' => false, 'error' => 'no-log'], 404);
+        }
+        try {
+            $mat = $match->matText(); // match_results.log -> kanonik .mat
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'error' => 'mat-build', 'message' => $e->getMessage()], 422);
+        }
+        if (trim((string) $mat) === '') {
+            return response()->json(['ok' => false, 'error' => 'empty-mat'], 404);
+        }
+        $res = app(\App\Services\GnuBg\GnuBgClient::class)->reviewMatch($mat, $plies);
+        if (! is_array($res) || empty($res['ok'])) {
+            return response()->json([
+                'ok' => false, 'error' => 'review-failed',
+                'detail' => is_array($res) ? ($res['error'] ?? $res['exception'] ?? null) : null,
+            ], 503);
+        }
+
+        return response()->json($res); // {ok, matchLength, names, decisions, log: LogEntry[]}
+    }
+
     // Profil analizi: rating/coin gecmisi + mac-uzunluguna gore kazanma%/PR + WXP
     public function analytics(Request $request)
     {
