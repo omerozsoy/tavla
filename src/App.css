@@ -7521,11 +7521,11 @@ html.fs-active .account-bar {
   height: calc(56px + env(safe-area-inset-top));
   align-items: center;
   justify-content: center;
-  /* Cerceve/kutu YOK (kullanici istegi): border/golge/zemin yok -> yalniz ikon, bantla
-     tam kaynasir (etrafinda beyaz kutu gorunmez). */
+  /* Zemin: ust bar ile ayni yuzey (--card-bg -> acik temada BEYAZ) ki altindan kayan
+     icerik hamburger'in arkasindan gorunmesin (sabit hex yok, temaya uyar). */
   border: none;
   border-radius: var(--radius-lg);
-  background: transparent;
+  background: var(--card-bg);
   color: var(--text);
   cursor: pointer;
   box-shadow: none;
