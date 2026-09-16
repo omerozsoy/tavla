@@ -11594,6 +11594,14 @@ button.acct-row:hover:not(:disabled) {
   .analysis-rows {
     max-height: 30vh;
   }
+  /* Hane numaralari (13-24/12-1) ve pip (161/167) SABIT boyutta (1rem/1.05rem) -> kucuk mobil
+     board'da orantisiz DEV duruyordu. Board'a gore (--checker) olcekle. */
+  .analysis-detail .an-board-stage .pt-numbers {
+    font-size: calc(var(--checker) * 0.62);
+  }
+  .analysis-detail .an-board-stage .pip {
+    font-size: calc(var(--checker) * 0.82);
+  }
 }
 
 /* ============ Emil-polish: Hamle Analizi modali ============
