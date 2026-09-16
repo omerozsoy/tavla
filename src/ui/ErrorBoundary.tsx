@@ -12,6 +12,9 @@ interface Props {
 }
 interface State {
   hasError: boolean
+  // ChunkLoadError (deploy sonrasi bayat chunk) mi? Oyleyse KORKUTUCU "ters gitti" yerine
+  // sessiz "Guncelleniyor..." goster (otomatik reload zaten yeni surumu alacak).
+  isChunk: boolean
 }
 
 // Deploy sonrasi eski sekmede lazy chunk yuklenememesi (ChunkLoadError / "Failed to fetch
@@ -43,10 +46,10 @@ function canAutoReload(): boolean {
 // Hata yakalanir, dostane bir ekran + yenile butonu gosterilir. Ayrica deploy-sonrasi
 // chunk hatasi icin TEK SEFERLIK guvenli otomatik reload uygulanir.
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false }
+  state: State = { hasError: false, isChunk: false }
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true }
+  static getDerivedStateFromError(error: unknown): State {
+    return { hasError: true, isChunk: isChunkLoadError(error) }
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
@@ -71,6 +74,24 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       // Granular fallback verilmisse onu goster (fallback={null} -> bosluk).
       if (this.props.fallback !== undefined) return this.props.fallback
+      // Deploy sonrasi bayat chunk (ChunkLoadError): componentDidCatch otomatik reload edecek.
+      // KORKUTUCU "Bir seyler ters gitti" YERINE sessiz "Guncelleniyor..." goster -> kullanici
+      // sadece kisa bir yenileme gorur, hata sanmaz. (Otomatik reload kalkanla engellenirse
+      // manuel "Yenile" butonu yine burada.)
+      if (this.state.isChunk) {
+        return (
+          <div className="error-boundary error-boundary-updating" role="status" aria-live="polite">
+            <div className="error-boundary-card">
+              <div className="eb-spinner" aria-hidden="true" />
+              <p>Güncelleniyor…</p>
+              <p className="error-boundary-sub">Yeni sürüm yükleniyor. / Updating to the latest version.</p>
+              <Button variant="default" onClick={this.handleReload}>
+                Yenile / Reload
+              </Button>
+            </div>
+          </div>
+        )
+      }
       return (
         <div className="error-boundary" role="alert">
           <div className="error-boundary-card">
