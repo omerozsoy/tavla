@@ -12003,9 +12003,31 @@ button.acct-row:hover:not(:disabled) {
 .setup-split .solo-grid {
   grid-template-columns: repeat(3, 1fr); /* 9 seviye -> 3'lu yan yana, 3 satir */
 }
+/* Secili bahis NET gorunsun: kalin aksan cerceve + aksan halkasi + aksan-tonlu zemin. */
 .solo-tile.selected {
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 40%, transparent);
+  border-width: 2px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 4px 14px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* Secili kart etiket/tutar da aksana donsun (secim vurgusu artar). */
+.solo-tile.selected .solo-lvl,
+.solo-tile.selected .solo-stake {
+  color: var(--accent);
+}
+/* Secilmemis (kilitsiz) kartlar hafif geri cekilsin -> secililer daha da one ciksin. */
+.solo-tile:not(.selected):not(.locked) {
+  opacity: 0.72;
+}
+.solo-tile:not(.selected):not(.locked):hover {
+  opacity: 1;
+}
+/* Onay rozeti daha belirgin: beyaz cerceveli aksan disk. */
+.solo-check {
+  border: 2px solid var(--card-bg);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 /* Coklu secim onay rozeti (sag ust) — birden fazla bahis secilebildigi belli olsun */
 .solo-tile {
