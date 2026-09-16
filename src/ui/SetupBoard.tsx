@@ -165,22 +165,42 @@ export default function SetupBoard({
   return (
     <div className="setup-board">
       <svg viewBox={`0 0 ${W} ${H}`} width="100%" className="setup-board-svg">
-        {/* Agac damari deseni (wood): ince dikey damar cizgileri. Zemin + haneler bunu kullanir. */}
-        {wood && (
-          <defs>
+        <defs>
+          {/* Agac damari deseni (wood): ince dikey damar cizgileri. Zemin + haneler bunu kullanir. */}
+          {wood && (
             <pattern id="sb-wood" width="6" height="8" patternUnits="userSpaceOnUse">
               <rect width="1" height="8" fill="rgba(0,0,0,0.22)" />
               <rect x="3" width="0.7" height="8" fill="rgba(255,255,255,0.06)" />
             </pattern>
-          </defs>
-        )}
+          )}
+          {/* Ic oyun alani KOSELERI YUVARLAK: haneler/bar bu yuvarlak dikdortgene klipli.
+              Aksi halde sivri hane tabanlari dis (yuvarlak) cerceve koselerine tasip
+              "kotu kose" veriyordu -> klip ile alan koseleri cerceveyle uyumlu yuvarlanir. */}
+          <clipPath id="sb-field">
+            <rect x={PAD} y={PAD} width={W - 2 * PAD} height={H - 2 * PAD} rx="9" />
+          </clipPath>
+        </defs>
         <rect x="0" y="0" width={W} height={H} rx="16" fill={panel} />
         {/* Zemin agac damari (kullanicinin okla gosterdigi: haneler ARASI koyu zemin dokulu) */}
         {wood && <rect x="0" y="0" width={W} height={H} rx="16" fill="url(#sb-wood)" />}
+        {/* Ic alan icerigi (haneler + orta bar) yuvarlak-kose alana klipli */}
+        <g clipPath="url(#sb-field)">
+          {/* orta bar */}
+          <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
+          {tris}
+        </g>
+        {/* Ic alan cercevesi: yuvarlak-kose ince cizgi -> alan/cerceve gecisi temiz */}
+        <rect
+          x={PAD}
+          y={PAD}
+          width={W - 2 * PAD}
+          height={H - 2 * PAD}
+          rx="9"
+          fill="none"
+          stroke="rgba(0,0,0,0.14)"
+          strokeWidth="1.5"
+        />
         <rect x="0" y="0" width={W} height={H} rx="16" fill="none" stroke="rgba(0,0,0,0.35)" strokeWidth="2" />
-        {/* orta bar */}
-        <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
-        {tris}
         {discs}
         {/* İki zar da AYNI: gövde=cream, pip=checker. (Eskiden sağ zarın pip'i üçgen rengi
             'a' idi -> Siyah pul takasında koyu zar üstünde kırmızı pip okunmuyordu/uyumsuzdu.
