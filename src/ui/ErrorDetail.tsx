@@ -1,11 +1,16 @@
 import { createPortal } from 'react-dom'
-import MiniBoard from './MiniBoard'
+import Board from './Board'
+import DiceRow from './Dice'
+import { MoveArrows } from './MatReview'
+import { useBoardDir } from './boardDirection'
+import { useSwapStones } from './pieceColors'
+import { pipCount } from '../engine/evaluate'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import type { EJEntry, EJSeverity } from '../api'
-import type { Player } from '../engine/types'
+import type { GameState, Player } from '../engine/types'
 
 const SEV_CLS: Record<EJSeverity, string> = { inaccuracy: 'ok', mistake: 'bad', blunder: 'blunder' }
 
@@ -21,6 +26,32 @@ export default function ErrorDetail({
 }) {
   const { t } = useT()
   useEscape(onClose)
+  const [boardDir] = useBoardDir()
+  const [swapStones] = useSwapStones()
+
+  // Tam-tahta gösterimi (MatReview/MatchReport ile aynı sistem: Board + kaynak→hedef okları +
+  // hayalet pullar). En iyi hamlenin adımları gösterilir (bestSteps).
+  const pl: Player = (entry.player as Player) ?? 'white'
+  const steps = entry.bestSteps ?? []
+  const boardState: GameState | null = entry.position
+    ? {
+        points: entry.position.points,
+        bar: entry.position.bar,
+        off: entry.position.off,
+        turn: pl,
+        dice: entry.dice ?? [],
+        diceUsed: [],
+      }
+    : null
+  const froms = new Set<number | 'bar'>()
+  const tos = new Set<number | 'off'>()
+  for (const s of steps) {
+    froms.add(s.from)
+    tos.add(s.to)
+  }
+  const diceFaces = (entry.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
+  const diceRow = boardState && diceFaces.length ? <DiceRow faces={diceFaces} owner={pl} /> : null
+  const whiteBottom = pl === 'white'
 
   const sevLabel =
     entry.severity === 'inaccuracy'
@@ -47,14 +78,30 @@ export default function ErrorDetail({
         </div>
 
         <div className="ej-detail-board">
-          {entry.position ? (
-            <MiniBoard
-              state={entry.position}
-              steps={entry.bestSteps ?? []}
-              player={(entry.player as Player) ?? 'white'}
-              dice={entry.dice ?? undefined}
-              flip={entry.player === 'black'}
-            />
+          {boardState ? (
+            <div className="mrv-board-stage an-board-stage">
+              <Board
+                state={boardState}
+                selectableFroms={froms}
+                targets={tos}
+                selectedFrom={null}
+                onSelectFrom={() => {}}
+                onSelectTarget={() => {}}
+                onDragFrom={() => {}}
+                pipTop={pipCount(boardState, 'black')}
+                pipBottom={pipCount(boardState, 'white')}
+                cube={{ value: 1, owner: null }}
+                flip={false}
+                mirror={boardDir === 'left'}
+                swapStones={swapStones}
+                centerLeft={whiteBottom ? null : diceRow}
+                centerRight={whiteBottom ? diceRow : null}
+              />
+              <MoveArrows
+                steps={steps}
+                dep={`${entry.id}:${boardDir}:${swapStones}:${steps.map((s) => `${s.from}>${s.to}`).join(',')}`}
+              />
+            </div>
           ) : (
             <div className="bl-card-noboard">
               <Icon name="alert" size={22} />
