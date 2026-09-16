@@ -25,7 +25,7 @@ const loadSaved = (): Saved | null => {
 // Mat Analiz sayfası: kullanıcı .mat maçı yükler -> TavlaTV motoru maçı hamle-hamle analiz eder
 // -> tam-ekran görüntüleyici (MatReview) açılır ve ÜSTÜNDE "Analiz Tamamlandı" özet popup'ı
 // gösterilir. Popup kapatılınca arkadaki görüntüleyici kalır (HedgeHog akışı).
-export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
+export default function MatAnalyzer({ onClose, currentName }: { onClose: () => void; currentName?: string }) {
   const { t } = useT()
   const notify = useToast()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -101,7 +101,7 @@ export default function MatAnalyzer({ onClose }: { onClose: () => void }) {
   // Analiz sonrası: tam-ekran görüntüleyici + açılış özet popup'ı.
   if (reviewLog) {
     return (
-      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} onClose={reset} />
+      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} currentName={currentName} onClose={reset} />
     )
   }
 

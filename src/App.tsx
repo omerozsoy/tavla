@@ -7157,7 +7157,7 @@ export default function App() {
       )}
       {matAnalyzerOpen && (
         <div className="register-overlay modal page" role="dialog" aria-modal="true">
-          <MatAnalyzer onClose={() => setMatAnalyzerOpen(false)} />
+          <MatAnalyzer onClose={() => setMatAnalyzerOpen(false)} currentName={profile.nickname} />
         </div>
       )}
     </>

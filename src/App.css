@@ -24053,6 +24053,10 @@ select:-webkit-autofill {
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
+/* "Rakibin hamlesi": senin hamlenden ayırt edilsin -> accent yerine nötr/muted. */
+.mrv-c-you.opp {
+  background: var(--muted);
+}
 .mrv-c-no {
   color: var(--muted);
   text-align: center;
