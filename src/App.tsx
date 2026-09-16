@@ -6071,6 +6071,16 @@ export default function App() {
             {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
           </Button>
           <LangMenu />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="acct-logout-btn [&_svg]:size-[22px]!"
+            title={t('auth.logout')}
+            aria-label={t('auth.logout')}
+            onClick={handleLogout}
+          >
+            <Icon name="logout" size={22} />
+          </Button>
         </div>
         {/* MOBIL (<=900px): SADECE avatar + ad. Tiklayinca dropdown. Desktopta gizli. */}
         <div className="account-menu acct-mobile" ref={acctMenuRef}>
@@ -6239,6 +6249,20 @@ export default function App() {
                   ))}
                 </span>
               </div>
+
+              {/* Cikis Yap — dropdown'un en altinda, ayrik (danger tonu) */}
+              <button
+                type="button"
+                className="acct-row acct-row-logout"
+                role="menuitem"
+                onClick={() => {
+                  setAcctMenuOpen(false)
+                  handleLogout()
+                }}
+              >
+                <Icon name="logout" size={18} className="acct-row-ic" />
+                <span className="acct-row-l">{t('auth.logout')}</span>
+              </button>
             </div>
           )}
         </div>
