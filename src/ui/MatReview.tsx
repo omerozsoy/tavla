@@ -77,12 +77,14 @@ export default function MatReview({
   names,
   matchLength,
   summary,
+  currentName,
   onClose,
 }: {
   log: LogEntry[]
   names: string[] | null
   matchLength: number | null
   summary?: MatSummary | null
+  currentName?: string
   onClose: () => void
 }) {
   const { t } = useT()
@@ -90,6 +92,10 @@ export default function MatReview({
   const [showSum, setShowSum] = useState(!!summary)
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
   const nameB = names?.[1] || t('mrv.black')
+  // "Sen" = giriş yapan kullanıcı hangi renkse. Ad eşleşmezse (başkasının maçı / misafir)
+  // alt-taraftaki (beyaz, ekranda altta gösterilen birincil) "sen" varsayılır. Oynanan hamle
+  // "sen"e aitse "Senin hamlen", rakibe aitse "Rakibin hamlesi".
+  const myColor: Player = currentName && currentName === nameB ? 'black' : 'white'
 
   const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('all')
   const [who, setWho] = useState<'both' | 'white' | 'black'>('both')
@@ -383,7 +389,12 @@ export default function MatReview({
                   <span className="mrv-c-no">{ci + 1}</span>
                   <span className="mrv-c-move">
                     {c.notation}
-                    {isPlayed && <span className="mrv-c-you">{t('mrv.yourMove')}</span>}
+                    {isPlayed &&
+                      (cur?.player === myColor ? (
+                        <span className="mrv-c-you">{t('mrv.yourMove')}</span>
+                      ) : (
+                        <span className="mrv-c-you opp">{t('mrv.oppMove')}</span>
+                      ))}
                   </span>
                   <span className="mrv-c-eq">
                     {ci === 0 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}` : `(${diff.toFixed(3)})`}
