@@ -8605,7 +8605,7 @@ button.acct-row:hover:not(:disabled) {
       'main';
     /* Mobilde bar ile icerik arasindaki 36px desktop boslugu (base .app.lobby
        row-gap) kompakt bar altinda "aciklanamayan bosluk" gibi duruyordu -> kucult. */
-    row-gap: 10px;
+    row-gap: 2px;
   }
   /* Mobilde de TAM wordmark gozuksun (kompakt sembol degil); sigmasi icin
      inline font-size'i (38px) ez -> daha kucuk olcek. */
