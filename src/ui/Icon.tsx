@@ -103,6 +103,7 @@ import {
   Smiley,
   PaperPlaneRight,
   Cherries,
+  Megaphone,
 } from '@phosphor-icons/react'
 
 export type IconName =
@@ -204,6 +205,7 @@ export type IconName =
   | 'youtube'
   | 'mail'
   | 'smiley-sad'
+  | 'megaphone'
 
 // Isim -> Phosphor bileseni (temiz outline icin weight="regular").
 const MAP: Record<IconName, PhosphorIcon> = {
@@ -305,6 +307,7 @@ const MAP: Record<IconName, PhosphorIcon> = {
   'smiley-sad': SmileySad,
   smiley: Smiley,
   'paper-plane-right': PaperPlaneRight,
+  megaphone: Megaphone,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
