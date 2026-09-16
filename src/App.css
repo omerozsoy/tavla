@@ -2175,20 +2175,56 @@ button[aria-disabled='true'],
 .mh-card .mh-chev.chev-open {
   transform: rotate(180deg);
 }
+/* --- Mobil redesign: 3-kolon skorbord (rakip|skor|ben) dar ekranda ortadaki skor yan
+   kolonlarin etiketleriyle CAKISIYORDU. Mobilde DIKEY stack: rakip blogu / skor / ben blogu;
+   her blok tam-genislik (avatar solda + isim + etiketler yatay serit). Asla cakismaz. */
 @media (max-width: 560px) {
-  .mh-card .mh-ava {
-    width: 32px;
-    height: 32px;
-    font-size: 0.9rem;
-  }
-  .mh-card .mh-nm {
-    font-size: 0.9rem;
-  }
-  .mh-card .mh-score {
-    font-size: 1.25rem;
+  .mh-card .mh-board {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
   }
   .mh-card .mh-team {
-    gap: 7px;
+    width: 100%;
+    gap: 9px;
+  }
+  /* "Ben" tarafi da avatar SOLDA (rakip ile ayni hiza) — DOM'da avatar sonda -> row-reverse */
+  .mh-card .mh-me {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+  .mh-card .mh-me .mh-info {
+    align-items: flex-start;
+    text-align: left;
+  }
+  .mh-card .mh-me .mh-tags {
+    align-items: center;
+  }
+  /* Etiketler (PR · sans · rating) DIKEY degil YATAY serit -> daha kompakt, sigar */
+  .mh-card .mh-tags {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+  /* Skor: iki blok ARASINDA, ortada, yatay kompakt (skor + format yan yana) */
+  .mh-card .mh-vs {
+    flex-direction: row;
+    align-items: baseline;
+    align-self: center;
+    gap: 10px;
+    padding: 1px 0;
+  }
+  .mh-card .mh-ava {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+  .mh-card .mh-nm {
+    font-size: 1rem;
+  }
+  .mh-card .mh-score {
+    font-size: 1.35rem;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -7877,7 +7913,6 @@ html.fs-active .account-bar {
     margin-bottom: 6px;
     min-height: 44px;
     border: none;
-    border-bottom: 1px solid var(--border);
     background: none;
     cursor: pointer;
     transition: opacity 0.15s;
@@ -11550,6 +11585,12 @@ button.acct-row:hover:not(:disabled) {
     flex: none;
     width: 100%;
   }
+  /* Kolon (column) yön + base align-items:flex-start -> detail'e width verilmezse içeriğe
+     büzülüp 0 genişlik olur (container-type 100cqw bozulur, tam-board TAŞAR). Tam genişlik ver. */
+  .analysis-detail {
+    flex: none;
+    width: 100%;
+  }
   .analysis-rows {
     max-height: 30vh;
   }
@@ -12017,8 +12058,35 @@ button.acct-row:hover:not(:disabled) {
   }
 }
 @media (max-width: 560px) {
+  /* Mobil: 3'lu dizilim + kompakt tile'lar (kullanici istegi: "3er 3er, ufak"). */
   .setup-split .solo-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .solo-tile {
+    padding: 6px 4px;
+    gap: 3px;
+  }
+  .solo-lvl {
+    font-size: 0.58rem;
+    letter-spacing: 0.03em;
+  }
+  .solo-stake {
+    font-size: 0.72rem;
+    gap: 2px;
+  }
+  .solo-dots {
+    gap: 2px;
+  }
+  .solo-dots > i {
+    width: 5px;
+    height: 5px;
+  }
+  .solo-check {
+    top: 3px;
+    right: 3px;
+    width: 14px;
+    height: 14px;
   }
 }
 
