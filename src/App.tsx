@@ -197,6 +197,7 @@ import type { ContentType } from './api'
 import Shop from './ui/Shop'
 import LuckyWheel from './ui/LuckyWheel'
 import DiceSlot from './ui/DiceSlot'
+import ExcuseMachine from './ui/ExcuseMachine'
 import CheckerShop from './ui/CheckerShop'
 import { CHECKER_BY_ID } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
@@ -658,6 +659,7 @@ export default function App() {
   const [shopOpen, setShopOpen] = useState(false) // magaza modali
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
+  const [excusesOpen, setExcusesOpen] = useState(false) // Bahane Makinesi modali (salt eğlence)
   const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
   // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
@@ -765,6 +767,8 @@ export default function App() {
         ? 'sans-carki'
         : diceSlotOpen
           ? 'zar-slotu'
+        : excusesOpen
+          ? 'bahane-makinesi'
         : checkerShopOpen
           ? 'pul-tasarimlari'
         : frameGalleryOpen
@@ -960,6 +964,9 @@ export default function App() {
           break
         case 'zar-slotu':
           setDiceSlotOpen(true)
+          break
+        case 'bahane-makinesi':
+          setExcusesOpen(true)
           break
         case 'pul-tasarimlari':
           setCheckerShopOpen(true)
@@ -6307,6 +6314,7 @@ export default function App() {
     setShopOpen(false)
     setLuckyWheelOpen(false)
     setDiceSlotOpen(false)
+    setExcusesOpen(false)
     setCheckerShopOpen(false)
     setCartOpen(false)
     setCheckoutOpen(false)
@@ -6404,6 +6412,7 @@ export default function App() {
     onShop: () => goPage(() => setShopOpen(true)),
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
+    onExcuses: () => goPage(() => setExcusesOpen(true)),
     onCheckers: () => goPage(() => setCheckerShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
@@ -6456,6 +6465,7 @@ export default function App() {
     leaderboard: menuProps.onLeaderboard,
     luckywheel: menuProps.onLuckyWheel,
     diceslot: menuProps.onDiceSlot,
+    excuses: menuProps.onExcuses,
     checkers: menuProps.onCheckers,
     shop: menuProps.onShop,
     friends: menuProps.onFriends,
@@ -6645,6 +6655,7 @@ export default function App() {
     shopOpen ||
     luckyWheelOpen ||
     diceSlotOpen ||
+    excusesOpen ||
     productsOpen ||
     myOrdersOpen ||
     cartOpen ||
@@ -7046,6 +7057,7 @@ export default function App() {
           onUser={(su) => setUser(su)}
         />
       )}
+      {excusesOpen && <ExcuseMachine onClose={() => setExcusesOpen(false)} />}
       {checkerShopOpen && user && (
         <CheckerShop
           unlocks={user.unlocks ?? []}
@@ -7486,6 +7498,19 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
+            {/* Bahane Makinesi ana-sayfa CTA'sı (salt eğlence) */}
+            <div className="home-excuse-cta">
+              <button
+                type="button"
+                className="home-excuse-btn"
+                onClick={menuProps.onExcuses}
+                aria-label={t('exc.homeCta')}
+              >
+                <Icon name="megaphone" size={20} />
+                <span className="hx-label">{t('exc.homeCta')}</span>
+              </button>
+              <span className="hx-hint">{t('exc.homeCtaHint')}</span>
+            </div>
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}

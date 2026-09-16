@@ -42,6 +42,9 @@ export const PAGES: PageDef[] = [
   // sol menude GIZLI (inMenu:false) ama /sans-carki + /zar-slotu URL'leri + top-bar ikonlari calisir. ---
   { key: 'luckywheel', slug: 'sans-carki', labelKey: 'lw.menu', icon: 'spinner-ball', group: 'fun', hideInGame: true, inMenu: false },
   { key: 'diceslot', slug: 'zar-slotu', labelKey: 'ds.menu', icon: 'slot', group: 'fun', hideInGame: true, inMenu: false },
+  // Bahane Makinesi: salt eğlence (coin/ödül yok, giriş gerekmez). Sol menüde GÖRÜNÜR
+  // (bu sayede "EĞLENCE" grup başlığı çizilir); /bahane-makinesi derin-link + tam-ekran modal.
+  { key: 'excuses', slug: 'bahane-makinesi', labelKey: 'exc.menu', icon: 'megaphone', group: 'fun', hideInGame: true },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },

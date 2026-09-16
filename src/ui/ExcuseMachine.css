@@ -1,0 +1,388 @@
+/* ================================================================================
+   BAHANE MAKİNESİ — DEV DİKEY MEKANİK TAMBUR ("Big Wheel" his)
+   Koyu premium kabin (Royal Navy + altın trim), yatay eksende dönen fiziksel silindir.
+   Tambur SAHNEDİR -> derinlik/gölge/perspektif burada serbest. Casino/slot değil.
+
+   3D: .em-viewport perspektif verir; .em-drum preserve-3d; her .em-panel silindir
+   yüzeyine rotateX + translateZ ile yerleşir (inline transform, JS'ten). Geometri:
+   --em-panel-h JS PANEL_H (82) ile BİREBİR aynı olmalı.
+   ============================================================================== */
+
+.em-overlay {
+  /* modal backdrop .register-overlay'den gelir */
+}
+
+/* ---- Kabin kartı (koyu premium atmosfer; DiceSlot ile aynı dil) ---- */
+.em-card {
+  max-width: 760px;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  position: relative;
+  color: var(--med-ivory);
+  border: none;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--med-navy-700) 60%, transparent) 0%, transparent 58%),
+    radial-gradient(90% 60% at 50% 38%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--med-navy-800), var(--med-navy-900));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--coin-gold) 38%, transparent),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75);
+  --gold: var(--coin-gold);
+  --gold-deep: color-mix(in srgb, var(--coin-gold) 55%, #000);
+  --chrome-hi: #eef3f8;
+  --chrome-lo: #7c8794;
+  --ivory-dim: color-mix(in srgb, var(--med-ivory) 62%, transparent);
+}
+
+/* KRİTİK: .register-overlay.page full-page reset'i (App.css) kartın koyu kabin bg'sini,
+   altın çerçevesini ve max-width'ini EZER. (0,4,0) seçici onu yener (DiceSlot ile aynı desen). */
+.register-overlay.page.em-overlay > .em-card {
+  max-width: 760px;
+  margin: 0; /* sola dayalı (diğer sayfalarla aynı) */
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--radius-xl);
+  background:
+    radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--med-navy-700) 60%, transparent) 0%, transparent 58%),
+    radial-gradient(90% 60% at 50% 38%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 62%),
+    linear-gradient(180deg, var(--med-navy-800), var(--med-navy-900));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--coin-gold) 38%, transparent),
+    0 30px 70px -20px rgba(0, 0, 0, 0.75);
+}
+
+.em-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 40;
+  color: var(--med-ivory) !important;
+  background: color-mix(in srgb, #000 34%, transparent) !important;
+  border-color: color-mix(in srgb, var(--gold) 40%, transparent) !important;
+}
+
+/* ---- Sahne: dikey yığın, ortalanmış (büyük çark ana obje) ---- */
+.em-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 22px;
+  padding: 30px 28px 34px;
+  text-align: center;
+}
+
+.em-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 520px;
+}
+.em-title {
+  margin: 0;
+  font-family: var(--tv-font-display);
+  font-size: clamp(22px, 4.4vw, 30px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--gold);
+  text-shadow: 0 0 16px color-mix(in srgb, var(--gold) 28%, transparent);
+}
+.em-subtitle {
+  margin: 0;
+  font-size: clamp(13px, 2.6vw, 15px);
+  line-height: 1.5;
+  color: var(--ivory-dim);
+}
+
+/* ================================================================================
+   TAMBUR
+   ============================================================================== */
+.em-machine {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Üst-merkez sabit gösterge ▼ (hareket etmez; tambur altında döner) */
+.em-pointer {
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 20px solid var(--gold);
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.55));
+  margin-bottom: -6px;
+  z-index: 30;
+}
+
+/* Silindir muhafazası (mekanik çerçeve + krom trim) */
+.em-frame {
+  position: relative;
+  width: 100%;
+  border-radius: 20px;
+  padding: 6px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--gold) 60%, #3a2f16) 0%, var(--gold-deep) 50%, #201a0c 100%);
+  box-shadow:
+    inset 0 2px 3px color-mix(in srgb, #fff 22%, transparent),
+    inset 0 -3px 8px rgba(0, 0, 0, 0.55),
+    0 18px 40px -18px rgba(0, 0, 0, 0.8);
+  overflow: hidden;
+}
+
+/* Silindirin görünür penceresi (3D perspektif burada) */
+.em-viewport {
+  --em-panel-w: min(420px, 100%);
+  position: relative;
+  height: 300px;
+  width: 100%;
+  border-radius: 15px;
+  overflow: hidden;
+  perspective: 900px;
+  perspective-origin: 50% 50%;
+  background:
+    radial-gradient(120% 100% at 50% 50%, #2b2721 0%, #16130f 78%, #100d0a 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+    inset 0 14px 26px rgba(0, 0, 0, 0.7),
+    inset 0 -14px 26px rgba(0, 0, 0, 0.7);
+}
+
+/* Silindir gövdesi — merkez çizgide, 3D bağlam */
+.em-drum {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 0;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Silindir yüzeyindeki bahane paneli */
+.em-panel {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: var(--em-panel-w);
+  height: var(--em-panel-h);
+  margin-left: calc(var(--em-panel-w) / -2);
+  margin-top: calc(var(--em-panel-h) / -2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 22px;
+  box-sizing: border-box;
+  backface-visibility: hidden;
+  transform-origin: center center;
+  border-top: 1px solid color-mix(in srgb, var(--gold) 24%, transparent);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.55);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--med-navy-700) 78%, #fff 5%) 0%, var(--med-navy-800) 52%, var(--med-navy-900) 100%);
+}
+
+.em-panel-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(14px, 3.4vw, 18px);
+  line-height: 1.28;
+  font-weight: 500;
+  color: color-mix(in srgb, var(--med-ivory) 78%, transparent);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Merkez (seçili) panel: en büyük / en parlak / en net */
+.em-panel.is-center {
+  border-top-color: color-mix(in srgb, var(--gold) 55%, transparent);
+}
+.em-panel.is-center .em-panel-text {
+  font-size: clamp(17px, 4.2vw, 23px);
+  font-weight: 700;
+  color: var(--med-ivory);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--gold) 22%, transparent);
+}
+
+/* Yüksek hızda hafif motion-blur hissi */
+.em-drum.is-fast .em-panel-text {
+  filter: blur(0.7px);
+}
+
+/* Merkez seçim bandı (sabit; ışıklı çerçeve) */
+.em-selector {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 50%;
+  height: var(--em-panel-h, 82px);
+  transform: translateY(-50%);
+  pointer-events: none;
+  border-radius: 10px;
+  border-top: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--gold) 70%, transparent);
+  box-shadow:
+    inset 0 0 22px color-mix(in srgb, var(--gold) 14%, transparent),
+    0 0 18px color-mix(in srgb, var(--gold) 12%, transparent);
+  z-index: 15;
+}
+
+/* Üst/alt housing fade — paneller muhafazaya doğru silinsin (silindir hissi) */
+.em-frame::before,
+.em-frame::after {
+  content: '';
+  position: absolute;
+  left: 6px;
+  right: 6px;
+  height: 34%;
+  pointer-events: none;
+  z-index: 12;
+}
+.em-frame::before {
+  top: 6px;
+  background: linear-gradient(180deg, #100d0a 0%, color-mix(in srgb, #100d0a 55%, transparent) 55%, transparent 100%);
+}
+.em-frame::after {
+  bottom: 6px;
+  background: linear-gradient(0deg, #100d0a 0%, color-mix(in srgb, #100d0a 55%, transparent) 55%, transparent 100%);
+}
+
+/* Cam parlaklığı (hafif, kontrollü) */
+.em-glare {
+  position: absolute;
+  inset: 6px;
+  border-radius: 15px;
+  pointer-events: none;
+  z-index: 14;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.09) 0%, transparent 26%, transparent 74%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+/* Ekran okuyucu duyurusu (görsel gizli) */
+.em-machine .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ================================================================================
+   KONTROL + SONUÇ
+   ============================================================================== */
+.em-controls {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.em-spin {
+  min-width: 220px;
+  height: 50px !important;
+  font-size: 16px !important;
+  letter-spacing: 0.06em;
+  font-weight: 700 !important;
+}
+
+.em-result {
+  width: 100%;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--gold) 26%, transparent);
+  background: color-mix(in srgb, #000 26%, transparent);
+  animation: em-pop 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes em-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.em-result-label {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ivory-dim);
+}
+.em-result-text {
+  margin: 0;
+  font-family: var(--tv-font-display);
+  font-size: clamp(18px, 4.6vw, 24px);
+  line-height: 1.32;
+  font-weight: 700;
+  color: var(--med-ivory);
+}
+.em-result-rarity {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.em-rarity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.em-result-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ================================================================================
+   RESPONSIVE
+   ============================================================================== */
+@media (max-width: 560px) {
+  .em-stage {
+    padding: 24px 16px 28px;
+    gap: 18px;
+  }
+  .em-viewport {
+    height: 256px;
+  }
+  .em-machine {
+    max-width: 100%;
+  }
+  .em-spin {
+    min-width: 180px;
+    width: 100%;
+  }
+}
+
+/* Erişilebilirlik: hareketi azalt (blur + pop kapalı; kısa geçiş JS'te) */
+@media (prefers-reduced-motion: reduce) {
+  .em-drum.is-fast .em-panel-text {
+    filter: none;
+  }
+  .em-result {
+    animation: none;
+  }
+}
