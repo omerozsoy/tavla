@@ -13,7 +13,6 @@ import { applyStep } from '../engine/moves'
 import { divisionOfPR } from '../badges'
 import type { LogEntry } from './MatchReport'
 import type { GameState, Step, Player } from '../engine/types'
-import { explicitNotation } from '../engine/notation'
 
 // Mat Analiz FAZ 2: yüklenen .mat maçının HAMLE-HAMLE görüntüleyicisi (HedgeHog benzeri
 // tam-ekran üç panel): sol = hamle listesi (oyuncu + hata filtreli), orta = tahta + oyuncu
@@ -277,7 +276,7 @@ export default function MatReview({
                     ) : (
                       <span className="mrv-dice mrv-dice-empty" />
                     )}
-                    <span className="mrv-move">{explicitNotation(e.playedSteps, e.player, e.notation)}</span>
+                    <span className="mrv-move">{e.notation}</span>
                     {!e.cube && e.loss >= 0.08 ? (
                       <span className="mrv-mark blunder">⁉</span>
                     ) : !e.cube && e.loss >= 0.02 ? (
@@ -389,7 +388,7 @@ export default function MatReview({
                 >
                   <span className="mrv-c-no">{ci + 1}</span>
                   <span className="mrv-c-move">
-                    {explicitNotation(c.steps, cur!.player, c.notation)}
+                    {c.notation}
                     {isPlayed &&
                       (cur?.player === myColor ? (
                         <span className="mrv-c-you">{t('mrv.yourMove')}</span>
@@ -475,7 +474,7 @@ function arrowPath(s: ArrowSeg, r: number): string {
   return `M${aL} Q${cL} ${nL} L${hL} L${tipx},${tipy} L${hR} L${nR} Q${cR} ${aR} Z`
 }
 
-function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
+export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
   const hostRef = useRef<HTMLDivElement>(null)
   const [segs, setSegs] = useState<ArrowSeg[]>([])
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })

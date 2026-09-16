@@ -8,7 +8,6 @@ import { Die } from './Dice'
 import { divisionOfPR } from '../badges'
 import { buildMatXg, type GameResultInput } from '../matExport'
 import { fetchGameLogMat } from '../api'
-import { explicitNotation } from '../engine/notation'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -269,7 +268,7 @@ export default function MatchReport({
               </div>
               {worst && worst.loss > 0.001 && (
                 <div className="rep-worst">
-                  {t('rep.worst')}: <code>{explicitNotation(worst.playedSteps, worst.player, worst.notation)}</code> → <code>{explicitNotation(worst.steps, worst.player, worst.best)}</code> (
+                  {t('rep.worst')}: <code>{worst.notation}</code> → <code>{worst.best}</code> (
                   {worst.loss.toFixed(3)})
                 </div>
               )}
@@ -350,7 +349,7 @@ export default function MatchReport({
                             <Die value={e.dice[1]} owner={e.player} used={false} />
                           </span>
                         )}
-                        <span className="ar-move">{explicitNotation(e.playedSteps, e.player, e.notation)}</span>
+                        <span className="ar-move">{e.notation}</span>
                         {e.loss >= 0.005 && <span className="ar-loss">-{e.loss.toFixed(3)}</span>}
                       </button>
                     )
@@ -367,7 +366,7 @@ export default function MatchReport({
                     <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
                       {candIdx < 0 || candIdx === playedIdx
                         ? t('rep.yourMove')
-                        : `#${candIdx + 1} · ${explicitNotation(cur.cands?.[candIdx]?.steps, cur.player, cur.cands?.[candIdx]?.notation)}`}
+                        : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
                     </div>
                     {winPct(cur.probs) != null && (
                       <div className="an-winbar" title={t('rep.winChance')}>
@@ -388,7 +387,7 @@ export default function MatchReport({
                             onClick={() => setCandIdx(ci)}
                           >
                             <span className="an-rank">{ci + 1}</span>
-                            <span className="an-cmove">{explicitNotation(c.steps, cur.player, c.notation)}</span>
+                            <span className="an-cmove">{c.notation}</span>
                             <span className={`an-eq ${diff < -0.001 ? 'neg' : 'pos'}`}>
                               {ci === 0
                                 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`
@@ -414,7 +413,7 @@ export default function MatchReport({
                           onClick={() => setCandIdx(-1)}
                         >
                           <span className="an-rank">·</span>
-                          <span className="an-cmove">{explicitNotation(cur.playedSteps, cur.player, cur.notation)}</span>
+                          <span className="an-cmove">{cur.notation}</span>
                           <span className="an-eq neg">
                             {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
                           </span>
