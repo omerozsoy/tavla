@@ -2032,8 +2032,9 @@ class RoomController extends Controller
             }
             $winner = $this->otherColor($this->slotColor($slot));
             // SİSTEM-belirlenen pes değeri (kullanıcı kuralı): tür/puanı OYUN DURUMU belirler, istemci
-            // DEĞİL (Backgammon::resignationValue). gammon/backgammon yalnız KARAR aşamasında (kazanan
-            // bear-off) -> açılış/erken konumda HAYALET backgammon YOK. pointsWon = değer × küp.
+            // DEĞİL (Backgammon::resignationValue). SAF KONUM: pes eden o an ne kaybediyorsa onu
+            // kaybeder (rakip evinde taş -> backgammon 3, hiç toplamadı -> gammon 2, topladı -> 1).
+            // pointsWon = değer × küp.
             $state = is_array($room->server_state) ? $room->server_state : \App\Support\Backgammon::initialState();
             $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
             $points = $value * (int) $this->cubeOf($room)['value'];

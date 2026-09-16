@@ -74,40 +74,15 @@ class Backgammon
         return 2; // hiç toplamadı, bar/ev yok -> gammon
     }
 
-    /** Kazanan bear-off evresinde mi (off>0 VEYA tüm taşları evinde)? gammon/backgammon karar aşaması. */
-    public static function inBearingPhase(array $state, string $winner): bool
-    {
-        if ((int) ($state['off'][$winner] ?? 0) > 0) {
-            return true;
-        }
-        if ((int) ($state['bar'][$winner] ?? 0) > 0) {
-            return false;
-        }
-        $points = $state['points'] ?? [];
-        $range = $winner === 'white' ? range(0, 5) : range(18, 23);
-        for ($i = 0; $i < 24; $i++) {
-            $v = (int) ($points[$i] ?? 0);
-            $cnt = $winner === 'white' ? max(0, $v) : max(0, -$v);
-            if ($cnt > 0 && ! in_array($i, $range, true)) {
-                return false; // ev dışında taş var -> henüz bear-off değil
-            }
-        }
-
-        return true;
-    }
-
     /**
-     * SİSTEM-belirlenen pes değeri (1/2/3): frontend resignationValue ile BİREBİR. gamePoints standart
-     * kuralı verir; gammon/backgammon YALNIZ oyun karara bağlandığında (kazanan bear-off) -> açılış/
-     * erken konumda HAYALET backgammon YOK. RoomController::resign bunu OTORİTER kullanır.
+     * SİSTEM-belirlenen pes değeri (1/2/3): frontend resignationValue (src/engine/resign.ts) ile BİREBİR.
+     * SAF KONUM (kullanıcı kararı 2026-09-16): gamePoints ne diyorsa o — kaybedenin barında/kazananın
+     * evinde taşı varsa 3, hiç toplamadıysa 2, en az 1 taş topladıysa 1. Kazananın bear-off evresinde
+     * olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı; erken/açılış pes'i de konuma göre
+     * 2/3 olabilir). RoomController::resign bunu OTORİTER kullanır.
      */
     public static function resignationValue(array $state, string $winner): int
     {
-        $base = self::gamePoints($state, $winner);
-        if ($base === 1) {
-            return 1;
-        }
-
-        return self::inBearingPhase($state, $winner) ? $base : 1;
+        return self::gamePoints($state, $winner);
     }
 }

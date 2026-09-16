@@ -1,13 +1,13 @@
 import type { GameState, Player } from './types'
-import { WHITE, opponent, lossMultiplier } from './board'
+import { lossMultiplier } from './board'
 
 // ============================================================================
 // RESIGN / PES ETME — KESİN ve DEĞİŞMEZ kural. TEK KAYNAK (frontend + MAT + testler).
 //
-// Pes AYRI bir oyun aksiyonudur: oyuncu SINGLE / GAMMON / BACKGAMMON SEÇER.
-// Sonuç tahtadaki konumdan TAHMİN EDİLMEZ (bar'da taş, rakip evinde taş, hiç toplamamış
-// olmak vb. resign puanını DEĞİŞTİRMEZ). Normal bear-off gammon/backgammon tespitiyle
-// KARIŞTIRILMAZ (o tahtaya bakar; bu SEÇİLEN türe bakar).
+// Pes değeri SAF KONUMDAN belirlenir (kullanıcı kararı 2026-09-16): pes eden ŞU ANKİ
+// tahtada ne kaybediyorsa onu kaybeder — rakibin evinde/barında taşı VARSA backgammon,
+// hiç toplamadıysa gammon, en az 1 taş topladıysa single. "Kazanan bear-off evresinde mi"
+// ARANMAZ; açılış anchor'ı da rakip evinde sayılır (erken pes = backgammon olabilir).
 //
 // PUAN = cubeValue × multiplier
 //   SINGLE      = cubeValue × 1
@@ -64,30 +64,17 @@ export function calculateResignationPoints(type: ResignationType, cubeValue: num
   return cubeValue * resignMultiplier(type)
 }
 
-// Kazanan bear-off (toplama) evresinde mi? off>0 VEYA tüm taşları evinde (bar'da yok). Bu evre
-// gammon/backgammon'un GERÇEKLEŞTİĞİ karar aşamasıdır; öncesinde (açılış/erken) HAYALET yok.
-function inBearingPhase(state: GameState, winner: Player): boolean {
-  if (state.off[winner] > 0) return true
-  if (state.bar[winner] > 0) return false
-  const [hs, he] = winner === WHITE ? [0, 6] : [18, 24]
-  for (let i = 0; i < 24; i++) {
-    const v = state.points[i]
-    const cnt = winner === WHITE ? Math.max(0, v) : Math.max(0, -v)
-    if (cnt > 0 && (i < hs || i >= he)) return false // ev dışında taş var -> henüz bear-off değil
-  }
-  return true
-}
-
 /**
- * SİSTEM-belirlenen pes değeri (1/2/3): kaybedenin (pes eden) ŞU ANKİ konumundan. Kullanıcı
- * 1/2/3 SEÇMEZ — sistem gösterir (kullanıcı kuralı). lossMultiplier standart kuralı verir; ANCAK
- * gammon/backgammon YALNIZ oyun KARARA bağlandığında (kazanan bear-off evresinde) raporlanır ->
- * açılış/erken konumda HAYALET backgammon OLMAZ (rule #1: normal/erken kayıp = single).
+ * SİSTEM-belirlenen pes değeri (1/2/3): kaybedenin (pes eden) ŞU ANKİ konumundan DOĞRUDAN.
+ * SAF KONUM (kullanıcı kararı 2026-09-16): lossMultiplier ne diyorsa o —
+ *   en az 1 taş topladı           -> 1 (single)
+ *   barda taş / rakip evinde taş  -> 3 (backgammon)
+ *   hiç toplamadı, yukarıdakiler yok -> 2 (gammon)
+ * Kazananın bear-off evresinde olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı):
+ * pes eden tam da o an ne kaybediyorsa onu kaybeder; erken/açılış pes'i de konuma göre 2/3 olabilir.
  */
 export function resignationValue(state: GameState, loser: Player): 1 | 2 | 3 {
-  const base = lossMultiplier(state, loser)
-  if (base === 1) return 1
-  return inBearingPhase(state, opponent(loser)) ? base : 1
+  return lossMultiplier(state, loser)
 }
 
 // Değer (1/2/3) -> tür (MAT/kayıt + calculateResignationPoints için).
