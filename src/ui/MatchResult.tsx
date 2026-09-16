@@ -16,6 +16,7 @@ interface Props {
   winnerPr: number | null
   loserPr: number | null
   analyzing?: boolean // HAKEM=gnubg: insanın PR'ı gnubg ile hesaplanıyor (async) -> sayı yerine "…"
+  analyzingBoth?: boolean // pvb: tek gnubg job İKİ tarafı da (insan+bot) hesaplar -> ikisinde de "…"
   // XG kırılım: checker-yalnız + küp-yalnız PR (overall = winnerPr/loserPr). null -> —.
   winnerCheckerPr?: number | null
   winnerCubePr?: number | null
@@ -75,6 +76,7 @@ export default function MatchResult({
   winnerPr,
   loserPr,
   analyzing = false,
+  analyzingBoth = false,
   winnerCheckerPr,
   winnerCubePr,
   loserCheckerPr,
@@ -117,8 +119,10 @@ export default function MatchResult({
   const fmtPr = (p: number | null) => (p == null ? '—' : p.toFixed(2))
   // İnsan tarafı: ratingIsWinner ? kazanan(mr-a) : kaybeden(mr-b). Analiz sürerken o tarafın PR
   // hücrelerinde sayı yerine nabızlı "…" gösterilir (wildbg sayısı ASLA gösterilmez).
-  const aAnalyzing = analyzing && ratingIsWinner
-  const bAnalyzing = analyzing && !ratingIsWinner
+  // pvb'de tek gnubg job hem insanı hem botu hesaplar -> analyzingBoth ile İKİ tarafta da loader
+  // (aksi halde bot tarafı analiz boyunca "—" gösterip sonra sayıya sıçrardı).
+  const aAnalyzing = analyzing && (analyzingBoth || ratingIsWinner)
+  const bAnalyzing = analyzing && (analyzingBoth || !ratingIsWinner)
   // gnubg (sunucu) PR hesaplanana kadar DÖNEN loader; wildbg sayısı ASLA gösterilmez.
   const dots = () => <span className="mr-pr-loader" role="status" aria-label={t('mr.prCalculating')} />
 
