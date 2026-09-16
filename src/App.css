@@ -11434,9 +11434,11 @@ button.acct-row:hover:not(:disabled) {
    geometri (--checker/--col/--bar-w...) :root'ta hesaplanıp DONUYOR; salt --board-h override edilince
    .board yüksekliği küçülür ama --checker/--col GLOBAL kalır -> tahta dev+basık görünür. Bu yüzden
    TÜM türevleri burada --board-h'imden yeniden türet (line 179-189 ile birebir oranlar). */
-.analysis-detail .an-board-stage {
+.analysis-detail .an-board-stage,
+.ej-detail-board .an-board-stage {
   /* Böler 1.5: board footprint genişliği ≈ --board-h × 1.52 -> kolonu (100cqw) TAM doldursun
-     (eskiden 1.7 idi, ~%12 sağ boşluk kalıyordu = "tam oturmamış"). -12px küçük güvenlik payı. */
+     (eskiden 1.7 idi, ~%12 sağ boşluk kalıyordu = "tam oturmamış"). -12px küçük güvenlik payı.
+     Aynı sistem Hata Günlüğü detay board'u (.ej-detail-board) için de kullanılır. */
   --board-h: max(150px, min(calc((100cqw - 12px) / 1.5), calc(100vh - 200px)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.14);
@@ -11453,10 +11455,12 @@ button.acct-row:hover:not(:disabled) {
 /* Hane numaralari (1rem) ve pip (1.05rem, desktop 1.7rem) SABIT -> analiz board'unda (kucuk)
    orantisiz DEV duruyordu. Board'a gore (--checker) olcekle; her boyutta orantili. Yuksek
    specificity -> base + @media(min-width:900px) .pip kuralini ezer. */
-.analysis-detail .an-board-stage .pt-numbers {
+.analysis-detail .an-board-stage .pt-numbers,
+.ej-detail-board .an-board-stage .pt-numbers {
   font-size: calc(var(--checker) * 0.5);
 }
-.analysis-detail .an-board-stage .pip {
+.analysis-detail .an-board-stage .pip,
+.ej-detail-board .an-board-stage .pip {
   font-size: calc(var(--checker) * 0.66);
 }
 .an-winbar {
@@ -22424,6 +22428,8 @@ select:-webkit-autofill {
   border: 1px solid var(--border);
   border-radius: 0;
   overflow: hidden;
+  /* Tam-board (MatReview sistemi: Board + ok + hayalet) kolona göre ölçülsün (cqw). */
+  container-type: inline-size;
 }
 .ej-detail-rows {
   display: flex;
