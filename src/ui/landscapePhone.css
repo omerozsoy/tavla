@@ -15,11 +15,14 @@
     'main';
 }
 
-/* Hamburger görünür (mobil gibi) */
+/* Hamburger görünür (mobil gibi) + yüksekliği İNCE bara eşit (beyaz zemin barın
+   altına taşmasın; base height calc(56px+safe) 51px'lik barı ~5px aşıyordu). */
 #root.lsphone .hamburger {
   display: flex;
   align-items: center;
   justify-content: center;
+  top: 0;
+  height: 51px;
 }
 
 /* Üst bar: masaüstü satır-içi kontroller GİZLİ -> kompakt isim+avatar dropdown */
