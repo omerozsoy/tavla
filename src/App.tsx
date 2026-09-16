@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import './ui/landscapePhone.css'
 // Cerceve animasyon secim demosu: gizli /cerceve-anim, tum sade animasyonlar isimli.
 const CerceveAnim = lazy(() => import('./ui/CerceveAnim'))
 import { ErrorBoundary } from './ui/ErrorBoundary'
@@ -4497,6 +4498,19 @@ export default function App() {
       /* yok */
     }
     document.getElementById('root')?.classList.remove('force-landscape')
+  }, [])
+
+  // Landscape TELEFON (yatay + kisa yukseklik): masaustu duzeni yerine kompakt MOBIL
+  // kabuk (hamburger + drawer + dropdown bar). #root.lsphone -> ui/landscapePhone.css.
+  // Gercek masaustu/tablet ETKILENMEZ (yukseklik >500). matchMedia ile canli takip.
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(orientation: landscape) and (max-height: 500px)')
+    const root = document.getElementById('root')
+    const apply = () => root?.classList.toggle('lsphone', mq.matches)
+    apply()
+    mq.addEventListener('change', apply)
+    return () => mq.removeEventListener('change', apply)
   }, [])
 
   // Tam ekran (browser Fullscreen API) — oyun ekraninda ac/kapa butonu.

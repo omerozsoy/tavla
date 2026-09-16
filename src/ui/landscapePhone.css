@@ -1,0 +1,70 @@
+/* LANDSCAPE TELEFON KABUĞU
+   Yatay telefon (genişlik >900 ama YÜKSEKLİK ≤500) masaüstü düzenine düşüp üst bar
+   sıkışıyor + yan menü garip duruyordu. #root.lsphone (App.tsx matchMedia ile eklenir)
+   ile o durumda KOMPAKT MOBİL kabuğu zorlarız: hamburger + soldan drawer + dropdown bar.
+
+   Neden #root (ID) seçici: App.css'teki class-tabanlı @media (min-width:901px) masaüstü
+   kuralları (0,2,0) bu genişlikte de eşleşiyor; ID özgüllüğü (1,x,x) onları KESİN yener,
+   kaynak sırasından bağımsız. Gerçek masaüstü/tablet ETKİLENMEZ (yükseklik >500 -> lsphone yok). */
+
+#root.lsphone .app.lobby {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas:
+    'bar'
+    'main';
+}
+
+/* Hamburger görünür (mobil gibi) */
+#root.lsphone .hamburger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Üst bar: masaüstü satır-içi kontroller GİZLİ -> kompakt isim+avatar dropdown */
+#root.lsphone .acct-desktop {
+  display: none;
+}
+#root.lsphone .acct-mobile {
+  display: inline-flex;
+}
+
+/* Bar sabit tepede + hamburger için sol pay */
+#root.lsphone .app.lobby > .account-bar {
+  position: sticky;
+  top: 0;
+  z-index: 105;
+  min-height: 48px;
+  padding-left: 60px;
+}
+
+/* Yan menü -> soldan kayan drawer (grid akışından çıkar) */
+#root.lsphone .side-menu {
+  position: fixed;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 248px;
+  max-width: 86vw;
+  z-index: 100;
+  background: var(--card-bg);
+  padding: 14px 12px 12px;
+  box-shadow: 6px 0 24px rgba(0, 0, 0, 0.4);
+  transform: translateX(-102%);
+  transition: transform 0.25s ease;
+  overflow-y: auto;
+}
+#root.lsphone .side-menu.open {
+  transform: translateX(0);
+}
+/* Drawer başlığındaki logo görünür (mobil drawer gibi) */
+#root.lsphone .side-menu-brand {
+  display: flex;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #root.lsphone .side-menu {
+    transition: none;
+  }
+}
