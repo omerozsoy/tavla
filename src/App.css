@@ -11402,10 +11402,23 @@ button.acct-row:hover:not(:disabled) {
   /* Tam-tahta (MatReview sistemi) analiz kolonuna göre ölçülsün diye query-container. */
   container-type: inline-size;
 }
-/* Hamle Analizi tahtası: MatReview'deki Board + ok + hayalet. Board genişliği ~ --board-h*1.4;
-   --board-h global (viewport) olduğu için dar kolonda taşardı -> kolona göre (cqw) küçült. */
+/* Hamle Analizi tahtası: MatReview'deki Board + ok + hayalet. Board --board-h global (viewport)
+   olduğu için dar analysis-detail kolonunda taşardı -> kolona göre (cqw) küçült. ÖNEMLİ: türev
+   geometri (--checker/--col/--bar-w...) :root'ta hesaplanıp DONUYOR; salt --board-h override edilince
+   .board yüksekliği küçülür ama --checker/--col GLOBAL kalır -> tahta dev+basık görünür. Bu yüzden
+   TÜM türevleri burada --board-h'imden yeniden türet (line 179-189 ile birebir oranlar). */
 .analysis-detail .an-board-stage {
-  --board-h: max(180px, min(calc((100cqw - 8px) / 1.55), calc(100vh - 240px)));
+  --board-h: max(150px, min(calc((100cqw - 8px) / 1.7), calc(100vh - 240px)));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.14);
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 1.4);
+  --tri-h: calc(var(--board-h) * 0.35);
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.82);
+  --tray-w: calc(var(--checker) * 1.5);
+  --bearoff-w: var(--tray-w);
+  --cube-size: clamp(18px, calc(var(--bar-w) * 0.62), 44px);
   width: 100%;
 }
 .an-winbar {
