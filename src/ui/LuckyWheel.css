@@ -41,7 +41,9 @@
 }
 @media (max-width: 860px) {
   .lw-layout {
-    grid-template-columns: 1fr;
+    /* minmax(0,1fr): '1fr'=minmax(auto,1fr) odul paneli min-content'ine (~327px)
+       buyuyup 320px viewport'u asiyordu -> kolonu konteynere sabitle. */
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
