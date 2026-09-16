@@ -99,7 +99,7 @@ export default function MatchSetup({
   const [timeControl, setTimeControl] = useState<TimeControl>(initial.timeControl)
   const [difficulty, setDifficulty] = useState<number>(initial.difficulty ?? 10)
   const [betPct, setBetPct] = useState<number>(initial.betPct ?? 10)
-  const [minRating, setMinRating] = useState<number>(initial.minRating ?? 0)
+  const [minRating] = useState<number>(initial.minRating ?? 0) // UI kaldirildi; her zaman 0 (rakip puan filtresi yok)
   const stake = Math.floor((coins * betPct) / 100)
 
   return (
@@ -205,20 +205,6 @@ export default function MatchSetup({
               </div>
             </div>
 
-            <div className="setup-row">
-              <div className="setup-label">
-                {t('setup.minRating')}: <b>{minRating}</b>
-              </div>
-              <input
-                type="range"
-                className="level-slider"
-                min={0}
-                max={2000}
-                step={50}
-                value={minRating}
-                onChange={(e) => setMinRating(Number(e.target.value))}
-              />
-            </div>
           </>
         )}
 
