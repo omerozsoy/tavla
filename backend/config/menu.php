@@ -27,6 +27,7 @@ return [
         // --- EGLENCE: sans/ekonomi oyunlari ---
         ['key' => 'luckywheel', 'group' => 'fun', 'label' => 'Şans Çarkı'],
         ['key' => 'diceslot', 'group' => 'fun', 'label' => 'Zar Slotu'],
+        ['key' => 'excuses', 'group' => 'fun', 'label' => 'Bahane Makinesi'],
 
         // --- KESFET: bilgi / icerik ---
         ['key' => 'calendar', 'group' => 'content', 'label' => 'Turnuva Takvimi'],
