@@ -11448,7 +11448,9 @@ button.acct-row:hover:not(:disabled) {
    .board yüksekliği küçülür ama --checker/--col GLOBAL kalır -> tahta dev+basık görünür. Bu yüzden
    TÜM türevleri burada --board-h'imden yeniden türet (line 179-189 ile birebir oranlar). */
 .analysis-detail .an-board-stage {
-  --board-h: max(150px, min(calc((100cqw - 8px) / 1.7), calc(100vh - 240px)));
+  /* Böler 1.5: board footprint genişliği ≈ --board-h × 1.52 -> kolonu (100cqw) TAM doldursun
+     (eskiden 1.7 idi, ~%12 sağ boşluk kalıyordu = "tam oturmamış"). -12px küçük güvenlik payı. */
+  --board-h: max(150px, min(calc((100cqw - 12px) / 1.5), calc(100vh - 200px)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.14);
   --point-w: var(--col);
@@ -11460,6 +11462,15 @@ button.acct-row:hover:not(:disabled) {
   --bearoff-w: var(--tray-w);
   --cube-size: clamp(18px, calc(var(--bar-w) * 0.62), 44px);
   width: 100%;
+}
+/* Hane numaralari (1rem) ve pip (1.05rem, desktop 1.7rem) SABIT -> analiz board'unda (kucuk)
+   orantisiz DEV duruyordu. Board'a gore (--checker) olcekle; her boyutta orantili. Yuksek
+   specificity -> base + @media(min-width:900px) .pip kuralini ezer. */
+.analysis-detail .an-board-stage .pt-numbers {
+  font-size: calc(var(--checker) * 0.5);
+}
+.analysis-detail .an-board-stage .pip {
+  font-size: calc(var(--checker) * 0.66);
 }
 .an-winbar {
   position: relative;
@@ -11593,14 +11604,6 @@ button.acct-row:hover:not(:disabled) {
   }
   .analysis-rows {
     max-height: 30vh;
-  }
-  /* Hane numaralari (13-24/12-1) ve pip (161/167) SABIT boyutta (1rem/1.05rem) -> kucuk mobil
-     board'da orantisiz DEV duruyordu. Board'a gore (--checker) olcekle. */
-  .analysis-detail .an-board-stage .pt-numbers {
-    font-size: calc(var(--checker) * 0.62);
-  }
-  .analysis-detail .an-board-stage .pip {
-    font-size: calc(var(--checker) * 0.82);
   }
 }
 
