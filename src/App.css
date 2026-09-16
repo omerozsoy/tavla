@@ -7051,9 +7051,13 @@ button.move-row:focus-visible {
 @media (max-width: 900px) {
   /* Dikey/tablet mobil: sol menu 900px'te drawer'a donup akistan cikinca board'a
      tam yer acilir; board'u da ayni esikte EKRAN GENISLIGINE gore olcekle. Aksi halde
-     720-900px "olu bolge"de board (100vw-560px)/1.4 ile ~143px'e dusuyordu. */
+     720-900px "olu bolge"de board (100vw-560px)/1.4 ile ~143px'e dusuyordu.
+     GENISLIK: board footprint = board-inner (~1.37×board-h) + bear-off tepsisi (~50px) +
+     gap/cerceve (~5px). Eski `(100vw-16)/1.5` tepsiyi HIC saymiyordu -> ~390px telefonda
+     board ~8px tasip SOLDAN kirpiliyordu. ~60px pay + gercek orana (1.4) yakin bolen ->
+     board (tepsi dahil) ekrana TAM otursun, kirpma yok. */
   :root {
-    --board-h: max(230px, min(calc((100vw - 16px) / 1.5), calc(100vh - var(--header-h) - 200px)));
+    --board-h: max(210px, min(calc((100vw - 60px) / 1.4), calc(100vh - var(--header-h) - 200px)));
   }
   .game-area {
     flex-direction: column;
@@ -8045,6 +8049,17 @@ html.fs-active .account-bar {
   .score-badge {
     font-size: 0.72rem;
     margin-bottom: 2px;
+  }
+  /* Kisa yatayda da PR alt notunu gizle + PR tek satir (board'un altina tasip kirpilmasin) */
+  .pc-pr-note {
+    display: none;
+  }
+  .pc-pr {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+  }
+  .player-name {
+    white-space: nowrap;
   }
   .off-box {
     width: 40px;
