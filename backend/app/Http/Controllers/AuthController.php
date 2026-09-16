@@ -746,12 +746,18 @@ class AuthController extends Controller
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
         $luckReady = $hasMwc && $match->luck_mwc !== null;
         $hasOppMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
+        // BOT (pvb) gnubg PR: aynı job self ile birlikte doldurur -> $ready (self hazır) iken bot da hazır.
+        $hasOppPr = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_pr');
 
         return response()->json([
             'ready' => $ready,
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
+            // Bot (rakip) gnubg PR — pvb'de dolu; online'da null (rakip PR'ı kendi satırından okunur).
+            'opponent_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_pr) : null,
+            'opponent_checker_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_checker_pr) : null,
+            'opponent_cube_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_cube_pr) : null,
             'luck_ready' => $luckReady,
             'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
             'opponent_luck_mwc' => ($luckReady && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot

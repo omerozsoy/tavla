@@ -2673,8 +2673,8 @@ export default function App() {
   // ---- Pes etme / cekilme ----
   // resignLoser: kim teslim oluyor (online -> ben; pvb -> insan/beyaz; pvp -> sırası gelen).
   const resignLoser: Player = online ? myColor : mode === 'pvp' ? turnStart.turn : 'white'
-  // SİSTEM-belirlenen pes değeri (1/2/3): ŞU ANKİ tahtadan. Kullanıcı SEÇMEZ — sistem gösterir.
-  // gammon/backgammon yalnız KARAR aşamasında (kazanan bear-off) -> açılış/erken = single (hayalet yok).
+  // SİSTEM-belirlenen pes değeri (1/2/3): ŞU ANKİ tahtadan (SAF KONUM). Kullanıcı SEÇMEZ — sistem gösterir.
+  // Rakip evinde/barında taş -> backgammon(3), hiç toplamadı -> gammon(2), topladı -> single(1).
   const resignVal = resignationValue(turnStart, resignLoser)
   const resignType = resignationTypeForValue(resignVal)
   const resignPoints = calculateResignationPoints(resignType, match.cube.value)
@@ -3567,13 +3567,15 @@ export default function App() {
         const g = await matchGnubgPr(id)
         if (prPollRef.current !== token) return
         if (!prDone && g.ready) {
+          // pvb: bot (rakip) gnubg PR de aynı job'la geldi -> opp/checkerOpp/cubeOpp doldur (yoksa
+          // önceki değeri koru; online'da null gelir, matchPr poll'u karşı satırdan doldurur).
           setServerPr((prev) => ({
             self: g.pr,
-            opp: prev?.opp ?? null,
+            opp: g.opponent_pr ?? prev?.opp ?? null,
             checkerSelf: g.checker_pr,
-            checkerOpp: prev?.checkerOpp ?? null,
+            checkerOpp: g.opponent_checker_pr ?? prev?.checkerOpp ?? null,
             cubeSelf: g.cube_pr,
-            cubeOpp: prev?.cubeOpp ?? null,
+            cubeOpp: g.opponent_cube_pr ?? prev?.cubeOpp ?? null,
           }))
           setPrAnalyzing(false)
           prDone = true
@@ -3661,7 +3663,8 @@ export default function App() {
         setRatingChange({ before, after: r.rating })
         setUser((u) => (u ? { ...u, rating: r!.rating } : u))
         if (r.achievements?.length) setAchUnlocked(r.achievements)
-        // pvb: kendi PR sunucudan (log'dan); rakip = bot (lokal prOf gosterilir)
+        // pvb: kendi PR + BOT PR ikisi de gnubg (authoritative) -> pollGnubgPr doldurur. Başlangıçta
+        // opp=null; analyzingBoth ile iki tarafta da loader gösterilir (wildbg sayısı ASLA gösterilmez).
         setServerPr({ self: r.pr_self ?? null, opp: null })
         // HAKEM=gnubg: gösterilen PR gnubg olsun. Job async -> "…" göster, gnubg gelince swap.
         if (r.match_result_id) matchResultIdRef.current = r.match_result_id
@@ -7919,6 +7922,7 @@ export default function App() {
           winnerPr={prShown(mWinner)}
           loserPr={prShown(opponent(mWinner))}
           analyzing={prAnalyzing}
+          analyzingBoth={mode === 'pvb'}
           winnerCheckerPr={prCheckerShown(mWinner)}
           winnerCubePr={prCubeShown(mWinner)}
           loserCheckerPr={prCheckerShown(opponent(mWinner))}

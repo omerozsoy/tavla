@@ -71,6 +71,32 @@ class AnalyzeMatchPrJob implements ShouldQueue
             $upd['gnubg_pr_at'] = now();
         }
 
+        // BOT (rakip) gnubg PR — YALNIZ pvb (AI) maçında. Online'da rakibin PR'ı KENDİ satırından
+        // (gnubg_pr) gelir; orada ikinci pas gereksiz + maliyeti 2 katına çıkarır. pvb'de karşı satır
+        // yok -> botun gnubg PR'ını (checker+cube havuzlanmış) BU satırda tutarız ki sonuç ekranı
+        // "yalnız gnubg" direktifine uygun göstersin (wildbg opponent_pr ekranda kullanılmaz).
+        if (($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI) {
+            $opp = $player === 'white' ? 'black' : 'white';
+            try {
+                $oChk = $orch->checkerPr($log, $opp, $ml, 2);
+                $oCube = $orch->cubePr($log, $opp, $ml);
+                $oTotLoss = $oChk['loss'] + $oCube['loss'];
+                $oTotDec = $oChk['decisions'] + $oCube['decisions'];
+                $oOverall = $oTotDec > 0 ? ($oTotLoss / $oTotDec) * 500 : ($oChk['pr'] ?: $oCube['pr']);
+                foreach ([
+                    'gnubg_opponent_pr' => round((float) $oOverall, 2),
+                    'gnubg_opponent_checker_pr' => round((float) $oChk['pr'], 2),
+                    'gnubg_opponent_cube_pr' => round((float) $oCube['pr'], 2),
+                ] as $col => $val) {
+                    if (Schema::hasColumn('match_results', $col)) {
+                        $upd[$col] = $val;
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('gnubg BOT PR job hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            }
+        }
+
         // ANA KURAL (A→Z gnubg): pr_mode=authoritative ise GOSTERILEN/OTORITER PR = gnubg (cubeful
         // EMG, match-aware) olur; istemci wildbg (kübsüz para, 1-ply) PR'i EZILIR. Boylece "Maç
         // Analizleri"ndeki PR + kariyer havuzu (pr_equity_lost/pr_decisions) XG ile ayni sınıf motordan
