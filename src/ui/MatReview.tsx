@@ -277,7 +277,7 @@ export default function MatReview({
                     ) : (
                       <span className="mrv-dice mrv-dice-empty" />
                     )}
-                    <span className="mrv-move">{explicitNotation(e.playedSteps ?? e.steps, e.player, e.notation)}</span>
+                    <span className="mrv-move">{explicitNotation(e.playedSteps, e.player, e.notation)}</span>
                     {!e.cube && e.loss >= 0.08 ? (
                       <span className="mrv-mark blunder">⁉</span>
                     ) : !e.cube && e.loss >= 0.02 ? (
