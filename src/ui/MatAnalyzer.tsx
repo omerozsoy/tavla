@@ -136,7 +136,10 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
           <input
             ref={fileRef}
             type="file"
-            accept=".mat,text/plain"
+            /* iOS: .mat uzantisini taniyan UTI yok -> dosya "public.data" olarak isaretlenir;
+               yalniz .mat/text/plain verirsek iOS dosyayi SOLUK (secilemez) yapar. octet-stream
+               (public.data) ekleyince iPhone'da secilebilir; masaustunde .mat filtresi korunur. */
+            accept=".mat,text/plain,application/octet-stream"
             hidden
             onChange={(e) => {
               const f = e.target.files?.[0]
