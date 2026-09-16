@@ -5345,6 +5345,15 @@ export default function App() {
     serverPr ? ((c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) ?? null) : null
   const prValue = prShown(prHumanColor)
   const prBandKey = prBand(prValue)
+  // CANLI (oyun-içi) anlık PR TAHMİNİ: gnubg maç-sonu hesaplandığından oyun İÇİNDE tek seçenek
+  // yerel prStats'tır. Sidebar'da "~PR" (tahmin) etiketiyle gösterilir; RESMİ/kesin PR maç sonu
+  // gnubg olur (sonuç ekranı + analiz). Kullanıcı kararı: oyun sırasında canlı tahmin görünsün.
+  const prLiveEstimate = (c: Player): number | null => {
+    const s = prStats[c]
+    if (s.decisions > 0) return (s.loss / s.decisions) * 500
+    const ad = s.allDecisions ?? 0
+    return ad > 0 ? ((s.allLoss ?? 0) / ad) * 500 : null
+  }
   // Sans: kendi rengim lokal (mutlak); online'da rakip hesaplanmadıysa null (MatchResult
   // negatifiyle sıfır-toplam gösterir). NOT: MatchResult zaten net = kazanan−kaybeden ile
   // sıfır-toplam yapar; burada MUTLAK değer döndür (relative döndürünce ×2 çift-sayım oluyordu).
@@ -5593,10 +5602,10 @@ export default function App() {
     avatarUrl: online ? (myColor === 'white' ? profile.avatar : (room?.oppAvatar ?? null)) : profile.avatar,
     frame: online ? (myColor === 'white' ? (user?.avatar_frame ?? null) : (room?.oppFrame ?? null)) : (user?.avatar_frame ?? null),
     // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
-    // Anlık PR: artık YALNIZ gnubg (sunucu). gnubg maç-sonu (async) olduğundan oyun İÇİNDE
-    // prShown null döner -> canlı PR GİZLİ (wildbg SAYISI gösterilmez). Maç bitince sidebar'da
-    // gnubg değeri görünür. (showLivePr toggle'ı korunur ama in-game etkisiz.)
-    pr: mode === 'pvb' && showLivePr ? prShown('white') : null,
+    // Anlık PR TAHMİNİ (oyun-içi, yalnız pvb + menüden açık): yerel estimate; Sidebar "~PR"
+    // tahmin etiketiyle gösterir. RESMİ/kesin PR maç sonu gnubg (sonuç ekranı + analiz).
+    pr: mode === 'pvb' && showLivePr ? prLiveEstimate('white') : null,
+    prEstimate: mode === 'pvb' && showLivePr,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
     // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:

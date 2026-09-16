@@ -44,6 +44,7 @@ interface PlayerInfo {
   frame?: string | null
   isBot?: boolean // YZ rakip -> avatar yoksa emoji yerine robot ikonu
   pr?: number | null // anlik PR (performans reytingi); null ise gizli
+  prEstimate?: boolean // true: oyun-içi TAHMİN (yerel); "~PR" + not gösterilir (kesin PR maç sonu gnubg)
   premium?: boolean // süresi geçerli ücretli plan -> isim yaninda PREMIUM
   onOpenProfile?: () => void // varsa: avatara tıkla/hover -> herkese açık profil modalı (rakip)
 }
@@ -120,10 +121,16 @@ function Name({ p }: { p: PlayerInfo }) {
         <div className={`pc-pr-wrap ${trend ? 'pr-' + trend : ''}`}>
           <div className="pc-pr">
             {trend && <span className="pr-arrow pa-left" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
-            <span className="pr-val">PR {p.pr.toFixed(1)}</span>
+            <span className="pr-val" title={p.prEstimate ? t('pr.estimateHint') : undefined}>
+              PR {p.prEstimate ? '~' : ''}{p.pr.toFixed(1)}
+            </span>
             {trend && <span className="pr-arrow pa-right" aria-hidden="true">{trend === 'bad' ? '▲' : '▼'}</span>}
           </div>
-          {trend && <div className="pc-pr-note">{trend === 'bad' ? t('pr.bad') : t('pr.good')}</div>}
+          {p.prEstimate ? (
+            <div className="pc-pr-note">{t('pr.estimate')}</div>
+          ) : (
+            trend && <div className="pc-pr-note">{trend === 'bad' ? t('pr.bad') : t('pr.good')}</div>
+          )}
         </div>
       ) : null}
     </div>
