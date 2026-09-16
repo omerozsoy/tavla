@@ -169,13 +169,14 @@
      Zincir: board-h -> checker -> col (point) -> bar/tray/dice/cube.
      Iliski: CHECKER = POINT WIDTH * 0.877 (0.86-0.90 araligi).
      Board ekranin ana kahramanidir: viewport yuksekliginin ~%89'unu kaplar. */
-  --player-panel-w: clamp(200px, 16vw, 250px); /* oyuncu paneli (buyutuldu) */
+  --player-panel-w: clamp(150px, 12.5vw, 196px); /* oyuncu paneli (daraltildi -> board'a yer acar) */
   --tray-w: clamp(50px, 4.4vw, 68px); /* dar bear-off tepsisi */
   /* Board yuksekligi: yukseklik ve genislik kisitlarinin kucugu (kaydirma olmaz).
      Dikey pay: header + ust/alt point-numarasi seritleri (24+24+gap ~54px) + app
      padding -> ~78px (yoksa board 100dvh'yi ~26px asip sagda dikey scrollbar cikar).
-     548px lump = sol menu + panel + saat + bosluklar icin ayrilan yatay alan. */
-  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 86px), calc((100vw - 548px) / 1.3)));
+     440px lump = sol panel(~196) + saat(~96) + game-ham(48) + bosluklar; daraltildi ki board
+     TAM otursun (eski 548 board'u genislikle kisitlayip ust/altta olu bant birakiyordu). */
+  --board-h: max(320px, min(calc(100dvh - var(--header-h) - 86px), calc((100vw - 440px) / 1.3)));
   --checker: calc(var(--board-h) / 11); /* tas capi (5'li yigin quadrant'a sigar) */
   --col: calc(var(--checker) * 1.14); /* POINT/kolon genisligi (tastan genis) */
   --point-w: var(--col);
@@ -4714,7 +4715,7 @@ button[aria-disabled='true'],
    Sadece masaustu-uzun ekran; fiziksel yatay (max-height:560) kendi tuned board-h'ini korur. */
 @media (min-width: 901px) and (min-height: 561px) {
   .app.game-view {
-    --board-h: max(320px, min(calc(100dvh - 92px), calc((100vw - 548px) / 1.3)));
+    --board-h: max(320px, min(calc(100dvh - 92px), calc((100vw - 440px) / 1.3)));
   }
 }
 
@@ -4751,6 +4752,13 @@ button[aria-disabled='true'],
   height: 100%;
   object-fit: cover;
   border-radius: var(--radius-circle);
+}
+/* YZ (bot) robot ikonu: sabit svg boyutu (52px) kucuk circle'da minicik kaliyordu ->
+   dairenin ORANSAL %64'unu doldur (her boyutta: 104 -> ~66px, 46 -> ~29px). Boylece bot
+   avatari, resmi/emojiyi dolduran kullanici avatariyla AYNI ebatta okunur (tek ebat istegi). */
+.avatar > svg {
+  width: 64%;
+  height: 64%;
 }
 .avatar.black,
 .avatar.white {
@@ -5689,10 +5697,11 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   transform: translateY(-5px); /* pip sayilari cok az yukari */
 }
-/* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir) */
+/* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir).
+   1.7rem "cok buyuk"tu (board'dan rol caliyordu) -> olculu 1.2rem. */
 @media (min-width: 900px) {
   .pip {
-    font-size: 1.7rem;
+    font-size: 1.2rem;
   }
 }
 /* Doubling cube (#9): kucuk + flat; board'un ana gorselinden rol calmaz */
@@ -5980,15 +5989,37 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
 /* Oyun-iÃ§i merkez aksiyon butonlarÄ± (Onayla / Geri / Roll / Double) â€” BÃœYÃœK
    (yalnÄ±z oyun tahtasÄ±na Ã¶zel; shadcn Button 42px sabitini burada ezer) */
 .center-overlay [data-slot='button'] {
-  height: 54px;
-  min-height: 54px;
-  padding: 0 26px;
-  font-size: 1.14rem;
+  height: 48px;
+  min-height: 48px;
+  padding: 0 22px;
+  font-size: 1.05rem;
   border-radius: var(--radius-lg);
 }
 .center-overlay [data-slot='button'] svg {
-  width: 20px !important;
-  height: 20px !important;
+  width: 18px !important;
+  height: 18px !important;
+}
+/* Mobil: oyun-ici merkez butonlari (Zar At / Katla / Onayla) kucult -> board'dan rol calmasin. */
+@media (max-width: 900px) {
+  .center-overlay [data-slot='button'] {
+    height: 40px;
+    min-height: 40px;
+    padding: 0 16px;
+    font-size: 0.94rem;
+  }
+  .center-overlay [data-slot='button'] svg {
+    width: 16px !important;
+    height: 16px !important;
+  }
+}
+/* Yatay telefon (kisa): iyice kompakt. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .center-overlay [data-slot='button'] {
+    height: 34px;
+    min-height: 34px;
+    padding: 0 13px;
+    font-size: 0.85rem;
+  }
 }
 /* Merkez HUD modali (#11): kompakt, premium game-HUD; dev popup DEGIL */
 .result-box {
@@ -7247,6 +7278,27 @@ button.move-row:focus-visible {
   height: 32px;
   font-size: 1.2rem;
 }
+/* Force-landscape (telefon yatay oyun): saat sayaclari KOMPAKT olsun ki merkez sutunu
+   daralip board buyusun (medya sorgulari gercek dikey viewport'u gordugu icin buraya AYRI
+   yaziyoruz; #root.force-landscape ozgullugu clockStack.css tabanini ezer). */
+#root.force-landscape .clock-off {
+  font-size: 1.25rem;
+  min-width: 50px;
+  padding: 6px 8px;
+}
+#root.force-landscape .clock-group {
+  min-width: 58px;
+  padding: 5px;
+  gap: 4px;
+}
+#root.force-landscape .clock-bank {
+  font-size: 0.92rem;
+  padding: 4px 6px;
+}
+#root.force-landscape .clock-move {
+  font-size: 1.05rem;
+  padding: 4px 0;
+}
 /* Oyun-ici hamburger sag ortada (Galaxy gibi); mobil sol-menu hamburger'i gizli */
 #root.force-landscape .hamburger {
   display: none;
@@ -7525,10 +7577,10 @@ html.fs-active .account-bar {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 42px;
+  height: 42px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, #000);
-  border-radius: 13px;
+  border-radius: 12px;
   background: var(--accent);
   color: var(--on-accent);
   cursor: pointer;
@@ -7540,13 +7592,16 @@ html.fs-active .account-bar {
     box-shadow 0.18s ease,
     transform 0.18s ease;
 }
-/* Mobilde (game-area kolon olabilir) hamburger board altina yigilmasin -> fixed */
+/* Mobilde (game-area kolon olabilir) hamburger board altina yigilmasin -> fixed + daha kucuk */
 @media (max-width: 900px) {
   .game-ham {
     position: fixed;
-    right: calc(8px + env(safe-area-inset-right));
+    right: calc(6px + env(safe-area-inset-right));
     top: 50%;
     transform: translateY(-50%);
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
   }
 }
 .game-ham:hover {
@@ -7948,7 +8003,11 @@ html.fs-active .account-bar {
     /* Genislik terimi yatayda board'u kirpiyordu: sol kume (panel 104 + saat + bosluk)
        ~214px yer kapliyor ama eski formul yalniz 150px ayiriyordu -> board sag kenardan
        ~25px tasip kesiliyordu. Ayrilan pay 232'ye, oran 1.5'e cekildi (board tam siar). */
-    --board-h: max(200px, min(calc(100vh - 62px), calc((100vw - 264px) / 1.5)));
+    /* YUKSEKLIK: board grid'i --board-h uzerine ~54px (24+24 nokta seritleri + gap) EKLER;
+       eski `100vh-62` bunu saymiyordu -> board dikeyde tasip ALT nokta/pullar kirpilir
+       ("bir hamle oynaninca asagi kayiyor, alt rakamlar okunmuyor"). ~96px dus -> tum
+       board (ust+alt nokta numaralari dahil) ekrana TAM otursun. */
+    --board-h: max(180px, min(calc(100dvh - 96px), calc((100vw - 264px) / 1.5)));
   }
   /* Hesap cubugu oyun-ici yatayda board'a biniyordu -> gizle (menu game-ham'da) */
   .account-bar,
@@ -11915,6 +11974,44 @@ button.acct-row:hover:not(:disabled) {
 .mr-actions .menu-btn {
   flex: 1;
   min-width: 120px;
+}
+
+/* ===== Sonuç ekranı mobil kompakt =====
+   Dar/kısa ekranlarda kart "dev gibi" görünüyordu (72px avatarlar + geniş padding +
+   büyük fontlar taşıyor, aksiyon butonları kırpılıyordu). Kartı küçült + kaydırılabilir yap. */
+.mr-card {
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+}
+@media (max-width: 560px) {
+  .mr-card { padding: 16px 14px; }
+  .mr-head { gap: 6px; margin-bottom: 12px; }
+  .mr-avatar { width: 54px; height: 54px; font-size: 26px; border-width: 2px; }
+  .mr-role { font-size: 0.72rem; margin-bottom: 3px; }
+  .mr-name { font-size: 0.85rem; }
+  .mr-title { font-size: 0.95rem; margin-bottom: 3px; }
+  .mr-score { font-size: 1.3rem; gap: 6px; }
+  .mr-score span { padding: 1px 9px; }
+  .mr-table { margin-bottom: 14px; }
+  .mr-row { padding: 8px 12px; font-size: 0.9rem; }
+  .mr-row.mr-sub { padding-top: 4px; padding-bottom: 4px; font-size: 0.8rem; }
+  .mr-label { font-size: 0.68rem; padding: 0 8px; }
+}
+/* Yatay telefon (kısa yükseklik): dikeyde iyice sıkıştır ki tüm kart + butonlar sığsın. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .mr-card { padding: 12px 16px; }
+  .mr-head { margin-bottom: 8px; gap: 8px; }
+  .mr-avatar { width: 44px; height: 44px; font-size: 22px; border-width: 2px; margin-bottom: 3px; }
+  .mr-head .mr-player:first-child .mr-avatar { box-shadow: 0 0 0 3px color-mix(in srgb, var(--tv-gold) 20%, transparent); }
+  .mr-role { font-size: 0.68rem; margin-bottom: 2px; }
+  .mr-name { font-size: 0.82rem; }
+  .mr-title { font-size: 0.9rem; margin-bottom: 2px; }
+  .mr-score { font-size: 1.2rem; gap: 6px; }
+  .mr-table { margin-bottom: 10px; }
+  .mr-row { padding: 5px 14px; font-size: 0.86rem; }
+  .mr-row.mr-sub { padding-top: 3px; padding-bottom: 3px; font-size: 0.76rem; }
+  .mr-label { font-size: 0.64rem; }
+  .mr-actions { gap: 6px; }
 }
 
 /* ---- Pes et modali ---- */
