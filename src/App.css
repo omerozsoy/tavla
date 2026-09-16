@@ -8626,7 +8626,11 @@ button.acct-row:hover:not(:disabled) {
    Tek kolon (menu drawer), kompakt logo, hamburger'a yer. */
 @media (max-width: 900px) {
   .app.lobby {
-    grid-template-columns: 1fr;
+    /* minmax(0,1fr): '1fr' = minmax(auto,1fr) -> kolon EN GENIS cocugun
+       (nowrap account-bar ~361px) min-content'ine buyuyup 320px viewport'u
+       asiyordu; overflow-x:hidden bunu gizleyip icerigi kirpiyordu. minmax(0,..)
+       kolonu konteynere (320px) sabitler -> tum sayfa icerigi viewport'a sigar. */
+    grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'bar'
       'main';
@@ -8651,6 +8655,30 @@ button.acct-row:hover:not(:disabled) {
   }
   .ab-brand {
     margin-left: 0; /* hamburger sagda -> logo solda gorunur */
+  }
+}
+/* Cok dar telefon (iPhone SE vb. <=360px): misafir barinda logo + Giris + tema +
+   dil yan yana ~361px -> son kontrol (bayrak) kirpiliyordu. Kontrolleri koru,
+   kompaktla: wordmark kucul, hamburger payi/gap/padding daralt, Giris butonu ince. */
+@media (max-width: 360px) {
+  .app.lobby > .account-bar,
+  .account-bar {
+    padding-left: 52px;
+    padding-right: 8px;
+    gap: 4px;
+  }
+  /* .account-bar ile ozgullugu artir: asagidaki @media(max-width:720px) icindeki
+     `.ab-wordmark{font-size:20px!important}` kaynak-sirasi geregi bunu eziyordu. */
+  .account-bar .ab-wordmark {
+    font-size: 16px !important;
+  }
+  .ab-beta {
+    display: none;
+  }
+  .ab-login {
+    padding-left: 10px;
+    padding-right: 10px;
+    font-size: 0.82rem;
   }
 }
 .account-name {
@@ -12082,8 +12110,8 @@ button.acct-row:hover:not(:disabled) {
     gap: 5px;
   }
   .solo-lvl {
-    font-size: 8px;
-    letter-spacing: 0.1em;
+    font-size: 10px;
+    letter-spacing: 0.04em;
   }
   .solo-stake {
     font-size: 12px;
@@ -13293,6 +13321,17 @@ button.acct-row:hover:not(:disabled) {
   .lb-flag,
   .rank-flag {
     padding-left: 4px;
+  }
+  /* Filtre butonlari (Puan/Jeton/WXP/PR) yan yana min-content ~360px -> lobby
+     grid kolonunu 320'nin uzerine itip icerigi kirpiyordu. 2x2 sararak coz. */
+  .rep-filter {
+    flex-wrap: wrap;
+  }
+  .rep-filter > [data-slot='button'],
+  .rep-filter > button,
+  .rep-filter .menu-btn {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
   }
 }
 /* ---- WXP kirilim paneli (yalniz WXP sekmesi): formul + kendi kategori dagilimi ---- */
