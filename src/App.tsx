@@ -6246,7 +6246,7 @@ export default function App() {
       ) : (
         /* Misafir: Giris + tema + dil (dropdown yok) */
         <>
-          <Button variant="default" onClick={() => setShowAuth(true)}>
+          <Button variant="default" className="ab-login" onClick={() => setShowAuth(true)}>
             {t('account.auth')}
           </Button>
           <span className="account-sep" />
