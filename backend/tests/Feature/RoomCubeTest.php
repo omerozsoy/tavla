@@ -151,34 +151,49 @@ class RoomCubeTest extends TestCase
     }
 
     // ---- resign ----
-    // Düz pes = TEK OYUN (küp değeri × 1). Küp 2 -> rakip +2. (Gerçek kural: gammon/backgammon
-    // ancak bear-off'ta tanımlı; pes seviyesi anlaşmayla. Konum çarpanı UYGULANMAZ.)
+    // SAF KONUM (kullanıcı kararı 2026-09-16): pes eden ŞU ANKİ konumundan değerlenir —
+    // en az 1 taş topladıysa SINGLE (küp × 1). Küp 2 -> rakip +2. Konum çarpanı UYGULANIR.
     public function test_resign_awards_current_cube_value_single(): void
     {
-        $this->room(target: 3, cube: ['value' => 2, 'owner' => 'black', 'pending' => null]);
+        // Kaybeden (beyaz) en az 1 taş topladı -> single (backgammon/gammon DEĞİL).
+        $this->room(target: 3, cube: ['value' => 2, 'owner' => 'black', 'pending' => null],
+            stateOverride: ['off' => ['white' => 1, 'black' => 0]]);
         $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])
             ->assertOk()->assertJsonPath('winner', 'black')->assertJsonPath('match_done', false);
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['black']);
     }
 
-    // Pes değeri KAZANANIN konumuna bağlıdır (sistem-belirli, FE resign.ts ile BE
-    // Backgammon::resignationValue BİREBİR aynı): kazanan bear-off evresindeyse (off>0 veya tüm
-    // taşları evde) VE kaybeden hiç toplamamışsa GAMMON (×2). Erken/açılış konumunda single
-    // kalır (bkz test_resign_awards_current_cube_value_single). "Hayalet gammon" = kazanan
-    // HENÜZ bear-off evresinde DEĞİLKEN gammon; o engellenir — burada kazanan (siyah) off=5 ile
-    // gerçekten bear-off evresinde, dolayısıyla gammon MEŞRU.
-    public function test_resign_is_gammon_when_winner_in_bearing_phase(): void
+    // SAF KONUM: pes değeri = kaybedenin konumu. Kaybeden hiç toplamadı + bar/rakip-ev yok -> GAMMON (×2).
+    // (Kazananın bear-off evresinde olması ARANMAZ; siyahın off durumu değeri ETKİLEMEZ.)
+    public function test_resign_is_gammon_when_loser_has_no_borne_off_and_no_back_checker(): void
     {
         $gammonish = [
             'points' => array_fill(0, 24, 0),
             'bar' => ['white' => 0, 'black' => 0],
-            'off' => ['white' => 0, 'black' => 5], // siyah (kazanan) TOPLUYOR -> bear-off evresi; beyaz hiç toplamadı
+            'off' => ['white' => 0, 'black' => 0], // beyaz (kaybeden) hiç toplamadı
             'turn' => 'white', 'dice' => [], 'diceUsed' => [],
         ];
         $gammonish['points'][8] = 15; // beyaz 15 taş ortada (gammon: hiç toplamadı, bar/rakip-ev yok)
         $this->room(target: 5, cube: ['value' => 2, 'owner' => 'black', 'pending' => null], stateOverride: $gammonish);
         $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])->assertOk();
         $this->assertSame(4, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 2 (gammon) = 4
+    }
+
+    // SAF KONUM: kaybedenin taşı KAZANANIN evinde -> BACKGAMMON (×3). Kazananın bear-off evresinde
+    // olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı).
+    public function test_resign_is_backgammon_when_loser_has_checker_in_winner_home(): void
+    {
+        $bg = [
+            'points' => array_fill(0, 24, 0),
+            'bar' => ['white' => 0, 'black' => 0],
+            'off' => ['white' => 0, 'black' => 0],
+            'turn' => 'white', 'dice' => [], 'diceUsed' => [],
+        ];
+        $bg['points'][8] = 14;  // beyaz 14 taş ortada
+        $bg['points'][20] = 1;  // beyaz 1 taş siyahın evinde (18-23) -> backgammon
+        $this->room(target: 9, cube: ['value' => 2, 'owner' => 'black', 'pending' => null], stateOverride: $bg);
+        $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])->assertOk();
+        $this->assertSame(6, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 3 (backgammon) = 6
     }
 
     // ---- geriye uyum: authoritative olmayan odada küp uçları reddedilir ----

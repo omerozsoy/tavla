@@ -58,11 +58,13 @@ class RoomServerAuthTest extends TestCase
     // ---- CRAWFORD ----
     public function test_reaching_one_away_triggers_crawford_and_blocks_cube(): void
     {
-        // target 4, beyaz 2. Siyah resign -> beyaz 3 = target-1 -> SONRAKİ oyun Crawford.
+        // target 4, beyaz 2. Siyah resign (SINGLE: siyah 1 taş topladı) -> beyaz 3 = target-1 -> Crawford.
         $sm = ['target' => 4, 'score' => ['white' => 2, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
-        $this->room($sm, Backgammon::initialState(), 4);
+        // SAF KONUM: açılış anchor'ı backgammon sayılır -> single için kaybedene 1 toplatıyoruz.
+        $single = array_merge(Backgammon::initialState(), ['off' => ['white' => 0, 'black' => 1]]);
+        $this->room($sm, $single, 4);
 
         $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk()->assertJsonPath('match_done', false);
         $room = Room::first()->fresh();
@@ -112,26 +114,29 @@ class RoomServerAuthTest extends TestCase
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
     }
 
-    public function test_resign_opening_is_single_no_phantom(): void
+    public function test_resign_opening_is_backgammon_pure_position(): void
     {
-        // AÇILIŞ: cube=2. Hayalet backgammon YOK -> server SINGLE hesaplar -> 2×1 = 2.
+        // SAF KONUM (kullanıcı kararı): açılışta kaybedenin (siyah) anchor'ı beyazın evinde (1-nokta)
+        // -> BACKGAMMON. cube=2 -> 2×3 = 6. (Eski "hayalet backgammon YOK" kalkanı kaldırıldı.)
         $sm = ['target' => 15, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
             'winner' => null, 'cube' => ['value' => 2, 'owner' => null, 'pending' => null],
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
         $this->room($sm, Backgammon::initialState(), 15);
 
         $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
-        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
+        $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
     }
 
     public function test_after_crawford_game_doubling_resumes(): void
     {
-        // Crawford oyunu şu an oynanıyor; beyaz 3/4. Beyaz resign -> siyah kazanır (1), maç sürer.
-        // wasCrawford=true -> crawfordDone=true, crawford=false -> küp tekrar serbest.
+        // Crawford oyunu şu an oynanıyor; beyaz 3/4. Beyaz resign (SINGLE: beyaz 1 taş topladı) ->
+        // siyah kazanır (1), maç sürer. wasCrawford=true -> crawfordDone=true, crawford=false -> küp serbest.
         $sm = ['target' => 4, 'score' => ['white' => 3, 'black' => 0], 'gameNo' => 2, 'done' => false,
             'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
             'crawford' => true, 'crawfordDone' => false, 'opened' => true];
-        $this->room($sm, Backgammon::initialState(), 4);
+        // SAF KONUM: açılış anchor'ı backgammon; single için kaybedene (beyaz) 1 toplatıyoruz.
+        $single = array_merge(Backgammon::initialState(), ['off' => ['white' => 1, 'black' => 0]]);
+        $this->room($sm, $single, 4);
 
         $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p1'])->assertOk()->assertJsonPath('match_done', false);
         $room = Room::first()->fresh();
