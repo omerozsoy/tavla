@@ -7552,6 +7552,18 @@ export default function App() {
               </button>
               <span className="hx-hint">{t('exc.homeCtaHint')}</span>
             </div>
+            {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) — Bahane Üret CTA'sının hemen altı */}
+            <div className="home-panels">
+              <OnlinePlayersPanel
+                currentName={profile.nickname}
+                onProfile={(id) => setHomeProfileId(id)}
+                onInvite={user ? handleInviteFriend : undefined}
+              />
+              <LiveMatchesPanel
+                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
+              />
+            </div>
+            <AdStrip slot="middle" />
             {!user && <HomeFeatures />}
             <div className="home-cal-wrap">
               {/* SOL: Online Turnuvalar (ust) + Turnuva Takvimi (alt). SAG: Haberler. */}
@@ -7568,17 +7580,6 @@ export default function App() {
                   onOpen={menuProps.onLeaderboard}
                 />
               </div>
-            </div>
-            <AdStrip slot="middle" />
-            <div className="home-panels">
-              <LiveMatchesPanel
-                onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
-              />
-              <OnlinePlayersPanel
-                currentName={profile.nickname}
-                onProfile={(id) => setHomeProfileId(id)}
-                onInvite={user ? handleInviteFriend : undefined}
-              />
             </div>
             <AdStrip slot="bottom" />
             </>
