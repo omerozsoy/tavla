@@ -413,9 +413,55 @@ export default function MatReview({
 // casing her boardda seçtirir). Nokta/bar/off GERÇEK ekran konumları ÖLÇÜLÜR (flip/mirror/
 // tema/pul-rengi fark etmez); Board'a dokunmadan salt-okuma overlay. Boyutlar noktanın
 // ölçülen genişliğinden (R = COL_W*0.43) MiniBoard oranlarıyla türetilir.
-const ARROW = '#f0a500' // MiniBoard ile aynı: parlak/doygun altın çekirdek
-const ARROW_EDGE = '#2a1206' // MiniBoard ile aynı: koyu casing/kontur
-type ArrowSeg = { x1: number; y1: number; x2: number; y2: number; n: number; bx: number; by: number }
+const ARROW = '#d8a878' // HedgeHog şeftali: ok gövdesi/uç dolgusu
+const ARROW_EDGE = '#a9743f' // hafif koyu şeftali kenar (tanım için ince kontur)
+const GHOST_FILL = 'rgba(216,168,120,0.26)' // hedef hanedeki hayalet pul dolgusu
+const GHOST_RING = 'rgba(216,168,120,0.82)' // hayalet pul halkası
+type ArrowSeg = { x1: number; y1: number; x2: number; y2: number; lane: number }
+
+// HedgeHog tarzı EĞRİ + UCA DOĞRU İNCELEN dolu ok: kaynak (geniş taban) -> hedef (sivri uç).
+// Nokta merkezleri ölçülür; buradan quadratic-bezier orta çizgi + perpendiküler genişlikle
+// dolu bir "şerit" gövde + üçgen uç üretilir. lane: aynı kaynak-hedef çiftinde (çift zar)
+// okları yelpaze gibi ayırmak için (üst üste binmesin).
+function arrowPath(s: ArrowSeg, r: number): string {
+  const { x1, y1, x2, y2, lane } = s
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const len = Math.hypot(dx, dy) || 1
+  const ux = dx / len
+  const uy = dy / len
+  const px = -uy // perpendiküler birim
+  const py = ux
+  const bend = len * 0.12 + lane * r * 2.4 // orta çizgi yayı (+ yelpaze ofseti)
+  const cx = (x1 + x2) / 2 + px * bend
+  const cy = (y1 + y2) / 2 + py * bend
+  const sx = x1 + ux * r * 0.1 // kaynağın hemen dışından başla
+  const sy = y1 + uy * r * 0.1
+  let ex = x2 - cx // uçtaki teğet (kontrol -> hedef)
+  let ey = y2 - cy
+  const el = Math.hypot(ex, ey) || 1
+  ex /= el
+  ey /= el
+  const epx = -ey // uçta perpendiküler
+  const epy = ex
+  const headLen = r * 1.5
+  const headW = r * 0.95
+  const tipx = x2 - ex * r * 0.55 // uç, hayalet pulun kenarına değsin (ortasını kapatmasın)
+  const tipy = y2 - ey * r * 0.55
+  const nx = tipx - ex * headLen // boyun (üçgen ucun tabanı)
+  const ny = tipy - ey * headLen
+  const wB = r * 0.48 // taban yarı-genişliği (geniş)
+  const wN = r * 0.16 // boyun yarı-genişliği (incelir)
+  const aL = `${sx + px * wB},${sy + py * wB}`
+  const aR = `${sx - px * wB},${sy - py * wB}`
+  const cL = `${cx + px * wB * 0.55},${cy + py * wB * 0.55}`
+  const cR = `${cx - px * wB * 0.55},${cy - py * wB * 0.55}`
+  const nL = `${nx + epx * wN},${ny + epy * wN}`
+  const nR = `${nx - epx * wN},${ny - epy * wN}`
+  const hL = `${nx + epx * headW},${ny + epy * headW}`
+  const hR = `${nx - epx * headW},${ny - epy * headW}`
+  return `M${aL} Q${cL} ${nL} L${hL} L${tipx},${tipy} L${hR} L${nR} Q${cR} ${aR} Z`
+}
 
 function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -467,18 +513,18 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
       // "Hamle Analizi" gibi: adımları SIRAYLA numaralandır (birleştirme yok; çift hamlede
       // aynı yere iki numaralı ok — MiniBoard ile aynı davranış).
       const out: ArrowSeg[] = []
-      steps.forEach((s, i) => {
+      steps.forEach((s) => {
         const a = centerOf(elFor(s.from, null))
         if (!a) return
         const b = centerOf(elFor(s.to, a.y))
         if (!b) return
-        out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, n: i + 1, bx: a.x, by: a.y })
+        out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, lane: 0 })
       })
-      // Aynı kaynaktan çıkan oklarda (çift zar: 11/6(2) gibi) numara rozetleri ÜST ÜSTE
-      // biner -> "4 yazmıyor" bug'ı. Aynı kaynağı paylaşan rozetleri okun DİKİNE yay.
+      // Aynı kaynak-hedef çiftini paylaşan oklar (çift zar: 8/4*(2) gibi) BİREBİR üst üste
+      // biner -> tek ok görünür. Grup üyelerini yelpaze gibi ayır (lane ofseti eğriyi kaydırır).
       const groups = new Map<string, number[]>()
       out.forEach((s, idx) => {
-        const k = `${Math.round(s.x1)},${Math.round(s.y1)}`
+        const k = `${Math.round(s.x1)},${Math.round(s.y1)}>${Math.round(s.x2)},${Math.round(s.y2)}`
         const arr = groups.get(k)
         if (arr) arr.push(idx)
         else groups.set(k, [idx])
@@ -486,15 +532,7 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
       for (const idxs of groups.values()) {
         if (idxs.length < 2) continue
         idxs.forEach((idx, j) => {
-          const s = out[idx]
-          const dx = s.x2 - s.x1
-          const dy = s.y2 - s.y1
-          const len = Math.hypot(dx, dy) || 1
-          const px = -dy / len // okun dikine birim vektör
-          const py = dx / len
-          const off = (j - (idxs.length - 1) / 2) * rad * 0.98
-          s.bx = s.x1 + px * off
-          s.by = s.y1 + py * off
+          out[idx].lane = j - (idxs.length - 1) / 2
         })
       }
       setRad(rad)
@@ -512,49 +550,33 @@ function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dep])
 
-  const ah = r * 1.16 // chevron ok ucu boyutu (MiniBoard 11u ~ 1.16R)
   return (
     <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
       {segs.length > 0 && size.w > 0 && (
-        // Silik/şeffaf ok katmanı: tahtayı boğmayacak kadar soluk (kullanıcı isteği).
-        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`} style={{ opacity: 0.66 }}>
-          <defs>
-            <marker
-              id="mrv-ah"
-              viewBox="0 0 11 11"
-              markerUnits="userSpaceOnUse"
-              markerWidth={ah}
-              markerHeight={ah}
-              refX="8.4"
-              refY="5.5"
-              orient="auto"
-            >
-              <path d="M1.6,1.4 L9,5.5 L1.6,9.6 L3.9,5.5 Z" fill={ARROW} stroke={ARROW_EDGE} strokeWidth="0.9" strokeLinejoin="round" />
-            </marker>
-          </defs>
+        <svg className="mrv-arrows" width={size.w} height={size.h} viewBox={`0 0 ${size.w} ${size.h}`}>
+          {/* 1) HAYALET PUL: taşın gideceği hedef haneyi yarı-saydam disk ile göster (HedgeHog). */}
           {segs.map((s, i) => (
-            <g key={i}>
-              {/* ince koyu casing (soft) */}
-              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.4} strokeLinecap="round" opacity={0.4} />
-              {/* altın çekirdek + zarif uç */}
-              <line x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={ARROW} strokeWidth={r * 0.2} strokeLinecap="round" markerEnd="url(#mrv-ah)" />
-              {/* sıra numarası rozeti (kaynak ucunda; çift zarda dikine yayılır) */}
-              <circle cx={s.bx} cy={s.by} r={r * 0.42} fill={ARROW_EDGE} opacity={0.62} />
-              <text
-                x={s.bx}
-                y={s.by + r * 0.3}
-                fontSize={r * 0.86}
-                fontWeight="900"
-                textAnchor="middle"
-                fill={ARROW}
-                stroke={ARROW_EDGE}
-                strokeWidth={r * 0.09}
-                paintOrder="stroke"
-                style={{ strokeLinejoin: 'round' }}
-              >
-                {s.n}
-              </text>
-            </g>
+            <circle
+              key={'g' + i}
+              cx={s.x2}
+              cy={s.y2}
+              r={r * 0.96}
+              fill={GHOST_FILL}
+              stroke={GHOST_RING}
+              strokeWidth={Math.max(1, r * 0.12)}
+            />
+          ))}
+          {/* 2) EĞRİ + UCA DOĞRU İNCELEN ŞEFTALİ OK: kaynak -> hayalet pul. */}
+          {segs.map((s, i) => (
+            <path
+              key={i}
+              d={arrowPath(s, r)}
+              fill={ARROW}
+              fillOpacity={0.9}
+              stroke={ARROW_EDGE}
+              strokeWidth={Math.max(0.6, r * 0.05)}
+              strokeLinejoin="round"
+            />
           ))}
         </svg>
       )}
