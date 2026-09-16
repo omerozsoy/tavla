@@ -41,6 +41,51 @@
   gap: 6px;
 }
 
+/* ===== Portre/tablet ust-bar: iki oyuncu YAN YANA -> AYNI dikey duzen =====
+   Dikeyde (max-width:900) sidebar row olur, iki oyuncu karti ust bar'da yan yana durur.
+   Sorun: pc-top DOM'u "isim->avatar" (isim ustte), pc-bottom "avatar->isim" (avatar ustte)
+   -> iki taraf dikeyde TERS, avatarlar/yazilar farkli hizada "garip" duruyordu.
+   Cozum: portre'de HER IKI karti da AYNI sira yap (AVATAR ustte, isim+PR altta) ve ustten
+   hizala -> iki tarafin avatari ayni satirda, tum yazilari karsilikli AYNI yerde. */
+@media (max-width: 900px) {
+  .sidebar {
+    align-items: flex-start;
+  }
+  .player-card.pc-top,
+  .player-card.pc-bottom {
+    justify-content: flex-start;
+  }
+  /* pc-top: DOM isim(1)->avatar(2)->rating(3); avatari one al -> pc-bottom ile ayni gorsel sira */
+  .player-card.pc-top .pc-avatar {
+    order: 1;
+  }
+  .player-card.pc-top .player-name-wrap {
+    order: 2;
+  }
+  .player-card.pc-top .player-rating {
+    order: 3;
+  }
+  /* Isim + alt satir (seviye / PR) iki tarafta da ortali -> karsilikli hizali */
+  .player-card.pc-top .player-name-wrap,
+  .player-card.pc-bottom .player-name-wrap {
+    text-align: center;
+  }
+  /* Kompakt ust-bar KISA: PR alt notu ("gizli tahmin"/"iyi"/"hata") ekstra satir yapip
+     board'un altina TASIP kirpiliyordu ("iki satira bolunup bozuluyor"). Notu gizle,
+     PR degerini TEK satirda tut (isim de sarmasin) -> temiz, kirpma yok. */
+  .pc-pr-note {
+    display: none;
+  }
+  .pc-pr {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .player-name {
+    white-space: nowrap;
+  }
+}
+
 /* Sira gostergesi: avatari saran kap; icteki avatarin margin'ini kap devralir.
    TEK BOYUT KAYNAGI: --pc-av (varsayilan 84px, var() FALLBACK ile — .sidebar'a taban DEGER
    YAZMIYORUZ ki App.css'teki kompakt @media override'lari kaynak-sirasi yuzunden EZILMESIN).
