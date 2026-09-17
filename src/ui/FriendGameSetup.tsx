@@ -33,9 +33,13 @@ interface Props {
   onCancel: () => void
   board: BoardColors
   onChangeBoard: () => void
+  // Belirli bir oyuncuyu DAVET etme modu (cevrimici listeden kilic ikonu): secili rakip
+  // gosterilir, "Oda Oluştur" yerine "Davet Gönder" -> onInvite; kod-ile-katil kutusu gizlenir.
+  invitee?: { id: number; name: string; avatar?: string | null } | null
+  onInvite?: (opts: { target: number; timeControl: TimeControl }) => void
 }
 
-export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard }: Props) {
+export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onChangeBoard, invitee, onInvite }: Props) {
   const { t } = useT()
   useEscape(onCancel)
   const [tab, setTab] = useState<'single' | 'match'>('single')
@@ -43,14 +47,28 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
   const [length, setLength] = useState(5)
   const [code, setCode] = useState('') // arkadasin verdigi oda kodu
   const target = tab === 'single' ? 1 : length
+  const inviting = !!invitee // davet modu mu?
 
   return (
     <div className="register-overlay page setup-page">
       <div className="setup-split">
         <div className="register-card setup-card">
           <h2>
-            <Icon name="users" size={24} /> {t('friend.title')}
+            <Icon name={inviting ? 'sword' : 'users'} size={24} /> {inviting ? t('friend.inviteTitle') : t('friend.title')}
           </h2>
+
+          {/* Davet modu: KIMI davet ettigin net gorunsun */}
+          {inviting && (
+            <div className="invite-target">
+              <span className="invite-target-av" aria-hidden="true">
+                {invitee!.avatar ? <img src={invitee!.avatar} alt="" /> : <Icon name="user" size={18} />}
+              </span>
+              <span className="invite-target-txt">
+                <span className="invite-target-label">{t('friend.inviteWho')}</span>
+                <strong>{invitee!.name}</strong>
+              </span>
+            </div>
+          )}
 
           {/* Oyun türü: Tek Oyun / Maç Oyunu */}
           <div className="setup-row">
@@ -110,12 +128,19 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
             <Button variant="secondary" onClick={onCancel}>
               {t('setup.cancel')}
             </Button>
-            <Button variant="default" onClick={() => onCreate({ target, timeControl: tc })}>
-              <Icon name="play" size={18} /> {t('friend.create')}
-            </Button>
+            {inviting ? (
+              <Button variant="default" onClick={() => onInvite?.({ target, timeControl: tc })}>
+                <Icon name="sword" size={18} /> {t('friend.inviteBtn')}
+              </Button>
+            ) : (
+              <Button variant="default" onClick={() => onCreate({ target, timeControl: tc })}>
+                <Icon name="play" size={18} /> {t('friend.create')}
+              </Button>
+            )}
           </div>
 
-          {/* Arkadasin KOD verdiyse: buradan odaya katil (ayarlar odayi kuranin) */}
+          {/* Arkadasin KOD verdiyse: buradan odaya katil (ayarlar odayi kuranin). Davet modunda gizli. */}
+          {!inviting && (
           <div className="friend-join-box">
             <div className="setup-label">{t('friend.joinTitle')}</div>
             <div className="friend-join">
@@ -133,6 +158,7 @@ export default function FriendGameSetup({ onCreate, onJoin, onCancel, board, onC
               </Button>
             </div>
           </div>
+          )}
         </div>
 
         <div className="setup-preview">

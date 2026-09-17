@@ -1084,6 +1084,7 @@ export default function App() {
           break
         }
         case 'arkadasinla-oyna':
+          setInviteTarget(null) // menuden acilis = normal mod (davet degil)
           setFriendSetupOpen(true)
           break
         case 'yeni-oyun':
@@ -1185,6 +1186,10 @@ export default function App() {
   }, [currentSlug])
 
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
+  // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
+  const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null } | null>(null)
+  // Daveti reddedince "Oyun Kabul Etmiyor / Cevrimdisi Gorun" diye soran mini modal
+  const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
   const [notifications, setNotifications] = useState<AppNotification[]>([]) // sistem bildirimleri
   const [unreadNotif, setUnreadNotif] = useState(0) // okunmamis bildirim sayisi (can rozeti)
@@ -4929,11 +4934,17 @@ export default function App() {
 
   // Paylasimli kodla online oyuna gir (arkadas daveti). Turnuva baglami yok.
   // DONUS: girildi mi (true/false). Rovans akisi bunu okur -> basarisiz girisi TEKRAR dener.
-  async function enterOnlineByCode(code: string, target = 3): Promise<boolean> {
+  async function enterOnlineByCode(code: string, target = 3, tc?: TimeControl): Promise<boolean> {
     setRoomBusy(true)
     setRoomError('')
+    // Davetten gelen saat (tc) varsa ONU kullan; state stale olmasin diye ayrica yaz.
+    const tcUse = tc ?? timeControl
+    if (tc) {
+      setTimeControl(tc)
+      clockRef.current = CLOCK_PRESETS[tc]
+    }
     try {
-      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, timeControl)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse)
       tournMatchRef.current = null
       resetRoomSync()
       lastSyncRef.current = ''
@@ -4953,9 +4964,9 @@ export default function App() {
       setMatchLog([])
     oppLoggedRef.current = ''
       setRatingChange(null)
-      setClock(freshMatchClock(onlineTargetRef.current))
       onlineTargetRef.current = target
       targetsRef.current = [target]
+      setClock(freshMatchClock(target))
       setMatch(newMatch(target))
       setStarter('white')
       setTurnsPlayed(0)
@@ -4998,15 +5009,34 @@ export default function App() {
       .catch(() => {})
   }
 
-  // Arkadasi oyuna davet et: kod al, odaya gir, arkadas kabul edince baslar
-  async function handleInviteFriend(userId: number) {
+  // Arkadasi oyuna davet et (kilic ikonu): ONCE oyun turu/uzunluk/sure sec (FriendGameSetup
+  // davet modu). Secili rakip orada gorunur; "Davet Gönder" -> handleSendInvite.
+  function handleInviteFriend(p: { id: number; name: string; avatar?: string | null }) {
     setFriendsOpen(false)
+    setInviteTarget(p)
+    setHome(false)
+    setFriendSetupOpen(true)
+  }
+  // Secilen ayarlarla daveti yolla: kod al (ayarlar davete islenir), odaya gir, rakip
+  // kabul edince AYNI ayarla (target/saat) baslar.
+  async function handleSendInvite(opts: { target: number; timeControl: TimeControl }) {
+    const tgt = inviteTarget
+    if (!tgt) return
+    setFriendSetupOpen(false)
+    setInviteTarget(null)
+    setTimeControl(opts.timeControl)
+    clockRef.current = CLOCK_PRESETS[opts.timeControl]
+    onlineTargetRef.current = opts.target
+    targetsRef.current = [opts.target]
+    setMode('online')
     try {
-      const { code } = await inviteFriend(userId)
-      await enterOnlineByCode(code)
+      const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl })
+      await enterOnlineByCode(code, opts.target, opts.timeControl)
     } catch (e) {
       // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
       if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
+      else notify.error(t('mp.connError'))
+      setHome(true)
     }
   }
   // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz.
@@ -5033,7 +5063,8 @@ export default function App() {
     setInvites((list) => list.filter((i) => i.id !== inv.id))
     try {
       const r = await respondInvite(inv.id, true)
-      if (r.code) await enterOnlineByCode(r.code)
+      // Davet edenin sectigi AYNI ayarla gir: target (Tek Oyun=1 / Mac uzunlugu) + saat.
+      if (r.code) await enterOnlineByCode(r.code, r.target ?? inv.target ?? 3, (r.timeControl ?? inv.timeControl ?? undefined) as TimeControl | undefined)
     } catch {
       /* yoksay */
     }
@@ -5041,6 +5072,8 @@ export default function App() {
   async function handleDeclineInvite(inv: GameInviteT) {
     setInvites((list) => list.filter((i) => i.id !== inv.id))
     respondInvite(inv.id, false).catch(() => {})
+    // Reddedince: bir daha rahatsiz olmamak icin durum degistirmek ister mi diye sor.
+    setDeclineAsk(true)
   }
 
   function handleLeaveRoom() {
@@ -6466,6 +6499,7 @@ export default function App() {
     // onaylayinca davet-kodlu oda olusturulur. Matchmaking'e (rastgele rakip) sokMAZ.
     onPlayFriend: () => {
       closeAllPages()
+      setInviteTarget(null) // menuden acilis = normal mod (davet degil)
       setFriendSetupOpen(true)
     },
     onResume: () => {
@@ -6699,19 +6733,51 @@ export default function App() {
   const showTournNotices = home && tournNotices.length > 0
   const inviteBanner = (invites.length > 0 || showTournNotices) && (
     <div className="invite-stack">
-      {invites.map((inv) => (
-        <div key={inv.id} className="invite-card">
-          <span className="invite-text">
-            <Icon name="play" size={16} /> <b>{inv.from}</b> {t('friends.invitedYou')}
-          </span>
-          <Button variant="default" aria-label={t('friends.accept')} onClick={() => handleAcceptInvite(inv)}>
-            {t('friends.accept')}
-          </Button>
-          <Button variant="destructive" aria-label={t('friends.decline')} onClick={() => handleDeclineInvite(inv)}>
-            {t('friends.decline')}
-          </Button>
-        </div>
-      ))}
+      {invites.map((inv) => {
+        // Davetli NEYE davet edildigini gorsun: oyun turu (Tek Oyun / Mac + puan) + sure.
+        const isMatch = (inv.target ?? 1) > 1
+        const typeLabel = isMatch
+          ? `${t('friend.match')} · ${t('invite.points', { n: inv.target })}`
+          : t('friend.single')
+        const clockKey =
+          inv.timeControl === 'casual'
+            ? 'setup.clockCasual'
+            : inv.timeControl === 'speed'
+              ? 'setup.clockSpeed'
+              : inv.timeControl === 'normal'
+                ? 'setup.clockNormal'
+                : null
+        return (
+          <div key={inv.id} className="invite-card game-invite">
+            <div className="invite-head">
+              <span className="invite-av" aria-hidden="true">
+                {inv.avatar ? <img src={inv.avatar} alt="" /> : <Icon name="user" size={18} />}
+              </span>
+              <span className="invite-who">
+                <b>{inv.from}</b> {t('friends.invitedYou')}
+              </span>
+            </div>
+            <div className="invite-meta">
+              <span className="invite-chip">
+                <Icon name={isMatch ? 'target' : 'play'} size={14} /> {typeLabel}
+              </span>
+              {clockKey && (
+                <span className="invite-chip">
+                  <Icon name="clock" size={14} /> {t(clockKey)}
+                </span>
+              )}
+            </div>
+            <div className="invite-btns">
+              <Button variant="default" aria-label={t('friends.accept')} onClick={() => handleAcceptInvite(inv)}>
+                <Icon name="check" size={16} /> {t('friends.accept')}
+              </Button>
+              <Button variant="destructive" aria-label={t('friends.decline')} onClick={() => handleDeclineInvite(inv)}>
+                <Icon name="x" size={16} /> {t('friends.decline')}
+              </Button>
+            </div>
+          </div>
+        )
+      })}
       {showTournNotices &&
         tournNotices.map((tn) => (
           <div key={`${tn.tid}-${tn.match}`} className="invite-card tourn-notice">
@@ -7266,6 +7332,40 @@ export default function App() {
   const menuOverlays = (
     <>
       {inviteBanner}
+      {/* Daveti reddettikten sonra: bir daha rahatsiz olmamak icin durum degistirme teklifi */}
+      {declineAsk && (
+        <div className="register-overlay modal" role="dialog" aria-modal="true">
+          <div className="register-card decline-ask" onClick={(e) => e.stopPropagation()}>
+            <h3>{t('invite.declineTitle')}</h3>
+            <p className="decline-ask-desc">{t('invite.declineDesc')}</p>
+            <div className="decline-ask-actions">
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  handleSetStatus('busy')
+                  setDeclineAsk(false)
+                  notify.info(t('online.st.busy'))
+                }}
+              >
+                <Icon name="shield-check" size={16} /> {t('online.st.busy')}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  handleSetStatus('offline')
+                  setDeclineAsk(false)
+                  notify.info(t('online.st.offline'))
+                }}
+              >
+                <Icon name="eye" size={16} /> {t('online.st.offline')}
+              </Button>
+              <Button variant="default" onClick={() => setDeclineAsk(false)}>
+                {t('invite.declineStay')}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       {boardPickerOpen && (
         <BoardPickerModal
           current={boardTheme}
@@ -7406,7 +7506,12 @@ export default function App() {
                   return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
                 })()}
                 onChangeBoard={() => setBoardPickerOpen(true)}
-                onCancel={() => setFriendSetupOpen(false)}
+                invitee={inviteTarget}
+                onInvite={handleSendInvite}
+                onCancel={() => {
+                  setFriendSetupOpen(false)
+                  setInviteTarget(null)
+                }}
                 onCreate={({ target, timeControl }) => {
                   setFriendSetupOpen(false)
                   setTimeControl(timeControl)

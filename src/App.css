@@ -20124,7 +20124,7 @@ button.acct-row-logout:hover:not(:disabled) {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  width: min(380px, 94vw);
+  width: min(420px, 94vw);
 }
 .invite-card {
   display: flex;
@@ -20159,6 +20159,131 @@ button.acct-row-logout:hover:not(:disabled) {
 .invite-dec {
   background: var(--border);
   color: var(--text);
+}
+
+/* ===== Gelen oyun daveti — genis kart (davetli NEYE davet edildigini gorsun) ===== */
+.invite-card.game-invite {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 14px 16px;
+}
+.invite-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.invite-av {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--muted);
+}
+.invite-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.invite-who {
+  flex: 1;
+  min-width: 0;
+  font-size: 0.95rem;
+}
+.invite-who b {
+  font-weight: 700;
+}
+.invite-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.invite-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--tv-brick-light) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-brick-light) 35%, var(--border));
+  color: var(--text);
+  font-size: 0.82rem;
+}
+.invite-btns {
+  display: flex;
+  gap: 8px;
+}
+.invite-btns > * {
+  flex: 1;
+}
+
+/* ===== Daveti reddedince: durum degistirme teklifi modali ===== */
+.register-card.decline-ask {
+  width: min(400px, 94vw);
+  text-align: center;
+  padding: 22px 20px;
+}
+.decline-ask h3 {
+  margin: 0 0 8px;
+}
+.decline-ask-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 0 0 18px;
+}
+.decline-ask-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.decline-ask-actions > * {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ===== FriendGameSetup davet modu: secili rakip rozeti ===== */
+.invite-target {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--tv-brick-light) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-brick-light) 35%, var(--border));
+}
+.invite-target-av {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  color: var(--muted);
+}
+.invite-target-av img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.invite-target-txt {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+}
+.invite-target-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.invite-target-txt strong {
+  font-weight: 700;
+  font-size: 1.02rem;
 }
 
 
