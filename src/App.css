@@ -5630,7 +5630,7 @@ html[data-board='iznik'] .point.shade-a.top::before,
 html[data-board='iznik'] .point.shade-a.bottom::before {
   background: #F8F4EB url('./assets/iznik-pano-x3.webp') center / cover no-repeat;
 }
-/* Komşu hane: DÜZ turkuaz (--tri-b = #2090C0; iç desen yok). */
+/* Boş (desensiz) hane: DÜZ kırmızı (--tri-b = #C81E28; iç desen yok). */
 html[data-board='iznik'] .point.shade-b.top::before,
 html[data-board='iznik'] .point.shade-b.bottom::before {
   background: var(--tri-b);
