@@ -34,8 +34,8 @@ const poly = (pts: string, f: string) => `%3Cpolygon points='${pts}' fill='${f}'
 function flagsFor(flip: boolean): string[] {
   const yb = (f: number) => Math.round(flip ? H - f * H : f * H)
   const half = Math.round(H / 2)
-  // Beyaz/renkli daireli flama: solid zemin + tabana yakın daire (svgR + cover -> yuvarlak kalır)
-  const disc = (field: string, dot: string) => svgR(band(0, 100, field) + circle(yb(0.15), 34, dot))
+  // Beyaz/renkli daireli flama: solid zemin + tabana yakın KÜÇÜK daire (svgR + cover -> yuvarlak kalır)
+  const disc = (field: string, dot: string) => svgR(band(0, 100, field) + circle(yb(0.17), 24, dot))
   // Nordic haç: tam-boy dikey kol + tabana yakın yatay kol
   const cross = (field: string, arm: string) => {
     const cy = yb(0.16)
@@ -49,7 +49,7 @@ function flagsFor(flip: boolean): string[] {
   }
   // Kullanıcı sıralaması (1.webp..12.webp) = point 2,4,..,24 (data-point 1,3,..,23).
   return [
-    svg(band(0, 100, Y) + band(33, 34, R)),                          // 1  (sarı/kırmızı/sarı)          -> pt2  dp1
+    svg(band(0, 100, Y) + rect(0, Math.round(H / 3), 100, Math.round(H / 3), R)), // 1 90° ÇEVRİK: sarı/kırmızı/sarı YATAY band -> pt2 dp1
     disc(W, R),                                                      // 2  (beyaz + kırmızı DAİRE)       -> pt4  dp3
     disc(B, W),                                                      // 3  (mavi + beyaz DAİRE)          -> pt6  dp5
     svg(band(0, 100, R) + band(33, 34, W) + band(67, 33, B)),        // 4  (kırmızı/beyaz/mavi)         -> pt8  dp7
