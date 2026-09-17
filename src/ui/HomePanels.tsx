@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './homeCalendar.css'
 import { useT } from '../i18n'
@@ -293,45 +293,72 @@ export function StatusPicker({
 }) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
+  // Menu konumu: tetik butonunun ekran koordinati (sag-hizali, altina acilir). Menu
+  // body'ye PORTAL edilir -> ust bar/hero stacking-context'inde ALTTA KALMAZ (kirpilmaz).
+  const [pos, setPos] = useState<{ top: number; right: number } | null>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  const openMenu = () => {
+    const r = btnRef.current?.getBoundingClientRect()
+    if (r) setPos({ top: r.bottom + 4, right: Math.max(8, window.innerWidth - r.right) })
+    setOpen(true)
+  }
+
+  // Menu acikken sayfa kayar/boyut degisirse kapat (fixed menu tetikten kaymasin).
+  useEffect(() => {
+    if (!open) return
+    const close = () => setOpen(false)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [open])
+
   return (
     <div className={`status-picker ${compact ? 'status-picker--compact' : ''}`}>
       {!compact && <span className="status-picker-lbl">{t('online.myStatus')}</span>}
       <div className="status-drop">
         <button
+          ref={btnRef}
           type="button"
           className="status-cur"
           aria-haspopup="listbox"
           aria-expanded={open}
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => (open ? setOpen(false) : openMenu())}
         >
           <span className={`status-dot status-dot--${value}`} />
           <span className="status-cur-txt">{t(STATUS_KEY[value])}</span>
           <Icon name="chevron" size={14} />
         </button>
-        {open && (
-          <>
-            <button type="button" className="status-backdrop" aria-label="" onClick={() => setOpen(false)} />
-            <ul className="status-menu" role="listbox">
-              {STATUS_ORDER.map((s) => (
-                <li key={s}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={s === value}
-                    className={`status-opt ${s === value ? 'active' : ''}`}
-                    onClick={() => {
-                      onChange(s)
-                      setOpen(false)
-                    }}
-                  >
-                    <span className={`status-dot status-dot--${s}`} />
-                    {t(STATUS_KEY[s])}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+        {open &&
+          pos &&
+          createPortal(
+            <>
+              <button type="button" className="status-backdrop" aria-label="" onClick={() => setOpen(false)} />
+              <ul className="status-menu status-menu--fixed" role="listbox" style={{ top: pos.top, right: pos.right }}>
+                {STATUS_ORDER.map((s) => (
+                  <li key={s}>
+                    <button
+                      type="button"
+                      role="option"
+                      aria-selected={s === value}
+                      className={`status-opt ${s === value ? 'active' : ''}`}
+                      onClick={() => {
+                        onChange(s)
+                        setOpen(false)
+                      }}
+                    >
+                      <span className={`status-dot status-dot--${s}`} />
+                      {t(STATUS_KEY[s])}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>,
+            document.body,
+          )}
       </div>
     </div>
   )
