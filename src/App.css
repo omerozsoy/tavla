@@ -5529,18 +5529,31 @@ html[data-board='nautical'] .point.shade-a::before {
 html[data-board='nautical'] .point.shade-b::before {
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.30));
 }
-html[data-board='nautical'] .point.shade-b[data-point='1']::before { background: var(--naut-1) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='3']::before { background: var(--naut-3) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='5']::before { background: var(--naut-5) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='7']::before { background: var(--naut-7) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='9']::before { background: var(--naut-9) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='11']::before { background: var(--naut-11) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='13']::before { background: var(--naut-13) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='15']::before { background: var(--naut-15) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='17']::before { background: var(--naut-17) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='19']::before { background: var(--naut-19) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='21']::before { background: var(--naut-21) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.shade-b[data-point='23']::before { background: var(--naut-23) center / 100% 100% no-repeat; }
+/* Üst hane (base=üstte) ve alt hane (base=altta) AYRI flama varyantı -> motif daima rail'de. */
+html[data-board='nautical'] .point.top.shade-b[data-point='1']::before { background: var(--naut-1) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='1']::before { background: var(--naut-1-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='3']::before { background: var(--naut-3) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='3']::before { background: var(--naut-3-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='5']::before { background: var(--naut-5) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='5']::before { background: var(--naut-5-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='7']::before { background: var(--naut-7) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='7']::before { background: var(--naut-7-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='9']::before { background: var(--naut-9) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='9']::before { background: var(--naut-9-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='11']::before { background: var(--naut-11) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='11']::before { background: var(--naut-11-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='13']::before { background: var(--naut-13) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='13']::before { background: var(--naut-13-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='15']::before { background: var(--naut-15) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='15']::before { background: var(--naut-15-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='17']::before { background: var(--naut-17) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='17']::before { background: var(--naut-17-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='19']::before { background: var(--naut-19) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='19']::before { background: var(--naut-19-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='21']::before { background: var(--naut-21) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='21']::before { background: var(--naut-21-b) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='23']::before { background: var(--naut-23) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='23']::before { background: var(--naut-23-b) center / 100% 100% no-repeat; }
 /* Pip sayıları ceviz ahşap üzerinde açık okunur */
 html[data-board='nautical'] .pip {
   color: rgba(242, 234, 210, 0.92);

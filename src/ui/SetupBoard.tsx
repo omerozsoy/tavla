@@ -1,5 +1,5 @@
 import { Icon } from './Icon'
-import { NAUTICAL_FLAGS } from '../nauticalFlags'
+import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -122,8 +122,8 @@ export default function SetupBoard({
       if (nautical) {
         // BOŞ AHŞAP (çift kolon): üçgen çizme -> ahşap zemin görünür. BAYRAKLI (tek kolon): iki flama.
         if (col % 2 === 1) {
-          tris.push(...flagTri(`${half}${col}t`, cx, PAD, PAD + trTriH, NAUTICAL_FLAGS[nautIdx++ % 12]))
-          tris.push(...flagTri(`${half}${col}b`, cx, H - PAD, H - PAD - trTriH, NAUTICAL_FLAGS[nautIdx++ % 12]))
+          tris.push(...flagTri(`${half}${col}t`, cx, PAD, PAD + trTriH, NAUTICAL_FLAGS_TOP[nautIdx++ % 12]))
+          tris.push(...flagTri(`${half}${col}b`, cx, H - PAD, H - PAD - trTriH, NAUTICAL_FLAGS_BOTTOM[nautIdx++ % 12]))
         }
         continue
       }
