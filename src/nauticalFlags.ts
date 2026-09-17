@@ -62,9 +62,9 @@ function flagsFor(flip: boolean): string[] {
     cross(W, R),                                                     // 9  (beyaz + kırmızı haç)        -> pt18 dp17
     quadCW(),                                                        // 10 90° CW: 4 çeyrek (Niner)      -> pt20 dp19
     svg(band(0, 100, R) + hband(0.2, 0.4, W) + hband(0.6, 0.8, W)),  // 11 90° CW: Answer YATAY şerit    -> pt22 dp21
-    // 12 Repeat: TEK sarı üçgen (düz tepe) — mavi point içinde, tabanı rail'de geniş+düz, ucu tip'e
-    // doğru AŞAĞI; altta mavi V, yanlarda ince mavi kenarlık. Çentik/ikinci üçgen YOK.
-    svg(band(0, 100, B) + poly(`11,${yb(0.02)} 89,${yb(0.02)} 50,${yb(0.6)}`, Y)), // -> pt24 dp23
+    // 12 Repeat: TEK sarı üçgen. Screenshot_13 PİKSEL ÖLÇÜMÜ: sarı taban = point genişliğinin ~%63'ü
+    // (yanlarda belirgin mavi kenarlık), apex = %58 derinlik. Tabanı rail'de düz, ucu tip'e doğru.
+    svg(band(0, 100, B) + poly(`19,${yb(0.015)} 81,${yb(0.015)} 50,${yb(0.58)}`, Y)), // -> pt24 dp23
   ]
 }
 
