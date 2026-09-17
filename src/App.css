@@ -5635,7 +5635,7 @@ html[data-board='iznik'] .point.shade-a.bottom::before {
 html[data-board='iznik'] .point.shade-b.top::before,
 html[data-board='iznik'] .point.shade-b.bottom::before {
   background:
-    linear-gradient(rgba(200, 30, 40, 0.80), rgba(200, 30, 40, 0.80)),
+    linear-gradient(rgba(200, 30, 40, 0.88), rgba(200, 30, 40, 0.88)),
     url('./assets/iznik-red-damask.webp') center / cover no-repeat;
   background-color: #C81E28;
 }

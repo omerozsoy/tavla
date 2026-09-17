@@ -142,7 +142,7 @@ export default function SetupBoard({
           const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
           return [
             ...flagTri(`${key}i`, cx, baseY, tipY, iznikRedDamask),
-            <polygon key={`${key}v`} points={pts} fill={b} opacity="0.8" />,
+            <polygon key={`${key}v`} points={pts} fill={b} opacity="0.88" />,
           ]
         }
         if (col % 2 === 0) tris.push(...flagTri(`iz-${half}${col}t`, cx, PAD, PAD + trTriH, iznikTile))
