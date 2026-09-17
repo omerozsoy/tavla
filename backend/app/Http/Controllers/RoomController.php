@@ -579,16 +579,28 @@ class RoomController extends Controller
     // Ana sayfa "Cevrimici Oyuncular" paneli icin. Herkese acik (izleme gibi).
     public function onlinePlayers()
     {
-        $users = User::whereNotNull('last_seen')
-            ->where('last_seen', '>', now()->subSeconds(70))
+        // presence_status kolonu HENUZ migrate edilmemis olabilir (canli sunucuda migrate
+        // kosmadan): kolon yoksa filtreyi/select'i uygulama -> endpoint 500 vermez, herkes
+        // 'available' sayilir. Migrate kosunca durum filtresi devreye girer.
+        $hasStatus = Schema::hasColumn('users', 'presence_status');
+
+        $cols = ['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until'];
+        if ($hasStatus) {
+            $cols[] = 'presence_status';
+        }
+
+        $query = User::whereNotNull('last_seen')
+            ->where('last_seen', '>', now()->subSeconds(70));
+        if ($hasStatus) {
             // "Çevrimdışı Görün" (offline) durumundakiler listede GÖRÜNMEZ. Eski/NULL
             // kayitlar (durum secmemis) 'available' sayilir -> gorunur.
-            ->where(function ($q) {
+            $query->where(function ($q) {
                 $q->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
-            })
-            ->orderByDesc('rating')
+            });
+        }
+        $users = $query->orderByDesc('rating')
             ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'presence_status']);
+            ->get($cols);
 
         $list = $users->map(fn ($u) => [
             'id'      => $u->id,
@@ -598,7 +610,7 @@ class RoomController extends Controller
             'country' => $u->country,
             'rating'  => $u->rating ?? 1500,
             'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
-            'status'  => $u->presence_status ?: 'available', // durum noktasi rengi (available|ready|busy)
+            'status'  => $hasStatus ? ($u->presence_status ?: 'available') : 'available', // durum noktasi rengi
         ]);
 
         return response()->json(['players' => $list, 'count' => $list->count()]);
