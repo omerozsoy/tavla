@@ -39,7 +39,8 @@
     top: auto;
     bottom: 84px; /* alttaki olası çubukların üstünde */
     transform: none;
-    padding: 10px 8px;
+    /* Yalnız ikon kaldığında dokunma hedefi ~44x44 olsun (mobil dokunma erişilebilirliği). */
+    padding: 12px;
   }
   .bug-fab-txt {
     display: none;
