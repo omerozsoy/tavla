@@ -268,6 +268,17 @@ export const TAVLATV_THEMES: BoardTheme[] = [
     surface: 'wood', pointStyle: 'sharp', checkerStyle: 'gloss',
     d1Bg: '#f4eeda', d1Pip: '#1e3a5f', d2Bg: '#1e3a5f', d2Pip: '#f4eeda', cubeBg: '#1e3a5f', cubeText: '#f4eeda',
   },
+  {
+    // İznik — Kütahya/İznik çini panosundan bespoke tavla: hane çifti dönüşümlü [Dolu Desen]
+    // (gerçek çini fotoğrafı, üçgene gömülü, DAİMA dik) + [Karanfil Kırmızısı komşu hane #C81E28].
+    // Açık fildişi oyun alanı (#F4EEE1), koyu ceviz çerçeve/bar, fildişi + abanoz (kobalt-lacivert)
+    // pullar. Bespoke: [data-board='iznik'] (App.css) + src/assets/iznik-pano-x3.webp. Referans:
+    // design_handoff_iznik_tavla_board (yüksek sadakat). TavlaTV Özel kademesi.
+    id: 'iznik', name: 'İznik', rarity: 'tavlatv',
+    panel: '#F4EEE1', a: '#F8F4EB', b: '#C81E28', light: '#FBF6EC', checker: '#161E3E', frame: '#33241a',
+    surface: 'plain', pointStyle: 'sharp', checkerStyle: 'gloss',
+    d1Bg: '#FBF6EC', d1Pip: '#161E3E', d2Bg: '#161E3E', d2Pip: '#FBF6EC', cubeBg: '#202090', cubeText: '#FFFFFF',
+  },
 ]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
