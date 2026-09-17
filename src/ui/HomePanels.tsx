@@ -122,6 +122,59 @@ function Avatar({ url, name }: { url?: string | null; name: string }) {
   )
 }
 
+// Liderlik Tablosu ile AYNI sayfalayici (lb-pager sinifi + < 1..N > oklar). Tum ana
+// sayfa panelleri (Siralama · Cevrimici Oyuncular · Canli Maclar) bunu paylasir.
+export function Pager({
+  page,
+  total,
+  pageSize = 10,
+  maxPages = 10,
+  onPage,
+}: {
+  page: number
+  total: number
+  pageSize?: number
+  maxPages?: number
+  onPage: (p: number) => void
+}) {
+  const { t } = useT()
+  const pages = Math.min(maxPages, Math.max(1, Math.ceil(total / pageSize)))
+  if (pages <= 1) return null
+  return (
+    <nav className="lb-pager" aria-label={t('lb.pager')}>
+      <button
+        type="button"
+        className="lb-pg-arrow"
+        disabled={page <= 0}
+        onClick={() => onPage(Math.max(0, page - 1))}
+        aria-label={t('lb.prev')}
+      >
+        <Icon name="caret-left" size={16} />
+      </button>
+      {Array.from({ length: pages }).map((_, i) => (
+        <button
+          key={i}
+          type="button"
+          className={`lb-pg-num ${i === page ? 'active' : ''}`}
+          aria-current={i === page ? 'page' : undefined}
+          onClick={() => onPage(i)}
+        >
+          {i + 1}
+        </button>
+      ))}
+      <button
+        type="button"
+        className="lb-pg-arrow"
+        disabled={page >= pages - 1}
+        onClick={() => onPage(Math.min(pages - 1, page + 1))}
+        aria-label={t('lb.next')}
+      >
+        <Icon name="caret-right" size={16} />
+      </button>
+    </nav>
+  )
+}
+
 // ---- Canli maclar (izlenebilir) ----
 export function LiveMatchesPanel({
   onSpectate,
@@ -131,8 +184,9 @@ export function LiveMatchesPanel({
   const { t } = useT()
   const [matches, setMatches] = useState<LiveMatch[] | null>(null)
   const [tab, setTab] = useState<'all' | 'single' | 'match' | 'friendly'>('all')
-  const [showAll, setShowAll] = useState(false) // 10'ar göster; "Tümü" ile hepsi
-  const LIVE_LIMIT = 10
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 mac (Liderlik Tablosu gibi)
+  const PAGE_SIZE = 10
+  const MAX_PAGES = 10 // en fazla 100 mac
 
   useEffect(() => {
     let alive = true
@@ -149,10 +203,14 @@ export function LiveMatchesPanel({
   }, [])
 
   const shown = matches?.filter((m) => tab === 'all' || liveCat(m) === tab) ?? null
-  // Sekme degisince tekrar 10'a don
+  // Sekme degisince ilk sayfaya dön
   useEffect(() => {
-    setShowAll(false)
+    setPage(0)
   }, [tab])
+
+  // Liste kuculunce (mac bitince) mevcut sayfa asilirsa son sayfaya sabitle.
+  const pageCount = shown ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(shown.length / PAGE_SIZE))) : 1
+  const curPage = Math.min(page, pageCount - 1)
 
   return (
     <div className="home-panel live-panel">
@@ -181,7 +239,7 @@ export function LiveMatchesPanel({
       ) : (
         <>
         <div className="live-list">
-          {(showAll ? shown : shown.slice(0, LIVE_LIMIT)).map((m) => (
+          {shown.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((m) => (
             <button
               key={m.code}
               className="live-row"
@@ -205,11 +263,7 @@ export function LiveMatchesPanel({
             </button>
           ))}
         </div>
-        {!showAll && shown.length > LIVE_LIMIT && (
-          <Button variant="ghost" className="live-more" onClick={() => setShowAll(true)}>
-            {t('live.showAll', { n: shown.length })}
-          </Button>
-        )}
+        <Pager page={curPage} total={shown.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
         </>
       )}
     </div>
@@ -228,8 +282,9 @@ export function OnlinePlayersPanel({
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
-  const [showAll, setShowAll] = useState(false)
-  const LIMIT = 12
+  const [page, setPage] = useState(0) // 0-tabanli; her sayfa 10 kisi (Liderlik Tablosu gibi)
+  const PAGE_SIZE = 10
+  const MAX_PAGES = 10 // en fazla 100 kisi
 
   useEffect(() => {
     let alive = true
@@ -245,6 +300,10 @@ export function OnlinePlayersPanel({
     }
   }, [])
 
+  // Liste kucuudubunde (oyuncu cikinca) mevcut sayfa asilirsa son sayfaya sabitle.
+  const pageCount = players ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(players.length / PAGE_SIZE))) : 1
+  const curPage = Math.min(page, pageCount - 1)
+
   return (
     <div className="home-panel online-panel">
       <div className="home-panel-head">
@@ -259,7 +318,7 @@ export function OnlinePlayersPanel({
       ) : (
         <>
           <div className="rank-list">
-            {(showAll ? players : players.slice(0, LIMIT)).map((p) => {
+            {players.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((p) => {
               const self = !!currentName && p.name === currentName
               return (
                 <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
@@ -289,11 +348,7 @@ export function OnlinePlayersPanel({
               )
             })}
           </div>
-          {!showAll && players.length > LIMIT && (
-            <Button variant="ghost" className="live-more" onClick={() => setShowAll(true)}>
-              {t('live.showAll', { n: players.length })}
-            </Button>
-          )}
+          <Pager page={curPage} total={players.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
         </>
       )}
     </div>
@@ -338,46 +393,10 @@ export function RankingPanel({
     }
   }, [by])
 
-  // Toplam kayittan sayfa sayisi (en fazla MAX_PAGES).
-  const pageCount = (total: number) => Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / PAGE_SIZE)))
-  // Modal Liderlik Tablosu ile AYNI pager (lb-pager sinifi + ayni ceviri anahtarlari).
-  const renderPager = (total: number) => {
-    const pages = pageCount(total)
-    if (pages <= 1) return null
-    return (
-      <nav className="lb-pager" aria-label={t('lb.pager')}>
-        <button
-          type="button"
-          className="lb-pg-arrow"
-          disabled={page === 0}
-          onClick={() => setPage((p) => Math.max(0, p - 1))}
-          aria-label={t('lb.prev')}
-        >
-          <Icon name="caret-left" size={16} />
-        </button>
-        {Array.from({ length: pages }).map((_, i) => (
-          <button
-            key={i}
-            type="button"
-            className={`lb-pg-num ${i === page ? 'active' : ''}`}
-            aria-current={i === page ? 'page' : undefined}
-            onClick={() => setPage(i)}
-          >
-            {i + 1}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="lb-pg-arrow"
-          disabled={page >= pages - 1}
-          onClick={() => setPage((p) => Math.min(pages - 1, p + 1))}
-          aria-label={t('lb.next')}
-        >
-          <Icon name="caret-right" size={16} />
-        </button>
-      </nav>
-    )
-  }
+  // Modal Liderlik Tablosu ile AYNI pager (paylasilan Pager: lb-pager sinifi + oklar).
+  const renderPager = (total: number) => (
+    <Pager page={page} total={total} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
+  )
 
   return (
     <div className="home-panel rank-panel">
