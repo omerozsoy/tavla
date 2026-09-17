@@ -625,7 +625,23 @@ class RoomController extends Controller
             ->where('updated_at', '>', now()->subMinutes(4))
             ->orderByDesc('updated_at')
             ->limit(10)
-            ->get(['code', 'p1_user_id', 'p2_user_id', 'p1_name', 'p1_rating', 'p1_avatar', 'p2_name', 'p2_rating', 'p2_avatar', 'target', 'state']);
+            ->get();
+
+        // HAYALETI ANINDA TEMIZLE: banner'a bakan kisi zaten ANA SAYFADA; bu sorgu ana sayfa
+        // acilisinda calisir. Aday odalardan GERCEKTEN olmus/olu olanlari (sonuc BELLI veya
+        // IKISI DE terk) burada an-be-an finalize et -> banner cron/presence beklemeden, ana
+        // sayfaya iner inmez dusar. TEK-taraf terk BURADA islenmez (banner "Maça dön" icin;
+        // kullanici donebilsin diye KENDI sorgusu onu forfeit etmesin -> o, rakibin poll'u/
+        // presence 48sn ile islenir). Olu odalar listeden de cikarilir.
+        $rooms = $rooms->reject(function ($r) {
+            $reason = $this->deadRoomReason($r);
+            if ($reason === null) {
+                return false; // canli / tek-taraf -> banner'da kalsin
+            }
+            $this->finalizeDead($r, $reason);
+
+            return true;
+        })->values();
 
         // Rakip premium: rakip user_id'lerinden TEK sorguyla plan lookup.
         $oppIds = $rooms->map(fn ($r) => (int) $r->p1_user_id === (int) $me->id ? $r->p2_user_id : $r->p1_user_id)
@@ -659,6 +675,64 @@ class RoomController extends Controller
         })->values();
 
         return response()->json(['rooms' => $list]);
+    }
+
+    /**
+     * Oda GERÇEKTEN bitti/ölü mü? 'decided' (sonuç belli: skor hedefte / tek-oyun / authoritative
+     * done) | 'abandon' (İKİSİ DE terk: her iki _seen damgası da PRESENCE_TIMEOUT+GRACE'i geçti) |
+     * null (canlı YA DA tek-taraf terk -> banner kalsın, kullanıcı dönebilir). TEK-taraf terk
+     * BİLEREK null döner: banner sahibinin kendi sorgusu onu forfeit etmesin (o, rakibin poll'u /
+     * presence ile işlenir). Yalnız hayalet banner'ı hızlı düşürmek için "kesin ölü" durumları.
+     */
+    private function deadRoomReason(Room $room): ?string
+    {
+        if ($this->decidedWinnerColor($room) !== null) {
+            return 'decided';
+        }
+        $clock = is_array($room->clock) ? $room->clock : [];
+        $p1s = $clock['p1_seen'] ?? null;
+        $p2s = $clock['p2_seen'] ?? null;
+        // Biri hiç damgalanmadıysa "ikisi de terk" diyemeyiz (yüklenmedi mi/terk mi ayrılamaz).
+        if ($p1s === null || $p2s === null) {
+            return null;
+        }
+        $now = microtime(true);
+        $limit = MatchClock::PRESENCE_TIMEOUT + MatchClock::GRACE;
+        if (($now - (float) $p1s) > $limit && ($now - (float) $p2s) > $limit) {
+            return 'abandon';
+        }
+
+        return null;
+    }
+
+    /**
+     * Ölü odayı finalize et (banner bir daha göstermesin). 'decided' -> gerçek kazananı yaz
+     * (puan satırını backstop idempotent tamamlar; ForfeitLoss ÇAĞRILMAZ). 'abandon' -> no-contest
+     * (puan/coin YOK). version++ -> izleyicinin sürüm-kapılı poll'u da 'finished'i yakalar.
+     */
+    private function finalizeDead(Room $room, string $reason): void
+    {
+        if ($room->status === 'finished') {
+            return;
+        }
+        if ($reason === 'decided') {
+            $color = $this->decidedWinnerColor($room);
+            $winnerSlot = $color === 'white' ? 'p1' : 'p2';
+            if ($room->p1_result === null) {
+                $room->p1_result = $winnerSlot === 'p1' ? 'won' : 'lost';
+            }
+            if ($room->p2_result === null) {
+                $room->p2_result = $winnerSlot === 'p2' ? 'won' : 'lost';
+            }
+            if ($room->end_reason === null) {
+                $room->end_reason = 'NORMAL_WIN';
+            }
+        } elseif ($room->end_reason === null) {
+            $room->end_reason = 'ABANDON';
+        }
+        $room->status = 'finished';
+        $room->version = (int) $room->version + 1;
+        $room->save();
     }
 
     // Hizli eslesmeyi iptal et (havuzdaki bekleyen odami sil)
