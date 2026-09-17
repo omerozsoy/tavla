@@ -48,8 +48,6 @@ class ShopController extends Controller
         'gold' => 'legendary', 'sunset' => 'legendary', 'obsidian' => 'legendary', 'samurai' => 'legendary',
         'blackdiamond' => 'legendary', 'gutenberg' => 'legendary', 'krypton' => 'legendary', 'infinity' => 'legendary',
         'vega' => 'legendary', 'quantum' => 'legendary', 'singularity' => 'legendary',
-        // Denizci (ceviz ahsap + 12 deniz sinyal flamasi) — src/boardThemes.ts 'nautical' ile senkron
-        'nautical' => 'legendary',
         // mythic (5000)
         'neon' => 'mythic', 'cyber' => 'mythic', 'inferno' => 'mythic',
         // club (1000)
@@ -58,7 +56,7 @@ class ShopController extends Controller
         'turkey' => 'country', 'usa' => 'country', 'uk' => 'country', 'germany' => 'country', 'greece' => 'country',
         'italy' => 'country', 'france' => 'country', 'spain' => 'country', 'japan' => 'country', 'brazil' => 'country',
         // tavlatv (TavlaTV özel boardlar, en ust kademe; src/boardThemes.ts TAVLATV_THEMES ile senkron)
-        'tavlatv-special' => 'tavlatv', 'citrus-wood' => 'tavlatv',
+        'tavlatv-special' => 'tavlatv', 'citrus-wood' => 'tavlatv', 'nautical' => 'tavlatv',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).

@@ -407,7 +407,7 @@ import {
   boardPrice,
   FREE_BOARDS,
 } from './boardThemes'
-import { NAUTICAL_FLAG_BY_DATAPOINT } from './nauticalFlags'
+import { NAUTICAL_FLAG_TOP_BY_DP, NAUTICAL_FLAG_BOTTOM_BY_DP } from './nauticalFlags'
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
@@ -1709,13 +1709,16 @@ export default function App() {
     root.setAttribute('data-surface', bt.surface ?? 'plain')
     root.setAttribute('data-point-style', bt.pointStyle ?? 'sharp') // hane sekli: sivri/yuvarlak
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
-    // Denizci board: 12 sinyal flamasini CSS degiskeni olarak yaz (--naut-<data-point>), App.css
-    // [data-board='nautical'] .point.shade-b[data-point='N']::before bunlari arka plan yapar.
+    // Maritime board: 12 sinyal flamasini CSS degiskeni olarak yaz. Ust/alt hane AYRI varyant
+    // (--naut-<dp> = ust, --naut-<dp>-b = alt) -> motif DAIMA tabanda (rail), distort YOK.
     // Diger boardlarda temizle (bayat degisken kalmasin). Tek kaynak: src/nauticalFlags.ts.
     for (let dp = 1; dp <= 23; dp += 2) {
-      const uri = boardTheme === 'nautical' ? NAUTICAL_FLAG_BY_DATAPOINT[dp] : undefined
-      if (uri) root.style.setProperty(`--naut-${dp}`, `url("${uri}")`)
+      const top = boardTheme === 'nautical' ? NAUTICAL_FLAG_TOP_BY_DP[dp] : undefined
+      const bot = boardTheme === 'nautical' ? NAUTICAL_FLAG_BOTTOM_BY_DP[dp] : undefined
+      if (top) root.style.setProperty(`--naut-${dp}`, `url("${top}")`)
       else root.style.removeProperty(`--naut-${dp}`)
+      if (bot) root.style.setProperty(`--naut-${dp}-b`, `url("${bot}")`)
+      else root.style.removeProperty(`--naut-${dp}-b`)
     }
     // Watermark rengi: board zemini acik -> koyu yazi, koyu -> acik yazi. Ulke boardlarinda
     // orta yazi (ulke adi) TASARIMIN merkezi -> biraz daha belirgin (~%16, yine taslari engellemez);
