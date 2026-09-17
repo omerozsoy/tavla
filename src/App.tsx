@@ -8014,6 +8014,7 @@ export default function App() {
             return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
           })()}
           matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
+          luck={{ white: luckPctOf('white'), black: luckPctOf('black') }}
           onClose={() => setResultView(null)}
         />
       )}

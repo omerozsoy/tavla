@@ -11,6 +11,7 @@ import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
 import { applyStep } from '../engine/moves'
 import { divisionOfPR } from '../badges'
+import MatchSummary from './MatchSummary'
 import type { LogEntry } from './MatchReport'
 import type { GameState, Step, Player } from '../engine/types'
 
@@ -90,6 +91,7 @@ export default function MatReview({
   const { t } = useT()
   useEscape(onClose)
   const [showSum, setShowSum] = useState(!!summary)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
   const nameB = names?.[1] || t('mrv.black')
   // "Sen" = giriş yapan kullanıcı hangi renkse. Ad eşleşmezse (başkasının maçı / misafir)
@@ -216,10 +218,18 @@ export default function MatReview({
           <Icon name="analyze" size={18} /> {t('mrv.title')}
           {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
         </span>
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')}>
-          <Icon name="x" size={18} />
-        </Button>
+        <div className="mrv-top-actions">
+          <Button variant="outline" className="mrv-summary-btn" onClick={() => setSummaryOpen(true)}>
+            <Icon name="chart" size={15} /> {t('ms.btn')}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')}>
+            <Icon name="x" size={18} />
+          </Button>
+        </div>
       </div>
+      {summaryOpen && (
+        <MatchSummary log={log} names={names} matchLength={matchLength} onClose={() => setSummaryOpen(false)} />
+      )}
 
       <div className="mrv-grid">
         {/* ---- SOL: hamle listesi ---- */}
