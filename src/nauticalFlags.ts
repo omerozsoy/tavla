@@ -62,7 +62,7 @@ function flagsFor(flip: boolean): string[] {
     cross(W, R),                                                     // 9  (beyaz + kırmızı haç)        -> pt18 dp17
     quadCW(),                                                        // 10 90° CW: 4 çeyrek (Niner)      -> pt20 dp19
     svg(band(0, 100, R) + hband(0.2, 0.4, W) + hband(0.6, 0.8, W)),  // 11 90° CW: Answer YATAY şerit    -> pt22 dp21
-    svg(band(0, 100, B) + poly(`14,${yb(0.045)} 86,${yb(0.045)} 50,${yb(0.9)}`, Y)), // 12 Repeat: mavi zemin + uca kadar uzanan büyük SARI ÜÇGEN (ince mavi kenarlık) -> pt24 dp23
+    svg(band(0, 100, B) + poly(`20,${yb(0.05)} 80,${yb(0.05)} 50,${yb(0.62)}`, Y)), // 12 Repeat: mavi zemin + SARI ÜÇGEN uca doğru (eski hali) -> pt24 dp23
   ]
 }
 
