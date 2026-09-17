@@ -10056,6 +10056,171 @@ button.acct-row-logout:hover:not(:disabled) {
   right: auto;
   z-index: 2000;
 }
+
+/* ---- Maç Özeti (Match Summary) modalı ---- */
+/* Analiz ekranlarının (tam-ekran portal) ÜSTÜNDE dursun diye yüksek z-index. */
+.ms-overlay {
+  z-index: 4000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.ms-card {
+  width: min(760px, 100%);
+  max-height: min(86vh, 900px);
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+.ms-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.ms-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.ms-mlen {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.9rem;
+}
+.ms-body {
+  overflow: auto;
+  padding: 4px 0 8px;
+  -webkit-overflow-scrolling: touch;
+}
+.ms-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.ms-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--card-bg);
+  padding: 10px 12px;
+  text-align: center;
+  vertical-align: bottom;
+  border-bottom: 1px solid var(--border);
+}
+.ms-table thead th.ms-corner {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 0.82rem;
+}
+.ms-phead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ms-pname {
+  font-weight: 500;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ms-plevel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 7px;
+  border: 1px solid;
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+/* Kategori başlığı satırı */
+.ms-cat th {
+  padding: 10px 12px 4px;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--accent);
+}
+.ms-row th {
+  text-align: left;
+  font-weight: 400;
+  padding: 6px 12px;
+}
+.ms-row td {
+  text-align: center;
+  padding: 6px 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ms-row:nth-child(even of .ms-row) {
+  background: color-mix(in srgb, var(--muted) 6%, transparent);
+}
+/* Ana metrik (kategori satırı) vurgusu */
+.ms-strong th,
+.ms-strong td {
+  font-weight: 500;
+}
+/* Alt metrik: girintili + soluk etiket */
+.ms-sub th {
+  padding-left: 26px;
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+.ms-sub td {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+/* Analiz ekranı başlık aksiyonları (Maç Özeti + kapat yan yana) */
+.report-head-actions,
+.mrv-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rep-summary-btn,
+.mrv-summary-btn {
+  gap: 6px;
+}
+
+@media (max-width: 560px) {
+  .ms-table {
+    font-size: 0.82rem;
+  }
+  .ms-row th,
+  .ms-row td,
+  .ms-table thead th {
+    padding: 6px 8px;
+  }
+  .ms-sub th {
+    padding-left: 16px;
+  }
+  .ms-pname {
+    max-width: 100px;
+  }
+  /* Dar ekranda "Maç Özeti" etiketi yer kaplamasın: buton ikon+kısa kalır */
+  .rep-summary-btn,
+  .mrv-summary-btn {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+}
 .status-opt {
   display: flex;
   align-items: center;

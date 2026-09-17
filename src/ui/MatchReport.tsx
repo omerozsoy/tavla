@@ -12,6 +12,7 @@ import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
 import { buildMatXg, type GameResultInput } from '../matExport'
 import { fetchGameLogMat } from '../api'
+import MatchSummary from './MatchSummary'
 import type { GameState, Player, Step } from '../engine/types'
 
 export interface LogEntry {
@@ -56,6 +57,7 @@ interface Props {
   // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
   matchResult?: { winner: Player; score: { white: number; black: number } }
   matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
+  luck?: { white: number | null; black: number | null } // Maç Özeti için şans (MWC%); yoksa '—'
   onClose: () => void
 }
 
@@ -83,10 +85,12 @@ export default function MatchReport({
   blackName = 'Black',
   gameResults,
   matchUid,
+  luck,
   onClose,
 }: Props) {
   const { t } = useT()
   useEscape(onClose)
+  const [summaryOpen, setSummaryOpen] = useState(false)
   // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri.
   // humanColor yoksa (bot-vs-bot/izleyici) ayrim anlamsiz -> hepsi gosterilir (toggle gizli).
   const [scope, setScope] = useState<'mine' | 'opp'>('mine')
@@ -267,9 +271,16 @@ export default function MatchReport({
             {mode === 'stats' ? <Icon name="chart" size={20} /> : <Icon name="search" size={20} />}{' '}
             {mode === 'stats' ? t('rep.statsTitle') : t('rep.analysisTitle')}
           </h2>
-          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
-            <Icon name="x" size={18} />
-          </Button>
+          <div className="report-head-actions">
+            {log.length > 0 && (
+              <Button variant="outline" className="rep-summary-btn" onClick={() => setSummaryOpen(true)}>
+                <Icon name="chart" size={15} /> {t('ms.btn')}
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
+              <Icon name="x" size={18} />
+            </Button>
+          </div>
         </div>
         <div className="report-body">
           {log.length === 0 ? (
@@ -504,6 +515,15 @@ export default function MatchReport({
           )}
         </div>
       </div>
+      {summaryOpen && (
+        <MatchSummary
+          log={log}
+          names={[whiteName, blackName]}
+          matchLength={matchLength}
+          luck={luck}
+          onClose={() => setSummaryOpen(false)}
+        />
+      )}
     </div>
   )
 }
