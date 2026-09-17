@@ -37,6 +37,7 @@ return [
 
         // --- ARACLAR ---
         ['key' => 'analyzer', 'group' => 'tools', 'label' => 'Pozisyon Analizi'],
+        ['key' => 'matAnalyzer', 'group' => 'tools', 'label' => 'Mat Analiz'],
         ['key' => 'blunders', 'group' => 'tools', 'label' => 'Hata Günlüğü'],
         ['key' => 'matchHistory', 'group' => 'tools', 'label' => 'Maç Analizleri'],
 
