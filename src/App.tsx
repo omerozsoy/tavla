@@ -7556,20 +7556,7 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
-            {/* Bahane Makinesi ana-sayfa CTA'sı (salt eğlence) */}
-            <div className="home-excuse-cta">
-              <button
-                type="button"
-                className="home-excuse-btn"
-                onClick={menuProps.onExcuses}
-                aria-label={t('exc.homeCta')}
-              >
-                <Icon name="megaphone" size={20} />
-                <span className="hx-label">{t('exc.homeCta')}</span>
-              </button>
-              <span className="hx-hint">{t('exc.homeCtaHint')}</span>
-            </div>
-            {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) — Bahane Üret CTA'sının hemen altı */}
+            {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
               <OnlinePlayersPanel
                 currentName={profile.nickname}
