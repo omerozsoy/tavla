@@ -3,14 +3,16 @@ import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useToast } from './Toast'
-import { reviewMat } from '../api'
+import { reviewMat, type MatReview as MatReviewResp } from '../api'
 import type { LogEntry } from './MatchReport'
 import MatReview, { computeSummary, type MatSummary } from './MatReview'
+
+type MatLuck = MatReviewResp['luck']
 
 // Son analiz sonucu localStorage'da tutulur -> sayfa REFRESH'te kaybolmaz (kullanıcı isteği).
 // İnceleme kapatılınca (reset) temizlenir; yeni analiz üzerine yazar.
 const STORE_KEY = 'matReview:last'
-type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null }
+type Saved = { log: LogEntry[]; names: string[] | null; matchLength: number | null; summary: MatSummary | null; luck?: MatLuck }
 const loadSaved = (): Saved | null => {
   try {
     const raw = localStorage.getItem(STORE_KEY)
@@ -39,6 +41,7 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
   const [names, setNames] = useState<string[] | null>(saved0?.names ?? null)
   const [matchLength, setMatchLength] = useState<number | null>(saved0?.matchLength ?? null)
   const [summary, setSummary] = useState<MatSummary | null>(saved0?.summary ?? null)
+  const [luck, setLuck] = useState<MatLuck | undefined>(saved0?.luck)
 
   function readFile(f: File) {
     if (f.size > 500_000) {
@@ -68,10 +71,11 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
       setNames(r.names ?? null)
       setMatchLength(r.matchLength ?? null)
       setSummary(sm)
+      setLuck(r.luck)
       setReviewLog(r.log)
       // Refresh'te kaybolmasın diye kaydet (kota dolarsa sessizce atla — analiz yine çalışır).
       try {
-        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm }))
+        localStorage.setItem(STORE_KEY, JSON.stringify({ log: r.log, names: r.names ?? null, matchLength: r.matchLength ?? null, summary: sm, luck: r.luck }))
       } catch {
         /* kota — persist yok */
       }
@@ -86,6 +90,7 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
   function reset() {
     setReviewLog(null)
     setSummary(null)
+    setLuck(undefined)
     setNames(null)
     setMatchLength(null)
     setMatText('')
@@ -101,7 +106,7 @@ export default function MatAnalyzer({ onClose, currentName }: { onClose: () => v
   // Analiz sonrası: tam-ekran görüntüleyici + açılış özet popup'ı.
   if (reviewLog) {
     return (
-      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} currentName={currentName} onClose={reset} />
+      <MatReview log={reviewLog} names={names} matchLength={matchLength} summary={summary} luck={luck} currentName={currentName} onClose={reset} />
     )
   }
 

@@ -78,6 +78,7 @@ export default function MatReview({
   names,
   matchLength,
   summary,
+  luck,
   currentName,
   onClose,
 }: {
@@ -85,6 +86,7 @@ export default function MatReview({
   names: string[] | null
   matchLength: number | null
   summary?: MatSummary | null
+  luck?: import('../api').MatReview['luck'] // gnubg şansı (p0=beyaz, p1=siyah); yoksa '—'
   currentName?: string
   onClose: () => void
 }) {
@@ -228,7 +230,13 @@ export default function MatReview({
         </div>
       </div>
       {summaryOpen && (
-        <MatchSummary log={log} names={names} matchLength={matchLength} onClose={() => setSummaryOpen(false)} />
+        <MatchSummary
+          log={log}
+          names={names}
+          matchLength={matchLength}
+          luck={luck ? { white: luck.p0, black: luck.p1 } : undefined}
+          onClose={() => setSummaryOpen(false)}
+        />
       )}
 
       <div className="mrv-grid">
