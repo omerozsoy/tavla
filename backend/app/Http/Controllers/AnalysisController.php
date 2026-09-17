@@ -178,6 +178,24 @@ class AnalysisController extends Controller
             ], 503);
         }
 
+        // MAÇ ÖZETİ ŞANSI: AYNI yüklenen .mat'e AYRI bir gnubg matchluck geçişi (dosya ÜRETİLMEZ,
+        // yalnız okunur) -> per-oyuncu Luck (Equity=emg) + MWC% + Joker. Ağır değil (analyse match);
+        // BAŞARISIZSA review'ı BOZMA (luck yok -> Maç Özeti'nde '—'). p0=beyaz (sol sütun), p1=siyah.
+        try {
+            $lk = $this->gnubg->matchluck($data['mat']);
+            $luck = is_array($lk) ? ($lk['luck'] ?? null) : null;
+            if (is_array($luck) && isset($luck['p0'], $luck['p1'])) {
+                $norm = fn ($p) => [
+                    'mwc' => isset($p['mwc_total']) ? round((float) $p['mwc_total'], 3) : null,
+                    'cost' => isset($p['emg_total']) ? round((float) $p['emg_total'], 4) : null,
+                    'jokers' => isset($p['jokers']) && $p['jokers'] !== null ? (int) $p['jokers'] : null,
+                ];
+                $res['luck'] = ['p0' => $norm($luck['p0']), 'p1' => $norm($luck['p1'])];
+            }
+        } catch (\Throwable $e) {
+            // luck opsiyonel -> yoksay (Maç Özeti Şans/Equity/Joker '—' gösterir)
+        }
+
         return response()->json($res);
     }
 

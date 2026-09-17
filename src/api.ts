@@ -1772,6 +1772,13 @@ export interface MatReview {
   names: string[] | null
   decisions: number
   log: import('./ui/MatchReport').LogEntry[]
+  // Maç Özeti şansı (gnubg matchluck; p0=beyaz, p1=siyah). Yoksa/başarısızsa undefined -> '—'.
+  luck?: { p0: MatLuckSide; p1: MatLuckSide }
+}
+export interface MatLuckSide {
+  mwc: number | null // MWC% (şans yüzdesi)
+  cost: number | null // luck EMG (equity cost)
+  jokers: number | null // joker sayısı
 }
 export async function reviewMat(mat: string, plies = 2): Promise<MatReview> {
   return req<MatReview>('/review-mat', {
