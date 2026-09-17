@@ -1,6 +1,7 @@
 import { Icon } from './Icon'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 import iznikTile from '../assets/iznik-pano-x3.webp' // İznik board: çini pano deseni (dolu hane)
+import iznikRedDamask from '../assets/iznik-red-damask.webp' // İznik: kırmızı hanede silik damask
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -136,10 +137,18 @@ export default function SetupBoard({
       if (iznik) {
         // Desenli hane (çift kolon üst / tek kolon alt) + karanfil kırmızısı komşu hane.
         // flagTri = üçgene klipli görsel (üst yarısı 'slice'/cover -> dik, ezilmez).
+        // Kırmızı hane: silik damask (görsel) + üstüne ~0.8 kırmızı örtü -> desen belli belirsiz.
+        const redHane = (key: string, baseY: number, tipY: number) => {
+          const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
+          return [
+            ...flagTri(`${key}i`, cx, baseY, tipY, iznikRedDamask),
+            <polygon key={`${key}v`} points={pts} fill={b} opacity="0.8" />,
+          ]
+        }
         if (col % 2 === 0) tris.push(...flagTri(`iz-${half}${col}t`, cx, PAD, PAD + trTriH, iznikTile))
-        else tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, b))
+        else tris.push(...redHane(`izr-${half}${col}t`, PAD, PAD + trTriH))
         if (col % 2 === 1) tris.push(...flagTri(`iz-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, iznikTile))
-        else tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, b))
+        else tris.push(...redHane(`izr-${half}${col}b`, H - PAD, H - PAD - trTriH))
         continue
       }
       const light = col % 2 === 0
