@@ -291,4 +291,55 @@ class RoomClockTest extends TestCase
         $this->assertSame('lost', $room->p2_result);
         $this->assertNotSame('ABANDON', $room->end_reason); // no-contest DEGIL: gercek galibiyet
     }
+
+    private function user(string $email): \App\Models\User
+    {
+        return \App\Models\User::create([
+            'first_name' => 'U', 'last_name' => 'T', 'country' => '', 'nickname' => $email,
+            'email' => $email, 'password' => bcrypt('secret123'),
+        ]);
+    }
+
+    // ---- HIZLI HAYALET FIX: ana sayfa myActiveRooms olu odayi ANINDA finalize edip gizler ----
+    public function test_active_rooms_finalizes_and_hides_dead_room_instantly(): void
+    {
+        $me = $this->user('me1@t.co');
+        $opp = $this->user('opp1@t.co');
+        $room = $this->playingRoom('AR1', 'casual', 5);
+        $room->p1_user_id = $me->id;
+        $room->p2_user_id = $opp->id;
+        $now = microtime(true);
+        $room->clock = ['p1_seen' => $now - 70, 'p2_seen' => $now - 80]; // IKISI DE terk (>48)
+        $room->save();
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $res = $this->getJson('/api/me/active-rooms')->assertOk();
+        $this->assertCount(0, $res->json('rooms')); // hayalet banner ANINDA dustu
+
+        $room->refresh();
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('ABANDON', $room->end_reason);
+        $this->assertNull($room->p1_result);  // no-contest: puan yok
+        $this->assertNull($room->p2_result);
+    }
+
+    // ---- KORUMA: tek-taraf uzakta (rakip present) -> banner KALIR, caller forfeit EDILMEZ ----
+    public function test_active_rooms_keeps_resumable_room_when_opponent_present(): void
+    {
+        $me = $this->user('me2@t.co');
+        $opp = $this->user('opp2@t.co');
+        $room = $this->playingRoom('AR2', 'casual', 5);
+        $room->p1_user_id = $me->id;
+        $room->p2_user_id = $opp->id;
+        $now = microtime(true);
+        $room->clock = ['p1_seen' => $now - 70, 'p2_seen' => $now - 1]; // ben uzaktayim, rakip present
+        $room->save();
+
+        \Laravel\Sanctum\Sanctum::actingAs($me);
+        $res = $this->getJson('/api/me/active-rooms')->assertOk();
+        $this->assertCount(1, $res->json('rooms')); // "Maça dön" icin banner KALIR
+
+        $room->refresh();
+        $this->assertSame('playing', $room->status); // caller kendi sorgusuyla forfeit OLMADI
+    }
 }
