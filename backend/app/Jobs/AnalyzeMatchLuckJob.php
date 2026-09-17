@@ -2,9 +2,11 @@
 
 namespace App\Jobs;
 
+use App\Models\GameLog;
 use App\Models\MatchResult;
 use App\Services\GnuBg\GnuBgClient;
 use App\Support\MatBuilder;
+use App\Support\MatFromLog;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -49,7 +51,14 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         $oppRow = MatchResult::where('room_code', $mr->room_code)
             ->where('user_id', '!=', $mr->user_id)->latest('id')->first();
         if (! $oppRow) {
-            return; // rakip henüz raporlamadı; onun raporu bu job'ı yeniden tetikler (iki log hazır olur)
+            // RAKİP HİÇ RAPORLAMADI (sekme kapandı/ağ) -> match_results birleştirmesi yapılamaz.
+            // KÖK ÇÖZÜM: şansı game_logs'tan hesapla — hamleler maç boyunca CANLI (p1_events[beyaz]
+            // + p2_events[siyah]) sunucuya yazılır, maç-sonu raporuna BAĞIMLI DEĞİLDİR. Böylece
+            // rakip raporlamasa bile İKİ oyuncunun da şansı (self + opponent) hesaplanır ve
+            // raporlayanın satırına self-contained yazılır (luck_* + opponent_luck_*).
+            $this->handleOnlineFromGameLog($gnubg, $mr);
+
+            return;
         }
         // DEDUP: iki oyuncu da aynı anda raporlarsa her iki job da tam gnubg analizini çalıştırır
         // (pahalı, çift). İki satır da ZATEN yazılıysa atla -> tek queue worker sıralı işlediği için
@@ -164,6 +173,83 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             MatchResult::where('id', $mr->id)->update($oppUpd);
         }
         Log::info('gnubg luck V1 (pvb)', ['id' => $mr->id, 'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null]);
+    }
+
+    /**
+     * ONLINE + rakip raporlamadı: şansı game_logs'tan (canlı, iki oyuncunun hamleleri) hesapla.
+     * game_logs.uid = ONLINE maçta oda kodu (=room_code). p1_events=beyaz, p2_events=siyah (slot
+     * konvansiyonu). MatFromLog::buildFromEvents TAM .mat kurar -> gnubg matchluck p0(beyaz)/p1(siyah).
+     * Raporlayanın (mr) rengine göre self/opp ayrılır ve mr satırına self-contained yazılır:
+     * luck_* (self) + opponent_luck_* (rakip). Böylece rakip satırı OLMASA da Maç Özeti iki oyuncuyu
+     * da gösterir. (Kolonlar 2026_09_11 + 2026_09_17 migrasyonlarında mevcut.)
+     */
+    private function handleOnlineFromGameLog(GnuBgClient $gnubg, MatchResult $mr): void
+    {
+        // Raporlayanın rengi (hc) kendi logundan gelir; yoksa renk belirlenemez -> çık.
+        $decoded = json_decode((string) $mr->log, true);
+        $hc = is_array($decoded) ? ($decoded['hc'] ?? null) : null;
+        if (! in_array($hc, ['white', 'black'], true)) {
+            return;
+        }
+        $gl = GameLog::where('uid', $mr->room_code)->first();
+        if (! $gl) {
+            return; // canlı hamle kaydı yok (eski maç / hiç yazılmamış) -> çık
+        }
+        $p1 = is_array($gl->p1_events) ? $gl->p1_events : []; // beyaz
+        $p2 = is_array($gl->p2_events) ? $gl->p2_events : []; // siyah
+        if (count($p1) + count($p2) < 2) {
+            return;
+        }
+        $matchLen = max(1, (int) ($mr->match_length ?? 1));
+        $mat = MatFromLog::buildFromEvents($p1, $p2, [
+            'whiteName' => 'White', 'blackName' => 'Black', 'matchLength' => $matchLen,
+        ]);
+        if ($mat === '') {
+            return;
+        }
+        $res = $gnubg->matchluck($mat);
+        $luck = is_array($res) ? ($res['luck'] ?? null) : null;
+        if (! is_array($luck) || ! isset($luck['p0'], $luck['p1'])) {
+            Log::warning('gnubg luck (game_logs): parse yok', ['id' => $mr->id, 'room' => $mr->room_code, 'mat_len' => strlen($mat)]);
+
+            return;
+        }
+        $white = $luck['p0'];
+        $black = $luck['p1'];
+        $suspicious = fn ($l) => ! is_array($l) || ! isset($l['emg_total']) || abs((float) $l['emg_total']) < 1e-9;
+        if ($suspicious($white) || $suspicious($black)) {
+            Log::warning('gnubg luck (game_logs) ŞÜPHELİ 0', [
+                'id' => $mr->id, 'room' => $mr->room_code, 'p1' => count($p1), 'p2' => count($p2),
+            ]);
+
+            return;
+        }
+        // Raporlayanın rengine göre self/opp ata; mr satırına self-contained yaz.
+        [$selfLuck, $oppLuck] = $hc === 'white' ? [$white, $black] : [$black, $white];
+        $this->write($mr->id, $selfLuck);
+        $this->writeOpponent($mr->id, $oppLuck);
+        Log::info('gnubg luck V1 (game_logs fallback)', [
+            'room' => $mr->room_code, 'hc' => $hc,
+            'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null,
+        ]);
+    }
+
+    /** Rakip şansını (opponent_luck_*) satıra yaz — yalnız var olan kolonlara (fillable gerekmez). */
+    private function writeOpponent(int $rowId, array $luck): void
+    {
+        $upd = [];
+        if (Schema::hasColumn('match_results', 'opponent_luck_mwc') && isset($luck['mwc_total'])) {
+            $upd['opponent_luck_mwc'] = round((float) $luck['mwc_total'], 3);
+        }
+        if (Schema::hasColumn('match_results', 'opponent_luck_emg') && isset($luck['emg_total'])) {
+            $upd['opponent_luck_emg'] = round((float) $luck['emg_total'], 4);
+        }
+        if (Schema::hasColumn('match_results', 'opponent_luck_jokers') && isset($luck['jokers'])) {
+            $upd['opponent_luck_jokers'] = (int) $luck['jokers'];
+        }
+        if ($upd) {
+            MatchResult::where('id', $rowId)->update($upd);
+        }
     }
 
     /** Query-builder update (fillable gerekmez); yalnız var olan kolonlara yaz. */
