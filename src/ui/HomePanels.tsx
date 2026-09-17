@@ -281,12 +281,21 @@ const STATUS_KEY: Record<PresenceStatus, string> = {
 
 // Kendi durumunu secen kucuk dropdown (Musait/Hazir/Mesgul/Cevrimdisi). Renkli nokta
 // + etiket; tiklayinca acilir, secince kapanir; disari tiklama backdrop ile kapatir.
-function StatusPicker({ value, onChange }: { value: PresenceStatus; onChange: (s: PresenceStatus) => void }) {
+// compact=true: ust bar (avatar yani) icin — "Durumum" etiketi yok, kompakt pill.
+export function StatusPicker({
+  value,
+  onChange,
+  compact = false,
+}: {
+  value: PresenceStatus
+  onChange: (s: PresenceStatus) => void
+  compact?: boolean
+}) {
   const { t } = useT()
   const [open, setOpen] = useState(false)
   return (
-    <div className="status-picker">
-      <span className="status-picker-lbl">{t('online.myStatus')}</span>
+    <div className={`status-picker ${compact ? 'status-picker--compact' : ''}`}>
+      {!compact && <span className="status-picker-lbl">{t('online.myStatus')}</span>}
       <div className="status-drop">
         <button
           type="button"
@@ -333,14 +342,10 @@ export function OnlinePlayersPanel({
   currentName,
   onProfile,
   onInvite,
-  myStatus,
-  onSetStatus,
 }: {
   currentName?: string
   onProfile: (id: number) => void
   onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
-  myStatus?: PresenceStatus // kendi durumu (giris yapmissa)
-  onSetStatus?: (s: PresenceStatus) => void // durum degistir (giris yapmissa)
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
@@ -373,8 +378,6 @@ export function OnlinePlayersPanel({
         <Icon name="users" size={17} /> {t('online.title')}
         {players && players.length > 0 && <span className="online-count">{players.length}</span>}
       </div>
-      {/* Kendi durumun (yalniz giris yapmissa): Musait / Oyuna Hazir / Oyun Kabul Etmiyor / Cevrimdisi Gorun */}
-      {myStatus && onSetStatus && <StatusPicker value={myStatus} onChange={onSetStatus} />}
       {players === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
       ) : players.length === 0 ? (

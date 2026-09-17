@@ -219,7 +219,7 @@ import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
-import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel } from './ui/HomePanels'
+import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -4985,6 +4985,11 @@ export default function App() {
       if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
     }
   }
+  // Kendi durumunu degistir (ust bar durum secici): iyimser guncelle + sunucuya yaz.
+  function handleSetStatus(s: PresenceStatus) {
+    setMyStatus(s)
+    setPresenceStatus(s).catch(() => {})
+  }
   // Cevrimici oyuncu panelinden "Arkadas ol": id ile istek + toast.
   async function handleAddFriend(userId: number) {
     try {
@@ -5954,6 +5959,8 @@ export default function App() {
               {profile.nickname}
               {premium && <PremiumCrown style={{ marginLeft: 6 }} />}
             </button>
+            {/* Oyuncu durumu (Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün) — avatarın yanında */}
+            <StatusPicker value={myStatus} onChange={handleSetStatus} compact />
             <button
               type="button"
               className="stat-chip stat-chip-coin"
@@ -6115,6 +6122,11 @@ export default function App() {
           </button>
           {acctMenuOpen && (
             <div className="acct-pop" role="menu" style={{ position: 'fixed', top: acctMenuPos.top, right: acctMenuPos.right }}>
+              {/* Oyuncu durumu (mobil): Müsait/Oyuna Hazır/Oyun Kabul Etmiyor/Çevrimdışı Görün */}
+              <div className="acct-status">
+                <StatusPicker value={myStatus} onChange={handleSetStatus} />
+              </div>
+              <div className="acct-div" />
               {/* Profilini Gor */}
               <button
                 type="button"
@@ -7563,15 +7575,6 @@ export default function App() {
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
                 onInvite={user ? handleInviteFriend : undefined}
-                myStatus={user ? myStatus : undefined}
-                onSetStatus={
-                  user
-                    ? (s) => {
-                        setMyStatus(s) // iyimser guncelle
-                        setPresenceStatus(s).catch(() => {})
-                      }
-                    : undefined
-                }
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}
