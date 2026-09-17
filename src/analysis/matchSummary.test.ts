@@ -98,6 +98,23 @@ describe('computeMatchSummary', () => {
     expect(s.black.takeBlunders).toBe(1)
   })
 
+  it('istemci küp girdisi (kayıp ÜST DÜZEY e.loss, cube.loss YOK) doğru okunur — 0 göstermez', () => {
+    // App.recordCubePR bu şekilde loglar: loss top-level, cube objesinde loss yok.
+    const log: LogEntry[] = [
+      { notation: '', best: '', loss: 0.05, player: 'black', cube: { win: 50, equity: 0, recommended: 'drop', chosen: 'take', correct: false } },
+      { notation: '', best: '', loss: 0.11, player: 'black', cube: { win: 50, equity: 0, recommended: 'take', chosen: 'drop', correct: false } },
+    ]
+    const s = computeMatchSummary(log, null)
+    // İkisi de yanıt kararı (take/drop); maliyet üst düzey loss'tan gelmeli (0 DEĞİL)
+    expect(s.black.takeDecisions).toBe(2)
+    expect(s.black.takeEquityCost).toBeCloseTo(0.16, 6)
+    expect(s.black.wrongTakesCost).toBeCloseTo(0.05, 6) // take + hata
+    expect(s.black.wrongPassesCost).toBeCloseTo(0.11, 6) // drop + hata
+    expect(s.black.takes).toBe(2)
+    expect(s.black.takeBlunders).toBe(1) // 0.11 >= 0.08
+    expect(s.black.cubePlay).toBeCloseTo((0.16 / 2) * 500, 6)
+  })
+
   it('checker + cube havuzlanır (overall PR ORTALAMA değil, Σloss/Σkarar)', () => {
     const log = [
       checker('white', 0.1), // checker: 1 karar, 0.1
@@ -137,15 +154,20 @@ describe('computeMatchSummary', () => {
     expect(s.white.rolls).toBe(2) // ikisi de zar attı
   })
 
-  it('luck verilmezse null (—), verilirse taşınır; jokers/luckCost/luckRating/Elo daima null', () => {
+  it('luck verilmezse null (—), verilirse mwc/cost/jokers taşınır; rating/Elo daima null', () => {
     const noLuck = computeMatchSummary([checker('white', 0)], null)
     expect(noLuck.white.luck).toBeNull()
-    const withLuck = computeMatchSummary([checker('white', 0)], null, { white: 1.25, black: -1.25 })
+    expect(noLuck.white.luckCost).toBeNull()
+    expect(noLuck.white.jokers).toBeNull()
+    const withLuck = computeMatchSummary([checker('white', 0)], null, {
+      white: { mwc: 1.25, cost: -0.42, jokers: 14 },
+      black: { mwc: -1.25, cost: 0.42, jokers: 17 },
+    })
     expect(withLuck.white.luck).toBeCloseTo(1.25, 6)
-    expect(withLuck.black.luck).toBeCloseTo(-1.25, 6)
-    // güvenilir üretilmeyenler daima null
-    expect(withLuck.white.jokers).toBeNull()
-    expect(withLuck.white.luckCost).toBeNull()
+    expect(withLuck.white.luckCost).toBeCloseTo(-0.42, 6)
+    expect(withLuck.white.jokers).toBe(14)
+    expect(withLuck.black.jokers).toBe(17)
+    // luck-based rating/Elo güvenilir üretilmiyor -> daima null
     expect(withLuck.white.luckBasedRating).toBeNull()
     expect(withLuck.white.luckBasedElo).toBeNull()
   })

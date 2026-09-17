@@ -154,7 +154,14 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             $this->write($mr->id, $selfLuck); // insanın gnubg luck_mwc'si
         }
         if (! $suspicious($oppLuck) && Schema::hasColumn('match_results', 'opponent_luck_mwc') && isset($oppLuck['mwc_total'])) {
-            MatchResult::where('id', $mr->id)->update(['opponent_luck_mwc' => round((float) $oppLuck['mwc_total'], 3)]);
+            $oppUpd = ['opponent_luck_mwc' => round((float) $oppLuck['mwc_total'], 3)];
+            if (Schema::hasColumn('match_results', 'opponent_luck_emg') && isset($oppLuck['emg_total'])) {
+                $oppUpd['opponent_luck_emg'] = round((float) $oppLuck['emg_total'], 4);
+            }
+            if (Schema::hasColumn('match_results', 'opponent_luck_jokers') && isset($oppLuck['jokers'])) {
+                $oppUpd['opponent_luck_jokers'] = (int) $oppLuck['jokers'];
+            }
+            MatchResult::where('id', $mr->id)->update($oppUpd);
         }
         Log::info('gnubg luck V1 (pvb)', ['id' => $mr->id, 'self_mwc' => $selfLuck['mwc_total'] ?? null, 'opp_mwc' => $oppLuck['mwc_total'] ?? null]);
     }
@@ -168,6 +175,10 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         }
         if (isset($luck['emg_total'])) {
             $upd['luck_emg'] = round((float) $luck['emg_total'], 4);
+        }
+        // Joker sayısı (gnubg service güncelse gelir; kolon+veri varsa yaz).
+        if (Schema::hasColumn('match_results', 'luck_jokers') && isset($luck['jokers'])) {
+            $upd['luck_jokers'] = (int) $luck['jokers'];
         }
         MatchResult::where('id', $rowId)->update($upd);
     }

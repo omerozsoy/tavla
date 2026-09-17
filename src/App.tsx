@@ -1357,6 +1357,9 @@ export default function App() {
   // Tavlai Luck V1: gnubg NATIVE per-oyuncu MWC-luck (%). Async (analyse match) -> hazır olunca
   // dolar; İKİSİ de biliniyorsa MatchResult BAĞIMSIZ % gösterir (sıfır-toplam DEĞİL, gnubg gibi).
   const [serverLuckMwc, setServerLuckMwc] = useState<{ white: number | null; black: number | null } | null>(null)
+  // Maç Özeti: gnubg luck EQUITY (cost) + JOKER sayısı (per renk). Async job doldurur.
+  const [serverLuckEmg, setServerLuckEmg] = useState<{ white: number | null; black: number | null } | null>(null)
+  const [serverLuckJokers, setServerLuckJokers] = useState<{ white: number | null; black: number | null } | null>(null)
   // Gecici bildirim: birlesik toast sistemi (src/ui/Toast). Ag hatalari + e-posta
   // dogrulama sonucu buradan gecer; eski yerel ".verify-toast" render'i kaldirildi.
   const notify = useToast()
@@ -1821,6 +1824,8 @@ export default function App() {
     setPrAnalyzing(false)
     setServerLuck(null) // yeni mac -> onceki sunucu-sansini gosterme
     setServerLuckMwc(null) // yeni mac -> onceki gnubg MWC-sansini gosterme
+    setServerLuckEmg(null)
+    setServerLuckJokers(null)
   }
 
   // PR: bu hamlede wildbg'ye gore kaybedilen equity'yi kaydet (senkron; tur basi analizini kullanir)
@@ -3460,6 +3465,20 @@ export default function App() {
             return next
           })
         setLuckMwcPair(r.luck_mwc_self, r.luck_mwc_opp)
+        // Maç Özeti: luck cost (emg) + joker — aynı renk eşlemesi (self->myColor).
+        const setColorPair = (
+          setter: typeof setServerLuckEmg,
+          selfV?: number | null,
+          oppV?: number | null,
+        ) =>
+          setter((prev) => {
+            const next = { white: prev?.white ?? null, black: prev?.black ?? null }
+            if (selfV != null) next[myColor] = selfV
+            if (oppV != null) next[opponent(myColor)] = oppV
+            return next
+          })
+        setColorPair(setServerLuckEmg, r.luck_emg_self, r.luck_emg_opp)
+        setColorPair(setServerLuckJokers, r.luck_jokers_self, r.luck_jokers_opp)
         let oppLuckDone = r.luck_opp != null
         let mwcDone = r.luck_mwc_self != null && r.luck_mwc_opp != null
         if ((oppPr == null || !oppLuckDone || !mwcDone) && code) {
@@ -3486,6 +3505,8 @@ export default function App() {
               setLuckMwcPair(pair.luck_mwc_self, pair.luck_mwc_opp)
               if (pair.luck_mwc_self != null && pair.luck_mwc_opp != null) mwcDone = true
             }
+            setColorPair(setServerLuckEmg, pair.luck_emg_self, pair.luck_emg_opp)
+            setColorPair(setServerLuckJokers, pair.luck_jokers_self, pair.luck_jokers_opp)
           }
         }
       }
@@ -3586,6 +3607,9 @@ export default function App() {
         // ADIM 4: gnubg NATIVE şans (Luck V1) hazır olunca swap. pvb: insan=beyaz, bot=siyah.
         if (!luckDone && g.luck_ready) {
           setServerLuckMwc({ white: g.luck_mwc, black: g.opponent_luck_mwc })
+          // Maç Özeti: luck cost (emg) + joker — aynı renk eşlemesi (pvb: insan=beyaz, bot=siyah).
+          setServerLuckEmg({ white: g.luck_emg ?? null, black: g.opponent_luck_emg ?? null })
+          setServerLuckJokers({ white: g.luck_jokers ?? null, black: g.opponent_luck_jokers ?? null })
           luckDone = true
         }
       } catch {
@@ -5438,6 +5462,9 @@ export default function App() {
     }
     return null
   }
+  // Maç Özeti: gnubg luck EQUITY (cost) + JOKER sayısı (renk bazlı; yoksa null -> '—').
+  const luckEmgOf = (c: Player): number | null => serverLuckEmg?.[c] ?? null
+  const jokersOf = (c: Player): number | null => serverLuckJokers?.[c] ?? null
 
   let centerMain: React.ReactNode = null
   if (opening === 'roll') {
@@ -8014,7 +8041,10 @@ export default function App() {
             return w ? { winner: w, score: { white: match.score.white, black: match.score.black } } : undefined
           })()}
           matchUid={recordUid ?? gameRecordRef.current?.uid ?? undefined}
-          luck={{ white: luckPctOf('white'), black: luckPctOf('black') }}
+          luck={{
+            white: { mwc: luckPctOf('white'), cost: luckEmgOf('white'), jokers: jokersOf('white') },
+            black: { mwc: luckPctOf('black'), cost: luckEmgOf('black'), jokers: jokersOf('black') },
+          }}
           onClose={() => setResultView(null)}
         />
       )}

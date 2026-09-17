@@ -707,6 +707,23 @@ def _parse_luck_stats(stats):
             out["p1"] = {}
         out["p0"].update({"emg_rate": float(mr.group(1)), "mwc_rate": float(mr.group(2))})
         out["p1"].update({"emg_rate": float(mr.group(3)), "mwc_rate": float(mr.group(4))})
+    # JOKER sayısı: gnubg "Rolls marked very lucky" + "very unlucky" (per-oyuncu). Yapısal
+    # ayrıştırıcıyla (sürüm-bağımsız) al; bulunamazsa None (istemci '—' gösterir, 0 DEĞİL).
+    parsed = _parse_match_stats(stats)
+
+    def _jokers(idx):
+        vl = _row_values(parsed, "very lucky")
+        vu = _row_values(parsed, "very unlucky")
+        a = _first_float(vl[idx]) if idx < len(vl) else None
+        b = _first_float(vu[idx]) if idx < len(vu) else None
+        if a is None and b is None:
+            return None
+        return int((a or 0) + (b or 0))
+
+    if out["p0"] is not None:
+        out["p0"]["jokers"] = _jokers(0)
+    if out["p1"] is not None:
+        out["p1"]["jokers"] = _jokers(1)
     return out
 
 
