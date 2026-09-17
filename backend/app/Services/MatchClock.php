@@ -35,7 +35,9 @@ class MatchClock
     public const GRACE = 3;          // network latency toleransi: kayip ilanini geciktir (sn)
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
-    public const PRESENCE_TIMEOUT = 60;
+    // 45sn: terk edilen/olu oda ~48sn'de (45 + GRACE) kapanir. Daha dusuk deger (30) mobilde
+    // sekme arka plana atilinca / kisa ag kesintisinde haksiz "terk" (false-forfeit) riskini artirir.
+    public const PRESENCE_TIMEOUT = 45;
 
     public static function normalizeMode(?string $mode): string
     {
