@@ -5630,14 +5630,10 @@ html[data-board='iznik'] .point.shade-a.top::before,
 html[data-board='iznik'] .point.shade-a.bottom::before {
   background: #F8F4EB url('./assets/iznik-pano-x3.webp') center / cover no-repeat;
 }
-/* Komşu hane: karanfil kırmızısı + ÜSTÜNE SİLİK (belli belirsiz) beyaz damask deseni.
-   Kırmızı örtü (~0.80 alpha) desenin üstünde -> beyaz motif çok soluk okunur, zemin kırmızı kalır. */
+/* Komşu hane: DÜZ turkuaz (--tri-b = #2090C0; iç desen yok). */
 html[data-board='iznik'] .point.shade-b.top::before,
 html[data-board='iznik'] .point.shade-b.bottom::before {
-  background:
-    linear-gradient(rgba(200, 30, 40, 0.88), rgba(200, 30, 40, 0.88)),
-    url('./assets/iznik-red-damask.webp') center / cover no-repeat;
-  background-color: #C81E28;
+  background: var(--tri-b);
 }
 /* NOT: İznik'in orta bar'ı KOYU ceviz (--bar #33241a) -> pip beyaz kalmalı; base .pip
    (beyaz + koyu kontur) zaten okunur. (Eski dark override dark-on-dark = görünmezdi.) */
