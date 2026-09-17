@@ -184,10 +184,11 @@
   --bearoff-w: var(--tray-w);
   --tri-h: calc(var(--board-h) * 0.35); /* KISA + genis taban ucgen (guclu geometri) */
   --point-h: var(--tri-h);
-  --dice-size: calc(var(--checker) * 0.82);
-  /* Kup (doubling cube) HER ZAMAN bardan KUCUK olsun (bara sigsin, iki yanda pay kalsin).
-     Referans oran ~0.62 x bar; clamp okunabilirlik icin min/max verir. */
-  --cube-size: clamp(26px, calc(var(--bar-w) * 0.62), 58px);
+  --dice-size: calc(var(--checker) * 0.76);
+  /* Kup (doubling cube): bara oranli ama DAHA BUYUK (desktop'ta net, mobilde dokunulabilir).
+     min 38px -> mobil dokunma hedefi (dar barda barin biraz disina tasabilir, kabul).
+     Referans oran ~0.82 x bar; clamp min/max okunabilirlik+dokunma icin. */
+  --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
 
   /* Oyun sahnesi (game screen): siteden bagimsiz koyu tavla sahnesi.
      board mavisi krem zemin yerine bu koyu sahnede cok daha guclu durur. */
@@ -5634,11 +5635,8 @@ html[data-board='iznik'] .point.shade-b.top::before,
 html[data-board='iznik'] .point.shade-b.bottom::before {
   background: #C81E28;
 }
-/* Açık fildişi oyun alanı üzerinde hane numaraları (pip) koyu okunur. */
-html[data-board='iznik'] .pip {
-  color: rgba(48, 36, 26, 0.92);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
-}
+/* NOT: İznik'in orta bar'ı KOYU ceviz (--bar #33241a) -> pip beyaz kalmalı; base .pip
+   (beyaz + koyu kontur) zaten okunur. (Eski dark override dark-on-dark = görünmezdi.) */
 /* Fildişi + abanoz (kobalt-lacivert) taş: solid renk (--cream / --navy) + fizik disk finish
    (iç ışık/gölge + kontak gölgesi). --cream/--navy kullanıldığından pul-takası tutarlı çalışır. */
 html[data-board='iznik'] .checker.white,
@@ -5791,10 +5789,16 @@ html[data-board='iznik'] .checker.black { background: var(--navy); }
   box-shadow: inset 0 0 0 2px var(--tv-white);
 }
 .pip {
-  color: rgba(255, 255, 255, 0.9);
+  /* Bar pip sayilari TUM temalarda okunur: beyaz metin + guclu KOYU kontur -> hem koyu
+     bar (cogu tema) hem acik bar (citrus/acik-tema #ded7ca) uzerinde net. Boylece
+     her temada gorunur (per-tema override sart degil). */
+  color: #fff;
   font-weight: 400;
   font-size: 1.05rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.9),
+    0 0 3px rgba(0, 0, 0, 0.75),
+    0 0 1px rgba(0, 0, 0, 0.9);
   transform: translateY(-5px); /* pip sayilari cok az yukari */
 }
 /* Desktop'ta pip sayilari daha net okunsun (mobil taban kucuk kalir).
@@ -11971,7 +11975,7 @@ button.acct-row-logout:hover:not(:disabled) {
   --bar-w: calc(var(--checker) * 1.4);
   --tri-h: calc(var(--board-h) * 0.35);
   --point-h: var(--tri-h);
-  --dice-size: calc(var(--checker) * 0.82);
+  --dice-size: calc(var(--checker) * 0.76);
   --tray-w: calc(var(--checker) * 1.5);
   --bearoff-w: var(--tray-w);
   --cube-size: clamp(18px, calc(var(--bar-w) * 0.62), 44px);
@@ -12755,7 +12759,7 @@ button.acct-row-logout:hover:not(:disabled) {
   --board-h: max(300px, min(56vh, calc((min(calc(100vw - 254px), 1400px) - 760px) / 1.45)));
   --checker: calc(var(--board-h) / 11);
   --col: calc(var(--checker) * 1.12);
-  --bar-w: var(--checker); /* orta bar genisligi = pul capi */
+  --bar-w: calc(var(--checker) * 1.3); /* orta bar: kup rahat sigsin diye biraz genis */
   --bearoff-w: calc(var(--checker) * 1);
   --tri-h: calc(var(--board-h) * 0.44);
   padding: calc(var(--header-h) + 6px) 14px 14px;
@@ -12903,9 +12907,8 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-self: start;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
-  /* Kup orta bara gore olceklenir: bardan KUCUK, iki yanda pay kalacak sekilde
-     (ana board ile ayni ~0.62 oran -> tum site boardlarinda tutarli). */
-  --cube-size: calc(var(--bar-w) * 0.62);
+  /* Kup: ana board ile ayni büyütülmüş oran (desktop net + dokunulabilir). */
+  --cube-size: clamp(34px, calc(var(--bar-w) * 0.82), 60px);
 }
 /* 15 tas limiti: board ustunde kibar, gecici uyari */
 .pa-limit-toast {
