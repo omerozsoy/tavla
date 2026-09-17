@@ -185,6 +185,16 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+/* Dokunmatik (coarse) cihazlarda ay-gezinme oklarının dokunma hedefini büyüt:
+   masaüstünde kompakt 26px görünüm korunur, telefon/tablette rahat dokunulur (~40px).
+   (Bkz. dokunma-hedefi min. ~44px hedefi; kenar kompaktlığı için 40px denge.) */
+@media (pointer: coarse) {
+  .cal-nav button {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+  }
+}
 .cal-month {
   font-size: 0.82rem;
   font-weight: 400;

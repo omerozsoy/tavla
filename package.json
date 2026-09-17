@@ -10,6 +10,8 @@
     "lint": "oxlint",
     "typecheck": "tsc -b",
     "test": "vitest run",
+    "audit:responsive": "node scripts/responsive-audit.mjs",
+    "test:responsive": "playwright test e2e/responsive.spec.ts",
     "check:mat": "vitest run src/matValidate.test.ts",
     "test:watch": "vitest",
     "preview": "vite preview",
