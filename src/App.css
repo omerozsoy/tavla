@@ -5620,6 +5620,38 @@ html[data-board='tavlatv-special'][data-point-style='rounded'] .point.shade-b::a
   background-blend-mode: soft-light, normal;
 }
 
+/* ============ İznik (Kütahya/İznik çini): dolu-desen hane + karanfil kırmızısı hane ============
+   Referans: design_handoff_iznik_tavla_board. KURAL: iki hane tipi dönüşümlü —
+   shade-a = ÇİNİ DESENLİ (gerçek pano fotoğrafı, üçgene klipli, DAİMA DİK; clip yönü üst/alt
+   değişir ama görsel döndürülmez), shade-b = düz KARANFİL KIRMIZISI (#C81E28). Her hane dolu
+   (boş hane yok). Asset: src/assets/iznik-pano-x3.webp (dikişsiz 3'lü dikey şerit). */
+html[data-board='iznik'] .point.shade-a.top::before,
+html[data-board='iznik'] .point.shade-a.bottom::before {
+  background: #F8F4EB url('./assets/iznik-pano-x3.webp') center / cover no-repeat;
+}
+/* Komşu hane: DÜZ karanfil kırmızısı (referansta iç katman yok — gradient değil düz renk). */
+html[data-board='iznik'] .point.shade-b.top::before,
+html[data-board='iznik'] .point.shade-b.bottom::before {
+  background: #C81E28;
+}
+/* Açık fildişi oyun alanı üzerinde hane numaraları (pip) koyu okunur. */
+html[data-board='iznik'] .pip {
+  color: rgba(48, 36, 26, 0.92);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+/* Fildişi + abanoz (kobalt-lacivert) taş: solid renk (--cream / --navy) + fizik disk finish
+   (iç ışık/gölge + kontak gölgesi). --cream/--navy kullanıldığından pul-takası tutarlı çalışır. */
+html[data-board='iznik'] .checker.white,
+html[data-board='iznik'] .checker.black {
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.32),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.30),
+    0 0 0 1px rgba(0, 0, 0, 0.18),
+    0 2px 4px rgba(0, 0, 0, 0.35);
+}
+html[data-board='iznik'] .checker.white { background: var(--cream); }
+html[data-board='iznik'] .checker.black { background: var(--navy); }
+
 @keyframes checker-place {
   0% {
     transform: translateY(-18%) scale(0.86);
