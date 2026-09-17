@@ -57,12 +57,12 @@ function flagsFor(flip: boolean): string[] {
     svg(hband(0, 0.34, B) + hband(0.34, 0.67, W) + hband(0.67, 1, R)), // 4 90° CCW: kırmızı/beyaz/mavi YATAY (taban→uç B/W/R) -> pt8 dp7
     cross(R, W),                                                     // 5  (kırmızı + beyaz haç)        -> pt10 dp9
     svg(hband(0, 0.5, B) + hband(0.5, 1, Y)),                        // 6 90° CCW: sarı/mavi YATAY (taban→uç B/Y) -> pt12 dp11
-    svg(band(0, 50, K) + band(50, 50, W)),                           // 7  (siyah | beyaz)              -> pt14 dp13
-    svg(band(0, 50, Y) + band(50, 50, R)),                           // 8  (sarı | kırmızı)             -> pt16 dp15
+    svg(band(0, 50, W) + band(50, 50, K)),                           // 7 180° çevrik (beyaz | siyah)   -> pt14 dp13
+    svg(band(0, 50, R) + band(50, 50, Y)),                           // 8 180° çevrik (kırmızı | sarı)  -> pt16 dp15
     cross(W, R),                                                     // 9  (beyaz + kırmızı haç)        -> pt18 dp17
     quadCW(),                                                        // 10 90° CW: 4 çeyrek (Niner)      -> pt20 dp19
     svg(band(0, 100, R) + hband(0.2, 0.4, W) + hband(0.6, 0.8, W)),  // 11 90° CW: Answer YATAY şerit    -> pt22 dp21
-    svgR(band(0, 100, B) + poly(`50,${yb(0.04)} 84,${yb(0.16)} 50,${yb(0.28)} 16,${yb(0.16)}`, Y)), // 12 Repeat (mavi+sarı) -> pt24 dp23
+    svg(band(0, 100, B) + poly(`20,${yb(0.05)} 80,${yb(0.05)} 50,${yb(0.62)}`, Y)), // 12 Repeat: mavi zemin + SARI ÜÇGEN uca doğru (mavi kenarlık) -> pt24 dp23
   ]
 }
 
