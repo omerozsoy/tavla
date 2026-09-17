@@ -9983,6 +9983,31 @@ button.acct-row-logout:hover:not(:disabled) {
   position: relative;
   margin-left: auto;
 }
+/* Kompakt varyant: ust bar (avatar yani) — etiketsiz, sik pill */
+.status-picker--compact {
+  margin: 0;
+  gap: 0;
+}
+.status-picker--compact .status-drop {
+  margin-left: 0;
+}
+.status-picker--compact .status-cur {
+  padding: 3px 8px;
+  white-space: nowrap;
+}
+.status-picker--compact .status-cur-txt {
+  max-width: 118px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Mobil hesap menusu icindeki durum satiri */
+.acct-status {
+  padding: 2px 8px;
+}
+.acct-status .status-picker {
+  margin: 4px 0;
+  font-size: 0.9rem;
+}
 .status-cur {
   display: inline-flex;
   align-items: center;
