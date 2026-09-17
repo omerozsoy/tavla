@@ -5519,9 +5519,14 @@ html[data-board='nautical'] .bar {
   background-repeat: no-repeat;
   background-blend-mode: soft-light;
 }
-/* BOŞ AHŞAP haneler (shade-a): üçgeni gizle -> doğal ahşap zemin görünür (wood-grain kuralını da ezer). */
+/* TEK-sayılı haneler (shade-a) = KOYU ceviz ahşap üçgen (referanstaki koyu haneler): açık zemin
+   (--panel) üzerinde koyu (--tri-a) + aynı maple damarı -> gerçek koyu ahşap kaplama hissi. */
 html[data-board='nautical'] .point.shade-a::before {
-  background: none;
+  background-color: var(--tri-a);
+  background-image: var(--maple-grain);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-blend-mode: soft-light;
 }
 /* BAYRAKLI haneler (shade-b): clip-path (üçgen) base .point.top/.bottom::before'dan gelir; yalnız
    arka planı flama yaparız + hafif oyma (drop-shadow) ahşaba gömülü hissi. Specificity
