@@ -154,11 +154,15 @@ describe('computeMatchSummary', () => {
     expect(s.white.rolls).toBe(2) // ikisi de zar attı
   })
 
-  it('luck verilmezse null (—), verilirse mwc/cost/jokers taşınır; rating/Elo daima null', () => {
+  it('luck verilmezse null (—); verilirse mwc/cost/jokers + Şans Bazlı Puan/Elo hesaplanır', () => {
     const noLuck = computeMatchSummary([checker('white', 0)], null)
     expect(noLuck.white.luck).toBeNull()
     expect(noLuck.white.luckCost).toBeNull()
     expect(noLuck.white.jokers).toBeNull()
+    // Şans yoksa Şans Bazlı Puan/Elo da null (—)
+    expect(noLuck.white.luckBasedRating).toBeNull()
+    expect(noLuck.white.luckBasedElo).toBeNull()
+
     const withLuck = computeMatchSummary([checker('white', 0)], null, {
       white: { mwc: 1.25, cost: -0.42, jokers: 14 },
       black: { mwc: -1.25, cost: 0.42, jokers: 17 },
@@ -167,9 +171,13 @@ describe('computeMatchSummary', () => {
     expect(withLuck.white.luckCost).toBeCloseTo(-0.42, 6)
     expect(withLuck.white.jokers).toBe(14)
     expect(withLuck.black.jokers).toBe(17)
-    // luck-based rating/Elo güvenilir üretilmiyor -> daima null
-    expect(withLuck.white.luckBasedRating).toBeNull()
-    expect(withLuck.white.luckBasedElo).toBeNull()
+    // Şans Bazlı Elo: mwc% -> lojistik Elo. +1.25% ≈ +9 Elo; siyah -1.25% ≈ -9 Elo.
+    expect(withLuck.white.luckBasedElo).toBe(9)
+    expect(withLuck.black.luckBasedElo).toBe(-9)
+    // Şans Bazlı Puan: (|EMG|/zar × 500), işaret mwc yönünde. Beyaz: 1 zar, |−0.42|×500 = +210
+    // (mwc>0 -> +). Siyah: logta hamlesi yok -> 0 zar -> null.
+    expect(withLuck.white.luckBasedRating).toBe(210)
+    expect(withLuck.black.luckBasedRating).toBeNull()
   })
 
   it('eksik/bozuk veri crash etmez; NaN/Infinity üretmez', () => {
