@@ -10030,7 +10030,7 @@ button.acct-row-logout:hover:not(:disabled) {
 .status-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 1999; /* portal backdrop: menunun (2000) hemen altinda, diger her seyin ustunde */
   background: transparent;
   border: 0;
   cursor: default;
@@ -10048,6 +10048,13 @@ button.acct-row-logout:hover:not(:disabled) {
   background: var(--card-bg);
   border: 1px solid var(--border);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+/* body'ye portal edilen menu: fixed + cok yuksek z (ust bar/hero'nun ustunde) */
+.status-menu--fixed {
+  position: fixed;
+  top: auto;
+  right: auto;
+  z-index: 2000;
 }
 .status-opt {
   display: flex;
