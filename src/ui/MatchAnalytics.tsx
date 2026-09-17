@@ -85,6 +85,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
     {
       log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
       matchResult?: { winner: Player; score: { white: number; black: number } }
+      luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null }
     } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
@@ -126,7 +127,11 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           : { white: m.score_opp, black: m.score_self }
         matchResult = { winner, score }
       }
-      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult })
+      // Maç Özeti şansı: self/opp -> renk (hc). gnubg async doldurur; yoksa '—'.
+      const luckSelf = { mwc: m.luck_mwc ?? null, cost: m.luck_emg ?? null, jokers: m.luck_jokers ?? null }
+      const luckOpp = { mwc: m.opponent_luck_mwc ?? null, cost: m.opponent_luck_emg ?? null, jokers: m.opponent_luck_jokers ?? null }
+      const luck = hc === 'white' ? { white: luckSelf, black: luckOpp } : { white: luckOpp, black: luckSelf }
+      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck })
     } catch {
       /* yoksay */
     } finally {
@@ -415,6 +420,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           whiteName={report.whiteName}
           blackName={report.blackName}
           matchResult={report.matchResult}
+          luck={report.luck}
           onClose={() => setReport(null)}
         />
       )}
