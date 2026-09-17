@@ -78,6 +78,11 @@ export interface LuckInfo {
 }
 
 const sum = (arr: LogEntry[], f: (e: LogEntry) => number): number => arr.reduce((s, e) => s + f(e), 0)
+// Elo lojistiğinde 0/1 olasılık ±sonsuz Elo verir -> [0.02, 0.98] aralığına kırp (±~680 Elo tavan).
+const clamp01 = (p: number): number => Math.min(0.98, Math.max(0.02, p))
+// Şans işareti: mwc (lehte/aleyhte) BİLİNİYORSA ona göre (+ = şanslı); yoksa luck EMG işaretine düş.
+const luckSign = (mwc: number | null, emg: number): number =>
+  (mwc != null ? mwc >= 0 : emg >= 0) ? 1 : -1
 // Küp kararının equity kaybı (pozitif). ÖNEMLİ: gnubg review girdileri cube.loss taşır AMA
 // istemci (wildbg canlı) küp girdileri kaybı ÜST DÜZEY e.loss'ta tutar (cube.loss YOK). İkisini
 // de destekle: cube.loss -> e.loss -> 0. (Aksi halde istemci-loglu maçlarda küp maliyeti hep 0.)
@@ -145,6 +150,22 @@ function perPlayer(
   const totalBlunders = checkerBlunders + doubleBlunders + takeBlunders
   const decisions = checkerDecisions + cubeCount
 
+  // ---- ŞANS BAZLI metrikler (gnubg şans verisi varsa; yoksa null -> '—') ----
+  // Şans Bazlı Elo: zar şansının MAÇ KAZANMA ŞANSINA (MWC%) katkısının Elo karşılığı. Lojistik
+  // (Elo) dönüşümü: nötr %50'den mwc% sapma -> "şans kaç Elo'luk rakip-gücü farkına denk?".
+  // + = şans lehte. Örn. +5% MWC ≈ +35 Elo. mwc yoksa null.
+  const luckBasedElo =
+    luckPct == null
+      ? null
+      : Math.round(400 * Math.log10(clamp01(0.5 + luckPct / 100) / (1 - clamp01(0.5 + luckPct / 100))))
+  // Şans Bazlı Puan: zar başına şans yoğunluğu, PR ile AYNI ölçekte (|luck EMG| / zar × 500),
+  // işareti mwc yönüne hizalı (+ = şanslı). PR'ın kardeşi: PR skoru hatayı ölçer, bu şansı ölçer.
+  // Maç uzunluğundan bağımsız kıyaslanabilir. luck EMG veya zar yoksa null.
+  const luckBasedRating =
+    luckCost == null || rolls <= 0
+      ? null
+      : Math.round((Math.abs(luckCost) / rolls) * 500 * luckSign(luckPct, luckCost) * 100) / 100
+
   return {
     name,
     color,
@@ -175,8 +196,8 @@ function perPlayer(
     jokers, // gnubg joker sayısı (verilmişse) -> yoksa '—'
     luckCost, // gnubg luck EMG (equity) (verilmişse) -> yoksa '—'
     rolls,
-    luckBasedRating: null, // -> '—'
-    luckBasedElo: null, // -> '—'
+    luckBasedRating, // (|luck EMG|/zar × 500), işaret mwc yönünde -> yoksa '—'
+    luckBasedElo, // şansın MWC% -> Elo karşılığı -> yoksa '—'
   }
 }
 
