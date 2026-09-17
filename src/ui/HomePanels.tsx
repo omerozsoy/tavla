@@ -367,10 +367,12 @@ export function StatusPicker({
 // ---- Cevrimici oyuncular ----
 export function OnlinePlayersPanel({
   currentName,
+  currentId,
   onProfile,
   onInvite,
 }: {
   currentName?: string
+  currentId?: number // giris yapan kullanici -> listede en uste sabitlenir (kendini gor)
   onProfile: (id: number) => void
   onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
 }) {
@@ -394,8 +396,16 @@ export function OnlinePlayersPanel({
     }
   }, [])
 
+  // Kendini HER ZAMAN gor: liste rating'e gore siralanir (Cevrimdisi Gorun degilsen
+  // listedesin) ama dusuk rating'de 2. sayfaya dusersin -> kendini en uste SABITLE.
+  const ordered = players
+    ? currentId != null && players.some((p) => p.id === currentId)
+      ? [players.find((p) => p.id === currentId)!, ...players.filter((p) => p.id !== currentId)]
+      : players
+    : null
+
   // Liste kucuudubunde (oyuncu cikinca) mevcut sayfa asilirsa son sayfaya sabitle.
-  const pageCount = players ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(players.length / PAGE_SIZE))) : 1
+  const pageCount = ordered ? Math.min(MAX_PAGES, Math.max(1, Math.ceil(ordered.length / PAGE_SIZE))) : 1
   const curPage = Math.min(page, pageCount - 1)
 
   return (
@@ -405,15 +415,15 @@ export function OnlinePlayersPanel({
         <Icon name="users" size={17} /> {t('online.title')}
         {players && players.length > 0 && <span className="online-count">{players.length}</span>}
       </div>
-      {players === null ? (
+      {ordered === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
-      ) : players.length === 0 ? (
+      ) : ordered.length === 0 ? (
         <div className="home-panel-empty">{t('online.empty')}</div>
       ) : (
         <>
           <div className="rank-list">
-            {players.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((p) => {
-              const self = !!currentName && p.name === currentName
+            {ordered.slice(curPage * PAGE_SIZE, curPage * PAGE_SIZE + PAGE_SIZE).map((p) => {
+              const self = (currentId != null && p.id === currentId) || (!!currentName && p.name === currentName)
               return (
                 <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
                   <span
@@ -445,7 +455,7 @@ export function OnlinePlayersPanel({
               )
             })}
           </div>
-          <Pager page={curPage} total={players.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
+          <Pager page={curPage} total={ordered.length} pageSize={PAGE_SIZE} maxPages={MAX_PAGES} onPage={setPage} />
         </>
       )}
     </div>

@@ -7573,6 +7573,7 @@ export default function App() {
             <div className="home-panels">
               <OnlinePlayersPanel
                 currentName={profile.nickname}
+                currentId={user?.id}
                 onProfile={(id) => setHomeProfileId(id)}
                 onInvite={user ? handleInviteFriend : undefined}
               />
