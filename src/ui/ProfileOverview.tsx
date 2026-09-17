@@ -213,6 +213,7 @@ export default function ProfileOverview({
                     cream={swapStones ? (equipped.checker ?? equipped.b) : equipped.light}
                     pointStyle={equipped.pointStyle}
                     surface={equipped.surface}
+                    themeId={equipped.id}
                   />
                 </div>
                 <div className="prof-ov-board-name">
@@ -403,6 +404,7 @@ export default function ProfileOverview({
                       cream={b.light}
                       pointStyle={b.pointStyle}
                       surface={b.surface}
+                      themeId={b.id}
                     />
                   </div>
                   <span className="prof-ov-item-name">{b.name}</span>
