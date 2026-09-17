@@ -6,6 +6,7 @@ use App\Models\Room;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PresenceController extends Controller
 {
@@ -118,11 +119,15 @@ class PresenceController extends Controller
             'status' => ['required', 'in:available,ready,busy,offline'],
         ]);
         $me = $request->user();
-        $me->presence_status = $data['status'];
         $me->last_seen = now(); // durum degisimi = aktivite
+        // Kolon henuz migrate edilmemisse durumu kaydetme (500 verme); yine de istenen
+        // degeri dondur ki arayuz kirilmasin. Migrate kosunca kalici olur.
+        if (Schema::hasColumn('users', 'presence_status')) {
+            $me->presence_status = $data['status'];
+        }
         $me->save();
 
-        return response()->json(['status' => $me->presence_status]);
+        return response()->json(['status' => $data['status']]);
     }
 
     // Bildirimleri OKUNDU isaretle (hepsi veya verilen id'ler). Silinmez -> kullanici
