@@ -120,6 +120,10 @@ export const RARITY_THEMES: BoardTheme[] = [
   { id: 'obsidian', name: 'Obsidian', rarity: 'legendary', panel: '#1a1b20', a: '#3a3d47', b: '#0e0f13', light: '#e6e8ec', checker: '#050608', frame: '#000000', checkerStyle: 'gloss', surface: 'gradient' },
   { id: 'samurai', name: 'Samurai', rarity: 'legendary', panel: '#161616', a: '#b12a2a', b: '#0c0c0c', light: '#e8dcc0', checker: '#8a1f1f', frame: '#050505', checkerStyle: 'gloss', cubeBg: '#c8a13a', cubeText: '#161616' },
   { id: 'blackdiamond', name: 'Black Diamond', rarity: 'legendary', panel: '#20222a', a: '#4a4f5e', b: '#14161c', light: '#eef1f7', checker: '#0a0b0f', frame: '#000000', checkerStyle: 'ice', surface: 'gradient' },
+  // Denizci — ceviz ahsap zemin + 12 uluslararasi deniz SINYAL FLAMASI hanelerde (tek-sayili
+  // haneler bos dogal ahsap; cift-sayili haneler bayrakli). Bespoke: [data-board='nautical']
+  // (bkz. App.css) + src/nauticalFlags.ts (12 SVG flama). Lacivert + fildisi pullar (denizci).
+  { id: 'nautical', name: 'Denizci', rarity: 'legendary', panel: '#6f4c2e', a: '#7a5636', b: '#5c3f26', light: '#f2ead2', checker: '#1e3a5f', frame: '#43301c', surface: 'wood', pointStyle: 'sharp', checkerStyle: 'gloss', d1Bg: '#f2ead2', d1Pip: '#1e3a5f', d2Bg: '#1e3a5f', d2Pip: '#f2ead2', cubeBg: '#1e3a5f', cubeText: '#f2ead2' },
   // --- MYTHIC ---
   { id: 'cyber', name: 'Cyberpunk', rarity: 'mythic', panel: '#160f2e', a: '#ff2e97', b: '#0e0a24', light: '#ff4fb0', checker: '#0bb8d8', frame: '#07051c', checkerStyle: 'neon', surface: 'gradient' },
   { id: 'inferno', name: 'Inferno', rarity: 'mythic', panel: '#1a0e0a', a: '#e8541f', b: '#7c1e10', light: '#ffd9a8', checker: '#ff6a2a', frame: '#0a0504', checkerStyle: 'neon', surface: 'gradient', cubeBg: '#e8541f', cubeText: '#ffffff' },

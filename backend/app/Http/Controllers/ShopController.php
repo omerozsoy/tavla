@@ -48,6 +48,8 @@ class ShopController extends Controller
         'gold' => 'legendary', 'sunset' => 'legendary', 'obsidian' => 'legendary', 'samurai' => 'legendary',
         'blackdiamond' => 'legendary', 'gutenberg' => 'legendary', 'krypton' => 'legendary', 'infinity' => 'legendary',
         'vega' => 'legendary', 'quantum' => 'legendary', 'singularity' => 'legendary',
+        // Denizci (ceviz ahsap + 12 deniz sinyal flamasi) — src/boardThemes.ts 'nautical' ile senkron
+        'nautical' => 'legendary',
         // mythic (5000)
         'neon' => 'mythic', 'cyber' => 'mythic', 'inferno' => 'mythic',
         // club (1000)
