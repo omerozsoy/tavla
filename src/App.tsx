@@ -407,6 +407,7 @@ import {
   boardPrice,
   FREE_BOARDS,
 } from './boardThemes'
+import { NAUTICAL_FLAG_BY_DATAPOINT } from './nauticalFlags'
 
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
@@ -1708,6 +1709,14 @@ export default function App() {
     root.setAttribute('data-surface', bt.surface ?? 'plain')
     root.setAttribute('data-point-style', bt.pointStyle ?? 'sharp') // hane sekli: sivri/yuvarlak
     root.setAttribute('data-board-rarity', bt.rarity ?? 'common') // kulup board: pullara gumus halka
+    // Denizci board: 12 sinyal flamasini CSS degiskeni olarak yaz (--naut-<data-point>), App.css
+    // [data-board='nautical'] .point.shade-b[data-point='N']::before bunlari arka plan yapar.
+    // Diger boardlarda temizle (bayat degisken kalmasin). Tek kaynak: src/nauticalFlags.ts.
+    for (let dp = 1; dp <= 23; dp += 2) {
+      const uri = boardTheme === 'nautical' ? NAUTICAL_FLAG_BY_DATAPOINT[dp] : undefined
+      if (uri) root.style.setProperty(`--naut-${dp}`, `url("${uri}")`)
+      else root.style.removeProperty(`--naut-${dp}`)
+    }
     // Watermark rengi: board zemini acik -> koyu yazi, koyu -> acik yazi. Ulke boardlarinda
     // orta yazi (ulke adi) TASARIMIN merkezi -> biraz daha belirgin (~%16, yine taslari engellemez);
     // digerlerinde cok soluk (0.075-0.09). Isik/koyu esigi panel luminance'ina gore.

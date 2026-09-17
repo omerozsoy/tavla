@@ -1,4 +1,5 @@
 import { Icon } from './Icon'
+import { NAUTICAL_FLAGS } from '../nauticalFlags'
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -91,10 +92,41 @@ export default function SetupBoard({
       />
     )
   const citrus = themeId === 'citrus-wood'
+  // Denizci: tek-sayılı haneler BOŞ ahşap, çift-sayılı haneler 12 sinyal flaması (her biri 1 kez).
+  // Önizlemede ritim: her yarıda tek kolonlar (1,3,5) bayraklı -> 3×2yarı×2satır = 12 flama.
+  const nautical = themeId === 'nautical'
+  let nautIdx = 0
+  const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string) => {
+    const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
+    const y = Math.min(baseY, tipY)
+    return [
+      <clipPath key={`${key}-c`} id={`nf-${key}`}>
+        <polygon points={pts} />
+      </clipPath>,
+      <image
+        key={key}
+        href={uri}
+        x={cx - colW / 2}
+        y={y}
+        width={colW}
+        height={Math.abs(tipY - baseY)}
+        preserveAspectRatio="none"
+        clipPath={`url(#nf-${key})`}
+      />,
+    ]
+  }
   const tris = []
   for (const half of ['L', 'R'] as const) {
     for (let col = 0; col < 6; col++) {
       const cx = colCx(half, col)
+      if (nautical) {
+        // BOŞ AHŞAP (çift kolon): üçgen çizme -> ahşap zemin görünür. BAYRAKLI (tek kolon): iki flama.
+        if (col % 2 === 1) {
+          tris.push(...flagTri(`${half}${col}t`, cx, PAD, PAD + trTriH, NAUTICAL_FLAGS[nautIdx++ % 12]))
+          tris.push(...flagTri(`${half}${col}b`, cx, H - PAD, H - PAD - trTriH, NAUTICAL_FLAGS[nautIdx++ % 12]))
+        }
+        continue
+      }
       const light = col % 2 === 0
       // Citrus: kolon konumuna gore cok-renkli (yesil/lime/sari/altin/turuncu); ust/alt farkli ton.
       // Digerleri: ust ve alt hane ters renk (gercek tahta gibi).
