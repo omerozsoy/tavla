@@ -57,7 +57,7 @@ interface Props {
   // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
   matchResult?: { winner: Player; score: { white: number; black: number } }
   matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
-  luck?: { white: number | null; black: number | null } // Maç Özeti için şans (MWC%); yoksa '—'
+  luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null } // Maç Özeti şansı (mwc/cost/jokers)
   onClose: () => void
 }
 

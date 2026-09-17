@@ -1610,6 +1610,10 @@ export async function reportRating(
   luck_opp?: number | null // rakibin HAM luck'ı (varsa) -> iki ekranda tutarlı net
   luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1, async -> ilkin null)
   luck_mwc_opp?: number | null // rakibin gnubg MWC-luck %'si (varsa)
+  luck_emg_self?: number | null // Maç Özeti: luck equity (cost)
+  luck_emg_opp?: number | null
+  luck_jokers_self?: number | null // Maç Özeti: joker sayısı
+  luck_jokers_opp?: number | null
 }> {
   return req('/rating/report', {
     method: 'POST',
@@ -1652,6 +1656,10 @@ export async function matchGnubgPr(id: number): Promise<{
   luck_ready: boolean
   luck_mwc: number | null // insan (satır sahibi) gnubg NATIVE şans %
   opponent_luck_mwc: number | null // bot gnubg NATIVE şans %
+  luck_emg?: number | null // Maç Özeti: luck equity (cost)
+  luck_jokers?: number | null // Maç Özeti: joker sayısı
+  opponent_luck_emg?: number | null
+  opponent_luck_jokers?: number | null
 }> {
   return req(`/me/match-pr-gnubg/${id}`)
 }
@@ -1671,6 +1679,10 @@ export async function matchPr(
   luck_opp?: number | null
   luck_mwc_self?: number | null // gnubg NATIVE MWC-luck % (V1)
   luck_mwc_opp?: number | null
+  luck_emg_self?: number | null // Maç Özeti: luck equity (cost)
+  luck_emg_opp?: number | null
+  luck_jokers_self?: number | null // Maç Özeti: joker sayısı
+  luck_jokers_opp?: number | null
 }> {
   try {
     return await req(`/me/match-pr?room_code=${encodeURIComponent(roomCode)}`)

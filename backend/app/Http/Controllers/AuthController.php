@@ -356,6 +356,8 @@ class AuthController extends Controller
                     'pr_self' => $ex?->pr, 'pr_opponent' => $oppEx?->pr,
                     'luck_self' => $ex?->luck, 'luck_opp' => $oppEx?->luck,
                     'luck_mwc_self' => $ex?->luck_mwc, 'luck_mwc_opp' => $oppEx?->luck_mwc,
+                    'luck_emg_self' => $ex?->luck_emg, 'luck_emg_opp' => $oppEx?->luck_emg,
+                    'luck_jokers_self' => $ex?->luck_jokers, 'luck_jokers_opp' => $oppEx?->luck_jokers,
                 ]);
             }
         }
@@ -388,6 +390,10 @@ class AuthController extends Controller
                     'luck_opp' => $oppExisting?->luck,
                     'luck_mwc_self' => $existing->luck_mwc,
                     'luck_mwc_opp' => $oppExisting?->luck_mwc,
+                    'luck_emg_self' => $existing->luck_emg,
+                    'luck_emg_opp' => $oppExisting?->luck_emg,
+                    'luck_jokers_self' => $existing->luck_jokers,
+                    'luck_jokers_opp' => $oppExisting?->luck_jokers,
                 ]);
             }
         }
@@ -579,6 +585,8 @@ class AuthController extends Controller
                 'pr_self' => $existing?->pr, 'pr_opponent' => null,
                 'luck_self' => $existing?->luck, 'luck_opp' => null,
                 'luck_mwc_self' => $existing?->luck_mwc, 'luck_mwc_opp' => null,
+                'luck_emg_self' => $existing?->luck_emg, 'luck_emg_opp' => null,
+                'luck_jokers_self' => $existing?->luck_jokers, 'luck_jokers_opp' => null,
             ]);
         }
 
@@ -683,6 +691,8 @@ class AuthController extends Controller
         $opponentCubePr = null;    // rakibin kup-yalniz PR'i (kup karari yoksa null)
         $opponentLuck = null; // rakibin HAM luck'ı (kendi renginden) — sunucu-otoriter sans için
         $opponentLuckMwc = null; // rakibin gnubg NATIVE MWC-luck'ı (V1, varsa)
+        $opponentLuckEmg = null; // rakibin luck equity (cost) — Maç Özeti
+        $opponentLuckJokers = null; // rakibin joker sayısı — Maç Özeti
         try {
             if (! empty($data['room_code']) && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
                 $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
@@ -696,6 +706,8 @@ class AuthController extends Controller
                     $opponentCubePr = $oppSplit['cube'];
                     $opponentLuck = $oppRow->luck;
                     $opponentLuckMwc = $oppRow->luck_mwc ?? null;
+                    $opponentLuckEmg = $oppRow->luck_emg ?? null;
+                    $opponentLuckJokers = $oppRow->luck_jokers ?? null;
                     if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_pr')) {
                         $result->opponent_pr = $opponentPr;
                         $result->save();
@@ -726,6 +738,11 @@ class AuthController extends Controller
             'luck_opp' => $opponentLuck,       // rakibin HAM luck'ı (raporladıysa) -> tutarlı net
             'luck_mwc_self' => $result->luck_mwc,       // gnubg V1 (async -> ilkin null, matchPr poll'lar)
             'luck_mwc_opp' => $opponentLuckMwc,         // rakibin gnubg MWC%'si (varsa)
+            // Maç Özeti: Luck (Equity=emg) + Joker sayısı (self satırdan, opp rakip satırından)
+            'luck_emg_self' => $result->luck_emg,
+            'luck_emg_opp' => $opponentLuckEmg,
+            'luck_jokers_self' => $result->luck_jokers,
+            'luck_jokers_opp' => $opponentLuckJokers,
         ]);
     }
 
@@ -761,6 +778,11 @@ class AuthController extends Controller
             'luck_ready' => $luckReady,
             'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
             'opponent_luck_mwc' => ($luckReady && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot
+            // Maç Özeti: Luck (Equity=emg) + Joker sayısı — kolon/veri varsa (yoksa null -> '—')
+            'luck_emg' => $luckReady ? $num($match->luck_emg) : null,
+            'luck_jokers' => $luckReady ? $match->luck_jokers : null,
+            'opponent_luck_emg' => $luckReady ? $num($match->opponent_luck_emg) : null,
+            'opponent_luck_jokers' => $luckReady ? $match->opponent_luck_jokers : null,
         ]);
     }
 

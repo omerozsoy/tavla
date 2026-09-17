@@ -4,7 +4,7 @@ import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
 import { useT } from '../i18n'
 import { divisionOfPR } from '../badges'
-import { computeMatchSummary, type PlayerMatchSummary } from '../analysis/matchSummary'
+import { computeMatchSummary, type PlayerMatchSummary, type LuckInfo } from '../analysis/matchSummary'
 import type { LogEntry } from './MatchReport'
 
 // Reusable Maç Özeti (Match Summary) modalı — GNU Backgammon Match Summary mantığında iki
@@ -35,7 +35,7 @@ export default function MatchSummary({
   log: LogEntry[]
   names: string[] | null
   matchLength: number | null
-  luck?: { white: number | null; black: number | null }
+  luck?: { white: LuckInfo | null; black: LuckInfo | null }
   onClose: () => void
 }) {
   const { t } = useT()
