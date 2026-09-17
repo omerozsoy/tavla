@@ -105,7 +105,24 @@ class PresenceController extends Controller
             'notifications' => $notifications,
             'unread' => $unread,
             'dm_unread' => $dmUnread,
+            'status' => $me->presence_status ?: 'available', // kendi durumu (durum secici senkron)
         ]);
+    }
+
+    // Oyuncu kendi DURUMUNU degistirir: available (Musait) | ready (Oyuna Hazir) |
+    // busy (Oyun Kabul Etmiyor) | offline (Cevrimdisi Gorun). offline -> cevrimici
+    // listesinde gorunmez; busy/offline -> maca davet edilemez (invite() engeller).
+    public function setStatus(Request $request)
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:available,ready,busy,offline'],
+        ]);
+        $me = $request->user();
+        $me->presence_status = $data['status'];
+        $me->last_seen = now(); // durum degisimi = aktivite
+        $me->save();
+
+        return response()->json(['status' => $me->presence_status]);
     }
 
     // Bildirimleri OKUNDU isaretle (hepsi veya verilen id'ler). Silinmez -> kullanici
@@ -150,8 +167,14 @@ class PresenceController extends Controller
         if ($userId === $me->id) {
             return $this->fail('Kendini davet edemezsin.', 422);
         }
-        if (! User::where('id', $userId)->exists()) {
+        $target = User::find($userId);
+        if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
+        }
+        // "Oyun Kabul Etmiyor" (busy) veya "Çevrimdışı Görün" (offline) durumundaki
+        // oyuncu maça davet edilemez -> davet eden dostça uyarilir.
+        if (in_array($target->presence_status, ['busy', 'offline'], true)) {
+            return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
         }
 
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

@@ -4,7 +4,7 @@ import './homeCalendar.css'
 import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
-import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type Tournament, type Content } from '../api'
+import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type PresenceStatus, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
@@ -270,15 +270,77 @@ export function LiveMatchesPanel({
   )
 }
 
+// Oyuncu durumlari: secim sirasi + i18n anahtari (offline = "Cevrimdisi Gorun").
+const STATUS_ORDER: PresenceStatus[] = ['available', 'ready', 'busy', 'offline']
+const STATUS_KEY: Record<PresenceStatus, string> = {
+  available: 'online.st.available',
+  ready: 'online.st.ready',
+  busy: 'online.st.busy',
+  offline: 'online.st.offline',
+}
+
+// Kendi durumunu secen kucuk dropdown (Musait/Hazir/Mesgul/Cevrimdisi). Renkli nokta
+// + etiket; tiklayinca acilir, secince kapanir; disari tiklama backdrop ile kapatir.
+function StatusPicker({ value, onChange }: { value: PresenceStatus; onChange: (s: PresenceStatus) => void }) {
+  const { t } = useT()
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="status-picker">
+      <span className="status-picker-lbl">{t('online.myStatus')}</span>
+      <div className="status-drop">
+        <button
+          type="button"
+          className="status-cur"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          <span className={`status-dot status-dot--${value}`} />
+          <span className="status-cur-txt">{t(STATUS_KEY[value])}</span>
+          <Icon name="chevron" size={14} />
+        </button>
+        {open && (
+          <>
+            <button type="button" className="status-backdrop" aria-label="" onClick={() => setOpen(false)} />
+            <ul className="status-menu" role="listbox">
+              {STATUS_ORDER.map((s) => (
+                <li key={s}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={s === value}
+                    className={`status-opt ${s === value ? 'active' : ''}`}
+                    onClick={() => {
+                      onChange(s)
+                      setOpen(false)
+                    }}
+                  >
+                    <span className={`status-dot status-dot--${s}`} />
+                    {t(STATUS_KEY[s])}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ---- Cevrimici oyuncular ----
 export function OnlinePlayersPanel({
   currentName,
   onProfile,
   onInvite,
+  myStatus,
+  onSetStatus,
 }: {
   currentName?: string
   onProfile: (id: number) => void
   onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
+  myStatus?: PresenceStatus // kendi durumu (giris yapmissa)
+  onSetStatus?: (s: PresenceStatus) => void // durum degistir (giris yapmissa)
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
@@ -311,6 +373,8 @@ export function OnlinePlayersPanel({
         <Icon name="users" size={17} /> {t('online.title')}
         {players && players.length > 0 && <span className="online-count">{players.length}</span>}
       </div>
+      {/* Kendi durumun (yalniz giris yapmissa): Musait / Oyuna Hazir / Oyun Kabul Etmiyor / Cevrimdisi Gorun */}
+      {myStatus && onSetStatus && <StatusPicker value={myStatus} onChange={onSetStatus} />}
       {players === null ? (
         <div className="home-panel-empty">{t('common.loading')}</div>
       ) : players.length === 0 ? (
@@ -322,7 +386,10 @@ export function OnlinePlayersPanel({
               const self = !!currentName && p.name === currentName
               return (
                 <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
-                  <span className="online-pdot" title={t('online.title')} />
+                  <span
+                    className={`online-pdot status-dot--${p.status ?? 'available'}`}
+                    title={t(STATUS_KEY[p.status ?? 'available'])}
+                  />
                   <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
                     <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated />
                   </button>

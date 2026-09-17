@@ -163,6 +163,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->whereNumber('userId')->middleware('throttle:60,1,msg-typing'); // "yaziyor…" nabzi
 
     Route::post('/ping', [PresenceController::class, 'ping']);
+    Route::post('/me/presence-status', [PresenceController::class, 'setStatus']); // oyuncu durumu (musait/hazir/mesgul/cevrimdisi)
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
     Route::post('/notifications/delete', [PresenceController::class, 'deleteNotifications']);
     Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);

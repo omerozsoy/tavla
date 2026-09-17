@@ -9967,6 +9967,116 @@ button.acct-row-logout:hover:not(:disabled) {
   justify-self: center;
   flex: 0 0 auto;
 }
+/* ---- Oyuncu DURUMU: kendi durum secici + renkli durum noktalari ---- */
+/* Durum secici satiri (Cevrimici paneli basligi altinda; yalniz giris yapmissa) */
+.status-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 2px 0 8px;
+  font-size: 0.82rem;
+}
+.status-picker-lbl {
+  color: var(--muted);
+}
+.status-drop {
+  position: relative;
+  margin-left: auto;
+}
+.status-cur {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.status-cur:hover {
+  border-color: var(--accent);
+}
+.status-cur-txt {
+  font-weight: 500;
+}
+/* Disari tiklama ile kapatan gorunmez katman */
+.status-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: transparent;
+  border: 0;
+  cursor: default;
+}
+.status-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 41;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  min-width: 190px;
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+.status-opt {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 9px;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.status-opt:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.status-opt.active {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  font-weight: 500;
+}
+.status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-circle);
+  flex: 0 0 auto;
+}
+/* Durum renkleri (semantik; komsu .online-dot/.live-dot gibi sabit) */
+.status-dot--available {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.16);
+}
+.status-dot--ready {
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+.status-dot--busy {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
+.status-dot--offline {
+  background: #9ca3af;
+  box-shadow: 0 0 0 3px rgba(156, 163, 175, 0.16);
+}
+/* Satir-basi durum noktasi: durum rengi online-pdot yesilini ezer (0,2,0 > 0,1,0) */
+.online-pdot.status-dot--ready {
+  background: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+.online-pdot.status-dot--busy {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18);
+}
 .live-list,
 .rank-list {
   display: flex;

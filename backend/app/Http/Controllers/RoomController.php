@@ -581,9 +581,14 @@ class RoomController extends Controller
     {
         $users = User::whereNotNull('last_seen')
             ->where('last_seen', '>', now()->subSeconds(70))
+            // "Çevrimdışı Görün" (offline) durumundakiler listede GÖRÜNMEZ. Eski/NULL
+            // kayitlar (durum secmemis) 'available' sayilir -> gorunur.
+            ->where(function ($q) {
+                $q->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
+            })
             ->orderByDesc('rating')
-            ->limit(50)
-            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until']);
+            ->limit(100) // 10'ar sayfalanir (ana sayfa paneli)
+            ->get(['id', 'first_name', 'nickname', 'avatar', 'avatar_frame', 'country', 'rating', 'plan', 'plan_until', 'presence_status']);
 
         $list = $users->map(fn ($u) => [
             'id'      => $u->id,
@@ -593,6 +598,7 @@ class RoomController extends Controller
             'country' => $u->country,
             'rating'  => $u->rating ?? 1500,
             'premium' => $u->plan_active !== 'free', // süresi geçerli ücretli plan -> taç
+            'status'  => $u->presence_status ?: 'available', // durum noktasi rengi (available|ready|busy)
         ]);
 
         return response()->json(['players' => $list, 'count' => $list->count()]);
