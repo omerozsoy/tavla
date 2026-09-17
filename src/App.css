@@ -5537,10 +5537,12 @@ html[data-board='nautical'] .point.shade-b::before {
 /* Üst hane (base=üstte) ve alt hane (base=altta) AYRI flama varyantı -> motif daima rail'de. */
 html[data-board='nautical'] .point.top.shade-b[data-point='1']::before { background: var(--naut-1) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.bottom.shade-b[data-point='1']::before { background: var(--naut-1-b) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.top.shade-b[data-point='3']::before { background: var(--naut-3) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.bottom.shade-b[data-point='3']::before { background: var(--naut-3-b) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.top.shade-b[data-point='5']::before { background: var(--naut-5) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.bottom.shade-b[data-point='5']::before { background: var(--naut-5-b) center / 100% 100% no-repeat; }
+/* dp3/dp5 = DAİRELİ flama (One/Two): 'cover' -> düzgün ÖLÇEK (scaleX=scaleY) -> daire her
+   bağlamda (oyun/analiz FARKLI en-boy) YUVARLAK kalır; '100% 100%' analizde ovalleştiriyordu. */
+html[data-board='nautical'] .point.top.shade-b[data-point='3']::before { background: var(--naut-3) center / cover no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='3']::before { background: var(--naut-3-b) center / cover no-repeat; }
+html[data-board='nautical'] .point.top.shade-b[data-point='5']::before { background: var(--naut-5) center / cover no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='5']::before { background: var(--naut-5-b) center / cover no-repeat; }
 html[data-board='nautical'] .point.top.shade-b[data-point='7']::before { background: var(--naut-7) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.bottom.shade-b[data-point='7']::before { background: var(--naut-7-b) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.top.shade-b[data-point='9']::before { background: var(--naut-9) center / 100% 100% no-repeat; }
@@ -5557,8 +5559,9 @@ html[data-board='nautical'] .point.top.shade-b[data-point='19']::before { backgr
 html[data-board='nautical'] .point.bottom.shade-b[data-point='19']::before { background: var(--naut-19-b) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.top.shade-b[data-point='21']::before { background: var(--naut-21) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.bottom.shade-b[data-point='21']::before { background: var(--naut-21-b) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.top.shade-b[data-point='23']::before { background: var(--naut-23) center / 100% 100% no-repeat; }
-html[data-board='nautical'] .point.bottom.shade-b[data-point='23']::before { background: var(--naut-23-b) center / 100% 100% no-repeat; }
+/* dp23 = Repeat (mavi + sarı üçgen/baklava): 'cover' -> baklava eğrilmez (üniform ölçek). */
+html[data-board='nautical'] .point.top.shade-b[data-point='23']::before { background: var(--naut-23) center / cover no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='23']::before { background: var(--naut-23-b) center / cover no-repeat; }
 /* Pip sayıları ceviz ahşap üzerinde açık okunur */
 html[data-board='nautical'] .pip {
   color: rgba(242, 234, 210, 0.92);

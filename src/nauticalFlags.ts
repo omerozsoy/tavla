@@ -16,8 +16,14 @@ const B = '%230047b6' // mavi
 const K = '%23161616' // siyah
 const H = 338 // viewBox yüksekliği (en/boy 100:338 = hane oranı)
 
+// Şerit/haç flamaları: PAR='none' -> içerik kutuya GERİLİR (background 100% 100% ile birlikte; aspect-toleranslı).
 const svg = (inner: string): string =>
   `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 ${H}' preserveAspectRatio='none'%3E${inner}%3C/svg%3E`
+// DAİRELİ/baklava flamaları: PAR YOK (varsayılan) -> SVG'nin İÇSEL en-boy oranı korunur; böylece
+// CSS 'background-size: cover' ÜNİFORM ölçekler (scaleX=scaleY) -> daire her bağlamda YUVARLAK.
+// (PAR='none' içsel oranı siler; o zaman cover '100% 100%' gibi davranıp daireyi ovalleştiriyordu.)
+const svgR = (inner: string): string =>
+  `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 ${H}'%3E${inner}%3C/svg%3E`
 // Tam-boy DİKEY band (uzun eksen boyunca; üst/alt SİMETRİK — flip'ten bağımsız)
 const band = (x: number, w: number, f: string) => `%3Crect x='${x}' y='0' width='${w}' height='${H}' fill='${f}'/%3E`
 const circle = (cy: number, r: number, f: string) => `%3Ccircle cx='50' cy='${cy}' r='${r}' fill='${f}'/%3E`
@@ -28,8 +34,8 @@ const poly = (pts: string, f: string) => `%3Cpolygon points='${pts}' fill='${f}'
 function flagsFor(flip: boolean): string[] {
   const yb = (f: number) => Math.round(flip ? H - f * H : f * H)
   const half = Math.round(H / 2)
-  // Beyaz/renkli daireli flama: solid zemin + tabana yakın daire (yuvarlak kalır)
-  const disc = (field: string, dot: string) => svg(band(0, 100, field) + circle(yb(0.15), 34, dot))
+  // Beyaz/renkli daireli flama: solid zemin + tabana yakın daire (svgR + cover -> yuvarlak kalır)
+  const disc = (field: string, dot: string) => svgR(band(0, 100, field) + circle(yb(0.15), 34, dot))
   // Nordic haç: tam-boy dikey kol + tabana yakın yatay kol
   const cross = (field: string, arm: string) => {
     const cy = yb(0.16)
@@ -41,20 +47,20 @@ function flagsFor(flip: boolean): string[] {
     const tipY = flip ? 0 : half
     return svg(rect(0, baseY, 50, half, W) + rect(50, baseY, 50, half, K) + rect(0, tipY, 50, half, R) + rect(50, tipY, 50, half, Y))
   }
-  // Sıra = point 2,4,..,24 (data-point 1,3,..,23)
+  // Kullanıcı sıralaması (1.webp..12.webp) = point 2,4,..,24 (data-point 1,3,..,23).
   return [
-    svg(band(0, 100, R) + band(20, 20, W) + band(60, 20, W)),        // f01 Answer (kırmızı/beyaz şerit)
-    svg(band(0, 100, Y) + band(33, 34, R)),                          // f02 0 (sarı/kırmızı/sarı)
-    disc(W, R),                                                      // f03 1 (beyaz + kırmızı daire)
-    disc(B, W),                                                      // f04 2 (mavi + beyaz daire)
-    svg(band(0, 100, R) + band(33, 34, W) + band(67, 33, B)),        // f05 3 (kırmızı/beyaz/mavi)
-    cross(R, W),                                                     // f06 4 (kırmızı + beyaz haç)
-    svg(band(0, 50, Y) + band(50, 50, B)),                           // f07 5 (sarı | mavi)
-    svg(band(0, 50, K) + band(50, 50, W)),                           // f08 6 (siyah | beyaz)
-    svg(band(0, 50, Y) + band(50, 50, R)),                           // f09 7 (sarı | kırmızı)
-    cross(W, R),                                                     // f10 8 (beyaz + kırmızı haç)
-    quad(),                                                          // f11 9 (beyaz/siyah–kırmızı/sarı)
-    svg(band(0, 100, B) + poly(`50,${yb(0.04)} 84,${yb(0.16)} 50,${yb(0.28)} 16,${yb(0.16)}`, Y)), // f12 Repeat (mavi + sarı baklava)
+    svg(band(0, 100, Y) + band(33, 34, R)),                          // 1  (sarı/kırmızı/sarı)          -> pt2  dp1
+    disc(W, R),                                                      // 2  (beyaz + kırmızı DAİRE)       -> pt4  dp3
+    disc(B, W),                                                      // 3  (mavi + beyaz DAİRE)          -> pt6  dp5
+    svg(band(0, 100, R) + band(33, 34, W) + band(67, 33, B)),        // 4  (kırmızı/beyaz/mavi)         -> pt8  dp7
+    cross(R, W),                                                     // 5  (kırmızı + beyaz haç)        -> pt10 dp9
+    svg(band(0, 50, Y) + band(50, 50, B)),                           // 6  (sarı | mavi)                -> pt12 dp11
+    svg(band(0, 50, K) + band(50, 50, W)),                           // 7  (siyah | beyaz)              -> pt14 dp13
+    svg(band(0, 50, Y) + band(50, 50, R)),                           // 8  (sarı | kırmızı)             -> pt16 dp15
+    cross(W, R),                                                     // 9  (beyaz + kırmızı haç)        -> pt18 dp17
+    quad(),                                                          // 10 (beyaz/siyah–kırmızı/sarı)   -> pt20 dp19
+    svg(band(0, 100, R) + band(20, 20, W) + band(60, 20, W)),        // 11 Answer (kırmızı/beyaz şerit) -> pt22 dp21
+    svgR(band(0, 100, B) + poly(`50,${yb(0.04)} 84,${yb(0.16)} 50,${yb(0.28)} 16,${yb(0.16)}`, Y)), // 12 Repeat (mavi+sarı) -> pt24 dp23
   ]
 }
 

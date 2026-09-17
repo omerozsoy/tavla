@@ -110,7 +110,7 @@ export default function SetupBoard({
         y={y}
         width={colW}
         height={Math.abs(tipY - baseY)}
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid slice"
         clipPath={`url(#nf-${key})`}
       />,
     ]
