@@ -5559,9 +5559,9 @@ html[data-board='nautical'] .point.top.shade-b[data-point='19']::before { backgr
 html[data-board='nautical'] .point.bottom.shade-b[data-point='19']::before { background: var(--naut-19-b) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.top.shade-b[data-point='21']::before { background: var(--naut-21) center / 100% 100% no-repeat; }
 html[data-board='nautical'] .point.bottom.shade-b[data-point='21']::before { background: var(--naut-21-b) center / 100% 100% no-repeat; }
-/* dp23 = Repeat (mavi + sarı üçgen/baklava): 'cover' -> baklava eğrilmez (üniform ölçek). */
-html[data-board='nautical'] .point.top.shade-b[data-point='23']::before { background: var(--naut-23) center / cover no-repeat; }
-html[data-board='nautical'] .point.bottom.shade-b[data-point='23']::before { background: var(--naut-23-b) center / cover no-repeat; }
+/* dp23 = Repeat (mavi + sarı ÜÇGEN uca doğru): stretch (100% 100%) -> üçgen hane şeklini izler. */
+html[data-board='nautical'] .point.top.shade-b[data-point='23']::before { background: var(--naut-23) center / 100% 100% no-repeat; }
+html[data-board='nautical'] .point.bottom.shade-b[data-point='23']::before { background: var(--naut-23-b) center / 100% 100% no-repeat; }
 /* Pip sayıları ceviz ahşap üzerinde açık okunur */
 html[data-board='nautical'] .pip {
   color: rgba(242, 234, 210, 0.92);
