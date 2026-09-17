@@ -62,9 +62,9 @@ function flagsFor(flip: boolean): string[] {
     cross(W, R),                                                     // 9  (beyaz + kırmızı haç)        -> pt18 dp17
     quadCW(),                                                        // 10 90° CW: 4 çeyrek (Niner)      -> pt20 dp19
     svg(band(0, 100, R) + hband(0.2, 0.4, W) + hband(0.6, 0.8, W)),  // 11 90° CW: Answer YATAY şerit    -> pt22 dp21
-    // 12 Repeat: sarı BASKIN, mavi İNCE kenarlık. Taban üstte geniş (rail'e değer, üstte mavi yok),
-    // apex %70 (uca yakın); mavi yalnız ince yan kenar + minik uç. (Kullanıcı: üstte/altta az mavi.)
-    svg(band(0, 100, B) + poly(`11,${yb(0.0)} 89,${yb(0.0)} 50,${yb(0.7)}`, Y)), // -> pt24 dp23
+    // 12 Repeat: DAHA KÜÇÜK sarı (kullanıcı) — Screenshot_13 ölçümü: taban üstte ~%65 (rail'e değer),
+    // apex %58, altında belirgin mavi V. Üstte mavi bant yok.
+    svg(band(0, 100, B) + poly(`17,${yb(0.0)} 83,${yb(0.0)} 50,${yb(0.58)}`, Y)), // -> pt24 dp23
   ]
 }
 
