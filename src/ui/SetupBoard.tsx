@@ -120,10 +120,13 @@ export default function SetupBoard({
     for (let col = 0; col < 6; col++) {
       const cx = colCx(half, col)
       if (nautical) {
-        // BOŞ AHŞAP (çift kolon): üçgen çizme -> ahşap zemin görünür. BAYRAKLI (tek kolon): iki flama.
+        // KOYU AHŞAP üçgen (çift kolon) + BAYRAKLI flama (tek kolon). a = koyu ceviz (tri-a).
         if (col % 2 === 1) {
           tris.push(...flagTri(`${half}${col}t`, cx, PAD, PAD + trTriH, NAUTICAL_FLAGS_TOP[nautIdx++ % 12]))
           tris.push(...flagTri(`${half}${col}b`, cx, H - PAD, H - PAD - trTriH, NAUTICAL_FLAGS_BOTTOM[nautIdx++ % 12]))
+        } else {
+          tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, a))
+          tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, a))
         }
         continue
       }

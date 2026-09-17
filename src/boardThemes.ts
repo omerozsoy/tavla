@@ -264,7 +264,7 @@ export const TAVLATV_THEMES: BoardTheme[] = [
     // varyant). Bespoke: [data-board='nautical'] (App.css) + src/nauticalFlags.ts. Lacivert + fildişi
     // pullar. TavlaTV Özel kademesi (citrus-wood / tavlatv-special ile aynı bespoke grup).
     id: 'nautical', name: 'Maritime', rarity: 'tavlatv',
-    panel: '#a6824f', a: '#b08c56', b: '#946f43', light: '#f4eeda', checker: '#1e3a5f', frame: '#7a5c37',
+    panel: '#a6824f', a: '#4a3620', b: '#946f43', light: '#f4eeda', checker: '#1e3a5f', frame: '#7a5c37',
     surface: 'wood', pointStyle: 'sharp', checkerStyle: 'gloss',
     d1Bg: '#f4eeda', d1Pip: '#1e3a5f', d2Bg: '#1e3a5f', d2Pip: '#f4eeda', cubeBg: '#1e3a5f', cubeText: '#f4eeda',
   },
