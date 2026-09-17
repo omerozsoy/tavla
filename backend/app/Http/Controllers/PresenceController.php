@@ -25,6 +25,8 @@ class PresenceController extends Controller
             ->get([
                 'game_invites.id',
                 'game_invites.room_code as code',
+                'game_invites.target',
+                'game_invites.time_control',
                 'users.first_name',
                 'users.nickname',
                 'users.avatar',
@@ -34,6 +36,8 @@ class PresenceController extends Controller
                 'code' => $r->code,
                 'from' => $r->nickname ?: $r->first_name ?: 'Oyuncu',
                 'avatar' => $r->avatar,
+                'target' => (int) ($r->target ?? 1),
+                'timeControl' => $r->time_control,
             ]);
 
         // Oynanmayi bekleyen turnuva maclarim (her iki oyuncu var, sonuc yok)
@@ -172,6 +176,12 @@ class PresenceController extends Controller
         if ($userId === $me->id) {
             return $this->fail('Kendini davet edemezsin.', 422);
         }
+        // Davet ile tasinan oyun ayarlari: target=1 -> Tek Oyun; >1 -> Mac uzunlugu (puan).
+        // time_control: casual | normal | speed. (Davetli neye davet edildigini gorsun.)
+        $settings = $request->validate([
+            'target' => ['nullable', 'integer', 'min:1', 'max:25'],
+            'time_control' => ['nullable', 'in:casual,normal,speed'],
+        ]);
         $target = User::find($userId);
         if (! $target) {
             return $this->fail('Kullanıcı bulunamadı.', 404);
@@ -201,6 +211,8 @@ class PresenceController extends Controller
             'from_user_id' => $me->id,
             'to_user_id' => $userId,
             'room_code' => $code,
+            'target' => $settings['target'] ?? 1,
+            'time_control' => $settings['time_control'] ?? null,
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
@@ -221,6 +233,11 @@ class PresenceController extends Controller
             'status' => $data['accept'] ? 'accepted' : 'declined',
             'updated_at' => now(),
         ]);
-        return response()->json(['code' => $data['accept'] ? $invite->room_code : null]);
+        return response()->json([
+            'code' => $data['accept'] ? $invite->room_code : null,
+            // Kabulde AYNI ayarla odaya gir: davet edenin sectigi Tek Oyun/Mac uzunlugu + saat.
+            'target' => (int) ($invite->target ?? 1),
+            'timeControl' => $invite->time_control,
+        ]);
     }
 }

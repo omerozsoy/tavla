@@ -763,6 +763,8 @@ export interface GameInvite {
   code: string
   from: string
   avatar?: string | null
+  target: number // 1 = Tek Oyun; >1 = Maç uzunluğu (puan)
+  timeControl?: string | null // casual | normal | speed
 }
 export interface TournNotice {
   tid: number
@@ -807,10 +809,19 @@ export async function deleteNotifications(ids?: number[]): Promise<void> {
     body: JSON.stringify(ids ? { ids } : {}),
   })
 }
-export async function inviteFriend(userId: number): Promise<{ code: string }> {
-  return req(`/friends/${userId}/invite`, { method: 'POST' })
+export async function inviteFriend(
+  userId: number,
+  opts?: { target?: number; timeControl?: string },
+): Promise<{ code: string }> {
+  return req(`/friends/${userId}/invite`, {
+    method: 'POST',
+    body: JSON.stringify({ target: opts?.target ?? 1, time_control: opts?.timeControl ?? null }),
+  })
 }
-export async function respondInvite(id: number, accept: boolean): Promise<{ code: string | null }> {
+export async function respondInvite(
+  id: number,
+  accept: boolean,
+): Promise<{ code: string | null; target: number; timeControl?: string | null }> {
   return req(`/invites/${id}/respond`, { method: 'POST', body: JSON.stringify({ accept }) })
 }
 

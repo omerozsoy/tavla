@@ -374,7 +374,7 @@ export function OnlinePlayersPanel({
   currentName?: string
   currentId?: number // giris yapan kullanici -> listede en uste sabitlenir (kendini gor)
   onProfile: (id: number) => void
-  onInvite?: (id: number) => void // maca davet et (giris yapmis kullanici)
+  onInvite?: (p: { id: number; name: string; avatar?: string | null }) => void // maca davet et (giris yapmis kullanici)
 }) {
   const { t } = useT()
   const [players, setPlayers] = useState<OnlinePlayer[] | null>(null)
@@ -445,9 +445,9 @@ export function OnlinePlayersPanel({
                         className="online-act"
                         title={t('online.invite')}
                         aria-label={t('online.invite')}
-                        onClick={() => onInvite(p.id)}
+                        onClick={() => onInvite({ id: p.id, name: p.name, avatar: p.avatar })}
                       >
-                        <Icon name="play" size={15} />
+                        <Icon name="sword" size={15} />
                       </Button>
                     </span>
                   )}

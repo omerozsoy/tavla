@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import SocialTabs, { type SocialTab } from './SocialTabs'
 
 interface Props {
-  onInvite: (userId: number) => void
+  onInvite: (p: { id: number; name: string; avatar?: string | null }) => void
   onMessage?: (userId: number) => void
   onClose: () => void
   // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
@@ -188,9 +188,9 @@ export default function Friends({ onInvite, onMessage, onClose, onTab }: Props) 
                           size="icon"
                           title={t('friends.invite')}
                           aria-label={t('friends.invite')}
-                          onClick={() => onInvite(f.id)}
+                          onClick={() => onInvite({ id: f.id, name: f.name, avatar: f.avatar })}
                         >
-                          <Icon name="play" size={16} />
+                          <Icon name="sword" size={16} />
                         </Button>
                       )}
                       <Button
