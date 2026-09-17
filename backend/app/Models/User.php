@@ -48,6 +48,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'email',
         'password',
         'game_state',
+        'presence_status', // oyuncu durumu (available|ready|busy|offline)
         // NOT: 'email_verified_at' bilincli olarak fillable DEGIL — kotu niyetli
         // mass-assignment ile e-posta dogrulamasi atlanamasin. Dogrulama yalnizca
         // markEmailAsVerified() / imzali dogrulama akisi ile yapilir.

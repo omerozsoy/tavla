@@ -114,6 +114,8 @@ import {
   submitGameLog,
   flushGameLogQueue,
   type GameLogTurn,
+  setPresenceStatus,
+  type PresenceStatus,
 } from './api'
 import Chat from './ui/Chat'
 import ViewersBadge from './ui/ViewersBadge'
@@ -1195,6 +1197,7 @@ export default function App() {
   const [rewardReady, setRewardReady] = useState(false) // 6 saatlik odul hazir mi
   const [rewardSecs, setRewardSecs] = useState(0) // sonraki odule kalan saniye (geri sayim)
   const [rewardCoins, setRewardCoins] = useState(25) // odul miktari (plana+admin ayarina gore; presence'tan)
+  const [myStatus, setMyStatus] = useState<PresenceStatus>('available') // oyuncu durumu (durum secici; presence'tan senkron)
   // Acilista her zaman ana menu; kayitli oyun varsa menude "Aktif Oyunlar" ile devam edilir
   const [home, setHome] = useState(true)
   const [lobbyTourns, setLobbyTourns] = useState<Tournament[]>([]) // lobide gosterilen aktif turnuvalar
@@ -4236,6 +4239,7 @@ export default function App() {
             setNotifications(notifs)
             setUnreadNotif(r.unread ?? 0)
             setDmUnread(r.dm_unread ?? 0)
+            if (r.status) setMyStatus(r.status) // durum secici sunucu ile senkron
             if (typeof r.coins === 'number') setUser((u) => (u ? { ...u, coins: r.coins } : u))
           }
         })
@@ -4976,8 +4980,9 @@ export default function App() {
     try {
       const { code } = await inviteFriend(userId)
       await enterOnlineByCode(code)
-    } catch {
-      /* yoksay */
+    } catch (e) {
+      // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
+      if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
     }
   }
   // Cevrimici oyuncu panelinden "Arkadas ol": id ile istek + toast.
@@ -7558,6 +7563,15 @@ export default function App() {
                 currentName={profile.nickname}
                 onProfile={(id) => setHomeProfileId(id)}
                 onInvite={user ? handleInviteFriend : undefined}
+                myStatus={user ? myStatus : undefined}
+                onSetStatus={
+                  user
+                    ? (s) => {
+                        setMyStatus(s) // iyimser guncelle
+                        setPresenceStatus(s).catch(() => {})
+                      }
+                    : undefined
+                }
               />
               <LiveMatchesPanel
                 onSpectate={(code, p1, p2) => setSpectate({ code, p1, p2 })}

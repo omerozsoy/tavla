@@ -784,6 +784,7 @@ export async function ping(): Promise<{
   notifications?: AppNotification[]
   unread?: number
   dm_unread?: number
+  status?: PresenceStatus // kendi durumu (durum secici senkron)
 }> {
   return req('/ping', { method: 'POST' })
 }
@@ -1531,6 +1532,9 @@ export async function liveMatches(): Promise<LiveMatch[]> {
   return data.matches
 }
 
+// Oyuncu durumu (kendi belirledigi): Musait | Oyuna Hazir | Oyun Kabul Etmiyor | Cevrimdisi Gorun
+export type PresenceStatus = 'available' | 'ready' | 'busy' | 'offline'
+
 // Cevrimici oyuncular (son 70sn ping'lemis) -> ana sayfa paneli
 export interface OnlinePlayer {
   id: number
@@ -1540,10 +1544,20 @@ export interface OnlinePlayer {
   country?: string | null
   rating: number
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  status?: PresenceStatus // durum noktasi rengi (offline olanlar listede gelmez)
 }
 export async function onlinePlayers(): Promise<OnlinePlayer[]> {
   const data = await req<{ players: OnlinePlayer[] }>('/online-players')
   return data.players
+}
+
+// Kendi durumunu degistir (Musait/Hazir/Mesgul/Cevrimdisi). Sunucu son_gorulme'yi de tazeler.
+export async function setPresenceStatus(status: PresenceStatus): Promise<PresenceStatus> {
+  const d = await req<{ status: PresenceStatus }>('/me/presence-status', {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  })
+  return d.status
 }
 
 // Devam eden (playing) online maclarim -> geri donebilmek icin
