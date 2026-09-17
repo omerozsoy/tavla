@@ -68,9 +68,9 @@ class AnalyzeMatchLuckJobTest extends TestCase
         $this->assertSame('TAVLAI_LUCK_V1', $wRow->luck_method);
     }
 
-    public function test_waits_when_opponent_not_reported(): void
+    public function test_waits_when_opponent_not_reported_and_no_game_log(): void
     {
-        // Rakip satırı yoksa (henüz raporlamadı) -> job hiçbir şey yazmaz (rakip raporunda tetiklenir).
+        // Rakip satırı YOK + game_logs de YOK -> hesaplanamaz, gnubg çağrılmaz, yazma yok.
         $w = $this->user('solo1');
         $wRow = MatchResult::create([
             'user_id' => $w->id, 'won' => true, 'room_code' => 'LKW', 'match_length' => 1,
@@ -78,11 +78,48 @@ class AnalyzeMatchLuckJobTest extends TestCase
             'log' => json_encode(['hc' => 'white', 'log' => [['player' => 'white', 'notation' => '8/5', 'dice' => [3, 1], 'seq' => 0]]]),
         ]);
         $mock = Mockery::mock(GnuBgClient::class);
-        $mock->shouldNotReceive('matchluck'); // rakip yok -> gnubg çağrılmamalı
+        $mock->shouldNotReceive('matchluck'); // ne rakip satırı ne game_log -> gnubg çağrılmamalı
 
         (new AnalyzeMatchLuckJob($wRow->id))->handle($mock);
 
         $this->assertNull($wRow->fresh()->luck_mwc);
+    }
+
+    public function test_online_fallback_computes_luck_from_game_logs_when_opponent_absent(): void
+    {
+        // KÖK ÇÖZÜM: rakip HİÇ raporlamasa bile (oppRow yok) şans game_logs'tan (canlı hamleler)
+        // hesaplanır. Raporlayanın (white) satırına self (luck_*) + rakip (opponent_luck_*) yazılır.
+        $w = $this->user('gl1');
+        $wRow = MatchResult::create([
+            'user_id' => $w->id, 'won' => true, 'room_code' => 'GLR', 'match_length' => 1,
+            'opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0,
+            'log' => json_encode(['hc' => 'white', 'log' => [['player' => 'white', 'notation' => '8/5 6/5', 'dice' => [3, 1], 'seq' => 0]]]),
+        ]);
+        // game_logs.uid = ONLINE oda kodu; p1_events=beyaz, p2_events=siyah (rakip raporlamasa da CANLI yazıldı).
+        \App\Models\GameLog::create([
+            'uid' => 'GLR', 'mode' => 'online', 'target' => 1,
+            'p1_events' => [['g' => 1, 's' => 0, 'p' => 'W', 'd' => '31', 'm' => '8/5 6/5']],
+            'p2_events' => [['g' => 1, 's' => 1, 'p' => 'B', 'd' => '32', 'm' => '24/21 13/11', 'k' => 'end']],
+        ]);
+        $mock = Mockery::mock(GnuBgClient::class);
+        $mock->shouldReceive('matchluck')->once()->andReturn([
+            'luck' => [
+                'p0' => ['mwc_total' => 12.0, 'emg_total' => 0.40, 'jokers' => 2],  // white = self
+                'p1' => ['mwc_total' => -8.0, 'emg_total' => -0.30, 'jokers' => 1], // black = opponent
+            ],
+        ]);
+
+        (new AnalyzeMatchLuckJob($wRow->id))->handle($mock);
+
+        $wRow->refresh();
+        // Self (white) -> luck_*
+        $this->assertEqualsWithDelta(12.0, (float) $wRow->luck_mwc, 1e-6);
+        $this->assertEqualsWithDelta(0.40, (float) $wRow->luck_emg, 1e-6);
+        $this->assertSame(2, (int) $wRow->luck_jokers);
+        // Rakip (black) -> opponent_luck_* (self-contained; rakip satırı olmasa da Maç Özeti dolu)
+        $this->assertEqualsWithDelta(-8.0, (float) $wRow->opponent_luck_mwc, 1e-6);
+        $this->assertEqualsWithDelta(-0.30, (float) $wRow->opponent_luck_emg, 1e-6);
+        $this->assertSame(1, (int) $wRow->opponent_luck_jokers);
     }
 
     public function test_suspicious_zero_not_written(): void
