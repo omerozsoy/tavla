@@ -1274,6 +1274,11 @@ class AuthController extends Controller
         $hasMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_mwc');
         $hasOppLuck = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck');
         $hasOppLuckMwc = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_mwc');
+        // Maç Özeti: luck EQUITY (emg) + JOKER (savunmacı — migration henüz koşmamış olabilir)
+        $hasEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_emg');
+        $hasJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_jokers');
+        $hasOppEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_emg');
+        $hasOppJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_jokers');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
         if ($hasNew) {
@@ -1290,6 +1295,18 @@ class AuthController extends Controller
         }
         if ($hasOppLuckMwc) {
             $cols[] = 'opponent_luck_mwc'; // PvB: rakip (bot) gnubg NATIVE MWC-luck'i (Luck V1)
+        }
+        if ($hasEmg) {
+            $cols[] = 'luck_emg';
+        }
+        if ($hasJokers) {
+            $cols[] = 'luck_jokers';
+        }
+        if ($hasOppEmg) {
+            $cols[] = 'opponent_luck_emg';
+        }
+        if ($hasOppJokers) {
+            $cols[] = 'opponent_luck_jokers';
         }
         if ($hasRoom) {
             $cols[] = 'room_code';
@@ -1325,6 +1342,8 @@ class AuthController extends Controller
         // Hem ham luck hem gnubg NATIVE MWC% (V1) — istemci MWC%'yi tercih eder, yoksa ham.
         $oppLuckByRoom = [];
         $oppLuckMwcByRoom = [];
+        $oppLuckEmgByRoom = [];
+        $oppLuckJokersByRoom = [];
         if ($hasRoom && $hasNew) {
             $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             if (! empty($codes)) {
@@ -1332,13 +1351,25 @@ class AuthController extends Controller
                 if ($hasMwc) {
                     $oppCols[] = 'luck_mwc';
                 }
+                if ($hasEmg) {
+                    $oppCols[] = 'luck_emg';
+                }
+                if ($hasJokers) {
+                    $oppCols[] = 'luck_jokers';
+                }
                 \App\Models\MatchResult::whereIn('room_code', $codes)
                     ->where('user_id', '!=', $me->id)
                     ->get($oppCols)
-                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, $hasMwc) {
+                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, $hasMwc, $hasEmg, $hasJokers) {
                         $oppLuckByRoom[$r->room_code] = $r->luck;
                         if ($hasMwc) {
                             $oppLuckMwcByRoom[$r->room_code] = $r->luck_mwc;
+                        }
+                        if ($hasEmg) {
+                            $oppLuckEmgByRoom[$r->room_code] = $r->luck_emg;
+                        }
+                        if ($hasJokers) {
+                            $oppLuckJokersByRoom[$r->room_code] = $r->luck_jokers;
                         }
                     });
             }
@@ -1368,6 +1399,15 @@ class AuthController extends Controller
                 'opponent_luck_mwc' => ($hasOppLuckMwc && $m->opponent_luck_mwc !== null)
                     ? $m->opponent_luck_mwc
                     : (($hasRoom && $hasMwc && $m->room_code) ? ($oppLuckMwcByRoom[$m->room_code] ?? null) : null),
+                // Maç Özeti: luck EQUITY (emg) + JOKER — self satırdan, opp pvb-kolonu ya da oda-eşleşmesi
+                'luck_emg' => $hasEmg ? $m->luck_emg : null,
+                'luck_jokers' => $hasJokers ? $m->luck_jokers : null,
+                'opponent_luck_emg' => ($hasOppEmg && $m->opponent_luck_emg !== null)
+                    ? $m->opponent_luck_emg
+                    : (($hasRoom && $hasEmg && $m->room_code) ? ($oppLuckEmgByRoom[$m->room_code] ?? null) : null),
+                'opponent_luck_jokers' => ($hasOppJokers && $m->opponent_luck_jokers !== null)
+                    ? $m->opponent_luck_jokers
+                    : (($hasRoom && $hasJokers && $m->room_code) ? ($oppLuckJokersByRoom[$m->room_code] ?? null) : null),
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
                 'has_log' => $hasLog ? (bool) $m->has_log : false,
