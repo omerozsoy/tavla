@@ -81,8 +81,21 @@ class BugReportResource extends Resource
                 ])
                 ->default('new')->required()->native(false),
 
-            Forms\Components\Textarea::make('admin_note')->label('Yönetici notu')
+            Forms\Components\Textarea::make('admin_note')->label('Yönetici notu (dahili)')
+                ->helperText('Yalnızca panelde görünür; bildirene gönderilmez.')
                 ->rows(3)->columnSpanFull(),
+
+            // Bildirene gönderilen yanıt (üstteki "Yanıtla ve E-posta Gönder" butonuyla
+            // yazılır + e-postalanır). Burada son gönderilen yanıt SALT-OKUNUR gösterilir.
+            Forms\Components\Placeholder::make('admin_reply')->label('Bildirene gönderilen yanıt')
+                ->content(fn (?BugReport $record) => $record?->admin_reply
+                    ? new \Illuminate\Support\HtmlString(nl2br(e($record->admin_reply))
+                        .($record->replied_at
+                            ? '<div style="margin-top:8px;font-size:12px;color:#6b6154;">Gönderildi: '
+                                .$record->replied_at->format('d.m.Y H:i').'</div>'
+                            : ''))
+                    : 'Henüz yanıt gönderilmedi. Üstteki “Yanıtla ve E-posta Gönder” butonunu kullanın.')
+                ->columnSpanFull(),
         ]);
     }
 
