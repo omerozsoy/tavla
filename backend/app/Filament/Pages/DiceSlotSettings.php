@@ -58,18 +58,24 @@ class DiceSlotSettings extends Page implements HasForms
                             ->numeric()->required()->minValue(0)
                             ->helperText('0 = ardışık çevirmede bekleme yok.'),
                     ])->columns(2),
-                Section::make('Sembol Olasılıkları (yüz bazında ağırlık)')
-                    ->description('Her zar yüzüne AYRI ağırlık verilir → her üçlünün (1-1-1, 2-2-2, … 6-6-6) gelme olasılığı bağımsızdır. Ağırlık yüksek = yüz sık gelir = üçlüsü daha sık. Örn. 6\'ya düşük ağırlık ver → 6-6-6 nadir (yüksek ödüle uygun); 1\'e yüksek ağırlık ver → 1-1-1 sık. 64 küpü ağırlığı düştükçe jackpot nadir gelir. Sağdaki panelde her üçlünün gerçek olasılığını gör.')
+                Section::make('Sonuç Olasılıkları (ağırlık)')
+                    ->description('GERÇEK SLOT MANTIĞI: sunucu önce sonucu bu ağırlıklarla seçer, sonra makarayı ona göre gösterir. Her kombinasyonun olasılığı BAĞIMSIZ → P = ağırlık / (tüm ağırlıklar toplamı). Kent (sıralama) artık kendi ağırlığına sahip (jackpot gibi). Kural: YÜKSEK ödüle DÜŞÜK ağırlık. "Kayıp" ağırlığı baskın olmalı (çoğu spin kazanmaz). Sağdaki panelde her sonucun gerçek olasılığını + toplam RTP\'yi gör.')
                     ->schema([
-                        TextInput::make('die_weight_1')->label('1 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('die_weight_2')->label('2 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('die_weight_3')->label('3 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('die_weight_4')->label('4 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('die_weight_5')->label('5 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('die_weight_6')->label('6 yüzü ağırlığı')->numeric()->required()->minValue(1),
-                        TextInput::make('cube_weight')->label('64 küpü ağırlığı')
-                            ->numeric()->required()->minValue(1)
-                            ->helperText('Jackpot sembolü (nadir olmalı).'),
+                        TextInput::make('lose_weight')->label('Kayıp (kazanmayan)')
+                            ->numeric()->required()->minValue(0)
+                            ->helperText('Baskın olmalı; RTP\'yi bu belirler.'),
+                        TextInput::make('straight_weight')->label('Kent / Sıralama ağırlığı')
+                            ->numeric()->required()->minValue(0)
+                            ->helperText('Bağımsız — nadir tutun (ödülü yüksek).'),
+                        TextInput::make('jackpot_weight')->label('Jackpot (64-64-64) ağırlığı')
+                            ->numeric()->required()->minValue(0)
+                            ->helperText('Çok nadir olmalı.'),
+                        TextInput::make('triple_weight_1')->label('1-1-1 ağırlığı')->numeric()->required()->minValue(0),
+                        TextInput::make('triple_weight_2')->label('2-2-2 ağırlığı')->numeric()->required()->minValue(0),
+                        TextInput::make('triple_weight_3')->label('3-3-3 ağırlığı')->numeric()->required()->minValue(0),
+                        TextInput::make('triple_weight_4')->label('4-4-4 ağırlığı')->numeric()->required()->minValue(0),
+                        TextInput::make('triple_weight_5')->label('5-5-5 ağırlığı')->numeric()->required()->minValue(0),
+                        TextInput::make('triple_weight_6')->label('6-6-6 ağırlığı')->numeric()->required()->minValue(0),
                     ])->columns(3),
                 Section::make('Üçlü Zar Ödülleri (coin)')
                     ->description('Aynı üç zar geldiğinde verilen coin. Küçükten büyüğe artmalı (klasik slot).')
@@ -81,8 +87,8 @@ class DiceSlotSettings extends Page implements HasForms
                         TextInput::make('payout_5')->label('5 – 5 – 5')->numeric()->required()->minValue(0)->suffix('coin'),
                         TextInput::make('payout_6')->label('6 – 6 – 6')->numeric()->required()->minValue(0)->suffix('coin'),
                     ])->columns(3),
-                Section::make('Sıralama / Kent (ardışık üçlü)')
-                    ->description('Ardışık üç FARKLI zar (1-2-3, 2-3-4, 3-4-5, 4-5-6) herhangi sırada — poker straight gibi. 64 küpü dahil değil. Üçlüden daha sık gelir; sağdaki panelden olasılığı gör.')
+                Section::make('Sıralama / Kent — Ödül (coin)')
+                    ->description('Ardışık üç FARKLI zar (1-2-3, 2-3-4, 3-4-5, 4-5-6) herhangi sırada — poker straight gibi. Olasılığı yukarıdaki "Kent ağırlığı" belirler; burada yalnız ödül miktarı.')
                     ->schema([
                         TextInput::make('payout_straight')->label('Sıralama ödülü')
                             ->numeric()->required()->minValue(0)->suffix('coin'),
@@ -110,36 +116,36 @@ class DiceSlotSettings extends Page implements HasForms
     // Sağ panel: güncel jackpot, gerçek olasılıklar ve son büyük kazançlar.
     protected function getViewData(): array
     {
-        // Yüz bazında ağırlıklar (özel değer yoksa taban die_weight).
-        $base = max(1, DSS::int('die_weight'));
-        $faceW = [];
+        // SONUÇ ağırlıkları (outcome-first) -> her kombinasyonun BAĞIMSIZ olasılığı.
+        $w = ['lose' => max(0, DSS::int('lose_weight'))];
         for ($v = 1; $v <= 6; $v++) {
-            $fw = DSS::intOrNull('die_weight_'.$v);
-            $faceW[$v] = max(1, $fw ?? $base);
+            $w['t'.$v] = max(0, DSS::int('triple_weight_'.$v));
         }
-        $cube = max(1, DSS::int('cube_weight'));
-        $total = array_sum($faceW) + $cube;
+        $w['straight'] = max(0, DSS::int('straight_weight'));
+        $w['jackpot'] = max(0, DSS::int('jackpot_weight'));
+        $total = max(1, array_sum($w));
 
-        $pFace = [];                          // her yüzün tek-makara olasılığı
-        foreach ($faceW as $v => $w) {
-            $pFace[$v] = $w / $total;
-        }
-        $pCube = $cube / $total;              // 64 küpü olasılığı
-
-        // Her üçlünün (v-v-v) olasılığı bağımsız: pFace[v]^3.
         $tripleOdds = [];
         $pAnyTriple = 0.0;
-        foreach ($pFace as $v => $p) {
-            $tripleOdds[$v] = $p ** 3;
+        for ($v = 1; $v <= 6; $v++) {
+            $tripleOdds[$v] = $w['t'.$v] / $total;
             $pAnyTriple += $tripleOdds[$v];
         }
-        // Sıralama: {1,2,3},{2,3,4},{3,4,5},{4,5,6}, her biri 3! sırada.
-        $straights = [[1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6]];
-        $pStraight = 0.0;
-        foreach ($straights as [$a, $b, $c]) {
-            $pStraight += 6 * $pFace[$a] * $pFace[$b] * $pFace[$c];
+        $pStraight = $w['straight'] / $total;
+        $pJackpot = $w['jackpot'] / $total;
+        $pLose = $w['lose'] / $total;
+
+        // RTP (ödemeli spin): EV / spin_cost. Progressive jackpot uzun-vade katkısı = P*base + increment.
+        $ev = 0.0;
+        for ($v = 1; $v <= 6; $v++) {
+            $ev += $tripleOdds[$v] * max(0, DSS::int('payout_'.$v));
         }
-        $pJackpot = $pCube ** 3;              // üçlü 64
+        $ev += $pStraight * max(0, DSS::int('payout_straight'));
+        $jpBase = max(0, DSS::int('jackpot_base'));
+        $jpInc = max(0, DSS::int('jackpot_increment'));
+        $ev += $pJackpot > 0 ? ($pJackpot * $jpBase + $jpInc) : 0.0;
+        $spinCost = max(0, DSS::int('spin_cost'));
+        $rtp = $spinCost > 0 ? $ev / $spinCost * 100 : null;
 
         $fmtOdds = fn (float $p) => $p > 0 ? '1 / '.number_format(1 / $p, 0, ',', '.') : '—';
 
@@ -171,8 +177,11 @@ class DiceSlotSettings extends Page implements HasForms
                     'odds' => $fmtOdds($p),
                 ])->values()->all(),
                 'jackpot' => $fmtOdds($pJackpot),
-                'cubePct' => number_format($pCube * 100, 2),
+                'losePct' => number_format($pLose * 100, 1),
             ],
+            'ev' => round($ev, 1),
+            'spinCost' => $spinCost,
+            'rtp' => $rtp === null ? null : round($rtp, 1),
             'recent' => $recent,
         ];
     }

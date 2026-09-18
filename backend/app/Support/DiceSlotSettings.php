@@ -73,18 +73,17 @@ class DiceSlotSettings
         $out['require_login'] = self::bool('require_login');
         foreach ([
             'free_spins_per_day', 'spin_cost', 'cooldown_minutes', 'reset_hour',
-            'die_weight', 'cube_weight',
+            // Sonuç (outcome) ağırlıkları — outcome-first slot
+            'lose_weight',
+            'triple_weight_1', 'triple_weight_2', 'triple_weight_3',
+            'triple_weight_4', 'triple_weight_5', 'triple_weight_6',
+            'straight_weight', 'jackpot_weight',
+            // Ödüller
             'payout_1', 'payout_2', 'payout_3', 'payout_4', 'payout_5', 'payout_6',
             'payout_straight',
             'jackpot_base', 'jackpot_increment',
         ] as $k) {
             $out[$k] = (int) $out[$k];
-        }
-        // Per-face ağırlık: özel değer girilmemişse taban die_weight ile doldur (form geçerli sayı göstersin).
-        $base = (int) $out['die_weight'];
-        for ($v = 1; $v <= 6; $v++) {
-            $k = 'die_weight_'.$v;
-            $out[$k] = ($out[$k] === null || $out[$k] === '') ? $base : (int) $out[$k];
         }
 
         return $out;

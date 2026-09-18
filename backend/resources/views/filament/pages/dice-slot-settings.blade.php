@@ -60,10 +60,29 @@
                         <span>{{ $odds['jackpot'] }}</span>
                     </li>
                     <li class="flex items-center justify-between">
-                        <span class="text-gray-500">Tek makarada 64 küpü</span>
-                        <span>%{{ $odds['cubePct'] }}</span>
+                        <span class="text-gray-500">Kayıp (kazanmayan)</span>
+                        <span>%{{ $odds['losePct'] }}</span>
                     </li>
                 </ul>
+            </x-filament::section>
+
+            <x-filament::section>
+                <x-slot name="heading">RTP (ödemeli spin getirisi)</x-slot>
+                <x-slot name="description">Ödemeli çevirmede uzun vadede geri dönen coin oranı. %100 üstü = coin BASILIR (abuse). Güvenli: %100 altı.</x-slot>
+
+                <div class="text-center py-2">
+                    <div class="text-3xl font-bold" style="color: {{ ($rtp !== null && $rtp >= 100) ? '#dc2626' : '#16a34a' }}">
+                        {{ $rtp === null ? '—' : '%'.number_format($rtp, 1, ',', '.') }}
+                    </div>
+                    <div class="text-sm text-gray-500">
+                        Spin başına ~{{ number_format($ev, 1, ',', '.') }} coin @if($spinCost > 0) / bedel {{ $spinCost }} coin @endif
+                    </div>
+                    @if ($rtp !== null && $rtp >= 100)
+                        <div class="mt-2 text-sm font-semibold" style="color:#dc2626">
+                            ⚠ RTP %100 üstünde — ödemeli spin coin BASAR. Ağırlıkları/ödülü düşür ya da jackpot katkısını (increment) azalt.
+                        </div>
+                    @endif
+                </div>
             </x-filament::section>
 
             <x-filament::section>
