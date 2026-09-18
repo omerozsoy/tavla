@@ -270,6 +270,19 @@ class MatchClock
         $moved = (bool) ($clock['moved'] ?? false);
         $timedOut = $now >= $timeoutAt + self::GRACE;              // banka tukendi
         $afkedOut = $moved && ($now >= $afkAt + self::GRACE);      // hareketsiz (yalniz ilk hamleden sonra)
+        // ADALET (KÖK FIX): ILK gercek hamleden ONCE, aktif oyuncu tahtayi HIC yuklemediyse
+        // (seen damgasi YOK = hic poll etmedi) onu TIMEOUT ile KAYBETTIRME. "Oynamadan/görmeden
+        // yenildim" bug'i buydu: matchmaking/davet oda acar, acilis sirasi ona gecer ama istemcisi
+        // tahtayi hic almaz; banka started_at'tan GERCEK-ZAMANLI akip ~delay+bank sn'de timeout eder.
+        // "Yuklenmedi mi / terk mi" AYIRT EDILEMEZ (presence de ayni sebeple never-seen'i atliyor,
+        // bkz. yukarisi) -> kayip yazmak haksiz: NO-CONTEST (winner=null) ile bitir (kimse puan/coin
+        // kazanmaz/kaybetmez, oda finalize). Yukledi (seen) ama oynamadiysa timeout GECERLIDIR.
+        $activeSeen = $clock[$active.'_seen'] ?? null;
+        if ($timedOut && ! $moved && $activeSeen === null) {
+            $clock['end'] = ['reason' => 'ABANDON', 'winner' => null];
+
+            return $clock;
+        }
         if ($timedOut || $afkedOut) {
             // Hangi deadline ONCE geldiyse kayip nedeni odur (AFK yalniz armed ise aday).
             $afkFirst = $afkedOut && (! $timedOut || $afkAt < $timeoutAt);
