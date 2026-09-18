@@ -2,6 +2,10 @@ import { Icon } from './Icon'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 import iznikTile from '../assets/iznik-pano-x3.webp' // İznik board: çini pano deseni (dolu hane)
 import sakuraTile from '../assets/sakura.webp' // Sakura board: kiraz dalı + kızıl güneş deseni
+import xmasFirTop from '../assets/yilbasi-fir-top.webp' // Yılbaşı: asılı çam (apex-aşağı)
+import xmasFirBot from '../assets/yilbasi-fir-bot.webp' // Yılbaşı: ayakta çam (apex-yukarı)
+import xmasSnowTop from '../assets/yilbasi-snow-top.webp' // Yılbaşı: asılı kar konisi
+import xmasSnowBot from '../assets/yilbasi-snow-bot.webp' // Yılbaşı: ayakta kar konisi
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -104,7 +108,7 @@ export default function SetupBoard({
   // Yılbaşı: köknar (a) + kar (b) dönüşümlü renkli haneler.
   const yilbasi = themeId === 'yilbasi'
   let nautIdx = 0
-  const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string) => {
+  const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string, par = 'xMidYMid slice') => {
     const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
     const y = Math.min(baseY, tipY)
     return [
@@ -118,7 +122,7 @@ export default function SetupBoard({
         y={y}
         width={colW}
         height={Math.abs(tipY - baseY)}
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio={par}
         clipPath={`url(#nf-${key})`}
       />,
     ]
@@ -156,10 +160,11 @@ export default function SetupBoard({
         continue
       }
       if (yilbasi) {
-        // Köknar (a=yeşil) + kar (b=krem) dönüşümlü; üst ve alt ters (gerçek tahta gibi).
+        // Çam (a) + kar konisi (b) dönüşümlü; üst = apex-aşağı (asılı) asset, alt = apex-yukarı.
+        // par='none' -> CSS'teki 100% 100% (ağaç tabanı geniş kenara, tepe sivri uca hizalı).
         const topFir = col % 2 === 0
-        tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, topFir ? a : b))
-        tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, topFir ? b : a))
+        tris.push(...flagTri(`yb-${half}${col}t`, cx, PAD, PAD + trTriH, topFir ? xmasFirTop : xmasSnowTop, 'none'))
+        tris.push(...flagTri(`yb-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, topFir ? xmasSnowBot : xmasFirBot, 'none'))
         continue
       }
       const light = col % 2 === 0

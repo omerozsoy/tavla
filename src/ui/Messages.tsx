@@ -277,14 +277,25 @@ export default function Messages({
                 if (loadingThreads) return <div className="lb-empty">{t('dm.loading')}</div>
                 if (threads.length === 0) return <div className="lb-empty">{t('dm.empty')}</div>
                 if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>
-                return list.map((th) => (
+                return list.map((th) => {
+                  const online = !!th.user.online
+                  // Çevrimdışı sohbet soluk (arkadaşlardaki gibi) — AMA offline görünüp mesaj
+                  // atmışsa (okunmamış var) soluklaştırma, dikkat çeksin. Durum yazısı yine offline.
+                  const dimmed = !online && th.unread === 0
+                  return (
                   <button
                     key={th.user.id}
                     type="button"
-                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''}`}
+                    className={`messages-thread ${activeId === th.user.id ? 'active' : ''} ${th.unread > 0 ? 'has-unread' : ''} ${dimmed ? 'messages-thread-off' : ''}`}
                     onClick={() => setActiveId(th.user.id)}
                   >
-                    <AvatarFrame src={th.user.avatar} frame={th.user.frame} size={44} name={th.user.name} />
+                    <span className="messages-thread-ava">
+                      <AvatarFrame src={th.user.avatar} frame={th.user.frame} size={44} name={th.user.name} />
+                      <span
+                        className={`messages-thread-dot ${online ? 'on' : ''}`}
+                        title={online ? t('friends.online') : t('friends.offline')}
+                      />
+                    </span>
                     <span className="messages-thread-body">
                       <span className="messages-thread-top">
                         <span className="messages-thread-name">{th.user.name}</span>
@@ -296,7 +307,8 @@ export default function Messages({
                     </span>
                     {th.unread > 0 && <span className="messages-badge">{th.unread > 9 ? '9+' : th.unread}</span>}
                   </button>
-                ))
+                  )
+                })
               })()}
             </div>
           </div>
@@ -371,6 +383,14 @@ export default function Messages({
                       rankSize="sm"
                       premium={activeUser.premium}
                     />
+                  )}
+                  {activeUser && (
+                    /* Durum yazısı: offline görünen biri mesaj atmış olsa da başlıkta gerçek
+                       çevrimiçi/çevrimdışı durumu YAZILIR. */
+                    <span className={`messages-head-status ${activeUser.online ? 'on' : 'off'}`}>
+                      <span className={`messages-thread-dot ${activeUser.online ? 'on' : ''}`} />
+                      {activeUser.online ? t('friends.online') : t('friends.offline')}
+                    </span>
                   )}
                 </div>
 

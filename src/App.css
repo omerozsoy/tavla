@@ -5666,16 +5666,24 @@ html[data-board='sakura'] .bar {
   box-shadow: inset 0 0 0 2px #1c040a;
 }
 
-/* ============ Yılbaşı (Noel): KÖKNAR yeşili hane + KAR kremi hane ============
-   Referans: design_handoff_yilbasi_temasi (renk-tabanlı, görsel YOK). shade-a = köknar (dikey
-   yeşil degrade), shade-b = kar (dikey krem degrade); kırmızı alan (--panel), yeşil çerçeve/bar. */
-html[data-board='yilbasi'] .point.shade-a.top::before,
-html[data-board='yilbasi'] .point.shade-a.bottom::before {
-  background: linear-gradient(#2e7d4f, #14532d);
+/* ============ Yılbaşı (Noel): ÇAM AĞACI hane + KAR KONİSİ hane ============
+   Referans: design_handoff_yilbasi_temasi/noel-arka-plan-temiz.png (yüksek sadakat). Artwork'ün
+   KENDİSİ bir tavla düzeni: 6 asılı (apex-aşağı) + 6 ayakta (apex-yukarı) dönüşümlü çam/kar konisi.
+   shade-a = altın yıldızlı yeşil çam (üçgene gömülü), shade-b = kademeli beyaz kar konisi; ikisi de
+   KIRMIZI (#D20117 = --panel) zeminde -> hane taban köşelerinde zemin görünür (referanstaki gibi).
+   ::before kutusu tam üçgen sınırı (col × tri-h) + clip apex yönü => 100% 100% ile ağaç tabanı geniş
+   kenara, tepe (yıldız) sivri uca birebir hizalanır. top = dikey-çevrilmiş asset (asılı ağaç). */
+html[data-board='yilbasi'] .point.shade-a.top::before {
+  background: #D20117 url('./assets/yilbasi-fir-top.webp') center / 100% 100% no-repeat;
 }
-html[data-board='yilbasi'] .point.shade-b.top::before,
+html[data-board='yilbasi'] .point.shade-a.bottom::before {
+  background: #D20117 url('./assets/yilbasi-fir-bot.webp') center / 100% 100% no-repeat;
+}
+html[data-board='yilbasi'] .point.shade-b.top::before {
+  background: #D20117 url('./assets/yilbasi-snow-top.webp') center / 100% 100% no-repeat;
+}
 html[data-board='yilbasi'] .point.shade-b.bottom::before {
-  background: linear-gradient(#ffffff, #f7f3ea);
+  background: #D20117 url('./assets/yilbasi-snow-bot.webp') center / 100% 100% no-repeat;
 }
 html[data-board='yilbasi'] .bar {
   background: linear-gradient(#0e4a2b, #08301c);
@@ -18545,6 +18553,53 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .messages-thread.has-unread .messages-thread-time {
   color: var(--accent);
+}
+/* Avatar sarmalayıcı: sağ-alt köşeye çevrimiçi durum noktası (arkadaşlardaki gibi). */
+.messages-thread-ava {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+}
+.messages-thread-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: var(--radius-circle);
+  background: color-mix(in srgb, var(--muted) 70%, transparent);
+  flex: none;
+}
+.messages-thread-ava .messages-thread-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  border: 2px solid var(--card-bg);
+}
+/* Online: profil kartıyla aynı yeşil yanıp sönen nokta */
+.messages-thread-dot.on {
+  background: var(--color-success, #1a7f37);
+  animation: pp-online-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .messages-thread-dot.on {
+    animation: none;
+  }
+}
+/* Çevrimdışı sohbet soluk (arkadaşlardaki .friend-row-off gibi) — avatar + gövde solar,
+   rozet net kalır. Okunmamışı olan offline sohbet SOLUK DEĞİL (dimmed hesabı JSX'te). */
+.messages-thread-off .messages-thread-ava,
+.messages-thread-off .messages-thread-body {
+  opacity: 0.5;
+}
+/* Sohbet başlığında minik durum yazısı */
+.messages-head-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.messages-head-status.on {
+  color: var(--color-success, #1a7f37);
 }
 /* Bildirimler satırı: yuvarlak zil rozeti */
 .messages-notif-ava {
