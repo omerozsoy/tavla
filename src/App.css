@@ -5689,6 +5689,19 @@ html[data-board='yilbasi'] .bar {
   background: linear-gradient(#0e4a2b, #08301c);
   box-shadow: inset 0 0 0 2px #05200f;
 }
+/* Yılbaşı: TavlaTV wordmark yerine ORTADA tek 'Mutlu Yıllar' el yazısı (Brush Script,
+   beyaz, şeffaf webp). Watermark katmanı (inset:0) => tahtanın tam merkezine oturur,
+   taşların ALTINDA (z1<z2) -> açılış ortası boş olduğundan net okunur, oyunu engellemez. */
+html[data-board='yilbasi'] .wm-logo {
+  display: none;
+}
+html[data-board='yilbasi'] .board-watermark {
+  background-image: url('./assets/yilbasi-mutlu-yillar.webp');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: min(46%, calc(var(--col) * 6.2)) auto;
+  opacity: 0.9;
+}
 
 /* Sakura + Yılbaşı pullar: solid (--cream / --navy) + fizik disk finish (İznik ile aynı;
    --cream/--navy kullanıldığından pul-takası tutarlı). */

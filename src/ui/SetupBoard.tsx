@@ -6,6 +6,7 @@ import xmasFirTop from '../assets/yilbasi-fir-top.webp' // Yılbaşı: asılı �
 import xmasFirBot from '../assets/yilbasi-fir-bot.webp' // Yılbaşı: ayakta çam (apex-yukarı)
 import xmasSnowTop from '../assets/yilbasi-snow-top.webp' // Yılbaşı: asılı kar konisi
 import xmasSnowBot from '../assets/yilbasi-snow-bot.webp' // Yılbaşı: ayakta kar konisi
+import xmasScript from '../assets/yilbasi-mutlu-yillar.webp' // Yılbaşı: ortada 'Mutlu Yıllar' el yazısı
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -264,6 +265,24 @@ export default function SetupBoard({
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}
+          {/* Yılbaşı: ortada 'Mutlu Yıllar' el yazısı (canlı boarddaki watermark'ın önizleme karşılığı;
+              taşların/zarın ALTINDA -> {discs}/{dice} sonra çizilir). Genişlik ~%46, oran korunur. */}
+          {yilbasi &&
+            (() => {
+              const iw = W * 0.46
+              const ih = (iw * 361) / 1743
+              return (
+                <image
+                  href={xmasScript}
+                  x={W / 2 - iw / 2}
+                  y={H / 2 - ih / 2}
+                  width={iw}
+                  height={ih}
+                  opacity="0.9"
+                  preserveAspectRatio="xMidYMid meet"
+                />
+              )
+            })()}
         </g>
         {/* Ic alan cercevesi: yuvarlak-kose ince cizgi -> alan/cerceve gecisi temiz */}
         <rect
