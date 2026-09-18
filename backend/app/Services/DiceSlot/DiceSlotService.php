@@ -167,38 +167,43 @@ class DiceSlotService
         ];
     }
 
-    // ---- Güvenli makara seçimi (CSPRNG) ----
+    // ---- Güvenli sonuç seçimi (CSPRNG, outcome-first) ----
 
     /**
-     * Sembol => ağırlık. Her zar yüzü BAĞIMSIZ ağırlık alabilir (111 ile 666 farklı olasılık);
-     * bir yüz için özel değer girilmemişse taban die_weight kullanılır. 64 küpü ayrı (nadir).
+     * SONUÇ (outcome) => ağırlık. Gerçek slot mantığı: sunucu ÖNCE kategoriyi seçer.
+     * Anahtarlar: 'lose', 't1'..'t6' (üçlüler), 'straight' (kent), 'jackpot' (64-64-64).
+     * Her kombinasyonun olasılığı BAĞIMSIZ (kent artık zar ağırlıklarından türemez).
      */
-    public function symbolWeights(): array
+    public function outcomeWeights(): array
     {
-        $base = max(1, DS::int('die_weight'));
-        $w = [];
+        $w = ['lose' => max(0, DS::int('lose_weight'))];
         for ($v = 1; $v <= 6; $v++) {
-            $fw = DS::intOrNull('die_weight_'.$v);
-            $w['d'.$v] = max(1, $fw ?? $base);
+            $w['t'.$v] = max(0, DS::int('triple_weight_'.$v));
         }
-        $w['c64'] = max(1, DS::int('cube_weight'));
+        $w['straight'] = max(0, DS::int('straight_weight'));
+        $w['jackpot'] = max(0, DS::int('jackpot_weight'));
 
         return $w;
     }
 
-    /** Tek makara: ağırlıklı random_int seçimi. */
-    private function pickSymbol(array $weights, int $total): string
+    /** Ağırlıklı sonuç seçimi (random_int = CSPRNG). Toplam 0 ise 'lose'. */
+    private function pickOutcome(): string
     {
-        $roll = random_int(1, max(1, $total));
+        $w = $this->outcomeWeights();
+        $total = array_sum($w);
+        if ($total <= 0) {
+            return 'lose';
+        }
+        $roll = random_int(1, $total);
         $acc = 0;
-        foreach ($weights as $sym => $w) {
-            $acc += $w;
+        foreach ($w as $key => $val) {
+            $acc += $val;
             if ($roll <= $acc) {
-                return $sym;
+                return $key;
             }
         }
 
-        return array_key_last($weights);
+        return 'lose';
     }
 
     /**
@@ -218,17 +223,64 @@ class DiceSlotService
         return $vals[0] + 1 === $vals[1] && $vals[1] + 1 === $vals[2];
     }
 
-    /** Üç makarayı BAĞIMSIZ çevir (gerçek slot: her makara ayrı). */
-    private function roll(): array
+    /** Herhangi bir kazanan kombinasyon mu (üçlü/kent)? -> kayıp üretirken hariç tutulur. */
+    private function isWinningCombo(array $reels): bool
     {
-        $weights = $this->symbolWeights();
-        $total = array_sum($weights);
+        [$a, $b, $c] = $reels;
+        if ($a === $b && $b === $c) {
+            return true; // her üçlü (64 dahil)
+        }
 
-        return [
-            $this->pickSymbol($weights, $total),
-            $this->pickSymbol($weights, $total),
-            $this->pickSymbol($weights, $total),
-        ];
+        return $this->isStraight($reels);
+    }
+
+    /** random_int tabanlı karıştırma (kent makara sırası kozmetik; CSPRNG ile tutarlı). */
+    private function shuffleReels(array $reels): array
+    {
+        for ($i = count($reels) - 1; $i > 0; $i--) {
+            $j = random_int(0, $i);
+            [$reels[$i], $reels[$j]] = [$reels[$j], $reels[$i]];
+        }
+
+        return $reels;
+    }
+
+    /** Kazanmayan rastgele makara (üçlü/kent DEĞİL). 7 sembolden çekip reddederek. */
+    private function randomLosingReels(): array
+    {
+        for ($i = 0; $i < 40; $i++) {
+            $r = [
+                self::SYMBOLS[random_int(0, count(self::SYMBOLS) - 1)],
+                self::SYMBOLS[random_int(0, count(self::SYMBOLS) - 1)],
+                self::SYMBOLS[random_int(0, count(self::SYMBOLS) - 1)],
+            ];
+            if (! $this->isWinningCombo($r)) {
+                return $r;
+            }
+        }
+
+        return ['d1', 'd3', 'd6']; // güvenli geri dönüş (üçlü/kent değil)
+    }
+
+    /** Seçilen sonuç kategorisine uygun 3 makarayı üret (sonuç zaten belirlendi). */
+    private function reelsForOutcome(string $outcome): array
+    {
+        if ($outcome === 'jackpot') {
+            return ['c64', 'c64', 'c64'];
+        }
+        if (preg_match('/^t([1-6])$/', $outcome, $m)) {
+            $d = 'd'.$m[1];
+
+            return [$d, $d, $d];
+        }
+        if ($outcome === 'straight') {
+            $runs = [[1, 2, 3], [2, 3, 4], [3, 4, 5], [4, 5, 6]];
+            $run = $runs[random_int(0, count($runs) - 1)];
+
+            return $this->shuffleReels(array_map(fn ($v) => 'd'.$v, $run));
+        }
+
+        return $this->randomLosingReels();
     }
 
     /**
@@ -281,16 +333,16 @@ class DiceSlotService
                 $spinType = 'free';
             }
 
-            // MAKARALARI ÇEVİR (sonuç sunucuda belirlenir).
-            $reels = $this->roll();
-            [$a, $b, $c] = $reels;
+            // SONUCU SEÇ (outcome-first: önce kategori ağırlıkla seçilir), sonra makarayı üret.
+            $outcome = $this->pickOutcome();
+            $reels = $this->reelsForOutcome($outcome);
 
             $winType = 'none';
             $payout = 0;
             $matchedValue = null;
             $jackpotWin = false;
 
-            // Jackpot havuzunu kilitle: her spinde büyür; üçlü 64 ise kazanılıp tabana sıfırlanır.
+            // Jackpot havuzunu kilitle: her spinde büyür; sonuç 'jackpot' ise kazanılıp tabana sıfırlanır.
             $jp = DiceSlotJackpot::where('id', 1)->lockForUpdate()->first();
             if (! $jp) {
                 $jp = new DiceSlotJackpot;
@@ -302,22 +354,19 @@ class DiceSlotService
             $jp->pool = (int) $jp->pool + $inc;
             $jp->total_contributed = (int) $jp->total_contributed + $inc;
 
-            if ($a === $b && $b === $c) {
-                if ($a === 'c64') {
-                    $jackpotWin = true;
-                    $winType = 'jackpot';
-                    $payout = (int) $jp->pool; // güncel havuzun tamamı
-                    $jp->last_won_user_id = $u->id;
-                    $jp->last_won_amount = $payout;
-                    $jp->last_won_at = now();
-                    $jp->pool = max(0, DS::int('jackpot_base')); // tabana sıfırla
-                } else {
-                    $winType = 'triple';
-                    $matchedValue = (int) substr($a, 1);
-                    $payout = max(0, $this->payouts()[$matchedValue] ?? 0);
-                }
-            } elseif ($this->isStraight($reels)) {
-                // Sıralama / kent (ardışık üç farklı zar) — üçlü değilse kontrol edilir.
+            if ($outcome === 'jackpot') {
+                $jackpotWin = true;
+                $winType = 'jackpot';
+                $payout = (int) $jp->pool; // güncel havuzun tamamı
+                $jp->last_won_user_id = $u->id;
+                $jp->last_won_amount = $payout;
+                $jp->last_won_at = now();
+                $jp->pool = max(0, DS::int('jackpot_base')); // tabana sıfırla
+            } elseif (preg_match('/^t([1-6])$/', $outcome, $m)) {
+                $winType = 'triple';
+                $matchedValue = (int) $m[1];
+                $payout = max(0, $this->payouts()[$matchedValue] ?? 0);
+            } elseif ($outcome === 'straight') {
                 $winType = 'straight';
                 $payout = $this->straightPayout();
             }

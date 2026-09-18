@@ -31,19 +31,23 @@ return [
         'reset_hour' => 0,             // günlük hakların sıfırlandığı saat (yerel)
         'timezone' => 'Europe/Istanbul',
 
-        // --- Sembol ağırlıkları (kazanma olasılığını belirler; RTP kontrolü) ---
-        // Her zar YÜZÜ ayrı ağırlıkta olabilir -> her üçlünün (111, 222, ... 666) gelme
-        // olasılığı bağımsız ayarlanır. Ağırlık yüksek = yüz sık gelir = üçlüsü daha sık.
-        // Tipik denge: yüksek ödüllü yüzü (6) düşük ağırlık ver -> 666 nadir; 1'i yüksek -> 111 sık.
-        // Her yüz eşit ağırlıkta bırakılırsa klasik slot davranışı (ödül farkı sadece miktardan).
-        'die_weight' => 100,           // ESKİ/taban ağırlık — bir yüz için özel değer girilmezse bu kullanılır
-        'die_weight_1' => null,        // 1 yüzü ağırlığı (boş = taban die_weight)
-        'die_weight_2' => null,        // 2 yüzü ağırlığı
-        'die_weight_3' => null,        // 3 yüzü ağırlığı
-        'die_weight_4' => null,        // 4 yüzü ağırlığı
-        'die_weight_5' => null,        // 5 yüzü ağırlığı
-        'die_weight_6' => null,        // 6 yüzü ağırlığı
-        'cube_weight' => 34,           // 64 küpü (c64) ağırlığı — nadir
+        // --- SONUÇ AĞIRLIKLARI (outcome-first: gerçek slot mantığı) ---
+        // Sunucu ÖNCE sonuç kategorisini bu ağırlıklarla seçer, SONRA ona uygun 3 makarayı üretir.
+        // Böylece HER kombinasyonun olasılığı BAĞIMSIZ ve doğrudan ayarlanır (net RTP kontrolü):
+        //   P(sonuç) = weight / (tüm ağırlıkların toplamı). 'lose_weight' = kazanmayan kombinasyon.
+        // Kent (straight) artık zar yüzü ağırlıklarından TÜREMEZ -> KENDİ ağırlığı var (jackpot gibi).
+        // Kural: yüksek ödüllü sonuca DÜŞÜK ağırlık ver. Ödemeli çevirmede beklenen değer < spin_cost
+        // kalmalı (aksi halde coin BASILIR). Aşağıdaki varsayılanlar spin_cost=50'de ~%76 RTP verir.
+        'lose_weight' => 9100,         // kazanmayan sonuç (baskın)
+        'triple_weight_1' => 350,      // 1-1-1  (ödül payout_1)
+        'triple_weight_2' => 180,      // 2-2-2
+        'triple_weight_3' => 90,       // 3-3-3
+        'triple_weight_4' => 45,       // 4-4-4
+        'triple_weight_5' => 20,       // 5-5-5
+        'triple_weight_6' => 9,        // 6-6-6 (en yüksek normal ödül -> en nadir)
+        'straight_weight' => 200,      // Kent (ardışık üçlü) — BAĞIMSIZ, nadir (≈%2)
+        'jackpot_weight' => 6,         // 64-64-64 (artan jackpot) — çok nadir
+        // (ESKİ die_weight_* / cube_weight anahtarları artık KULLANILMIYOR; outcome ağırlıkları geçerli.)
 
         // --- Üçlü zar ödülleri (coin), küçükten büyüğe ---
         'payout_1' => 100,             // 1-1-1
@@ -58,7 +62,10 @@ return [
         'payout_straight' => 150,
 
         // --- Artan (progressive) jackpot: 64-64-64 ---
+        // DİKKAT: jackpot_increment uzun vadede spin başına DOĞRUDAN RTP'ye eklenir
+        // (her spin havuza girer, biri kazanınca hepsi ödenir). Yüksek increment = yüksek RTP.
+        // spin_cost=50'de increment≈8 -> jackpot katkısı ~%16; toplam RTP ~%68 (güvenli).
         'jackpot_base' => 5000,        // taban/başlangıç havuzu (kazanılınca buraya sıfırlanır)
-        'jackpot_increment' => 25,     // her spinde havuza eklenen coin (havuz büyür)
+        'jackpot_increment' => 8,      // her spinde havuza eklenen coin (RTP'ye doğrudan katkı)
     ],
 ];
