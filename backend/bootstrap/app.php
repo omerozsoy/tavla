@@ -45,9 +45,15 @@ return Application::configure(basePath: dirname(__DIR__))
             // alınır, worker devam eder, iş kaybı YOK). Loglanır ama UYARI (e-posta/WA) GÖNDERİLMEZ
             // -> "cli/queue" 500 spam'i olmaz. Gerçek 500'ler etkilenmez.
             if ($e instanceof \Illuminate\Database\QueryException) {
-                $sqlState = (string) $e->getCode();
-                $driverErrno = $e->errorInfo[1] ?? null;
-                if ($sqlState === '40001' || $driverErrno === 1213 || $driverErrno === 1205) {
+                // MESAJ-tabanlı (kurşun geçirmez): getCode/errorInfo sürüme göre değişebilir; hata
+                // metni deadlock imzasını DAİMA taşır ("SQLSTATE[40001] ... 1213 Deadlock ...").
+                $m = $e->getMessage();
+                if ((string) $e->getCode() === '40001'
+                    || str_contains($m, '40001')
+                    || str_contains($m, '1213')
+                    || str_contains($m, '1205')
+                    || str_contains($m, 'Deadlock')
+                    || str_contains($m, 'Lock wait timeout')) {
                     return;
                 }
             }
