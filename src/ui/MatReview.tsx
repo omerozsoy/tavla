@@ -79,7 +79,6 @@ export default function MatReview({
   matchLength,
   summary,
   luck,
-  currentName,
   onClose,
 }: {
   log: LogEntry[]
@@ -96,10 +95,6 @@ export default function MatReview({
   const [summaryOpen, setSummaryOpen] = useState(false)
   const nameW = names?.[0] || t('mrv.white') // white = gnubg player0
   const nameB = names?.[1] || t('mrv.black')
-  // "Sen" = giriş yapan kullanıcı hangi renkse. Ad eşleşmezse (başkasının maçı / misafir)
-  // alt-taraftaki (beyaz, ekranda altta gösterilen birincil) "sen" varsayılır. Oynanan hamle
-  // "sen"e aitse "Senin hamlen", rakibe aitse "Rakibin hamlesi".
-  const myColor: Player = currentName && currentName === nameB ? 'black' : 'white'
 
   const [filter, setFilter] = useState<'all' | 'errors' | 'blunders'>('all')
   const [who, setWho] = useState<'both' | 'white' | 'black'>('both')
@@ -407,12 +402,8 @@ export default function MatReview({
                   <span className="mrv-c-no">{ci + 1}</span>
                   <span className="mrv-c-move">
                     {c.notation}
-                    {isPlayed &&
-                      (cur?.player === myColor ? (
-                        <span className="mrv-c-you">{t('mrv.yourMove')}</span>
-                      ) : (
-                        <span className="mrv-c-you opp">{t('mrv.oppMove')}</span>
-                      ))}
+                    {/* Oynanan hamle: "senin/rakibin" ayrımı YOK — ikisi de "Oynanan Hamle". */}
+                    {isPlayed && <span className="mrv-c-you">{t('mrv.playedMove')}</span>}
                   </span>
                   <span className="mrv-c-eq">
                     {ci === 0 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}` : `(${diff.toFixed(3)})`}
