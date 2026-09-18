@@ -1,6 +1,7 @@
 import { Icon } from './Icon'
 import { NAUTICAL_FLAGS_TOP, NAUTICAL_FLAGS_BOTTOM } from '../nauticalFlags'
 import iznikTile from '../assets/iznik-pano-x3.webp' // İznik board: çini pano deseni (dolu hane)
+import sakuraTile from '../assets/sakura.webp' // Sakura board: kiraz dalı + kızıl güneş deseni
 
 // Kurulum ekranlarindaki tahta onizlemesi: secilen temaya gore renklenir,
 // baslangic dizilisinde istiflenmis pullar + iki zar. Ortada istege bagli
@@ -98,6 +99,10 @@ export default function SetupBoard({
   const nautical = themeId === 'nautical'
   // İznik: hane çifti dönüşümlü — desenli çini (shade-a) + karanfil kırmızısı (shade-b, prop 'b').
   const iznik = themeId === 'iznik'
+  // Sakura: desenli kiraz hane (shade-a) + düz kızıl hane (shade-b, prop 'b').
+  const sakura = themeId === 'sakura'
+  // Yılbaşı: köknar (a) + kar (b) dönüşümlü renkli haneler.
+  const yilbasi = themeId === 'yilbasi'
   let nautIdx = 0
   const flagTri = (key: string, cx: number, baseY: number, tipY: number, uri: string) => {
     const pts = `${cx - colW / 2 + 1},${baseY} ${cx + colW / 2 - 1},${baseY} ${cx},${tipY}`
@@ -140,6 +145,21 @@ export default function SetupBoard({
         else tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, b))
         if (col % 2 === 1) tris.push(...flagTri(`iz-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, iznikTile))
         else tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, b))
+        continue
+      }
+      if (sakura) {
+        // Desenli kiraz hane (üst çift / alt tek kolon) + düz kızıl komşu hane (prop 'b').
+        if (col % 2 === 0) tris.push(...flagTri(`sk-${half}${col}t`, cx, PAD, PAD + trTriH, sakuraTile))
+        else tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, b))
+        if (col % 2 === 1) tris.push(...flagTri(`sk-${half}${col}b`, cx, H - PAD, H - PAD - trTriH, sakuraTile))
+        else tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, b))
+        continue
+      }
+      if (yilbasi) {
+        // Köknar (a=yeşil) + kar (b=krem) dönüşümlü; üst ve alt ters (gerçek tahta gibi).
+        const topFir = col % 2 === 0
+        tris.push(shape(`t-${half}-${col}`, cx, PAD, PAD + trTriH, topFir ? a : b))
+        tris.push(shape(`btm-${half}-${col}`, cx, H - PAD, H - PAD - trTriH, topFir ? b : a))
         continue
       }
       const light = col % 2 === 0

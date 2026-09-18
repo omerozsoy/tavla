@@ -57,6 +57,7 @@ class ShopController extends Controller
         'italy' => 'country', 'france' => 'country', 'spain' => 'country', 'japan' => 'country', 'brazil' => 'country',
         // tavlatv (TavlaTV özel boardlar, en ust kademe; src/boardThemes.ts TAVLATV_THEMES ile senkron)
         'tavlatv-special' => 'tavlatv', 'citrus-wood' => 'tavlatv', 'nautical' => 'tavlatv', 'iznik' => 'tavlatv',
+        'sakura' => 'tavlatv', 'yilbasi' => 'tavlatv',
     ];
 
     // Avatar cerceve animasyonlari -> rarity (frontend avatarFrames.ts ANIMS ile BIREBIR, 62 adet).
