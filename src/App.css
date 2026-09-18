@@ -5650,6 +5650,59 @@ html[data-board='iznik'] .checker.black {
 html[data-board='iznik'] .checker.white { background: var(--cream); }
 html[data-board='iznik'] .checker.black { background: var(--navy); }
 
+/* ============ Sakura (kiraz çiçeği): DESENLİ hane + düz KIZIL hane ============
+   Referans: design_handoff_sakura_temasi. shade-a = kiraz dalı + kızıl güneş foto (üçgene klipli,
+   DAİMA dik), shade-b = düz kızıl (#C4114F). Açık pembe alan (--panel), koyu bordo çerçeve/bar. */
+html[data-board='sakura'] .point.shade-a.top::before,
+html[data-board='sakura'] .point.shade-a.bottom::before {
+  background: var(--tri-a) url('./assets/sakura.webp') center / cover no-repeat;
+}
+html[data-board='sakura'] .point.shade-b.top::before,
+html[data-board='sakura'] .point.shade-b.bottom::before {
+  background: var(--tri-b); /* düz kızıl #C4114F */
+}
+html[data-board='sakura'] .bar {
+  background: linear-gradient(#3b0a14, #24060d);
+  box-shadow: inset 0 0 0 2px #1c040a;
+}
+
+/* ============ Yılbaşı (Noel): KÖKNAR yeşili hane + KAR kremi hane ============
+   Referans: design_handoff_yilbasi_temasi (renk-tabanlı, görsel YOK). shade-a = köknar (dikey
+   yeşil degrade), shade-b = kar (dikey krem degrade); kırmızı alan (--panel), yeşil çerçeve/bar. */
+html[data-board='yilbasi'] .point.shade-a.top::before,
+html[data-board='yilbasi'] .point.shade-a.bottom::before {
+  background: linear-gradient(#2e7d4f, #14532d);
+}
+html[data-board='yilbasi'] .point.shade-b.top::before,
+html[data-board='yilbasi'] .point.shade-b.bottom::before {
+  background: linear-gradient(#ffffff, #f7f3ea);
+}
+html[data-board='yilbasi'] .bar {
+  background: linear-gradient(#0e4a2b, #08301c);
+  box-shadow: inset 0 0 0 2px #05200f;
+}
+
+/* Sakura + Yılbaşı pullar: solid (--cream / --navy) + fizik disk finish (İznik ile aynı;
+   --cream/--navy kullanıldığından pul-takası tutarlı). */
+html[data-board='sakura'] .checker.white,
+html[data-board='sakura'] .checker.black,
+html[data-board='yilbasi'] .checker.white,
+html[data-board='yilbasi'] .checker.black {
+  box-shadow:
+    inset 0 2px 3px rgba(255, 255, 255, 0.30),
+    inset 0 -3px 5px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(0, 0, 0, 0.16),
+    0 2px 4px rgba(0, 0, 0, 0.34);
+}
+html[data-board='sakura'] .checker.white,
+html[data-board='yilbasi'] .checker.white {
+  background: var(--cream);
+}
+html[data-board='sakura'] .checker.black,
+html[data-board='yilbasi'] .checker.black {
+  background: var(--navy);
+}
+
 @keyframes checker-place {
   0% {
     transform: translateY(-18%) scale(0.86);

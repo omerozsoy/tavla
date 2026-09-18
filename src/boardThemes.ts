@@ -279,6 +279,25 @@ export const TAVLATV_THEMES: BoardTheme[] = [
     surface: 'plain', pointStyle: 'sharp', checkerStyle: 'gloss',
     d1Bg: '#FBF6EC', d1Pip: '#161E3E', d2Bg: '#161E3E', d2Pip: '#FBF6EC', cubeBg: '#202090', cubeText: '#FFFFFF',
   },
+  {
+    // Sakura — kiraz çiçeği: DESENLİ hane (kiraz dalı + kızıl güneş fotoğrafı, üçgene gömülü) +
+    // düz KIZIL (#C4114F) hane. Açık pembe alan, koyu bordo çerçeve, tomurcuk/dal pulları.
+    // Bespoke: [data-board='sakura'] (App.css) + src/assets/sakura.webp. Referans:
+    // design_handoff_sakura_temasi (yüksek sadakat). TavlaTV Özel kademesi.
+    id: 'sakura', name: 'Sakura', rarity: 'tavlatv',
+    panel: '#F7E7EC', a: '#DE9CAF', b: '#C4114F', light: '#FBEDF2', checker: '#3B0A14', frame: '#3B0A14',
+    surface: 'plain', pointStyle: 'sharp', checkerStyle: 'gloss',
+    d1Bg: '#FBEDF2', d1Pip: '#3B0A14', d2Bg: '#3B0A14', d2Pip: '#FBEDF2', cubeBg: '#C4114F', cubeText: '#FBEDF2',
+  },
+  {
+    // Yılbaşı — Noel: KÖKNAR YEŞİLİ hane (dikey degrade) + KAR KREMİ hane; kırmızı oyun alanı,
+    // koyu yeşil çerçeve, krem/köknar pullar, altın (yıldız) aksan. Renk-tabanlı (görsel YOK).
+    // Bespoke: [data-board='yilbasi'] (App.css). Referans: design_handoff_yilbasi_temasi.
+    id: 'yilbasi', name: 'Yılbaşı', rarity: 'tavlatv',
+    panel: '#D20117', a: '#14532D', b: '#F7F3EA', light: '#FFFBF2', checker: '#14532D', frame: '#0E4A2B',
+    surface: 'plain', pointStyle: 'sharp', checkerStyle: 'gloss',
+    d1Bg: '#FFFBF2', d1Pip: '#14532D', d2Bg: '#14532D', d2Pip: '#FFFBF2', cubeBg: '#FFC928', cubeText: '#14532D',
+  },
 ]
 // Galaksi koleksiyonu — ek referans boardlar (rename listesi disi). Screenshot'lardan
 // yeniden uretildi; pul stili + yuzey finish referansa gore. Plan kilidiyle acilir.
