@@ -85,6 +85,7 @@ class MatchClockTest extends TestCase
     public function test_timeout_when_bank_exhausted(): void
     {
         $c = $this->started('speed', 1); // banka 24, delay 8 -> timeout t0+32
+        $c = MatchClock::seen($c, 'p1', self::T0); // p1 tahtayi YUKLEDI (present) -> timeout gecerli
         $this->assertEmpty(MatchClock::tick($c, self::T0 + 33)['end'] ?? null); // 33 < 32+grace(3)
         $end = MatchClock::tick($c, self::T0 + 35)['end']; // 35 >= 32+3
         $this->assertSame('TIMEOUT', $end['reason']);
@@ -177,6 +178,7 @@ class MatchClockTest extends TestCase
     public function test_client_view_maps_loss_to_color(): void
     {
         $c = $this->started('speed', 1); // aktif beyaz(p1)
+        $c = MatchClock::seen($c, 'p1', self::T0); // p1 yukledi (present) -> timeout gecerli
         $v = MatchClock::clientView(MatchClock::tick($c, self::T0 + 40), self::T0 + 40);
         $this->assertNotNull($v['loss']);
         $this->assertSame('black', $v['loss']['winner']); // p2 -> siyah
@@ -188,6 +190,7 @@ class MatchClockTest extends TestCase
     {
         // speed 1: timeout t0+32 < afk t0+60 -> TIMEOUT
         $c = $this->started('speed', 1);
+        $c = MatchClock::seen($c, 'p1', self::T0 + 58); // p1 present (yukledi, poll ediyor)
         $this->assertSame('TIMEOUT', MatchClock::tick($c, self::T0 + 60)['end']['reason']);
     }
 
@@ -236,13 +239,16 @@ class MatchClockTest extends TestCase
         $this->assertSame('p2', $end['winner']);
     }
 
-    // ---- 17) Ikisi de terk -> karar verilmez (haksiz kayip yazma) ----
-    public function test_presence_both_absent_no_decision(): void
+    // ---- 17) Ikisi de terk -> haksiz kayip YOK: NO-CONTEST (winner=null) ile finalize
+    // (hayalet "Devam Eden Maç" + izleyici donmasi fix; bkz. MatchClock both-gone). ----
+    public function test_presence_both_absent_no_contest(): void
     {
         $c = $this->started('casual', 5);
         $c = MatchClock::seen($c, 'p1', self::T0);
         $c = MatchClock::seen($c, 'p2', self::T0);
-        $this->assertEmpty(MatchClock::tick($c, self::T0 + 70)['end'] ?? null);
+        $end = MatchClock::tick($c, self::T0 + 70)['end']; // ikisi de >48sn kayip
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertNull($end['winner']); // kimse kazanmaz -> no-contest
     }
 
     // ---- 18) _seen damgasi yoksa presence ATLANIR (saf zaman davranisi korunur) ----
@@ -264,12 +270,25 @@ class MatchClockTest extends TestCase
     }
 
     // ---- 20) Ilk hamleden once bile TIMEOUT (banka) calisir -> sonsuz stall engeli ----
-    public function test_timeout_still_applies_before_first_move(): void
+    // ANCAK aktif oyuncu tahtayi YUKLEDIYSE (seen). Yuklemeden timeout = haksiz (test 20b).
+    public function test_timeout_still_applies_before_first_move_when_loaded(): void
     {
         $c = $this->started('speed', 1); // moved=false; banka 24 + delay 8 -> timeout t0+32
+        $c = MatchClock::seen($c, 'p1', self::T0); // p1 tahtayi yukledi ama oynamıyor (stall)
         $end = MatchClock::tick($c, self::T0 + 40)['end']; // 40 >= 32+3
         $this->assertSame('TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']);
+    }
+
+    // ---- 20b) ADALET: aktif oyuncu tahtayi HIC yuklemediyse (seen YOK) ilk hamleden once
+    // TIMEOUT ile KAYBETMEZ -> NO-CONTEST (winner=null). "Oynamadan/görmeden yenildim" fix. ----
+    public function test_no_contest_before_first_move_when_never_loaded(): void
+    {
+        $c = $this->started('speed', 1); // moved=false, aktif p1
+        $c = MatchClock::seen($c, 'p2', self::T0); // yalnız rakip yukledi; p1 HIC gorulmedi
+        $end = MatchClock::tick($c, self::T0 + 40)['end']; // banka deadline gecti
+        $this->assertSame('ABANDON', $end['reason']);
+        $this->assertNull($end['winner']); // kimse kaybetmez/kazanmaz (puan/coin islemez)
     }
 
     // ---- 21) Ilk hamleden SONRA AFK normal calisir ----
