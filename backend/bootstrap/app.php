@@ -39,6 +39,18 @@ return Application::configure(basePath: dirname(__DIR__))
                 && $e->getStatusCode() < 500) {
                 return;
             }
+            // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
+            // database queue sürücüsünde worker'ın `SELECT ... FOR UPDATE` yoklaması ile eşzamanlı
+            // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri
+            // alınır, worker devam eder, iş kaybı YOK). Loglanır ama UYARI (e-posta/WA) GÖNDERİLMEZ
+            // -> "cli/queue" 500 spam'i olmaz. Gerçek 500'ler etkilenmez.
+            if ($e instanceof \Illuminate\Database\QueryException) {
+                $sqlState = (string) $e->getCode();
+                $driverErrno = $e->errorInfo[1] ?? null;
+                if ($sqlState === '40001' || $driverErrno === 1213 || $driverErrno === 1205) {
+                    return;
+                }
+            }
             try {
                 if (\Illuminate\Support\Facades\Cache::get('alert:http500:last')) {
                     return; // 15 dk penceresi -> spam bastır
