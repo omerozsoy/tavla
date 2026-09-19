@@ -159,7 +159,7 @@ class UserResource extends Resource
                 Tables\Columns\IconColumn::make('banned_at')->label('Yasaklı')
                     ->boolean()->trueColor('danger')->falseColor('gray')
                     ->getStateUsing(fn ($record) => $record->banned_at !== null),
-                Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y')->sortable()->toggleable(),
+                Tables\Columns\TextColumn::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i')->sortable()->toggleable(),
                 Tables\Columns\TextColumn::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')
                     ->placeholder('—')->sortable()->toggleable(),
             ])
@@ -277,11 +277,40 @@ class UserResource extends Resource
                     ->badge(fn (User $r) => $r->matchResults()->count() ?: null)
                     ->schema([
                         ViewEntry::make('matchResults')->hiddenLabel()
-                            ->state(fn (User $r) => $r->matchResults()->latest('id')->limit(100)->get())
+                            ->state(fn (User $r) => self::matchRowsWithNames($r))
                             ->view('filament.user.matches'),
                     ]),
             ]),
         ]);
+    }
+
+    /**
+     * "Maçlar" sekmesi için son 100 maç + oyuncuların ad soyad'ı.
+     * - Sahip (bu üye): first_name+last_name (self_full_name).
+     * - Rakip: opponent_name (nickname) → User tablosundan tek sorguyla çözülür (opp_full_name).
+     *   Bulunamazsa null (blade sadece nickname gösterir). Ad soyad = model üzerine dinamik nitelik.
+     */
+    public static function matchRowsWithNames(User $u): \Illuminate\Support\Collection
+    {
+        $rows = $u->matchResults()->latest('id')->limit(100)->get();
+        $selfFull = trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: null;
+
+        $nicks = $rows->pluck('opponent_name')->filter()->unique()->values();
+        $map = $nicks->isEmpty()
+            ? collect()
+            : User::whereIn('nickname', $nicks->all())
+                ->get(['nickname', 'first_name', 'last_name'])
+                ->mapWithKeys(fn (User $o) => [
+                    $o->nickname => trim(($o->first_name ?? '').' '.($o->last_name ?? '')) ?: null,
+                ]);
+
+        foreach ($rows as $row) {
+            $row->self_nickname = $u->nickname;
+            $row->self_full_name = $selfFull;
+            $row->opp_full_name = $row->opponent_name ? ($map[$row->opponent_name] ?? null) : null;
+        }
+
+        return $rows;
     }
 
     /** unlocks'tan sahip olunan board id'leri (önek soyulmuş). */

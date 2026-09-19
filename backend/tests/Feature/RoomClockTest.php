@@ -342,4 +342,58 @@ class RoomClockTest extends TestCase
         $room->refresh();
         $this->assertSame('playing', $room->status); // caller kendi sorgusuyla forfeit OLMADI
     }
+
+    // ---- BOT MAÇI: rakip(bot) HİÇ poll etmez -> tick-bots insanın süresini SUNUCUDA bitirir ----
+    // "Süre bitmemiş" bug'ı: bot maçında saati soracak kimse (rakip poll'ü) yok; insan sekmeyi
+    // arka plana alınca süre gerçekte bitse de timeout ilan edilmiyordu. matches:tick-bots
+    // periyodik tick ile finalize eder. Bot odası 'friendly' -> insana rating cezası YOK.
+    public function test_tick_bots_times_out_afk_human_in_bot_match(): void
+    {
+        $now = microtime(true);
+        Room::create([
+            'code' => 'BOTC',
+            'p1_token' => 't1',
+            'p1_name' => 'Insan',
+            'p2_token' => 'botsecret',
+            'p2_name' => 'Seviye 10 · Neural AI',
+            'status' => 'playing',
+            'mode' => 'friendly',      // bot maçı friendly -> rating/Elo cezası YOK
+            'time_control' => 'normal',
+            'target' => 1,
+            'authoritative' => true,
+            'dice_authority' => true,
+            'bot' => true,
+            'bot_level' => 10,
+            'version' => 1,
+            'server_version' => 2,
+            'server_state' => \App\Support\Backgammon::initialState(),
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null,
+                'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 2,
+            ],
+            // İnsanın (p1/white) sırası ve BANKASI tükenmiş: started_at çok geçmişte -> timeout.
+            'clock' => [
+                'running' => true,
+                'turn_slot' => 'p1',
+                'p1_bank' => 60, 'p2_bank' => 60, 'delay' => 0,
+                'started_at' => $now - 400, // 400 > delay+bank+grace -> süre bitti
+                'moved' => true,            // ilk hamle yapıldı (never-seen no-contest DEĞİL)
+                'p1_seen' => $now - 1,      // insan present gibi -> presence karar vermez, SÜRE işler
+            ],
+        ]);
+
+        $this->artisan('matches:tick-bots')->assertSuccessful();
+
+        $room = Room::where('code', 'BOTC')->first();
+        $this->assertSame('finished', $room->status);
+        // Bot (p2 = black) süreden kazanır; insan (p1 = white) kaybeder.
+        $this->assertSame('lost', $room->p1_result);
+        $this->assertSame('won', $room->p2_result);
+        $this->assertContains($room->end_reason, ['TIMEOUT', 'AFK_TIMEOUT']);
+        $sm = $room->server_match;
+        $this->assertTrue((bool) ($sm['done'] ?? false));
+        $this->assertSame('black', $sm['winner'] ?? null);
+    }
 }
