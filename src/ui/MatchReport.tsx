@@ -11,7 +11,7 @@ import { useSwapStones } from './pieceColors'
 import { pipCount } from '../engine/evaluate'
 import { divisionOfPR } from '../badges'
 import { buildMatXg, type GameResultInput } from '../matExport'
-import { fetchGameLogMat } from '../api'
+import { fetchGameLogMat, fetchMatchMat } from '../api'
 import MatchSummary from './MatchSummary'
 import type { GameState, Player, Step } from '../engine/types'
 
@@ -57,6 +57,7 @@ interface Props {
   // kazanan hamlesi eksik / eski truncated log) son care: tamamlanan mac DAIMA sonuc satiri alsin.
   matchResult?: { winner: Player; score: { white: number; black: number } }
   matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
+  matchDbId?: number // Maç Analizleri: DB maç id'si -> /me/matches/{id}/mat kanonik .mat (game_logs uid yoksa)
   luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null } // Maç Özeti şansı (mwc/cost/jokers)
   onClose: () => void
 }
@@ -85,6 +86,7 @@ export default function MatchReport({
   blackName = 'Black',
   gameResults,
   matchUid,
+  matchDbId,
   luck,
   onClose,
 }: Props) {
@@ -223,6 +225,20 @@ export default function MatchReport({
       for (let attempt = 0; attempt < 3; attempt++) {
         try {
           const { mat, filename } = await fetchGameLogMat(matchUid)
+          saveFile(mat, filename)
+          return
+        } catch {
+          if (attempt < 2) await new Promise((r) => setTimeout(r, 500 * (attempt + 1)))
+        }
+      }
+    }
+    // Maç Analizleri: game_logs uid yok ama DB maç id'si var -> KANONİK .mat sunucudan
+    // (match_results.log -> matText, gnubg review ile aynı kaynak). Butonun sessizce boşa
+    // düştüğü yol buydu; buradan indirilir.
+    if (matchDbId != null) {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { mat, filename } = await fetchMatchMat(matchDbId)
           saveFile(mat, filename)
           return
         } catch {

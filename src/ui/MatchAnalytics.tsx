@@ -91,7 +91,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
   const [openIdx, setOpenIdx] = useState<number | null>(null)
   const [report, setReport] = useState<
     {
-      log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
+      id: number; log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
       matchResult?: { winner: Player; score: { white: number; black: number } }
       luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null }
     } | null
@@ -139,7 +139,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const luckSelf = { mwc: m.luck_mwc ?? null, cost: m.luck_emg ?? null, jokers: m.luck_jokers ?? null }
       const luckOpp = { mwc: m.opponent_luck_mwc ?? null, cost: m.opponent_luck_emg ?? null, jokers: m.opponent_luck_jokers ?? null }
       const luck = hc === 'white' ? { white: luckSelf, black: luckOpp } : { white: luckOpp, black: luckSelf }
-      setReport({ log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck })
+      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck })
     } catch {
       /* yoksay */
     } finally {
@@ -433,6 +433,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           whiteName={report.whiteName}
           blackName={report.blackName}
           matchResult={report.matchResult}
+          matchDbId={report.id}
           luck={report.luck}
           onClose={() => setReport(null)}
         />
