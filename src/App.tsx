@@ -5180,18 +5180,27 @@ export default function App() {
     setHome(false)
   }
 
-  // Lobide: giris yapan kullanicinin devam eden online maclarini cek (geri donme banner'i)
+  // Lobide: giris yapan kullanicinin devam eden online maclarini cek (geri donme banner'i).
+  // PERIYODIK yoklama SART: davet gonderip odadan cikan kullanici ana sayfada beklerken
+  // rakip daveti KABUL edince oda 'waiting' -> 'playing' olur. Tek-seferlik cekim (deps
+  // degismedigi icin) banner'i ASLA gostermezdi -> kullanici maci yalnizca "Canli Maclar"da
+  // gorup IZLEYICI olarak acardi (oyuncu olarak giremeden). Canli Maclar paneli gibi 10sn'de
+  // bir yenile -> kabul edilir edilmez "Maça Dön" banner'i (oyuncu olarak giris) belirsin.
   useEffect(() => {
     if (!user || !home) {
       setActiveRooms([])
       return
     }
     let alive = true
-    myActiveRooms()
-      .then((rs) => alive && setActiveRooms(rs))
-      .catch(() => alive && setActiveRooms([]))
+    const load = () =>
+      myActiveRooms()
+        .then((rs) => alive && setActiveRooms(rs))
+        .catch(() => alive && setActiveRooms([]))
+    load()
+    const id = window.setInterval(load, 10000)
     return () => {
       alive = false
+      window.clearInterval(id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, home])
