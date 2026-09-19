@@ -1328,6 +1328,10 @@ export default function App() {
   const [invites, setInvites] = useState<GameInviteT[]>([]) // gelen oyun davetleri
   // Cevrimici listeden "kilic" ile secilen rakip -> FriendGameSetup davet modu (oyun turu/sure sec)
   const [inviteTarget, setInviteTarget] = useState<{ id: number; name: string; avatar?: string | null } | null>(null)
+  // Hedefli davetle acilan bekleme odasinda rakip adi: doluysa Lobby bekleme ekrani "kod
+  // paylas" yerine "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterir (davet zaten kisiye
+  // gitti, kod paylasmaya gerek yok). Oda-olustur/matchmake/terk'te temizlenir.
+  const [inviteWaitName, setInviteWaitName] = useState<string | null>(null)
   // Daveti reddedince "Oyun Kabul Etmiyor / Cevrimdisi Gorun" diye soran mini modal
   const [declineAsk, setDeclineAsk] = useState(false)
   const [tournNotices, setTournNotices] = useState<TournNoticeT[]>([]) // sirasi gelen turnuva maclari
@@ -4783,6 +4787,7 @@ export default function App() {
   async function handleCreateRoom(target = 1, tc?: TimeControl) {
     setRoomBusy(true)
     setRoomError('')
+    setInviteWaitName(null) // generic oda: hedefli davet etiketi gosterme
     // Onceki BITMIS oyunu HEMEN temizle (matchOver true kalirsa oda kurma agi beklerken
     // game-view eski board'u FLASH ediyordu) -> spinner sorunsuz gorunur.
     setGameEnd(null)
@@ -4878,6 +4883,7 @@ export default function App() {
   async function handleMatchmake() {
     setRoomBusy(true)
     setRoomError('')
+    setInviteWaitName(null) // eslesme havuzu: hedefli davet etiketi gosterme
     friendlyRef.current = false // eslesme havuzu / Tek Oyun = puanli/coinli (dostluk degil)
     // Onceki BITMIS oyunu HEMEN (await'ten once) temizle: matchOver true kalirsa arama
     // agi beklerken 4691 (!matchOver) atlanip game-view ESKI board'u FLASH ediyordu.
@@ -5202,6 +5208,7 @@ export default function App() {
     if (!tgt) return
     setFriendSetupOpen(false)
     setInviteTarget(null)
+    setInviteWaitName(tgt.name) // bekleme ekrani "kod paylas" yerine "{ad} bekleniyor" gostersin
     setTimeControl(opts.timeControl)
     clockRef.current = CLOCK_PRESETS[opts.timeControl]
     onlineTargetRef.current = opts.target
@@ -5225,6 +5232,7 @@ export default function App() {
       if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
       else notify.error(t('mp.connError'))
       setRoomBusy(false) // spinner'i kapat -> home dalina temiz don
+      setInviteWaitName(null) // davet basarisiz -> bekleme etiketini birakma
       setHome(true)
     }
   }
@@ -5268,6 +5276,7 @@ export default function App() {
   function handleLeaveRoom() {
     stakeRef.current = 0
     betPctRef.current = 0
+    setInviteWaitName(null) // hedefli davet bekleme etiketini temizle
     setRematch({ mine: null, theirs: null, code: null })
     rematchEnteredRef.current = null
     rematchEnteringRef.current = null
@@ -8006,6 +8015,7 @@ export default function App() {
               room={room}
               busy={roomBusy}
               error={roomError}
+              inviteWaitName={inviteWaitName}
               myAvatar={profile.avatar}
               onCreate={() => handleCreateRoom(onlineTargetRef.current)}
               onJoin={handleJoinRoom}

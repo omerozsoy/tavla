@@ -1457,6 +1457,8 @@ const TR: Dict = {
   'mp.shareCode': 'Bu kodu arkadaşına gönder:',
   'mp.copy': '📋 Kodu Kopyala',
   'mp.leave': 'Odadan Çık',
+  'mp.waitingFor': '{name} kullanıcısının daveti yanıtlaması bekleniyor…',
+  'mp.cancelGame': 'Oyunu İptal Et',
   'mp.oppTurn': 'Rakibin sırası…',
   'mp.roomNotFound': 'Oda bulunamadı.',
   'mp.roomFull': 'Oda dolu.',
