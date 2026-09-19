@@ -533,11 +533,28 @@ class RoomController extends Controller
     }
 
     // Canli maclar: su an oynanan odalar (izlenebilir). Herkese acik.
-    public function liveMatches()
+    public function liveMatches(Request $request)
     {
+        // Ekstra: KENDI macini izleme listesinde GORME. /live-matches herkese acik (auth
+        // middleware'i yok) -> Bearer token'i sanctum guard'iyla ELDE et; giris yapmissa
+        // kendisinin p1/p2 oldugu odalari listeden cikar. Aksi halde davet gonderip odadan
+        // cikan kullanici kendi (kabul edilmis) macini burada gorup IZLEYICI olarak acardi;
+        // devam eden mac banner'i (myActiveRooms) zaten "Maça Dön" ile oyuncu girisini sunar.
+        $me = $request->user('sanctum');
+
         $rooms = Room::where('status', 'playing')
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')
+            ->when($me, function ($q) use ($me) {
+                // NULL-guvenli: SQL'de `NULL != x` -> NULL (false) oldugundan duz `!=`
+                // misafir (user_id NULL) maclarini da eler. "kendisi degil VEYA null" ile
+                // yalnizca gercekten KENDI oldugu odalari cikar.
+                $q->where(function ($w) use ($me) {
+                    $w->where('p1_user_id', '!=', $me->id)->orWhereNull('p1_user_id');
+                })->where(function ($w) use ($me) {
+                    $w->where('p2_user_id', '!=', $me->id)->orWhereNull('p2_user_id');
+                });
+            })
             // Tahta durumu VAR: legacy `state` (istemci PUT) VEYA `server_state` (AUTHORITATIVE).
             // Otoriter modda istemci tam-state PUT etmez (App.tsx: authoritative -> updateRoom atlanir)
             // -> `state` NULL kalir. Sadece whereNotNull('state') derse tum otoriter maclar listeden
