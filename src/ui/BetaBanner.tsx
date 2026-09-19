@@ -13,8 +13,13 @@ const MESSAGES: { text: string; strong?: boolean }[] = [
   { text: `SÜRÜM ${VERSION}`, strong: true },
   { text: 'BU SÜRÜM TEST AŞAMASINDADIR' },
   { text: 'HATALAR VE EKSİK ÖZELLİKLER OLABİLİR' },
-  { text: 'GERİ BİLDİRİM GÖNDERİN' },
+  { text: 'LÜTFEN GERİ BİLDİRİM GÖNDERİN' },
 ]
+
+// Kesintisiz akis: tek dizi genis ekranda viewport'tan dar kalinca arada BOSLUK
+// olusup akis "bitmis" gibi gorunuyordu. Diziyi cok kez tekrarla ki her an ekran
+// dolu kalsin (translateX bir dizi-boyu kayar -> kusursuz dongu). Bkz. keyframe.
+const LOOPS = 6
 
 // Tek tur metin dizisi (her mesajdan sonra ◆ ayrac -> dongude uniform aralik + kusursuz ek).
 function Sequence({ hidden }: { hidden?: boolean }) {
@@ -61,10 +66,12 @@ export default function BetaBanner() {
         BETA
       </div>
       <div className="bb-marquee">
-        {/* Icerik IKI kez: width:max-content + translateX(0 -> -50%) = kusursuz dongu. */}
+        {/* Icerik LOOPS kez: width:max-content + translateX(0 -> -1 dizi) = kusursuz,
+            hic durmayan dongu (genis ekranda bile bosluk olmaz). */}
         <div className="bb-track">
-          <Sequence />
-          <Sequence hidden />
+          {Array.from({ length: LOOPS }).map((_, i) => (
+            <Sequence key={i} hidden={i > 0} />
+          ))}
         </div>
       </div>
       <button type="button" className="bb-close" onClick={close} aria-label="Bandı kapat">
