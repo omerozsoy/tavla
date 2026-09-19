@@ -34,6 +34,18 @@ class AppServiceProvider extends ServiceProvider
             @mkdir($lwTmp, 0775, true);
         }
 
+        // QUEUE WORKER CANLILIK (heartbeat): worker HER döngüde (iş olsun olmasın) cache'e zaman
+        // damgası bırakır. ServiceStatus paneli bunu okur -> backfill'de yüzlerce iş birikse bile
+        // "en eski iş > 90sn" YANLIŞ-alarmı yerine gerçek süreç canlılığına bakar (worker ölürse
+        // heartbeat bayatlar -> kırmızı). looping her worker turunda (~sleep aralığı) tetiklenir.
+        \Illuminate\Support\Facades\Queue::looping(function () {
+            try {
+                \Illuminate\Support\Facades\Cache::put('queue:worker:heartbeat', time(), now()->addMinutes(10));
+            } catch (\Throwable $e) {
+                // best-effort (cache down ise sessiz geç)
+            }
+        });
+
         // AKSAMA UYARISI: herhangi bir arka plan job'ı BAŞARISIZ olursa (PR/Şans analizi, ödeme
         // sonrası işler vb.) admin'e e-posta + WhatsApp. Merkezi -> tek yerden tüm job'lar kapsanır.
         // Spam-önleyici: 15 dk'da bir (tekil job hatası yağmuru olmasın). Alert kanalları ayarsızsa

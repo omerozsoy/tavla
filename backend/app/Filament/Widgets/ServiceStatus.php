@@ -103,9 +103,10 @@ class ServiceStatus extends Widget
     }
 
     /**
-     * Queue worker (shadow PR + gnubg luck işçisi). Doğrudan process kontrolü PHP'den mümkün değil;
-     * PROXY: 'jobs' tablosunda bekleyen iş yaşı. Birikmiş (>90sn) iş = worker muhtemelen KAPALI.
-     * Boşta (bekleyen 0) = ayırt edilemez -> "boşta" (gri). Taze iş var = çalışıyor (yeşil).
+     * Queue worker (shadow PR + gnubg luck işçisi). CANLILIK: worker her döngüde 'queue:worker:heartbeat'
+     * cache'ine zaman damgası bırakır (AppServiceProvider Queue::looping). Heartbeat taze (<60sn) ise
+     * worker AYAKTA -> yüzlerce iş birikse (backfill) bile YEŞİL (yığını eritiyor). Heartbeat yok/eski
+     * ise ESKİ proxy'ye düş: en eski bekleyen iş > 90sn -> worker muhtemelen KAPALI (kırmızı).
      */
     private function checkQueue(): array
     {
@@ -117,16 +118,24 @@ class ServiceStatus extends Widget
             } catch (\Throwable $e) {
                 // failed_jobs yoksa yok say
             }
+
+            // Süreç canlılık damgası (backlog'tan bağımsız KESIN sinyal).
+            $hb = (int) (Cache::get('queue:worker:heartbeat') ?? 0);
+            $alive = $hb > 0 && (time() - $hb) < 60;
+
             if ($pending === 0) {
                 $detail = 'Boşta (bekleyen iş yok'.($failed > 0 ? ", $failed başarısız" : '').')';
-
-                return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, null, $detail, true);
+                // heartbeat taze -> canlı-boşta (yeşil); yoksa ayırt edilemez (gri).
+                return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $alive ? true : null, $detail, true);
             }
             $oldest = DB::table('jobs')->min('available_at');
             $age = $oldest ? (time() - (int) $oldest) : 0;
-            $up = $age < 90; // 90sn'den eski bekleyen iş -> worker kapalı sinyali
+            // Heartbeat taze -> worker çalışıyor (backlog erimekte); değilse eski proxy (>90sn = kapalı).
+            $up = $alive ? true : ($age < 90);
             $detail = "$pending iş bekliyor, en eski {$age}sn".($failed > 0 ? " · $failed başarısız" : '');
-            if (! $up) {
+            if ($alive && $age >= 90) {
+                $detail .= ' — işleniyor (worker canlı, yığın eriyor)';
+            } elseif (! $up) {
                 $detail .= ' — birikmiş (worker kapalı olabilir)';
             }
 
