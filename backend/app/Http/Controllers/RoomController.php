@@ -2590,6 +2590,8 @@ class RoomController extends Controller
                         $sm['cube']['pending'] = 'black';
                         $room->server_match = $sm;
                         $room->server_version = (int) $room->server_version + 1;
+                        // SAAT: bot küp teklif etti -> take/drop karar sırası (ve saat) insana geçsin.
+                        $this->driveAuthoritativeClock($room, 'p2', microtime(true));
                         $room->save();
                         $turns[] = [
                             'rollState' => $state, // zar YOK -> applyBotTurn hamle reconstruct etmez
@@ -2642,6 +2644,11 @@ class RoomController extends Controller
                 }
                 $room->live = null;
                 $room->server_version = (int) $room->server_version + 1;
+                // SAAT (KÖK FIX): botun turu bitti -> saati bot (p2) segmentiyle ilerlet ki SIRA + SAAT
+                // İNSANA geçsin. Yoksa saatin turn_slot'u insan move'unun bıraktığı 'p2'de KALIR ve
+                // tahtada sıra insandayken BOT'un saati erirdi ("sıra bende ama bottan süre düşüyor").
+                // İnsan roll/move/cube'da olduğu gibi bot turu da saati sürmeli (simetri).
+                $this->driveAuthoritativeClock($room, 'p2', microtime(true));
                 $room->save();
 
                 $turns[] = [
