@@ -7627,8 +7627,10 @@ export default function App() {
       <>
         {mobileNav}
         <div className="app lobby">
-          {accountBar}
-          {betaBanner}
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7678,8 +7680,10 @@ export default function App() {
       <>
         {mobileNav}
         <div className="app lobby">
-          {accountBar}
-          {betaBanner}
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7741,8 +7745,10 @@ export default function App() {
       <>
         {mobileNav}
         <div className="app lobby">
-          {accountBar}
-          {betaBanner}
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7957,8 +7963,10 @@ export default function App() {
       <>
         {mobileNav}
         <div className="app lobby">
-          {accountBar}
-          {betaBanner}
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
