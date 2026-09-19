@@ -1,99 +1,194 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Ana sayfa -->
   <url>
     <loc>https://www.tavlatv.com/</loc>
-    <lastmod>2026-09-14</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
+
+  <!-- Oyun modlari (giris gerektirmeden oynanabilir) -->
   <url>
     <loc>https://www.tavlatv.com/yz-ile-oyna</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/yeni-oyun</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.tavlatv.com/arkadasinla-oyna</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/tek-oyun</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Rekabet ve topluluk -->
+  <url>
     <loc>https://www.tavlatv.com/lider-tablosu</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/online-turnuvalar</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/turnuva-takvimi</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/kulupler</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
+
+  <!-- Icerik -->
   <url>
     <loc>https://www.tavlatv.com/haberler</loc>
-    <lastmod>2026-09-14</lastmod>
-    <changefreq>weekly</changefreq>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/tavla-magazin</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
+    <loc>https://www.tavlatv.com/nasil-oynanir</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Analiz araclari -->
+  <url>
     <loc>https://www.tavlatv.com/pozisyon-analizi</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/mat-analiz</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <!-- Eglence -->
+  <url>
+    <loc>https://www.tavlatv.com/sans-carki</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/zar-slotu</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/bahane-makinesi</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.4</priority>
+  </url>
+
+  <!-- Uyelik -->
   <url>
     <loc>https://www.tavlatv.com/uyelik</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
+
+  <!-- Bilgi sayfalari -->
   <url>
     <loc>https://www.tavlatv.com/bilgi/hakkinda</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/adil-zar</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://www.tavlatv.com/bilgi/hizmetler</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
+    <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/bilgi/rutbeler</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://www.tavlatv.com/bilgi/puanlama</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://www.tavlatv.com/bilgi/hizmetler</loc>
-    <lastmod>2026-09-14</lastmod>
+    <loc>https://www.tavlatv.com/bilgi/basarilarim</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/bilgi/adil-zar</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Hukuki sayfalar -->
+  <url>
+    <loc>https://www.tavlatv.com/kvkk</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/gizlilik-politikasi</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/cerez-politikasi</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/kullanim-kosullari</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/uyelik-sozlesmesi</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
   </url>
 </urlset>

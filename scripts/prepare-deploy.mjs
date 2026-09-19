@@ -26,6 +26,7 @@ for (const item of [
   'icons.svg',
   'robots.txt',
   'sitemap.xml',
+  'og-image.png', // sosyal paylasim karti (OG/Twitter)
   'manifest.webmanifest',
   'turkiye.svg', // kulüp rehberi haritası (statik)
   'sw.js',
