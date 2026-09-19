@@ -5712,13 +5712,16 @@ html[data-board='yilbasi'] .wm-logo {
   display: none;
 }
 html[data-board='yilbasi'] .board-watermark {
+  opacity: 0.85;
+}
+/* 'Mutlu Yıllar' yalnizca TavlaTV logolarinin bulundugu YERLERDE: board-watermark iki
+   .wm-cell icerir (sol yari + sag yari merkezi). Logolar gizli (.wm-logo display:none);
+   her hucrenin ORTASINA (logo yerine) tek 'Mutlu Yıllar' cizilir -> iki yerde, dosenmis degil. */
+html[data-board='yilbasi'] .wm-cell {
   background-image: url('./assets/yilbasi-mutlu-yillar.webp');
-  /* Tek merkezi yazi yerine board'un HER tarafina DÖŞENMIS kucuk 'Mutlu Yıllar' (space =
-     esit araliklarla tekrar, iki eksende). Tas ustunde bogucu olmasin diye opaklik dusuk. */
-  background-repeat: space;
+  background-repeat: no-repeat;
   background-position: center;
-  background-size: calc(var(--col) * 3.4) auto;
-  opacity: 0.55;
+  background-size: min(88%, calc(var(--col) * 4.4)) auto;
 }
 
 /* Sakura + Yılbaşı pullar: solid (--cream / --navy) + fizik disk finish (İznik ile aynı;
