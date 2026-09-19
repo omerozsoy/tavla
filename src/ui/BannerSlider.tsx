@@ -41,6 +41,7 @@ const SWIPE_MIN = 40 // yon degistirmek icin gereken min surukleme (px)
  */
 export default function BannerSlider({ onOpen }: Props) {
   const [banners, setBanners] = useState<TournamentAd[]>([])
+  const [loaded, setLoaded] = useState(false) // fetch tamamlandi mi (CLS iskeleti icin)
   const [current, setCurrent] = useState(0)
   // Devam eden gecis: hedef indeks + yon (1=ileri/sagdan, -1=geri/soldan) + faz.
   const [anim, setAnim] = useState<{ to: number; dir: 1 | -1; phase: 'enter' | 'run' } | null>(null)
@@ -55,6 +56,7 @@ export default function BannerSlider({ onOpen }: Props) {
       .catch(() => {
         /* yoksay */
       })
+      .finally(() => setLoaded(true))
   }, [])
 
   const multi = banners.length > 1
@@ -100,7 +102,17 @@ export default function BannerSlider({ onOpen }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, animating, multi, banners.length])
 
-  if (banners.length === 0) return null
+  if (banners.length === 0) {
+    // CLS: fetch bitene kadar banner yuksekligini REZERVE et (iskelet) -> banner gelince
+    // ayni alani doldurur, altindaki icerik (paneller/features) KAYMAZ. Yuklenmis ama banner
+    // yoksa null (collapse) -> kalici bosluk birakma. bs-viewer aspect-ratio 163/67 yeri tutar.
+    if (loaded) return null
+    return (
+      <div className="banner-slider bs-skeleton" aria-hidden="true">
+        <div className="bs-viewer" />
+      </div>
+    )
+  }
 
   // Mouse + parmak surukleme (Pointer Events tek elden yonetir).
   const onPointerDown = (e: PointerEvent) => {
