@@ -550,6 +550,8 @@ const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
 const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar okunabilsin)
 const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
 const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
+const BOT_REVEAL_DELAY = 850 // bot zarini ILK hamleden once net goster (kullanici "gele attigini goremedim" -> zar okunsun)
+const BOT_DANCE_DELAY = 1600 // bot HAMLE YOK (dance / bardan giremedi): zar + "Hamle Yok" overlay'i gorunur kalsin
 
 interface BotAnim {
   steps: Step[]
@@ -3090,8 +3092,10 @@ export default function App() {
   useEffect(() => {
     if (!botAnim) return
     if (botAnim.index >= botAnim.steps.length) {
-      // Tum taslar oynandi -> kisa bekle, sirayi gec
+      // Tum taslar oynandi -> kisa bekle, sirayi gec. DANCE (adim yok): bot zarini + "Hamle Yok"
+      // overlay'ini (online && !myTurn) daha uzun goster ki kullanici botun ne attigini GORSUN.
       const sf = botAnim.serverFinal
+      const endDelay = botAnim.steps.length === 0 ? BOT_DANCE_DELAY : BOT_END_DELAY
       const t = window.setTimeout(() => {
         if (sf) {
           // SUNUCU-OTORİTER BOT: sunucu hamleyi zaten uyguladı -> commitTurn YERİNE otoriter durumu
@@ -3103,14 +3107,16 @@ export default function App() {
           commitTurn(botAnim.steps)
         }
         setBotAnim(null)
-      }, BOT_END_DELAY)
+      }, endDelay)
       return () => window.clearTimeout(t)
     }
-    // Sonraki tasi oyna
+    // Sonraki tasi oyna. ILK adimdan once daha uzun bekle (BOT_REVEAL_DELAY) -> bot zari net okunsun;
+    // sonraki adimlar snappy (BOT_STEP_DELAY). Tur-devri hizini (BOT_END_DELAY) etkilemez.
+    const stepDelay = botAnim.index === 0 ? BOT_REVEAL_DELAY : BOT_STEP_DELAY
     const t = window.setTimeout(() => {
       setPlayed(botAnim.steps.slice(0, botAnim.index + 1))
       setBotAnim({ steps: botAnim.steps, index: botAnim.index + 1 })
-    }, BOT_STEP_DELAY)
+    }, stepDelay)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [botAnim])
@@ -4159,8 +4165,12 @@ export default function App() {
   // (zar-atılmış tur-başı) -> botun hamlesi tek anlamlı çözülür + matchLog'a yazılır (.mat/PR).
   function applyBotTurn(bt: BotTurn, animate = false) {
     const steps = (bt.steps ?? []) as Step[]
-    // KÜP teklifi / pas (boş steps) VEYA animasyon istenmiyorsa: doğrudan uygula (snap).
-    if (!animate || steps.length === 0) {
+    const rollDice = ((bt.rollState as GameState)?.dice ?? []) as number[]
+    // SNAP (animasyon YOK): (a) çoklu tur (nadir oyun geçişi) VEYA (b) ZAR YOK = küp teklifi/pas.
+    // Zar yoksa gösterilecek zar da yoktur; küp teklifinde tahta değişmez (pending gösterilir).
+    // NOT: "hamle yok" (dance) ARTIK snap DEĞİL -> zarı VAR, aşağıda gösterilir (kullanıcı raporu:
+    // "bot gele attı göremedim" = dance'te bot zarı hiç görünmeden snap'leniyordu).
+    if (!animate || rollDice.length === 0) {
       srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
       appliedServerVersionRef.current = bt.version
       if (room?.code) appliedServerRoomRef.current = room.code
@@ -4168,9 +4178,10 @@ export default function App() {
       applyServerBoard(bt.state as GameState, (bt.match as ServerMatch) ?? null)
       return
     }
-    // TAS-TAS ANİMASYON: önce rollState'i (bot zarı dolu tur-başı) göster; botAnim effect adımları
-    // tek tek oynatır; bittiğinde serverFinal ile OTORİTER durumu uygular (commitTurn YOK -> tekrar
-    // serverMove YOLLANMAZ). appliedServerVersionRef'i ŞİMDİ yaz -> poll animasyonu KESİP snap'lemesin.
+    // ZAR VAR (normal hamle VEYA dance): önce rollState'i (bot zarı dolu tur-başı) göster; botAnim
+    // effect adımları tek tek oynatır (dance'te 0 adım -> zar + "Hamle Yok" overlay'i BOT_DANCE_DELAY
+    // kadar görünür, sonra serverFinal uygulanır). commitTurn YOK -> tekrar serverMove YOLLANMAZ.
+    // appliedServerVersionRef'i ŞİMDİ yaz -> poll animasyonu KESİP snap'lemesin.
     srvTurnStartRef.current = bt.rollState as GameState
     appliedServerVersionRef.current = bt.version
     if (room?.code) appliedServerRoomRef.current = room.code
@@ -4185,9 +4196,9 @@ export default function App() {
   }
   function applyBotTurns(turns?: BotTurn[] | null): boolean {
     if (!turns || turns.length === 0) return false
-    // Normal durum: TEK bot turu -> tas-tas animasyon (kayma). Nadir çoklu tur -> snap (animasyon
-    // zincirlemesi karmaşık/riskli; tahta yine doğru kalır).
-    const animate = turns.length === 1 && ((turns[0].steps?.length ?? 0) > 0)
+    // TEK bot turu -> zarı göster + tas-tas animasyon (dance dahil: zar + "Hamle Yok" görünür).
+    // Nadir çoklu tur (oyun geçişi) -> snap (animasyon zincirlemesi karmaşık; tahta yine doğru kalır).
+    const animate = turns.length === 1
     for (const bt of turns) applyBotTurn(bt, animate)
     return true
   }
