@@ -7,22 +7,25 @@
      hemen ALTINDA bitisik kalir; ikisi birlikte tepede sabitlenir (cakisma olmaz). */
   position: relative;
   z-index: 100;
+  /* Ustteki account-bar'in border-bottom'u (var(--border)) kiremit rozetin uzerinde
+     SIYAH cizgi gibi gorunuyordu -> bandi 1px yukari cekip o dikisi orten. */
+  margin-top: -1px;
   overflow: hidden;
   display: flex;
   align-items: stretch;
-  background: #141413;
-  border-bottom: 1px solid rgba(250, 249, 245, 0.14);
+  /* Tum bant TEK renk: ust beta rozetiyle ayni kiremit (tema rengi). */
+  background: var(--accent);
   font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* Sol sabit blok: kiremit zemin + koyu daire + BETA */
+/* Sol sabit blok: bant ile AYNI kiremit zemin + koyu daire + BETA */
 .bb-badge {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 7px;
   padding: 0 18px;
-  background: #d97757;
+  background: var(--accent);
   color: #141413;
   font-size: 12px;
   font-weight: 600;
@@ -62,14 +65,14 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  color: rgba(250, 249, 245, 0.72);
+  color: rgba(20, 20, 19, 0.68); /* kiremit zemin -> koyu yazi */
   white-space: nowrap;
 }
 .bb-msg-strong {
-  color: #faf9f5;
+  color: #141413;
 }
 .bb-sep {
-  color: #d97757;
+  color: rgba(20, 20, 19, 0.5); /* kiremit uzerinde ayrac koyu */
   padding: 0 18px; /* mesajlar arasi uniform aralik (◆ ortada) */
   font-size: 12px;
   line-height: 1;
@@ -87,13 +90,13 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #faf9f5;
+  color: #141413; /* kiremit zemin -> koyu ikon */
 }
 .bb-close:hover {
-  background: rgba(250, 249, 245, 0.08);
+  background: rgba(20, 20, 19, 0.12);
 }
 .bb-close:focus-visible {
-  outline: 2px solid #d97757;
+  outline: 2px solid #141413;
   outline-offset: -2px;
 }
 
