@@ -1,0 +1,114 @@
+/* Ince BETA duyuru bandi — account bar'in ALTINDA, sticky. IBM Plex Mono. */
+.beta-banner {
+  height: 44px;
+  width: 100%;
+  box-sizing: border-box;
+  /* Stickiness .topbar-stack (account-bar + bant) tarafindan yonetilir -> bant bar'in
+     hemen ALTINDA bitisik kalir; ikisi birlikte tepede sabitlenir (cakisma olmaz). */
+  position: relative;
+  z-index: 100;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  background: #141413;
+  border-bottom: 1px solid rgba(250, 249, 245, 0.14);
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Sol sabit blok: kiremit zemin + koyu daire + BETA */
+.bb-badge {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 18px;
+  background: #d97757;
+  color: #141413;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+}
+.bb-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #141413;
+}
+
+/* Orta blok: kayan marquee (kirpar) */
+.bb-marquee {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+.bb-track {
+  display: flex;
+  width: max-content;
+  animation: bb-mq 24s linear infinite;
+}
+.bb-seq {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+.bb-item {
+  display: inline-flex;
+  align-items: center;
+}
+.bb-msg {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(250, 249, 245, 0.72);
+  white-space: nowrap;
+}
+.bb-msg-strong {
+  color: #faf9f5;
+}
+.bb-sep {
+  color: #d97757;
+  padding: 0 18px; /* mesajlar arasi uniform aralik (◆ ortada) */
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* Sag: kapat butonu (44x44) */
+.bb-close {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #faf9f5;
+}
+.bb-close:hover {
+  background: rgba(250, 249, 245, 0.08);
+}
+.bb-close:focus-visible {
+  outline: 2px solid #d97757;
+  outline-offset: -2px;
+}
+
+/* Kusursuz dongu: iki kopya -> bir kopya (%50) kadar kaydir. */
+@keyframes bb-mq {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-track {
+    animation: none;
+  }
+}

@@ -8081,10 +8081,9 @@ html.fs-active .account-bar {
   .app.lobby {
     grid-template-columns: 1fr;
     /* Mobilde bar yuksekligi farkli (48px) -> satiri icerige birak (auto). */
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       'bar'
-      'beta'
       'main';
   }
   .hamburger {
@@ -8758,10 +8757,10 @@ button.acct-row-logout:hover:not(:disabled) {
      klemplenip UZUN icerigi (kulupler/anasayfa) buyutemiyor -> footer viewport dibinde
      kalip icerigin ustune biniyordu. 'auto' = satir icerige gore buyur, footer daima
      altta. Kisa sayfada main'in min-height'i viewport'u doldurur (asagida). */
-  grid-template-rows: var(--header-h) auto auto;
+  /* Bar satiri AUTO: .topbar-stack (account-bar + BETA bandi) yuksekligine gore buyur. */
+  grid-template-rows: auto auto;
   grid-template-areas:
     'bar bar'
-    'beta beta'
     'menu main';
   align-items: start;
   column-gap: 22px;
@@ -8773,12 +8772,16 @@ button.acct-row-logout:hover:not(:disabled) {
   padding: 0;
   /* Scrollbar GORUNUR: marka renkli global kural (bkz. dosya basi) gecerlidir. */
 }
-.app.lobby > .account-bar {
+/* Ust yigin = account-bar + BETA bandi (bar'in ALTINDA, bitisik). Grid'de 'bar' alani.
+   Sticky: bar + bant birlikte tepede sabit kalir (tek sticky eleman -> cakisma yok). */
+.app.lobby > .topbar-stack {
   grid-area: bar;
-}
-/* BETA bandi: bar'in ALTINDA, tam genislik (iki kolonu kapsar). Kapatilinca (null) satir 0. */
-.app.lobby > .beta-banner {
-  grid-area: beta;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: sticky;
+  top: 0;
+  z-index: 105;
 }
 .app.lobby > .side-menu {
   grid-area: menu;
@@ -8923,7 +8926,6 @@ button.acct-row-logout:hover:not(:disabled) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'bar'
-      'beta'
       'main';
     /* Mobilde bar ile icerik arasindaki 36px desktop boslugu (base .app.lobby
        row-gap) kompakt bar altinda "aciklanamayan bosluk" gibi duruyordu -> kucult. */
