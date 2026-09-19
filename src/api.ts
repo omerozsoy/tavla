@@ -828,6 +828,11 @@ export async function respondInvite(
 ): Promise<{ code: string | null; target: number; timeControl?: string | null }> {
   return req(`/invites/${id}/respond`, { method: 'POST', body: JSON.stringify({ accept }) })
 }
+// Davet EDEN daveti iptal eder (bekleme ekraninda "Oyunu Iptal Et"): oda koduna ait KENDI
+// bekleyen davetini sil -> alicinin daveti banner'i sonraki /ping poll'unda kalkar.
+export async function cancelInvite(code: string): Promise<void> {
+  await req('/invites/cancel', { method: 'POST', body: JSON.stringify({ code }) })
+}
 
 export async function requestFriend(nickname: string): Promise<{ status: string }> {
   return req('/friends/request', { method: 'POST', body: JSON.stringify({ nickname }) })
