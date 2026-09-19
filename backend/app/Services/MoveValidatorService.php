@@ -42,6 +42,24 @@ class MoveValidatorService
         return count($this->urls) > 0;
     }
 
+    /** Yapılandırılmış validator tabanları (birincil + yedekler), sırayla. Panelde ayrı gösterim için. */
+    public function bases(): array
+    {
+        return $this->urls;
+    }
+
+    /** TEK bir tabanı DOĞRUDAN yokla (failover'sız): admin panelinde her örneğin ayrı lambası için. */
+    public function probeBase(string $base, array $state, array $steps): bool
+    {
+        try {
+            $res = $this->client()->post(rtrim($base, '/').'/validate', ['state' => $state, 'steps' => $steps]);
+
+            return $res->successful() && (bool) ($res->json('valid') ?? false);
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
     /**
      * YEDEKLİ (failover) POST: tabanları SIRAYLA dener, ilk 2xx yanıtı döndürür. Birincil
      * erişilemez / 5xx ise yedek devreye girer -> tek validator düşse de maç akışı DURMAZ. HEPSİ
