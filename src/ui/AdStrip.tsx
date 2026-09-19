@@ -29,13 +29,24 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
     }
   }, [])
 
-  const ad = ads?.find((a) => a.slot === slot && a.image)
+  // CLS: fetch bitene kadar ust (above-fold) slot yer ayirir (tum reklamlar SABIT boyut:
+  // masaustu 1120x180, mobil 720x300 -> aspect biliniyor; iskelet birebir ayni yeri tutar,
+  // reklam gelince KAYMAZ). Alt slotlar below-fold -> null (bos-slot bosluk riski yok).
+  if (ads === null) {
+    return slot === 'top' ? <div className="ad-strip ad-strip-top ad-skeleton" aria-hidden="true" /> : null
+  }
+  const ad = ads.find((a) => a.slot === slot && a.image)
   if (!ad) return null
 
+  // CLS: gorsel boyutlari SABIT (masaustu 1120x180, mobil 720x300). width/height ver ->
+  // tarayici bytes inmeden dogru yuksekligi rezerve eder, gec yuklenen reklam alttaki
+  // panelleri ITMEZ. (width:100%/height:auto CSS oranı korur; distortion yok.)
   const img = (
     <picture>
-      {ad.image_mobile && <source media="(max-width: 720px)" srcSet={srcOf(ad.image_mobile)} />}
-      <img className="ad-img" src={srcOf(ad.image)} alt="" loading="lazy" />
+      {ad.image_mobile && (
+        <source media="(max-width: 720px)" srcSet={srcOf(ad.image_mobile)} width={720} height={300} />
+      )}
+      <img className="ad-img" src={srcOf(ad.image)} alt="" width={1120} height={180} loading="lazy" />
     </picture>
   )
 
