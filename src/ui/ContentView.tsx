@@ -468,7 +468,7 @@ export default function ContentView({
                       onClick={() => v.video_id && setPlayVideo(v.video_id)}
                     >
                       <div className="mag-thumb">
-                        {v.image && <img src={v.image} alt="" loading="lazy" />}
+                        {v.image && <img src={v.image} alt={v.title} loading="lazy" />}
                         <span className="mag-play">
                           <Icon name="play" size={22} />
                         </span>
@@ -494,7 +494,7 @@ export default function ContentView({
                   </button>
                   {open && (
                     <div className="content-post-body">
-                      {p.image && <img className="content-img" src={p.image} alt="" />}
+                      {p.image && <img className="content-img" src={p.image} alt={p.title} />}
                       {paras(p.body).map((x, i) => (
                         <p key={i}>{x}</p>
                       ))}
