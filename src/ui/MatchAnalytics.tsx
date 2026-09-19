@@ -47,7 +47,15 @@ function fmtDate(iso?: string | null): string {
   if (!iso) return ''
   const d = new Date(iso)
   if (isNaN(d.getTime())) return ''
-  return d.toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })
+  // Tarih + SAAT:DAKİKA (maçın oynandığı an). 24 saat biçimi (hour12:false) — kullanıcı isteği.
+  return d.toLocaleString(undefined, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  })
 }
 
 // Isimden monogram (ilk harf, buyuk). Bos ise '?'.
