@@ -294,6 +294,71 @@ class BotRoomTest extends TestCase
         $this->assertSame(7, (int) $row['bot_level']);
     }
 
+    /** target=3 (küp açık), sıra verilen renkte, açılış oynanmış (turns=1), küp ortada. */
+    private function cubeRoom(string $turn = 'white'): Room
+    {
+        $state = Backgammon::initialState();
+        $state['turn'] = $turn;
+        $state['dice'] = [];
+        $state['diceUsed'] = [];
+
+        return Room::create([
+            'code' => 'BOTCU',
+            'p1_token' => 'human-tok', 'p1_name' => 'İnsan',
+            'p2_token' => 'secret-bot', 'p2_name' => 'Seviye 10 · Neural AI',
+            'status' => 'playing', 'authoritative' => true, 'dice_authority' => true,
+            'bot' => true, 'bot_level' => 10, 'target' => 3, 'version' => 0, 'server_version' => 3,
+            'server_state' => $state,
+            'server_match' => [
+                'target' => 3, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
+                'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 1,
+            ],
+        ]);
+    }
+
+    public function test_bot_cube_response_uses_gnubg_take(): void
+    {
+        config()->set('gnubg.url', 'http://gnubg.test');
+        Http::fake(['gnubg.test/analyze' => Http::response(['cube' => ['proper' => 'Double, take']])]);
+        $this->cubeRoom('white'); // sıra insanda -> insan küp teklif eder
+
+        $res = $this->postJson('/api/rooms/BOTCU/cube/offer', ['token' => 'human-tok'])->assertOk();
+        $res->assertJsonPath('bot_cube', 'take');
+        $res->assertJsonPath('match.cube.value', 2);
+        $res->assertJsonPath('match.cube.owner', 'black');
+        $res->assertJsonPath('match.cube.pending', null);
+    }
+
+    public function test_bot_cube_response_uses_gnubg_drop(): void
+    {
+        config()->set('gnubg.url', 'http://gnubg.test');
+        Http::fake(['gnubg.test/analyze' => Http::response(['cube' => ['proper' => 'Double, pass']])]);
+        $this->cubeRoom('white');
+
+        $res = $this->postJson('/api/rooms/BOTCU/cube/offer', ['token' => 'human-tok'])->assertOk();
+        $res->assertJsonPath('bot_cube', 'drop');
+        $res->assertJsonPath('winner', 'white'); // bot pes -> insan mevcut küp değerinde (1) kazanır
+
+        $room = Room::where('code', 'BOTCU')->first();
+        $this->assertSame(1, (int) $room->server_match['score']['white']); // 1 puan (küp değeri)
+    }
+
+    public function test_bot_offers_double_via_gnubg(): void
+    {
+        config()->set('gnubg.url', 'http://gnubg.test');
+        // gnubg 'Double, take' -> bot (sırası botta, zar atmadan) küp teklif eder.
+        Http::fake(['gnubg.test/analyze' => Http::response(['cube' => ['proper' => 'Double, take']])]);
+        $this->cubeRoom('black'); // sıra botta
+
+        $res = $this->postJson('/api/rooms/BOTCU/bot', ['token' => 'human-tok'])->assertOk();
+        $res->assertJsonPath('bot.0.cubeOffer', true);
+        $res->assertJsonPath('bot.0.match.cube.pending', 'black');
+
+        $room = Room::where('code', 'BOTCU')->first();
+        $this->assertSame('black', $room->server_match['cube']['pending']); // teklif kaydedildi
+    }
+
     public function test_botnudge_recovers_when_gnubg_returns(): void
     {
         config()->set('validator.url', 'http://validator.test');

@@ -2156,7 +2156,7 @@ export async function serverCubeOffer(code: string): Promise<{ match: ServerMatc
 export async function serverCubeRespond(
   code: string,
   action: 'take' | 'drop',
-): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string }> {
+): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), action }),

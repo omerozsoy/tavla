@@ -2216,18 +2216,40 @@ class RoomController extends Controller
             $room->save();
 
             // BOT ODASI: insan (p1) teklif etti -> bot HEMEN yanıtlar (bekleyen teklif bırakmaz).
-            // v1 politikası: TAKE. (Botun coin/rating'i yok -> bu güvenlik değil oyun-kalitesi
-            // kararı; TAKE asla takılmaz. Upgrade: gnubg cubetest ile gerçek take/drop.)
+            // KARARI gnubg VERİR (take/drop); gnubg yoksa güvenli TAKE. Sonuç poll ile senkronlanır
+            // (frontend cube handler zaten poll'a güvenir).
             if ($room->bot && $slot === 'p1') {
+                $decision = 'take';
+                try {
+                    $decision = app(BotMoveService::class)->chooseCube(
+                        is_array($room->server_state) ? $room->server_state : [], $sm, 'respond'
+                    );
+                } catch (\Throwable $e) {
+                    $decision = 'take';
+                }
+
+                if ($decision === 'drop') {
+                    // Bot PES: teklif eden insan (white) MEVCUT küp değerinde oyunu kazanır.
+                    $sm['cube']['pending'] = null;
+                    $room->server_match = $sm;
+                    $matchDone = $this->applyGameResult($room, 'white', (int) $cube['value']);
+                    $room->server_version = (int) $room->server_version + 1;
+                    $room->save();
+
+                    return response()->json([
+                        'match' => $room->server_match, 'version' => (int) $room->server_version,
+                        'bot_cube' => 'drop', 'winner' => 'white', 'match_done' => $matchDone,
+                    ]);
+                }
+
+                // TAKE: ikiye katla, küp bota (black) geçer, teklif temizlenir. Sıra insanda (zarını atar).
                 $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => 'black', 'pending' => null];
                 $room->server_match = $sm;
                 $room->server_version = (int) $room->server_version + 1;
                 $room->save();
 
                 return response()->json([
-                    'match' => $room->server_match,
-                    'version' => (int) $room->server_version,
-                    'bot_cube' => 'take',
+                    'match' => $room->server_match, 'version' => (int) $room->server_version, 'bot_cube' => 'take',
                 ]);
             }
 
@@ -2246,7 +2268,7 @@ class RoomController extends Controller
             'action' => ['required', 'string', 'in:take,drop'],
         ]);
 
-        return DB::transaction(function () use ($data, $code) {
+        $resp = DB::transaction(function () use ($data, $code) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2303,6 +2325,11 @@ class RoomController extends Controller
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
         });
+
+        // BOT ODASI: insan botun küp teklifini TAKE ettiyse sıra hâlâ botta (zarını atacak) ->
+        // botu senkron oynat; bot[] yanıta eklenir (frontend handleTake uygular). DROP'ta maç bitti
+        // (turn insana döndü / done) -> maybeDriveBot no-op.
+        return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
     /**
@@ -2547,6 +2574,36 @@ class RoomController extends Controller
                 }
                 if (($state['turn'] ?? 'white') !== 'black') {
                     break; // sıra insanda (veya yeni oyun açılışı insan roll'una kaldı)
+                }
+
+                // KÜP (gnubg): zar ATMADAN önce bot katlamayı düşünür. Kurallar cubeAvailability'de
+                // (sıra/açılış/sahiplik/64/ölü-küp/Crawford/1-puan). gnubg 'double' derse teklif et,
+                // sıra insana geçmeden DUR -> insan take/drop yanıtı bekle (frontend cubePending UI).
+                if (empty($state['dice']) && $this->cubeAvailability($room, 'black')['allowed']) {
+                    $cubeDecision = 'no-double';
+                    try {
+                        $cubeDecision = $bot->chooseCube($state, $sm, 'offer');
+                    } catch (\Throwable $e) {
+                        $cubeDecision = 'no-double';
+                    }
+                    if ($cubeDecision === 'double') {
+                        $sm['cube']['pending'] = 'black';
+                        $room->server_match = $sm;
+                        $room->server_version = (int) $room->server_version + 1;
+                        $room->save();
+                        $turns[] = [
+                            'rollState' => $state, // zar YOK -> applyBotTurn hamle reconstruct etmez
+                            'dice' => [],
+                            'steps' => [],
+                            'state' => $state,     // tahta değişmedi
+                            'version' => (int) $room->server_version,
+                            'match' => $room->server_match, // pending=black -> frontend cubePending gösterir
+                            'winner' => null,
+                            'match_done' => false,
+                            'cubeOffer' => true,
+                        ];
+                        break; // insanın take/drop yanıtını bekle
+                    }
                 }
 
                 // Zar yoksa bot zar atar (sunucu-otoriter; açılış zaten dolu gelir).
