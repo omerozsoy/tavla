@@ -1,0 +1,19 @@
+[Unit]
+Description=Tavla validator YEDEK #2 (failover, port 8091)
+After=network.target
+
+[Service]
+Type=simple
+# ÖNEMLİ: vhost sistem kullanıcısı. Bul: stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
+User=CHANGE_ME_VHOST_USER
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/validator
+# PORT birincilden (8090) FARKLI; SECRET birincil ile AYNI (backend/.env VALIDATOR_SECRET).
+Environment=VALIDATOR_PORT=8091
+Environment=VALIDATOR_SECRET=CHANGE_ME_AYNI_SECRET
+# node yolu: `command -v node` çıktısıyla değiştir (ör. /usr/bin/node).
+ExecStart=/usr/bin/node dist/server.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
