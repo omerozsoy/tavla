@@ -2693,6 +2693,17 @@ export default function App() {
         setLastError(null)
         setRanked(null)
         setCurrentProbs(null)
+        // OTORİTE SÜRÜM MUHASEBESİ (KRİTİK): açılış eli uygulandı -> uygulanan server_version'i
+        // KAYDET. Aksi halde appliedServerVersionRef, resetRoomSync'ten kalan -1'de kalır ve
+        // açılıştan ÖNCE yola çıkmış (opened=false, version=0) UÇUŞTAKİ bir poll yanıtı sürüm
+        // kapısını geçip (0 > -1) taze açılışı EZER: applyServerBoard tahtayı initialState'e (zarsız)
+        // döndürür + openingStateFromMatch(opened=false) -> setOpening('roll'). Zar "geri alınır",
+        // effect yeniden açılışı tetikler, sunucu reused döner, sonraki poll zarı geri getirir ->
+        // kullanıcı raporu: "AI'a başlarken zar atıyor, geri alıyor, sonra tekrar atıyor". Sürümü
+        // burada yazmak o bayat poll'u shouldApplyServerState'te (version <= applied) eler. Bot
+        // başlatıcıysa applyBotTurns bunu daha da ilerletir (bt.version) — güvenli.
+        appliedServerVersionRef.current = r.version
+        if (code) appliedServerRoomRef.current = code
         setOpening(null) // reveal ekranını atla — sunucu başlayanı belirledi
         const moves = generateMoves(s)
         setMessage(
