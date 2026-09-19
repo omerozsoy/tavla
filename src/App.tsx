@@ -1940,6 +1940,10 @@ export default function App() {
   const diceRolled = turnStart.dice.length > 0
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
   const online = mode === 'online' && room !== null
+  // BOT MAÇI: eski yerel pvb (SERVER_BOT=false) VEYA sunucu-otoriter bot odası (mode='online' +
+  // room.bot). Canlı PR / analiz gösterimi ikisinde de açık olmalı; SERVER_BOT geçişinden önce
+  // yalnız `mode==='pvb'` kontrol ediliyordu -> otoriter bot maçında canlı PR "—" kalıyordu.
+  const botMatch = mode === 'pvb' || (online && !!room?.bot)
   const myColor: Player = room?.slot === 'p2' ? 'black' : 'white'
   // Online'da siyah oyuncu tahtayi 180 cevrilmis gorur (kendi taslari altta)
   const flipBoard = online && myColor === 'black'
@@ -6191,8 +6195,8 @@ export default function App() {
     // Anlik PR: yalniz bota karsi (pvb) + menuden acikken goster (online/pvp'de canli analiz gizli).
     // Anlık PR TAHMİNİ (oyun-içi, yalnız pvb + menüden açık): yerel estimate; Sidebar "~PR"
     // tahmin etiketiyle gösterir. RESMİ/kesin PR maç sonu gnubg (sonuç ekranı + analiz).
-    pr: mode === 'pvb' && showLivePr ? prLiveEstimate('white') : null,
-    prEstimate: mode === 'pvb' && showLivePr,
+    pr: botMatch && showLivePr ? prLiveEstimate(prHumanColor) : null,
+    prEstimate: botMatch && showLivePr,
     premium: online ? (myColor === 'white' ? isMePremium : (room?.oppPremium ?? false)) : (mode === 'pvb' ? isMePremium : false),
     // Rakip (beyaz/alt, ben siyahsam) avatarina tikla/hover -> herkese acik profil modali.
     onOpenProfile:
@@ -8399,7 +8403,7 @@ export default function App() {
         setShowLivePr={setShowLivePr}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
-        canAnalyze={mode === 'pvb'}
+        canAnalyze={botMatch}
         canResign={!matchOver}
         loggedIn={!!user}
         onTournaments={online && !matchOver ? undefined : menuProps.onTournaments}
