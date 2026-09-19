@@ -279,6 +279,41 @@ function setCanonical(url: string): void {
   }
   el.setAttribute('href', url)
 }
+
+// Hukuki sayfalar icin H1 (LegalView title'i DB'den async gelir; H1'i statik veriyoruz).
+const LEGAL_H1: Record<string, string> = {
+  kvkk: 'KVKK Aydınlatma Metni',
+  'gizlilik-politikasi': 'Gizlilik Politikası',
+  'cerez-politikasi': 'Çerez Politikası',
+  'kullanim-kosullari': 'Kullanım Koşulları',
+  'uyelik-sozlesmesi': 'Üyelik Sözleşmesi',
+  'sifre-sifirla': 'Şifre Sıfırla',
+}
+
+// Rota basligi -> gorsel-gizli <h1> metni (SPA'da her sayfa DOM'da benzersiz H1 tasisin;
+// JS render eden crawler'lar (Google) icin. JS'siz crawler'lar SeoMeta <noscript> H1'ini alir).
+function seoH1(slug: string): string {
+  if (!slug) return 'Online Tavla Oyna — Ücretsiz ve Bedava Tavla'
+  if (LEGAL_H1[slug]) return LEGAL_H1[slug]
+  const { title } = seoLookup(slug)
+  // " | TavlaTv" / " - TavlaTv…" markasal son eki at.
+  return title.replace(/\s*[|\-–—]\s*TavlaTv.*$/i, '').trim() || 'TavlaTv'
+}
+
+// Rota-farkindali gorsel-gizli H1: body'nin ilk cocugu olarak tutulur (React #root'a dokunmaz).
+function setSeoH1(text: string): void {
+  let el = document.getElementById('seo-route-h1') as HTMLHeadingElement | null
+  if (!el) {
+    el = document.createElement('h1')
+    el.id = 'seo-route-h1'
+    // Gorsel-gizli ama erisilebilir (display:none DEGIL; SR + crawler okur). clip pattern.
+    el.style.cssText =
+      'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;' +
+      'clip:rect(0,0,0,0);clip-path:inset(50%);white-space:nowrap;border:0;'
+    document.body.insertBefore(el, document.body.firstChild)
+  }
+  if (el.textContent !== text) el.textContent = text
+}
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
 import FriendGameSetup from './ui/FriendGameSetup'
@@ -1264,6 +1299,7 @@ export default function App() {
     const canonical = SITE_ORIGIN + '/' + slug
     setCanonical(canonical)
     upsertMeta('property', 'og:url', canonical)
+    setSeoH1(seoH1(slug)) // her rota DOM'da benzersiz gorsel-gizli H1 tasisin (JS crawler)
     // Hukuki sayfalarin title/description'ini LegalView (page.seo_*) yonetir; canonical/og:url
     // yukarida verildi, gerisini atla.
     if (slug && LEGAL_SLUGS.has(slug)) return

@@ -758,7 +758,7 @@ export function NewsPanel({ onOpen, onOpenNews }: { onOpen: () => void; onOpenNe
               return (
                 <button key={n.id} className="news-row" onClick={() => onOpenNews(newsSlug(n.title))}>
                   {cover ? (
-                    <img className="news-thumb" src={cover} alt="" loading="lazy" />
+                    <img className="news-thumb" src={cover} alt={n.title} loading="lazy" />
                   ) : (
                     <span className="news-thumb news-thumb-ph" aria-hidden="true">
                       <Icon name="chat" size={16} />
