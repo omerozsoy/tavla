@@ -70,7 +70,7 @@ export default function BetaBanner() {
         <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true">
           <path
             d="M1 1 L11 11 M11 1 L1 11"
-            stroke="#FAF9F5"
+            stroke="#141413"
             strokeWidth="1.6"
             strokeLinecap="round"
           />
