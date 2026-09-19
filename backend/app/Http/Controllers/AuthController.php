@@ -892,13 +892,20 @@ class AuthController extends Controller
             return; // zaten zengin VEYA gelen raporda analiz yok -> yapacak bir şey yok
         }
         $dirty = false;
+        $gnubgAuthoritative = (string) config('gnubg.pr_mode', 'off') === 'authoritative';
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
-            $row->log = $data['log'];
-            $totals = $this->prTotalsFromLog($data['log']);
-            $row->pr = $this->prFromLog($data['log']) ?? ($data['pr'] ?? $row->pr);
-            if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
-                $row->pr_equity_lost = $totals['loss'] ?? $row->pr_equity_lost;
-                $row->pr_decisions = $totals['decisions'] ?? $row->pr_decisions;
+            $row->log = $data['log']; // log HER durumda saklanır -> gnubg (aşağıda dispatch) analiz eder
+            // PR'ın TEK yetkilisi gnubg (DİREKTİF 2026-09-19): authoritative + log varsa istemci
+            // (wildbg) PR/totalleri SEED ETME -> gnubg gelene dek NULL kalır, AnalyzeMatchPrJob doldurur.
+            // reportRating'teki aynı kuralın arka kapısıydı (geç-rapor/terk zenginleştirme). gnubg
+            // KAPALIYSA istemci değeri fallback kalır ('—' yerine).
+            if (! $gnubgAuthoritative) {
+                $totals = $this->prTotalsFromLog($data['log']);
+                $row->pr = $this->prFromLog($data['log']) ?? ($data['pr'] ?? $row->pr);
+                if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'pr_equity_lost')) {
+                    $row->pr_equity_lost = $totals['loss'] ?? $row->pr_equity_lost;
+                    $row->pr_decisions = $totals['decisions'] ?? $row->pr_decisions;
+                }
             }
             $dirty = true;
         }
@@ -906,7 +913,11 @@ class AuthController extends Controller
             $row->luck = $data['luck'];
             $dirty = true;
         }
-        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name') && $row->opponent_pr === null && isset($data['opponent_pr'])) {
+        // Rakip PR: authoritative modda istemci tahmini seed EDİLMEZ (gnubg AnalyzeMatchPrJob'da
+        // rakip satırdan/gnubg'den senkronlar). Yalnız gnubg kapalıyken istemci değeri fallback.
+        if (! $gnubgAuthoritative
+            && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')
+            && $row->opponent_pr === null && isset($data['opponent_pr'])) {
             $row->opponent_pr = $data['opponent_pr'];
             $dirty = true;
         }
