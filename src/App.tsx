@@ -1971,16 +1971,6 @@ export default function App() {
   // Tahtada gösterilecek durum: kendi turumda `working`; RAKİP turunda canlı önizleme varsa
   // turnStart + rakip adımları (adım adım animasyonla dolar) -> rakip oynarken/geri alırken görürsün.
   const boardDisplay = online && !myTurn && oppLive.length > 0 ? applyPlayed(turnStart, oppLive) : working
-  // RAKİP İZİ: rakip (bot/online) turunda oynadığı her zarla taşıdığı pul yarı saydam kalır ->
-  // zarlar oynandıkça saydam pullar birikir, ne oynadığını iz gibi görürsün. Kaynak = gösterilen
-  // adımlar (online insan: oppLive; bot/otoriter-bot: played). Kendi turumda boş -> pullar opak.
-  const oppFadeCounts = useMemo(() => {
-    const m = new Map<number, number>()
-    if (myTurn) return m
-    const steps = online && oppLive.length > 0 ? oppLive : played
-    for (const s of steps) if (typeof s.to === 'number') m.set(s.to, (m.get(s.to) ?? 0) + 1)
-    return m
-  }, [myTurn, online, oppLive, played])
 
   const nextSteps = useMemo(
     () => (diceRolled && !gameWon ? legalNextSteps(turnStart, played) : []),
@@ -8490,7 +8480,6 @@ export default function App() {
         )}
         <Board
           state={boardDisplay}
-          fadeCounts={oppFadeCounts}
           checkerSkin={user?.checker ? (CHECKER_BY_ID[user.checker] ?? null) : null}
           selectableFroms={selectableFroms}
           targets={targets}
