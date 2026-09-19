@@ -3,7 +3,8 @@ import './betaBanner.css'
 
 // Surum TEK KAYNAK: vite.config define'i package.json'dan okur (elle yazilmaz).
 declare const __APP_VERSION__: string
-const VERSION = `v${__APP_VERSION__}`
+// Etikette major.minor goster: "2.2.0" -> "v2.2" (sondaki .0 kirpilir).
+const VERSION = `v${__APP_VERSION__.replace(/\.0$/, '')}`
 // Kapatma tercihi surume bagli: yeni surumde bant TEKRAR gorunur.
 const DISMISS_KEY = `beta-banner-dismissed-${VERSION}`
 

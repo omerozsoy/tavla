@@ -65,7 +65,7 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  color: rgba(250, 249, 245, 0.72); /* siyah zemin -> beyaz yazi (sonuk) */
+  color: #faf9f5; /* siyah zemin -> TUM kayan yazilar tam beyaz */
   white-space: nowrap;
 }
 .bb-msg-strong {
