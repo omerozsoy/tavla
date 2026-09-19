@@ -7,6 +7,11 @@ return [
     'secret' => env('GNUBG_SECRET', ''),
     'timeout' => (int) env('GNUBG_TIMEOUT', 20),
 
+    // Servis dosyası (systemd birimi bunu çalıştırır). Admin "Servis Durumu" paneli gnubg KIRMIZI
+    // iken bunu inceleyip "symlink kırık / dosya yok" teşhisi verir (bugün yaşanan tavlai->tavlatv
+    // symlink sorunu gibi). www-data /opt'u okuyabilir (drwxr-xr-x). Yol farklıysa env ile ayarla.
+    'service_file' => env('GNUBG_SERVICE_FILE', '/opt/gnubg-service/gnubg_service.py'),
+
     // GNU-only PR modu: off | shadow | authoritative.
     //  off           -> hiçbir şey (varsayılan; güvenli).
     //  shadow        -> maç bitince arka planda (queue) gnubg PR hesapla + match_results.gnubg_pr'a

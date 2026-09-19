@@ -30,12 +30,20 @@ class ServiceStatus extends Widget
     public function status(): array
     {
         $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
+            $validator = $this->checkValidator();
+            $gnubg = $this->checkGnubg();
+
             return [
                 'services' => [
-                    $this->checkValidator(),
-                    $this->checkGnubg(),
+                    $validator,
+                    $gnubg,
+                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (gnubg + validator).
+                    $this->checkBot($validator, $gnubg),
                     $this->checkDatabase(),
                     $this->checkQueue(),
+                    // İzleyiciyi izler: cron durursa TÜM izleme/alarm ölür -> bunu görünür kıl.
+                    $this->checkScheduler(),
+                    $this->checkDisk(),
                 ],
                 'validator_required' => (bool) config('validator.required', true),
             ];
@@ -82,11 +90,32 @@ class ServiceStatus extends Widget
         }
         try {
             $up = app(GnuBgClient::class)->health();
+            // KIRMIZIYSA nedenini teşhis et (bugünkü symlink/dosya sorunu gibi) -> SSH'a girmeden anla.
+            $detail = $up ? $url : $url.' — '.$this->gnubgDownReason();
 
-            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, $up, $url, true);
+            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, $up, $detail, true);
         } catch (\Throwable $e) {
             return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, false, 'İstisna: '.$e->getMessage(), true);
         }
+    }
+
+    /** gnubg KIRMIZIyken nedenini teşhis et: symlink kırık / dosya yok / servis kapalı. */
+    private function gnubgDownReason(): string
+    {
+        $file = (string) config('gnubg.service_file', '');
+        if ($file !== '') {
+            // Kırık symlink: is_link true ama file_exists (hedefi izler) false -> tam bugünkü durum.
+            if (@is_link($file) && ! @file_exists($file)) {
+                $target = @readlink($file) ?: '?';
+
+                return 'SYMLINK KIRIK: '.$file.' → '.$target.' (hedef yok; domain/yol değiştiyse symlink\'i güncelle)';
+            }
+            if (! @file_exists($file)) {
+                return 'DOSYA YOK: '.$file.' (systemd bu yolu bekliyor)';
+            }
+        }
+
+        return 'servis kapalı — SSH: systemctl restart gnubg-analysis (durum: systemctl status gnubg-analysis)';
     }
 
     /** Veritabanı: basit "select 1". */
@@ -142,6 +171,71 @@ class ServiceStatus extends Widget
             return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, $up, $detail, true);
         } catch (\Throwable $e) {
             return $this->svc('queue', 'Kuyruk İşçisi (queue worker)', true, false, 'jobs tablosu okunamadı', true);
+        }
+    }
+
+    /** Bot (PvB) hazır mı: sunucu-otoriter bot maçı gnubg + validator gerektirir (ikisi de UP). */
+    private function checkBot(array $validator, array $gnubg): array
+    {
+        $vUp = ($validator['up'] ?? null) === true;
+        $gUp = ($gnubg['up'] ?? null) === true;
+        $up = $vUp && $gUp;
+        $need = [];
+        if (! $gUp) {
+            $need[] = 'analiz servisi (gnubg)';
+        }
+        if (! $vUp) {
+            $need[] = 'validator';
+        }
+        $detail = $up
+            ? 'Sunucu-otoriter bot maçı oynatılabilir'
+            : 'Oynatılamaz — gerekli: '.implode(' + ', $need);
+
+        return $this->svc('bot', 'Bot Maçı (PvB)', true, $up, $detail);
+    }
+
+    /**
+     * Zamanlayıcı (cron): schedule:run gerçekten çalışıyor mu? routes/console.php'deki nabız her
+     * dakika 'ops:cron:heartbeat' cache'ini tazeler. Bayatsa cron DURMUŞ -> services:watch dahil
+     * TÜM izleme/otomatik-restart/alarm sessizce çalışmıyor demektir (en kritik kör nokta).
+     */
+    private function checkScheduler(): array
+    {
+        $hb = (int) (Cache::get('ops:cron:heartbeat') ?? 0);
+        if ($hb === 0) {
+            return $this->svc('scheduler', 'Zamanlayıcı (cron)', true, null,
+                'Henüz nabız yok — yeni kurulduysa ~1-2 dk bekleyin. Sürerse: "* * * * * php artisan schedule:run" cron\'u tanımlı mı?');
+        }
+        $age = time() - $hb;
+        $up = $age < 150; // ~2.5 dk tolerans (dakikalık nabız + gecikme payı)
+        $detail = $up
+            ? "Çalışıyor — en son {$age}sn önce"
+            : "SON NABIZ {$age}sn önce — cron DURMUŞ olabilir (schedule:run). İzleme/otomatik-restart/alarm ÇALIŞMIYOR!";
+
+        return $this->svc('scheduler', 'Zamanlayıcı (cron)', true, $up, $detail);
+    }
+
+    /** Disk alanı: additive deploy (backend/public/assets) + gnubg .mat + loglar zamanla büyür. */
+    private function checkDisk(): array
+    {
+        try {
+            $path = base_path();
+            $free = @disk_free_space($path);
+            $total = @disk_total_space($path);
+            if (! $free || ! $total) {
+                return $this->svc('disk', 'Disk Alanı', true, null, 'Ölçülemedi');
+            }
+            $usedPct = (int) round((1 - $free / $total) * 100);
+            $freeGb = round($free / 1073741824, 1);
+            $up = $usedPct < 90 ? true : ($usedPct < 97 ? null : false); // <90 yeşil, 90-96 sarı(gri), 97+ kırmızı
+            $detail = "%{$usedPct} kullanımda · {$freeGb} GB boş";
+            if ($usedPct >= 90) {
+                $detail .= ' — TEMİZLİK GEREKLİ (eski hash\'li asset / log / .mat)';
+            }
+
+            return $this->svc('disk', 'Disk Alanı', true, $up, $detail);
+        } catch (\Throwable $e) {
+            return $this->svc('disk', 'Disk Alanı', true, null, 'Ölçülemedi');
         }
     }
 
