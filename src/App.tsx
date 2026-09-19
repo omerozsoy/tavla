@@ -5503,6 +5503,12 @@ export default function App() {
     setOppStarted(true)
     setChat([])
     closeAllPages()
+    // SUNUCU-OTORİTER BOT resume: yerel motor DEĞİL sunucu akışı. Otorite ref'lerini SENKRON kur
+    // (poll'dan önce doRoll/commit serverRoll/serverMove seçsin) + bot maçı puanlı (matchType='ai').
+    const isBot = !!r.bot
+    friendlyRef.current = !isBot ? friendlyRef.current : false
+    authoritativeRef.current = isBot ? true : authoritativeRef.current
+    diceAuthorityRef.current = isBot ? true : diceAuthorityRef.current
     setRoom({
       code: r.code,
       slot: r.slot,
@@ -5511,8 +5517,21 @@ export default function App() {
       oppAvatar: r.opp_avatar ?? null,
       oppFrame: null,
       status: 'playing',
+      authoritative: isBot ? true : undefined,
+      dice_authority: isBot ? true : undefined,
+      bot: isBot,
+      botLevel: r.bot_level ?? null,
     })
     setHome(false)
+    // Bot maçında sıra bota geçmiş halde bırakılmış olabilir (nadir); poll durumu getirince
+    // botNudge idempotenttir (sıra insandaysa no-op). Kısa gecikme: server_state uygulansın.
+    if (isBot) {
+      window.setTimeout(() => {
+        botNudge(r.code)
+          .then((res) => applyBotTurns(res?.bot))
+          .catch(() => {})
+      }, 1200)
+    }
   }
 
   // Lobide: giris yapan kullanicinin devam eden online maclarini cek (geri donme banner'i).
