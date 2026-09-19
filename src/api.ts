@@ -2168,7 +2168,7 @@ export async function serverCubeRespond(
 export async function serverResign(
   code: string,
   resignType: 'single' | 'gammon' | 'backgammon' = 'single',
-): Promise<{ match: ServerMatch; winner: string; version: number; match_done: boolean }> {
+): Promise<{ state: GameState; match: ServerMatch; winner: string; version: number; match_done: boolean }> {
   return req(`/rooms/${encodeURIComponent(code)}/resign`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), resign_type: resignType }),

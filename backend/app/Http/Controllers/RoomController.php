@@ -2377,6 +2377,11 @@ class RoomController extends Controller
             $room->save();
 
             return response()->json([
+                // state DÖNER: istemci pes yanıtını DOĞRUDAN uygular (applyServerBoard) — poll'un
+                // mid-move kalkanına takılmadan. Aksi halde pes eden oyuncu KENDİ turunda (zar atılmış)
+                // olduğu için shouldApplyServerState false döner ve sonuç/yeni-oyun durumu HİÇ gelmez
+                // ("pes ettim, sayfa olduğu yerde kaldı" bug'ı).
+                'state' => $room->server_state,
                 'match' => $room->server_match, 'winner' => $winner,
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
