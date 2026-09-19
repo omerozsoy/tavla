@@ -83,8 +83,21 @@ class BotMoveService
             }
         }
         if (count($ranked) === 0) {
-            // gnubg adayları yasal hamlelere eşlenemedi (python eki yok / konvansiyon sapması).
-            throw new BotUnavailableException('gnubg-no-match');
+            // KÖK FIX (bot bar'da TAKILMASI): gnubg adayları yasal hamlelere from/to ile EŞLENEMEDİ
+            // (ör. bar-giriş "bar/X" notasyonu validator'ın sayısal nokta temsiliyle uyuşmuyor).
+            // ESKİDEN throw -> BotUnavailableException -> bot bar'da bekleyip KALIYORDU (validator +
+            // gnubg YEŞİL olsa bile "bot oynamıyor" bug'ı buydu). gnubg AYAKTA ve YASAL hamle VAR ->
+            // bot ASLA takılmamalı: gnubg sıralamasını eşleyemediğimiz nadir durumda YASAL bir hamle
+            // oyna (ilk yasal). Gösterilen PR ayrı gnubg-authoritative yolla hesaplanır (bu bozmaz).
+            // (gnubg gerçekten DÜŞÜKSE yukarıda gnubg-unavailable ile duraklar/retry eder — o korunur.)
+            \Illuminate\Support\Facades\Log::warning('bot.gnubg-no-match-fallback', [
+                'legal' => count($legal),
+                'cands' => count($cands),
+                'turn' => $state['turn'] ?? '?',
+                'dice' => array_slice(array_values(array_filter(array_map('intval', $state['dice'] ?? []))), 0, 2),
+            ]);
+
+            return $this->stepsOf($legal[0]);
         }
 
         // 4) Seviye gürültüsü ile sıralı yasal hamleler arasından seç.
