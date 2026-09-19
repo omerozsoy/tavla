@@ -46,6 +46,27 @@ class RoomController extends Controller
     }
 
     /**
+     * Kullanıcı ŞU AN oynanan (bahisli olsun olmasın) başka bir odada katılımcı mı?
+     * "Aynı kullanıcı iki maçta" durumunu ve escrow'u atlayan kod-ile-katılma para-hilesini
+     * engellemek için join()/enter() YENİ katılımcı dalında kullanılır. excludeRoomId = hedef oda
+     * (kendi odasına yeni token'la yeniden bağlanan p1 bloklanmasın). uid null (misafir) -> false;
+     * misafirin coin'i yok, hile riski yok.
+     */
+    private function userInAnyPlaying(?int $uid, ?int $excludeRoomId = null): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+
+        return Room::where('status', 'playing')
+            ->when($excludeRoomId, fn ($q) => $q->where('id', '!=', $excludeRoomId))
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            })
+            ->exists();
+    }
+
+    /**
      * ESCROW BIRAK: bu odanın rezerve edilmiş stake'ini iki oyuncudan serbest bırak. IDEMPOTENT
      * (escrowed true->false tek claim). Coin DÜŞMEZ/EKLENMEZ; yalnız coins_reserved azalır -> hiçbir
      * yol kaçsa bile coin KAYBOLMAZ (en fazla geçici kilitli). Settle sonrası + abort/cleanup öncesi çağrılır.
@@ -796,8 +817,15 @@ class RoomController extends Controller
             if ($room->p2_token) {
                 return $this->fail('Oda dolu.', 409);
             }
+            // EŞZAMANLILIK KALKANI: zaten başka bir maçta oynayan hesap ikinci bir odaya
+            // katılamaz (aynı kullanıcı iki maçta + escrow'u atlayan bahisli-oda para-hilesi).
+            // Hedef oda hariç tutulur -> kendi odasına yeni token'la yeniden bağlanma bloklanmaz.
+            $joinUserId = $request->user('sanctum')?->id;
+            if ($this->userInAnyPlaying($joinUserId, $room->id)) {
+                return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
             $room->p2_token = $data['token'];
-            $room->p2_user_id = $request->user('sanctum')?->id;
+            $room->p2_user_id = $joinUserId;
             $room->p2_name = $data['name'];
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;
@@ -850,8 +878,14 @@ class RoomController extends Controller
             if ($room->p2_token) {
                 return $this->fail('Oda dolu.', 409);
             }
+            // EŞZAMANLILIK KALKANI: zaten başka bir maçta oynayan hesap ikinci bir odaya
+            // katılamaz (join() ile aynı; hedef oda hariç -> kendi odasına yeniden bağlanma serbest).
+            $enterUserId = $request->user('sanctum')?->id;
+            if ($this->userInAnyPlaying($enterUserId, $room->id)) {
+                return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
+            }
             $room->p2_token = $data['token'];
-            $room->p2_user_id = $request->user('sanctum')?->id;
+            $room->p2_user_id = $enterUserId;
             $room->p2_name = $data['name'];
             $room->p2_rating = $data['rating'] ?? null;
             $room->p2_avatar = $data['avatar'] ?? null;
