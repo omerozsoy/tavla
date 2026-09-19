@@ -456,6 +456,18 @@ def _analyze(pos):
     hint = gnubg.hint()
     out = {"gnubgid": gid, "result": hint}
 
+    # SUNUCU-OTORİTER BOT: her adaya notasyondan türetilmiş from/to adımlarını ekle (die=0; backend
+    # BotMoveService bunu validator'ın DOĞRU-die'li yasal hamlesiyle from/to üzerinden eşler). PR
+    # yolu bu alanı yok sayar (yalnız played eşlemesi/loss kullanır).
+    turn = pos.get("turn", "white")
+    if isinstance(hint, dict) and isinstance(hint.get("hint"), list):
+        for cand in hint["hint"]:
+            try:
+                if isinstance(cand, dict) and cand.get("move"):
+                    cand["steps"] = _parse_gnubg_move_to_steps(turn, cand["move"])
+            except Exception:
+                pass  # eşleme backend'de best-effort; parse hatası adayı atlar
+
     steps = pos.get("playedSteps")
     if steps and isinstance(hint, dict) and hint.get("hint"):
         cand = hint["hint"]

@@ -94,6 +94,8 @@ import {
   watchRoom,
   type RoomViewer,
   updateRoom,
+  createBotRoom,
+  botNudge,
   serverRoll,
   serverMove,
   serverCubeOffer,
@@ -102,6 +104,7 @@ import {
   leaveRoom,
   postLive,
   type ServerMatch,
+  type BotTurn,
   myActiveRooms,
   type ActiveRoom,
   sendChat,
@@ -509,10 +512,19 @@ interface RoomState {
   // BAĞIMSIZ Faz 1: true iken yalnız ZAR sunucudan (serverRoll); hamle/tahta/küp LEGACY kalır.
   // Bahisli (para) eşleşme odalarında açılır. authoritative'den AYRIDIR.
   dice_authority?: boolean
+  // SUNUCU-OTORİTER BOT: bu oda bir bot maçı (p2 = sunucu botu). Rakip hamleleri serverRoll/
+  // serverMove yanıtındaki bot[] turlarından gelir (yerel motor YOK). botLevel = HUD zorluk.
+  bot?: boolean
+  botLevel?: number | null
   // CANLI hamle önizlemesi (cosmetic): sıradaki oyuncunun o an oynadığı/geri aldığı adımlar.
   live?: { slot: Slot; steps: Step[]; turn?: Player | null; seq?: number } | null
 }
 const BOT_PLAYER: Player = 'black'
+// SUNUCU-OTORİTER BOT: true iken PvB maçı sunucuda (authoritative bot odası) oynanır — zar/tahta/
+// bot hamlesi SUNUCUDA; iki sekme aynı TEK state'i izler ("aynı maç iki pencerede farklı state"
+// bug'ı kapanır). false = eski yerel motor (ONNX) yolu (anında geri dönüş). DEPLOY: gnubg/validator
+// ayakta olmalı; yoksa açılış "Rakip düşünüyor…"da bekler (insan hamlesi kaybolmaz).
+const SERVER_BOT = true
 const TARGETS = [1, 3, 5, 7, 9, 11] // mac uzunlugu secenekleri (1 = tek oyun)
 
 // Board renk temalari — boardThemes.ts'e cikarildi (God-component kucultme, #10)
@@ -1397,6 +1409,8 @@ export default function App() {
   // BAGIMSIZ Faz 1: true iken yalniz ZAR sunucudan (serverRoll); hamle/tahta/PUT LEGACY kalir.
   // authoritative'den AYRI: doRoll serverRoll'a gider ama commitTurn/PUT sync degismez.
   const diceAuthorityRef = useRef(false)
+  // SUNUCU-OTORİTER BOT: gnubg yokken (bot_status='unavailable') botu tekrar dürtme zamanlayıcısı.
+  const botNudgeTimerRef = useRef<number | null>(null)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
@@ -2313,6 +2327,11 @@ export default function App() {
             appliedServerRoomRef.current = code // surum + ait oldugu oda BIRLIKTE yazilir
             applyServerBoard(r.state as GameState, r.match ?? null)
           }
+          // BOT ODASI: insan hamlesinden sonra botun (siyah) senkron oynadığı tur(lar). gnubg
+          // yoksa bot_status='unavailable' -> insan hamlesi KORUNDU, botu dürterek tekrar dene.
+          if (!applyBotTurns(r?.bot) && r?.bot_status === 'unavailable') {
+            scheduleBotNudge(code)
+          }
         })
         .catch((e) => {
           notify.error(srvErr(e))
@@ -2645,6 +2664,10 @@ export default function App() {
             ? t('msg.noMovePass', { name: pName(starter) })
             : t('msg.playing', { name: pName(starter), dice: r.dice.join(', ') }),
         )
+        // BOT ODASI: açılış botu (siyah) başlatıcı yaptıysa botun turu yanıtta gelir -> uygula.
+        if (!applyBotTurns(r.bot) && r.bot_status === 'unavailable') {
+          scheduleBotNudge(code)
+        }
         return
       }
       // reused (sunucuda zaten verilmiş el): YEREL uygulama YAPMA. newTurn yerel turn'ü korur;
@@ -3578,7 +3601,7 @@ export default function App() {
           // (luck sessizce yanlış). 1000 giriş gerçekçi tüm maçları kapsar + 1.2MB validation altında.
           JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-1000) }),
           !friendlyRef.current, // ranked: eslesme/solo puanli; ARKADASLIK maci puansiz
-          stakeRef.current > 0 ? 'coin' : 'match', // Jeton (duz coin bahsi) vs N-puanlik mac
+          room?.bot ? 'ai' : stakeRef.current > 0 ? 'coin' : 'match', // Bot=ai; Jeton=coin; N-puanlik=match
           room?.code ?? null, // oda kodu -> backend friendly odayi kesin puansiz yapar
           achExtra, // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
           null, // .mat: backend stored log'dan (MatBuilder) kurar; istemci .mat'i kullanılmaz
@@ -3609,7 +3632,7 @@ export default function App() {
           prRef(opponent(myColor)),
           JSON.stringify({ hc: myColor, log: matchLogRef.current.slice(-1000) }),
           !friendlyRef.current,
-          stakeRef.current > 0 ? 'coin' : 'match',
+          room?.bot ? 'ai' : stakeRef.current > 0 ? 'coin' : 'match',
           room?.code ?? null,
           achExtra,
           null, // .mat: backend stored log'dan kurar; istemci .mat'i kullanılmaz
@@ -4065,6 +4088,38 @@ export default function App() {
       }
     }
     if (!winner(gs)) setMessage(t('msg.turnOf', { name: pName(gs.turn) }))
+  }
+
+  // ---- SUNUCU-OTORİTER BOT: botun (siyah) sunucuda oynadığı turu istemcide uygula ----
+  // Botun hamlesi serverRoll/serverMove/botNudge yanıtındaki bot[] turlarında GELİR (yerel motor
+  // YOK). Her tur applyServerBoard ile uygulanır; reconstructOppMove'un prev'i = bt.rollState
+  // (zar-atılmış tur-başı) -> botun hamlesi tek anlamlı çözülür + matchLog'a yazılır (.mat/PR).
+  function applyBotTurn(bt: BotTurn) {
+    srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
+    appliedServerVersionRef.current = bt.version
+    if (room?.code) appliedServerRoomRef.current = room.code
+    Sound.dice()
+    applyServerBoard(bt.state as GameState, (bt.match as ServerMatch) ?? null)
+  }
+  function applyBotTurns(turns?: BotTurn[] | null): boolean {
+    if (!turns || turns.length === 0) return false
+    for (const bt of turns) applyBotTurn(bt)
+    return true
+  }
+  // gnubg geçici yoksa (bot_status='unavailable') botu tekrar dener. Backend senkron sürer;
+  // servis gelince tur döner. Birkaç deneme sonra bırakır (poll yine de nihai durumu getirir).
+  function scheduleBotNudge(code: string, tries = 0) {
+    if (botNudgeTimerRef.current) window.clearTimeout(botNudgeTimerRef.current)
+    if (tries > 6) return
+    botNudgeTimerRef.current = window.setTimeout(() => {
+      botNudge(code)
+        .then((r) => {
+          if (!applyBotTurns(r?.bot) && r?.bot_status === 'unavailable') {
+            scheduleBotNudge(code, tries + 1)
+          }
+        })
+        .catch(() => scheduleBotNudge(code, tries + 1))
+    }, 1500)
   }
 
   // Poll (stale-closure) icin guncel tur/oynanan + authoritative ref'lerini tazele.
@@ -4848,6 +4903,82 @@ export default function App() {
     }
   }
 
+  // SUNUCU-OTORİTER BOT MAÇI başlat: sunucu p2=bot ile authoritative oda kurar; oyun ONLINE akışıyla
+  // (serverRoll/serverMove + poll + applyServerBoard) oynanır, bot hamleleri yanıttaki bot[] turlarından
+  // gelir. Böylece iki sekme/pencere TEK sunucu-state'i izler (yerel ıraksama YOK). Açılış, ilk
+  // serverRoll'da sunucuda atılır (online açılış yolu); bot başlatıcıysa aynı yanıtta oynar.
+  async function handleCreateBotRoom(target: number, level: number, tc?: TimeControl) {
+    setRoomBusy(true)
+    setRoomError('')
+    setInviteWaitName(null)
+    setGameEnd(null)
+    setTurnsPlayed(0)
+    setMatch(newMatch(target))
+    try {
+      friendlyRef.current = false // bot maçı PUANLI (rating raporlanır, matchType='ai')
+      stakeRef.current = 0
+      betPctRef.current = 0
+      onlineTargetRef.current = target
+      targetsRef.current = [target]
+      const tcUse = tc ?? timeControl
+      const res = await createBotRoom(profile?.nickname ?? t('auth.guestNick'), level, target, user?.rating, profile.avatar, tcUse)
+      resetRoomSync()
+      lastSyncRef.current = ''
+      syncEnabledRef.current = false
+      setOppStarted(true) // bot daima hazır (insan rakip beklenmez)
+      setChat([])
+      setRematch({ mine: null, theirs: null, code: null })
+      rematchSentRef.current = null
+      ratingReportedRef.current = false
+      setPrStats({ white: { loss: 0, decisions: 0 }, black: { loss: 0, decisions: 0 } })
+      setPrLuck({ white: 0, black: 0 })
+      setCoinDelta(null)
+      setCoinPair(null)
+      setMatchLog([])
+      oppLoggedRef.current = ''
+      setRatingChange(null)
+      setClock(freshMatchClock(target))
+      setDifficulty(level)
+      fairRef.current = new FairDice() // otoriter modda kullanılmaz; tutarlılık için sıfırla
+      setMatch(newMatch(target))
+      setStarter('white')
+      setTurnsPlayed(0)
+      setTurnStart(freshBoard('white'))
+      setPlayed([])
+      setSelectedFrom(null)
+      setCubePending(null)
+      setGameEnd(null)
+      setBotAnim(null)
+      // OTORİTE ref'lerini SENKRON yaz: açılış effect'i poll'dan ÖNCE doRollAuthoritative'i seçsin
+      // (aksi halde ilk açılış yerel-zar yoluna kaçabilirdi).
+      authoritativeRef.current = true
+      diceAuthorityRef.current = true
+      setOpening('roll') // açılış serverRoll -> sunucu açar + bot başlatıcıysa aynı yanıtta oynar
+      setRoom({
+        code: res.room.code,
+        slot: res.slot,
+        oppName: res.room.p2_name,
+        oppRating: res.room.p2_rating,
+        oppAvatar: res.room.p2_avatar,
+        oppFrame: res.room.p2_frame ?? null,
+        oppId: res.room.p2_user_id ?? null,
+        status: res.room.status,
+        authoritative: true,
+        dice_authority: true,
+        bot: true,
+        botLevel: level,
+      })
+      setMode('online')
+      setHome(false)
+    } catch {
+      notify.error(t('mp.connError'))
+      setRoom(null)
+      setHome(true)
+    } finally {
+      setRoomBusy(false)
+    }
+  }
+
   // Tek Oyun: bir veya BIRDEN COK bahis sec -> kesisen tutarli rakiple eslesir (tek oyun).
   // Anlasilan tutar sunucuda kesinlesir (ortak tutarlardan en yuksegi); stakeRef gecici max.
   function startSoloStake(stakes: number[], target = 1) {
@@ -5459,6 +5590,11 @@ export default function App() {
       setMode('online')
       setHome(false)
       handleMatchmake()
+    } else if (SERVER_BOT) {
+      // SUNUCU-OTORİTER BOT: PvB artık sunucuda (authoritative oda) oynanır -> iki pencere TEK
+      // state'i izler. Yerel motor (handleNewMatch/'pvb') SERVER_BOT=false ile geri gelir.
+      mmOriginRef.current = 'solo' // iptal/terkte lobiye dön
+      handleCreateBotRoom(opts.target, opts.difficulty ?? difficulty, opts.timeControl)
     } else {
       handleNewMatch(opts.target, 'pvb')
     }

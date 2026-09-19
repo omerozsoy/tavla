@@ -72,6 +72,10 @@ Route::middleware('throttle:240,1,rooms')->group(function () {
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
     Route::get('/online-players', [RoomController::class, 'onlinePlayers']); // cevrimici oyuncular
     Route::post('/rooms', [RoomController::class, 'create']);
+    // SUNUCU-OTORİTER BOT (PvB): bot maçını sunucuda başlat (state/zar/bot hamlesi sunucuda).
+    Route::post('/bot/rooms', [RoomController::class, 'createBotRoom']);
+    // Bot dürtme (kurtarma): sıra botta ama senkron sürüş gnubg yokluğunda duraklamışsa tekrar dener.
+    Route::post('/rooms/{code}/bot', [RoomController::class, 'botNudge']);
     Route::post('/rooms/{code}/join', [RoomController::class, 'join']);
     Route::post('/rooms/{code}/enter', [RoomController::class, 'enter']);
     Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
