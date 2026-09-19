@@ -100,13 +100,14 @@
   outline-offset: -2px;
 }
 
-/* Kusursuz dongu: iki kopya -> bir kopya (%50) kadar kaydir. */
+/* Kusursuz, hic durmayan dongu: LOOPS(6) kopya -> tam BIR kopya (track'in 1/6'si)
+   kadar kaydir. translateX yuzdesi track genisligine goredir: 100%/6 = bir dizi. */
 @keyframes bb-mq {
   from {
     transform: translateX(0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translateX(calc(-100% / 6));
   }
 }
 
