@@ -2339,6 +2339,14 @@ export default function App() {
     // reddederse (yasadışı/erişimsiz) gerçek sebebi göster + poll ile otoriter duruma dön.
     if (online && authoritativeRef.current && room?.code) {
       if (moveInFlightRef.current) return // mükerrer commit yok
+      // ZAR YOKKEN HAMLE YOLLAMA (kök fix "Önce zar at"): sıra bende ama turnStart'ta zar yoksa
+      // (bot turundan sonra henüz atmadım / kısa desync) hamleyi SUNUCUYA YOLLAMA. Yoksa sunucu
+      // "Önce zar at." (409) döner ve kullanıcı "zar atmadan taşa tıklayınca" saçma mesaj görür.
+      // Bunun yerine SESSİZCE resync: appliedServerVersionRef=-1 poll'u tetikler -> doğru sıra+zar gelir.
+      if (turnStart.dice.length === 0) {
+        appliedServerVersionRef.current = -1
+        return
+      }
       moveInFlightRef.current = true
       setSelectedFrom(null)
       setRanked(null)
@@ -2358,7 +2366,11 @@ export default function App() {
           }
         })
         .catch((e) => {
-          notify.error(srvErr(e))
+          // SIRA/ZAR DESYNC (409: "Önce zar at." / "Sıra sende değil."): korkutucu mesaj GÖSTERME.
+          // appliedServerVersionRef=-1 zaten poll'u tetikler -> otoriter durum (doğru sıra+zar) geri
+          // gelir (kendi kendini onarır). doRollAuthoritative da 409'u sessiz geçer — aynı desen.
+          const err = e as { status?: number }
+          if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
         })
         .finally(() => {
