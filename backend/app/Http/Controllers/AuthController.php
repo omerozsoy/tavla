@@ -529,6 +529,20 @@ class AuthController extends Controller
             }
         }
 
+        // HAKEM=gnubg (DİREKTİF 2026-09-19: PR'ın TEK yetkilisi gnubg): authoritative modda istemci
+        // (wildbg, kübsüz para-equity, düşük-ply) PR'ı OTORİTER OLARAK KAYDEDİLMEZ. pr + kırılım +
+        // havuz totalleri gnubg gelene dek NULL (pending) kalır; AnalyzeMatchPrJob (aşağıda dispatch)
+        // gnubg değeriyle DOLDURUR. Böylece panel/analiz asla bayat istemci tahminini göstermez
+        // (bkz XU7E4: istemci 0.39 vs gnubg 65). Log yine saklanır -> gnubg analiz eder. Log YOKSA
+        // (pvb-eski/log-kapalı) gnubg çalışamaz -> istemci değeri fallback kalır ('—' yerine).
+        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($data['log'])) {
+            $selfPr = null;
+            $prEquityLost = null;
+            $prDecisions = null;
+            $selfCheckerPr = null;
+            $selfCubePr = null;
+        }
+
         // Mac gecmisine kaydet (yonetim panelinde + profil analizinde gorunur)
         $mr = [
             'user_id'         => $user->id,
@@ -549,7 +563,10 @@ class AuthController extends Controller
         }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_name')) {
             $mr['opponent_name'] = $data['opponent_name'] ?? null;
-            $mr['opponent_pr'] = $data['opponent_pr'] ?? null;
+            // gnubg-authoritative + log varsa istemci rakip-PR tahmini KAYDEDİLMEZ (gnubg dolduracak).
+            $mr['opponent_pr'] = ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && ! empty($data['log']))
+                ? null
+                : ($data['opponent_pr'] ?? null);
         }
         // Rakip (bot) ham luck'i: PvB'de karsi satir olmadigindan dogrudan bu satira yazilir.
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck')) {
