@@ -4667,6 +4667,11 @@ button[aria-disabled='true'],
   text-transform: lowercase;
   color: var(--text-dim, color-mix(in srgb, var(--text) 62%, transparent));
 }
+/* Mac-ici koyu kenar cubuginda not devralinan koyu renkle gorunmuyordu:
+   PR degerinin altin tonuyla uyumlu, acik ve okunur bir ton ver. */
+.main.game-scene .pc-pr-note {
+  color: color-mix(in srgb, var(--tv-gold) 45%, #eef2ff);
+}
 .pc-pr-wrap.pr-bad .pc-pr-note {
   color: var(--color-error);
 }
