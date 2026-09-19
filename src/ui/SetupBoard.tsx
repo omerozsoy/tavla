@@ -265,22 +265,42 @@ export default function SetupBoard({
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}
-          {/* Yılbaşı: ortada 'Mutlu Yıllar' el yazısı (canlı boarddaki watermark'ın önizleme karşılığı;
-              taşların/zarın ALTINDA -> {discs}/{dice} sonra çizilir). Genişlik ~%46, oran korunur. */}
+          {/* Yılbaşı: tek merkezi yazı yerine board'un HER tarafına DÖŞENMIŞ küçük 'Mutlu Yıllar'
+              (canlı boarddaki .board-watermark background-repeat:space karşılığı; taşların/zarın
+              ALTINDA -> {discs}/{dice} sonra çizilir). Oran korunur, düşük opaklık. */}
           {yilbasi &&
             (() => {
-              const iw = W * 0.46
+              const iw = W * 0.24 // küçük tek yazı
               const ih = (iw * 361) / 1743
+              const tileW = iw * 1.18 // yatay aralık
+              const tileH = ih * 2.6 // dikey aralık (görsel kısa -> satırlar seyrelsin)
+              const ix = PAD
+              const iy = PAD
+              const iwIn = W - 2 * PAD
+              const ihIn = H - 2 * PAD
               return (
-                <image
-                  href={xmasScript}
-                  x={W / 2 - iw / 2}
-                  y={H / 2 - ih / 2}
-                  width={iw}
-                  height={ih}
-                  opacity="0.9"
-                  preserveAspectRatio="xMidYMid meet"
-                />
+                <>
+                  <defs>
+                    <pattern
+                      id="xmas-wm"
+                      patternUnits="userSpaceOnUse"
+                      x={ix}
+                      y={iy}
+                      width={tileW}
+                      height={tileH}
+                    >
+                      <image
+                        href={xmasScript}
+                        x={(tileW - iw) / 2}
+                        y={(tileH - ih) / 2}
+                        width={iw}
+                        height={ih}
+                        preserveAspectRatio="xMidYMid meet"
+                      />
+                    </pattern>
+                  </defs>
+                  <rect x={ix} y={iy} width={iwIn} height={ihIn} fill="url(#xmas-wm)" opacity="0.55" />
+                </>
               )
             })()}
         </g>

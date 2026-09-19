@@ -5713,10 +5713,12 @@ html[data-board='yilbasi'] .wm-logo {
 }
 html[data-board='yilbasi'] .board-watermark {
   background-image: url('./assets/yilbasi-mutlu-yillar.webp');
-  background-repeat: no-repeat;
+  /* Tek merkezi yazi yerine board'un HER tarafina DÖŞENMIS kucuk 'Mutlu Yıllar' (space =
+     esit araliklarla tekrar, iki eksende). Tas ustunde bogucu olmasin diye opaklik dusuk. */
+  background-repeat: space;
   background-position: center;
-  background-size: min(46%, calc(var(--col) * 6.2)) auto;
-  opacity: 0.9;
+  background-size: calc(var(--col) * 3.4) auto;
+  opacity: 0.55;
 }
 
 /* Sakura + Yılbaşı pullar: solid (--cream / --navy) + fizik disk finish (İznik ile aynı;
