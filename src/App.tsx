@@ -168,6 +168,10 @@ const LEGAL_SLUGS = new Set([
   'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
   'uyelik-sozlesmesi', 'sifre-sifirla',
 ])
+const SITE_ORIGIN = 'https://www.tavlatv.com'
+// Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
+const DEFAULT_DESC =
+  'Ücretsiz online tavla oyna! Bedava tavla, arkadaşlarınla online tavla, yapay zekaya karşı güçlü tavla botu, sıralama (rating) ve maç modları. Kayıt gerektirmeden hemen bedava tavla oyna.'
 const SEO_TITLES: Record<string, string> = {
   'tek-oyun': 'Tek Oyun Tavla | TavlaTv',
   'yeni-oyun': 'Online Tavla Maçı Oyna | TavlaTv',
@@ -181,16 +185,99 @@ const SEO_TITLES: Record<string, string> = {
   'kulupler': 'Tavla Kulüpleri | TavlaTv',
   'haberler': 'Tavla Haberleri | TavlaTv',
   'tavla-magazin': 'Tavla Magazin | TavlaTv',
+  'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
   'pozisyon-analizi': 'Tavla Pozisyon Analizi | TavlaTv',
   'mat-analiz': 'Tavla Maç Analizi (.mat) | TavlaTv',
   'mac-analizleri': 'Maç Analizlerim | TavlaTv',
   'hata-gunlugu': 'Hata Günlüğü | TavlaTv',
+  'sans-carki': 'Şans Çarkı | TavlaTv',
+  'zar-slotu': 'Zar Slotu | TavlaTv',
+  'bahane-makinesi': 'Tavla Bahane Makinesi | TavlaTv',
   'bilgi/hakkinda': 'Hakkımızda | TavlaTv',
   'bilgi/hizmetler': 'Hizmetler | TavlaTv',
   'bilgi/rutbeler': 'Tavla Rütbeleri | TavlaTv',
   'bilgi/puanlama': 'Puanlama ve PR (Performans) | TavlaTv',
   'bilgi/basarilarim': 'Rozetler ve Başarımlar | TavlaTv',
   'bilgi/adil-zar': 'Adil Zar — Kanıtlanabilir Rastgelelik | TavlaTv',
+}
+// Rota bazli meta aciklamasi (og/twitter + <meta name=description>). Her sayfa BENZERSIZ
+// aciklama alir — soft-duplicate meta sorununu (tum sayfalar ayni description) kapatir.
+const SEO_DESCS: Record<string, string> = {
+  'tek-oyun':
+    'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',
+  'yeni-oyun':
+    'Online tavla maçı kur: puanlı (rating) maçlar, farklı zaman kontrolleri ve gerçek rakiplerle canlı tavla.',
+  'yz-ile-oyna':
+    'Güçlü sinir ağı tavla botuna karşı oyna. Seviyeni seç, performansını (PR) ölç ve gelişimini takip et.',
+  'arkadasinla-oyna':
+    'Arkadaşını davet et, birlikte online tavla oyna. Özel maç ayarları, süre ve puan seçenekleriyle.',
+  'online-turnuvalar':
+    'Online tavla turnuvalarına katıl: eleme tabloları, ödüller ve canlı sonuçlar. Turnuvalara ücretsiz kayıt.',
+  'lider-tablosu':
+    'En iyi tavla oyuncularının güncel sıralaması. Rating, performans (PR) ve istatistiklerle lider tablosu.',
+  'uyelik':
+    'TavlaTv üyelik ve Premium avantajları: detaylı analiz, ekstra özellikler ve reklamsız deneyim.',
+  'turnuva-takvimi':
+    'Yaklaşan tavla turnuvalarının takvimi: tarih, yer ve düzenleyen kurum bilgileriyle etkinlik listesi.',
+  'kulupler':
+    'Tavla kulüplerini keşfet: kulüp profilleri, üyeler ve etkinlikler. Kendi tavla topluluğunu bul.',
+  'haberler':
+    'Tavla dünyasından güncel haberler, turnuva sonuçları ve duyurular. En yeni tavla haberleri TavlaTv’de.',
+  'tavla-magazin':
+    'Tavla magazin: röportajlar, analizler ve tavla kültüründen içerikler.',
+  'nasil-oynanir':
+    'Tavla nasıl oynanır? Kurallar, açılış dizilimi, zar ve pul hareketleriyle yeni başlayanlar için tavla rehberi.',
+  'pozisyon-analizi':
+    'Tavla pozisyonunu analiz et: gnubg ve sinir ağı motoruyla en iyi hamle, kazanma yüzdesi ve equity.',
+  'mat-analiz':
+    '.mat maç dosyanı yükle, motorla tam analiz al: PR, blunder, hata ve şans dökümü.',
+  'sans-carki': 'Şans Çarkını çevir, ödüller kazan. TavlaTv eğlence oyunlarından Şans Çarkı.',
+  'zar-slotu': 'Zar Slotu: tavla temalı slot oyunu, artan jackpot ve eğlenceli ödüller.',
+  'bahane-makinesi':
+    'Bahane Makinesi: tavla kaybettiğinde işine yarayacak 100 hazır bahane. Salt eğlence.',
+  'bilgi/hakkinda': 'TavlaTv hakkında: misyonumuz, adil oyun ilkelerimiz ve tavla topluluğu.',
+  'bilgi/hizmetler': 'TavlaTv hizmetleri: online tavla, turnuvalar, analiz araçları ve daha fazlası.',
+  'bilgi/rutbeler':
+    'Tavla rütbeleri ve seviye sistemi: rating aralıkları ve rütbe rozetleri nasıl kazanılır.',
+  'bilgi/puanlama':
+    'Puanlama ve performans (PR) nasıl hesaplanır? Rating, Elo ve şans-bazlı puan açıklamaları.',
+  'bilgi/basarilarim':
+    'TavlaTv rozetleri ve başarımları: hangi rozet nasıl açılır, tüm başarımların listesi.',
+  'bilgi/adil-zar':
+    'Adil zar: kanıtlanabilir rastgelelik (CSPRNG) nasıl çalışır, test alanı ve Ki-Kare doğrulaması.',
+}
+
+// Rota bazli SEO meta: once tam slug (ör. 'bilgi/hakkinda'), sonra ilk segment (ör.
+// 'haberler/<slug>' -> 'haberler') denenir; ikisi de yoksa ana sayfa varsayilanina doner.
+function seoLookup(slug: string): { title: string; desc: string } {
+  const base = slug.split('/')[0]
+  return {
+    title: SEO_TITLES[slug] || SEO_TITLES[base] || DEFAULT_DOC_TITLE,
+    desc: SEO_DESCS[slug] || SEO_DESCS[base] || DEFAULT_DESC,
+  }
+}
+
+// <head>'deki bir <meta> etiketini gunceller; yoksa olusturur (attr: 'name' | 'property').
+function upsertMeta(attr: 'name' | 'property', key: string, content: string): void {
+  const sel = `meta[${attr}="${key}"]`
+  let el = document.head.querySelector<HTMLMetaElement>(sel)
+  if (!el) {
+    el = document.createElement('meta')
+    el.setAttribute(attr, key)
+    document.head.appendChild(el)
+  }
+  el.setAttribute('content', content)
+}
+
+// <link rel="canonical"> href'ini gunceller (yoksa olusturur).
+function setCanonical(url: string): void {
+  let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')
+  if (!el) {
+    el = document.createElement('link')
+    el.setAttribute('rel', 'canonical')
+    document.head.appendChild(el)
+  }
+  el.setAttribute('href', url)
 }
 import Achievements from './ui/Achievements'
 import AchievementUnlock from './ui/AchievementUnlock'
@@ -1170,8 +1257,23 @@ export default function App() {
   // React effect'leri alttan-uste calisir -> child LegalView cleanup'i bu parent
   // effect'ten ONCE calisir, boylece legal->diger gecisinde son sozu bu effect soyler.
   useEffect(() => {
-    if (currentSlug && LEGAL_SLUGS.has(currentSlug)) return
-    document.title = (currentSlug && SEO_TITLES[currentSlug]) || DEFAULT_DOC_TITLE
+    const slug = currentSlug || ''
+    // Canonical + og:url HER rotada kendine isaret eder (eskiden hep ana sayfaya isaret
+    // ediyordu -> tum sayfalar ayni canonical). Detay yollari (haberler/<slug> vb.) de
+    // kendi tam URL'lerini alir.
+    const canonical = SITE_ORIGIN + '/' + slug
+    setCanonical(canonical)
+    upsertMeta('property', 'og:url', canonical)
+    // Hukuki sayfalarin title/description'ini LegalView (page.seo_*) yonetir; canonical/og:url
+    // yukarida verildi, gerisini atla.
+    if (slug && LEGAL_SLUGS.has(slug)) return
+    const { title, desc } = seoLookup(slug)
+    document.title = title
+    upsertMeta('name', 'description', desc)
+    upsertMeta('property', 'og:title', title)
+    upsertMeta('property', 'og:description', desc)
+    upsertMeta('name', 'twitter:title', title)
+    upsertMeta('name', 'twitter:description', desc)
   }, [currentSlug])
 
   // Sayfa acilinca EN USTE kaydir: footer'dan (asagidan) bir linke tiklayinca sayfa ustte

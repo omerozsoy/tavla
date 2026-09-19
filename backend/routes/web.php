@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\PanelController;
+use App\Support\SeoMeta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -72,14 +73,61 @@ Route::get('/pay/onizleme', fn () => view('pay.card', [
 
 // SPA: API disindaki tum yollar React uygulamasini (public/index.html) servis eder.
 // Statik dosyalar (assets/, models/) web sunucusu tarafindan dogrudan sunulur.
-Route::fallback(function () {
+// SEO soft-404: BILINMEYEN yollar index.html'i yine servis eder (SPA acilir) ama HTTP 404
+// statusuyle -> "her yol 200 doner" (soft 404) sorunu kapanir. Allowlist = src/App.tsx
+// applyFromPath() switch'indeki ILK segmentler + hukuki slug'lar. YENI ust-duzey rota
+// eklerken buraya da eklenmeli (aksi halde o sayfa 404 doner).
+Route::fallback(function (Request $request) {
+    $path = trim($request->path(), '/'); // kok icin ''
+    $first = $path === '' ? '' : explode('/', $path)[0];
+
+    // /api/* eslesmedi (yanlis uc/yontem) -> HTML degil JSON 404 (soft-404 API'ye sizmasin).
+    if ($path === 'api' || str_starts_with($path, 'api/')) {
+        return response()->json(['message' => 'Not Found'], 404);
+    }
+
+    // Uzantili (dosya-benzeri) istek fallback'e dustuyse gercek dosya yok demektir (var olsa
+    // web sunucusu servis ederdi) -> index.html HTML'i DONME, duz 404. (/indexnow.txt, /key.txt,
+    // silinmis /assets/*.js chunk istekleri...)
+    if ($first !== '' && str_contains(basename($path), '.')) {
+        return response('Not Found', 404);
+    }
+
+    // Gecerli SPA ilk-segmentleri (src/App.tsx applyFromPath switch'i ile senkron tutulmali).
+    static $valid = [
+        'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna',
+        'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
+        'sans-carki', 'zar-slotu', 'bahane-makinesi',
+        'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'haberler', 'blog', 'tavla-magazin',
+        'urunler', 'hizmetler', 'nasil-oynanir', 'dersler', 'bulmaca',
+        'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri',
+        'oyun-onizleme', 'cerceve-anim', 'adillik',
+        'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'odeme', 'cerceveler',
+        'istatistiklerim', 'profil', 'profil-duzenle', 'ayarlar', 'tahta-ayarlari',
+        'giris', 'sifremi-unuttum',
+        'bilgi', 'izle',
+        'kvkk', 'gizlilik-politikasi', 'cerez-politikasi', 'kullanim-kosullari',
+        'uyelik-sozlesmesi', 'sifre-sifirla',
+        // backend eslesen rotalar (normalde fallback'e dusmez; guvenlik icin allowlist'te)
+        'admin', 'panel', 'pay', 'email',
+    ];
+    $known = $first === '' || in_array($first, $valid, true);
+
     $index = public_path('index.html');
     if (file_exists($index)) {
+        // Per-route SEO: SPA statik kabugu her rotada AYNI canonical/title/description +
+        // <noscript> H1 tasiyordu -> Google ic sayfalari "ana sayfa kopyasi" sayip
+        // indekslemiyordu; JS'siz tarayicilar ayni bos kabugu goruyordu. SeoMeta, yola
+        // gore bu etiketleri per-route degerlerle degistirir (slug bilinmiyorsa no-op).
+        // response()->file yerine string donuyoruz (icerigi degistirdigimiz icin).
+        $html = SeoMeta::inject($request->path(), (string) file_get_contents($index));
+
         // index.html ASLA cache'lenmemeli: her deploy asset hash'lerini degistirir ve
         // eskileri silinir. Tarayici bayat index.html tutarsa silinmis chunk'lara istek
         // atar -> ChunkLoadError -> "sayfa acilmiyor/refresh edilemiyor". Hash'li /assets
         // ise icerik-adresli oldugundan uzun cache'te kalir (web sunucusu/htaccess).
-        return response()->file($index, [
+        return response($html, $known ? 200 : 404, [
+            'Content-Type' => 'text/html; charset=UTF-8',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
             'Expires' => '0',
@@ -87,6 +135,6 @@ Route::fallback(function () {
     }
     return response(
         'Frontend build not found. Build React and copy dist/* into backend/public/.',
-        200
+        $known ? 200 : 404
     );
 });
