@@ -93,6 +93,77 @@ class BotMoveService
         return $ranked[$idx];
     }
 
+    /**
+     * KÜP kararı gnubg'den. mode='offer' -> 'double'|'no-double' (bot sırasında katlasın mı);
+     * mode='respond' -> 'take'|'drop' (insan katladı, bot ne yapsın). gnubg (zar YOK -> küp analizi)
+     * 'proper' önerisini kullanır; yoksa equity fallback. gnubg erişilemezse GÜVENLİ varsayılan
+     * (respond->take: asla takılmaz/puan hediye etmez; offer->no-double: gereksiz katlamaz).
+     */
+    public function chooseCube(array $state, array $sm, string $mode): string
+    {
+        $fallback = $mode === 'respond' ? 'take' : 'no-double';
+        try {
+            $res = $this->gnubg->analyze($this->cubePositionFor($state, $sm));
+        } catch (\Throwable $e) {
+            return $fallback;
+        }
+        $cube = is_array($res) ? ($res['cube'] ?? null) : null;
+        $proper = is_array($cube) ? strtolower(trim((string) ($cube['proper'] ?? ''))) : '';
+
+        if ($proper !== '') {
+            if ($mode === 'respond') {
+                // 'proper' yanıtlayan aksiyonunu da içerir: "...pass" -> drop, "...take" -> take.
+                return str_contains($proper, 'pass') ? 'drop' : 'take';
+            }
+            // offer: "double"/"redouble" (ama "no ..." ve "too good" HARİÇ) -> katla.
+            $isDouble = (str_contains($proper, 'double') || str_contains($proper, 'redouble'))
+                && ! str_contains($proper, 'no ')
+                && ! str_contains($proper, 'too good');
+
+            return $isDouble ? 'double' : 'no-double';
+        }
+
+        // 'proper' yoksa equity'den karar (AnalysisOrchestrator ile aynı perspektif).
+        $eq = is_array($cube) ? ($cube['equities'] ?? null) : null;
+        if (is_array($eq) && isset($eq['noDouble'], $eq['doubleTake'], $eq['doublePass'])) {
+            return $this->cubeFromEquities($mode, (float) $eq['noDouble'], (float) $eq['doubleTake'], (float) $eq['doublePass']);
+        }
+
+        return $fallback; // gnubg boş -> güvenli
+    }
+
+    /** Equity fallback: respond -> take (dT<=1); offer -> double (min(dT,dP) >= noD). */
+    private function cubeFromEquities(string $mode, float $noDouble, float $doubleTake, float $doublePass): string
+    {
+        if ($mode === 'respond') {
+            // Yanıtlayan perspektifi: take = -doubleTake, pass = -1 (küp değeri). take >= pass?
+            return (-$doubleTake) >= -1.0 ? 'take' : 'drop';
+        }
+        $doubleVal = min($doubleTake, $doublePass); // rakip optimal yanıt (doubler için en kötü)
+
+        return $doubleVal >= $noDouble ? 'double' : 'no-double';
+    }
+
+    /** Küp kararı için konum: ZAR YOK -> gnubg /analyze küp analizi (cube result) döndürür. */
+    private function cubePositionFor(array $state, array $sm): array
+    {
+        return [
+            'points' => array_map('intval', $state['points'] ?? []),
+            'turn' => $state['turn'] ?? 'white',
+            'dice' => [], // zar yok -> küp kararı
+            'matchLength' => (int) ($sm['target'] ?? 1),
+            'plies' => 2,
+            'score' => [
+                'white' => (int) ($sm['score']['white'] ?? 0),
+                'black' => (int) ($sm['score']['black'] ?? 0),
+            ],
+            'cube' => [
+                'value' => (int) ($sm['cube']['value'] ?? 1),
+                'owner' => $sm['cube']['owner'] ?? null,
+            ],
+        ];
+    }
+
     /** Aday nesnesinden (validator {steps,resultKey} | gnubg {move,steps}) adımları çıkar. */
     private function stepsOf(array $cand): array
     {

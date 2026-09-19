@@ -554,6 +554,9 @@ const BOT_END_DELAY = 1200 // son tastan sonra sira gecmeden once (~1sn ara: sir
 interface BotAnim {
   steps: Step[]
   index: number
+  // SUNUCU-OTORİTER BOT: doluysa animasyon SONUNDA commitTurn YERİNE bu otoriter durum uygulanır
+  // (sunucu hamleyi zaten uyguladı; istemci yalnız tas-tas GÖSTERİR, tekrar sunucuya YOLLAMAZ).
+  serverFinal?: { state: GameState; match: ServerMatch | null; version: number }
 }
 
 interface OpeningResult {
@@ -1790,6 +1793,27 @@ export default function App() {
             rejoinRoom(rm)
             return
           }
+          // SUNUCU-OTORİTER BOT: bot odaları myActiveRooms'tan HARİÇ tutulur (banner'da görünmesin).
+          // Bu yüzden refresh/ikinci sekmede rm=undefined kalır -> rejoin edilmez -> room=null ->
+          // poll effect'i `if (!online || !room) return` ile ANINDA çıkar -> sekme eski server_state'te
+          // DONAR ("iki pencere farklı state"). Bot odasını doğrudan koddan çek: hâlâ oynanan bir bot
+          // maçıysa rejoin et (poll yeniden bağlanır -> güncel server_state'e YAKALAR + bot turlarını uygular).
+          const rv = await showRoom(code).catch(() => null)
+          if (cancelled) return
+          if (rv && rv.bot && rv.status === 'playing') {
+            rejoinRoom({
+              code,
+              slot: local.record.slot,
+              opp_name: rv.p2_name ?? '',
+              opp_rating: rv.p2_rating ?? null,
+              opp_avatar: rv.p2_avatar ?? null,
+              target: rv.target ?? local.record.target ?? 1,
+              score: null,
+              bot: true,
+              bot_level: rv.bot_level ?? null,
+            })
+            return
+          }
         }
         if (localActive) {
           applySavedGame(local!) // taze yerel aktif oyun -> sunucuyu bekleme/ezdirme
@@ -2841,10 +2865,13 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code) {
         const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
-        void serverCubeRespond(room.code, 'take')
-          .then(() => {
+        const code = room.code
+        void serverCubeRespond(code, 'take')
+          .then((r) => {
             recordCubePR(srvTaker, 'take', 'take') // XG cube PR + .mat kaydı
             recordCubeEvent(srvTaker, 'take') // maç kaydı (okunur)
+            // BOT ODASI: insan botun küpünü TAKE etti -> sıra botta; botun hamlesi yanıtta gelir.
+            if (!applyBotTurns(r?.bot) && r?.bot_status === 'unavailable') scheduleBotNudge(code)
           })
           .catch((e) => notify.error(srvErr(e)))
       }
@@ -3037,8 +3064,17 @@ export default function App() {
     if (!botAnim) return
     if (botAnim.index >= botAnim.steps.length) {
       // Tum taslar oynandi -> kisa bekle, sirayi gec
+      const sf = botAnim.serverFinal
       const t = window.setTimeout(() => {
-        commitTurn(botAnim.steps)
+        if (sf) {
+          // SUNUCU-OTORİTER BOT: sunucu hamleyi zaten uyguladı -> commitTurn YERİNE otoriter durumu
+          // uygula (tekrar serverMove YOLLAMA). srvTurnStartRef = animasyon başı (rollState) korunur.
+          appliedServerVersionRef.current = sf.version
+          if (room?.code) appliedServerRoomRef.current = room.code
+          applyServerBoard(sf.state, sf.match)
+        } else {
+          commitTurn(botAnim.steps)
+        }
         setBotAnim(null)
       }, BOT_END_DELAY)
       return () => window.clearTimeout(t)
@@ -4094,16 +4130,38 @@ export default function App() {
   // Botun hamlesi serverRoll/serverMove/botNudge yanıtındaki bot[] turlarında GELİR (yerel motor
   // YOK). Her tur applyServerBoard ile uygulanır; reconstructOppMove'un prev'i = bt.rollState
   // (zar-atılmış tur-başı) -> botun hamlesi tek anlamlı çözülür + matchLog'a yazılır (.mat/PR).
-  function applyBotTurn(bt: BotTurn) {
-    srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
+  function applyBotTurn(bt: BotTurn, animate = false) {
+    const steps = (bt.steps ?? []) as Step[]
+    // KÜP teklifi / pas (boş steps) VEYA animasyon istenmiyorsa: doğrudan uygula (snap).
+    if (!animate || steps.length === 0) {
+      srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
+      appliedServerVersionRef.current = bt.version
+      if (room?.code) appliedServerRoomRef.current = room.code
+      if (steps.length > 0) Sound.dice()
+      applyServerBoard(bt.state as GameState, (bt.match as ServerMatch) ?? null)
+      return
+    }
+    // TAS-TAS ANİMASYON: önce rollState'i (bot zarı dolu tur-başı) göster; botAnim effect adımları
+    // tek tek oynatır; bittiğinde serverFinal ile OTORİTER durumu uygular (commitTurn YOK -> tekrar
+    // serverMove YOLLANMAZ). appliedServerVersionRef'i ŞİMDİ yaz -> poll animasyonu KESİP snap'lemesin.
+    srvTurnStartRef.current = bt.rollState as GameState
     appliedServerVersionRef.current = bt.version
     if (room?.code) appliedServerRoomRef.current = room.code
     Sound.dice()
-    applyServerBoard(bt.state as GameState, (bt.match as ServerMatch) ?? null)
+    setTurnStart(bt.rollState as GameState)
+    setPlayed([])
+    setBotAnim({
+      steps,
+      index: 0,
+      serverFinal: { state: bt.state as GameState, match: (bt.match as ServerMatch) ?? null, version: bt.version },
+    })
   }
   function applyBotTurns(turns?: BotTurn[] | null): boolean {
     if (!turns || turns.length === 0) return false
-    for (const bt of turns) applyBotTurn(bt)
+    // Normal durum: TEK bot turu -> tas-tas animasyon (kayma). Nadir çoklu tur -> snap (animasyon
+    // zincirlemesi karmaşık/riskli; tahta yine doğru kalır).
+    const animate = turns.length === 1 && ((turns[0].steps?.length ?? 0) > 0)
+    for (const bt of turns) applyBotTurn(bt, animate)
     return true
   }
   // gnubg geçici yoksa (bot_status='unavailable') botu tekrar dener. Backend senkron sürer;
