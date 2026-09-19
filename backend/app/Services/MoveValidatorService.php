@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Log;
  */
 class MoveValidatorService
 {
-    private string $url;
+    /** Sıralı validator tabanları: [birincil, yedek...]. Birincil düşükse SIRAYLA denenir (failover). */
+    private array $urls;
 
     private string $secret;
 
@@ -24,7 +25,13 @@ class MoveValidatorService
     public function __construct()
     {
         $cfg = config('validator');
-        $this->url = rtrim((string) ($cfg['url'] ?? ''), '/');
+        // Birincil + yedek(ler). Yedek virgülle ayrılmış olabilir. Boşları ele, sondaki '/'i kırp.
+        $primary = rtrim((string) ($cfg['url'] ?? ''), '/');
+        $backups = array_map(
+            fn ($u) => rtrim(trim((string) $u), '/'),
+            explode(',', (string) ($cfg['url_backup'] ?? '')),
+        );
+        $this->urls = array_values(array_filter(array_merge([$primary], $backups), fn ($u) => $u !== ''));
         $this->secret = (string) ($cfg['secret'] ?? '');
         $this->timeout = (float) ($cfg['timeout'] ?? 3);
         $this->verifyTls = (bool) ($cfg['verify_tls'] ?? false);
@@ -32,7 +39,38 @@ class MoveValidatorService
 
     public function isConfigured(): bool
     {
-        return $this->url !== '';
+        return count($this->urls) > 0;
+    }
+
+    /**
+     * YEDEKLİ (failover) POST: tabanları SIRAYLA dener, ilk 2xx yanıtı döndürür. Birincil
+     * erişilemez / 5xx ise yedek devreye girer -> tek validator düşse de maç akışı DURMAZ. HEPSİ
+     * düşükse null (çağıran fail-closed davranır). $timeout verilirse o istekte varsayılanı ezer.
+     */
+    private function postFailover(string $path, array $payload, ?float $timeout = null): ?\Illuminate\Http\Client\Response
+    {
+        $last = count($this->urls) - 1;
+        foreach ($this->urls as $i => $base) {
+            try {
+                $req = $this->client();
+                if ($timeout !== null) {
+                    $req = $req->timeout($timeout);
+                }
+                $res = $req->post($base.$path, $payload);
+                if ($res->successful()) {
+                    return $res;
+                }
+                Log::warning('validator non-2xx', ['idx' => $i, 'path' => $path, 'status' => $res->status()]);
+            } catch (\Throwable $e) {
+                // Bu taban erişilemez -> sıradaki yedeği dene; sonuncuda da olmazsa null.
+                Log::warning(
+                    $i < $last ? 'validator unreachable, yedeğe geçiliyor' : 'validator unreachable (tüm tabanlar düştü)',
+                    ['idx' => $i, 'path' => $path, 'err' => $e->getMessage()],
+                );
+            }
+        }
+
+        return null;
     }
 
     private function headers(): array
@@ -59,26 +97,17 @@ class MoveValidatorService
         if (! $this->isConfigured()) {
             return ['valid' => false, 'reason' => 'validator-not-configured', 'unreachable' => true];
         }
-        try {
-            $res = $this->client()->post($this->url.'/validate', ['state' => $state, 'steps' => $steps]);
-
-            if (! $res->successful()) {
-                Log::warning('validator.validate non-2xx', ['status' => $res->status()]);
-
-                return ['valid' => false, 'reason' => 'validator-error', 'unreachable' => true];
-            }
-            $data = $res->json();
-
-            return [
-                'valid' => (bool) ($data['valid'] ?? false),
-                'state' => $data['state'] ?? null,
-                'reason' => $data['reason'] ?? null,
-            ];
-        } catch (\Throwable $e) {
-            Log::warning('validator.validate unreachable', ['err' => $e->getMessage()]);
-
+        $res = $this->postFailover('/validate', ['state' => $state, 'steps' => $steps]);
+        if ($res === null) {
             return ['valid' => false, 'reason' => 'validator-unreachable', 'unreachable' => true];
         }
+        $data = $res->json();
+
+        return [
+            'valid' => (bool) ($data['valid'] ?? false),
+            'state' => $data['state'] ?? null,
+            'reason' => $data['reason'] ?? null,
+        ];
     }
 
     /**
@@ -90,13 +119,9 @@ class MoveValidatorService
         if (! $this->isConfigured()) {
             return null;
         }
-        try {
-            $res = $this->client()->post($this->url.'/legal-moves', ['state' => $state]);
+        $res = $this->postFailover('/legal-moves', ['state' => $state]);
 
-            return $res->successful() ? ($res->json('moves') ?? []) : null;
-        } catch (\Throwable $e) {
-            return null;
-        }
+        return $res !== null ? ($res->json('moves') ?? []) : null;
     }
 
     /**
@@ -130,9 +155,10 @@ class MoveValidatorService
         }
 
         // 2) /restart ucu — servis AYAKTAYKEN graceful (yeni sürümde var). Down iken bağlantı düşer.
-        if ($this->isConfigured()) {
+        //    HER tabana (birincil + yedekler) gönder -> tüm örnekler tazelenir.
+        foreach ($this->urls as $base) {
             try {
-                $res = $this->client()->timeout(5)->post($this->url.'/restart');
+                $res = $this->client()->timeout(5)->post($base.'/restart');
                 if ($res->successful()) {
                     $did = true;
                 } else {
@@ -160,32 +186,22 @@ class MoveValidatorService
         if (! $this->isConfigured()) {
             return null;
         }
-        try {
-            // PR analizi motor calistirir (yavas olabilir) -> daha uzun timeout.
-            $res = $this->client()
-                ->timeout(max($this->timeout, 20))
-                ->post($this->url.'/analyze-pr', [
-                    'hc' => $hc, 'log' => $log, 'matchLength' => $matchLength, 'isMoney' => $isMoney,
-                ]);
-            if (! $res->successful()) {
-                Log::warning('validator.analyzePr non-2xx', ['status' => $res->status()]);
-
-                return null;
-            }
-
-            // XG-style: overall.pr + kirilim (checker/cube) + havuzlama icin totaller.
-            return [
-                'pr' => $res->json('pr'),                          // overall.pr
-                'decisions' => (int) $res->json('decisions', 0),   // overall.decisions
-                'equity_lost' => (float) $res->json('overall.equityLost', 0),
-                'checker' => $res->json('checker'),
-                'cube' => $res->json('cube'),
-                'overall' => $res->json('overall'),
-            ];
-        } catch (\Throwable $e) {
-            Log::warning('validator.analyzePr unreachable', ['err' => $e->getMessage()]);
-
+        // PR analizi motor çalıştırır (yavaş olabilir) -> daha uzun timeout; yedekli.
+        $res = $this->postFailover('/analyze-pr', [
+            'hc' => $hc, 'log' => $log, 'matchLength' => $matchLength, 'isMoney' => $isMoney,
+        ], max($this->timeout, 20));
+        if ($res === null) {
             return null;
         }
+
+        // XG-style: overall.pr + kirilim (checker/cube) + havuzlama icin totaller.
+        return [
+            'pr' => $res->json('pr'),                          // overall.pr
+            'decisions' => (int) $res->json('decisions', 0),   // overall.decisions
+            'equity_lost' => (float) $res->json('overall.equityLost', 0),
+            'checker' => $res->json('checker'),
+            'cube' => $res->json('cube'),
+            'overall' => $res->json('overall'),
+        ];
     }
 }

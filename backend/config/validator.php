@@ -7,6 +7,12 @@ return [
     // birlikte para/ranked maçta hamle REDDEDİLİR (fail-closed).
     'url' => env('VALIDATOR_URL', ''),
 
+    // YEDEK (failover) validator taban(lar)ı: birincil (url) erişilemez/5xx olunca SIRAYLA denenir.
+    // Validator stateless -> ikinci bir Node örneğini BAŞKA portta koştur, buraya yaz. Böylece tek
+    // örnek düşse de otoriter maç DONMAZ (fail-closed yalnız HEPSİ düşerse). Virgülle çok yedek:
+    //   VALIDATOR_URL_BACKUP=http://127.0.0.1:8091,http://127.0.0.1:8092
+    'url_backup' => env('VALIDATOR_URL_BACKUP', ''),
+
     // Paylaşılan sır (validator VALIDATOR_SECRET ile aynı). x-validator-secret başlığı.
     'secret' => env('VALIDATOR_SECRET', ''),
 
