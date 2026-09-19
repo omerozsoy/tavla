@@ -18834,6 +18834,24 @@ button.acct-row-logout:hover:not(:disabled) {
 .msg-tick.read {
   color: #7fd4ff;
 }
+/* Yonetici: mesaj sil butonu (yalnizca admin gorur) */
+.msg-delete {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  padding: 0;
+  margin-left: 2px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  opacity: 0.75;
+  transition: color 0.15s ease, opacity 0.15s ease;
+}
+.msg-delete:hover {
+  color: #ff6b6b;
+  opacity: 1;
+}
 /* "Yaziyor…" gostergesi (karsi taraf yaziyorken) */
 .messages-typing {
   align-self: flex-start;

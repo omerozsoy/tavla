@@ -195,6 +195,34 @@ class MessageController extends Controller
         ]);
     }
 
+    // Yonetici: bir DM mesajini kalici sil. YALNIZCA admin (is_admin) yapabilir.
+    // Kapsam: yalnizca admin ile {userId} arasindaki konusma (iki yon de) -> baskasinin
+    // ozel konusmasina karisilmaz; admin kendi gonderdigi VEYA aldigi mesaji silebilir.
+    public function destroy(Request $request, int $userId, int $messageId)
+    {
+        $me = $request->user();
+        if (! $me->is_admin) {
+            return $this->fail('Bu islem icin yetkiniz yok.', 403);
+        }
+        // id VE (konusma cifti) ayni anda tutmali -> orWhere'i tek parantez icinde grupla,
+        // yoksa orWhere id kosulundan kacar ve yanlis mesaj silinebilir.
+        $msg = Message::where('id', $messageId)
+            ->where(function ($q) use ($me, $userId) {
+                $q->where(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $me->id)->where('receiver_id', $userId);
+                })->orWhere(function ($x) use ($me, $userId) {
+                    $x->where('sender_id', $userId)->where('receiver_id', $me->id);
+                });
+            })
+            ->first();
+        if (! $msg) {
+            return $this->fail('Mesaj bulunamadı.', 404);
+        }
+        $msg->delete();
+
+        return response()->json(['ok' => true, 'id' => $messageId]);
+    }
+
     // Toplam okunmamis mesaj sayisi (rozet). ping'e de eklenir.
     public function unread(Request $request)
     {

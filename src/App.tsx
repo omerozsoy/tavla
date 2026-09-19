@@ -6945,6 +6945,7 @@ export default function App() {
       {messagesOpen && user && (
         <Messages
           focusUserId={messagesFocusId}
+          isAdmin={!!user.is_admin}
           onTab={(tab) => {
             // Sekme tıklaması: Arkadaşlar'a geç (karşılıklı-dışlar; URL de /arkadaslar olur).
             if (tab === 'friends') {
