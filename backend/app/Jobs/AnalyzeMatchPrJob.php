@@ -119,6 +119,34 @@ class AnalyzeMatchPrJob implements ShouldQueue
             MatchResult::where('id', $mr->id)->update($upd); // query-builder -> fillable gerekmez
         }
 
+        // gnubg-authoritative DOLUM SONRASI (PR'ın tek yetkilisi gnubg): reportRating artık istemci PR'ı
+        // seed etmiyor (pending) -> burada iki türev de gnubg'den tamamlanmalı:
+        //  (a) ONLINE rakip satırının opponent_pr'ı = bu satırın gnubg PR'ı (iki oyuncu özdeş görsün).
+        //  (b) Bu oyuncunun KARİYER PR havuzu (pr_equity_lost/pr_decisions artık gnubg) -> yeniden hesap;
+        //      yoksa maç, reportRating'te null totallerle recalc edildiğinden havuza HİÇ girmez.
+        if ((string) config('gnubg.pr_mode', 'off') === 'authoritative' && $totDec > 0) {
+            try {
+                $prVal = round((float) $overall, 2);
+                if (! empty($mr->room_code)
+                    && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI
+                    && Schema::hasColumn('match_results', 'opponent_pr')) {
+                    MatchResult::where('room_code', $mr->room_code)
+                        ->where('user_id', '!=', $mr->user_id)
+                        ->update(['opponent_pr' => $prVal]);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('gnubg opponent_pr senkron hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            }
+            try {
+                $u = \App\Models\User::find($mr->user_id);
+                if ($u) {
+                    app(\App\Services\CareerPrService::class)->recalc($u);
+                }
+            } catch (\Throwable $e) {
+                Log::warning('gnubg sonrasi kariyer PR recalc hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);
+            }
+        }
+
         // ADIM 2 (HAKEM=gnubg): Hata Günlüğü'nü gnubg per-karar loss'uyla YENİDEN üret. reportRating'te
         // senkron olarak wildbg loss'uyla üretilmişti; burada (async) gnubg loss'uyla ezilir. logIndex ->
         // gnubg loss haritası ErrorJournal'a verilir (yalnız insanın kararları; rakip wildbg kalır).

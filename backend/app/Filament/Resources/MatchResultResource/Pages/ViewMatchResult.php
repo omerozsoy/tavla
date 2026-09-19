@@ -73,9 +73,22 @@ class ViewMatchResult extends ViewRecord
                 ])
                 ->columns(3),
             Section::make('Performans (PR) ve Şans')
+                ->description('PR’ın tek yetkilisi gnubg (TavlaTV motoru). “Oyuncu PR” = gnubg değeri. '
+                    .'“Kayıtlı PR” eski satırlarda istemci (wildbg) tahmini olabilir; ikisi arasında büyük fark '
+                    .'(>10) bir tutarsızlık işaretidir → tavla:gnubg-pr-backfill --rerun ile düzeltilir.')
                 ->schema([
-                    TextEntry::make('pr')->label('Oyuncu PR')
+                    // BİRİNCİL: gnubg (TavlaTV) PR. Yeni satırlarda pr == gnubg_pr; eski satırlarda gnubg_pr
+                    // otoriter değer, pr ise bayat istemci tahmini olabilir -> ikisini de göster.
+                    TextEntry::make('gnubg_pr')->label('Oyuncu PR (TavlaTV)')
+                        ->state(fn (MatchResult $r) => $r->gnubg_pr ?? $r->pr)
+                        ->formatStateUsing(fn ($state) => $state === null ? 'analiz bekliyor' : number_format((float) $state, 2)),
+                    TextEntry::make('pr')->label('Kayıtlı PR')
                         ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2)),
+                    TextEntry::make('pr_diff')->label('Fark (kayıtlı − gnubg)')
+                        ->state(fn (MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
+                            ? '—' : number_format((float) $r->pr - (float) $r->gnubg_pr, 2))
+                        ->color(fn ($state, MatchResult $r) => ($r->pr === null || $r->gnubg_pr === null)
+                            ? 'gray' : (abs((float) $r->pr - (float) $r->gnubg_pr) > 10 ? 'danger' : 'gray')),
                     TextEntry::make('opponent_pr')->label('Rakip PR')
                         ->formatStateUsing(fn ($state) => $state === null ? '—' : number_format((float) $state, 2)),
                     TextEntry::make('luck')->label('Şans')
