@@ -548,8 +548,8 @@ import { NAUTICAL_FLAG_TOP_BY_DP, NAUTICAL_FLAG_BOTTOM_BY_DP } from './nauticalF
 // Bot temposu (ms) - daha yuksek = daha yavas/dogal
 const BOT_ROLL_DELAY = 1000 // zar atmadan once (kisa dusunme)
 const BOT_MOVE_DELAY = 900 // zar atildiktan sonra ilk tas oynanmadan once (zar okunabilsin)
-const BOT_STEP_DELAY = 1050 // her tas arasi (bear-off/toplama dahil tek tek izlenebilsin)
-const BOT_END_DELAY = 1200 // son tastan sonra sira gecmeden once (~1sn ara: sira aniden gecmesin)
+const BOT_STEP_DELAY = 500 // her tas arasi (izlenebilir ama snappy; sunucu-bot tur devri hizlansin)
+const BOT_END_DELAY = 500 // son tastan sonra sira gecmeden once (kisa ara; ~1sn tur-devri gecikmesi cok uzundu)
 
 interface BotAnim {
   steps: Step[]
