@@ -13,12 +13,12 @@
   overflow: hidden;
   display: flex;
   align-items: stretch;
-  /* Tum bant TEK renk: ust beta rozetiyle ayni kiremit (tema rengi). */
-  background: var(--accent);
+  /* Kayan yazi zemini SIYAH (beyaz yazi). Sol BETA rozeti kiremit kalir. */
+  background: #141413;
   font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* Sol sabit blok: bant ile AYNI kiremit zemin + koyu daire + BETA */
+/* Sol sabit blok: kiremit zemin + koyu daire + BETA */
 .bb-badge {
   flex: 0 0 auto;
   display: flex;
@@ -65,14 +65,14 @@
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.08em;
-  color: rgba(20, 20, 19, 0.68); /* kiremit zemin -> koyu yazi */
+  color: rgba(250, 249, 245, 0.72); /* siyah zemin -> beyaz yazi (sonuk) */
   white-space: nowrap;
 }
 .bb-msg-strong {
-  color: #141413;
+  color: #faf9f5; /* siyah zemin -> parlak beyaz */
 }
 .bb-sep {
-  color: rgba(20, 20, 19, 0.5); /* kiremit uzerinde ayrac koyu */
+  color: var(--accent); /* ayrac kiremit */
   padding: 0 18px; /* mesajlar arasi uniform aralik (◆ ortada) */
   font-size: 12px;
   line-height: 1;
@@ -90,13 +90,13 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #141413; /* kiremit zemin -> koyu ikon */
+  color: #faf9f5; /* siyah zemin -> beyaz ikon */
 }
 .bb-close:hover {
-  background: rgba(20, 20, 19, 0.12);
+  background: rgba(250, 249, 245, 0.08);
 }
 .bb-close:focus-visible {
-  outline: 2px solid #141413;
+  outline: 2px solid var(--accent);
   outline-offset: -2px;
 }
 
