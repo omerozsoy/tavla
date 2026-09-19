@@ -45,14 +45,24 @@ class MessageTest extends TestCase
         $this->assertSame(1, Message::where('sender_id', $me->id)->where('receiver_id', $friend->id)->count());
     }
 
-    public function test_non_friends_cannot_message(): void
+    public function test_non_friend_message_goes_to_request_box_with_flood_limit(): void
     {
+        // DM artik herkese acik: arkadas-olmayana ilk mesaj ISTEK kutusuna duser (200);
+        // onaylanana kadar en fazla 5 mesaj (flood korumasi), 6.'si 403.
         $me = $this->makeUser('me');
         $stranger = $this->makeUser('st');
         Sanctum::actingAs($me);
 
-        $this->postJson("/api/messages/{$stranger->id}", ['body' => 'selam'])->assertStatus(403);
-        $this->assertSame(0, Message::count());
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson("/api/messages/{$stranger->id}", ['body' => "selam {$i}"])->assertOk();
+        }
+        // 6. mesaj: onaylanmamis istekte flood siniri
+        $this->postJson("/api/messages/{$stranger->id}", ['body' => 'selam 6'])->assertStatus(403);
+
+        $this->assertSame(5, Message::count());
+        $this->assertSame(1, DB::table('message_requests')
+            ->where('requester_id', $me->id)->where('target_id', $stranger->id)
+            ->where('status', 'pending')->count());
     }
 
     public function test_opening_thread_marks_incoming_read_and_unread_drops(): void
@@ -111,13 +121,15 @@ class MessageTest extends TestCase
         $this->getJson("/api/messages/{$friend->id}")->assertOk()->assertJsonPath('typing', true);
     }
 
-    public function test_typing_requires_friendship(): void
+    public function test_typing_to_stranger_is_silently_ignored(): void
     {
+        // Alakasiz kisiye typing nabzi: 403 DEGIL, sessiz gec (200 + ok:false).
         $me = $this->makeUser('me');
         $stranger = $this->makeUser('st');
         Sanctum::actingAs($me);
 
-        $this->postJson("/api/messages/{$stranger->id}/typing")->assertStatus(403);
+        $this->postJson("/api/messages/{$stranger->id}/typing")
+            ->assertOk()->assertJsonPath('ok', false);
     }
 
     public function test_threads_list_shows_last_message_and_unread(): void
