@@ -2003,10 +2003,26 @@ export default function App() {
     const isMoney = stakeRef.current > 0
     // Bot (pvb'de siyah): secilen hamlenin gercek equity kaybi (XG-style, analiz .then icinde)
     if (mode === 'pvb' && mover === BOT_PLAYER) {
-      // Botun (rakip) hamlesini de analize kaydet: siralamayi arka planda hesapla
+      // Botun (rakip) hamlesini de analize kaydet: siralamayi arka planda hesapla.
+      // INSAN daliyla SIMETRIK: pendingAnalysisRef ile izlenir + retry'li. (1) Mac-sonu flush
+      // bu analizi BEKLER -> black kayitlari GONDERILEN log'a girer; eskiden izlenmiyordu ->
+      // black entry'ler log'a gec kalip gnubg botu skorlayamiyordu -> "bot PR 0.00" bug'i.
+      // (2) Gecici WASM hatasinda (analyzeMoves []) bot karari DUSMESIN diye birkac kez dener.
       const playedKey = boardKey(applyPlayed(before, steps))
-      neuralRef.current
-        .analyzeMoves(before)
+      pendingAnalysisRef.current++
+      const analyzeBotWithRetry = async (): Promise<RankedMove[]> => {
+        let rk: RankedMove[] = []
+        for (let i = 0; i < 5 && rk.length === 0; i++) {
+          if (i > 0) await new Promise((r) => setTimeout(r, 300))
+          try {
+            rk = await neuralRef.current.analyzeMoves(before)
+          } catch {
+            rk = []
+          }
+        }
+        return rk
+      }
+      analyzeBotWithRetry()
         .then((ranks) => {
           if (ranks.length === 0) return
           const pl = ranks.find((r) => r.move.resultKey === playedKey) ?? ranks[0]
@@ -2084,6 +2100,9 @@ export default function App() {
           ])
         })
         .catch(() => {})
+        .finally(() => {
+          pendingAnalysisRef.current = Math.max(0, pendingAnalysisRef.current - 1)
+        })
       return
     }
     // Insan: hamlenin gercek equity kaybini NEURAL siralamayla kaydet.
