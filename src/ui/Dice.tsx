@@ -13,23 +13,28 @@ export const PIP_POS: Record<number, [number, number][]> = {
 
 export interface DieFace {
   value: number
-  used: boolean // oynanmis zar -> soluk
+  used: boolean // oynanmis zar -> tam soluk
+  // Cift zar: her zar 2 hamle. Bir hamle oynaninca zarin CAPRAZ yarisi solar (half=true),
+  // ikinci hamlede zar tamamen solar (used=true). Boylece 4 hamle = 4 adim seffaflasma.
+  half?: boolean
 }
 
 export function Die({
   value,
   owner,
   used,
+  half = false,
   className = '',
 }: {
   value: number
   owner: Player
   used: boolean
+  half?: boolean
   className?: string
 }) {
   const pos = PIP_POS[value] ?? []
   return (
-    <div className={`die-face ${owner} ${used ? 'used' : ''} ${className}`}>
+    <div className={`die-face ${owner} ${used ? 'used' : ''} ${half ? 'die-half' : ''} ${className}`}>
       {pos.map(([x, y], i) => (
         <span key={i} className="pip-dot" style={{ left: `${x}%`, top: `${y}%` }} />
       ))}
@@ -58,7 +63,7 @@ export default function DiceRow({
     >
       {faces.map((f, i) => (
         // key'e deger dahil -> yeni atista yeniden mount olur, donme animasyonu oynar
-        <Die key={`${i}-${f.value}`} value={f.value} owner={owner} used={f.used} />
+        <Die key={`${i}-${f.value}`} value={f.value} owner={owner} used={f.used} half={f.half} />
       ))}
     </div>
   )

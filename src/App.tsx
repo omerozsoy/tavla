@@ -5607,15 +5607,17 @@ export default function App() {
     remainingDice.length === 2 &&
     remainingDice[0] !== remainingDice[1]
   // Zar yuzleri: hep 2 zar goster, oynananlari soluk yap (ciftte yarisi soluk)
-  const diceFaces = ((): { value: number; used: boolean }[] => {
+  const diceFaces = ((): { value: number; used: boolean; half?: boolean }[] => {
     const d = turnStart.dice
     if (d.length === 0) return []
     if (d.length === 4) {
-      const faded = Math.floor(played.length / 2) // her zar 2 hamle
-      return [
-        { value: d[0], used: faded >= 1 },
-        { value: d[0], used: faded >= 2 },
-      ]
+      // Cift zar: 2 zar goster, her zar 2 hamle. Her oynanan hamle zarin CAPRAZ yarisini
+      // soldurur -> 1. hamle 1. zarin yarisi, 2. hamle 1. zar tam, 3. hamle 2. zarin yarisi,
+      // 4. hamle 2. zar tam (4 adimda seffaflasir).
+      return [0, 1].map((i) => {
+        const h = Math.min(2, Math.max(0, played.length - i * 2)) // bu zarin oynanmis yarisi (0/1/2)
+        return { value: d[0], used: h >= 2, half: h === 1 }
+      })
     }
     const used = [false, false]
     for (const st of played) {
@@ -6162,7 +6164,7 @@ export default function App() {
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
             {/* Surum etiketi: logonun bittigi yerin sag ustunde tema-renkli kucuk yazi. */}
-            <span className="ab-beta" aria-hidden="true">v2.2</span>
+            <span className="ab-beta" aria-hidden="true">BETA 2.2</span>
             {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
                 bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
             <span className="ab-tag">{t('foot.tag')}</span>
