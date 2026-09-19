@@ -467,7 +467,7 @@ export default function Messages({
                             type="button"
                             className="emoji-item"
                             onClick={() => {
-                              setText((v) => (v + e).slice(0, 1000))
+                              setText((v) => (v + e).slice(0, 4000))
                               inputRef.current?.focus()
                             }}
                           >
@@ -492,7 +492,7 @@ export default function Messages({
                       }
                     }}
                     placeholder={t('dm.placeholder')}
-                    maxLength={1000}
+                    maxLength={4000}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), doSend())}
                   />
                   <Button variant="default" size="icon" disabled={sending || !text.trim()} onClick={doSend} aria-label={t('dm.send')}>

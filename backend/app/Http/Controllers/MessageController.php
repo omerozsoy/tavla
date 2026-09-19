@@ -162,7 +162,7 @@ class MessageController extends Controller
     {
         $me = $request->user();
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:1000'],
+            'body' => ['required', 'string', 'max:4000'],
         ]);
         $body = trim($data['body']);
         if ($body === '') {
