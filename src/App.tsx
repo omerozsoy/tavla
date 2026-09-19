@@ -5041,6 +5041,16 @@ export default function App() {
     onlineTargetRef.current = opts.target
     targetsRef.current = [opts.target]
     setMode('online')
+    // Onceki BITMIS oyunu HEMEN temizle + bekleme spinner'ini ac (handleCreateRoom ile ayni
+    // kalkan): aksi halde davet agi (inviteFriend) beklenirken matchOver=true bayat kalip
+    // game-view ESKI board'u -hatta sonuc ekranini- FLASH ediyordu ("davet gonderince
+    // eskiden kalma board"). Bu 3 reset matchOver'i dusurup roomBusy=true ile bekleme
+    // kabugunu (Lobby) render eder; enterOnlineByCode zaten tam sifirlamayi yapar.
+    setRoomBusy(true)
+    setRoomError('')
+    setGameEnd(null)
+    setTurnsPlayed(0)
+    setMatch(newMatch(opts.target))
     try {
       const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl })
       await enterOnlineByCode(code, opts.target, opts.timeControl)
@@ -5048,6 +5058,7 @@ export default function App() {
       // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
       if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
       else notify.error(t('mp.connError'))
+      setRoomBusy(false) // spinner'i kapat -> home dalina temiz don
       setHome(true)
     }
   }
