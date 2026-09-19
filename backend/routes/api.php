@@ -175,6 +175,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/read', [PresenceController::class, 'readNotifications']);
     Route::post('/notifications/delete', [PresenceController::class, 'deleteNotifications']);
     Route::post('/friends/{userId}/invite', [PresenceController::class, 'invite']);
+    Route::post('/invites/cancel', [PresenceController::class, 'cancelInvite']); // davet EDEN iptal eder
     Route::post('/invites/{inviteId}/respond', [PresenceController::class, 'respond']);
 
     Route::get('/me/club', [ClubController::class, 'mine']);

@@ -240,4 +240,20 @@ class PresenceController extends Controller
             'timeControl' => $invite->time_control,
         ]);
     }
+
+    // Davet EDEN daveti iptal eder (bekleme ekraninda "Oyunu Iptal Et"): bu oda koduna ait
+    // KENDI bekleyen davet(ler)ini sil -> alicinin daveti banner'i bir sonraki /ping poll'unda
+    // KALKAR (frontend setInvites listeyi degistirir; kabul edilmis/bitmis davet etkilenmez).
+    public function cancelInvite(Request $request)
+    {
+        $me = $request->user();
+        $data = $request->validate(['code' => ['required', 'string', 'max:12']]);
+        DB::table('game_invites')
+            ->where('from_user_id', $me->id)
+            ->where('room_code', $data['code'])
+            ->where('status', 'pending')
+            ->delete();
+
+        return response()->json(['ok' => true]);
+    }
 }

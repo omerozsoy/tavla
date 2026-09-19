@@ -84,6 +84,7 @@ import {
   markNotificationsRead,
   deleteNotifications,
   inviteFriend,
+  cancelInvite,
   requestFriendById,
   respondInvite,
   type GameInvite as GameInviteT,
@@ -5276,6 +5277,11 @@ export default function App() {
   function handleLeaveRoom() {
     stakeRef.current = 0
     betPctRef.current = 0
+    // Hedefli davetle acilmis + hala BEKLEYEN oda -> "Oyunu Iptal Et": daveti de geri cek ki
+    // rakibin ekranindaki davet banner'i (sonraki /ping poll'unda) KALKSIN.
+    if (inviteWaitName && room?.status === 'waiting' && room?.code) {
+      cancelInvite(room.code).catch(() => {})
+    }
     setInviteWaitName(null) // hedefli davet bekleme etiketini temizle
     setRematch({ mine: null, theirs: null, code: null })
     rematchEnteredRef.current = null
