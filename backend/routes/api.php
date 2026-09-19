@@ -161,6 +161,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ->whereNumber('userId')->middleware('throttle:30,1,msg-send'); // spam/flood korumasi
     Route::post('/messages/{userId}/typing', [\App\Http\Controllers\MessageController::class, 'typing'])
         ->whereNumber('userId')->middleware('throttle:60,1,msg-typing'); // "yaziyor…" nabzi
+    // Yonetici: DM mesajini sil (controller icinde is_admin denetimi var).
+    Route::delete('/messages/{userId}/{messageId}', [\App\Http\Controllers\MessageController::class, 'destroy'])
+        ->whereNumber('userId')->whereNumber('messageId');
 
     Route::post('/ping', [PresenceController::class, 'ping']);
     Route::post('/me/presence-status', [PresenceController::class, 'setStatus']); // oyuncu durumu (musait/hazir/mesgul/cevrimdisi)

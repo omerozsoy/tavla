@@ -7,6 +7,7 @@ import {
   getThread,
   sendMessage,
   sendTyping,
+  deleteMessage,
   ApiError,
   type ChatThread,
   type ChatMessage,
@@ -36,6 +37,8 @@ interface Props {
   onNotifDeleteAll?: () => void
   // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
   onTab?: (t: SocialTab) => void
+  // Yonetici: her mesajin yaninda "Sil" butonu gosterilir (backend de is_admin denetler).
+  isAdmin?: boolean
 }
 
 // Bildirimler "sohbeti" icin ozel sentinel id (gercek kullanici id'leri pozitif).
@@ -82,6 +85,7 @@ export default function Messages({
   onNotifDelete,
   onNotifDeleteAll,
   onTab,
+  isAdmin = false,
 }: Props) {
   const { t } = useT()
   const toast = useToast()
@@ -217,6 +221,20 @@ export default function Messages({
       toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
     } finally {
       setSending(false)
+    }
+  }
+
+  // Yonetici: bir mesaji sil. Onay iste -> API -> listeden dus + baslik/thread tazele.
+  async function doDelete(messageId: number) {
+    if (activeId == null || messageId < 0) return // iyimser (henuz sunucuda yok) mesaji atla
+    if (!window.confirm(t('dm.deleteConfirm'))) return
+    try {
+      await deleteMessage(activeId, messageId)
+      pendingRef.current = pendingRef.current.filter((x) => x.id !== messageId)
+      setMessages((m) => m.filter((x) => x.id !== messageId))
+      refreshThreads()
+    } catch (err) {
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.deleteFail'))
     }
   }
 
@@ -428,6 +446,17 @@ export default function Messages({
                                 >
                                   <Icon name={m.read ? 'checks' : 'check'} size={14} />
                                 </span>
+                              )}
+                              {isAdmin && m.id > 0 && (
+                                <button
+                                  type="button"
+                                  className="msg-delete"
+                                  onClick={() => doDelete(m.id)}
+                                  aria-label={t('dm.delete')}
+                                  title={t('dm.delete')}
+                                >
+                                  <Icon name="trash" size={13} />
+                                </button>
                               )}
                             </span>
                           </div>

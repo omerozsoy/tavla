@@ -884,6 +884,10 @@ export async function sendTyping(userId: number): Promise<void> {
 export async function sendMessage(userId: number, body: string): Promise<{ message: ChatMessage }> {
   return req(`/messages/${userId}`, { method: 'POST', body: JSON.stringify({ body }) })
 }
+// Yonetici: bir DM mesajini kalici sil (backend is_admin denetler)
+export async function deleteMessage(userId: number, messageId: number): Promise<void> {
+  await req(`/messages/${userId}/${messageId}`, { method: 'DELETE' })
+}
 // Toplam okunmamis mesaj sayisi (rozet tazeleme)
 export async function messagesUnread(): Promise<{ unread: number }> {
   return req('/messages/unread')
