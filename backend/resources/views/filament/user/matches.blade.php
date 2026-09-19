@@ -13,6 +13,7 @@
                     <tr>
                         <th class="px-3 py-2 text-left font-medium">Tarih</th>
                         <th class="px-3 py-2 text-left font-medium">Sonuç</th>
+                        <th class="px-3 py-2 text-left font-medium">Oyuncu</th>
                         <th class="px-3 py-2 text-left font-medium">Rakip</th>
                         <th class="px-3 py-2 text-right font-medium">Skor</th>
                         <th class="px-3 py-2 text-right font-medium">Puan Δ</th>
@@ -38,8 +39,17 @@
                                 @endif
                             </td>
                             <td class="px-3 py-2 whitespace-nowrap">
-                                {{ $m->opponent_name ?: '—' }}
+                                {{ $m->self_nickname ?: '—' }}
+                                @if (!empty($m->self_full_name))
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $m->self_full_name }}</span>
+                                @endif
+                            </td>
+                            <td class="px-3 py-2 whitespace-nowrap">
+                                <span>{{ $m->opponent_name ?: '—' }}</span>
                                 <span class="text-gray-400">({{ $m->opponent_rating ?? '—' }})</span>
+                                @if (!empty($m->opp_full_name))
+                                    <span class="block text-xs text-gray-500 dark:text-gray-400">{{ $m->opp_full_name }}</span>
+                                @endif
                             </td>
                             <td class="px-3 py-2 text-right whitespace-nowrap">
                                 {{ $m->score_self !== null ? $m->score_self.'-'.$m->score_opp : '—' }}

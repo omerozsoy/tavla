@@ -1239,7 +1239,7 @@ class RoomController extends Controller
 
     // Saati poll aninda ilerlet: kayip kosulu olustuysa maci sonlandir (idempotent).
     // $slot verilirse poll edenin VARLIK damgasi (throttle ile) tazelenir -> terk tespiti.
-    private function tickClock(Room $room, ?string $slot = null): void
+    public function tickClock(Room $room, ?string $slot = null): void
     {
         $clock = $room->clock;
         if (! is_array($clock) || empty($clock)) {

@@ -1403,12 +1403,31 @@ class AuthController extends Controller
             }
         }
 
+        // Oyuncuların AD SOYAD'ı: kendim (bu üye) + rakip (opponent_name=nickname -> users tek sorgu).
+        // Ad soyad tanımlı değilse null döner (istemci yalnız nickname gösterir).
+        $fullName = static fn ($u) => $u ? (trim(($u->first_name ?? '').' '.($u->last_name ?? '')) ?: null) : null;
+        $selfFullName = $fullName($me);
+        $oppFullByNick = [];
+        if ($hasOpp) {
+            $nicks = $rows->pluck('opponent_name')->filter()->unique()->values()->all();
+            if (! empty($nicks)) {
+                \App\Models\User::whereIn('nickname', $nicks)
+                    ->get(['nickname', 'first_name', 'last_name'])
+                    ->each(function ($o) use (&$oppFullByNick, $fullName) {
+                        $oppFullByNick[$o->nickname] = $fullName($o);
+                    });
+            }
+        }
+
         $matches = $rows
             ->map(fn ($m) => [
                 'id' => $m->id,
                 'won' => (bool) $m->won,
+                'self_name' => $me->nickname,
+                'self_full_name' => $selfFullName,
                 'opponent_rating' => $m->opponent_rating,
                 'opponent_name' => $hasOpp ? $m->opponent_name : null,
+                'opponent_full_name' => ($hasOpp && $m->opponent_name) ? ($oppFullByNick[$m->opponent_name] ?? null) : null,
                 'opponent_pr' => $hasOpp ? $m->opponent_pr : null,
                 'rating_before' => $m->rating_before,
                 'rating_after' => $m->rating_after,

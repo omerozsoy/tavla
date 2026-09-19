@@ -267,6 +267,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
               const oppWon = hasScore ? m.score_opp! > m.score_self! : !m.won
               const oppName = m.opponent_name || t('mh.opponentFb')
               const meName = myName || t('mh.you')
+              // Oyuncuların ad soyad'ı (takma addan farklıysa alt satırda göster; bot/eşitse gizle).
+              const oppFull = m.opponent_full_name && m.opponent_full_name !== oppName ? m.opponent_full_name : null
+              const meFull = m.self_full_name && m.self_full_name !== meName ? m.self_full_name : null
               // Sans: gnubg NATIVE MWC% oncelikli, yoksa ham luck — her oyuncu kendi tarafinda.
               const selfLuck = luckLabel(m.luck_mwc, m.luck)
               const oppLuck = luckLabel(m.opponent_luck_mwc, m.opponent_luck)
@@ -294,6 +297,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                         </span>
                         <span className="mh-info">
                           <span className="mh-nm">{oppName}</span>
+                          {oppFull && <span className="mh-full">{oppFull}</span>}
                           <span className="mh-tags">
                             {m.opponent_pr != null && (
                               <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
@@ -335,6 +339,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                       <div className={`mh-team mh-me ${selfWon ? 'won' : ''}`}>
                         <span className="mh-info">
                           <span className="mh-nm">{meName}</span>
+                          {meFull && <span className="mh-full">{meFull}</span>}
                           <span className="mh-tags">
                             {m.pr != null && (
                               <span className={`mh-prc ${prCls(m.pr)}`}>PR {m.pr.toFixed(1)}</span>

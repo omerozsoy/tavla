@@ -4365,9 +4365,21 @@ export default function App() {
     }
     const id = window.setInterval(poll, 1200)
     poll()
+    // SEKMEYE DÖNÜNCE ANINDA RESYNC: sunucu-otoriter saat POLL'da lazy hesaplanır
+    // (MatchClock::tick -> now - started_at). Arka planda tarayıcı poll interval'ını
+    // kısıp/askıya alır -> saati soracak kimse kalmaz ve süre bittiği HALDE timeout ilan
+    // edilmez (özellikle bot maçında: rakip=bot hiç poll etmez, tek insan arka plandadır ->
+    // maç saati donmuş görünür, "süre bitmemiş" gibi asılı kalır). Sekme tekrar görünür
+    // olunca hemen bir poll at: sunucu gerçek geçen süreyi döndürür, süre bittiyse timeout/AFK
+    // o an tetiklenir ve istemci gameEnd olarak uygular (bot maçı 'friendly' -> rating cezası yok).
+    const onVisiblePoll = () => {
+      if (document.visibilityState === 'visible' && !cancelled) void poll()
+    }
+    document.addEventListener('visibilitychange', onVisiblePoll)
     return () => {
       cancelled = true
       window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisiblePoll)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [online, room?.code])
