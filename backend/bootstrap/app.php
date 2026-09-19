@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // "Kapali test" sifre kapisi: SITE_PASSWORD doluysa tum /api istekleri X-Site-Gate ister.
         // En basta kossun ki reddedilen istek hicbir controller'a/hataya ulasmasin.
         $middleware->prependToGroup('api', \App\Http\Middleware\SiteGate::class);
+        // Guvenlik Kalkani izleyicisi: TUM /api isteklerini yanit-sonrasi kaydeder (kim, nerede,
+        // kac istek, hata/spin/tarama, risk). Sona eklenir ki auth cozulmus + durum kodu belli olsun.
+        $middleware->appendToGroup('api', \App\Http\Middleware\ShieldTracker::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // AKSAMA UYARISI: canlı bir istek SUNUCU HATASI (500) ile patlarsa admin'e e-posta +
