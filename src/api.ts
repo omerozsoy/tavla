@@ -1614,6 +1614,9 @@ export interface ActiveRoom {
   opp_premium?: boolean
   target: number | null
   score: { white: number; black: number } | null
+  // SUNUCU-OTORİTER BOT: bu oda bir bot maçı mı (rejoin'de yerel motor değil sunucu akışı kurulur).
+  bot?: boolean
+  bot_level?: number | null
 }
 export async function myActiveRooms(): Promise<ActiveRoom[]> {
   const data = await req<{ rooms: ActiveRoom[] }>('/me/active-rooms')

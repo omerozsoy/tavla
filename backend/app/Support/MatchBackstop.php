@@ -34,6 +34,14 @@ class MatchBackstop
      */
     public static function ensure(Room $room): int
     {
+        // BOT MAÇI (PvB): rating YALNIZ istemcinin reportRating'inden gelir (matchType='ai').
+        // Sunucu YEDEK satırı YAZMAZ -> insan sekmeyi yeniler/kapatırsa (bot maçı terk) HAKSIZ
+        // rating KAYBI oluşmaz. Bot maçı pratik amaçlıdır; yalnız gerçekten tamamlanıp raporlanan
+        // maç puana işler. (tick-bots odayı temizler ama buradan ceza satırı çıkmaz.)
+        if ($room->bot) {
+            return 0;
+        }
+
         $written = 0;
         $ranked = $room->mode !== 'friendly';
         $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0)

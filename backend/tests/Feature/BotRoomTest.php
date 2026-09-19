@@ -240,6 +240,60 @@ class BotRoomTest extends TestCase
         $this->assertNotContains($code, $codes);
     }
 
+    public function test_backstop_never_writes_rating_for_bot_room(): void
+    {
+        // Bot maçı terk/yenileme -> sunucu YEDEK satırı YAZMAMALI (haksız rating kaybı yok).
+        $u = \App\Models\User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan', 'email' => 'insan@example.com', 'password' => bcrypt('secret123'),
+        ]);
+        $u->forceFill(['rating' => 1500])->save();
+
+        $room = Room::create([
+            'code' => 'BOTZZ',
+            'p1_token' => 'human-tok', 'p1_name' => 'İnsan', 'p1_user_id' => $u->id,
+            'p2_token' => 'secret-bot', 'p2_name' => 'Seviye 10 · Neural AI',
+            'status' => 'playing', 'authoritative' => true, 'bot' => true, 'bot_level' => 10, 'target' => 1,
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 1], 'gameNo' => 2, 'done' => true,
+                'winner' => 'black', 'cube' => ['value' => 1, 'owner' => null, 'pending' => null], 'opened' => true, 'turns' => 0,
+            ],
+        ]);
+
+        $written = \App\Support\MatchBackstop::ensure($room->fresh());
+        $this->assertSame(0, $written); // bot odası -> hiçbir satır yazılmaz
+        $this->assertDatabaseMissing('match_results', ['room_code' => 'BOTZZ', 'user_id' => $u->id]);
+        $this->assertSame(1500, (int) $u->fresh()->rating); // rating DEĞİŞMEDİ
+    }
+
+    public function test_bot_room_appears_in_my_active_rooms_for_resume(): void
+    {
+        // Devam eden bot maçı "Maça Dön" banner'ında (myActiveRooms) görünmeli + bot bayrağı taşımalı.
+        $u = \App\Models\User::create([
+            'first_name' => 'İnsan', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'insan2', 'email' => 'insan2@example.com', 'password' => bcrypt('secret123'),
+        ]);
+        Room::create([
+            'code' => 'BOTYY',
+            'p1_token' => 'human-tok', 'p1_name' => 'İnsan', 'p1_user_id' => $u->id,
+            'p2_token' => 'secret-bot', 'p2_name' => 'Seviye 7 · Neural AI',
+            'status' => 'playing', 'authoritative' => true, 'bot' => true, 'bot_level' => 7, 'target' => 1,
+            'server_state' => Backgammon::initialState(),
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1, 'done' => false,
+                'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null], 'opened' => true, 'turns' => 1,
+            ],
+            'clock' => ['p1_seen' => microtime(true), 'segment' => 'p1'], // taze -> canlı say
+        ]);
+
+        \Laravel\Sanctum\Sanctum::actingAs($u);
+        $res = $this->getJson('/api/me/active-rooms')->assertOk();
+        $row = collect($res->json('rooms'))->firstWhere('code', 'BOTYY');
+        $this->assertNotNull($row);
+        $this->assertTrue((bool) $row['bot']);
+        $this->assertSame(7, (int) $row['bot_level']);
+    }
+
     public function test_botnudge_recovers_when_gnubg_returns(): void
     {
         config()->set('validator.url', 'http://validator.test');

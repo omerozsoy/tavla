@@ -669,7 +669,9 @@ class RoomController extends Controller
             return response()->json(['rooms' => []]);
         }
         $rooms = Room::where('status', 'playing')
-            ->where('bot', false) // BOT maçları "Maça Dön" banner'ında listelenmez
+            // BOT maçları DA banner'da görünür (yenileme/geri dönüş): devam edenler kalır, bitenler
+            // deadRoomReason (server_match.done) ile aşağıda düşer. Bot terkinde ceza YOK (MatchBackstop
+            // bot odalarını atlar) -> banner yalnız "kaldığın yerden devam" içindir.
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
@@ -720,6 +722,9 @@ class RoomController extends Controller
                 'opp_premium' => $premiumMap[$oppId] ?? false,
                 'target' => $r->target,
                 'score' => $score,
+                // SUNUCU-OTORİTER BOT: istemci rejoin'de yerel motoru DEĞİL sunucu akışını kursun.
+                'bot' => (bool) $r->bot,
+                'bot_level' => $r->bot_level !== null ? (int) $r->bot_level : null,
             ];
         })->filter(function ($m) {
             // Hedefe ulasilmis (mac bitmis) odalari listeleme -> "devam eden" degil
