@@ -13,10 +13,12 @@ export default function PublicProfile({
   id,
   onClose,
   onAddFriend,
+  onMessage,
 }: {
   id: number
   onClose: () => void
   onAddFriend?: () => void
+  onMessage?: () => void // baska bir oyuncuya mesaj gonder (arkadas olmasa da; istek olarak duser)
 }) {
   const { t } = useT()
   useEscape(onClose)
@@ -76,6 +78,11 @@ export default function PublicProfile({
                   >
                     <Icon name={friendSent ? 'check' : 'user-plus'} size={14} />{' '}
                     {friendSent ? t('online.friendSent') : t('online.addFriend')}
+                  </Button>
+                )}
+                {onMessage && (
+                  <Button variant="outline" className="pp-message" onClick={onMessage}>
+                    <Icon name="chat" size={14} /> {t('dm.message')}
                   </Button>
                 )}
               </div>

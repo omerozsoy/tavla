@@ -8081,9 +8081,10 @@ html.fs-active .account-bar {
   .app.lobby {
     grid-template-columns: 1fr;
     /* Mobilde bar yuksekligi farkli (48px) -> satiri icerige birak (auto). */
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     grid-template-areas:
       'bar'
+      'beta'
       'main';
   }
   .hamburger {
@@ -8757,9 +8758,10 @@ button.acct-row-logout:hover:not(:disabled) {
      klemplenip UZUN icerigi (kulupler/anasayfa) buyutemiyor -> footer viewport dibinde
      kalip icerigin ustune biniyordu. 'auto' = satir icerige gore buyur, footer daima
      altta. Kisa sayfada main'in min-height'i viewport'u doldurur (asagida). */
-  grid-template-rows: var(--header-h) auto;
+  grid-template-rows: var(--header-h) auto auto;
   grid-template-areas:
     'bar bar'
+    'beta beta'
     'menu main';
   align-items: start;
   column-gap: 22px;
@@ -8773,6 +8775,10 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .app.lobby > .account-bar {
   grid-area: bar;
+}
+/* BETA bandi: bar'in ALTINDA, tam genislik (iki kolonu kapsar). Kapatilinca (null) satir 0. */
+.app.lobby > .beta-banner {
+  grid-area: beta;
 }
 .app.lobby > .side-menu {
   grid-area: menu;
@@ -8917,6 +8923,7 @@ button.acct-row-logout:hover:not(:disabled) {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'bar'
+      'beta'
       'main';
     /* Mobilde bar ile icerik arasindaki 36px desktop boslugu (base .app.lobby
        row-gap) kompakt bar altinda "aciklanamayan bosluk" gibi duruyordu -> kucult. */
@@ -15675,6 +15682,19 @@ button.acct-row-logout:hover:not(:disabled) {
   width: 14px;
   height: 14px;
 }
+.pp-message {
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  gap: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-top: 8px;
+}
+.pp-message svg {
+  width: 14px;
+  height: 14px;
+}
 
 /* Kapali test sifre kapisi (GatePrompt) — tum ekrani kaplar, en ustte */
 .gate-overlay {
@@ -18527,6 +18547,91 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .messages-search-clear:hover {
   color: var(--ink);
+}
+/* Sohbetler / İstekler bölme sekmeleri */
+.messages-panes {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.messages-pane-tab {
+  position: relative;
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.messages-pane-tab:hover {
+  color: var(--ink);
+}
+.messages-pane-tab.active {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.messages-pane-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  margin-left: 6px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--color-error);
+  color: #fff;
+  font-size: 0.66rem;
+  line-height: 1;
+}
+/* Onay bekleyen gelen istek bandı (kabul / reddet) */
+.messages-request-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--accent) 8%, var(--card-bg));
+}
+.mrb-text {
+  flex: 1;
+  min-width: 140px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.mrb-actions {
+  display: inline-flex;
+  gap: 8px;
+  flex: none;
+}
+.mrb-btn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: filter 0.15s, background 0.15s;
+}
+.mrb-accept {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.mrb-accept:hover {
+  filter: brightness(1.08);
+}
+.mrb-decline:hover {
+  background: color-mix(in srgb, var(--color-error) 14%, transparent);
+  border-color: var(--color-error);
+  color: var(--color-error);
 }
 .messages-thread-scroll {
   flex: 1;

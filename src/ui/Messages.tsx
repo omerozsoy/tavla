@@ -8,6 +8,8 @@ import {
   sendMessage,
   sendTyping,
   deleteMessage,
+  acceptRequest,
+  declineRequest,
   ApiError,
   type ChatThread,
   type ChatMessage,
@@ -101,6 +103,8 @@ export default function Messages({
   const [emojiOpen, setEmojiOpen] = useState(false)
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
+  const [pane, setPane] = useState<'chats' | 'requests'>('chats') // sol liste: sohbetler / istekler
+  const [activeRequest, setActiveRequest] = useState(false) // aktif konusma benim onayimi bekleyen istek mi
   const listEndRef = useRef<HTMLDivElement>(null)
   const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -151,6 +155,7 @@ export default function Messages({
       setActiveUser(d.user)
       setMessages(mergePending(d.messages)) // in-flight iyimser mesajlari koru
       setPartnerTyping(!!d.typing) // karsi taraf yaziyor mu
+      setActiveRequest(!!d.request) // benim onayimi bekleyen istek mi (banner)
       onReadRef.current?.() // gelenler backend'de okundu -> rozet tazele
     } catch {
       /* yoksay */
@@ -166,6 +171,7 @@ export default function Messages({
   // Aktif konusma degisince yukle (onceki konusmanin "yaziyor" durumunu + bekleyenleri sifirla)
   useEffect(() => {
     setPartnerTyping(false)
+    setActiveRequest(false)
     pendingRef.current = [] // konusma degisti -> onceki sohbetin bekleyen iyimser mesajlari
     if (activeId != null && activeId !== NOTIF_ID) loadThread(activeId)
   }, [activeId, loadThread])
@@ -238,6 +244,37 @@ export default function Messages({
     }
   }
 
+  // Mesaj istegini kabul et: konusma normal gelen kutusuna gecer, sohbetler sekmesinde acik kalir.
+  async function doAccept() {
+    if (activeId == null || activeId === NOTIF_ID) return
+    try {
+      await acceptRequest(activeId)
+      setActiveRequest(false)
+      setPane('chats')
+      refreshThreads()
+    } catch (err) {
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.reqFail'))
+    }
+  }
+
+  // Mesaj istegini reddet: konusma listeden kalkar, karsi taraf tekrar yazamaz.
+  async function doDecline() {
+    if (activeId == null || activeId === NOTIF_ID) return
+    if (!window.confirm(t('dm.declineConfirm'))) return
+    try {
+      await declineRequest(activeId)
+      setActiveId(null)
+      refreshThreads()
+    } catch (err) {
+      toast.error(err instanceof ApiError && err.message ? err.message : t('dm.reqFail'))
+    }
+  }
+
+  // Sol liste iki bolme: normal sohbetler ve onay bekleyen istekler.
+  const requestThreads = threads.filter((th) => th.request)
+  const chatThreads = threads.filter((th) => !th.request)
+  const reqCount = requestThreads.length
+
   const showList = activeId == null // mobilde: liste mi konusma mi
 
   return (
@@ -272,28 +309,54 @@ export default function Messages({
                 </button>
               )}
             </div>
-            <div className="messages-thread-scroll">
+            {/* Sohbetler / İstekler bölmeleri (arkadaş olmayanların mesajı istek olarak düşer) */}
+            <div className="messages-panes" role="tablist">
               <button
                 type="button"
-                className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
-                onClick={() => setActiveId(NOTIF_ID)}
+                role="tab"
+                aria-selected={pane === 'chats'}
+                className={`messages-pane-tab ${pane === 'chats' ? 'active' : ''}`}
+                onClick={() => setPane('chats')}
               >
-                <span className="messages-notif-ava">
-                  <Icon name="bell" size={18} />
-                </span>
-                <span className="messages-thread-body">
-                  <span className="messages-thread-top">
-                    <span className="messages-thread-name">{t('notif.title')}</span>
-                  </span>
-                  <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
-                </span>
-                {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+                {t('dm.tabChats')}
               </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={pane === 'requests'}
+                className={`messages-pane-tab ${pane === 'requests' ? 'active' : ''}`}
+                onClick={() => setPane('requests')}
+              >
+                {t('dm.tabRequests')}
+                {reqCount > 0 && <span className="messages-pane-badge">{reqCount > 9 ? '9+' : reqCount}</span>}
+              </button>
+            </div>
+            <div className="messages-thread-scroll">
+              {pane === 'chats' && (
+                <button
+                  type="button"
+                  className={`messages-thread messages-thread-notif ${activeId === NOTIF_ID ? 'active' : ''}`}
+                  onClick={() => setActiveId(NOTIF_ID)}
+                >
+                  <span className="messages-notif-ava">
+                    <Icon name="bell" size={18} />
+                  </span>
+                  <span className="messages-thread-body">
+                    <span className="messages-thread-top">
+                      <span className="messages-thread-name">{t('notif.title')}</span>
+                    </span>
+                    <span className="messages-thread-last">{notifications[0]?.title ?? t('notif.empty')}</span>
+                  </span>
+                  {unreadNotif > 0 && <span className="messages-badge">{unreadNotif > 9 ? '9+' : unreadNotif}</span>}
+                </button>
+              )}
               {(() => {
+                const source = pane === 'requests' ? requestThreads : chatThreads
                 const q = search.trim().toLowerCase()
-                const list = q ? threads.filter((th) => th.user.name.toLowerCase().includes(q)) : threads
+                const list = q ? source.filter((th) => th.user.name.toLowerCase().includes(q)) : source
                 if (loadingThreads) return <div className="lb-empty">{t('dm.loading')}</div>
-                if (threads.length === 0) return <div className="lb-empty">{t('dm.empty')}</div>
+                if (pane === 'requests' && source.length === 0) return <div className="lb-empty">{t('dm.requestsEmpty')}</div>
+                if (pane === 'chats' && chatThreads.length === 0 && !q) return <div className="lb-empty">{t('dm.empty')}</div>
                 if (list.length === 0) return <div className="lb-empty">{t('dm.searchEmpty')}</div>
                 return list.map((th) => {
                   const online = !!th.user.online
@@ -411,6 +474,21 @@ export default function Messages({
                     </span>
                   )}
                 </div>
+
+                {/* Onay bekleyen gelen istek: kabul / reddet bandı */}
+                {activeRequest && (
+                  <div className="messages-request-banner">
+                    <span className="mrb-text">{t('dm.requestBanner')}</span>
+                    <span className="mrb-actions">
+                      <button type="button" className="mrb-btn mrb-accept" onClick={doAccept}>
+                        {t('dm.accept')}
+                      </button>
+                      <button type="button" className="mrb-btn mrb-decline" onClick={doDecline}>
+                        {t('dm.decline')}
+                      </button>
+                    </span>
+                  </div>
+                )}
 
                 <div className="messages-log" ref={logRef}>
                   {loadingThread ? (

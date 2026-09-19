@@ -339,6 +339,7 @@ import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
+import BetaBanner from './ui/BetaBanner'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
@@ -6143,6 +6144,8 @@ export default function App() {
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
   // Oyun ekraninda mi (cekilme butonu bunun icin)
+  // BETA duyuru bandi (account bar'in ALTINDA gosterilir; yalniz lobide, oyun ekraninda degil).
+  const betaBanner = <BetaBanner />
   const accountBar = (
     <div className="account-bar">
       {/* Sol: TavlaTV logosu (ana sayfaya doner). Sag: hesap kontrolleri. */}
@@ -7581,6 +7584,16 @@ export default function App() {
               ? () => handleAddFriend(homeProfileId)
               : undefined
           }
+          onMessage={
+            user && user.id !== homeProfileId
+              ? () => {
+                  const uid = homeProfileId
+                  setHomeProfileId(null)
+                  setMessagesFocusId(uid)
+                  setMessagesOpen(true)
+                }
+              : undefined
+          }
         />
       )}
       {memOpen && user && (
@@ -7615,6 +7628,7 @@ export default function App() {
         {mobileNav}
         <div className="app lobby">
           {accountBar}
+          {betaBanner}
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7665,6 +7679,7 @@ export default function App() {
         {mobileNav}
         <div className="app lobby">
           {accountBar}
+          {betaBanner}
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7727,6 +7742,7 @@ export default function App() {
         {mobileNav}
         <div className="app lobby">
           {accountBar}
+          {betaBanner}
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}
@@ -7942,6 +7958,7 @@ export default function App() {
         {mobileNav}
         <div className="app lobby">
           {accountBar}
+          {betaBanner}
           <SideMenu
             inGame={false}
             hasActiveGame={hasActiveGame}

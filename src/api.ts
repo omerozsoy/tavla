@@ -402,8 +402,12 @@ export interface MyMatch {
   id: number
   has_log?: boolean
   won: boolean
+  // Oyuncuların ad soyad'ı (tanımlıysa): kendim + rakip. Yoksa null -> yalnız takma ad gösterilir.
+  self_name?: string | null
+  self_full_name?: string | null
   opponent_rating: number
   opponent_name?: string | null
+  opponent_full_name?: string | null
   opponent_pr?: number | null
   rating_before: number
   rating_after: number
@@ -864,17 +868,28 @@ export interface ChatThread {
   user: ChatUser
   last: { body: string; mine: boolean; read?: boolean; created_at?: string | null } | null
   unread: number
+  request?: boolean // BENIM onayimi bekleyen gelen mesaj istegi (arkadas degiliz)
 }
 
-// Gelen kutusu: mesajlasilan arkadaslar + son mesaj + okunmamis sayisi
-export async function getThreads(): Promise<{ threads: ChatThread[] }> {
+// Gelen kutusu: mesajlasilan kisiler + son mesaj + okunmamis sayisi + istek bayragi.
+// requestCount: onayimi bekleyen gelen istek sayisi (İstekler sekmesi rozeti).
+export async function getThreads(): Promise<{ threads: ChatThread[]; requestCount?: number }> {
   return req('/messages')
 }
-// Bir arkadasla konusma (gelenler okundu isaretlenir). typing: karsi taraf bana yaziyor mu.
+// Bir kisiyle konusma (gelenler okundu isaretlenir). typing: karsi taraf bana yaziyor mu.
+// request: bu konusma benim onayimi bekleyen bir istek mi (banner icin).
 export async function getThread(
   userId: number,
-): Promise<{ user: ChatUser; messages: ChatMessage[]; typing?: boolean }> {
+): Promise<{ user: ChatUser; messages: ChatMessage[]; typing?: boolean; request?: boolean }> {
   return req(`/messages/${userId}`)
+}
+// Gelen mesaj istegini kabul et (konusma normal gelen kutusuna gecer)
+export async function acceptRequest(userId: number): Promise<void> {
+  await req(`/messages/${userId}/accept`, { method: 'POST' })
+}
+// Gelen mesaj istegini reddet (konusma kalkar; karsi taraf tekrar yazamaz)
+export async function declineRequest(userId: number): Promise<void> {
+  await req(`/messages/${userId}/decline`, { method: 'POST' })
 }
 // "Yaziyor…" nabzi (yazarken periyodik gonderilir; fire-and-forget)
 export async function sendTyping(userId: number): Promise<void> {
