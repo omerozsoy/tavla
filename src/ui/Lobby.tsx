@@ -15,6 +15,9 @@ interface Props {
   room: RoomInfo | null
   busy: boolean
   error: string
+  /** Hedefli davetle acilan bekleme odasinda rakip adi (doluysa "kod paylas" yerine
+   *  "{ad} yaniti bekleniyor" + "Oyunu Iptal Et" gosterilir). */
+  inviteWaitName?: string | null
   myAvatar?: string | null
   onCreate: () => void
   onJoin: (code: string) => void
@@ -30,6 +33,7 @@ export default function Lobby({
   room,
   busy,
   error,
+  inviteWaitName,
   myAvatar,
   onCreate,
   onJoin,
@@ -119,25 +123,40 @@ export default function Lobby({
     )
   }
 
-  // Odaya girildi, rakip bekleniyor
+  // Odaya girildi, rakip bekleniyor. Hedefli davet (inviteWaitName) ise davet ZATEN o kisiye
+  // gitti -> kod paylasma yok; "{ad} yaniti bekleniyor" + "Oyunu Iptal Et". Aksi halde (genel
+  // oda) klasik "kodu arkadasina gonder" + kopyala + "Odadan Cik".
   if (room && room.status === 'waiting') {
     return (
       <div className={wrapCls}>
         <div className="register-card">
           <h2>{t('mp.waiting')}</h2>
-          <p className="register-sub">{t('mp.shareCode')}</p>
-          <div className="room-code">{room.code}</div>
-          <Button
-            variant="outline"
-            onClick={() => navigator.clipboard?.writeText(room.code).catch(() => {})}
-          >
-            {t('mp.copy')}
-          </Button>
-          <div className="register-actions">
-            <Button variant="outline" onClick={onLeave}>
-              {t('mp.leave')}
-            </Button>
-          </div>
+          {inviteWaitName ? (
+            <>
+              <p className="register-sub">{t('mp.waitingFor', { name: inviteWaitName })}</p>
+              <div className="register-actions">
+                <Button variant="outline" onClick={onLeave}>
+                  {t('mp.cancelGame')}
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="register-sub">{t('mp.shareCode')}</p>
+              <div className="room-code">{room.code}</div>
+              <Button
+                variant="outline"
+                onClick={() => navigator.clipboard?.writeText(room.code).catch(() => {})}
+              >
+                {t('mp.copy')}
+              </Button>
+              <div className="register-actions">
+                <Button variant="outline" onClick={onLeave}>
+                  {t('mp.leave')}
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     )
