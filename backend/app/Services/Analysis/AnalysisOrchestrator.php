@@ -113,11 +113,19 @@ class AnalysisOrchestrator
                 $loss += (float) $played['loss'];
                 $decisions++;
             }
+            $lossVal = (float) $played['loss'];
             $per[] = [
                 'move' => $played['move'] ?? null,
-                'loss' => round((float) $played['loss'], 4),
+                'loss' => round($lossVal, 4),
                 'counts' => $counts,
                 'logIndex' => $logIndex, // Hata Günlüğü: gnubg loss'unu orijinal log girdisine eşler
+                // XG karşılaştırma tablosu (tavla:gnubg-pr) için ek sütunlar:
+                'dice' => array_values($e['dice']),
+                'bestMove' => $cand[0]['move'] ?? null,
+                'bestEquity' => round((float) $bestEq, 4),
+                'playedEquity' => round((float) $bestEq - $lossVal, 4),
+                'legal' => $legal,
+                'forced' => $legal <= 1,
             ];
         }
 
