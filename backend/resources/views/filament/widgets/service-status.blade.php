@@ -1,7 +1,7 @@
 <x-filament-widgets::widget>
     <x-filament::section>
         <x-slot name="heading">Servis Durumu</x-slot>
-        <x-slot name="description">Çalışan tüm servisler (validator · TavlaTV · veritabanı · queue) + otorite/PR/luck modu</x-slot>
+        <x-slot name="description">Çalışan tüm servisler (validator · TavlaTV · bot · veritabanı · queue · cron · disk) + otorite/PR/luck modu</x-slot>
 
         @php($s = $this->status())
 

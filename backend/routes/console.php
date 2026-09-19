@@ -46,6 +46,15 @@ Schedule::command('matches:reap-stale')
     ->name('reap-stale-rooms')
     ->withoutOverlapping();
 
+// BOT MAÇI SAATİNİ İLERLET: bot maçında rakip (bot) HİÇ poll etmez -> tek insan sekmeyi arka
+// plana alınca saati soracak kimse kalmaz ve süre bitse de timeout ilan edilmez (donuk "playing").
+// Dakikada bir oynanan bot odalarını tick'le -> süre/AFK/terk bittiyse sunucu kendiliğinden
+// finalize etsin (insan geri dönmese/sekmeyi kapatsa bile). Süre bitmediğinde idempotent (maliyetsiz).
+Schedule::command('matches:tick-bots')
+    ->everyMinute()
+    ->name('tick-bot-clocks')
+    ->withoutOverlapping();
+
 // ÇALIŞAN TÜM SERVİSLERİ izle: dakikada bir kontrol; düşerse OTOMATİK yeniden başlat, kalıcıysa
 // admin e-posta + WhatsApp (CallMeBot, ayarlıysa) uyarısı. Validator + gnubg + queue + veritabanı.
 // (validator:watch komutu --test için duruyor ama zamanlama buraya birleşti -> çift-uyarı yok.)
@@ -53,3 +62,11 @@ Schedule::command('services:watch')
     ->everyMinute()
     ->name('services-watch')
     ->withoutOverlapping();
+
+// CRON NABZI (izleyiciyi izler): schedule:run GERÇEKTEN çalışıyor mu? Her dakika cache'e zaman
+// damgası yaz. Admin "Servis Durumu" panelindeki "Zamanlayıcı (cron)" lambası bunu okur; bayatsa
+// (>~2.5dk) cron DURMUŞ demektir -> services:watch dahil TÜM izleme/otomatik-restart/alarm sessizce
+// ölmüş olur. Bu tek satır o kör noktayı görünür kılar (bugünkü gnubg çökmesinde alarm gelmemesi gibi).
+Schedule::call(function () {
+    \Illuminate\Support\Facades\Cache::put('ops:cron:heartbeat', time(), now()->addHours(6));
+})->everyMinute()->name('ops-cron-heartbeat');
