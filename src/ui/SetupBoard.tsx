@@ -265,41 +265,29 @@ export default function SetupBoard({
           {/* orta bar */}
           <rect x={PAD + halfW} y={PAD} width={GAP} height={H - 2 * PAD} rx="3" fill={checker} opacity="0.55" />
           {tris}
-          {/* Yılbaşı: tek merkezi yazı yerine board'un HER tarafına DÖŞENMIŞ küçük 'Mutlu Yıllar'
-              (canlı boarddaki .board-watermark background-repeat:space karşılığı; taşların/zarın
-              ALTINDA -> {discs}/{dice} sonra çizilir). Oran korunur, düşük opaklık. */}
+          {/* Yılbaşı: 'Mutlu Yıllar' yalnızca TavlaTV logolarının bulunduğu YERLERDE — her
+              yarının (sol/sağ) MERKEZİNE tek yazı (canlı boarddaki .wm-cell background karşılığı;
+              taşların/zarın ALTINDA -> {discs}/{dice} sonra çizilir). Oran korunur. */}
           {yilbasi &&
             (() => {
-              const iw = W * 0.24 // küçük tek yazı
+              const iw = halfW * 0.86 // yarıya sığan küçük yazı
               const ih = (iw * 361) / 1743
-              const tileW = iw * 1.18 // yatay aralık
-              const tileH = ih * 2.6 // dikey aralık (görsel kısa -> satırlar seyrelsin)
-              const ix = PAD
-              const iy = PAD
-              const iwIn = W - 2 * PAD
-              const ihIn = H - 2 * PAD
+              const cy = H / 2
+              const cx = (half: 'L' | 'R') => halfX(half) + halfW / 2 // yarı merkezi
               return (
                 <>
-                  <defs>
-                    <pattern
-                      id="xmas-wm"
-                      patternUnits="userSpaceOnUse"
-                      x={ix}
-                      y={iy}
-                      width={tileW}
-                      height={tileH}
-                    >
-                      <image
-                        href={xmasScript}
-                        x={(tileW - iw) / 2}
-                        y={(tileH - ih) / 2}
-                        width={iw}
-                        height={ih}
-                        preserveAspectRatio="xMidYMid meet"
-                      />
-                    </pattern>
-                  </defs>
-                  <rect x={ix} y={iy} width={iwIn} height={ihIn} fill="url(#xmas-wm)" opacity="0.55" />
+                  {(['L', 'R'] as const).map((h) => (
+                    <image
+                      key={h}
+                      href={xmasScript}
+                      x={cx(h) - iw / 2}
+                      y={cy - ih / 2}
+                      width={iw}
+                      height={ih}
+                      opacity="0.85"
+                      preserveAspectRatio="xMidYMid meet"
+                    />
+                  ))}
                 </>
               )
             })()}
