@@ -1477,6 +1477,35 @@ class AuthController extends Controller
     }
 
     /**
+     * Bir maçın KANONİK .mat dosyası (Maç Analizleri "Dışa aktar"). match_results.log ->
+     * matText() ile (gnubg review'in yediği AYNI kaynak) üretilir; sunucu tek-otorite.
+     * Sahiplik kontrolü. Log yoksa 404, tutarsız kayıt (sonuçsuz ara oyun) 422 -> istemci
+     * kullanıcıyı bozuk dosyayla baş başa bırakmaz.
+     */
+    public function matchMat(Request $request, \App\Models\MatchResult $match)
+    {
+        if ($match->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'Yetkisiz.'], 403);
+        }
+        if (empty($match->log)) {
+            return response()->json(['message' => 'Kayıt bulunamadı'], 404);
+        }
+        try {
+            $mat = $match->matText();
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => 'Kayıt tutarsız: '.$e->getMessage()], 422);
+        }
+        if (trim((string) $mat) === '') {
+            return response()->json(['message' => 'Kayıt eksik'], 404);
+        }
+
+        return response()->json([
+            'mat' => $mat,
+            'filename' => $match->matFilename(),
+        ]);
+    }
+
+    /**
      * HAKEM=gnubg: bir maçın hamle-hamle analizini GNUBG ile üretir (MatchReport/MatReview'in
      * yediği LogEntry[] biçiminde). Sunucu maçın .mat'ini (match_results.log -> matText) kurar,
      * gnubg reviewMatch ile per-karar loss/best/equity çıkarır. Böylece "Analiz" ekranları

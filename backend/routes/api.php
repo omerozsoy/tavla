@@ -115,6 +115,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
     Route::get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
+    Route::middleware('throttle:30,1,match-mat')->get('/me/matches/{match}/mat', [AuthController::class, 'matchMat']); // kanonik .mat (Dışa aktar)
     // HAKEM=gnubg: maçın hamle-hamle analizini gnubg ile üret (MatchReport gnubg log'u). Ağır (gnubg).
     Route::middleware('throttle:30,1,gnubg-review')->get('/me/matches/{match}/gnubg-review', [AuthController::class, 'matchGnubgReview']);
     Route::get('/me/active-rooms', [RoomController::class, 'myActiveRooms']); // devam eden online maclar

@@ -2266,6 +2266,12 @@ export async function fetchGameLogMat(uid: string): Promise<{ mat: string; filen
   return req<{ mat: string; filename: string }>(`/game-logs/${encodeURIComponent(uid)}/mat`)
 }
 
+// Maç Analizleri "Dışa aktar": bir maçın KANONİK .mat'ini DB maç id'siyle (sahiplik kontrollü)
+// çeker. match_results.log -> matText() (gnubg review ile aynı kaynak) -> her maç için tek dosya.
+export async function fetchMatchMat(matchId: number): Promise<{ mat: string; filename: string }> {
+  return req<{ mat: string; filename: string }>(`/me/matches/${matchId}/mat`)
+}
+
 // Maç kaydını gönderir (en iyi çaba). keepalive=true -> sayfa kapanırken/gizlenirken
 // tarayıcı isteği unload sonrası bile teslim eder. Başarısızsa idempotent kuyruğa alınır.
 export async function submitGameLog(
