@@ -19,3 +19,15 @@
   height: auto;
   border-radius: var(--radius-lg);
 }
+/* CLS iskeleti: reklam fetch edilene kadar SABIT reklam oranıyla (masaustu 1120x180)
+   yer tutar -> reklam gelince ayni alani doldurur, altindaki paneller kaymaz. */
+.ad-skeleton {
+  aspect-ratio: 1120 / 180;
+  background: color-mix(in srgb, var(--text, #000) 5%, transparent);
+  border-radius: var(--radius-lg);
+}
+@media (max-width: 720px) {
+  .ad-skeleton {
+    aspect-ratio: 720 / 300; /* mobil reklam 720x300 */
+  }
+}
