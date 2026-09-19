@@ -104,4 +104,45 @@ class BotMoveServiceTest extends TestCase
         $this->expectException(BotUnavailableException::class);
         $this->service()->chooseSteps($this->state(), ['target' => 1], 10);
     }
+
+    /**
+     * REGRESYON: bot BARDA iken gnubg'ye gönderilen pozisyon `bar`'ı İÇERMELİ. Eksikse gnubg
+     * bardaki taşı görmez -> bar-girişsiz adaylar önerir -> yasal (bar-girişli) hamlelere eşleşmez
+     * -> legal[0] (en kötü) fallback'i devreye girer ("Seviye 10 bot barda saçmalıyor" kök nedeni).
+     */
+    public function test_position_sent_to_gnubg_includes_bar(): void
+    {
+        // Siyah barda (die 5 -> index 4), 14-point (index 10) taşları hedef.
+        $entryHit = [['from' => 'bar', 'to' => 4, 'die' => 5], ['from' => 10, 'to' => 11, 'die' => 1]];
+        $entryDeep = [['from' => 'bar', 'to' => 0, 'die' => 1], ['from' => 10, 'to' => 15, 'die' => 5]];
+        Http::fake([
+            'validator.test/legal-moves' => Http::response(['moves' => [
+                ['steps' => $entryHit, 'resultKey' => 'H'],
+                ['steps' => $entryDeep, 'resultKey' => 'D'],
+            ]]),
+            'gnubg.test/analyze' => Http::response(['result' => ['hint' => [
+                ['move' => 'bar/20 14/13', 'steps' => $this->gnubgSteps($entryHit)],
+                ['move' => 'bar/24 14/9', 'steps' => $this->gnubgSteps($entryDeep)],
+            ]]]),
+        ]);
+
+        $s = Backgammon::initialState();
+        $s['turn'] = 'black';
+        $s['dice'] = [5, 1];
+        $s['diceUsed'] = [false, false];
+        $s['bar']['black'] = 1;
+
+        $chosen = $this->service()->chooseSteps($s, ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 10);
+        // gnubg #1 (bar/20 14/13) doğru-die'li yasal hamleyle eşleşmeli (bar gönderildiği için).
+        $this->assertSame($entryHit, $chosen);
+
+        Http::assertSent(function (\Illuminate\Http\Client\Request $req) {
+            if (! str_contains($req->url(), 'gnubg.test/analyze')) {
+                return false;
+            }
+            $body = $req->data();
+
+            return isset($body['bar']) && (int) ($body['bar']['black'] ?? 0) === 1;
+        });
+    }
 }

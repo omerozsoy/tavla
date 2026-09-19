@@ -94,8 +94,9 @@ class FriendController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Isteği alan kullaniciyi bildirimle uyar (can + toast frontend'de).
-        Notification::notify($target->id, "{$meName} sana arkadaşlık isteği gönderdi", null, 'user-plus');
+        // Isteği alan kullaniciyi bildirimle uyar (can + toast frontend'de). action+actor: Bildirimler'de
+        // dogrudan "Kabul Et" butonu cikar (accept ucu $me->id ile cagrilir).
+        Notification::notify($target->id, "{$meName} sana arkadaşlık isteği gönderdi", null, 'user-plus', 'friend_request', $me->id);
 
         return response()->json(['status' => 'pending']);
     }

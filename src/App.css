@@ -17160,6 +17160,26 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.82rem;
   line-height: 1.4;
 }
+/* Bildirimdeki "Kabul Et" (arkadaslik istegi): kompakt kiremit-token buton, sol hizali. */
+.notif-accept {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.notif-accept:hover {
+  filter: brightness(1.08);
+}
 .notif-time {
   flex: none;
   color: var(--faint, var(--muted));

@@ -782,6 +782,8 @@ export interface AppNotification {
   title: string
   body?: string | null
   icon?: string | null
+  action?: string | null // eyleme donuk bildirim (or. 'friend_request' -> "Kabul Et" butonu)
+  actor_id?: number | null // eylemin ilgili oldugu kullanici (or. istegi gonderen)
   read: boolean
   created_at?: string | null
 }
