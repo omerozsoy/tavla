@@ -30,15 +30,15 @@ class ServiceStatus extends Widget
     public function status(): array
     {
         $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
-            $validator = $this->checkValidator();
+            $vres = $this->checkValidators();
             $gnubg = $this->checkGnubg();
 
             return [
                 'services' => [
-                    $validator,
+                    ...$vres['rows'], // birincil + yedek validator(lar) AYRI lamba
                     $gnubg,
-                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (gnubg + validator).
-                    $this->checkBot($validator, $gnubg),
+                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (gnubg + EN AZ BİR validator).
+                    $this->checkBot($vres['up'], $gnubg),
                     $this->checkDatabase(),
                     $this->checkQueue(),
                     // İzleyiciyi izler: cron durursa TÜM izleme/alarm ölür -> bunu görünür kıl.
@@ -58,27 +58,38 @@ class ServiceStatus extends Widget
         ];
     }
 
-    /** Node validator (sunucu-otoriter maç hakemi): gerçek bir doğrulama isteğiyle canlılık. */
-    private function checkValidator(): array
+    /**
+     * Node validator(lar) — birincil + yedek(ler) AYRI lamba. Her tabanı DOĞRUDAN yoklar (failover'sız)
+     * ki panelde "birincil düştü, yedek ayakta" durumu NET görünsün. Dönüş: ['rows'=>satırlar, 'up'=>en az biri].
+     */
+    private function checkValidators(): array
     {
         $validator = app(MoveValidatorService::class);
-        if (! $validator->isConfigured()) {
-            return $this->svc('validator', 'Sunucu Hakem (Validator)', false, null, 'Yapılandırılmamış', true);
+        $bases = $validator->bases();
+        if (count($bases) === 0) {
+            return [
+                'rows' => [$this->svc('validator', 'Sunucu Hakem (Validator)', false, null, 'Yapılandırılmamış', true)],
+                'up' => false,
+            ];
         }
-        try {
-            $s = Backgammon::initialState();
-            $s['dice'] = [3, 1];
-            $s['diceUsed'] = [false, false];
-            $r = $validator->validate($s, [
-                ['from' => 5, 'to' => 2, 'die' => 3],
-                ['from' => 2, 'to' => 1, 'die' => 1],
-            ]);
-            $up = (bool) ($r['valid'] ?? false) && empty($r['unreachable']);
+        $s = Backgammon::initialState();
+        $s['dice'] = [3, 1];
+        $s['diceUsed'] = [false, false];
+        $steps = [['from' => 5, 'to' => 2, 'die' => 3], ['from' => 2, 'to' => 1, 'die' => 1]];
 
-            return $this->svc('validator', 'Sunucu Hakem (Validator)', true, $up, 'Hamle doğrulama servisi', true);
-        } catch (\Throwable $e) {
-            return $this->svc('validator', 'Sunucu Hakem (Validator)', true, false, 'İstisna: '.$e->getMessage(), true);
+        $rows = [];
+        $anyUp = false;
+        foreach ($bases as $i => $base) {
+            $up = $validator->probeBase($base, $s, $steps);
+            $anyUp = $anyUp || $up;
+            $label = $i === 0
+                ? 'Sunucu Hakem (Validator) — Birincil'
+                : 'Sunucu Hakem (Validator) — Yedek #'.$i;
+            // Restart butonu yalnız BİRİNCİL satırda (restartValidator() zaten TÜM tabanlara /restart yollar).
+            $rows[] = $this->svc('validator'.($i === 0 ? '' : '-'.$i), $label, true, $up, $base, $i === 0);
         }
+
+        return ['rows' => $rows, 'up' => $anyUp];
     }
 
     /** gnubg analiz servisi (PR + native luck kaynağı): /health. */
@@ -175,9 +186,8 @@ class ServiceStatus extends Widget
     }
 
     /** Bot (PvB) hazır mı: sunucu-otoriter bot maçı gnubg + validator gerektirir (ikisi de UP). */
-    private function checkBot(array $validator, array $gnubg): array
+    private function checkBot(bool $vUp, array $gnubg): array
     {
-        $vUp = ($validator['up'] ?? null) === true;
         $gUp = ($gnubg['up'] ?? null) === true;
         $up = $vUp && $gUp;
         $need = [];
