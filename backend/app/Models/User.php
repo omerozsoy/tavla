@@ -151,4 +151,11 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     {
         return $this->hasMany(LuckyWheelSpin::class, 'user_id');
     }
+
+    // ---- Maç geçmişi (admin detay sekmesi) ----
+
+    public function matchResults(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MatchResult::class, 'user_id');
+    }
 }

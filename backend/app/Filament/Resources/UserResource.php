@@ -7,6 +7,11 @@ use App\Http\Controllers\PanelController;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists\Components\ImageEntry;
+use Filament\Infolists\Components\Tabs as ITabs;
+use Filament\Infolists\Components\TextEntry;
+use Filament\Infolists\Components\ViewEntry;
+use Filament\Infolists\Infolist;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -171,7 +176,9 @@ class UserResource extends Resource
                         blank: fn (Builder $q) => $q,
                     ),
             ])
+            ->recordUrl(fn ($record) => Pages\ViewUser::getUrl([$record]))
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\Action::make('verifyEmail')
                     ->label(fn ($record) => $record->email_verified_at ? 'Doğrulamayı Kaldır' : 'E-postayı Doğrula')
@@ -197,11 +204,116 @@ class UserResource extends Resource
             ]);
     }
 
+    // Kullanıcı DETAY görünümü: her şey sekme sekme (Bilgiler / Üyelik / Boardlar / Avatarlar / Maçlar).
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist->schema([
+            ITabs::make('Detay')->columnSpanFull()->persistTabInQueryString()->tabs([
+                ITabs\Tab::make('Bilgiler')->icon('heroicon-o-identification')->schema([
+                    TextEntry::make('id')->label('#'),
+                    TextEntry::make('nickname')->label('Takma ad'),
+                    TextEntry::make('email')->label('E-posta')->copyable(),
+                    TextEntry::make('full_name')->label('Ad Soyad')
+                        ->state(fn (User $r) => trim(($r->first_name ?? '').' '.($r->last_name ?? '')) ?: '—'),
+                    TextEntry::make('country')->label('Ülke')->placeholder('—'),
+                    TextEntry::make('province')->label('İl')->placeholder('—'),
+                    TextEntry::make('rating')->label('Puan')->badge()->color('warning')
+                        ->formatStateUsing(fn ($state) => (int) $state.'  ·  '.PanelController::levelLabel((int) ($state ?: 1500))),
+                    TextEntry::make('coins')->label('Coin')
+                        ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
+                    TextEntry::make('record')->label('Galibiyet / Mağlubiyet / Oynanan')
+                        ->state(fn (User $r) => ($r->wins ?? 0).' / '.($r->losses ?? 0).' / '.($r->games_played ?? 0)),
+                    TextEntry::make('total_wxp')->label('Toplam WXP')->placeholder('—')
+                        ->formatStateUsing(fn ($state) => $state !== null ? number_format((int) $state, 0, ',', '.') : '—'),
+                    TextEntry::make('email_verified_at')->label('E-posta doğrulama')->dateTime('d.m.Y H:i')
+                        ->placeholder('Doğrulanmadı')->badge()
+                        ->color(fn ($state) => $state ? 'success' : 'danger'),
+                    TextEntry::make('is_admin')->label('Yönetici')->badge()
+                        ->formatStateUsing(fn ($state) => $state ? 'Evet' : 'Hayır')
+                        ->color(fn ($state) => $state ? 'success' : 'gray'),
+                    TextEntry::make('banned_at')->label('Yasak')->dateTime('d.m.Y H:i')
+                        ->placeholder('Aktif (yasaksız)')->badge()
+                        ->color(fn ($state) => $state ? 'danger' : 'success'),
+                    TextEntry::make('presence_status')->label('Durum')->placeholder('—'),
+                    TextEntry::make('created_at')->label('Kayıt')->dateTime('d.m.Y H:i'),
+                    TextEntry::make('last_login_at')->label('Son giriş')->dateTime('d.m.Y H:i')->placeholder('—'),
+                ])->columns(3),
+
+                ITabs\Tab::make('Üyelik')->icon('heroicon-o-star')->schema([
+                    TextEntry::make('plan_active')->label('Aktif plan')->badge()
+                        ->formatStateUsing(fn ($state) => $state === 'free' ? 'Ücretsiz' : 'Premium')
+                        ->color(fn ($state) => $state === 'free' ? 'gray' : 'success'),
+                    TextEntry::make('plan')->label('Plan (kayıtlı)')->placeholder('free'),
+                    TextEntry::make('plan_since')->label('Başlangıç')->dateTime('d.m.Y H:i')->placeholder('—'),
+                    TextEntry::make('plan_until')->label('Bitiş')->dateTime('d.m.Y H:i')->placeholder('—')
+                        ->badge()->color(fn (User $r) => $r->plan_active === 'free' ? 'gray' : 'success'),
+                    TextEntry::make('coins')->label('Coin bakiyesi')
+                        ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
+                ])->columns(3),
+
+                ITabs\Tab::make('Boardlar')->icon('heroicon-o-squares-2x2')
+                    ->badge(fn (User $r) => count(self::ownedBoards($r)) ?: null)
+                    ->schema([
+                        TextEntry::make('boards')->hiddenLabel()
+                            ->state(fn (User $r) => self::ownedBoards($r))
+                            ->badge()->color('info')
+                            ->placeholder('Sahip olduğu board yok.'),
+                    ]),
+
+                ITabs\Tab::make('Avatarlar')->icon('heroicon-o-user-circle')->schema([
+                    ImageEntry::make('avatar')->label('Avatar')->circular()
+                        ->height(96)->placeholder('Avatar yok'),
+                    TextEntry::make('avatar_frame')->label('Seçili çerçeve')->placeholder('Yok')->badge()->color('warning'),
+                    TextEntry::make('checker')->label('Seçili pul')->placeholder('Varsayılan')->badge()->color('warning'),
+                    TextEntry::make('frames')->label('Sahip olunan çerçeveler')
+                        ->state(fn (User $r) => self::ownedFrames($r))
+                        ->badge()->color('info')->placeholder('Çerçeve yok.'),
+                    TextEntry::make('checkers')->label('Sahip olunan pullar')
+                        ->state(fn (User $r) => self::ownedCheckers($r))
+                        ->badge()->color('info')->placeholder('Ek pul yok.'),
+                ])->columns(2),
+
+                ITabs\Tab::make('Maçlar')->icon('heroicon-o-trophy')
+                    ->badge(fn (User $r) => $r->matchResults()->count() ?: null)
+                    ->schema([
+                        ViewEntry::make('matchResults')->hiddenLabel()
+                            ->state(fn (User $r) => $r->matchResults()->latest('id')->limit(100)->get())
+                            ->view('filament.user.matches'),
+                    ]),
+            ]),
+        ]);
+    }
+
+    /** unlocks'tan sahip olunan board id'leri (önek soyulmuş). */
+    public static function ownedBoards(User $u): array
+    {
+        return collect($u->unlocks ?? [])
+            ->filter(fn ($x) => is_string($x) && str_starts_with($x, 'theme.'))
+            ->map(fn ($x) => substr($x, 6))->values()->all();
+    }
+
+    /** unlocks'tan sahip olunan çerçeve (frame) motion id'leri. */
+    public static function ownedFrames(User $u): array
+    {
+        return collect($u->unlocks ?? [])
+            ->filter(fn ($x) => is_string($x) && str_starts_with($x, 'frame.'))
+            ->map(fn ($x) => substr($x, 6))->values()->all();
+    }
+
+    /** unlocks'tan sahip olunan pul (checker) id'leri. */
+    public static function ownedCheckers(User $u): array
+    {
+        return collect($u->unlocks ?? [])
+            ->filter(fn ($x) => is_string($x) && str_starts_with($x, 'checker.'))
+            ->map(fn ($x) => substr($x, 8))->values()->all();
+    }
+
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListUsers::route('/'),
             'create' => Pages\CreateUser::route('/create'),
+            'view' => Pages\ViewUser::route('/{record}'),
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
