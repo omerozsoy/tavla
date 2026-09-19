@@ -160,6 +160,10 @@ export default function MatchReport({
   }, [cur, candIdx])
   // Oynanan hamlenin aday listesindeki yeri (-1: top listede yok -> ayri "Senin hamlen" satiri)
   const playedIdx = cur?.cands?.findIndex((c) => c.notation === cur.notation) ?? -1
+  // Gosterilen hamle BENIM mi? RAKIP hamlesinde (veya izleyici/bot-vs-bot) "Sizin hamleniz" YANLIS
+  // olur -> notr "Oynanan Hamle" yazilir (kullanici: "rakip analizinde Sizin hamleniz degil, Oynanan").
+  const playedByMe = !!effHuman && cur?.player === effHuman
+  const playedLabel = playedByMe ? t('rep.yourMove') : t('mrv.playedMove')
 
   // Tam-tahta gösterimi (MatReview ile aynı sistem: Board + kaynak→hedef okları + hayalet pullar).
   // Tahta yönü/pul rengi kullanıcı ayarından; oklar gerçek DOM konumlarını ölçer (tema-bağımsız).
@@ -457,7 +461,7 @@ export default function MatchReport({
                     {/* Tahtada su an hangi hamle gosteriliyor: senin hamlen mi, bir aday mi */}
                     <div className={`an-view-label ${candIdx < 0 || candIdx === playedIdx ? 'you' : ''}`}>
                       {candIdx < 0 || candIdx === playedIdx
-                        ? t('rep.yourMove')
+                        ? playedLabel
                         : `#${candIdx + 1} · ${cur.cands?.[candIdx]?.notation ?? ''}`}
                     </div>
                     {winPct(cur.probs) != null && (
@@ -492,7 +496,7 @@ export default function MatchReport({
                                 </span>
                               )}
                               {isPlayed && (
-                                <span className="an-you-tag">{t('rep.yourMove')}</span>
+                                <span className="an-you-tag">{playedLabel}</span>
                               )}
                             </span>
                           </button>
@@ -510,7 +514,7 @@ export default function MatchReport({
                             {cur.loss >= 0.005 ? `-${cur.loss.toFixed(3)}` : ''}
                           </span>
                           <span className="an-tags">
-                            <span className="an-you-tag">{t('rep.yourMove')}</span>
+                            <span className="an-you-tag">{playedLabel}</span>
                           </span>
                         </button>
                       )}

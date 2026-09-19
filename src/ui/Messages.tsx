@@ -37,6 +37,8 @@ interface Props {
   onNotifRead?: () => void // Bildirimler acilinca hepsini okundu isaretle
   onNotifDelete?: (id: number) => void
   onNotifDeleteAll?: () => void
+  // Eyleme donuk bildirim: arkadaslik istegi -> "Kabul Et" butonu (actorId=istegi gonderen).
+  onAcceptFriend?: (actorId: number, notifId: number) => void
   // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
   onTab?: (t: SocialTab) => void
   // Yonetici: her mesajin yaninda "Sil" butonu gosterilir (backend de is_admin denetler).
@@ -47,6 +49,7 @@ interface Props {
 const NOTIF_ID = -1
 const NOTIF_ICONS: Record<string, IconName> = {
   bell: 'bell', crown: 'crown', medal: 'medal', star: 'star', trophy: 'trophy', coin: 'coin', gift: 'gift',
+  'user-plus': 'user-plus', users: 'users',
 }
 function timeAgo(iso: string | null | undefined, t: (k: string, p?: Record<string, string | number>) => string): string {
   if (!iso) return ''
@@ -86,6 +89,7 @@ export default function Messages({
   onNotifRead,
   onNotifDelete,
   onNotifDeleteAll,
+  onAcceptFriend,
   onTab,
   isAdmin = false,
 }: Props) {
@@ -430,6 +434,15 @@ export default function Messages({
                           <span className="notif-txt">
                             <span className="notif-t">{n.title}</span>
                             {n.body && <span className="notif-b">{n.body}</span>}
+                            {n.action === 'friend_request' && n.actor_id != null && onAcceptFriend && (
+                              <button
+                                type="button"
+                                className="notif-accept"
+                                onClick={() => onAcceptFriend(n.actor_id!, n.id)}
+                              >
+                                <Icon name="user-plus" size={13} /> {t('friends.accept')}
+                              </button>
+                            )}
                           </span>
                           <span className="notif-time">{timeAgo(n.created_at, t)}</span>
                           {onNotifDelete && (

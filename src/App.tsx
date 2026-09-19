@@ -86,6 +86,7 @@ import {
   inviteFriend,
   cancelInvite,
   requestFriendById,
+  acceptFriend,
   respondInvite,
   type GameInvite as GameInviteT,
   type AppNotification,
@@ -6371,6 +6372,19 @@ export default function App() {
     setUnreadNotif(0)
     deleteNotifications().catch(() => {})
   }
+  // Bildirimdeki "Kabul Et" (arkadaslik istegi): istegi gonderenle (actorId) arkadas ol, ardindan
+  // bildirimi kutudan kaldir (isini yapti) + toast. Idempotent: zaten kabul edilmisse accept no-op.
+  async function handleAcceptFriendNotif(actorId: number, notifId: number) {
+    try {
+      await acceptFriend(actorId)
+      notify.success(t('friends.added'))
+    } catch {
+      notify.error(t('online.friendFail'))
+      return
+    }
+    setNotifications((ns) => ns.filter((n) => n.id !== notifId))
+    deleteNotifications([notifId]).catch(() => {})
+  }
 
   // Profil sayfasi: girisliyse once GENEL BAKIS; "Profili Duzenle" -> form. Misafir -> direkt form.
   const editProfilePage = editProfile ? (
@@ -7440,6 +7454,7 @@ export default function App() {
           }}
           onNotifDelete={handleDeleteNotification}
           onNotifDeleteAll={handleDeleteAllNotifications}
+          onAcceptFriend={handleAcceptFriendNotif}
           onClose={() => {
             setMessagesOpen(false)
             setMessagesFocusId(null)

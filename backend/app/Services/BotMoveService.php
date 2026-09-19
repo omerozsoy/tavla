@@ -162,6 +162,11 @@ class BotMoveService
     {
         return [
             'points' => array_map('intval', $state['points'] ?? []),
+            // bar'ı gönder (positionFor ile aynı gerekçe): eksikse gnubg yanlış pozisyon analiz eder.
+            'bar' => [
+                'white' => (int) ($state['bar']['white'] ?? 0),
+                'black' => (int) ($state['bar']['black'] ?? 0),
+            ],
             'turn' => $state['turn'] ?? 'white',
             'dice' => [], // zar yok -> küp kararı
             'matchLength' => (int) ($sm['target'] ?? 1),
@@ -228,6 +233,15 @@ class BotMoveService
 
         return [
             'points' => array_map('intval', $state['points'] ?? []),
+            // KRİTİK: bar'ı GÖNDER. Eksikse gnubg botun bardaki taşını GÖRMEZ (hatta 15-toplam'dan
+            // hayalet bir "toplanmış" taş sanır) -> YANLIŞ pozisyon analiz eder -> önerdiği adaylar
+            // bar-girişi İÇERMEZ -> gerçek yasal hamlelere (hepsi bar-girişi) eşleşmez -> reconcile
+            // BOŞ -> legal[0] (ilk yasal = çoğu zaman EN KÖTÜ) fallback'i devreye girer. "Seviye 10
+            // bot barda saçmalıyor" bug'ının kök nedeni buydu (bar-giriş turlarında en kötü hamle).
+            'bar' => [
+                'white' => (int) ($state['bar']['white'] ?? 0),
+                'black' => (int) ($state['bar']['black'] ?? 0),
+            ],
             'turn' => $state['turn'] ?? 'white',
             // gnubg 2 zar bekler; çift [d,d,d,d] -> [d,d].
             'dice' => array_slice($dice, 0, 2),

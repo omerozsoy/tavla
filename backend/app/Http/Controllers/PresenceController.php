@@ -83,16 +83,23 @@ class PresenceController extends Controller
             ? \App\Models\Setting::int('reward_premium', 50)
             : \App\Models\Setting::int('reward_normal', 25);
 
-        // Bildirimler (son 20) + okunmamis sayisi
+        // Bildirimler (son 20) + okunmamis sayisi. action/actor_id kolonu canlida henuz migrate
+        // edilmemis olabilir -> varsa sec (eyleme donuk "Kabul Et" butonu icin).
+        $hasAction = Schema::hasColumn('notifications', 'action');
+        $notifCols = $hasAction
+            ? ['id', 'title', 'body', 'icon', 'action', 'actor_id', 'read', 'created_at']
+            : ['id', 'title', 'body', 'icon', 'read', 'created_at'];
         $notifications = \App\Models\Notification::where('user_id', $me->id)
             ->orderByDesc('id')
             ->limit(20)
-            ->get(['id', 'title', 'body', 'icon', 'read', 'created_at'])
+            ->get($notifCols)
             ->map(fn ($n) => [
                 'id' => $n->id,
                 'title' => $n->title,
                 'body' => $n->body,
                 'icon' => $n->icon,
+                'action' => $hasAction ? $n->action : null,
+                'actor_id' => $hasAction ? ($n->actor_id !== null ? (int) $n->actor_id : null) : null,
                 'read' => (bool) $n->read,
                 'created_at' => optional($n->created_at)->toIso8601String(),
             ]);
@@ -190,6 +197,19 @@ class PresenceController extends Controller
         // oyuncu maça davet edilemez -> davet eden dostça uyarilir.
         if (in_array($target->presence_status, ['busy', 'offline'], true)) {
             return $this->fail('Bu oyuncu şu anda oyun kabul etmiyor.', 409);
+        }
+
+        // Zaten aktif bir maçta olan oyuncu daveti kabul edemez (maç ortasında). Davet eden dostça
+        // uyarilir. updated_at 3dk guard'i: yalnizca GERCEKTEN aktif maclar (yarim kalmis/hayalet
+        // 'playing' odalar sayilmaz). Bot maci dahil -> oyuncu her turlu mesgul.
+        $inMatch = Room::where('status', 'playing')
+            ->where('updated_at', '>', now()->subMinutes(3))
+            ->where(function ($q) use ($userId) {
+                $q->where('p1_user_id', $userId)->orWhere('p2_user_id', $userId);
+            })
+            ->exists();
+        if ($inMatch) {
+            return $this->fail('Davet ettiğiniz oyuncu aktif maçta.', 409);
         }
 
         $alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
