@@ -2906,6 +2906,10 @@ export default function App() {
 
   // ---- Bot sirasi: kup teklifi -> zar -> oyna ----
   useEffect(() => {
+    // PERF: lobide (home) DEGIL. Aksi halde kaydedilmis "bot sirasi" oyun lobide arka planda
+    // bot hamlesini tetikler -> 26MB ONNX motoru landing'de bosuna yuklenir. Oyuna girince
+    // (home=false, "Maça Dön"/Başla) calisir; motor gercek oyun basinda yuklenir.
+    if (home) return
     if (!isBotTurn || gameEnd || matchOver || cubePending || botAnim || opening || played.length > 0)
       return
     let cancelled = false
@@ -2965,7 +2969,7 @@ export default function App() {
       window.clearTimeout(timer)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBotTurn, gameEnd, matchOver, cubePending, botAnim, opening, diceRolled, played, turnStart, engine, match, turnsPlayed])
+  }, [home, isBotTurn, gameEnd, matchOver, cubePending, botAnim, opening, diceRolled, played, turnStart, engine, match, turnsPlayed])
 
   // ---- Bot "hamle yok" -> popup 2sn goster, sonra sirayi gec ----
   useEffect(() => {
@@ -3352,6 +3356,10 @@ export default function App() {
   // Acilis zarini OTOMATIK at (tum oyunlarda). Lokal -> rasgele; online -> oda
   // kodu + oyun no'dan deterministik (iki istemci ayni). Kimin baslayacagini belirler.
   useEffect(() => {
+    // PERF: lobide (home) acilisi OTO-atma. Taze ziyaretcide varsayilan pvb oyunu opening='roll'
+    // ile baslar; lobide atarsa bot sirasi gelir ve 26MB ONNX landing'de yuklenir. Oyuna girince
+    // (home=false) acilis atilir. (Online zaten oynarken home=false; bu kosul onu etkilemez.)
+    if (home) return
     if (opening !== 'roll' || cubePending || gameEnd || matchOver) return
     // Online'da rakip hazir olana kadar bekle (mm_waiting / tek kisi)
     if (online && (!onlineReady || room?.status !== 'playing')) return
@@ -3382,7 +3390,7 @@ export default function App() {
       window.clearInterval(retry)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
+  }, [home, opening, online, onlineReady, room?.status, cubePending, gameEnd, matchOver])
 
   // SELF-HEAL ("Acilis zari atiliyor" kilidi kalkani): opening==='roll' + hala duran gameEnd/
   // cubePending = GECERSIZ kombinasyon. Bu, onceki oyun daha bitis-sonucu beklerken acilisin
