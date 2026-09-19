@@ -47,6 +47,9 @@ class Room extends Model
         'server_winner',
         'server_match',
         'authoritative',
+        // SUNUCU-OTORİTER BOT (PvB): bot=bu oda bir bot maçı (p2 = sunucu botu); bot_level=zorluk 1-10.
+        'bot',
+        'bot_level',
         // BAĞIMSIZ Faz 1: yalnız zar sunucudan (hamle/tahta legacy). authoritative'den AYRI.
         'dice_authority',
         'dice_consumed',
@@ -91,6 +94,8 @@ class Room extends Model
             'server_match' => 'array',
             'authoritative' => 'boolean',
             'dice_authority' => 'boolean',
+            'bot' => 'boolean',
+            'bot_level' => 'integer',
             'live' => 'array',
         ];
     }
@@ -130,6 +135,10 @@ class Room extends Model
             'target' => $this->target !== null ? (int) $this->target : null,
             // Sunucu-otoriter mod (Faz 2c). false ise istemci eski akisi kullanir (degisiklik yok).
             'authoritative' => (bool) $this->authoritative,
+            // SUNUCU-OTORİTER BOT: istemci bunu görünce yerel motoru kullanmaz; roll/move'u sunucuya
+            // yollar, botun cevabı server_state'ten gelir. bot_level = zorluk (HUD + rating için).
+            'bot' => (bool) $this->bot,
+            'bot_level' => $this->bot_level !== null ? (int) $this->bot_level : null,
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
             'server_version' => (int) $this->server_version,
             'server_winner' => $this->server_winner,

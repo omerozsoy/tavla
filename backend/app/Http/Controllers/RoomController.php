@@ -4,7 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Room;
 use App\Models\User;
+use App\Services\BotMoveService;
+use App\Services\BotUnavailableException;
+use App\Services\FairDiceService;
 use App\Services\MatchClock;
+use App\Services\MoveValidatorService;
+use App\Support\Backgammon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -59,6 +64,7 @@ class RoomController extends Controller
         }
 
         return Room::where('status', 'playing')
+            ->where('bot', false) // BOT maçı (stake=0, tek oyuncu) online-eşzamanlılık hilesini oluşturmaz
             ->when($excludeRoomId, fn ($q) => $q->where('id', '!=', $excludeRoomId))
             ->where(function ($q) use ($uid) {
                 $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
@@ -564,6 +570,7 @@ class RoomController extends Controller
         $me = $request->user('sanctum');
 
         $rooms = Room::where('status', 'playing')
+            ->where('bot', false) // BOT maçları özel: Canlı Maçlar'da listelenmez/izlenmez
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')
             ->when($me, function ($q) use ($me) {
@@ -662,6 +669,7 @@ class RoomController extends Controller
             return response()->json(['rooms' => []]);
         }
         $rooms = Room::where('status', 'playing')
+            ->where('bot', false) // BOT maçları "Maça Dön" banner'ında listelenmez
             ->where(function ($q) use ($me) {
                 $q->where('p1_user_id', $me->id)->orWhere('p2_user_id', $me->id);
             })
@@ -1900,7 +1908,7 @@ class RoomController extends Controller
             'client_seed' => ['nullable', 'string', 'max:40'],
         ]);
 
-        return DB::transaction(function () use ($data, $code, $dice) {
+        $resp = DB::transaction(function () use ($data, $code, $dice) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -1908,6 +1916,10 @@ class RoomController extends Controller
             $slot = $this->slotOf($room, $data['token']);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            // GÜVENLİK: bot odasında p2 (bot) zar ATAMAZ HTTP ile (botu yalnız sunucu sürer).
+            if ($room->bot && $slot === 'p2') {
+                return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
             }
             // YENİ TUR = eski canlı önizleme geçersiz. `room.live` yalnız yeni POST üzerine yazıldığı
             // için tur değişince ESKİ turun adımlarını (ör. bardan giriş) taşımaya devam ederdi; zar
@@ -2039,6 +2051,10 @@ class RoomController extends Controller
                 'reused' => false,
             ]);
         });
+
+        // BOT ODASI: AÇILIŞ eli botu başlatıcı yaptıysa (starter=black) botu senkron oynat.
+        // Normal (insan kendi zarını attı) durumda sıra insanda kalır -> maybeDriveBot no-op.
+        return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
     /**
@@ -2056,7 +2072,7 @@ class RoomController extends Controller
             'steps.*.die' => ['required', 'integer', 'min:1', 'max:6'],
         ]);
 
-        return DB::transaction(function () use ($data, $code, $validator) {
+        $resp = DB::transaction(function () use ($data, $code, $validator) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2064,6 +2080,11 @@ class RoomController extends Controller
             $slot = $this->slotOf($room, $data['token']);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            // GÜVENLİK: bot odasında p2 (bot) slotu HTTP ile OYNAYAMAZ — botu yalnız sunucu (driveBot)
+            // sürer. İstemci bot token'ını bilmez (toClient token dönmez) ama derinlemesine savunma.
+            if ($room->bot && $slot === 'p2') {
+                return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
             }
             $state = is_array($room->server_state) ? $room->server_state : null;
             if (! $state) {
@@ -2145,6 +2166,10 @@ class RoomController extends Controller
                 'match_done' => $matchDone,
             ]);
         });
+
+        // BOT ODASI: insan hamlesi KAYDEDİLDİ (yukarıdaki tx commit). Sıra bota geçtiyse botu
+        // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
+        return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
     /**
@@ -2185,6 +2210,22 @@ class RoomController extends Controller
             $this->driveAuthoritativeClock($room, $slot, microtime(true));
             $room->save();
 
+            // BOT ODASI: insan (p1) teklif etti -> bot HEMEN yanıtlar (bekleyen teklif bırakmaz).
+            // v1 politikası: TAKE. (Botun coin/rating'i yok -> bu güvenlik değil oyun-kalitesi
+            // kararı; TAKE asla takılmaz. Upgrade: gnubg cubetest ile gerçek take/drop.)
+            if ($room->bot && $slot === 'p1') {
+                $sm['cube'] = ['value' => $cube['value'] * 2, 'owner' => 'black', 'pending' => null];
+                $room->server_match = $sm;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->save();
+
+                return response()->json([
+                    'match' => $room->server_match,
+                    'version' => (int) $room->server_version,
+                    'bot_cube' => 'take',
+                ]);
+            }
+
             return response()->json(['match' => $room->server_match, 'version' => (int) $room->server_version]);
         });
     }
@@ -2211,6 +2252,9 @@ class RoomController extends Controller
             $slot = $this->slotOf($room, $data['token']);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if ($room->bot && $slot === 'p2') {
+                return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
             }
             $color = $this->slotColor($slot);
             $cube = $this->cubeOf($room);
@@ -2280,6 +2324,9 @@ class RoomController extends Controller
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
             }
+            if ($room->bot && $slot === 'p2') {
+                return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
+            }
             $sm = is_array($room->server_match) ? $room->server_match : null;
             if (! $sm || ! empty($sm['done'])) {
                 return $this->fail('Oyun aktif değil.', 409);
@@ -2302,6 +2349,283 @@ class RoomController extends Controller
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
         });
+    }
+
+    // ============================================================================================
+    // SUNUCU-OTORİTER BOT (PvB)
+    // Bot maçı artık istemci-tarafı motor (ONNX) DEĞİL, gerçek authoritative Room. p2 = sunucu botu.
+    // Zar + tahta + skor + küp SUNUCUDA; bot hamlesi gnubg ile SUNUCUDA seçilir. İstemci yalnız
+    // kendi ACTION'ını (roll/move/cube/resign) yollar; iki sekme/pencere aynı TEK state'i izler
+    // (çünkü otorite sunucudadır) — "aynı maç iki pencerede farklı state" bug'ı KÖKTEN kapanır.
+    // ============================================================================================
+
+    /**
+     * BOT MAÇI BAŞLAT: sunucu-otoriter bir oda kurar (p2 = bot), açılış elini sunucuda atar,
+     * Açılış (ve bot başlatıcıysa ilk bot turu) istemcinin ilk serverRoll'unda roll() içinde atılır
+     * (online açılış yolu AYNEN). Misafir de oynayabilir (rating login ister).
+     */
+    public function createBotRoom(Request $request)
+    {
+        $this->cleanupStale();
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'name' => ['required', 'string', 'max:40'],
+            'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
+            'avatar' => ['nullable', 'string', 'max:300000'],
+            'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
+            'target' => ['nullable', 'integer', 'min:1', 'max:25'],
+            'level' => ['required', 'integer', 'min:1', 'max:10'],
+            'client_seed' => ['nullable', 'string', 'max:40'],
+        ]);
+
+        $code = $this->generateCode();
+        $level = (int) $data['level'];
+        $room = Room::create([
+            'code' => $code,
+            'p1_token' => $data['token'],
+            'p1_user_id' => $request->user('sanctum')?->id,
+            'p1_name' => $data['name'],
+            'p1_rating' => $data['rating'] ?? null,
+            'p1_avatar' => $data['avatar'] ?? null,
+            // Bot slotu: TAHMİN EDİLEMEZ gizli token (toClient token döndürmez) -> istemci bot
+            // slotunu impersonate edemez. Ayrıca roll/move/cube/resign'da p2 slotu HTTP'den reddedilir.
+            'p2_token' => bin2hex(random_bytes(24)),
+            'p2_user_id' => null,
+            'p2_name' => 'Seviye '.$level.' · Neural AI',
+            'p2_rating' => null,
+            'status' => 'playing',
+            'mode' => 'friendly',
+            'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
+            'target' => (int) ($data['target'] ?? 1),
+            'authoritative' => true,
+            'dice_authority' => true,
+            'bot' => true,
+            'bot_level' => $level,
+            'version' => 0,
+            'server_version' => 0,
+        ]);
+
+        // Otoriter maç + tahta (AÇILIŞ eli oynanmadı: opened=false). Açılış, istemcinin ilk
+        // serverRoll'unda roll() içinde atılır (online açılış yolu AYNEN kullanılır); açılış botu
+        // başlatıcı yaparsa roll()'daki maybeDriveBot botu oynar. Böylece tek bir açılış kod yolu var.
+        if ($data['client_seed'] ?? null) {
+            $room->dice_client_seed = substr((string) $data['client_seed'], 0, 40);
+        }
+        $room->server_match = $this->initServerMatch($room);
+        $room->server_state = Backgammon::initialState();
+        $room->save();
+
+        return response()->json(['room' => $room->toClient(), 'slot' => 'p1']);
+    }
+
+    /**
+     * BOT DÜRTME (kurtarma ucu): sıra botta ama senkron sürüş gnubg yokluğunda duraklamışsa,
+     * istemci bunu çağırıp botu tekrar denetir. Sıra insandaysa/maç bittiyse no-op (idempotent).
+     */
+    public function botNudge(Request $request, string $code)
+    {
+        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $room = Room::where('code', strtoupper($code))->first();
+        if (! $room || ! $room->bot) {
+            return $this->fail('Bot odası bulunamadı.', 404);
+        }
+        // Yalnız odanın insan oyuncusu (p1) dürtebilir.
+        if ($this->slotOf($room, $data['token']) !== 'p1') {
+            return $this->fail('Bu odada değilsin.', 403);
+        }
+
+        return $this->maybeDriveBot(strtoupper($code), null);
+    }
+
+    /**
+     * İnsan action'ından SONRA çağrılır: sıra bota (black) geçtiyse botu SENKRON oynatır ve
+     * güncel otoriter durumu döndürür. Değilse (sıra insanda / bot değil / maç bitti) $resp'i
+     * olduğu gibi geçirir. gnubg yoksa insan hamlesi KORUNUR; bot_status='unavailable' döner
+     * (istemci "Rakip düşünüyor…" gösterip botNudge ile tekrar dener).
+     *
+     * @param  \Illuminate\Http\JsonResponse|null  $resp  insan action yanıtı (yoksa botNudge)
+     */
+    private function maybeDriveBot(string $code, $resp)
+    {
+        $room = Room::where('code', $code)->first();
+        // Bot odası değil / yok -> insan yanıtını aynen geçir (online maçlarda SIFIR etki).
+        if (! $room || ! $room->bot) {
+            return $resp ?? $this->fail('Oda bulunamadı.', 404);
+        }
+        // İnsan action'ı başarısızsa (4xx/5xx) botu sürme; hatayı aynen döndür.
+        if ($resp !== null && ($resp->status() < 200 || $resp->status() >= 300)) {
+            return $resp;
+        }
+
+        $sm = is_array($room->server_match) ? $room->server_match : [];
+        $state = is_array($room->server_state) ? $room->server_state : [];
+        $needsBot = empty($sm['done']) && ($state['turn'] ?? 'white') === 'black';
+
+        $turns = [];
+        $botStatus = 'idle';
+        $botReason = null;
+        if ($needsBot) {
+            try {
+                $turns = $this->driveBot($code);
+                $botStatus = 'played';
+            } catch (BotUnavailableException $e) {
+                // gnubg yok -> insan hamlesi (ayrı tx) KORUNUR; bot beklemede. İstemci botNudge/poll ile tekrar dener.
+                $botStatus = 'unavailable';
+                $botReason = $e->getMessage();
+            }
+        }
+
+        // move()/roll() sonrası: İNSAN yanıtını (post-human durumu) AYNEN koru, botun turlarını EKLE.
+        // İstemci önce kendi hamlesini (state), sonra bot turlarını (bot[]) uygular.
+        if ($resp !== null) {
+            $data = $resp->getData(true);
+            $data['bot'] = $turns;
+            $data['bot_status'] = $botStatus;
+            if ($botReason !== null) {
+                $data['bot_reason'] = $botReason;
+            }
+
+            return response()->json($data, $resp->status());
+        }
+
+        // botNudge (bağımsız kurtarma): güncel otoriter durum + botun turları.
+        $fresh = Room::where('code', $code)->first();
+
+        return response()->json([
+            'state' => $fresh->server_state,
+            'version' => (int) $fresh->server_version,
+            'winner' => $fresh->server_winner,
+            'match' => $fresh->server_match,
+            'match_done' => ! empty($fresh->server_match['done']),
+            'bot' => $turns,
+            'bot_status' => $botStatus,
+            'bot_reason' => $botReason,
+        ]);
+    }
+
+    /**
+     * BOTU OYNAT (senkron çekirdek): sıra botta (black) ve maç sürerken; her turda
+     *   (zar yoksa) sunucu zarı at -> gnubg ile hamle seç -> validator ile uygula -> skor/versiyon.
+     * Sıra insana dönünce / yeni oyun açılışı gerektiğinde / maç bitince durur. AYRI tx +
+     * lockForUpdate: iki eşzamanlı sürüş çakışamaz. gnubg/validator karar üretemezse
+     * BotUnavailableException (tx rollback -> insan hamlesi ayrı tx'te korunur).
+     *
+     * DÖNÜŞ: oynanan bot turlarının listesi (normalde 1). Her tur istemcinin botun hamlesini
+     * BİREBİR canlandırıp loglayabilmesi için TAM bilgi taşır:
+     *   ['rollState'=>zar-atılmış-tahta(bot dice dolu), 'dice'=>[..], 'steps'=>[..],
+     *    'state'=>hamle-sonrası-tahta, 'version'=>int, 'match'=>server_match,
+     *    'winner'=>?renk, 'match_done'=>bool]
+     * (rollState reconstructOppMove için ZORUNLU: senkron sürüşte poll ara "zar atıldı" durumunu
+     * göremez; istemci prev olarak bunu kullanıp botun hamlesini tek anlamlı çözer.)
+     */
+    private function driveBot(string $code): array
+    {
+        $dice = app(FairDiceService::class);
+        $validator = app(MoveValidatorService::class);
+        $bot = app(BotMoveService::class);
+
+        return DB::transaction(function () use ($code, $dice, $validator, $bot) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room || ! $room->bot) {
+                return [];
+            }
+            $turns = [];
+            $guard = 0;
+            while (true) {
+                if (++$guard > 100) { // sonsuz döngü kalkanı (normalde 1 iterasyon)
+                    break;
+                }
+                $state = is_array($room->server_state) ? $room->server_state : null;
+                $sm = is_array($room->server_match) ? $room->server_match : null;
+                if (! $state || ! $sm || ! empty($sm['done'])) {
+                    break; // maç bitti / durum yok
+                }
+                if (($state['turn'] ?? 'white') !== 'black') {
+                    break; // sıra insanda (veya yeni oyun açılışı insan roll'una kaldı)
+                }
+
+                // Zar yoksa bot zar atar (sunucu-otoriter; açılış zaten dolu gelir).
+                if (empty($state['dice'])) {
+                    $this->botRoll($room, $dice);
+                    $state = $room->server_state;
+                }
+                $rollState = $state; // istemci reconstruct'ı için: bot dice DOLU tur-başı tahtası
+
+                // gnubg ile tam-tur seç (boş = pas/dance). Karar üretilemezse fırlatır -> rollback.
+                $level = (int) ($room->bot_level ?? 10);
+                $steps = $bot->chooseSteps($state, $sm, $level);
+
+                // Botun seçimini de validator DOĞRULAR (bot bile "istemci" gibi denetlenir).
+                $result = $validator->validate($state, array_values($steps));
+                if (! empty($result['unreachable'])) {
+                    throw new BotUnavailableException('validator-unreachable');
+                }
+                if (empty($result['valid']) || empty($result['state'])) {
+                    // Bot yasadışı seçti (olmamalı) -> güvenli taraf: duraklat.
+                    throw new BotUnavailableException('bot-move-invalid');
+                }
+
+                $new = $result['state'];
+                $winner = Backgammon::winner($new);
+                $sm['turns'] = (int) ($sm['turns'] ?? 0) + 1;
+                $room->server_match = $sm;
+                $matchDone = false;
+                if ($winner) {
+                    $cubeVal = $this->cubeOf($room)['value'];
+                    $pts = Backgammon::gamePoints($new, $winner) * $cubeVal;
+                    $room->server_state = $new; // son tahta (maç biterse korunur)
+                    $matchDone = $this->applyGameResult($room, $winner, $pts);
+                } else {
+                    $room->server_state = $new;
+                }
+                $room->live = null;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->save();
+
+                $turns[] = [
+                    'rollState' => $rollState,
+                    'dice' => array_values(array_slice($rollState['dice'] ?? [], 0, 2)),
+                    'steps' => array_values($steps),
+                    'state' => $room->server_state,
+                    'version' => (int) $room->server_version,
+                    'match' => $room->server_match,
+                    'winner' => $winner,
+                    'match_done' => $matchDone,
+                ];
+
+                $room->refresh();
+                // Döngü tekrar: sıra genelde insana döndü -> üstte durur. Bir sonraki oyun açılışı
+                // (applyGameResult -> opened=false, turn=white) insanın roll'una kalır.
+            }
+
+            return $turns;
+        });
+    }
+
+    /** Bot için sunucu-otoriter zar at (roll() otoriter dalının bot eşi; açılış DEĞİL). */
+    private function botRoll(Room $room, FairDiceService $dice): void
+    {
+        if (empty($room->dice_seed)) {
+            $room->dice_seed = $dice->newSeed();
+            $room->dice_commit = $dice->commit($room->dice_seed);
+            $room->dice_client_seed = (string) $room->dice_client_seed;
+            $room->dice_roll_index = 0;
+            $room->dice_rolls = [];
+        }
+        $state = is_array($room->server_state) ? $room->server_state : Backgammon::initialState();
+        $index = (int) $room->dice_roll_index;
+        [$d1, $d2] = $dice->roll($room->dice_seed, (string) $room->dice_client_seed, $index);
+        $roll = $d1 === $d2 ? [$d1, $d1, $d1, $d1] : [$d1, $d2];
+        $state['dice'] = $roll;
+        $state['diceUsed'] = array_fill(0, count($roll), false);
+
+        $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+        $rolls[] = ['index' => $index, 'slot' => 'p2', 'dice' => $roll];
+        $room->dice_rolls = $rolls;
+        $room->dice_roll_index = $index + 1;
+        $room->server_state = $state;
+        $room->server_version = (int) $room->server_version + 1;
+        $room->save();
     }
 
     /**

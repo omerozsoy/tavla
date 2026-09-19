@@ -1414,6 +1414,10 @@ export interface RoomView {
   // Sunucu-otoriter mod (Faz 2c). true ise istemci zar/hamleyi SUNUCUDAN alir (serverRoll/
   // serverMove) + server_state uygular; false (varsayilan) eski akis (degisiklik yok).
   authoritative?: boolean
+  // SUNUCU-OTORİTER BOT (PvB): true ise oda bir bot maçı (p2 = sunucu botu). İstemci yerel motoru
+  // KULLANMAZ; roll/move'u sunucuya yollar, botun cevabı server_state / serverMove.bot'tan gelir.
+  bot?: boolean
+  bot_level?: number | null // bot zorluk 1-10 (HUD "Seviye X" + isim)
   server_state?: GameState | null // otoriter tahta (yalniz authoritative iken dolu)
   server_version?: number
   server_winner?: string | null // 'white'|'black' bir oyun bitince
@@ -2042,13 +2046,68 @@ export interface ServerMatch {
   turns?: number // bu oyunda tamamlanan tur sayisi (kup hakki: ilk el oynanmadan kup yok)
 }
 
+// SUNUCU-OTORİTER BOT turu: botun (siyah) sunucuda oynadığı BİR tam tur. İstemci bunu birebir
+// canlandırıp loglar. rollState = zar-atılmış tur-başı tahtası (reconstructOppMove için prev);
+// state = hamle sonrası tahta; version/match/winner/match_done otoriter sonuç.
+export interface BotTurn {
+  rollState: GameState
+  dice: number[]
+  steps: Step[]
+  state: GameState
+  version: number
+  match: ServerMatch
+  winner: 'white' | 'black' | null
+  match_done: boolean
+}
+
+// bot_status: 'played' (bot oynadı), 'unavailable' (gnubg yok -> insan hamlesi korunur, bekle),
+// 'idle' (sıra insanda), 'none' (bot başlatıcı değil).
+export type BotStatus = 'played' | 'unavailable' | 'idle' | 'none'
+
+// SUNUCU-OTORİTER BOT MAÇI başlat: sunucu p2=bot ile authoritative oda kurar, açılışı sunucuda atar,
+// bot başlatıcıysa ilk turu (bot[]) döndürür. slot daima 'p1' (insan beyaz).
+export async function createBotRoom(
+  name: string,
+  level: number,
+  target: number,
+  rating?: number,
+  avatar?: string,
+  timeControl?: string,
+  clientSeed?: string,
+): Promise<{ room: RoomView; slot: Slot; bot?: BotTurn[]; bot_status?: BotStatus }> {
+  return req('/bot/rooms', {
+    method: 'POST',
+    body: JSON.stringify({
+      token: playerToken(),
+      name,
+      level,
+      target,
+      rating: rating ?? null,
+      avatar: avatar ?? null,
+      time_control: timeControl ?? null,
+      client_seed: clientSeed ?? null,
+    }),
+  })
+}
+
+// Bot dürtme (kurtarma): sıra botta ama senkron sürüş gnubg yokluğunda duraklamışsa tekrar dener.
+export async function botNudge(
+  code: string,
+): Promise<{ state: GameState; version: number; match: ServerMatch; match_done: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
+  return req(`/rooms/${encodeURIComponent(code)}/bot`, {
+    method: 'POST',
+    body: JSON.stringify({ token: playerToken() }),
+  })
+}
+
 // Sıradaki oyuncu bir el zar ister. Zar SUNUCUDA (commit-reveal) üretilir; istemci seçemez.
 // RE-ROLL ENGELİ: zar zaten verildiyse aynısı döner (reused=true). Oyunun İLK eli = adil
 // AÇILIŞ (opening=true, starter=başlayan renk; iki farklı zar, yüksek başlar).
+// bot: bot odasında açılış botu başlatıcı yaptıysa botun turu(ları).
 export async function serverRoll(
   code: string,
   clientSeed?: string,
-): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black' }> {
+): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/roll`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null }),
@@ -2057,10 +2116,11 @@ export async function serverRoll(
 
 // İstemci tam-tur step dizisini gönderir; sunucu (Node validator=TS motoru) yasallığı doğrular.
 // Yasal → uygulanmış otoriter state + maç skoru döner; yasadışı → 422, doğrulama servisi yok → 503.
+// bot: bot odasında insan hamlesi sonrası botun (siyah) senkron oynadığı tur(lar).
 export async function serverMove(
   code: string,
   steps: Step[],
-): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean }> {
+): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/move`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), steps }),
