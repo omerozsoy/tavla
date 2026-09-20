@@ -44,6 +44,9 @@ class MatchResultAuthoritativeTest extends TestCase
             'p2_user_id' => $p2->id,
             'p2_name' => $p2->nickname,
             'status' => 'finished',
+            'authoritative' => true, 'mode' => 'ranked',
+            'server_match' => ['done' => true, 'winner' => 'black', 'target' => 3,
+                'score' => ['white' => 0, 'black' => 3]],
             'target' => 3,
             'version' => 1,
             'settled' => false,
@@ -99,25 +102,19 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(1, (int) $black->fresh()->wins);
     }
 
-    public function test_no_room_falls_back_to_client_claim(): void
+    public function test_no_room_rejects_client_result(): void
     {
-        // Oda yok (pvb / temizlenmis): istemci beyanina duser (geriye uyum).
         $u = $this->makeUser('solo');
         Sanctum::actingAs($u);
         $this->postJson('/api/rating/report', [
-            'won' => true,
-            'opponent_rating' => 1500,
-            'ranked' => true,
-        ])->assertOk();
-
-        $mr = MatchResult::where('user_id', $u->id)->latest('id')->first();
-        $this->assertTrue((bool) $mr->won);
-        $this->assertGreaterThan(1500, $u->fresh()->rating);
+            'won' => true, 'opponent_rating' => 4000, 'ranked' => true,
+        ])->assertStatus(409)->assertJsonPath('reason', 'verified-match-required');
+        $this->assertSame(1500, (int) $u->fresh()->rating);
+        $this->assertSame(0, MatchResult::where('user_id', $u->id)->count());
     }
 
-    // Oda KARARSIZ (skor hedefe ulasmamis, p_result yok) ama rakip zaten "kazandim"
-    // raporlamis -> bu tarafin "kazandim"i REDDEDILIR (ikisi birden kazanamaz).
-    public function test_undecided_room_forces_complement_of_opponent(): void
+    // Rakibin beyanindan yeni sonuc uretme; bitmemis mac acikca reddedilir.
+    public function test_undecided_room_rejects_even_when_opponent_reported(): void
     {
         $white = $this->makeUser('wu'); // p1
         $black = $this->makeUser('bu'); // p2
@@ -134,15 +131,15 @@ class MatchResultAuthoritativeTest extends TestCase
             'room_code' => 'UNDEC', 'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
         ]);
 
-        // Beyaz da "kazandim" der -> reddedilmeli (tamamlayici: kayip).
+        // Beyaz da "kazandim" der -> ekonomik etki yaratmadan reddedilmeli.
         Sanctum::actingAs($white);
         $this->postJson('/api/rating/report', [
             'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'room_code' => 'UNDEC',
-        ])->assertOk();
+        ])->assertStatus(409);
 
         $mr = MatchResult::where('user_id', $white->id)->latest('id')->first();
-        $this->assertFalse((bool) $mr->won, 'Rakip kazandi dediyse bu taraf kazanamaz');
-        $this->assertLessThan(1500, $white->fresh()->rating);
+        $this->assertNull($mr);
+        $this->assertSame(1500, (int) $white->fresh()->rating);
     }
 
     // ÜRETİM REPRODUCTION: online maç GERÇEK log (checker + cube kararları + mctx) ile raporlanır.
@@ -197,6 +194,9 @@ class MatchResultAuthoritativeTest extends TestCase
             'code' => 'HEAL', 'p1_token' => 't1', 'p1_user_id' => $white->id, 'p1_name' => 'wh',
             'p2_token' => 't2', 'p2_user_id' => $black->id, 'p2_name' => 'bh',
             'status' => 'finished', 'target' => 3, 'version' => 1, 'settled' => false,
+            'authoritative' => true, 'mode' => 'ranked',
+            'server_match' => ['done' => true, 'winner' => 'black', 'target' => 3,
+                'score' => ['white' => 0, 'black' => 3]],
             'state' => ['match' => ['target' => 3, 'score' => ['white' => 0, 'black' => 3]]],
         ]);
         // Siyah (gercek KAZANAN) yanlislikla "kaybettim" raporlamis: rating dusmus.
@@ -223,37 +223,23 @@ class MatchResultAuthoritativeTest extends TestCase
         $this->assertSame(0, (int) $black->fresh()->losses);
     }
 
-    // M1 (denetim): oda SİLİNMİŞ + puanlı rapor -> istemci opponent_rating:4000 ile Elo ŞİŞİREMEZ.
-    // Otoriter kaynak (rakip satırı) yoksa kendi rating'ine sabitlenir (~even Elo).
-    public function test_purged_room_ranked_clamps_opponent_rating(): void
+    // Silinmis oda veya rakibin eski raporu yeni ekonomik sonuc icin yetkili kanit degildir.
+    public function test_purged_room_rejects_report_even_with_opponent_row(): void
     {
-        $u = $this->makeUser('ghost'); // rating 1500
-        Sanctum::actingAs($u);
-        // 'GHOST' odası YOK (silinmiş). Puanlı galibiyet, istemci opponent 4000 iddia ediyor.
-        $this->postJson('/api/rating/report', [
-            'won' => true, 'opponent_rating' => 4000, 'ranked' => true, 'room_code' => 'GHOST', 'match_length' => 1,
-        ])->assertOk();
-        // Kendi 1500'üne sabit -> eşit rakibe galibiyet = +16 -> 1516 (4000'den ~+32 DEĞİL).
-        $this->assertSame(1516, (int) $u->fresh()->rating, 'silinmiş odada opponent_rating kendi puanına sabitlenmeli');
-    }
-
-    // M1: oda silinmiş ama rakibin match_results satırı VAR -> onun rating_before'ı otoriter kullanılır.
-    public function test_purged_room_uses_opponent_row_rating(): void
-    {
-        $u = $this->makeUser('m1a');
-        $opp = $this->makeUser('m1b');
+        $u = $this->makeUser('ghost');
+        $opp = $this->makeUser('other');
         MatchResult::create([
             'user_id' => $opp->id, 'won' => false, 'room_code' => 'GONE',
             'opponent_rating' => 1500, 'rating_before' => 1600, 'rating_after' => 1584, 'delta' => -16,
         ]);
         Sanctum::actingAs($u);
-        $this->postJson('/api/rating/report', [
-            'won' => true, 'opponent_rating' => 4000, 'ranked' => true, 'room_code' => 'GONE', 'match_length' => 1,
-        ])->assertOk();
-        // rb = rakip satırı rating_before = 1600 -> güçlü rakibe galibiyet: 1516 < yeni < 1532 (4000 değil).
-        $r = (int) $u->fresh()->rating;
-        $this->assertGreaterThan(1516, $r, '1600 kullanılmalı (eşitten fazla kazanç)');
-        $this->assertLessThan(1532, $r, '4000 kullanılmamalı');
+        foreach (['GHOST', 'GONE'] as $code) {
+            $this->postJson('/api/rating/report', [
+                'won' => true, 'opponent_rating' => 4000, 'ranked' => true, 'room_code' => $code,
+            ])->assertStatus(409);
+        }
+        $this->assertSame(1500, (int) $u->fresh()->rating);
+        $this->assertSame(0, MatchResult::where('user_id', $u->id)->count());
     }
 
     // M2 (denetim): aynı room+user için ÇİFT rapor -> tek satır + tek Elo değişimi (çift-Elo yarışı
@@ -277,6 +263,56 @@ class MatchResultAuthoritativeTest extends TestCase
 
         $this->assertSame($ratingAfter1, (int) $black->fresh()->rating, 'ikinci rapor rating\'i değiştirmemeli');
         $this->assertSame(1, MatchResult::where('room_code', 'AUTHR')->where('user_id', $black->id)->count(), 'tek satır');
+    }
+
+    public function test_client_metadata_cannot_change_result_category_or_reward_evidence(): void
+    {
+        $white = $this->makeUser('metaw');
+        $black = $this->makeUser('metab');
+        $room = $this->makeFinishedRoom($white, $black);
+        $room->p1_rating = 1500;
+        $room->save();
+        config()->set('validator.pr_mode', 'off');
+        config()->set('gnubg.pr_mode', 'off');
+
+        Sanctum::actingAs($black);
+        $this->postJson('/api/rating/report', [
+            'won' => false, 'ranked' => false, 'match_type' => 'ai', 'match_length' => 25,
+            'opponent_rating' => 4000, 'opponent_name' => 'forged', 'room_code' => 'AUTHR',
+            'score_self' => 0, 'score_opp' => 99, 'pr' => 0, 'luck' => -99,
+            'gammons' => 100, 'backgammons' => 100, 'ach_flags' => ['prime6', 'comeback'],
+            'min_win_prob' => 0, 'log' => '{"hc":"black","log":[]}',
+        ])->assertOk();
+
+        $result = MatchResult::where('user_id', $black->id)->firstOrFail();
+        $this->assertTrue($result->won);
+        $this->assertSame('match', $result->match_type);
+        $this->assertSame(3, (int) $result->match_length);
+        $this->assertSame(1500, (int) $result->opponent_rating);
+        $this->assertSame($white->nickname, $result->opponent_name);
+        $this->assertSame(3, (int) $result->score_self);
+        $this->assertSame(0, (int) $result->score_opp);
+        $this->assertGreaterThan(1500, (int) $black->fresh()->rating);
+        $stats = $black->fresh()->stat;
+        $this->assertNotNull($stats);
+        $this->assertSame(0, (int) $stats->total_gammons);
+        $this->assertSame(0, (int) $stats->total_backgammons);
+        $this->assertSame(0, (int) $stats->analysis_count);
+        $this->assertNull($stats->best_error_rate);
+    }
+
+    public function test_finished_room_cannot_be_reported_by_a_third_user(): void
+    {
+        $white = $this->makeUser('ownerw');
+        $black = $this->makeUser('ownerb');
+        $outsider = $this->makeUser('outsider');
+        $this->makeFinishedRoom($white, $black);
+        Sanctum::actingAs($outsider);
+        $this->postJson('/api/rating/report', [
+            'won' => true, 'opponent_rating' => 4000, 'room_code' => 'AUTHR',
+        ])->assertStatus(409);
+        $this->assertSame(0, MatchResult::where('user_id', $outsider->id)->count());
+        $this->assertSame(1500, (int) $outsider->fresh()->rating);
     }
 
     // SUNUCU-OTORITER SANS (luck): her oyuncu KENDİ renginin HAM luck'ını raporlar; /me/match-pr

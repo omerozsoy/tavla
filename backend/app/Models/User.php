@@ -64,7 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         'remember_token',
     ];
 
-    // is_admin (email tabanli) + plan_active (suresi gecerli plan) JSON'a eklenir
+    // is_admin (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
     protected $appends = ['is_admin', 'plan_active'];
 
     // Suresi gecerli aktif plan: 'free' | 'star' | 'starpro'
@@ -105,22 +105,17 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
         ];
     }
 
-    // Yonetici mi? DB bayragi VEYA config'deki admin e-posta listesi.
-    // (Config e-postalari her zaman admin kalir -> sahip kendini kilitleyemez.)
+    // Ayricalik yalniz explicit DB grant'inden gelir; email kullanici tarafindan degistirilebilir.
     public function getIsAdminAttribute(): bool
     {
-        if (! empty($this->attributes['is_admin'])) {
-            return true;
-        }
-        $admins = array_map('strtolower', config('services.admin_emails', []));
-        return in_array(strtolower((string) $this->email), $admins, true);
+        return (bool) ($this->attributes['is_admin'] ?? false);
     }
 
-    // Config e-postasiyla admin mi? (DB bayragi degistirilemez olanlar)
+    // Explicit admin ayrica korunan config listesinde mi? Liste tek basina yetki vermez.
     public function isConfigAdmin(): bool
     {
         $admins = array_map('strtolower', config('services.admin_emails', []));
-        return in_array(strtolower((string) $this->email), $admins, true);
+        return $this->is_admin && in_array(strtolower((string) $this->email), $admins, true);
     }
 
     public function isBanned(): bool

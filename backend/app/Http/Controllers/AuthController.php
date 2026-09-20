@@ -258,6 +258,9 @@ class AuthController extends Controller
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
             unset($data['province']);
         }
+        if ($user->email !== $data['email']) {
+            $user->email_verified_at = null;
+        }
         $user->update($data);
         return response()->json(['user' => $user]);
     }
@@ -284,56 +287,34 @@ class AuthController extends Controller
             'room_code'       => ['nullable', 'string', 'max:20'], // online oda (friendly denetimi)
         ]);
         $user = $request->user();
-        $ranked = $data['ranked'] ?? true; // null/eksik -> puanli (geriye uyum)
-        // YAPAY ZEKA maci: KESINLIKLE puansiz (rating/wins/WXP DEGISMEZ). match_results satiri
-        // yine yazilir (Mac Analizleri'nde gorunur) ama istatistiklere girmez (bkz MatchResult::real).
-        if (($data['match_type'] ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI) {
-            $ranked = false;
+        // Yalniz tamamlanmis authoritative oda ekonomik sonuc uretebilir.
+        $roomCode = strtoupper(trim((string) ($data['room_code'] ?? '')));
+        $room = $roomCode !== '' ? \App\Models\Room::where('code', $roomCode)->first() : null;
+        $verified = $room ? \App\Support\RoomResult::verified($room, (int) $user->id) : null;
+        if ($verified === null) {
+            return response()->json([
+                'message' => 'Bu oyuncuya ait tamamlanmış sunucu maçı bulunamadı.',
+                'reason' => 'verified-match-required',
+            ], 409);
         }
 
-        // YETKILI KURAL: oda 'friendly' (davet kodu maci) ise KESINLIKLE puansiz — istemci
-        // ranked=true gonderse veya refresh/rejoin ile bayrak kaybolsa bile oda mode'u belirler.
-        $room = null;
-        if (! empty($data['room_code'])) {
-            $room = \App\Models\Room::where('code', $data['room_code'])->first();
-            if ($room && $room->mode === 'friendly') {
-                $ranked = false;
-            }
-        }
-
+        // Mod, uzunluk ve rakip bilgisi istemciden degil odadan gelir.
+        $ranked = ! $room->bot && $room->mode === 'ranked';
+        $opponentSlot = (int) $room->p1_user_id === (int) $user->id ? 'p2' : 'p1';
         $ra = $user->rating ?? 1500;
-        // RATING BÜTÜNLÜĞÜ (güvenlik): rakip rating'ine İSTEMCİDEN GÜVENME -> online odada gerçek
-        // rakip slotunun (maç anındaki) rating'iyle geçersiz kıl. Aksi halde istemci
-        // opponent_rating:4000 gönderip Elo kazancını şişirebilir. Oda/rating yoksa istemciye düş
-        // (pvb / temizlenmiş oda geri uyum).
-        $rb = (int) ($data['opponent_rating'] ?? $ra);
-        if ($room) {
-            $oppRating = $room->p1_user_id === $user->id ? $room->p2_rating
-                : ($room->p2_user_id === $user->id ? $room->p1_rating : null);
-            if ($oppRating !== null && (int) $oppRating > 0) {
-                $rb = (int) $oppRating;
-            }
-        } elseif (! empty($data['room_code'])) {
-            // M1 (denetim): oda SİLİNMİŞ (cleanup >1 gün). İstemci opponent_rating:4000 gönderip Elo
-            // şişiremesin. Rakibin match_results satırı varsa (raporladıysa) onun rating_before'ı
-            // AUTORİTER; yoksa PUANLI raporu kendi rating'ine sabitle (şişirme engeli; ~even Elo).
-            $oppRow = \App\Models\MatchResult::where('room_code', $data['room_code'])
-                ->where('user_id', '!=', $user->id)->latest('id')->first();
-            if ($oppRow && (int) $oppRow->rating_before > 0) {
-                $rb = (int) $oppRow->rating_before;
-            } elseif ($ranked) {
-                $rb = (int) $ra;
-            }
+        $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
+        if ($rb <= 0) {
+            $rb = (int) $ra;
         }
-
-        // SUNUCU-OTORITER GALIBIYET/MAGLUBIYET: online macta istemcinin 'won' beyanina
-        // GUVENME (perspektif/bayat-state hatasi kazanilan maci "kayip" yazabiliyordu).
-        // Kazanani ODANIN paylasilan senkron durumundan (mac skoru / slot / p_result)
-        // deterministik cikar; iki oyuncu ayni kaynaktan ayni sonucu gorur. Oda yoksa
-        // (pvb / temizlenmis oda) istemci beyanina dus (geriye uyum).
-        $clientWon = (bool) $data['won'];
-        $won = $clientWon;
-        $roomCode = $data['room_code'] ?? null;
+        $data['room_code'] = $roomCode;
+        $data['ranked'] = $ranked;
+        $data['match_type'] = $room->bot ? \App\Support\StatsConfig::MATCH_TYPE_AI
+            : (((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match');
+        $data['match_length'] = (int) ($room->server_match['target'] ?? $room->target ?? 1);
+        $data['opponent_name'] = $room->{$opponentSlot.'_name'};
+        $data['score_self'] = $verified['self'];
+        $data['score_opp'] = $verified['opp'];
+        $won = $verified['won'];
 
         // M2 (denetim): aynı room+user için EŞ ZAMANLI raporları SERİLEŞTİR -> çift-Elo + çift-satır
         // yarışını kapat. Kilidi alamazsak (başka rapor işliyor) çift İŞLEM yapma; mevcut durumu
@@ -398,49 +379,14 @@ class AuthController extends Controller
             }
         }
 
-        $srv = $this->serverResultForRoom($user, $roomCode);
-
-        // Rakibin (ayni room_code) daha once raporladigi satir — cift-galibiyet/kayip
-        // celiskisini engellemek + yarista yanlis raporlanan rakip satirini duzeltmek icin.
-        $oppRow = null;
-        if (! empty($roomCode)) {
+        // Sonuc yukarida yalniz verified server result'tan alindi.
+        // Mevcut self-heal davranisi yalniz gercek rakibin satiri ve dogrulanmis sonuc icin korunur.
+        $opponentId = (int) $room->{$opponentSlot.'_user_id'};
+        if ($ranked && $opponentId > 0) {
             $oppRow = \App\Models\MatchResult::where('room_code', $roomCode)
-                ->where('user_id', '!=', $user->id)
-                ->latest('id')
-                ->first();
-        }
-
-        if ($srv !== null) {
-            // 1) ODA KESIN -> otoriter sonuc.
-            $won = $srv['won'];
-            if ($srv['won'] !== $clientWon) {
-                \Illuminate\Support\Facades\Log::warning('reportRating: sunucu-otoriter sonuc istemciden farkli (duzeltildi)', [
-                    'user_id' => $user->id, 'room' => $roomCode,
-                    'client_won' => $clientWon, 'server_won' => $srv['won'],
-                ]);
-            }
-            // Skorlari da otoriter degerle duzelt ki gecmis satiri tutarli gorunsun.
-            if ($srv['self'] !== null) {
-                $data['score_self'] = $srv['self'];
-            }
-            if ($srv['opp'] !== null) {
-                $data['score_opp'] = $srv['opp'];
-            }
-            // KENDINI-IYILESTIRME: rakip once (oda o an kararsizken) YANLIS raporladiysa,
-            // artik kesin gercekle onun satirini da tamamlayiciya cek (ikisi birden
-            // kazanamaz/kaybedemez). Rakibin rating/win-loss'u da net farkla duzeltilir.
+                ->where('user_id', $opponentId)->latest('id')->first();
             if ($oppRow !== null && (bool) $oppRow->won === $won) {
-                $this->reconcileRow($oppRow, ! $won, $srv['opp'], $srv['self']);
-            }
-        } elseif ($oppRow !== null) {
-            // 2) ODA KARARSIZ ama rakip raporlamis -> TAMAMLAYICI ol (celiskiyi reddet).
-            // Rakip 'kazandim' dediyse bu taraf kazanmis olamaz; tersi de gecerli.
-            $won = ! (bool) $oppRow->won;
-            if ($won !== $clientWon) {
-                \Illuminate\Support\Facades\Log::warning('reportRating: oda kararsiz; rakiple tutarlilastirildi (istemci beyani reddedildi)', [
-                    'user_id' => $user->id, 'room' => $roomCode,
-                    'client_won' => $clientWon, 'forced_won' => $won,
-                ]);
+                $this->reconcileRow($oppRow, ! $won, $verified['opp'], $verified['self']);
             }
         }
 
@@ -636,7 +582,9 @@ class AuthController extends Controller
         // WXP odullendir (kazanan + desteklenen tur/uzunluk). Idempotent + transaction-safe.
         // Ayri, bagimsiz domain akisi: WXP source of truth ledger'dir (rating'den bagimsiz).
         try {
-            app(\App\Services\WxpService::class)->awardForMatchResult($result);
+            if ($ranked) {
+                app(\App\Services\WxpService::class)->awardForMatchResult($result);
+            }
         } catch (\Throwable $e) {
             // WXP verilemezse mac kaydi yine de gecerli; sessizce veri kaybetme -> logla.
             \Illuminate\Support\Facades\Log::warning('WXP award failed', [
@@ -679,15 +627,16 @@ class AuthController extends Controller
         // mac akisini kirmaz: hata olursa sessizce yut + logla. Yeni acilanlar UI'a doner.
         $unlocked = [];
         try {
-            $extra = [
-                'gammons' => (int) $request->input('gammons', 0),
-                'backgammons' => (int) $request->input('backgammons', 0),
-                'min_win_prob' => $request->input('min_win_prob'),
-                'flags' => (array) $request->input('ach_flags', []),
-            ];
-            $ctx = app(\App\Services\Achievements\StatsUpdater::class)->updateForMatch($user, $result, $extra);
+            // Client log/PR/luck/flags analiz verisidir, coin odulu kaniti degildir.
+            $rewardResult = clone $result;
+            $rewardResult->log = null;
+            $rewardResult->pr = null;
+            $rewardResult->luck = null;
+            $ctx = $ranked
+                ? app(\App\Services\Achievements\StatsUpdater::class)->updateForMatch($user, $rewardResult)
+                : null;
             $user->unsetRelation('stat');
-            $newAch = app(\App\Services\Achievements\AchievementService::class)->evaluate($user, $ctx);
+            $newAch = $ranked ? app(\App\Services\Achievements\AchievementService::class)->evaluate($user, $ctx) : [];
             $unlocked = array_map(fn ($d) => [
                 'slug' => $d['slug'], 'name' => $d['name'], 'desc' => $d['desc'],
                 'icon' => $d['icon'], 'tier' => $d['tier'], 'rarity' => $d['rarity'],

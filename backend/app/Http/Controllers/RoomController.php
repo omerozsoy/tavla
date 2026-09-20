@@ -10,6 +10,7 @@ use App\Services\FairDiceService;
 use App\Services\MatchClock;
 use App\Services\MoveValidatorService;
 use App\Support\Backgammon;
+use App\Support\RoomAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -164,6 +165,10 @@ class RoomController extends Controller
     // Hizli eslesme: bekleyen biri varsa esle, yoksa havuza gir ve bekle.
     public function matchmaking(Request $request)
     {
+        $authUser = $request->user('sanctum');
+        if (! $authUser || $authUser->isBanned()) {
+            return $this->fail('Eşleşme için aktif bir hesapla giriş yapmalısın.', $authUser ? 403 : 401);
+        }
         $this->cleanupStale();
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
@@ -204,8 +209,10 @@ class RoomController extends Controller
         // gelir (route auth middleware'i disinda olsa da bearer token gonderiliyor).
         // Aksi halde saldirgan baskasinin user_id'siyle bahis odasina girip settle'da onun
         // coin'ini riske atabilir/eritebilirdi. Giris yoksa userId null (yalnizca ucretsiz oyun).
-        $authUser = $request->user('sanctum');
-        $userId = $authUser?->id ?? null;
+        $userId = (int) $authUser->id;
+        $data['name'] = $authUser->nickname;
+        $data['rating'] = (int) ($authUser->rating ?? 1500);
+        $data['avatar'] = $authUser->avatar;
         // Kabul edilen mac uzunluklari (kolay eslesme icin coklu). Bos -> tek oyun.
         $targets = array_values(array_unique(array_map('intval', $data['targets'] ?? [])));
         $targets = array_values(array_filter($targets, fn ($n) => in_array($n, [1, 3, 5, 7, 9, 11], true)));
@@ -235,7 +242,7 @@ class RoomController extends Controller
         // Zaten havuzda bekleyen kendi odam (ayni kategori) varsa: bahis secimi AYNIysa don,
         // FARKLIysa eskiyi kaldir (orphan bekleyen oda kalmasin) -> yeni secimle yeniden aranir.
         $mine = Room::where('status', 'mm_waiting')
-            ->where('p1_token', $data['token'])
+            ->where('p1_user_id', $userId)
             ->where('bet_pct', $betPct)
             ->where('time_control', $timeControl)
             ->first();
@@ -245,7 +252,7 @@ class RoomController extends Controller
             if ($mineStakes === $stakes) {
                 return response()->json(['room' => $mine->toClient(), 'slot' => 'p1', 'matched' => false]);
             }
-            $mine->delete();
+            return $this->fail('Zaten aktif bir eşleşme bekliyorsun. Önce onu iptal et.', 409);
         }
 
         // Ayni bahis/kategorili bekleyen adaylar; min puan filtresi (tek yonlu).
@@ -254,11 +261,16 @@ class RoomController extends Controller
         // aksi halde kilit hemen birakilir ve iki es zamanli istek ayni bekleyen odayi
         // rakip secip ikisi de p2'ye yazabilir (cift eslesme / bahis tutarsizligi).
         $opponent = DB::transaction(function () use ($data, $stakes, $betPct, $minRating, $targets, $userId, $timeControl) {
+            $requester = User::lockForUpdate()->find($userId);
+            if (! $requester || $requester->isBanned() || Room::userHasActiveMoneyMatch($userId)) {
+                return null;
+            }
             // Bahis KOLONUYLA filtrelemiyoruz: aday listesiyle KESISIM kontrol edilir (coklu secim).
             $q = Room::where('status', 'mm_waiting')
                 ->where('bet_pct', $betPct)
                 ->where('time_control', $timeControl) // yalnizca ayni tempo
-                ->where('p1_token', '!=', $data['token'])
+                ->whereNotNull('p1_user_id')
+                ->where('p1_user_id', '!=', $userId)
                 ->whereNull('p2_token');
             if ($minRating > 0) {
                 $q->where('p1_rating', '>=', $minRating);
@@ -266,6 +278,17 @@ class RoomController extends Controller
             $candidates = $q->orderBy('created_at')->lockForUpdate()->get();
 
             foreach ($candidates as $cand) {
+                // A banned/deleted waiting account cannot be admitted as an opponent.
+                $host = User::find($cand->p1_user_id);
+                if (! $host || $host->isBanned()) {
+                    continue;
+                }
+                // The candidate row is locked above, so it cannot be admitted twice. A stale
+                // second active room is still rejected; the host row is deliberately not locked
+                // here to avoid cross-user lock inversion between two matching requests.
+                if (Room::userHasActiveMoneyMatch((int) $cand->p1_user_id, (int) $cand->id)) {
+                    continue;
+                }
                 // Uzunluk KESISIMI
                 $candTargets = is_array($cand->targets) ? $cand->targets : [1];
                 $commonTargets = array_values(array_intersect($candTargets, $targets));
@@ -372,7 +395,23 @@ class RoomController extends Controller
         if ($hasDiceAuthCol && config('dice.authority', true) && ($maxStake > 0 || $betPct > 0)) {
             $roomData['dice_authority'] = true;
         }
-        $room = Room::create($roomData);
+        // The user row is the serialization point for concurrent matchmaking requests.
+        // The active-room check and insert must share this transaction; an application-level
+        // pre-check alone allows two simultaneous requests to create two money rooms.
+        $room = DB::transaction(function () use ($roomData, $userId) {
+            $lockedUser = User::lockForUpdate()->find($userId);
+            if (! $lockedUser || $lockedUser->isBanned()) {
+                return null;
+            }
+            if (Room::userHasActiveMoneyMatch($userId)) {
+                return null;
+            }
+
+            return Room::create($roomData);
+        });
+        if (! $room) {
+            return $this->fail('Zaten aktif bir para maçı veya eşleşme beklemesi var.', 409);
+        }
 
         return response()->json(['room' => $room->toClient(), 'slot' => 'p1', 'matched' => false]);
     }
@@ -399,23 +438,14 @@ class RoomController extends Controller
         if ($room->mode === 'friendly' || ($stake <= 0 && $betPct <= 0) || ! $room->p1_user_id || ! $room->p2_user_id) {
             return response()->json(['ok' => false]);
         }
-        $callerIsP1 = $room->p1_token === $data['token'];
-        $callerIsP2 = $room->p2_token === $data['token'];
-        if (! $callerIsP1 && ! $callerIsP2) {
+        $callerSlot = $this->slotOf($room, $data['token'], $request);
+        if ($callerSlot === null) {
             return $this->fail('Bu odada değilsin.', 403);
         }
-        $callerSlot = $callerIsP1 ? 'p1' : 'p2';
-        $callerId = $callerIsP1 ? $room->p1_user_id : $room->p2_user_id;
+        $callerId = $room->{$callerSlot.'_user_id'};
 
-        // Bu oyuncunun beyan ettigi sonucu (bir kez) kaydet
-        $resultCol = $callerSlot.'_result';
-        if ($room->$resultCol === null) {
-            $room->$resultCol = $data['won'] ? 'won' : 'lost';
-            $room->save();
-        }
-
-        // Kazanani yetkili sekilde coz; henuz belli degilse odeme yapma (rakip beyani
-        // veya son mac durumu senkronu gelince tamamlanir).
+        // Money settlement never trusts the client `won` field. The winner comes from the
+        // verified authoritative match; the request field remains only for old API shape.
         $winnerSlot = $this->resolveWinnerSlot($room->fresh());
         if ($winnerSlot === null) {
             $caller = User::find($callerId);
@@ -424,17 +454,6 @@ class RoomController extends Controller
 
         $winnerId = $winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id;
         $loserId = $winnerSlot === 'p1' ? $room->p2_user_id : $room->p1_user_id;
-
-        // Kazanan belli -> mac bitti: odayi 'finished' isaretle (Canli Maclar'da gorunmesin;
-        // client status gonderemese bile guvenlik agi).
-        if ($room->status !== 'finished') {
-            // version'i da ARTIR: izleyicinin version-kapili poll'u 'finished'i yakalasin
-            // (yoksa version degismezse showRoom 'degismedi' donup izleyici DONAR).
-            Room::where('code', $code)->update([
-                'status' => 'finished',
-                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
-            ]);
-        }
 
         // ATOMIK: "settled" iddiasi + coin transferi TEK transaction, kullanicilar kilitli.
         // Ayni oyuncunun es zamanli birden fazla oda cozumunde net coin uretimi/kaybi engellenir.
@@ -450,6 +469,12 @@ class RoomController extends Controller
             if (! $claimed) {
                 return ['already' => true];
             }
+            // Finalization is part of the same claim transaction as the wallet transfer.
+            // A failed debit/credit rolls back both the economic claim and room finalization.
+            Room::where('code', $code)->update([
+                'status' => 'finished',
+                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
+            ]);
             // Deadlock'u onlemek icin deterministik kilit sirasi (id'ye gore)
             $ids = array_values(array_unique(array_filter([$winnerId, $loserId])));
             sort($ids);
@@ -802,8 +827,12 @@ class RoomController extends Controller
     public function matchmakingCancel(Request $request)
     {
         $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $user = $request->user('sanctum');
+        if (! $user || $user->isBanned()) {
+            return $this->fail('Aktif bir hesapla giriş yapmalısın.', $user ? 403 : 401);
+        }
         Room::where('status', 'mm_waiting')
-            ->where('p1_token', $data['token'])
+            ->where('p1_user_id', $user->id)
             ->whereNull('p2_token')
             ->delete();
         return $this->ok();
@@ -824,8 +853,14 @@ class RoomController extends Controller
             return $this->fail('Oda bulunamadı.', 404);
         }
 
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
+            if (RoomAccess::requiresAccount($room)) {
+                return $this->fail('Bu odaya yeni katılım için eşleşme akışını kullanmalısın.', 403);
+            }
+            if ($room->status !== 'waiting' || $room->bot) {
+                return $this->fail('Bu odaya yeni oyuncu alınamaz.', 409);
+            }
             // Yeni katilimci
             if ($room->p2_token) {
                 return $this->fail('Oda dolu.', 409);
@@ -886,8 +921,14 @@ class RoomController extends Controller
             ],
         );
 
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
+            if (RoomAccess::requiresAccount($room)) {
+                return $this->fail('Bu odaya yeni katılım için eşleşme akışını kullanmalısın.', 403);
+            }
+            if ($room->status !== 'waiting' || $room->bot) {
+                return $this->fail('Bu odaya yeni oyuncu alınamaz.', 409);
+            }
             if ($room->p2_token) {
                 return $this->fail('Oda dolu.', 409);
             }
@@ -929,8 +970,8 @@ class RoomController extends Controller
         // Poll aninda saati ilerlet + kayip (TIMEOUT/AFK_TIMEOUT/ABANDON) kosulunu uygula.
         // Token verilirse poll edenin VARLIK (presence) damgasi tazelenir -> terk tespiti.
         // (state degismeden; kayip olursa applyClockEnd version'i artirir.)
-        $token = (string) $request->query('token', '');
-        $slot = $token !== '' ? $this->slotOf($room, $token) : null;
+        $token = (string) $request->header('X-Room-Token', $request->query('token', ''));
+        $slot = $this->slotOf($room, $token, $request);
         $this->tickClock($room, $slot);
 
         $since = (int) $request->query('since', -1);
@@ -973,7 +1014,7 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
             return $this->fail('Bu odada değilsin.', 403);
         }
@@ -1114,9 +1155,9 @@ class RoomController extends Controller
         if (! $room) {
             return response()->json(['ok' => true]);
         }
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
-            return response()->json(['ok' => true]); // odada degil -> yapacak sey yok
+            return $this->fail('Bu odada değilsin.', 403);
         }
         $clock = is_array($room->clock) ? $room->clock : [];
         $ended = ! empty($clock['end']) || $room->status === 'finished';
@@ -1145,101 +1186,107 @@ class RoomController extends Controller
             'status' => ['nullable', 'string', 'in:playing,finished'],
         ]);
 
-        $room = Room::where('code', strtoupper($code))->first();
-        if (! $room) {
-            return $this->fail('Oda bulunamadı.', 404);
-        }
-        $slot = $this->slotOf($room, $data['token']);
-        if ($slot === null) {
-            return $this->fail('Bu odada değilsin.', 403);
-        }
+        return DB::transaction(function () use ($data, $code, $request) {
+            $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
+            if (! $room) {
+                return $this->fail('Oda bulunamadı.', 404);
+            }
+            $slot = $this->slotOf($room, $data['token'], $request);
+            if ($slot === null) {
+                return $this->fail('Bu odada değilsin.', 403);
+            }
 
-        // ---- BAĞIMSIZ Faz 1: sunucu-otoriter ZAR eşleşmesi (dice_authority odalar) ----
-        // İstemcinin OYNADIĞI zar (state.turnStart.dice) SUNUCUNUN verdiği açık elle eşleşmeli;
-        // aksi halde istemci kendi zarını enjekte etmiş -> REDDET (zar değeri seçme hilesi kapanır).
-        // Tur rengi değişince açık el tüketilmiş sayılır (sıradaki roll yeni el üretir).
-        if ($room->dice_authority && ! $room->authoritative) {
-            $prev = is_array($room->state) ? $room->state : null;
-            $newDiceKey = $this->diceBaseKey($data['state']['turnStart']['dice'] ?? null);
+            if (! $room->acceptsLegacyState()) {
+                return $this->fail('Bu odanın oyun durumu yalnız sunucu aksiyonlarıyla değiştirilebilir.', 409);
+            }
 
-            if ($newDiceKey !== null) {
-                $issued = (int) $room->dice_roll_index;
-                $consumed = (int) $room->dice_consumed;
-                $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
-                $openKey = ($issued > $consumed && ! empty($rolls))
-                    ? $this->diceBaseKey($rolls[count($rolls) - 1]['dice'] ?? null)
-                    : null;
+            // ---- BAĞIMSIZ Faz 1: sunucu-otoriter ZAR eşleşmesi (dice_authority odalar) ----
+            // İstemcinin OYNADIĞI zar (state.turnStart.dice) SUNUCUNUN verdiği açık elle eşleşmeli;
+            // aksi halde istemci kendi zarını enjekte etmiş -> REDDET (zar değeri seçme hilesi kapanır).
+            // Tur rengi değişince açık el tüketilmiş sayılır (sıradaki roll yeni el üretir).
+            if ($room->dice_authority && ! $room->authoritative) {
+                $prev = is_array($room->state) ? $room->state : null;
+                $newDiceKey = $this->diceBaseKey($data['state']['turnStart']['dice'] ?? null);
 
-                // AÇILIŞ MUAFİYETİ: her oyunun ilk eli serverRoll'dan GELMEZ; oda kodu + oyun no'dan
-                // DETERMINISTIK üretilir (iki istemci aynı). Sunucu aynı değeri yeniden hesaplar
-                // (SeededOpening = JS `seededOpening` byte-exact portu) ve o eli MUAF tutar.
-                // gameNo = maça dek toplam puan (state.match.score) — istemci ile aynı formül.
-                $score = $data['state']['match']['score'] ?? null;
-                $gameNo = is_array($score)
-                    ? (int) ($score['white'] ?? 0) + (int) ($score['black'] ?? 0)
-                    : 0;
-                $openingKey = $this->diceBaseKey(\App\Support\SeededOpening::dice($room->code, $gameNo));
+                if ($newDiceKey !== null) {
+                    $issued = (int) $room->dice_roll_index;
+                    $consumed = (int) $room->dice_consumed;
+                    $rolls = is_array($room->dice_rolls) ? $room->dice_rolls : [];
+                    $openKey = ($issued > $consumed && ! empty($rolls))
+                        ? $this->diceBaseKey($rolls[count($rolls) - 1]['dice'] ?? null)
+                        : null;
 
-                $mismatch = ($newDiceKey !== $openKey && $newDiceKey !== $openingKey);
-                if ($mismatch) {
-                    if (config('dice.enforce', false)) {
-                        // ENFORCE: istemci zarı sunucununkiyle uyuşmuyor -> reddet (hile kapanır).
-                        return $this->fail('Zar sunucudan alınmalı (geçersiz zar).', 422, ['reason' => 'dice-forgery']);
+                    // AÇILIŞ MUAFİYETİ: her oyunun ilk eli serverRoll'dan GELMEZ; oda kodu + oyun no'dan
+                    // DETERMINISTIK üretilir (iki istemci aynı). Sunucu aynı değeri yeniden hesaplar
+                    // (SeededOpening = JS `seededOpening` byte-exact portu) ve o eli MUAF tutar.
+                    // gameNo = maça dek toplam puan (state.match.score) — istemci ile aynı formül.
+                    $score = $data['state']['match']['score'] ?? null;
+                    $gameNo = is_array($score)
+                        ? (int) ($score['white'] ?? 0) + (int) ($score['black'] ?? 0)
+                        : 0;
+                    $openingKey = $this->diceBaseKey(\App\Support\SeededOpening::dice($room->code, $gameNo));
+
+                    $mismatch = ($newDiceKey !== $openKey && $newDiceKey !== $openingKey);
+                    if ($mismatch) {
+                        if (config('dice.enforce', false)) {
+                            // ENFORCE: istemci zarı sunucununkiyle uyuşmuyor -> reddet (hile kapanır).
+                            return $this->fail('Zar sunucudan alınmalı (geçersiz zar).', 422, ['reason' => 'dice-forgery']);
+                        }
+                        // SHADOW: reddetme ama LOGLA -> canlıda enforce açmadan önce yanlış-red
+                        // (meşru oyunu kıracak edge-case) var mı gör. Beklenen: hiç log olmamalı.
+                        \Illuminate\Support\Facades\Log::warning('dice.shadow-mismatch', [
+                            'room' => $room->code, 'slot' => $slot, 'played' => $newDiceKey,
+                            'open' => $openKey, 'opening' => $openingKey, 'gameNo' => $gameNo,
+                        ]);
                     }
-                    // SHADOW: reddetme ama LOGLA -> canlıda enforce açmadan önce yanlış-red
-                    // (meşru oyunu kıracak edge-case) var mı gör. Beklenen: hiç log olmamalı.
-                    \Illuminate\Support\Facades\Log::warning('dice.shadow-mismatch', [
-                        'room' => $room->code, 'slot' => $slot, 'played' => $newDiceKey,
-                        'open' => $openKey, 'opening' => $openingKey, 'gameNo' => $gameNo,
-                    ]);
+                }
+
+                // Tüketim: tur rengi değiştiyse açık el(ler) tüketildi -> consumed = issued.
+                $prevTurn = $prev['turnStart']['turn'] ?? null;
+                $newTurn = $data['state']['turnStart']['turn'] ?? null;
+                if ($prevTurn !== null && $newTurn !== null && $prevTurn !== $newTurn) {
+                    $room->dice_consumed = (int) $room->dice_roll_index;
                 }
             }
 
-            // Tüketim: tur rengi değiştiyse açık el(ler) tüketildi -> consumed = issued.
-            $prevTurn = $prev['turnStart']['turn'] ?? null;
-            $newTurn = $data['state']['turnStart']['turn'] ?? null;
-            if ($prevTurn !== null && $newTurn !== null && $prevTurn !== $newTurn) {
-                $room->dice_consumed = (int) $room->dice_roll_index;
+            $room->state = $data['state'];
+            $room->version = $room->version + 1;
+            if (! empty($data['status'])) {
+                $room->status = $data['status'];
             }
-        }
 
-        $room->state = $data['state'];
-        $room->version = $room->version + 1;
-        if (! empty($data['status'])) {
-            $room->status = $data['status'];
-        }
-
-        // ---- Sunucu-otoriter saat + AFK ----
-        $now = microtime(true);
-        $clock = is_array($room->clock) ? $room->clock : [];
-        if (empty($clock)) {
-            // Ilk gercek guncelleme: state.match.target biliniyorsa saati kur.
-            $target = (int) ($data['state']['match']['target'] ?? $room->target ?? 0);
-            if ($target > 0) {
-                $clock = MatchClock::init($room->time_control, $target, $now);
+            // ---- Sunucu-otoriter saat + AFK ----
+            $now = microtime(true);
+            $clock = is_array($room->clock) ? $room->clock : [];
+            if (empty($clock)) {
+                // Ilk gercek guncelleme: state.match.target biliniyorsa saati kur.
+                $target = (int) ($data['state']['match']['target'] ?? $room->target ?? 0);
+                if ($target > 0) {
+                    $clock = MatchClock::init($room->time_control, $target, $now);
+                }
             }
-        }
-        if (! empty($clock)) {
-            // $slot = istegi yapanin slotu -> sira DEVRINI yalniz sira sahibi tetikleyebilir.
-            $clock = MatchClock::onUpdate($clock, $data['state'], $slot, $now);
-            $clock = MatchClock::seen($clock, $slot, $now); // hamle yapan present
-            if (! empty($clock['end'])) {
-                $this->applyClockEnd($room, $clock);
+            if (! empty($clock)) {
+                // $slot = istegi yapanin slotu -> sira DEVRINI yalniz sira sahibi tetikleyebilir.
+                $clock = MatchClock::onUpdate($clock, $data['state'], $slot, $now);
+                $clock = MatchClock::seen($clock, $slot, $now); // hamle yapan present
+                if (! empty($clock['end'])) {
+                    $this->applyClockEnd($room, $clock);
+                } else {
+                    $this->tagNormalEnd($room, $data['state']);
+                }
+                $room->clock = $clock;
             } else {
                 $this->tagNormalEnd($room, $data['state']);
             }
-            $room->clock = $clock;
-        } else {
-            $this->tagNormalEnd($room, $data['state']);
-        }
 
-        $room->save();
+            $room->save();
 
-        return response()->json([
-            'version' => $room->version,
-            'status' => $room->status,
-            'clock' => $this->clockView($room),
-        ]);
+            return response()->json([
+                'version' => $room->version,
+                'status' => $room->status,
+                'clock' => $this->clockView($room),
+            ]);
+        });
     }
 
     // Saati poll aninda ilerlet: kayip kosulu olustuysa maci sonlandir (idempotent).
@@ -1551,7 +1598,7 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
             return $this->fail('Bu odada değilsin.', 403);
         }
@@ -1598,7 +1645,7 @@ class RoomController extends Controller
         if (! empty($data['leave'])) {
             // Sekme kapanışı (best-effort): kaydı hemen sil.
             DB::table('room_viewers')->where('room_code', $codeU)->where('token', $data['token'])->delete();
-        } elseif ($this->slotOf($room, $data['token']) === null) {
+        } elseif ($this->slotOf($room, $data['token'], $request) === null) {
             // Oyuncu değil -> izleyici olarak kaydet/tazele (upsert).
             $user = $request->user('sanctum');
             $name = $user?->nickname ?: ($user?->first_name ?: ($data['name'] ?: 'Misafir'));
@@ -1911,16 +1958,23 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'client_seed' => ['nullable', 'string', 'max:40'],
+            'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $resp = DB::transaction(function () use ($data, $code, $dice) {
+        $resp = DB::transaction(function () use ($data, $code, $dice, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
             }
-            $slot = $this->slotOf($room, $data['token']);
+            $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if (! $room->acceptsGameActions()) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
             }
             // GÜVENLİK: bot odasında p2 (bot) zar ATAMAZ HTTP ile (botu yalnız sunucu sürer).
             if ($room->bot && $slot === 'p2') {
@@ -2075,16 +2129,23 @@ class RoomController extends Controller
             'steps.*.from' => ['required'],
             'steps.*.to' => ['required'],
             'steps.*.die' => ['required', 'integer', 'min:1', 'max:6'],
+            'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $resp = DB::transaction(function () use ($data, $code, $validator) {
+        $resp = DB::transaction(function () use ($data, $code, $validator, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
             }
-            $slot = $this->slotOf($room, $data['token']);
+            $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if (! $room->acceptsGameActions()) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
             }
             // GÜVENLİK: bot odasında p2 (bot) slotu HTTP ile OYNAYAMAZ — botu yalnız sunucu (driveBot)
             // sürer. İstemci bot token'ını bilmez (toClient token dönmez) ama derinlemesine savunma.
@@ -2184,9 +2245,12 @@ class RoomController extends Controller
      */
     public function cubeOffer(Request $request, string $code)
     {
-        $data = $request->validate(['token' => ['required', 'string', 'max:64']]);
+        $data = $request->validate([
+            'token' => ['required', 'string', 'max:64'],
+            'expected_version' => ['nullable', 'integer', 'min:0'],
+        ]);
 
-        return DB::transaction(function () use ($data, $code) {
+        return DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2194,9 +2258,15 @@ class RoomController extends Controller
             if (! $room->authoritative) {
                 return $this->fail('Bu oda sunucu-otoriter değil.', 409);
             }
-            $slot = $this->slotOf($room, $data['token']);
+            $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if (! $room->acceptsGameActions()) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
             }
             $color = $this->slotColor($slot);
             // MERKEZİ KURAL KONTROLÜ: tüm küp kuralları (sıra/Crawford/zar/açılış/sahiplik/64/
@@ -2266,9 +2336,10 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'action' => ['required', 'string', 'in:take,drop'],
+            'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $resp = DB::transaction(function () use ($data, $code) {
+        $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2276,9 +2347,15 @@ class RoomController extends Controller
             if (! $room->authoritative) {
                 return $this->fail('Bu oda sunucu-otoriter değil.', 409);
             }
-            $slot = $this->slotOf($room, $data['token']);
+            $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if (! $room->acceptsGameActions()) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
             }
             if ($room->bot && $slot === 'p2') {
                 return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
@@ -2342,9 +2419,10 @@ class RoomController extends Controller
             'token' => ['required', 'string', 'max:64'],
             // Pes türü: SINGLE(×1)/GAMMON(×2)/BACKGAMMON(×3). Yoksa geriye-uyum: single.
             'resign_type' => ['nullable', 'in:single,gammon,backgammon'],
+            'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        return DB::transaction(function () use ($data, $code) {
+        return DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2352,9 +2430,15 @@ class RoomController extends Controller
             if (! $room->authoritative) {
                 return $this->fail('Bu oda sunucu-otoriter değil.', 409);
             }
-            $slot = $this->slotOf($room, $data['token']);
+            $slot = $this->slotOf($room, $data['token'], $request);
             if ($slot === null) {
                 return $this->fail('Bu odada değilsin.', 403);
+            }
+            if (! $room->acceptsGameActions()) {
+                return $this->fail('Oyun aktif değil.', 409);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
             }
             if ($room->bot && $slot === 'p2') {
                 return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
@@ -2467,7 +2551,7 @@ class RoomController extends Controller
             return $this->fail('Bot odası bulunamadı.', 404);
         }
         // Yalnız odanın insan oyuncusu (p1) dürtebilir.
-        if ($this->slotOf($room, $data['token']) !== 'p1') {
+        if ($this->slotOf($room, $data['token'], $request) !== 'p1') {
             return $this->fail('Bu odada değilsin.', 403);
         }
 
@@ -2723,7 +2807,7 @@ class RoomController extends Controller
         if (! $room) {
             return response()->json(['ok' => false], 404);
         }
-        $slot = $this->slotOf($room, $data['token']);
+        $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
             return response()->json(['ok' => false], 403);
         }
@@ -2764,14 +2848,25 @@ class RoomController extends Controller
         ]);
     }
 
-    private function slotOf(Room $room, string $token): ?string
+    private function slotOf(Room $room, string $token, Request $request): ?string
     {
-        if ($room->p1_token === $token) {
-            return 'p1';
+        return RoomAccess::slot($room, $request->user('sanctum'), $token);
+    }
+
+    /** Reject an explicitly versioned command from a stale tab; omitted versions remain compatible. */
+    private function staleCommand(Room $room, array $data): ?\Symfony\Component\HttpFoundation\Response
+    {
+        if (! array_key_exists('expected_version', $data) || $data['expected_version'] === null) {
+            return null;
         }
-        if ($room->p2_token === $token) {
-            return 'p2';
+
+        $actual = $room->authoritative ? (int) $room->server_version : (int) $room->version;
+        if ((int) $data['expected_version'] !== $actual) {
+            return $this->fail('Oyun durumu güncellendi; önce yeniden senkronize ol.', 409, [
+                'reason' => 'stale-version', 'version' => $actual,
+            ]);
         }
+
         return null;
     }
 }

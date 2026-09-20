@@ -317,7 +317,8 @@ class LuckyWheelService
                     // Ödemeli çevirme kapalı ve ücretsiz hak yok.
                     return ['error' => 'no_spins', 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
                 }
-                if ((int) ($u->coins ?? 0) < $cost) {
+                $available = (int) ($u->coins ?? 0) - (int) ($u->coins_reserved ?? 0);
+                if ($available < $cost) {
                     return ['error' => 'need_coins', 'cost' => $cost, 'nextFreeSpinAt' => $this->nextFreeSpinAt($state)];
                 }
                 $paid = true;
@@ -331,7 +332,7 @@ class LuckyWheelService
 
             // Hak tüket: önce ücretsiz, sonra bonus, ikisi de bittiyse coin ile ödemeli.
             if ($paid) {
-                $u->coins = max(0, (int) ($u->coins ?? 0) - $cost);
+                $u->coins = (int) ($u->coins ?? 0) - $cost;
                 $u->save();
                 $spinType = 'paid';
             } elseif ($this->freeRemaining($state) <= 0) {

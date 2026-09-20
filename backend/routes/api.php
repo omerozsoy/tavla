@@ -66,9 +66,9 @@ Route::get('/dice-slot', [\App\Http\Controllers\DiceSlotController::class, 'show
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
 // 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
 // genisligi tuketimi) durdurur. Sohbet spam'i icin ayrica daha siki 40/dk.
-Route::middleware('throttle:240,1,rooms')->group(function () {
-    Route::post('/matchmaking', [RoomController::class, 'matchmaking']);
-    Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel']);
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:240,1,rooms'])->group(function () {
+    Route::post('/matchmaking', [RoomController::class, 'matchmaking'])->middleware('auth:sanctum');
+    Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel'])->middleware('auth:sanctum');
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
     Route::get('/online-players', [RoomController::class, 'onlinePlayers']); // cevrimici oyuncular
     Route::post('/rooms', [RoomController::class, 'create']);
@@ -91,11 +91,11 @@ Route::middleware('throttle:240,1,rooms')->group(function () {
     Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond']);
     Route::post('/rooms/{code}/resign', [RoomController::class, 'resign']);
 });
-Route::middleware('throttle:40,1,chat')->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
-Route::middleware('throttle:600,1,live')->post('/rooms/{code}/live', [RoomController::class, 'live']);
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,live'])->post('/rooms/{code}/live', [RoomController::class, 'live']);
 // Canli mac IZLEME presence (spectator heartbeat): izleyici kaydi + izleyen listesi/sayisi. Herkese acik.
-Route::middleware('throttle:120,1,watch')->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:120,1,watch'])->post('/rooms/{code}/watch', [RoomController::class, 'watch']);
 // GEÇİCİ TEŞHİS (Faz 2): backend Node validator'a ulaşabiliyor mu? Secret/URL AÇMAZ. Sorun
 // çözülünce KALDIR. Tarayıcıda /api/validator-check açılır. Limit bol (teşhis için yenilenebilsin).
 Route::middleware('throttle:60,1,validator')->get('/validator-check', [RoomController::class, 'validatorCheck']);
@@ -109,8 +109,9 @@ Route::middleware('throttle:20,1,game-logs')->post('/game-logs', [\App\Http\Cont
 Route::middleware('throttle:30,1,game-logs-mat')->get('/game-logs/{uid}/mat', [\App\Http\Controllers\GameLogController::class, 'mat']);
 
 // Giris gerektiren
-Route::middleware('auth:sanctum')->group(function () {
-    Route::post('/logout', [AuthController::class, 'logout']);
+Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::class])->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout'])
+        ->withoutMiddleware(\App\Http\Middleware\EnsureActiveAccount::class);
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);

@@ -510,6 +510,7 @@ interface RoomState {
   // Sunucu-otoriter mod (para maçı güvenliği Faz 2c). true iken istemci zar/hamleyi
   // SUNUCUDAN alır (serverRoll/serverMove). Şu an hiçbir oda için true değil (gated).
   authoritative?: boolean
+  server_version?: number
   // BAĞIMSIZ Faz 1: true iken yalnız ZAR sunucudan (serverRoll); hamle/tahta/küp LEGACY kalır.
   // Bahisli (para) eşleşme odalarında açılır. authoritative'den AYRIDIR.
   dice_authority?: boolean
@@ -2359,7 +2360,7 @@ export default function App() {
       setRanked(null)
       setCurrentProbs(null)
       const code = room.code
-      serverMove(code, finalPlayed)
+      serverMove(code, finalPlayed, room.server_version ?? 0)
         .then((r) => {
           if (r?.state) {
             appliedServerVersionRef.current = r.version
@@ -2685,7 +2686,7 @@ export default function App() {
       // NOT: try'in İÇİNDE — dışarıda atarsa uçuş kilidi (rollInFlightRef) asla açılmaz ve
       // o istemci bir daha ZAR ATAMAZ (açılışta: overlay'de kalıcı takılma).
       recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
-      const r = await serverRoll(code)
+      const r = await serverRoll(code, undefined, room?.server_version ?? 0)
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
       if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
         const starter = r.starter
@@ -2876,7 +2877,7 @@ export default function App() {
       // Küp kararı SUNUCUDA uygulanır ama PR/.mat kaydı istemcide tutulur -> sunucu teklifi
       // KABUL ettiyse (2xx) kendi kararımı da logla; yoksa online maçta Küp PR hiç oluşmuyordu.
       if (room?.code) {
-        void serverCubeOffer(room.code)
+        void serverCubeOffer(room.code, room.server_version ?? 0)
           .then(() => {
             recordCubePR(player, 'offer', 'double') // XG cube PR + .mat kaydı
             recordCubeEvent(player, 'double') // maç kaydı (okunur)
@@ -2896,7 +2897,7 @@ export default function App() {
       if (room?.code) {
         const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
         const code = room.code
-        void serverCubeRespond(code, 'take')
+        void serverCubeRespond(code, 'take', room.server_version ?? 0)
           .then((r) => {
             recordCubePR(srvTaker, 'take', 'take') // XG cube PR + .mat kaydı
             recordCubeEvent(srvTaker, 'take') // maç kaydı (okunur)
@@ -2920,7 +2921,7 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code) {
         const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
-        void serverCubeRespond(room.code, 'drop')
+        void serverCubeRespond(room.code, 'drop', room.server_version ?? 0)
           .then(() => {
             recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
             recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
@@ -2962,7 +2963,7 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code) {
         const code = room.code
-        serverResign(code, type)
+        serverResign(code, type, room.server_version ?? 0)
           .then((r) => {
             if (r?.state) {
               appliedServerVersionRef.current = r.version
@@ -4351,6 +4352,7 @@ export default function App() {
                 oppId: r.slot === 'p1' ? (rv.p2_user_id ?? null) : (rv.p1_user_id ?? null),
                 status: rv.status,
                 authoritative: rv.authoritative ?? r.authoritative,
+                server_version: rv.server_version ?? r.server_version,
                 dice_authority: rv.dice_authority ?? r.dice_authority,
                 live: rv.live ?? null, // canlı rakip önizlemesi (cosmetic)
               }
@@ -5201,6 +5203,7 @@ export default function App() {
         // ile hemen açılışa girer; authoritativeRef henüz false ise açılış seededOpening'e (legacy)
         // düşer -> server_state'e zar YAZILMAZ -> ilk serverMove "Önce zar at" (409) -> sıra geçmez.
         authoritative: res.room.authoritative,
+        server_version: res.room.server_version ?? 0,
         // BAGIMSIZ Faz 1: bahisli oda -> zar sunucudan (serverRoll). Aynı erken-gate mantığı.
         dice_authority: res.room.dice_authority,
       })

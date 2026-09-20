@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class Room extends Model
 {
@@ -81,6 +82,35 @@ class Room extends Model
             ->exists();
     }
 
+    /**
+     * A money/ranked room reserves a user's single active-game slot, including matchmaking wait.
+     * The caller must hold the user row lock when this is used for admission decisions.
+     */
+    public static function userHasActiveMoneyMatch(?int $uid, ?int $excludeRoomId = null): bool
+    {
+        if (! $uid) {
+            return false;
+        }
+
+        $query = static::whereIn('status', ['mm_waiting', 'playing'])
+            ->where(function ($q) use ($uid) {
+                $q->where('p1_user_id', $uid)->orWhere('p2_user_id', $uid);
+            });
+        if ($excludeRoomId !== null) {
+            $query->whereKeyNot($excludeRoomId);
+        }
+        $query->where(function ($q) {
+                $q->where('mode', 'ranked')
+                    ->orWhere('stake', '>', 0)
+                    ->orWhere('bet_pct', '>', 0);
+                if (Schema::hasColumn('rooms', 'escrowed')) {
+                    $q->orWhere('escrowed', true);
+                }
+            });
+
+        return $query->exists();
+    }
+
     protected function casts(): array
     {
         return [
@@ -98,6 +128,28 @@ class Room extends Model
             'bot_level' => 'integer',
             'live' => 'array',
         ];
+    }
+
+    public function acceptsLegacyState(): bool
+    {
+        return ! $this->authoritative && ! $this->bot
+            && (int) $this->stake === 0 && (int) $this->bet_pct === 0
+            && $this->mode === 'friendly' && $this->status === 'playing'
+            && $this->server_match === null && $this->server_state === null;
+    }
+
+    public function hasVerifiedServerResult(): bool
+    {
+        $match = $this->server_match;
+
+        return (bool) $this->authoritative && $this->status === 'finished'
+            && is_array($match) && ($match['done'] ?? false) === true
+            && in_array($match['winner'] ?? null, ['white', 'black'], true);
+    }
+
+    public function acceptsGameActions(): bool
+    {
+        return $this->status === 'playing' && ! ($this->server_match['done'] ?? false);
     }
 
     // Istemciye donen guvenli gorunum (token'lar gizli)
@@ -150,8 +202,8 @@ class Room extends Model
             'live' => $this->live,
             // REVEAL: maç bitince (yalnız o zaman) tohumu ve el logunu aç -> iki taraf da
             // commit'i ve tüm zarları provably-fair doğrular. Oyun sürerken dice_seed GİZLİ.
-            'dice_seed' => $this->status === 'finished' ? $this->dice_seed : null,
-            'dice_rolls' => $this->status === 'finished' ? ($this->dice_rolls ?? []) : null,
+            'dice_seed' => $this->hasVerifiedServerResult() ? $this->dice_seed : null,
+            'dice_rolls' => $this->hasVerifiedServerResult() ? ($this->dice_rolls ?? []) : null,
             // Oda modu (ranked/friendly): rovans sonrasi istemci puanli/puansiz ayrimini korur.
             'mode' => $this->mode,
             // RÖVANŞ durumu: p1/p2 cevaplari (null|yes|no) + anlasma saglandiysa YENI oda kodu.
