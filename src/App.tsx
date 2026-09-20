@@ -2380,6 +2380,21 @@ export default function App() {
           const err = e as { status?: number }
           if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
+          // Poll aralığını beklemeden tek seferlik doğrudan senkronizasyon yap.
+          // Özellikle "Önce zar at" yarışında eski yerel tahta bir sonraki hamle
+          // denemesini tetikleyip aynı 409'un sonsuza kadar tekrarlanmasını önler.
+          if (err?.status === 409) {
+            void showRoom(code)
+              .then((rv) => {
+                if (!rv?.server_state) return
+                applyServerBoard(rv.server_state, rv.server_match ?? null)
+                appliedServerVersionRef.current = rv.server_version ?? 0
+                appliedServerRoomRef.current = code
+              })
+              .catch(() => {
+                // Normal polling bir sonraki turda yeniden deneyecek.
+              })
+          }
         })
         .finally(() => {
           moveInFlightRef.current = false
