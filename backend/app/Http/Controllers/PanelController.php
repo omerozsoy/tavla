@@ -14,7 +14,7 @@ class PanelController extends Controller
 
     public function showLogin()
     {
-        if (Auth::check() && Auth::user()->is_admin) {
+        if (Auth::check() && Auth::user()->is_admin && ! Auth::user()->isBanned()) {
             return redirect('/panel/users');
         }
         return view('panel.login');
@@ -30,7 +30,7 @@ class PanelController extends Controller
         if (! Auth::attempt($data)) {
             return back()->withErrors(['email' => 'E-posta veya şifre hatalı.'])->withInput();
         }
-        if (! Auth::user()->is_admin) {
+        if (! Auth::user()->is_admin || Auth::user()->isBanned()) {
             Auth::logout();
             return back()->withErrors(['email' => 'Bu hesap yönetici değil.']);
         }
@@ -45,7 +45,7 @@ class PanelController extends Controller
         $token = (string) $request->query('token', '');
         $access = $token ? \Laravel\Sanctum\PersonalAccessToken::findToken($token) : null;
         $user = $access?->tokenable;
-        if ($user && $user->is_admin) {
+        if ($user && $user->is_admin && ! $user->isBanned()) {
             Auth::login($user);
             $request->session()->regenerate();
             return redirect('/panel/users');

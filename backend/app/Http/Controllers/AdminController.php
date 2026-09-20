@@ -10,7 +10,7 @@ class AdminController extends Controller
     // Uye listesi (yalnizca yonetici): arama + sayfalama
     public function users(Request $request)
     {
-        if (! $request->user()?->is_admin) {
+        if (! $request->user()?->is_admin || $request->user()->isBanned()) {
             return $this->fail('Yetkisiz.', 403);
         }
 
@@ -41,7 +41,7 @@ class AdminController extends Controller
     public function updateUser(Request $request, User $user)
     {
         $me = $request->user();
-        if (! $me?->is_admin) {
+        if (! $me?->is_admin || $me->isBanned()) {
             return $this->fail('Yetkisiz.', 403);
         }
 
@@ -84,7 +84,7 @@ class AdminController extends Controller
     // Uyenin son maclari (mac gecmisi)
     public function userMatches(Request $request, User $user)
     {
-        if (! $request->user()?->is_admin) {
+        if (! $request->user()?->is_admin || $request->user()->isBanned()) {
             return $this->fail('Yetkisiz.', 403);
         }
         $matches = \App\Models\MatchResult::where('user_id', $user->id)
