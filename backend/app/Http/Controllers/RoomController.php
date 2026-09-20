@@ -1021,6 +1021,13 @@ class RoomController extends Controller
         if (! $room->p1_token || ! $room->p2_token) {
             return $this->fail('Rakip yok.', 409);
         }
+        if ($room->status !== 'finished') {
+            return $this->fail('Rövanş yalnız tamamlanmış maçtan sonra açılabilir.', 409);
+        }
+        $moneyRoom = Room::requiresAccount($room);
+        if ($moneyRoom && ! $room->settled) {
+            return $this->fail('Önce mevcut maçın settlement işlemi tamamlanmalı.', 409);
+        }
 
         $room->{'rematch_'.$slot} = $data['accept'] ? 'yes' : 'no';
         $room->save();
@@ -1030,10 +1037,10 @@ class RoomController extends Controller
         if ($room->rematch_p1 === 'yes' && $room->rematch_p2 === 'yes' && ! $room->rematch_code) {
             $stake = (int) $room->stake;
             $betPct = (int) $room->bet_pct;
-            // C1: bahisli rovans, oyunculardan biri baska bir bahisli macta ise ACILMAZ.
-            if (($stake > 0 || $betPct > 0)
-                && ($this->userInStakedPlaying($room->p1_user_id, $room->id)
-                    || $this->userInStakedPlaying($room->p2_user_id, $room->id))) {
+            // C1: ranked/money rövanş, oyunculardan biri başka aktif money maçındaysa açılmaz.
+            if ($moneyRoom
+                && (Room::userHasActiveMoneyMatch((int) $room->p1_user_id, (int) $room->id)
+                    || Room::userHasActiveMoneyMatch((int) $room->p2_user_id, (int) $room->id))) {
                 $room->{'rematch_'.$slot} = null;
                 $room->save();
 
@@ -1071,8 +1078,30 @@ class RoomController extends Controller
     {
         return DB::transaction(function () use ($old) {
             $locked = Room::where('id', $old->id)->lockForUpdate()->first();
+            if (! $locked || $locked->status !== 'finished') {
+                throw new \RuntimeException('Rövanş yalnız tamamlanmış maçtan sonra açılabilir.');
+            }
+            if (Room::requiresAccount($locked) && ! $locked->settled) {
+                throw new \RuntimeException('Önce mevcut maçın settlement işlemi tamamlanmalı.');
+            }
             if ($locked->rematch_code) {
                 return $locked->rematch_code; // rakip cagrisi zaten acti
+            }
+            $participantIds = array_values(array_unique(array_filter([
+                (int) $locked->p1_user_id, (int) $locked->p2_user_id,
+            ])));
+            if (count($participantIds) !== 2) {
+                throw new \RuntimeException('Rövanş için iki doğrulanmış oyuncu gerekir.');
+            }
+            sort($participantIds);
+            foreach ($participantIds as $uid) {
+                $participant = User::lockForUpdate()->find($uid);
+                if (! $participant || $participant->isBanned()) {
+                    throw new \RuntimeException('Rövanş için iki aktif hesap gerekir.');
+                }
+                if (Room::userHasActiveMoneyMatch($uid, (int) $locked->id)) {
+                    throw new \RuntimeException('Oyunculardan birinin başka aktif para maçı var.');
+                }
             }
             $stake = (int) $locked->stake;
             $escrowed = false;
