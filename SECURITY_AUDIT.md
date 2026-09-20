@@ -58,6 +58,8 @@ Rövanş admission'ı da güncellendi: tamamlanmamış veya settlement bekleyen 
 
 Admin savunması da güncellendi: banlı explicit admin için hem API middleware/controller hem web panel session/SSO giriş yolları reddediliyor. Bu, coin değişikliklerinin admin yoluyla yapılabilmesi için aktif ve yetkili hesap şartını korur; immutable wallet ledger ve admin action audit trail hâlâ eksiktir.
 
+Ödeme fulfillment'ı da güncellendi: payment claim, kullanıcı kilidi ve coin/üyelik/ürün fulfillment'ı tek transaction içinde. Retry aynı payment için no-op olur; payment `paid` olup ekonomik fulfillment'ın yarıda kalması durumunda yeniden deneme mümkün kalır.
+
 ## 1. Attack surface ve trust boundary haritası
 
 ### Bileşenler

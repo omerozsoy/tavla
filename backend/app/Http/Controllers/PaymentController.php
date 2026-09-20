@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\Setting;
 use App\Services\GarantiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\URL;
 
 class PaymentController extends Controller
@@ -371,26 +372,25 @@ class PaymentController extends Controller
     // odeme hesaba islenir; yenileme/cift submit'te tekrar yuklenmez.
     private function fulfillDemo(Payment $payment)
     {
-        $claimed = Payment::where('id', $payment->id)
-            ->where('status', 'pending')
-            ->update(['status' => 'paid', 'bank_msg' => 'DEMO — gerçek tahsilat yapılmadı']);
-        if ($claimed) {
-            $u = $payment->user;
-            if ($payment->kind === 'coins') {
-                $u->increment('coins', (int) $payment->coins);
-                if (! empty($payment->discount_code)) {
-                    \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
-                }
-            } elseif ($payment->kind === 'product') {
-                // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
-                $this->fulfillProductOrder($payment);
-            } elseif ($payment->kind === 'cart') {
-                // Ortak sepet: coin paketleri + birden cok fiziksel urun tek odemede.
-                $this->fulfillCart($payment);
-            } else {
-                // 'subscription' (etkinlestir) veya 'renew' (uzat) — ikisi de plan_until'i buradan yonetir.
-                $this->activateMembership($u, $payment);
+        $claimed = DB::transaction(function () use ($payment) {
+            $locked = Payment::where('id', $payment->id)->lockForUpdate()->first();
+            if (! $locked || $locked->status !== 'pending') {
+                return false;
             }
+            $locked->status = 'paid';
+            $locked->bank_msg = 'DEMO — gerçek tahsilat yapılmadı';
+            $u = \App\Models\User::lockForUpdate()->find($locked->user_id);
+            if (! $u) {
+                throw new \RuntimeException('Ödeme hesabı bulunamadı.');
+            }
+            $locked->setRelation('user', $u);
+            $locked->save();
+            $this->fulfillPayment($locked);
+
+            return true;
+        });
+        if ($claimed) {
+            $payment->status = 'paid';
         }
 
         $okMsg = $this->fulfillMessage($payment);
@@ -447,28 +447,25 @@ class PaymentController extends Controller
             if ($res['ok'] && $amountOk) {
                 // ATOMIK idempotency: yalnizca ILK basarili callback plani aktive eder.
                 // (Banka retry'i / replay / yaris kosulunda cift aktivasyon olmaz.)
-                $claimed = Payment::where('id', $payment->id)
-                    ->where('status', 'pending')
-                    ->update(['status' => 'paid', 'bank_msg' => $res['msg']]);
-                if ($claimed) {
-                    $u = $payment->user;
-                    if ($payment->kind === 'coins') {
-                        // Coin paketi: satin alinan jetonu hesaba yukle (atomik, tek kez).
-                        $u->increment('coins', (int) $payment->coins);
-                        // Promo kodu kullanildiysa BASARILI redemption sayacini artir (yalniz burada).
-                        if (! empty($payment->discount_code)) {
-                            \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
-                        }
-                    } elseif ($payment->kind === 'product') {
-                        // Fiziksel urun siparisi: bagli siparisi 'paid' yap + stok dus.
-                        $this->fulfillProductOrder($payment);
-                    } elseif ($payment->kind === 'cart') {
-                        // Ortak sepet: coin paketleri + birden cok fiziksel urun tek odemede.
-                        $this->fulfillCart($payment);
-                    } else {
-                        // Uyelik: 'subscription' -> aktive et, 'renew' -> mevcut bitise +sure EKLE.
-                        $this->activateMembership($u, $payment);
+                $claimed = DB::transaction(function () use ($payment, $res) {
+                    $locked = Payment::where('id', $payment->id)->lockForUpdate()->first();
+                    if (! $locked || $locked->status !== 'pending') {
+                        return false;
                     }
+                    $u = \App\Models\User::lockForUpdate()->find($locked->user_id);
+                    if (! $u) {
+                        throw new \RuntimeException('Ödeme hesabı bulunamadı.');
+                    }
+                    $locked->status = 'paid';
+                    $locked->bank_msg = $res['msg'];
+                    $locked->setRelation('user', $u);
+                    $locked->save();
+                    $this->fulfillPayment($locked);
+
+                    return true;
+                });
+                if ($claimed) {
+                    $payment->status = 'paid';
                 }
             } elseif ($payment->status === 'pending') {
                 $payment->status = 'failed';
@@ -480,6 +477,25 @@ class PaymentController extends Controller
         $okMsg = $payment ? $this->fulfillMessage($payment) : 'İşlem tamamlandı.';
 
         return view('pay.result', ['ok' => $res['ok'] && $payment, 'msg' => $res['msg'], 'okMsg' => $okMsg]);
+    }
+
+    /** Apply one already-claimed payment while its payment and user rows are locked. */
+    private function fulfillPayment(Payment $payment): void
+    {
+        $u = $payment->user;
+        if ($payment->kind === 'coins') {
+            $u->coins = (int) ($u->coins ?? 0) + (int) $payment->coins;
+            $u->save();
+            if (! empty($payment->discount_code)) {
+                \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+            }
+        } elseif ($payment->kind === 'product') {
+            $this->fulfillProductOrder($payment);
+        } elseif ($payment->kind === 'cart') {
+            $this->fulfillCart($payment);
+        } else {
+            $this->activateMembership($u, $payment);
+        }
     }
 
     // Odeme turune gore basari mesaji.
