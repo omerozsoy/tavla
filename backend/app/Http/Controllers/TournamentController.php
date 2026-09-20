@@ -219,11 +219,11 @@ class TournamentController extends Controller
                 return ['err' => 'Sonuç zaten girildi.', 'code' => 422];
             }
 
-            // YETKILI kazanan: once odanin senkron mac durumu; yoksa beyan.
-            $authWinner = $this->winnerIdFromRoom($m);
-            $winnerId = ($authWinner !== null && in_array($authWinner, $ids, true))
-                ? $authWinner
-                : (int) $data['winner_id'];
+            // Sonuc yoksa istemci beyanina geri dusme.
+            $winnerId = $this->winnerIdFromRoom($m);
+            if ($winnerId === null || ! in_array($winnerId, $ids, true)) {
+                return ['err' => 'Tamamlanmış sunucu maçı bulunamadı.', 'code' => 409];
+            }
 
             $this->applyWinnerToBracket($t, $ri, $mi, $winnerId);
             return ['t' => $t];
@@ -296,9 +296,10 @@ class TournamentController extends Controller
         if ($tournament->status !== 'running') {
             return $this->fail('Turnuva aktif değil.', 422);
         }
-        $me = $request->user()->id;
+        $actor = $request->user();
+        $me = $actor->id;
 
-        $out = DB::transaction(function () use ($tournament, $data, $me) {
+        $out = DB::transaction(function () use ($tournament, $data, $me, $actor) {
             $t = Tournament::lockForUpdate()->find($tournament->id);
             if (! $t || $t->status !== 'running') {
                 return ['err' => 'Turnuva aktif değil.', 'code' => 422];
@@ -335,10 +336,9 @@ class TournamentController extends Controller
             if ($room->created_at && $room->created_at->gt(now()->subSeconds(60))) {
                 return ['err' => 'Rakip için bekleme süresi (1 dk) dolmadı.', 'code' => 422];
             }
-            // Cagiranin slotu (token) -> rakip slotu. Cagiran odada olmali.
-            $slot = $room->p1_token === $data['token'] ? 'p1'
-                : ($room->p2_token === $data['token'] ? 'p2' : null);
-            if ($slot === null) {
+            // Bracket uyeligi yetmez: odadaki koltuk da ayni hesaba ait olmali.
+            $slot = \App\Support\RoomAccess::slot($room, $actor, $data['token']);
+            if ($slot === null || (int) $room->{$slot.'_user_id'} !== (int) $me) {
                 return ['err' => 'Bu odada değilsin.', 'code' => 403];
             }
             $other = $slot === 'p1' ? 'p2' : 'p1';
@@ -454,54 +454,27 @@ class TournamentController extends Controller
 
     /* ---------- yardimcilar ---------- */
 
-    // Macin oynandigi odanin YETKILI durumundan kazanan oyuncunun id'sini coz.
-    // Oda p1=beyaz / p2=siyah; kazanan slot mac skorundan (target'a ulasan taraf) belirlenir.
-    // Turnuva odalarinda p*_user_id bos olabildigi icin oda ismi bracket oyuncusuyla eslenir.
-    // Karar yoksa (oda yok / skor kesin degil / isim eslesmiyor) null -> beyana dusulur.
+    // Bracket oyuncularinin tamamlanmis canonical odasi; isim veya client state fallback yok.
     private function winnerIdFromRoom(array $m): ?int
     {
         $code = $m['room'] ?? null;
         if (! $code) {
             return null;
         }
-        $room = \App\Models\Room::where('code', $code)->first();
-        $state = $room?->state;
-        $match = is_array($state) ? ($state['match'] ?? null) : null;
-        if (! is_array($match) || ! isset($match['target'], $match['score'])) {
+        $room = \App\Models\Room::where('code', $code)->lockForUpdate()->first();
+        if (! $room || $room->bot || ! $room->hasVerifiedServerResult()) {
             return null;
         }
-        $target = (int) $match['target'];
-        $w = (int) ($match['score']['white'] ?? 0);
-        $b = (int) ($match['score']['black'] ?? 0);
-        if ($target <= 0) {
+        $players = [(int) ($m['p1']['id'] ?? 0), (int) ($m['p2']['id'] ?? 0)];
+        $seats = [(int) $room->p1_user_id, (int) $room->p2_user_id];
+        sort($players);
+        sort($seats);
+        if ($players[0] <= 0 || $players[0] === $players[1] || $players !== $seats) {
             return null;
         }
-        if ($w >= $target && $w > $b) {
-            $winnerName = $room->p1_name; // beyaz = oda p1
-            $winnerUid = $room->p1_user_id;
-        } elseif ($b >= $target && $b > $w) {
-            $winnerName = $room->p2_name; // siyah = oda p2
-            $winnerUid = $room->p2_user_id;
-        } else {
-            return null; // henuz kesin kazanan yok
-        }
-        // KIMLIK ONCELIGI: oda slot'unda dogrulanmis user_id varsa bracket oyuncusuyla
-        // BIRE BIR eslesmeli -> ucuncu birinin odayi ele gecirip isim TAKLIDIYLE (spoof)
-        // yetkili sonuc uretmesi engellenir. user_id yoksa (misafir) isimle eslen (eski davranis).
-        foreach (['p1', 'p2'] as $slot) {
-            if (! isset($m[$slot]['id'])) {
-                continue;
-            }
-            $bid = (int) $m[$slot]['id'];
-            if ($winnerUid !== null) {
-                if ((int) $winnerUid === $bid) {
-                    return $bid;
-                }
-            } elseif (isset($m[$slot]['name']) && $m[$slot]['name'] === $winnerName) {
-                return $bid;
-            }
-        }
-        return null;
+
+        return $room->server_match['winner'] === 'white'
+            ? (int) $room->p1_user_id : (int) $room->p2_user_id;
     }
 
     // Odul dagitimi: siralamaya gore coin ode. prizes tablosu (index=sira-1) varsa

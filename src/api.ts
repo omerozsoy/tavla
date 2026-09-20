@@ -1998,12 +1998,18 @@ export async function matchGnubgReview(id: number, plies = 2): Promise<MatReview
 // Poll: since verilirse degismemisse null doner
 export async function showRoom(code: string, since?: number): Promise<RoomView | null> {
   const token = getToken()
+  const gate = getGate()
   // token=oda kimligi: sunucu poll edenin VARLIK (presence) damgasini tazeler ->
   // terk (poll'u kesme) tespiti calisir; sira sahibi haksiz AFK'dan korunur.
-  const params = new URLSearchParams({ token: playerToken() })
+  const params = new URLSearchParams()
   if (since !== undefined) params.set('since', String(since))
   const res = await fetch(`${API_URL}/rooms/${encodeURIComponent(code)}?${params.toString()}`, {
-    headers: { Accept: 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    headers: {
+      Accept: 'application/json',
+      'X-Room-Token': playerToken(),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(gate ? { 'X-Site-Gate': gate } : {}),
+    },
   })
   if (res.status === 204) return null
   if (!res.ok) throw new ApiError(res.status, 'Oda hatası')
@@ -2112,10 +2118,11 @@ export async function botNudge(
 export async function serverRoll(
   code: string,
   clientSeed?: string,
+  expectedVersion?: number,
 ): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/roll`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null }),
+    body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2125,10 +2132,11 @@ export async function serverRoll(
 export async function serverMove(
   code: string,
   steps: Step[],
+  expectedVersion?: number,
 ): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/move`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), steps }),
+    body: JSON.stringify({ token: playerToken(), steps, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2147,10 +2155,10 @@ export async function postLive(code: string, steps: Step[], turn: Player, seq: n
 }
 
 // Küp teklifi (sıra sahibi, zar atmadan önce). Sunucu kuralları doğrular (sıra/sahiplik/Crawford).
-export async function serverCubeOffer(code: string): Promise<{ match: ServerMatch; version: number }> {
+export async function serverCubeOffer(code: string, expectedVersion?: number): Promise<{ match: ServerMatch; version: number }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/offer`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken() }),
+    body: JSON.stringify({ token: playerToken(), expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2158,10 +2166,11 @@ export async function serverCubeOffer(code: string): Promise<{ match: ServerMatc
 export async function serverCubeRespond(
   code: string,
   action: 'take' | 'drop',
+  expectedVersion?: number,
 ): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), action }),
+      body: JSON.stringify({ token: playerToken(), action, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2170,10 +2179,11 @@ export async function serverCubeRespond(
 export async function serverResign(
   code: string,
   resignType: 'single' | 'gammon' | 'backgammon' = 'single',
+  expectedVersion?: number,
 ): Promise<{ state: GameState; match: ServerMatch; winner: string; version: number; match_done: boolean }> {
   return req(`/rooms/${encodeURIComponent(code)}/resign`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), resign_type: resignType }),
+    body: JSON.stringify({ token: playerToken(), resign_type: resignType, expected_version: expectedVersion ?? null }),
   })
 }
 

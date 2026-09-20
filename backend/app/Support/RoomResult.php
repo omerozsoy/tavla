@@ -14,6 +14,18 @@ use App\Models\Room;
  */
 class RoomResult
 {
+    /** Live ekonomik islemler legacy state veya oyuncu beyanina geri dusmez. */
+    public static function verified(Room $room, int $userId): ?array
+    {
+        if ($userId <= 0 || ! $room->hasVerifiedServerResult()
+            || ($room->p1_user_id !== null && $room->p2_user_id !== null
+                && (int) $room->p1_user_id === (int) $room->p2_user_id)) {
+            return null;
+        }
+
+        return self::resolve($room, $userId);
+    }
+
     /**
      * Kaynak onceligi: (1) mac skoru (hedefe ulasan taraf) -> (2) p{slot}_result
      * (saat/forfeit/settle) -> (3) tek-puanlik gameEnd.winner. Belirlenemezse null.
