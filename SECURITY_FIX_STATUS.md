@@ -106,6 +106,10 @@ Bu fazın bilinçli sınırları: aday kullanıcı kilidi deadlock oluşturmamak
 
 Alan geriye dönük uyum için nullable bırakıldı. Eski üçüncü taraf istemci alanı göndermezse bu yeni kontrolü kullanmaz; bu yüzden migration tabanlı zorunlu command envelope ve `action_id`/`command_id` unique kaydı sonraki adımda yapılmalıdır. Version kontrolü finansal settlement veya queue retry exactly-once garantisi değildir.
 
+## Rövanş admission düzeltmesi
+
+`RoomController::rematch` artık `playing` veya settlement bekleyen bir odadan yeni oda açmıyor. Money/ranked rövanş için eski oda tamamlanmış ve `settled=true` olmalı. Yeni oda transaction'ında iki participant user satırı deterministik sırayla kilitleniyor; eksik/duplicate/banlı hesap veya başka aktif money/ranked oda varsa rezervasyon ve yeni oda oluşturma rollback oluyor.
+
 ## Faz 4 — settlement ve reserved coin koruması
 
 `RoomController::settle` artık client'ın `won` beyanını settlement state'ine yazmıyor; authoritative odalarda kazanan yalnız `server_match.done/winner` üzerinden çözülüyor. `settled=false` claim'i, room'un `finished` işaretlenmesi, kullanıcı kilitleri ve coin transferi aynı transaction içinde. Debit/credit hatasında ekonomik claim ve finalization birlikte rollback olur. İlk claim sonrası tekrar istek coin transferi yapmadan mevcut bakiye yanıtı döndürür.

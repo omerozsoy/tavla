@@ -54,6 +54,8 @@ Audit başlangıcında değiştirilmiş/untracked uygulama dosyaları vardı. İ
 
 Bu rapor ilk keşif durumunu ve bulguların kök nedenlerini korur. Sonraki yerel düzeltmelerden sonra kritik checklist durumları yukarıda güncellenmiştir. `RoomAccess`, `EnsureActiveAccount`, verified server result kontrolleri ve matchmaking user-row lock'ları uygulanmıştır. Bu değişiklikler migration çalıştırmadı ve production şemasının claim/unique korumasını kanıtlamaz. Bu nedenle eski SEC-005/006/007 bulgu metinleri tarihsel saldırı yolunu açıklamaya devam eder; güncel karar için checklist ve `SECURITY_FIX_STATUS.md` esas alınmalıdır.
 
+Rövanş admission'ı da güncellendi: tamamlanmamış veya settlement bekleyen oda yeni money/ranked oda üretemez; yeni oda transaction'ı iki participant hesabını kilitleyip ban/aktif-match kontrolü yapar. Bu kontrol gerçek production DB paralel testi veya kalıcı claim constraint'i yerine geçmez.
+
 ## 1. Attack surface ve trust boundary haritası
 
 ### Bileşenler
