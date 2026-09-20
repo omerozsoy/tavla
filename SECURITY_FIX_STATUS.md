@@ -110,6 +110,10 @@ Alan geriye dönük uyum için nullable bırakıldı. Eski üçüncü taraf iste
 
 `RoomController::rematch` artık `playing` veya settlement bekleyen bir odadan yeni oda açmıyor. Money/ranked rövanş için eski oda tamamlanmış ve `settled=true` olmalı. Yeni oda transaction'ında iki participant user satırı deterministik sırayla kilitleniyor; eksik/duplicate/banlı hesap veya başka aktif money/ranked oda varsa rezervasyon ve yeni oda oluşturma rollback oluyor.
 
+## Ödeme callback atomikliği
+
+`PaymentController` demo ve Garanti callback akışlarında payment satırı `lockForUpdate()` ile claim ediliyor; kullanıcı satırı da kilitlenerek payment status değişimi ile coin, üyelik, ürün veya sepet fulfillment'ı aynı transaction içinde yapılıyor. Fulfillment hata verirse payment `paid` olarak kalmıyor ve callback yeniden güvenle denenebiliyor. Daha önceki `pending -> paid` yazımı ile coin/üyelik yazımının ayrı olması nedeniyle oluşabilecek partial failure penceresi kapatıldı.
+
 ## Admin ban savunması
 
 `EnsureAdmin`, `PanelController` login/SSO girişleri ve `AdminController` savunma kontrolleri banlı admin hesabını reddediyor. Sanctum token'ları ban sırasında silinse bile mevcut web session'ı artık panel middleware'inden geçemiyor. Admin panel erişimi yalnız `is_admin` DB grant'i ve aktif hesapla mümkün.
