@@ -44,10 +44,15 @@ export function countryName(code: string, lang: string): string {
 }
 
 // Dile gore sirali {code, name} listesi (datalist/select icin).
+// Turkiye (TR) her zaman en ustte, kalanlar alfabetik.
 export function countryOptions(lang: string): { code: string; name: string }[] {
   return [...new Set(COUNTRY_CODES)]
     .map((code) => ({ code, name: countryName(code, lang) }))
-    .sort((a, b) => a.name.localeCompare(b.name, lang))
+    .sort((a, b) => {
+      if (a.code === 'TR') return -1
+      if (b.code === 'TR') return 1
+      return a.name.localeCompare(b.name, lang)
+    })
 }
 
 // Legacy: kayitli deger kod mu isim mi? Isimse kod'a cevir (eslesmezse aynen dondur).
