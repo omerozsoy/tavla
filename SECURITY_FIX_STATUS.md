@@ -110,6 +110,10 @@ Alan geriye dönük uyum için nullable bırakıldı. Eski üçüncü taraf iste
 
 `RoomController::rematch` artık `playing` veya settlement bekleyen bir odadan yeni oda açmıyor. Money/ranked rövanş için eski oda tamamlanmış ve `settled=true` olmalı. Yeni oda transaction'ında iki participant user satırı deterministik sırayla kilitleniyor; eksik/duplicate/banlı hesap veya başka aktif money/ranked oda varsa rezervasyon ve yeni oda oluşturma rollback oluyor.
 
+## Admin ban savunması
+
+`EnsureAdmin`, `PanelController` login/SSO girişleri ve `AdminController` savunma kontrolleri banlı admin hesabını reddediyor. Sanctum token'ları ban sırasında silinse bile mevcut web session'ı artık panel middleware'inden geçemiyor. Admin panel erişimi yalnız `is_admin` DB grant'i ve aktif hesapla mümkün.
+
 ## Faz 4 — settlement ve reserved coin koruması
 
 `RoomController::settle` artık client'ın `won` beyanını settlement state'ine yazmıyor; authoritative odalarda kazanan yalnız `server_match.done/winner` üzerinden çözülüyor. `settled=false` claim'i, room'un `finished` işaretlenmesi, kullanıcı kilitleri ve coin transferi aynı transaction içinde. Debit/credit hatasında ekonomik claim ve finalization birlikte rollback olur. İlk claim sonrası tekrar istek coin transferi yapmadan mevcut bakiye yanıtı döndürür.

@@ -11,7 +11,7 @@ class EnsureAdmin
     {
         // $request->user() hem web (session) hem sanctum (API) guard'inda calisir.
         $user = $request->user();
-        if (! $user || ! $user->is_admin) {
+        if (! $user || ! $user->is_admin || $user->isBanned()) {
             // API/JSON istegi -> 403; tarayici (panel) -> giris sayfasina yonlendir.
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Yetkisiz.'], 403);

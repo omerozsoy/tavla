@@ -56,6 +56,8 @@ Bu rapor ilk keşif durumunu ve bulguların kök nedenlerini korur. Sonraki yere
 
 Rövanş admission'ı da güncellendi: tamamlanmamış veya settlement bekleyen oda yeni money/ranked oda üretemez; yeni oda transaction'ı iki participant hesabını kilitleyip ban/aktif-match kontrolü yapar. Bu kontrol gerçek production DB paralel testi veya kalıcı claim constraint'i yerine geçmez.
 
+Admin savunması da güncellendi: banlı explicit admin için hem API middleware/controller hem web panel session/SSO giriş yolları reddediliyor. Bu, coin değişikliklerinin admin yoluyla yapılabilmesi için aktif ve yetkili hesap şartını korur; immutable wallet ledger ve admin action audit trail hâlâ eksiktir.
+
 ## 1. Attack surface ve trust boundary haritası
 
 ### Bileşenler
