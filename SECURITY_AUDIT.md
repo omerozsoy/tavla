@@ -1382,3 +1382,7 @@ The result authority paths were rechecked after the legacy-state fail-closed cha
 ## Audit amendment - RNG bias and replay verification (2026-09-21)
 
 The server and client verification implementations use rejection sampling (`byte < 252`) before modulo-6 mapping, so the previously noted 256-to-6 modulo bias is no longer present in current source. Roll identity is domain-separated by seed/client/index and the command layer prevents repeated roll commands from advancing the authoritative index. `FairDiceTest` passes **5 tests / 6,006 assertions**. Remaining RNG status is limited to production seed-reveal/transport evidence, not the mapping algorithm.
+
+## Audit amendment - admin email privilege escalation blocked (2026-09-21)
+
+An authenticated admin could previously change their profile email to an address in `ADMIN_EMAILS`; the `isConfigAdmin()` guard would then treat that account as the protected configuration administrator. Profile updates now reject that transition unless the account is already a config admin. This preserves explicit `is_admin` grants while preventing self-escalation into the bootstrap-protected admin role. `AdminEmailGuardTest` passes **1 test / 2 assertions**.

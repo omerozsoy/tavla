@@ -122,6 +122,16 @@ class SecurityPhaseZeroTest extends TestCase
         self::assertTrue($user->is_admin);
     }
 
+    public function test_non_config_admin_cannot_move_into_config_admin_email(): void
+    {
+        config()->set('services.admin_emails', ['synthetic-admin@example.test']);
+        $user = new User();
+        $user->setRawAttributes(['is_admin' => 1, 'email' => 'ordinary-admin@example.test']);
+
+        self::assertFalse($user->isConfigAdmin());
+        self::assertTrue($user->is_admin);
+    }
+
     public function test_finished_status_alone_never_reveals_seed(): void
     {
         $room = $this->room(['status' => 'finished', 'p1_user_id' => null, 'p2_user_id' => null,
