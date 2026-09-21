@@ -4,7 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\GameLog;
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Maç kaydı (hamle+zar): istemci slot-kolon yazımı, meta idempotency, online oda zenginleştirme,
@@ -89,19 +91,24 @@ class GameLogTest extends TestCase
         $this->assertCount(3, $merged);
         // seq sırası: 0(W), 1(B), 2(W)
         $this->assertSame(['W', 'B', 'W'], array_column($merged, 'p'));
-        $this->assertSame('finished', $log->status);
-        $this->assertSame('white', $log->winner);
-        $this->assertSame(['white' => 3, 'black' => 1], $log->score);
+        // Online client result fields are ignored; only the authoritative room
+        // result can finalize a log.
+        $this->assertSame('playing', $log->status);
+        $this->assertNull($log->winner);
+        $this->assertNull($log->score);
     }
 
     public function test_online_mode_enriches_from_room(): void
     {
+        User::factory()->create(['id' => 5]);
+        User::factory()->create(['id' => 9]);
         Room::create([
             'code' => 'RM999', 'p1_token' => 't1', 'p2_token' => 't2',
             'p1_name' => 'Alice', 'p2_name' => 'Bob',
             'p1_user_id' => 5, 'p2_user_id' => 9, 'status' => 'playing',
         ]);
 
+        Sanctum::actingAs(User::findOrFail(5));
         $this->postJson('/api/game-logs', [
             'uid' => 'RM999', 'slot' => 'p1', 'mode' => 'online', 'target' => 1,
             'p1_name' => 'x', 'p2_name' => 'y',
