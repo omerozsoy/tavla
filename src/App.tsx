@@ -7059,6 +7059,18 @@ export default function App() {
           >
             {theme === 'dark' ? <Icon name="sun" size={24} /> : <Icon name="moon" size={24} />}
           </Button>
+          {/* Geri bildirim bayragi: mobilde sabit FAB gizlenir, ust barda dil bayraginin
+              SOLUNDA cikar (masaustunde gorunmez -> FAB kalir). */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="ab-bug-flag [&_svg]:size-[24px]!"
+            title={t('bug.button')}
+            aria-label={t('bug.button')}
+            onClick={() => window.dispatchEvent(new Event('tavla:open-bug-report'))}
+          >
+            <Icon name="flag" size={24} />
+          </Button>
           <LangMenu />
         </>
       )}
