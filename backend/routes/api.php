@@ -84,12 +84,17 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:24
     Route::get('/rooms/{code}', [RoomController::class, 'show']);
     Route::put('/rooms/{code}', [RoomController::class, 'update']);
     // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)
-    Route::post('/rooms/{code}/roll', [RoomController::class, 'roll']);
-    Route::post('/rooms/{code}/move', [RoomController::class, 'move']);
+    Route::post('/rooms/{code}/roll', [RoomController::class, 'roll'])
+        ->middleware('throttle:60,1,room-command');
+    Route::post('/rooms/{code}/move', [RoomController::class, 'move'])
+        ->middleware('throttle:60,1,room-command');
     // Sunucu-otoriter küp + resign (Faz 2)
-    Route::post('/rooms/{code}/cube/offer', [RoomController::class, 'cubeOffer']);
-    Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond']);
-    Route::post('/rooms/{code}/resign', [RoomController::class, 'resign']);
+    Route::post('/rooms/{code}/cube/offer', [RoomController::class, 'cubeOffer'])
+        ->middleware('throttle:60,1,room-command');
+    Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond'])
+        ->middleware('throttle:60,1,room-command');
+    Route::post('/rooms/{code}/resign', [RoomController::class, 'resign'])
+        ->middleware('throttle:30,1,room-command');
 });
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
