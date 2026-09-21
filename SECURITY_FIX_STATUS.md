@@ -158,6 +158,10 @@ Authoritative oda komutlarında (`roll`, `move`, cube offer/respond, resign) `ex
 
 `DICE_ENFORCE` varsayılanı `true` oldu. Dice-authority update yolunda client zarının server roll/opening ile uyuşmaması artık reddediliyor; `false` yalnız kontrollü rollback/shadow için açıkça seçilebilir.
 
+## Tam authoritative varsayılanı
+
+`SERVER_AUTHORITATIVE` varsayılanı `true` oldu. Yeni ücretsiz/friendly odalarda da board, legal move, skor ve cube state server tarafından tutuluyor; validator yoksa hamle fail-closed reddediliyor. `SERVER_AUTHORITATIVE=false` yalnız açıkça yapılan availability rollback’idir ve güvenlik downgrade’i sayılır.
+
 ## Queue visibility düzeltmesi
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.

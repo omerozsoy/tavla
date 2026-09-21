@@ -6,9 +6,9 @@ return [
     // Faz 2 tam otorite: AÇIK ise TÜM yeni eşleşme odaları (bahisli + ücretsiz/arkadaşlık)
     // authoritative=true olur → istemci server_state uygular, her hamle Node validator'da
     // doğrulanır, skor+küp sunucuda. (Bahis ayrımı KALDIRILDI — direktif: herkes test etsin.)
-    // VARSAYILAN KAPALI: açmadan önce Node validator ayakta olmalı (VALIDATOR_URL/SECRET); PR'ı da
-    // otoriter istersen VALIDATOR_PR_MODE. Rollback = env false + config:clear + FPM restart.
-    'server_authoritative' => (bool) env('SERVER_AUTHORITATIVE', false),
+    // Güvenli varsayılan AÇIK: validator yoksa hamle fail-closed reddedilir. Kontrollü rollback
+    // yalnızca açıkça SERVER_AUTHORITATIVE=false verilerek yapılabilir.
+    'server_authoritative' => (bool) env('SERVER_AUTHORITATIVE', true),
 
     // TEST allow-list: GLOBAL kapalıyken bile, SADECE bu user id'lerin İKİSİ de eşleşirse
     // o oda authoritative olur; başka hiçbir maç etkilenmez. Frontend DRAFT'ı 2 hesapla
