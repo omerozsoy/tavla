@@ -76,3 +76,19 @@ scripts/email-shot.mjs
 # Playwright E2E (Faz 2 harness)
 /test-results/
 /playwright-report/
+
+# gecici ajan/probe/scratch harness'leri + ciktilari (kalici degil)
+.agents/
+scripts/_*
+backend/test-results/
+
+# python bytecode cache
+gnubg-service/__pycache__/
+*.pyc
+
+# gecici render/audit ciktilari (kalici degil)
+rendered-*.html
+schema-audit-*.json
+premium-gallery.png
+rating-unvanlari.txt
+ratingler.txt
