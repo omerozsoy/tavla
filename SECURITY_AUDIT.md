@@ -1166,3 +1166,5 @@ The complete Laravel suite was executed in SQLite: **497 tests / 7,576 assertion
 ## Audit amendment — security fixture migration plan (2026-09-21)
 
 The required test-harness migration is documented in [`SECURITY_TEST_FIXTURE_MIGRATION.md`](SECURITY_TEST_FIXTURE_MIGRATION.md). It defines the fixture contract for authenticated room ownership, UUID command envelopes, server-issued state/dice, verified settlement, and checkout idempotency. The plan is intentionally documentation-only in this phase: no test fixture or production source was changed, no migration was executed, and no production data was touched.
+
+The first four authoritative feature groups were rerun independently: **55 tests / 96 assertions, 45 failures, 5 errors**. Every failure is consistent with the tightened contract: legacy fixtures use nonexistent numeric user IDs, omit the required command envelope, or attempt to seed client-owned dice/state. This confirms the suite is not evidence of a production bypass; it is evidence that the fixtures must be migrated in the batch order above. The focused unit/security suites and wallet/product suites remain green as recorded earlier.
