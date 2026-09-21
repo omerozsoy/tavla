@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - production response headers and CA trust (2026-09-21)
+
+The production main-site response now includes X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN, and Referrer-Policy: strict-origin-when-cross-origin. Strict-Transport-Security and Content-Security-Policy are still absent and remain deployment hardening follow-ups. The server initially failed normal curl certificate verification because its EL8 CA bundle was stale; ca-certificates-2025.2.80_v9.0.304-80.2.el8_10 was upgraded. A normal non -k curl check is still required to close TLS-chain verification evidence.
+
 ## Audit amendment — production security headers (2026-09-21)
 
 Read-only HTTPS header checks returned 200 for the main site and 401 for the unauthenticated validator command path, but neither response exposed `Strict-Transport-Security`, `X-Content-Type-Options`, `Content-Security-Policy`, or `X-Frame-Options/frame-ancestors`. This is a **MEDIUM deployment hardening gap**. Configure headers at the Plesk/Nginx reverse-proxy layer, test CSP against the existing frontend, and add HSTS only after every production subdomain is HTTPS-ready.
