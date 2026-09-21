@@ -777,7 +777,8 @@ class AuthController extends Controller
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
-            // Bot (rakip) gnubg PR — pvb'de dolu; online'da null (rakip PR'ı kendi satırından okunur).
+            // Rakip gnubg PR — pvb'de dolu; online'da normalde rakip PR'ı KENDİ satırından okunur, ANCAK
+            // rakip hiç raporlamazsa (terk/kopma) AnalyzeMatchPrJob bunu kazananın log'undan fallback doldurur.
             'opponent_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_pr) : null,
             'opponent_checker_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_checker_pr) : null,
             'opponent_cube_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_cube_pr) : null,
