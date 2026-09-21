@@ -26,7 +26,8 @@ return [
     // TLS doğrulaması. Validator AYNI sunucuda + secret korumalı iç servis olduğundan,
     // subdomain'de geçerli SSL yoksa (Plesk self-signed) doğrulamayı atlamak makul.
     // Let's Encrypt kurulunca true yapabilirsin. Varsayılan false (hemen çalışsın).
-    'verify_tls' => filter_var(env('VALIDATOR_VERIFY_TLS', false), FILTER_VALIDATE_BOOL),
+    // Uzak validator HTTPS ise sertifika doğrulaması varsayılan olarak açık olmalı.
+    'verify_tls' => filter_var(env('VALIDATOR_VERIFY_TLS', true), FILTER_VALIDATE_BOOL),
 
     // SUNUCU-OTORİTER PR modu (validator /analyze-pr):
     //   'off'           -> istemci log'undan hesaplanan PR (prFromLog) kullanılır (mevcut davranış).

@@ -980,3 +980,14 @@ Envanter aşağıya Laravel'in gerçek route registry çıktısından eklenir. A
 The server previously mapped raw HMAC bytes with `% 6`, making faces 1–4 occur 43/256 and faces 5–6 42/256. `roll()` and `single()` now use domain-separated HMAC blocks with rejection sampling (`byte < 252`) before mapping to 1–6. This preserves deterministic commit/reveal behavior while removing the modulo bias. Existing historical rolls are not rewritten.
 
 The frontend's local verifier already used rejection sampling but a different local hash helper; production parity should be covered by a server test vector before enabling client-side reveal verification for server rolls.
+
+## Audit amendment — validator service fail-closed (2026-09-21)
+
+**ID:** SEC-017 (partially remediated)
+**Severity:** MEDIUM
+**Category:** Internal service authentication / transport hardening
+**Affected file(s):** `validator/server.ts`, `gnubg-service/gnubg_service.py`, `backend/config/validator.php`
+
+The validator and GNUbg POST endpoints now reject all requests with `503` when their shared secret is missing, instead of treating an empty secret as “authentication disabled.” Wrong or missing headers still receive `401`. Validator bind defaults to `127.0.0.1` and is overrideable only through an explicit host environment setting. Laravel TLS certificate verification now defaults to enabled for remote validator URLs.
+
+The health endpoints remain unauthenticated for process monitoring. Production environment values, reverse proxy exposure, and actual certificate configuration remain **UNKNOWN** and require deployment verification.
