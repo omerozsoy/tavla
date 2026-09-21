@@ -9,7 +9,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 | CRITICAL | 0 |
 | HIGH | 3 |
 | MEDIUM | 2 |
-| LOW | 1 |
+| LOW | 0 |
 | UNKNOWN | 2 |
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
@@ -105,20 +105,6 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.  
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 
-### SEC-DEP-002 — Validator dependency lockfile kapsamı UNKNOWN
-
-**Severity:** LOW  
-**Category:** Supply chain  
-**Affected file(s):** `validator/package.json`  
-**Affected endpoint/event:** validator deployment  
-**Description:** Validator projesinde lockfile bulunmadığı için production dependency ağacı ve advisory durumu deterministik biçimde doğrulanamadı.  
-**Attack scenario:** Deploy ortamı farklı transitive sürüm kurabilir.  
-**Root cause:** Reproducible install manifestinin eksikliği.  
-**Potential impact:** Beklenmeyen güvenlik açığı veya sürüm farkı.  
-**Recommended fix:** Kontrollü ortamda lockfile oluştur, tekrarlanabilir install kullan; production install'i plansız yenileme.  
-**Database protection required?:** Hayır.  
-**Regression test required?:** Evet.
-
 ### SEC-OPS-001 — Gerçek production concurrency ve deployment state kanıtı eksik
 
 **Severity:** UNKNOWN  
@@ -165,10 +151,9 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 2. Settlement state machine ve unique business reference'ı production migration planıyla uygula.
 3. Queue retry/rollback/reconciliation testleri ekle.
 
-### PHASE 3 — Web ve supply-chain hardening
+### PHASE 3 — Web hardening
 
 1. CSP Report-Only gözlem dönemi, ardından enforcing CSP. **Dosyalar:** Plesk/Nginx ve frontend build.
-2. Validator lockfile ve reproducible install sürecini oluştur.
 
 ### PHASE 4 — Operasyon ve adli iz
 
