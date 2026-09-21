@@ -4446,54 +4446,12 @@ export default function App() {
   // aksi halde iki istemci birbirinin eski durumunu yeniden uygulayip hamleyi siler.
   const roomCode = room?.code
   const roomStatus = room?.status
-  useEffect(() => {
-    if (
-      !online ||
-      !roomCode ||
-      roomStatus !== 'playing' ||
-      !syncEnabledRef.current ||
-      roomLeavingRef.current === roomCode ||
-      room?.authoritative
-    ) return
-    // Sunucu-otoriter oda: tum-state PUT ETME. Otorite server_state'te; roll/move ucları
-    // gunceller, poll geri okur. (Legacy istemci-state sync yalniz authoritative=false'ta.)
-    if (authoritativeRef.current) return
-    const sig = stateSig(match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd)
-    if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
-    const timer = window.setTimeout(() => {
-      if (!syncEnabledRef.current || roomLeavingRef.current === roomCode) return
-      lastSyncRef.current = sig
-      const snap = {
-        mode,
-        difficulty,
-        match,
-        starter,
-        turnsPlayed,
-        turnStart,
-        played,
-        clock: { delay: clock.delay, white: clock.white, black: clock.black },
-        gameEnd,
-        cubePending,
-        pr: prStats,
-        luck: prLuck,
-        // Analiz hamleleri: KENDI rengimin son 80 girdisi (karsi taraf zaten yalniz rakip
-        // renkli olanlari alir). KRITIK: duz `matchLog.slice(-80)` YANLISTI — birlesik log
-        // [...benimkiler, ...rakibinkiler] siralı oldugundan son 80 girdi cogunlukla RAKIBIN
-        // girdileriydi; log 80'i asinca kendi hamlelerimi gondermeyi birakiyordum ve rakibin
-        // .mat'inde benim sutunum donup kaliyordu. Suzmek ayrica yuku de yariya indirir.
-        moves: matchLog.filter((e) => e.player === myColor).slice(-80),
-      }
-      // Mac bittiyse odayi 'finished' isaretle -> Canli Maclar'da gorunmesin (bug: bitmis
-      // mac status='playing' kalip 3dk listede duruyordu).
-      updateRoom(roomCode, snap, matchOver ? 'finished' : undefined)
-        .then((r) => {
-          appliedVersionRef.current = r.version
-        })
-        .catch(() => {})
-    }, 200)
-    return () => window.clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [online, roomCode, roomStatus, match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd])
+  // DİREKTİF: TÜM MAÇLAR OTORİTER -> legacy tum-state PUT (updateRoom) senkronu KALDIRILDI.
+  // Otoriter oda legacy PUT'u acceptsLegacyState=false ile 409 reddeder; ayrıca authoritative
+  // bayrağı gecikince bu debounce yarışla PUT atıp "PUT /rooms 409 (Conflict)" üretiyordu.
+  // Durum artık yalnız server_state'te: roll/move uçları günceller, poll geri okur.
+  // (Maç-sonu 'finished' yazımı da sunucu tarafında applyGameResult/applyClockEnd ile yapılır.)
+  void roomStatus // deps sadeleştirildi; roomStatus başka yerde de okunuyor (unused değil)
 
   // Online MAÇ SONU: son tahtayı + 'finished'i ODAYA GARANTİ yaz (izleyiciler donmasın).
   // SORUN: yukarıdaki sync 200ms debounce'lu + yalnız status==='playing' iken çalışır; maç
@@ -5671,7 +5629,7 @@ export default function App() {
       clockRef.current = CLOCK_PRESETS[tc]
     }
     try {
-      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse)
+      const res = await enterRoom(code, profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target)
       tournMatchRef.current = null
       resetRoomSync()
       lastSyncRef.current = ''
