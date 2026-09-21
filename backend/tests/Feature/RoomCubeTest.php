@@ -408,5 +408,36 @@ class RoomCubeTest extends TestCase
             ->assertOk()->assertJsonPath('winner', 'white')->assertJsonPath('match_done', false);
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']); // MEVCUT kÃ¼p = 2 (Ã—1)
     }
+
+    // (16) REGRESYON: yÃ¼zde bahis maÃ§Ä±nda server_match matchmaking'de pct_stake_snapshot ile Ã¶n
+    // tohumlanÄ±r (target/score/cube YOK). Ä°lk roll (aÃ§Ä±lÄ±ÅŸ) bu kÄ±smÄ± maÃ§ durumunu NORMALÄ°ZE etmeli:
+    // aksi halde server_match.target null kalÄ±r -> kÃ¼p "Tek puanlÄ±k maÃ§" (409) reddi + iki istemci
+    // FARKLI uzunluk gÃ¶sterir. AÃ§Ä±lÄ±ÅŸ sonrasÄ± target=3 (oda uzunluÄŸu) + pct snapshot KORUNMALÄ±.
+    public function test_roll_initializes_match_over_pct_seeded_server_match(): void
+    {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
+        $room = Room::create([
+            'code' => 'PCTMM',
+            'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
+            'p2_token' => 'p2', 'p2_name' => 'B', 'p2_user_id' => 20,
+            'status' => 'playing', 'version' => 0, 'target' => 3,
+            'mode' => 'ranked', 'bet_pct' => 10, 'authoritative' => true,
+            'server_state' => null,
+            // matchmaking'in bÄ±raktÄ±ÄŸÄ± KISMÄ° durum: yalnÄ±z pct snapshot, target/score/cube YOK.
+            'server_match' => ['pct_stake_snapshot' => ['10' => 50, '20' => 50]],
+        ]);
+
+        Sanctum::actingAs($this->p1);
+        $this->postJson('/api/rooms/PCTMM/roll', [
+            'token' => 'p1', 'command_id' => (string) Str::uuid(), 'expected_version' => 0,
+        ])->assertOk()->assertJsonPath('opening', true);
+
+        $sm = $room->fresh()->server_match;
+        $this->assertSame(3, (int) ($sm['target'] ?? 0)); // oda uzunluÄŸundan normalize edildi
+        $this->assertSame(['white' => 0, 'black' => 0], $sm['score']); // maÃ§ durumu tam kuruldu
+        $this->assertSame(1, (int) $sm['cube']['value']);
+        $this->assertSame(['10' => 50, '20' => 50], $sm['pct_stake_snapshot']); // pct snapshot KORUNDU
+    }
 }
 

@@ -4533,15 +4533,18 @@ export default function App() {
             return
           }
         }
-        // Bekleyen oyuncu (p1) eslesince: sunucunun anlastigi uzunlugu uygula (henuz
-        // hamle senkronu gelmeden). Bir kez ve yalnizca oyun baslamadan.
-        if (!matchTargetSyncedRef.current && rv.target != null && appliedVersionRef.current < 0) {
+        // SUNUCU-OTORİTER MAÇ UZUNLUĞU: coklu-uzunluk secen bekleyen oyuncunun (p1) yerel `target`
+        // degeri PLACEHOLDER'dir (secilenlerin max'i); gercek uzunlugu sunucu eslesmede belirler
+        // (rv.target = ortak uzunluklarin en yukseigi). Bunu HER POLL'da otoriter kabul et: eski kod
+        // yalniz `appliedVersion<0` iken (oyun baslamadan) uyguluyordu; p1 acilis zarini atinca
+        // version ilerledigi icin duzeltme ENGELLENIP p1 placeholder'da (or. 11) TAKILI kaliyordu ->
+        // iki istemci farkli uzunluk gosterirdi. GUVENLI: yalniz `target` alanini duzelt (skor/board'a
+        // DOKUNMA). rv.target sabit oldugundan bir kez uygulanip esitlenir, tekrar tetiklenmez.
+        if (rv.target != null && rv.target !== onlineTargetRef.current) {
+          onlineTargetRef.current = rv.target
           matchTargetSyncedRef.current = true
-          if (onlineTargetRef.current !== rv.target) {
-            onlineTargetRef.current = rv.target
-            setMatch(newMatch(rv.target))
-            setClock(freshMatchClock(rv.target))
-          }
+          setMatch((m) => ({ ...m, target: rv.target as number }))
+          setClock(freshMatchClock(rv.target))
           // Coklu bahis: bekleyen oyuncu eslesince sunucunun anlastigi tutari uygula.
           if (rv.stake != null && rv.stake > 0) stakeRef.current = rv.stake
         }
