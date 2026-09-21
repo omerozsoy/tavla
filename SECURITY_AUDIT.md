@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - HSTS verified on public hosts (2026-09-21)
+
+Normal HTTPS header checks now show Strict-Transport-Security: max-age=31536000 on both www.tavlatv.com and alidator.tavlatv.com. Apex and HTTP variants redirect to the HTTPS canonical host. includeSubDomains was intentionally not enabled because the complete subdomain inventory was not established.
+
 ## Audit amendment - validator response headers verified (2026-09-21)
 
 A normal curl -I https://validator.tavlatv.com/health returns 401 Unauthorized and now includes X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN, and Referrer-Policy: strict-origin-when-cross-origin. Anonymous health access remains denied while the reverse-proxy security headers are present.
