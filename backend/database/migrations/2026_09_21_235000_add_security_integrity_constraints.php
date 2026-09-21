@@ -103,7 +103,10 @@ return new class extends Migration
 
     private function supportsCheckConstraints(string $driver): bool
     {
-        return in_array($driver, ['mysql', 'pgsql', 'sqlite'], true);
+        // SQLite cannot ALTER TABLE to add a named CHECK constraint. The
+        // application invariants remain covered by the row-locking services
+        // in SQLite test databases; production MySQL/PostgreSQL gets DB checks.
+        return in_array($driver, ['mysql', 'pgsql'], true);
     }
 
     private function addCheck(string $table, string $name, string $expression): void
