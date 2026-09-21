@@ -290,6 +290,20 @@ class AuthController extends Controller
         // Yalniz tamamlanmis authoritative oda ekonomik sonuc uretebilir.
         $roomCode = strtoupper(trim((string) ($data['room_code'] ?? '')));
         $room = $roomCode !== '' ? \App\Models\Room::where('code', $roomCode)->first() : null;
+        // AUTHORITATIVE backstop: server_match is the canonical terminal result. A move/bot
+        // response can commit `done=true` just before a delayed status write/poll is observed;
+        // do not make the player's completed result permanently unreportable in that window.
+        if ($room && $room->authoritative && is_array($room->server_match)
+            && ($room->server_match['done'] ?? false)
+            && in_array($room->server_match['winner'] ?? null, ['white', 'black'], true)
+            && $room->status !== 'finished') {
+            $winnerSlot = $room->server_match['winner'] === 'white' ? 'p1' : 'p2';
+            $room->status = 'finished';
+            $room->end_reason = $room->end_reason ?? 'NORMAL_WIN';
+            $room->p1_result = $room->p1_result ?? ($winnerSlot === 'p1' ? 'won' : 'lost');
+            $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
+            $room->save();
+        }
         $verified = $room ? \App\Support\RoomResult::verified($room, (int) $user->id) : null;
         if ($verified === null) {
             return response()->json([
