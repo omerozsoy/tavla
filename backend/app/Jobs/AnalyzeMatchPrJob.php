@@ -82,11 +82,17 @@ class AnalyzeMatchPrJob implements ShouldQueue
             $upd['gnubg_pr_at'] = now();
         }
 
-        // BOT (rakip) gnubg PR — YALNIZ pvb (AI) maçında. Online'da rakibin PR'ı KENDİ satırından
-        // (gnubg_pr) gelir; orada ikinci pas gereksiz + maliyeti 2 katına çıkarır. pvb'de karşı satır
-        // yok -> botun gnubg PR'ını (checker+cube havuzlanmış) BU satırda tutarız ki sonuç ekranı
-        // "yalnız gnubg" direktifine uygun göstersin (wildbg opponent_pr ekranda kullanılmaz).
-        if (($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI) {
+        // RAKİP (opponent) gnubg PR — pvb (AI) maçında HER ZAMAN (karşı satır yok). ONLINE'da ise
+        // FALLBACK olarak: rakip kendi raporunu göndermezse (maçtan hızla çıkma / bağlantı kopması /
+        // saat-forfeit) opponent_pr rakip satırından ASLA dolmaz ve sonuç ekranında kalıcı "—" kalır.
+        // Kazananın stored log'u rakibin (reconstructed) hamlelerini de içerir ($opp renginin
+        // pos+steps+dice'ı applyServerBoard'dan gelir) -> gnubg rakibin PR'ını AYNI log'dan hesaplar.
+        // Böylece rakip hiç raporlamasa bile gnubg_opponent_pr dolar (matchGnubgPr ucu döndürür).
+        // NOT: rakip kendi raporunu gönderirse KENDİ satırının otoriter gnubg PR'ı opponent_pr'a
+        // senkronlanır (aşağıda + matchPr poll) ve ekran onu tercih eder; bu yalnız emniyet ağıdır.
+        $computeOppPr = ($mr->match_type ?? null) === \App\Support\StatsConfig::MATCH_TYPE_AI
+            || ! empty($mr->room_code);
+        if ($computeOppPr) {
             $opp = $player === 'white' ? 'black' : 'white';
             try {
                 $oChk = $orch->checkerPr($log, $opp, $ml, 2);
@@ -102,6 +108,17 @@ class AnalyzeMatchPrJob implements ShouldQueue
                     if (Schema::hasColumn('match_results', $col)) {
                         $upd[$col] = $val;
                     }
+                }
+                // ONLINE + rakip HİÇ raporlamadı (opponent_pr hâlâ null): "Maç Analizleri" listesi +
+                // MatchReport rakip PR'ı opponent_pr KOLONUNDAN okur (gnubg_opponent_pr'dan DEĞİL). Bu
+                // yüzden tarihsel görünümün de "—" kalmaması için fallback'i opponent_pr'a da yaz.
+                // YALNIZ null iken -> rakip GERÇEKTEN raporlarsa KENDİ otoriter gnubg PR'ı (reportRating
+                // senkronu / rakibin bu job'unun opponent_pr update'i) bunu EZER (o daha doğru).
+                if (! empty($mr->room_code)
+                    && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI
+                    && $mr->opponent_pr === null
+                    && Schema::hasColumn('match_results', 'opponent_pr')) {
+                    $upd['opponent_pr'] = round((float) $oOverall, 2);
                 }
             } catch (\Throwable $e) {
                 Log::warning('gnubg BOT PR job hata (yok sayildi)', ['id' => $mr->id, 'err' => $e->getMessage()]);

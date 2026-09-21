@@ -96,6 +96,33 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->actingAs($other)->getJson("/api/me/match-pr-gnubg/{$mr->id}")->assertStatus(403);
     }
 
+    public function test_online_opponent_pr_filled_from_own_log_when_opponent_never_reported(): void
+    {
+        // Rakip (kaybeden) HİÇ raporlamadı: karşı satır YOK. Kazananın log'u rakibin reconstructed
+        // hamlelerini de içerir -> gnubg rakip PR'ını AYNI log'dan hesaplar. Sonuç ekranı (gnubg_opponent_pr)
+        // + tarihsel "Maç Analizleri" (opponent_pr) artık "—" yerine sayı gösterir.
+        config(['gnubg.pr_mode' => 'authoritative']);
+        $u = User::factory()->create();
+        $mr = MatchResult::create([
+            'user_id' => $u->id, 'won' => true, 'opponent_rating' => 1500,
+            'rating_before' => 1500, 'rating_after' => 1516, 'delta' => 16,
+            'match_length' => 3, 'match_type' => 'match', 'pr' => 12.0,
+            'room_code' => 'ABCDE', // ONLINE maç
+            'log' => json_encode(['hc' => 'white', 'log' => [
+                ['player' => 'white', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [3, 1], 'playedSteps' => [[8, 5]]],
+                ['player' => 'black', 'pos' => ['points' => array_fill(0, 24, 0)], 'dice' => [6, 2], 'playedSteps' => [[24, 18]]],
+            ]]),
+        ]);
+
+        (new AnalyzeMatchPrJob($mr->id))->handle($this->fakeOrch(chkPr: 4.0, chkLoss: 0.048, chkDec: 6));
+
+        $mr->refresh();
+        $this->assertNotNull($mr->gnubg_opponent_pr, 'online rakip gnubg PR log\'dan dolmali (sonuç ekranı)');
+        $this->assertEqualsWithDelta(4.0, (float) $mr->gnubg_opponent_pr, 1e-6);
+        $this->assertNotNull($mr->opponent_pr, 'online rakip opponent_pr fallback dolmali (Maç Analizleri)');
+        $this->assertEqualsWithDelta(4.0, (float) $mr->opponent_pr, 1e-6);
+    }
+
     public function test_shadow_does_not_touch_authoritative_pr(): void
     {
         config(['gnubg.pr_mode' => 'shadow']);
