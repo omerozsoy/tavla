@@ -991,3 +991,7 @@ The frontend's local verifier already used rejection sampling but a different lo
 The validator and GNUbg POST endpoints now reject all requests with `503` when their shared secret is missing, instead of treating an empty secret as “authentication disabled.” Wrong or missing headers still receive `401`. Validator bind defaults to `127.0.0.1` and is overrideable only through an explicit host environment setting. Laravel TLS certificate verification now defaults to enabled for remote validator URLs.
 
 The health endpoints remain unauthenticated for process monitoring. Production environment values, reverse proxy exposure, and actual certificate configuration remain **UNKNOWN** and require deployment verification.
+
+## Audit amendment — Sanctum SSO expiry check (2026-09-21)
+
+The two manual token-to-web-session SSO handlers (`/admin/enter` and `/panel/enter`) now reject a token whose `expires_at` is in the past. `PersonalAccessToken::findToken()` itself only verifies the hash; it does not apply expiry, unlike Sanctum's normal guard path. Query-string exposure and the lack of a one-time SSO exchange remain documented residual risks.
