@@ -3017,6 +3017,13 @@ class RoomController extends Controller
                 ]);
             }
 
+            if ($existing->response_json !== null) {
+                $replayed = json_decode((string) $existing->response_json, true);
+                if (is_array($replayed)) {
+                    return response()->json($replayed, (int) ($existing->response_status ?: 200));
+                }
+            }
+
             return $this->fail('Bu komut daha Ã¶nce iÅŸlendi.', 409, [
                 'reason' => 'command-replayed',
                 'version' => (int) $room->server_version,
@@ -3061,10 +3068,22 @@ class RoomController extends Controller
                 return;
             }
 
-            \App\Models\RoomCommand::where('room_id', $roomId)
+            $receipt = \App\Models\RoomCommand::where('room_id', $roomId)
                 ->where('command_id', $commandId)
                 ->whereNull('result_version')
-                ->update(['result_version' => $version]);
+                ->first();
+            if (! $receipt) {
+                return;
+            }
+
+            $receipt->result_version = $version;
+            if (is_array($payload)) {
+                $receipt->response_json = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+                $receipt->response_status = method_exists($response, 'getStatusCode')
+                    ? (int) $response->getStatusCode()
+                    : 200;
+            }
+            $receipt->save();
         } catch (\Throwable $e) {
             // The authoritative state transaction has already committed. A
             // receipt bookkeeping outage must not turn a successful move into

@@ -41,11 +41,12 @@ class RoomCommandIdempotencyTest extends TestCase
         ])->assertOk();
         $this->assertSame(1, (int) $first->json('version'));
 
-        $this->postJson("/api/rooms/{$room->code}/roll", [
+        $replay = $this->postJson("/api/rooms/{$room->code}/roll", [
             'token' => 'p1-token',
             'command_id' => $commandId,
             'expected_version' => 1,
-        ])->assertStatus(409)->assertJsonPath('reason', 'command-replayed');
+        ])->assertOk();
+        $this->assertSame($first->json(), $replay->json());
 
         $fresh = $room->fresh();
         $this->assertSame(1, (int) $fresh->server_version);
@@ -55,6 +56,11 @@ class RoomCommandIdempotencyTest extends TestCase
             'room_id' => $fresh->id,
             'command_id' => $commandId,
             'result_version' => 1,
+        ]);
+        $this->assertDatabaseHas('room_commands', [
+            'room_id' => $fresh->id,
+            'command_id' => $commandId,
+            'response_status' => 200,
         ]);
     }
 

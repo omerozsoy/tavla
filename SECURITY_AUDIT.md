@@ -1,5 +1,7 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — canonical command replay response (2026-09-21)
 
+Authoritative command receipts now persist the canonical JSON response and HTTP status after a successful `roll`, `move`, cube, or `resign`. Repeating the same `(room_id, command_id)` returns that stored response without applying state again; payload mutation still returns `409`. The migration is `2026_09_22_010000_add_response_to_room_commands.php`. `RoomCommandIdempotencyTest` passes **4 tests / 22 assertions**.
 ## SECURITY SUMMARY
 
 | Severity | Bulgu sayısı |
