@@ -1,4 +1,10 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production wallet ledger baseline gap (2026-09-21)
+
+Production `wallet:reconcile` was run read-only after the ledger migration: **81 users checked, 68 drift**. The affected rows have non-zero `users.coins` but `ledger_expected=0`, while `coins_reserved=0`; the ledger table contains no historical opening entries for those balances. This is a **HIGH financial-forensics gap**, not evidence that balances should be set to zero. No balances or ledger rows were changed.
+
+Before treating the ledger as reconciled, take a verified database backup, freeze or tightly control economic writes, generate one auditable opening-balance transaction per user from the approved snapshot (`balance_before=0`, `amount=current coins`, `balance_after=current coins`, explicit `opening_balance` type), then rerun `wallet:reconcile`. The baseline must be a reviewed data operation; it is not performed by this audit session.
+
 ## Audit amendment — production Laravel-to-validator verification (2026-09-21)
 
 On the deployed host, using PHP 8.3 and the configured `VALIDATOR_URL=https://validator.tavlatv.com`, `VALIDATOR_VERIFY_TLS=true`, and configured shared secret, `php artisan test --filter=ValidatorParityTest` passed **4 tests / 9 assertions**. This confirms the Laravel HTTP bridge reaches the protected validator over verified TLS and receives the expected legal/illegal move responses.
