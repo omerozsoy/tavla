@@ -1208,3 +1208,5 @@ The two remaining discrepancies are resolved. `Room::userHasActiveMoneyMatch()` 
 After all fixture and invariant corrections, the complete Laravel suite passes **497 tests / 7,925 assertions with 0 failures**. Four tests remain skipped by their existing environment guards. No migration was executed and no production data was changed during this validation.
 
 Final static validation also passed: `npm run build` completed TypeScript and Vite production compilation successfully; PHP lint passed for the changed Room, RoomController, and TournamentController files; and `git diff --check` reported no whitespace errors. Vite emitted only existing large-chunk performance warnings.
+
+The isolated Playwright authoritative E2E passed: **1 test passed** for two-player matchmaking, server-authoritative dice, both-player moves, and turn rotation. The harness recreated only its separate `e2e` SQLite database. Production migration/pull/push was performed externally by the operator and was not executed by this audit session.
