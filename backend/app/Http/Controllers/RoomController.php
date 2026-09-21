@@ -2002,9 +2002,6 @@ class RoomController extends Controller
             if (! $room->acceptsGameActions()) {
                 return $this->fail('Oyun aktif değil.', 409);
             }
-            if (($stale = $this->staleCommand($room, $data)) !== null) {
-                return $stale;
-            }
             // GÜVENLİK: bot odasında p2 (bot) zar ATAMAZ HTTP ile (botu yalnız sunucu sürer).
             if ($room->bot && $slot === 'p2') {
                 return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
@@ -2098,6 +2095,17 @@ class RoomController extends Controller
             }
 
             // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
+            if (! empty($state['dice'])) {
+                return response()->json([
+                    'dice' => $state['dice'],
+                    'commit' => $room->dice_commit,
+                    'version' => (int) $room->server_version,
+                    'reused' => true,
+                ]);
+            }
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
+            }
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);
             }
@@ -2107,15 +2115,6 @@ class RoomController extends Controller
             }
 
             // RE-ROLL ENGELİ: zar zaten verilmişse (dice dolu) aynısını döndür (idempotent).
-            if (! empty($state['dice'])) {
-                return response()->json([
-                    'dice' => $state['dice'],
-                    'commit' => $room->dice_commit,
-                    'version' => (int) $room->server_version,
-                    'reused' => true,
-                ]);
-            }
-
             // Yeni el üret (deterministik, sunucu-otoriter). Çift ise 4 hamle.
             $index = (int) $room->dice_roll_index;
             [$d1, $d2] = $dice->roll($room->dice_seed, (string) $room->dice_client_seed, $index);
@@ -2893,10 +2892,19 @@ class RoomController extends Controller
         return RoomAccess::slot($room, $request->user('sanctum'), $token);
     }
 
-    /** Reject an explicitly versioned command from a stale tab; omitted versions remain compatible. */
+    /**
+     * Reject stale commands. Full server-authoritative rooms require the version envelope;
+     * omitting it would leave an old/manual client outside the concurrency protocol.
+     */
     private function staleCommand(Room $room, array $data): ?\Symfony\Component\HttpFoundation\Response
     {
         if (! array_key_exists('expected_version', $data) || $data['expected_version'] === null) {
+            if ($room->authoritative) {
+                return $this->fail('Oyun sürümü gerekli; önce odayı senkronize et.', 428, [
+                    'reason' => 'expected-version-required',
+                    'version' => (int) $room->server_version,
+                ]);
+            }
             return null;
         }
 

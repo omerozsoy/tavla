@@ -150,6 +150,10 @@ Admin API, legacy panel ve Filament kullanıcı düzenlemesi hedef user satırı
 
 `reportRating` cache lock alınırken exception oluşursa artık devam etmiyor; herhangi bir rating/stat/result yazmadan `503 result-lock-unavailable` dönüyor. Cache kesintisinin fail-open duplicate Elo üretmesi önlendi. Rating/result/side-effect işlemlerinin tek atomik finalization transaction'ı ve lock release protokolü hâlâ ayrı iş olarak açık.
 
+## Authoritative version envelope
+
+Authoritative oda komutlarında (`roll`, `move`, cube offer/respond, resign) `expected_version` artık zorunlu. Alan gönderilmezse server `428 expected-version-required` döndürüyor; eski/manual client stale-state kontrolünü atlayamıyor. Legacy non-authoritative friendly/dice-only akışı korunuyor.
+
 ## Queue visibility düzeltmesi
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
