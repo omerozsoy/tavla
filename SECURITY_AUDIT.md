@@ -1386,3 +1386,7 @@ The server and client verification implementations use rejection sampling (`byte
 ## Audit amendment - admin email privilege escalation blocked (2026-09-21)
 
 An authenticated admin could previously change their profile email to an address in `ADMIN_EMAILS`; the `isConfigAdmin()` guard would then treat that account as the protected configuration administrator. Profile updates now reject that transition unless the account is already a config admin. This preserves explicit `is_admin` grants while preventing self-escalation into the bootstrap-protected admin role. `AdminEmailGuardTest` passes **1 test / 2 assertions**.
+
+## Audit amendment - per-command room rate limits (2026-09-21)
+
+Authoritative `roll`, `move`, cube offer/respond, and `resign` routes now have action-level throttles in addition to the room group limit: 60/min for normal commands and 30/min for resign. This limits duplicate/replay spam before controller/database work while preserving legitimate play cadence. `RoomCommandIdempotencyTest` remains green at **4 tests / 22 assertions**; route inspection confirms the command endpoints are registered with the middleware stack.
