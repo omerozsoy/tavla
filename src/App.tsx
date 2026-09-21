@@ -3004,7 +3004,12 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code) {
         const code = room.code
-        serverResign(code, type, room.server_version ?? 0)
+        // Poll ile gelen room.server_version bir render geriden gelebilir. İlk
+        // açılış zarı/AI hamlesi sonrası gerçek uygulanan sürüm ref'tedir;
+        // eski sürümü gönderirsek sunucu 409 dönüp pes işlemini reddeder.
+        const expectedServerVersion =
+          appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+        serverResign(code, type, expectedServerVersion)
           .then((r) => {
             if (r?.state) {
               appliedServerVersionRef.current = r.version
@@ -5097,9 +5102,27 @@ export default function App() {
     setRoomBusy(true)
     setRoomError('')
     setInviteWaitName(null)
+    // Yeni bot odası kurulurken API yanıtını beklediğimiz ara render'da önceki
+    // online/bot odasının tahtası görünmemeli. Özellikle önceki maçtan kalan
+    // `room` online=true bırakıyor, `turnStart + played` de eski pozisyonu
+    // boardDisplay'e taşıyordu.
+    setRoom(null)
+    setMode('pvb')
+    setHome(true)
+    resetRoomSync()
+    syncEnabledRef.current = false
+    authoritativeRef.current = false
+    diceAuthorityRef.current = false
     setGameEnd(null)
     setTurnsPlayed(0)
     setMatch(newMatch(target))
+    setStarter('white')
+    setTurnStart(freshBoard('white'))
+    setPlayed([])
+    setSelectedFrom(null)
+    setCubePending(null)
+    setBotAnim(null)
+    setOpening('roll')
     try {
       friendlyRef.current = false // bot maçı PUANLI (rating raporlanır, matchType='ai')
       stakeRef.current = 0
