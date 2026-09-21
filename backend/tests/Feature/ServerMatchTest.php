@@ -7,12 +7,28 @@ use App\Models\User;
 use App\Support\Backgammon;
 use App\Support\RoomResult;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Sunucu-otoriter MAÇ (Faz 3): puan (gammon/backgammon), skor otoritesi, settle/RoomResult.
 class ServerMatchTest extends TestCase
 {
     use RefreshDatabase;
+
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function command(string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    {
+        Sanctum::actingAs($token === 'p1' ? $this->p1 : $this->p2);
+        $room = Room::where('code', 'MTCHX')->first()->fresh();
+        return $this->postJson($uri, array_merge([
+            'token' => $token,
+            'command_id' => (string) Str::uuid(),
+            'expected_version' => (int) $room->server_version,
+        ], $payload));
+    }
 
     // Sunucu başlangıç tahtası src/engine/board.ts initialState ile BİREBİR olmalı (validator =
     // istemci motoru bu konvansiyonu bekler). TERS dizi = hamle reddi + tahta ters görünür.
@@ -66,6 +82,8 @@ class ServerMatchTest extends TestCase
     // ---- server_match skor otoritesi (move üzerinden) ----
     private function room(int $target = 1): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         return Room::create([
             'code' => 'MTCHX',
             'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
@@ -109,7 +127,7 @@ class ServerMatchTest extends TestCase
         config()->set('validator.url', 'http://validator.test');
         $room = $this->room(1);
         // roll ile server_state kur
-        $this->postJson('/api/rooms/MTCHX/roll', ['token' => 'p1'])->assertOk();
+        $this->command('p1', '/api/rooms/MTCHX/roll')->assertOk();
 
         // Validator: beyaz 15 taş topladı (oyun bitti) -> sıra black
         $won = Backgammon::initialState();
@@ -120,7 +138,7 @@ class ServerMatchTest extends TestCase
             'validator.test/validate' => \Illuminate\Support\Facades\Http::response(['valid' => true, 'state' => $won]),
         ]);
 
-        $res = $this->postJson('/api/rooms/MTCHX/move', ['token' => 'p1', 'steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])->assertOk();
+        $res = $this->command('p1', '/api/rooms/MTCHX/move', ['steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])->assertOk();
         $res->assertJsonPath('winner', 'white')->assertJsonPath('match_done', true);
         $res->assertJsonPath('match.score.white', 1)->assertJsonPath('match.winner', 'white');
     }
