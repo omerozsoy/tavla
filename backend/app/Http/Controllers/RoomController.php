@@ -974,6 +974,9 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
+            // Davet/turnuva maç uzunluğu (Tek Oyun=1 / Maç). Oda İLK KEZ burada kurulursa
+            // server_match init'i bu target'ı kullanır; verilmezse davetten (aşağıda) alınır.
+            'target' => ['nullable', 'integer', 'in:1,3,5,7,9,11'],
         ]);
         $authUser = $request->user('sanctum');
         if ($authUser) {
@@ -983,19 +986,30 @@ class RoomController extends Controller
         }
         $code = strtoupper($code);
 
-        $room = Room::firstOrCreate(
-            ['code' => $code],
-            [
-                'p1_token' => $data['token'],
-                'p1_user_id' => $authUser?->id,
-                'p1_name' => $data['name'],
-                'p1_rating' => $data['rating'] ?? null,
-                'p1_avatar' => $data['avatar'] ?? null,
-                'status' => 'waiting',
-                'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
-                'version' => 0,
-            ],
-        );
+        // DAVET AYARLARI: oda bu istekte İLK KEZ kurulacaksa (davet EDEN = p1) maç uzunluğunu
+        // ve saati davetin kendisinden (game_invites) al. Aksi halde target odaya HİÇ işlenmez,
+        // rooms.target NULL kalır ve initServerMatch 1'e düşer -> "arkadaşla 5'lik seçtik ama
+        // 1'lik maç başladı". Gelen açık 'target' önceliklidir; yoksa davet, o da yoksa 1.
+        $invite = DB::table('game_invites')->where('room_code', $code)->orderByDesc('id')->first();
+        $createAttrs = [
+            'p1_token' => $data['token'],
+            'p1_user_id' => $authUser?->id,
+            'p1_name' => $data['name'],
+            'p1_rating' => $data['rating'] ?? null,
+            'p1_avatar' => $data['avatar'] ?? null,
+            'status' => 'waiting',
+            'time_control' => MatchClock::normalizeMode($data['time_control'] ?? ($invite->time_control ?? null)),
+            'target' => (int) ($data['target'] ?? $invite->target ?? 1),
+            'version' => 0,
+        ];
+        // Davetle kurulan oda = arkadaşlık maçı (create() ile aynı). Böylece show() özel-maç
+        // gizliliğini (katılımcı olmayan seyredemez) uygular. Turnuva/rematch enter'ında davet
+        // yoktur -> mode dokunulmaz (mevcut davranış korunur).
+        if ($invite) {
+            $createAttrs['mode'] = 'friendly';
+        }
+
+        $room = Room::firstOrCreate(['code' => $code], $createAttrs);
 
         $slot = $this->slotOf($room, $data['token'], $request);
         if ($slot === null) {
@@ -2112,21 +2126,15 @@ class RoomController extends Controller
      */
     private function shouldAuthoritative(?int $u1, ?int $u2, bool $staked): bool
     {
-        // PARA GÜVENLİĞİ (C1): bahisli oda (stake/bet) HER ZAMAN authoritative — global flag
-        // KAPALI olsa bile. Böylece settle mutual-consent'e düşemez; iki-hesap collusion ile
-        // coin transferi (kaybeden 'lost' + kazanan 'won' anlaşması) KAPANIR. Kazanan yalnız
-        // sunucunun server_match'inden gelir (forge edilemez).
-        if ($staked) {
-            return true;
-        }
+        // DİREKTİF (kullanıcı): TÜM MAÇLAR OTORİTER. Otoriter-olmayan maç YOK.
+        // Env/config'e BAĞIMLI DEĞİL: canlı .env yanlışlıkla SERVER_AUTHORITATIVE=false olsa
+        // bile burada koşulsuz true dönerek "limbo oda" (ne otoriter server_state ne legacy PUT
+        // -> PUT 409, senkron imkânsız) sınıfını KÖKTEN kapatır. Bahisli/allow-list zaten true'ydu;
+        // artık arkadaş/free maçlar da her zaman otoriter (server_state + serverRoll/serverMove).
+        // ($u1/$u2/$staked parametreleri imza uyumu için korunur.)
+        unset($u1, $u2, $staked);
 
-        $allow = config('game.authoritative_users', []);
-        if ($u1 && $u2 && $allow && in_array((int) $u1, $allow, true) && in_array((int) $u2, $allow, true)) {
-            return true;
-        }
-
-        // GLOBAL açıksa ücretsiz maçlar da authoritative.
-        return (bool) config('game.server_authoritative', false);
+        return true;
     }
 
     /**
