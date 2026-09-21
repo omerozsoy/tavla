@@ -6188,7 +6188,11 @@ export default function App() {
     played.length === 0 &&
     remainingDice.length === 2 &&
     remainingDice[0] !== remainingDice[1]
-  // Zar yuzleri: hep 2 zar goster, oynananlari soluk yap (ciftte yarisi soluk)
+  // Zar yuzleri: hep 2 zar goster, oynananlari soluk yap (ciftte yarisi soluk).
+  // RAKİP TURUNDA da soluklaşsın (kullanıcı isteği: rakibin hangi zarı oynadığı/kaldığı net olsun):
+  // pvp'de rakibin canlı adımları oppLive'da, bota karşı bot adımları played'de (botAnim) gelir.
+  // Kendi turumda: played. Böylece hem kendi hem rakip zarları oynandıkça solar.
+  const fadeSteps = online && !myTurn && oppLive.length > 0 ? oppLive : played
   const diceFaces = ((): { value: number; used: boolean; half?: boolean }[] => {
     const d = turnStart.dice
     if (d.length === 0) return []
@@ -6197,12 +6201,12 @@ export default function App() {
       // soldurur -> 1. hamle 1. zarin yarisi, 2. hamle 1. zar tam, 3. hamle 2. zarin yarisi,
       // 4. hamle 2. zar tam (4 adimda seffaflasir).
       return [0, 1].map((i) => {
-        const h = Math.min(2, Math.max(0, played.length - i * 2)) // bu zarin oynanmis yarisi (0/1/2)
+        const h = Math.min(2, Math.max(0, fadeSteps.length - i * 2)) // bu zarin oynanmis yarisi (0/1/2)
         return { value: d[0], used: h >= 2, half: h === 1 }
       })
     }
     const used = [false, false]
-    for (const st of played) {
+    for (const st of fadeSteps) {
       for (let i = 0; i < d.length; i++) {
         if (!used[i] && d[i] === st.die) {
           used[i] = true
