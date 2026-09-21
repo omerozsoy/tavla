@@ -1190,3 +1190,7 @@ Settlement/escrow/forfeit fixtures are now aligned with the hardened contract. `
 The dedicated fixtures are now in place: achievement rating reports use a finished authoritative ranked room, and Luck V1 uses a server-match winner before queue analysis. The offline no-room path explicitly asserts `409 verified-match-required` and creates no result row. `AchievementTest` plus `LuckV1EndToEndTest` pass **13 tests / 88 assertions**.
 
 `MatchBackstopTest` completed-room fixtures now include the authoritative `server_match` winner and score. This allows late client reports to enrich an existing bare row without reopening client-controlled result authority. The suite passes **5 tests / 28 assertions**.
+
+## Audit amendment — full suite after fixture batches (2026-09-21)
+
+The complete Laravel suite was rerun after the authoritative fixture migrations: **497 tests / 7,835 assertions**, with **21 failures** and **4 skipped**. This is down from the earlier 87 failures. The remaining failures are concentrated in legacy Lucky Wheel admin authentication, RoomClock/LivePreview ownership fixtures, one active-money admission expectation, and an outdated tournament no-show expectation. No production authorization guard was weakened to satisfy them; they remain the next dedicated fixture batch.
