@@ -1366,10 +1366,6 @@ class RoomController extends Controller
 
             $room->state = $data['state'];
             $room->version = $room->version + 1;
-            if (! empty($data['status'])) {
-                $room->status = $data['status'];
-            }
-
             // ---- Sunucu-otoriter saat + AFK ----
             $now = microtime(true);
             $clock = is_array($room->clock) ? $room->clock : [];
@@ -1392,6 +1388,18 @@ class RoomController extends Controller
                 $room->clock = $clock;
             } else {
                 $this->tagNormalEnd($room, $data['state']);
+            }
+
+            // Client status is intent/legacy metadata only. A room becomes finished
+            // here only when the server can derive a terminal winner from the canonical
+            // state (or when applyClockEnd already finalized a server timeout).
+            if ($room->status !== 'finished' && $this->decidedWinnerColor($room) !== null) {
+                $winnerColor = $this->decidedWinnerColor($room);
+                $winnerSlot = $winnerColor === 'white' ? 'p1' : 'p2';
+                $room->status = 'finished';
+                $room->p1_result = $room->p1_result ?? ($winnerSlot === 'p1' ? 'won' : 'lost');
+                $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
+                $room->end_reason = $room->end_reason ?? 'NORMAL_WIN';
             }
 
             $room->save();
