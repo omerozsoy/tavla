@@ -1150,3 +1150,7 @@ Achievement and Dice Slot regression coverage was also run: 31 tests / 235 asser
 ## Audit amendment — migration rollout runbook (2026-09-21)
 
 `SECURITY_MIGRATION_RUNBOOK.md` now documents the non-destructive production rollout sequence, backup requirement, migration order, reconciliation checks, feature flags, smoke tests, and rollback boundaries. No migration or production data operation was executed during this audit.
+
+## Audit amendment — opening-roll command envelope (2026-09-21)
+
+The opening authoritative roll previously returned before the command receipt guard, allowing a manual request without `command_id`. The guard now runs before every authoritative roll branch, including opening and reused-dice responses. Stale-version validation runs before claiming the receipt, and the payload hash excludes `expected_version` so a network retry may refresh its optimistic version without becoming a payload mismatch. `RoomCommandIdempotencyTest` passes 2 tests / 12 assertions.
