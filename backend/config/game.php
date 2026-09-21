@@ -10,6 +10,10 @@ return [
     // yalnızca açıkça SERVER_AUTHORITATIVE=false verilerek yapılabilir.
     'server_authoritative' => (bool) env('SERVER_AUTHORITATIVE', true),
 
+    // Eski istemci tam-state PUT yolu yalnız kontrollü geçiş/test ortamında açık olabilir.
+    // Production varsayılanı fail-closed: oyun state'i yalnız canonical server commands yazar.
+    'legacy_state_allowed' => (bool) env('ALLOW_LEGACY_STATE', false),
+
     // TEST allow-list: GLOBAL kapalıyken bile, SADECE bu user id'lerin İKİSİ de eşleşirse
     // o oda authoritative olur; başka hiçbir maç etkilenmez. Frontend DRAFT'ı 2 hesapla
     // güvenle test etmek için. Kendi + test hesabının id'sini koy. Örn:

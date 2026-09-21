@@ -45,6 +45,7 @@ class RoomDiceAuthorityTest extends TestCase
         // Enforcement testleri: canlı varsayılan SHADOW (false) olsa da burada ZORLAMA'yı
         // doğruluyoruz -> açık başlat. Gölge testi ayrıca false'a çeker.
         config()->set('dice.enforce', true);
+        config()->set('game.legacy_state_allowed', true);
     }
 
     private function room(bool $diceAuthority = true, ?int $target = null): Room

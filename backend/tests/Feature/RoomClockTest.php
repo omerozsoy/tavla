@@ -18,6 +18,12 @@ class RoomClockTest extends TestCase
     private ?User $p1 = null;
     private ?User $p2 = null;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config()->set('game.legacy_state_allowed', true);
+    }
+
     private function playingRoom(string $code, string $mode, int $target): Room
     {
         $this->p1 = User::factory()->create();
