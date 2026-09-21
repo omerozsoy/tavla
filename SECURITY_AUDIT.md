@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production Laravel-to-validator verification (2026-09-21)
+
+On the deployed host, using PHP 8.3 and the configured `VALIDATOR_URL=https://validator.tavlatv.com`, `VALIDATOR_VERIFY_TLS=true`, and configured shared secret, `php artisan test --filter=ValidatorParityTest` passed **4 tests / 9 assertions**. This confirms the Laravel HTTP bridge reaches the protected validator over verified TLS and receives the expected legal/illegal move responses.
+
 ## Audit amendment — production validator secret guard fixed (2026-09-21)
 
 After the Plesk runtime secret and Laravel `VALIDATOR_SECRET` were aligned, a secret-less `POST https://validator.tavlatv.com/validate` returned **401 Unauthorized**. The production validator no longer processes unauthenticated validation payloads. The secret value is not recorded.
