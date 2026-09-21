@@ -53,6 +53,10 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         if (! $mr) {
             return;
         }
+        // Bozuk tarihsel loglar tekrar kuyruğa alınsa bile aynı hatayı üretmesin.
+        if ($mr->luck_method === 'TAVLAI_LUCK_UNAVAILABLE') {
+            return;
+        }
         // ADIM 4 (HAKEM=gnubg): pvb (room_code YOK) -> tek log iki rengi de içerir; doğrudan .mat kur.
         if (empty($mr->room_code)) {
             $this->handlePvb($gnubg, $mr);
@@ -100,7 +104,13 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             return;
         }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
-        $mat = MatBuilder::build($merged, $matchLen, 'White', 'Black');
+        try {
+            $mat = MatBuilder::build($merged, $matchLen, 'White', 'Black');
+        } catch (\RuntimeException $e) {
+            $this->markUnavailable($mr, 'merged');
+
+            return;
+        }
 
         $res = $gnubg->matchluck($mat);
         $luck = is_array($res) ? ($res['luck'] ?? null) : null;
@@ -156,7 +166,13 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             return;
         }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
-        $mat = MatBuilder::build($log, $matchLen, 'White', 'Black');
+        try {
+            $mat = MatBuilder::build($log, $matchLen, 'White', 'Black');
+        } catch (\RuntimeException $e) {
+            $this->markUnavailable($mr, 'pvb');
+
+            return;
+        }
         if ($mat === '') {
             return;
         }
@@ -212,9 +228,15 @@ class AnalyzeMatchLuckJob implements ShouldQueue
             return;
         }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
-        $mat = MatFromLog::buildFromEvents($p1, $p2, [
-            'whiteName' => 'White', 'blackName' => 'Black', 'matchLength' => $matchLen,
-        ]);
+        try {
+            $mat = MatFromLog::buildFromEvents($p1, $p2, [
+                'whiteName' => 'White', 'blackName' => 'Black', 'matchLength' => $matchLen,
+            ]);
+        } catch (\RuntimeException $e) {
+            $this->markUnavailable($mr, 'game_logs');
+
+            return;
+        }
         if ($mat === '') {
             return;
         }
@@ -261,6 +283,17 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         if ($upd) {
             MatchResult::where('id', $rowId)->update($upd);
         }
+    }
+
+    /** Bozuk tarihsel MAT kaydını karantinaya al; queue retry aynı kaydı tekrar patlatmasın. */
+    private function markUnavailable(MatchResult $mr, string $source): void
+    {
+        MatchResult::whereKey($mr->id)->update(['luck_method' => 'TAVLAI_LUCK_UNAVAILABLE']);
+        Log::warning('gnubg luck skipped: malformed historical log', [
+            'id' => $mr->id,
+            'room' => $mr->room_code,
+            'source' => $source,
+        ]);
     }
 
     /** Query-builder update (fillable gerekmez); yalnız var olan kolonlara yaz. */

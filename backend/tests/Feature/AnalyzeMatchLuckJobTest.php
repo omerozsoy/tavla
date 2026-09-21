@@ -156,6 +156,35 @@ class AnalyzeMatchLuckJobTest extends TestCase
         $this->assertEqualsWithDelta(5.0, (float) $wRow->fresh()->luck_mwc, 1e-6);
     }
 
+    public function test_malformed_historical_mat_is_quarantined_without_retry_failure(): void
+    {
+        $w = $this->user('badlog');
+        $row = MatchResult::create([
+            'user_id' => $w->id, 'won' => true, 'room_code' => 'BADMAT', 'match_length' => 5,
+            'opponent_rating' => 1500, 'rating_before' => 1500, 'rating_after' => 1500, 'delta' => 0,
+            'log' => json_encode(['hc' => 'white', 'log' => [['player' => 'white', 'notation' => '8/5', 'dice' => [3, 1], 'seq' => 0]]]),
+        ]);
+        // İlk oyun sonuçsuz, seq reset'i ikinci oyunu başlatıyor: MatSerializer bunu bilinçli
+        // olarak reddeder. Job bu tarihsel kaydı karantinaya almalı ve exception fırlatmamalı.
+        \App\Models\GameLog::create([
+            'uid' => 'BADMAT', 'mode' => 'online', 'target' => 5,
+            'p1_events' => [
+                ['g' => 1, 's' => 2, 'p' => 'W', 'd' => '31', 'm' => '8/5 6/5'],
+                ['g' => 2, 's' => 0, 'p' => 'W', 'd' => '32', 'm' => '24/21 13/11'],
+            ],
+            'p2_events' => [],
+        ]);
+        $mock = Mockery::mock(GnuBgClient::class);
+        $mock->shouldNotReceive('matchluck');
+
+        (new AnalyzeMatchLuckJob($row->id))->handle($mock);
+
+        $this->assertSame('TAVLAI_LUCK_UNAVAILABLE', $row->fresh()->luck_method);
+        // İkinci queue denemesi aynı kaydı sessizce atlamalı.
+        (new AnalyzeMatchLuckJob($row->id))->handle($mock);
+        $this->assertSame('TAVLAI_LUCK_UNAVAILABLE', $row->fresh()->luck_method);
+    }
+
     protected function tearDown(): void
     {
         Mockery::close();
