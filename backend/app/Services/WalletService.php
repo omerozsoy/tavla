@@ -64,6 +64,12 @@ class WalletService
                 ]);
             }
 
+            // Çağıran transaction çoğu zaman aynı User nesnesini debit/credit sonrasında
+            // başka alanlarla birlikte kaydeder. Kilitli satırın yeni bakiyesini o nesneye de
+            // taşı; aksi halde stale model save() ile atomik hareketi geri yazabilir.
+            $user->setRawAttributes($locked->getAttributes());
+            $user->syncOriginal();
+
             return $locked;
         });
     }
