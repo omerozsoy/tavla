@@ -2176,6 +2176,8 @@ class RoomController extends Controller
             ]);
         });
 
+        $this->markAuthoritativeCommandResult($code, $data, $resp);
+
         // BOT ODASI: AÇILIŞ eli botu başlatıcı yaptıysa (starter=black) botu senkron oynat.
         // Normal (insan kendi zarını attı) durumda sıra insanda kalır -> maybeDriveBot no-op.
         return $this->maybeDriveBot(strtoupper($code), $resp);
@@ -2325,6 +2327,7 @@ class RoomController extends Controller
 
         // BOT ODASI: insan hamlesi KAYDEDİLDİ (yukarıdaki tx commit). Sıra bota geçtiyse botu
         // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
+        $this->markAuthoritativeCommandResult($code, $data, $resp);
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -2341,7 +2344,7 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        return DB::transaction(function () use ($data, $code, $request) {
+        $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2419,6 +2422,10 @@ class RoomController extends Controller
 
             return response()->json(['match' => $room->server_match, 'version' => (int) $room->server_version]);
         });
+
+        $this->markAuthoritativeCommandResult($code, $data, $resp);
+
+        return $resp;
     }
 
     /**
@@ -2504,6 +2511,7 @@ class RoomController extends Controller
         // BOT ODASI: insan botun küp teklifini TAKE ettiyse sıra hâlâ botta (zarını atacak) ->
         // botu senkron oynat; bot[] yanıta eklenir (frontend handleTake uygular). DROP'ta maç bitti
         // (turn insana döndü / done) -> maybeDriveBot no-op.
+        $this->markAuthoritativeCommandResult($code, $data, $resp);
         return $this->maybeDriveBot(strtoupper($code), $resp);
     }
 
@@ -2521,7 +2529,7 @@ class RoomController extends Controller
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
-        return DB::transaction(function () use ($data, $code, $request) {
+        $resp = DB::transaction(function () use ($data, $code, $request) {
             $room = Room::where('code', strtoupper($code))->lockForUpdate()->first();
             if (! $room) {
                 return $this->fail('Oda bulunamadı.', 404);
@@ -2572,6 +2580,10 @@ class RoomController extends Controller
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
         });
+
+        $this->markAuthoritativeCommandResult($code, $data, $resp);
+
+        return $resp;
     }
 
     // ============================================================================================
@@ -3006,6 +3018,36 @@ class RoomController extends Controller
         ]);
 
         return null;
+    }
+
+    /**
+     * Persist the canonical state version reached by a successfully claimed
+     * command. This is intentionally best-effort after the state transaction:
+     * failure here must never roll back a committed game action, and retries
+     * still remain rejected by the unique command receipt.
+     */
+    private function markAuthoritativeCommandResult(string $code, array $data, $response): void
+    {
+        $commandId = $data['command_id'] ?? null;
+        if (! $commandId || ! Schema::hasTable('room_commands')) {
+            return;
+        }
+
+        $payload = method_exists($response, 'getData') ? $response->getData(true) : null;
+        $version = is_array($payload) && isset($payload['version']) ? (int) $payload['version'] : null;
+        if ($version === null) {
+            return;
+        }
+
+        $roomId = Room::where('code', strtoupper($code))->value('id');
+        if (! $roomId) {
+            return;
+        }
+
+        \App\Models\RoomCommand::where('room_id', $roomId)
+            ->where('command_id', $commandId)
+            ->whereNull('result_version')
+            ->update(['result_version' => $version]);
     }
 
     /**
