@@ -1362,3 +1362,7 @@ The private-room read guard now covers the public `GET /api/live-matches` listin
 ## Audit amendment - authenticated room identity metadata is server-derived (2026-09-21)
 
 `join` and `enter` no longer trust authenticated clients for player name, rating, or avatar metadata. When a Sanctum user is present, all three values are taken from the locked user profile before the room participant row is written. This prevents a forged opponent rating from being persisted and later consumed by rating/forfeit calculations; guest compatibility remains limited to non-account rooms. `RoomCodeAuthoritativeTest` passes **4 tests / 15 assertions**, including a forged-metadata regression.
+
+## Audit amendment - MAT export error detail redaction (2026-09-21)
+
+Canonical MAT export failures no longer return the internal `MatSerializer` exception text to the browser. The endpoint returns a generic 422 response while logging the diagnostic server-side with the log UID and record ID for forensic review. `GameLogTest` passes **11 tests / 58 assertions**.
