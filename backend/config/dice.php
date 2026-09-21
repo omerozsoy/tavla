@@ -8,9 +8,7 @@ return [
     // false yaparsan yeni odalar zarı yine LEGACY (istemci) üretir (eski davranış).
     'authority' => (bool) env('DICE_AUTHORITY', true),
 
-    // KILL-SWITCH: update()'te zar eşleşmesini ZORLA (uyuşmazsa reddet). false = "shadow":
-    // sunucu zarı yine verilir + uyuşmazlık LOGLANIR ama reddedilmez (boru hattını canlıda
-    // risksiz doğrula). VARSAYILAN false (gölge): ilk canlı deploy hiçbir maçı kıramaz.
-    // Boru hattı doğrulanınca .env'de DICE_ENFORCE=true yap -> hile fiilen engellenir.
-    'enforce' => (bool) env('DICE_ENFORCE', false),
+    // KILL-SWITCH: update()'te zar eşleşmesini ZORLA (uyuşmazsa reddet). false yalnız
+    // kontrollü shadow/geri alma için açıkça seçilebilir; güvenli varsayılan fail-closed'dur.
+    'enforce' => (bool) env('DICE_ENFORCE', true),
 ];
