@@ -721,6 +721,7 @@ export default function App() {
   // Kup danismani (insan icin): roll-oncesi teklif tavsiyesi veya take/drop tavsiyesi
   const [cubeHint, setCubeHint] = useState<CubeHint | null>(null)
   const cubeHintRef = useRef<CubeHint | null>(null) // karar aninda loglamak icin
+  const cubeBusyRef = useRef(false) // take/drop ucusta-guard: cift-gonderim -> 409 (pending yok) engeli
   const [gameEnd, setGameEnd] = useState<GameEnd | null>(saved?.gameEnd ?? null)
   const [botAnim, setBotAnim] = useState<BotAnim | null>(null) // bot tas-tas oynatma
   const [botDance, setBotDance] = useState(false) // bot "hamle yok" -> popup 2sn gorunur, sonra gecer
@@ -2960,7 +2961,8 @@ export default function App() {
   function handleTake() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) {
+      if (room?.code && !cubeBusyRef.current) {
+        cubeBusyRef.current = true
         const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
         const code = room.code
         void serverCubeRespond(code, 'take', room.server_version ?? 0)
@@ -2970,7 +2972,14 @@ export default function App() {
             // BOT ODASI: insan botun küpünü TAKE etti -> sıra botta; botun hamlesi yanıtta gelir.
             if (!applyBotTurns(r?.bot) && r?.bot_status === 'unavailable') scheduleBotNudge(code)
           })
-          .catch((e) => notify.error(srvErr(e)))
+          // 409 = teklif zaten çözüldü (bot sunucuda anında yanıtladı / çift-tıklama) -> zararsız;
+          // poll server_match ile cubePending'i senkronlar. Hata toast'ı GÖSTERME.
+          .catch((e) => {
+            if ((e as { status?: number })?.status !== 409) notify.error(srvErr(e))
+          })
+          .finally(() => {
+            cubeBusyRef.current = false
+          })
       }
       return
     }
@@ -2985,14 +2994,21 @@ export default function App() {
   function handleDrop() {
     if (!cubePending) return
     if (online && authoritativeRef.current) {
-      if (room?.code) {
+      if (room?.code && !cubeBusyRef.current) {
+        cubeBusyRef.current = true
         const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
         void serverCubeRespond(room.code, 'drop', room.server_version ?? 0)
           .then(() => {
             recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
             recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
           })
-          .catch((e) => notify.error(srvErr(e)))
+          // 409 = teklif zaten çözüldü / çift-tıklama -> zararsız; poll senkronlar (bkz handleTake).
+          .catch((e) => {
+            if ((e as { status?: number })?.status !== 409) notify.error(srvErr(e))
+          })
+          .finally(() => {
+            cubeBusyRef.current = false
+          })
       }
       return
     }
