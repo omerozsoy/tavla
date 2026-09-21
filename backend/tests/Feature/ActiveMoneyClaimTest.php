@@ -30,4 +30,26 @@ class ActiveMoneyClaimTest extends TestCase
         $this->assertFalse(Room::claimActiveMoneySlot($p1->id, $roomB->id));
         $this->assertDatabaseCount('active_money_match_claims', 2);
     }
+
+    public function test_release_allows_user_to_claim_next_money_room(): void
+    {
+        $user = User::factory()->create();
+        $roomA = Room::create([
+            'code' => 'CLMR1', 'p1_token' => 'a', 'p1_name' => 'P1', 'status' => 'playing',
+            'mode' => 'ranked', 'stake' => 10, 'version' => 0,
+        ]);
+        $roomB = Room::create([
+            'code' => 'CLMR2', 'p1_token' => 'b', 'p1_name' => 'P1', 'status' => 'playing',
+            'mode' => 'ranked', 'stake' => 10, 'version' => 0,
+        ]);
+
+        $this->assertTrue(Room::claimActiveMoneySlot($user->id, $roomA->id));
+        Room::releaseActiveMoneyClaims($roomA->id);
+
+        $this->assertTrue(Room::claimActiveMoneySlot($user->id, $roomB->id));
+        $this->assertDatabaseHas('active_money_match_claims', [
+            'user_id' => $user->id,
+            'room_id' => $roomB->id,
+        ]);
+    }
 }
