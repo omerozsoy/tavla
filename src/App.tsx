@@ -5078,7 +5078,7 @@ export default function App() {
       stakeRef.current = 0
       betPctRef.current = 0
       const tcUse = tc ?? timeControl // FriendGameSetup'tan gelen saat (state stale olmasin)
-      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse)
+      const res = await createRoom(profile?.nickname ?? t('auth.guestNick'), user?.rating, profile.avatar, tcUse, target)
       resetRoomSync()
       lastSyncRef.current = ''
       syncEnabledRef.current = false

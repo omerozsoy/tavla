@@ -112,6 +112,7 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
+            'target' => ['nullable', 'integer', 'in:1,3,5,7,9,11'],
         ]);
 
         $room = Room::create([
@@ -124,6 +125,7 @@ class RoomController extends Controller
             'status' => 'waiting',
             'mode' => 'friendly', // davet kodlu ozel oda -> Dostluk maci
             'time_control' => MatchClock::normalizeMode($data['time_control'] ?? null),
+            'target' => (int) ($data['target'] ?? 1),
             'version' => 0,
         ]);
 
