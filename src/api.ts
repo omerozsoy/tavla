@@ -2183,7 +2183,7 @@ export async function serverCubeRespond(
   code: string,
   action: 'take' | 'drop',
   expectedVersion?: number,
-): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus }> {
+): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
     method: 'POST',
       body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), action, expected_version: expectedVersion ?? null }),

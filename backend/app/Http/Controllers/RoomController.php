@@ -2542,7 +2542,10 @@ class RoomController extends Controller
             $cube = $this->cubeOf($room);
             $offerer = $cube['pending'];
             if ($offerer === null) {
-                return $this->fail('Bekleyen küp teklifi yok.', 409);
+                // BEKLEYEN TEKLİF YOK (yarış: teklif zaten çözüldü / çift-tıklama / bayat cubePending):
+                // 409 YERİNE güncel durumu 200 not_turn ile dön -> istemci sessizce senkronlar, konsolda
+                // "POST /cube/respond 409" spam OLMAZ. Küp değişmez (idempotent, güvenlik aynı).
+                return $this->notTurnSync($room);
             }
             // Yalnız teklifin RAKİBİ yanıtlayabilir (teklif eden kendi teklifini yanıtlayamaz).
             if ($color !== $this->otherColor($offerer)) {

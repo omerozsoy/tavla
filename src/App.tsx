@@ -2982,6 +2982,15 @@ export default function App() {
         const code = room.code
         void serverCubeRespond(code, 'take', room.server_version ?? 0)
           .then((r) => {
+            // BEKLEYEN TEKLİF YOK (yarış): sunucu not_turn+güncel durum döndü -> sessizce senkronla,
+            // PR/olay KAYDETME (teklif yoktu). Konsolda 409 spam olmaz.
+            if (r?.not_turn) {
+              if (r.state) {
+                appliedServerVersionRef.current = r.version ?? appliedServerVersionRef.current
+                applyServerBoard(r.state as GameState, r.match ?? null)
+              }
+              return
+            }
             recordCubePR(srvTaker, 'take', 'take') // XG cube PR + .mat kaydı
             recordCubeEvent(srvTaker, 'take') // maç kaydı (okunur)
             // BOT ODASI: insan botun küpünü TAKE etti -> sıra botta; botun hamlesi yanıtta gelir.
@@ -3013,7 +3022,15 @@ export default function App() {
         cubeBusyRef.current = true
         const srvDropper = opponent(cubePending) // pas geçen taraf (= ben)
         void serverCubeRespond(room.code, 'drop', room.server_version ?? 0)
-          .then(() => {
+          .then((r) => {
+            // BEKLEYEN TEKLİF YOK (yarış): not_turn -> sessizce senkronla, PR/olay kaydetme.
+            if (r?.not_turn) {
+              if (r.state) {
+                appliedServerVersionRef.current = r.version ?? appliedServerVersionRef.current
+                applyServerBoard(r.state as GameState, r.match ?? null)
+              }
+              return
+            }
             recordCubePR(srvDropper, 'take', 'drop') // XG cube PR + .mat kaydı
             recordCubeEvent(srvDropper, 'drop') // maç kaydı (okunur)
           })
