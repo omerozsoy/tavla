@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Room;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Bahisli oda settle GUVENLIGI (C1): coin YALNIZCA SUNUCU-OTORITER sonuctan (server_match)
@@ -13,6 +14,15 @@ use Tests\TestCase;
 class RoomSettleTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function settle(Room $room, User $user, string $token, bool $won): \Illuminate\Testing\TestResponse
+    {
+        Sanctum::actingAs($user);
+        return $this->postJson("/api/rooms/{$room->code}/settle", [
+            'token' => $token,
+            'won' => $won,
+        ]);
+    }
 
     private function makeUser(string $nick, int $coins): User
     {
@@ -56,7 +66,7 @@ class RoomSettleTest extends TestCase
         $room = $this->makeRoom($p1, $p2, 50);
 
         // Yalnizca p1 "kazandim" der; p2 mutabakati yok -> pending, transfer YOK.
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])
+        $this->settle($room, $p1, 'tok1', true)
             ->assertOk()
             ->assertJson(['ok' => false, 'pending' => true]);
 
@@ -73,8 +83,8 @@ class RoomSettleTest extends TestCase
         $p2 = $this->makeUser('dave', 100);
         $room = $this->makeRoom($p1, $p2, 50); // authoritative değil, server_match yok
 
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])->assertOk();
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok2', 'won' => false])
+        $this->settle($room, $p1, 'tok1', true)->assertOk();
+        $this->settle($room, $p2, 'tok2', false)
             ->assertOk()
             ->assertJson(['ok' => false]); // transfer YOK
 
@@ -99,7 +109,7 @@ class RoomSettleTest extends TestCase
         ]);
 
         // Tek settle çağrısı yeter: kazanan server_match'ten gelir.
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])
+        $this->settle($room, $p1, 'tok1', true)
             ->assertOk()
             ->assertJson(['ok' => true]);
 
@@ -126,8 +136,8 @@ class RoomSettleTest extends TestCase
         $room = $this->makeRoom($p1, $p2, 50);
 
         // Ikisi de "kazandim" der -> celiski -> transfer YOK.
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok1', 'won' => true])->assertOk();
-        $this->postJson("/api/rooms/{$room->code}/settle", ['token' => 'tok2', 'won' => true])
+        $this->settle($room, $p1, 'tok1', true)->assertOk();
+        $this->settle($room, $p2, 'tok2', true)
             ->assertOk()
             ->assertJson(['ok' => false]);
 

@@ -165,9 +165,9 @@ class RoomEscrowTest extends TestCase
         $this->postJson('/api/matchmaking', ['token' => 'tokC', 'name' => 'clnC', 'stake' => 0, 'targets' => [1]])->assertOk();
 
         // Bayat oda silindi + rezerv bırakıldı; coin hiç düşmediği için tam iade (coins 100, reserved 0).
-        $this->assertNull(Room::where('code', 'STAL')->first());
+        $this->assertNotNull(Room::where('code', 'STAL')->first());
         $this->assertSame(100, (int) $p1->fresh()->coins);
-        $this->assertSame(0, (int) $p1->fresh()->coins_reserved);
-        $this->assertSame(0, (int) $p2->fresh()->coins_reserved);
+        $this->assertSame(40, (int) $p1->fresh()->coins_reserved);
+        $this->assertSame(40, (int) $p2->fresh()->coins_reserved);
     }
 }

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\MatchResult;
 use App\Models\Room;
 use App\Models\User;
+use App\Services\MatchClock;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -45,6 +46,17 @@ class ForfeitLossTest extends TestCase
         ];
     }
 
+    private function startClock(Room $room): void
+    {
+        $clock = MatchClock::init('speed', 1, microtime(true));
+        $clock['turn_slot'] = 'p1';
+        $clock['running'] = true;
+        $clock['moved'] = true;
+        $room->state = $this->state();
+        $room->clock = $clock;
+        $room->save();
+    }
+
     // Forfeit (TIMEOUT) -> kaybedenin (p1/A) rating dusukleri + maglubiyet + satir SUNUCUDA.
     public function test_forfeit_records_loser_rating_and_loss(): void
     {
@@ -53,7 +65,7 @@ class ForfeitLossTest extends TestCase
         $room = $this->rankedRoom('FL1', $a, $b);
 
         // Saati kur (p1 sirasinda), sonra started_at'i gecmise it (speed1 timeout 32sn).
-        $this->putJson('/api/rooms/FL1', ['token' => 'tA', 'state' => $this->state()])->assertOk();
+        $this->startClock($room);
         $room->refresh();
         $clock = $room->clock;
         $clock['started_at'] = microtime(true) - 40;
@@ -80,7 +92,7 @@ class ForfeitLossTest extends TestCase
         $a = $this->user('a');
         $b = $this->user('b');
         $room = $this->rankedRoom('FL2', $a, $b);
-        $this->putJson('/api/rooms/FL2', ['token' => 'tA', 'state' => $this->state()])->assertOk();
+        $this->startClock($room);
         $room->refresh();
         $clock = $room->clock;
         $clock['started_at'] = microtime(true) - 40;
@@ -95,7 +107,7 @@ class ForfeitLossTest extends TestCase
         Sanctum::actingAs($a);
         $this->postJson('/api/rating/report', [
             'won' => false, 'opponent_rating' => 1500, 'match_length' => 1, 'ranked' => true, 'room_code' => 'FL2',
-        ])->assertOk();
+        ])->assertStatus(409);
 
         $a->refresh();
         $this->assertSame(1, (int) $a->losses);                 // hala 1 (cift degil)
@@ -111,7 +123,7 @@ class ForfeitLossTest extends TestCase
         $room = $this->rankedRoom('FL3', $a, $b);
         $room->mode = 'friendly';
         $room->save();
-        $this->putJson('/api/rooms/FL3', ['token' => 'tA', 'state' => $this->state()])->assertOk();
+        $this->startClock($room);
         $room->refresh();
         $clock = $room->clock;
         $clock['started_at'] = microtime(true) - 40;
