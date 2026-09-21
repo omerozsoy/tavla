@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Icon } from './Icon'
@@ -73,6 +73,15 @@ export default function BugReport({ currentPage, loggedIn }: Props) {
     setOpen(true)
   }
 
+  // Ust bardaki (mobil misafir) bayrak tetikleyicisi ayni formu acsin — sabit FAB
+  // mobilde gizlenip yerine ust bara tasindigi icin, pencere olayiyla kopruleriz.
+  useEffect(() => {
+    const onOpen = () => openForm()
+    window.addEventListener('tavla:open-bug-report', onOpen)
+    return () => window.removeEventListener('tavla:open-bug-report', onOpen)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage])
+
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = '' // ayni dosya tekrar secilebilsin
@@ -127,7 +136,12 @@ export default function BugReport({ currentPage, loggedIn }: Props) {
     <>
       {/* Sağ kenar sabit sekme butonu — oyun ekranında render EDİLMEZ (App gizler). */}
       {!open && (
-        <button className="bug-fab" onClick={openForm} aria-label={t('bug.button')} title={t('bug.button')}>
+        <button
+          className={`bug-fab${loggedIn ? '' : ' bug-fab-guest'}`}
+          onClick={openForm}
+          aria-label={t('bug.button')}
+          title={t('bug.button')}
+        >
           <Icon name="flag" size={20} />
           <span className="bug-fab-txt">{t('bug.button')}</span>
         </button>

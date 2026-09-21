@@ -47,6 +47,14 @@
   }
 }
 
+/* Misafir + mobil: sabit FAB'ı gizle — bayrak ÜST BARDA dil bayrağının solunda çıkar
+   (App.css .ab-bug-flag). Masaüstünde ve giriş yapmış kullanıcıda FAB olduğu gibi kalır. */
+@media (max-width: 720px) {
+  .bug-fab-guest {
+    display: none;
+  }
+}
+
 /* --- Form --- */
 .bug-card {
   max-width: 440px;
