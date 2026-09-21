@@ -2735,6 +2735,17 @@ export default function App() {
       const expectedServerVersion =
         appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room?.server_version ?? 0)
       const r = await serverRoll(code, undefined, expectedServerVersion)
+      // SIRA-DEĞİL: sunucu 409 yerine güncel durumu döndü (not_turn). Tur-geçişi anında yerel tur
+      // bir an bayatken auto-roll tetiklenince olur; SESSİZCE otoriter durumu uygula (konsolda 409
+      // spam OLMAZ). Zar gelmedi -> yeni tur kurma, yalnız server_state/match'i yansıt.
+      if (r.not_turn) {
+        if (r.state) {
+          appliedServerVersionRef.current = r.version ?? appliedServerVersionRef.current
+          appliedServerRoomRef.current = code
+          applyServerBoard(r.state as GameState, r.match ?? null)
+        }
+        return
+      }
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
       if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
         const starter = r.starter
@@ -4221,6 +4232,12 @@ export default function App() {
     // O yuzden oyun-bitti (sm.done) durumunda tur-devri sartini ARAMA; aksi halde rakibin son
     // (kazanan) toplamasi loga girmez ve .mat sonuc satiri OLMADAN kesilir (tavlatv-mac(4) bug'i).
     const ended = !!sm?.done
+    // GÜVENLİK (KAYBEDEN KİLİDİ KÖK FIX): rakip-hamle rekonstrüksiyonu SALT maç-kaydı/.mat export
+    // içindir. reconstructOppMove/notation kazananın BİTİREN (bear-off) hamlesinde throw edebilir;
+    // try/catch ile sararız ki aşağıdaki setTurnStart/setMatch/setGameEnd HER ZAMAN çalışsın. Aksi
+    // halde applyServerBoard burada kesilir, maç-durumu (matchOver/gameEnd) HİÇ uygulanmaz ve
+    // KAYBEDEN taraf maç-sonu ekranını GÖREMEZ (poll her seferinde yeniden throw -> kalıcı kilit).
+    try {
     if (online && prev && prev.turn !== myColor && (prev.dice?.length ?? 0) > 0 && (gs.turn !== prev.turn || ended)) {
       const sig = `${boardKey(prev)}|${prev.dice.join('')}|${boardKey(gs)}`
       if (sig !== oppLoggedRef.current) {
@@ -4261,6 +4278,9 @@ export default function App() {
           }
         }
       }
+    }
+    } catch {
+      /* reconstruct/notation SALT kayıt içindir; hata durum senkronunu BLOKLAMAZ (kaybeden kilidi fix) */
     }
     syncEnabledRef.current = true
     setTurnStart(gs)

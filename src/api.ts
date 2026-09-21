@@ -2135,7 +2135,7 @@ export async function serverRoll(
   code: string,
   clientSeed?: string,
   expectedVersion?: number,
-): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus }> {
+): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus; not_turn?: boolean; state?: GameState; match?: ServerMatch }> {
   return req(`/rooms/${encodeURIComponent(code)}/roll`, {
     method: 'POST',
     body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null }),

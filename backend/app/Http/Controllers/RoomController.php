@@ -1847,6 +1847,21 @@ class RoomController extends Controller
     }
 
     // Sunucu-otoriter maç durumunu (skor 0-0) kur. target: odanın maç uzunluğu (yoksa 1).
+    // SIRA-DEĞİL zar isteği: 409 yerine GÜNCEL otoriter durumu 200 ile dön. Tur-geçişi anında
+    // (istemcinin yerel turu bir an bayatken) auto-roll yarışı KONSOLDA "POST /roll 409 (Conflict)"
+    // spam üretiyordu; oyun sessizce resync ile toparlasa da kullanıcı hata sanıyordu. Bu yanıt zar
+    // VERMEZ (güvenlik aynı: sıra sahibi değilsen el alamazsın), yalnız mevcut server_state/match'i
+    // yansıtır -> istemci (doRollAuthoritative not_turn dalı) sessizce uygular, 409 kalmaz.
+    private function notTurnSync(Room $room): \Illuminate\Http\JsonResponse
+    {
+        return response()->json([
+            'not_turn' => true,
+            'state' => $room->server_state,
+            'match' => $room->server_match,
+            'version' => (int) $room->server_version,
+        ]);
+    }
+
     private function initServerMatch(Room $room): array
     {
         $match = [
@@ -2192,7 +2207,7 @@ class RoomController extends Controller
                 // whose turn owns that dice set. Keep opening-roll reuse
                 // above, but reject out-of-turn normal-roll reads.
                 if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
-                    return $this->fail('Sıra sende değil.', 409);
+                    return $this->notTurnSync($room);
                 }
                 return response()->json([
                     'dice' => $state['dice'],
@@ -2202,7 +2217,7 @@ class RoomController extends Controller
                 ]);
             }
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
-                return $this->fail('Sıra sende değil.', 409);
+                return $this->notTurnSync($room);
             }
             // Bekleyen küp teklifi varsa zar ATILAMAZ (önce take/drop yanıtı gelmeli).
             if ($this->cubeOf($room)['pending'] !== null) {
