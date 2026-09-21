@@ -1158,3 +1158,7 @@ The opening authoritative roll previously returned before the command receipt gu
 The regression now also proves that a stale request leaves zero command receipts and the same command ID can succeed after the client refreshes to the current version. The suite passes 3 tests / 16 assertions.
 
 Cube offer and resign are covered by the same missing-command rejection test; the complete command envelope suite now passes 4 tests / 21 assertions.
+
+## Audit amendment — full suite compatibility inventory (2026-09-21)
+
+The complete Laravel suite was executed in SQLite: **497 tests / 7,576 assertions**, with 87 failures, 5 errors, and 4 skipped. The failures cluster around legacy fixtures that do not create/authenticate room users, omit `command_id` or `expected_version`, submit client-owned dice/state to now-authoritative endpoints, or expect pre-hardening rating/no-show behavior. The new security checks are intentionally returning `403`, `409`, and `428` in these cases. No production authorization or server-authoritative check will be weakened to satisfy these fixtures; the test harness must be migrated in a dedicated batch.
