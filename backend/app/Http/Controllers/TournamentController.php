@@ -100,8 +100,7 @@ class TournamentController extends Controller
                 if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $fee) {
                     return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
                 }
-                $u->coins = ($u->coins ?? 0) - $fee;
-                $u->save();
+                app(\App\Services\WalletService::class)->debit($u, $fee, 'tournament_entry', Tournament::class, $t->id);
                 $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
                 $t->save();
             }
@@ -156,8 +155,7 @@ class TournamentController extends Controller
             $fee = (int) ($t->entry_fee ?? 0);
             if ($fee > 0) {
                 $u = User::lockForUpdate()->find($me->id);
-                $u->coins = ($u->coins ?? 0) + $fee;
-                $u->save();
+                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund', Tournament::class, $t->id);
                 $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
             }
             array_splice($players, $idx, 1);
@@ -490,26 +488,29 @@ class TournamentController extends Controller
             foreach ($prizes as $i => $pr) {
                 $coins = (int) ($pr['coins'] ?? 0);
                 if ($coins > 0 && isset($standings[$i])) {
-                    User::where('id', $standings[$i])->update([
-                        'coins' => DB::raw('COALESCE(coins,0) + '.$coins),
-                    ]);
+                    $winner = User::lockForUpdate()->find($standings[$i]);
+                    if ($winner) {
+                        app(\App\Services\WalletService::class)->credit($winner, $coins, 'tournament_prize', Tournament::class, $t->id);
+                    }
                 }
             }
             // Giris ucreti havuzu -> 1.lige (sampiyon)
             if ($pool > 0) {
                 $first = $standings[0] ?? $winnerId;
-                User::where('id', $first)->update([
-                    'coins' => DB::raw('COALESCE(coins,0) + '.$pool),
-                ]);
+                $winner = User::lockForUpdate()->find($first);
+                if ($winner) {
+                    app(\App\Services\WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
+                }
             }
             return;
         }
 
         // Eski akis: prizes tablosu yoksa tum havuz sampiyona
         if ($pool > 0) {
-            User::where('id', $winnerId)->update([
-                'coins' => DB::raw('COALESCE(coins,0) + '.$pool),
-            ]);
+            $winner = User::lockForUpdate()->find($winnerId);
+            if ($winner) {
+                app(\App\Services\WalletService::class)->credit($winner, $pool, 'tournament_pool_prize', Tournament::class, $t->id);
+            }
         }
     }
 
