@@ -1889,7 +1889,9 @@ class RoomController extends Controller
         if (! empty($sm['crawford'])) {
             return $deny('CRAWFORD_GAME');
         }
-        $target = (int) ($sm['target'] ?? 1);
+        // SAVUNMA: server_match['target'] eksik/bozuksa oda uzunluğuna düş (asla 1'e sabitleme ->
+        // aksi halde çok-puanlı maç yanlışlıkla "tek puanlık" sayılıp küp reddedilirdi).
+        $target = (int) ($sm['target'] ?? $room->target ?? 1);
         if ($target <= 1) {
             // 1 puanlık maç: tek oyun maçı bitirir -> küp anlamsız (gerçek tavla kuralı).
             return $deny('ONE_POINT_MATCH');
@@ -2071,7 +2073,13 @@ class RoomController extends Controller
             if (! $state) {
                 $state = \App\Support\Backgammon::initialState();
             }
-            if (! is_array($room->server_match)) {
+            // Lazy init / NORMALİZASYON: server_match matchmaking'de pct_stake_snapshot ile ÖN
+            // tohumlanmış olabilir (yüzde bahis maçı). O durumda is_array=true olduğundan ESKİ kod
+            // init'i ATLIYOR -> 'target'/'score'/'cube' HİÇ yazılmıyordu. Sonuç: küp teklifi "Tek
+            // puanlık maçta küp kullanılamaz" (409) verir ve iki istemci FARKLI maç uzunluğu gösterir
+            // (server_match.target null -> herkes kendi placeholder'ında kalır). 'target' yoksa
+            // initServerMatch'i çağır (pct_stake_snapshot'ı KORUR).
+            if (! is_array($room->server_match) || ! isset($room->server_match['target'])) {
                 $room->server_match = $this->initServerMatch($room);
             }
             if (empty($room->dice_seed)) {
