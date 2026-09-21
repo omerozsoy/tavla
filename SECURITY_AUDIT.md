@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production security flag verification (2026-09-21)
+
+The deployed Laravel configuration was read without exposing secrets: `app_debug=false`, `server_authoritative=true`, `dice_enforce=true`, `wallet_require_ledger=true`, `validator_required=true`, and `validator_verify_tls=true`. The active database queue `retry_after=700` seconds; this is above the documented 600-second analysis timeout, though deployment worker settings should remain aligned with that margin.
+
 ## Audit amendment — production replay and wallet reference check (2026-09-21)
 
 Read-only production checks found `duplicate_command_groups=0` and `duplicate_wallet_reference_groups=0`. No duplicate `(room_id, command_id)` receipt group or repeated non-null wallet business reference/type group was present in the inspected test data.
