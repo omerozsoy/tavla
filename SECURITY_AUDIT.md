@@ -1176,3 +1176,5 @@ While migrating the authoritative loop fixture, a real edge case was reproduced:
 `RoomDiceAuthorityTest` fixtures now create real users, authenticate through Sanctum, and declare the explicit `friendly` legacy mode required for the independent dice-authority path. The suite passes **12 tests / 77 assertions** without weakening server dice validation.
 
 `RoomCubeTest` authoritative offer/respond/move/resign calls now use authenticated users with fresh UUID command IDs and current server versions. The cube suite passes **29 tests / 95 assertions**; the two intentional non-authoritative endpoint rejection checks remain guest-compatible.
+
+The next `ServerMoveTest` batch was inspected but intentionally not committed: its fixtures pre-seed a partially opened authoritative state while asserting the older roll-reuse/opening semantics. Adding command IDs alone produces contradictory version/turn expectations. It requires a dedicated state-builder migration (server-issued roll, current `server_version`, and validator state) before the tests can be changed safely. Production authorization and turn checks were left unchanged.
