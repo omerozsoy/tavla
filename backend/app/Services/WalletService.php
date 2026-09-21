@@ -33,7 +33,7 @@ class WalletService
         return $this->move($user, $target - (int) ($user->coins ?? 0), $type);
     }
 
-    private function move(User $user, int $amount, string $type, ?string $referenceType, ?int $referenceId): User
+    private function move(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null): User
     {
         return DB::transaction(function () use ($user, $amount, $type, $referenceType, $referenceId): User {
             // Her ekonomik hareket güncel satırı kilitleyip ledger ile aynı transaction'da işler.

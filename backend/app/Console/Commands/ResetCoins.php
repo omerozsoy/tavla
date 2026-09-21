@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+use App\Models\User;
+use App\Services\WalletService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -36,12 +38,20 @@ class ResetCoins extends Command
             return self::SUCCESS;
         }
 
-        $update = ['coins' => $amount];
-        if (Schema::hasColumn('users', 'coins_reserved')) {
-            $update['coins_reserved'] = 0;
-        }
-
-        $count = DB::table('users')->update($update);
+        $count = 0;
+        User::query()->select(['id', 'coins', 'coins_reserved'])->chunkById(100, function ($users) use ($amount, &$count) {
+            foreach ($users as $user) {
+                DB::transaction(function () use ($user, $amount, &$count) {
+                    $locked = User::lockForUpdate()->findOrFail($user->id);
+                    if (Schema::hasColumn('users', 'coins_reserved')) {
+                        $locked->coins_reserved = 0;
+                        $locked->save();
+                    }
+                    app(WalletService::class)->setBalance($locked, $amount, 'admin_reset_coins');
+                    $count++;
+                });
+            }
+        });
         $this->info('Bitti. '.$count.' kullanicinin jetonu '.$amount.' olarak ayarlandi.');
 
         return self::SUCCESS;

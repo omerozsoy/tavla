@@ -29,7 +29,8 @@ class EditUser extends EditRecord
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $beforeCoins = (int) ($record->coins ?? 0);
-        return DB::transaction(function () use ($record, $data, $beforeCoins) {
+        $coinsChanged = array_key_exists('coins', $data);
+        return DB::transaction(function () use ($record, $data, $beforeCoins, $coinsChanged) {
             $locked = $record::query()->lockForUpdate()->findOrFail($record->getKey());
             if (array_key_exists('coins', $data)
                 && (int) $data['coins'] < (int) ($locked->coins_reserved ?? 0)) {
@@ -44,7 +45,7 @@ class EditUser extends EditRecord
             }
             $locked->forceFill($data)->save();
 
-            if (array_key_exists('coins', $data)) {
+            if ($coinsChanged) {
                 \App\Support\Shield::audit(
                     auth()->id(),
                     'filament_wallet_adjustment',

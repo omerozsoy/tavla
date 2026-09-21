@@ -54,7 +54,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Description:** WalletService güvenli transaction ve ledger yazımı sağlıyor; ancak repository'deki bütün ekonomik yolların yalnızca bu servisten geçtiği ve production şemasının ledger migration'larını içerdiği kanıtlanmadı.  
 **Attack scenario:** Bir doğrudan `users.coins` güncellemesi ledger dışında kalır veya queue retry'da reference koruması olmadan tekrar çalışır.  
 **Root cause:** Tarihsel ekonomi yolları çok sayıda controller/service'e dağılmış.  
-**Evidence:** Kod taramasında birden fazla coin/escrow/reward yolu bulundu; production migration ve gerçek queue retry kanıtı yok.  
+**Evidence:** Runtime ekonomik yolları WalletService çağırıyor; `ResetCoins` komutu da artık kullanıcı başına kilitli WalletService + ledger yazımı kullanıyor. Kod taramasında yalnızca E2E seed fixture'ında doğrudan başlangıç bakiyesi ataması kaldı; production migration ve gerçek queue retry kanıtı yok. `WalletAtomicityTest` ve `ResetCoinsLedgerTest` birlikte **2 test / 8 assertions** geçti.  
 **Potential impact:** Bakiye-ledger drift, çift ödeme veya forensic kayıt eksikliği.  
 **Recommended fix:** Tüm ekonomik hareketleri WalletService/immutable ledger üzerinden geçir; direct balance update için static check ve DB constraint stratejisi değerlendir; settlement reference'larını unique yap.  
 **Database protection required?:** Evet.  
