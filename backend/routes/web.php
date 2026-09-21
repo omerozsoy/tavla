@@ -11,8 +11,11 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 // Filament SSO: React uygulamasindaki "Yonetici" butonu Sanctum token'i ile buraya
 // gelir; token gecerli ve admin ise web oturumu acilir ve Filament paneline yonlenir.
-Route::get('/admin/enter', function (Request $request) {
-    $pat = PersonalAccessToken::findToken((string) $request->query('token', ''));
+Route::match(['GET', 'POST'], '/admin/enter', function (Request $request) {
+    $rawToken = $request->isMethod('POST')
+        ? (string) $request->input('token', '')
+        : (string) $request->query('token', '');
+    $pat = PersonalAccessToken::findToken($rawToken);
     // findToken() yalnız hash eşleşmesini doğrular; normal Sanctum guard gibi expiry de kontrol et.
     if ($pat?->expires_at && $pat->expires_at->isPast()) {
         $pat = null;
@@ -43,7 +46,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
     Route::post('/login', [PanelController::class, 'login']);
-    Route::get('/enter', [PanelController::class, 'enter'])
+    Route::match(['GET', 'POST'], '/enter', [PanelController::class, 'enter'])
         ->middleware('throttle:10,1,admin-sso'); // token ile sifresiz giris (siteden)
     Route::post('/logout', [PanelController::class, 'logout']);
 
