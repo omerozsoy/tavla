@@ -439,5 +439,39 @@ class RoomCubeTest extends TestCase
         $this->assertSame(1, (int) $sm['cube']['value']);
         $this->assertSame(['10' => 50, '20' => 50], $sm['pct_stake_snapshot']); // pct snapshot KORUNDU
     }
+
+    // (17) #5PTWV SUNUCU YARISI: kazanan kup 4'te GAMMON ile bitirir -> 5'lik macta skor 8 -> mac
+    // biter (done=true). Bundan SONRA kaybedenin (bayat) cube/respond'u "Oyun aktif degil" 409 alir
+    // -> tam da canlida gorulen 409. (Istemci tarafi: poll done'i mid-move'a ragmen uygular -> authSync
+    // vitest kapsar; burada SUNUCUNUN dogru bitirdigini + gec aksiyonu reddettigini kanitlariz.)
+    public function test_match_end_gammon_at_cube_four_then_late_cube_respond_409(): void
+    {
+        config()->set('validator.url', 'http://validator.test');
+        $this->room(target: 5, cube: ['value' => 4, 'owner' => 'white', 'pending' => null],
+            stateOverride: ['dice' => [6, 1], 'diceUsed' => [false, false]]);
+        $won = Backgammon::initialState();
+        $won['points'] = array_fill(0, 24, 0);
+        $won['points'][10] = -14;              // siyah 14 tas ortada (gammon: hic toplamadi)
+        $won['off'] = ['white' => 15, 'black' => 0];
+        $won['bar'] = ['white' => 0, 'black' => 0];
+        $won['turn'] = 'black';
+        $won['dice'] = [];
+        Http::fake(['validator.test/validate' => Http::response(['valid' => true, 'state' => $won])]);
+
+        // Beyaz son tasi toplar -> gammon(2) x kup(4) = 8 >= 5 -> mac biter.
+        $this->command('p1', '/api/rooms/CUBEX/move', ['steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
+            ->assertOk()
+            ->assertJsonPath('match.score.white', 8)
+            ->assertJsonPath('match.done', true);
+
+        $room = Room::first()->fresh();
+        $this->assertTrue((bool) $room->server_match['done']);
+        $this->assertSame('white', $room->server_match['winner']);
+        $this->assertFalse($room->acceptsGameActions()); // done -> aksiyon kabul etmez
+
+        // KAYBEDEN (siyah/p2) gec kalmis cube/respond gonderir -> 409 "Oyun aktif degil".
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])
+            ->assertStatus(409);
+    }
 }
 
