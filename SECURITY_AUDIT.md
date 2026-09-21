@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production cookie scope and validator failover config (2026-09-21)
+
+The deployed configuration now reports `session_domain=www.tavlatv.com`, `app_url=https://www.tavlatv.com`, primary validator `https://validator.tavlatv.com`, and loopback backup `http://127.0.0.1:8091`. The Laravel session cookie is no longer scoped to every subdomain, and validator failover remains internal for the backup instance.
+
 ## Audit amendment — production session/token settings applied (2026-09-21)
 
 The deployed config was rechecked after rollout: `session.secure=true` and `sanctum.expiration=1440` minutes. HTTPS-only session cookies and finite bearer-token lifetime are active in the deployed Laravel configuration.
