@@ -3028,26 +3028,37 @@ class RoomController extends Controller
      */
     private function markAuthoritativeCommandResult(string $code, array $data, $response): void
     {
-        $commandId = $data['command_id'] ?? null;
-        if (! $commandId || ! Schema::hasTable('room_commands')) {
-            return;
-        }
+        try {
+            $commandId = $data['command_id'] ?? null;
+            if (! $commandId || ! Schema::hasTable('room_commands')) {
+                return;
+            }
 
-        $payload = method_exists($response, 'getData') ? $response->getData(true) : null;
-        $version = is_array($payload) && isset($payload['version']) ? (int) $payload['version'] : null;
-        if ($version === null) {
-            return;
-        }
+            $payload = method_exists($response, 'getData') ? $response->getData(true) : null;
+            $version = is_array($payload) && isset($payload['version']) ? (int) $payload['version'] : null;
+            if ($version === null) {
+                return;
+            }
 
-        $roomId = Room::where('code', strtoupper($code))->value('id');
-        if (! $roomId) {
-            return;
-        }
+            $roomId = Room::where('code', strtoupper($code))->value('id');
+            if (! $roomId) {
+                return;
+            }
 
-        \App\Models\RoomCommand::where('room_id', $roomId)
-            ->where('command_id', $commandId)
-            ->whereNull('result_version')
-            ->update(['result_version' => $version]);
+            \App\Models\RoomCommand::where('room_id', $roomId)
+                ->where('command_id', $commandId)
+                ->whereNull('result_version')
+                ->update(['result_version' => $version]);
+        } catch (\Throwable $e) {
+            // The authoritative state transaction has already committed. A
+            // receipt bookkeeping outage must not turn a successful move into
+            // a client-visible 500 or roll back the game action.
+            \Illuminate\Support\Facades\Log::warning('room-command-result-receipt-failed', [
+                'room' => strtoupper($code),
+                'command_id' => $data['command_id'] ?? null,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
