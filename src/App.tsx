@@ -5786,9 +5786,17 @@ export default function App() {
     try {
       const r = await respondInvite(inv.id, true)
       // Davet edenin sectigi AYNI ayarla gir: target (Tek Oyun=1 / Mac uzunlugu) + saat.
-      if (r.code) await enterOnlineByCode(r.code, r.target ?? inv.target ?? 3, (r.timeControl ?? inv.timeControl ?? undefined) as TimeControl | undefined)
-    } catch {
-      /* yoksay */
+      if (r.code) {
+        await enterOnlineByCode(r.code, r.target ?? inv.target ?? 3, (r.timeControl ?? inv.timeControl ?? undefined) as TimeControl | undefined)
+      } else {
+        // Kod yok = davet artik gecerli degil. SESSIZ KALMA -> "kabul ettim hicbir sey olmadi".
+        notify.error(t('friends.inviteExpired'))
+      }
+    } catch (e) {
+      // Davet eden ayrildi (409) / davet silinmis (404): banner iyimser kaldirildi, kullanici
+      // hicbir geri bildirim gormeden takiliyordu. Sunucu mesajini dostca goster.
+      const msg = e instanceof ApiErr && e.message ? e.message : t('friends.inviteExpired')
+      notify.error(msg)
     }
   }
   async function handleDeclineInvite(inv: GameInviteT) {

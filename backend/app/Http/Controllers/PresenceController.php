@@ -249,12 +249,43 @@ class PresenceController extends Controller
         if (! $invite) {
             return $this->fail('Davet bulunamadı.', 404);
         }
+
+        // Reddetme: durumu isaretle, cik.
+        if (! $data['accept']) {
+            DB::table('game_invites')->where('id', $inviteId)->update([
+                'status' => 'declined',
+                'updated_at' => now(),
+            ]);
+            return response()->json([
+                'code' => null,
+                'target' => (int) ($invite->target ?? 1),
+                'timeControl' => $invite->time_control,
+            ]);
+        }
+
+        // KABUL: davet edenin odasi HALA var ve katilima acik olmali. Aksi halde davetli
+        // enter() ile KENDINI p1 yapan bos bir oda kurup tek basina takilir -> kullanicinin
+        // gozunde "kabul ettim hicbir sey olmadi". Davet eden ayrilmis / davetini iptal etmis /
+        // oda dolmus / maca baslamissa dostca uyar ve daveti 'expired' yap (banner geri gelmesin).
+        $room = Room::where('code', $invite->room_code)->first();
+        $joinable = $room
+            && $room->status === 'waiting'
+            && $room->p1_token          // davet eden hala p1 slotunda
+            && ! $room->p2_token;       // ikinci slot bos
+        if (! $joinable) {
+            DB::table('game_invites')->where('id', $inviteId)->update([
+                'status' => 'expired',
+                'updated_at' => now(),
+            ]);
+            return $this->fail('Davet eden oyundan ayrıldı. Tekrar davet iste.', 409);
+        }
+
         DB::table('game_invites')->where('id', $inviteId)->update([
-            'status' => $data['accept'] ? 'accepted' : 'declined',
+            'status' => 'accepted',
             'updated_at' => now(),
         ]);
         return response()->json([
-            'code' => $data['accept'] ? $invite->room_code : null,
+            'code' => $invite->room_code,
             // Kabulde AYNI ayarla odaya gir: davet edenin sectigi Tek Oyun/Mac uzunlugu + saat.
             'target' => (int) ($invite->target ?? 1),
             'timeControl' => $invite->time_control,
