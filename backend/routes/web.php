@@ -20,10 +20,13 @@ Route::get('/admin/enter', function (Request $request) {
     if ($user && $user->is_admin && ! $user->isBanned()) {
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
-        return redirect('/admin');
+        return redirect('/admin')->withHeaders([
+            'Cache-Control' => 'no-store',
+            'Referrer-Policy' => 'no-referrer',
+        ]);
     }
     return redirect('/admin/login');
-});
+})->middleware('throttle:10,1,admin-sso');
 
 // E-posta dogrulama linki (imzali URL). Dogrular ve SPA'ya yonlendirir.
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
@@ -34,7 +37,8 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
     Route::post('/login', [PanelController::class, 'login']);
-    Route::get('/enter', [PanelController::class, 'enter']); // token ile sifresiz giris (siteden)
+    Route::get('/enter', [PanelController::class, 'enter'])
+        ->middleware('throttle:10,1,admin-sso'); // token ile sifresiz giris (siteden)
     Route::post('/logout', [PanelController::class, 'logout']);
 
     Route::middleware('admin')->group(function () {
