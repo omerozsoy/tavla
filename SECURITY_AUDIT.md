@@ -1162,3 +1162,7 @@ Cube offer and resign are covered by the same missing-command rejection test; th
 ## Audit amendment — full suite compatibility inventory (2026-09-21)
 
 The complete Laravel suite was executed in SQLite: **497 tests / 7,576 assertions**, with 87 failures, 5 errors, and 4 skipped. The failures cluster around legacy fixtures that do not create/authenticate room users, omit `command_id` or `expected_version`, submit client-owned dice/state to now-authoritative endpoints, or expect pre-hardening rating/no-show behavior. The new security checks are intentionally returning `403`, `409`, and `428` in these cases. No production authorization or server-authoritative check will be weakened to satisfy these fixtures; the test harness must be migrated in a dedicated batch.
+
+## Audit amendment — security fixture migration plan (2026-09-21)
+
+The required test-harness migration is documented in [`SECURITY_TEST_FIXTURE_MIGRATION.md`](SECURITY_TEST_FIXTURE_MIGRATION.md). It defines the fixture contract for authenticated room ownership, UUID command envelopes, server-issued state/dice, verified settlement, and checkout idempotency. The plan is intentionally documentation-only in this phase: no test fixture or production source was changed, no migration was executed, and no production data was touched.
