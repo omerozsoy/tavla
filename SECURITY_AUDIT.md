@@ -1350,3 +1350,7 @@ The complete Laravel suite was rerun after canonical command-response replay cha
 ## Audit amendment — validator TLS deployment check (2026-09-21)
 
 With `VALIDATOR_URL=https://validator.tavlatv.com`, the live `/health` endpoint returned **200 OK**, but the host certificate chain failed client verification with `SEC_E_UNTRUSTED_ROOT`. Consequently, the default `verify_tls=true` path correctly treated the service as unreachable. Running the parity suite with only the test process configured as `VALIDATOR_VERIFY_TLS=false` produced **4 passing tests / 9 assertions**, confirming the validator endpoints and game-engine responses work. Production must install a publicly trusted certificate chain; disabling TLS verification remains a security downgrade and was not committed.
+
+## Audit amendment - friendly rooms excluded from public live listing (2026-09-21)
+
+The private-room read guard now covers the public `GET /api/live-matches` listing as well as direct room state reads. Friendly rooms are excluded server-side before the response is built, preventing invitation-only room codes, player names, ratings, avatars, and stake metadata from being exposed to unauthenticated spectators. Ranked/legacy public rooms remain listed. `RoomLivePreviewTest` covers both sides of this boundary: **5 tests / 18 assertions** pass.
