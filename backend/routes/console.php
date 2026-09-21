@@ -75,3 +75,6 @@ Schedule::command('services:watch')
 Schedule::call(function () {
     \Illuminate\Support\Facades\Cache::put('ops:cron:heartbeat', time(), now()->addHours(6));
 })->everyMinute()->name('ops-cron-heartbeat');
+
+// Wallet reconciliation is intentionally read-only; run manually or schedule after the
+// wallet ledger migration is deployed. It never repairs balances automatically.

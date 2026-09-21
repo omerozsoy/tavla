@@ -1094,3 +1094,5 @@ Achievement unlock coin rewards and Lucky Wheel coin rewards now use `WalletServ
 Authoritative match settlement now records loser debit and winner credit through `WalletService`, using the room as the economic reference while preserving escrow reservation release in the same transaction. The remaining ledger gap is admin absolute balance adjustment modeling and migration execution/reconciliation.
 
 Admin REST, legacy panel, and Filament balance edits now call `WalletService::setBalance`; the target value is represented as a signed adjustment and cannot violate `coins_reserved`. The wallet ledger migration and production reconciliation are still intentionally pending.
+
+Added read-only `wallet:reconcile` command. It compares each user balance with the append-only ledger projection and flags `reserved > balance` without modifying data. It fails closed when the ledger table is not present; no automatic repair or production migration was run.
