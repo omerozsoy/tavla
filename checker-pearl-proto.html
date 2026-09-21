@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"/>
+<title>Purple Pearl Checker — Prototip v2</title>
+<style>
+  body { margin:0; font-family: system-ui, sans-serif; background:#f4efe6; color:#241a12; }
+  h1 { font-size:18px; margin:18px 20px 4px; }
+  p.note { margin:0 20px 16px; color:#7a6a58; font-size:13px; }
+  .row { display:flex; align-items:flex-end; gap:22px; padding:18px 24px; flex-wrap:wrap; }
+  .lbl { text-align:center; font-size:11px; color:#8a7a68; margin-top:6px; }
+  .board { margin:12px 20px; padding:20px 24px; border-radius:14px;
+    background: radial-gradient(120% 90% at 50% 0%, #6b4a32, #3d2817); display:flex; gap:14px; align-items:center; }
+  .checkerbox { display:flex; flex-direction:column; gap:2px; }
+</style>
+</head>
+<body>
+  <h1>Purple Pearl — dijital checker prototipi v2 (prosedürel SVG)</h1>
+  <p class="note">Sedef swirl baskın + kontrastlı (gümüş-lavanta akış + koyu menekşe derinlik), disk/coin okuması, cilalı gloss + bevel. İki seed = organik varyasyon. Sağda gerçek tahta boyutu, altta koyu tahtada istiflenme.</p>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <!-- YATIŞTIRILMIŞ orta-mor kubbe (üst-sol ışık) — swirl her yerde görünsün -->
+      <radialGradient id="pp-dome" cx="42%" cy="36%" r="82%">
+        <stop offset="0%"  stop-color="#7b4fd6"/>
+        <stop offset="52%" stop-color="#5a23ad"/>
+        <stop offset="100%" stop-color="#39136f"/>
+      </radialGradient>
+      <!-- bevel/rim: iç açık halka + dış koyu temas -->
+      <radialGradient id="pp-rim" cx="50%" cy="50%" r="50%">
+        <stop offset="80%" stop-color="rgba(0,0,0,0)"/>
+        <stop offset="90%" stop-color="rgba(220,204,255,0.45)"/>
+        <stop offset="97%" stop-color="rgba(30,10,58,0.35)"/>
+        <stop offset="100%" stop-color="rgba(14,4,30,0.85)"/>
+      </radialGradient>
+      <!-- üst geniş cila sheen -->
+      <linearGradient id="pp-sheen" x1="0" y1="0" x2="0.15" y2="1">
+        <stop offset="0%"  stop-color="rgba(255,255,255,0.40)"/>
+        <stop offset="26%" stop-color="rgba(255,255,255,0)"/>
+      </linearGradient>
+      <radialGradient id="pp-spec" cx="50%" cy="50%" r="50%">
+        <stop offset="0%"  stop-color="rgba(255,255,255,0.95)"/>
+        <stop offset="40%" stop-color="rgba(255,255,255,0.25)"/>
+        <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+      </radialGradient>
+
+      <!-- NACRE 1: geniş GÜMÜŞ-LAVANTA akış (screen -> parlak damarlar). Anizotropik freq = akışlı -->
+      <filter id="pp-nlite" x="-25%" y="-25%" width="150%" height="150%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.011 0.045" numOctaves="4" seed="11" result="n"/>
+        <feColorMatrix in="n" type="matrix"
+          values="0 0 0 0 0.90
+                  0 0 0 0 0.84
+                  0 0 0 0 1.0
+                  1.5 0 0 0 -0.55" result="c"/>
+        <feGaussianBlur in="c" stdDeviation="0.45"/>
+      </filter>
+      <!-- NACRE 2: KOYU menekşe derinlik/vadi (multiply) -> kontrast, sedef okuması -->
+      <filter id="pp-ndark" x="-25%" y="-25%" width="150%" height="150%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.013 0.05" numOctaves="4" seed="27" result="n"/>
+        <feColorMatrix in="n" type="matrix"
+          values="0 0 0 0 0.16
+                  0 0 0 0 0.04
+                  0 0 0 0 0.30
+                  1.4 0 0 0 -0.62" result="c"/>
+        <feGaussianBlur in="c" stdDeviation="0.5"/>
+      </filter>
+      <!-- NACRE 3: ince beyaz parıltı (screen) -->
+      <filter id="pp-nsparkle" x="-25%" y="-25%" width="150%" height="150%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.06 0.11" numOctaves="2" seed="4" result="n"/>
+        <feColorMatrix in="n" type="matrix"
+          values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  1.7 0 0 0 -0.95" result="c"/>
+        <feGaussianBlur in="c" stdDeviation="0.25"/>
+      </filter>
+
+      <clipPath id="pp-clip"><circle cx="60" cy="60" r="54"/></clipPath>
+
+      <symbol id="checker-purple-pearl" viewBox="0 0 120 120">
+        <circle cx="60" cy="63" r="54" fill="rgba(0,0,0,0.40)" style="filter:blur(3px)"/>
+        <circle cx="60" cy="60" r="54" fill="url(#pp-dome)"/>
+        <g clip-path="url(#pp-clip)">
+          <rect x="6" y="6" width="108" height="108" filter="url(#pp-ndark)"   opacity="0.60" style="mix-blend-mode:multiply"/>
+          <rect x="6" y="6" width="108" height="108" filter="url(#pp-nlite)"   opacity="0.78" style="mix-blend-mode:screen"/>
+          <rect x="6" y="6" width="108" height="108" filter="url(#pp-nsparkle)" opacity="0.45" style="mix-blend-mode:screen"/>
+          <circle cx="60" cy="60" r="54" fill="url(#pp-sheen)"/>
+        </g>
+        <circle cx="60" cy="60" r="54" fill="url(#pp-rim)"/>
+        <ellipse cx="44" cy="38" rx="20" ry="12" fill="url(#pp-spec)"/>
+        <circle cx="60" cy="60" r="53.4" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.7"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <div class="row">
+    <div><svg width="240" height="240"><use href="#checker-purple-pearl"/></svg><div class="lbl">240px detay</div></div>
+    <div><svg width="120" height="120"><use href="#checker-purple-pearl"/></svg><div class="lbl">120px</div></div>
+    <div><svg width="72" height="72"><use href="#checker-purple-pearl"/></svg><div class="lbl">72px</div></div>
+    <div><svg width="44" height="44"><use href="#checker-purple-pearl"/></svg><div class="lbl">44px (tahta boyu)</div></div>
+  </div>
+
+  <div class="board">
+    <div class="checkerbox">
+      <svg width="44" height="44"><use href="#checker-purple-pearl"/></svg>
+      <svg width="44" height="44"><use href="#checker-purple-pearl"/></svg>
+      <svg width="44" height="44"><use href="#checker-purple-pearl"/></svg>
+      <svg width="44" height="44"><use href="#checker-purple-pearl"/></svg>
+      <svg width="44" height="44"><use href="#checker-purple-pearl"/></svg>
+    </div>
+    <div style="color:#e9dcc9;font-size:12px">← tahta üzerinde istiflenmiş 5 pul (44px)</div>
+  </div>
+</body>
+</html>
