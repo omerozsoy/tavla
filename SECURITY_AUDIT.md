@@ -1048,3 +1048,5 @@ The previous percentage settlement calculated each player's wager from the live 
 Fixed-stake escrow behavior remains unchanged. Existing percentage rooms created before this control do not have a snapshot and are intentionally fail-closed; they require an operator/data-repair decision rather than an inferred payout.
 
 **Regression test required:** concurrent percentage matchmaking must assert one locked snapshot per player; settlement after a balance credit must transfer the original snapshot amount; a missing snapshot must roll back the settled claim and return `409`.
+
+The settlement path also now rejects a loser balance below the locked amount with `409` and rolls back the claim transaction. It no longer silently performs a partial payout when an out-of-band balance adjustment conflicts with the match stake.
