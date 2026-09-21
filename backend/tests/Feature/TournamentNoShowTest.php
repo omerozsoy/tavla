@@ -93,6 +93,7 @@ class TournamentNoShowTest extends TestCase
             ->assertOk()->json('code');
         $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokA', 'name' => 'A'])->assertOk();
         // B de girer -> oda dolu
+        Sanctum::actingAs($b);
         $this->postJson("/api/rooms/{$code}/enter", ['token' => 'tokB', 'name' => 'B'])->assertOk();
 
         $room = Room::where('code', $code)->first();
