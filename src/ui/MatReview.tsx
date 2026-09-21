@@ -198,17 +198,13 @@ export default function MatReview({
   const diceFaces = (cur?.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
   const diceRow =
     boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
-  // İNCELENEN HAMLENİN SAHİBİ HEP ALTTA: tahta hamleyi oynayanın perspektifine döner + nokta
-  // numaraları o oyuncunun kendi 1-24'üne geçer (perspectiveNumbers). Böylece notasyon ("14/10"),
-  // tahta etiketi ("14") ve ok AYNI noktayı gösterir. (Eskiden tahta hep beyaz numaralıydı ->
-  // rakip/siyah hamlesinde notasyon 14 derken ok "11" etiketli noktadan çıkıyordu.)
-  const flip = cur?.player === 'black' // siyahın hamlesi -> siyah altta
-  const whiteBottom = !flip
+  const whiteBottom = cur?.player === 'white' // beyaz altta (tahta DÖNMEZ; yalnız numaralar perspektifli)
 
-  // Küp ÇEKME (double) girdisinde: küpü çeken (mover) ARTIK HEP ALTTA -> alıcı (rakip) üstte ->
-  // ok DAİMA YUKARI. (Perspektif dönmesiyle "aşağı" ihtimali kalktı.)
+  // Küp ÇEKME (double) girdisinde: küpü çeken oyuncudan rakibine (küpün önerildiği kişi)
+  // doğru kibar bir ok. Tahta hep beyaz altta / siyah üstte (flip yok); alıcı = çekenin
+  // rakibi -> beyaz çekince alıcı siyah (üst) = ok YUKARI, siyah çekince alıcı beyaz (alt) = AŞAĞI.
   const cubeArrowDir: 'up' | 'down' | null =
-    cur?.cube?.chosen === 'double' && cur?.player ? 'up' : null
+    cur?.cube?.chosen === 'double' && cur?.player ? (cur.player === 'white' ? 'up' : 'down') : null
 
   // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
@@ -311,10 +307,9 @@ export default function MatReview({
         <main className="mrv-board">
           <div className="mrv-player mrv-player-top">
             <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            {/* ÜST = incelenen hamlenin RAKİBİ (mover hep altta). flip'e göre isim swap. */}
-            <span className={`mrv-pname ${cur?.player === (flip ? 'white' : 'black') ? 'turn' : ''}`}>
-              {cur?.player === (flip ? 'white' : 'black') && <span className="mrv-turn">▶</span>}
-              {flip ? nameW : nameB}
+            <span className={`mrv-pname ${cur?.player === 'black' ? 'turn' : ''}`}>
+              {cur?.player === 'black' && <span className="mrv-turn">▶</span>}
+              {nameB}
             </span>
           </div>
 
@@ -331,8 +326,8 @@ export default function MatReview({
                 pipTop={pipCount(boardState, 'black')}
                 pipBottom={pipCount(boardState, 'white')}
                 cube={cubeForBoard}
-                flip={flip}
-                perspectiveNumbers
+                flip={false}
+                numberFrom={cur?.player ?? 'white'}
                 mirror={boardDir === 'left'}
                 swapStones={swapStones}
                 centerLeft={whiteBottom ? null : diceRow}
@@ -353,10 +348,9 @@ export default function MatReview({
 
           <div className="mrv-player mrv-player-bot">
             <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
-            {/* ALT = incelenen hamlenin SAHİBİ (mover). flip'e göre isim swap. */}
-            <span className={`mrv-pname ${cur?.player === (flip ? 'black' : 'white') ? 'turn' : ''}`}>
-              {cur?.player === (flip ? 'black' : 'white') && <span className="mrv-turn">▶</span>}
-              {flip ? nameB : nameW}
+            <span className={`mrv-pname ${cur?.player === 'white' ? 'turn' : ''}`}>
+              {cur?.player === 'white' && <span className="mrv-turn">▶</span>}
+              {nameW}
             </span>
           </div>
         </main>
