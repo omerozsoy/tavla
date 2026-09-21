@@ -2082,6 +2082,7 @@ class RoomController extends Controller
     {
         $sm = is_array($room->server_match) ? $room->server_match : $this->initServerMatch($room);
         $wasCrawford = ! empty($sm['crawford']);
+        $prevTurns = (int) ($sm['turns'] ?? 0); // done olursa opened/turns'ü geri yazmak için (aşağıda)
         $sm['score'][$winner] = (int) ($sm['score'][$winner] ?? 0) + $points;
         $sm['gameNo'] = (int) ($sm['gameNo'] ?? 1) + 1;
         $sm['cube'] = ['value' => 1, 'owner' => null, 'pending' => null]; // yeni oyun: küp ortada
@@ -2094,6 +2095,13 @@ class RoomController extends Controller
             $sm['winner'] = $winner;
             $room->server_winner = $winner;
             // server_state son tahtada kalır (çağıran ayarlar).
+            // KÖK FIX (#PXFLJ kaybeden kilidi): maç BİTTİĞİNDE yukarıda "sonraki oyun" için
+            // yazılan opened=false / turns=0'ı GERİ AL. done=true + opened=false ÇELİŞKİLİ bir
+            // durumdur: kaybeden istemci bunu "yeni oyun açılışı" sanıp maç-sonunu göstermeyebilir
+            // (openingStateFromMatch done'ı önce okur ama başka kod yolları opened=false'a takılır).
+            // Biten oyun ZATEN açılmıştı -> opened=true kalmalı; turns son tur sayısında kalır.
+            $sm['opened'] = true;
+            $sm['turns'] = max(1, $prevTurns);
         } else {
             // CRAWFORD geçişi: Crawford oyunu YENİ bittiyse -> sonrası serbest (crawfordDone).
             // Değilse ve biri ilk kez (target-1)'e ulaştıysa -> SONRAKİ oyun Crawford (çift yasak).
