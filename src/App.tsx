@@ -2360,7 +2360,12 @@ export default function App() {
       setRanked(null)
       setCurrentProbs(null)
       const code = room.code
-      serverMove(code, finalPlayed, room.server_version ?? 0)
+      // React'teki room.server_version polling nedeniyle bir render geriden gelebilir.
+      // Otoriter hamlelerde gerçek son senkron sürümünü kullan; aksi halde sunucu
+      // eski sürümle gelen hamleyi reddedip istemciyi tekrar senkronizasyona sokar.
+      const expectedServerVersion =
+        appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+      serverMove(code, finalPlayed, expectedServerVersion)
         .then((r) => {
           if (r?.state) {
             appliedServerVersionRef.current = r.version
@@ -2701,7 +2706,9 @@ export default function App() {
       // NOT: try'in İÇİNDE — dışarıda atarsa uçuş kilidi (rollInFlightRef) asla açılmaz ve
       // o istemci bir daha ZAR ATAMAZ (açılışta: overlay'de kalıcı takılma).
       recordNoDoubleIfEligible() // katlamayip zar atmak = no-double kup karari (PR'a girer)
-      const r = await serverRoll(code, undefined, room?.server_version ?? 0)
+      const expectedServerVersion =
+        appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room?.server_version ?? 0)
+      const r = await serverRoll(code, undefined, expectedServerVersion)
       // AÇILIŞ (Faz 2): sunucu adil açılışı yaptı -> başlayan + iki zar geldi. Taze tahta kur.
       if (r.opening && (r.starter === 'white' || r.starter === 'black')) {
         const starter = r.starter
