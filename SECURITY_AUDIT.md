@@ -953,3 +953,18 @@ Registry toplamı: **262 route**. Bu envanter izole SQLite :memory: / array cach
 | GET\|HEAD | {fallbackPlaceholder} | Closure | web |
 
 Envanter aşağıya Laravel'in gerçek route registry çıktısından eklenir. API `api` grubu SiteGate/ShieldTracker ile bootstrap'ta genişletilir; `auth:sanctum`, admin, signed ve throttle bilgileri route registry'deki değerlerdir. `web` grubu session/CSRF gibi varsayılan middleware'i temsil eder; payment CSRF istisnaları yukarıda açıklanmıştır. Filament sayfa route'ları ayrıca Livewire action endpoint'lerini kullanır. Generic storage routes middleware listesi boş görünse de vendor handler içinde signature/path kontrolleri olabilir; yalnız boş route middleware üzerinden açık ilan edilmez.
+## Audit amendment — game-log write authorization (2026-09-21)
+
+**ID:** SEC-014 (remediated in this change)
+**Severity:** HIGH
+**Category:** Replay integrity / authorization / forensic data
+**Affected file(s):** `backend/app/Http/Controllers/GameLogController.php`, `src/api.ts`
+**Affected endpoint/event:** `POST /api/game-logs`
+
+**Original evidence:** The endpoint was public and trusted the caller-supplied `slot`, `winner`, `score`, and `status`. When a `uid` matched an online room, any caller who knew the room code could overwrite either event column and forge replay metadata. The route had throttling but no room ownership check. This did not prove direct wallet settlement impact because settlement/rating use the authoritative room result, but it corrupted replay and forensic evidence.
+
+**Applied control:** Online writes now require an existing room and resolve the seat with `RoomAccess::slot` using the authenticated account ID or the matching guest capability token. The requested slot is overwritten with the resolved seat. Online names/user IDs come from the room, and result metadata is written only from `Room::hasVerifiedServerResult()` / `server_match`; client winner/score/status are ignored. The frontend sends the existing room token in the log payload when needed. PvB/local logging remains guest-compatible and is explicitly non-authoritative for economic results.
+
+**Residual limitation:** Event arrays are still client-originated telemetry and are not a source of truth for board, dice, winner, rating, or wallet state. Public `GET /api/game-logs/{uid}/mat` remains available for replay compatibility; private replay policy and retention should be decided separately.
+
+**Regression test required:** Add isolated HTTP tests with two authenticated users and two guest tokens proving wrong-seat writes return 403, online client result fields are ignored, verified server result is copied, and retrying the same seat remains idempotent. Do not run against production or real balances.

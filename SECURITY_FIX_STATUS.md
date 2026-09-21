@@ -125,3 +125,7 @@ Alan geriye dönük uyum için nullable bırakıldı. Eski üçüncü taraf iste
 `LuckyWheelService` ve `DiceSlotService`, ücretli spin öncesi `coins - coins_reserved` kullanılabilir bakiyesini kontrol ediyor. Böylece money match escrow'u varken ayrılmış coin tekrar harcanamıyor; debit işlemi kilitli user satırı üzerinde gerçekleşiyor.
 
 Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/hold edilmesi, tüm coin debit yazarlarının tek servise taşınması ve settlement replay audit kaydı bu fazda yapılmadı; migration/ledger şeması gerektiriyor. `coins` alanında mevcut negatiflik ve tarihsel düzeltme koşulları production verisi okunmadan doğrulanamaz.
+
+## Replay/game-log yazma sınırı
+
+`POST /api/game-logs` online modda artık mevcut odayı ve yazanın koltuğunu `RoomAccess` ile doğrular. Hesap koltuğu authenticated user ID ile, misafir koltuğu yalnız oda token'ı ile kabul edilir; client'ın gönderdiği `slot` yetki kararı değildir. Online `winner`, `score` ve `status` alanları yok sayılır; yalnız tamamlanmış doğrulanmış `server_match` sonucu log metadata'sına yazılır. `pvb`/`local` logları misafir uyumluluğu için bırakılmıştır ancak settlement/rating kanıtı değildir. Migration veya production log temizliği yapılmadı.
