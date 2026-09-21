@@ -183,11 +183,11 @@ class SecurityPhaseZeroTest extends TestCase
         self::assertSame(409, $response->getStatusCode());
     }
 
-    public function test_non_economic_legacy_friendly_room_remains_supported(): void
+    public function test_legacy_friendly_room_fails_closed_without_authoritative_state(): void
     {
         $room = $this->room(['authoritative' => false, 'mode' => 'friendly', 'stake' => 0,
             'server_match' => null, 'server_state' => null]);
-        self::assertTrue($room->acceptsLegacyState());
+        self::assertFalse($room->acceptsLegacyState());
     }
 
     public static function commands(): array
