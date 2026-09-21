@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — validator unauthenticated validate confirmation (2026-09-21)
+
+After the restart, a secret-less synthetic `POST /validate` request returned **400** from validator input processing rather than the expected **401/503** guard response. This confirms the production process is still accepting unauthenticated endpoint processing; the CRITICAL secret-guard finding remains open.
+
 ## Audit amendment — production validator secret guard failure (2026-09-21)
 
 **CRITICAL deployment finding:** a production request without `x-validator-secret` to `POST https://validator.tavlatv.com/restart` returned **200** and `{"ok":true,"restarting":true}`. The service restarted and its health endpoint returned 200 afterward. The repository's current `validator/server.ts` is expected to return **503** when `VALIDATOR_SECRET` is missing and **401** for an incorrect secret, so the deployed process/configuration does not match the audited source or its secret guard is not active. Until this is corrected, an unauthenticated party can restart the validator and potentially invoke internal endpoints.
