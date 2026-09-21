@@ -258,6 +258,15 @@ class AuthController extends Controller
         if (isset($data['province']) && ! Schema::hasColumn('users', 'province')) {
             unset($data['province']);
         }
+        $adminEmails = array_map('strtolower', config('services.admin_emails', []));
+        $movesIntoConfigAdmin = $user->is_admin
+            && in_array(strtolower((string) $data['email']), $adminEmails, true)
+            && ! $user->isConfigAdmin();
+        if ($movesIntoConfigAdmin) {
+            return response()->json([
+                'message' => 'Yönetici hesabı yapılandırılmış yönetici e-postasına dönüştürülemez.',
+            ], 422);
+        }
         if ($user->email !== $data['email']) {
             $user->email_verified_at = null;
         }
