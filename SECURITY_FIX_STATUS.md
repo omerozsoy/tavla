@@ -154,6 +154,10 @@ Admin API, legacy panel ve Filament kullanıcı düzenlemesi hedef user satırı
 
 Authoritative oda komutlarında (`roll`, `move`, cube offer/respond, resign) `expected_version` artık zorunlu. Alan gönderilmezse server `428 expected-version-required` döndürüyor; eski/manual client stale-state kontrolünü atlayamıyor. Legacy non-authoritative friendly/dice-only akışı korunuyor.
 
+## Dice enforcement varsayılanı
+
+`DICE_ENFORCE` varsayılanı `true` oldu. Dice-authority update yolunda client zarının server roll/opening ile uyuşmaması artık reddediliyor; `false` yalnız kontrollü rollback/shadow için açıkça seçilebilir.
+
 ## Queue visibility düzeltmesi
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
