@@ -366,6 +366,16 @@ class RoomController extends Controller
                     $cand->authoritative = true;
                     $cand->dice_authority = false;
                 }
+                $hostClaimed = Room::claimActiveMoneySlot((int) $cand->p1_user_id, (int) $cand->id);
+                if (! $hostClaimed || ! Room::claimActiveMoneySlot($userId, (int) $cand->id)) {
+                    if ($hostClaimed) {
+                        DB::table('active_money_match_claims')
+                            ->where('room_id', $cand->id)
+                            ->where('user_id', $cand->p1_user_id)
+                            ->delete();
+                    }
+                    continue;
+                }
                 $cand->save();
                 return $cand;
             }
@@ -420,7 +430,11 @@ class RoomController extends Controller
                 return null;
             }
 
-            return Room::create($roomData);
+            $created = Room::create($roomData);
+            if ($moneySearch && ! Room::claimActiveMoneySlot($userId, (int) $created->id)) {
+                throw new \RuntimeException('Aktif para maçı claim edilemedi.');
+            }
+            return $created;
         });
         if (! $room) {
             return $this->fail('Zaten aktif bir para maçı veya eşleşme beklemesi var.', 409);
@@ -488,6 +502,9 @@ class RoomController extends Controller
                 'status' => 'finished',
                 'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
             ]);
+            if (Schema::hasTable('active_money_match_claims')) {
+                Room::releaseActiveMoneyClaims((int) $room->id);
+            }
             // Deadlock'u onlemek icin deterministik kilit sirasi (id'ye gore)
             $ids = array_values(array_unique(array_filter([$winnerId, $loserId])));
             sort($ids);
@@ -875,6 +892,9 @@ class RoomController extends Controller
             ->where('p1_user_id', $user->id)
             ->whereNull('p2_token')
             ->delete();
+        if (Schema::hasTable('active_money_match_claims')) {
+            DB::table('active_money_match_claims')->where('user_id', $user->id)->delete();
+        }
         return $this->ok();
     }
 
@@ -2286,7 +2306,7 @@ class RoomController extends Controller
                 'version' => (int) $room->server_version,
                 'reused' => false,
             ]);
-        });
+        }, 5); // deadlock-retry: eşzamanlı room_commands yarışında InnoDB victim'i şeffaf tekrar dene
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
 
@@ -2435,7 +2455,7 @@ class RoomController extends Controller
                 'match' => $room->server_match,  // otoriter maç skoru
                 'match_done' => $matchDone,
             ]);
-        });
+        }, 5); // deadlock-retry (bkz roll)
 
         // BOT ODASI: insan hamlesi KAYDEDİLDİ (yukarıdaki tx commit). Sıra bota geçtiyse botu
         // SENKRON oynat (AYRI tx -> gnubg yoksa insan hamlesi geri ALINMAZ, sadece duraklar).
@@ -2533,7 +2553,7 @@ class RoomController extends Controller
             }
 
             return response()->json(['match' => $room->server_match, 'version' => (int) $room->server_version]);
-        });
+        }, 5); // deadlock-retry (bkz roll)
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
 
@@ -2621,7 +2641,7 @@ class RoomController extends Controller
                 'match' => $room->server_match, 'action' => 'drop', 'winner' => $offerer,
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
-        });
+        }, 5); // deadlock-retry (bkz roll)
 
         // BOT ODASI: insan botun küp teklifini TAKE ettiyse sıra hâlâ botta (zarını atacak) ->
         // botu senkron oynat; bot[] yanıta eklenir (frontend handleTake uygular). DROP'ta maç bitti
@@ -2704,7 +2724,7 @@ class RoomController extends Controller
                 'match' => $room->server_match, 'winner' => $winner,
                 'version' => (int) $room->server_version, 'match_done' => $matchDone,
             ]);
-        });
+        }, 5); // deadlock-retry (bkz roll)
 
         $this->markAuthoritativeCommandResult($code, $data, $resp);
 
@@ -3119,9 +3139,17 @@ class RoomController extends Controller
         // network retry; command identity is the action payload itself.
         unset($payload['expected_version']);
         $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        // NOT: lockForUpdate KASITLI KALDIRILDI. Oda satırı çağıran handler'da zaten
+        // lockForUpdate ile kilitli -> AYNI odaya ait komutlar zaten seri işlenir; buradaki
+        // ek satır kilidi gereksizdi. Var-olmayan (room_id,command_id) satırına FOR UPDATE
+        // InnoDB'de GAP/next-key kilidi alır; eşzamanlı FARKLI odalar (ardışık id'ler) örtüşen
+        // gap'lerde DEADLOCK olup /roll (ve move/küp/resign) 500 "Server Error" veriyordu
+        // (eşzamanlı açılış maçlarında ~%60 — bot hata avı ile doğrulandı). Düz consistent-read +
+        // benzersiz (room_id,command_id) indeksi + oda kilidi yeterli; ayrıca transaction'lar
+        // deadlock-retry ile sarılı (DB::transaction attempts).
         $existing = \App\Models\RoomCommand::where('room_id', $room->id)
             ->where('command_id', $commandId)
-            ->lockForUpdate()->first();
+            ->first();
         if ($existing) {
             if (! hash_equals((string) $existing->payload_hash, $hash)) {
                 return $this->fail('AynÄ± komut kimliÄŸi farklÄ± iÃ§erikle kullanÄ±lamaz.', 409, [
