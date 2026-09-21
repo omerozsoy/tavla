@@ -4,6 +4,7 @@ namespace App\Services\LuckyWheel;
 
 use App\Http\Controllers\ShopController;
 use App\Models\LuckyWheelReward;
+use App\Models\LuckyWheelSpin;
 use App\Models\Notification;
 use App\Models\User;
 use App\Services\Achievements\AchievementCatalog;
@@ -23,7 +24,7 @@ class RewardFulfillmentService
      * Ödülü kullanıcıya işle. FREE_SPIN ve CUSTOM burada coin/plan değiştirmez.
      * @return string|null kullanıcıya gösterilecek kısa özet (bildirim gövdesi)
      */
-    public function grant(User $u, LuckyWheelReward $reward): ?string
+    public function grant(User $u, LuckyWheelReward $reward, ?int $spinId = null): ?string
     {
         $amount = (int) $reward->amount;
         $ref = $reward->reference_id;
@@ -32,7 +33,13 @@ class RewardFulfillmentService
         switch ($reward->type) {
             case LuckyWheelReward::TYPE_COIN:
                 if ($amount > 0) {
-                    app(\App\Services\WalletService::class)->credit($u, $amount, 'lucky_wheel_reward', LuckyWheelReward::class, $reward->id);
+                    app(\App\Services\WalletService::class)->credit(
+                        $u,
+                        $amount,
+                        'lucky_wheel_reward',
+                        $spinId ? LuckyWheelSpin::class : LuckyWheelReward::class,
+                        $spinId ?: $reward->id,
+                    );
                     $body = "+{$amount} coin";
                 }
                 break;

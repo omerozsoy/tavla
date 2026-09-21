@@ -362,25 +362,27 @@ class LuckyWheelService
                 }
             }
 
-            // Ödülü dağıt. FREE_SPIN -> bonus hakkı aynı state satırına ekle.
-            if ($winner->type === LuckyWheelReward::TYPE_FREE_SPIN) {
-                $state->bonus_spins = (int) $state->bonus_spins + max(1, (int) $winner->amount);
-                $this->fulfillment->grant($u, $winner); // yalnız bildirim
-            } else {
-                $this->fulfillment->grant($u, $winner);
-            }
-
-            $state->last_spin_at = now();
-            $state->save();
-
-            // Geçmiş: kazanıldığı anki snapshot (admin sonradan değiştirse bozulmaz).
-            LuckyWheelSpin::create([
+            // Create a unique spin receipt before fulfillment. A reward definition
+            // may be won repeatedly; the wallet reference must identify this spin.
+            $spin = LuckyWheelSpin::create([
                 'user_id' => $u->id,
                 'reward_id' => $winner->id,
                 'reward_snapshot' => $winner->snapshot(),
                 'spin_type' => $spinType,
             ]);
 
+            // Ödülü dağıt. FREE_SPIN -> bonus hakkı aynı state satırına ekle.
+            if ($winner->type === LuckyWheelReward::TYPE_FREE_SPIN) {
+                $state->bonus_spins = (int) $state->bonus_spins + max(1, (int) $winner->amount);
+                $this->fulfillment->grant($u, $winner, $spin->id); // yalnız bildirim
+            } else {
+                $this->fulfillment->grant($u, $winner, $spin->id);
+            }
+
+            $state->last_spin_at = now();
+            $state->save();
+
+            // Geçmiş: kazanıldığı anki snapshot (admin sonradan değiştirse bozulmaz).
             $u->refresh();
 
             $remainingAfter = $this->remaining($state);
