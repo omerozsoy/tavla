@@ -8902,8 +8902,17 @@ export default function App() {
               ? -Math.round(ratingChange.after - ratingChange.before)
               : null
           }
-          rematchState={online ? rematch : null}
+          // BOT ODASI: rövanş consensus'ü (mine/theirs 'yes') İNSAN-İNSAN içindir; bot hiç 'yes'
+          // demez -> "Rakip bekleniyor…" sonsuza dek takılır. Bot maçında null geçip basit "Rövanş"
+          // butonunu göster (idle) -> onRematch anında yeni bot odası açar (bot her zaman kabul).
+          rematchState={online && !room?.bot ? rematch : null}
           onRematch={() => {
+            // BOT RÖVANŞI: bot "kabul" akışı YOK (openRematchRoom iki doğrulanmış user ID ister ->
+            // bot odasında açılmaz). Rövanş = AYNI seviye/uzunlukla ANINDA yeni bot odası.
+            if (online && room?.bot) {
+              void handleCreateBotRoom(match.target, room.botLevel ?? difficulty)
+              return
+            }
             if (online) {
               // ROVANS = ayni rakip, ayni ayarlar. Odadan CIKMIYORUZ: teklif sunucuya gider,
               // rakip de kabul edince sunucu yeni odayi acar ve poll ikimizi de oraya sokar.
