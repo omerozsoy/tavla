@@ -69,7 +69,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Description:** HTTP command replay koruması mevcut; Laravel queue'nun at-least-once çalışmasında tüm finansal job'ların aynı idempotency/reference garantisini koruduğu production queue üzerinde kanıtlanmadı.
 **Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.
 **Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu canlı ortamda doğrulanmadı.
-**Evidence:** `RoomSettleTest`, `RoomEscrowTest`, `SettlePctMissingSnapshotTest` ve `PaymentCallbackTest` birlikte **22 test / 79 assertions** geçti; rollback, escrow release, duplicate claim ve payment callback idempotency HTTP düzeyinde doğrulandı. Gerçek finansal queue retry simülasyonu çalıştırılmadı.
+**Evidence:** `RoomSettleTest`, `RoomEscrowTest`, `SettlePctMissingSnapshotTest` ve `PaymentCallbackTest` birlikte **23 test / 83 assertions** geçti; başarılı settlement replay’inin no-op olduğu ve debit/credit ledger referanslarının tekil kaldığı da doğrulandı. Rollback, escrow release, duplicate claim ve payment callback idempotency HTTP düzeyinde test edildi. Gerçek finansal queue retry simülasyonu çalıştırılmadı.  
 **Potential impact:** Partial settlement, duplicate reward, stuck escrow.
 **Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve gerçek queue retry testi.
 **Database protection required?:** Evet.

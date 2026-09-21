@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Room;
 use App\Models\User;
+use App\Models\WalletTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -115,6 +116,33 @@ class RoomSettleTest extends TestCase
 
         $this->assertEquals(150, $p1->fresh()->coins);
         $this->assertEquals(50, $p2->fresh()->coins);
+    }
+
+    public function test_successful_settlement_replay_is_noop(): void
+    {
+        config(['game.commission_pct' => 0]);
+        $p1 = $this->makeUser('replay-w', 100);
+        $p2 = $this->makeUser('replay-l', 100);
+        $room = Room::create([
+            'code' => 'TESTRP',
+            'p1_token' => 'tok1', 'p1_user_id' => $p1->id, 'p1_name' => $p1->nickname,
+            'p2_token' => 'tok2', 'p2_user_id' => $p2->id, 'p2_name' => $p2->nickname,
+            'status' => 'playing', 'stake' => 50, 'bet_pct' => 0, 'version' => 1,
+            'settled' => false, 'authoritative' => true,
+            'server_match' => ['done' => true, 'winner' => 'white'],
+        ]);
+
+        $this->settle($room, $p1, 'tok1', true)->assertOk()->assertJson(['ok' => true]);
+        $this->settle($room, $p1, 'tok1', true)
+            ->assertOk()
+            ->assertJson(['ok' => false]);
+
+        $this->assertSame(150, (int) $p1->fresh()->coins);
+        $this->assertSame(50, (int) $p2->fresh()->coins);
+        $this->assertSame(1, WalletTransaction::where('reference_type', Room::class)
+            ->where('reference_id', $room->id)->where('type', 'match_settlement_debit')->count());
+        $this->assertSame(1, WalletTransaction::where('reference_type', Room::class)
+            ->where('reference_id', $room->id)->where('type', 'match_settlement_credit')->count());
     }
 
     public function test_hard_error_uses_standard_message_shape(): void
