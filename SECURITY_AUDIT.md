@@ -1202,3 +1202,7 @@ The complete Laravel suite was rerun after the authoritative fixture migrations:
 `LuckyWheelAdminTest` now grants admin access explicitly through the `users.is_admin` database field before issuing Sanctum requests. The suite passes **8 tests / 29 assertions**. The remaining full-suite discrepancy is documented: the free-match-while-money-match test receives the current active-match guard response, and the tournament no-show fixture reports an unexpected successful walkover when an opponent is present; neither was weakened in production.
 
 The two remaining discrepancies are resolved. `Room::userHasActiveMoneyMatch()` and matchmaking admission now reserve the single slot only for economic rooms (`stake`, `bet_pct`, or escrow), so a zero-stake match remains allowed while a money match is active. `TournamentNoShowTest` now authenticates the second entrant as the actual opponent, proving that a present opponent blocks walkover. `RoomStakeGuardTest` passes **3 tests / 3 assertions** and `TournamentNoShowTest` passes **2 tests / 12 assertions**.
+
+## Audit amendment — full suite green (2026-09-21)
+
+After all fixture and invariant corrections, the complete Laravel suite passes **497 tests / 7,925 assertions with 0 failures**. Four tests remain skipped by their existing environment guards. No migration was executed and no production data was changed during this validation.
