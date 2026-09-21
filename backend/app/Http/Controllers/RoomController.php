@@ -515,6 +515,13 @@ class RoomController extends Controller
             } else {
                 $amount = $stake;
             }
+            // Never make a silent partial payout when the locked stake is unavailable.
+            // Throwing here rolls back the earlier settled claim in the same transaction.
+            if ($loser && (int) ($loser->coins ?? 0) < $amount) {
+                throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                    409, 'Loser balance is below the locked stake; settlement is pending.'
+                );
+            }
             // COIN KORUNUMU (güvenlik): kaybedenden fiilen alınabilen kadar düş (min stake, bakiye);
             // kazanana TAM O KADARINI ekle. Aksi halde kaybedenin bakiyesi stake'in altındaysa
             // (ör. eşzamanlı maçlarla drenaj) net coin BASILIR: kazanan tam stake alır, kaybeden
@@ -2282,6 +2289,16 @@ class RoomController extends Controller
                 $pts = \App\Support\Backgammon::gamePoints($new, $winner) * $cubeVal;
                 $room->server_state = $new; // son tahta (maç biterse korunur; bitmezse applyGameResult ezer)
                 $matchDone = $this->applyGameResult($room, $winner, $pts);
+                if ($matchDone) {
+                    // RoomResult::verified güvenlik kontrolü için server_match.done ile
+                    // oda status'ü birlikte terminal olmalı. Önceden AI/tek oyununda
+                    // skor kapanıyor ama status=playing kaldığı için rating/report 409 dönüyordu.
+                    $room->status = 'finished';
+                    $room->end_reason = $room->end_reason ?? 'NORMAL_WIN';
+                    $winnerSlot = $winner === 'white' ? 'p1' : 'p2';
+                    $room->p1_result = $room->p1_result ?? ($winnerSlot === 'p1' ? 'won' : 'lost');
+                    $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
+                }
             } else {
                 $room->server_state = $new;
             }
