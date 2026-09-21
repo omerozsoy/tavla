@@ -8,9 +8,9 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 |---|---:|
 | CRITICAL | 0 |
 | HIGH | 3 |
-| MEDIUM | 5 |
+| MEDIUM | 2 |
 | LOW | 1 |
-| UNKNOWN | 4 |
+| UNKNOWN | 2 |
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
 
@@ -105,21 +105,6 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.  
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 
-### SEC-DEP-001 — NPM bağımlılık advisory'leri
-
-**Severity:** MEDIUM  
-**Category:** Dependencies  
-**Affected file(s):** `package-lock.json`, `package.json`  
-**Affected dependency:** `adm-zip` via `onnxruntime-node@1.29.0`; `@vitest/mocker` via Vitest 4.1.10  
-**Description:** `npm audit --audit-level=moderate` üç advisory raporladı: bir high `adm-zip`, iki moderate Vitest mocker.  
-**Attack scenario:** Kötü amaçlı arşiv/fixture veya test/build ortamı girdisi extraction/path traversal ve DoS etkisi oluşturabilir.  
-**Root cause:** Transitive dependency sürümleri advisory aralığında.  
-**Evidence:** `npm ls adm-zip @vitest/mocker vitest`; audit çıktısı.  
-**Potential impact:** Build/test runner veya Node validator tooling etkilenebilir; production reachability doğrulanmadı.  
-**Recommended fix:** Lockfile uyumlu güncelleme, build/test ve onnxruntime uyumluluk kontrolü; validator için lockfile üretmeden önce ayrı plan.  
-**Database protection required?:** Hayır.  
-**Regression test required?:** Evet; build, typecheck, Vitest ve validator smoke testleri.
-
 ### SEC-DEP-002 — Validator dependency lockfile kapsamı UNKNOWN
 
 **Severity:** LOW  
@@ -183,8 +168,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 ### PHASE 3 — Web ve supply-chain hardening
 
 1. CSP Report-Only gözlem dönemi, ardından enforcing CSP. **Dosyalar:** Plesk/Nginx ve frontend build.
-2. NPM advisory'lerini lockfile uyumlu sürüm yükseltmesiyle kapat; build/test sonrası deploy et. **Dosyalar:** `package.json`, `package-lock.json`.
-3. Validator lockfile ve reproducible install sürecini oluştur.
+2. Validator lockfile ve reproducible install sürecini oluştur.
 
 ### PHASE 4 — Operasyon ve adli iz
 
