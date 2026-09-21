@@ -9,6 +9,7 @@ import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
+import { installAutoUpdate } from './autoUpdate.ts'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +26,10 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 )
+
+// BAYAT BUNDLE KALICI ÇÖZÜM: yeni deploy'u algılayıp GÜVENLİ anda (aktif maç/ödeme DIŞINDA)
+// otomatik yenile. Açık kalan sekmeler eski kodda (maç-sonu desync vb.) takılı kalmasın.
+installAutoUpdate()
 
 // PWA: service worker'i kaydet (yuklenebilir + cevrimdisi). Sadece prod'da.
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
