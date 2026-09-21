@@ -3,6 +3,10 @@
 
 Plesk'te sertifika düzeltildikten sonra normal TLS `GET /health` **200 OK** döndü. `VALIDATOR_VERIFY_TLS=true` ile `ValidatorParityTest` **4 test / 9 assertion** geçti.
 
+## Audit amendment — validator production-mode recheck (2026-09-21)
+
+The validator was rechecked with `VALIDATOR_URL=https://validator.tavlatv.com`, the configured loopback backup, and `VALIDATOR_VERIFY_TLS=true`. All four parity cases passed (**4 tests / 9 assertions**): legal opening moves are accepted, an unrolled die is rejected, an empty-point move is rejected, and legal-moves returns a non-empty set. No TLS bypass was used for this run.
+
 ## Audit amendment — canonical command replay response (2026-09-21)
 
 Authoritative command receipts now persist the canonical JSON response and HTTP status after a successful `roll`, `move`, cube, or `resign`. Repeating the same `(room_id, command_id)` returns that stored response without applying state again; payload mutation still returns `409`. The migration is `2026_09_22_010000_add_response_to_room_commands.php`. `RoomCommandIdempotencyTest` passes **4 tests / 22 assertions**.
