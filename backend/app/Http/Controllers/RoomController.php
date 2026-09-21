@@ -410,12 +410,13 @@ class RoomController extends Controller
         // The user row is the serialization point for concurrent matchmaking requests.
         // The active-room check and insert must share this transaction; an application-level
         // pre-check alone allows two simultaneous requests to create two money rooms.
-        $room = DB::transaction(function () use ($roomData, $userId) {
+        $moneySearch = $maxStake > 0 || $betPct > 0;
+        $room = DB::transaction(function () use ($roomData, $userId, $moneySearch) {
             $lockedUser = User::lockForUpdate()->find($userId);
             if (! $lockedUser || $lockedUser->isBanned()) {
                 return null;
             }
-            if (Room::userHasActiveMoneyMatch($userId)) {
+            if ($moneySearch && Room::userHasActiveMoneyMatch($userId)) {
                 return null;
             }
 

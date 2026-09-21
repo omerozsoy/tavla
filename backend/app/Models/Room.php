@@ -99,9 +99,11 @@ class Room extends Model
         if ($excludeRoomId !== null) {
             $query->whereKeyNot($excludeRoomId);
         }
-        $query->where(function ($q) {
-                $q->where('mode', 'ranked')
-                    ->orWhere('stake', '>', 0)
+            $query->where(function ($q) {
+                // Only rooms with an actual economic stake reserve the single
+                // money-game slot. A zero-stake ranked/friendly match must
+                // remain available while another money match is active.
+                $q->where('stake', '>', 0)
                     ->orWhere('bet_pct', '>', 0);
                 if (Schema::hasColumn('rooms', 'escrowed')) {
                     $q->orWhere('escrowed', true);
