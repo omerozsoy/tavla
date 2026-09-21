@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — static validation recheck (2026-09-21)
+
+`npm run typecheck`, `npx oxlint src`, `npx oxlint validator`, and `composer validate --no-check-publish` completed successfully. The full `npm run lint` command remains non-zero because untracked helper files under `scripts/` contain existing `var` lint errors; product source findings are warnings only. Those unrelated helper files were not modified.
+
 ## Audit amendment — dependency audit recheck (2026-09-21)
 
 The repository root `npm audit --omit=dev` completed with **0 vulnerabilities**, and `backend/composer audit --no-interaction` reported **No security vulnerability advisories found**. The `validator/` project has no lockfile, so its audit remains **UNKNOWN** without generating a new lockfile or installing dependencies.
