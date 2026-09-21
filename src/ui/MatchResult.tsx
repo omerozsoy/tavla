@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
 import { Button } from '@/components/ui/button'
@@ -54,6 +55,7 @@ interface Props {
   onStats: () => void
   onAnalysis: () => void
   hasReport: boolean
+  matchCode?: string | null // online maç kodu (kopyalanabilir; hata bildirimi/destek için)
 }
 
 function Avatar({ url, color }: { url?: string | null; color: Side }) {
@@ -103,8 +105,20 @@ export default function MatchResult({
   onStats,
   onAnalysis,
   hasReport,
+  matchCode,
 }: Props) {
   const { t } = useT()
+  const [codeCopied, setCodeCopied] = useState(false)
+  const copyCode = () => {
+    if (!matchCode) return
+    navigator.clipboard
+      ?.writeText(matchCode)
+      .then(() => {
+        setCodeCopied(true)
+        window.setTimeout(() => setCodeCopied(false), 1500)
+      })
+      .catch(() => {})
+  }
   // ROVANS asamasi (online): idle = teklif edilebilir, waiting = rakip bekleniyor,
   // asked = rakip istedi (kabul/reddet), done = taraflardan biri reddetti -> buton yok.
   const rmPhase: 'idle' | 'waiting' | 'asked' | 'done' = !rematchState
@@ -309,6 +323,18 @@ export default function MatchResult({
             <Icon name="home" /> {t('home.title')}
           </Button>
         </div>
+        {matchCode && (
+          <button
+            type="button"
+            className={`mr-code${codeCopied ? ' copied' : ''}`}
+            onClick={copyCode}
+            title={t('mr.copyCode')}
+          >
+            <span className="mr-code-lbl">{t('mr.matchCode')}</span>
+            <span className="mr-code-val">{matchCode}</span>
+            <Icon name={codeCopied ? 'check' : 'copy'} size={15} />
+          </button>
+        )}
       </div>
     </div>
   )

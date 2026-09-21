@@ -8956,6 +8956,7 @@ export default function App() {
           hasReport={matchLog.length > 0}
           onStats={() => setResultView('stats')}
           onAnalysis={() => setResultView('analysis')}
+          matchCode={online ? (room?.code ?? null) : null}
         />
       )}
 
