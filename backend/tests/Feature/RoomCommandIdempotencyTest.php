@@ -51,8 +51,11 @@ class RoomCommandIdempotencyTest extends TestCase
         $this->assertSame(1, (int) $fresh->server_version);
         $this->assertCount(1, $fresh->dice_rolls ?? []);
         $this->assertDatabaseCount('room_commands', 1);
-        $this->assertNotNull($freshCommand = $fresh->server_version);
-        $this->assertSame($freshCommand, (int) $fresh->server_version);
+        $this->assertDatabaseHas('room_commands', [
+            'room_id' => $fresh->id,
+            'command_id' => $commandId,
+            'result_version' => 1,
+        ]);
     }
 
     private function room(User $user): Room
