@@ -22,6 +22,22 @@ class AuditMoneyClaims extends Command
             return self::FAILURE;
         }
 
+        $driver = DB::connection()->getDriverName();
+        $this->line('db_driver='.$driver);
+        if ($driver === 'mysql') {
+            $version = DB::selectOne('select version() as version');
+            $isolation = DB::selectOne('select @@transaction_isolation as isolation');
+            $this->line('db_version='.(string) ($version->version ?? 'unknown'));
+            $this->line('transaction_isolation='.(string) ($isolation->isolation ?? 'unknown'));
+        }
+        if ($driver === 'mysql') {
+            $indexes = DB::select("select index_name, non_unique, column_name from information_schema.statistics where table_schema = database() and table_name = 'active_money_match_claims' order by index_name, seq_in_index");
+            $uniqueUserIndex = collect($indexes)->first(fn ($index) => (int) $index->non_unique === 0 && $index->column_name === 'user_id');
+            $this->line('unique_user_claim_index='.($uniqueUserIndex ? 'present' : 'missing'));
+        } else {
+            $this->line('unique_user_claim_index=not_checked_non_mysql');
+        }
+
         $rooms = Room::query()
             ->whereIn('status', ['playing', 'mm_waiting'])
             ->where(function ($q) {
