@@ -3671,6 +3671,14 @@ button[aria-disabled='true'],
     max-width: 160px;
     max-height: 64px;
   }
+  /* Mobilde kart column olunca logo sol uste gelir; TavlaTV bayragi (sol ust kose)
+     logonun uzerine biner. Cozum: bayragi sag uste, Turk (ulke) bayraginin SOLUNA
+     al, aralarinda biraz bosluk birak. Ulke bayragi right:8 + 46 gen -> sol kenari
+     right:54; tvflag'i right:66'ya koy -> ~12px bosluk. */
+  .event-tvflag {
+    left: auto;
+    right: 66px;
+  }
   /* Cok dar ekran: gorsel + harita yan yana sigmaz -> alt alta. */
   .event-side-media {
     flex-direction: column;
