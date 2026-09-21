@@ -176,8 +176,7 @@ class ProductController extends Controller
                 return ['no_stock' => true];
             }
 
-            $u->coins = ($u->coins ?? 0) - $cost;
-            $u->save();
+            app(\App\Services\WalletService::class)->debit($u, $cost, 'product_purchase', ProductOrder::class, null);
             $fresh->decrement('stock', $qty);
 
             $order = ProductOrder::create(array_merge($ship, [
@@ -402,8 +401,7 @@ class ProductController extends Controller
                     'admin_note'   => $billNote,
                 ]));
             }
-            $u->coins = ($u->coins ?? 0) - $total;
-            $u->save();
+            app(\App\Services\WalletService::class)->debit($u, $total, 'cart_purchase', ProductOrder::class, null);
             return ['orders' => $orders, 'coins' => $u->coins];
         });
 
