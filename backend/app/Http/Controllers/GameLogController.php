@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\GameLog;
 use App\Models\Room;
+use App\Support\RoomAccess;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -11,10 +12,12 @@ use Illuminate\Validation\Rule;
  * OYNANAN TÜM maçların hamle+zar kaydını alır (denetim/replay). Oyun tarayıcıda çalıştığı
  * için kayıt istemciden gelir: her istemci KENDİ turlarını kendi slot kolonuna yazar
  * (p1_events/p2_events, her kolon tek yazar). Meta (isim/mod/uzunluk) ilk çağrıda set edilir;
- * online maçta oda bilgisiyle zenginleştirilir. winner/score/status yalnız verilirse güncellenir.
+ * online maçta oda bilgisiyle zenginleştirilir. Online slot ve sonuç server/oda yetkisiyle
+ * belirlenir; pvb/local kayıtlar misafir uyumluluğu için istemci sonuçlarını kabul edebilir.
  *
  * Açık uç: throttle + boyut sınırlarıyla korunur (bkz. routes/api.php). Kimlik doğrulama
- * gerekmez (misafir pvb oynayabilir); user_id varsa oda/oturumdan iliştirilir.
+ * gerekmez (misafir pvb oynayabilir). Online kayıt için oda koltuğu hesap veya guest token ile
+ * doğrulanır; client'ın gönderdiği slot/winner/score/status ekonomik sonuç sayılmaz.
  */
 class GameLogController extends Controller
 {
@@ -24,6 +27,7 @@ class GameLogController extends Controller
             'uid' => ['required', 'string', 'max:40', 'regex:/^[A-Za-z0-9_-]+$/'],
             'slot' => ['required', Rule::in(['p1', 'p2'])],
             'mode' => ['required', Rule::in(['pvb', 'online', 'local'])],
+            'token' => ['nullable', 'string', 'max:128'],
             'target' => ['required', 'integer', 'min:1', 'max:25'],
             'p1_name' => ['nullable', 'string', 'max:40'],
             'p2_name' => ['nullable', 'string', 'max:40'],
@@ -52,15 +56,24 @@ class GameLogController extends Controller
             'p2_name' => $data['p2_name'] ?? null,
         ];
 
-        // Online maç: odadan güvenilir isim + user_id iliştir (varsa).
+        // Online kayıtlar yalnızca ilgili odanın yetkili oyuncusundan kabul edilir.
+        // Slot ve sonuç metadatası client'tan gelmez; oda/server state'inden türetilir.
         if ($data['mode'] === 'online') {
             $room = Room::where('code', $uid)->first();
-            if ($room) {
-                $meta['p1_name'] = $room->p1_name ?: $meta['p1_name'];
-                $meta['p2_name'] = $room->p2_name ?: $meta['p2_name'];
-                $meta['p1_user_id'] = $room->p1_user_id;
-                $meta['p2_user_id'] = $room->p2_user_id;
+            if (! $room) {
+                return response()->json(['message' => 'Oda bulunamadı'], 404);
             }
+            $actor = $request->user('sanctum');
+            $guestToken = (string) ($data['token'] ?? $request->header('X-Room-Token', ''));
+            $authorizedSlot = RoomAccess::slot($room, $actor, $guestToken);
+            if ($authorizedSlot === null) {
+                return response()->json(['message' => 'Bu maç kaydına yazma yetkiniz yok'], 403);
+            }
+            $data['slot'] = $authorizedSlot;
+            $meta['p1_name'] = $room->p1_name ?: null;
+            $meta['p2_name'] = $room->p2_name ?: null;
+            $meta['p1_user_id'] = $room->p1_user_id;
+            $meta['p2_user_id'] = $room->p2_user_id;
         }
 
         try {
@@ -74,15 +87,28 @@ class GameLogController extends Controller
         $col = $data['slot'] === 'p1' ? 'p1_events' : 'p2_events';
         $log->{$col} = $data['events'];
 
-        // winner/score/status YALNIZ verilirse (maç sonu) güncellenir; null ile ezme.
-        if (($data['status'] ?? null) === 'finished') {
-            $log->status = 'finished';
-        }
-        if (! empty($data['winner'])) {
-            $log->winner = $data['winner'];
-        }
-        if (! empty($data['score'])) {
-            $log->score = $data['score'];
+        // Online sonuç client payload'ından okunmaz. Yalnız doğrulanmış server_match
+        // tamamlandıysa replay metadata'sına yansıtılır; pvb/local kayıtları geriye dönük
+        // olarak kendi yerel sonuçlarını yazmaya devam edebilir.
+        if ($data['mode'] === 'online') {
+            $match = $room->server_match;
+            if ($room->hasVerifiedServerResult()) {
+                $log->status = 'finished';
+                $log->winner = $match['winner'];
+                if (is_array($match['score'] ?? null)) {
+                    $log->score = $match['score'];
+                }
+            }
+        } else {
+            if (($data['status'] ?? null) === 'finished') {
+                $log->status = 'finished';
+            }
+            if (! empty($data['winner'])) {
+                $log->winner = $data['winner'];
+            }
+            if (! empty($data['score'])) {
+                $log->score = $data['score'];
+            }
         }
 
         $log->save();

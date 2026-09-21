@@ -2204,6 +2204,8 @@ export interface GameLogPayload {
   uid: string
   slot: Slot
   mode: 'pvb' | 'online' | 'local'
+  /** Online kayıt yazımında oda koltuğunu doğrulayan guest capability. */
+  token?: string
   target: number
   p1_name?: string | null
   p2_name?: string | null
@@ -2291,9 +2293,12 @@ export async function submitGameLog(
   opts: { keepalive?: boolean } = {},
 ): Promise<void> {
   try {
+    const body = payload.mode === 'online' && !payload.token
+      ? { ...payload, token: playerToken() }
+      : payload
     await req('/game-logs', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
       keepalive: opts.keepalive,
     })
     // Ağ geri gelmiş olabilir: başarılı normal gönderimde bekleyen kuyruğu da boşalt.
