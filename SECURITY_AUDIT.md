@@ -1078,3 +1078,7 @@ Opportunistic and scheduled stale-room cleanup now deletes only rooms that are b
 Admin REST and legacy panel coin adjustments now emit high-severity Shield audit events containing actor ID, target user ID, and before/after balance values. Credentials and raw request payloads are not recorded. This improves forensic coverage for SEC-015; the immutable wallet ledger and Filament/admin adjustment reason/reference fields remain open.
 
 Filament `UserResource` coin edits now emit the same audit event after the locked update path, closing the third admin-surface gap. A durable wallet ledger and mandatory adjustment reason/reference remain required for full SEC-015 closure.
+
+## Audit amendment — wallet transaction foundation (2026-09-21)
+
+An append-only `WalletTransaction` model, migration, and `WalletService` were added. Payment coin and cart fulfillment now use the service, which records transaction UUID, user, signed amount, balance before/after, type, and payment reference when the migration exists. Negative balances are rejected. The migration was not executed; legacy writers still require migration to the shared service before SEC-015 can be marked complete.

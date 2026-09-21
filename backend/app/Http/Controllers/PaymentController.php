@@ -492,8 +492,7 @@ class PaymentController extends Controller
     {
         $u = $payment->user;
         if ($payment->kind === 'coins') {
-            $u->coins = (int) ($u->coins ?? 0) + (int) $payment->coins;
-            $u->save();
+            app(\App\Services\WalletService::class)->credit($u, (int) $payment->coins, 'payment', Payment::class, $payment->id);
             if (! empty($payment->discount_code)) {
                 \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
             }
@@ -524,7 +523,7 @@ class PaymentController extends Controller
     {
         $u = $payment->user;
         if ((int) $payment->coins > 0) {
-            $u->increment('coins', (int) $payment->coins);
+            app(\App\Services\WalletService::class)->credit($u, (int) $payment->coins, 'payment_cart', Payment::class, $payment->id);
         }
         if (! empty($payment->discount_code)) {
             \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
