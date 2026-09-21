@@ -1004,3 +1004,7 @@ The two manual token-to-web-session SSO handlers (`/admin/enter` and `/panel/ent
 **Affected file(s):** `backend/app/Http/Controllers/BugReportController.php`, `backend/app/Http/Controllers/PanelController.php`
 
 Bug-report data URLs now require a real image signature from `getimagesizefromstring`, a MIME match with the declared type, and a 40-million-pixel limit in addition to the existing byte limit. Admin content uploads now derive the extension from server-detected content, allow only `jpg/png/gif/webp`, and use a cryptographically random filename instead of the client filename. Public upload execution policy and production web-server behavior remain deployment checks.
+
+## Audit amendment — alert/log redaction (2026-09-21)
+
+500 alerts now use scheme/host/path without the query string, and exception/job error text redacts bearer credentials plus `token`, `password`, `secret`, `authorization`, and `api_key` assignments before it reaches the alert channel. Full application logs and third-party exception text still require deployment-level retention and redaction review.

@@ -57,7 +57,12 @@ class AppServiceProvider extends ServiceProvider
                 }
                 \Illuminate\Support\Facades\Cache::put('alert:jobfail:last', time(), now()->addMinutes(15));
                 $job = method_exists($event->job, 'resolveName') ? $event->job->resolveName() : 'job';
-                $err = $event->exception ? $event->exception->getMessage() : 'bilinmiyor';
+                $err = $event->exception ? (string) $event->exception->getMessage() : 'bilinmiyor';
+                $err = preg_replace(
+                    '/(bearer\s+|(?:token|password|secret|authorization|api_key)=)[^\s&]+/i',
+                    '$1[REDACTED]',
+                    $err
+                ) ?: 'redacted-error';
                 \App\Support\Alert::send("🔴 Arka plan işi BAŞARISIZ: {$job}\n{$err}", 'TavlaTV — Job Hatası');
             } catch (\Throwable $e) {
                 // uyarı mekanizması hiçbir job akışını bozmasın

@@ -65,9 +65,17 @@ return Application::configure(basePath: dirname(__DIR__))
                     return; // 15 dk penceresi -> spam bastır
                 }
                 \Illuminate\Support\Facades\Cache::put('alert:http500:last', time(), now()->addMinutes(15));
-                $url = app()->runningInConsole() ? 'cli/queue' : request()->fullUrl();
+                // Query string room/PAT/reset token'ları alert kanallarına taşınmasın.
+                $url = app()->runningInConsole()
+                    ? 'cli/queue'
+                    : request()->getSchemeAndHttpHost().request()->getPathInfo();
+                $error = preg_replace(
+                    '/(bearer\s+|(?:token|password|secret|authorization|api_key)=)[^\s&]+/i',
+                    '$1[REDACTED]',
+                    (string) $e->getMessage()
+                ) ?: 'redacted-error';
                 \App\Support\Alert::send(
-                    "🔴 Sunucu HATASI (500): ".get_class($e)."\n".$e->getMessage()."\nURL: ".$url,
+                    "🔴 Sunucu HATASI (500): ".get_class($e)."\n".$error."\nURL: ".$url,
                     'TavlaTV — Sunucu Hatası (500)'
                 );
             } catch (\Throwable $x) {

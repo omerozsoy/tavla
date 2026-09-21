@@ -138,6 +138,10 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 
 `validator/server.ts` ve `gnubg-service/gnubg_service.py` artık secret boşken POST endpoint'lerini çalıştırmıyor; 503 döndürüyor. Yanlış/missing secret 401 döndürmeye devam ediyor. Validator varsayılan olarak loopback (`127.0.0.1`) üzerinde dinliyor ve Laravel validator TLS doğrulaması varsayılan açık hale getirildi. Health endpoint'leri monitoring için public bırakıldı; production proxy/bind/secret değerleri ayrıca doğrulanmalı.
 
+## Alert/log redaction
+
+500 ve queue-failure alert'lerinde query string kaldırılıyor; bearer/token/password/secret/authorization/api_key değerleri hata metninden maskeleniyor. Uygulamanın diğer log kanalları ve retention politikası ayrıca doğrulanmalı.
+
 ## Sanctum SSO expiry kontrolü
 
 `/admin/enter` ve `/panel/enter` içindeki manuel `PersonalAccessToken::findToken()` kullanımı artık `expires_at` değerini de kontrol ediyor. Query-string token sızıntısı ve tek kullanımlık SSO exchange eksikliği ayrıca açık residual risk olarak kalıyor.
