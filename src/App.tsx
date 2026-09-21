@@ -4524,6 +4524,28 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchOver, online, roomCode])
 
+  // MAÇ-SONU EMNİYET SUBABI (KAYBEDEN KİLİDİ — #FSYZH): sunucu maçı bitirdiyse (room.status
+  // 'finished'; poll bunu KOŞULSUZ yazar) ama yerelde hâlâ matchOver DEĞİLSE, TAM durumu sunucudan
+  // (since'siz -> server_state + server_match GARANTİ) çek ve KOŞULSUZ uygula. Poll'un içindeki
+  // terminal-apply herhangi bir edge'de (server_match eksik/sürüm muhasebesi/istisna) kaçırsa bile
+  // KAYBEDEN taraf MatchResult'ı görür. Bir kez çalışır: matchOver true olunca dep değişir, durur.
+  useEffect(() => {
+    if (!online || !room?.code || room.status !== 'finished' || matchOver) return
+    let cancelled = false
+    void showRoom(room.code)
+      .then((rv) => {
+        if (cancelled || !rv?.server_state) return
+        appliedServerVersionRef.current = rv.server_version ?? appliedServerVersionRef.current
+        appliedServerRoomRef.current = room.code
+        applyServerBoard(rv.server_state as GameState, rv.server_match ?? null)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room?.status, matchOver, online, room?.code])
+
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
     if (!online || !room) return
