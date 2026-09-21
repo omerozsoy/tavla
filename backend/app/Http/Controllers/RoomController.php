@@ -1070,7 +1070,16 @@ class RoomController extends Controller
         $this->tickClock($room, $slot);
 
         $since = (int) $request->query('since', -1);
-        $unchanged = $since >= 0 && $room->version <= $since;
+        // KÖK FIX (KAYBEDEN KİLİDİ #29ZZT): "değişti mi" kıyası, istemcinin `since` olarak
+        // GÖNDERDİĞİ sayaçla AYNI sayaca bakmalı. Otoriter oda istemcisi `since`=server_version
+        // (appliedServerVersionRef) gönderir; legacy `version` ise otoriter akışta ARTMAZ (legacy
+        // PUT sync kaldırıldı) -> legacy `version` ile kıyaslamak DAİMA unchanged=true verir ve
+        // maç bitince (saat DURUNCA) 204 döner: kazananın bitiren hamlesi + server_match.done
+        // KAYBEDENE HİÇ ulaşmaz, kaybeden aktif tahtada kilitli kalır. Otoriterde server_version
+        // ile kıyasla; legacy odada eski davranış (version) korunur.
+        $authoritative = (bool) $room->authoritative;
+        $effectiveVersion = $authoritative ? (int) $room->server_version : (int) $room->version;
+        $unchanged = $since >= 0 && $effectiveVersion <= $since;
         $clock = $this->clockView($room);
         $clockRunning = $clock && ! empty($clock['running']);
 
@@ -1082,7 +1091,11 @@ class RoomController extends Controller
         }
         $payload = $room->toClient();
         if ($unchanged) {
+            // Delta: değişmediyse büyük tahta blob'unu tekrar taşıma (legacy `state` ve otoriter
+            // `server_state` ikisi de). İstemci sürüm ilerlemediği için zaten yeniden uygulamaz;
+            // saat için poll devam eder. Sürüm ilerleyince (hamle/maç-sonu) tam state yollanır.
             $payload['state'] = null;
+            $payload['server_state'] = null;
         }
         $payload['clock'] = $clock;
 
