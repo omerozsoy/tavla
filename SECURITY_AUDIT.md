@@ -1279,6 +1279,10 @@ The production frontend now generates and sends a checkout key for the cart coin
 
 The `/admin/enter` and `/panel/enter` PAT-to-session exchanges now claim an atomic five-minute cache key per personal-access-token ID before creating the web session. A copied or replayed SSO URL therefore cannot create another admin session during the exchange window, while the underlying API PAT remains valid for the existing SPA session. `AdminSsoReplayTest` passes **2 tests / 9 assertions**. Query-string exposure remains a residual transport/history risk; a one-time POST exchange is still the preferred future design.
 
+## Audit amendment - dependency audit snapshot (2026-09-21)
+
+`composer audit --no-interaction` reports **no PHP security advisories**. `npm audit --audit-level=moderate` reports **3 advisories**: one high-severity `adm-zip` issue pulled transitively by `onnxruntime-node@1.29.0`, and two moderate `@vitest/mocker` issues pulled by the installed Vitest line. No automatic dependency upgrade was run in this audit; the remediation must first be checked against the lockfile, Node/Vite/Vitest compatibility, and whether the archive path is reachable from production code. Current dependency graph was confirmed with `npm ls`.
+
 ## Audit amendment — tournament entry/refund ledger references (2026-09-21)
 
 Tournament entry and refund writes no longer use the static tournament ID as a unique wallet reference. A user may legitimately leave and later rejoin the same open tournament, while the locked player list already prevents duplicate entry and makes repeated leave a no-op. Prize and pool settlement references remain tournament-scoped and idempotent.
