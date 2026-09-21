@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - validator health endpoint access (2026-09-21)
+
+curl -I https://validator.tavlatv.com/health returns 401 Unauthorized. The deployed validator protects the health route from anonymous external probes; this is consistent with a private validator boundary, but monitoring must use an authenticated probe or an internal loopback check. No secret value is recorded.
+
 ## Audit amendment - production TLS chain verified (2026-09-21)
 
 A normal certificate-verifying curl -I https://www.tavlatv.com now returns HTTP 200 after the server CA bundle upgrade. The TLS-chain verification issue is closed. The response exposes the expected nosniff, SAMEORIGIN, and strict-origin-when-cross-origin headers; HSTS and CSP remain pending hardening items.
