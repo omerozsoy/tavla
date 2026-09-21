@@ -7,6 +7,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class PanelController extends Controller
@@ -123,8 +124,15 @@ class PanelController extends Controller
         $action = $request->input('action');
 
         if ($action === 'coins') {
-            $user->coins = max(0, (int) $request->input('coins', 0));
-            $user->save();
+            DB::transaction(function () use ($user, $request) {
+                $locked = User::lockForUpdate()->findOrFail($user->id);
+                $coins = max(0, (int) $request->input('coins', 0));
+                if ($coins < (int) ($locked->coins_reserved ?? 0)) {
+                    abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
+                }
+                $locked->coins = $coins;
+                $locked->save();
+            });
         } elseif ($action === 'rating') {
             // Rating'i (Elo) elle ayarla; seviye/lig bu degere gore hesaplanir.
             $user->rating = max(100, min(4000, (int) $request->input('rating', 1500)));

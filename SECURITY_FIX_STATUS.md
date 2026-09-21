@@ -142,6 +142,10 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 
 500 ve queue-failure alert'lerinde query string kaldırılıyor; bearer/token/password/secret/authorization/api_key değerleri hata metninden maskeleniyor. Uygulamanın diğer log kanalları ve retention politikası ayrıca doğrulanmalı.
 
+## Admin bakiye hold koruması
+
+Admin API, legacy panel ve Filament kullanıcı düzenlemesi hedef user satırını `lockForUpdate()` ile kilitliyor; `coins` değeri `coins_reserved` altına indirilemiyor. Bu, settlement ile yarışan mutlak bakiye overwrite’ını ve aktif escrow’un bozulmasını engelliyor. Immutable coin ledger ve actor/reason/reference audit trail hâlâ sonraki fazda.
+
 ## Queue visibility düzeltmesi
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
