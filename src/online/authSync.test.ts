@@ -61,6 +61,27 @@ describe('shouldApplyServerState', () => {
     const done = { ...rv(9, 'white'), server_match: { opened: true, done: true } }
     expect(shouldApplyServerState(local, done, 'white')).toBe(false)
   })
+
+  it('OYUN-GEÇİŞİ FIX: opened=false (yeni oyun) iken mid-move olsa bile uygula', () => {
+    // Maç-içi bir OYUN bitti; sunucu sonraki oyunu açılış-öncesi kurdu (opened=false, taze tahta).
+    // Kaybeden kendi turunda bayat zarla dururken sonraki oyun gelmezse KİLİTLENİR. FIX: uygula.
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 5 }
+    const nextGame = { ...rv(9, 'white'), server_match: { opened: false, done: false } }
+    expect(shouldApplyServerState(local, nextGame, 'white')).toBe(true)
+  })
+
+  it('opened=false olsa bile SÜRÜM ilerlemediyse uygulamaz (döngü önlenir)', () => {
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 9 }
+    const nextGame = { ...rv(9, 'white'), server_match: { opened: false, done: false } }
+    expect(shouldApplyServerState(local, nextGame, 'white')).toBe(false)
+  })
+
+  it('AKTİF OYUN: opened=true + KENDİ turumda zar varken mid-move korunur (bypass tetiklenmez)', () => {
+    // Sınır bypass'ı yalnız done/opened=false içindir; aktif oyunda mid-move koruması AYNEN sürer.
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 0, appliedServerVersion: 3 }
+    const active = { ...rv(9, 'white'), server_match: { opened: true, done: false } }
+    expect(shouldApplyServerState(local, active, 'white')).toBe(false)
+  })
 })
 
 describe('rollResponseAction', () => {
