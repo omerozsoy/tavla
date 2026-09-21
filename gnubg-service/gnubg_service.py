@@ -1480,7 +1480,10 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, {"error": "not-found"})
 
     def do_POST(self):
-        if SECRET and self.headers.get("x-gnubg-secret") != SECRET:
+        # Secret yokken fail-open yapma: analiz motoru yalnız backend içinden çağrılmalı.
+        if not SECRET:
+            return self._send(503, {"error": "gnubg-misconfigured"})
+        if self.headers.get("x-gnubg-secret") != SECRET:
             return self._send(401, {"error": "unauthorized"})
         try:
             n = int(self.headers.get("Content-Length", 0) or 0)

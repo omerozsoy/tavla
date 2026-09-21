@@ -3,8 +3,9 @@
 // Mevcut TS motorunu (src/engine) YENİDEN KULLANIR — PHP↔TS mantık sapması YOK.
 // PHP backend (RoomController) her hamleyi buraya sorar; yasadışıysa reddedilir.
 //
-// Güvenlik: yalnız backend erişmeli. VALIDATOR_SECRET set edilirse `x-validator-secret`
-// başlığı zorunlu. Servisi ASLA halka açık porta koyma (localhost + backend).
+// Güvenlik: yalnız backend erişmeli. VALIDATOR_SECRET zorunludur ve
+// `x-validator-secret` başlığı olmadan oyun/analiz uçları çalışmaz. Servisi ASLA halka
+// açık porta koyma (localhost + backend).
 //
 // Çalıştırma (Plesk/Node): `node validator/server.ts` (Node 24 type-stripping) veya
 //   bundle: `node validator/dist/server.mjs`. Port: VALIDATOR_PORT (vars. 8090).
@@ -15,6 +16,7 @@ import { generateMoves } from '../src/engine/moves.ts'
 import { analyzePr, type PrLogEntry } from './analyzePr.ts'
 
 const SECRET = process.env.VALIDATOR_SECRET || ''
+const HOST = process.env.VALIDATOR_HOST || '127.0.0.1'
 // Plesk/Passenger PORT env'i enjekte eder; SSH/PM2'de VALIDATOR_PORT kullanılır; yoksa 8090.
 const PORT = Number(process.env.VALIDATOR_PORT || process.env.PORT || 8090)
 
@@ -64,8 +66,11 @@ const server = createServer(async (req, res) => {
   if (req.method === 'GET' && req.url === '/health') {
     return send(res, 200, { ok: true, service: 'tavla-validator' })
   }
-  // Paylaşılan sır (backend dışına kapalı)
-  if (SECRET && req.headers['x-validator-secret'] !== SECRET) {
+  // Paylaşılan sır (backend dışına kapalı). Secret yoksa fail-open yapılmaz.
+  if (!SECRET) {
+    return send(res, 503, { error: 'validator-misconfigured' })
+  }
+  if (req.headers['x-validator-secret'] !== SECRET) {
     return send(res, 401, { error: 'unauthorized' })
   }
   // Yeniden başlat: süreç kendini kapatır; Plesk/Passenger (veya pm2/systemd) bir sonraki
@@ -111,7 +116,7 @@ const server = createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   // eslint-disable-next-line no-console
-  console.log(`[tavla-validator] listening on :${PORT}${SECRET ? ' (secret on)' : ''}`)
+  console.log(`[tavla-validator] listening on ${HOST}:${PORT} (secret on)`)
 })

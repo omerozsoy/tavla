@@ -133,3 +133,7 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 ## RNG bias düzeltmesi
 
 `FairDiceService::roll` ve `single` artık HMAC çıktısını `% 6` ile doğrudan eşlemiyor; 252 ve üzeri baytları reddeden deterministic rejection sampling kullanıyor. Böylece 1–6 yüzleri eşit dağılıma sahip oluyor. Commit/reveal seed kayıtları ve historical roll kayıtları değiştirilmedi; yeni algoritma için server test vector'ları eklenmesi gerekir.
+
+## Validator/GNUbg fail-closed düzeltmesi
+
+`validator/server.ts` ve `gnubg-service/gnubg_service.py` artık secret boşken POST endpoint'lerini çalıştırmıyor; 503 döndürüyor. Yanlış/missing secret 401 döndürmeye devam ediyor. Validator varsayılan olarak loopback (`127.0.0.1`) üzerinde dinliyor ve Laravel validator TLS doğrulaması varsayılan açık hale getirildi. Health endpoint'leri monitoring için public bırakıldı; production proxy/bind/secret değerleri ayrıca doğrulanmalı.
