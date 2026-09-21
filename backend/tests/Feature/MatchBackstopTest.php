@@ -36,6 +36,8 @@ class MatchBackstopTest extends TestCase
             'p1_token' => 'tA', 'p1_user_id' => $a->id, 'p1_name' => 'A', 'p1_rating' => $a->rating,
             'p2_token' => 'tB', 'p2_user_id' => $b->id, 'p2_name' => 'B', 'p2_rating' => $b->rating,
             'status' => 'finished', 'mode' => $mode, 'time_control' => 'speed', 'target' => 1,
+            'authoritative' => true,
+            'server_match' => ['target' => 1, 'score' => ['white' => $whiteScore, 'black' => $blackScore], 'done' => true, 'winner' => 'white'],
             'version' => 3,
             'state' => [
                 'match' => ['target' => 1, 'cube' => ['value' => 1, 'owner' => null], 'score' => ['white' => $whiteScore, 'black' => $blackScore]],
