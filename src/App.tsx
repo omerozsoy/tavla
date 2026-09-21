@@ -2753,6 +2753,11 @@ export default function App() {
       // doğru turn+zar+opened'i getirir. Döngü YOK: açılışta otomatik zar !opening ile gated, normal
       // turda diceRolled ile gated; poll opening overlay'ini kaldırır + rollInFlightRef korur.
       if (r.reused) return
+      // Normal zar atışında da sunucu sürümü ilerler. Bunu yalnızca opening
+      // dalında kaydetmek, sonraki move isteğinin bir sürüm geriden gitmesine
+      // ve sunucunun stale-version 409 döndürmesine neden oluyordu.
+      appliedServerVersionRef.current = r.version
+      appliedServerRoomRef.current = code
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
       Sound.dice()
