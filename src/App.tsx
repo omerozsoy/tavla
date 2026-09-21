@@ -4546,50 +4546,6 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [room?.status, matchOver, online, room?.code])
 
-  // OTO-GÜNCELLEME (BAYAT BUNDLE KÖKTEN ÇÖZÜM): SPA'da tam reload olmadan JS DEĞİŞMEZ; kullanıcı
-  // deploy sonrası ESKİ bundle'da kalıp düzeltmeleri görmüyordu (bu oturumun ana ıstırabı). Yüklü ana
-  // chunk hash'i ile CANLI index.html'deki chunk'ı karşılaştır; FARKLIYSA (yeni deploy var) ve
-  // GÜVENLİ AN'daysa (lobi / maç bitmiş / oda yok — aktif maç ORTASINDA DEĞİL) sayfayı BİR KEZ yenile.
-  // Reload sonrası hash eşitlenir + sessionStorage hedef kalkanı -> ASLA döngü yok. index.html
-  // network-first (SW) olduğundan reload taze bundle'ı getirir. Böylece gelecekteki fix'ler de otomatik.
-  useEffect(() => {
-    const loadedSrc = document.querySelector('script[src*="/assets/index-"]')?.getAttribute('src') ?? ''
-    const loadedHash = loadedSrc.match(/index-[A-Za-z0-9_-]+\.js/)?.[0] ?? ''
-    if (!loadedHash) return
-    let stopped = false
-    const check = async () => {
-      if (stopped) return
-      const safe = home || !room || matchOver || room.status === 'finished'
-      if (!safe) return // aktif maç ortasında YENİLEME
-      try {
-        // BENZERSIZ cache-buster: SW same-origin GET'i stale-while-revalidate eder; '/' aynı URL
-        // olsa BAYAT index.html döner. '?_='+Date.now() her seferinde farklı URL -> SW cache miss ->
-        // TAZE index.html (gerçek son bundle hash'i). (Date.now tarayıcıda serbest.)
-        const html = await fetch('/?_=' + String(Date.now()), { cache: 'no-store' }).then((r) => r.text())
-        const latest = html.match(/index-[A-Za-z0-9_-]+\.js/)?.[0] ?? ''
-        if (latest && latest !== loadedHash) {
-          if (sessionStorage.getItem('tavla-reload-target') === latest) return // bu hedef için zaten denendi
-          sessionStorage.setItem('tavla-reload-target', latest)
-          window.location.reload()
-        }
-      } catch {
-        /* ağ hatası -> sonraki tur tekrar dener */
-      }
-    }
-    const id = window.setInterval(() => void check(), 45000)
-    const onVis = () => {
-      if (document.visibilityState === 'visible') void check()
-    }
-    document.addEventListener('visibilitychange', onVis)
-    void check()
-    return () => {
-      stopped = true
-      window.clearInterval(id)
-      document.removeEventListener('visibilitychange', onVis)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [home, matchOver, room?.status, room?.code])
-
   // Online: odayi periyodik yokla (rakip hamlesi + durum)
   useEffect(() => {
     if (!online || !room) return
