@@ -233,7 +233,7 @@ const SEO_DESCS: Record<string, string> = {
   'nasil-oynanir':
     'Tavla nasıl oynanır? Kurallar, açılış dizilimi, zar ve pul hareketleriyle yeni başlayanlar için tavla rehberi.',
   'pozisyon-analizi':
-    'Tavla pozisyonunu analiz et: gnubg ve sinir ağı motoruyla en iyi hamle, kazanma yüzdesi ve equity.',
+    'Tavla pozisyonunu analiz et: TavlaTV Motoru ve sinir ağı ile en iyi hamle, kazanma yüzdesi ve equity.',
   'mat-analiz':
     '.mat maç dosyanı yükle, motorla tam analiz al: PR, blunder, hata ve şans dökümü.',
   'sans-carki': 'Şans Çarkını çevir, ödüller kazan. TavlaTv eğlence oyunlarından Şans Çarkı.',

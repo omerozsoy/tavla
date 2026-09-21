@@ -111,7 +111,7 @@ final class SeoMeta
         ],
         'pozisyon-analizi' => [
             'Tavla Pozisyon Analizi | TavlaTv',
-            'Tavla pozisyon analizi aracı: gnubg ve nöral ağ ile herhangi bir tavla pozisyonunu ücretsiz analiz et.',
+            'Tavla pozisyon analizi aracı: TavlaTV Motoru ve nöral ağ ile herhangi bir tavla pozisyonunu ücretsiz analiz et.',
             'Tavla Pozisyon Analizi',
         ],
         'mat-analiz' => [
