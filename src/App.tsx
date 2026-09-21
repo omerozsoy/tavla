@@ -3954,7 +3954,10 @@ export default function App() {
         won,
       }
       const bl = matchLog
-        .filter((e) => e.loss >= 0.08 && e.player === myColor)
+        // Yalnız CHECKER hamleleri: küp girdilerinde notation/best BOŞ ('') olur; backend
+        // 'played'/'best' required -> boş string 422 verir ve TEK bozuk item TÜM kaydı düşürür
+        // (geçerli hamle blunder'ları da kaybolur). Küp hataları zaten KÜP PR'da görünür.
+        .filter((e) => e.loss >= 0.08 && e.player === myColor && !!e.notation)
         .sort((a, b) => b.loss - a.loss)
         .slice(0, 5)
         .map((e) => ({
@@ -4107,7 +4110,8 @@ export default function App() {
         won: mW === 'white',
       }
       const bl = logNow
-        .filter((e) => e.loss >= 0.08 && e.player === 'white')
+        // Yalnız CHECKER hamleleri (küp girdileri boş notation -> backend 422). Bkz online dalı.
+        .filter((e) => e.loss >= 0.08 && e.player === 'white' && !!e.notation)
         .sort((a, b) => b.loss - a.loss)
         .slice(0, 5)
         .map((e) => ({

@@ -24,8 +24,10 @@ class BlunderController extends Controller
         $data = $request->validate([
             'items' => ['required', 'array', 'max:10'],
             'items.*.loss' => ['required', 'numeric', 'min:0', 'max:10'],
-            'items.*.played' => ['required', 'string', 'max:32'],
-            'items.*.best' => ['required', 'string', 'max:32'],
+            // played/best: nullable — küp girdileri boş etiket gönderebilir; tek bozuk item TÜM
+            // batch'i 422 ile düşürmesin (checker blunder'ları da kaybolurdu). Boş -> '—' saklanır.
+            'items.*.played' => ['nullable', 'string', 'max:32'],
+            'items.*.best' => ['nullable', 'string', 'max:32'],
             'items.*.pos' => ['nullable', 'string', 'max:4000'],
             'items.*.steps' => ['nullable', 'string', 'max:2000'],
             'items.*.player' => ['nullable', 'string', 'in:white,black'],
@@ -41,8 +43,8 @@ class BlunderController extends Controller
             Blunder::create([
                 'user_id' => $userId,
                 'loss' => $it['loss'],
-                'played' => $it['played'],
-                'best' => $it['best'],
+                'played' => ($it['played'] ?? '') !== '' ? $it['played'] : '—',
+                'best' => ($it['best'] ?? '') !== '' ? $it['best'] : '—',
                 'pos' => $it['pos'] ?? null,
                 'steps' => $it['steps'] ?? null,
                 'player' => $it['player'] ?? null,
