@@ -1,4 +1,10 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production validator secret guard failure (2026-09-21)
+
+**CRITICAL deployment finding:** a production request without `x-validator-secret` to `POST https://validator.tavlatv.com/restart` returned **200** and `{"ok":true,"restarting":true}`. The service restarted and its health endpoint returned 200 afterward. The repository's current `validator/server.ts` is expected to return **503** when `VALIDATOR_SECRET` is missing and **401** for an incorrect secret, so the deployed process/configuration does not match the audited source or its secret guard is not active. Until this is corrected, an unauthenticated party can restart the validator and potentially invoke internal endpoints.
+
+**Required deployment action:** set a strong `VALIDATOR_SECRET` in the validator runtime and the Laravel environment, deploy the current validator build, restart it through Plesk, then verify that requests without the header return 401/503 and only the matching secret permits `/validate`, `/legal-moves`, and `/restart`. The secret value is intentionally not recorded here.
+
 ## Audit amendment — static validation recheck (2026-09-21)
 
 `npm run typecheck`, `npx oxlint src`, `npx oxlint validator`, and `composer validate --no-check-publish` completed successfully. The full `npm run lint` command remains non-zero because untracked helper files under `scripts/` contain existing `var` lint errors; product source findings are warnings only. Those unrelated helper files were not modified.
