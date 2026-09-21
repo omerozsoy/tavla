@@ -12582,6 +12582,39 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--muted);
   font-weight: 400;
 }
+/* Maç kodu + kopyala (hata bildirimi/destek için) — sonuç ekranı altında ince satır */
+.mr-code {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin: 14px auto 0;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.mr-code:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.mr-code.copied {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.mr-code-lbl {
+  opacity: 0.8;
+}
+.mr-code-val {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
 .mr-actions {
   display: flex;
   flex-wrap: wrap;
