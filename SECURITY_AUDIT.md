@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - private room read authorization (2026-09-21)
+
+GET /api/rooms/{code} now rejects non-participant reads for mode=friendly rooms with 403, preventing leaked room codes from exposing board state, chat, and live previews. Participant access remains token plus account-authorized. Public ranked spectator reads are unchanged. RoomLivePreviewTest passes 4 tests / 15 assertions.
+
 ## Audit amendment - online replay export authorization (2026-09-21)
 
 GET /api/game-logs/{uid}/mat now checks RoomAccess when an online room with that UID still exists. A participant's Sanctum identity or correct X-Room-Token is required; outsiders receive 403. PvB/local and archived records whose room no longer exists retain the existing export compatibility path. GameLogTest passes 11 tests / 58 assertions and frontend TypeScript compilation passes.

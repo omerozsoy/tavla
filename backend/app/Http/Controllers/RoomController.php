@@ -1009,6 +1009,11 @@ class RoomController extends Controller
         // (state degismeden; kayip olursa applyClockEnd version'i artirir.)
         $token = (string) $request->header('X-Room-Token', $request->query('token', ''));
         $slot = $this->slotOf($room, $token, $request);
+        // Davet/arkadaş odaları herkese açık seyir alanı değildir. Oda kodu sızsa bile
+        // katılımcı olmayan kişi tahta, sohbet ve canlı önizlemeyi okuyamasın.
+        if ($room->mode === 'friendly' && $slot === null) {
+            return $this->fail('Bu özel maçı görüntüleme yetkiniz yok.', 403);
+        }
         $this->tickClock($room, $slot);
 
         $since = (int) $request->query('since', -1);
