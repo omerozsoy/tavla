@@ -105,6 +105,21 @@ class RoomLivePreviewTest extends TestCase
         $this->assertContains('RANKEDY', $codes);
     }
 
+    public function test_friendly_room_watch_is_private_to_participants(): void
+    {
+        $room = $this->room();
+        $room->mode = 'friendly';
+        $room->save();
+
+        $this->postJson("/api/rooms/{$room->code}/watch", [
+            'token' => 'spectator-token',
+        ])->assertForbidden();
+
+        $this->acting('p1');
+        $this->postJson("/api/rooms/{$room->code}/watch", [
+            'token' => 'p1',
+        ])->assertOk();
+    }
     public function test_live_empty_steps_clears_preview(): void
     {
         $room = $this->room();

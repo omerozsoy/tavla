@@ -1354,3 +1354,7 @@ With `VALIDATOR_URL=https://validator.tavlatv.com`, the live `/health` endpoint 
 ## Audit amendment - friendly rooms excluded from public live listing (2026-09-21)
 
 The private-room read guard now covers the public `GET /api/live-matches` listing as well as direct room state reads. Friendly rooms are excluded server-side before the response is built, preventing invitation-only room codes, player names, ratings, avatars, and stake metadata from being exposed to unauthenticated spectators. Ranked/legacy public rooms remain listed. `RoomLivePreviewTest` covers both sides of this boundary: **5 tests / 18 assertions** pass.
+
+## Audit amendment - friendly room watcher privacy (2026-09-21)
+
+`POST /api/rooms/{code}/watch` now applies the same participant check as direct friendly-room reads. A non-participant can no longer register a spectator token or receive the private room's viewer list; participants retain the heartbeat path. `RoomLivePreviewTest` passes **6 tests / 20 assertions**.
