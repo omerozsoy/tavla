@@ -2725,6 +2725,18 @@ export default function App() {
     // Aksi halde biten maçta auto-roll POST /roll 409 "Oyun aktif değil" döngüsüne girer (#KVU8X).
     // Poll'un maç-sonu kesin-uygulama dalı zaten MatchResult'ı getirir; burada yalnız spam'i keseriz.
     if (room?.status === 'finished') return
+    // SIRA-DEĞİL ZAR ATMA (kök fix, kullanıcı: "rakip sırası-değilken nasıl zar atar"): açılış
+    // DIŞINDA, SUNUCUNUN bildiği en taze sıra (srvTurnStartRef) bende DEĞİLSE zar İSTEME. Auto-roll
+    // bir an bayat React state'iyle (yerel turnStart) tetiklense bile bu REF kapısı out-of-turn
+    // POST'u KÖKTEN engeller -> sunucu 409/not_turn üretmez. Yerel state bayatsa resync tetikle ki
+    // poll doğru sırayı getirsin (auto-roll sonra doğru anda çalışır -> kilitlenme yok).
+    if (openingRef.current !== 'roll') {
+      const srvTurn = srvTurnStartRef.current?.turn
+      if (srvTurn && srvTurn !== myColor) {
+        appliedServerVersionRef.current = -1 // bayat yerel sıra -> poll otoriter durumu geri getirir
+        return
+      }
+    }
     if (rollConflictRef.current) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
