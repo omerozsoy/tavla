@@ -2794,6 +2794,23 @@ export default function App() {
       if (err?.status !== 409) {
         notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
       }
+      // Açılış veya normal zar yarışında yalnızca sessizce dönmek istemciyi eski
+      // overlay'de bırakabilir. Sunucunun kanonik durumunu hemen çek; normal poll'u
+      // beklemeden doğru sıra/zarı uygula. Bu, move tarafındaki 409 resync davranışıyla
+      // aynı güvenli yolu kullanır.
+      if (err?.status === 409 && code) {
+        appliedServerVersionRef.current = -1
+        void showRoom(code)
+          .then((rv) => {
+            if (!rv?.server_state) return
+            applyServerBoard(rv.server_state as GameState, rv.server_match ?? null)
+            appliedServerVersionRef.current = rv.server_version ?? 0
+            appliedServerRoomRef.current = code
+          })
+          .catch(() => {
+            // Normal polling sonraki turda yeniden deneyecek.
+          })
+      }
     } finally {
       rollInFlightRef.current = false // uçuş kilidi her durumda serbest bırakılır
     }
