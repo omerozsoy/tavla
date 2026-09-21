@@ -129,7 +129,9 @@ class ForfeitLossTest extends TestCase
         $clock['started_at'] = microtime(true) - 40;
         $room->clock = $clock;
         $room->save();
-        $this->getJson('/api/rooms/FL3')->assertOk();
+        // Legacy friendly room has no server-authoritative state; fail closed and do not
+        // manufacture a timeout result from client-controlled state.
+        $this->getJson('/api/rooms/FL3')->assertStatus(403);
 
         $a->refresh();
         $this->assertSame(1500, (int) $a->rating);
