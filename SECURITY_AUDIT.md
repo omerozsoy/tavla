@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - admin SSO token exposure reduction (2026-09-21)
+
+The /admin/enter and /panel/enter Sanctum-token exchange routes now have a dedicated 10-per-minute throttle. Successful exchange redirects set Cache-Control: no-store and Referrer-Policy: no-referrer, reducing browser/proxy caching and cross-origin referrer leakage. The token still arrives in the query string for backward compatibility; replacing it with a one-time POST exchange remains a follow-up design item.
+
 ## Audit amendment - production strict amount confirmed (2026-09-21)
 
 The deployed PHP 8.3 configuration was checked without exposing payment credentials: config('garanti.strict_amount') is 	rue. Missing or mismatched callback amounts therefore cannot be auto-fulfilled under the active configuration.

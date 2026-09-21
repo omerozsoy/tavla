@@ -53,7 +53,10 @@ class PanelController extends Controller
         if ($user && $user->is_admin && ! $user->isBanned()) {
             Auth::login($user);
             $request->session()->regenerate();
-            return redirect('/panel/users');
+            return redirect('/panel/users')->withHeaders([
+                'Cache-Control' => 'no-store',
+                'Referrer-Policy' => 'no-referrer',
+            ]);
         }
         return redirect('/panel/login')->withErrors(['email' => 'Oturum doğrulanamadı, giriş yap.']);
     }
