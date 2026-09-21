@@ -46,6 +46,21 @@ describe('shouldApplyServerState', () => {
     const local: SyncLocal = { turn: 'black', diceCount: 2, playedCount: 0, appliedServerVersion: 0 }
     expect(shouldApplyServerState(local, rv(9, 'black'), 'white')).toBe(true)
   })
+
+  it('MAÇ-SONU FIX: done=true iken KENDİ turumda zar olsa bile uygula (#5PTWV kilitlenme)', () => {
+    // KAYBEDEN taraf kendi turunda bayat zarla dururken rakip maçı kazanan hamleyle bitirir.
+    // ESKİ BUG: midMove -> poll done'ı hiç uygulamaz -> ekran kilitli + cube/respond 409.
+    // FIX: sunucu done=true dediğinde mid-move kalkanı DEVRE DIŞI -> maç-sonu ekranı gelir.
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 5 }
+    const done = { ...rv(9, 'white'), server_match: { opened: true, done: true } }
+    expect(shouldApplyServerState(local, done, 'white')).toBe(true)
+  })
+
+  it('done=true olsa bile SÜRÜM ilerlemediyse uygulamaz (tekrar-uygulama/döngü önlenir)', () => {
+    const local: SyncLocal = { turn: 'white', diceCount: 2, playedCount: 1, appliedServerVersion: 9 }
+    const done = { ...rv(9, 'white'), server_match: { opened: true, done: true } }
+    expect(shouldApplyServerState(local, done, 'white')).toBe(false)
+  })
 })
 
 describe('rollResponseAction', () => {
