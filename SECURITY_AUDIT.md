@@ -52,8 +52,8 @@ Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-re
 Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `daily_reward=16`, `lucky_wheel_spin=11`, `dice_slot_payout=12`, `shop_purchase=2`. Bu tarihsel satırlar değiştirilmedi.
 **Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
 **Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
-**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt.
-**Recommended fix:** Her ekonomik komuta benzersiz business reference/command id ekle; ledger üzerinde unique koruma ve duplicate-job testleri uygula; direct balance update için CI kontrolü ekle.
+**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt. Production’daki 116 satır referanssızlığı tek başına çift ödeme kanıtı değildir; mevcut akışların cooldown/ownership kontrolleri ayrı bir savunma katmanıdır.
+**Recommended fix:** Her ekonomik komuta benzersiz business reference/command id ekle; recurring ödüller için claim-period anahtarı, spin’ler için spin receipt, mağaza için order/ownership referansı kullan; ledger üzerinde unique koruma ve duplicate-request/job testleri uygula; direct balance update için CI kontrolü ekle. Tarihsel 116 satırı otomatik yeniden yazma; yalnız reconciliation/forensics için ayrı backfill planla.
 **Database protection required?:** Evet.
 **Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
