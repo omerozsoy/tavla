@@ -65,6 +65,7 @@ class AdminController extends Controller
             return $this->fail('Bu hesap yapılandırmada yönetici; yetkisi kaldırılamaz.', 422);
         }
 
+        $beforeCoins = (int) ($user->coins ?? 0);
         $user = DB::transaction(function () use ($data, $user) {
             $locked = User::lockForUpdate()->findOrFail($user->id);
             if (array_key_exists('coins', $data)) {
@@ -87,6 +88,15 @@ class AdminController extends Controller
 
             return $locked;
         });
+
+        if (array_key_exists('coins', $data)) {
+            \App\Support\Shield::audit(
+                (int) $me->id,
+                'admin_wallet_adjustment',
+                sprintf('target_user=%d balance_before=%d balance_after=%d', $user->id, $beforeCoins, (int) $user->coins),
+                3
+            );
+        }
 
         return response()->json(['user' => $this->row($user->fresh())]);
     }

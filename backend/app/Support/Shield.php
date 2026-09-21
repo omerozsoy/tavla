@@ -262,6 +262,19 @@ class Shield
         }
     }
 
+    /** Record a privileged security/audit action without exposing credentials or raw payloads. */
+    public static function audit(?int $actorId, string $type, string $detail, int $severity = 2): void
+    {
+        if (! self::tablesReady()) {
+            return;
+        }
+        try {
+            self::event($actorId, request()->ip(), $type, $severity, request()->path(), request()->method(), 200, $detail);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('shield audit write failed', ['type' => $type, 'err' => $e->getMessage()]);
+        }
+    }
+
     /** Ara sıra eski kayıtları buda (istek başına ~1/400 olasılık). */
     private static function maybePrune(): void
     {

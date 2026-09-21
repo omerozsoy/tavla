@@ -1072,3 +1072,7 @@ The failure branch of the bank callback now re-reads and locks the payment row i
 ## Audit amendment — economic room cleanup safety (2026-09-21)
 
 Opportunistic and scheduled stale-room cleanup now deletes only rooms that are both `finished` and `settled`. Playing, escrowed, and finished-unsettled rooms are retained for settlement/backstop recovery instead of deleting the only hold/payout reference. This closes the destructive cleanup path from SEC-011; reconciliation and archival retention remain open work.
+
+## Audit amendment — privileged wallet adjustment audit events (2026-09-21)
+
+Admin REST and legacy panel coin adjustments now emit high-severity Shield audit events containing actor ID, target user ID, and before/after balance values. Credentials and raw request payloads are not recorded. This improves forensic coverage for SEC-015; the immutable wallet ledger and Filament/admin adjustment reason/reference fields remain open.
