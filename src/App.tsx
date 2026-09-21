@@ -4389,7 +4389,13 @@ export default function App() {
     let cancelled = false
     const poll = async () => {
       try {
-        const rv = await showRoom(room.code)
+        // Oda sürümleri oda-yereldir. Son uygulanan sürümü gönderince backend
+        // değişiklik yoksa 204 döner; büyük state her 1.2 saniyede yeniden taşınmaz.
+        const isAuthoritative = authoritativeRef.current || !!room.authoritative
+        const appliedVersion = isAuthoritative
+          ? appliedServerVersionRef.current
+          : appliedVersionRef.current
+        const rv = await showRoom(room.code, appliedVersion >= 0 ? appliedVersion : undefined)
         if (cancelled || !rv) return
         setRoom((r) =>
           r
