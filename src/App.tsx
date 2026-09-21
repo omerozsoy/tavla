@@ -386,6 +386,7 @@ import {
   getMenuConfig,
   buyMembership,
   cartCoinOrder,
+  newCommandId,
   cartCheckout,
   isBankTransfer,
   type BankTransferResult,
@@ -7705,6 +7706,8 @@ export default function App() {
                 coinProducts.map((i) => ({ product_id: i.product!.id, qty: i.qty, color: i.product!.color ?? null })),
                 sel.shippingId as number,
                 sel.billingId,
+                undefined,
+                newCommandId(),
               )
               setUser((u) => (u ? { ...u, coins: r.coins } : u))
               setCartItems((prev) => prev.filter((i) => !(i.kind === 'product' && i.product?.payment === 'coin')))

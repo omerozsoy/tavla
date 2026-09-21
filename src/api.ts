@@ -10,7 +10,7 @@ const API_URL =
 const TOKEN_KEY = 'tavla.token'
 const GATE_KEY = 'tavla.gate' // "kapali test" site sifresi (X-Site-Gate basligi)
 
-function newCommandId(): string {
+export function newCommandId(): string {
   if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
   return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
 }
@@ -601,6 +601,7 @@ export interface OrderInput extends ShippingInput {
   qty: number
   color?: string | null
   payment_type: 'coin' | 'money'
+  idempotency_key?: string
 }
 export interface ProductOrder {
   id: number
@@ -697,6 +698,7 @@ export async function cartCoinOrder(
   shippingAddressId: number,
   billingAddressId?: number | null,
   note?: string,
+  idempotencyKey?: string,
 ): Promise<{ ok: boolean; coins: number; orders: ProductOrder[] }> {
   return req('/products/cart/coin', {
     method: 'POST',
@@ -705,6 +707,7 @@ export async function cartCoinOrder(
       shipping_address_id: shippingAddressId,
       billing_address_id: billingAddressId ?? null,
       note: note || undefined,
+      idempotency_key: idempotencyKey,
     }),
   })
 }
