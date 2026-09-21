@@ -8,6 +8,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -26,6 +27,16 @@ class AnalyzeMatchPrJob implements ShouldQueue
     public int $timeout = 600;  // 60+ gnubg çağrısı olabilir
 
     public function __construct(public int $matchResultId) {}
+
+    /** Aynı match_result için ağır GNUbg hesaplarını worker'lar arasında seri çalıştır. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('match-pr:'.$this->matchResultId))
+                ->expireAfter(900)
+                ->dontRelease(),
+        ];
+    }
 
     public function handle(AnalysisOrchestrator $orch): void
     {

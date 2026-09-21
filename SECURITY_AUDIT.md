@@ -1016,3 +1016,5 @@ Admin API, legacy panel, and Filament user edits now lock the target user row be
 ## Audit amendment — queue visibility for long analysis jobs (2026-09-21)
 
 The default database, Redis, and Beanstalk queue `retry_after` is now 720 seconds, exceeding the 600-second PR analysis job timeout with margin. The previous 90-second default could make an in-progress heavy job visible to a second worker before the first worker finished. Existing environment overrides remain authoritative and must be set above the longest worker timeout in deployment.
+
+The PR and luck jobs also use Laravel `WithoutOverlapping` locks keyed by `match_result_id`, with expiries longer than their normal work windows. A duplicate dispatch is dropped while the first analysis is active. This is compute/result deduplication; wallet settlement still requires its own economic idempotency claim.
