@@ -10,6 +10,11 @@ const API_URL =
 const TOKEN_KEY = 'tavla.token'
 const GATE_KEY = 'tavla.gate' // "kapali test" site sifresi (X-Site-Gate basligi)
 
+function newCommandId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') return globalThis.crypto.randomUUID()
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}-${Math.random().toString(16).slice(2)}`
+}
+
 export function getToken(): string | null {
   try {
     return localStorage.getItem(TOKEN_KEY)
@@ -2122,7 +2127,7 @@ export async function serverRoll(
 ): Promise<{ dice: number[]; commit: string | null; version: number; reused: boolean; opening?: boolean; starter?: 'white' | 'black'; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/roll`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null }),
+    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), client_seed: clientSeed ?? null, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2136,7 +2141,7 @@ export async function serverMove(
 ): Promise<{ state: GameState; version: number; winner: string | null; match?: ServerMatch; match_done?: boolean; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/move`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), steps, expected_version: expectedVersion ?? null }),
+    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), steps, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2158,7 +2163,7 @@ export async function postLive(code: string, steps: Step[], turn: Player, seq: n
 export async function serverCubeOffer(code: string, expectedVersion?: number): Promise<{ match: ServerMatch; version: number }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/offer`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), expected_version: expectedVersion ?? null }),
+    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2170,7 +2175,7 @@ export async function serverCubeRespond(
 ): Promise<{ match: ServerMatch; action: string; version: number; match_done: boolean; winner?: string; bot?: BotTurn[]; bot_status?: BotStatus }> {
   return req(`/rooms/${encodeURIComponent(code)}/cube/respond`, {
     method: 'POST',
-      body: JSON.stringify({ token: playerToken(), action, expected_version: expectedVersion ?? null }),
+      body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), action, expected_version: expectedVersion ?? null }),
   })
 }
 
@@ -2183,7 +2188,7 @@ export async function serverResign(
 ): Promise<{ state: GameState; match: ServerMatch; winner: string; version: number; match_done: boolean }> {
   return req(`/rooms/${encodeURIComponent(code)}/resign`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), resign_type: resignType, expected_version: expectedVersion ?? null }),
+    body: JSON.stringify({ token: playerToken(), command_id: newCommandId(), resign_type: resignType, expected_version: expectedVersion ?? null }),
   })
 }
 

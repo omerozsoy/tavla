@@ -1054,3 +1054,9 @@ The settlement path also now rejects a loser balance below the locked amount wit
 ## Audit amendment — validator diagnostic access (2026-09-21)
 
 The `/api/validator-check` diagnostic endpoint is now restricted to an authenticated admin and retains throttling. Anonymous callers can no longer trigger validator work or map internal service availability through this route.
+
+## Audit amendment — authoritative command replay claim (2026-09-21)
+
+Authoritative `roll`, `move`, cube offer/respond, and `resign` requests now accept a UUID `command_id`. When the `room_commands` table exists, the locked room transaction records a unique `(room_id, command_id, payload_hash)` receipt and rejects a duplicate or payload mutation with `409`; missing IDs fail closed with `428`, and a missing command store returns `503`. The frontend includes a fresh UUID for each new command. The migration is created but intentionally not executed in this audit session. Existing deployments must run it before enabling authoritative commands.
+
+**Residual limitation:** this first receipt layer returns a replay error rather than a persisted original response. A later finalization phase should store the canonical response/result version and return it as an idempotent NO-OP. Network retry code must reuse the original command ID when added.

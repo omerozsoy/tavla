@@ -2023,6 +2023,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'client_seed' => ['nullable', 'string', 'max:40'],
+            'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -2142,6 +2143,9 @@ class RoomController extends Controller
             if (($stale = $this->staleCommand($room, $data)) !== null) {
                 return $stale;
             }
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'roll')) !== null) {
+                return $command;
+            }
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);
             }
@@ -2193,6 +2197,7 @@ class RoomController extends Controller
             'steps.*.from' => ['required'],
             'steps.*.to' => ['required'],
             'steps.*.die' => ['required', 'integer', 'min:1', 'max:6'],
+            'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -2269,6 +2274,9 @@ class RoomController extends Controller
             }
 
             // Otoriter durumu güncelle (validator uyguladı + sırayı devretti).
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'move')) !== null) {
+                return $command;
+            }
             $new = $result['state'];
             $winner = \App\Support\Backgammon::winner($new);
 
@@ -2332,6 +2340,7 @@ class RoomController extends Controller
     {
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
+            'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -2352,6 +2361,9 @@ class RoomController extends Controller
             }
             if (($stale = $this->staleCommand($room, $data)) !== null) {
                 return $stale;
+            }
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'cube_offer')) !== null) {
+                return $command;
             }
             $color = $this->slotColor($slot);
             // MERKEZİ KURAL KONTROLÜ: tüm küp kuralları (sıra/Crawford/zar/açılış/sahiplik/64/
@@ -2421,6 +2433,7 @@ class RoomController extends Controller
         $data = $request->validate([
             'token' => ['required', 'string', 'max:64'],
             'action' => ['required', 'string', 'in:take,drop'],
+            'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -2441,6 +2454,9 @@ class RoomController extends Controller
             }
             if (($stale = $this->staleCommand($room, $data)) !== null) {
                 return $stale;
+            }
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'cube_respond')) !== null) {
+                return $command;
             }
             if ($room->bot && $slot === 'p2') {
                 return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
@@ -2504,6 +2520,7 @@ class RoomController extends Controller
             'token' => ['required', 'string', 'max:64'],
             // Pes türü: SINGLE(×1)/GAMMON(×2)/BACKGAMMON(×3). Yoksa geriye-uyum: single.
             'resign_type' => ['nullable', 'in:single,gammon,backgammon'],
+            'command_id' => ['nullable', 'uuid'],
             'expected_version' => ['nullable', 'integer', 'min:0'],
         ]);
 
@@ -2527,6 +2544,9 @@ class RoomController extends Controller
             }
             if ($room->bot && $slot === 'p2') {
                 return $this->fail('Bot slotu istemciden oynatılamaz.', 403);
+            }
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'resign')) !== null) {
+                return $command;
             }
             $sm = is_array($room->server_match) ? $room->server_match : null;
             if (! $sm || ! empty($sm['done'])) {
@@ -2936,6 +2956,59 @@ class RoomController extends Controller
     private function slotOf(Room $room, string $token, Request $request): ?string
     {
         return RoomAccess::slot($room, $request->user('sanctum'), $token);
+    }
+
+    /**
+     * Claim an authoritative command once per room. The room row is already locked by
+     * the caller transaction, so the unique receipt is also the replay serialization point.
+     */
+    private function claimAuthoritativeCommand(Room $room, array $data, string $slot, string $action): ?\Symfony\Component\HttpFoundation\Response
+    {
+        if (! $room->authoritative) {
+            return null;
+        }
+        $commandId = $data['command_id'] ?? null;
+        if (! $commandId) {
+            return $this->fail('Komut kimliÄŸi gerekli; isteÄŸi yeniden oluÅŸtur.', 428, [
+                'reason' => 'command-id-required',
+            ]);
+        }
+        if (! Schema::hasTable('room_commands')) {
+            return $this->fail('Komut replay korumasÄ± hazÄ±r deÄŸil.', 503, [
+                'reason' => 'command-store-unavailable',
+            ]);
+        }
+
+        $payload = $data;
+        unset($payload['command_id']);
+        $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $existing = \App\Models\RoomCommand::where('room_id', $room->id)
+            ->where('command_id', $commandId)
+            ->lockForUpdate()->first();
+        if ($existing) {
+            if (! hash_equals((string) $existing->payload_hash, $hash)) {
+                return $this->fail('AynÄ± komut kimliÄŸi farklÄ± iÃ§erikle kullanÄ±lamaz.', 409, [
+                    'reason' => 'command-payload-mismatch',
+                ]);
+            }
+
+            return $this->fail('Bu komut daha Ã¶nce iÅŸlendi.', 409, [
+                'reason' => 'command-replayed',
+                'version' => (int) $room->server_version,
+            ]);
+        }
+
+        \App\Models\RoomCommand::create([
+            'room_id' => $room->id,
+            'command_id' => $commandId,
+            'action' => $action,
+            'actor_user_id' => $room->{$slot.'_user_id'},
+            'actor_slot' => $slot,
+            'payload_hash' => $hash,
+            'expected_version' => $data['expected_version'] ?? null,
+        ]);
+
+        return null;
     }
 
     /**
