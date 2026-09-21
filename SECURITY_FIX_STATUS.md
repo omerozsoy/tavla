@@ -146,6 +146,10 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 
 Admin API, legacy panel ve Filament kullanıcı düzenlemesi hedef user satırını `lockForUpdate()` ile kilitliyor; `coins` değeri `coins_reserved` altına indirilemiyor. Bu, settlement ile yarışan mutlak bakiye overwrite’ını ve aktif escrow’un bozulmasını engelliyor. Immutable coin ledger ve actor/reason/reference audit trail hâlâ sonraki fazda.
 
+## Rating lock fail-closed
+
+`reportRating` cache lock alınırken exception oluşursa artık devam etmiyor; herhangi bir rating/stat/result yazmadan `503 result-lock-unavailable` dönüyor. Cache kesintisinin fail-open duplicate Elo üretmesi önlendi. Rating/result/side-effect işlemlerinin tek atomik finalization transaction'ı ve lock release protokolü hâlâ ayrı iş olarak açık.
+
 ## Queue visibility düzeltmesi
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
