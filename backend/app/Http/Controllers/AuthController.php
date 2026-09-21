@@ -1706,10 +1706,15 @@ class AuthController extends Controller
         if ($amount <= 0) {
             return;
         }
-        User::where('id', $userId)->where('welcome_granted', false)->update([
-            'welcome_granted' => true,
-            'coins' => \Illuminate\Support\Facades\DB::raw('coins + '.$amount),
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($userId, $amount) {
+            $user = User::lockForUpdate()->find($userId);
+            if (! $user || (bool) $user->welcome_granted) {
+                return;
+            }
+            app(\App\Services\WalletService::class)->credit($user, $amount, 'welcome_reward', User::class, $user->id);
+            $user->welcome_granted = true;
+            $user->save();
+        });
     }
 
     /**

@@ -1086,3 +1086,5 @@ An append-only `WalletTransaction` model, migration, and `WalletService` were ad
 Shop purchases, daily rewards, Lucky Wheel spins, and Dice Slot debit/payout paths now also call `WalletService`. Their existing user-row locks and business guards remain in place. Tournament, match settlement, achievements, and admin absolute adjustments still need migration to the same ledger protocol.
 
 Tournament entry fees, refunds, configured prizes, and entry-fee pool payouts now use `WalletService` with locked recipient rows and tournament references. Match settlement and achievement/reward writers remain to be migrated before the ledger invariant is complete.
+
+Physical product purchases (single/cart) and the one-time welcome reward now use the same service. Welcome grant retains its row-lock/idempotency guard; remaining direct writers are match settlement, achievement rewards, Lucky Wheel reward fulfillment, and admin absolute balance changes.
