@@ -468,9 +468,17 @@ class PaymentController extends Controller
                     $payment->status = 'paid';
                 }
             } elseif ($payment->status === 'pending') {
-                $payment->status = 'failed';
-                $payment->bank_msg = $amountOk ? $res['msg'] : 'Tutar uyusmuyor';
-                $payment->save();
+                // A failed callback must not overwrite a concurrent successful callback.
+                // Re-read and lock the payment row before changing its terminal status.
+                DB::transaction(function () use ($payment, $amountOk, $res) {
+                    $locked = Payment::whereKey($payment->id)->lockForUpdate()->first();
+                    if (! $locked || $locked->status !== 'pending') {
+                        return;
+                    }
+                    $locked->status = 'failed';
+                    $locked->bank_msg = $amountOk ? $res['msg'] : 'Tutar uyusmuyor';
+                    $locked->save();
+                });
             }
         }
 

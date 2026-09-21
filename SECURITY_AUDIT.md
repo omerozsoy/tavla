@@ -1060,3 +1060,7 @@ The `/api/validator-check` diagnostic endpoint is now restricted to an authentic
 Authoritative `roll`, `move`, cube offer/respond, and `resign` requests now accept a UUID `command_id`. When the `room_commands` table exists, the locked room transaction records a unique `(room_id, command_id, payload_hash)` receipt and rejects a duplicate or payload mutation with `409`; missing IDs fail closed with `428`, and a missing command store returns `503`. The frontend includes a fresh UUID for each new command. The migration is created but intentionally not executed in this audit session. Existing deployments must run it before enabling authoritative commands.
 
 **Residual limitation:** this first receipt layer returns a replay error rather than a persisted original response. A later finalization phase should store the canonical response/result version and return it as an idempotent NO-OP. Network retry code must reuse the original command ID when added.
+
+## Audit amendment — payment failure callback race (2026-09-21)
+
+The failure branch of the bank callback now re-reads and locks the payment row inside a transaction before writing `failed`. A stale failure callback can no longer overwrite a concurrent successful `paid` claim. Payment fulfillment remains transactional for the local account/order writes; immutable payment event and wallet-ledger reconciliation remain open under SEC-012 and SEC-015.
