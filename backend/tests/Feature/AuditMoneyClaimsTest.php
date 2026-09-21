@@ -26,6 +26,7 @@ class AuditMoneyClaimsTest extends TestCase
             ->expectsOutput('active_money_rooms=1')
             ->expectsOutput('claim_rows=1')
             ->expectsOutput('duplicate_active_users=0')
+            ->expectsOutput('duplicate_room_participants=0')
             ->expectsOutput('missing_claims=0')
             ->expectsOutput('stale_claims=0')
             ->assertExitCode(0);

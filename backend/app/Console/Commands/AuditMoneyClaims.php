@@ -53,6 +53,11 @@ class AuditMoneyClaims extends Command
             })
             ->get(['id', 'code', 'status', 'p1_user_id', 'p2_user_id']);
 
+        $duplicateParticipants = Room::query()
+            ->whereNotNull('p1_user_id')
+            ->whereColumn('p1_user_id', 'p2_user_id')
+            ->count();
+
         $expected = [];
         $duplicateUsers = [];
         foreach ($rooms as $room) {
@@ -84,6 +89,7 @@ class AuditMoneyClaims extends Command
         $this->line('active_money_rooms='.count($rooms));
         $this->line('claim_rows='.$claims->count());
         $this->line('duplicate_active_users='.count($duplicateUsers));
+        $this->line('duplicate_room_participants='.$duplicateParticipants);
         $this->line('missing_claims='.count($missing));
         $this->line('stale_claims='.count($stale));
 
@@ -97,6 +103,6 @@ class AuditMoneyClaims extends Command
             $this->warn("stale_claim user={$userId} expected=".($row['expected'] ?? 'none')." actual={$row['actual']}");
         }
 
-        return ($duplicateUsers || $missing || $stale) ? self::FAILURE : self::SUCCESS;
+        return ($duplicateUsers || $duplicateParticipants || $missing || $stale) ? self::FAILURE : self::SUCCESS;
     }
 }
