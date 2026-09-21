@@ -77,6 +77,34 @@ function fmtTime(iso?: string | null): string {
   return d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
 }
 
+// Secilen gorseli DM icin SIKISTIR: en fazla DM_IMG_MAX_DIM px'e olcekle + JPEG kalite 0.82 ->
+// base64 data-URL. 4-5 MB foto ~200-400 KB'a iner (payload + DB makul, backend limiti 3M char).
+const DM_IMG_MAX_DIM = 1280
+async function compressImageFile(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const r = new FileReader()
+    r.onerror = () => reject(new Error('read'))
+    r.onload = () => resolve(r.result as string)
+    r.readAsDataURL(file)
+  })
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const im = new Image()
+    im.onload = () => resolve(im)
+    im.onerror = () => reject(new Error('decode'))
+    im.src = dataUrl
+  })
+  const scale = Math.min(1, DM_IMG_MAX_DIM / Math.max(img.width, img.height))
+  const width = Math.max(1, Math.round(img.width * scale))
+  const height = Math.max(1, Math.round(img.height * scale))
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return dataUrl // canvas yoksa orijinali dene (backend limiti eler)
+  ctx.drawImage(img, 0, 0, width, height)
+  return canvas.toDataURL('image/jpeg', 0.82)
+}
+
 export default function Messages({
   focusUserId,
   onClose,
@@ -105,6 +133,10 @@ export default function Messages({
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [emojiOpen, setEmojiOpen] = useState(false)
+  const [pendingImage, setPendingImage] = useState<string | null>(null) // gonderilmeyi bekleyen sikistirilmis gorsel
+  const [imgBusy, setImgBusy] = useState(false) // gorsel sikistiriliyor
+  const [zoomImage, setZoomImage] = useState<string | null>(null) // tam-ekran gorsel onizleme
+  const fileRef = useRef<HTMLInputElement | null>(null)
   const [partnerTyping, setPartnerTyping] = useState(false) // karsi taraf "yaziyor…" mu
   const [search, setSearch] = useState('') // sol listede sohbet arama
   const [pane, setPane] = useState<'chats' | 'requests'>('chats') // sol liste: sohbetler / istekler
@@ -198,18 +230,41 @@ export default function Messages({
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, activeId, loadingThread])
 
+  // Gorsel sec + sikistir -> gonderilmeyi bekleyen onizleme (doSend ile birlikte gider).
+  async function onPickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    e.target.value = '' // ayni dosyayi tekrar secebilmek icin sifirla
+    if (!file || imgBusy) return
+    setImgBusy(true)
+    try {
+      const b64 = await compressImageFile(file)
+      if (b64.length > 2_800_000) {
+        toast.error(t('dm.imageTooBig')) // backend limiti 3M; guvenli tarafta uyar
+        return
+      }
+      setPendingImage(b64)
+    } catch {
+      toast.error(t('dm.imageBad'))
+    } finally {
+      setImgBusy(false)
+    }
+  }
+
   async function doSend() {
     const body = text.trim()
-    if (!body || sending || activeId == null) return
+    const image = pendingImage
+    // Metin VEYA gorsel gerekli (ikisi de bos ise gonderme).
+    if ((!body && !image) || sending || activeId == null) return
     setEmojiOpen(false)
     setSending(true)
     // Iyimser ekle (+ pendingRef: 3sn tazeleme araya girse de kaybolmasin)
-    const optimistic: ChatMessage = { id: -Date.now(), body, mine: true, created_at: new Date().toISOString() }
+    const optimistic: ChatMessage = { id: -Date.now(), body, image, mine: true, created_at: new Date().toISOString() }
     pendingRef.current = [...pendingRef.current, optimistic]
     setMessages((m) => [...m, optimistic])
     setText('')
+    setPendingImage(null)
     try {
-      const r = await sendMessage(activeId, body)
+      const r = await sendMessage(activeId, body, image)
       pendingRef.current = pendingRef.current.filter((x) => x.id !== optimistic.id)
       setMessages((m) => {
         const idx = m.findIndex((x) => x.id === optimistic.id)
@@ -228,6 +283,7 @@ export default function Messages({
       pendingRef.current = pendingRef.current.filter((x) => x.id !== optimistic.id)
       setMessages((m) => m.filter((x) => x.id !== optimistic.id))
       setText(body)
+      if (image) setPendingImage(image) // gorseli de geri yukle (tekrar denenebilsin)
       toast.error(err instanceof ApiError && err.message ? err.message : t('dm.sendFail'))
     } finally {
       setSending(false)
@@ -387,7 +443,13 @@ export default function Messages({
                         {th.last?.created_at && <span className="messages-thread-time">{fmtTime(th.last.created_at)}</span>}
                       </span>
                       <span className="messages-thread-last">
-                        {th.last ? (th.last.mine ? `${t('dm.you')}: ${th.last.body}` : th.last.body) : ''}
+                        {th.last
+                          ? (() => {
+                              // Yalniz gorsel (metin bos) -> "📷 Görsel" onizlemesi.
+                              const preview = th.last.body || (th.last.has_image ? t('dm.imageLabel') : '')
+                              return th.last.mine ? `${t('dm.you')}: ${preview}` : preview
+                            })()
+                          : ''}
                       </span>
                     </span>
                     {th.unread > 0 && <span className="messages-badge">{th.unread > 9 ? '9+' : th.unread}</span>}
@@ -525,8 +587,17 @@ export default function Messages({
                           ) : (
                             <span className="msg-avatar-spacer" aria-hidden="true" />
                           )}
-                          <div className={`msg-bubble ${m.mine ? 'mine' : 'theirs'}`}>
-                            <span className="msg-text">{m.body}</span>
+                          <div className={`msg-bubble ${m.mine ? 'mine' : 'theirs'} ${m.image ? 'has-image' : ''}`}>
+                            {m.image && (
+                              <img
+                                className="msg-image"
+                                src={m.image}
+                                alt=""
+                                loading="lazy"
+                                onClick={() => setZoomImage(m.image ?? null)}
+                              />
+                            )}
+                            {m.body && <span className="msg-text">{m.body}</span>}
                             <span className="msg-meta">
                               <span className="msg-time">{fmtTime(m.created_at)}</span>
                               {m.mine && (
@@ -568,6 +639,20 @@ export default function Messages({
                   <div ref={listEndRef} />
                 </div>
 
+                {pendingImage && (
+                  <div className="messages-img-preview">
+                    <img src={pendingImage} alt="" />
+                    <button
+                      type="button"
+                      className="img-preview-remove"
+                      onClick={() => setPendingImage(null)}
+                      aria-label={t('dm.removeImage')}
+                      title={t('dm.removeImage')}
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  </div>
+                )}
                 <div className="messages-compose">
                   <div className="emoji-wrap">
                     <button
@@ -597,6 +682,23 @@ export default function Messages({
                       </div>
                     )}
                   </div>
+                  <button
+                    type="button"
+                    className="emoji-btn attach-btn"
+                    onClick={() => fileRef.current?.click()}
+                    disabled={imgBusy}
+                    aria-label={t('dm.attachImage')}
+                    title={t('dm.attachImage')}
+                  >
+                    {imgBusy ? '⏳' : '📷'}
+                  </button>
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={onPickImage}
+                  />
                   <input
                     ref={inputRef}
                     value={text}
@@ -615,7 +717,7 @@ export default function Messages({
                     maxLength={4000}
                     onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), doSend())}
                   />
-                  <Button variant="default" size="icon" disabled={sending || !text.trim()} onClick={doSend} aria-label={t('dm.send')}>
+                  <Button variant="default" size="icon" disabled={sending || imgBusy || (!text.trim() && !pendingImage)} onClick={doSend} aria-label={t('dm.send')}>
                     <Icon name="arrow-right" size={18} />
                   </Button>
                 </div>
@@ -624,6 +726,11 @@ export default function Messages({
           </div>
         </div>
       </div>
+      {zoomImage && (
+        <div className="dm-zoom-overlay" onClick={() => setZoomImage(null)} role="dialog" aria-modal="true">
+          <img src={zoomImage} alt="" onClick={(e) => e.stopPropagation()} />
+        </div>
+      )}
     </div>
   )
 }

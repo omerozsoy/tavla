@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 // Ozel mesajlasma (DM). Arkadaslar dogrudan yazisir. Arkadas OLMAYAN birine
 // yazilinca konusma aliciya "istek" (message request) olarak duser: alici kabul
@@ -89,6 +90,7 @@ class MessageController extends Controller
         }
 
         $users = User::whereIn('id', $partnerIds)->get()->keyBy('id');
+        $hasImageCol = Schema::hasColumn('messages', 'image');
 
         // Ilgili istek satirlarini tek seferde cek (N+1 olmasin).
         $reqRows = DB::table('message_requests')
@@ -110,7 +112,7 @@ class MessageController extends Controller
             }
         }
 
-        $threads = $partnerIds->map(function ($pid) use ($me, $users, $out, $in) {
+        $threads = $partnerIds->map(function ($pid) use ($me, $users, $out, $in, $hasImageCol) {
             $u = $users->get($pid);
             if (! $u) {
                 return null;
@@ -128,6 +130,12 @@ class MessageController extends Controller
             // Onayimi bekleyen gelen istek mi?
             $isRequest = ! $open && $inRow && $inRow->status === 'pending';
 
+            // Liste önizlemesi: AĞIR base64 image blob'unu ÇEKME (thread listesi MB'larca şişerdi);
+            // yalnız gerekli kolonlar + hafif has_image ifadesi.
+            $lastCols = ['id', 'body', 'sender_id', 'read_at', 'created_at'];
+            if ($hasImageCol) {
+                $lastCols[] = DB::raw("(image IS NOT NULL AND image <> '') AS has_image");
+            }
             $last = Message::query()
                 ->where(function ($q) use ($me, $pid) {
                     $q->where('sender_id', $me)->where('receiver_id', $pid);
@@ -136,7 +144,7 @@ class MessageController extends Controller
                     $q->where('sender_id', $pid)->where('receiver_id', $me);
                 })
                 ->orderByDesc('created_at')->orderByDesc('id')
-                ->first();
+                ->first($lastCols);
             $unread = Message::where('sender_id', $pid)
                 ->where('receiver_id', $me)
                 ->whereNull('read_at')
@@ -146,6 +154,7 @@ class MessageController extends Controller
                 'user' => $this->pub($u),
                 'last' => $last ? [
                     'body' => $last->body,
+                    'has_image' => (bool) ($last->has_image ?? false), // liste önizlemesi "📷 Görsel"
                     'mine' => $last->sender_id === $me,
                     'read' => $last->read_at !== null,
                     'created_at' => optional($last->created_at)->toIso8601String(),
@@ -191,9 +200,11 @@ class MessageController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
+        $hasImageCol = Schema::hasColumn('messages', 'image');
         $messages = $rows->map(fn ($m) => [
             'id' => $m->id,
             'body' => $m->body,
+            'image' => $hasImageCol ? ($m->image ?? null) : null,
             'mine' => $m->sender_id === $me,
             'read' => $m->read_at !== null, // gonderdigim mesaj karsi tarafca okundu mu (mavi tik)
             'created_at' => optional($m->created_at)->toIso8601String(),
@@ -234,12 +245,16 @@ class MessageController extends Controller
     public function send(Request $request, int $userId)
     {
         $me = $request->user();
+        $hasImageCol = Schema::hasColumn('messages', 'image');
         $data = $request->validate([
-            'body' => ['required', 'string', 'max:4000'],
+            'body' => ['nullable', 'string', 'max:4000'],
+            // GÖRSEL: base64 data-URL (avatar deseni, daha büyük limit; istemci sıkıştırır).
+            'image' => ['nullable', 'string', 'max:3000000', 'starts_with:data:image/'],
         ]);
-        $body = trim($data['body']);
-        if ($body === '') {
-            return $this->fail('Mesaj boş olamaz.', 422);
+        $body = trim((string) ($data['body'] ?? ''));
+        $image = $hasImageCol ? ($data['image'] ?? null) : null;
+        if ($body === '' && ! $image) {
+            return $this->fail('Mesaj boş olamaz.', 422); // metin VEYA görsel gerekli
         }
         if ($userId === $me->id) {
             return $this->fail('Kendine mesaj gönderemezsin.', 422);
@@ -277,18 +292,23 @@ class MessageController extends Controller
             }
         }
 
-        $msg = Message::create([
+        $attrs = [
             'sender_id' => $me->id,
             'receiver_id' => $userId,
             'body' => $body,
             'read_at' => null,
             'created_at' => now(),
-        ]);
+        ];
+        if ($hasImageCol) {
+            $attrs['image'] = $image;
+        }
+        $msg = Message::create($attrs);
 
         return response()->json([
             'message' => [
                 'id' => $msg->id,
                 'body' => $msg->body,
+                'image' => $hasImageCol ? $msg->image : null,
                 'mine' => true,
                 'read' => false,
                 'created_at' => optional($msg->created_at)->toIso8601String(),

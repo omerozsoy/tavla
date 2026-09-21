@@ -12,6 +12,7 @@ class Message extends Model
         'sender_id',
         'receiver_id',
         'body',
+        'image',
         'read_at',
         'created_at',
     ];
