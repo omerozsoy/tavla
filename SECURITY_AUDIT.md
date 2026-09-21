@@ -2,7 +2,7 @@
 
 ## SECURITY SUMMARY
 
-Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamış riskler tutulur. Tamamlanan düzeltmeler ve kapanmış bulgular rapordan çıkarılmıştır.
+Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamış riskler bulunur.
 
 | Severity | Kalan bulgu |
 |---|---:|
@@ -14,141 +14,134 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
 
-| İnvariant | Durum | Kalan kanıt boşluğu |
+| İnvariant | Durum | Kalan iş |
 |---|---|---|
-| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | `active_money_match_claims.user_id` unique claim'i production’da [99] batch ile kuruldu; eski aktif odaların backfill doğrulaması ve gerçek MySQL/InnoDB paralel test bekliyor. |
-| Aynı match + aynı user duplicate participant olamaz | PARTIAL | Claim tablosu kullanıcı başına tek aktif ekonomik oda sağlar; mevcut eski room participant satırları için backfill/duplicate temizliği ve production constraint kanıtı bekliyor. |
-| Aynı match iki kez settle edilemez | PARTIAL | Command ve settlement guard'ları var; queue retry, gerçek DB isolation ve kalıcı settlement referansının production kanıtı eksik. |
-| Aynı game action iki kez uygulanamaz | PASS (test edilen HTTP command yolları) | HTTP dışı tüketici veya eski deployment sürümü ayrıca doğrulanmalı. |
-| Client game result belirleyemez | PARTIAL | Doğrulanmış server result yolları korunuyor; tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zincir kanıtı yok. |
-| Client wallet balance değiştiremez | PARTIAL | WalletService satır kilidi + transaction + ledger kullanıyor; tüm ekonomik yazarların tek servisi kullandığı production kanıtlanmadı. |
-| Client dice sonucunu belirleyemez | PARTIAL | Current authoritative roll ve unbiased mapping testli; production seed/reveal ve tüm legacy odaların kapsamı kanıtlanmadı. |
-| Stale request reddedilir | PASS (authoritative command yolları) | Legacy/harici entegrasyonların deployment sürümü doğrulanmalı. |
-| Timeout/AFK server tarafından belirlenir | PARTIAL | Authoritative clock yolu korunuyor; legacy ve scheduler deployment zincirinin tamamı gerçek ortamda kanıtlanmadı. |
-| WebSocket event'i state değiştiremez | UNKNOWN / mevcut repoda socket yok | Production'da harici socket/broadcast servisi çalışıp çalışmadığı doğrulanmadı. |
-| Immutable wallet ledger | PARTIAL | Ledger tablosu ve WalletService transaction'ı var; tüm direct `users.coins` yazarlarının kapatıldığı ve production migration durumunun kanıtı yok. |
+| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | Eski aktif odaları claim kayıtlarıyla read-only karşılaştır ve gerçek MySQL/InnoDB paralel admission testi yap. |
+| Aynı match + aynı user duplicate participant olamaz | PARTIAL | Eski room kayıtlarını ve production duplicate durumunu doğrula. |
+| Aynı match iki kez settle edilemez | PARTIAL | Gerçek queue retry ve DB isolation davranışını production benzeri ortamda doğrula. |
+| Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
+| Client wallet balance değiştiremez | PARTIAL | Referanssız ekonomik hareketler için ortak idempotency protokolünü tamamla. |
+| Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
+| Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zincirini production’da doğrula. |
+| WebSocket event'i state değiştiremez | UNKNOWN | Production’da harici socket/broadcast servisi kullanılıp kullanılmadığını doğrula. |
+| Immutable wallet ledger | PARTIAL | Tüm ekonomik yazarlar ve production ledger şeması için deployment kanıtı topla. |
 
 ## KALAN BULGULAR
 
-### SEC-DB-001 — Money-match admission için DB seviyesinde claim yok
+### SEC-DB-001 — Money-match admission için gerçek DB yarış kanıtı eksik
 
-**Severity:** HIGH
-**Category:** Concurrency / database invariant
-**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations
-**Affected endpoint/event:** matchmaking, room join/enter/rematch
-**Description:** `active_money_match_claims` migration'ı ve admission entegrasyonu artık kullanıcı başına DB unique claim kullanıyor. Production migration çalıştı; mevcut eski aktif odalar için güvenli backfill/duplicate temizliği ve gerçek InnoDB yarış kanıtı hâlâ eksik.  
-**Attack scenario:** Aynı user ile iki paralel HTTP isteği farklı transaction'larda admission kontrolünü geçerse iki aktif money match oluşabilir.
-**Root cause:** Önceki akış yalnız application row-lock ve sorgu kontrolüne dayanıyordu; yeni claim tablosunun production rollout'u ve backfill'i henüz kanıtlanmadı.
-**Evidence:** `ActiveMoneyClaimTest` **2 test / 8 assertions** ile aynı oda idempotency’si, kullanıcı başına tek oda ve release sonrası yeni odaya claim doğrulandı; SQLite `lockForUpdate()` gerçek InnoDB davranışını kanıtlamaz. Production `migrate:status` çıktısında `2026_09_22_020000_create_active_money_match_claims` **[99] Ran** olarak görüldü; production engine/isolation ve eski aktif oda backfill'i ayrıca doğrulanmadı.  
-**Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.
-**Recommended fix:** Mevcut aktif odaları read-only sorguyla claim tablosuyla karşılaştır; duplicate varsa oyun/coin değiştirmeden operasyon planı oluştur; settlement/cancel/cleanup/recovery claim release'lerini doğrula ve gerçek MySQL paralel testi çalıştır.  
-**Database protection required?:** Evet.
-**Regression test required?:** Evet; gerçek MySQL ile 10–50 paralel join/enter isteği.
+**Severity:** HIGH  
+**Category:** Concurrency / database invariant  
+**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations  
+**Affected endpoint/event:** matchmaking, room join/enter/rematch  
+**Description:** Kullanıcı başına unique claim mekanizmasının eski aktif odalarla tutarlılığı ve gerçek InnoDB yarış davranışı production benzeri ortamda kanıtlanmadı.  
+**Attack scenario:** Aynı user ile paralel admission istekleri iki aktif money match oluşturmaya çalışabilir.  
+**Root cause:** SQLite testleri gerçek MySQL isolation ve lock davranışını temsil etmez; eski odaların claim backfill durumu bilinmiyor.  
+**Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.  
+**Recommended fix:** Eski aktif odaları claim tablosuyla read-only karşılaştır; duplicate varsa operasyon planı oluştur; 10–50 paralel MySQL join/enter testi çalıştır.  
+**Database protection required?:** Evet.  
+**Regression test required?:** Evet; gerçek MySQL/InnoDB üzerinde.
 
-### SEC-WALLET-001 — Tüm ekonomik yazıcıların tek ledger protokolüne taşındığı kanıtlanmadı
+### SEC-WALLET-001 — Tüm ekonomik hareketlerde ortak idempotency kanıtı eksik
 
-**Severity:** HIGH
-**Category:** Wallet / accounting
-**Affected file(s):** `backend/app/Services/WalletService.php`, payment, tournament, spin, achievement ve admin controller/service yolları
-**Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
-**Description:** WalletService güvenli transaction ve ledger yazımı sağlıyor; ancak repository'deki bütün ekonomik yolların yalnızca bu servisten geçtiği ve production şemasının ledger migration'larını içerdiği kanıtlanmadı.
-**Attack scenario:** Bir doğrudan `users.coins` güncellemesi ledger dışında kalır veya queue retry'da reference koruması olmadan tekrar çalışır.
-**Root cause:** Tarihsel ekonomi yolları çok sayıda controller/service'e dağılmış.
-**Evidence:** Runtime ekonomik yolları WalletService çağırıyor; `ResetCoins` komutu da artık kullanıcı başına kilitli WalletService + ledger yazımı kullanıyor. WalletService, hem hareket sonrası model senkronizasyonunu hem de `setBalance()` hedef/rezerve kontrolünü aynı satır kilidi altında yapıyor. Böylece stale `save()` ve eşzamanlı rezerv artışı bakiyeyi geri yazamıyor. Static scan’de referanssız hareketler (`daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout`, `lucky_wheel_spin`) görüldü; bunların HTTP state gate’leri testli olsa da queue retry için ortak business idempotency referansı yok. Kod taramasında yalnızca E2E seed fixture'ında doğrudan başlangıç bakiyesi ataması kaldı; production migration ve gerçek queue retry kanıtı yok. Wallet/product/reward atomiklik testleri **31 test / 203 assertions** geçti.  
-**Potential impact:** Bakiye-ledger drift, çift ödeme veya forensic kayıt eksikliği.
-**Recommended fix:** Tüm ekonomik hareketleri WalletService/immutable ledger üzerinden geçir; direct balance update için static check ve DB constraint stratejisi değerlendir; settlement reference'larını unique yap.
-**Database protection required?:** Evet.
+**Severity:** HIGH  
+**Category:** Wallet / accounting  
+**Affected file(s):** `backend/app/Services/WalletService.php`, payment, tournament, spin, achievement ve admin controller/service yolları  
+**Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize  
+**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor.  
+**Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.  
+**Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.  
+**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt.  
+**Recommended fix:** Her ekonomik komuta benzersiz business reference/command id ekle; ledger üzerinde unique koruma ve duplicate-job testleri uygula; direct balance update için CI kontrolü ekle.  
+**Database protection required?:** Evet.  
 **Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
-### SEC-SETTLE-001 — Queue retry ve settlement recovery zinciri production'da kanıtlanmadı
+### SEC-SETTLE-001 — Queue retry ve settlement recovery zinciri production’da kanıtlanmadı
 
-**Severity:** HIGH
-**Category:** Idempotency / failure recovery
-**Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`
-**Affected endpoint/event:** finish, settle, scheduled backstop, queue retry
-**Description:** HTTP command replay koruması mevcut; Laravel queue'nun at-least-once çalışmasında tüm finansal job'ların aynı idempotency/reference garantisini koruduğu production queue üzerinde kanıtlanmadı.
-**Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.
-**Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu canlı ortamda doğrulanmadı.
-**Evidence:** `RoomSettleTest`, `RoomEscrowTest`, `SettlePctMissingSnapshotTest` ve `PaymentCallbackTest` birlikte **23 test / 83 assertions** geçti; başarılı settlement replay’inin no-op olduğu ve debit/credit ledger referanslarının tekil kaldığı da doğrulandı. Rollback, escrow release, duplicate claim ve payment callback idempotency HTTP düzeyinde test edildi. Gerçek finansal queue retry simülasyonu çalıştırılmadı.  
-**Potential impact:** Partial settlement, duplicate reward, stuck escrow.
-**Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve gerçek queue retry testi.
-**Database protection required?:** Evet.
+**Severity:** HIGH  
+**Category:** Idempotency / failure recovery  
+**Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`  
+**Affected endpoint/event:** finish, settle, scheduled backstop, queue retry  
+**Description:** Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.  
+**Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.  
+**Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu production’da simüle edilmedi.  
+**Potential impact:** Partial settlement, duplicate reward, stuck escrow.  
+**Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve güvenli queue retry testi uygula.  
+**Database protection required?:** Evet.  
 **Regression test required?:** Evet.
 
 ### SEC-WEB-001 — Enforcing CSP için kaynak envanteri eksik
 
-**Severity:** MEDIUM
-**Category:** Browser security / XSS defense-in-depth
-**Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML
-**Affected endpoint/event:** tüm web sayfaları ve admin içerik render'ı
-**Description:** Inline style/script, Google Fonts, opsiyonel analytics, `data:`/`blob:` medya ve API bağlantıları bulunuyor. Kaynakları kapsayan opt-in `Content-Security-Policy-Report-Only` middleware'i eklendi; enforcing CSP hâlâ kaynak envanteri ve gözlem dönemi bekliyor.
-**Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP olmadığı için tarayıcıda daha geniş etki alanı oluşur.
-**Root cause:** Mevcut frontend kaynakları strict CSP ile uyumlu olarak sınıflandırılmadı.
-**Evidence:** Source review; `SecurityHeadersTest` **2 test / 3 assertions** geçti. Production `curl -I https://www.tavlatv.com` artık kesilmeden `style-src`, `font-src`, `img-src` içeren `Content-Security-Policy-Report-Only` header'ını döndürüyor. Enforcing geçişi için gerçek tarayıcı ihlal listesi ve rapor toplama sonucu hâlâ bekleniyor.
-**Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.
-**Recommended fix:** Önce `Content-Security-Policy-Report-Only`, rapor toplama ve nonce/hash kaynak envanteri; sonra enforcing CSP.
-**Database protection required?:** Hayır.
-**Regression test required?:** Evet; Playwright ile ana akışlar ve admin içerik render'ı.
+**Severity:** MEDIUM  
+**Category:** Browser security / XSS defense-in-depth  
+**Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML  
+**Affected endpoint/event:** tüm web sayfaları ve admin içerik render’ı  
+**Description:** Strict CSP için inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarının tamamı sınıflandırılmadı.  
+**Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP enforcing olmadığı için etki alanı genişler.  
+**Root cause:** Report-Only gözleminden enforcing politikaya geçiş tamamlanmadı.  
+**Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.  
+**Recommended fix:** Tarayıcı ihlallerini topla; nonce/hash ve kaynak allowlist’ini tamamla; ardından enforcing CSP’ye geç.  
+**Database protection required?:** Hayır.  
+**Regression test required?:** Evet; Playwright ile ana akışlar ve admin içerik render’ı.
 
-### SEC-SSO-001 — Admin SSO tokeni URL query string'de taşınıyor
+### SEC-SSO-001 — Admin SSO tokeni URL query string’de taşınıyor
 
-**Severity:** MEDIUM
-**Category:** Authentication / credential exposure
-**Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`
-**Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`
-**Description:** SSO değişimi PAT başına atomik kısa süreli tek kullanımlık cache claim'i yapıyor ve artık tokenı URL’ye koymadan POST body ile exchange edilebiliyor; legacy GET sözleşmesi hâlâ açık olduğu için URL/history/log riski tamamen kapanmış değil.
-**Attack scenario:** URL sızıntısı gerçekleşirse saldırgan exchange penceresinde tokenı kullanmayı deneyebilir.
-**Root cause:** Backward-compatible GET query sözleşmesi.
-**Evidence:** `AdminSsoPostExchangeTest` ve `AdminSsoReplayTest` birlikte **5 test / 23 assertions** geçti. POST route body token kullanıyor; GET uyumluluk yolu geçerli kaldı ancak başarılı/başarısız/replay redirect'leri artık `Cache-Control: no-store` ve `Referrer-Policy: no-referrer` taşıyor.  
-**Potential impact:** Admin web session açılması.
-**Recommended fix:** Frontend/panel link üretimini POST exchange'e taşı, legacy GET'i kontrollü deprecation süresinden sonra kaldır; kısa ömürlü one-time nonce kullanımı korunmalı.
-**Database protection required?:** Tercihen nonce unique/revocation kaydı.
+**Severity:** MEDIUM  
+**Category:** Authentication / credential exposure  
+**Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`  
+**Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`  
+**Description:** POST exchange mevcut olsa da legacy GET query token sözleşmesi hâlâ açık.  
+**Attack scenario:** URL sızıntısı gerçekleşirse saldırgan kısa exchange penceresinde tokenı kullanmayı deneyebilir.  
+**Root cause:** Backward-compatible GET akışı.  
+**Potential impact:** Admin web session açılması.  
+**Recommended fix:** Tüm frontend/panel link üretimini POST exchange’e taşı; deprecation süresinden sonra GET’i kaldır; one-time nonce kullanımını koru.  
+**Database protection required?:** Tercihen nonce unique/revocation kaydı.  
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 
-### SEC-OPS-001 — Gerçek production concurrency ve deployment state kanıtı eksik
+### SEC-OPS-001 — Production concurrency ve deployment state kanıtı eksik
 
-**Severity:** UNKNOWN
-**Category:** Operations / verification
-**Affected file(s):** deployment environment, DB, queue, reverse proxy
-**Affected endpoint/event:** tüm money-game ve validator yolları
-**Description:** Yerel testler ve operator tinker çıktıları uygulama davranışını doğruluyor; çalışan release commit'i, production migration state'i, DB engine/isolation, queue worker sürümü ve reverse-proxy route'larının tamamı bu çalışma alanından bağımsızdır.
-**Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya migration/constraint eksik olabilir.
-**Root cause:** Deployment kanıtı audit çalışma alanında yok.
-**Potential impact:** Yerel PASS sonuçları production garantisine dönüşmeyebilir.
-**Recommended fix:** Read-only release SHA, `migrate:status`, DB engine/isolation, queue worker command ve route/config fingerprint'lerini kayıt altına al; production'da yalnız güvenli smoke test çalıştır.
-**Database protection required?:** Evet, fakat migration yalnız onaylı rollout ile.
+**Severity:** UNKNOWN  
+**Category:** Operations / verification  
+**Affected file(s):** deployment environment, DB, queue, reverse proxy  
+**Affected endpoint/event:** tüm money-game ve validator yolları  
+**Description:** Çalışan release SHA, config cache, DB engine/isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.  
+**Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.  
+**Root cause:** Production doğrulama zinciri standardize edilmedi.  
+**Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.  
+**Recommended fix:** Read-only release/config/DB/queue/route fingerprint komutu ve periyodik kayıt oluştur; yalnız güvenli smoke test çalıştır.  
+**Database protection required?:** Evet, yalnız kontrollü rollout ile.  
 **Regression test required?:** Evet.
 
 ## SIRALI KALAN FIX PLANI
 
-### PHASE 0 — Acil exploit ve deployment doğrulaması
+### PHASE 0 — Deployment doğrulaması
 
-1. Çalışan production release SHA, config cache ve validator secret guard'ını read-only doğrula. **Dosyalar:** deployment/Plesk, `validator/server.ts`, Laravel config.
-2. SSO token query kullanımını access-log/referrer politikasıyla sınırla; POST nonce tasarımını hazırla. **Dosyalar:** `routes/web.php`, `PanelController.php`.
+1. Release SHA, config cache, validator secret guard ve route fingerprint’lerini kaydet.
+2. SSO GET kullanımını access-log/referrer politikasıyla izle ve POST migration’ını tamamla.
 
-### PHASE 1 — DB concurrency claim
+### PHASE 1 — DB concurrency
 
-1. Production migration tamamlandı. Şimdi eski aktif odaları claim tablosuyla read-only karşılaştır ve gerçek MySQL paralel admission testini çalıştır. **Dosyalar:** room migrations, `RoomController`, `Room`.
-2. Gerçek MySQL paralel admission testi ekle ve claim insert/release yarışlarını doğrula.
+1. Eski aktif odaları claim tablosuyla read-only karşılaştır.
+2. Gerçek MySQL paralel admission testini çalıştır.
 
-### PHASE 2 — Wallet/settlement bütünlüğü
+### PHASE 2 — Wallet/settlement
 
-1. Tüm coin yazarlarını WalletService'e taşı ve direct update taramasını CI kontrolüne bağla. **Dosyalar:** wallet/payment/tournament/spin/achievement servisleri.
-2. Settlement state machine ve unique business reference'ı production migration planıyla uygula.
-3. Queue retry/rollback/reconciliation testleri ekle.
+1. Referanssız ekonomik hareketlere command/business id ekle.
+2. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
+3. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
 
 ### PHASE 3 — Web hardening
 
-1. CSP Report-Only gözlem dönemi, ardından enforcing CSP. **Dosyalar:** Plesk/Nginx ve frontend build.
+1. CSP Report-Only ihlal envanterini tamamla.
+2. CSP enforcing geçişini Playwright regresyonlarıyla doğrula.
 
-### PHASE 4 — Operasyon ve adli iz
+### PHASE 4 — Monitoring
 
-1. Production release/config/DB/queue fingerprint'lerini periyodik kaydet.
-2. Gerçek MySQL concurrency, duplicate settlement ve worker retry smoke testlerini güvenli test verisiyle otomatikleştir.
+1. Production release/config/DB/queue fingerprint’lerini periyodik kaydet.
+2. WebSocket/broadcast altyapısının command-only state değişimi yaptığını doğrula.
 
 ## KAPSAM VE KISITLAR
 
-- Bu rapor yalnız kalan riskleri içerir; tamamlanmış düzeltme geçmişi silinmiştir.
 - Production migration, gerçek kullanıcı/coin/bakiye işlemi veya destructive test yapılmadı.
 - Secret, token ve gerçek hesap değerleri rapora yazılmadı.
 - SQLite testleri MySQL/InnoDB lock/constraint garantisi sayılmadı.
