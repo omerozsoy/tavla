@@ -1738,6 +1738,9 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
+        if ($room->mode === 'friendly' && $this->slotOf($room, $data['token'], $request) === null) {
+            return $this->fail('Bu odayi izleme yetkin yok.', 403);
+        }
         // Migration henüz koşmadıysa (tablo yok) sessizce boş dön -> istemci kırılmaz.
         if (! Schema::hasTable('room_viewers')) {
             return response()->json(['viewers' => [], 'count' => 0]);
