@@ -30,86 +30,86 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ### SEC-DB-001 — Money-match admission için gerçek DB yarış kanıtı eksik
 
-**Severity:** HIGH  
-**Category:** Concurrency / database invariant  
-**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations  
-**Affected endpoint/event:** matchmaking, room join/enter/rematch  
-**Description:** Kullanıcı başına unique claim mekanizmasının eski aktif odalarla tutarlılığı ve gerçek InnoDB yarış davranışı production benzeri ortamda kanıtlanmadı.  
-**Attack scenario:** Aynı user ile paralel admission istekleri iki aktif money match oluşturmaya çalışabilir.  
-**Root cause:** SQLite testleri gerçek MySQL isolation ve lock davranışını temsil etmez; eski odaların claim backfill durumu bilinmiyor.  
-**Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.  
-**Recommended fix:** Eski aktif odaları claim tablosuyla read-only karşılaştır; duplicate varsa operasyon planı oluştur; 10–50 paralel MySQL join/enter testi çalıştır.  
-**Database protection required?:** Evet.  
+**Severity:** HIGH
+**Category:** Concurrency / database invariant
+**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations
+**Affected endpoint/event:** matchmaking, room join/enter/rematch
+**Description:** Kullanıcı başına unique claim mekanizmasının eski aktif odalarla tutarlılığı ve gerçek InnoDB yarış davranışı production benzeri ortamda kanıtlanmadı.
+**Attack scenario:** Aynı user ile paralel admission istekleri iki aktif money match oluşturmaya çalışabilir.
+**Root cause:** SQLite testleri gerçek MySQL isolation ve lock davranışını temsil etmez; eski odaların claim backfill durumu bilinmiyor.
+**Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.
+**Recommended fix:** Eski aktif odaları claim tablosuyla read-only karşılaştır; duplicate varsa operasyon planı oluştur; 10–50 paralel MySQL join/enter testi çalıştır.
+**Database protection required?:** Evet.
 **Regression test required?:** Evet; gerçek MySQL/InnoDB üzerinde.
 
 ### SEC-WALLET-001 — Tüm ekonomik hareketlerde ortak idempotency kanıtı eksik
 
-**Severity:** HIGH  
-**Category:** Wallet / accounting  
-**Affected file(s):** `backend/app/Services/WalletService.php`, payment, tournament, spin, achievement ve admin controller/service yolları  
-**Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize  
-**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor.  
-**Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.  
-**Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.  
-**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt.  
-**Recommended fix:** Her ekonomik komuta benzersiz business reference/command id ekle; ledger üzerinde unique koruma ve duplicate-job testleri uygula; direct balance update için CI kontrolü ekle.  
-**Database protection required?:** Evet.  
+**Severity:** HIGH
+**Category:** Wallet / accounting
+**Affected file(s):** `backend/app/Services/WalletService.php`, payment, tournament, spin, achievement ve admin controller/service yolları
+**Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
+**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor.
+**Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
+**Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
+**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt.
+**Recommended fix:** Her ekonomik komuta benzersiz business reference/command id ekle; ledger üzerinde unique koruma ve duplicate-job testleri uygula; direct balance update için CI kontrolü ekle.
+**Database protection required?:** Evet.
 **Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
 ### SEC-SETTLE-001 — Queue retry ve settlement recovery zinciri production’da kanıtlanmadı
 
-**Severity:** HIGH  
-**Category:** Idempotency / failure recovery  
-**Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`  
-**Affected endpoint/event:** finish, settle, scheduled backstop, queue retry  
-**Description:** Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.  
-**Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.  
-**Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu production’da simüle edilmedi.  
-**Potential impact:** Partial settlement, duplicate reward, stuck escrow.  
-**Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve güvenli queue retry testi uygula.  
-**Database protection required?:** Evet.  
+**Severity:** HIGH
+**Category:** Idempotency / failure recovery
+**Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`
+**Affected endpoint/event:** finish, settle, scheduled backstop, queue retry
+**Description:** Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.
+**Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.
+**Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu production’da simüle edilmedi.
+**Potential impact:** Partial settlement, duplicate reward, stuck escrow.
+**Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve güvenli queue retry testi uygula.
+**Database protection required?:** Evet.
 **Regression test required?:** Evet.
 
 ### SEC-WEB-001 — Enforcing CSP için kaynak envanteri eksik
 
-**Severity:** MEDIUM  
-**Category:** Browser security / XSS defense-in-depth  
-**Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML  
-**Affected endpoint/event:** tüm web sayfaları ve admin içerik render’ı  
-**Description:** Strict CSP için inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarının tamamı sınıflandırılmadı.  
-**Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP enforcing olmadığı için etki alanı genişler.  
-**Root cause:** Report-Only gözleminden enforcing politikaya geçiş tamamlanmadı.  
-**Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.  
-**Recommended fix:** Tarayıcı ihlallerini topla; nonce/hash ve kaynak allowlist’ini tamamla; ardından enforcing CSP’ye geç.  
-**Database protection required?:** Hayır.  
+**Severity:** MEDIUM
+**Category:** Browser security / XSS defense-in-depth
+**Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML
+**Affected endpoint/event:** tüm web sayfaları ve admin içerik render’ı
+**Description:** Strict CSP için inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarının tamamı sınıflandırılmadı.
+**Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP enforcing olmadığı için etki alanı genişler.
+**Root cause:** Report-Only gözleminden enforcing politikaya geçiş tamamlanmadı.
+**Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.
+**Recommended fix:** Tarayıcı ihlallerini topla; nonce/hash ve kaynak allowlist’ini tamamla; ardından enforcing CSP’ye geç.
+**Database protection required?:** Hayır.
 **Regression test required?:** Evet; Playwright ile ana akışlar ve admin içerik render’ı.
 
 ### SEC-SSO-001 — Admin SSO tokeni URL query string’de taşınıyor
 
-**Severity:** MEDIUM  
-**Category:** Authentication / credential exposure  
-**Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`  
-**Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`  
-**Description:** POST exchange mevcut olsa da legacy GET query token sözleşmesi hâlâ açık.  
-**Attack scenario:** URL sızıntısı gerçekleşirse saldırgan kısa exchange penceresinde tokenı kullanmayı deneyebilir.  
-**Root cause:** Backward-compatible GET akışı.  
-**Potential impact:** Admin web session açılması.  
-**Recommended fix:** Tüm frontend/panel link üretimini POST exchange’e taşı; deprecation süresinden sonra GET’i kaldır; one-time nonce kullanımını koru.  
-**Database protection required?:** Tercihen nonce unique/revocation kaydı.  
+**Severity:** MEDIUM
+**Category:** Authentication / credential exposure
+**Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`
+**Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`
+**Description:** POST exchange mevcut olsa da legacy GET query token sözleşmesi hâlâ açık.
+**Attack scenario:** URL sızıntısı gerçekleşirse saldırgan kısa exchange penceresinde tokenı kullanmayı deneyebilir.
+**Root cause:** Backward-compatible GET akışı.
+**Potential impact:** Admin web session açılması.
+**Recommended fix:** Tüm frontend/panel link üretimini POST exchange’e taşı; deprecation süresinden sonra GET’i kaldır; one-time nonce kullanımını koru.
+**Database protection required?:** Tercihen nonce unique/revocation kaydı.
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 
 ### SEC-OPS-001 — Production concurrency ve deployment state kanıtı eksik
 
-**Severity:** UNKNOWN  
-**Category:** Operations / verification  
-**Affected file(s):** deployment environment, DB, queue, reverse proxy  
-**Affected endpoint/event:** tüm money-game ve validator yolları  
-**Description:** Çalışan release SHA, config cache, DB engine/isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.  
-**Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.  
-**Root cause:** Production doğrulama zinciri standardize edilmedi.  
-**Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.  
-**Recommended fix:** Read-only release/config/DB/queue/route fingerprint komutu ve periyodik kayıt oluştur; yalnız güvenli smoke test çalıştır.  
-**Database protection required?:** Evet, yalnız kontrollü rollout ile.  
+**Severity:** UNKNOWN
+**Category:** Operations / verification
+**Affected file(s):** deployment environment, DB, queue, reverse proxy
+**Affected endpoint/event:** tüm money-game ve validator yolları
+**Description:** Çalışan release SHA, config cache, DB engine/isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
+**Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.
+**Root cause:** Production doğrulama zinciri standardize edilmedi.
+**Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.
+**Recommended fix:** Read-only release/config/DB/queue/route fingerprint komutu ve periyodik kayıt oluştur; yalnız güvenli smoke test çalıştır.
+**Database protection required?:** Evet, yalnız kontrollü rollout ile.
 **Regression test required?:** Evet.
 
 ## SIRALI KALAN FIX PLANI
