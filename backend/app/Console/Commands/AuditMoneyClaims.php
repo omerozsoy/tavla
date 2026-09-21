@@ -26,8 +26,13 @@ class AuditMoneyClaims extends Command
         $this->line('db_driver='.$driver);
         if ($driver === 'mysql') {
             $version = DB::selectOne('select version() as version');
-            $isolation = DB::selectOne('select @@transaction_isolation as isolation');
             $this->line('db_version='.(string) ($version->version ?? 'unknown'));
+            try {
+                $isolation = DB::selectOne('select @@transaction_isolation as isolation');
+            } catch (\Throwable) {
+                // Older MySQL/MariaDB exposes the same setting as tx_isolation.
+                $isolation = DB::selectOne('select @@tx_isolation as isolation');
+            }
             $this->line('transaction_isolation='.(string) ($isolation->isolation ?? 'unknown'));
         }
         if ($driver === 'mysql') {
