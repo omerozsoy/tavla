@@ -150,6 +150,8 @@ Admin API, legacy panel ve Filament kullanıcı düzenlemesi hedef user satırı
 
 Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
 
+PR ve luck analysis job'larına `match_result_id` tabanlı `WithoutOverlapping` middleware eklendi; aynı ağır analiz iki worker'da paralel çalışmıyor. Bu koruma ekonomik settlement idempotency’si değildir.
+
 ## Sanctum SSO expiry kontrolü
 
 `/admin/enter` ve `/panel/enter` içindeki manuel `PersonalAccessToken::findToken()` kullanımı artık `expires_at` değerini de kontrol ediyor. Query-string token sızıntısı ve tek kullanımlık SSO exchange eksikliği ayrıca açık residual risk olarak kalıyor.
