@@ -23,8 +23,9 @@ return [
     // Tutar dogrulama sikiligi. Callback'te banka txnamount'u kayitli tutarla (kurus)
     // TAM SAYI olarak karsilastirilir. Banka test'te txnamount'un HER ZAMAN dolu geldigi
     // dogrulandiktan sonra bunu true yap: o zaman bos/uyumsuz tutar odemeyi REDDEDER.
-    // Varsayilan false: bos txnamount loglanir ama akis bozulmaz (hash zaten korur).
-    'strict_amount' => (bool) env('GARANTI_STRICT_AMOUNT', false),
+    // Güvenli varsayılan: banka txnamount göndermiyorsa callback otomatik başarılı sayılmaz.
+    // Test entegrasyonu için açıkça GARANTI_STRICT_AMOUNT=false verilmesi gerekir.
+    'strict_amount' => (bool) env('GARANTI_STRICT_AMOUNT', true),
 
     'urls' => [
         'TEST' => [
