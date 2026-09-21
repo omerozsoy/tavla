@@ -3771,11 +3771,26 @@ export default function App() {
         )
       // Gecici ag/sunucu hatasi tek denemede "puanin kaydedilemedi" gostermesin -> 3 kez dene.
       let r: Awaited<ReturnType<typeof reportRating>> | null = null
-      for (let attempt = 1; attempt <= 3 && !r; attempt++) {
+      let lastReportError: { status?: number } | null = null
+      for (let attempt = 1; attempt <= 12 && !r; attempt++) {
         try {
           r = await doReport()
-        } catch {
-          if (attempt < 3) await new Promise((res) => setTimeout(res, 800 * attempt))
+          lastReportError = null
+        } catch (e) {
+          lastReportError = e as { status?: number }
+          // The authoritative room can become terminal a fraction after the local
+          // result screen opens (especially after the bot's final server turn). Pull
+          // the room and retry 409 until the canonical result is visible.
+          if (lastReportError.status === 409 && reportRoomCode) {
+            try {
+              await showRoom(reportRoomCode)
+            } catch {
+              // The next attempt/poll will retry the room read.
+            }
+            if (attempt < 12) await new Promise((res) => setTimeout(res, 1000))
+          } else if (attempt < 3) {
+            await new Promise((res) => setTimeout(res, 800 * attempt))
+          }
         }
       }
       if (!r) {
