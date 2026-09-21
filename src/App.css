@@ -3329,8 +3329,8 @@ button[aria-disabled='true'],
   position: absolute;
   top: -3px;
   right: 8px;
-  width: 46px;
-  height: 70px;
+  width: 54px;
+  height: 82px;
   pointer-events: none;
   z-index: 3;
   filter: drop-shadow(0 3px 4px rgba(0, 0, 0, 0.3));
@@ -3372,8 +3372,8 @@ button[aria-disabled='true'],
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
-  width: 72px !important;
-  height: 48px !important;
+  width: 84px !important;
+  height: 56px !important;
   object-fit: cover !important;
   transform: translate(-50%, -50%) rotate(90deg) !important;
   transform-origin: center !important;
