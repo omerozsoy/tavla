@@ -60,11 +60,11 @@ Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-re
 
 **Severity:** HIGH
 **Category:** Idempotency / failure recovery
-**Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`
-**Affected endpoint/event:** finish, settle, scheduled backstop, queue retry
-**Description:** Production settlement snapshot’ı temiz olsa da Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.
-**Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.
-**Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu production’da simüle edilmedi.
+**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/routes/console.php`, `backend/app/Support/MatchBackstop.php`
+**Affected endpoint/event:** `settle`, `matches:backstop-finished`, HTTP retry/reconnect
+**Description:** Settlement endpoint’i `settled=false` claim’i, room finalization ve wallet hareketlerini tek transaction’da yapıyor; production snapshot’ı da temiz. Buna rağmen canlı ortamda aynı settlement isteğinin eşzamanlı/retry davranışı ve scheduler/backstop recovery zinciri henüz kanıtlanmadı. Settlement için ayrı bir financial queue job’ı bulunmadı; bu nedenle risk HTTP retry ve scheduled recovery sınırındadır.
+**Attack scenario:** Ağ zaman aşımı sonrası istemci aynı settlement isteğini tekrar gönderir veya backstop ile canlı istek çakışır; claim guard’ın tüm yolları tek bir ekonomik işlemde tuttuğu production DB’de kanıtlanmalıdır.
+**Root cause:** Production MariaDB üzerinde kontrollü eşzamanlı retry ve scheduler çakışma testi henüz çalıştırılmadı.
 **Potential impact:** Partial settlement, duplicate reward, stuck escrow.
 **Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve güvenli queue retry testi uygula.
 **Database protection required?:** Evet.
