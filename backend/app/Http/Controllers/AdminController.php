@@ -73,7 +73,7 @@ class AdminController extends Controller
                 if ((int) $data['coins'] < $reserved) {
                     abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
                 }
-                $locked->coins = $data['coins'];
+                app(\App\Services\WalletService::class)->setBalance($locked, (int) $data['coins']);
             }
             if (array_key_exists('is_admin', $data)) {
                 $locked->is_admin = $data['is_admin'];

@@ -1092,3 +1092,5 @@ Physical product purchases (single/cart) and the one-time welcome reward now use
 Achievement unlock coin rewards and Lucky Wheel coin rewards now use `WalletService` with their achievement/reward references. The remaining direct economic writer is authoritative match settlement, plus admin absolute overwrites which require a ledger adjustment model rather than a credit/debit operation.
 
 Authoritative match settlement now records loser debit and winner credit through `WalletService`, using the room as the economic reference while preserving escrow reservation release in the same transaction. The remaining ledger gap is admin absolute balance adjustment modeling and migration execution/reconciliation.
+
+Admin REST, legacy panel, and Filament balance edits now call `WalletService::setBalance`; the target value is represented as a signed adjustment and cannot violate `coins_reserved`. The wallet ledger migration and production reconciliation are still intentionally pending.

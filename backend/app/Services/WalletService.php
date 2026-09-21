@@ -25,6 +25,14 @@ class WalletService
         return $this->move($user, -$amount, $type, $referenceType, $referenceId);
     }
 
+    public function setBalance(User $user, int $target, string $type = 'admin_adjustment'): User
+    {
+        if ($target < (int) ($user->coins_reserved ?? 0)) {
+            throw new \RuntimeException('Wallet balance cannot be below reserved coins.');
+        }
+        return $this->move($user, $target - (int) ($user->coins ?? 0), $type);
+    }
+
     private function move(User $user, int $amount, string $type, ?string $referenceType, ?int $referenceId): User
     {
         $before = (int) ($user->coins ?? 0);
