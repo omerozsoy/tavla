@@ -1050,3 +1050,7 @@ Fixed-stake escrow behavior remains unchanged. Existing percentage rooms created
 **Regression test required:** concurrent percentage matchmaking must assert one locked snapshot per player; settlement after a balance credit must transfer the original snapshot amount; a missing snapshot must roll back the settled claim and return `409`.
 
 The settlement path also now rejects a loser balance below the locked amount with `409` and rolls back the claim transaction. It no longer silently performs a partial payout when an out-of-band balance adjustment conflicts with the match stake.
+
+## Audit amendment — validator diagnostic access (2026-09-21)
+
+The `/api/validator-check` diagnostic endpoint is now restricted to an authenticated admin and retains throttling. Anonymous callers can no longer trigger validator work or map internal service availability through this route.
