@@ -1064,3 +1064,7 @@ Authoritative `roll`, `move`, cube offer/respond, and `resign` requests now acce
 ## Audit amendment — payment failure callback race (2026-09-21)
 
 The failure branch of the bank callback now re-reads and locks the payment row inside a transaction before writing `failed`. A stale failure callback can no longer overwrite a concurrent successful `paid` claim. Payment fulfillment remains transactional for the local account/order writes; immutable payment event and wallet-ledger reconciliation remain open under SEC-012 and SEC-015.
+
+## Audit amendment — result lock release and deployed client version (2026-09-21)
+
+`reportRating` now explicitly releases its cache result lock on all normal idempotent and success return paths; a lock is no longer held until TTL solely because the request completed early. The frontend production bundle was rebuilt so authoritative roll/resign requests include the current `expected_version`; the observed `428 expected-version-required` console errors came from a stale deployed bundle, not from weakening the server check.

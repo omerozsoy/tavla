@@ -321,11 +321,13 @@ class AuthController extends Controller
         // idempotent dön. TTL 30s: kritik bölüm (validator PR max ~20s dahil) sığar. Kilit altyapısı
         // Lock alınamazsa idempotent sonuç döndürülür; lock altyapısı exception verirse
         // fail-closed 503 uygulanır (rating yazımı yapılmaz).
+        $resultLock = null;
         if (! empty($roomCode)) {
             $gotLock = true;
             $lockError = false;
             try {
-                $gotLock = \Illuminate\Support\Facades\Cache::lock('rr:'.$roomCode.':'.$user->id, 30)->get();
+                $resultLock = \Illuminate\Support\Facades\Cache::lock('rr:'.$roomCode.':'.$user->id, 30);
+                $gotLock = $resultLock->get();
             } catch (\Throwable $e) {
                 // Cache lock altyapısı bilinmiyorsa rating yazmaya devam etme; fail-open
                 // iki request'in aynı stale rating üzerinden Elo uygulamasına izin verebilir.
@@ -353,6 +355,17 @@ class AuthController extends Controller
             }
         }
 
+        $releaseResultLock = static function () use (&$resultLock): void {
+            if ($resultLock) {
+                try {
+                    $resultLock->release();
+                } catch (\Throwable $e) {
+                    \Illuminate\Support\Facades\Log::warning('result lock release failed', ['err' => $e->getMessage()]);
+                }
+                $resultLock = null;
+            }
+        };
+
         // IDEMPOTENT (cift sayma engeli): bu oda+oyuncu icin sonuc ZATEN kaydedilmisse
         // (sunucu forfeit'i = terk eden kaybeder, VEYA bu oyuncunun onceki raporu) tekrar
         // rating/istatistik/satir YAZMA. Sunucu forfeit'i (ForfeitLoss) kaybedenin satirini
@@ -371,6 +384,7 @@ class AuthController extends Controller
                 $oppExisting = \App\Models\MatchResult::where('room_code', $roomCode)
                     ->where('user_id', '!=', $user->id)->latest('id')->first();
 
+                $releaseResultLock();
                 return response()->json([
                     'rating' => $user->rating ?? 1500,
                     'user' => $user,
@@ -553,6 +567,7 @@ class AuthController extends Controller
                 : null;
             $fresh = $user->fresh() ?? $user;
 
+            $releaseResultLock();
             return response()->json([
                 'rating' => $fresh->rating ?? 1500, 'user' => $fresh, 'achievements' => [],
                 'pr_self' => $existing?->pr, 'pr_opponent' => null,
@@ -696,6 +711,7 @@ class AuthController extends Controller
             \Illuminate\Support\Facades\Log::warning('opponent PR senkron hata (yok sayildi)', ['err' => $e->getMessage()]);
         }
 
+        $releaseResultLock();
         return response()->json([
             'rating' => $newRating,
             'user' => $user,
