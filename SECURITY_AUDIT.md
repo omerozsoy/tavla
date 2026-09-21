@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - online replay export authorization (2026-09-21)
+
+GET /api/game-logs/{uid}/mat now checks RoomAccess when an online room with that UID still exists. A participant's Sanctum identity or correct X-Room-Token is required; outsiders receive 403. PvB/local and archived records whose room no longer exists retain the existing export compatibility path. GameLogTest passes 11 tests / 58 assertions and frontend TypeScript compilation passes.
+
 ## Audit amendment - upload and replay privacy review (2026-09-21)
 
 Static review confirms bug screenshots require a real PNG/JPEG/WebP/GIF signature, dimensions/pixels are bounded, and admin content uploads use a random filename with a fixed raster extension allowlist; SVG and executable extensions are rejected. The remaining medium privacy item is GET /api/game-logs/{uid}/mat: online replay export is addressable by the room UID without participant authorization. It does not mutate game or wallet state, but should be restricted to a participant/guest room token or a short-lived signed export URL.

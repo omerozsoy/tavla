@@ -2293,7 +2293,9 @@ export async function flushGameLogQueue(): Promise<void> {
 // KANONİK XG .mat'i sunucudan al (merged game_logs -> MatFromLog). Client "Dışa Aktar"
 // önce bunu dener -> AYNI maç DAİMA AYNI çıktı (tek kaynak). Kayıt yoksa 404 -> yerel fallback.
 export async function fetchGameLogMat(uid: string): Promise<{ mat: string; filename: string }> {
-  return req<{ mat: string; filename: string }>(`/game-logs/${encodeURIComponent(uid)}/mat`)
+  return req<{ mat: string; filename: string }>(`/game-logs/${encodeURIComponent(uid)}/mat`, {
+    headers: { 'X-Room-Token': playerToken() },
+  })
 }
 
 // Maç Analizleri "Dışa aktar": bir maçın KANONİK .mat'ini DB maç id'siyle (sahiplik kontrollü)

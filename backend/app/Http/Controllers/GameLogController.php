@@ -121,11 +121,25 @@ class GameLogController extends Controller
      * (deterministik: stabil matchId=uid + created_at, iki oyuncunun küpü birleşik, kanonik zar).
      * Kayıt yoksa (henüz flush edilmemiş) 404 -> client yerel buildMatXg'e düşer.
      */
-    public function mat(string $uid)
+    public function mat(Request $request, string $uid)
     {
         $log = GameLog::where('uid', $uid)->first();
         if (! $log) {
             return response()->json(['message' => 'Kayıt bulunamadı'], 404);
+        }
+
+        // Online replay mevcut oda ile eşleşiyorsa yalnızca katılımcı/guest room token
+        // export edebilsin. PvB/local ve arşivlenmiş (artık odası olmayan) eski kayıtlar
+        // geriye dönük export sözleşmesini korur.
+        if ($log->mode === 'online') {
+            $room = Room::where('code', $uid)->first();
+            if ($room) {
+                $actor = $request->user('sanctum');
+                $guestToken = (string) ($request->header('X-Room-Token') ?? '');
+                if (RoomAccess::slot($room, $actor, $guestToken) === null) {
+                    return response()->json(['message' => 'Bu maç kaydını dışa aktarma yetkiniz yok'], 403);
+                }
+            }
         }
 
         // YARIM KAYIT KORUMASI: online maçta bir oyuncunun istemcisi kendi turlarını hiç

@@ -129,6 +129,28 @@ class GameLogTest extends TestCase
         ])->assertStatus(422);
     }
 
+    public function test_online_mat_export_requires_room_participant_when_room_exists(): void
+    {
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+        $outsider = User::factory()->create();
+        Room::create([
+            'code' => 'MATROOM', 'p1_token' => 'p1-secret', 'p2_token' => 'p2-secret',
+            'p1_user_id' => $owner->id, 'p2_user_id' => $other->id,
+            'p1_name' => 'Owner', 'p2_name' => 'Other',
+            'status' => 'finished', 'target' => 1,
+        ]);
+        GameLog::create(['uid' => 'MATROOM', 'mode' => 'online', 'target' => 1]);
+
+        $this->getJson('/api/game-logs/MATROOM/mat')->assertForbidden();
+        Sanctum::actingAs($owner);
+        $this->getJson('/api/game-logs/MATROOM/mat', ['X-Room-Token' => 'p1-secret'])
+            ->assertOk(); // authorized; fixture has no events but access is allowed
+        Sanctum::actingAs($outsider);
+        $this->getJson('/api/game-logs/MATROOM/mat', ['X-Room-Token' => 'wrong'])
+            ->assertForbidden();
+    }
+
     public function test_cube_and_end_events_order_and_dedupe(): void
     {
         // Aynı seq'te: kup(o=-3) < hamle(o=0) < bitiş(o=9). Bitiş iki kez yazılırsa tekilleşir.
