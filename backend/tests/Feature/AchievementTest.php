@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\MatchResult;
+use App\Models\Room;
 use App\Models\User;
 use App\Models\UserAchievement;
 use App\Models\UserStat;
@@ -119,10 +120,17 @@ class AchievementTest extends TestCase
     public function test_report_rating_unlocks_and_returns_achievements(): void
     {
         $u = $this->makeUser('s');
+        $opp = $this->makeUser('s-opp');
+        Room::create([
+            'code' => 'ACHR1', 'p1_user_id' => $u->id, 'p1_token' => 'a1', 'p1_name' => $u->nickname,
+            'p2_user_id' => $opp->id, 'p2_token' => 'a2', 'p2_name' => $opp->nickname,
+            'status' => 'finished', 'mode' => 'ranked', 'authoritative' => true, 'target' => 1,
+            'server_match' => ['target' => 1, 'score' => ['white' => 1, 'black' => 0], 'done' => true, 'winner' => 'white'],
+        ]);
         Sanctum::actingAs($u);
 
         $res = $this->postJson('/api/rating/report', [
-            'won' => true, 'opponent_rating' => 1500, 'match_length' => 7, 'ranked' => true,
+            'won' => true, 'opponent_rating' => 1500, 'match_length' => 7, 'ranked' => true, 'room_code' => 'ACHR1',
         ]);
         $res->assertOk();
         $slugs = array_column($res->json('achievements'), 'slug');
