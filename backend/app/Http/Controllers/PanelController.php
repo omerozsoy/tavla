@@ -7,6 +7,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class PanelController extends Controller
 {
@@ -252,8 +253,14 @@ class PanelController extends Controller
         // Gorsel yuklendiyse public/uploads'a tasi
         if ($request->hasFile('image_file')) {
             $file = $request->file('image_file');
-            $ext = $file->getClientOriginalExtension() ?: 'jpg';
-            $name = 'c_'.uniqid().'.'.$ext;
+            // Client filename/extension'ını kullanma; Laravel'in içerik tabanlı MIME
+            // tespitinden güvenli sabit uzantı üret ve rastgele ad kullan.
+            $ext = strtolower((string) $file->extension());
+            if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                return back()->withErrors(['image_file' => 'Desteklenmeyen görsel türü.'])->withInput();
+            }
+            $ext = $ext === 'jpeg' ? 'jpg' : $ext;
+            $name = 'c_'.Str::random(40).'.'.$ext;
             $dir = public_path('uploads');
             if (! is_dir($dir)) {
                 @mkdir($dir, 0755, true);

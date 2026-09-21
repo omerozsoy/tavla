@@ -141,3 +141,7 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 ## Sanctum SSO expiry kontrolü
 
 `/admin/enter` ve `/panel/enter` içindeki manuel `PersonalAccessToken::findToken()` kullanımı artık `expires_at` değerini de kontrol ediyor. Query-string token sızıntısı ve tek kullanımlık SSO exchange eksikliği ayrıca açık residual risk olarak kalıyor.
+
+## Upload doğrulama sertleştirmesi
+
+Bug-report görsellerinde gerçek image signature/MIME ve piksel sınırı kontrol ediliyor. Admin içerik görsellerinde client uzantısı yerine server MIME tespiti kullanılıyor; yalnız `jpg/png/gif/webp` kabul ediliyor ve rastgele dosya adı üretiliyor. Public upload dizininin web sunucusunda çalıştırılamaz olması deployment üzerinde ayrıca doğrulanmalı.
