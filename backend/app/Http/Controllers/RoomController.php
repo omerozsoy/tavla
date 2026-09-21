@@ -138,10 +138,14 @@ class RoomController extends Controller
     private function cleanupStale(): void
     {
         try {
-            Room::where('status', 'mm_waiting')
+            $staleWaitingIds = Room::where('status', 'mm_waiting')
                 ->whereNull('p2_token')
                 ->where('created_at', '<', now()->subMinutes(2))
-                ->delete();
+                ->pluck('id');
+            if ($staleWaitingIds->isNotEmpty() && Schema::hasTable('active_money_match_claims')) {
+                DB::table('active_money_match_claims')->whereIn('room_id', $staleWaitingIds)->delete();
+            }
+            Room::whereIn('id', $staleWaitingIds)->delete();
             // Eski (>1 gün) odalar. ESCROW: rezerve edilmiş (escrowed) varsa ÖNCE rezervi bırak
             // (terk edilmiş bahisli maçın coin'i kilitli kalmasın; idempotent). NOT: releaseEscrow
             // Eloquent update ile updated_at'i touch ediyor -> silinecek id'leri ÖNCE yakala, sonra
@@ -1268,7 +1272,14 @@ class RoomController extends Controller
             if ($pctSnapshot !== null) {
                 $fields['server_match'] = ['pct_stake_snapshot' => $pctSnapshot];
             }
-            Room::create($fields); // yeni tohum/commit ilk zarda uretilir (provably-fair taze)
+            $newRoom = Room::create($fields); // yeni tohum/commit ilk zarda uretilir (provably-fair taze)
+            if (RoomAccess::requiresAccount($locked)) {
+                foreach ($participantIds as $uid) {
+                    if (! Room::claimActiveMoneySlot($uid, (int) $newRoom->id)) {
+                        throw new \RuntimeException('RÃ¶vanÅŸ iÃ§in aktif para maÃ§Ä± claim edilemedi.');
+                    }
+                }
+            }
 
             $locked->rematch_code = $fields['code'];
             // Eski oda kapanir: rovans YENI odada oynanir (Canli Maclar'da olu oda gorunmesin,

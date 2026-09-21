@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class Room extends Model
@@ -111,6 +113,38 @@ class Room extends Model
             });
 
         return $query->exists();
+    }
+
+    /**
+     * Claim the user's single economic room slot. The unique user constraint is the
+     * database serialization point; application pre-checks are only an optimization.
+     */
+    public static function claimActiveMoneySlot(int $userId, int $roomId): bool
+    {
+        $existingRoom = DB::table('active_money_match_claims')
+            ->where('user_id', $userId)->value('room_id');
+        if ($existingRoom !== null) {
+            return (int) $existingRoom === $roomId;
+        }
+        try {
+            DB::table('active_money_match_claims')->insert([
+                'user_id' => $userId,
+                'room_id' => $roomId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            return true;
+        } catch (QueryException $e) {
+            if (in_array((string) $e->getCode(), ['23000', '23505'], true)) {
+                return false;
+            }
+            throw $e;
+        }
+    }
+
+    public static function releaseActiveMoneyClaims(int $roomId): void
+    {
+        DB::table('active_money_match_claims')->where('room_id', $roomId)->delete();
     }
 
     protected function casts(): array
