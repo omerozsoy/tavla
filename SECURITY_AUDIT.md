@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production session/token settings applied (2026-09-21)
+
+The deployed config was rechecked after rollout: `session.secure=true` and `sanctum.expiration=1440` minutes. HTTPS-only session cookies and finite bearer-token lifetime are active in the deployed Laravel configuration.
+
 ## Audit amendment — session and Sanctum lifetime hardening (2026-09-21)
 
 The production read-only config check found `SESSION_SECURE_COOKIE` unset and Sanctum expiration disabled (`null`). Sanctum configuration now reads `SANCTUM_EXPIRATION` from the environment, and `.env.example` documents `SESSION_SECURE_COOKIE=true` plus a finite `SANCTUM_EXPIRATION=1440` default. The deployed environment must set these values and rebuild config cache; the existing room access security suite still passes **23 tests / 52 assertions**.
