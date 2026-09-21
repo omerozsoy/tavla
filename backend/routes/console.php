@@ -19,7 +19,12 @@ Schedule::call(function () {
         ->whereNull('p2_token')
         ->where('created_at', '<', now()->subMinutes(2))
         ->delete();
-    Room::where('updated_at', '<', now()->subDay())->delete();
+    // Never delete a playing, escrowed, or finished-unsettled room. Economic rooms are
+    // retained until the settlement claim is complete so payout/hold recovery remains possible.
+    Room::where('status', 'finished')
+        ->where('settled', true)
+        ->where('updated_at', '<', now()->subDay())
+        ->delete();
     DB::table('game_invites')->where('created_at', '<', now()->subMinutes(10))->delete();
 })->everyFiveMinutes()->name('cleanup-stale-rooms')->withoutOverlapping();
 
