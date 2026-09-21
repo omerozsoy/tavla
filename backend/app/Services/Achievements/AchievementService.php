@@ -62,7 +62,7 @@ class AchievementService
         try {
             return DB::transaction(function () use ($user, $def, $progress, $silent, $coin) {
                 // Yaris kosulunda ikinci deneme unique constraint'e takilir -> catch.
-                UserAchievement::create([
+                $achievement = UserAchievement::create([
                     'user_id' => $user->id,
                     'achievement_slug' => $def['slug'],
                     'unlocked_at' => now(),
@@ -72,8 +72,9 @@ class AchievementService
                 ]);
 
                 if ($coin > 0) {
-                    // coins fillable degil -> dogrudan artir (mass-assignment degil).
-                    $user->increment('coins', $coin);
+                    app(\App\Services\WalletService::class)->credit(
+                        $user, $coin, 'achievement_reward', UserAchievement::class, $achievement->id
+                    );
                 }
 
                 if (! $silent) {
