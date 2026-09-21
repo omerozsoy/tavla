@@ -2681,6 +2681,16 @@ class RoomController extends Controller
             $value = \App\Support\Backgammon::resignationValue($state, $winner); // 1/2/3
             $points = $value * (int) $this->cubeOf($room)['value'];
             $matchDone = $this->applyGameResult($room, $winner, $points);
+            if ($matchDone) {
+                // MOVE yoluyla AYNI terminal kapanış: server_match.done ile oda status'ü birlikte
+                // terminal olmalı, yoksa status=playing kalır -> rating/report 409 + frontend
+                // safety-net effect'i (room.status==='finished') tetiklenmez. Pes = RESIGN_LOSS.
+                $room->status = 'finished';
+                $room->end_reason = $room->end_reason ?? 'RESIGN_LOSS';
+                $winnerSlot = $winner === 'white' ? 'p1' : 'p2';
+                $room->p1_result = $room->p1_result ?? ($winnerSlot === 'p1' ? 'won' : 'lost');
+                $room->p2_result = $room->p2_result ?? ($winnerSlot === 'p2' ? 'won' : 'lost');
+            }
             $room->server_version = (int) $room->server_version + 1;
             $this->driveAuthoritativeClock($room, $slot, microtime(true)); // maç bitti -> saati durdur
             $room->save();
