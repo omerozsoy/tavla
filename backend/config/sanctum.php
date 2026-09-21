@@ -50,7 +50,9 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Token ömrü production'da env ile zorunlu olarak yönetilebilsin.
+    // Boş bırakılırsa Sanctum token'ları süresiz olur.
+    'expiration' => env('SANCTUM_EXPIRATION'),
 
     /*
     |--------------------------------------------------------------------------
