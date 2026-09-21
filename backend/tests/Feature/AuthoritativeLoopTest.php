@@ -233,6 +233,13 @@ class AuthoritativeLoopTest extends TestCase
         // Başlayan pes eder -> rakip maçı kazanır.
         $this->command($starterTok, '/api/rooms/LOOPX/resign')
             ->assertOk()->assertJsonPath('winner', $otherColor)->assertJsonPath('match_done', true);
-        $this->assertSame($otherColor, Room::first()->fresh()->server_match['winner']);
+        $room = Room::first()->fresh();
+        $this->assertSame($otherColor, $room->server_match['winner']);
+        // Pes ile maç bitince oda TERMINAL olmalı (status=finished + sonuç kolonları) — yoksa
+        // rating/report 409 döner ve iki taraf sonuç ekranı görmez (move yoluyla aynı kapanış).
+        $this->assertSame('finished', $room->status);
+        $this->assertSame('RESIGN_LOSS', $room->end_reason);
+        $this->assertNotNull($room->p1_result);
+        $this->assertNotNull($room->p2_result);
     }
 }
