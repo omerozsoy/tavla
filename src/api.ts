@@ -1506,10 +1506,11 @@ export async function enterRoom(
   rating?: number,
   avatar?: string,
   timeControl?: string,
+  target?: number, // maç uzunluğu (davetten): oda ilk kez kurulursa server_match target'ı
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req(`/rooms/${encodeURIComponent(code)}/enter`, {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null }),
+    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null, target: target ?? null }),
   })
 }
 
