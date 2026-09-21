@@ -38,11 +38,17 @@ ErrorDocument 503 /maintenance.html
     RewriteRule ^ https://www.tavlatv.com%{REQUEST_URI} [L,R=301]
 
     # --- Bakim modu bayrak-kurali (maintenance.on varsa) ---
+    # /admin ve /panel'in yaninda panelin CALISMASI icin gereken yollar da HARIC tutulmali:
+    #   - gercek dosyalar (-f): Filament CSS/JS (public/css/filament, public/js/filament), ikon, gorsel
+    #   - /livewire: Livewire JS (livewire.js) + AJAX ucu (/livewire/update) — "Kaydet" bunu kullanir
+    # Aksi halde /admin acilir ama stilsiz+olu kalir, bakim modunu KAPATAN toggle calismaz.
     RewriteCond %{DOCUMENT_ROOT}/maintenance.on -f
+    RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_URI} !^/maintenance\.html$
     RewriteCond %{REQUEST_URI} !^/favicon\.
     RewriteCond %{REQUEST_URI} !^/admin
     RewriteCond %{REQUEST_URI} !^/panel
+    RewriteCond %{REQUEST_URI} !^/livewire
     RewriteRule ^ - [R=503,L]
 
     # Handle Authorization Header

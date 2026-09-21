@@ -32,6 +32,10 @@ const paras = (body?: string | null) =>
 // paragraflara bolunur; HTML ise dogrudan (guvenli sekilde) basilir.
 const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 
+// Zengin-metin (RichEditor HTML) haberin liste özetinde etiketsiz düz metin göster.
+const stripHtml = (s?: string | null) =>
+  (s ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
+
 // Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
 // target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
 const linksBlank = (html?: string | null): string =>
@@ -389,7 +393,7 @@ export default function ContentView({
           ) : (
             (() => {
               const [lead, ...rest] = items
-              const excerpt = paras(lead.body)[0]
+              const excerpt = isHtml(lead.body) ? stripHtml(lead.body) : paras(lead.body)[0]
               return (
                 <section className="news-editorial">
                   <article
@@ -747,11 +751,15 @@ function NewsDetail({
           onClick={() => onOpenImage(0)}
         />
       )}
-      <div className="news-detail-body">
-        {paras(item.body).map((x, i) => (
-          <p key={i}>{x}</p>
-        ))}
-      </div>
+      {isHtml(item.body) ? (
+        <div className="news-detail-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(item.body) }} />
+      ) : (
+        <div className="news-detail-body">
+          {paras(item.body).map((x, i) => (
+            <p key={i}>{x}</p>
+          ))}
+        </div>
+      )}
       {gallery.length > 0 && (
         <div className="news-gallery">
           {gallery.map((g, i) => (
