@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — dependency audit recheck (2026-09-21)
+
+The repository root `npm audit --omit=dev` completed with **0 vulnerabilities**, and `backend/composer audit --no-interaction` reported **No security vulnerability advisories found**. The `validator/` project has no lockfile, so its audit remains **UNKNOWN** without generating a new lockfile or installing dependencies.
+
 ## Audit amendment — validator TLS corrected (2026-09-21)
 
 Plesk'te sertifika düzeltildikten sonra normal TLS `GET /health` **200 OK** döndü. `VALIDATOR_VERIFY_TLS=true` ile `ValidatorParityTest` **4 test / 9 assertion** geçti.
