@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production validator secret guard fixed (2026-09-21)
+
+After the Plesk runtime secret and Laravel `VALIDATOR_SECRET` were aligned, a secret-less `POST https://validator.tavlatv.com/validate` returned **401 Unauthorized**. The production validator no longer processes unauthenticated validation payloads. The secret value is not recorded.
+
 ## Audit amendment — validator unauthenticated validate confirmation (2026-09-21)
 
 After the restart, a secret-less synthetic `POST /validate` request returned **400** from validator input processing rather than the expected **401/503** guard response. This confirms the production process is still accepting unauthenticated endpoint processing; the CRITICAL secret-guard finding remains open.
