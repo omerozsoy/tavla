@@ -332,7 +332,7 @@ class LuckyWheelService
 
             // Hak tüket: önce ücretsiz, sonra bonus, ikisi de bittiyse coin ile ödemeli.
             if ($paid) {
-                $u->coins = (int) ($u->coins ?? 0) - $cost;
+                app(\App\Services\WalletService::class)->debit($u, $cost, 'lucky_wheel_spin');
                 $u->save();
                 $spinType = 'paid';
             } elseif ($this->freeRemaining($state) <= 0) {

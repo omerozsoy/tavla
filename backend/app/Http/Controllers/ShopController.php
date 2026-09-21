@@ -181,7 +181,7 @@ class ShopController extends Controller
             if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $price) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
-            $u->coins = ($u->coins ?? 0) - $price;
+            app(\App\Services\WalletService::class)->debit($u, $price, 'shop_purchase');
             $unlocks[] = $id;
             $u->unlocks = $unlocks;
             $u->save();
@@ -226,7 +226,7 @@ class ShopController extends Controller
             $amount = $premium
                 ? \App\Models\Setting::int('reward_premium', 50)
                 : \App\Models\Setting::int('reward_normal', 25);
-            $u->coins = ($u->coins ?? 0) + $amount;
+            app(\App\Services\WalletService::class)->credit($u, $amount, 'daily_reward');
             $u->last_reward = now();
             $u->save();
             return [
