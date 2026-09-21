@@ -99,7 +99,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Description:** SSO değişimi PAT başına atomik kısa süreli tek kullanımlık cache claim'i yapıyor ve artık tokenı URL’ye koymadan POST body ile exchange edilebiliyor; legacy GET sözleşmesi hâlâ açık olduğu için URL/history/log riski tamamen kapanmış değil.
 **Attack scenario:** URL sızıntısı gerçekleşirse saldırgan exchange penceresinde tokenı kullanmayı deneyebilir.
 **Root cause:** Backward-compatible GET query sözleşmesi.
-**Evidence:** `AdminSsoPostExchangeTest` ve `AdminSsoReplayTest` birlikte **4 test / 13 assertions** geçti. Legacy GET route query token okuyor; yeni POST route body token kullanıyor.
+**Evidence:** `AdminSsoPostExchangeTest` ve `AdminSsoReplayTest` birlikte **5 test / 23 assertions** geçti. POST route body token kullanıyor; GET uyumluluk yolu geçerli kaldı ancak başarılı/başarısız/replay redirect'leri artık `Cache-Control: no-store` ve `Referrer-Policy: no-referrer` taşıyor.  
 **Potential impact:** Admin web session açılması.
 **Recommended fix:** Frontend/panel link üretimini POST exchange'e taşı, legacy GET'i kontrollü deprecation süresinden sonra kaldır; kısa ömürlü one-time nonce kullanımı korunmalı.
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.

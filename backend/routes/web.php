@@ -12,6 +12,10 @@ use Laravel\Sanctum\PersonalAccessToken;
 // Filament SSO: React uygulamasindaki "Yonetici" butonu Sanctum token'i ile buraya
 // gelir; token gecerli ve admin ise web oturumu acilir ve Filament paneline yonlenir.
 Route::match(['GET', 'POST'], '/admin/enter', function (Request $request) {
+    $safeRedirect = static fn (string $path) => redirect($path)->withHeaders([
+        'Cache-Control' => 'no-store',
+        'Referrer-Policy' => 'no-referrer',
+    ]);
     $rawToken = $request->isMethod('POST')
         ? (string) $request->input('token', '')
         : (string) $request->query('token', '');
@@ -25,16 +29,13 @@ Route::match(['GET', 'POST'], '/admin/enter', function (Request $request) {
         // URL'deki PAT bir kez web oturumuna dönüştürülebilsin; API tokenı silinmez.
         // Cache::add atomik olduğundan aynı URL'nin eşzamanlı tekrarları yalnızca biriyle yarışır.
         if (! Cache::add('admin-sso-used:'.$pat->id, true, now()->addMinutes(5))) {
-            return redirect('/admin/login');
+            return $safeRedirect('/admin/login');
         }
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
-        return redirect('/admin')->withHeaders([
-            'Cache-Control' => 'no-store',
-            'Referrer-Policy' => 'no-referrer',
-        ]);
+        return $safeRedirect('/admin');
     }
-    return redirect('/admin/login');
+    return $safeRedirect('/admin/login');
 })->middleware('throttle:10,1,admin-sso');
 
 // E-posta dogrulama linki (imzali URL). Dogrular ve SPA'ya yonlendirir.

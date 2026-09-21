@@ -45,6 +45,10 @@ class PanelController extends Controller
     // "Yonetim" dugmesi -> /panel/enter?token=<sanctum-token>
     public function enter(Request $request)
     {
+        $safeRedirect = static fn (string $path) => redirect($path)->withHeaders([
+            'Cache-Control' => 'no-store',
+            'Referrer-Policy' => 'no-referrer',
+        ]);
         $token = $request->isMethod('POST')
             ? (string) $request->input('token', '')
             : (string) $request->query('token', '');
@@ -56,16 +60,13 @@ class PanelController extends Controller
         if ($user && $user->is_admin && ! $user->isBanned()) {
             // SSO URL'si tek kullanımlıktır; PAT API oturumunu bozmamak için silinmez.
             if (! Cache::add('admin-sso-used:'.$access->id, true, now()->addMinutes(5))) {
-                return redirect('/panel/login')->withErrors(['email' => 'Oturum bağlantısı daha önce kullanıldı.']);
+                return $safeRedirect('/panel/login')->withErrors(['email' => 'Oturum bağlantısı daha önce kullanıldı.']);
             }
             Auth::login($user);
             $request->session()->regenerate();
-            return redirect('/panel/users')->withHeaders([
-                'Cache-Control' => 'no-store',
-                'Referrer-Policy' => 'no-referrer',
-            ]);
+            return $safeRedirect('/panel/users');
         }
-        return redirect('/panel/login')->withErrors(['email' => 'Oturum doğrulanamadı, giriş yap.']);
+        return $safeRedirect('/panel/login')->withErrors(['email' => 'Oturum doğrulanamadı, giriş yap.']);
     }
 
     public function logout(Request $request)
