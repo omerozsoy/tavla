@@ -1214,3 +1214,7 @@ Final static validation also passed: `npm run build` completed TypeScript and Vi
 The isolated Playwright authoritative E2E passed: **1 test passed** for two-player matchmaking, server-authoritative dice, both-player moves, and turn rotation. The harness recreated only its separate `e2e` SQLite database. Production migration/pull/push was performed externally by the operator and was not executed by this audit session.
 
 The complete Laravel suite was rerun after canonical command-response replay changes: **493 passed, 4 skipped, 7,926 assertions, 0 failures**. The skipped tests are existing environment guards; validator parity tests skip when `VALIDATOR_URL` is not configured.
+
+## Audit amendment — validator TLS deployment check (2026-09-21)
+
+With `VALIDATOR_URL=https://validator.tavlatv.com`, the live `/health` endpoint returned **200 OK**, but the host certificate chain failed client verification with `SEC_E_UNTRUSTED_ROOT`. Consequently, the default `verify_tls=true` path correctly treated the service as unreachable. Running the parity suite with only the test process configured as `VALIDATOR_VERIFY_TLS=false` produced **4 passing tests / 9 assertions**, confirming the validator endpoints and game-engine responses work. Production must install a publicly trusted certificate chain; disabling TLS verification remains a security downgrade and was not committed.
