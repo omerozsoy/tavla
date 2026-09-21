@@ -1120,3 +1120,7 @@ No Laravel WebSocket/Broadcasting server or socket command channel was found in 
 ## Audit amendment — command result version receipt (2026-09-21)
 
 After a claimed authoritative `roll`, `move`, cube, or `resign` transaction commits, the corresponding `room_commands.result_version` is now populated from the canonical response. This gives retries and forensic review the exact server revision reached by the command. The command receipt still returns a replay response rather than the original JSON body; full response replay remains a later compatibility enhancement.
+
+## Audit amendment — regression suite compatibility findings (2026-09-21)
+
+The focused Feature security suite was executed against SQLite without running migrations: 38 tests, 104 assertions, with 11 failures and 1 error. The failures are fixture compatibility failures after the security contract was tightened: legacy test requests omit required `command_id`/`expected_version`, and several fixtures reference numeric room users that are not authenticated test users, so `RoomAccess` correctly returns `403`. Additional dice/cube fixtures still assume legacy client state. These failures must be fixed in the test harness by creating real users, authenticating them, and generating UUID command IDs plus the current state version; relaxing production authorization would be incorrect. The existing isolated unit security suite remains green at 89 tests / 204 assertions.
