@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — test production wallet baseline reconciled (2026-09-21)
+
+The operator confirmed this is a test deployment. Users with no prior wallet ledger entries received one explicit `opening_balance` ledger record based on their existing `users.coins` value; balances themselves were not changed. A follow-up read-only reconciliation reported **81 users checked; drift=0**.
+
 ## Audit amendment — production wallet ledger baseline gap (2026-09-21)
 
 Production `wallet:reconcile` was run read-only after the ledger migration: **81 users checked, 68 drift**. The affected rows have non-zero `users.coins` but `ledger_expected=0`, while `coins_reserved=0`; the ledger table contains no historical opening entries for those balances. This is a **HIGH financial-forensics gap**, not evidence that balances should be set to zero. No balances or ledger rows were changed.
