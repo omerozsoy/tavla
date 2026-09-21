@@ -118,21 +118,16 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
     Route::get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
     Route::middleware('throttle:30,1,match-mat')->get('/me/matches/{match}/mat', [AuthController::class, 'matchMat']); // kanonik .mat (Dışa aktar)
-    // Maçın hamle-hamle analizini TavlaTV Motoru ile üret (MatReview log'u). Ağır. Kullanıcıya
-    // görünen ad 'tavlatv-review' (marka); 'gnubg-review' geriye-uyum ALIAS'ı olarak korunur
-    // (dağıtım sırasında bayat istemciler kırılmasın). İkisi de AYNI controller metoduna gider.
+    // Maçın hamle-hamle analizini TavlaTV Motoru ile üret (MatReview log'u). Ağır.
     Route::middleware('throttle:30,1,tavlatv-review')->get('/me/matches/{match}/tavlatv-review', [AuthController::class, 'matchGnubgReview']);
-    Route::middleware('throttle:30,1,tavlatv-review')->get('/me/matches/{match}/gnubg-review', [AuthController::class, 'matchGnubgReview']); // ALIAS (eski istemci)
     Route::get('/me/active-rooms', [RoomController::class, 'myActiveRooms']); // devam eden online maclar
     Route::get('/me/analytics', [AuthController::class, 'analytics']);
     Route::get('/me/performance-stats', [AuthController::class, 'performanceStats']); // Medyan Hata Orani + WXP
     Route::get('/me/wxp-breakdown', [AuthController::class, 'wxpBreakdown']); // WXP kategori kirilimi (coin/1/3/5/7)
     Route::get('/me/dice-stats', [AuthController::class, 'diceStats']); // Zar Ortalamalari (zar-basina Sen/Rakip)
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
-    // Canlı ekran: maç-sonu PR hazır mı (poll). Görünen ad 'match-pr-tavlatv' (marka);
-    // 'match-pr-gnubg' geriye-uyum ALIAS'ı (bayat istemci). İkisi de AYNI metoda gider.
+    // Canlı ekran: maç-sonu PR hazır mı (poll). Görünen ad 'match-pr-tavlatv' (marka).
     Route::get('/me/match-pr-tavlatv/{match}', [AuthController::class, 'matchGnubgPr']);
-    Route::get('/me/match-pr-gnubg/{match}', [AuthController::class, 'matchGnubgPr']); // ALIAS (eski istemci)
     // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
     // ÖNEMLİ: throttle'a AYRI PREFIX ver -> Laravel'de isimsiz throttle anahtari sha1(userId) ile
     // TÜM throttled route'lar arasinda PAYLASILIR (rota anahtara girmez). Prefix olmadan; oyun-logu,
