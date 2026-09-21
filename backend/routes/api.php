@@ -81,7 +81,6 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:60
     Route::post('/rooms/{code}/settle', [RoomController::class, 'settle']);
     Route::post('/rooms/{code}/rematch', [RoomController::class, 'rematch']); // ayni ayarlarla yeni oda
     Route::post('/rooms/{code}/leave', [RoomController::class, 'leave']); // terk -> terk eden kaybeder
-    Route::get('/rooms/{code}', [RoomController::class, 'show']);
     Route::put('/rooms/{code}', [RoomController::class, 'update']);
     // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)
     Route::post('/rooms/{code}/roll', [RoomController::class, 'roll'])
@@ -96,6 +95,13 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:60
     Route::post('/rooms/{code}/resign', [RoomController::class, 'resign'])
         ->middleware('throttle:120,1,room-command');
 });
+// SENKRON CANKURTARANI: oda durum POLL'u (salt-okunur, ucuz) KENDİ BOL limitinde — yazma
+// (roll/move) floodu bunu ASLA boğmasın. KÖK FIX: poll ile yazma aynı kovayı paylaşınca, bir
+// desync döngüsü kovayı doldurup poll'u da 429'a düşürüyor -> istemci güncel durumu çekemeyip
+// kilitli kalıyordu. Poll istemcinin tek kurtuluş yolu: her zaman çalışmalı ki bozuk durumdan
+// (maç bitti/desync) senkronla çıkabilsin. 1200/dk = ~20/sn: çok sekme + hızlı poll rahat sığar.
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:1200,1,room-read'])
+    ->get('/rooms/{code}', [RoomController::class, 'show']);
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,live'])->post('/rooms/{code}/live', [RoomController::class, 'live']);
