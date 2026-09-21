@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - payment checkout rate limits (2026-09-21)
+
+Authenticated payment creation routes now have endpoint-specific throttles: subscription, coin checkout, membership renewal, and cart checkout are limited to 10 requests per minute per user; promo validation is limited to 30 per minute per user. Route inspection confirmed the middleware, and the payment/product regression subset passed 21 tests / 76 assertions. This limits pending-payment and promo abuse; callback idempotency remains enforced by the locked payment claim.
+
 ## Audit amendment - failed analysis job diagnosis (2026-09-21)
 
 The production failed-job inspection found 10 AnalyzeMatchLuckJob failures. All share MatSerializer's intentional integrity guard: a later game starts while the previous game has result=null. No failed settlement, wallet, payout, or reward job was observed in this listing. Retrying these records without repairing or quarantining the incomplete historical logs will deterministically fail again; no retry or flush command was executed.
