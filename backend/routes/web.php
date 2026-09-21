@@ -12,6 +12,10 @@ use Laravel\Sanctum\PersonalAccessToken;
 // gelir; token gecerli ve admin ise web oturumu acilir ve Filament paneline yonlenir.
 Route::get('/admin/enter', function (Request $request) {
     $pat = PersonalAccessToken::findToken((string) $request->query('token', ''));
+    // findToken() yalnız hash eşleşmesini doğrular; normal Sanctum guard gibi expiry de kontrol et.
+    if ($pat?->expires_at && $pat->expires_at->isPast()) {
+        $pat = null;
+    }
     $user = $pat?->tokenable;
     if ($user && $user->is_admin && ! $user->isBanned()) {
         Auth::guard('web')->login($user);

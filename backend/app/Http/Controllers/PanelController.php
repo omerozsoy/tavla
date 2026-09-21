@@ -44,6 +44,9 @@ class PanelController extends Controller
     {
         $token = (string) $request->query('token', '');
         $access = $token ? \Laravel\Sanctum\PersonalAccessToken::findToken($token) : null;
+        if ($access?->expires_at && $access->expires_at->isPast()) {
+            $access = null;
+        }
         $user = $access?->tokenable;
         if ($user && $user->is_admin && ! $user->isBanned()) {
             Auth::login($user);
