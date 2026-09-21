@@ -41,6 +41,11 @@ export interface ServerSyncView {
 export function shouldApplyServerState(local: SyncLocal, rv: ServerSyncView, myColor: Player): boolean {
   if (!rv.authoritative || !rv.server_state) return false
   if ((rv.server_version ?? 0) <= local.appliedServerVersion) return false
+  // MAÇ BİTTİ: korunacak hamle YOK. Mid-move kalkanı terminal durumu ASLA engellememeli; aksi
+  // halde kendi turunda bayat zar/hamle ile duran KAYBEDEN taraf (rakip maçı kazanan hamleyle
+  // bitirmişken) maç-sonunu hiç almaz -> ekran KİLİTLİ kalır (cube/respond "Oyun aktif değil" 409).
+  // Sunucu done=true dediğinde koşulsuz uygula (yaşanan #5PTWV bug'ı).
+  if (rv.server_match?.done) return true
   const myTurn = local.turn === myColor
   const midMove = myTurn && (local.playedCount > 0 || local.diceCount > 0)
   return !midMove
