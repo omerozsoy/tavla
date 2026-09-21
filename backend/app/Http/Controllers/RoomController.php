@@ -2048,6 +2048,16 @@ class RoomController extends Controller
             // sertleştirme; istemci de live.seq!==turnsPlayed ile eler). Bu save eden tüm dalları kapsar.
             $room->live = null;
 
+            if (($stale = $this->staleCommand($room, $data)) !== null) {
+                return $stale;
+            }
+
+            // Every authoritative roll, including the opening roll, must have
+            // a replay receipt before any state branch can return 200.
+            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'roll')) !== null) {
+                return $command;
+            }
+
             // ---- BAĞIMSIZ Faz 1: yalnız ZAR sunucudan (hamle/tahta/küp LEGACY kalır) ----
             // authoritative TAM yol DEĞİL: sunucu server_state tutmaz; sadece commit-reveal zarı
             // verir, update() eşleşmeyi zorlar. Tek açık el (idempotent + peek-ahead engeli).
@@ -2138,12 +2148,6 @@ class RoomController extends Controller
                     'version' => (int) $room->server_version,
                     'reused' => true,
                 ]);
-            }
-            if (($stale = $this->staleCommand($room, $data)) !== null) {
-                return $stale;
-            }
-            if (($command = $this->claimAuthoritativeCommand($room, $data, $slot, 'roll')) !== null) {
-                return $command;
             }
             if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
                 return $this->fail('Sıra sende değil.', 409);
@@ -2992,6 +2996,9 @@ class RoomController extends Controller
 
         $payload = $data;
         unset($payload['command_id']);
+        // The optimistic version envelope may legitimately be refreshed on a
+        // network retry; command identity is the action payload itself.
+        unset($payload['expected_version']);
         $hash = hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
         $existing = \App\Models\RoomCommand::where('room_id', $room->id)
             ->where('command_id', $commandId)
