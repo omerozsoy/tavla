@@ -1198,3 +1198,5 @@ The complete Laravel suite was rerun after the authoritative fixture migrations:
 `RoomLivePreviewTest` now authenticates both member preview writers and the non-member rejection path with Sanctum users. The cosmetic preview suite passes **3 tests / 13 assertions** and still verifies that `version` is not bumped.
 
 `RoomClockTest` now uses real user ownership, authenticated matchmaking, and the supported friendly legacy state path for clock-only coverage. The spectator no-contest case clears stale test authentication before polling. The clock suite passes **14 tests / 86 assertions**.
+
+`LuckyWheelAdminTest` now grants admin access explicitly through the `users.is_admin` database field before issuing Sanctum requests. The suite passes **8 tests / 29 assertions**. The remaining full-suite discrepancy is documented: the free-match-while-money-match test receives the current active-match guard response, and the tournament no-show fixture reports an unexpected successful walkover when an opponent is present; neither was weakened in production.
