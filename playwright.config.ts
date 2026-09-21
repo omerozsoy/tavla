@@ -5,6 +5,7 @@ import { defineConfig, devices } from '@playwright/test'
 // AYRI test DB (.env.e2e -> database/e2e.sqlite); prod/dev verisine dokunmaz. globalSetup seed'ler.
 export default defineConfig({
   testDir: './e2e',
+  globalSetup: './e2e/global-setup.ts',
   timeout: 120_000, // Vite dev SOĞUK-derleme ilk goto'yu yavaşlatır; 2 istemci cold compile sığsın.
   expect: { timeout: 12_000 },
   fullyParallel: false,

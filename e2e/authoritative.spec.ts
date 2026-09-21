@@ -1,5 +1,6 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { readFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 
 // Faz 2 tam-stack OYUN E2E'si: gerçek backend + Node validator üzerinden 2 oyuncu EŞLEŞİR ve
 // GERÇEKTEN HAMLE OYNAR. Amaç: "iki oyuncu da (beyaz p1 VE siyah p2) authoritative modda zar
@@ -58,7 +59,9 @@ const mmBody = (token: string, name: string) => ({
   token,
   name,
   rating: 1500,
-  stake: 100,
+  // Bu E2E'nin amacı para/escrow değil, iki oyunculu authoritative zar+hamle döngüsü.
+  // Ücretsiz oda kullanmak testi coin/escrow doğrulamalarından bağımsız ve hızlı tutar.
+  stake: 0,
   targets: [1],
   time_control: 'normal',
 })
@@ -66,13 +69,17 @@ const mmBody = (token: string, name: string) => ({
 test('tam stack: 2 oyuncu eşleşir + GERÇEKTEN oynar (beyaz VE siyah hamle yapar, sıra döner)', async ({
   request,
 }) => {
+  // Önceki bir test zorla kesildiyse kalan mm_waiting kaydını temizle.
+  for (const user of users) {
+    await post(request, `${API}/matchmaking/cancel`, user.token, { token: `e2e-cancel-${user.id}` })
+  }
   // ---- 1) Eşleşme -> authoritative oda ----
   const r1 = await post(request, `${API}/matchmaking`, users[0].token, mmBody('e2e-room-p1', users[0].nick))
-  expect(r1.status).toBe(200)
+  expect(r1.status, `matchmaking p1 response: ${JSON.stringify(r1.body)}`).toBe(200)
   expect(r1.body.matched, 'p1 havuza girer (rakip yok)').toBeFalsy()
 
   const r2 = await post(request, `${API}/matchmaking`, users[1].token, mmBody('e2e-room-p2', users[1].nick))
-  expect(r2.status).toBe(200)
+  expect(r2.status, `matchmaking p2 response: ${JSON.stringify(r2.body)}`).toBe(200)
   expect(r2.body.matched, 'p2 p1 ile eşleşmeli').toBe(true)
   expect(r2.body.room.authoritative, 'allow-list 1,2 -> authoritative').toBe(true)
   const code: string = r2.body.room.code
@@ -85,7 +92,11 @@ test('tam stack: 2 oyuncu eşleşir + GERÇEKTEN oynar (beyaz VE siyah hamle yap
   } as const
 
   // ---- 2) Açılış elini tetikle (kim çağırırsa sunucu adil başlayanı seçer) ----
-  const open = await post(request, `${API}/rooms/${code}/roll`, P.white.bearer, { token: P.white.token })
+  const open = await post(request, `${API}/rooms/${code}/roll`, P.white.bearer, {
+    token: P.white.token,
+    expected_version: 0,
+    command_id: randomUUID(),
+  })
   expect(open.status, 'açılış roll 200').toBe(200)
   expect(open.body.opening, 'ilk roll açılış eli olmalı').toBe(true)
 
@@ -103,7 +114,11 @@ test('tam stack: 2 oyuncu eşleşir + GERÇEKTEN oynar (beyaz VE siyah hamle yap
 
     // Zar yoksa sıra sahibi atar (açılışta başlayanın zarı zaten dolu).
     if (!room.server_state.dice || room.server_state.dice.length === 0) {
-      const rr = await post(request, `${API}/rooms/${code}/roll`, me.bearer, { token: me.token })
+      const rr = await post(request, `${API}/rooms/${code}/roll`, me.bearer, {
+        token: me.token,
+        expected_version: room.server_version,
+        command_id: randomUUID(),
+      })
       expect(rr.status, `roll(${color}) 200`).toBe(200)
       room = await getRoom(request, code, P.white.bearer, P.white.token)
     }
@@ -114,7 +129,12 @@ test('tam stack: 2 oyuncu eşleşir + GERÇEKTEN oynar (beyaz VE siyah hamle yap
     const steps = moves.length ? moves[0].steps : []
 
     const preVersion = room.server_version
-    const mv = await post(request, `${API}/rooms/${code}/move`, me.bearer, { token: me.token, steps })
+    const mv = await post(request, `${API}/rooms/${code}/move`, me.bearer, {
+      token: me.token,
+      steps,
+      expected_version: preVersion,
+      command_id: randomUUID(),
+    })
     expect(mv.status, `move(${color}) 200 — steps=${JSON.stringify(steps)}`).toBe(200)
     expect(mv.body.version, 'hamle server_version artırmalı').toBeGreaterThan(preVersion)
 
