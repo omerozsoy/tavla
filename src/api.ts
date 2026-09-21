@@ -1731,7 +1731,8 @@ export async function matchGnubgPr(id: number): Promise<{
   opponent_luck_emg?: number | null
   opponent_luck_jokers?: number | null
 }> {
-  return req(`/me/match-pr-gnubg/${id}`)
+  // Görünen endpoint adı 'match-pr-tavlatv' (marka; Network'te gnubg görünmez).
+  return req(`/me/match-pr-tavlatv/${id}`)
 }
 
 // Online mac PR cifti (sunucu-otoriter): iki oyuncu ayni degerleri gorsun diye
@@ -2013,7 +2014,8 @@ export async function matchLogById(id: number): Promise<string | null> {
 // Sunucu .mat'i kurup gnubg reviewMatch çalıştırır. Ağır (~saniyeler) -> çağıran loader gösterir.
 // ok=false ise (servis yok / log yok) çağıran eski yerel-log yoluna düşebilir.
 export async function matchGnubgReview(id: number, plies = 2): Promise<MatReview> {
-  return req<MatReview>(`/me/matches/${id}/gnubg-review?plies=${plies}`)
+  // Kullanıcıya görünen endpoint adı 'tavlatv-review' (marka; Network'te gnubg görünmez).
+  return req<MatReview>(`/me/matches/${id}/tavlatv-review?plies=${plies}`)
 }
 
 // Poll: since verilirse degismemisse null doner
