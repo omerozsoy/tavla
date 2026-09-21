@@ -3,24 +3,42 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Faz 2 — sunucu-otoriter KÜP (doubling cube) + resign. Küp değeri/sahip/teklif SUNUCUDA;
- * istemci forge edemez. Küp motordan (hamle) bağımsız -> validator'a dokunmaz.
+ * Faz 2 â€” sunucu-otoriter KÃœP (doubling cube) + resign. KÃ¼p deÄŸeri/sahip/teklif SUNUCUDA;
+ * istemci forge edemez. KÃ¼p motordan (hamle) baÄŸÄ±msÄ±z -> validator'a dokunmaz.
  */
 class RoomCubeTest extends TestCase
 {
     use RefreshDatabase;
 
-    // target VARSAYILANI 7: küp teklifleri için canlı (ölü olmayan) bir maç. turns=1 +
-    // opened=true: açılış eli oynandı -> küp hakkı açık (gerçek kural: açılıştan önce küp yok).
-    // score override edilebilir (ölü-küp/Crawford skorlarını test etmek için).
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function command(string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    {
+        Sanctum::actingAs($token === 'p1' ? $this->p1 : $this->p2);
+        return $this->postJson($uri, array_merge([
+            'token' => $token,
+            'command_id' => (string) Str::uuid(),
+            'expected_version' => (int) Room::whereIn('code', ['CUBEX', 'LEGCY'])->first()->fresh()->server_version,
+        ], $payload));
+    }
+
+    // target VARSAYILANI 7: kÃ¼p teklifleri iÃ§in canlÄ± (Ã¶lÃ¼ olmayan) bir maÃ§. turns=1 +
+    // opened=true: aÃ§Ä±lÄ±ÅŸ eli oynandÄ± -> kÃ¼p hakkÄ± aÃ§Ä±k (gerÃ§ek kural: aÃ§Ä±lÄ±ÅŸtan Ã¶nce kÃ¼p yok).
+    // score override edilebilir (Ã¶lÃ¼-kÃ¼p/Crawford skorlarÄ±nÄ± test etmek iÃ§in).
     private function room(int $target = 7, array $cube = ['value' => 1, 'owner' => null, 'pending' => null], array $stateOverride = [], array $matchOverride = []): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         $state = array_merge(Backgammon::initialState(), $stateOverride); // turn=white, dice=[]
         $match = array_merge([
             'target' => $target, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
@@ -33,6 +51,7 @@ class RoomCubeTest extends TestCase
             'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
             'p2_token' => 'p2', 'p2_name' => 'B', 'p2_user_id' => 20,
             'status' => 'playing', 'version' => 0, 'target' => $target,
+            'mode' => 'friendly',
             'authoritative' => true,
             'server_state' => $state,
             'server_match' => $match,
@@ -48,32 +67,32 @@ class RoomCubeTest extends TestCase
     public function test_offer_sets_pending(): void
     {
         $this->room();
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])->assertOk();
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')->assertOk();
         $this->assertSame('white', $this->cube(Room::first())['pending']);
     }
 
     public function test_offer_rejected_when_not_your_turn(): void
     {
         $this->room(); // turn=white
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p2'])->assertStatus(409);
+        $this->command('p2', '/api/rooms/CUBEX/cube/offer')->assertStatus(409);
     }
 
     public function test_offer_rejected_after_dice_rolled(): void
     {
         $this->room(stateOverride: ['dice' => [3, 1], 'diceUsed' => [false, false]]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])->assertStatus(409);
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')->assertStatus(409);
     }
 
     public function test_offer_rejected_when_opponent_owns_cube(): void
     {
         $this->room(cube: ['value' => 2, 'owner' => 'black', 'pending' => null]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])->assertStatus(409);
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')->assertStatus(409);
     }
 
     public function test_offer_allowed_when_you_own_cube(): void
     {
         $this->room(cube: ['value' => 2, 'owner' => 'white', 'pending' => null]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])->assertOk();
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')->assertOk();
         $this->assertSame('white', $this->cube(Room::first())['pending']);
     }
 
@@ -81,14 +100,14 @@ class RoomCubeTest extends TestCase
     public function test_roll_blocked_while_cube_pending(): void
     {
         $this->room(cube: ['value' => 1, 'owner' => null, 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/roll', ['token' => 'p1'])->assertStatus(409);
+        $this->command('p1', '/api/rooms/CUBEX/roll')->assertStatus(409);
     }
 
-    // ---- yanıt: take ----
+    // ---- yanÄ±t: take ----
     public function test_respond_take_doubles_and_transfers_cube(): void
     {
         $this->room(cube: ['value' => 1, 'owner' => null, 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p2', 'action' => 'take'])
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])
             ->assertOk()->assertJsonPath('action', 'take');
         $c = $this->cube(Room::first());
         $this->assertSame(2, $c['value']);
@@ -96,23 +115,23 @@ class RoomCubeTest extends TestCase
         $this->assertNull($c['pending']);
     }
 
-    // ---- yanıt: drop ----
+    // ---- yanÄ±t: drop ----
     public function test_respond_drop_awards_current_value_and_continues_match(): void
     {
         $this->room(target: 3, cube: ['value' => 2, 'owner' => 'white', 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p2', 'action' => 'drop'])
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'drop'])
             ->assertOk()->assertJsonPath('winner', 'white')->assertJsonPath('match_done', false);
         $sm = Room::first()->fresh()->server_match;
-        $this->assertSame(2, $sm['score']['white']); // drop = MEVCUT küp değeri (gammon YOK)
+        $this->assertSame(2, $sm['score']['white']); // drop = MEVCUT kÃ¼p deÄŸeri (gammon YOK)
         $this->assertSame(2, $sm['gameNo']);
-        $this->assertSame(1, $sm['cube']['value']); // yeni oyun: küp ortada
+        $this->assertSame(1, $sm['cube']['value']); // yeni oyun: kÃ¼p ortada
         $this->assertNull($sm['cube']['owner']);
     }
 
     public function test_respond_drop_can_win_match(): void
     {
         $this->room(target: 1, cube: ['value' => 1, 'owner' => null, 'pending' => 'black']);
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p1', 'action' => 'drop'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/respond', ['action' => 'drop'])
             ->assertOk()->assertJsonPath('winner', 'black')->assertJsonPath('match_done', true);
         $sm = Room::first()->fresh()->server_match;
         $this->assertTrue($sm['done']);
@@ -121,66 +140,66 @@ class RoomCubeTest extends TestCase
 
     public function test_respond_rejected_from_offerer(): void
     {
-        // Teklif eden kendi teklifini yanıtlayamaz (yalnız rakip).
+        // Teklif eden kendi teklifini yanÄ±tlayamaz (yalnÄ±z rakip).
         $this->room(cube: ['value' => 1, 'owner' => null, 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p1', 'action' => 'take'])->assertStatus(403);
+        $this->command('p1', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])->assertStatus(403);
     }
 
     public function test_respond_rejected_without_pending(): void
     {
         $this->room();
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p2', 'action' => 'take'])->assertStatus(409);
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])->assertStatus(409);
     }
 
-    // ---- move: küp çarpanı ----
+    // ---- move: kÃ¼p Ã§arpanÄ± ----
     public function test_move_applies_cube_multiplier_to_score(): void
     {
         config()->set('validator.url', 'http://validator.test');
-        // Küp 2, zar atılmış; beyaz 15 taş toplayıp tek-puanlık maçı bitirecek -> 1(normal)×2=2.
+        // KÃ¼p 2, zar atÄ±lmÄ±ÅŸ; beyaz 15 taÅŸ toplayÄ±p tek-puanlÄ±k maÃ§Ä± bitirecek -> 1(normal)Ã—2=2.
         $this->room(target: 1, cube: ['value' => 2, 'owner' => 'white', 'pending' => null],
             stateOverride: ['dice' => [6, 1], 'diceUsed' => [false, false]]);
 
         $won = Backgammon::initialState();
-        $won['off'] = ['white' => 15, 'black' => 5]; // kaybeden topladı -> normal (1)
+        $won['off'] = ['white' => 15, 'black' => 5]; // kaybeden topladÄ± -> normal (1)
         $won['turn'] = 'black';
         $won['dice'] = [];
         Http::fake(['validator.test/validate' => Http::response(['valid' => true, 'state' => $won])]);
 
-        $this->postJson('/api/rooms/CUBEX/move', ['token' => 'p1', 'steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
+        $this->command('p1', '/api/rooms/CUBEX/move', ['steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
             ->assertOk()->assertJsonPath('match_done', true)->assertJsonPath('match.score.white', 2);
     }
 
     // ---- resign ----
-    // SAF KONUM (kullanıcı kararı 2026-09-16): pes eden ŞU ANKİ konumundan değerlenir —
-    // en az 1 taş topladıysa SINGLE (küp × 1). Küp 2 -> rakip +2. Konum çarpanı UYGULANIR.
+    // SAF KONUM (kullanÄ±cÄ± kararÄ± 2026-09-16): pes eden ÅžU ANKÄ° konumundan deÄŸerlenir â€”
+    // en az 1 taÅŸ topladÄ±ysa SINGLE (kÃ¼p Ã— 1). KÃ¼p 2 -> rakip +2. Konum Ã§arpanÄ± UYGULANIR.
     public function test_resign_awards_current_cube_value_single(): void
     {
-        // Kaybeden (beyaz) en az 1 taş topladı -> single (backgammon/gammon DEĞİL).
+        // Kaybeden (beyaz) en az 1 taÅŸ topladÄ± -> single (backgammon/gammon DEÄžÄ°L).
         $this->room(target: 3, cube: ['value' => 2, 'owner' => 'black', 'pending' => null],
             stateOverride: ['off' => ['white' => 1, 'black' => 0]]);
-        $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/resign')
             ->assertOk()->assertJsonPath('winner', 'black')->assertJsonPath('match_done', false);
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['black']);
     }
 
-    // SAF KONUM: pes değeri = kaybedenin konumu. Kaybeden hiç toplamadı + bar/rakip-ev yok -> GAMMON (×2).
-    // (Kazananın bear-off evresinde olması ARANMAZ; siyahın off durumu değeri ETKİLEMEZ.)
+    // SAF KONUM: pes deÄŸeri = kaybedenin konumu. Kaybeden hiÃ§ toplamadÄ± + bar/rakip-ev yok -> GAMMON (Ã—2).
+    // (KazananÄ±n bear-off evresinde olmasÄ± ARANMAZ; siyahÄ±n off durumu deÄŸeri ETKÄ°LEMEZ.)
     public function test_resign_is_gammon_when_loser_has_no_borne_off_and_no_back_checker(): void
     {
         $gammonish = [
             'points' => array_fill(0, 24, 0),
             'bar' => ['white' => 0, 'black' => 0],
-            'off' => ['white' => 0, 'black' => 0], // beyaz (kaybeden) hiç toplamadı
+            'off' => ['white' => 0, 'black' => 0], // beyaz (kaybeden) hiÃ§ toplamadÄ±
             'turn' => 'white', 'dice' => [], 'diceUsed' => [],
         ];
-        $gammonish['points'][8] = 15; // beyaz 15 taş ortada (gammon: hiç toplamadı, bar/rakip-ev yok)
+        $gammonish['points'][8] = 15; // beyaz 15 taÅŸ ortada (gammon: hiÃ§ toplamadÄ±, bar/rakip-ev yok)
         $this->room(target: 5, cube: ['value' => 2, 'owner' => 'black', 'pending' => null], stateOverride: $gammonish);
-        $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])->assertOk();
-        $this->assertSame(4, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 2 (gammon) = 4
+        $this->command('p1', '/api/rooms/CUBEX/resign')->assertOk();
+        $this->assertSame(4, Room::first()->fresh()->server_match['score']['black']); // kÃ¼p 2 Ã— 2 (gammon) = 4
     }
 
-    // SAF KONUM: kaybedenin taşı KAZANANIN evinde -> BACKGAMMON (×3). Kazananın bear-off evresinde
-    // olması ARANMAZ (eski "hayalet backgammon" kalkanı kaldırıldı).
+    // SAF KONUM: kaybedenin taÅŸÄ± KAZANANIN evinde -> BACKGAMMON (Ã—3). KazananÄ±n bear-off evresinde
+    // olmasÄ± ARANMAZ (eski "hayalet backgammon" kalkanÄ± kaldÄ±rÄ±ldÄ±).
     public function test_resign_is_backgammon_when_loser_has_checker_in_winner_home(): void
     {
         $bg = [
@@ -189,14 +208,14 @@ class RoomCubeTest extends TestCase
             'off' => ['white' => 0, 'black' => 0],
             'turn' => 'white', 'dice' => [], 'diceUsed' => [],
         ];
-        $bg['points'][8] = 14;  // beyaz 14 taş ortada
-        $bg['points'][20] = 1;  // beyaz 1 taş siyahın evinde (18-23) -> backgammon
+        $bg['points'][8] = 14;  // beyaz 14 taÅŸ ortada
+        $bg['points'][20] = 1;  // beyaz 1 taÅŸ siyahÄ±n evinde (18-23) -> backgammon
         $this->room(target: 9, cube: ['value' => 2, 'owner' => 'black', 'pending' => null], stateOverride: $bg);
-        $this->postJson('/api/rooms/CUBEX/resign', ['token' => 'p1'])->assertOk();
-        $this->assertSame(6, Room::first()->fresh()->server_match['score']['black']); // küp 2 × 3 (backgammon) = 6
+        $this->command('p1', '/api/rooms/CUBEX/resign')->assertOk();
+        $this->assertSame(6, Room::first()->fresh()->server_match['score']['black']); // kÃ¼p 2 Ã— 3 (backgammon) = 6
     }
 
-    // ---- geriye uyum: authoritative olmayan odada küp uçları reddedilir ----
+    // ---- geriye uyum: authoritative olmayan odada kÃ¼p uÃ§larÄ± reddedilir ----
     public function test_cube_endpoints_require_authoritative_room(): void
     {
         Room::create([
@@ -208,16 +227,16 @@ class RoomCubeTest extends TestCase
     }
 
     // ====================================================================================
-    // 18-SENARYO KÜP DENETİMİ (sunucu-otoriter enforce + net reason). Merkezi cubeAvailability.
+    // 18-SENARYO KÃœP DENETÄ°MÄ° (sunucu-otoriter enforce + net reason). Merkezi cubeAvailability.
     // ====================================================================================
 
-    // (4,5,6,7,8,9,18) Küp değeri 1→2→4→8→16→32→64 ilerler; 64 tavanda daha fazla teklif edilemez.
-    // Uzun maç (target=128) -> ölü-küp devreye girmesin, saf ×2 matematiği + tavan izole test.
+    // (4,5,6,7,8,9,18) KÃ¼p deÄŸeri 1â†’2â†’4â†’8â†’16â†’32â†’64 ilerler; 64 tavanda daha fazla teklif edilemez.
+    // Uzun maÃ§ (target=128) -> Ã¶lÃ¼-kÃ¼p devreye girmesin, saf Ã—2 matematiÄŸi + tavan izole test.
     public function test_cube_value_progression_1_to_64_and_max_cap(): void
     {
         $room = $this->room(target: 128);
         foreach ([1 => 2, 2 => 4, 4 => 8, 8 => 16, 16 => 32, 32 => 64] as $from => $to) {
-            // Küpü 'from' değerinde ORTAYA koy, sıra beyazda, zar boş -> beyaz teklif + siyah take.
+            // KÃ¼pÃ¼ 'from' deÄŸerinde ORTAYA koy, sÄ±ra beyazda, zar boÅŸ -> beyaz teklif + siyah take.
             $sm = $room->fresh()->server_match;
             $sm['cube'] = ['value' => $from, 'owner' => null, 'pending' => null];
             $st = $room->fresh()->server_state;
@@ -228,12 +247,12 @@ class RoomCubeTest extends TestCase
             $r->server_state = $st;
             $r->save();
 
-            $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])->assertOk();
-            $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p2', 'action' => 'take'])->assertOk();
+            $this->command('p1', '/api/rooms/CUBEX/cube/offer')->assertOk();
+            $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])->assertOk();
             $this->assertSame($to, $this->cube($room->fresh())['value']);
             $this->assertSame('black', $this->cube($room->fresh())['owner']);
         }
-        // Küp 64 tavanda: yeni teklif REDDEDİLİR (CUBE_AT_MAX). 128'e çıkılamaz.
+        // KÃ¼p 64 tavanda: yeni teklif REDDEDÄ°LÄ°R (CUBE_AT_MAX). 128'e Ã§Ä±kÄ±lamaz.
         $r = $room->fresh();
         $sm = $r->server_match;
         $sm['cube'] = ['value' => 64, 'owner' => 'white', 'pending' => null];
@@ -243,125 +262,125 @@ class RoomCubeTest extends TestCase
         $r->server_match = $sm;
         $r->server_state = $st;
         $r->save();
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'CUBE_AT_MAX');
     }
 
-    // (4) Redouble: take'ten sonra küp alan tarafa (siyah) geçer; KARŞI taraf (beyaz) artık
-    // teklif EDEMEZ (NOT_CUBE_OWNER). Yalnız sahip redouble edebilir.
+    // (4) Redouble: take'ten sonra kÃ¼p alan tarafa (siyah) geÃ§er; KARÅžI taraf (beyaz) artÄ±k
+    // teklif EDEMEZ (NOT_CUBE_OWNER). YalnÄ±z sahip redouble edebilir.
     public function test_redouble_only_by_cube_owner_after_take(): void
     {
-        // Küp 2, sahip siyah (take etmiş gibi). Sıra beyazda -> beyaz teklif edemez.
+        // KÃ¼p 2, sahip siyah (take etmiÅŸ gibi). SÄ±ra beyazda -> beyaz teklif edemez.
         $this->room(cube: ['value' => 2, 'owner' => 'black', 'pending' => null]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'NOT_CUBE_OWNER');
-        // Sıra siyaha geçince (sahip) redouble edebilir.
+        // SÄ±ra siyaha geÃ§ince (sahip) redouble edebilir.
         $r = Room::first();
         $st = $r->server_state;
         $st['turn'] = 'black';
         $r->server_state = $st;
         $r->save();
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/CUBEX/cube/offer')->assertOk();
         $this->assertSame('black', $this->cube(Room::first())['pending']);
     }
 
-    // (10) Crawford oyununda küp teklifi REDDEDİLİR (CRAWFORD_GAME) + reason gövdede.
+    // (10) Crawford oyununda kÃ¼p teklifi REDDEDÄ°LÄ°R (CRAWFORD_GAME) + reason gÃ¶vdede.
     public function test_offer_rejected_in_crawford_game(): void
     {
         $this->room(target: 5, matchOverride: ['crawford' => true, 'score' => ['white' => 4, 'black' => 2]]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'CRAWFORD_GAME');
     }
 
-    // (11) Post-Crawford: Crawford oyunu bittiyse (crawfordDone) küp yeniden AKTİF.
+    // (11) Post-Crawford: Crawford oyunu bittiyse (crawfordDone) kÃ¼p yeniden AKTÄ°F.
     public function test_offer_allowed_post_crawford(): void
     {
-        // Siyah 5 puan uzakta (score black=0, target=5) -> onun için küp canlı; sıra siyahta.
+        // Siyah 5 puan uzakta (score black=0, target=5) -> onun iÃ§in kÃ¼p canlÄ±; sÄ±ra siyahta.
         $this->room(target: 5, matchOverride: [
             'crawford' => false, 'crawfordDone' => true, 'score' => ['white' => 4, 'black' => 0],
         ], stateOverride: ['turn' => 'black']);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/CUBEX/cube/offer')->assertOk();
         $this->assertSame('black', $this->cube(Room::first())['pending']);
     }
 
-    // (12) Ölü küp: 5'lik maçta 4-3, önde olan (beyaz, 1 puan uzakta) küpü teklif EDEMEZ
-    // (kazanmak zaten maçı bitirir -> DEAD_CUBE). Skordan bağımsız genel hesap: value>=need.
+    // (12) Ã–lÃ¼ kÃ¼p: 5'lik maÃ§ta 4-3, Ã¶nde olan (beyaz, 1 puan uzakta) kÃ¼pÃ¼ teklif EDEMEZ
+    // (kazanmak zaten maÃ§Ä± bitirir -> DEAD_CUBE). Skordan baÄŸÄ±msÄ±z genel hesap: value>=need.
     public function test_offer_rejected_dead_cube_score(): void
     {
         $this->room(target: 5, matchOverride: ['score' => ['white' => 4, 'black' => 3]]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'DEAD_CUBE');
-        // Geride olan (siyah, 2 puan uzakta) için küp CANLI (value 1 < need 2); sıra siyaha geçince.
+        // Geride olan (siyah, 2 puan uzakta) iÃ§in kÃ¼p CANLI (value 1 < need 2); sÄ±ra siyaha geÃ§ince.
         $r = Room::first();
         $st = $r->server_state;
         $st['turn'] = 'black';
         $r->server_state = $st;
         $r->save();
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/CUBEX/cube/offer')->assertOk();
     }
 
-    // Ölü küp genel: value=2, beyaza 2 kaldı -> DEAD_CUBE (5'lik, 3-x). value>=need genel kuralı.
+    // Ã–lÃ¼ kÃ¼p genel: value=2, beyaza 2 kaldÄ± -> DEAD_CUBE (5'lik, 3-x). value>=need genel kuralÄ±.
     public function test_offer_rejected_dead_cube_when_value_covers_need(): void
     {
         $this->room(target: 5, cube: ['value' => 2, 'owner' => 'white', 'pending' => null],
             matchOverride: ['score' => ['white' => 3, 'black' => 0]]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'DEAD_CUBE');
     }
 
-    // 1 puanlık maç: küp HİÇ kullanılmaz (ONE_POINT_MATCH).
+    // 1 puanlÄ±k maÃ§: kÃ¼p HÄ°Ã‡ kullanÄ±lmaz (ONE_POINT_MATCH).
     public function test_offer_rejected_one_point_match(): void
     {
         $this->room(target: 1);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'ONE_POINT_MATCH');
     }
 
-    // Açılış eli oynanmadan (turns=0) küp teklif edilemez (OPENING_NOT_PLAYED).
+    // AÃ§Ä±lÄ±ÅŸ eli oynanmadan (turns=0) kÃ¼p teklif edilemez (OPENING_NOT_PLAYED).
     public function test_offer_rejected_before_opening(): void
     {
         $this->room(matchOverride: ['turns' => 0]);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'OPENING_NOT_PLAYED');
     }
 
-    // (17) Bekleyen teklif varken İKİNCİ teklif reddedilir (DOUBLE_ALREADY_PENDING).
+    // (17) Bekleyen teklif varken Ä°KÄ°NCÄ° teklif reddedilir (DOUBLE_ALREADY_PENDING).
     public function test_second_offer_while_pending_rejected(): void
     {
         $this->room(cube: ['value' => 1, 'owner' => null, 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'DOUBLE_ALREADY_PENDING');
     }
 
-    // (16) Sıra rakipteyken teklif reddedilir (NOT_PLAYERS_TURN) + reason gövdede.
+    // (16) SÄ±ra rakipteyken teklif reddedilir (NOT_PLAYERS_TURN) + reason gÃ¶vdede.
     public function test_offer_rejected_not_your_turn_reason(): void
     {
         $this->room(); // turn=white
-        $this->postJson('/api/rooms/CUBEX/cube/offer', ['token' => 'p2'])
+        $this->command('p2', '/api/rooms/CUBEX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'NOT_PLAYERS_TURN');
     }
 
-    // (13) Gammon + küp: oyunu gammon biten taraf küp × 2 alır (kaybeden hiç toplamadı).
+    // (13) Gammon + kÃ¼p: oyunu gammon biten taraf kÃ¼p Ã— 2 alÄ±r (kaybeden hiÃ§ toplamadÄ±).
     public function test_move_gammon_times_cube(): void
     {
         config()->set('validator.url', 'http://validator.test');
         $this->room(target: 7, cube: ['value' => 2, 'owner' => 'white', 'pending' => null],
             stateOverride: ['dice' => [6, 1], 'diceUsed' => [false, false]]);
-        // Kazanan beyaz 15 topladı; siyah (kaybeden) hiç toplamadı, beyazın evinde/bar'da YOK -> gammon.
+        // Kazanan beyaz 15 topladÄ±; siyah (kaybeden) hiÃ§ toplamadÄ±, beyazÄ±n evinde/bar'da YOK -> gammon.
         $won = Backgammon::initialState();
         $won['points'] = array_fill(0, 24, 0);
-        $won['points'][10] = -15; // siyah orta bölgede (beyazın evi 0-5 DIŞI) -> gammon, backgammon değil
+        $won['points'][10] = -15; // siyah orta bÃ¶lgede (beyazÄ±n evi 0-5 DIÅžI) -> gammon, backgammon deÄŸil
         $won['off'] = ['white' => 15, 'black' => 0];
         $won['bar'] = ['white' => 0, 'black' => 0];
         $won['turn'] = 'black';
         $won['dice'] = [];
         Http::fake(['validator.test/validate' => Http::response(['valid' => true, 'state' => $won])]);
 
-        $this->postJson('/api/rooms/CUBEX/move', ['token' => 'p1', 'steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
-            ->assertOk()->assertJsonPath('match.score.white', 4); // gammon(2) × küp(2) = 4
+        $this->command('p1', '/api/rooms/CUBEX/move', ['steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
+            ->assertOk()->assertJsonPath('match.score.white', 4); // gammon(2) Ã— kÃ¼p(2) = 4
     }
 
-    // (14) Backgammon + küp: kaybedenin bar'da taşı var -> küp × 3.
+    // (14) Backgammon + kÃ¼p: kaybedenin bar'da taÅŸÄ± var -> kÃ¼p Ã— 3.
     public function test_move_backgammon_times_cube(): void
     {
         config()->set('validator.url', 'http://validator.test');
@@ -371,22 +390,23 @@ class RoomCubeTest extends TestCase
         $won['points'] = array_fill(0, 24, 0);
         $won['points'][10] = -14;
         $won['off'] = ['white' => 15, 'black' => 0];
-        $won['bar'] = ['white' => 0, 'black' => 1]; // siyah bar'da -> backgammon (3×)
+        $won['bar'] = ['white' => 0, 'black' => 1]; // siyah bar'da -> backgammon (3Ã—)
         $won['turn'] = 'black';
         $won['dice'] = [];
         Http::fake(['validator.test/validate' => Http::response(['valid' => true, 'state' => $won])]);
 
-        $this->postJson('/api/rooms/CUBEX/move', ['token' => 'p1', 'steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
-            ->assertOk()->assertJsonPath('match.score.white', 6); // backgammon(3) × küp(2) = 6
+        $this->command('p1', '/api/rooms/CUBEX/move', ['steps' => [['from' => 5, 'to' => 'off', 'die' => 6]]])
+            ->assertOk()->assertJsonPath('match.score.white', 6); // backgammon(3) Ã— kÃ¼p(2) = 6
     }
 
-    // (15) Maçın PASS ile bitmesi: drop, teklif edeni MEVCUT küp değerinde kazandırır (gammon YOK)
-    // -> zaten test_respond_drop_* kapsıyor. Burada: 5'lik maçta küp 2 drop -> beyaz +2, maç sürer.
+    // (15) MaÃ§Ä±n PASS ile bitmesi: drop, teklif edeni MEVCUT kÃ¼p deÄŸerinde kazandÄ±rÄ±r (gammon YOK)
+    // -> zaten test_respond_drop_* kapsÄ±yor. Burada: 5'lik maÃ§ta kÃ¼p 2 drop -> beyaz +2, maÃ§ sÃ¼rer.
     public function test_pass_awards_current_cube_value_no_gammon(): void
     {
         $this->room(target: 5, cube: ['value' => 2, 'owner' => 'white', 'pending' => 'white']);
-        $this->postJson('/api/rooms/CUBEX/cube/respond', ['token' => 'p2', 'action' => 'drop'])
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'drop'])
             ->assertOk()->assertJsonPath('winner', 'white')->assertJsonPath('match_done', false);
-        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']); // MEVCUT küp = 2 (×1)
+        $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']); // MEVCUT kÃ¼p = 2 (Ã—1)
     }
 }
+
