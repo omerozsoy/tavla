@@ -1196,3 +1196,5 @@ The dedicated fixtures are now in place: achievement rating reports use a finish
 The complete Laravel suite was rerun after the authoritative fixture migrations: **497 tests / 7,835 assertions**, with **21 failures** and **4 skipped**. This is down from the earlier 87 failures. The remaining failures are concentrated in legacy Lucky Wheel admin authentication, RoomClock/LivePreview ownership fixtures, one active-money admission expectation, and an outdated tournament no-show expectation. No production authorization guard was weakened to satisfy them; they remain the next dedicated fixture batch.
 
 `RoomLivePreviewTest` now authenticates both member preview writers and the non-member rejection path with Sanctum users. The cosmetic preview suite passes **3 tests / 13 assertions** and still verifies that `version` is not bumped.
+
+`RoomClockTest` now uses real user ownership, authenticated matchmaking, and the supported friendly legacy state path for clock-only coverage. The spectator no-contest case clears stale test authentication before polling. The clock suite passes **14 tests / 86 assertions**.

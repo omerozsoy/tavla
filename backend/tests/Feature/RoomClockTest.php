@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 // Sunucu-otoriter saat + AFK'nin HTTP katmani: eslesme tempo sarti, clock init,
@@ -13,16 +15,24 @@ class RoomClockTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
     private function playingRoom(string $code, string $mode, int $target): Room
     {
+        $this->p1 = User::factory()->create();
+        $this->p2 = User::factory()->create();
+        Sanctum::actingAs($this->p1);
         return Room::create([
             'code' => $code,
-            'p1_token' => 't1',
+            'p1_token' => 't1', 'p1_user_id' => $this->p1->id,
             'p1_name' => 'P1',
-            'p2_token' => 't2',
+            'p2_token' => 't2', 'p2_user_id' => $this->p2->id,
             'p2_name' => 'P2',
             'status' => 'playing',
-            'mode' => 'ranked',
+            // Clock tests exercise timing, not ranked result settlement; use
+            // the explicitly supported legacy friendly state path.
+            'mode' => 'friendly',
             'time_control' => $mode,
             'target' => $target,
             'version' => 1,
@@ -43,14 +53,20 @@ class RoomClockTest extends TestCase
     // ---- Eslesme: yalniz AYNI tempo ----
     public function test_matchmaking_pairs_only_same_time_control(): void
     {
+        $a = User::factory()->create();
+        $b = User::factory()->create();
+        $c = User::factory()->create();
+        Sanctum::actingAs($a);
         $this->postJson('/api/matchmaking', ['token' => 'A', 'name' => 'A', 'targets' => [5], 'time_control' => 'normal'])
             ->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
 
         // Farkli tempo -> A ile ESLESMEZ, kendi havuzuna girer
+        Sanctum::actingAs($b);
         $this->postJson('/api/matchmaking', ['token' => 'B', 'name' => 'B', 'targets' => [5], 'time_control' => 'speed'])
             ->assertOk()->assertJson(['matched' => false, 'slot' => 'p1']);
 
         // Ayni tempo -> A ile eslesir
+        Sanctum::actingAs($c);
         $this->postJson('/api/matchmaking', ['token' => 'C', 'name' => 'C', 'targets' => [5], 'time_control' => 'normal'])
             ->assertOk()->assertJson(['matched' => true, 'slot' => 'p2']);
     }
@@ -140,6 +156,7 @@ class RoomClockTest extends TestCase
         $forge = $this->state(5);
         $forge['turnsPlayed'] = 9;
         $forge['played'] = [['x' => 1], ['x' => 1]];
+        Sanctum::actingAs($this->p2);
         $this->putJson('/api/rooms/CLK4', ['token' => 't2', 'state' => $forge])->assertOk();
 
         $room->refresh();
@@ -187,9 +204,11 @@ class RoomClockTest extends TestCase
         $state = $this->state(1);
         $state['match']['score'] = ['white' => 1, 'black' => 0];
         $state['gameEnd'] = ['winner' => 'white'];
+        Sanctum::actingAs($winner);
         $this->putJson('/api/rooms/CLKD', ['token' => 't1', 'state' => $state])->assertOk();
 
         // KAZANAN (p1/beyaz) sekmeyi kapatır (leave). Sonuç TERS ÇEVRİLMEMELİ.
+        Sanctum::actingAs($winner);
         $this->postJson('/api/rooms/CLKD/leave', ['token' => 't1'])->assertOk();
 
         $room->refresh();
@@ -244,6 +263,7 @@ class RoomClockTest extends TestCase
         $room->save();
 
         // Izleyici (token yok) poll eder -> ikisi-de-terk no-contest ile finalize edilir
+        $this->app['auth']->forgetGuards();
         $this->getJson('/api/rooms/CLKB')->assertOk();
 
         $room->refresh();
