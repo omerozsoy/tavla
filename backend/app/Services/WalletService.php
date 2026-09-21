@@ -40,21 +40,28 @@ class WalletService
         if ($after < 0) {
             throw new \RuntimeException('Wallet balance cannot be negative.');
         }
+        $ledgerAvailable = Schema::hasTable('wallet_transactions');
+        if (! $ledgerAvailable && config('wallet.require_ledger', true)) {
+            throw new \RuntimeException('Wallet ledger is unavailable; economic write rejected.');
+        }
+
         $user->coins = $after;
         $user->save();
 
-        if (Schema::hasTable('wallet_transactions')) {
-            WalletTransaction::create([
-                'transaction_id' => (string) \Illuminate\Support\Str::uuid(),
-                'user_id' => $user->id,
-                'amount' => $amount,
-                'balance_before' => $before,
-                'balance_after' => $after,
-                'type' => $type,
-                'reference_type' => $referenceType,
-                'reference_id' => $referenceId,
-            ]);
+        if (! $ledgerAvailable) {
+            return $user;
         }
+
+        WalletTransaction::create([
+            'transaction_id' => (string) \Illuminate\Support\Str::uuid(),
+            'user_id' => $user->id,
+            'amount' => $amount,
+            'balance_before' => $before,
+            'balance_after' => $after,
+            'type' => $type,
+            'reference_type' => $referenceType,
+            'reference_id' => $referenceId,
+        ]);
 
         return $user;
     }
