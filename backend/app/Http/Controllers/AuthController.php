@@ -1080,18 +1080,28 @@ class AuthController extends Controller
         $opp = \App\Models\MatchResult::where('room_code', $code)
             ->where('user_id', '!=', $user->id)->latest('id')->first();
 
-        $mineSplit = $this->prSplitFromLog($mine?->log ?? null);
-        $oppSplit = $this->prSplitFromLog($opp?->log ?? null);
+        // KÖK FIX (çapraz-istemci PR tutarsızlığı #2NPAF): checker/cube KIRILIMI GNUBG-OTORİTER
+        // kolonlardan gelmeli. Önceden prSplitFromLog($log) (wildbg per-karar loss) kullanılıyordu:
+        // "self" kırılımı gnubg (pollGnubgPr) iken "opponent" kırılımı wildbg-log-split oluyordu ->
+        // iki istemci aynı maç için FARKLI "Pul Oyunu PR" gösteriyordu (bir ekran 4.01, diğeri 2.32)
+        // ve genel PR (gnubg) ile kendi içinde tutarsızdı. gnubg iki oyuncuda AYNI olduğundan bu
+        // değerler her istemcide özdeş. gnubg hazır değilse null -> istemci gnubg gelene kadar mevcut
+        // değeri korur (wildbg sayısı KULLANICIYA gösterilmez — direktif).
+        $has = fn (string $c): bool => \Illuminate\Support\Facades\Schema::hasColumn('match_results', $c);
+        $col = fn ($m, string $c) => ($m && $has($c) && $m->$c !== null) ? (float) $m->$c : null;
+        // opp kırılımı: rakibin KENDİ satırının gnubg self'i (otoriter); yoksa benim satırımın
+        // gnubg_opponent_* fallback'i (aynı maç -> aynı gnubg değeri, rakip hiç raporlamasa bile).
+        $checkerOpp = $col($opp, 'gnubg_checker_pr') ?? $col($mine, 'gnubg_opponent_checker_pr');
+        $cubeOpp = $col($opp, 'gnubg_cube_pr') ?? $col($mine, 'gnubg_opponent_cube_pr');
 
         return response()->json([
             'self' => $mine?->pr,
             'opponent' => $opp?->pr,
-            // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — rakip gec raporlarsa
-            // istemci poll'u kirilimi de buradan doldurur.
-            'checker_self' => $mineSplit['checker'],
-            'cube_self' => $mineSplit['cube'],
-            'checker_opponent' => $oppSplit['checker'],
-            'cube_opponent' => $oppSplit['cube'],
+            // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — GNUBG-otoriter (yukarı bkz).
+            'checker_self' => $col($mine, 'gnubg_checker_pr'),
+            'cube_self' => $col($mine, 'gnubg_cube_pr'),
+            'checker_opponent' => $checkerOpp,
+            'cube_opponent' => $cubeOpp,
             // Sans (luck) SUNUCU-OTORITER: her oyuncu KENDİ renginin HAM luck'ını raporlar
             // (kendi ONNX'inden — aynı zar+pozisyonla merkezî hesapla özdeş). İki istemci de
             // buradan AYNI beyaz+siyah ham çifti okur -> net (kazanan−kaybeden) TUTARLI görünür.
