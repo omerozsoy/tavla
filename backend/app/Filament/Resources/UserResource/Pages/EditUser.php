@@ -37,6 +37,11 @@ class EditUser extends EditRecord
                     'coins' => 'Bakiye ayrılmış coin miktarının altına indirilemez.',
                 ]);
             }
+            if (array_key_exists('coins', $data)) {
+                $coins = (int) $data['coins'];
+                unset($data['coins']);
+                app(\App\Services\WalletService::class)->setBalance($locked, $coins);
+            }
             $locked->forceFill($data)->save();
 
             if (array_key_exists('coins', $data)) {

@@ -131,8 +131,7 @@ class PanelController extends Controller
                 if ($coins < (int) ($locked->coins_reserved ?? 0)) {
                     abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
                 }
-                $locked->coins = $coins;
-                $locked->save();
+                app(\App\Services\WalletService::class)->setBalance($locked, $coins);
             });
             $afterCoins = (int) User::whereKey($user->id)->value('coins');
             \App\Support\Shield::audit(
