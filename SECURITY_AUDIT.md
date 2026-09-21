@@ -1378,3 +1378,7 @@ The remaining legacy `PUT /api/rooms/{code}` compatibility path is now disabled 
 ## Audit amendment - result/reward client fallback verification (2026-09-21)
 
 The result authority paths were rechecked after the legacy-state fail-closed change. `reportRating` ignores forged `won`, opponent metadata, match category, score, and reward evidence unless the referenced room has a verified canonical server result. Tournament `report` derives the winner from the locked room result, and `noShow` requires the authenticated bracket player to own the room seat and proves the opponent never joined. Achievement unlocks are idempotent and consume server-side `MatchResult`/stat context. Focused `MatchResultAuthoritativeTest`, `AchievementTest`, `LuckV1EndToEndTest`, and `TournamentNoShowTest` suites all passed. Residual status remains PARTIAL for historical/offline projections and unverified external consumers; no client-result bypass was found in these tested HTTP paths.
+
+## Audit amendment - RNG bias and replay verification (2026-09-21)
+
+The server and client verification implementations use rejection sampling (`byte < 252`) before modulo-6 mapping, so the previously noted 256-to-6 modulo bias is no longer present in current source. Roll identity is domain-separated by seed/client/index and the command layer prevents repeated roll commands from advancing the authoritative index. `FairDiceTest` passes **5 tests / 6,006 assertions**. Remaining RNG status is limited to production seed-reveal/transport evidence, not the mapping algorithm.
