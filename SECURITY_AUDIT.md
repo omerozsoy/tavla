@@ -1096,3 +1096,18 @@ Authoritative match settlement now records loser debit and winner credit through
 Admin REST, legacy panel, and Filament balance edits now call `WalletService::setBalance`; the target value is represented as a signed adjustment and cannot violate `coins_reserved`. The wallet ledger migration and production reconciliation are still intentionally pending.
 
 Added read-only `wallet:reconcile` command. It compares each user balance with the append-only ledger projection and flags `reserved > balance` without modifying data. It fails closed when the ledger table is not present; no automatic repair or production migration was run.
+
+## Current status correction (2026-09-21)
+
+The original discovery checklist above intentionally preserves historical findings. Current implementation status is amended here: authoritative command receipts exist for `roll/move/cube/resign`; percentage stake snapshots and fail-closed settlement are active; stale cleanup retains unsettled rooms; validator diagnostics require admin access; wallet writers for payment, shop, rewards, tournaments, products, settlement, and admin adjustments route through `WalletService`. These controls do not replace the remaining database migration, production rollout, persisted command responses, or real parallel DB regression tests.
+
+## Audit amendment — database integrity constraints prepared (2026-09-21)
+
+**ID:** SEC-024 (prepared, not deployed)
+**Severity:** HIGH
+**Category:** Database invariants / concurrency support
+**Affected file(s):** `backend/database/migrations/2026_09_21_235000_add_security_integrity_constraints.php`
+
+A deployment-ready migration now adds database checks for distinct room players, terminal-only settled rooms, `coins_reserved <= coins`, and wallet ledger arithmetic. It also adds indexes used by active-room admission queries. Before adding any constraint it scans for violating rows and aborts with a descriptive error; it does not delete or repair data. The migration has **not** been executed in this audit session.
+
+This does not create a database-enforced partial unique constraint for “one active money room per user”; that rule spans two nullable participant columns and room status, so the current application row-lock protocol remains necessary. A future participant/admission table or database-specific partial index is required for a complete database-only guarantee. Production schema support (MySQL version, existing violations, and rollout order) remains UNKNOWN until deployment inspection.
