@@ -1082,3 +1082,5 @@ Filament `UserResource` coin edits now emit the same audit event after the locke
 ## Audit amendment — wallet transaction foundation (2026-09-21)
 
 An append-only `WalletTransaction` model, migration, and `WalletService` were added. Payment coin and cart fulfillment now use the service, which records transaction UUID, user, signed amount, balance before/after, type, and payment reference when the migration exists. Negative balances are rejected. The migration was not executed; legacy writers still require migration to the shared service before SEC-015 can be marked complete.
+
+Shop purchases, daily rewards, Lucky Wheel spins, and Dice Slot debit/payout paths now also call `WalletService`. Their existing user-row locks and business guards remain in place. Tournament, match settlement, achievements, and admin absolute adjustments still need migration to the same ledger protocol.
