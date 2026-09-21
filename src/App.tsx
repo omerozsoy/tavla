@@ -2721,6 +2721,10 @@ export default function App() {
   async function doRollAuthoritative() {
     const code = room?.code
     if (!code) return
+    // MAÇ BİTTİ: sunucu odayı 'finished' işaretlediyse (forfeit/timeout/normal son) ZAR ATMA.
+    // Aksi halde biten maçta auto-roll POST /roll 409 "Oyun aktif değil" döngüsüne girer (#KVU8X).
+    // Poll'un maç-sonu kesin-uygulama dalı zaten MatchResult'ı getirir; burada yalnız spam'i keseriz.
+    if (room?.status === 'finished') return
     if (rollConflictRef.current) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
@@ -4568,6 +4572,24 @@ export default function App() {
           appliedServerVersionRef.current = -1
           appliedServerRoomRef.current = room.code
         }
+        // MAÇ-SONU KESİN UYGULAMA (KÖK FIX #KVU8X): sunucu maçı bitirdiyse (status 'finished' VEYA
+        // server_match.done) terminal durumu shouldApplyServerState/mid-move/turn kapısına TAKILMADAN
+        // KOŞULSUZ uygula. Aksi halde forfeit/timeout ile biten maçta (özellikle yeni-oyun açılışı
+        // sırasında: done=true AMA opened=true + zar + turn kalır) istemci "aktif tahta"da kalıp zar
+        // atmayı sürdürür -> POST /roll 409 "Oyun aktif değil" spam + maç-sonu ekranı HİÇ gelmez.
+        // setRoom zaten status'ü güncelliyor ama applyServerBoard (skor+gameEnd) kapıya takılıydı.
+        // Sürüm ilerlediğinde bir kez uygula (idempotent; done bump'ı version'ı artırır). return YOK:
+        // aşağıdaki saat-durdurma (srvDone) mantığı da çalışsın.
+        const srvTerminal = !!(isAuthoritative && rv.server_state && (rv.status === 'finished' || rv.server_match?.done))
+        if (srvTerminal && (rv.server_version ?? 0) > appliedServerVersionRef.current) {
+          try {
+            applyServerBoard(rv.server_state as GameState, rv.server_match ?? null)
+            appliedServerVersionRef.current = rv.server_version ?? 0
+            appliedServerRoomRef.current = room.code
+          } catch {
+            appliedServerVersionRef.current = -1
+          }
+        }
         // AÇILIŞ KALKANI: hâlâ "Açılış zarı atılıyor…" ekranındayız ama sunucuda oyun ZATEN
         // açılmışsa surum muhasebesine BAKMADAN uygula. Acilisi ilk tetikleyemeyen taraf
         // (reused/409) tek bir kacirilmis apply'da sonsuza kadar bu ekranda kaliyordu.
@@ -4575,8 +4597,10 @@ export default function App() {
         if (stuckOpening) appliedServerVersionRef.current = -1
         // Poll-apply kararı SAF fonksiyonda (src/online/authSync + test). midMove yalnız KENDİ
         // turumda geçerli; rakip turundaysak daima senkronla (açılış desync fix — bkz authSync).
+        // srvTerminal iken normal apply ATLA (terminal dal zaten uyguladı; çift-apply yok).
         if (
-          stuckOpening ||
+          !srvTerminal &&
+          (stuckOpening ||
           shouldApplyServerState(
             {
               turn: srvTurnStartRef.current?.turn ?? 'white',
@@ -4586,7 +4610,7 @@ export default function App() {
             },
             rv,
             myColor,
-          )
+          ))
         ) {
           // ÖNCE uygula, SONRA "uygulandı" yaz. Ters sırada, applyServerBoard içinde atılan bir
           // istisna sürümü uygulanmış SAYDIRIYOR ve poll o durumu bir daha getirmiyordu
