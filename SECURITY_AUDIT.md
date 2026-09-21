@@ -1366,3 +1366,7 @@ The private-room read guard now covers the public `GET /api/live-matches` listin
 ## Audit amendment - MAT export error detail redaction (2026-09-21)
 
 Canonical MAT export failures no longer return the internal `MatSerializer` exception text to the browser. The endpoint returns a generic 422 response while logging the diagnostic server-side with the log UID and record ID for forensic review. `GameLogTest` passes **11 tests / 58 assertions**.
+
+## Audit amendment - legacy room status is server-derived (2026-09-21)
+
+The legacy `PUT /api/rooms/{code}` path still exists only for the explicitly supported non-money friendly compatibility mode. Its client `status=finished` field is no longer authoritative: the server ignores it unless the canonical state proves a terminal winner, or the server clock has produced a timeout/AFK result. A non-terminal state cannot be marked finished by request payload alone. `RoomClockTest` passes **15 tests / 88 assertions** including the forged-status regression.

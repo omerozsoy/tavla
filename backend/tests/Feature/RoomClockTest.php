@@ -88,6 +88,19 @@ class RoomClockTest extends TestCase
         $this->assertSame('white', $showClock['active']);
     }
 
+    public function test_client_cannot_finish_legacy_room_without_terminal_state(): void
+    {
+        $this->playingRoom('CLKSTATUS', 'normal', 5);
+
+        $this->putJson('/api/rooms/CLKSTATUS', [
+            'token' => 't1',
+            'status' => 'finished',
+            'state' => $this->state(5),
+        ])->assertOk();
+
+        $this->assertSame('playing', Room::where('code', 'CLKSTATUS')->value('status'));
+    }
+
     // ---- show TIMEOUT'u enforce eder (speed 1: ana sure AFK'dan once biter) ----
     public function test_show_enforces_timeout(): void
     {
@@ -259,6 +272,9 @@ class RoomClockTest extends TestCase
         $clock['p1_seen'] = $now - 70; // ikisi de terk (70 > 60+3)
         $clock['p2_seen'] = $now - 80;
         $room->clock = $clock;
+        // Public spectator path is used here to exercise stale-room finalization;
+        // friendly-room reads are intentionally participant-only.
+        $room->mode = null;
         $verBefore = (int) $room->version;
         $room->save();
 
