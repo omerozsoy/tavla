@@ -319,13 +319,23 @@ class AuthController extends Controller
         // M2 (denetim): aynı room+user için EŞ ZAMANLI raporları SERİLEŞTİR -> çift-Elo + çift-satır
         // yarışını kapat. Kilidi alamazsak (başka rapor işliyor) çift İŞLEM yapma; mevcut durumu
         // idempotent dön. TTL 30s: kritik bölüm (validator PR max ~20s dahil) sığar. Kilit altyapısı
-        // yoksa best-effort devam (unique index yine çift satırı önler).
+        // Lock alınamazsa idempotent sonuç döndürülür; lock altyapısı exception verirse
+        // fail-closed 503 uygulanır (rating yazımı yapılmaz).
         if (! empty($roomCode)) {
             $gotLock = true;
+            $lockError = false;
             try {
                 $gotLock = \Illuminate\Support\Facades\Cache::lock('rr:'.$roomCode.':'.$user->id, 30)->get();
             } catch (\Throwable $e) {
-                $gotLock = true;
+                // Cache lock altyapısı bilinmiyorsa rating yazmaya devam etme; fail-open
+                // iki request'in aynı stale rating üzerinden Elo uygulamasına izin verebilir.
+                $lockError = true;
+            }
+            if ($lockError) {
+                return response()->json([
+                    'message' => 'Sonuç kilidi geçici olarak kullanılamıyor; lütfen tekrar dene.',
+                    'reason' => 'result-lock-unavailable',
+                ], 503);
             }
             if (! $gotLock) {
                 $ex = \App\Models\MatchResult::where('room_code', $roomCode)->where('user_id', $user->id)->first();

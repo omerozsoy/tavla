@@ -1013,6 +1013,10 @@ Bug-report data URLs now require a real image signature from `getimagesizefromst
 
 Admin API, legacy panel, and Filament user edits now lock the target user row before changing `coins` and reject a requested balance below `coins_reserved`. This prevents an admin adjustment from invalidating an active escrow and removes the read/check/write race with settlement. A complete immutable wallet ledger, actor/reason/reference record, and reconciliation process remain open under SEC-015.
 
+## Audit amendment — rating lock fail-closed (2026-09-21)
+
+`reportRating` no longer treats a cache-lock exception as permission to continue. If the result lock backend is unavailable, the endpoint returns `503` before any rating/stat/result write. This prevents a cache outage from turning the existing lock into a fail-open duplicate-Elo path. The remaining gap is the broad rating/result/side-effect transaction and explicit lock release, which require a dedicated finalization refactor.
+
 ## Audit amendment — queue visibility for long analysis jobs (2026-09-21)
 
 The default database, Redis, and Beanstalk queue `retry_after` is now 720 seconds, exceeding the 600-second PR analysis job timeout with margin. The previous 90-second default could make an in-progress heavy job visible to a second worker before the first worker finished. Existing environment overrides remain authoritative and must be set above the longest worker timeout in deployment.
