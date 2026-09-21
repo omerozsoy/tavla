@@ -129,3 +129,7 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 ## Replay/game-log yazma sınırı
 
 `POST /api/game-logs` online modda oda mevcutsa yazanın koltuğunu `RoomAccess` ile doğrular. Hesap koltuğu authenticated user ID ile, misafir koltuğu yalnız oda token'ı ile kabul edilir; client'ın gönderdiği `slot` yetki kararı değildir. Oda silindikten sonra gelen orphan telemetry, geriye dönük en iyi çaba uyumluluğu için kabul edilir ancak authoritative result/settlement kanıtı değildir. Online `winner`, `score` ve `status` alanları yok sayılır; yalnız tamamlanmış doğrulanmış `server_match` sonucu log metadata'sına yazılır. `pvb`/`local` logları misafir uyumluluğu için bırakılmıştır ancak settlement/rating kanıtı değildir. Migration veya production log temizliği yapılmadı.
+
+## RNG bias düzeltmesi
+
+`FairDiceService::roll` ve `single` artık HMAC çıktısını `% 6` ile doğrudan eşlemiyor; 252 ve üzeri baytları reddeden deterministic rejection sampling kullanıyor. Böylece 1–6 yüzleri eşit dağılıma sahip oluyor. Commit/reveal seed kayıtları ve historical roll kayıtları değiştirilmedi; yeni algoritma için server test vector'ları eklenmesi gerekir.
