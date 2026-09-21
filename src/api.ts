@@ -1452,10 +1452,18 @@ export async function createRoom(
   rating?: number,
   avatar?: string,
   timeControl?: string,
+  target = 1,
 ): Promise<{ room: RoomView; slot: Slot }> {
   return req('/rooms', {
     method: 'POST',
-    body: JSON.stringify({ token: playerToken(), name, rating: rating ?? null, avatar: avatar ?? null, time_control: timeControl ?? null }),
+    body: JSON.stringify({
+      token: playerToken(),
+      name,
+      rating: rating ?? null,
+      avatar: avatar ?? null,
+      time_control: timeControl ?? null,
+      target,
+    }),
   })
 }
 
