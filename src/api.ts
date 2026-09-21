@@ -875,13 +875,14 @@ export interface ChatUser {
 export interface ChatMessage {
   id: number
   body: string
+  image?: string | null // base64 data-URL gorsel (opsiyonel; metinle birlikte veya tek basina)
   mine: boolean
   read?: boolean // gonderdigim mesaj karsi tarafca okundu mu (mavi cift tik)
   created_at?: string | null
 }
 export interface ChatThread {
   user: ChatUser
-  last: { body: string; mine: boolean; read?: boolean; created_at?: string | null } | null
+  last: { body: string; has_image?: boolean; mine: boolean; read?: boolean; created_at?: string | null } | null
   unread: number
   request?: boolean // BENIM onayimi bekleyen gelen mesaj istegi (arkadas degiliz)
 }
@@ -910,9 +911,13 @@ export async function declineRequest(userId: number): Promise<void> {
 export async function sendTyping(userId: number): Promise<void> {
   await req(`/messages/${userId}/typing`, { method: 'POST' })
 }
-// Arkadasa mesaj gonder
-export async function sendMessage(userId: number, body: string): Promise<{ message: ChatMessage }> {
-  return req(`/messages/${userId}`, { method: 'POST', body: JSON.stringify({ body }) })
+// Arkadasa mesaj gonder (opsiyonel base64 gorsel; metin bos olabilir ama en az biri gerekli)
+export async function sendMessage(
+  userId: number,
+  body: string,
+  image?: string | null,
+): Promise<{ message: ChatMessage }> {
+  return req(`/messages/${userId}`, { method: 'POST', body: JSON.stringify({ body, image: image ?? null }) })
 }
 // Yonetici: bir DM mesajini kalici sil (backend is_admin denetler)
 export async function deleteMessage(userId: number, messageId: number): Promise<void> {

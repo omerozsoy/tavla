@@ -19027,6 +19027,73 @@ button.acct-row-logout:hover:not(:disabled) {
 .msg-text {
   white-space: pre-wrap;
 }
+/* DM gorsel: balon icinde onizleme (tiklayinca tam-ekran zoom) */
+.msg-image {
+  display: block;
+  max-width: min(260px, 60vw);
+  max-height: 320px;
+  width: auto;
+  height: auto;
+  border-radius: 10px;
+  cursor: zoom-in;
+  object-fit: cover;
+}
+.msg-bubble.has-image .msg-text {
+  margin-top: 6px;
+}
+/* Compose: gonderilmeyi bekleyen gorsel onizlemesi */
+.messages-img-preview {
+  position: relative;
+  align-self: flex-start;
+  margin: 6px 8px 0;
+  width: fit-content;
+}
+.messages-img-preview img {
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: 10px;
+  display: block;
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+}
+.img-preview-remove {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+.attach-btn {
+  flex: none;
+}
+/* Tam-ekran gorsel onizleme */
+.dm-zoom-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+.dm-zoom-overlay img {
+  max-width: 96vw;
+  max-height: 92vh;
+  border-radius: 8px;
+  cursor: default;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+}
 .msg-meta {
   flex: none;
   align-self: flex-end; /* alt satirda saga yasla */
