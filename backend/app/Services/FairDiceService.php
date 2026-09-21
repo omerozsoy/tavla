@@ -29,17 +29,16 @@ class FairDiceService
 
     /**
      * `index` elindeki zar çifti (deterministik). Her ikisi de 1..6.
-     * İki bağımsız zar için HMAC çıktısının ayrı baytlarını kullanırız (modülo-yanlılığı
-     * ihmal edilir: 256 mod 6 = 4 -> ~%1.5 yanlılık, oyun için kabul edilir; istenirse
-     * rejection-sampling'e geçilebilir).
+     * 256, 6'nın katı olmadığı için modulo bias oluşmaması adına 252 üzerindeki baytlar
+     * reddedilir ve HMAC çıktısı bir sonraki domain-separated bloktan sürdürülür.
      *
      * @return array{0:int,1:int} [d1, d2]
      */
     public function roll(string $serverSeed, string $clientSeed, int $index): array
     {
-        $mac = hash_hmac('sha256', $clientSeed.':'.$index, $serverSeed, true); // ham baytlar
-        $d1 = (ord($mac[0]) % 6) + 1;
-        $d2 = (ord($mac[1]) % 6) + 1;
+        $bytes = $this->uniformBytes($serverSeed, $clientSeed.':'.$index, 2);
+        $d1 = ($bytes[0] % 6) + 1;
+        $d2 = ($bytes[1] % 6) + 1;
 
         return [$d1, $d2];
     }
@@ -47,9 +46,26 @@ class FairDiceService
     /** Açılış zarı: tek zar (başlayanı belirler). index'e göre deterministik. */
     public function single(string $serverSeed, string $clientSeed, int $index): int
     {
-        $mac = hash_hmac('sha256', $clientSeed.':single:'.$index, $serverSeed, true);
+        $bytes = $this->uniformBytes($serverSeed, $clientSeed.':single:'.$index, 1);
 
-        return (ord($mac[0]) % 6) + 1;
+        return ($bytes[0] % 6) + 1;
+    }
+
+    /** @return list<int> accepted bytes in [0, 251], uniformly mappable to 1..6. */
+    private function uniformBytes(string $serverSeed, string $message, int $count): array
+    {
+        $accepted = [];
+        for ($round = 0; count($accepted) < $count; $round++) {
+            $mac = hash_hmac('sha256', $message.':'.$round, $serverSeed, true);
+            for ($i = 0, $length = strlen($mac); $i < $length && count($accepted) < $count; $i++) {
+                $byte = ord($mac[$i]);
+                if ($byte < 252) {
+                    $accepted[] = $byte;
+                }
+            }
+        }
+
+        return $accepted;
     }
 
     /**

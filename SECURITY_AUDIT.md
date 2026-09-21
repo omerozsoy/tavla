@@ -968,3 +968,15 @@ Envanter aşağıya Laravel'in gerçek route registry çıktısından eklenir. A
 **Residual limitation:** Event arrays are still client-originated telemetry and are not a source of truth for board, dice, winner, rating, or wallet state. Public `GET /api/game-logs/{uid}/mat` remains available for replay compatibility; private replay policy and retention should be decided separately.
 
 **Regression test required:** Add isolated HTTP tests with two authenticated users and two guest tokens proving wrong-seat writes return 403, online client result fields are ignored, verified server result is copied, and retrying the same seat remains idempotent. Do not run against production or real balances.
+
+## Audit amendment — server dice modulo bias (2026-09-21)
+
+**ID:** SEC-016 (remediated in this change)
+**Severity:** MEDIUM
+**Category:** RNG fairness
+**Affected file(s):** `backend/app/Services/FairDiceService.php`
+**Affected endpoint/event:** authoritative room roll/opening roll
+
+The server previously mapped raw HMAC bytes with `% 6`, making faces 1–4 occur 43/256 and faces 5–6 42/256. `roll()` and `single()` now use domain-separated HMAC blocks with rejection sampling (`byte < 252`) before mapping to 1–6. This preserves deterministic commit/reveal behavior while removing the modulo bias. Existing historical rolls are not rewritten.
+
+The frontend's local verifier already used rejection sampling but a different local hash helper; production parity should be covered by a server test vector before enabling client-side reveal verification for server rolls.
