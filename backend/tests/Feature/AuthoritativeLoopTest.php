@@ -103,8 +103,11 @@ class AuthoritativeLoopTest extends TestCase
         // Sırası gelen oyuncu zar atabilir.
         $this->command($otherTok, '/api/rooms/LOOPX/roll')->assertOk()
             ->assertJsonPath('opening', null); // artık açılış değil, normal el
-        // Sırası OLMAYAN (az önce oynayan) zar atarsa 409.
-        $this->command($starterTok, '/api/rooms/LOOPX/roll')->assertStatus(409);
+        // Sırası OLMAYAN (az önce oynayan) zar atarsa: 409 YERİNE güncel durumu 200 `not_turn` ile
+        // dön (istemci sessizce senkronlar; konsolda "POST /roll 409" spam olmaz). Zar VERİLMEZ.
+        $this->command($starterTok, '/api/rooms/LOOPX/roll')->assertOk()
+            ->assertJsonPath('not_turn', true)
+            ->assertJsonMissingPath('dice'); // el üretilmedi -> güvenlik aynı
     }
 
     public function test_move_can_win_game_and_finish_match(): void
