@@ -95,10 +95,10 @@ interface BoardProps {
   centerRight?: ReactNode
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
-  // true: nokta numaralari ALTTAKI oyuncunun perspektifinden yazilir (kendi 1-24'u). flip ile
-  // birlikte GERCEK perspektif dondurmesi olur (analiz: rakip hamlesini rakibin numarasiyla goster).
-  // false (varsayilan): numaralar daima beyaz/mutlak (index+1) — canli oyun davranisi degismez.
-  perspectiveNumbers?: boolean
+  // Nokta NUMARALARINI hangi oyuncunun perspektifinden yaz. 'white' (varsayilan) = index+1 (mutlak;
+  // canli oyun davranisi degismez). 'black' = 24-index (rakibin kendi 1-24'u). TASLARI OYNATMAZ,
+  // yalniz etiketleri degistirir (analiz: rakip hamlesinde tahta ayni kalir, sadece rakamlar rakibin).
+  numberFrom?: Player
   mirror?: boolean // true: oyun yonu "sola topla" (tahta yatay aynalanir, tepsi solda)
   swapStones?: boolean // true: pul renkleri takas (oyuncu siyah/beyaz secer) — gorsel, motor etkilenmez
   showPip?: boolean // pip sayilari gorunur mu
@@ -233,7 +233,7 @@ function Board({
   centerRight,
   centerMain,
   flip = false,
-  perspectiveNumbers = false,
+  numberFrom = 'white',
   mirror = false,
   swapStones = false,
   showPip = true,
@@ -250,11 +250,10 @@ function Board({
       ? LAYOUT.flipped
       : LAYOUT.normal
 
-  // Nokta NUMARALARI (etiketler). perspectiveNumbers false -> L'den (mevcut davranis: numaralar
-  // daima beyaz/mutlak). true -> ALTTAKI oyuncunun kendi 1-24'u: bu, flip'ten bagimsiz olarak
-  // "normal" numara dizilimidir (13-24 ust, 12-1 alt) cunku her oyuncu kendi tarafini boyle okur;
-  // flip pozisyonlariyla birlesince index->etiket dogru hizalanir (bkz LAYOUT flipped konumlari).
-  const numsL: Layout = perspectiveNumbers ? (mirror ? MIRROR.normal : LAYOUT.normal) : L
+  // Nokta ETİKETİ: üçgen index'inden perspektife göre hesaplanır. 'white' -> index+1 (mutlak),
+  // 'black' -> 24-index (rakibin kendi numaralaması). L'nin KONUM dizilerinden (TL/TR/BL/BR)
+  // türetilir -> flip/mirror'dan BAĞIMSIZ doğru hizalanır ve TAŞLARI OYNATMAZ (yalnız etiket).
+  const numFor = (i: number): number => (numberFrom === 'black' ? 24 - i : i + 1)
 
   // ---------------------------------------------------------------------------
   // Pointer-tabanli surukle-birak (native HTML5 DnD DEGIL).
@@ -590,12 +589,12 @@ function Board({
     >
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
-        {numsL.topNums[0].map((n) => (
-          <span key={n}>{n}</span>
+        {L.TL.map((i) => (
+          <span key={i}>{numFor(i)}</span>
         ))}
         <span className="num-gap" />
-        {numsL.topNums[1].map((n) => (
-          <span key={n}>{n}</span>
+        {L.TR.map((i) => (
+          <span key={i}>{numFor(i)}</span>
         ))}
       </div>
 
@@ -699,12 +698,12 @@ function Board({
 
       {/* Alt ucgen numaralari */}
       <div className="pt-numbers bottom">
-        {numsL.botNums[0].map((n) => (
-          <span key={n}>{n}</span>
+        {L.BL.map((i) => (
+          <span key={i}>{numFor(i)}</span>
         ))}
         <span className="num-gap" />
-        {numsL.botNums[1].map((n) => (
-          <span key={n}>{n}</span>
+        {L.BR.map((i) => (
+          <span key={i}>{numFor(i)}</span>
         ))}
       </div>
 
