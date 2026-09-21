@@ -1076,3 +1076,5 @@ Opportunistic and scheduled stale-room cleanup now deletes only rooms that are b
 ## Audit amendment — privileged wallet adjustment audit events (2026-09-21)
 
 Admin REST and legacy panel coin adjustments now emit high-severity Shield audit events containing actor ID, target user ID, and before/after balance values. Credentials and raw request payloads are not recorded. This improves forensic coverage for SEC-015; the immutable wallet ledger and Filament/admin adjustment reason/reference fields remain open.
+
+Filament `UserResource` coin edits now emit the same audit event after the locked update path, closing the third admin-surface gap. A durable wallet ledger and mandatory adjustment reason/reference remain required for full SEC-015 closure.

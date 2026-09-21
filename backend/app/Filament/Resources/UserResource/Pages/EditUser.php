@@ -28,7 +28,8 @@ class EditUser extends EditRecord
     // alanlari yaziyoruz. Public API $fillable ile kisitli/guvenli kaliyor.
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        return DB::transaction(function () use ($record, $data) {
+        $beforeCoins = (int) ($record->coins ?? 0);
+        return DB::transaction(function () use ($record, $data, $beforeCoins) {
             $locked = $record::query()->lockForUpdate()->findOrFail($record->getKey());
             if (array_key_exists('coins', $data)
                 && (int) $data['coins'] < (int) ($locked->coins_reserved ?? 0)) {
@@ -37,6 +38,15 @@ class EditUser extends EditRecord
                 ]);
             }
             $locked->forceFill($data)->save();
+
+            if (array_key_exists('coins', $data)) {
+                \App\Support\Shield::audit(
+                    auth()->id(),
+                    'filament_wallet_adjustment',
+                    sprintf('target_user=%d balance_before=%d balance_after=%d', $locked->id, $beforeCoins, (int) $locked->coins),
+                    3
+                );
+            }
 
             return $locked;
         });
