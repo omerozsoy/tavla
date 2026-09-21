@@ -27,10 +27,16 @@ class WalletService
 
     public function setBalance(User $user, int $target, string $type = 'admin_adjustment'): User
     {
-        if ($target < (int) ($user->coins_reserved ?? 0)) {
-            throw new \RuntimeException('Wallet balance cannot be below reserved coins.');
-        }
-        return $this->move($user, $target - (int) ($user->coins ?? 0), $type);
+        return DB::transaction(function () use ($user, $target, $type): User {
+            // Hedef bakiye ve rezerve tutar aynı kilitli satırdan okunmalı; aksi halde eşzamanlı
+            // bir money-match rezervi, kontrol edilen hedefi işlem sonunda geçersiz bırakabilir.
+            $locked = User::query()->lockForUpdate()->findOrFail($user->id);
+            if ($target < (int) ($locked->coins_reserved ?? 0)) {
+                throw new \RuntimeException('Wallet balance cannot be below reserved coins.');
+            }
+
+            return $this->move($locked, $target - (int) ($locked->coins ?? 0), $type);
+        });
     }
 
     private function move(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null): User
