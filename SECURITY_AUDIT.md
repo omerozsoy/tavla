@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production admin account check (2026-09-21)
+
+The read-only admin check reported **0 banned admins**, **0 unverified admins**, and one configured admin notification email. The configured email list is not itself an authorization grant; access remains controlled by the explicit database `is_admin` flag and active account checks.
+
 ## Audit amendment — production security flag verification (2026-09-21)
 
 The deployed Laravel configuration was read without exposing secrets: `app_debug=false`, `server_authoritative=true`, `dice_enforce=true`, `wallet_require_ledger=true`, `validator_required=true`, and `validator_verify_tls=true`. The active database queue `retry_after=700` seconds; this is above the documented 600-second analysis timeout, though deployment worker settings should remain aligned with that margin.
