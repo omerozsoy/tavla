@@ -1146,3 +1146,7 @@ The production frontend now generates and sends a checkout key for the cart coin
 Tournament entry and refund writes no longer use the static tournament ID as a unique wallet reference. A user may legitimately leave and later rejoin the same open tournament, while the locked player list already prevents duplicate entry and makes repeated leave a no-op. Prize and pool settlement references remain tournament-scoped and idempotent.
 
 Achievement and Dice Slot regression coverage was also run: 31 tests / 235 assertions completed, with one legacy `AchievementTest` fixture still expecting a client-supplied rating result path that now correctly returns `409` without a verified authoritative room result. No wallet duplicate or payout collision was found in these flows.
+
+## Audit amendment — migration rollout runbook (2026-09-21)
+
+`SECURITY_MIGRATION_RUNBOOK.md` now documents the non-destructive production rollout sequence, backup requirement, migration order, reconciliation checks, feature flags, smoke tests, and rollback boundaries. No migration or production data operation was executed during this audit.
