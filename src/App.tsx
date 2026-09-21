@@ -1472,6 +1472,7 @@ export default function App() {
   } | null>(null)
   const [recordUid, setRecordUid] = useState<string | null>(null) // sol üst HUD'da gösterilen maç ID
   const prevGameEndRef = useRef(false) // gameEnd null->deger gecisini yakala (oyun-sonu flush)
+  const autoNextGameRef = useRef(false)
   const turnsPlayedRef = useRef(0) // commitTurn anindaki ortak sira (iki istemci ayni deger)
   const [message, setMessage] = useState(() => t('msg.roll'))
   const [showAnalysis, setShowAnalysis] = useState(false)
@@ -2719,6 +2720,7 @@ export default function App() {
   async function doRollAuthoritative() {
     const code = room?.code
     if (!code) return
+    if (rollConflictRef.current) return
     if (rollInFlightRef.current) return // önceki serverRoll bitmeden yeni çağrı YOK (döngü kalkanı)
     rollInFlightRef.current = true
     try {
@@ -6033,6 +6035,22 @@ export default function App() {
     setMessage(m2.isCrawford ? t('msg.crawfordGame') : t('msg.nextGame'))
   }
 
+  // Maç devam ediyorsa sonuç ekranında kullanıcıdan "Sonraki Oyun" tıklaması isteme.
+  // Sunucu yeni oyunun state'ini hazırladıktan kısa süre sonra aynı geçişi otomatik yap.
+  useEffect(() => {
+    if (!gameEnd || matchOver) {
+      autoNextGameRef.current = false
+      return
+    }
+    if (autoNextGameRef.current) return
+    autoNextGameRef.current = true
+    const timer = window.setTimeout(() => {
+      nextGame()
+    }, 900)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameEnd, matchOver])
+
   // ---- Overlay icerikleri ----
   // "hamle yok" popup: kendi siramda VEYA bot dans ederken VEYA online RAKİP dans ederken goster
   // (rakip zar atip hamlesi yoksa yerel oyuncu da ~2sn "Hamle Yok" panelini gorur -> adam anlar).
@@ -6199,13 +6217,9 @@ export default function App() {
           </div>
         )}
         <div className="result-actions">
-          {matchOver ? (
+          {matchOver && (
             <Button variant="default" onClick={() => handleNewMatch()}>
               {t('btn.newMatch')}
-            </Button>
-          ) : (
-            <Button variant="default" onClick={nextGame}>
-              {t('btn.nextGame')}
             </Button>
           )}
           <Button
