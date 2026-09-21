@@ -1417,6 +1417,8 @@ export default function App() {
   const syncEnabledRef = useRef(false)
   // Oda cikisi basladiginda bekleyen legacy PUT/debounce isteklerini de engelle.
   const roomLeavingRef = useRef<string | null>(null)
+  // 409 sonrasi otomatik acilis timer'i ayni hatali istegi sonsuza dek yinelemesin.
+  const rollConflictRef = useRef(false)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
   // Sunucu-otoriter mod (Faz 2c): true iken legacy PUT/lokal-zar DEVRE DISI (serverRoll/Move).
   const authoritativeRef = useRef(false)
@@ -2802,6 +2804,7 @@ export default function App() {
       // beklemeden doğru sıra/zarı uygula. Bu, move tarafındaki 409 resync davranışıyla
       // aynı güvenli yolu kullanır.
       if (err?.status === 409 && code) {
+        rollConflictRef.current = true
         appliedServerVersionRef.current = -1
         void showRoom(code)
           .then((rv) => {
@@ -3566,6 +3569,7 @@ export default function App() {
     if (online && (!onlineReady || room?.status !== 'playing')) return
     const fire = () => {
       if (online && room && authoritativeRef.current) {
+        if (rollConflictRef.current) return
         // Faz 2: açılışı SUNUCU yapar (adil, deterministik). serverRoll opening+starter döner;
         // doRollAuthoritative taze tahtayı kurar. Sıra-değil hatası olursa (diğer taraf tetikledi)
         // poll server_state ile senkron gelir -> sessiz geç.
@@ -4232,7 +4236,6 @@ export default function App() {
         }
       }
     }
-    roomLeavingRef.current = null
     syncEnabledRef.current = true
     setTurnStart(gs)
     setPlayed([])
@@ -4256,6 +4259,7 @@ export default function App() {
       setTurnsPlayed(lm.turns)
       // Açılış overlay kararı da saf: opened=false->'roll' (yeni oyun), true->null (kaldır), done->keep.
       const os = openingStateFromMatch(sm)
+      if (os !== 'roll') rollConflictRef.current = false
       if (os === 'keep') {
         // MAÇ BİTTİ (sunucu). KRİTİK: authoritative modda yerel oyun-sonu effect'i (winner(working))
         // ATLANIR -> gameEnd'i burada SUNUCU sonucundan kurmazsak MatchResult ekranı HİÇ açılmaz;
@@ -5077,6 +5081,8 @@ export default function App() {
   useEffect(() => {
     if (!online || room?.slot !== 'p1' || room?.status !== 'playing') return
     if (syncEnabledRef.current) return
+    roomLeavingRef.current = null
+    rollConflictRef.current = false
     syncEnabledRef.current = true
     setTurnStart(freshBoard('white'))
     setPlayed([])
@@ -5085,6 +5091,8 @@ export default function App() {
   }, [online, room?.slot, room?.status])
 
   async function handleCreateRoom(target = 1, tc?: TimeControl) {
+    roomLeavingRef.current = null
+    rollConflictRef.current = false
     setRoomBusy(true)
     setRoomError('')
     setInviteWaitName(null) // generic oda: hedefli davet etiketi gosterme
@@ -5152,6 +5160,8 @@ export default function App() {
   // gelir. Böylece iki sekme/pencere TEK sunucu-state'i izler (yerel ıraksama YOK). Açılış, ilk
   // serverRoll'da sunucuda atılır (online açılış yolu); bot başlatıcıysa aynı yanıtta oynar.
   async function handleCreateBotRoom(target: number, level: number, tc?: TimeControl) {
+    roomLeavingRef.current = null
+    rollConflictRef.current = false
     setRoomBusy(true)
     setRoomError('')
     setInviteWaitName(null)
