@@ -17,7 +17,6 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | İnvariant | Durum | Kalan iş |
 |---|---|---|
 | Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | MariaDB 10.3.39 / REPEATABLE-READ ve unique claim index production’da doğrulandı; gerçek paralel admission testi hâlâ bekliyor. |
-| Aynı match + aynı user duplicate participant olamaz | PARTIAL | Eski room kayıtlarını ve production duplicate durumunu doğrula. |
 | Aynı match iki kez settle edilemez | PARTIAL | Gerçek queue retry ve DB isolation davranışını production benzeri ortamda doğrula. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
 | Client wallet balance değiştiremez | PARTIAL | Referanssız ekonomik hareketler için ortak idempotency protokolünü tamamla. |
