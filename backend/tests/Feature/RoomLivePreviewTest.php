@@ -70,6 +70,17 @@ class RoomLivePreviewTest extends TestCase
         ])->assertStatus(403);
     }
 
+    public function test_friendly_room_state_is_private_to_participants(): void
+    {
+        $room = $this->room();
+        $room->mode = 'friendly';
+        $room->save();
+
+        $this->getJson("/api/rooms/{$room->code}")->assertForbidden();
+        $this->acting('p1');
+        $this->getJson("/api/rooms/{$room->code}?token=p1")->assertOk();
+    }
+
     public function test_live_empty_steps_clears_preview(): void
     {
         $room = $this->room();
