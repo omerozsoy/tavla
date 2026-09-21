@@ -3,8 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -14,8 +17,24 @@ class RoomServerAuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function command(string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    {
+        $user = $token === 'p1' ? $this->p1 : $this->p2;
+        Sanctum::actingAs($user);
+        return $this->postJson($uri, array_merge([
+            'token' => $token,
+            'command_id' => (string) Str::uuid(),
+            'expected_version' => (int) Room::first()->fresh()->server_version,
+        ], $payload));
+    }
+
     private function room(array $sm = [], ?array $state = null, int $target = 1): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         return Room::create([
             'code' => 'AUTHX',
             'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
@@ -31,7 +50,7 @@ class RoomServerAuthTest extends TestCase
     public function test_first_roll_is_fair_opening(): void
     {
         $this->room(); // server_state/server_match yok -> roll lazy-init + açılış
-        $res = $this->postJson('/api/rooms/AUTHX/roll', ['token' => 'p1'])->assertOk();
+        $res = $this->command('p1', '/api/rooms/AUTHX/roll')->assertOk();
         $res->assertJsonPath('opening', true);
         $dice = $res->json('dice');
         $this->assertCount(2, $dice);
@@ -47,11 +66,11 @@ class RoomServerAuthTest extends TestCase
     public function test_opening_is_deterministic_and_idempotent(): void
     {
         $this->room();
-        $a = $this->postJson('/api/rooms/AUTHX/roll', ['token' => 'p1'])->json('dice');
+        $a = $this->command('p1', '/api/rooms/AUTHX/roll')->assertOk()->json('dice');
         $starter = Room::first()->fresh()->server_match['opened'] ? Room::first()->fresh()->server_state['turn'] : null;
         // Başlayan tekrar isterse AYNI açılış zarı (reused); açılış bir daha üretilmez.
         $starterToken = $starter === 'white' ? 'p1' : 'p2';
-        $b = $this->postJson('/api/rooms/AUTHX/roll', ['token' => $starterToken])->assertOk();
+        $b = $this->command($starterToken, '/api/rooms/AUTHX/roll')->assertOk();
         $this->assertSame($a, $b->json('dice'));
     }
 
@@ -66,13 +85,13 @@ class RoomServerAuthTest extends TestCase
         $single = array_merge(Backgammon::initialState(), ['off' => ['white' => 0, 'black' => 1]]);
         $this->room($sm, $single, 4);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk()->assertJsonPath('match_done', false);
+        $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk()->assertJsonPath('match_done', false);
         $room = Room::first()->fresh();
         $this->assertSame(3, $room->server_match['score']['white']);
         $this->assertTrue($room->server_match['crawford']); // Crawford oyunu
 
         // Crawford oyununda küp YASAK (beyazın sırası, tahta taze).
-        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])->assertStatus(409);
+        $this->command('p1', '/api/rooms/AUTHX/cube/offer')->assertStatus(409);
     }
 
     // ---- RESIGN: SİSTEM-belirlenen değer (server_state'ten; istemci türüne güvenilmez) × küp ----
@@ -95,7 +114,7 @@ class RoomServerAuthTest extends TestCase
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
         $this->room($sm, $this->board($p, ['white' => 3, 'black' => 0]), 15);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk();
         $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
     }
 
@@ -110,7 +129,7 @@ class RoomServerAuthTest extends TestCase
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
         $this->room($sm, $this->board($p, ['white' => 3, 'black' => 0]), 15);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk();
         $this->assertSame(2, Room::first()->fresh()->server_match['score']['white']);
     }
 
@@ -123,7 +142,7 @@ class RoomServerAuthTest extends TestCase
             'crawford' => false, 'crawfordDone' => false, 'opened' => true];
         $this->room($sm, Backgammon::initialState(), 15);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/AUTHX/resign')->assertOk();
         $this->assertSame(6, Room::first()->fresh()->server_match['score']['white']);
     }
 
@@ -138,7 +157,7 @@ class RoomServerAuthTest extends TestCase
         $single = array_merge(Backgammon::initialState(), ['off' => ['white' => 1, 'black' => 0]]);
         $this->room($sm, $single, 4);
 
-        $this->postJson('/api/rooms/AUTHX/resign', ['token' => 'p1'])->assertOk()->assertJsonPath('match_done', false);
+        $this->command('p1', '/api/rooms/AUTHX/resign')->assertOk()->assertJsonPath('match_done', false);
         $room = Room::first()->fresh();
         $this->assertSame(1, $room->server_match['score']['black']);
         $this->assertFalse($room->server_match['crawford']);
@@ -154,11 +173,11 @@ class RoomServerAuthTest extends TestCase
         $room2 = Room::first();
         $room2->server_state = array_merge(Backgammon::initialState(), ['turn' => 'white']);
         $room2->save();
-        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p1'])
+        $this->command('p1', '/api/rooms/AUTHX/cube/offer')
             ->assertStatus(409)->assertJsonPath('reason', 'DEAD_CUBE');
         // Geride olan black (3 uzakta) için küp CANLI -> teklif edebilir.
         $room2->server_state = array_merge(Backgammon::initialState(), ['turn' => 'black']);
         $room2->save();
-        $this->postJson('/api/rooms/AUTHX/cube/offer', ['token' => 'p2'])->assertOk();
+        $this->command('p2', '/api/rooms/AUTHX/cube/offer')->assertOk();
     }
 }

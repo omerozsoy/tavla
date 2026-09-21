@@ -3,9 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -17,8 +20,23 @@ class AuthoritativeLoopTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function command(string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    {
+        Sanctum::actingAs($token === 'p1' ? $this->p1 : $this->p2);
+        return $this->postJson($uri, array_merge([
+            'token' => $token,
+            'command_id' => (string) Str::uuid(),
+            'expected_version' => (int) Room::first()->fresh()->server_version,
+        ], $payload));
+    }
+
     private function room(int $target = 1): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         return Room::create([
             'code' => 'LOOPX',
             'p1_token' => 'p1', 'p1_name' => 'W', 'p1_user_id' => 10,
@@ -32,7 +50,7 @@ class AuthoritativeLoopTest extends TestCase
     /** Açılış elini at, başlayanı çöz; [starterColor, starterToken, otherColor, otherToken]. */
     private function openingRoll(): array
     {
-        $r = $this->postJson('/api/rooms/LOOPX/roll', ['token' => 'p1'])->assertOk();
+        $r = $this->command('p1', '/api/rooms/LOOPX/roll')->assertOk();
         $r->assertJsonPath('opening', true);
         $starter = $r->json('starter');
         $dice = $r->json('dice');
@@ -79,14 +97,14 @@ class AuthoritativeLoopTest extends TestCase
 
         // Başlayan hamle yapar -> sıra karşıya geçer.
         $this->fakeFlip($otherColor);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])
+        $this->command($starterTok, '/api/rooms/LOOPX/move', ['steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])
             ->assertOk()->assertJsonPath('state.turn', $otherColor);
 
         // Sırası gelen oyuncu zar atabilir.
-        $this->postJson('/api/rooms/LOOPX/roll', ['token' => $otherTok])->assertOk()
+        $this->command($otherTok, '/api/rooms/LOOPX/roll')->assertOk()
             ->assertJsonPath('opening', null); // artık açılış değil, normal el
         // Sırası OLMAYAN (az önce oynayan) zar atarsa 409.
-        $this->postJson('/api/rooms/LOOPX/roll', ['token' => $starterTok])->assertStatus(409);
+        $this->command($starterTok, '/api/rooms/LOOPX/roll')->assertStatus(409);
     }
 
     public function test_move_can_win_game_and_finish_match(): void
@@ -97,7 +115,7 @@ class AuthoritativeLoopTest extends TestCase
 
         // Başlayan 15 taşı toplar -> oyunu (ve target=1 maçı) kazanır.
         $this->fakeFlip($starterColor === 'white' ? 'black' : 'white', ['white' => 0, 'black' => 0, $starterColor => 15]);
-        $res = $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
+        $res = $this->command($starterTok, '/api/rooms/LOOPX/move', ['steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
             ->assertOk();
         $res->assertJsonPath('winner', $starterColor)->assertJsonPath('match_done', true);
 
@@ -115,14 +133,14 @@ class AuthoritativeLoopTest extends TestCase
 
         // Başlayan oynar -> sıra karşıya. Karşı taraf zar atmadan ÖNCE küp teklif eder.
         $this->fakeFlip($otherColor);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
+        $this->command($starterTok, '/api/rooms/LOOPX/move', ['steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
 
-        $this->postJson('/api/rooms/LOOPX/cube/offer', ['token' => $otherTok])->assertOk();
+        $this->command($otherTok, '/api/rooms/LOOPX/cube/offer')->assertOk();
         $this->assertSame($otherColor, Room::first()->fresh()->server_match['cube']['pending']);
         // Küp beklerken zar atılamaz.
-        $this->postJson('/api/rooms/LOOPX/roll', ['token' => $otherTok])->assertStatus(409);
+        $this->command($otherTok, '/api/rooms/LOOPX/roll')->assertStatus(409);
         // Rakip take -> ikiye katla, sahiplik devret, pending temizle.
-        $this->postJson('/api/rooms/LOOPX/cube/respond', ['token' => $starterTok, 'action' => 'take'])
+        $this->command($starterTok, '/api/rooms/LOOPX/cube/respond', ['action' => 'take'])
             ->assertOk()->assertJsonPath('action', 'take');
         $c = Room::first()->fresh()->server_match['cube'];
         $this->assertSame(2, $c['value']);
@@ -145,13 +163,13 @@ class AuthoritativeLoopTest extends TestCase
 
         // Açılış eli oynandı -> 1 tur (sıradaki oyuncu artık küp teklif edebilir).
         $this->fakeFlip($otherColor);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
+        $this->command($starterTok, '/api/rooms/LOOPX/move', ['steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
         $this->assertSame(1, Room::first()->fresh()->server_match['turns']);
 
         // Oyun bitti (maç sürüyor) -> yeni oyunda sayaç 0'a döner: açılış eli şartı yine geçerli.
-        $this->postJson('/api/rooms/LOOPX/roll', ['token' => $starterTok === 'p1' ? 'p2' : 'p1'])->assertOk();
+        $this->command($starterTok === 'p1' ? 'p2' : 'p1', '/api/rooms/LOOPX/roll')->assertOk();
         $this->fakeFlip($starterColor, ['white' => 0, 'black' => 0, $otherColor => 15]);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok === 'p1' ? 'p2' : 'p1', 'steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
+        $this->command($starterTok === 'p1' ? 'p2' : 'p1', '/api/rooms/LOOPX/move', ['steps' => [['from' => 1, 'to' => 'off', 'die' => 1]]])
             ->assertOk()->assertJsonPath('match_done', false);
         $sm = Room::first()->fresh()->server_match;
         $this->assertSame(0, $sm['turns']);
@@ -172,7 +190,7 @@ class AuthoritativeLoopTest extends TestCase
 
         // Başlayan hamle yapar -> saat aktifi KARŞIYA geçer (yanlış-oyuncu-süresi bug'ı fix).
         $this->fakeFlip($otherColor);
-        $this->postJson('/api/rooms/LOOPX/move', ['token' => $starterTok, 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
+        $this->command($starterTok, '/api/rooms/LOOPX/move', ['steps' => [['from' => 5, 'to' => 2, 'die' => 3]]])->assertOk();
         $room = Room::first()->fresh();
         $this->assertSame($otherColor === 'white' ? 'p1' : 'p2', $room->clock['turn_slot']);
     }
@@ -183,7 +201,7 @@ class AuthoritativeLoopTest extends TestCase
         [, $starterTok, $otherColor, ] = $this->openingRoll();
 
         // Başlayan pes eder -> rakip maçı kazanır.
-        $this->postJson('/api/rooms/LOOPX/resign', ['token' => $starterTok])
+        $this->command($starterTok, '/api/rooms/LOOPX/resign')
             ->assertOk()->assertJsonPath('winner', $otherColor)->assertJsonPath('match_done', true);
         $this->assertSame($otherColor, Room::first()->fresh()->server_match['winner']);
     }

@@ -2142,6 +2142,12 @@ class RoomController extends Controller
 
             // Sıra kontrolü: yalnız sıra sahibi zar atabilir.
             if (! empty($state['dice'])) {
+                // A normal turn may reuse an issued roll only by the player
+                // whose turn owns that dice set. Keep opening-roll reuse
+                // above, but reject out-of-turn normal-roll reads.
+                if (($state['turn'] ?? 'white') !== $this->slotColor($slot)) {
+                    return $this->fail('Sıra sende değil.', 409);
+                }
                 return response()->json([
                     'dice' => $state['dice'],
                     'commit' => $room->dice_commit,
