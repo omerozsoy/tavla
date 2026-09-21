@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - production TLS chain verified (2026-09-21)
+
+A normal certificate-verifying curl -I https://www.tavlatv.com now returns HTTP 200 after the server CA bundle upgrade. The TLS-chain verification issue is closed. The response exposes the expected nosniff, SAMEORIGIN, and strict-origin-when-cross-origin headers; HSTS and CSP remain pending hardening items.
+
 ## Audit amendment - production response headers and CA trust (2026-09-21)
 
 The production main-site response now includes X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN, and Referrer-Policy: strict-origin-when-cross-origin. Strict-Transport-Security and Content-Security-Policy are still absent and remain deployment hardening follow-ups. The server initially failed normal curl certificate verification because its EL8 CA bundle was stale; ca-certificates-2025.2.80_v9.0.304-80.2.el8_10 was upgraded. A normal non -k curl check is still required to close TLS-chain verification evidence.
