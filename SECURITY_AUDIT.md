@@ -96,12 +96,12 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Category:** Authentication / credential exposure  
 **Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`  
 **Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`  
-**Description:** SSO değişimi PAT başına atomik kısa süreli tek kullanımlık cache claim'i yapıyor; ancak token ilk istekte URL, browser history, access log veya proxy log'larına girebilir.  
+**Description:** SSO değişimi PAT başına atomik kısa süreli tek kullanımlık cache claim'i yapıyor ve artık tokenı URL’ye koymadan POST body ile exchange edilebiliyor; legacy GET sözleşmesi hâlâ açık olduğu için URL/history/log riski tamamen kapanmış değil.  
 **Attack scenario:** URL sızıntısı gerçekleşirse saldırgan exchange penceresinde tokenı kullanmayı deneyebilir.  
 **Root cause:** Backward-compatible GET query sözleşmesi.  
-**Evidence:** Route ve controller query token okuyor; replay testi yalnız ikinci exchange'i engelliyor.  
+**Evidence:** `AdminSsoPostExchangeTest` ve `AdminSsoReplayTest` birlikte **4 test / 13 assertions** geçti. Legacy GET route query token okuyor; yeni POST route body token kullanıyor.  
 **Potential impact:** Admin web session açılması.  
-**Recommended fix:** Kısa ömürlü one-time nonce + POST exchange; PAT'yi doğrudan URL'de taşımama.  
+**Recommended fix:** Frontend/panel link üretimini POST exchange'e taşı, legacy GET'i kontrollü deprecation süresinden sonra kaldır; kısa ömürlü one-time nonce kullanımı korunmalı.  
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.  
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 

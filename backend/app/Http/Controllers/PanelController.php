@@ -45,7 +45,9 @@ class PanelController extends Controller
     // "Yonetim" dugmesi -> /panel/enter?token=<sanctum-token>
     public function enter(Request $request)
     {
-        $token = (string) $request->query('token', '');
+        $token = $request->isMethod('POST')
+            ? (string) $request->input('token', '')
+            : (string) $request->query('token', '');
         $access = $token ? \Laravel\Sanctum\PersonalAccessToken::findToken($token) : null;
         if ($access?->expires_at && $access->expires_at->isPast()) {
             $access = null;
