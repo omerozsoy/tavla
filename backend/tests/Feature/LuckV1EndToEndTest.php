@@ -35,7 +35,9 @@ class LuckV1EndToEndTest extends TestCase
         return Room::create([
             'code' => 'LKE2E', 'p1_token' => 't1', 'p1_user_id' => $w->id, 'p1_name' => $w->nickname,
             'p2_token' => 't2', 'p2_user_id' => $b->id, 'p2_name' => $b->nickname,
-            'status' => 'finished', 'target' => 1, 'version' => 1, 'settled' => false,
+            'status' => 'finished', 'mode' => 'ranked', 'authoritative' => true,
+            'target' => 1, 'version' => 1, 'settled' => false,
+            'server_match' => ['target' => 1, 'score' => ['white' => 0, 'black' => 1], 'done' => true, 'winner' => 'black'],
             'state' => ['match' => ['target' => 1, 'score' => ['white' => 0, 'black' => 1]],
                 'gameEnd' => ['winner' => 'black']],
         ]);
@@ -110,12 +112,9 @@ class LuckV1EndToEndTest extends TestCase
         $this->postJson('/api/rating/report', [
             'won' => true, 'opponent_rating' => 1500, 'ranked' => true, 'match_length' => 1,
             'log' => json_encode(['hc' => 'white', 'log' => []]),
-        ])->assertOk();
+        ])->assertStatus(409)->assertJsonPath('reason', 'verified-match-required');
 
-        Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1]);
-
-        $mr = \App\Models\MatchResult::where('user_id', $u->id)->latest('id')->first();
-        $this->assertNull($mr->luck_mwc);
+        $this->assertNull(\App\Models\MatchResult::where('user_id', $u->id)->latest('id')->first());
     }
 
     protected function tearDown(): void
