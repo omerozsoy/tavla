@@ -124,6 +124,7 @@ class PanelController extends Controller
         $action = $request->input('action');
 
         if ($action === 'coins') {
+            $beforeCoins = (int) ($user->coins ?? 0);
             DB::transaction(function () use ($user, $request) {
                 $locked = User::lockForUpdate()->findOrFail($user->id);
                 $coins = max(0, (int) $request->input('coins', 0));
@@ -133,6 +134,13 @@ class PanelController extends Controller
                 $locked->coins = $coins;
                 $locked->save();
             });
+            $afterCoins = (int) User::whereKey($user->id)->value('coins');
+            \App\Support\Shield::audit(
+                $me?->id,
+                'panel_wallet_adjustment',
+                sprintf('target_user=%d balance_before=%d balance_after=%d', $user->id, $beforeCoins, $afterCoins),
+                3
+            );
         } elseif ($action === 'rating') {
             // Rating'i (Elo) elle ayarla; seviye/lig bu degere gore hesaplanir.
             $user->rating = max(100, min(4000, (int) $request->input('rating', 1500)));
