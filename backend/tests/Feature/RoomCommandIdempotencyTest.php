@@ -82,6 +82,25 @@ class RoomCommandIdempotencyTest extends TestCase
         $this->assertDatabaseCount('room_commands', 1);
     }
 
+    public function test_cube_and_resign_require_command_id(): void
+    {
+        $user = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($user);
+        $room = $this->room($user);
+
+        $this->postJson("/api/rooms/{$room->code}/cube/offer", [
+            'token' => 'p1-token',
+            'expected_version' => 0,
+        ])->assertStatus(428)->assertJsonPath('reason', 'command-id-required');
+
+        $this->postJson("/api/rooms/{$room->code}/resign", [
+            'token' => 'p1-token',
+            'expected_version' => 0,
+        ])->assertStatus(428)->assertJsonPath('reason', 'command-id-required');
+
+        $this->assertDatabaseCount('room_commands', 0);
+    }
+
     private function room(User $user): Room
     {
         return Room::create([

@@ -1156,3 +1156,5 @@ Achievement and Dice Slot regression coverage was also run: 31 tests / 235 asser
 The opening authoritative roll previously returned before the command receipt guard, allowing a manual request without `command_id`. The guard now runs before every authoritative roll branch, including opening and reused-dice responses. Stale-version validation runs before claiming the receipt, and the payload hash excludes `expected_version` so a network retry may refresh its optimistic version without becoming a payload mismatch. `RoomCommandIdempotencyTest` passes 2 tests / 12 assertions.
 
 The regression now also proves that a stale request leaves zero command receipts and the same command ID can succeed after the client refreshes to the current version. The suite passes 3 tests / 16 assertions.
+
+Cube offer and resign are covered by the same missing-command rejection test; the complete command envelope suite now passes 4 tests / 21 assertions.
