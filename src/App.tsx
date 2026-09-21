@@ -4002,7 +4002,7 @@ export default function App() {
         JSON.stringify({ hc: 'white', log: logNow.slice(-1000) }),
         rankedMatch,
         'ai', // match_type -> yapay zeka
-        null, // room_code yok
+        room?.code ?? null, // sunucu-otoriter AI odasi -> backend sonucu oda skorundan dogrular
         buildAchExtra(), // basarim sinyalleri (mars/katmerli, min WP, prime6/closeout)
         null, // mat yok (pvb'de gnubg NATIVE MWC job'i calismaz -> ham luck gosterilir)
         prLuckRef.current.black, // rakip (bot) HAM luck'i -> opponent_luck kolonuna yazilir
