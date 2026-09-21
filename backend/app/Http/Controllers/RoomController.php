@@ -2194,7 +2194,18 @@ class RoomController extends Controller
                 return $this->fail('Önce küp teklifine yanıt ver.', 409);
             }
             if (empty($state['dice'])) {
-                return $this->fail('Önce zar at.', 409);
+                // İdempotency: istemci, önceki hamlenin cevabı gelmeden aynı turu
+                // tekrar gönderirse ilk hamle zarları zaten tüketmiş olabilir.
+                // Bu isteği yeniden uygulama; mevcut otoriter durumu başarıyla
+                // döndürerek istemcinin senkronize olmasını sağla.
+                return response()->json([
+                    'state' => $room->server_state,
+                    'version' => (int) $room->server_version,
+                    'winner' => null,
+                    'match' => $room->server_match,
+                    'match_done' => (bool) (($room->server_match['done'] ?? false)),
+                    'ignored' => true,
+                ]);
             }
 
             // Node validator ile doğrula (TS motoru = tek gerçek).
