@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - strict payment amount default (2026-09-21)
+
+Garanti callback amount validation now defaults to strict mode: a missing 	xnamount no longer counts as a successful amount check. GARANTI_STRICT_AMOUNT=true is documented in .env.example; tests explicitly cover both strict rejection and the compatibility override. Production must set the variable and rebuild the Laravel config cache before real payments are enabled.
+
 ## Audit amendment - payment checkout rate limits (2026-09-21)
 
 Authenticated payment creation routes now have endpoint-specific throttles: subscription, coin checkout, membership renewal, and cart checkout are limited to 10 requests per minute per user; promo validation is limited to 30 per minute per user. Route inspection confirmed the middleware, and the payment/product regression subset passed 21 tests / 76 assertions. This limits pending-payment and promo abuse; callback idempotency remains enforced by the locked payment claim.
