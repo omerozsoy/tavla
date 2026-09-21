@@ -58,11 +58,17 @@ class BotMoveService
             return $this->stepsOf($legal[0]); // tek seçenek -> gnubg gereksiz
         }
 
-        // Yasal hamleleri from/to imzasıyla indexle (die'nin OTORİTER kaynağı: validator).
-        $byKey = [];
+        // Yasal hamleleri SONUÇ-TAHTASI imzasıyla indexle (die'nin OTORİTER kaynağı: validator).
+        // NEDEN from/to DEĞİL: gnubg birleşik tek-taş hamlesini KOMPAKT yazar ("24/13" = tek adım),
+        // motor ise HER zarı ayrı adım üretir ("24/18 18/13" = iki adım) -> from/to anahtarları
+        // ASLA eşleşmez. Aynı hamlenin SONUÇ TAHTASI ikisinde de AYNIDIR -> güvenilir eşleşme.
+        // (KÖK NEDEN "seviye 10 bot ~32 PR": en iyi hamle birleşik tek-taş oynayış [koşu/race/
+        //  toplama/çiftler] olduğunda gnubg #1 sessizce elenip bot daha KÖTÜ ama eşleşen hamleyi
+        //  oynuyordu; ranked boş kalmadığı için fallback logu da YAZILMIYORDU -> teşhis edilemiyordu.)
+        $byBoard = [];
         foreach ($legal as $m) {
             $steps = $this->stepsOf($m);
-            $byKey[$this->fromToKey($steps)] = $steps;
+            $byBoard[$this->boardAfter($state, $steps)] = $steps;
         }
 
         // 2) gnubg konumu analiz eder, adayları equity-azalan sıralar. Her adayda notasyondan
@@ -74,12 +80,17 @@ class BotMoveService
             throw new BotUnavailableException('gnubg-unavailable');
         }
 
-        // 3) gnubg sırasını yasal hamlelere from/to ile EŞLE (die'yi validator'dan al) -> sıralı liste.
+        // 3) gnubg sırasını yasal hamlelere SONUÇ-TAHTASI ile EŞLE (die'yi validator'dan al) -> sıralı.
         $ranked = [];
         foreach ($cands as $c) {
-            $key = $this->fromToKey($this->stepsOf($c));
-            if ($key !== '' && isset($byKey[$key])) {
-                $ranked[] = $byKey[$key];
+            $cs = $this->stepsOf($c);
+            if (count($cs) === 0) {
+                continue; // notasyonu parse edilememiş aday -> atla
+            }
+            $key = $this->boardAfter($state, $cs);
+            if (isset($byBoard[$key])) {
+                $ranked[] = $byBoard[$key];
+                unset($byBoard[$key]); // aynı sonuç-tahtasını iki kez ekleme (equity-en-iyi olan kalır)
             }
         }
         if (count($ranked) === 0) {
@@ -190,19 +201,52 @@ class BotMoveService
         return is_array($steps) ? array_values($steps) : [];
     }
 
-    /** Adımların from/to imzası (die HARİÇ; sıra bağımsız) — iki motor arası hamle eşleme anahtarı. */
-    private function fromToKey(array $steps): string
+    /**
+     * Adımları $state'e uygulayıp SONUÇ TAHTASININ imzasını döndürür — iki motor arası hamle eşleme
+     * anahtarı. from/to notasyonu yerine sonuç tahtasını kullanmak birleşik tek-taş hamlelerini
+     * (gnubg "24/13" tek-adım vs motor "24/18 18/13" iki-adım) DOĞRU eşler; python _apply_our_steps
+     * ile aynı mantık (vuruş dahil). die alanı önemsiz. Vuruşlu birleşik hamlede gnubg ara noktayı
+     * '*' ile gösterir -> parse çok-adımlı gelir -> ara vuruş da yakalanır (sonuç yine birebir).
+     */
+    private function boardAfter(array $state, array $steps): string
     {
-        $pairs = [];
+        $pts = array_map('intval', array_values($state['points'] ?? []));
+        $bar = [
+            'white' => (int) ($state['bar']['white'] ?? 0),
+            'black' => (int) ($state['bar']['black'] ?? 0),
+        ];
+        $off = [
+            'white' => (int) ($state['off']['white'] ?? 0),
+            'black' => (int) ($state['off']['black'] ?? 0),
+        ];
+        $turn = ($state['turn'] ?? 'white') === 'black' ? 'black' : 'white';
+        $opp = $turn === 'white' ? 'black' : 'white';
+        $sign = $turn === 'white' ? 1 : -1;
+
         foreach ($steps as $s) {
             if (! is_array($s)) {
                 continue;
             }
-            $pairs[] = ($s['from'] ?? '?').'>'.($s['to'] ?? '?');
+            $from = $s['from'] ?? null;
+            $to = $s['to'] ?? null;
+            if ($from === 'bar') {
+                $bar[$turn]--;
+            } elseif (is_numeric($from)) {
+                $pts[(int) $from] -= $sign;
+            }
+            if ($to === 'off') {
+                $off[$turn]++;
+            } elseif (is_numeric($to)) {
+                $t = (int) $to;
+                if (($pts[$t] ?? 0) === -$sign) { // tek rakip blot -> vur (bara gönder)
+                    $pts[$t] = 0;
+                    $bar[$opp]++;
+                }
+                $pts[$t] = ($pts[$t] ?? 0) + $sign;
+            }
         }
-        sort($pairs);
 
-        return implode(',', $pairs);
+        return implode(',', $pts).'|'.$bar['white'].','.$bar['black'].'|'.$off['white'].','.$off['black'];
     }
 
     /**
