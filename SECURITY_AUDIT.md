@@ -16,7 +16,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 | İnvariant | Durum | Kalan iş |
 |---|---|---|
-| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | Production read-only snapshot temiz; gerçek MySQL/InnoDB paralel admission testi hâlâ bekliyor. |
+| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | MariaDB 10.3.39 / REPEATABLE-READ ve unique claim index production’da doğrulandı; gerçek paralel admission testi hâlâ bekliyor. |
 | Aynı match + aynı user duplicate participant olamaz | PARTIAL | Eski room kayıtlarını ve production duplicate durumunu doğrula. |
 | Aynı match iki kez settle edilemez | PARTIAL | Gerçek queue retry ve DB isolation davranışını production benzeri ortamda doğrula. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
@@ -34,9 +34,9 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 **Category:** Concurrency / database invariant
 **Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations
 **Affected endpoint/event:** matchmaking, room join/enter/rematch
-**Description:** Production read-only claim snapshot’ı temiz olsa da kullanıcı başına unique claim mekanizmasının gerçek InnoDB yarış davranışı production benzeri ortamda kanıtlanmadı.
+**Description:** Production read-only claim snapshot’ı temiz ve unique user claim index’i mevcut; kullanıcı başına claim mekanizmasının gerçek paralel admission yarış davranışı henüz kanıtlanmadı.
 **Attack scenario:** Aynı user ile paralel admission istekleri iki aktif money match oluşturmaya çalışabilir.
-**Root cause:** SQLite testleri gerçek MySQL isolation ve lock davranışını temsil etmez; aktif maç yokken paralel admission gözlemi yapılamadı.
+**Root cause:** SQLite testleri gerçek MariaDB isolation ve lock davranışını temsil etmez; aktif maç yokken paralel admission gözlemi yapılamadı.
 **Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.
 **Recommended fix:** Kontrollü test kullanıcılarıyla 10–50 paralel MySQL join/enter isteği çalıştır; production kullanıcı/coin verisine dokunmadan unique claim sonucunu doğrula.
 **Database protection required?:** Evet.
