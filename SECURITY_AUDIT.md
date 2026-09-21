@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - CSP readiness review (2026-09-21)
+
+A repository source review found Google Fonts, optional Google Tag Manager and Facebook Pixel scripts, inline styling, data:/lob: media, and application/API connections. A strict enforcing CSP cannot be added safely without a browser Content-Security-Policy-Report-Only observation period and an approved source inventory. CSP remains an open MEDIUM hardening item; no blocking CSP header was deployed by this audit.
+
 ## Audit amendment - HSTS verified on public hosts (2026-09-21)
 
 Normal HTTPS header checks now show Strict-Transport-Security: max-age=31536000 on both www.tavlatv.com and alidator.tavlatv.com. Apex and HTTP variants redirect to the HTTPS canonical host. includeSubDomains was intentionally not enabled because the complete subdomain inventory was not established.
