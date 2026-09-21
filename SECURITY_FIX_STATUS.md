@@ -142,6 +142,10 @@ Ortak immutable wallet ledger, yüzde bahis tutarının maç başında snapshot/
 
 500 ve queue-failure alert'lerinde query string kaldırılıyor; bearer/token/password/secret/authorization/api_key değerleri hata metninden maskeleniyor. Uygulamanın diğer log kanalları ve retention politikası ayrıca doğrulanmalı.
 
+## Queue visibility düzeltmesi
+
+Database/Redis/Beanstalk varsayılan `retry_after` değeri 720 saniyeye çıkarıldı; 600 saniyelik PR analiz job'ı timeout'undan uzun olduğu için aynı ağır işin ikinci worker'a erken görünme penceresi kapatıldı. Production `.env` override değeri varsa worker timeout'undan büyük olmalıdır.
+
 ## Sanctum SSO expiry kontrolü
 
 `/admin/enter` ve `/panel/enter` içindeki manuel `PersonalAccessToken::findToken()` kullanımı artık `expires_at` değerini de kontrol ediyor. Query-string token sızıntısı ve tek kullanımlık SSO exchange eksikliği ayrıca açık residual risk olarak kalıyor.
