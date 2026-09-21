@@ -1415,6 +1415,8 @@ export default function App() {
   }
   const appliedVersionRef = useRef(-1)
   const syncEnabledRef = useRef(false)
+  // Oda cikisi basladiginda bekleyen legacy PUT/debounce isteklerini de engelle.
+  const roomLeavingRef = useRef<string | null>(null)
   const lastSyncRef = useRef('') // en son gonderilen/uygulanan durum imzasi (echo engelle)
   // Sunucu-otoriter mod (Faz 2c): true iken legacy PUT/lokal-zar DEVRE DISI (serverRoll/Move).
   const authoritativeRef = useRef(false)
@@ -3058,6 +3060,8 @@ export default function App() {
     setResignOpen(false)
     if (online && room?.code) {
       const code = room.code
+      roomLeavingRef.current = code
+      syncEnabledRef.current = false
       void leaveRoom(code).finally(() => handleLeaveRoom())
       return
     }
@@ -4228,6 +4232,7 @@ export default function App() {
         }
       }
     }
+    roomLeavingRef.current = null
     syncEnabledRef.current = true
     setTurnStart(gs)
     setPlayed([])
@@ -4351,13 +4356,21 @@ export default function App() {
   const roomCode = room?.code
   const roomStatus = room?.status
   useEffect(() => {
-    if (!online || !roomCode || roomStatus !== 'playing' || !syncEnabledRef.current) return
+    if (
+      !online ||
+      !roomCode ||
+      roomStatus !== 'playing' ||
+      !syncEnabledRef.current ||
+      roomLeavingRef.current === roomCode ||
+      room?.authoritative
+    ) return
     // Sunucu-otoriter oda: tum-state PUT ETME. Otorite server_state'te; roll/move ucları
     // gunceller, poll geri okur. (Legacy istemci-state sync yalniz authoritative=false'ta.)
     if (authoritativeRef.current) return
     const sig = stateSig(match, starter, turnsPlayed, turnStart, played, cubePending, gameEnd)
     if (sig === lastSyncRef.current) return // degismedi / echo -> gonderme
     const timer = window.setTimeout(() => {
+      if (!syncEnabledRef.current || roomLeavingRef.current === roomCode) return
       lastSyncRef.current = sig
       const snap = {
         mode,
@@ -4402,7 +4415,14 @@ export default function App() {
       finalPushedRef.current = false // yeni maç/rövanş için sıfırla
       return
     }
-    if (finalPushedRef.current || !online || !roomCode || authoritativeRef.current) return
+    if (
+      finalPushedRef.current ||
+      !online ||
+      !roomCode ||
+      authoritativeRef.current ||
+      room?.authoritative ||
+      roomLeavingRef.current === roomCode
+    ) return
     finalPushedRef.current = true
     const snap = {
       mode,
