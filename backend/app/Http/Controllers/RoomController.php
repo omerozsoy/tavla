@@ -632,6 +632,9 @@ class RoomController extends Controller
         $me = $request->user('sanctum');
 
         $rooms = Room::where('status', 'playing')
+            ->where(function ($q) {
+                $q->whereNull('mode')->orWhere('mode', '!=', 'friendly');
+            })
             ->where('bot', false) // BOT maçları özel: Canlı Maçlar'da listelenmez/izlenmez
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')

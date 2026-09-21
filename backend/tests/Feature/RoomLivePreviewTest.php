@@ -81,6 +81,30 @@ class RoomLivePreviewTest extends TestCase
         $this->getJson("/api/rooms/{$room->code}?token=p1")->assertOk();
     }
 
+    public function test_friendly_rooms_are_not_exposed_by_live_matches_listing(): void
+    {
+        $this->room();
+        Room::create([
+            'code' => 'FRIENDY',
+            'p1_token' => 'friend-p1', 'p1_name' => 'Private A',
+            'p2_token' => 'friend-p2', 'p2_name' => 'Private B',
+            'status' => 'playing', 'mode' => 'friendly',
+            'state' => ['turn' => 'white'],
+        ]);
+        Room::create([
+            'code' => 'RANKEDY',
+            'p1_token' => 'ranked-p1', 'p1_name' => 'Public A',
+            'p2_token' => 'ranked-p2', 'p2_name' => 'Public B',
+            'status' => 'playing', 'state' => ['turn' => 'white'],
+        ]);
+
+        $codes = collect($this->getJson('/api/live-matches')->assertOk()->json('matches'))
+            ->pluck('code')->all();
+
+        $this->assertNotContains('FRIENDY', $codes);
+        $this->assertContains('RANKEDY', $codes);
+    }
+
     public function test_live_empty_steps_clears_preview(): void
     {
         $room = $this->room();
