@@ -1420,6 +1420,7 @@ export default function App() {
   const botNudgeTimerRef = useRef<number | null>(null)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
+  const lastSubmittedMoveRef = useRef<string | null>(null)
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // Yukaridaki surum HANGI odaya ait? Surumler oda-yerelidir (her oda 0'dan baslar), bu yuzden
   // "ref eskimis mi" karari SURUM SIRASINA degil ODA KIMLIGINE bakmali (bkz. serverSyncRoomChanged).
@@ -2365,6 +2366,14 @@ export default function App() {
       // eski sürümle gelen hamleyi reddedip istemciyi tekrar senkronizasyona sokar.
       const expectedServerVersion =
         appliedServerVersionRef.current >= 0 ? appliedServerVersionRef.current : (room.server_version ?? 0)
+      const moveKey = `${code}:${expectedServerVersion}:${JSON.stringify(finalPlayed)}`
+      // Aynı render yarışında aynı tur iki kez gönderilirse ilk istek zarları
+      // tüketir; ikinci istek gereksiz "Önce zar at" 409'u üretir.
+      if (lastSubmittedMoveRef.current === moveKey) {
+        moveInFlightRef.current = false
+        return
+      }
+      lastSubmittedMoveRef.current = moveKey
       serverMove(code, finalPlayed, expectedServerVersion)
         .then((r) => {
           if (r?.state) {
@@ -2383,6 +2392,7 @@ export default function App() {
           // appliedServerVersionRef=-1 zaten poll'u tetikler -> otoriter durum (doğru sıra+zar) geri
           // gelir (kendi kendini onarır). doRollAuthoritative da 409'u sessiz geçer — aynı desen.
           const err = e as { status?: number }
+          if (err?.status !== 409) lastSubmittedMoveRef.current = null
           if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
           // Poll aralığını beklemeden tek seferlik doğrudan senkronizasyon yap.
