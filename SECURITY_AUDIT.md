@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - production strict amount confirmed (2026-09-21)
+
+The deployed PHP 8.3 configuration was checked without exposing payment credentials: config('garanti.strict_amount') is 	rue. Missing or mismatched callback amounts therefore cannot be auto-fulfilled under the active configuration.
+
 ## Audit amendment - strict payment amount default (2026-09-21)
 
 Garanti callback amount validation now defaults to strict mode: a missing 	xnamount no longer counts as a successful amount check. GARANTI_STRICT_AMOUNT=true is documented in .env.example; tests explicitly cover both strict rejection and the compatibility override. Production must set the variable and rebuild the Laravel config cache before real payments are enabled.
