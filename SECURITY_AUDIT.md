@@ -1116,3 +1116,7 @@ This does not create a database-enforced partial unique constraint for “one ac
 The repository root has no Composer manifest; the PHP manifest is under `backend/`. `composer audit` from that directory could not reach Packagist in this sandbox, so dependency vulnerability status is **UNKNOWN**, not PASS. The root and `validator/` JavaScript projects do not contain a lockfile, therefore `npm audit` cannot produce a reproducible advisory result; no lockfile was generated and no dependency was installed.
 
 No Laravel WebSocket/Broadcasting server or socket command channel was found in the route/application inventory. Live match updates use authenticated HTTP polling/presence endpoints. WebSocket-specific controls are therefore **N/A for the current codebase**, while any future socket service must reuse `RoomAccess`, command IDs, and server-authoritative state handlers rather than accept broadcast events as mutations.
+
+## Audit amendment — command result version receipt (2026-09-21)
+
+After a claimed authoritative `roll`, `move`, cube, or `resign` transaction commits, the corresponding `room_commands.result_version` is now populated from the canonical response. This gives retries and forensic review the exact server revision reached by the command. The command receipt still returns a replay response rather than the original JSON body; full response replay remains a later compatibility enhancement.
