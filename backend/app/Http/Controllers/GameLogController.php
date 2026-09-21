@@ -170,7 +170,12 @@ class GameLogController extends Controller
         try {
             $mat = $log->matText();
         } catch (\RuntimeException $e) {
-            return response()->json(['message' => 'Kayıt tutarsız: '.$e->getMessage()], 422);
+            \Illuminate\Support\Facades\Log::warning('Canonical MAT export rejected inconsistent game log', [
+                'uid' => $uid,
+                'log_id' => $log->id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json(['message' => 'Kayıt tutarsız.'], 422);
         }
 
         return response()->json([
