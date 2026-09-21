@@ -109,6 +109,7 @@ class ProductController extends Controller
             'ship_city'    => ['required', 'string', 'max:80'],
             'ship_postal'  => ['nullable', 'string', 'max:20'],
             'note'         => ['nullable', 'string', 'max:500'],
+            'idempotency_key' => ['nullable', 'uuid'],
         ]);
 
         $product = Product::where('published', true)->find($data['product_id']);
@@ -150,19 +151,27 @@ class ProductController extends Controller
         ];
 
         return $paymentType === 'coin'
-            ? $this->orderWithCoins($request, $product, $qty, $color, $ship)
+            ? $this->orderWithCoins($request, $product, $qty, $color, $ship, $data['idempotency_key'] ?? null)
             : $this->orderWithMoney($request, $product, $qty, $color, $ship, $garanti, $data['method'] ?? 'card');
     }
 
     // Coin ile: ATOMIK stok + coin dusumu, siparis aninda 'paid'. ShopController::buy ile ayni
     // koruma (pct-bahis kilidi + KULLANILABILIR bakiye = coins - reserved).
-    private function orderWithCoins(Request $request, Product $product, int $qty, ?string $color, array $ship)
+    private function orderWithCoins(Request $request, Product $product, int $qty, ?string $color, array $ship, ?string $idempotencyKey = null)
     {
         $unit = (int) $product->coin_price;
         $cost = $unit * $qty;
 
-        $r = DB::transaction(function () use ($request, $product, $qty, $color, $ship, $cost) {
+        $r = DB::transaction(function () use ($request, $product, $qty, $color, $ship, $cost, $idempotencyKey) {
             $u = User::lockForUpdate()->find($request->user()->id);
+
+            if ($idempotencyKey) {
+                $existing = ProductOrder::where('user_id', $u->id)
+                    ->where('idempotency_key', $idempotencyKey)->first();
+                if ($existing) {
+                    return ['order' => $existing, 'coins' => $u->coins, 'replayed' => true];
+                }
+            }
 
             if (Room::userInPctStakedPlaying($u->id)) {
                 return ['pct_locked' => true];
@@ -185,6 +194,7 @@ class ProductController extends Controller
                 'payment_type' => 'coin',
                 'coin_cost'    => $cost,
                 'status'       => 'pending',
+                'idempotency_key' => $idempotencyKey,
             ]));
 
             app(\App\Services\WalletService::class)->debit($u, $cost, 'product_purchase', ProductOrder::class, $order->id);
@@ -337,12 +347,13 @@ class ProductController extends Controller
     {
         $data = $request->validate([
             'items'               => ['required', 'array', 'min:1', 'max:20'],
-            'items.*.product_id'  => ['required', 'integer'],
+            'items.*.product_id'  => ['required', 'integer', 'distinct'],
             'items.*.qty'         => ['required', 'integer', 'min:1', 'max:10'],
             'items.*.color'       => ['nullable', 'string', 'max:40'],
             'shipping_address_id' => ['required', 'integer'],
             'billing_address_id'  => ['nullable', 'integer'],
             'note'                => ['nullable', 'string', 'max:500'],
+            'idempotency_key'     => ['nullable', 'uuid'],
         ]);
 
         $ship = self::resolveShip($request->user()->id, $data['shipping_address_id'], $data['note'] ?? null);
@@ -371,8 +382,17 @@ class ProductController extends Controller
             $lines[] = ['p' => $p, 'qty' => $qty, 'color' => $color];
         }
 
-        $r = DB::transaction(function () use ($request, $lines, $total, $ship, $billNote) {
+        $idempotencyKey = $data['idempotency_key'] ?? null;
+        $r = DB::transaction(function () use ($request, $lines, $total, $ship, $billNote, $idempotencyKey) {
             $u = User::lockForUpdate()->find($request->user()->id);
+            if ($idempotencyKey) {
+                $existing = ProductOrder::where('user_id', $u->id)
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->get();
+                if ($existing->isNotEmpty()) {
+                    return ['orders' => $existing, 'coins' => $u->coins, 'replayed' => true];
+                }
+            }
             if (Room::userInPctStakedPlaying($u->id)) {
                 return ['pct_locked' => true];
             }
@@ -400,6 +420,7 @@ class ProductController extends Controller
                     'payment_type' => 'coin',
                     'coin_cost'    => (int) $ln['p']->coin_price * $ln['qty'],
                     'status'       => 'pending',
+                    'idempotency_key' => $idempotencyKey,
                     'admin_note'   => $billNote,
                 ]));
             }

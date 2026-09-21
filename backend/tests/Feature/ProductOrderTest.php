@@ -79,6 +79,27 @@ class ProductOrderTest extends TestCase
         $this->assertSame('Siyah', $order->color);
     }
 
+    public function test_coin_order_retry_with_same_idempotency_key_is_noop(): void
+    {
+        $u = User::factory()->create(['coins' => 1000]);
+        $p = $this->product();
+        Sanctum::actingAs($u);
+        $payload = array_merge($this->ship(), [
+            'product_id' => $p->id,
+            'qty' => 1,
+            'color' => 'Ceviz',
+            'payment_type' => 'coin',
+            'idempotency_key' => '6f7f8c2e-1db8-4d4a-a8ac-30e5c2a9a111',
+        ]);
+
+        $this->postJson('/api/products/order', $payload)->assertOk();
+        $this->postJson('/api/products/order', $payload)->assertOk();
+
+        $this->assertSame(700, (int) $u->fresh()->coins);
+        $this->assertSame(4, (int) $p->fresh()->stock);
+        $this->assertSame(1, ProductOrder::count());
+    }
+
     public function test_coin_order_rejected_when_insufficient_coins(): void
     {
         $u = User::factory()->create(['coins' => 100]);
