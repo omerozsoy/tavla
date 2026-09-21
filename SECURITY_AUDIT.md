@@ -1017,6 +1017,10 @@ Admin API, legacy panel, and Filament user edits now lock the target user row be
 
 `reportRating` no longer treats a cache-lock exception as permission to continue. If the result lock backend is unavailable, the endpoint returns `503` before any rating/stat/result write. This prevents a cache outage from turning the existing lock into a fail-open duplicate-Elo path. The remaining gap is the broad rating/result/side-effect transaction and explicit lock release, which require a dedicated finalization refactor.
 
+## Audit amendment — authoritative version envelope required (2026-09-21)
+
+Authoritative room commands (`roll`, `move`, cube offer/respond, resign) now reject an omitted `expected_version` with `428 expected-version-required`. Previously the field was optional, so an old/manual client could bypass stale-tab detection. Legacy non-authoritative friendly/dice-only rooms retain their compatibility path.
+
 ## Audit amendment — queue visibility for long analysis jobs (2026-09-21)
 
 The default database, Redis, and Beanstalk queue `retry_after` is now 720 seconds, exceeding the 600-second PR analysis job timeout with margin. The previous 90-second default could make an in-progress heavy job visible to a second worker before the first worker finished. Existing environment overrides remain authoritative and must be set above the longest worker timeout in deployment.

@@ -212,7 +212,9 @@ class SecurityPhaseZeroTest extends TestCase
         $room = $this->room(['server_version' => 7]);
         $method = new \ReflectionMethod(RoomController::class, 'staleCommand');
         $method->setAccessible(true);
-        self::assertNull($method->invoke(new RoomController(), $room, []));
+        $missing = $method->invoke(new RoomController(), $room, []);
+        self::assertSame(428, $missing->getStatusCode());
+        self::assertSame('expected-version-required', $missing->getData(true)['errors']['reason'] ?? $missing->getData(true)['reason'] ?? null);
         $response = $method->invoke(new RoomController(), $room, ['expected_version' => 6]);
         self::assertSame(409, $response->getStatusCode());
         self::assertSame('stale-version', $response->getData(true)['errors']['reason'] ?? $response->getData(true)['reason'] ?? null);
