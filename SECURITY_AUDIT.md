@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production replay and wallet reference check (2026-09-21)
+
+Read-only production checks found `duplicate_command_groups=0` and `duplicate_wallet_reference_groups=0`. No duplicate `(room_id, command_id)` receipt group or repeated non-null wallet business reference/type group was present in the inspected test data.
+
 ## Audit amendment — production room invariant read-only check (2026-09-21)
 
 The deployed test database was checked without writes: `duplicate_seat_rooms=0`, `users_in_multiple_active_money_rooms=0`, and `settled_non_terminal_rooms=0`. No duplicate room seat, simultaneous active money-room user, or settled non-terminal room was observed in the inspected data.
