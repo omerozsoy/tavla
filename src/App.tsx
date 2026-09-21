@@ -1015,8 +1015,12 @@ export default function App() {
           const rr = await reportRating(...(pr.args as Parameters<typeof reportRating>))
           if (alive) setUser((u) => (u ? { ...u, rating: rr.rating } : u))
           clearPendingReport()
-        } catch {
-          /* sonraki açılışta yine denenir */
+        } catch (error) {
+          // verified-match-required kalıcı bir 409'dur: oda artık doğrulanabilir
+          // değilse eski pending raporu her sayfa açılışında tekrar gönderilmesin.
+          if (error instanceof ApiErr && error.status === 409) {
+            clearPendingReport()
+          }
         }
       }
       const ps = loadPendingSettle()
