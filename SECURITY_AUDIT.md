@@ -1188,3 +1188,5 @@ Settlement/escrow/forfeit fixtures are now aligned with the hardened contract. `
 `GameLogTest` now authenticates online room ownership and asserts that client-supplied online `status`, `winner`, and `score` are ignored until a verified server result exists. The game-log suite passes **10 tests / 55 assertions**. `AchievementTest` and `LuckV1EndToEndTest` still contain legacy report calls without an authoritative finished room; their `409 verified-match-required` responses remain intentional and require a dedicated room-result fixture.
 
 The dedicated fixtures are now in place: achievement rating reports use a finished authoritative ranked room, and Luck V1 uses a server-match winner before queue analysis. The offline no-room path explicitly asserts `409 verified-match-required` and creates no result row. `AchievementTest` plus `LuckV1EndToEndTest` pass **13 tests / 88 assertions**.
+
+`MatchBackstopTest` completed-room fixtures now include the authoritative `server_match` winner and score. This allows late client reports to enrich an existing bare row without reopening client-controlled result authority. The suite passes **5 tests / 28 assertions**.
