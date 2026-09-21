@@ -8,6 +8,7 @@ use App\Services\BotUnavailableException;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
@@ -19,6 +20,16 @@ use Tests\TestCase;
 class BotRoomTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function command(string $code, string $token, string $uri, array $payload = []): \Illuminate\Testing\TestResponse
+    {
+        $room = Room::where('code', $code)->first()->fresh();
+        return $this->postJson($uri, array_merge([
+            'token' => $token,
+            'command_id' => (string) Str::uuid(),
+            'expected_version' => (int) $room->server_version,
+        ], $payload));
+    }
 
     /** Belirli adımlar döndüren / istenirse fırlatan sahte bot. */
     private function fakeBot(array $steps = [], bool $throw = false): BotMoveService
@@ -139,8 +150,7 @@ class BotRoomTest extends TestCase
 
         $this->botRoom('white', [3, 1]);
 
-        $res = $this->postJson('/api/rooms/BOTAA/move', [
-            'token' => 'human-tok',
+        $res = $this->command('BOTAA', 'human-tok', '/api/rooms/BOTAA/move', [
             'steps' => [['from' => 11, 'to' => 8, 'die' => 3]],
         ])->assertOk();
 
@@ -174,8 +184,7 @@ class BotRoomTest extends TestCase
 
         $this->botRoom('white', [3, 1]);
 
-        $res = $this->postJson('/api/rooms/BOTAA/move', [
-            'token' => 'human-tok',
+        $res = $this->command('BOTAA', 'human-tok', '/api/rooms/BOTAA/move', [
             'steps' => [['from' => 11, 'to' => 8, 'die' => 3]],
         ])->assertOk();
 
@@ -198,8 +207,7 @@ class BotRoomTest extends TestCase
 
         $this->botRoom('white', [3, 1]);
 
-        $res = $this->postJson('/api/rooms/BOTAA/move', [
-            'token' => 'human-tok',
+        $res = $this->command('BOTAA', 'human-tok', '/api/rooms/BOTAA/move', [
             'steps' => [['from' => 11, 'to' => 8, 'die' => 3]],
         ])->assertOk();
 
@@ -323,7 +331,7 @@ class BotRoomTest extends TestCase
         Http::fake(['gnubg.test/analyze' => Http::response(['cube' => ['proper' => 'Double, take']])]);
         $this->cubeRoom('white'); // sıra insanda -> insan küp teklif eder
 
-        $res = $this->postJson('/api/rooms/BOTCU/cube/offer', ['token' => 'human-tok'])->assertOk();
+        $res = $this->command('BOTCU', 'human-tok', '/api/rooms/BOTCU/cube/offer')->assertOk();
         $res->assertJsonPath('bot_cube', 'take');
         $res->assertJsonPath('match.cube.value', 2);
         $res->assertJsonPath('match.cube.owner', 'black');
@@ -336,7 +344,7 @@ class BotRoomTest extends TestCase
         Http::fake(['gnubg.test/analyze' => Http::response(['cube' => ['proper' => 'Double, pass']])]);
         $this->cubeRoom('white');
 
-        $res = $this->postJson('/api/rooms/BOTCU/cube/offer', ['token' => 'human-tok'])->assertOk();
+        $res = $this->command('BOTCU', 'human-tok', '/api/rooms/BOTCU/cube/offer')->assertOk();
         $res->assertJsonPath('bot_cube', 'drop');
         $res->assertJsonPath('winner', 'white'); // bot pes -> insan mevcut küp değerinde (1) kazanır
 
