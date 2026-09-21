@@ -162,6 +162,10 @@ class Room extends Model
             ? User::whereIn('id', $ids)->get(['id', 'avatar_frame', 'plan', 'plan_until'])->keyBy('id')
             : collect();
         $prem = fn ($uid) => $uid && isset($users[$uid]) ? $users[$uid]->plan_active !== 'free' : false;
+        $clientServerMatch = $this->server_match;
+        if (is_array($clientServerMatch)) {
+            unset($clientServerMatch['pct_stake_snapshot']);
+        }
 
         return [
             'code' => $this->code,
@@ -194,7 +198,7 @@ class Room extends Model
             'server_state' => $this->server_state, // otoriter tahta (yalniz authoritative iken dolu)
             'server_version' => (int) $this->server_version,
             'server_winner' => $this->server_winner,
-            'server_match' => $this->server_match, // otoriter maç skoru {target,score,gameNo,done,winner}
+            'server_match' => $clientServerMatch, // otoriter maç skoru {target,score,gameNo,done,winner}
             'dice_commit' => $this->dice_commit, // provably-fair taahhut (dice_seed GIZLI kalir)
             // BAĞIMSIZ Faz 1: bu odada zar sunucudan alınır (istemci serverRoll kullanır).
             'dice_authority' => (bool) $this->dice_authority,

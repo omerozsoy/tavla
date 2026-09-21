@@ -319,8 +319,7 @@ class RoomController extends Controller
                 // Kullanılabilir bakiye (coins - coins_reserved) < stake ise eşleşme YAPMA (o an başka
                 // yere ayrılmış olabilir). Atomik: tx içinde, deadlock için user'lar sıralı-id kilitli.
                 // Böylece kaybeden stake'i maç sırasında harcayamaz -> settle her zaman TAM öder.
-                if ($agreedStake > 0 && Schema::hasColumn('users', 'coins_reserved')
-                    && $cand->p1_user_id && $userId) {
+                if (($agreedStake > 0 || $betPct > 0) && $cand->p1_user_id && $userId) {
                     $uids = [(int) $cand->p1_user_id, (int) $userId];
                     sort($uids);
                     $lk = [];
@@ -330,14 +329,28 @@ class RoomController extends Controller
                     $p1u = $lk[$cand->p1_user_id] ?? null;
                     $p2u = $lk[$userId] ?? null;
                     $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
-                    if (! $p1u || ! $p2u || $avail($p1u) < $agreedStake || $avail($p2u) < $agreedStake) {
+                    $p1Available = $p1u ? $avail($p1u) : 0;
+                    $p2Available = $p2u ? $avail($p2u) : 0;
+                    if (! $p1u || ! $p2u
+                        || ($agreedStake > 0 && ($p1Available < $agreedStake || $p2Available < $agreedStake))
+                        || ($betPct > 0 && ($p1Available < 1 || $p2Available < 1))) {
                         continue; // biri kullanılabilir bakiyeyle karşılayamıyor -> bu eşleşme yok
                     }
-                    $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $agreedStake;
-                    $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $agreedStake;
-                    $p1u->save();
-                    $p2u->save();
-                    $cand->escrowed = true;
+                    if ($agreedStake > 0 && Schema::hasColumn('users', 'coins_reserved')) {
+                        $p1u->coins_reserved = (int) ($p1u->coins_reserved ?? 0) + $agreedStake;
+                        $p2u->coins_reserved = (int) ($p2u->coins_reserved ?? 0) + $agreedStake;
+                        $p1u->save();
+                        $p2u->save();
+                        $cand->escrowed = true;
+                    }
+                    if ($betPct > 0) {
+                        $cand->server_match = [
+                            'pct_stake_snapshot' => [
+                                (string) $cand->p1_user_id => (int) floor($p1Available * $betPct / 100),
+                                (string) $userId => (int) floor($p2Available * $betPct / 100),
+                            ],
+                        ];
+                    }
                 }
                 $cand->p2_token = $data['token'];
                 $cand->p2_user_id = $userId;
@@ -462,7 +475,7 @@ class RoomController extends Controller
         // KOMISYON (rake): kazanan stake × (1 − oran) alır; fark commissions ledger'ına yazılır.
         // Oran admin 'commission_pct' ayarından (varsayılan config; 0..90 kırpılır).
         $commissionPct = max(0, min(90, \App\Models\Setting::int('commission_pct', (int) config('game.commission_pct', 5))));
-        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct) {
+        $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct, $room) {
             // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
             $claimed = Room::where('code', $code)->where('settled', false)
                 ->update($escrowed ? ['settled' => true, 'escrowed' => false] : ['settled' => true]);
@@ -485,11 +498,20 @@ class RoomController extends Controller
             $winner = $winnerId ? ($locked[$winnerId] ?? null) : null;
             $loser = $loserId ? ($locked[$loserId] ?? null) : null;
 
-            // Transfer tutari: sabit stake, ya da % ise iki oyuncunun bahsinin min'i
+            // Transfer tutari: sabit stake, ya da matchmaking sirasinda kaydedilen % stake snapshot'i.
+            // Settlement anindaki bakiyeden tekrar hesaplanmaz.
             if ($betPct > 0) {
-                $wBet = (int) floor((($winner->coins ?? 0) * $betPct) / 100);
-                $lBet = (int) floor((($loser->coins ?? 0) * $betPct) / 100);
-                $amount = max(0, min($wBet, $lBet));
+                $snapshot = is_array($room->server_match['pct_stake_snapshot'] ?? null)
+                    ? $room->server_match['pct_stake_snapshot'] : null;
+                $wBet = $snapshot[(string) $winnerId] ?? null;
+                $lBet = $snapshot[(string) $loserId] ?? null;
+                if ((! is_int($wBet) && ! ctype_digit((string) $wBet))
+                    || (! is_int($lBet) && ! ctype_digit((string) $lBet))) {
+                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                        409, 'Percentage stake snapshot missing; settlement is pending.'
+                    );
+                }
+                $amount = max(0, min((int) $wBet, (int) $lBet));
             } else {
                 $amount = $stake;
             }
@@ -1783,7 +1805,7 @@ class RoomController extends Controller
     // Sunucu-otoriter maç durumunu (skor 0-0) kur. target: odanın maç uzunluğu (yoksa 1).
     private function initServerMatch(Room $room): array
     {
-        return [
+        $match = [
             'target' => (int) ($room->target ?? 1),
             'score' => ['white' => 0, 'black' => 0],
             'gameNo' => 1,
@@ -1803,6 +1825,13 @@ class RoomController extends Controller
             // (otoriter modda yerel sayaç artmaz). Her yeni oyunda 0'a döner.
             'turns' => 0,
         ];
+        // Matchmaking stores the percentage stake snapshot before the first action.
+        // Preserve it when the authoritative game state is initialized.
+        if (is_array($room->server_match) && isset($room->server_match['pct_stake_snapshot'])) {
+            $match['pct_stake_snapshot'] = $room->server_match['pct_stake_snapshot'];
+        }
+
+        return $match;
     }
 
     /** server_match.cube (yoksa varsayılan: 1/ortada). */

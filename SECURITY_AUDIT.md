@@ -1034,3 +1034,17 @@ Authoritative room commands (`roll`, `move`, cube offer/respond, resign) now rej
 The default database, Redis, and Beanstalk queue `retry_after` is now 720 seconds, exceeding the 600-second PR analysis job timeout with margin. The previous 90-second default could make an in-progress heavy job visible to a second worker before the first worker finished. Existing environment overrides remain authoritative and must be set above the longest worker timeout in deployment.
 
 The PR and luck jobs also use Laravel `WithoutOverlapping` locks keyed by `match_result_id`, with expiries longer than their normal work windows. A duplicate dispatch is dropped while the first analysis is active. This is compute/result deduplication; wallet settlement still requires its own economic idempotency claim.
+
+## Audit amendment — percentage stake snapshot (2026-09-21)
+
+**ID:** SEC-022 (remediated for new matches; legacy rooms fail closed)
+**Severity:** HIGH
+**Category:** Wallet / settlement integrity / race condition
+**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`
+**Affected endpoint/event:** matchmaking and `POST /api/rooms/{code}/settle`
+
+The previous percentage settlement calculated each player's wager from the live `coins` balance at match finish. Credits or other balance changes during a match could therefore change the stake after admission. Matchmaking now locks both users, computes a percentage stake snapshot, and stores it in the internal `server_match.pct_stake_snapshot` field. Settlement uses only that snapshot and never recomputes from finish-time balances. The internal field is removed from `Room::toClient()` responses. A percentage room without a snapshot returns `409` and remains unsettled instead of falling back to a client or live-balance value.
+
+Fixed-stake escrow behavior remains unchanged. Existing percentage rooms created before this control do not have a snapshot and are intentionally fail-closed; they require an operator/data-repair decision rather than an inferred payout.
+
+**Regression test required:** concurrent percentage matchmaking must assert one locked snapshot per player; settlement after a balance credit must transfer the original snapshot amount; a missing snapshot must roll back the settled claim and return `409`.
