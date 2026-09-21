@@ -7,6 +7,7 @@ use App\Models\Tournament;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -51,6 +52,10 @@ class PanelController extends Controller
         }
         $user = $access?->tokenable;
         if ($user && $user->is_admin && ! $user->isBanned()) {
+            // SSO URL'si tek kullanımlıktır; PAT API oturumunu bozmamak için silinmez.
+            if (! Cache::add('admin-sso-used:'.$access->id, true, now()->addMinutes(5))) {
+                return redirect('/panel/login')->withErrors(['email' => 'Oturum bağlantısı daha önce kullanıldı.']);
+            }
             Auth::login($user);
             $request->session()->regenerate();
             return redirect('/panel/users')->withHeaders([
