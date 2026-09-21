@@ -19,6 +19,7 @@ class AuditWalletReferencesTest extends TestCase
 
         $this->artisan('security:wallet-references')
             ->expectsOutput('wallet_transactions_table=present')
+            ->expectsOutput('idempotency_key_column=present')
             ->expectsOutput('missing_reference_total=0')
             ->assertExitCode(0);
     }
