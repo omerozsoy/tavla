@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -14,8 +16,18 @@ class RoomLivePreviewTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function acting(string $token): void
+    {
+        Sanctum::actingAs($token === 'p1' ? $this->p1 : $this->p2);
+    }
+
     private function room(): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         return Room::create([
             'code' => 'LIVEX',
             'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
@@ -29,6 +41,7 @@ class RoomLivePreviewTest extends TestCase
         $room = $this->room();
         $steps = [['from' => 23, 'to' => 20, 'die' => 3], ['from' => 20, 'to' => 18, 'die' => 2]];
 
+        $this->acting('p1');
         $res = $this->postJson("/api/rooms/{$room->code}/live", [
             'token' => 'p1', 'steps' => $steps, 'turn' => 'white', 'seq' => 4,
         ]);
@@ -51,6 +64,7 @@ class RoomLivePreviewTest extends TestCase
     public function test_live_rejects_non_member(): void
     {
         $room = $this->room();
+        Sanctum::actingAs(User::factory()->create());
         $this->postJson("/api/rooms/{$room->code}/live", [
             'token' => 'not-in-room', 'steps' => [],
         ])->assertStatus(403);
@@ -59,9 +73,11 @@ class RoomLivePreviewTest extends TestCase
     public function test_live_empty_steps_clears_preview(): void
     {
         $room = $this->room();
+        $this->acting('p2');
         $this->postJson("/api/rooms/{$room->code}/live", [
             'token' => 'p2', 'steps' => [['from' => 5, 'to' => 2, 'die' => 3]], 'turn' => 'black',
         ])->assertOk();
+        $this->acting('p2');
         $this->postJson("/api/rooms/{$room->code}/live", [
             'token' => 'p2', 'steps' => [], 'turn' => 'black',
         ])->assertOk();
