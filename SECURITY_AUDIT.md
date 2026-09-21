@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production room invariant read-only check (2026-09-21)
+
+The deployed test database was checked without writes: `duplicate_seat_rooms=0`, `users_in_multiple_active_money_rooms=0`, and `settled_non_terminal_rooms=0`. No duplicate room seat, simultaneous active money-room user, or settled non-terminal room was observed in the inspected data.
+
 ## Audit amendment — test production wallet baseline reconciled (2026-09-21)
 
 The operator confirmed this is a test deployment. Users with no prior wallet ledger entries received one explicit `opening_balance` ledger record based on their existing `users.coins` value; balances themselves were not changed. A follow-up read-only reconciliation reported **81 users checked; drift=0**.
