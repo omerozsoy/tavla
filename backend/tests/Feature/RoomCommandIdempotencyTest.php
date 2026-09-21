@@ -58,6 +58,30 @@ class RoomCommandIdempotencyTest extends TestCase
         ]);
     }
 
+    public function test_stale_version_does_not_consume_command_receipt(): void
+    {
+        $user = User::factory()->create(['coins' => 1000]);
+        Sanctum::actingAs($user);
+        $room = $this->room($user);
+        $commandId = (string) Str::uuid();
+
+        $this->postJson("/api/rooms/{$room->code}/roll", [
+            'token' => 'p1-token',
+            'command_id' => $commandId,
+            'expected_version' => 99,
+        ])->assertStatus(409)->assertJsonPath('reason', 'stale-version');
+
+        $this->assertDatabaseCount('room_commands', 0);
+
+        $this->postJson("/api/rooms/{$room->code}/roll", [
+            'token' => 'p1-token',
+            'command_id' => $commandId,
+            'expected_version' => 0,
+        ])->assertOk();
+
+        $this->assertDatabaseCount('room_commands', 1);
+    }
+
     private function room(User $user): Room
     {
         return Room::create([
