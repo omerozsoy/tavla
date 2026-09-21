@@ -1132,3 +1132,7 @@ The focused Feature security suite was executed against SQLite without running m
 ## Audit amendment — repeated Lucky Wheel reward ledger reference (2026-09-21)
 
 Focused wallet tests exposed a legitimate-repeat collision: coin rewards used the static `LuckyWheelReward` row as their unique ledger reference, so winning the same configured reward twice violated the ledger uniqueness key. The spin receipt is now created first and its unique `LuckyWheelSpin` ID is used as the economic reference. `LuckyWheelTest` passes 13 tests / 132 assertions after the correction.
+
+## Audit amendment — product coin purchase receipt ordering (2026-09-21)
+
+Single and cart coin purchases previously debited the wallet with a null `ProductOrder` reference before creating the order, leaving economic rows without an immutable business reference. They now create pending order receipts inside the same transaction, debit using the order ID (the first order ID for a cart), then mark the receipts paid. Stock, order, wallet, and ledger writes roll back together on failure. A client retry still needs an explicit checkout idempotency key to become a no-op. `ProductOrderTest` and `LuckyWheelTest` pass 23 tests / 176 assertions.

@@ -176,9 +176,6 @@ class ProductController extends Controller
                 return ['no_stock' => true];
             }
 
-            app(\App\Services\WalletService::class)->debit($u, $cost, 'product_purchase', ProductOrder::class, null);
-            $fresh->decrement('stock', $qty);
-
             $order = ProductOrder::create(array_merge($ship, [
                 'user_id'      => $u->id,
                 'product_id'   => $product->id,
@@ -187,8 +184,13 @@ class ProductController extends Controller
                 'qty'          => $qty,
                 'payment_type' => 'coin',
                 'coin_cost'    => $cost,
-                'status'       => 'paid',
+                'status'       => 'pending',
             ]));
+
+            app(\App\Services\WalletService::class)->debit($u, $cost, 'product_purchase', ProductOrder::class, $order->id);
+            $fresh->decrement('stock', $qty);
+            $order->status = 'paid';
+            $order->save();
 
             return ['order' => $order, 'coins' => $u->coins];
         });
@@ -397,11 +399,22 @@ class ProductController extends Controller
                     'qty'          => $ln['qty'],
                     'payment_type' => 'coin',
                     'coin_cost'    => (int) $ln['p']->coin_price * $ln['qty'],
-                    'status'       => 'paid',
+                    'status'       => 'pending',
                     'admin_note'   => $billNote,
                 ]));
             }
-            app(\App\Services\WalletService::class)->debit($u, $total, 'cart_purchase', ProductOrder::class, null);
+            $referenceOrder = $orders[0] ?? null;
+            app(\App\Services\WalletService::class)->debit(
+                $u,
+                $total,
+                'cart_purchase',
+                ProductOrder::class,
+                $referenceOrder?->id,
+            );
+            foreach ($orders as $order) {
+                $order->status = 'paid';
+                $order->save();
+            }
             return ['orders' => $orders, 'coins' => $u->coins];
         });
 
