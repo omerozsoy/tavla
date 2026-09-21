@@ -100,7 +100,10 @@ class TournamentController extends Controller
                 if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $fee) {
                     return ['err' => 'Giriş ücreti için yetersiz coin.', 'code' => 422];
                 }
-                app(\App\Services\WalletService::class)->debit($u, $fee, 'tournament_entry', Tournament::class, $t->id);
+                // Entry/leave cycles are legitimate. The player-list lock is
+                // the idempotency guard, so do not reuse the tournament ID as
+                // a unique ledger reference across multiple participations.
+                app(\App\Services\WalletService::class)->debit($u, $fee, 'tournament_entry');
                 $t->prize_coins = ($t->prize_coins ?? 0) + $fee;
                 $t->save();
             }
@@ -155,7 +158,7 @@ class TournamentController extends Controller
             $fee = (int) ($t->entry_fee ?? 0);
             if ($fee > 0) {
                 $u = User::lockForUpdate()->find($me->id);
-                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund', Tournament::class, $t->id);
+                app(\App\Services\WalletService::class)->credit($u, $fee, 'tournament_refund');
                 $t->prize_coins = max(0, (int) ($t->prize_coins ?? 0) - $fee);
             }
             array_splice($players, $idx, 1);

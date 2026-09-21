@@ -1140,3 +1140,7 @@ Single and cart coin purchases previously debited the wallet with a null `Produc
 An optional UUID `idempotency_key` is now accepted for single and cart coin checkout. It is scoped to the authenticated user and stored on the order; repeated requests with the same key return the existing order set without another debit or stock change. The unexecuted migration adds the supporting unique index, and the regression test covers the single-order retry path. Requests that omit a key retain existing compatibility behavior and should be given a key by the frontend for network retries.
 
 The production frontend now generates and sends a checkout key for the cart coin flow. TypeScript/Vite build succeeded and the ProductOrder feature suite remains green at 11 tests / 49 assertions. The backend still accepts omitted keys for backward compatibility; those callers do not receive replay protection until they adopt the key.
+
+## Audit amendment — tournament entry/refund ledger references (2026-09-21)
+
+Tournament entry and refund writes no longer use the static tournament ID as a unique wallet reference. A user may legitimately leave and later rejoin the same open tournament, while the locked player list already prevents duplicate entry and makes repeated leave a no-op. Prize and pool settlement references remain tournament-scoped and idempotent.
