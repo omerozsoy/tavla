@@ -66,7 +66,7 @@ Route::get('/dice-slot', [\App\Http\Controllers\DiceSlotController::class, 'show
 // Hiz siniri: mesru istemci hamle basina 1 update + ~1200ms'de 1 poll yapar (~<60/dk).
 // 240/dk (IP basi) paylasimli NAT'i bile rahat karsilar ama dev-JSON flood'unu (DB/bant
 // genisligi tuketimi) durdurur. Sohbet spam'i icin ayrica daha siki 40/dk.
-Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:240,1,rooms'])->group(function () {
+Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:600,1,rooms'])->group(function () {
     Route::post('/matchmaking', [RoomController::class, 'matchmaking'])->middleware('auth:sanctum');
     Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel'])->middleware('auth:sanctum');
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
@@ -85,16 +85,16 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:24
     Route::put('/rooms/{code}', [RoomController::class, 'update']);
     // Sunucu-otoriter zar + hamle (para maçı güvenliği Faz 2b)
     Route::post('/rooms/{code}/roll', [RoomController::class, 'roll'])
-        ->middleware('throttle:60,1,room-command');
+        ->middleware('throttle:240,1,room-command');
     Route::post('/rooms/{code}/move', [RoomController::class, 'move'])
-        ->middleware('throttle:60,1,room-command');
+        ->middleware('throttle:240,1,room-command');
     // Sunucu-otoriter küp + resign (Faz 2)
     Route::post('/rooms/{code}/cube/offer', [RoomController::class, 'cubeOffer'])
-        ->middleware('throttle:60,1,room-command');
+        ->middleware('throttle:240,1,room-command');
     Route::post('/rooms/{code}/cube/respond', [RoomController::class, 'cubeRespond'])
-        ->middleware('throttle:60,1,room-command');
+        ->middleware('throttle:240,1,room-command');
     Route::post('/rooms/{code}/resign', [RoomController::class, 'resign'])
-        ->middleware('throttle:30,1,room-command');
+        ->middleware('throttle:120,1,room-command');
 });
 Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:40,1,chat'])->post('/rooms/{code}/chat', [RoomController::class, 'chat']);
 // Canli hamle onizlemesi (cosmetic): her adim/geri-alma cagrisi -> ayri + genis hiz siniri.

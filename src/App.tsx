@@ -1430,6 +1430,10 @@ export default function App() {
   const botNudgeTimerRef = useRef<number | null>(null)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
+  // API GERİ-ÇEKİLME (429 "Too Many Attempts"): bir istek rate-limit yerse bu zaman damgasına
+  // kadar YENİ istek ATMA (roll + poll). Aksi halde takılı auto-roll/poll döngüsü kotayı doldurup
+  // tüm hesabı kilitliyor (bir maçın spam'i diğer maçı da bloke ediyordu). Date.now() > ref -> serbest.
+  const apiBackoffUntilRef = useRef(0)
   const lastSubmittedMoveRef = useRef<string | null>(null)
   const appliedServerVersionRef = useRef(-1) // uygulanan son server_state versiyonu
   // Yukaridaki surum HANGI odaya ait? Surumler oda-yerelidir (her oda 0'dan baslar), bu yuzden
@@ -2721,6 +2725,7 @@ export default function App() {
   async function doRollAuthoritative() {
     const code = room?.code
     if (!code) return
+    if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme penceresi
     // MAÇ BİTTİ: sunucu odayı 'finished' işaretlediyse (forfeit/timeout/normal son) ZAR ATMA.
     // Aksi halde biten maçta auto-roll POST /roll 409 "Oyun aktif değil" döngüsüne girer (#KVU8X).
     // Poll'un maç-sonu kesin-uygulama dalı zaten MatchResult'ı getirir; burada yalnız spam'i keseriz.
@@ -2826,20 +2831,21 @@ export default function App() {
     } catch (e) {
       // Açılış/sıra yarışı: başlayan-olmayan taraf 409 alır -> SESSİZ (poll açılışı getirir).
       const err = e as { status?: number; message?: string }
-      // 429 = "Too Many Attempts" (room-command rate-limit). KÖK FIX (#XS54E kaybeden kilidi):
-      // maç BİTMİŞ ama istemci maç-sonunu uygulayamadıysa auto-roll durmadan serverRoll dener ->
-      // her atış reddedilir (409) -> poll rollConflictRef'i sıfırlar -> tekrar dene -> 60/dk limitine
-      // çarpıp 429. 429'u da 409 gibi ele al: kanonik durumu çek; maç bittiyse applyServerBoard
-      // gameEnd'i kurar -> matchOver -> auto-roll KALICI durur (matchOver auto-roll'u gate'ler) ->
-      // döngü + 429 spam sona erer. 429'da rahatsız edici hata toast'ı GÖSTERME.
-      if (err?.status !== 409 && err?.status !== 429) {
+      // 429 = "Too Many Attempts" (rate-limit). KRİTİK: 429'da EK İSTEK ATMA (showRoom bile) —
+      // aksi halde flood daha da büyür ve poll bile 429 yer (yaşanan #3ZYS8 kilidi). Onun yerine
+      // GERİ ÇEKİL: birkaç saniye roll+poll durur, kova boşalır, sonra normal akış döner. 429'da
+      // rahatsız edici toast da gösterme.
+      if (err?.status === 429) {
+        apiBackoffUntilRef.current = Date.now() + 5000 // 5 sn geri çekil (roll + poll)
+        return
+      }
+      if (err?.status !== 409) {
         notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
       }
-      // Açılış/sıra yarışı (409) VEYA rate-limit (429; genelde bitmiş maçta auto-roll döngüsü):
-      // sunucunun kanonik durumunu HEMEN çek (showRoom ayrı throttle -> 429 iken de çalışır) ve
-      // uygula. Maç bittiyse gameEnd kurulur; değilse doğru sıra/zar gelir. move tarafındaki 409
-      // resync ile aynı güvenli yol.
-      if ((err?.status === 409 || err?.status === 429) && code) {
+      // Açılış/sıra yarışı (409) VEYA bitmiş maçta "Oyun aktif değil": sunucunun kanonik durumunu
+      // çek + uygula. Maç bittiyse gameEnd kurulur -> matchOver -> auto-roll KALICI durur (döngü
+      // biter). move tarafındaki 409 resync ile aynı güvenli yol.
+      if (err?.status === 409 && code) {
         rollConflictRef.current = true
         appliedServerVersionRef.current = -1
         void showRoom(code)
@@ -4557,6 +4563,7 @@ export default function App() {
     if (!online || !room) return
     let cancelled = false
     const poll = async () => {
+      if (Date.now() < apiBackoffUntilRef.current) return // 429 sonrası geri-çekilme: poll'u da durdur
       try {
         // Oda sürümleri oda-yereldir. Son uygulanan sürümü gönderince backend
         // değişiklik yoksa 204 döner; büyük state her 1.2 saniyede yeniden taşınmaz.
@@ -4721,8 +4728,13 @@ export default function App() {
           setSrvActive(null) // aktif taraf vurgusu + AFK geri sayimi da dursun
           setAfkLeft(null)
         }
-      } catch {
-        /* gecici */
+      } catch (e) {
+        // 429 (Too Many Attempts): poll da rate-limit yedi -> GERİ ÇEKİL. Yoksa her 1.2sn tekrar
+        // vurup kovayı dolu tutar (yaşanan #3ZYS8 kilidi). Kısa bekleyiş kovayı boşaltır.
+        if ((e as { status?: number })?.status === 429) {
+          apiBackoffUntilRef.current = Date.now() + 5000
+        }
+        /* diğer geçici hatalar: sonraki tur yeniden dener */
       }
     }
     const id = window.setInterval(poll, 1200)
