@@ -1212,3 +1212,5 @@ After all fixture and invariant corrections, the complete Laravel suite passes *
 Final static validation also passed: `npm run build` completed TypeScript and Vite production compilation successfully; PHP lint passed for the changed Room, RoomController, and TournamentController files; and `git diff --check` reported no whitespace errors. Vite emitted only existing large-chunk performance warnings.
 
 The isolated Playwright authoritative E2E passed: **1 test passed** for two-player matchmaking, server-authoritative dice, both-player moves, and turn rotation. The harness recreated only its separate `e2e` SQLite database. Production migration/pull/push was performed externally by the operator and was not executed by this audit session.
+
+The complete Laravel suite was rerun after canonical command-response replay changes: **493 passed, 4 skipped, 7,926 assertions, 0 failures**. The skipped tests are existing environment guards; validator parity tests skip when `VALIDATOR_URL` is not configured.
