@@ -3689,6 +3689,7 @@ export default function App() {
     const won = mW === myColor
     const oppRating = room?.oppRating ?? 1500
     const before = user.rating ?? 1500
+    const reportRoomCode = room?.code ?? null
     // Bekleyen (async) hamle analizleri bitene kadar bekle (max ~1.5s) -> online analiz
     // log'u TAM kaydolsun (son hamleler kaybolmasin). Sonra en guncel log ile bildir.
     void (async () => {
@@ -3699,6 +3700,19 @@ export default function App() {
       // oku (rapor closure'undaki stale prStats degil) -> kendi PR'im "—" dusmesin.
       await new Promise((res) => setTimeout(res, 200))
       prDebugSummary() // PR DEBUG (§13): açıksa karar tablosu + toplam/PR konsola (online)
+      // The local AI board can finish before the authoritative room is marked
+      // finished. Wait for the server result before sending the rating report.
+      if (reportRoomCode) {
+        for (let i = 0; i < 20; i++) {
+          try {
+            const serverRoom = await showRoom(reportRoomCode)
+            if (serverRoom?.status === 'finished') break
+          } catch {
+            // Retry the room poll below.
+          }
+          await new Promise((res) => setTimeout(res, 300))
+        }
+      }
       const prRef = (c: Player): number | null => {
         const s = prStatsRef.current[c]
         return s.decisions > 0 ? (s.loss / s.decisions) * 500 : null
