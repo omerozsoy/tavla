@@ -887,6 +887,12 @@ class RoomController extends Controller
             'rating' => ['nullable', 'integer', 'min:100', 'max:4000'],
             'avatar' => ['nullable', 'string', 'max:300000'],
         ]);
+        $authUser = $request->user('sanctum');
+        if ($authUser) {
+            $data['name'] = $authUser->nickname ?: trim(($authUser->first_name ?? '').' '.($authUser->last_name ?? ''));
+            $data['rating'] = (int) ($authUser->rating ?? 1500);
+            $data['avatar'] = $authUser->avatar;
+        }
 
         $room = Room::where('code', strtoupper($code))->first();
         if (! $room) {
@@ -908,7 +914,7 @@ class RoomController extends Controller
             // EŞZAMANLILIK KALKANI: zaten başka bir maçta oynayan hesap ikinci bir odaya
             // katılamaz (aynı kullanıcı iki maçta + escrow'u atlayan bahisli-oda para-hilesi).
             // Hedef oda hariç tutulur -> kendi odasına yeni token'la yeniden bağlanma bloklanmaz.
-            $joinUserId = $request->user('sanctum')?->id;
+            $joinUserId = $authUser?->id;
             if ($this->userInAnyPlaying($joinUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
@@ -945,13 +951,19 @@ class RoomController extends Controller
             'avatar' => ['nullable', 'string', 'max:300000'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
         ]);
+        $authUser = $request->user('sanctum');
+        if ($authUser) {
+            $data['name'] = $authUser->nickname ?: trim(($authUser->first_name ?? '').' '.($authUser->last_name ?? ''));
+            $data['rating'] = (int) ($authUser->rating ?? 1500);
+            $data['avatar'] = $authUser->avatar;
+        }
         $code = strtoupper($code);
 
         $room = Room::firstOrCreate(
             ['code' => $code],
             [
                 'p1_token' => $data['token'],
-                'p1_user_id' => $request->user('sanctum')?->id,
+                'p1_user_id' => $authUser?->id,
                 'p1_name' => $data['name'],
                 'p1_rating' => $data['rating'] ?? null,
                 'p1_avatar' => $data['avatar'] ?? null,
@@ -974,7 +986,7 @@ class RoomController extends Controller
             }
             // EŞZAMANLILIK KALKANI: zaten başka bir maçta oynayan hesap ikinci bir odaya
             // katılamaz (join() ile aynı; hedef oda hariç -> kendi odasına yeniden bağlanma serbest).
-            $enterUserId = $request->user('sanctum')?->id;
+            $enterUserId = $authUser?->id;
             if ($this->userInAnyPlaying($enterUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
