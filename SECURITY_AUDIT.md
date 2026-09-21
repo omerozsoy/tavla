@@ -45,9 +45,10 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 **Severity:** HIGH
 **Category:** Wallet / accounting
-**Affected file(s):** `backend/app/Services/WalletService.php`, payment, tournament, spin, achievement ve admin controller/service yolları
+**Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, payment, tournament, spin, achievement ve admin controller/service yolları
 **Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
 **Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor.
+Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-references` komutu mevcut satırları değiştirmeden eksik referansları tür bazında sayar; production çıktısı henüz alınmadı.
 **Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
 **Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
 **Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt.
