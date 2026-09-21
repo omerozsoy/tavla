@@ -121,6 +121,12 @@ class Room extends Model
      */
     public static function claimActiveMoneySlot(int $userId, int $roomId): bool
     {
+        if (! Schema::hasTable('active_money_match_claims')) {
+            throw new \Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException(
+                null,
+                'Money match claim storage is not ready.'
+            );
+        }
         $existingRoom = DB::table('active_money_match_claims')
             ->where('user_id', $userId)->value('room_id');
         if ($existingRoom !== null) {
