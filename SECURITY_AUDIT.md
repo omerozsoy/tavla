@@ -1172,3 +1172,5 @@ The first four authoritative feature groups were rerun independently: **55 tests
 ## Audit amendment — out-of-turn roll replay guard (2026-09-21)
 
 While migrating the authoritative loop fixture, a real edge case was reproduced: after a valid roll, a different seat could call `roll` and receive the already-issued dice with HTTP 200. The board did not change, but accepting the command and creating a receipt violated the turn boundary and exposed normal-turn dice to the wrong actor. `RoomController::roll()` now checks the authoritative turn before the normal-roll reuse response; opening-roll reuse remains available for the initial two-client race. `RoomServerAuthTest` and `AuthoritativeLoopTest` pass **14 tests / 98 assertions** after the guard.
+
+`RoomDiceAuthorityTest` fixtures now create real users, authenticate through Sanctum, and declare the explicit `friendly` legacy mode required for the independent dice-authority path. The suite passes **12 tests / 77 assertions** without weakening server dice validation.
