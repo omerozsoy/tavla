@@ -41,11 +41,15 @@ export interface ServerSyncView {
 export function shouldApplyServerState(local: SyncLocal, rv: ServerSyncView, myColor: Player): boolean {
   if (!rv.authoritative || !rv.server_state) return false
   if ((rv.server_version ?? 0) <= local.appliedServerVersion) return false
-  // MAÇ BİTTİ: korunacak hamle YOK. Mid-move kalkanı terminal durumu ASLA engellememeli; aksi
-  // halde kendi turunda bayat zar/hamle ile duran KAYBEDEN taraf (rakip maçı kazanan hamleyle
-  // bitirmişken) maç-sonunu hiç almaz -> ekran KİLİTLİ kalır (cube/respond "Oyun aktif değil" 409).
-  // Sunucu done=true dediğinde koşulsuz uygula (yaşanan #5PTWV bug'ı).
-  if (rv.server_match?.done) return true
+  // MAÇ/OYUN SINIRI: korunacak in-progress hamle YOK. Mid-move kalkanı yalnız KENDİ turumdaki
+  // CANLI hamlemi sunucunun onu-henüz-görmemiş durumuyla ezmesin diyedir. İki sınırda ise yerel
+  // "mid-move" ÖNCEKİ oyundan kalma BAYAT durumdur ve kalkan yalnızca kilit yaratır:
+  //  - done=true: maç bitti (rakip kazanan hamleyle bitirdi) -> maç-sonu ekranı HİÇ gelmez,
+  //    cube/respond "Oyun aktif değil" 409 (#5PTWV).
+  //  - opened=false: bir OYUN bitti; sunucu sonraki oyunu açılış-öncesi taze tahtayla kurdu
+  //    (opened=false). Kaybeden bayat zarıyla dururken sonraki oyun HİÇ gelmez (aynı kilit).
+  // Version kapısından SONRA olduğu için stale poll elenir; sınır durumu tam bir kez uygulanır.
+  if (rv.server_match?.done || rv.server_match?.opened === false) return true
   const myTurn = local.turn === myColor
   const midMove = myTurn && (local.playedCount > 0 || local.diceCount > 0)
   return !midMove
