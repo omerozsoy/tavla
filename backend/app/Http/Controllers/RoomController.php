@@ -144,15 +144,12 @@ class RoomController extends Controller
             // (terk edilmiş bahisli maçın coin'i kilitli kalmasın; idempotent). NOT: releaseEscrow
             // Eloquent update ile updated_at'i touch ediyor -> silinecek id'leri ÖNCE yakala, sonra
             // o id'lerle sil (aksi halde bırakılan oda "artık eski değil" olup delete'i kaçırırdı).
-            $staleIds = Room::where('updated_at', '<', now()->subDay())->pluck('id')->all();
-            if ($staleIds && Schema::hasColumn('rooms', 'escrowed')) {
-                foreach (Room::whereIn('id', $staleIds)->where('escrowed', true)->get() as $r) {
-                    $this->releaseEscrow($r);
-                }
-            }
-            if ($staleIds) {
-                Room::whereIn('id', $staleIds)->delete();
-            }
+            // Economic rooms are retained until terminal settlement is confirmed. Deleting an
+            // old escrowed or finished-unsettled room would destroy the payout/hold reference.
+            Room::where('status', 'finished')
+                ->where('settled', true)
+                ->where('updated_at', '<', now()->subDay())
+                ->delete();
             \Illuminate\Support\Facades\DB::table('game_invites')
                 ->where('created_at', '<', now()->subMinutes(10))
                 ->delete();

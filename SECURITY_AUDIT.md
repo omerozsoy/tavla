@@ -1068,3 +1068,7 @@ The failure branch of the bank callback now re-reads and locks the payment row i
 ## Audit amendment — result lock release and deployed client version (2026-09-21)
 
 `reportRating` now explicitly releases its cache result lock on all normal idempotent and success return paths; a lock is no longer held until TTL solely because the request completed early. The frontend production bundle was rebuilt so authoritative roll/resign requests include the current `expected_version`; the observed `428 expected-version-required` console errors came from a stale deployed bundle, not from weakening the server check.
+
+## Audit amendment — economic room cleanup safety (2026-09-21)
+
+Opportunistic and scheduled stale-room cleanup now deletes only rooms that are both `finished` and `settled`. Playing, escrowed, and finished-unsettled rooms are retained for settlement/backstop recovery instead of deleting the only hold/payout reference. This closes the destructive cleanup path from SEC-011; reconciliation and archival retention remain open work.
