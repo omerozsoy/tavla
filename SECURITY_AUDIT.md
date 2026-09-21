@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment — production security headers (2026-09-21)
+
+Read-only HTTPS header checks returned 200 for the main site and 401 for the unauthenticated validator command path, but neither response exposed `Strict-Transport-Security`, `X-Content-Type-Options`, `Content-Security-Policy`, or `X-Frame-Options/frame-ancestors`. This is a **MEDIUM deployment hardening gap**. Configure headers at the Plesk/Nginx reverse-proxy layer, test CSP against the existing frontend, and add HSTS only after every production subdomain is HTTPS-ready.
+
 ## Audit amendment — production cookie scope and validator failover config (2026-09-21)
 
 The deployed configuration now reports `session_domain=www.tavlatv.com`, `app_url=https://www.tavlatv.com`, primary validator `https://validator.tavlatv.com`, and loopback backup `http://127.0.0.1:8091`. The Laravel session cookie is no longer scoped to every subdomain, and validator failover remains internal for the backup instance.
