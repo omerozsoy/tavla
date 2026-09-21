@@ -17,7 +17,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | İnvariant | Durum | Kalan iş |
 |---|---|---|
 | Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | MariaDB 10.3.39 / REPEATABLE-READ ve unique claim index production’da doğrulandı; gerçek paralel admission testi hâlâ bekliyor. |
-| Aynı match iki kez settle edilemez | PARTIAL | Gerçek queue retry ve DB isolation davranışını production benzeri ortamda doğrula. |
+| Aynı match iki kez settle edilemez | PARTIAL | Production snapshot’ta terminal/duplicate settlement sorunu yok; gerçek queue retry ve DB isolation testi bekliyor. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
 | Client wallet balance değiştiremez | PARTIAL | Referanssız ekonomik hareketler için ortak idempotency protokolünü tamamla. |
 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
@@ -61,7 +61,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 **Category:** Idempotency / failure recovery
 **Affected file(s):** settlement services, `routes/console.php`, queue jobs, `MatchBackstop`
 **Affected endpoint/event:** finish, settle, scheduled backstop, queue retry
-**Description:** Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.
+**Description:** Production settlement snapshot’ı temiz olsa da Laravel queue’nun at-least-once çalışmasında tüm finansal yolların aynı idempotency ve rollback garantisini koruduğu canlı queue üzerinde doğrulanmadı.
 **Attack scenario:** Worker timeout veya retry sonrası winner credit ikinci kez uygulanabilir ya da match finalized olmadan ekonomik işlem tamamlanabilir.
 **Root cause:** Queue worker, timeout, retry_after ve DB isolation kombinasyonu production’da simüle edilmedi.
 **Potential impact:** Partial settlement, duplicate reward, stuck escrow.
