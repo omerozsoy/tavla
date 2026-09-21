@@ -1275,6 +1275,10 @@ An optional UUID `idempotency_key` is now accepted for single and cart coin chec
 
 The production frontend now generates and sends a checkout key for the cart coin flow. TypeScript/Vite build succeeded and the ProductOrder feature suite remains green at 11 tests / 49 assertions. The backend still accepts omitted keys for backward compatibility; those callers do not receive replay protection until they adopt the key.
 
+## Audit amendment - admin SSO replay guard (2026-09-21)
+
+The `/admin/enter` and `/panel/enter` PAT-to-session exchanges now claim an atomic five-minute cache key per personal-access-token ID before creating the web session. A copied or replayed SSO URL therefore cannot create another admin session during the exchange window, while the underlying API PAT remains valid for the existing SPA session. `AdminSsoReplayTest` passes **2 tests / 9 assertions**. Query-string exposure remains a residual transport/history risk; a one-time POST exchange is still the preferred future design.
+
 ## Audit amendment — tournament entry/refund ledger references (2026-09-21)
 
 Tournament entry and refund writes no longer use the static tournament ID as a unique wallet reference. A user may legitimately leave and later rejoin the same open tournament, while the locked player list already prevents duplicate entry and makes repeated leave a no-op. Prize and pool settlement references remain tournament-scoped and idempotent.

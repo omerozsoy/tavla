@@ -5,6 +5,7 @@ use App\Http\Controllers\PanelController;
 use App\Support\SeoMeta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -18,6 +19,11 @@ Route::get('/admin/enter', function (Request $request) {
     }
     $user = $pat?->tokenable;
     if ($user && $user->is_admin && ! $user->isBanned()) {
+        // URL'deki PAT bir kez web oturumuna dönüştürülebilsin; API tokenı silinmez.
+        // Cache::add atomik olduğundan aynı URL'nin eşzamanlı tekrarları yalnızca biriyle yarışır.
+        if (! Cache::add('admin-sso-used:'.$pat->id, true, now()->addMinutes(5))) {
+            return redirect('/admin/login');
+        }
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
         return redirect('/admin')->withHeaders([
