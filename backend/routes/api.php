@@ -139,6 +139,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::get('/me/match-pr', [AuthController::class, 'matchPr']); // online mac PR cifti (sunucu-otoriter, tutarli gosterim)
     // Canlı ekran: maç-sonu PR hazır mı (poll). Görünen ad 'match-pr-tavlatv' (marka).
     Route::get('/me/match-pr-tavlatv/{match}', [AuthController::class, 'matchGnubgPr']);
+    // Eski istemci sürümleri için geriye dönük alias; aynı auth/policy zincirini kullanır.
+    Route::get('/me/match-pr-gnubg/{match}', [AuthController::class, 'matchGnubgPr']);
     // Pozisyon Analizi ekrani "GNU" motoru: yapisal konumu gnubg servisine gonderir (throttle: agir).
     // ÖNEMLİ: throttle'a AYRI PREFIX ver -> Laravel'de isimsiz throttle anahtari sha1(userId) ile
     // TÜM throttled route'lar arasinda PAYLASILIR (rota anahtara girmez). Prefix olmadan; oyun-logu,
