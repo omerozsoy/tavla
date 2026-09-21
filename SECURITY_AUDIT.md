@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - upload and replay privacy review (2026-09-21)
+
+Static review confirms bug screenshots require a real PNG/JPEG/WebP/GIF signature, dimensions/pixels are bounded, and admin content uploads use a random filename with a fixed raster extension allowlist; SVG and executable extensions are rejected. The remaining medium privacy item is GET /api/game-logs/{uid}/mat: online replay export is addressable by the room UID without participant authorization. It does not mutate game or wallet state, but should be restricted to a participant/guest room token or a short-lived signed export URL.
+
 ## Audit amendment - admin SSO token exposure reduction (2026-09-21)
 
 The /admin/enter and /panel/enter Sanctum-token exchange routes now have a dedicated 10-per-minute throttle. Successful exchange redirects set Cache-Control: no-store and Referrer-Policy: no-referrer, reducing browser/proxy caching and cross-origin referrer leakage. The token still arrives in the query string for backward compatibility; replacing it with a one-time POST exchange remains a follow-up design item.
