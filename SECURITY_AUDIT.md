@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - failed analysis job diagnosis (2026-09-21)
+
+The production failed-job inspection found 10 AnalyzeMatchLuckJob failures. All share MatSerializer's intentional integrity guard: a later game starts while the previous game has result=null. No failed settlement, wallet, payout, or reward job was observed in this listing. Retrying these records without repairing or quarantining the incomplete historical logs will deterministically fail again; no retry or flush command was executed.
+
 ## Audit amendment - CSP readiness review (2026-09-21)
 
 A repository source review found Google Fonts, optional Google Tag Manager and Facebook Pixel scripts, inline styling, data:/lob: media, and application/API connections. A strict enforcing CSP cannot be added safely without a browser Content-Security-Policy-Report-Only observation period and an approved source inventory. CSP remains an open MEDIUM hardening item; no blocking CSP header was deployed by this audit.
