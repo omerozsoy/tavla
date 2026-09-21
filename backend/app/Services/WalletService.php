@@ -9,20 +9,20 @@ use Illuminate\Support\Facades\Schema;
 
 class WalletService
 {
-    public function credit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null): User
+    public function credit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null, ?string $idempotencyKey = null): User
     {
         if ($amount < 0) {
             throw new \InvalidArgumentException('Wallet credit must be non-negative.');
         }
-        return $this->move($user, $amount, $type, $referenceType, $referenceId);
+        return $this->move($user, $amount, $type, $referenceType, $referenceId, $idempotencyKey);
     }
 
-    public function debit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null): User
+    public function debit(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null, ?string $idempotencyKey = null): User
     {
         if ($amount < 0) {
             throw new \RuntimeException('Insufficient wallet balance.');
         }
-        return $this->move($user, -$amount, $type, $referenceType, $referenceId);
+        return $this->move($user, -$amount, $type, $referenceType, $referenceId, $idempotencyKey);
     }
 
     public function setBalance(User $user, int $target, string $type = 'admin_adjustment'): User
@@ -39,11 +39,20 @@ class WalletService
         });
     }
 
-    private function move(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null): User
+    private function move(User $user, int $amount, string $type, ?string $referenceType = null, ?int $referenceId = null, ?string $idempotencyKey = null): User
     {
-        return DB::transaction(function () use ($user, $amount, $type, $referenceType, $referenceId): User {
+        return DB::transaction(function () use ($user, $amount, $type, $referenceType, $referenceId, $idempotencyKey): User {
             // Her ekonomik hareket güncel satırı kilitleyip ledger ile aynı transaction'da işler.
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
+            if ($idempotencyKey !== null && Schema::hasColumn('wallet_transactions', 'idempotency_key')) {
+                $replayed = WalletTransaction::query()
+                    ->where('idempotency_key', $idempotencyKey)
+                    ->where('user_id', $locked->id)
+                    ->exists();
+                if ($replayed) {
+                    return $locked;
+                }
+            }
             $before = (int) ($locked->coins ?? 0);
             $after = $before + $amount;
             if ($after < 0) {
@@ -60,6 +69,7 @@ class WalletService
             if ($ledgerAvailable) {
                 WalletTransaction::create([
                     'transaction_id' => (string) \Illuminate\Support\Str::uuid(),
+                    'idempotency_key' => $idempotencyKey,
                     'user_id' => $locked->id,
                     'amount' => $amount,
                     'balance_before' => $before,
