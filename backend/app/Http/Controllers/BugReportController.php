@@ -113,6 +113,23 @@ class BugReportController extends Controller
         if ($binary === false || strlen($binary) > 8 * 1024 * 1024) {
             return null; // bozuk veya 8 MB'tan buyuk -> atla
         }
+        // Data-URL MIME'ı client tarafından yazılabilir; gerçek dosya imzasını ayrıca doğrula.
+        $info = @getimagesizefromstring($binary);
+        $mime = is_array($info) ? (string) ($info['mime'] ?? '') : '';
+        $allowed = [
+            'png' => 'image/png',
+            'jpg' => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'webp' => 'image/webp',
+            'gif' => 'image/gif',
+        ];
+        if (! $info || ($allowed[$m[1]] ?? '') !== $mime) {
+            return null;
+        }
+        $pixels = (int) ($info[0] ?? 0) * (int) ($info[1] ?? 0);
+        if ($pixels <= 0 || $pixels > 40_000_000) {
+            return null;
+        }
         $path = 'bug-reports/'.date('Y-m').'/'.Str::random(24).'.'.$ext;
         Storage::disk('uploads')->put($path, $binary);
 

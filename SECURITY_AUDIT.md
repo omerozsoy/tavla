@@ -995,3 +995,12 @@ The health endpoints remain unauthenticated for process monitoring. Production e
 ## Audit amendment — Sanctum SSO expiry check (2026-09-21)
 
 The two manual token-to-web-session SSO handlers (`/admin/enter` and `/panel/enter`) now reject a token whose `expires_at` is in the past. `PersonalAccessToken::findToken()` itself only verifies the hash; it does not apply expiry, unlike Sanctum's normal guard path. Query-string exposure and the lack of a one-time SSO exchange remain documented residual risks.
+
+## Audit amendment — upload content validation (2026-09-21)
+
+**ID:** SEC-021 (partially remediated)
+**Severity:** MEDIUM
+**Category:** Unsafe file upload
+**Affected file(s):** `backend/app/Http/Controllers/BugReportController.php`, `backend/app/Http/Controllers/PanelController.php`
+
+Bug-report data URLs now require a real image signature from `getimagesizefromstring`, a MIME match with the declared type, and a 40-million-pixel limit in addition to the existing byte limit. Admin content uploads now derive the extension from server-detected content, allow only `jpg/png/gif/webp`, and use a cryptographically random filename instead of the client filename. Public upload execution policy and production web-server behavior remain deployment checks.
