@@ -44,9 +44,15 @@ class WalletService
         return DB::transaction(function () use ($user, $amount, $type, $referenceType, $referenceId, $idempotencyKey): User {
             // Her ekonomik hareket güncel satırı kilitleyip ledger ile aynı transaction'da işler.
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
-            if ($idempotencyKey !== null && Schema::hasColumn('wallet_transactions', 'idempotency_key')) {
+            // Referanslı ekonomik işlemler için çağıranın ayrıca anahtar üretmesine gerek yok:
+            // aynı business reference + hareket tipi + kullanıcı deterministik bir replay anahtarıdır.
+            $effectiveKey = $idempotencyKey;
+            if ($effectiveKey === null && $referenceType !== null && $referenceId !== null) {
+                $effectiveKey = 'ref:'.sha1($type.'|'.$referenceType.'|'.$referenceId.'|'.$locked->id);
+            }
+            if ($effectiveKey !== null && Schema::hasColumn('wallet_transactions', 'idempotency_key')) {
                 $replayed = WalletTransaction::query()
-                    ->where('idempotency_key', $idempotencyKey)
+                    ->where('idempotency_key', $effectiveKey)
                     ->where('user_id', $locked->id)
                     ->exists();
                 if ($replayed) {
@@ -69,7 +75,7 @@ class WalletService
             if ($ledgerAvailable) {
                 WalletTransaction::create([
                     'transaction_id' => (string) \Illuminate\Support\Str::uuid(),
-                    'idempotency_key' => $idempotencyKey,
+                    'idempotency_key' => $effectiveKey,
                     'user_id' => $locked->id,
                     'amount' => $amount,
                     'balance_before' => $before,

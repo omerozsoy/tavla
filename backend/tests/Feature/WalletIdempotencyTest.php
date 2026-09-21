@@ -28,4 +28,20 @@ class WalletIdempotencyTest extends TestCase
         $this->assertSame(75, (int) $user->fresh()->coins);
         $this->assertSame(1, WalletTransaction::where('idempotency_key', 'test-command-1')->count());
     }
+
+    public function test_reference_based_wallet_move_gets_deterministic_key(): void
+    {
+        if (! Schema::hasColumn('wallet_transactions', 'idempotency_key')) {
+            $this->markTestSkipped('Wallet idempotency migration is unavailable.');
+        }
+
+        $user = User::factory()->create(['coins' => 100]);
+        $wallet = app(WalletService::class);
+
+        $wallet->credit($user, 10, 'test_reference', User::class, $user->id);
+        $wallet->credit($user->fresh(), 10, 'test_reference', User::class, $user->id);
+
+        $this->assertSame(110, (int) $user->fresh()->coins);
+        $this->assertSame(1, WalletTransaction::where('type', 'test_reference')->count());
+    }
 }
