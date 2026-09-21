@@ -1088,3 +1088,5 @@ Shop purchases, daily rewards, Lucky Wheel spins, and Dice Slot debit/payout pat
 Tournament entry fees, refunds, configured prizes, and entry-fee pool payouts now use `WalletService` with locked recipient rows and tournament references. Match settlement and achievement/reward writers remain to be migrated before the ledger invariant is complete.
 
 Physical product purchases (single/cart) and the one-time welcome reward now use the same service. Welcome grant retains its row-lock/idempotency guard; remaining direct writers are match settlement, achievement rewards, Lucky Wheel reward fulfillment, and admin absolute balance changes.
+
+Achievement unlock coin rewards and Lucky Wheel coin rewards now use `WalletService` with their achievement/reward references. The remaining direct economic writer is authoritative match settlement, plus admin absolute overwrites which require a ledger adjustment model rather than a credit/debit operation.

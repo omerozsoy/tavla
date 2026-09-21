@@ -32,8 +32,7 @@ class RewardFulfillmentService
         switch ($reward->type) {
             case LuckyWheelReward::TYPE_COIN:
                 if ($amount > 0) {
-                    // coins fillable değil -> doğrudan artır (ShopController/AchievementService deseni).
-                    $u->increment('coins', $amount);
+                    app(\App\Services\WalletService::class)->credit($u, $amount, 'lucky_wheel_reward', LuckyWheelReward::class, $reward->id);
                     $body = "+{$amount} coin";
                 }
                 break;
