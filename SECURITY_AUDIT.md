@@ -1358,3 +1358,7 @@ The private-room read guard now covers the public `GET /api/live-matches` listin
 ## Audit amendment - friendly room watcher privacy (2026-09-21)
 
 `POST /api/rooms/{code}/watch` now applies the same participant check as direct friendly-room reads. A non-participant can no longer register a spectator token or receive the private room's viewer list; participants retain the heartbeat path. `RoomLivePreviewTest` passes **6 tests / 20 assertions**.
+
+## Audit amendment - authenticated room identity metadata is server-derived (2026-09-21)
+
+`join` and `enter` no longer trust authenticated clients for player name, rating, or avatar metadata. When a Sanctum user is present, all three values are taken from the locked user profile before the room participant row is written. This prevents a forged opponent rating from being persisted and later consumed by rating/forfeit calculations; guest compatibility remains limited to non-account rooms. `RoomCodeAuthoritativeTest` passes **4 tests / 15 assertions**, including a forged-metadata regression.
