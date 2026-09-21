@@ -25,6 +25,9 @@ class LuckyWheelAdminTest extends TestCase
             'email' => 'admin'.substr(md5(microtime()), 0, 5).'@e.com',
             'password' => bcrypt('secret123'),
         ]);
+        // Admin access is an explicit database grant; email configuration is
+        // not authorization by itself.
+        $u->forceFill(['is_admin' => true])->save();
         // is_admin: config admin e-posta listesi -> bu kullanıcı admin.
         config(['services.admin_emails' => [$u->email]]);
         return [$u, ['Authorization' => 'Bearer '.$u->createToken('t')->plainTextToken]];
