@@ -3,9 +3,11 @@
 namespace Tests\Feature;
 
 use App\Models\Room;
+use App\Models\User;
 use App\Services\FairDiceService;
 use App\Support\SeededOpening;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
@@ -17,6 +19,26 @@ class RoomDiceAuthorityTest extends TestCase
 {
     use RefreshDatabase;
 
+    private ?User $p1 = null;
+    private ?User $p2 = null;
+
+    private function acting(string $token): void
+    {
+        Sanctum::actingAs($token === 'p1' ? $this->p1 : $this->p2);
+    }
+
+    private function roll(string $token): \Illuminate\Testing\TestResponse
+    {
+        $this->acting($token);
+        return $this->postJson('/api/rooms/DICEX/roll', ['token' => $token]);
+    }
+
+    private function updateState(string $token, array $state): \Illuminate\Testing\TestResponse
+    {
+        $this->acting($token);
+        return $this->putJson('/api/rooms/DICEX', ['token' => $token, 'state' => $state]);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -27,11 +49,14 @@ class RoomDiceAuthorityTest extends TestCase
 
     private function room(bool $diceAuthority = true, ?int $target = null): Room
     {
+        $this->p1 = User::factory()->create(['id' => 10]);
+        $this->p2 = User::factory()->create(['id' => 20]);
         return Room::create([
             'code' => 'DICEX',
             'p1_token' => 'p1', 'p1_name' => 'A', 'p1_user_id' => 10,
             'p2_token' => 'p2', 'p2_name' => 'B', 'p2_user_id' => 20,
             'status' => 'playing', 'version' => 0, 'target' => $target,
+            'mode' => 'friendly',
             'dice_authority' => $diceAuthority,
             'authoritative' => false,
         ]);
@@ -94,7 +119,7 @@ class RoomDiceAuthorityTest extends TestCase
     public function test_roll_issues_deterministic_server_dice(): void
     {
         $room = $this->room();
-        $res = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->assertOk();
+        $res = $this->roll('p1')->assertOk();
         $res->assertJsonPath('index', 0)->assertJsonPath('reused', false);
 
         // Sunucu tohumundan HMAC ile birebir üretilmiş olmalı.
@@ -110,9 +135,9 @@ class RoomDiceAuthorityTest extends TestCase
     public function test_roll_idempotent_no_peek_ahead(): void
     {
         $this->room();
-        $a = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->assertOk();
+        $a = $this->roll('p1')->assertOk();
         // Tüketilmeden tekrar iste: AYNI zar döner (daha iyi değer seçilemez, ileri el peek yok).
-        $b = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->assertOk();
+        $b = $this->roll('p1')->assertOk();
         $b->assertJsonPath('reused', true);
         $this->assertSame($a->json('dice'), $b->json('dice'));
         $this->assertSame(0, $b->json('index'));
@@ -123,19 +148,20 @@ class RoomDiceAuthorityTest extends TestCase
     public function test_update_accepts_server_issued_dice(): void
     {
         $this->room();
-        $dice = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->json('dice');
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state($dice, 'white')])
+        $dice = $this->roll('p1')->json('dice');
+        $this->acting('p1');
+        $this->updateState('p1', $this->state($dice, 'white'))
             ->assertOk();
     }
 
     public function test_update_rejects_forged_dice(): void
     {
         $room = $this->room();
-        $dice = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->json('dice');
+        $dice = $this->roll('p1')->json('dice');
         $openingKey = $this->keyOf(SeededOpening::dice('DICEX', 0));
         $forged = $this->forgedNotIn([$this->keyOf($dice), $openingKey]);
 
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state($forged, 'white')])
+        $this->updateState('p1', $this->state($forged, 'white'))
             ->assertStatus(422)
             ->assertJsonPath('reason', 'dice-forgery');
 
@@ -148,7 +174,7 @@ class RoomDiceAuthorityTest extends TestCase
         // Açılış eli serverRoll'dan GELMEZ (deterministik). Hiç roll yokken bile MUAF.
         $this->room();
         $opening = SeededOpening::dice('DICEX', 0);
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state($opening, 'white')])
+        $this->updateState('p1', $this->state($opening, 'white'))
             ->assertOk();
     }
 
@@ -156,7 +182,7 @@ class RoomDiceAuthorityTest extends TestCase
     {
         // Tur arası (zar atılmamış) PUT -> zar yok, eşleşme kontrolü atlanır.
         $this->room();
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state([], 'white')])
+        $this->updateState('p1', $this->state([], 'white'))
             ->assertOk();
     }
 
@@ -165,14 +191,15 @@ class RoomDiceAuthorityTest extends TestCase
     {
         $room = $this->room();
         // p1 (white) index 0 aldı, oynadı.
-        $d0 = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->json('dice');
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state($d0, 'white')])->assertOk();
+        $d0 = $this->roll('p1')->json('dice');
+        $this->acting('p1');
+        $this->updateState('p1', $this->state($d0, 'white'))->assertOk();
         // Sıra siyaha geçti (dice boş) -> açık el tüketilir.
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state([], 'black')])->assertOk();
+        $this->updateState('p1', $this->state([], 'black'))->assertOk();
         $this->assertSame(1, (int) $room->fresh()->dice_consumed);
 
         // Siyah yeni el ister -> index 1 (tüketilen sayısı), taze değer.
-        $r = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p2'])->assertOk();
+        $r = $this->roll('p2')->assertOk();
         $r->assertJsonPath('index', 1)->assertJsonPath('reused', false);
         $room->refresh();
         [$d1, $d2] = app(FairDiceService::class)->roll($room->dice_seed, (string) $room->dice_client_seed, 1);
@@ -185,7 +212,7 @@ class RoomDiceAuthorityTest extends TestCase
     {
         $this->room(diceAuthority: false);
         // Legacy odada zar serbest (istemci üretir) -> herhangi bir zar kabul edilir.
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state([6, 6, 6, 6], 'white')])
+        $this->updateState('p1', $this->state([6, 6, 6, 6], 'white'))
             ->assertOk();
     }
 
@@ -194,11 +221,12 @@ class RoomDiceAuthorityTest extends TestCase
     {
         config()->set('dice.enforce', false);
         $this->room();
-        $dice = $this->postJson('/api/rooms/DICEX/roll', ['token' => 'p1'])->json('dice');
+        $dice = $this->roll('p1')->json('dice');
+        $this->acting('p1');
         $openingKey = $this->keyOf(SeededOpening::dice('DICEX', 0));
         $forged = $this->forgedNotIn([$this->keyOf($dice), $openingKey]);
         // enforce kapalı: sahte zar bile kabul (ama zar yine sunucuda üretildi/loglandı).
-        $this->putJson('/api/rooms/DICEX', ['token' => 'p1', 'state' => $this->state($forged, 'white')])
+        $this->updateState('p1', $this->state($forged, 'white'))
             ->assertOk();
         $this->assertNotEmpty(Room::where('code', 'DICEX')->value('dice_rolls'));
     }
@@ -206,6 +234,7 @@ class RoomDiceAuthorityTest extends TestCase
     public function test_roll_rejects_non_participant(): void
     {
         $this->room();
+        Sanctum::actingAs(User::factory()->create());
         $this->postJson('/api/rooms/DICEX/roll', ['token' => 'intruder'])->assertStatus(403);
     }
 }
