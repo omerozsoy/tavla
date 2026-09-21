@@ -2817,8 +2817,8 @@ button[aria-disabled='true'],
 }
 /* Detay: sade makale */
 .news-detail {
-  max-width: 720px;
-  margin: 0 auto;
+  max-width: 860px;
+  margin: 0;
 }
 .news-back {
   margin-bottom: 18px;

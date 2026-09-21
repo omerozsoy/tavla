@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Models\Content;
+
 /**
  * Rota-başına SEO <head> enjeksiyonu (SPA statik index.html kabuğu düzeltmesi).
  *
@@ -161,18 +163,64 @@ final class SeoMeta
 
     /**
      * index.html içeriğini, istenen yola göre per-route SEO etiketleriyle döndür.
-     * Slug META'da yoksa içerik DEĞİŞMEDEN döner (homepage/bilinmeyen = mevcut davranış).
+     * Slug ne statik META'da ne de dinamik haber olarak eşleşirse içerik DEĞİŞMEDEN
+     * döner (homepage/bilinmeyen = mevcut davranış).
      */
     public static function inject(string $path, string $html): string
     {
         $slug = trim($path, '/');
-        if ($slug === '' || ! isset(self::META[$slug])) {
+        if ($slug === '') {
             return $html;
         }
 
-        [$title, $desc, $h1] = self::META[$slug];
-        $url = self::BASE . $slug;
+        // 1) Statik rota META tablosu.
+        if (isset(self::META[$slug])) {
+            [$title, $desc, $h1] = self::META[$slug];
 
+            return self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website');
+        }
+
+        // 2) Dinamik haber makalesi: /haberler/<slug>. Paylaşımda (WhatsApp/Twitter vb.)
+        //    makalenin kendi başlığı + özeti + KAPAK GÖRSELİ görünsün diye per-article
+        //    og/twitter etiketlerini enjekte et. Slug, frontend slugify(title) ile aynı.
+        $parts = explode('/', $slug);
+        if (count($parts) === 2 && $parts[0] === 'haberler') {
+            $article = self::findNews($parts[1]);
+            if ($article) {
+                $title = $article->title . ' | TavlaTv';
+                $desc  = self::excerpt($article->body)
+                    ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
+
+                return self::apply(
+                    $html,
+                    $title,
+                    $desc,
+                    (string) $article->title,
+                    self::BASE . $slug,
+                    self::absImg($article->image),
+                    'article',
+                );
+            }
+        }
+
+        return $html;
+    }
+
+    /**
+     * Verilen değerlerle <head> etiketlerini değiştirir. $image verilirse og:image /
+     * og:image:alt / twitter:image de güncellenir. preg_replace_callback kullanılır:
+     * replacement string'i olduğu gibi basar (kullanıcı içeriğindeki "$1"/"\" gibi
+     * dizeler geri-referans sanılıp bozulmaz).
+     */
+    private static function apply(
+        string $html,
+        string $title,
+        string $desc,
+        string $h1,
+        string $url,
+        ?string $image,
+        string $type,
+    ): string {
         $tTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         $tDesc  = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
         $tH1    = htmlspecialchars($h1, ENT_QUOTES, 'UTF-8');
@@ -187,19 +235,86 @@ final class SeoMeta
             '~<meta\s+property="og:title"\s+content="[^"]*"\s*/?>~s' => "<meta property=\"og:title\" content=\"{$tTitle}\" />",
             '~<meta\s+property="og:description"\s+content="[^"]*"\s*/?>~s' => "<meta property=\"og:description\" content=\"{$tDesc}\" />",
             '~<meta\s+property="og:url"\s+content="[^"]*"\s*/?>~s' => "<meta property=\"og:url\" content=\"{$tUrl}\" />",
+            '~<meta\s+property="og:type"\s+content="[^"]*"\s*/?>~s' => "<meta property=\"og:type\" content=\"{$type}\" />",
             '~<meta\s+name="twitter:title"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:title\" content=\"{$tTitle}\" />",
             '~<meta\s+name="twitter:description"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:description\" content=\"{$tDesc}\" />",
             // JS'siz tarayıcıların gördüğü H1 + açıklama: per-route yap.
             '~<noscript>.*?</noscript>~s' => "<noscript><h1>{$tH1}</h1><p>{$tDesc}</p></noscript>",
         ];
 
+        if ($image) {
+            $tImg = htmlspecialchars($image, ENT_QUOTES, 'UTF-8');
+            $subs['~<meta\s+property="og:image"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image\" content=\"{$tImg}\" />";
+            $subs['~<meta\s+property="og:image:alt"\s+content="[^"]*"\s*/?>~s'] = "<meta property=\"og:image:alt\" content=\"{$tTitle}\" />";
+            $subs['~<meta\s+name="twitter:image"\s+content="[^"]*"\s*/?>~s'] = "<meta name=\"twitter:image\" content=\"{$tImg}\" />";
+        }
+
         foreach ($subs as $pattern => $replacement) {
-            $out = preg_replace($pattern, $replacement, $html, 1);
+            $out = preg_replace_callback($pattern, fn () => $replacement, $html, 1);
             if ($out !== null) {
                 $html = $out; // preg hatasında (null) o adımı atla, HTML'i bozma
             }
         }
 
         return $html;
+    }
+
+    /** Yayındaki haberler içinde slug'ı frontend slugify(title) ile eşleşeni bul. */
+    private static function findNews(string $slug): ?Content
+    {
+        $rows = Content::query()
+            ->where('type', 'news')
+            ->where('published', true)
+            ->get(['id', 'title', 'body', 'image']);
+
+        foreach ($rows as $row) {
+            if (self::slugify((string) $row->title) === $slug) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /** frontend ContentView.tsx slugify() ile bayt-bayt aynı: TR harf eşleme + [^a-z0-9]->-. */
+    private static function slugify(string $s): string
+    {
+        $map = [
+            'ç' => 'c', 'ğ' => 'g', 'ı' => 'i', 'ö' => 'o', 'ş' => 's', 'ü' => 'u',
+            'İ' => 'i', 'Ç' => 'c', 'Ğ' => 'g', 'Ö' => 'o', 'Ş' => 's', 'Ü' => 'u',
+        ];
+        $s = strtr($s, $map);
+        $s = mb_strtolower($s, 'UTF-8');
+        $s = preg_replace('/[^a-z0-9]+/', '-', $s);
+
+        return trim((string) $s, '-');
+    }
+
+    /** HTML gövdeyi düz-metin özete indir (~200 karakter). */
+    private static function excerpt(?string $body): string
+    {
+        $text = trim((string) preg_replace('/\s+/', ' ', strip_tags((string) $body)));
+        if ($text === '') {
+            return '';
+        }
+        if (mb_strlen($text) > 200) {
+            $text = mb_substr($text, 0, 197) . '…';
+        }
+
+        return $text;
+    }
+
+    /** Görsel yolunu mutlak URL'e çevir (frontend mediaSrc mantığı + BASE ön-ek). */
+    private static function absImg(?string $img): ?string
+    {
+        if (! $img) {
+            return null;
+        }
+        if (preg_match('#^https?://#i', $img)) {
+            return $img;
+        }
+        $base = rtrim(self::BASE, '/');
+
+        return $img[0] === '/' ? $base . $img : $base . '/uploads/' . $img;
     }
 }
