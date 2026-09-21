@@ -93,9 +93,11 @@ export default function MatchReport({
   const { t } = useT()
   useEscape(onClose)
   const [summaryOpen, setSummaryOpen] = useState(false)
-  // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri.
+  // Analiz kapsami: 'mine' = benim hamlelerim, 'opp' = rakibin hamleleri, 'all' = iki taraf.
+  // 'all' + "Sirala gore" -> hamleler seq'e gore ic ice (karsilikli) listelenir; oyunun
+  // gidisatini iki taraftan sirayla takip edersin.
   // humanColor yoksa (bot-vs-bot/izleyici) ayrim anlamsiz -> hepsi gosterilir (toggle gizli).
-  const [scope, setScope] = useState<'mine' | 'opp'>('mine')
+  const [scope, setScope] = useState<'mine' | 'opp' | 'all'>('mine')
   // Etkin insan rengi: kaydedilmis maclarda hc bazen ters gelebiliyor (eski kayit / online
   // senkron). "Benim" tarafinda hic analiz edilebilir hamle yokken rakip tarafinda varsa
   // etiketleme kesinlikle terstir -> otomatik cevir. Dogru veride tetiklenmez.
@@ -107,7 +109,7 @@ export default function MatchReport({
     return mineN === 0 && oppN > 0 ? other : humanColor
   })()
   const inScope = (e: LogEntry) =>
-    !effHuman || (scope === 'mine' ? e.player === effHuman : e.player !== effHuman)
+    !effHuman || scope === 'all' || (scope === 'mine' ? e.player === effHuman : e.player !== effHuman)
   // Hatali hamleler (equity kaybi >= 0.02; kup haric) — analiz varsayilani bunlar
   const mistakes = log
     .map((e, i) => ({ e, i }))
@@ -393,6 +395,12 @@ export default function MatchReport({
                       onClick={() => setScope('opp')}
                     >
                       {t('rep.scopeOpp')}
+                    </Button>
+                    <Button
+                      variant={scope === 'all' ? 'secondary' : 'ghost'}
+                      onClick={() => setScope('all')}
+                    >
+                      {t('rep.scopeAll')}
                     </Button>
                   </div>
                 )}
