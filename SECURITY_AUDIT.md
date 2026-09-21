@@ -1370,3 +1370,7 @@ Canonical MAT export failures no longer return the internal `MatSerializer` exce
 ## Audit amendment - legacy room status is server-derived (2026-09-21)
 
 The legacy `PUT /api/rooms/{code}` path still exists only for the explicitly supported non-money friendly compatibility mode. Its client `status=finished` field is no longer authoritative: the server ignores it unless the canonical state proves a terminal winner, or the server clock has produced a timeout/AFK result. A non-terminal state cannot be marked finished by request payload alone. `RoomClockTest` passes **15 tests / 88 assertions** including the forged-status regression.
+
+## Audit amendment - legacy full-state path is fail-closed by configuration (2026-09-21)
+
+The remaining legacy `PUT /api/rooms/{code}` compatibility path is now disabled by default through `ALLOW_LEGACY_STATE=false`. `Room::acceptsLegacyState()` requires an explicit runtime opt-in in a controlled migration/test environment, in addition to the existing friendly/non-money checks. Production therefore cannot accept client-authored full board state merely because an old room row has legacy flags. Legacy clock/dice compatibility tests explicitly opt in and pass: `RoomClockTest` **15/88**, `RoomDiceAuthorityTest` **12/77**.

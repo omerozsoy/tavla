@@ -135,6 +135,7 @@ class Room extends Model
     public function acceptsLegacyState(): bool
     {
         return ! $this->authoritative && ! $this->bot
+            && (bool) config('game.legacy_state_allowed', false)
             && (int) $this->stake === 0 && (int) $this->bet_pct === 0
             && $this->mode === 'friendly' && $this->status === 'playing'
             && $this->server_match === null && $this->server_state === null;
