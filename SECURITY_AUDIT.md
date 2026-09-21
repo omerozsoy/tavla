@@ -81,10 +81,10 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Category:** Browser security / XSS defense-in-depth  
 **Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML  
 **Affected endpoint/event:** tüm web sayfaları ve admin içerik render'ı  
-**Description:** Inline style/script, Google Fonts, opsiyonel analytics, `data:`/`blob:` medya ve API bağlantıları bulunuyor. Güvenli kaynak envanteri çıkarılmadan enforcing CSP eklenmedi.  
+**Description:** Inline style/script, Google Fonts, opsiyonel analytics, `data:`/`blob:` medya ve API bağlantıları bulunuyor. Kaynakları kapsayan opt-in `Content-Security-Policy-Report-Only` middleware'i eklendi; enforcing CSP hâlâ kaynak envanteri ve gözlem dönemi bekliyor.  
 **Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP olmadığı için tarayıcıda daha geniş etki alanı oluşur.  
 **Root cause:** Mevcut frontend kaynakları strict CSP ile uyumlu olarak sınıflandırılmadı.  
-**Evidence:** Source review; production response header'larında CSP kanıtı yok.  
+**Evidence:** Source review; `SecurityHeadersTest` **2 test / 3 assertions** geçti. Production'da `CSP_REPORT_ONLY=true` rollout'u ve rapor toplama henüz doğrulanmadı.  
 **Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.  
 **Recommended fix:** Önce `Content-Security-Policy-Report-Only`, rapor toplama ve nonce/hash kaynak envanteri; sonra enforcing CSP.  
 **Database protection required?:** Hayır.  
