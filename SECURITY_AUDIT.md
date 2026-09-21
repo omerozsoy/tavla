@@ -16,7 +16,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 
 | İnvariant | Durum | Kalan kanıt boşluğu |
 |---|---|---|
-| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | `active_money_match_claims.user_id` unique claim'i ve admission entegrasyonu eklendi; production migration/backfill ve gerçek MySQL/InnoDB paralel test bekliyor. |
+| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | `active_money_match_claims.user_id` unique claim'i production’da [99] batch ile kuruldu; eski aktif odaların backfill doğrulaması ve gerçek MySQL/InnoDB paralel test bekliyor. |
 | Aynı match + aynı user duplicate participant olamaz | PARTIAL | Claim tablosu kullanıcı başına tek aktif ekonomik oda sağlar; mevcut eski room participant satırları için backfill/duplicate temizliği ve production constraint kanıtı bekliyor. |
 | Aynı match iki kez settle edilemez | PARTIAL | Command ve settlement guard'ları var; queue retry, gerçek DB isolation ve kalıcı settlement referansının production kanıtı eksik. |
 | Aynı game action iki kez uygulanamaz | PASS (test edilen HTTP command yolları) | HTTP dışı tüketici veya eski deployment sürümü ayrıca doğrulanmalı. |
@@ -36,12 +36,12 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 **Category:** Concurrency / database invariant
 **Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations
 **Affected endpoint/event:** matchmaking, room join/enter/rematch
-**Description:** `active_money_match_claims` migration'ı ve admission entegrasyonu artık kullanıcı başına DB unique claim kullanıyor. Ancak migration production'da çalıştırılmadı ve mevcut eski aktif odalar için güvenli backfill/duplicate temizliği yapılmadı.
+**Description:** `active_money_match_claims` migration'ı ve admission entegrasyonu artık kullanıcı başına DB unique claim kullanıyor. Production migration çalıştı; mevcut eski aktif odalar için güvenli backfill/duplicate temizliği ve gerçek InnoDB yarış kanıtı hâlâ eksik.  
 **Attack scenario:** Aynı user ile iki paralel HTTP isteği farklı transaction'larda admission kontrolünü geçerse iki aktif money match oluşabilir.
 **Root cause:** Önceki akış yalnız application row-lock ve sorgu kontrolüne dayanıyordu; yeni claim tablosunun production rollout'u ve backfill'i henüz kanıtlanmadı.
-**Evidence:** `ActiveMoneyClaimTest` **1 test / 5 assertions** ve mevcut concurrency suite geçiyor; SQLite `lockForUpdate()` gerçek InnoDB davranışını kanıtlamaz. Production engine/isolation doğrulanmadı.
+**Evidence:** `ActiveMoneyClaimTest` **1 test / 5 assertions** ve mevcut concurrency suite geçiyor; SQLite `lockForUpdate()` gerçek InnoDB davranışını kanıtlamaz. Production `migrate:status` çıktısında `2026_09_22_020000_create_active_money_match_claims` **[99] Ran** olarak görüldü; production engine/isolation ve eski aktif oda backfill'i ayrıca doğrulanmadı.  
 **Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.
-**Recommended fix:** `2026_09_22_020000_create_active_money_match_claims.php` migration'ını backup ve kontrollü backfill ile rollout et; settlement/cancel/cleanup/recovery claim release'lerini doğrula; gerçek MySQL paralel testi çalıştır.
+**Recommended fix:** Mevcut aktif odaları read-only sorguyla claim tablosuyla karşılaştır; duplicate varsa oyun/coin değiştirmeden operasyon planı oluştur; settlement/cancel/cleanup/recovery claim release'lerini doğrula ve gerçek MySQL paralel testi çalıştır.  
 **Database protection required?:** Evet.
 **Regression test required?:** Evet; gerçek MySQL ile 10–50 paralel join/enter isteği.
 
@@ -128,7 +128,7 @@ Bu dosyada yalnızca halen açık, kısmi veya güvenli biçimde kanıtlanmamı�
 
 ### PHASE 1 — DB concurrency claim
 
-1. `2026_09_22_020000_create_active_money_match_claims.php` migration'ını backup ve kontrollü backfill ile production'a uygula; eski aktif odaların claim kayıtlarını doğrula. **Dosyalar:** room migrations, `RoomController`, `Room`.
+1. Production migration tamamlandı. Şimdi eski aktif odaları claim tablosuyla read-only karşılaştır ve gerçek MySQL paralel admission testini çalıştır. **Dosyalar:** room migrations, `RoomController`, `Room`.
 2. Gerçek MySQL paralel admission testi ekle ve claim insert/release yarışlarını doğrula.
 
 ### PHASE 2 — Wallet/settlement bütünlüğü
