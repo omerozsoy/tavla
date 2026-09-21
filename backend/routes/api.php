@@ -150,10 +150,15 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/email/resend', [AuthController::class, 'resendVerification']);
     Route::post('/membership/trial', [MembershipController::class, 'startTrial']);
     Route::post('/membership/auto-renew', [MembershipController::class, 'autoRenew']);
-    Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
-    Route::post('/shop/coins', [\App\Http\Controllers\PaymentController::class, 'buyCoins']); // sepetteki coin paketleri -> odeme
-    Route::post('/shop/membership', [\App\Http\Controllers\PaymentController::class, 'buyMembership']); // "Üyeliğini Uzat" -> 1 yil premium -> odeme
-    Route::post('/shop/promo/validate', [\App\Http\Controllers\PaymentController::class, 'promoValidate']); // indirim kodu dogrula (sunucu)
+    // Ödeme/promo başlangıçlarında kullanıcı başına ayrı kova: pending ödeme ve promo
+    // doğrulama satırlarının spam ile büyümesini engeller; callback limiti ayrıdır.
+    Route::middleware('throttle:10,1,payment-checkout')->group(function () {
+        Route::post('/subscribe', [\App\Http\Controllers\PaymentController::class, 'subscribe']);
+        Route::post('/shop/coins', [\App\Http\Controllers\PaymentController::class, 'buyCoins']); // sepetteki coin paketleri -> odeme
+        Route::post('/shop/membership', [\App\Http\Controllers\PaymentController::class, 'buyMembership']); // "Üyeliğini Uzat" -> 1 yil premium -> odeme
+    });
+    Route::post('/shop/promo/validate', [\App\Http\Controllers\PaymentController::class, 'promoValidate'])
+        ->middleware('throttle:30,1,promo-validate'); // indirim kodu dogrula (sunucu)
 
     Route::get('/friends', [FriendController::class, 'index']);
     Route::post('/friends/request', [FriendController::class, 'request']);
@@ -251,7 +256,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::delete('/addresses/{address}', [\App\Http\Controllers\AddressController::class, 'destroy'])->whereNumber('address');
 
     // Sepet ödemesi: para (coin paketleri + para-ürünleri) TEK Garanti ödemesi (kind='cart').
-    Route::post('/shop/cart-checkout', [\App\Http\Controllers\PaymentController::class, 'cartCheckout']);
+    Route::post('/shop/cart-checkout', [\App\Http\Controllers\PaymentController::class, 'cartCheckout'])
+        ->middleware('throttle:10,1,payment-checkout');
 
     Route::get('/blunders', [BlunderController::class, 'index']);
     Route::post('/blunders', [BlunderController::class, 'store']);
