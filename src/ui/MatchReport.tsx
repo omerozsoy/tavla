@@ -200,7 +200,11 @@ export default function MatchReport({
   const diceFaces = (cur?.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
   const diceRow =
     boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
-  const whiteBottom = cur?.player === 'white' // beyaz altta (flip yok; MatReview ile aynı)
+  // İncelenen hamlenin sahibi HEP ALTTA + numaralar onun kendi 1-24'ü (perspectiveNumbers) ->
+  // notasyon ("14/10"), tahta etiketi ve ok AYNI noktayı gösterir. Eskiden tahta hep beyaz
+  // numaralıydı -> rakip (siyah) hamlesinde ok "11" etiketli noktadan çıkarken notasyon "14" diyordu.
+  const flip = cur?.player === 'black' // siyahın hamlesi -> siyah altta
+  const whiteBottom = !flip
 
   function selectMove(i: number) {
     setSel(i)
@@ -447,7 +451,8 @@ export default function MatchReport({
                         pipTop={pipCount(boardState!, 'black')}
                         pipBottom={pipCount(boardState!, 'white')}
                         cube={cubeForBoard}
-                        flip={false}
+                        flip={flip}
+                        perspectiveNumbers
                         mirror={boardDir === 'left'}
                         swapStones={swapStones}
                         centerLeft={whiteBottom ? null : diceRow}

@@ -95,6 +95,10 @@ interface BoardProps {
   centerRight?: ReactNode
   centerMain?: ReactNode
   flip?: boolean // true: siyah oyuncunun bakisi (tahta 180 cevrilir)
+  // true: nokta numaralari ALTTAKI oyuncunun perspektifinden yazilir (kendi 1-24'u). flip ile
+  // birlikte GERCEK perspektif dondurmesi olur (analiz: rakip hamlesini rakibin numarasiyla goster).
+  // false (varsayilan): numaralar daima beyaz/mutlak (index+1) — canli oyun davranisi degismez.
+  perspectiveNumbers?: boolean
   mirror?: boolean // true: oyun yonu "sola topla" (tahta yatay aynalanir, tepsi solda)
   swapStones?: boolean // true: pul renkleri takas (oyuncu siyah/beyaz secer) — gorsel, motor etkilenmez
   showPip?: boolean // pip sayilari gorunur mu
@@ -229,6 +233,7 @@ function Board({
   centerRight,
   centerMain,
   flip = false,
+  perspectiveNumbers = false,
   mirror = false,
   swapStones = false,
   showPip = true,
@@ -244,6 +249,12 @@ function Board({
     : flip
       ? LAYOUT.flipped
       : LAYOUT.normal
+
+  // Nokta NUMARALARI (etiketler). perspectiveNumbers false -> L'den (mevcut davranis: numaralar
+  // daima beyaz/mutlak). true -> ALTTAKI oyuncunun kendi 1-24'u: bu, flip'ten bagimsiz olarak
+  // "normal" numara dizilimidir (13-24 ust, 12-1 alt) cunku her oyuncu kendi tarafini boyle okur;
+  // flip pozisyonlariyla birlesince index->etiket dogru hizalanir (bkz LAYOUT flipped konumlari).
+  const numsL: Layout = perspectiveNumbers ? (mirror ? MIRROR.normal : LAYOUT.normal) : L
 
   // ---------------------------------------------------------------------------
   // Pointer-tabanli surukle-birak (native HTML5 DnD DEGIL).
@@ -579,11 +590,11 @@ function Board({
     >
       {/* Ust ucgen numaralari */}
       <div className="pt-numbers top">
-        {L.topNums[0].map((n) => (
+        {numsL.topNums[0].map((n) => (
           <span key={n}>{n}</span>
         ))}
         <span className="num-gap" />
-        {L.topNums[1].map((n) => (
+        {numsL.topNums[1].map((n) => (
           <span key={n}>{n}</span>
         ))}
       </div>
@@ -688,11 +699,11 @@ function Board({
 
       {/* Alt ucgen numaralari */}
       <div className="pt-numbers bottom">
-        {L.botNums[0].map((n) => (
+        {numsL.botNums[0].map((n) => (
           <span key={n}>{n}</span>
         ))}
         <span className="num-gap" />
-        {L.botNums[1].map((n) => (
+        {numsL.botNums[1].map((n) => (
           <span key={n}>{n}</span>
         ))}
       </div>
