@@ -60,20 +60,19 @@ class GameLogController extends Controller
         // Slot ve sonuç metadatası client'tan gelmez; oda/server state'inden türetilir.
         if ($data['mode'] === 'online') {
             $room = Room::where('code', $uid)->first();
-            if (! $room) {
-                return response()->json(['message' => 'Oda bulunamadı'], 404);
+            if ($room) {
+                $actor = $request->user('sanctum');
+                $guestToken = (string) ($data['token'] ?? $request->header('X-Room-Token', ''));
+                $authorizedSlot = RoomAccess::slot($room, $actor, $guestToken);
+                if ($authorizedSlot === null) {
+                    return response()->json(['message' => 'Bu maç kaydına yazma yetkiniz yok'], 403);
+                }
+                $data['slot'] = $authorizedSlot;
+                $meta['p1_name'] = $room->p1_name ?: null;
+                $meta['p2_name'] = $room->p2_name ?: null;
+                $meta['p1_user_id'] = $room->p1_user_id;
+                $meta['p2_user_id'] = $room->p2_user_id;
             }
-            $actor = $request->user('sanctum');
-            $guestToken = (string) ($data['token'] ?? $request->header('X-Room-Token', ''));
-            $authorizedSlot = RoomAccess::slot($room, $actor, $guestToken);
-            if ($authorizedSlot === null) {
-                return response()->json(['message' => 'Bu maç kaydına yazma yetkiniz yok'], 403);
-            }
-            $data['slot'] = $authorizedSlot;
-            $meta['p1_name'] = $room->p1_name ?: null;
-            $meta['p2_name'] = $room->p2_name ?: null;
-            $meta['p1_user_id'] = $room->p1_user_id;
-            $meta['p2_user_id'] = $room->p2_user_id;
         }
 
         try {
@@ -91,8 +90,8 @@ class GameLogController extends Controller
         // tamamlandıysa replay metadata'sına yansıtılır; pvb/local kayıtları geriye dönük
         // olarak kendi yerel sonuçlarını yazmaya devam edebilir.
         if ($data['mode'] === 'online') {
-            $match = $room->server_match;
-            if ($room->hasVerifiedServerResult()) {
+            $match = $room?->server_match;
+            if ($room && $room->hasVerifiedServerResult()) {
                 $log->status = 'finished';
                 $log->winner = $match['winner'];
                 if (is_array($match['score'] ?? null)) {
