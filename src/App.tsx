@@ -2826,14 +2826,20 @@ export default function App() {
     } catch (e) {
       // Açılış/sıra yarışı: başlayan-olmayan taraf 409 alır -> SESSİZ (poll açılışı getirir).
       const err = e as { status?: number; message?: string }
-      if (err?.status !== 409) {
+      // 429 = "Too Many Attempts" (room-command rate-limit). KÖK FIX (#XS54E kaybeden kilidi):
+      // maç BİTMİŞ ama istemci maç-sonunu uygulayamadıysa auto-roll durmadan serverRoll dener ->
+      // her atış reddedilir (409) -> poll rollConflictRef'i sıfırlar -> tekrar dene -> 60/dk limitine
+      // çarpıp 429. 429'u da 409 gibi ele al: kanonik durumu çek; maç bittiyse applyServerBoard
+      // gameEnd'i kurar -> matchOver -> auto-roll KALICI durur (matchOver auto-roll'u gate'ler) ->
+      // döngü + 429 spam sona erer. 429'da rahatsız edici hata toast'ı GÖSTERME.
+      if (err?.status !== 409 && err?.status !== 429) {
         notify.error(err?.status ? err.message || t('mp.connError') : t('mp.connError'))
       }
-      // Açılış veya normal zar yarışında yalnızca sessizce dönmek istemciyi eski
-      // overlay'de bırakabilir. Sunucunun kanonik durumunu hemen çek; normal poll'u
-      // beklemeden doğru sıra/zarı uygula. Bu, move tarafındaki 409 resync davranışıyla
-      // aynı güvenli yolu kullanır.
-      if (err?.status === 409 && code) {
+      // Açılış/sıra yarışı (409) VEYA rate-limit (429; genelde bitmiş maçta auto-roll döngüsü):
+      // sunucunun kanonik durumunu HEMEN çek (showRoom ayrı throttle -> 429 iken de çalışır) ve
+      // uygula. Maç bittiyse gameEnd kurulur; değilse doğru sıra/zar gelir. move tarafındaki 409
+      // resync ile aynı güvenli yol.
+      if ((err?.status === 409 || err?.status === 429) && code) {
         rollConflictRef.current = true
         appliedServerVersionRef.current = -1
         void showRoom(code)
