@@ -503,6 +503,14 @@ class RoomController extends Controller
             if ($betPct > 0) {
                 $snapshot = is_array($room->server_match['pct_stake_snapshot'] ?? null)
                     ? $room->server_match['pct_stake_snapshot'] : null;
+                // NULL-SAFE (kök fix): snapshot yoksa OFFSET ERİŞME (PHP 8.2'de `null['id']` ->
+                // E_WARNING -> Laravel ErrorException -> HTTP 500). Doğrudan pending 409 dön.
+                // (Snapshot rematch'te betPct için kurulmadığından kaybolabiliyordu; artık kuruluyor.)
+                if ($snapshot === null) {
+                    throw new \Symfony\Component\HttpKernel\Exception\HttpException(
+                        409, 'Percentage stake snapshot missing; settlement is pending.'
+                    );
+                }
                 $wBet = $snapshot[(string) $winnerId] ?? null;
                 $lBet = $snapshot[(string) $loserId] ?? null;
                 if ((! is_int($wBet) && ! ctype_digit((string) $wBet))
@@ -1053,7 +1061,7 @@ class RoomController extends Controller
         if ($room->status !== 'finished') {
             return $this->fail('Rövanş yalnız tamamlanmış maçtan sonra açılabilir.', 409);
         }
-        $moneyRoom = Room::requiresAccount($room);
+        $moneyRoom = RoomAccess::requiresAccount($room);
         if ($moneyRoom && ! $room->settled) {
             return $this->fail('Önce mevcut maçın settlement işlemi tamamlanmalı.', 409);
         }
@@ -1110,7 +1118,7 @@ class RoomController extends Controller
             if (! $locked || $locked->status !== 'finished') {
                 throw new \RuntimeException('Rövanş yalnız tamamlanmış maçtan sonra açılabilir.');
             }
-            if (Room::requiresAccount($locked) && ! $locked->settled) {
+            if (RoomAccess::requiresAccount($locked) && ! $locked->settled) {
                 throw new \RuntimeException('Önce mevcut maçın settlement işlemi tamamlanmalı.');
             }
             if ($locked->rematch_code) {
@@ -1157,6 +1165,31 @@ class RoomController extends Controller
                 $escrowed = true;
             }
 
+            // YÜZDE BAHİS (bet_pct) RÖVANŞI: matchmaking gibi pct_stake_snapshot HESAPLA. Eski kod
+            // yalnız bet_pct'yi kopyalayıp snapshot'ı ATLIYORDU -> yeni oda snapshot'sız kuruluyor,
+            // maç bitince settle `null['id']` ile PHP 8.2'de 500 (Internal Server Error) veriyordu
+            // (#8DZT4). Snapshot'ı YENİ oda server_match'ine yaz; ilk roll initServerMatch KORUR.
+            $rematchBetPct = (int) $locked->bet_pct;
+            $pctSnapshot = null;
+            if ($rematchBetPct > 0 && $locked->p1_user_id && $locked->p2_user_id) {
+                $uids = [(int) $locked->p1_user_id, (int) $locked->p2_user_id];
+                sort($uids);
+                $lk = [];
+                foreach ($uids as $uid) {
+                    $lk[$uid] = User::lockForUpdate()->find($uid);
+                }
+                $p1u = $lk[$locked->p1_user_id] ?? null;
+                $p2u = $lk[$locked->p2_user_id] ?? null;
+                $avail = fn ($u) => (int) (($u->coins ?? 0) - ($u->coins_reserved ?? 0));
+                if (! $p1u || ! $p2u || $avail($p1u) < 1 || $avail($p2u) < 1) {
+                    throw new \RuntimeException('Yüzde bahis rövanşı için yeterli bakiye yok.');
+                }
+                $pctSnapshot = [
+                    (string) $locked->p1_user_id => (int) floor($avail($p1u) * $rematchBetPct / 100),
+                    (string) $locked->p2_user_id => (int) floor($avail($p2u) * $rematchBetPct / 100),
+                ];
+            }
+
             $fields = [
                 'code' => $this->generateCode(),
                 'p1_token' => $locked->p1_token,
@@ -1190,6 +1223,10 @@ class RoomController extends Controller
             }
             if (Schema::hasColumn('rooms', 'dice_authority')) {
                 $fields['dice_authority'] = (bool) $locked->dice_authority;
+            }
+            // Yüzde bahis snapshot'ı YENİ oda server_match'ine tohumla (matchmaking ile aynı biçim).
+            if ($pctSnapshot !== null) {
+                $fields['server_match'] = ['pct_stake_snapshot' => $pctSnapshot];
             }
             Room::create($fields); // yeni tohum/commit ilk zarda uretilir (provably-fair taze)
 
