@@ -1,4 +1,8 @@
 # TavlaTV — SECURITY + SERVER-AUTHORITATIVE ARCHITECTURE AUDIT
+## Audit amendment - validator response headers verified (2026-09-21)
+
+A normal curl -I https://validator.tavlatv.com/health returns 401 Unauthorized and now includes X-Content-Type-Options: nosniff, X-Frame-Options: SAMEORIGIN, and Referrer-Policy: strict-origin-when-cross-origin. Anonymous health access remains denied while the reverse-proxy security headers are present.
+
 ## Audit amendment - validator health endpoint access (2026-09-21)
 
 curl -I https://validator.tavlatv.com/health returns 401 Unauthorized. The deployed validator protects the health route from anonymous external probes; this is consistent with a private validator boundary, but monitoring must use an authenticated probe or an internal loopback check. No secret value is recorded.
