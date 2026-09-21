@@ -89,6 +89,33 @@ class AuthoritativeLoopTest extends TestCase
         $this->assertNotEmpty($room->server_state['dice']); // başlayan açılış zarını oynar
     }
 
+    // #ZKH4D: açılışta İKİ istemci de version=0'da /roll atar (adil açılış -> başlayanı belirlemek
+    // için ikisi de zar ister). İlk roll açılışı kurup version'ı 1 yapar; ikincinin expected_version=0
+    // artık BAYAT -> ESKİDEN staleCommand 409 "Oyun durumu güncellendi" (maç başında konsol 409).
+    // Açılış roll'u IDEMPOTENT olduğundan bu faz (turns=0) staleCommand'ı ATLAR: ikinci roll de 200
+    // döner (reused-opening, aynı başlayan/zar). Böylece maç başında out-of-turn 409 OLMAZ.
+    public function test_opening_double_roll_race_no_stale_409(): void
+    {
+        $this->room();
+        // p1 açılışı kurar (version 0 -> 1).
+        Sanctum::actingAs($this->p1);
+        $r1 = $this->postJson('/api/rooms/LOOPX/roll', [
+            'token' => 'p1', 'command_id' => (string) Str::uuid(), 'expected_version' => 0,
+        ])->assertOk()->assertJsonPath('opening', true);
+        $starter = $r1->json('starter');
+        $dice = $r1->json('dice');
+
+        // p2 HÂLÂ version=0 sanıyor (p1'in açılışını görmedi) -> BAYAT expected_version=0.
+        // ESKİDEN 409; ARTIK 200 (idempotent açılış): AYNI başlayan + AYNI zar döner.
+        Sanctum::actingAs($this->p2);
+        $this->postJson('/api/rooms/LOOPX/roll', [
+            'token' => 'p2', 'command_id' => (string) Str::uuid(), 'expected_version' => 0,
+        ])->assertOk()
+            ->assertJsonPath('opening', true)
+            ->assertJsonPath('starter', $starter)
+            ->assertJsonPath('dice', $dice);
+    }
+
     public function test_move_passes_turn_and_blocks_out_of_turn_roll(): void
     {
         config()->set('validator.url', 'http://validator.test');
