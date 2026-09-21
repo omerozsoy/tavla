@@ -145,10 +145,13 @@ class RoomCubeTest extends TestCase
         $this->command('p1', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])->assertStatus(403);
     }
 
-    public function test_respond_rejected_without_pending(): void
+    public function test_respond_without_pending_syncs_gracefully(): void
     {
+        // BEKLEYEN TEKLİF YOK: 409 YERİNE 200 not_turn (yarış/bayat cubePending). Küp DEĞİŞMEZ.
         $this->room();
-        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])->assertStatus(409);
+        $this->command('p2', '/api/rooms/CUBEX/cube/respond', ['action' => 'take'])
+            ->assertOk()->assertJsonPath('not_turn', true);
+        $this->assertSame(1, (int) Room::first()->fresh()->server_match['cube']['value']); // küp aynı
     }
 
     // ---- move: kÃ¼p Ã§arpanÄ± ----

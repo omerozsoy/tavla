@@ -69,6 +69,17 @@ class RoomCommandIdempotencyTest extends TestCase
         $user = User::factory()->create(['coins' => 1000]);
         Sanctum::actingAs($user);
         $room = $this->room($user);
+        // staleCommand yalnız MID-oyunda (turns>=1) uygulanır; açılış fazı (turns=0) idempotent
+        // olduğu için ATLANIR (bkz #ZKH4D). Bu testin amacı stale-receipt olduğundan mid-oyun kur:
+        // p1'in (white) sırası, zar boş -> geçerli sürümle roll atılabilir.
+        $room->update([
+            'server_match' => [
+                'target' => 1, 'score' => ['white' => 0, 'black' => 0], 'gameNo' => 1,
+                'done' => false, 'winner' => null, 'cube' => ['value' => 1, 'owner' => null, 'pending' => null],
+                'crawford' => false, 'crawfordDone' => false, 'opened' => true, 'turns' => 1,
+            ],
+            'server_state' => array_merge(\App\Support\Backgammon::initialState(), ['turn' => 'white', 'dice' => []]),
+        ]);
         $commandId = (string) Str::uuid();
 
         $this->postJson("/api/rooms/{$room->code}/roll", [

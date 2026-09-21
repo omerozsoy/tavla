@@ -2103,7 +2103,15 @@ class RoomController extends Controller
             // sertleştirme; istemci de live.seq!==turnsPlayed ile eler). Bu save eden tüm dalları kapsar.
             $room->live = null;
 
-            if (($stale = $this->staleCommand($room, $data)) !== null) {
+            // AÇILIŞ FAZI (KÖK FIX #ZKH4D): açılış eli oynanmadan (turns=0) İKİ istemci de version=0'da
+            // /roll atar (adil açılış: başlayanı belirlemek için ikisi de zar ister). İlk gelen roll
+            // açılışı kurup server_version'ı artırınca, ikincinin expected_version'ı bir GERİ kalır ve
+            // staleCommand 409 "Oyun durumu güncellendi" döndürürdü -> MAÇ BAŞINDA konsol 409 + gereksiz
+            // resync (yaşanan bug). Açılış roll'u IDEMPOTENT (opening/reused-opening idempotent döner),
+            // o yüzden bu fazda staleCommand'ı ATLA. Mid-oyun (turns>=1) staleCommand AYNEN çalışır.
+            $smForStale = is_array($room->server_match) ? $room->server_match : null;
+            $openingPhase = ! $smForStale || (int) ($smForStale['turns'] ?? 0) === 0;
+            if (! $openingPhase && ($stale = $this->staleCommand($room, $data)) !== null) {
                 return $stale;
             }
 
