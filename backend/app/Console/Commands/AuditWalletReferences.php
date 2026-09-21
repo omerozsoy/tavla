@@ -20,6 +20,7 @@ class AuditWalletReferences extends Command
             return self::FAILURE;
         }
 
+        $hasIdempotencyColumn = Schema::hasColumn('wallet_transactions', 'idempotency_key');
         $rows = DB::table('wallet_transactions')
             ->where(function ($query): void {
                 $query->whereNull('reference_type')->orWhereNull('reference_id');
@@ -31,7 +32,12 @@ class AuditWalletReferences extends Command
 
         $total = (int) $rows->sum('total');
         $this->line('wallet_transactions_table=present');
+        $this->line('idempotency_key_column='.($hasIdempotencyColumn ? 'present' : 'missing'));
         $this->line('missing_reference_total='.$total);
+        if ($hasIdempotencyColumn) {
+            $missingKeys = (int) DB::table('wallet_transactions')->whereNull('idempotency_key')->count();
+            $this->line('missing_idempotency_key='.$missingKeys);
+        }
         foreach ($rows as $row) {
             $this->line('missing_reference_type='.$row->type.' count='.(int) $row->total);
         }
