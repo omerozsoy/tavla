@@ -1372,17 +1372,31 @@ export function isApiConfigured(): boolean {
 // ---- Multiplayer odalari ----
 const PLAYER_TOKEN_KEY = 'tavla.playerToken'
 
+function newGuestCapability(): string {
+  // Oda token'i guest seat yetkisidir; tahmin edilebilir Math.random() kullanma.
+  const bytes = new Uint8Array(32)
+  const webCrypto = globalThis.crypto
+  if (!webCrypto?.getRandomValues) {
+    throw new Error('Web Crypto gerekli')
+  }
+  webCrypto.getRandomValues(bytes)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return 'p_' + btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replaceAll('=', '')
+}
+
 // Bu istemci icin kalici rastgele token (hesap gerekmez)
 export function playerToken(): string {
   try {
     let t = localStorage.getItem(PLAYER_TOKEN_KEY)
     if (!t) {
-      t = 'p_' + Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2)
+      t = newGuestCapability()
       localStorage.setItem(PLAYER_TOKEN_KEY, t)
     }
     return t
   } catch {
-    return 'p_' + Math.random().toString(36).slice(2)
+    // Web Crypto yoksa guest yetkisi üretme; tahmin edilebilir fallback güvenli değildir.
+    return ''
   }
 }
 

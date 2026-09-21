@@ -1283,6 +1283,10 @@ The `/admin/enter` and `/panel/enter` PAT-to-session exchanges now claim an atom
 
 `composer audit --no-interaction` reports **no PHP security advisories**. `npm audit --audit-level=moderate` reports **3 advisories**: one high-severity `adm-zip` issue pulled transitively by `onnxruntime-node@1.29.0`, and two moderate `@vitest/mocker` issues pulled by the installed Vitest line. No automatic dependency upgrade was run in this audit; the remediation must first be checked against the lockfile, Node/Vite/Vitest compatibility, and whether the archive path is reachable from production code. Current dependency graph was confirmed with `npm ls`.
 
+## Audit amendment - guest capability token entropy (2026-09-21)
+
+Guest room and viewer capabilities are now generated with 32 bytes from the browser Web Crypto API and encoded as URL-safe text. The previous `Math.random()` fallback was removed; environments without Web Crypto fail closed by returning no guest capability instead of issuing a predictable token. `npm run build` and `npm run typecheck` both pass. Authenticated money rooms continue to require the Sanctum account path and are unaffected.
+
 ## Audit amendment — tournament entry/refund ledger references (2026-09-21)
 
 Tournament entry and refund writes no longer use the static tournament ID as a unique wallet reference. A user may legitimately leave and later rejoin the same open tournament, while the locked player list already prevents duplicate entry and makes repeated leave a no-op. Prize and pool settlement references remain tournament-scoped and idempotent.
