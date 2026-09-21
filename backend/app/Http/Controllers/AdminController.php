@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class AdminController extends Controller
 {
@@ -64,19 +65,28 @@ class AdminController extends Controller
             return $this->fail('Bu hesap yapılandırmada yönetici; yetkisi kaldırılamaz.', 422);
         }
 
-        if (array_key_exists('coins', $data)) {
-            $user->coins = $data['coins'];
-        }
-        if (array_key_exists('is_admin', $data)) {
-            $user->is_admin = $data['is_admin'];
-        }
-        if (array_key_exists('banned', $data)) {
-            $user->banned_at = $data['banned'] ? now() : null;
-            if ($data['banned']) {
-                $user->tokens()->delete(); // acik oturumlari kapat
+        $user = DB::transaction(function () use ($data, $user) {
+            $locked = User::lockForUpdate()->findOrFail($user->id);
+            if (array_key_exists('coins', $data)) {
+                $reserved = (int) ($locked->coins_reserved ?? 0);
+                if ((int) $data['coins'] < $reserved) {
+                    abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
+                }
+                $locked->coins = $data['coins'];
             }
-        }
-        $user->save();
+            if (array_key_exists('is_admin', $data)) {
+                $locked->is_admin = $data['is_admin'];
+            }
+            if (array_key_exists('banned', $data)) {
+                $locked->banned_at = $data['banned'] ? now() : null;
+                if ($data['banned']) {
+                    $locked->tokens()->delete(); // acik oturumlari kapat
+                }
+            }
+            $locked->save();
+
+            return $locked;
+        });
 
         return response()->json(['user' => $this->row($user->fresh())]);
     }

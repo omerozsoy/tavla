@@ -6,6 +6,8 @@ use App\Filament\Resources\UserResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class EditUser extends EditRecord
 {
@@ -26,8 +28,17 @@ class EditUser extends EditRecord
     // alanlari yaziyoruz. Public API $fillable ile kisitli/guvenli kaliyor.
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
-        $record->forceFill($data)->save();
+        return DB::transaction(function () use ($record, $data) {
+            $locked = $record::query()->lockForUpdate()->findOrFail($record->getKey());
+            if (array_key_exists('coins', $data)
+                && (int) $data['coins'] < (int) ($locked->coins_reserved ?? 0)) {
+                throw ValidationException::withMessages([
+                    'coins' => 'Bakiye ayrılmış coin miktarının altına indirilemez.',
+                ]);
+            }
+            $locked->forceFill($data)->save();
 
-        return $record;
+            return $locked;
+        });
     }
 }

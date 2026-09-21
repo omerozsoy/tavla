@@ -1009,6 +1009,10 @@ Bug-report data URLs now require a real image signature from `getimagesizefromst
 
 500 alerts now use scheme/host/path without the query string, and exception/job error text redacts bearer credentials plus `token`, `password`, `secret`, `authorization`, and `api_key` assignments before it reaches the alert channel. Full application logs and third-party exception text still require deployment-level retention and redaction review.
 
+## Audit amendment — admin balance hold guard (2026-09-21)
+
+Admin API, legacy panel, and Filament user edits now lock the target user row before changing `coins` and reject a requested balance below `coins_reserved`. This prevents an admin adjustment from invalidating an active escrow and removes the read/check/write race with settlement. A complete immutable wallet ledger, actor/reason/reference record, and reconciliation process remain open under SEC-015.
+
 ## Audit amendment — queue visibility for long analysis jobs (2026-09-21)
 
 The default database, Redis, and Beanstalk queue `retry_after` is now 720 seconds, exceeding the 600-second PR analysis job timeout with margin. The previous 90-second default could make an in-progress heavy job visible to a second worker before the first worker finished. Existing environment overrides remain authoritative and must be set above the longest worker timeout in deployment.
