@@ -13,7 +13,9 @@ class DeploymentFingerprintTest extends TestCase
             ->expectsOutput('app_debug=true')
             ->expectsOutputToContain('php_version=')
             ->expectsOutputToContain('db_driver=')
+            ->expectsOutputToContain('db_transaction_isolation=')
             ->expectsOutputToContain('queue_connection=')
+            ->expectsOutputToContain('failed_jobs_table=')
             ->assertExitCode(0);
     }
 }
