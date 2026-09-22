@@ -77,11 +77,11 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Category:** Browser security / XSS defense-in-depth
 **Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML
 **Affected endpoint/event:** tüm web sayfaları ve admin içerik render’ı
-**Description:** Strict CSP için inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarının tamamı sınıflandırılmadı.
+**Description:** CSP policy kaynakları sınıflandırıldı ve `CSP_ENFORCE` opt-in bayrağı eklendi; production’da enforcing smoke/regresyon geçişi henüz yapılmadı. Politika inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarını kapsıyor.
 **Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP enforcing olmadığı için etki alanı genişler.
 **Root cause:** Report-Only gözleminden enforcing politikaya geçiş tamamlanmadı.
 **Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.
-**Recommended fix:** Tarayıcı ihlallerini topla; nonce/hash ve kaynak allowlist’ini tamamla; ardından enforcing CSP’ye geç.
+**Recommended fix:** Production’da önce `CSP_ENFORCE=true` ile config cache yenile, ana akışları Playwright/smoke ile doğrula; ihlal yoksa enforcing’i kalıcılaştır. Uzun vadede inline kaynakları nonce/hash’e taşı.
 **Database protection required?:** Hayır.
 **Regression test required?:** Evet; Playwright ile ana akışlar ve admin içerik render’ı.
 
