@@ -226,7 +226,10 @@ class ShopController extends Controller
             $amount = $premium
                 ? \App\Models\Setting::int('reward_premium', 50)
                 : \App\Models\Setting::int('reward_normal', 25);
-            app(\App\Services\WalletService::class)->credit($u, $amount, 'daily_reward');
+            // Claim anahtarı önceki ödül zamanına bağlanır. Aynı cooldown penceresindeki
+            // request retry'si tek ledger hareketi üretir; sonraki pencere yeni anahtar alır.
+            $claimKey = 'daily_reward:'.$u->id.':'.($last?->timestamp ?? 'initial');
+            app(\App\Services\WalletService::class)->credit($u, $amount, 'daily_reward', null, null, $claimKey);
             $u->last_reward = now();
             $u->save();
             return [
