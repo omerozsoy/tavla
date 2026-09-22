@@ -1498,6 +1498,11 @@ export default function App() {
   // Poll (stale-closure) acilis overlay'ini de gormeli: "Acilis zari atiliyor..."da takilirsak
   // sunucudaki acilmis oyunu KOSULSUZ uygula (openingNeedsResync kalkani).
   const openingRef = useRef<'roll' | 'reveal' | null>(null)
+  // Poll (stale-closure): bot HAMLESI EKRANDA OYNANIRKEN (botAnim) sunucu saatini YAZMA. Sunucuda
+  // bot aninda oynadigi icin sira/saat coktan insana (p1) gecmis olur; poll bu araligi yazarsa
+  // "sira botta ama benim (beyaz) sayim eriyor" desync'i olusur. Animasyon bitene kadar yerel saat
+  // (aktif=siyah) gosterilir; bittiginde poll gercek sunucu saatini (reveal-grace'li) yazar.
+  const botAnimRef = useRef(false)
   const oppLoggedRef = useRef('') // otoriter modda rakip hamlesi bir KEZ loglansin
   // Odaya (yeniden) GIRERKEN senkron sayaclarini sifirla — TEK YER.
   // KRITIK BUG (canli): appliedServerVersionRef yalniz ilk mount'ta -1'di ve oda girislerinde
@@ -4484,6 +4489,9 @@ export default function App() {
     srvPlayedRef.current = played
   }, [played])
   useEffect(() => {
+    botAnimRef.current = botAnim !== null
+  }, [botAnim])
+  useEffect(() => {
     openingRef.current = opening
   }, [opening])
   useEffect(() => {
@@ -4731,7 +4739,11 @@ export default function App() {
         // korumasi deploy oncesi acilmis odalar icin de gecerli.
         const srvDone = !!rv.server_match?.done || rv.status === 'finished'
         const sc = srvDone ? null : rv.clock
-        if (sc) {
+        // BOT ANIMASYONU (botAnim): bot hamlesi EKRANDA oynanirken sunucu saatini YAZMA. Sunucuda
+        // bot aninda oynayip sirayi/saati insana (p1) devrettigi icin bu araligi yazmak "sira botta
+        // ama beyaz sayim eriyor" desync'ini uretir. Animasyon bitip serverFinal uygulaninca (bir
+        // sonraki poll) gercek saat (reveal-grace'li) yazilir; o ana kadar yerel saat (aktif=siyah).
+        if (sc && !botAnimRef.current) {
           setClock({ delay: sc.delay, white: sc.white, black: sc.black })
           setSrvActive(sc.active === 'white' ? 'white' : sc.active === 'black' ? 'black' : null)
           setAfkLeft(sc.afk)

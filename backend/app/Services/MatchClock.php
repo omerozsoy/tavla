@@ -33,6 +33,15 @@ class MatchClock
     public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
     public const AFK_TOTAL = 60;     // toplam hareketsizlik -> kayip (sn)
     public const GRACE = 3;          // network latency toleransi: kayip ilanini geciktir (sn)
+    // BOT REVEAL GRACE: bot maçında bot hamlesi SUNUCUDA anında oynanır ve sıra/saat aynı anda
+    // insana (p1) döner; ama insanın İSTEMCİSİ botun hamlesini REVEAL/animasyonla gösterip (zar
+    // ~0.85sn + adımlar + tur-devri ~0.5sn) sonra oto-roll (~0.5sn) eder — bu wall-clock süre
+    // gerçekte botun turudur ama saat p1'e döndüğü için insandan işlerdi ("sıra botta ama benim
+    // sürem azalıyor", özellikle mobilde timer kısılınca pencere delay'i aşar). Bu kadar sn'lik
+    // grace, bot turundan sonra insanın İLK segmentinin started_at'ını ileri iterek reveal süresini
+    // insana yazmaz; insan roll'unda started_at zaten gerçek now'a sıfırlanır (sömürüye kapalı,
+    // AFK/presence korumaları aynen işler).
+    public const BOT_REVEAL_GRACE = 4.5;
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
     // 45sn: terk edilen/olu oda ~48sn'de (45 + GRACE) kapanir. Daha dusuk deger (30) mobilde

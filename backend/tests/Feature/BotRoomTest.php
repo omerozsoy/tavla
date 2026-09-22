@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Room;
 use App\Services\BotMoveService;
 use App\Services\BotUnavailableException;
+use App\Services\MatchClock;
 use App\Support\Backgammon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -165,6 +166,51 @@ class BotRoomTest extends TestCase
         $this->assertSame('white', $room->server_state['turn']); // DB son durum: sıra insanda
         // Bot bir tur oynadı -> turns arttı (insan 1 + bot 1 = başlangıç 1'den >= 2).
         $this->assertGreaterThanOrEqual(2, (int) $room->server_match['turns']);
+    }
+
+    public function test_human_clock_gets_reveal_grace_after_bot_turn(): void
+    {
+        // KÖK FIX ("sıra bilgisayarda ama benim vaktim azalıyor", özellikle mobil): bot hamlesi
+        // SUNUCUDA anında oynanıp sıra/saat aynı istekte insana (p1) döner; ama istemci botun
+        // hamlesini reveal/animasyonla gösterip sonra oto-roll eder. graceHumanAfterBot bu reveal
+        // süresini (BOT_REVEAL_GRACE) insanın segmentinin started_at'ını ileri iterek insana YAZMAZ.
+        $this->fakeBot([['from' => 0, 'to' => 3, 'die' => 3]]);
+        config()->set('validator.url', 'http://validator.test');
+        Http::fake(['validator.test/validate' => function ($request) {
+            $turn = data_get($request->data(), 'state.turn');
+
+            return Http::response(['valid' => true, 'state' => $this->turnState($turn === 'white' ? 'black' : 'white')]);
+        }]);
+
+        $this->botRoom('white', [3, 1]);
+
+        $this->command('BOTAA', 'human-tok', '/api/rooms/BOTAA/move', [
+            'steps' => [['from' => 11, 'to' => 8, 'die' => 3]],
+        ])->assertOk();
+
+        $clock = Room::where('code', 'BOTAA')->first()->clock;
+        $this->assertIsArray($clock);
+        $this->assertSame('p1', $clock['turn_slot']); // bot oynadı -> sıra/saat insana (beyaz) döndü
+        $this->assertTrue((bool) $clock['running']);
+
+        // Mode'dan bağımsız: tam delay/banka değerlerini clock'tan oku.
+        $fullDelay = (float) $clock['delay'];
+        $fullBank = (float) $clock['p1_bank'];
+        // Segment gerçek başlangıcı = started_at - grace (grace started_at'ı ileri itti).
+        $segmentStart = (float) $clock['started_at'] - MatchClock::BOT_REVEAL_GRACE;
+
+        // 1) started_at gerçekten ~grace kadar İLERİDE (reveal penceresi insana yazılmıyor).
+        $this->assertGreaterThan(3.0, MatchClock::BOT_REVEAL_GRACE, 'grace anlamlı olmalı');
+
+        // 2) Segment başlangıcından 2sn SONRA bile insanın delay sayacı TAM + bankası ERİMEMİŞ olmalı.
+        $view2 = MatchClock::clientView($clock, $segmentStart + 2.0);
+        $this->assertSame('white', $view2['active']); // sunucu sırayı insana verdi (bug'ın kaynağı)
+        $this->assertEqualsWithDelta($fullDelay, $view2['delay'], 0.2, 'reveal-grace içinde delay düşmemeli');
+        $this->assertEqualsWithDelta($fullBank, $view2['white'], 0.2, 'reveal-grace içinde insan bankası erimemeli');
+
+        // 3) Grace bitince saat normal akmalı (kalıcı donma DEĞİL): grace+3sn'de delay belirgin düşük.
+        $viewLater = MatchClock::clientView($clock, $segmentStart + MatchClock::BOT_REVEAL_GRACE + 3.0);
+        $this->assertLessThan($fullDelay - 2.0, $viewLater['delay'], 'grace bitince delay normal akmalı');
     }
 
     public function test_bot_winning_move_finalizes_match(): void
