@@ -69,6 +69,11 @@ final class SeoMeta
             'Tavla rehberi: açılış stratejileri, küp (doubling cube) kullanımı, kazanma taktikleri, mars ve backgammon puanlaması. Oyununu geliştirecek özgün yazılar.',
             'Tavla Rehberi',
         ],
+        'turnuva-kurallari' => [
+            'Tavla Turnuva Kuralları (WBF) — Resmî Kurallar | TavlaTv',
+            'WBF (Dünya Tavla Federasyonu) Uluslararası Tavla Turnuva Kuralları: format, süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü. Resmî ve eksiksiz Türkçe kural metni.',
+            'Tavla Turnuva Kuralları',
+        ],
         'sans-carki' => [
             'Şans Çarkı | TavlaTv',
             'Şans Çarkını çevir, ödüller kazan. TavlaTv eğlence oyunlarından Şans Çarkı.',
