@@ -1,0 +1,106 @@
+/* İletişim / turnuva organizasyonu talep formu. /iletisim + turnuva organizasyonu
+   landing'lerinde kullanilir. Uygulama tasarim token'larini (--input-bg, --border,
+   --muted, --accent, --radius-md) yeniden kullanir. */
+
+.contact-form {
+  margin-top: 8px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-2, var(--input-bg));
+}
+
+.contact-form-title {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+}
+
+.cf-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.cf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+.cf-field.cf-full {
+  margin-top: 12px;
+}
+.cf-field > span {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.cf-field input,
+.cf-field select,
+.cf-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--btn-border, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--input-bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease;
+}
+.cf-field textarea {
+  resize: vertical;
+  min-height: 96px;
+}
+.cf-field input:focus,
+.cf-field select:focus,
+.cf-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.cf-note {
+  margin: 12px 0 4px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.cf-submit {
+  width: 100%;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* Gönderim sonrası teşekkür kartı */
+.contact-done {
+  text-align: center;
+  padding: 32px 20px;
+}
+.contact-done-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-circle, 50%);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.contact-done h3 {
+  margin: 0 0 6px;
+}
+.contact-done p {
+  margin: 0 auto;
+  max-width: 420px;
+  color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .cf-grid {
+    grid-template-columns: 1fr;
+  }
+  .contact-form {
+    padding: 16px;
+  }
+}

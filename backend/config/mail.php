@@ -132,4 +132,8 @@ return [
 
     'bug_report_to' => env('BUG_REPORT_TO', 'omerozsoy@gmail.com'),
 
+    // İletişim / turnuva organizasyonu talepleri bu adres(ler)e iletilir (virgülle birden
+    // çok adres). Boşsa ContactController bug_report_to'ya düşer.
+    'contact_to' => env('CONTACT_TO'),
+
 ];
