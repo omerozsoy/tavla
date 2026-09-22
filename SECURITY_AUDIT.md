@@ -16,10 +16,9 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 | # | Kalan iş | Durum | Eksik kanıt |
 |---:|---|---|---|
-| 1 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zincirin production’da tamamen kapalı olduğu doğrulanmalı. |
-| 2 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamı doğrulanmalı. |
-| 3 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zinciri production smoke testiyle doğrulanmalı. |
-| 4 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
+| 1 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamı doğrulanmalı. |
+| 2 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zinciri production smoke testiyle doğrulanmalı. |
+| 3 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
 
 ## KALAN BULGULAR
 
@@ -27,7 +26,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ### PHASE 1 — Remaining invariant evidence
 
-1. Client result, dice authority ve timeout/AFK production smoke testlerini tamamla.
+1. Dice authority ve timeout/AFK production smoke testlerini tamamla.
 2. Immutable ledger için DB koruması ve reconciliation alarmını ekle.
 
 ### PHASE 2 — Web hardening
