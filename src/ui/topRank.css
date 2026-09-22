@@ -37,102 +37,184 @@
 }
 .trm-text b {
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 400; /* bold degil (kullanici) */
   color: var(--text, #2a2118);
 }
 .trm-text em {
   font-style: normal;
-  font-weight: 800;
+  font-weight: 500; /* bold degil; sira numarasi hafif ayrik */
   font-size: 13px;
   /* rütbe rengini (currentColor) koru */
 }
 
-/* ---- Ana sayfa: Şampiyonlar (İlk 3) podyumu ---- */
+/* ---- Ana sayfa: "Top List" (İlk 3) podyumu — tam sayfa genişliği, Emil Kowalski craft ---- */
 .top-three-showcase {
+  --tts-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  width: 100%;
   background: var(--panel, #fff);
-  border: 1px solid rgba(0, 0, 0, 0.07);
-  border-radius: 14px;
-  padding: 12px 14px 14px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+  border-radius: 16px;
+  padding: 18px clamp(16px, 3vw, 30px) 20px;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 12px 32px -22px rgba(0, 0, 0, 0.28);
+}
+/* Başlık şeridi: ince ayraçla gövdeden ayrılır. */
+.tts-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.07));
 }
 .tts-title {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   font-weight: 800;
-  font-size: 15px;
+  font-size: 16px;
+  letter-spacing: -0.01em;
   color: var(--text, #2a2118);
-  margin-bottom: 10px;
 }
 .tts-title > svg {
   color: #e8b923;
+  filter: drop-shadow(0 1px 1px rgba(232, 185, 35, 0.35));
 }
 .tts-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  column-gap: 0;
 }
-@media (max-width: 560px) {
-  .tts-cols {
-    grid-template-columns: 1fr;
+.tts-col {
+  min-width: 0;
+}
+/* Kolonlar arası ince dikey ayraç (yalnız iki kolon varken; tek kolonda ayraç yok). */
+@media (min-width: 561px) {
+  .tts-col:first-child {
+    padding-right: clamp(20px, 4vw, 44px);
+  }
+  .tts-col + .tts-col {
+    border-left: 1px solid var(--border, rgba(0, 0, 0, 0.07));
+    padding-left: clamp(20px, 4vw, 44px);
   }
 }
 .tts-col-head {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: 7px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted, #7a6f60);
-  margin-bottom: 6px;
+  margin-bottom: 10px;
+}
+.tts-col-head > svg {
+  opacity: 0.85;
 }
 .tts-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .tts-row {
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 26px 1fr auto;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   width: 100%;
-  padding: 5px 8px;
-  border: 0;
-  border-radius: 10px;
-  background: rgba(0, 0, 0, 0.03);
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: var(--stone-050, rgba(0, 0, 0, 0.025));
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease;
+  /* Emil: yalnız transform/opacity/renk; güçlü custom ease-out. */
+  transition:
+    background 180ms var(--tts-ease),
+    border-color 180ms var(--tts-ease),
+    box-shadow 180ms var(--tts-ease),
+    transform 140ms var(--tts-ease);
+  /* Sayfa yüklenince satırlar sırayla belirir (stagger, yalnız ilk görünüm). */
+  animation: tts-in 420ms var(--tts-ease) backwards;
+  animation-delay: calc(var(--i, 0) * 60ms);
 }
-.tts-row:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.06);
+@media (hover: hover) and (pointer: fine) {
+  .tts-row:hover:not(:disabled) {
+    background: var(--panel, #fff);
+    border-color: var(--border, rgba(0, 0, 0, 0.1));
+    box-shadow: 0 4px 14px -8px rgba(0, 0, 0, 0.25);
+  }
+}
+.tts-row:active:not(:disabled) {
+  transform: scale(0.985);
 }
 .tts-row:disabled {
   cursor: default;
 }
-.tts-medal {
+@keyframes tts-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+/* Sıra rozeti: numaralı yuvarlak, madalya rengiyle (altın/gümüş/bronz). */
+.tts-rank {
   display: inline-flex;
+  align-items: center;
   justify-content: center;
-  line-height: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: #fff;
 }
-.tts-row[data-rank='1'] .tts-medal {
-  color: #e8b923;
+.tts-row[data-rank='1'] .tts-rank {
+  background: linear-gradient(145deg, #f4cd5a, #d99a1c);
+  box-shadow:
+    0 0 0 1px rgba(217, 154, 28, 0.35),
+    0 2px 8px -2px rgba(217, 154, 28, 0.65);
 }
-.tts-row[data-rank='2'] .tts-medal {
-  color: #9aa7b2;
+.tts-row[data-rank='2'] .tts-rank {
+  background: linear-gradient(145deg, #c9d1d8, #9aa7b2);
+  box-shadow: 0 0 0 1px rgba(154, 167, 178, 0.35);
+  color: #3a3f45;
 }
-.tts-row[data-rank='3'] .tts-medal {
-  color: #b9772f;
+.tts-row[data-rank='3'] .tts-rank {
+  background: linear-gradient(145deg, #d99a63, #b9772f);
+  box-shadow: 0 0 0 1px rgba(185, 119, 47, 0.35);
 }
-.tts-medal > svg {
-  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.35));
+.tts-name {
+  min-width: 0;
 }
 .tts-val {
   font-weight: 800;
-  font-size: 13px;
+  font-size: 14px;
+  letter-spacing: -0.01em;
   color: var(--text, #2a2118);
   font-variant-numeric: tabular-nums;
+}
+@media (max-width: 560px) {
+  .top-three-showcase {
+    padding: 16px;
+  }
+  .tts-cols {
+    grid-template-columns: 1fr;
+    row-gap: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tts-row {
+    animation: none;
+  }
+  .tts-row:active:not(:disabled) {
+    transform: none;
+  }
 }
