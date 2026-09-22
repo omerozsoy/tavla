@@ -14,16 +14,12 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
 
-| İnvariant | Durum | Kalan iş |
-|---|---|---|
-| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PASS | Production MariaDB üzerinde iki eşzamanlı claim testi: 1 başarılı, 1 reddedildi, claim satırı 1; geçici veriler temizlendi. |
-| Aynı match iki kez settle edilemez | PASS | Production snapshot temiz; iki eşzamanlı settlement retry testinde 1 başarılı claim, 1 already-settled retry ve tam 2 wallet settlement satırı görüldü; geçici kayıtlar temizlendi. |
-| Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
-| Client wallet balance değiştiremez | PASS | Wallet ledger ve idempotency kolonu production’da mevcut; deployment/cache yenilemesi sonrası üç ardışık auditte anahtarsız toplam 243’te sabit kaldı. WalletIdempotencyTest, DailyRewardIdempotencyTest ve LuckyWheelTest geçti. |
-| Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
-| Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zincirini production’da doğrula. |
-| WebSocket event'i state değiştiremez | PASS | Repo’da broadcasting channel/event, Reverb/Pusher/Echo veya socket state handler bulunmadı; state API command/polling akışından geçiyor. |
-| Immutable wallet ledger | PARTIAL | Tüm ekonomik yazarlar ve production ledger şeması için deployment kanıtı topla. |
+| # | Kalan iş | Durum | Eksik kanıt |
+|---:|---|---|---|
+| 1 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zincirin production’da tamamen kapalı olduğu doğrulanmalı. |
+| 2 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamı doğrulanmalı. |
+| 3 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zinciri production smoke testiyle doğrulanmalı. |
+| 4 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
 
 ## KALAN BULGULAR
 
@@ -31,8 +27,8 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ### PHASE 1 — Remaining invariant evidence
 
-1. Client result/dice authority ve timeout/AFK akışlarını production smoke testleriyle doğrula.
-2. Immutable ledger yazarlarının tamamı için reconciliation alarmı ekle.
+1. Client result, dice authority ve timeout/AFK production smoke testlerini tamamla.
+2. Immutable ledger için DB koruması ve reconciliation alarmını ekle.
 
 ### PHASE 2 — Web hardening
 
