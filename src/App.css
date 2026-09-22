@@ -8802,6 +8802,13 @@ button.acct-row-logout:hover:not(:disabled) {
     'bar bar'
     'menu main';
   align-items: start;
+  /* KÖK FIX ("sayfa aşağıda açılıyor" — /yeni-oyun, /yz-ile-oyna vb. KISA sayfalar): grid
+     varsayılan align-content:normal (=stretch). İçerik viewport'tan KISA olunca (setup gibi,
+     footer yok) artan dikey boşluk auto satırlara DAĞITILIP 'bar' (üst bar) satırını da
+     uzatıyordu -> üst bar 132px yerine ~164px'lik track'e oturup içeriği ~32px AŞAĞI itiyordu.
+     'start' ile satırlar doğal boyunda kalır, boşluk ALTA toplanır (tasarım: kısa sayfada footer
+     içeriğin bittiği yerde). Taşan sayfalarda (boşluk yok) etkisizdir. */
+  align-content: start;
   column-gap: 22px;
   /* Ust bar ile menu/icerik arasinda net bosluk (icerik bara "binmesin"). */
   row-gap: 36px;
