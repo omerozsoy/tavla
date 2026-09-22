@@ -50,6 +50,13 @@
 /* ---- Ana sayfa: "Top List" (İlk 3) — sitenin panel dili (.home-panel + .rank-row) ----
    Kart/satır/madalya stilleri App.css'teki ortak sınıflardan gelir (Sıralama paneliyle
    BİREBİR aynı görünüm). Burada YALNIZ iki kolon (Puan / PR) düzeni tanımlanır. */
+/* Genişlik: diğer ana sayfa bölümleriyle (.home-panels) AYNI standart genişlik + ortalı;
+   içerik sütununu tam doldurup taşmasın (kullanıcı: "standart genişliğe küçült"). */
+.tts-panel {
+  width: 100%;
+  max-width: var(--lobby-w);
+  margin: 10px auto 0;
+}
 .tts-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
