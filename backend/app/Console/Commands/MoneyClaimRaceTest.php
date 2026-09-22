@@ -37,7 +37,8 @@ class MoneyClaimRaceTest extends Command
             return self::FAILURE;
         }
 
-        $suffix = strtoupper(substr(bin2hex(random_bytes(6)), 0, 8));
+        // rooms.code is varchar(8) in production: keep the generated codes within that limit.
+        $suffix = strtoupper(substr(bin2hex(random_bytes(6)), 0, 4));
         $user = null;
         $rooms = [];
         $files = [];
