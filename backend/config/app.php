@@ -41,6 +41,9 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
+    // Secret-free deployment fingerprint; value is only exposed as presence by the audit command.
+    'release_sha' => env('APP_RELEASE_SHA'),
+
     /*
     |--------------------------------------------------------------------------
     | Site Gate (kapali test sifresi)
