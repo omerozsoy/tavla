@@ -5,7 +5,7 @@
 // ONEMLI: respondWith'e HER ZAMAN gecerli bir Response donmeli; undefined donersen
 // tarayici "Failed to convert value to 'Response'" atar (fetch VEYA cache.put reddettiginde
 // eski surumde iki caches.match da bos olunca bu oluyordu -> asagida her yol Response garanti).
-const CACHE = 'tavla-cache-v6'
+const CACHE = 'tavla-cache-v7'
 
 // Son care cevrimdisi yaniti (tek-kullanimlik body -> her cagride YENI uret).
 function offlineResponse() {
@@ -47,8 +47,20 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return
   const url = new URL(req.url)
   if (url.origin !== self.location.origin) return
-  // API ve service worker'in kendisi cache'lenmez
-  if (url.pathname.startsWith('/api/') || url.pathname === '/sw.js') return
+  // API, SW'nin kendisi VE SUNUCU-RENDER BACKEND ROTALARI (Filament admin, Livewire, ödeme)
+  // service worker'dan GEÇMEZ -> tarayıcı doğrudan sunucudan çeker. Aksi halde SW gezinme
+  // network-first'ünde bu sayfaları SPA kabuğu ('/index.html') ile karıştırır / bayat servis eder
+  // ve "/admin açılmıyor" olur (Filament yerine React kabuğu döner). API gibi tamamen dışarıda tut.
+  if (
+    url.pathname.startsWith('/api/') ||
+    url.pathname === '/sw.js' ||
+    url.pathname === '/admin' ||
+    url.pathname.startsWith('/admin/') ||
+    url.pathname === '/panel' ||
+    url.pathname.startsWith('/panel/') ||
+    url.pathname.startsWith('/livewire/')
+  )
+    return
 
   const isNavigation = req.mode === 'navigate'
 
@@ -58,12 +70,16 @@ self.addEventListener('fetch', (event) => {
       (async () => {
         try {
           const fresh = await fetch(req)
-          // Kabugu '/' altinda sakla (put reddederse yaniti YINE de don).
-          try {
-            const cache = await caches.open(CACHE)
-            await cache.put('/', fresh.clone())
-          } catch {
-            /* cache.put reddetse bile taze yaniti dondur */
+          // Kabuğu YALNIZ gerçek kök ('/') gezinmesinde güncelle. Önceden HER gezinme yanıtı
+          // '/' altına yazılıyordu -> kabuk cache'i son ziyaret edilen sayfayla (ör. /online-tavla
+          // veya bir 302) KİRLENİYORDU. Yalnız kök + redirect olmayan başarılı yanıt cache'lensin.
+          if (url.pathname === '/' && fresh.ok && !fresh.redirected) {
+            try {
+              const cache = await caches.open(CACHE)
+              await cache.put('/', fresh.clone())
+            } catch {
+              /* cache.put reddetse bile taze yaniti dondur */
+            }
           }
           return fresh
         } catch {
