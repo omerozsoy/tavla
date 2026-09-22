@@ -8,8 +8,9 @@
   color: #f4efe6;
 }
 .foot-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+  /* Tam sayfa genişliği: içerik 1200px ile sınırlanmaz, kenardan kenara yayılır. */
+  max-width: none;
+  margin: 0;
   padding: 34px clamp(16px, 4vw, 48px) 24px;
   display: flex;
   gap: 40px;
