@@ -41,6 +41,17 @@ class AdminPanelProvider extends PanelProvider
                 Widgets\AccountWidget::class,
                 Widgets\FilamentInfoWidget::class,
             ])
+            // Menü grup sırası: GÜVENLİK EN ÜSTTE (Hata Bildirimleri + Güvenlik Kalkanı + Başarısız
+            // İşler burada). Listelenmeyen grup varsa sona eklenir.
+            ->navigationGroups([
+                'Güvenlik',
+                'Oyun',
+                'Finans',
+                'Mağaza',
+                'İçerik',
+                'Destek',
+                'Ayarlar',
+            ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
