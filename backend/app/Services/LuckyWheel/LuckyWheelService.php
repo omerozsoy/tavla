@@ -286,7 +286,7 @@ class LuckyWheelService
      * ATOMİK SPIN. Tüm doğrulama+dağıtım tek transaction'da; hata olursa hiçbir şey değişmez
      * (spin hakkı da harcanmaz). Dönen dizi 'error' içeriyorsa controller mesaja çevirir.
      */
-    public function spin(User $user): array
+    public function spin(User $user, ?string $idempotencyKey = null): array
     {
         if (! $this->isEnabled()) {
             return ['error' => 'disabled'];
@@ -296,13 +296,33 @@ class LuckyWheelService
             return ['error' => 'not_ready'];
         }
 
-        return DB::transaction(function () use ($user, $pool) {
+        return DB::transaction(function () use ($user, $pool, $idempotencyKey) {
             $u = User::lockForUpdate()->find($user->id);
             if (! $u) {
                 return ['error' => 'disabled'];
             }
             $state = LuckyWheelUserState::forUser($u->id);
             $this->resetIfNeeded($state);
+
+            if ($idempotencyKey !== null && \Illuminate\Support\Facades\Schema::hasColumn('lucky_wheel_spins', 'idempotency_key')) {
+                $receipt = LuckyWheelSpin::where('user_id', $u->id)->where('idempotency_key', $idempotencyKey)->first();
+                if ($receipt) {
+                    $snapshot = $receipt->reward_snapshot ?? [];
+                    return [
+                        'replayed' => true,
+                        'reward' => $snapshot,
+                        'winningRewardId' => $receipt->reward_id,
+                        'remainingSpins' => $this->remaining($state),
+                        'bonusSpins' => (int) $state->bonus_spins,
+                        'nextFreeSpinAt' => $this->nextFreeSpinAt($state),
+                        'coins' => (int) $u->coins,
+                        'spinCost' => LuckyWheelSettings::int('spin_cost'),
+                        'nextSpinPaid' => $this->remaining($state) <= 0 && LuckyWheelSettings::int('spin_cost') > 0,
+                        'paid' => $receipt->spin_type === 'paid',
+                        'user' => $u,
+                    ];
+                }
+            }
 
             $cooldown = $this->cooldownRemaining($state);
             if ($cooldown > 0) {
@@ -332,8 +352,6 @@ class LuckyWheelService
 
             // Hak tüket: önce ücretsiz, sonra bonus, ikisi de bittiyse coin ile ödemeli.
             if ($paid) {
-                app(\App\Services\WalletService::class)->debit($u, $cost, 'lucky_wheel_spin');
-                $u->save();
                 $spinType = 'paid';
             } elseif ($this->freeRemaining($state) <= 0) {
                 $state->bonus_spins = max(0, (int) $state->bonus_spins - 1);
@@ -366,10 +384,16 @@ class LuckyWheelService
             // may be won repeatedly; the wallet reference must identify this spin.
             $spin = LuckyWheelSpin::create([
                 'user_id' => $u->id,
+                'idempotency_key' => $idempotencyKey,
                 'reward_id' => $winner->id,
                 'reward_snapshot' => $winner->snapshot(),
                 'spin_type' => $spinType,
             ]);
+
+            if ($paid) {
+                app(\App\Services\WalletService::class)->debit($u, $cost, 'lucky_wheel_spin', LuckyWheelSpin::class, $spin->id);
+                $u->save();
+            }
 
             // Ödülü dağıt. FREE_SPIN -> bonus hakkı aynı state satırına ekle.
             if ($winner->type === LuckyWheelReward::TYPE_FREE_SPIN) {
