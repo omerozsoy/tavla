@@ -23,7 +23,10 @@ class DeploymentFingerprint extends Command
         $this->line('routes_cached='.((function_exists('app') && app()->routesAreCached()) ? 'true' : 'false'));
         $this->line('db_driver='.DB::getDriverName());
         $this->line('db_version='.$this->databaseVersion());
+        $this->line('db_transaction_isolation='.$this->transactionIsolation());
         $this->line('queue_connection='.config('queue.default'));
+        $this->line('failed_jobs_table='.(Schema::hasTable('failed_jobs') ? 'present' : 'missing'));
+        $this->line('release_sha_present='.(($this->releaseSha() !== null) ? 'true' : 'false'));
         $this->line('validator_url_configured='.(config('validator.url') ? 'true' : 'false'));
         $this->line('validator_backup_configured='.(config('validator.url_backup') ? 'true' : 'false'));
         $this->line('wallet_ledger_table='.(Schema::hasTable('wallet_transactions') ? 'present' : 'missing'));
@@ -48,5 +51,31 @@ class DeploymentFingerprint extends Command
             return 'unavailable';
         }
         return (string) (DB::table('migrations')->max('batch') ?? 'none');
+    }
+
+    private function transactionIsolation(): string
+    {
+        try {
+            $row = DB::selectOne('select @@transaction_isolation as isolation');
+            return (string) ($row->isolation ?? 'unknown');
+        } catch (\Throwable) {
+            try {
+                $row = DB::selectOne('select @@tx_isolation as isolation');
+                return (string) ($row->isolation ?? 'unknown');
+            } catch (\Throwable) {
+                return 'unavailable';
+            }
+        }
+    }
+
+    private function releaseSha(): ?string
+    {
+        foreach (['APP_RELEASE_SHA', 'RELEASE_SHA', 'GIT_COMMIT'] as $key) {
+            $value = getenv($key);
+            if (is_string($value) && trim($value) !== '') {
+                return trim($value);
+            }
+        }
+        return null;
     }
 }

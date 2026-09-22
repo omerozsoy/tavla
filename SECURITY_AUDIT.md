@@ -105,7 +105,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Category:** Operations / verification
 **Affected file(s):** deployment environment, DB, queue, reverse proxy
 **Affected endpoint/event:** tüm money-game ve validator yolları
-**Description:** Production fingerprint alındı: `production`, `app_debug=false`, PHP `8.3.33`, Laravel `12.67.0`, MariaDB `10.3.39`, database queue, validator primary/backup, wallet/claim tabloları ve migration batch `100` mevcut; config/routes cache etkin. Çalışan release SHA bu çıktıda yok. DB isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
+**Description:** Production fingerprint alındı: `production`, `app_debug=false`, PHP `8.3.33`, Laravel `12.67.0`, MariaDB `10.3.39`, database queue, validator primary/backup, wallet/claim tabloları ve migration batch `100` mevcut; config/routes cache etkin. Fingerprint komutu artık DB isolation, failed-jobs tablosu ve release SHA varlığını da raporluyor; production’da bu genişletilmiş çıktı henüz alınmadı. Queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
 **Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.
 **Root cause:** Production doğrulama zinciri standardize edilmedi.
 **Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.
