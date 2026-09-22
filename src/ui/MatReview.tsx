@@ -207,14 +207,46 @@ export default function MatReview({
     cur?.cube?.chosen === 'double' && cur?.player ? (cur.player === 'white' ? 'up' : 'down') : null
 
   // Tam-ekran: transform'lu ata (register-overlay.page) position:fixed'i kırpıyor ->
+  // XG-tarzı MAÇ ÖZETİ (üst bar): oyuncular SATIR, metrikler SÜTUN -> geniş, alçak (3 kısa satır).
+  const xgSum = summary ?? computeSummary(log, names, 0)
+  const xgP = xgSum.players
+  const xgErr = (p: MatSummaryPlayer) => `${p.blunders + p.errors + p.inaccuracies} (${p.blunders})`
+  const xgLuck = (x?: { mwc: number | null; jokers: number | null } | null) =>
+    x && x.mwc != null
+      ? `${x.mwc >= 0 ? '+' : ''}${x.mwc.toFixed(2)}${x.jokers != null ? ` (${x.jokers})` : ''}`
+      : '—'
+  const xgRow = (p: MatSummaryPlayer, x?: { mwc: number | null; jokers: number | null } | null, name?: string) => (
+    <>
+      <span className="mrv-xgb-name">{name}</span>
+      <span>{xgErr(p)}</span>
+      <span>−{p.equityLost.toFixed(3)}</span>
+      <span>{xgLuck(x)}</span>
+      <span>{p.xr.toFixed(2)}</span>
+      <span className="mrv-xgb-cls">{t(divisionOfPR(p.xr).key)}</span>
+    </>
+  )
+
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
   return createPortal(
     <div className="mrv-overlay">
       <div className="mrv-top">
-        <span className="mrv-title">
-          <Icon name="analyze" size={18} /> {t('mrv.title')}
-          {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
-        </span>
+        {xgP && xgP.length >= 2 ? (
+          <div className="mrv-xgbar" title={t('mrv.title') + (matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : '')}>
+            <span className="mrv-xgb-h" />
+            <span className="mrv-xgb-h">{t('mrv.miniErr')}</span>
+            <span className="mrv-xgb-h">{t('mrv.miniEq')}</span>
+            <span className="mrv-xgb-h">{t('mrv.miniLuck')}</span>
+            <span className="mrv-xgb-h">{t('mrv.xr')}</span>
+            <span className="mrv-xgb-h">{t('mrv.miniClass')}</span>
+            {xgRow(xgP[0], luck?.p0, nameW)}
+            {xgRow(xgP[1], luck?.p1, nameB)}
+          </div>
+        ) : (
+          <span className="mrv-title">
+            <Icon name="analyze" size={18} /> {t('mrv.title')}
+            {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
+          </span>
+        )}
         <div className="mrv-top-actions">
           <Button variant="outline" className="mrv-summary-btn" onClick={() => setSummaryOpen(true)}>
             <Icon name="chart" size={15} /> {t('ms.btn')}
@@ -438,38 +470,6 @@ export default function MatReview({
           </div>
           </>
           )}
-          {/* XG-tarzı MAÇ ÖZETİ (sağ panel alt alan): iki oyuncu için hata(blunder)/kayıp/şans/PR/sınıf. */}
-          {(() => {
-            const s = summary ?? computeSummary(log, names, 0)
-            const P = s.players
-            if (!P || P.length < 2) return null
-            const errCell = (p: MatSummaryPlayer) => `${p.blunders + p.errors + p.inaccuracies} (${p.blunders})`
-            const lk = (x?: { mwc: number | null; jokers: number | null } | null) =>
-              x && x.mwc != null
-                ? `${x.mwc >= 0 ? '+' : ''}${x.mwc.toFixed(2)}${x.jokers != null ? ` (${x.jokers})` : ''}`
-                : '—'
-            const row = (l: string, a: string, b: string) => (
-              <div className="mrv-xg-row" key={l}>
-                <span className="mrv-xg-l">{l}</span>
-                <span>{a}</span>
-                <span>{b}</span>
-              </div>
-            )
-            return (
-              <div className="mrv-xgsum">
-                <div className="mrv-xg-row mrv-xg-head">
-                  <span className="mrv-xg-l">{t('mrv.miniSum')}</span>
-                  <span>{nameW}</span>
-                  <span>{nameB}</span>
-                </div>
-                {row(t('mrv.miniErr'), errCell(P[0]), errCell(P[1]))}
-                {row(t('mrv.miniEq'), `−${P[0].equityLost.toFixed(3)}`, `−${P[1].equityLost.toFixed(3)}`)}
-                {row(t('mrv.miniLuck'), lk(luck?.p0), lk(luck?.p1))}
-                {row(t('mrv.xr'), P[0].xr.toFixed(2), P[1].xr.toFixed(2))}
-                {row(t('mrv.miniClass'), t(divisionOfPR(P[0].xr).key), t(divisionOfPR(P[1].xr).key))}
-              </div>
-            )
-          })()}
         </aside>
       </div>
 
