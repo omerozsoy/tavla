@@ -143,6 +143,8 @@ export default function Messages({
   const [activeRequest, setActiveRequest] = useState(false) // aktif konusma benim onayimi bekleyen istek mi
   const listEndRef = useRef<HTMLDivElement>(null)
   const logRef = useRef<HTMLDivElement>(null) // sohbet log kaydırma kabı (en alta indir)
+  const nearBottomRef = useRef(true) // kullanıcı log'un en altında mı (canlı takip mi, yoksa eski mesaj mı okuyor)
+  const prevActiveIdRef = useRef<number | null>(null) // konuşma değişimini yeni-mesajdan ayırt et
   const inputRef = useRef<HTMLInputElement>(null)
   const typingSentRef = useRef(0) // son "yaziyor" nabzinin zamani (throttle)
 
@@ -222,12 +224,20 @@ export default function Messages({
     return () => window.clearInterval(id)
   }, [activeId, loadThread, refreshThreads])
 
-  // Sohbet açılınca / yeni mesajda log'u EN ALTA indir (son mesaj görünür). Kabın kendisini
-  // kaydır (scrollTop=scrollHeight) — zero-height end-marker + scrollIntoView güvenilmezdi
-  // (yanlış ata kayabiliyor, üstte kalıyordu). layout effect: boyanmadan önce çalışır (zıplama yok).
+  // Log'u EN ALTA indir — AMA yalnızca (a) sohbet YENİ AÇILDIYSA veya (b) kullanıcı ZATEN en
+  // alttaysa (canlı takip). Kullanıcı yukarı kaydırıp ESKİ mesaj okuyorsa, 3sn'lik sessiz
+  // tazeleme (loadThread) messages'ı güncellese bile KONUMU KORU — aksi halde her poll'de
+  // kullanıcıyı en alta atıyordu (şikâyet). Kabın kendisini kaydır (scrollTop=scrollHeight).
+  // layout effect: boyanmadan önce çalışır (zıplama yok).
   useLayoutEffect(() => {
     const el = logRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (!el) return
+    const convChanged = prevActiveIdRef.current !== activeId
+    prevActiveIdRef.current = activeId
+    if (convChanged || nearBottomRef.current) {
+      el.scrollTop = el.scrollHeight
+      nearBottomRef.current = true
+    }
   }, [messages, activeId, loadingThread])
 
   // Gorsel sec + sikistir -> gonderilmeyi bekleyen onizleme (doSend ile birlikte gider).
@@ -257,6 +267,7 @@ export default function Messages({
     if ((!body && !image) || sending || activeId == null) return
     setEmojiOpen(false)
     setSending(true)
+    nearBottomRef.current = true // kendi gönderdiğin mesaj daima en altta görünsün
     // Iyimser ekle (+ pendingRef: 3sn tazeleme araya girse de kaybolmasin)
     const optimistic: ChatMessage = { id: -Date.now(), body, image, mine: true, created_at: new Date().toISOString() }
     pendingRef.current = [...pendingRef.current, optimistic]
@@ -565,7 +576,16 @@ export default function Messages({
                   </div>
                 )}
 
-                <div className="messages-log" ref={logRef}>
+                <div
+                  className="messages-log"
+                  ref={logRef}
+                  onScroll={(e) => {
+                    // En altta mı? (80px tolerans) -> yeni mesajda otomatik en-alta kaydırma yalnız
+                    // kullanıcı canlı takipteyken olsun; yukarı kaydırıp eski mesaj okurken kalsın.
+                    const el = e.currentTarget
+                    nearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+                  }}
+                >
                   {loadingThread ? (
                     <div className="lb-empty">{t('dm.loading')}</div>
                   ) : messages.length === 0 ? (
