@@ -168,7 +168,9 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // Düzenlenebilir bilgi sayfası: RichEditor HTML + isimli/varsayılan galeriler.
 // İçerikte <ad> (veya varsayılan <resimgalerisi>) yazılan yere ilgili galeri serpiştirilir;
 // referans verilmeyen varsayılan galeri en alta eklenir (geriye dönük uyum).
-function InfoPane({ page }: { page?: InfoPage }) {
+// NOT: dışa aktarılır — ServiceLanding (turnuva organizasyonu sayfaları) da aynı galeri
+// enjeksiyonunu kullanır (aksi halde <resimgalerisi> düz metin kalır, galeri görünmez).
+export function InfoPane({ page }: { page?: InfoPage }) {
   const { t } = useT()
   if (!page) return <div className="admin-empty">{t('admin.loading')}</div>
 
