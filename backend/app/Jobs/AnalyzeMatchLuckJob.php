@@ -46,6 +46,31 @@ class AnalyzeMatchLuckJob implements ShouldQueue
 
     public function handle(GnuBgClient $gnubg): void
     {
+        // KALICI ÇÖZÜM ("queue'da habire başarısız iş" derdi): Şans (luck) analizi KRİTİK DEĞİL
+        // (bozuk/eksik-sonuçlu log, gnubg down, .mat export durması, vb.). Bu iş ASLA failed_jobs'a
+        // düşmemeli. Her Throwable'ı BURADA yut -> satırı "kullanılamaz" işaretle (tekrar kuyruğa
+        // girse bile aynı hatayı üretmez) -> sessizce çık. Böylece failed-job alarmı luck yüzünden
+        // bir daha çalmaz. (PR işi = AnalyzeMatchPrJob ayrıdır; onun retry'ı korunur.)
+        try {
+            $this->run($gnubg);
+        } catch (\Throwable $e) {
+            try {
+                $mr = MatchResult::find($this->matchResultId);
+                if ($mr) {
+                    $this->markUnavailable($mr, 'exception:'.class_basename($e));
+                }
+            } catch (\Throwable) {
+                // markUnavailable bile patlarsa (DB down) yut: yine de failed_jobs'a düşme.
+            }
+            Log::warning('AnalyzeMatchLuckJob bastırıldı (failed_jobs önlendi)', [
+                'id' => $this->matchResultId,
+                'err' => $e->getMessage(),
+            ]);
+        }
+    }
+
+    private function run(GnuBgClient $gnubg): void
+    {
         if (! Schema::hasColumn('match_results', 'luck_mwc')) {
             return; // migration yoksa sessiz geç
         }
