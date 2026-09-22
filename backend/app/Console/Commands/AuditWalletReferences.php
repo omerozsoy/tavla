@@ -37,6 +37,11 @@ class AuditWalletReferences extends Command
         if ($hasIdempotencyColumn) {
             $missingKeys = (int) DB::table('wallet_transactions')->whereNull('idempotency_key')->count();
             $this->line('missing_idempotency_key='.$missingKeys);
+            $recentMissingKeys = (int) DB::table('wallet_transactions')
+                ->whereNull('idempotency_key')
+                ->where('created_at', '>=', now()->subDay())
+                ->count();
+            $this->line('missing_idempotency_key_last_24h='.$recentMissingKeys);
         }
         foreach ($rows as $row) {
             $this->line('missing_reference_type='.$row->type.' count='.(int) $row->total);
