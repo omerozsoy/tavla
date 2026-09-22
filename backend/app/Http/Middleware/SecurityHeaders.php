@@ -13,12 +13,10 @@ class SecurityHeaders
         $response = $next($request);
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        // Google Sign-In (GSI): accounts.google.com popup/iframe kimlik bilgisini (credential JWT)
-        // window.postMessage ile bu sayfaya geri gönderir. COOP ayarlanmazsa/same-origin olursa
-        // tarayıcı "Cross-Origin-Opener-Policy policy would block the window.postMessage call"
-        // uyarısı verir. 'same-origin-allow-popups' popup'ın opener'a mesaj atmasına izin verirken
-        // COOP korumasının çoğunu korur (Google'ın bu uyarı için önerdiği resmî çözüm).
-        $response->headers->set('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+        // COOP burada SET EDİLMEZ. COOP tek kaynaktan (nginx additional directives) verilir.
+        // Birden fazla katman (nginx + .htaccess + middleware) aynı COOP başlığını eklerse tarayıcı
+        // çoklu değeri GEÇERSİZ sayar ve GSI "would block the window.postMessage" uyarısı döner.
+        // Tek nginx satırı 'same-origin-allow-popups' hem kök '/' hem tüm rotaları kapsar.
 
         $policy = (string) config('security.csp_report_only_policy');
         if (config('security.csp_enforce', false)) {

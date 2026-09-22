@@ -14,12 +14,17 @@ AddType application/wasm .wasm
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
 
-    # Google Sign-In (GSI): accounts.google.com popup/iframe credential'i window.postMessage
-    # ile bu sayfaya geri gonderir. COOP olmadan tarayici "would block the window.postMessage
-    # call" uyarisi verir. 'same-origin-allow-popups' popup'in opener'a mesaj atmasina izin verir.
-    # Kok '/' Apache tarafindan statik index.html olarak dogrudan servis edildiginden (Laravel
-    # middleware calismaz) bu basligi burada da set etmek sart.
-    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+    # COOP burada SET EDILMEZ. COOP tek kaynaktan (nginx additional directives) verilir; birden
+    # fazla katman (nginx + .htaccess + middleware) ayni basligi eklerse tarayici coklu COOP'u
+    # GECERSIZ sayar ve GSI "would block the window.postMessage" uyarisi doner. Tek nginx satiri
+    # 'same-origin-allow-popups' hem kok '/' hem proxied rotalari kapsar.
+
+    # Content-Security-Policy ENFORCING olarak burada set edilir (nginx add_header bu Plesk
+    # kurulumunda uzun degeri ~199 baytta KESIYOR -> style-src/frame-src dusuyor -> Google font +
+    # GSI iframe bloklaniyor. Apache Header uzun degeri kesmeden tasir, hem statik kok '/' hem tum
+    # rotalar hem /admin bu blok kapsaminda). 'unsafe-eval' = Filament/Alpine.js sart; wildbg WASM
+    # icin 'wasm-unsafe-eval'; fonts.bunny.net = Filament fontu.
+    Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' 'unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.bunny.net https://accounts.google.com; font-src 'self' https://fonts.gstatic.com https://fonts.bunny.net data:; img-src 'self' data: blob: https:; connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com; frame-src 'self' https://accounts.google.com"
 </IfModule>
 
 # Kok istegi (/) once React index.html'i dogrudan servis etsin (Laravel kurulmadan da acilir).

@@ -1,7 +1,14 @@
-add_header Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com; frame-src 'self' https://accounts.google.com" always;
+# Plesk > Apache & nginx Settings > "Additional nginx directives"
+# NOT 1: Content-Security-Policy ARTIK BURADA DEGIL -> Apache backend/public/.htaccess'te
+#   (nginx add_header uzun CSP degerini ~199 baytta kesiyordu).
+# NOT 2: COOP TEK KAYNAK = bu nginx satiri. .htaccess ve SecurityHeaders middleware'den COOP
+#   KALDIRILDI; cunku 3 katman ayni COOP'u eklerse tarayici coklu basligi GECERSIZ sayar ve GSI
+#   "would block window.postMessage" uyarisi doner. Tek satir hem kok '/' hem proxied rotalari kapsar.
+#   (proxy_hide_header ise Plesk proxy location'i kendi hide listesini tanimladigi icin ISE YARAMADI.)
 
-# Google Sign-In (GSI): accounts.google.com popup/iframe credential'i window.postMessage ile
-# sayfaya geri gonderir. COOP olmadan tarayici "Cross-Origin-Opener-Policy policy would block
-# the window.postMessage call" uyarisi verir. 'same-origin-allow-popups' popup'in opener'a mesaj
-# atmasina izin verir (Google'in bu uyari icin onerdigi resmi cozum).
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Strict-Transport-Security "max-age=31536000" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
 add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
