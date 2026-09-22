@@ -96,11 +96,67 @@
   color: var(--muted);
 }
 
+/* /iletisim ust bilgi kartlari: e-posta / GSM / Instagram / YouTube */
+.contact-channels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.contact-channel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  background: var(--card-2, var(--input-bg));
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+.contact-channel:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.cc-icon {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-circle, 50%);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.cc-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.cc-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cc-value {
+  font-size: 0.98rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 560px) {
   .cf-grid {
     grid-template-columns: 1fr;
   }
   .contact-form {
     padding: 16px;
+  }
+  .contact-channels {
+    grid-template-columns: 1fr;
   }
 }

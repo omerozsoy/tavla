@@ -14,7 +14,7 @@
  * hub↔alt sayfalar (hub-and-spoke). Bkz [[seo-online-tavla-tavla-oyna-landing]].
  */
 
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
 import ContactForm from './ContactForm'
@@ -304,6 +304,50 @@ function AvmBody() {
   )
 }
 
+// /iletisim sayfasi ust bilgi kartlari: e-posta, GSM, Instagram, YouTube. Sadece
+// iletisim slug'inda hero altinda (ust) render edilir; form asagida kalir.
+const CHANNELS: { icon: IconName; label: string; value: string; href: string; ext?: boolean }[] = [
+  { icon: 'mail', label: 'E-posta', value: 'bilgi@tavlatv.com', href: 'mailto:bilgi@tavlatv.com' },
+  { icon: 'phone', label: 'GSM', value: '+90 537 389 1907', href: 'tel:+905373891907' },
+  {
+    icon: 'instagram',
+    label: 'Instagram',
+    value: 'instagram.com/tavlatv',
+    href: 'https://instagram.com/tavlatv',
+    ext: true,
+  },
+  {
+    icon: 'youtube',
+    label: 'YouTube',
+    value: 'youtube.com/tavlatv',
+    href: 'https://youtube.com/tavlatv',
+    ext: true,
+  },
+]
+
+function ContactChannels() {
+  return (
+    <div className="contact-channels" aria-label="İletişim kanalları">
+      {CHANNELS.map((c) => (
+        <a
+          key={c.label}
+          className="contact-channel"
+          href={c.href}
+          {...(c.ext ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        >
+          <span className="cc-icon">
+            <Icon name={c.icon} size={20} />
+          </span>
+          <span className="cc-text">
+            <span className="cc-label">{c.label}</span>
+            <span className="cc-value">{c.value}</span>
+          </span>
+        </a>
+      ))}
+    </div>
+  )
+}
+
 function IletisimBody() {
   return (
     <>
@@ -368,6 +412,7 @@ export default function ServiceLanding({ slug, onClose }: Props) {
         <p className="seo-hero-sub">{meta.heroSub}</p>
       </header>
       <div className="info-tab-pane seo-landing-body-wrap">
+        {slug === 'iletisim' && <ContactChannels />}
         <div className="info-rich rich seo-landing-body">
           {dbBody ? <div dangerouslySetInnerHTML={{ __html: dbBody }} /> : fallbackBody(slug)}
 
