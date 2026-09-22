@@ -32,9 +32,7 @@ export default function ContactForm({ sourcePage, defaultSubject = 'genel', head
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [subject, setSubject] = useState(defaultSubject)
-  const [city, setCity] = useState('')
   const [eventDate, setEventDate] = useState('')
-  const [participants, setParticipants] = useState('')
   const [message, setMessage] = useState('')
 
   async function submit(e: React.FormEvent) {
@@ -54,16 +52,13 @@ export default function ContactForm({ sourcePage, defaultSubject = 'genel', head
     }
     setBusy(true)
     try {
-      const partNum = parseInt(participants.replace(/\D+/g, ''), 10)
       await sendContact({
         name: name.trim(),
         org: org.trim() || null,
         email: email.trim() || null,
         phone: phone.trim() || null,
         subject,
-        city: city.trim() || null,
         event_date: eventDate.trim() || null,
-        participants: Number.isFinite(partNum) ? partNum : null,
         message: message.trim(),
         source_page: sourcePage,
         url: typeof location !== 'undefined' ? location.href : null,
@@ -146,26 +141,12 @@ export default function ContactForm({ sourcePage, defaultSubject = 'genel', head
           </select>
         </label>
         <label className="cf-field">
-          <span>İl / Şehir</span>
-          <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={80} />
-        </label>
-        <label className="cf-field">
           <span>Etkinlik tarihi</span>
           <input
             value={eventDate}
             onChange={(e) => setEventDate(e.target.value)}
             maxLength={60}
             placeholder="Örn: Kasım 2026 / henüz net değil"
-          />
-        </label>
-        <label className="cf-field">
-          <span>Tahmini katılımcı</span>
-          <input
-            inputMode="numeric"
-            value={participants}
-            onChange={(e) => setParticipants(e.target.value)}
-            maxLength={6}
-            placeholder="Örn: 64"
           />
         </label>
       </div>
