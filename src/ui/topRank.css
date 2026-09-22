@@ -1,0 +1,138 @@
+/* Top-3 madalya vitrinleri: profil belirgin madalya bloğu (.top-rank-medals) +
+   ana sayfa "Şampiyonlar" İlk-3 podyumu (.top-three-showcase).
+   Sıra renkleri App.css'teki .top-rank-badge ile AYNI (altın/gümüş/bronz). */
+.top-rank-medals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.trm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px 5px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.045);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  line-height: 1;
+  cursor: default;
+}
+.trm-chip > svg {
+  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.35));
+}
+.trm-chip[data-rank='1'] {
+  color: #e8b923;
+}
+.trm-chip[data-rank='2'] {
+  color: #9aa7b2;
+}
+.trm-chip[data-rank='3'] {
+  color: #b9772f;
+}
+.trm-text {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.trm-text b {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text, #2a2118);
+}
+.trm-text em {
+  font-style: normal;
+  font-weight: 800;
+  font-size: 13px;
+  /* rütbe rengini (currentColor) koru */
+}
+
+/* ---- Ana sayfa: Şampiyonlar (İlk 3) podyumu ---- */
+.top-three-showcase {
+  background: var(--panel, #fff);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 14px;
+  padding: 12px 14px 14px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.tts-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 15px;
+  color: var(--text, #2a2118);
+  margin-bottom: 10px;
+}
+.tts-title > svg {
+  color: #e8b923;
+}
+.tts-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 560px) {
+  .tts-cols {
+    grid-template-columns: 1fr;
+  }
+}
+.tts-col-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--muted, #7a6f60);
+  margin-bottom: 6px;
+}
+.tts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.tts-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.tts-row:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.06);
+}
+.tts-row:disabled {
+  cursor: default;
+}
+.tts-medal {
+  display: inline-flex;
+  justify-content: center;
+  line-height: 0;
+}
+.tts-row[data-rank='1'] .tts-medal {
+  color: #e8b923;
+}
+.tts-row[data-rank='2'] .tts-medal {
+  color: #9aa7b2;
+}
+.tts-row[data-rank='3'] .tts-medal {
+  color: #b9772f;
+}
+.tts-medal > svg {
+  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.35));
+}
+.tts-val {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--text, #2a2118);
+  font-variant-numeric: tabular-nums;
+}

@@ -391,6 +391,7 @@ import BetaBanner from './ui/BetaBanner'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
+import TopThreeShowcase from './ui/TopThreeShowcase'
 import Spectate from './ui/Spectate'
 import PublicProfile from './ui/PublicProfile'
 import Membership from './ui/Membership'
@@ -8826,6 +8827,8 @@ export default function App() {
               />
             )}
             <AdStrip slot="top" />
+            {/* Öne çıkan Şampiyonlar: PR + Puan İlk 3 madalyalı oyuncular (tıklayınca profil) */}
+            <TopThreeShowcase onProfile={(id) => setHomeProfileId(id)} />
             {/* Çevrimiçi Oyuncular (sol) + Canlı Maçlar (yanında) */}
             <div className="home-panels">
               <OnlinePlayersPanel
