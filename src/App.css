@@ -16255,7 +16255,23 @@ button.acct-row-logout:hover:not(:disabled) {
 
 /* Herkese acik profil karti */
 .pp-card {
-  max-width: 420px;
+  max-width: 468px;
+  padding: 26px 28px 24px;
+  gap: 4px;
+  /* Merkezli modal -> Emil istisnasi: transform-origin center; hafif scale+opacity
+     ile "hicten belirme" hissi olmadan yumusak giris (200ms, guclu ease-out). */
+  animation: pp-card-in 200ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes pp-card-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-card {
+    animation: none;
+  }
 }
 /* Arkadaslik butonu: header sag sutununda (rating/coin altinda) KUCUK & kompakt.
    Global 42px standardini bu baglamda bilincli olarak ezeriz. */
@@ -16348,8 +16364,20 @@ button.acct-row-logout:hover:not(:disabled) {
 .pp-head {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  margin-bottom: 18px;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+/* Profil basligi = kartin manseti: isim ASLA kirpilmesin (leaderboard satirlarindaki
+   ellipsis dogru ama burada tam gorunmeli). Uzun isim gerekirse iki satira sarar. */
+.pp-head .player-id-name {
+  white-space: normal;
+}
+.pp-head .player-id-name-text {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 .pp-avatar {
   width: 60px;
@@ -16451,12 +16479,12 @@ button.acct-row-logout:hover:not(:disabled) {
 .pp-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 .pp-box {
   text-align: center;
-  padding: 10px 4px;
+  padding: 13px 6px;
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -16484,8 +16512,8 @@ button.acct-row-logout:hover:not(:disabled) {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 16px;
+  padding: 13px 15px;
+  margin-bottom: 18px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent) 6%, transparent);
