@@ -1229,6 +1229,45 @@ class AuthController extends Controller
         return response()->json(['players' => $rows, 'min_matches' => $minM, 'min_decisions' => $minD]);
     }
 
+    // Herkese acik: SITE GENELI top-3 rozet haritasi. PR sIralamasInda ilk 3 (madalya) +
+    // Rating sIralamasInda ilk 3 (kupa) oyuncunun id+rank'i. Isim yanIndaki rozetler bunu
+    // okur (frontend TopRanksProvider). Siralama kriterleri leaderboard/prLeaderboard ile
+    // AYNI olmali ki #1 rozeti tablodaki #1 ile ortusssun. Kisa sureli cache (~120s) —
+    // liste her istemcide gorunur, sik degismez.
+    public function topRanks()
+    {
+        $data = \Illuminate\Support\Facades\Cache::remember('top_ranks_v1', 120, function () {
+            // Rating: leaderboard ile ayni sira (rating DESC, wins DESC), ilk 3.
+            $rating = User::orderByDesc('rating')
+                ->orderByDesc('wins')
+                ->limit(3)
+                ->pluck('id')
+                ->values()
+                ->map(fn ($id, $i) => ['id' => (int) $id, 'rank' => $i + 1])
+                ->all();
+
+            // PR: prLeaderboard ile ayni sira/esik (career_pr ASC + asgari mac/karar), ilk 3.
+            $pr = [];
+            if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
+                $pr = User::whereNotNull('career_pr')
+                    ->where('career_pr_matches', '>=', \App\Services\CareerPrService::minMatches())
+                    ->where('career_pr_decisions', '>=', \App\Services\CareerPrService::minDecisions())
+                    ->orderBy('career_pr', 'asc')
+                    ->orderByDesc('career_pr_decisions')
+                    ->orderByDesc('career_pr_matches')
+                    ->limit(3)
+                    ->pluck('id')
+                    ->values()
+                    ->map(fn ($id, $i) => ['id' => (int) $id, 'rank' => $i + 1])
+                    ->all();
+            }
+
+            return ['pr' => $pr, 'rating' => $rating];
+        });
+
+        return response()->json($data);
+    }
+
     // Herkese acik oyuncu profili: temel istatistik + son mac formu (W/L)
     public function publicProfile(Request $request, User $user)
     {
