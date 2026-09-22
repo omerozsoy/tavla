@@ -9121,10 +9121,11 @@ export default function App() {
           ratingAfter={ratingChange?.after ?? null}
           ratingIsWinner={prHumanColor === mWinner}
           oppRating={mode === 'pvb' ? 900 + difficulty * 100 : (room?.oppRating ?? null)}
-          // Rakip rating değişimi: online PUANLI maçta Elo sıfır-toplamlı -> -(kendi delta). pvb
-          // (AI kalıcı rating yok) veya puansız -> null. Her iki ekranda TUTARLI (deterministik).
+          // Rakip rating değişimi: online PUANLI maçta Elo sıfır-toplamlı -> -(kendi delta). Bot
+          // maçında (pvb veya online-bot) AI'nın kalıcı rating'i yok -> null. Arkadaş/kılıç + turnuva
+          // dahil TÜM online insan maçları puanlı olduğundan botMatch dışında hep göster (TUTARLI).
           oppRatingDelta={
-            mode !== 'pvb' && !friendlyRef.current && ratingChange
+            !botMatch && ratingChange
               ? -Math.round(ratingChange.after - ratingChange.before)
               : null
           }

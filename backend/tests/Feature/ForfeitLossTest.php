@@ -115,8 +115,10 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(1, MatchResult::where('room_code', 'FL2')->where('user_id', $a->id)->count());
     }
 
-    // Arkadaslik (friendly) odasi: forfeit'te rating/maglubiyet YAZILMAZ (puansiz).
-    public function test_friendly_forfeit_does_not_record_loss(): void
+    // Arkadaslik (friendly) odasi GIZLIDIR: katilimci-olmayan/oturumsuz poll odayi goremez (403)
+    // -> disaridan forfeit sonucu URETILEMEZ. (NOT: friendly artik PUANLI; ama sonucu ancak
+    // katilimcinin otoriter poll'u yazar. Legacy otorite-siz oda ayrica fail-closed.)
+    public function test_friendly_forfeit_requires_participant_authority(): void
     {
         $a = $this->user('a');
         $b = $this->user('b');

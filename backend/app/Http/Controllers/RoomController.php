@@ -1744,8 +1744,9 @@ class RoomController extends Controller
 
         // TERK EDEN KAYBEDER (sunucu-otoriter kayit): kaybedenin rating + maglubiyet +
         // match_results satirini SUNUCUDA yaz -> istemci raporlamasa (sekme kapali) bile
-        // sicile yansisin. Puansiz (friendly) oda haric. Idempotent (bkz ForfeitLoss).
-        if ($room->mode !== 'friendly') {
+        // sicile yansisin. Yalniz bot (PvB) maci haric -> insan sekmeyi kapatinca HAKSIZ
+        // rating kaybi olmaz. Arkadas/turnuva dahil TUM online insan maclari puanli. Idempotent.
+        if (! $room->bot) {
             $loserSlot = $winnerSlot === 'p1' ? 'p2' : 'p1';
             $loserId = (int) ($loserSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id);
             $oppRating = (int) ($winnerSlot === 'p1' ? $room->p1_rating : $room->p2_rating);
