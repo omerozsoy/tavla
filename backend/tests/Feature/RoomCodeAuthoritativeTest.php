@@ -79,16 +79,23 @@ class RoomCodeAuthoritativeTest extends TestCase
         $this->assertSame(7, (int) Room::where('code', $code)->firstOrFail()->target);
     }
 
-    public function test_room_stays_legacy_when_global_off(): void
+    public function test_room_authoritative_even_when_global_off(): void
     {
+        // DİREKTİF: TÜM MAÇLAR OTORİTER (shouldAuthoritative koşulsuz true, env/config'e BAĞIMSIZ).
+        // Global config KAPALI + bahis YOK olsa bile oda otoriter kurulur -> "limbo oda" (ne otoriter
+        // server_state ne legacy PUT senkronu -> PUT 409) sınıfı kökten kapalı. ESKİ davranış (global
+        // kapalıysa legacy=false) BİLİNÇLİ olarak kaldırıldı; bu test artık direktifin regresyon
+        // bekçisi (biri env-gating'i geri getirirse yakalar).
         config()->set('game.server_authoritative', false);
         config()->set('game.authoritative_users', []);
         $code = $this->postJson('/api/rooms', ['token' => 'p1tok', 'name' => 'A'])
             ->assertOk()->json('room.code');
         $this->postJson("/api/rooms/{$code}/join", ['token' => 'p2tok', 'name' => 'B'])->assertOk();
 
-        // Global kapalı + stake yok -> eski davranış korunur (authoritative=false).
-        $this->assertFalse((bool) Room::where('code', $code)->first()->authoritative);
+        $this->assertTrue(
+            (bool) Room::where('code', $code)->first()->authoritative,
+            'Tüm maçlar otoriter direktifi: global kapalı + bahissiz oda bile authoritative olmalı.'
+        );
     }
 
     public function test_authenticated_join_ignores_client_identity_metadata(): void
