@@ -3646,26 +3646,245 @@ button[aria-disabled='true'],
 .event-body.rich p {
   margin: 0 0 0.6em;
 }
+/* ============================================================
+   SEO landing + ana sayfa blogu — design-eng cila (Emil Kowalski)
+   Tema: kiremit #A83A2B + krem; tipografi ritmi, kart-listeler, ince
+   mikro-animasyonlar. Renkler var(--*) ile dark/light uyumlu.
+   ============================================================ */
+:root {
+  --seo-accent: #a83a2b;
+  --seo-ease: cubic-bezier(0.23, 1, 0.32, 1); /* guclu ease-out */
+}
 /* SEO icerik: ana sayfa alt blogu (taranabilir tanitim + ic linkler). */
 .seo-content-home {
-  margin: 18px auto 4px;
+  margin: 26px auto 6px;
   max-width: 980px;
   width: 100%;
+  padding: clamp(18px, 3vw, 30px);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--card-bg) 55%, transparent);
 }
 .seo-content-home .info-rich.rich h2 {
-  margin-top: 1.1em;
+  margin-top: 1.15em;
 }
-/* SEO landing: page-host icinde kart (info-card ile ayni gorunum). H1 = info-title. */
-.seo-landing-card .info-title {
-  margin-bottom: 0.4em;
+
+/* ---- Landing kart ---- */
+.seo-landing-card {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
 }
+
+/* ---- HERO ---- */
+.seo-hero {
+  text-align: center;
+  padding: clamp(14px, 3vw, 30px) 8px clamp(18px, 3vw, 26px);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: clamp(18px, 3vw, 28px);
+  position: relative;
+}
+/* Ustte ince kiremit sicaklik parlamasi (dekoratif) */
+.seo-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 180px;
+  background: radial-gradient(60% 120% at 50% -10%, color-mix(in srgb, var(--seo-accent) 16%, transparent), transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.seo-hero > * {
+  position: relative;
+  z-index: 1;
+}
+.seo-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--seo-accent);
+  background: color-mix(in srgb, var(--seo-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--seo-accent) 28%, transparent);
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+.seo-eyebrow::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--seo-accent);
+}
+.seo-hero-title.info-title {
+  font-size: clamp(2rem, 5vw, 3.1rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0.5em 0 0.28em;
+}
+.seo-hero-sub {
+  max-width: 560px;
+  margin: 0 auto;
+  font-size: clamp(1rem, 2.2vw, 1.15rem);
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text, currentColor) 72%, transparent);
+}
+.seo-hero-cta {
+  margin-top: clamp(16px, 2.5vw, 22px);
+}
+/* Hero giris animasyonu: NADIR gorulen sayfa -> zarif fade-up stagger. */
+@media (prefers-reduced-motion: no-preference) {
+  .seo-hero > * {
+    animation: seoHeroIn 560ms var(--seo-ease) both;
+  }
+  .seo-eyebrow {
+    animation-delay: 40ms;
+  }
+  .seo-hero-title.info-title {
+    animation-delay: 100ms;
+  }
+  .seo-hero-sub {
+    animation-delay: 160ms;
+  }
+  .seo-hero-cta {
+    animation-delay: 220ms;
+  }
+}
+@keyframes seoHeroIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* ---- Govde tipografisi ---- */
+.seo-landing-body-wrap .info-rich.rich {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.seo-landing-body-wrap .rules-intro {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--text, currentColor) 80%, transparent);
+}
+.seo-landing-body-wrap .info-rich.rich h2 {
+  font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+  letter-spacing: -0.01em;
+  margin: 1.7em 0 0.5em;
+  padding-left: 14px;
+  position: relative;
+}
+/* H2 sol kiremit isaretcisi */
+.seo-landing-body-wrap .info-rich.rich h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.18em;
+  bottom: 0.18em;
+  width: 4px;
+  border-radius: 3px;
+  background: var(--seo-accent);
+}
+.seo-landing-body-wrap .info-rich.rich p {
+  line-height: 1.7;
+}
+.seo-landing-body-wrap .info-rich.rich strong {
+  color: var(--seo-accent);
+  font-weight: 700;
+}
+/* Ic linkler */
+.seo-landing-body-wrap a,
+.seo-content-home a {
+  color: var(--seo-accent);
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--seo-accent) 35%, transparent);
+  transition: border-color 150ms var(--seo-ease), color 150ms var(--seo-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .seo-landing-body-wrap a:hover,
+  .seo-content-home a:hover {
+    border-bottom-color: var(--seo-accent);
+  }
+}
+
+/* ---- Listeler = kart benzeri satirlar ---- */
+.seo-landing-body-wrap .info-rich.rich ul {
+  list-style: none;
+  padding: 0;
+  margin: 0.6em 0 0.4em;
+  display: grid;
+  gap: 10px;
+}
+.seo-landing-body-wrap .info-rich.rich ul li {
+  position: relative;
+  padding: 12px 14px 12px 40px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 45%, transparent);
+  line-height: 1.55;
+  transition: transform 180ms var(--seo-ease), border-color 180ms var(--seo-ease);
+}
+/* Madde isaretci: kiremit onay noktasi */
+.seo-landing-body-wrap .info-rich.rich ul li::before {
+  content: '';
+  position: absolute;
+  left: 14px;
+  top: 15px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--seo-accent) 18%, transparent);
+  border: 1.5px solid var(--seo-accent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .seo-landing-body-wrap .info-rich.rich ul li:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in srgb, var(--seo-accent) 45%, var(--border));
+  }
+}
+
+/* ---- Q&A (h3 + p) ---- */
+.seo-landing-body-wrap .info-rich.rich h3 {
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 1.25em 0 0.35em;
+  padding-top: 0.9em;
+  border-top: 1px solid var(--border);
+}
+.seo-landing-body-wrap .info-rich.rich h3:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+
+/* ---- CTA ---- */
 .seo-cta {
-  margin: 1.4em 0 0.4em;
+  margin: 2em 0 0.4em;
+  padding-top: 1.4em;
+  border-top: 1px solid var(--border);
+  text-align: center;
 }
 .seo-cta-btn {
-  height: 46px;
-  padding: 0 22px;
-  font-size: 1.02rem;
+  height: 48px;
+  padding: 0 26px;
+  font-size: 1.03rem;
+  font-weight: 650;
+  transition: transform 160ms var(--seo-ease), box-shadow 200ms var(--seo-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .seo-cta-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 26px -12px color-mix(in srgb, var(--seo-accent) 70%, transparent);
+  }
+}
+/* Basildiginda "duydum" geri bildirimi (Emil: pressable her ogede) */
+.seo-cta-btn:active {
+  transform: scale(0.97);
+}
+.seo-hero-cta .seo-cta-btn:active {
+  transform: scale(0.97);
 }
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
