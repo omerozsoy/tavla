@@ -25586,8 +25586,12 @@ select:-webkit-autofill {
 .mrv-analysis {
   border-left: 1px solid var(--border);
   padding: 12px 14px;
-  overflow-y: auto;
   background: color-mix(in srgb, var(--card-bg) 60%, var(--bg));
+  /* Sağ sütun TAM yükseklik: flex-column -> aday listesi kalan alanı doldurur, içeride kaydırır. */
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
 }
 .mrv-ply {
   text-align: right;
@@ -25620,7 +25624,9 @@ select:-webkit-autofill {
 /* Tüm hamleler listelenince (eski 8-limit kalktı) liste uzayabilir -> panel içinde kaydır. */
 .mrv-cands {
   overflow-y: auto;
-  max-height: min(46vh, 460px);
+  /* Kalan tüm yüksekliği kullan (sabit 46vh cap yerine) -> sağ sütun tam boy. */
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .mrv-cands-head,
 .mrv-cand {
