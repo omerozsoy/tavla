@@ -31,6 +31,7 @@ Route::middleware('throttle:20,1,auth-register')->group(function () {
 Route::middleware('throttle:30,1,nickname')->get('/nickname-available', [AuthController::class, 'nicknameAvailable']);
 Route::get('/leaderboard', [AuthController::class, 'leaderboard']);
 Route::get('/leaderboard/pr', [AuthController::class, 'prLeaderboard']); // PR Sıralaması (Career PR)
+Route::get('/top-ranks', [AuthController::class, 'topRanks']); // site geneli top-3 rozet haritası (PR madalya + Rating kupa)
 Route::get('/achievements', [\App\Http\Controllers\AchievementController::class, 'publicCatalog']); // Bilgi>Rozetler (misafir dahil)
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)

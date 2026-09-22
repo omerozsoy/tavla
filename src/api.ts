@@ -321,6 +321,20 @@ export async function prLeaderboard(limit = 10): Promise<{ players: PrLeaderRow[
   return { players: d.players, minMatches: d.min_matches, minDecisions: d.min_decisions }
 }
 
+// Site geneli top-3 rozet haritası: PR sıralamasında ilk 3 (madalya) + Rating sıralamasında
+// ilk 3 (kupa). İsimlerin yanındaki TopRankBadge bunu okur. {id, rank(1..3)}.
+export interface TopRankEntry {
+  id: number
+  rank: number
+}
+export interface TopRanks {
+  pr: TopRankEntry[]
+  rating: TopRankEntry[]
+}
+export async function topRanks(): Promise<TopRanks> {
+  return req<TopRanks>('/top-ranks')
+}
+
 // ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk/grup) ----
 export interface MenuOverride {
   key: string
@@ -1620,10 +1634,12 @@ export async function cancelMatchmake(): Promise<void> {
 // Canli maclar (izlenebilir odalar)
 export interface LiveMatch {
   code: string
+  p1_id?: number | null // top-3 rozeti (PR madalya / Rating kupa) için
   p1_name: string
   p1_rating?: number | null
   p1_avatar?: string | null
   p1_premium?: boolean
+  p2_id?: number | null
   p2_name: string
   p2_rating?: number | null
   p2_avatar?: string | null

@@ -542,6 +542,7 @@ export default function Messages({
                   </button>
                   {activeUser && (
                     <PlayerIdentity
+                      userId={activeUser.id}
                       name={activeUser.name}
                       rating={activeUser.rating}
                       avatar={activeUser.avatar}

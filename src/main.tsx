@@ -7,6 +7,7 @@ import './shadcn.css'
 import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
+import { TopRanksProvider } from './topRanks.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import { installAutoUpdate } from './autoUpdate.ts'
@@ -16,11 +17,13 @@ createRoot(document.getElementById('root')!).render(
     <ErrorBoundary>
       <LangProvider>
         <ToastProvider>
-          <App />
-          {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
-          <GatePrompt />
-          {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
-          <PullToRefresh />
+          <TopRanksProvider>
+            <App />
+            {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
+            <GatePrompt />
+            {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
+            <PullToRefresh />
+          </TopRanksProvider>
         </ToastProvider>
       </LangProvider>
     </ErrorBoundary>
