@@ -1,14 +1,14 @@
 # Plesk > Apache & nginx Settings > "Additional nginx directives"
-# NOT 1: Content-Security-Policy ARTIK BURADA DEGIL -> Apache backend/public/.htaccess'te
-#   (nginx add_header uzun CSP degerini ~199 baytta kesiyordu).
-# NOT 2: COOP TEK KAYNAK = bu nginx satiri. .htaccess ve SecurityHeaders middleware'den COOP
-#   KALDIRILDI; cunku 3 katman ayni COOP'u eklerse tarayici coklu basligi GECERSIZ sayar ve GSI
-#   "would block window.postMessage" uyarisi doner. Tek satir hem kok '/' hem proxied rotalari kapsar.
-#   (proxy_hide_header ise Plesk proxy location'i kendi hide listesini tanimladigi icin ISE YARAMADI.)
+# NOT 1: Content-Security-Policy Apache backend/public/.htaccess'te (nginx uzun degeri ~199B keser).
+# NOT 2: COOP TEK KAYNAK = bu nginx satiri (.htaccess + middleware'den kaldirildi).
+#   Deger 'unsafe-none': GSI (accounts.google.com) popup'i KENDI COOP'unu set ettigi icin
+#   'same-origin-allow-popups' bile "would block window.postMessage" uyarisi veriyordu. 'unsafe-none'
+#   izolasyonu kapatir -> postMessage serbest -> uyari yok. Site cross-origin isolation kullanmiyor
+#   (COEP yok, wildbg tek-thread WASM) -> guvenli, zaten tarayici varsayilani.
 
 add_header X-Content-Type-Options "nosniff" always;
 add_header X-Frame-Options "SAMEORIGIN" always;
 add_header Referrer-Policy "strict-origin-when-cross-origin" always;
 add_header Strict-Transport-Security "max-age=31536000" always;
 add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
-add_header Cross-Origin-Opener-Policy "same-origin-allow-popups" always;
+add_header Cross-Origin-Opener-Policy "unsafe-none" always;
