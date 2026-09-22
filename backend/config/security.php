@@ -14,7 +14,7 @@ return [
         // (Report-Only'de konsol hatası; CSP zorunlu olursa motor HİÇ yüklenmez). 'wasm-unsafe-eval'
         // yalnız WebAssembly derlemeye izin verir, JS eval()'a DEĞİL -> WASM için güvenli seçim.
         "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com",
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob: https:",
         "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com",
