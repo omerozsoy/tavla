@@ -26,9 +26,11 @@ class DeploymentFingerprint extends Command
         $this->line('db_version='.$this->databaseVersion());
         $this->line('db_transaction_isolation='.$this->transactionIsolation());
         $this->line('queue_connection='.config('queue.default'));
-        $this->line('failed_jobs_table='.(Schema::hasTable('failed_jobs') ? 'present' : 'missing'));
-        $this->line('queue_pending_jobs='.$this->tableCount('jobs'));
-        $this->line('queue_failed_jobs='.$this->tableCount('failed_jobs'));
+        $failedConnection = (string) config('queue.failed.database', config('database.default'));
+        $failedTable = (string) config('queue.failed.table', 'failed_jobs');
+        $this->line('failed_jobs_table='.$this->tablePresence($failedConnection, $failedTable));
+        $this->line('queue_pending_jobs='.$this->tableCount((string) config('queue.connections.database.table', 'jobs'), (string) config('queue.connections.database.connection', config('database.default'))));
+        $this->line('queue_failed_jobs='.$this->tableCount($failedTable, $failedConnection));
         $this->line('queue_heartbeat_age_seconds='.$this->heartbeatAge('queue:worker:heartbeat'));
         $this->line('cron_heartbeat_age_seconds='.$this->heartbeatAge('ops:cron:heartbeat'));
         $this->line('release_sha_present='.(($this->releaseSha() !== null) ? 'true' : 'false'));
@@ -88,13 +90,23 @@ class DeploymentFingerprint extends Command
         return null;
     }
 
-    private function tableCount(string $table): string
+    private function tableCount(string $table, ?string $connection = null): string
     {
-        if (! Schema::hasTable($table)) {
+        $connection ??= config('database.default');
+        try {
+            if (! DB::connection($connection)->getSchemaBuilder()->hasTable($table)) {
+                return 'unavailable';
+            }
+            return (string) DB::connection($connection)->table($table)->count();
+        } catch (\Throwable) {
             return 'unavailable';
         }
+    }
+
+    private function tablePresence(string $connection, string $table): string
+    {
         try {
-            return (string) DB::table($table)->count();
+            return DB::connection($connection)->getSchemaBuilder()->hasTable($table) ? 'present' : 'missing';
         } catch (\Throwable) {
             return 'unavailable';
         }
