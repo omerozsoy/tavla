@@ -20,11 +20,11 @@ Tüm kritik server-authoritative invariant'lar production kanıtıyla tamamland�
 
 ## SIRALI KALAN FIX PLANI
 
-### PHASE 2 — Web hardening
+Aktif kalan düzeltme bulunmuyor.
 
+## ERTELENEN ÇALIŞMA
 
-1. CSP Report-Only ihlal envanterini tamamla.
-2. CSP enforcing geçişini Playwright regresyonlarıyla doğrula.
+CSP enforcing geçişi beta sürümde devre dışı bırakıldı; mevcut policy site akışını bozduğu için production’da zorlanmıyor. İleride Google GSI, WASM ve kullanılan tüm üçüncü taraf kaynaklar birlikte test edilerek yeniden ele alınmalı.
 
 ## KAPSAM VE KISITLAR
 
