@@ -34,6 +34,10 @@ $PHP artisan error-journal:backfill || echo "UYARI: error-journal:backfill atlan
 $PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
 
 $PHP artisan optimize:clear
+# Filament component/panel cache'ini de temizle: aksi halde YENİ Filament sayfaları (ör. Başarısız
+# İşler) canlıda menüde GÖRÜNMEZ (filament:optimize ile önbelleğe alınmış eski liste kalır).
+# optimize:clear bunu KAPSAMAZ. Best-effort (komut yoksa/eski sürümse atla).
+$PHP artisan filament:optimize-clear 2>/dev/null || $PHP artisan filament:clear-cached-components 2>/dev/null || echo "UYARI: filament cache temizleme atlandi (elle: php artisan filament:optimize-clear)"
 
 # --- OPcache / PHP-FPM tazeleme ------------------------------------------------
 # SORUN: PHP-FPM ayri (uzun omurlu) surectir; CLI'dan opcache_reset() FPM'in
