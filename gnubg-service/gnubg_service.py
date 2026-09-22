@@ -936,6 +936,9 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
             "steps": _parse_gnubg_move_to_steps(turn, mv),
             "probs": _probs6_from_cumulative((c.get("details") or {}).get("probs")),
         })
+    # Tüm hamleler aynı ply'de (derin) değerlendirildiğinde equity'ye göre KESİN sırala -> en iyi
+    # üstte, aşağı indikçe monoton kötüleşir (XG gibi). (Derin filtre yoksa gnubg zaten sıralı verir.)
+    cands.sort(key=lambda c: c["equity"], reverse=True)
     entry["cands"] = cands
     entry["best"] = cands[0]["notation"] if cands else None
     entry["probs"] = cands[0]["probs"] if cands else None
@@ -1195,6 +1198,15 @@ def _reviewmatch(mat_text, plies=2):
         match_len, names, games = _parse_mat_games(mat_text)
         out["matchLength"] = match_len or None
         out["names"] = names
+        # DERİN LİSTE: bu analiz boyunca TÜM legal hamleleri hedef ply'de değerlendir (XG gibi tam,
+        # kesin sıralı liste). gnubg move-filter'ını GENİŞLET (accept=40 ~ hepsi, eşik yok). gnubg
+        # TEKİL/kalıcı süreç -> finally'de Normal'e geri döndür ki bot maçları yavaşlamasın.
+        try:
+            gnubg.command("set evaluation chequer movefilter 2 0 40 0 0")
+            gnubg.command("set evaluation chequer movefilter 3 0 40 0 0")
+            gnubg.command("set evaluation chequer movefilter 4 0 40 0 0")
+        except Exception:
+            pass
         log = []
         for gi, g in enumerate(games):
             pos = _initial_pos()
@@ -1271,6 +1283,15 @@ def _reviewmatch(mat_text, plies=2):
             out["error"] = "no-moves-extracted"
     except Exception as e:
         out["error"] = str(e)
+    finally:
+        # Move-filter'ı Normal'e geri döndür (gnubg kalıcı süreç -> bot maçları/diğer analizler
+        # geniş filtreyle yavaşlamasın). Normal preset: accept 0 + extra 8 + eşik 0.16.
+        try:
+            gnubg.command("set evaluation chequer movefilter 2 0 0 8 0.160")
+            gnubg.command("set evaluation chequer movefilter 3 0 0 8 0.160")
+            gnubg.command("set evaluation chequer movefilter 4 0 0 8 0.160")
+        except Exception:
+            pass
     return out
 
 
