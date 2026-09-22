@@ -27,7 +27,9 @@ class DiceSlotController extends Controller
     // POST /dice-slot/spin — güvenli çevirme. Sonuç sunucuda seçilir.
     public function spin(Request $request)
     {
-        $result = $this->slot->spin($request->user());
+        $request->validate(['idempotency_key' => ['nullable', 'string', 'max:120']]);
+        $key = $request->input('idempotency_key') ?: $request->header('Idempotency-Key');
+        $result = $this->slot->spin($request->user(), $key);
 
         if (isset($result['error'])) {
             return $this->mapError($result);

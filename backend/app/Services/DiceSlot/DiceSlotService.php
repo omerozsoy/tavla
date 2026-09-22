@@ -287,19 +287,43 @@ class DiceSlotService
      * ATOMİK SPIN. Doğrulama + hak tüketimi + makara + jackpot + ödül tek transaction'da.
      * Hata olursa hiçbir şey değişmez (hak/coin harcanmaz). Dönen dizide 'error' olabilir.
      */
-    public function spin(User $user): array
+    public function spin(User $user, ?string $idempotencyKey = null): array
     {
         if (! $this->isEnabled()) {
             return ['error' => 'disabled'];
         }
 
-        return DB::transaction(function () use ($user) {
+        return DB::transaction(function () use ($user, $idempotencyKey) {
             $u = User::lockForUpdate()->find($user->id);
             if (! $u) {
                 return ['error' => 'disabled'];
             }
             $state = DiceSlotUserState::forUser($u->id);
             $this->resetIfNeeded($state);
+
+            if ($idempotencyKey !== null && \Illuminate\Support\Facades\Schema::hasColumn('dice_slot_spins', 'idempotency_key')) {
+                $receipt = DiceSlotSpin::where('user_id', $u->id)->where('idempotency_key', $idempotencyKey)->first();
+                if ($receipt) {
+                    $jackpot = DiceSlotJackpot::find(1);
+                    return [
+                        'replayed' => true,
+                        'reels' => $receipt->reels,
+                        'winType' => $receipt->win_type,
+                        'payout' => (int) $receipt->payout,
+                        'matchedValue' => null,
+                        'jackpot' => (int) ($jackpot?->pool ?? 0),
+                        'jackpotWon' => (bool) $receipt->jackpot_won,
+                        'remainingSpins' => $this->remaining($state),
+                        'bonusSpins' => (int) $state->bonus_spins,
+                        'nextFreeSpinAt' => $this->nextFreeSpinAt($state),
+                        'coins' => (int) $u->coins,
+                        'spinCost' => (int) $receipt->cost,
+                        'nextSpinPaid' => $this->remaining($state) <= 0 && DS::int('spin_cost') > 0,
+                        'paid' => $receipt->spin_type === 'paid',
+                        'user' => $u,
+                    ];
+                }
+            }
 
             $cooldown = $this->cooldownRemaining($state);
             if ($cooldown > 0) {
@@ -323,8 +347,6 @@ class DiceSlotService
 
             // Hak tüket: önce ücretsiz, sonra bonus, ikisi de bittiyse coin ile ödemeli.
             if ($paid) {
-                app(\App\Services\WalletService::class)->debit($u, $cost, 'dice_slot_spin');
-                $u->save();
                 $spinType = 'paid';
             } elseif ($this->freeRemaining($state) <= 0) {
                 $state->bonus_spins = max(0, (int) $state->bonus_spins - 1);
@@ -373,18 +395,10 @@ class DiceSlotService
             }
             $jp->save();
 
-            // Ödülü ver (coin). Bakiye zaten kilitli $u satırında.
-            if ($payout > 0) {
-                app(\App\Services\WalletService::class)->credit($u, $payout, 'dice_slot_payout');
-                $u->save();
-            }
-
-            $state->last_spin_at = now();
-            $state->save();
-
-            // Kayıt (istatistik + izlenebilirlik).
-            DiceSlotSpin::create([
+            // Receipt önce oluşturulur; debit/payout aynı transaction'da bu receipt'e bağlanır.
+            $spin = DiceSlotSpin::create([
                 'user_id' => $u->id,
+                'idempotency_key' => $idempotencyKey,
                 'reels' => $reels,
                 'win_type' => $winType,
                 'payout' => $payout,
@@ -392,6 +406,20 @@ class DiceSlotService
                 'spin_type' => $spinType,
                 'jackpot_won' => $jackpotWin,
             ]);
+
+            if ($paid) {
+                app(\App\Services\WalletService::class)->debit($u, $cost, 'dice_slot_spin', DiceSlotSpin::class, $spin->id);
+                $u->save();
+            }
+
+            // Ödülü ver (coin). Bakiye zaten kilitli $u satırında.
+            if ($payout > 0) {
+                app(\App\Services\WalletService::class)->credit($u, $payout, 'dice_slot_payout', DiceSlotSpin::class, $spin->id);
+                $u->save();
+            }
+
+            $state->last_spin_at = now();
+            $state->save();
 
             // Bildirim (kazançta). Hata olsa ana işlemi bozmasın.
             if ($payout > 0) {

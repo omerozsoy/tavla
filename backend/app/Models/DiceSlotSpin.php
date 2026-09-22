@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class DiceSlotSpin extends Model
 {
     protected $fillable = [
-        'user_id', 'reels', 'win_type', 'payout', 'cost', 'spin_type', 'jackpot_won',
+        'user_id', 'idempotency_key', 'reels', 'win_type', 'payout', 'cost', 'spin_type', 'jackpot_won',
     ];
 
     protected function casts(): array
