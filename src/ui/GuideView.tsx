@@ -50,6 +50,17 @@ function GuideHub({ onOpen }: { onOpen?: (slug: string) => void }) {
             </span>
           </a>
         ))}
+        {/* Referans makale: WBF resmî turnuva kuralları (tam sayfa /turnuva-kurallari). */}
+        <a href="/turnuva-kurallari" className="guide-card">
+          <h2 className="guide-card-title">Tavla Turnuva Kuralları (WBF)</h2>
+          <p className="guide-card-excerpt">
+            Dünya Tavla Federasyonu resmî turnuva kuralları: format, süre, zar ve küp kuralları,
+            kural dışı hareketler ve anlaşmazlıkların çözümü — eksiksiz Türkçe kural metni.
+          </p>
+          <span className="guide-card-more">
+            Kuralları oku <Icon name="caret-right" size={14} />
+          </span>
+        </a>
       </div>
     </div>
   )

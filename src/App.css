@@ -3952,6 +3952,165 @@ button[aria-disabled='true'],
   margin-top: 1.4em;
   font-weight: 600;
 }
+
+/* ============================================================
+   Referans-doküman (WBF Turnuva Kuralları) — /turnuva-kurallari
+   emil-design-eng: içindekiler nav + numaralı bölüm rozetleri + not
+   callout'ları. .seo-* dilini miras alır; dark/light var(--*) ile.
+   ============================================================ */
+.doc-card {
+  max-width: 860px;
+}
+.doc-toc {
+  margin: 0 auto clamp(20px, 3vw, 30px);
+  max-width: 760px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card-bg) 55%, transparent);
+}
+.doc-toc-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--text, currentColor) 60%, transparent);
+  margin-bottom: 10px;
+}
+.doc-toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 4px 18px;
+}
+.doc-toc-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 9px;
+  color: var(--text, currentColor);
+  text-decoration: none;
+  border-bottom: none;
+  transition: background-color 150ms var(--seo-ease, ease), transform 150ms var(--seo-ease, ease);
+}
+.doc-toc-num {
+  flex: 0 0 auto;
+  min-width: 30px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: var(--seo-accent, var(--accent));
+  background: color-mix(in srgb, var(--seo-accent, var(--accent)) 12%, transparent);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .doc-toc-link:hover {
+    background: color-mix(in srgb, var(--seo-accent, var(--accent)) 9%, transparent);
+    transform: translateX(2px);
+  }
+}
+.doc-toc-link:active {
+  transform: scale(0.99);
+}
+.doc-body {
+  max-width: 760px;
+  margin: 0 auto;
+}
+.doc-group {
+  scroll-margin-top: 84px;
+  margin-top: 2.2em;
+}
+.doc-group:first-of-type {
+  margin-top: 0.5em;
+}
+.doc-body .doc-group-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: clamp(1.35rem, 2.8vw, 1.7rem);
+  letter-spacing: -0.01em;
+  padding: 0 0 0.5em;
+  margin: 0 0 0.4em;
+  border-bottom: 2px solid color-mix(in srgb, var(--seo-accent, var(--accent)) 30%, var(--border));
+}
+.doc-body .doc-group-head::before {
+  content: none; /* .info-rich h2 kiremit marker'ını iptal et (rozet var) */
+}
+.doc-group-num {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  height: 30px;
+  padding: 0 8px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: #f8f1e7;
+  background: var(--seo-accent, var(--accent));
+  border-radius: 8px;
+}
+.doc-section {
+  margin: 1.3em 0;
+  padding-left: 14px;
+  border-left: 2px solid var(--border);
+}
+.doc-body .doc-section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-size: 1.05rem;
+  font-weight: 650;
+  margin: 0 0 0.35em;
+  padding-top: 0;
+  border-top: none;
+}
+.doc-section-num {
+  flex: 0 0 auto;
+  font-weight: 800;
+  font-size: 0.85rem;
+  color: var(--seo-accent, var(--accent));
+}
+.doc-body p {
+  line-height: 1.7;
+}
+.doc-note {
+  margin: 0.7em 0;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--seo-accent, var(--accent));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--seo-accent, var(--accent)) 7%, transparent);
+}
+.doc-note-ref {
+  display: inline-block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--seo-accent, var(--accent));
+  margin-bottom: 4px;
+}
+.doc-note p {
+  margin: 0;
+}
+.doc-edition {
+  margin-top: 2em;
+  padding-top: 1em;
+  border-top: 1px solid var(--border);
+  font-size: 0.86rem;
+  color: color-mix(in srgb, var(--text, currentColor) 58%, transparent);
+}
+.doc-cta-sub {
+  margin-top: 0.9em;
+  font-size: 0.95rem;
+  color: color-mix(in srgb, var(--text, currentColor) 72%, transparent);
+}
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
   .event-map-col {

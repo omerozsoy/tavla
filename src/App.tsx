@@ -157,6 +157,7 @@ const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
 const GuideView = lazy(() => import('./ui/GuideView'))
+const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
@@ -196,6 +197,7 @@ const SEO_TITLES: Record<string, string> = {
   'tavla-magazin': 'Tavla Magazin | TavlaTv',
   'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
   'tavla-rehberi': 'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
+  'turnuva-kurallari': 'Tavla Turnuva Kuralları (WBF) — Resmî Kurallar | TavlaTv',
   'tavla-rehberi/tavla-acilis-stratejileri': 'Tavla Açılış Stratejileri: En İyi İlk Hamleler | TavlaTv',
   'tavla-rehberi/tavla-kupu-doubling-cube': 'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
   'tavla-rehberi/tavla-kazanma-taktikleri': 'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
@@ -247,6 +249,8 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla nasıl oynanır? Kurallar, açılış dizilimi, zar ve pul hareketleriyle yeni başlayanlar için tavla rehberi.',
   'tavla-rehberi':
     'Tavla rehberi: açılış stratejileri, küp (doubling cube) kullanımı, kazanma taktikleri, mars ve backgammon puanlaması. Oyununu geliştirecek özgün yazılar.',
+  'turnuva-kurallari':
+    'WBF (Dünya Tavla Federasyonu) Uluslararası Tavla Turnuva Kuralları: format, süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü. Resmî ve eksiksiz Türkçe kural metni.',
   'tavla-rehberi/tavla-acilis-stratejileri':
     'Tavla açılış stratejileri: her zar atışı için en iyi ilk hamleler, 5-nokta ve bar-nokta yapma, blot bırakma riskleri ve yeni başlayanlar için pratik ipuçları.',
   'tavla-rehberi/tavla-kupu-doubling-cube':
@@ -769,6 +773,7 @@ export default function App() {
   const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
   const [guideOpen, setGuideOpen] = useState(false) // Tavla Rehberi blog: /tavla-rehberi
   const [guideSlug, setGuideSlug] = useState<string | null>(null) // /tavla-rehberi/<slug> -> yazı
+  const [tournRulesOpen, setTournRulesOpen] = useState(false) // WBF turnuva kuralları: /turnuva-kurallari
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
@@ -1003,6 +1008,8 @@ export default function App() {
                                         ? 'tavla-oyna'
                                       : guideOpen
                                         ? (guideSlug ? 'tavla-rehberi/' + guideSlug : 'tavla-rehberi')
+                                      : tournRulesOpen
+                                        ? 'turnuva-kurallari'
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
@@ -1282,6 +1289,9 @@ export default function App() {
         case 'tavla-rehberi': // Tavla Rehberi blog: hub (/tavla-rehberi) veya yazi (/tavla-rehberi/<slug>)
           setGuideOpen(true)
           setGuideSlug(seg[1] || null)
+          break
+        case 'turnuva-kurallari': // WBF turnuva kuralları referans sayfası
+          setTournRulesOpen(true)
           break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
@@ -7263,6 +7273,7 @@ export default function App() {
     setTavlaOynaOpen(false)
     setGuideOpen(false)
     setGuideSlug(null)
+    setTournRulesOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -8476,6 +8487,50 @@ export default function App() {
                     setHome(true)
                   }}
                   onOpen={(s) => setGuideSlug(s)}
+                />
+              </Suspense>
+            </div>
+          </main>
+          <Footer columns={footerColumns} />
+        </div>
+        {menuPages}
+        {authModal}
+        {menuOverlays}
+        {bugReport}
+      </>
+    )
+  }
+
+  // WBF Turnuva Kuralları referans/SEO sayfası (/turnuva-kurallari): guideOpen ile ayni page-host akisi.
+  if (tournRulesOpen) {
+    return (
+      <>
+        {mobileNav}
+        <div className="app lobby">
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            groupSig={groupCollapseSig}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            badges={{ messages: dmUnread }}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <Suspense fallback={null}>
+                <TournamentRules
+                  onClose={() => {
+                    setTournRulesOpen(false)
+                    setHome(true)
+                  }}
                 />
               </Suspense>
             </div>
