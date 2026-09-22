@@ -495,17 +495,22 @@ class RoomController extends Controller
         $commissionPct = max(0, min(90, \App\Models\Setting::int('commission_pct', (int) config('game.commission_pct', 5))));
         $out = DB::transaction(function () use ($code, $winnerId, $loserId, $betPct, $stake, $escrowed, $commissionPct, $room) {
             // Yalnizca ilk cagri coin tasir (+ escrowed'u da bir kez false yap = rezerv bırakma claim'i)
-            $claimed = Room::where('code', $code)->where('settled', false)
-                ->update($escrowed ? ['settled' => true, 'escrowed' => false] : ['settled' => true]);
+            // MariaDB CHECK constraint requires a settled room to be terminal in the
+            // same statement; never expose the invalid intermediate settled+playing state.
+            $claimUpdate = [
+                'settled' => true,
+                'status' => 'finished',
+                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
+            ];
+            if ($escrowed) {
+                $claimUpdate['escrowed'] = false;
+            }
+            $claimed = Room::where('code', $code)->where('settled', false)->update($claimUpdate);
             if (! $claimed) {
                 return ['already' => true];
             }
             // Finalization is part of the same claim transaction as the wallet transfer.
             // A failed debit/credit rolls back both the economic claim and room finalization.
-            Room::where('code', $code)->update([
-                'status' => 'finished',
-                'version' => \Illuminate\Support\Facades\DB::raw('version + 1'),
-            ]);
             if (Schema::hasTable('active_money_match_claims')) {
                 Room::releaseActiveMoneyClaims((int) $room->id);
             }
