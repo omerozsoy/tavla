@@ -6,10 +6,10 @@ After=network.target mariadb.service mysqld.service
 Type=simple
 # ÖNEMLİ: vhost sistem kullanıcısı olmalı (storage/logs hem worker hem PHP-FPM tarafından
 # yazılır -> root çalıştırma izin çakışması yaratır). Kullanıcıyı bul:
-#   stat -c '%U' /var/www/vhosts/tavlai.com/httpdocs
+#   stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
 # ve CHANGE_ME_VHOST_USER yerine yaz.
 User=CHANGE_ME_VHOST_USER
-WorkingDirectory=/var/www/vhosts/tavlai.com/httpdocs/backend
+WorkingDirectory=/var/www/vhosts/tavlatv.com/httpdocs/backend
 # database kuyruğunu işle. timeout=600 (uzun maç ~60 gnubg çağrısı). tries=1 (gnubg down->sessiz).
 #
 # KALICI ÇÖZÜM "worker eski kodu tutuyor" (deploy sonrası her seferinde elle restart derdi):
