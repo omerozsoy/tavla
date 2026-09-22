@@ -25,7 +25,8 @@ class AuditWalletIntegrity extends Command
         $this->line('balance_math_check='.$this->constraintPresence('wallet_balance_math_chk'));
         $this->line('append_only_update_triggers='.$this->triggerCount('UPDATE'));
         $this->line('append_only_delete_triggers='.$this->triggerCount('DELETE'));
-        $this->line('transaction_id_unique='.$this->indexPresence('transaction_id')); 
+        $this->line('transaction_id_unique='.$this->indexPresence('transaction_id'));
+        $this->line('mutation_audit_table='.(Schema::hasTable('wallet_transaction_mutations') ? 'present' : 'missing'));
         $this->line('wallet_integrity_result='.$this->result());
 
         return self::SUCCESS;
@@ -39,6 +40,8 @@ class AuditWalletIntegrity extends Command
         }
 
         return $this->triggerCount('UPDATE') > 0 && $this->triggerCount('DELETE') > 0
+            && Schema::hasTable('wallet_transaction_mutations')
+            && $this->indexPresence('transaction_id') === 'present'
             ? 'PASS'
             : 'PARTIAL';
     }
@@ -73,13 +76,13 @@ class AuditWalletIntegrity extends Command
     private function indexPresence(string $column): string
     {
         try {
-            $count = DB::table('information_schema.statistics')
-                ->whereRaw('table_schema = database()')
-                ->where('table_name', 'wallet_transactions')
-                ->where('column_name', $column)
-                ->where('non_unique', 0)
-                ->count();
-            return $count > 0 ? 'present' : 'missing';
+            $rows = DB::select('SHOW INDEX FROM wallet_transactions WHERE Column_name = ?', [$column]);
+            foreach ($rows as $row) {
+                if ((int) ($row->Non_unique ?? 1) === 0) {
+                    return 'present';
+                }
+            }
+            return 'missing';
         } catch (\Throwable) {
             return 'unknown';
         }
