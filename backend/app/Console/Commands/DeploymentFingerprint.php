@@ -70,6 +70,10 @@ class DeploymentFingerprint extends Command
 
     private function releaseSha(): ?string
     {
+        $configured = config('app.release_sha');
+        if (is_string($configured) && trim($configured) !== '') {
+            return trim($configured);
+        }
         foreach (['APP_RELEASE_SHA', 'RELEASE_SHA', 'GIT_COMMIT'] as $key) {
             $value = getenv($key);
             if (is_string($value) && trim($value) !== '') {
