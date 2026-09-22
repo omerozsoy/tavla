@@ -11,14 +11,14 @@ use Laravel\Sanctum\PersonalAccessToken;
 
 // Filament SSO: React uygulamasindaki "Yonetici" butonu Sanctum token'i ile buraya
 // gelir; token gecerli ve admin ise web oturumu acilir ve Filament paneline yonlenir.
-Route::match(['GET', 'POST'], '/admin/enter', function (Request $request) {
+Route::get('/admin/enter', static fn () => response()->json(['message' => 'POST required'], 405)
+    ->withHeaders(['Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer']));
+Route::post('/admin/enter', function (Request $request) {
     $safeRedirect = static fn (string $path) => redirect($path)->withHeaders([
         'Cache-Control' => 'no-store',
         'Referrer-Policy' => 'no-referrer',
     ]);
-    $rawToken = $request->isMethod('POST')
-        ? (string) $request->input('token', '')
-        : (string) $request->query('token', '');
+    $rawToken = (string) $request->input('token', '');
     $pat = PersonalAccessToken::findToken($rawToken);
     // findToken() yalnız hash eşleşmesini doğrular; normal Sanctum guard gibi expiry de kontrol et.
     if ($pat?->expires_at && $pat->expires_at->isPast()) {
@@ -47,7 +47,9 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::prefix('panel')->group(function () {
     Route::get('/login', [PanelController::class, 'showLogin']);
     Route::post('/login', [PanelController::class, 'login']);
-    Route::match(['GET', 'POST'], '/enter', [PanelController::class, 'enter'])
+    Route::get('/enter', static fn () => response()->json(['message' => 'POST required'], 405)
+        ->withHeaders(['Cache-Control' => 'no-store', 'Referrer-Policy' => 'no-referrer']));
+    Route::post('/enter', [PanelController::class, 'enter'])
         ->middleware('throttle:10,1,admin-sso'); // token ile sifresiz giris (siteden)
     Route::post('/logout', [PanelController::class, 'logout']);
 
@@ -118,7 +120,7 @@ Route::fallback(function (Request $request) {
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi',
         'turnuva-takvimi', 'kulupler', 'kulup-rehberi', 'haberler', 'blog', 'tavla-magazin',
-        'urunler', 'hizmetler', 'nasil-oynanir', 'dersler', 'bulmaca',
+        'urunler', 'hizmetler', 'nasil-oynanir', 'tavla-rehberi', 'dersler', 'bulmaca',
         'pozisyon-analizi', 'mat-analiz', 'basarimlar', 'hata-gunlugu', 'mac-analizleri',
         'oyun-onizleme', 'cerceve-anim', 'adillik',
         'uyelik', 'magaza', 'pul-tasarimlari', 'siparislerim', 'sepet', 'odeme', 'cerceveler',

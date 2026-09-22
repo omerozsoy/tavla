@@ -8,7 +8,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 |---|---:|
 | CRITICAL | 0 |
 | HIGH | 3 |
-| MEDIUM | 1 |
+| MEDIUM | 0 |
 | LOW | 0 |
 | UNKNOWN | 1 |
 
@@ -71,25 +71,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Database protection required?:** Evet.
 **Regression test required?:** Evet.
 
-### SEC-SSO-001 — Admin SSO tokeni URL query string’de taşınıyor
-
-**Severity:** MEDIUM
-**Category:** Authentication / credential exposure
-**Affected file(s):** `backend/routes/web.php`, `backend/app/Http/Controllers/PanelController.php`
-**Affected endpoint/event:** `/admin/enter?token=...`, `/panel/enter?token=...`
-**Description:** POST exchange mevcut olsa da legacy GET query token sözleşmesi hâlâ açık.
-**Attack scenario:** URL sızıntısı gerçekleşirse saldırgan kısa exchange penceresinde tokenı kullanmayı deneyebilir.
-**Root cause:** Backward-compatible GET akışı.
-**Potential impact:** Admin web session açılması.
-**Recommended fix:** Tüm frontend/panel link üretimini POST exchange’e taşı; deprecation süresinden sonra GET’i kaldır; one-time nonce kullanımını koru.
-**Database protection required?:** Tercihen nonce unique/revocation kaydı.
-**Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
-
 ## SIRALI KALAN FIX PLANI
-
-### PHASE 0 — Deployment doğrulaması
-
-1. SSO GET kullanımını access-log/referrer politikasıyla izle ve POST migration’ını tamamla.
 
 ### PHASE 1 — DB concurrency
 

@@ -49,9 +49,7 @@ class PanelController extends Controller
             'Cache-Control' => 'no-store',
             'Referrer-Policy' => 'no-referrer',
         ]);
-        $token = $request->isMethod('POST')
-            ? (string) $request->input('token', '')
-            : (string) $request->query('token', '');
+        $token = (string) $request->input('token', '');
         $access = $token ? \Laravel\Sanctum\PersonalAccessToken::findToken($token) : null;
         if ($access?->expires_at && $access->expires_at->isPast()) {
             $access = null;
