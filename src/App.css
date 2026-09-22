@@ -22622,14 +22622,17 @@ button.acct-row-logout:hover:not(:disabled) {
   pointer-events: none;
 }
 
+/* Mobilde oyun-ici sohbet penceresi GIZLI: tahta zaten dar ekrani doldurur,
+   sabit-konumlu sohbet paneli hamle/zar alanini ortuyordu. Hem portre telefonlar
+   hem de yatay (landscape) telefonlar icin kapat. */
 @media (max-width: 720px) {
   .chat-panel {
-    right: 8px;
-    bottom: 8px;
-    width: 210px;
+    display: none;
   }
-  .chat-list {
-    height: 160px;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .chat-panel {
+    display: none;
   }
 }
 
