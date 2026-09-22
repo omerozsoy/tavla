@@ -400,10 +400,15 @@ export default function ServiceLanding({ slug, onClose }: Props) {
   const meta = META[slug] ?? META.iletisim
 
   return (
-    // Standart sayfa formati (LegalView/ContentView gibi): sola dayali, title en tepede,
-    // KAPATMA (X) YOK — bu sayfalar footer/menu navigasyonuyla acilir (modal degil). SEO
-    // landing (online-tavla/tavla-oyna) merkezli hero'dan bilerek AYRI tutulur.
-    <div className="register-card info-card service-landing">
+    // Standart alt sayfa formati (SeoContent/GuideView/TournamentRules ile birebir):
+    // seo-landing-card = sola dayali 1400px seffaf zemin; desktop'ta KAPATMA (X) gizli
+    // (footer/menu ile acilir), mobilde X geri gelir. service-landing = sola dayali baslik.
+    <div className="register-card info-card seo-landing-card service-landing">
+      {onClose && (
+        <button className="modal-close" onClick={onClose} aria-label="Kapat" type="button">
+          <Icon name="x" size={16} />
+        </button>
+      )}
       <header className="service-landing-head">
         <h1 className="info-title service-landing-title">{meta.h1}</h1>
         <p className="service-landing-sub">{meta.heroSub}</p>

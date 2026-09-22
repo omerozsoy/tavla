@@ -96,15 +96,9 @@
   color: var(--muted);
 }
 
-/* Turnuva organizasyonu servis sayfalari + /iletisim: STANDART sayfa formati.
-   Sola dayali (merkezli SEO hero DEGIL), title en tepede, KAPATMA (X) YOK.
-   .page-host scope'u specificity'yi .info-card/.register-card'in ustune cikarir. */
-.page-host .service-landing {
-  width: 100%;
-  max-width: 900px;
-  margin: 0; /* margin:auto YOK -> sola dayali */
-  padding: 22px clamp(16px, 3vw, 40px) 48px;
-}
+/* Turnuva organizasyonu servis sayfalari + /iletisim: STANDART alt sayfa formati.
+   Kapsayici genislik/hizalama/seffaflik + X gizleme .seo-landing-card'dan gelir
+   (App.css). Burada yalniz sola dayali BASLIK bloguna ozgu stiller kalir. */
 .service-landing .service-landing-head {
   margin: 0 0 clamp(16px, 2.5vw, 24px);
   padding: 0 0 clamp(14px, 2vw, 20px);
