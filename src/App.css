@@ -7327,6 +7327,9 @@ button.move-row:focus-visible {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px 20px;
+  /* İki-kolon satırlarda item'ları üstten hizala (bkz. reg-grid): Takma İsim sayacı yüzünden
+     komşu alan stretch olup input'u aşağı itmesin -> input'lar hizalı kalsın. */
+  align-items: start;
 }
 .profile-form .form-grid > label {
   gap: 6px;
@@ -23368,6 +23371,12 @@ select:-webkit-autofill {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px 16px;
+  /* HİZALAMA FIX (/giris Kayıt formu): item'ları ÜSTTEN hizala. Aksi halde default 'stretch' ile
+     kısa alan (E-posta) uzun komşusunun (Takma İsim + '0/15' sayacı) satır yüksekliğine stretch olup
+     iç grid'inin align-content:stretch'i input'u ~11px AŞAĞI itiyor -> aynı satırdaki E-posta ve
+     Takma İsim input'ları HİZASIZ görünüyordu. start = her alan doğal boyunda, input'lar üstten hizalı.
+     (Aynı kök: .app.lobby align-content:start dersi.) */
+  align-items: start;
 }
 /* shadcn <Label> (data-slot=label) `items-center` + `.register-card label{flex-direction:column}`
    birlesince kayit/profil etiketleri YATAY ORTALANIYORDU (Ad/Soyad/E-posta ortada, giris
