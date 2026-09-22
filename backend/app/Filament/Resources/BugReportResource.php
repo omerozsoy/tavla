@@ -28,9 +28,9 @@ class BugReportResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Hata Bildirimleri';
 
-    protected static ?string $navigationGroup = 'Destek';
+    protected static ?string $navigationGroup = 'Güvenlik';
 
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 0; // Güvenlik grubunun EN ÜSTÜ
 
     // Yeni (incelenmemis) bildirim sayisini menu rozetinde goster.
     public static function getNavigationBadge(): ?string

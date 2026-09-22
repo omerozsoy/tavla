@@ -23,9 +23,9 @@ class FailedJobs extends Page
 
     protected static ?string $title = 'Başarısız Kuyruk İşleri';
 
-    protected static ?string $navigationGroup = 'Ayarlar';
+    protected static ?string $navigationGroup = 'Güvenlik';
 
-    protected static ?int $navigationSort = 20;
+    protected static ?int $navigationSort = 2;
 
     protected static string $view = 'filament.pages.failed-jobs';
 
