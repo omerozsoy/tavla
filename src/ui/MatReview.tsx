@@ -465,14 +465,16 @@ function arrowPath(s: ArrowSeg, r: number): string {
   ey /= el
   const epx = -ey // uçta perpendiküler
   const epy = ex
-  const headLen = r * 1.5
-  const headW = r * 0.95
+  // İNCE + KİBAR ok (renk/opaklık aynı): gövde ve ok-başı yarı-genişlikleri kısıldı; uca doğru
+  // daha zarif incelen bir siluet. (Eski: headW 0.95 / wB 0.48 / wN 0.16 -> kalın/iri dururdu.)
+  const headLen = r * 1.3
+  const headW = r * 0.55 // ok-başı yarı-genişliği (daha zarif, iri değil)
   const tipx = x2 - ex * r * 0.55 // uç, hayalet pulun kenarına değsin (ortasını kapatmasın)
   const tipy = y2 - ey * r * 0.55
   const nx = tipx - ex * headLen // boyun (üçgen ucun tabanı)
   const ny = tipy - ey * headLen
-  const wB = r * 0.48 // taban yarı-genişliği (geniş)
-  const wN = r * 0.16 // boyun yarı-genişliği (incelir)
+  const wB = r * 0.28 // taban yarı-genişliği (ince gövde)
+  const wN = r * 0.075 // boyun yarı-genişliği (uca doğru inceden incelir)
   const aL = `${sx + px * wB},${sy + py * wB}`
   const aR = `${sx - px * wB},${sy - py * wB}`
   const cL = `${cx + px * wB * 0.55},${cy + py * wB * 0.55}`
@@ -595,7 +597,7 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
               fill={ARROW}
               fillOpacity={0.9}
               stroke={ARROW_EDGE}
-              strokeWidth={Math.max(0.6, r * 0.05)}
+              strokeWidth={Math.max(0.5, r * 0.035)}
               strokeLinejoin="round"
             />
           ))}
@@ -651,7 +653,7 @@ function CubeArrow({ dir, dep }: { dir: 'up' | 'down'; dep: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dep])
 
-  const ah = r * 1.16
+  const ah = r * 0.9 // daha ince/kibar ok-başı (MoveArrows ile uyumlu)
   return (
     <div ref={hostRef} className="mrv-arrows-host" aria-hidden="true">
       {seg && size.w > 0 && (
@@ -670,10 +672,10 @@ function CubeArrow({ dir, dep }: { dir: 'up' | 'down'; dep: string }) {
               <path d="M1.6,1.4 L9,5.5 L1.6,9.6 L3.9,5.5 Z" fill={ARROW} stroke={ARROW_EDGE} strokeWidth="0.9" strokeLinejoin="round" />
             </marker>
           </defs>
-          {/* koyu casing */}
-          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.484} strokeLinecap="round" opacity={0.7} />
-          {/* parlak çekirdek + zarif uç */}
-          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW} strokeWidth={r * 0.232} strokeLinecap="round" markerEnd="url(#mrv-cah)" />
+          {/* koyu casing (ince) */}
+          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW_EDGE} strokeWidth={r * 0.30} strokeLinecap="round" opacity={0.7} />
+          {/* parlak çekirdek + zarif uç (ince) */}
+          <line x1={seg.x} y1={seg.y1} x2={seg.x} y2={seg.y2} stroke={ARROW} strokeWidth={r * 0.13} strokeLinecap="round" markerEnd="url(#mrv-cah)" />
         </svg>
       )}
     </div>
