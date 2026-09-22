@@ -28,4 +28,19 @@ class InfoPage extends Model
 
     // "Bilgi" modal sekmesi olan (duzenlenebilir metin) slug'lar — hukuki sayfalar HARIC.
     public const INFO_TAB_SLUGS = ['about', 'services'];
+
+    // SEO icerik sayfalari: landing'ler + nasil-oynanir + turnuva kurallari + rehber yazilari.
+    // Bu slug'lar admin panelden (Bilgi Sayfalari) RichEditor ile duzenlenebilir hale gelir.
+    // Frontend'de body DB'de varsa onu render eder, yoksa hardcoded icerige duser (fallback).
+    // NOT: bazi slug'lar '/' icerir (tavla-rehberi/<yazi>); admin URL gosterimi buna gore.
+    public const SEO_SLUGS = [
+        'online-tavla',
+        'tavla-oyna',
+        'nasil-oynanir',
+        'turnuva-kurallari',
+        'tavla-rehberi/tavla-acilis-stratejileri',
+        'tavla-rehberi/tavla-kupu-doubling-cube',
+        'tavla-rehberi/tavla-kazanma-taktikleri',
+        'tavla-rehberi/mars-gammon-backgammon-nedir',
+    ];
 }

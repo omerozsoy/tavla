@@ -76,6 +76,8 @@ fi
 # Gorseller de commit'li (public/news) -> tekrar indirme yok. Hata olsa deploy patlamasin.
 $PHP artisan news:import --file=database/data/news.json || echo "UYARI: news:import atlandi."
 $PHP artisan magazine:import --file=database/data/magazine.json || echo "UYARI: magazine:import atlandi."
+# SEO icerik sayfalarini seed et (firstOrCreate; var olani ezmez -> admin duzenlemeleri korunur).
+$PHP artisan seo-pages:import --file=database/data/seo-pages.json || echo "UYARI: seo-pages:import atlandi."
 
 # --- gnubg analiz motoru + queue worker: kod degisince YENIDEN BASLAT --------------
 # SORUN: gnubg motoru /opt/gnubg-service/gnubg_service.py'yi (ayri kopya) uzun-omurlu

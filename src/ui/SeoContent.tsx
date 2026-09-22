@@ -13,6 +13,7 @@
 
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
 
 export type SeoVariant = 'home' | 'online-tavla' | 'tavla-oyna'
@@ -395,8 +396,27 @@ function TavlaOynaContent() {
   )
 }
 
+// DB body varsa: hero+CTA kabugunu KORU, govdeyi admin HTML'i ile degistir.
+// CTA fallback icerikte de gomulu oldugundan DB body'nin sonuna ayrica ekliyoruz.
+function LandingDbBody({ body, cta }: { body: string; cta: string }) {
+  return (
+    <div className="info-rich rich seo-landing-body">
+      <div dangerouslySetInnerHTML={{ __html: body }} />
+      <div className="seo-cta">
+        <Button asChild className="seo-cta-btn">
+          <a href="/yeni-oyun">
+            <Icon name="play" size={18} /> {cta}
+          </a>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 export default function SeoContent({ variant, onClose }: Props) {
   useEscape(onClose)
+  // Ana sayfa kompakt blogu icin DB body cekmeyiz (hep hardcoded).
+  const dbBody = useInfoPageBody(variant === 'home' ? null : variant)
 
   if (variant === 'home') {
     return <HomeContent />
@@ -429,7 +449,13 @@ export default function SeoContent({ variant, onClose }: Props) {
         </div>
       </header>
       <div className="info-tab-pane seo-landing-body-wrap">
-        {isOnline ? <OnlineTavlaContent /> : <TavlaOynaContent />}
+        {dbBody ? (
+          <LandingDbBody body={dbBody} cta={heroCta} />
+        ) : isOnline ? (
+          <OnlineTavlaContent />
+        ) : (
+          <TavlaOynaContent />
+        )}
       </div>
     </div>
   )
