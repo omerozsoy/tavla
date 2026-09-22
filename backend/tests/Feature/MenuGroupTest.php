@@ -41,6 +41,17 @@ class MenuGroupTest extends TestCase
         $this->assertGreaterThanOrEqual(6, $count); // en az 6 varsayilan grup
     }
 
+    public function test_shop_is_in_account_catalog(): void
+    {
+        // Mağaza sol menüye geri kondu -> katalogda HESAP grubunda satir olusmali,
+        // /admin/menu-items ile yonetilebilir olmali (visible varsayilan true).
+        MenuItem::syncCatalog();
+        $shop = MenuItem::where('key', 'shop')->first();
+        $this->assertNotNull($shop);
+        $this->assertSame('account', $shop->group);
+        $this->assertTrue((bool) $shop->visible);
+    }
+
     public function test_syncCatalog_preserves_admin_group_assignment(): void
     {
         MenuItem::syncCatalog();
