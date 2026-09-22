@@ -105,11 +105,11 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Category:** Operations / verification
 **Affected file(s):** deployment environment, DB, queue, reverse proxy
 **Affected endpoint/event:** tüm money-game ve validator yolları
-**Description:** Çalışan release SHA, config cache, DB engine/isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
+**Description:** Salt-okunur `php artisan security:deployment-fingerprint` komutu eklendi; ancak production çıktısı ve çalışan release ile karşılaştırma henüz kaydedilmedi. DB engine/isolation, queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
 **Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.
 **Root cause:** Production doğrulama zinciri standardize edilmedi.
 **Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.
-**Recommended fix:** Read-only release/config/DB/queue/route fingerprint komutu ve periyodik kayıt oluştur; yalnız güvenli smoke test çalıştır.
+**Recommended fix:** Production’da `security:deployment-fingerprint` çalıştırıp release/config/DB/queue/route çıktısını kaydet; yalnız güvenli smoke test çalıştır.
 **Database protection required?:** Evet, yalnız kontrollü rollout ile.
 **Regression test required?:** Evet.
 
@@ -117,7 +117,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ### PHASE 0 — Deployment doğrulaması
 
-1. Release SHA, config cache, validator secret guard ve route fingerprint’lerini kaydet.
+1. `security:deployment-fingerprint` ile release/config/DB/queue/validator ve route fingerprint’lerini kaydet.
 2. SSO GET kullanımını access-log/referrer politikasıyla izle ve POST migration’ını tamamla.
 
 ### PHASE 1 — DB concurrency
