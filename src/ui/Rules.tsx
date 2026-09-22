@@ -86,6 +86,96 @@ const CONTENT: Record<string, RulesContent> = {
           'Maç sonunda “Analiz” ile en kötü hamlelerini ve küp kararlarını görebilirsin.',
         ],
       },
+      {
+        h: 'Açılış Zarı ve Kim Başlar',
+        p: [
+          'Oyunun başında her iki oyuncu birer zar atar. Büyük sayıyı atan oyuncu ilk hamleyi yapar; ilk hamlede kendi attığı zarla rakibin attığı zarı birlikte oynar.',
+          'İki oyuncu da aynı sayıyı atarsa (beraberlik) zarlar yeniden atılır; bu durum genellikle küpü de otomatik olarak yükseltir (isteğe bağlı kural). TavlaTv’de açılış zarı otomatik atılır ve kimin başlayacağı ekranda gösterilir.',
+          'Açılış hamlesinde çift atılamaz; en yüksek tek atış oyuna başlar. Bu yüzden ilk hamlede her zaman iki farklı sayıyla oynarsın.',
+        ],
+      },
+      {
+        h: 'Vurma ve Bardan Giriş (Detay)',
+        p: [
+          'Bir hanede rakibin yalnızca tek taşı (blot) varsa, o haneye gelerek taşı vurabilirsin. Vurulan taş “bar”a (orta çubuğa) konur ve rakip onu yeniden oyuna sokmak zorundadır.',
+          'Barda taşı olan oyuncu, tüm taşlarını bardan sokmadan tahtadaki başka hiçbir taşını oynayamaz. Giriş, rakibin ev bölgesindeki (senin için 1–6 haneleri) açık noktalardan yapılır.',
+          'Attığın zar, girmeye çalıştığın haneye denk gelmeli ve o hane açık olmalı (rakibin 2+ taşı bulunmamalı). İki zarın da denk geldiği haneler kapalıysa giriş yapamaz, sıranı kaybedersin.',
+          'Birden fazla taşın bardaysa hepsini teker teker sokman gerekir; hepsi girene kadar başka hamle yapamazsın. Bu yüzden rakibin ev bölgesini kapatmak (prime kurmak) güçlü bir savunmadır.',
+        ],
+      },
+      {
+        h: 'Toplama (Bear Off) Detayları',
+        p: [
+          '15 taşının tamamı kendi ev bölgene girdiğinde toplamaya başlayabilirsin. Ev bölgesi senin son çeyreğindir (1–6 haneleri).',
+          'Attığın zar değeri kadar uzaklıktaki haneden taş toplarsın: 5 attıysan 5-hanedeki taşı tahtadan çıkarırsın. O hanede taş yoksa, daha yüksek bir haneden taşı öne oynayabilirsin.',
+          'Attığın sayıdan daha ileride hiç taşın yoksa, o zarla en yakın (daha düşük) dolu haneden toplama yapabilirsin. Örneğin 6 attın ama 6-hanen boşsa ve en yüksek dolu hanen 4 ise, 4-haneden toplarsın.',
+          'Toplama aşamasında bir taşın açıkta kalır ve rakibinle hâlâ temas varsa, vurulma riski vardır. Vurulan taş bara döner ve baştan girmen gerekir — bu, kazanılmış görünen oyunları bile çevirebilir.',
+        ],
+      },
+      {
+        h: 'Küp (Doubling Cube) Kullanımı',
+        p: [
+          'Küp, oyunun puan değerini katlamak için kullanılan altı yüzlü (2, 4, 8, 16, 32, 64) özel bir zardır. Oyun 1 değerinde başlar.',
+          'Sıran geldiğinde ve zar atmadan önce, konumun iyiyse rakibe küp teklif edebilirsin. Rakip iki seçenekle karşı karşıya kalır: kabul et (take) — oyun iki katına çıkar ve küp artık ona geçer, bir sonraki teklifi o yapar; ya da pas geç (drop) — mevcut değeri sana kaptırıp eli bitirir.',
+          'Doğru küp teklifi genellikle kazanma ihtimalin belirgin biçimde arttığında yapılır; çok erken teklif rakibe kolay “take”, çok geç teklif ise kazandığın puanı küçültür.',
+          'Crawford kuralı: bir oyuncu maçı kazanmaya 1 puan kala, hemen sonraki tek elde küp kullanılamaz. Bu elden sonra küp yeniden devreye girer.',
+          'TavlaTv’nin oyun içi “Küp danışmanı”, kazanma yüzdene göre katla / kabul et / pas geç önerileri sunarak doğru kararı öğrenmene yardımcı olur.',
+        ],
+      },
+      {
+        h: 'Mars (Gammon) ve Backgammon Puanlaması',
+        p: [
+          'Tavlada kazanmanın değeri, rakibi ne kadar geride bıraktığına göre değişir ve varsa küp çarpanıyla çarpılır.',
+          'Tekli (normal) galibiyet: rakip en az bir taşını toplayabilmişse, oyun 1 puan × küp değerindedir.',
+          'Mars (Gammon): rakip hiç taş toplayamadan oyunu bitirirsen 2 puan × küp değeri kazanırsın.',
+          'Backgammon: rakip hiç taş toplayamadığı gibi hâlâ barda ya da senin ev bölgende taşı kaldıysa, 3 puan × küp değeriyle en yüksek galibiyeti alırsın.',
+          'Örnek: küp 2’deyken bir mars yaparsan 2 (mars) × 2 (küp) = 4 puan kazanırsın. TavlaTv tüm bu çarpanları otomatik hesaplar.',
+        ],
+      },
+      {
+        h: 'Temel Strateji',
+        p: [
+          'Açıkta tek taş (blot) bırakmamaya çalış; her blot rakip için bir vurma fırsatıdır. Zorunlu kaldığında blotu, vurulması en zor olan yere bırak.',
+          'Kilit (point) yap: bir haneye iki taş koyarak orayı rakibe kapatırsın. Özellikle kendi 5-noktan (“altın nokta”) ve bar-noktan (7-nokta) en değerli kilitlerdir.',
+          'Prime kurmaya çalış: yan yana kapatılmış hanelerden oluşan bir duvar, rakibin taşlarını arkanda hapseder. Altı ardışık kapalı hane (full prime) rakibin hiçbir taşının geçmesine izin vermez.',
+          'Yarış (race) durumunu tanı: iki taraf birbirini geçmiş ve temas kalmamışsa, artık strateji değil hız önemlidir; taşlarını en verimli şekilde eve taşı. Temas varken ise güvenlik ve zamanlama ön plandadır.',
+          'Pip sayımını öğren: her iki tarafın bitişe kaç adım uzakta olduğunu hesaplamak, yarışta önde misin geride misin bilmeni ve küp kararlarını doğru vermeni sağlar.',
+        ],
+      },
+      {
+        h: 'Sık Kullanılan Terimler',
+        p: [
+          'Pip: bir taşın bitiş çizgisine olan uzaklığı (adım sayısı). Tüm taşların pip toplamı, bitişe ne kadar kaldığını gösterir.',
+          'Blot: bir hanede tek başına duran, vurulmaya açık taş.',
+          'Point (kilit): bir oyuncunun iki veya daha fazla taşıyla tuttuğu, rakibe kapalı hane.',
+          'Prime: yan yana yapılmış birden fazla kilitin oluşturduğu, rakibi geride tutan duvar.',
+          'Anchor (çapa): rakibin ev bölgesinde tuttuğun kilit; hem güvenli bir sığınak hem de sonradan vurma fırsatı sağlar.',
+          'Bar: vurulan taşların konduğu, tahtayı ikiye ayıran orta çubuk.',
+          'Bear off (toplama): tüm taşları eve topladıktan sonra tahtadan çıkarma aşaması.',
+        ],
+      },
+      {
+        h: 'Sık Sorulan Sorular',
+        p: [],
+      },
+      {
+        h: 'Zar atınca hiç oynayamazsam ne olur?',
+        p: [
+          'Attığın zarların hiçbiriyle geçerli bir hamle yapamıyorsan (tüm haneler kapalı ya da barda taşın giremiyor), sıra kayıpsız şekilde rakibe geçer. Yalnızca bir zarı oynayabiliyorsan, mümkün olanı oynaman zorunludur.',
+        ],
+      },
+      {
+        h: 'Çift attığımda kaç hamle yaparım?',
+        p: [
+          'Aynı sayıyı atarsan (örneğin 5-5) o değeri dört kez oynarsın: dört ayrı taşla ya da aynı taşı dört kez ilerleterek. Mümkünse dört hamleyi de yapmak zorundasın.',
+        ],
+      },
+      {
+        h: 'Küpü ne zaman teklif etmeliyim?',
+        p: [
+          'Kesin bir kural yoktur ama genel olarak kazanma ihtimalin belirgin biçimde arttığında (yaklaşık %70’in üzerinde ama rakibin hâlâ kabul edebileceği bir aralıkta) küp teklif etmek mantıklıdır. TavlaTv’nin küp danışmanı bu kararı öğrenmene yardımcı olur.',
+        ],
+      },
     ],
   },
   en: {

@@ -64,6 +64,11 @@ final class SeoMeta
             'Tavla nasıl oynanır? Kurallar, açılış dizilimi, zar ve pul hareketleriyle yeni başlayanlar için tavla rehberi.',
             'Tavla Nasıl Oynanır?',
         ],
+        'tavla-rehberi' => [
+            'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
+            'Tavla rehberi: açılış stratejileri, küp (doubling cube) kullanımı, kazanma taktikleri, mars ve backgammon puanlaması. Oyununu geliştirecek özgün yazılar.',
+            'Tavla Rehberi',
+        ],
         'sans-carki' => [
             'Şans Çarkı | TavlaTv',
             'Şans Çarkını çevir, ödüller kazan. TavlaTv eğlence oyunlarından Şans Çarkı.',
@@ -172,6 +177,34 @@ final class SeoMeta
     ];
 
     /**
+     * Tavla Rehberi blog yazıları: slug => [title, desc, h1].
+     * Kaynak (tek doğru): src/data/guides.ts — değerler birebir SENKRON tutulmalıdır.
+     * /tavla-rehberi/<slug> yolu için per-article meta + BlogPosting JSON-LD enjekte edilir.
+     */
+    private const GUIDES = [
+        'tavla-acilis-stratejileri' => [
+            'Tavla Açılış Stratejileri: En İyi İlk Hamleler | TavlaTv',
+            'Tavla açılış stratejileri: her zar atışı için en iyi ilk hamleler, 5-nokta ve bar-nokta yapma, blot bırakma riskleri ve yeni başlayanlar için pratik ipuçları.',
+            'Tavla Açılış Stratejileri: En İyi İlk Hamleler',
+        ],
+        'tavla-kupu-doubling-cube' => [
+            'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
+            'Tavla küpü (doubling cube) nedir, nasıl kullanılır? Katlama, kabul (take) ve pas (drop) kararları, Crawford kuralı ve doğru zamanlama ile küp stratejisi rehberi.',
+            'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır?',
+        ],
+        'tavla-kazanma-taktikleri' => [
+            'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
+            'Tavla kazanma taktikleri: blot bırakmama, kilit ve prime kurma, pip sayımı, yarış ve tutma oyunu ile küp kullanımı. Oyununu geliştirecek pratik ipuçları.',
+            'Tavla Kazanma Taktikleri ve İpuçları',
+        ],
+        'mars-gammon-backgammon-nedir' => [
+            'Mars (Gammon) ve Backgammon Nedir? | TavlaTv',
+            'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
+            'Mars (Gammon) ve Backgammon Nedir?',
+        ],
+    ];
+
+    /**
      * index.html içeriğini, istenen yola göre per-route SEO etiketleriyle döndür.
      * Slug ne statik META'da ne de dinamik haber olarak eşleşirse içerik DEĞİŞMEDEN
      * döner (homepage/bilinmeyen = mevcut davranış).
@@ -194,6 +227,17 @@ final class SeoMeta
         //    makalenin kendi başlığı + özeti + KAPAK GÖRSELİ görünsün diye per-article
         //    og/twitter etiketlerini enjekte et. Slug, frontend slugify(title) ile aynı.
         $parts = explode('/', $slug);
+
+        // 2b) Tavla Rehberi yazısı: /tavla-rehberi/<slug>. Per-article title/desc/h1 +
+        //     BlogPosting JSON-LD (yalnız gerçek/doğru alanlarla). guides.ts ile senkron.
+        if (count($parts) === 2 && $parts[0] === 'tavla-rehberi' && isset(self::GUIDES[$parts[1]])) {
+            [$title, $desc, $h1] = self::GUIDES[$parts[1]];
+            $url = self::BASE . $slug;
+            $html = self::apply($html, $title, $desc, $h1, $url, null, 'article');
+
+            return self::injectJsonLd($html, $h1, $desc, $url);
+        }
+
         if (count($parts) === 2 && $parts[0] === 'haberler') {
             $article = self::findNews($parts[1]);
             if ($article) {
@@ -267,6 +311,34 @@ final class SeoMeta
         }
 
         return $html;
+    }
+
+    /**
+     * Tavla Rehberi yazısı için BlogPosting JSON-LD'yi </head>'den hemen önce enjekte eder.
+     * Yalnız kesin/doğru alanlar kullanılır (headline, description, url, inLanguage, author,
+     * publisher, mainEntityOfPage). Tarih uydurulmaz. </head> yoksa HTML dokunulmaz döner.
+     */
+    private static function injectJsonLd(string $html, string $h1, string $desc, string $url): string
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BlogPosting',
+            'headline' => $h1,
+            'description' => $desc,
+            'url' => $url,
+            'inLanguage' => 'tr',
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+            'author' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
+            'publisher' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
+        ];
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $html;
+        }
+        $script = '<script type="application/ld+json">' . $json . '</script>';
+        $out = preg_replace_callback('~</head>~i', fn () => $script . '</head>', $html, 1);
+
+        return $out ?? $html;
     }
 
     /** Yayındaki haberler içinde slug'ı frontend slugify(title) ile eşleşeni bul. */
