@@ -47,7 +47,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 **Category:** Wallet / accounting
 **Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, spin ve mağaza controller/service yolları
 **Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
-**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor. Zar slotu için kalıcı receipt ve `Idempotency-Key` desteği eklendi; production migration/deploy ve tekrar denetimi bekleniyor.
+**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor. Zar slotu ve Lucky Wheel için kalıcı receipt/`Idempotency-Key` desteği eklendi; production migration/deploy ve tekrar denetimi bekleniyor.
 Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-references` komutu mevcut satırları değiştirmeden eksik referansları tür bazında sayar; production çıktısı henüz alınmadı.
 Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `daily_reward=16`, `lucky_wheel_spin=11`, `dice_slot_payout=12`, `shop_purchase=2`. Bu tarihsel satırlar değiştirilmedi.
 **Attack scenario:** `shop_purchase`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.

@@ -27,7 +27,9 @@ class LuckyWheelController extends Controller
     // POST /lucky-wheel/spin — güvenli çevirme. Sonuç sunucuda seçilir.
     public function spin(Request $request)
     {
-        $result = $this->wheel->spin($request->user());
+        $request->validate(['idempotency_key' => ['nullable', 'string', 'max:120']]);
+        $key = $request->input('idempotency_key') ?: $request->header('Idempotency-Key');
+        $result = $this->wheel->spin($request->user(), $key);
 
         if (isset($result['error'])) {
             return $this->mapError($result);

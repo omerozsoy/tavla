@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 class LuckyWheelSpin extends Model
 {
     protected $fillable = [
-        'user_id', 'reward_id', 'reward_snapshot', 'spin_type',
+        'user_id', 'idempotency_key', 'reward_id', 'reward_snapshot', 'spin_type',
     ];
 
     protected function casts(): array
