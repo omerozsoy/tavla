@@ -12,12 +12,9 @@ class SecurityHeadersTest extends TestCase
             ->assertHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
     }
 
-    public function test_coop_allows_popups_for_google_sign_in(): void
-    {
-        // GSI popup/iframe window.postMessage'i bloklanmasin diye same-origin-allow-popups sart.
-        $this->get('/up')
-            ->assertHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
-    }
+    // NOT: COOP artik middleware'de DEGIL, nginx additional directives'te tek kaynaktan verilir
+    // (coklu katman COOP'u tarayicida gecersiz kilip GSI postMessage uyarisi doguruyordu). Bu
+    // yuzden COOP birim testi kaldirildi; dogrulama canli 'curl -D' ile yapilir.
 
     public function test_csp_report_only_is_opt_in(): void
     {
