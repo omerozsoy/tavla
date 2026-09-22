@@ -3887,6 +3887,17 @@ button[aria-disabled='true'],
 .seo-hero-cta .seo-cta-btn:active {
   transform: scale(0.97);
 }
+/* KRITIK: CTA butonu .info-rich icindeyken satir-ici link kurali
+   (.info-rich.rich a { color: var(--accent) } = KIREMIT) butonun metnini kiremit
+   yapiyordu -> kiremit ZEMIN uzerinde kiremit METIN = GORUNMEZ (bottom CTA bug'i).
+   Buton foreground'unu (cream) zorla; alt-cizgi/underline yok. Specificity 0,2,1 +
+   dosyada SONRA geldigi icin temel .info-rich.rich a (0,2,1) kuralini yener. */
+.seo-landing-body-wrap a.seo-cta-btn,
+.seo-content-home a.seo-cta-btn {
+  color: #f8f1e7;
+  text-decoration: none;
+  border-bottom: none;
+}
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
   .event-map-col {
@@ -25303,7 +25314,7 @@ select:-webkit-autofill {
   flex: 1 1 auto;
   min-height: 0;
   display: grid;
-  grid-template-columns: 288px 1fr 340px;
+  grid-template-columns: 288px 1fr 380px;
 }
 /* ---- SOL: hamle listesi ---- */
 .mrv-list {
