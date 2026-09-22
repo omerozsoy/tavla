@@ -16,8 +16,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 | # | Kalan iş | Durum | Eksik kanıt |
 |---:|---|---|---|
-| 1 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zinciri production smoke testiyle doğrulanmalı. |
-| 2 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
+| 1 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
 
 ## KALAN BULGULAR
 
@@ -25,8 +24,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ### PHASE 1 — Remaining invariant evidence
 
-1. Timeout/AFK production smoke testini tamamla.
-2. Immutable ledger için DB koruması ve reconciliation alarmını ekle.
+1. Immutable ledger için DB koruması ve reconciliation alarmını ekle.
 
 ### PHASE 2 — Web hardening
 
