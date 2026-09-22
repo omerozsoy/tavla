@@ -5,8 +5,12 @@ return [
 
     'allowed_methods' => ['*'],
 
-    // Token tabanli auth kullaniyoruz (cerez degil) -> tum origin'lere izin verilebilir.
-    'allowed_origins' => ['*'],
+    // Production'da wildcard yerine yalnızca izinli frontend origin'leri kullan.
+    // Virgülle ayrılmış liste: CORS_ALLOWED_ORIGINS=https://www.tavlatv.com,http://localhost:5173
+    'allowed_origins' => array_values(array_filter(array_map(
+        static fn (string $origin): string => trim($origin),
+        explode(',', (string) env('CORS_ALLOWED_ORIGINS', 'https://www.tavlatv.com'))
+    ))),
 
     'allowed_origins_patterns' => [],
 

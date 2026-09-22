@@ -105,11 +105,11 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Category:** CORS / browser security
 **Affected file(s):** `backend/config/cors.php`, reverse proxy header configuration
 **Affected endpoint/event:** API yanıtları
-**Description:** Production API smoke yanıtında `Access-Control-Allow-Origin: *` görüldü. Sanctum credentials kapalı olsa da wildcard allowlist API’nin yanlışlıkla public cross-origin tüketilmesine ve ileride credentials açılırsa güvenlik sınırının bozulmasına neden olabilir.
+**Description:** Production API smoke yanıtında `Access-Control-Allow-Origin: *` görüldü. CORS allowlist düzeltmesi `CORS_ALLOWED_ORIGINS` env değişkenine taşındı; production deploy ve header doğrulaması bekleniyor.
 **Attack scenario:** Kötü niyetli bir origin API yanıtlarını cross-origin çağırmayı deneyebilir; ileride credential policy değişirse kimlikli erişim riski oluşur.
 **Root cause:** CORS allowlist production origin’leriyle daraltılmamış.
 **Potential impact:** Cross-origin bilgi ifşası ve yanlış yapılandırma halinde kimlikli API erişimi.
-**Recommended fix:** `allowed_origins` değerini yalnızca gerekli TavlaTV origin’leriyle sınırla; `supports_credentials=false` kararını koru; preflight regresyon testi ekle.
+**Recommended fix:** Production `.env` içine yalnız `https://www.tavlatv.com` yaz, `config:cache` çalıştır ve izinli/izinsiz origin preflight testini uygula; `supports_credentials=false` kararını koru.
 **Database protection required?:** Hayır.
 **Regression test required?:** Evet; izinli ve izinsiz origin ile.
 
