@@ -94,6 +94,38 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Tavla Rehberi blog -->
+  <url>
+    <loc>https://www.tavlatv.com/tavla-rehberi</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-acilis-stratejileri</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-kupu-doubling-cube</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/tavla-rehberi/tavla-kazanma-taktikleri</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/tavla-rehberi/mars-gammon-backgammon-nedir</loc>
+    <lastmod>2026-09-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- Analiz araclari -->
   <url>
     <loc>https://www.tavlatv.com/pozisyon-analizi</loc>

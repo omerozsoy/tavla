@@ -3898,6 +3898,60 @@ button[aria-disabled='true'],
   text-decoration: none;
   border-bottom: none;
 }
+
+/* ---- Tavla Rehberi (blog) hub kartlari ---- */
+.guide-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 16px;
+  margin: 1.6em 0 0.4em;
+}
+/* Kart = tiklanabilir link; satir-ici link renk/altcizgi kuralini kart icin sifirla. */
+.seo-landing-body-wrap a.guide-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card, #1b1712) 70%, transparent);
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+  transition: transform 160ms var(--seo-ease), box-shadow 200ms var(--seo-ease), border-color 160ms var(--seo-ease);
+}
+@media (hover: hover) and (pointer: fine) {
+  .seo-landing-body-wrap a.guide-card:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--seo-accent) 55%, var(--border));
+    box-shadow: 0 14px 30px -18px color-mix(in srgb, var(--seo-accent) 80%, transparent);
+  }
+}
+.seo-landing-body-wrap a.guide-card:active {
+  transform: scale(0.985);
+}
+.guide-card-title {
+  margin: 0;
+  font-size: 1.12rem;
+  line-height: 1.3;
+}
+.guide-card-excerpt {
+  margin: 0;
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+.guide-card-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: auto;
+  font-weight: 600;
+  color: var(--seo-accent, var(--accent));
+}
+.guide-back {
+  margin-top: 1.4em;
+  font-weight: 600;
+}
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
   .event-map-col {

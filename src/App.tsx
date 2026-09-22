@@ -156,6 +156,7 @@ import QuizPlay from './ui/QuizPlay'
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
+const GuideView = lazy(() => import('./ui/GuideView'))
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
@@ -194,6 +195,11 @@ const SEO_TITLES: Record<string, string> = {
   'haberler': 'Tavla Haberleri | TavlaTv',
   'tavla-magazin': 'Tavla Magazin | TavlaTv',
   'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
+  'tavla-rehberi': 'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
+  'tavla-rehberi/tavla-acilis-stratejileri': 'Tavla Açılış Stratejileri: En İyi İlk Hamleler | TavlaTv',
+  'tavla-rehberi/tavla-kupu-doubling-cube': 'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
+  'tavla-rehberi/tavla-kazanma-taktikleri': 'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
+  'tavla-rehberi/mars-gammon-backgammon-nedir': 'Mars (Gammon) ve Backgammon Nedir? | TavlaTv',
   'pozisyon-analizi': 'Tavla Pozisyon Analizi | TavlaTv',
   'mat-analiz': 'Tavla Maç Analizi (.mat) | TavlaTv',
   'mac-analizleri': 'Maç Analizlerim | TavlaTv',
@@ -239,6 +245,16 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla magazin: röportajlar, analizler ve tavla kültüründen içerikler.',
   'nasil-oynanir':
     'Tavla nasıl oynanır? Kurallar, açılış dizilimi, zar ve pul hareketleriyle yeni başlayanlar için tavla rehberi.',
+  'tavla-rehberi':
+    'Tavla rehberi: açılış stratejileri, küp (doubling cube) kullanımı, kazanma taktikleri, mars ve backgammon puanlaması. Oyununu geliştirecek özgün yazılar.',
+  'tavla-rehberi/tavla-acilis-stratejileri':
+    'Tavla açılış stratejileri: her zar atışı için en iyi ilk hamleler, 5-nokta ve bar-nokta yapma, blot bırakma riskleri ve yeni başlayanlar için pratik ipuçları.',
+  'tavla-rehberi/tavla-kupu-doubling-cube':
+    'Tavla küpü (doubling cube) nedir, nasıl kullanılır? Katlama, kabul (take) ve pas (drop) kararları, Crawford kuralı ve doğru zamanlama ile küp stratejisi rehberi.',
+  'tavla-rehberi/tavla-kazanma-taktikleri':
+    'Tavla kazanma taktikleri: blot bırakmama, kilit ve prime kurma, pip sayımı, yarış ve tutma oyunu ile küp kullanımı. Oyununu geliştirecek pratik ipuçları.',
+  'tavla-rehberi/mars-gammon-backgammon-nedir':
+    'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
   'pozisyon-analizi':
     'Tavla pozisyonunu analiz et: TavlaTV Motoru ve sinir ağı ile en iyi hamle, kazanma yüzdesi ve equity.',
   'mat-analiz':
@@ -751,6 +767,8 @@ export default function App() {
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [onlineTavlaOpen, setOnlineTavlaOpen] = useState(false) // SEO landing: /online-tavla
   const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
+  const [guideOpen, setGuideOpen] = useState(false) // Tavla Rehberi blog: /tavla-rehberi
+  const [guideSlug, setGuideSlug] = useState<string | null>(null) // /tavla-rehberi/<slug> -> yazı
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
@@ -983,6 +1001,8 @@ export default function App() {
                                         ? 'online-tavla'
                                       : tavlaOynaOpen
                                         ? 'tavla-oyna'
+                                      : guideOpen
+                                        ? (guideSlug ? 'tavla-rehberi/' + guideSlug : 'tavla-rehberi')
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
@@ -1258,6 +1278,10 @@ export default function App() {
           break
         case 'tavla-oyna': // SEO landing sayfasi (taranabilir icerik)
           setTavlaOynaOpen(true)
+          break
+        case 'tavla-rehberi': // Tavla Rehberi blog: hub (/tavla-rehberi) veya yazi (/tavla-rehberi/<slug>)
+          setGuideOpen(true)
+          setGuideSlug(seg[1] || null)
           break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
@@ -7237,6 +7261,8 @@ export default function App() {
     setFriendSetupOpen(false)
     setOnlineTavlaOpen(false)
     setTavlaOynaOpen(false)
+    setGuideOpen(false)
+    setGuideSlug(null)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -8404,6 +8430,54 @@ export default function App() {
                   setHome(true)
                 }}
               />
+            </div>
+          </main>
+          <Footer columns={footerColumns} />
+        </div>
+        {menuPages}
+        {authModal}
+        {menuOverlays}
+        {bugReport}
+      </>
+    )
+  }
+
+  // Tavla Rehberi blog (/tavla-rehberi, /tavla-rehberi/<slug>): SEO landing deseniyle ayni
+  // page-host akisi; sol menu gorunur kalir. Kapatinca home'a doner. (haberler'den bagimsiz.)
+  if (guideOpen) {
+    return (
+      <>
+        {mobileNav}
+        <div className="app lobby">
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            groupSig={groupCollapseSig}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            badges={{ messages: dmUnread }}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <Suspense fallback={null}>
+                <GuideView
+                  slug={guideSlug}
+                  onClose={() => {
+                    setGuideOpen(false)
+                    setGuideSlug(null)
+                    setHome(true)
+                  }}
+                  onOpen={(s) => setGuideSlug(s)}
+                />
+              </Suspense>
             </div>
           </main>
           <Footer columns={footerColumns} />
