@@ -61,7 +61,6 @@ export const TOURNAMENT_RULES: RuleGroup[] = [
           'Intermediate, Advanced → Birinci tur maçları maksimum uzunluğu 7 veya 9 oyun.',
           'Championship → Birinci tur maçları maksimum uzunluğu 11 oyun.',
           'Master → Birinci tur maçları minimum uzunluğu 13 oyun.',
-          '(Bkz. Yorumlar)',
         ],
       },
       {
@@ -94,7 +93,6 @@ export const TOURNAMENT_RULES: RuleGroup[] = [
           '1. Birinci günün ana kademe mağlupları, elle çekilen rastgele kura ile ve gerekli sayıda bye ataması yapılarak Eşleşme Tablosu’nun üst yarısına yazılırlar,',
           '2. İkinci günün ana kademe mağlupları, ödül kazanmış olanlar hariç tutularak Eşleşme Tablosu’nun alt yarısında ve turlar ilerledikçe ileri noktalarda olmak üzere kendilerine yer bulurlar,',
           '3. İlerleyen Teselli Kademesinin final maçı, Eşleşme Tablosu’nun iki yarısının (alt ve üst) galipleri arasında oynanır. İlerleyen Teselli ve Son Şans kademelerinin standart formatları, turların rastgele eşleşmelerle ilerlemesini kendiliğinden sağlayacaktır.',
-          '(Bkz. Yorumlar)',
         ],
       },
     ],
@@ -331,22 +329,6 @@ export const TOURNAMENT_RULES: RuleGroup[] = [
         ],
       },
     ],
-  },
-]
-
-// "Yorumlar" bölümü (belirli kurallara açıklayıcı notlar).
-export const RULE_COMMENTS: { ref: string; text: string }[] = [
-  {
-    ref: 'Kural 1.1',
-    text: 'Bu kuralın ABD versiyonu, direktöre çok büyük ve sınırsız bir yetki tanımaktadır ki; bu durum genel kuralların geçerliliğini ortadan kaldırmaktadır. Bu şekilde direktör bir diktatör haline gelebilmektedir.',
-  },
-  {
-    ref: 'Kural 1.5',
-    text: 'Eski eksik sistem, direktörün arkadaşlarını veya akrabalarını alt kategorilerden turnuvaya dahil etmesini olası kılmaktadır. Yeni sistem, ilk defa 1993 Avrupa Şampiyonası, Menton’da denenmiş ve başarılı olduğu görülmüştür. Üst seviye oyuncuların alt kategorilerde düşük maç sayılarıyla oynamaları hoşgörülmektedir, az paraya iyi bir ders ortaya çıkacaktır. Örneğin birinci tur maçları 9 veya daha fazla oyundan meydana gelen bir kategoriye Beginner demek, gerçek Beginner’lar için tam bir tuzak olacaktır.',
-  },
-  {
-    ref: 'Kural 1.9',
-    text: 'Katılımcı isimlerine göre yapılan kura çekimleri, kura sırasında arkadaş veya akrabalara bye eşleşmesi verilmesi şeklinde bir hile durumunun ortaya çıkmasına sebebiyet verebilir.',
   },
 ]
 
