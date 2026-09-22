@@ -181,7 +181,8 @@ class ShopController extends Controller
             if ((($u->coins ?? 0) - ($u->coins_reserved ?? 0)) < $price) {
                 return ['insufficient' => true, 'coins' => $u->coins ?? 0];
             }
-            app(\App\Services\WalletService::class)->debit($u, $price, 'shop_purchase');
+            $purchaseKey = 'shop_purchase:'.$u->id.':'.$id;
+            app(\App\Services\WalletService::class)->debit($u, $price, 'shop_purchase', null, null, $purchaseKey);
             $unlocks[] = $id;
             $u->unlocks = $unlocks;
             $u->save();
