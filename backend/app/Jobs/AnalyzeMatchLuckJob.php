@@ -252,6 +252,28 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         if (count($p1) + count($p2) < 2) {
             return;
         }
+        // BOZUK/EKSİK TARİHSEL KAYIT KARANTİNASI: game_logs TEK TARAFLI ise (bir renk için HİÇBİR
+        // olay yok — ör. eski seq-reset fantom oyunları, rakip slotunun hiç yazılmadığı kayıtlar)
+        // İKİ oyunculu luck hesaplanamaz. gnubg 'gnubg' lehçesinde sonuçsuz ara oyunu TOLERE ettiği
+        // için (540caa32) bu bozuk girdi bile "geçerli görünen" bir .mat üretir; gnubg'yi boşuna
+        // çağırıp null bırakmak (kayıt kuyruğa tekrar girince aynı hatayı üretir) yerine kaydı
+        // karantinaya al. Meşru maçlarda İKİ renk de olay yazar (bitiren hamle 'end' olarak gelse
+        // bile o renk mevcuttur; rakip raporlamasa da hamleleri diğer slota reconstruct edilir)
+        // -> bu durumlar ETKİLENMEZ. NOT: olay TÜRÜ (hamle/end/cube) DEĞİL, rengin VARLIĞI kriterdir.
+        $hasColor = function (string $color) use ($p1, $p2): bool {
+            foreach (array_merge($p1, $p2) as $e) {
+                if (($e['p'] ?? null) === $color) {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+        if (! $hasColor('W') || ! $hasColor('B')) {
+            $this->markUnavailable($mr, 'game_logs:one-sided');
+
+            return;
+        }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
         try {
             // KÖK FIX (cli/queue 500 "MAT export durduruldu ... sonuçsuz"): bu yol GNUBG-NATIVE luck
