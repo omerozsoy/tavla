@@ -7479,6 +7479,18 @@ export default function App() {
         onClick: pageHandlers[pg.key]!,
       })),
   }))
+  // SEO Rehber kolonu: içerik/landing sayfalarına iç link (tarama + keşif). goPage ile lobi
+  // bağlamında açılır (info/legal kolonlarıyla aynı desen). Bkz [[seo-online-tavla-tavla-oyna-landing]].
+  footerColumns.push({
+    titleKey: 'foot.guide',
+    items: [
+      { key: 'seo-online-tavla', labelKey: '', label: 'Online Tavla Oyna', onClick: () => goPage(() => setOnlineTavlaOpen(true)) },
+      { key: 'seo-tavla-oyna', labelKey: '', label: 'Tavla Oyna', onClick: () => goPage(() => setTavlaOynaOpen(true)) },
+      { key: 'seo-nasil-oynanir', labelKey: '', label: 'Nasıl Oynanır', onClick: () => goPage(() => setRulesOpen(true)) },
+      { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', onClick: () => goPage(() => { setGuideOpen(true); setGuideSlug(null) }) },
+      { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
+    ],
+  })
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
   footerColumns.push({
     titleKey: 'menu.info',

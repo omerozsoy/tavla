@@ -13,6 +13,13 @@ AddType application/wasm .wasm
     <FilesMatch "\.(js|css|woff2?|wasm)$">
         Header set Cache-Control "public, max-age=31536000, immutable"
     </FilesMatch>
+
+    # Google Sign-In (GSI): accounts.google.com popup/iframe credential'i window.postMessage
+    # ile bu sayfaya geri gonderir. COOP olmadan tarayici "would block the window.postMessage
+    # call" uyarisi verir. 'same-origin-allow-popups' popup'in opener'a mesaj atmasina izin verir.
+    # Kok '/' Apache tarafindan statik index.html olarak dogrudan servis edildiginden (Laravel
+    # middleware calismaz) bu basligi burada da set etmek sart.
+    Header set Cross-Origin-Opener-Policy "same-origin-allow-popups"
 </IfModule>
 
 # Kok istegi (/) once React index.html'i dogrudan servis etsin (Laravel kurulmadan da acilir).
