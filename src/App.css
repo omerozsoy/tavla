@@ -25624,7 +25624,8 @@ select:-webkit-autofill {
 .mrv-cand {
   display: grid;
   /* #, hamle, equity (mutlak), kayıp (en iyiye göre) — iki sağ sütun */
-  grid-template-columns: 24px 1fr auto auto;
+  /* #, Hamle (sola yaslı), Eşitlik + Kayıp -> kalan alanı EŞİT paylaşır (1fr 1fr). */
+  grid-template-columns: 24px 1.4fr 1fr 1fr;
   align-items: center;
   gap: 8px;
 }
@@ -25709,6 +25710,37 @@ select:-webkit-autofill {
 }
 .mrv-c-loss {
   color: color-mix(in srgb, #d9534f 78%, var(--muted));
+}
+/* ---- XG-tarzı MAÇ ÖZETİ (sağ panel alt boş alan) ---- */
+.mrv-xgsum {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 0.82rem;
+}
+.mrv-xg-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 8px;
+  padding: 3px 0;
+  font-variant-numeric: tabular-nums;
+}
+.mrv-xg-row span:not(.mrv-xg-l) {
+  text-align: right;
+}
+.mrv-xg-l {
+  color: var(--muted);
+}
+.mrv-xg-head {
+  font-size: 0.74rem;
+  color: var(--muted);
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 3px;
+}
+.mrv-xg-head span:not(.mrv-xg-l) {
+  color: var(--text);
+  font-weight: 600;
 }
 /* ---- Küp analizi paneli (sağ sütun, küp kararında) ---- */
 .mrv-cube {
