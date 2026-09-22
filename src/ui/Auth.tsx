@@ -20,6 +20,36 @@ function isEmail(v: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
 }
 
+// Google Identity Services keeps its initialization state globally. Auth can be
+// mounted more than once during route/profile transitions, so initialize it
+// once and always dispatch credentials to the latest mounted Auth instance.
+let gsiInitialized = false
+let gsiCredentialHandler: ((resp: { credential: string }) => void) | null = null
+let gsiScriptPromise: Promise<void> | null = null
+
+function loadGsiScript(): Promise<void> {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if ((window as unknown as { google?: any }).google?.accounts?.id) return Promise.resolve()
+  if (gsiScriptPromise) return gsiScriptPromise
+
+  gsiScriptPromise = new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>('script[src="https://accounts.google.com/gsi/client"]')
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true })
+      existing.addEventListener('error', () => reject(new Error('Google Identity Services failed to load')), { once: true })
+      return
+    }
+    const script = document.createElement('script')
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = () => resolve()
+    script.onerror = () => reject(new Error('Google Identity Services failed to load'))
+    document.body.appendChild(script)
+  })
+  return gsiScriptPromise
+}
+
 // Native <select> (uzun ulke listesinde native UX korunur) shadcn Input ile AYNI gorunum.
 // Tek kaynak: Input ile ayni yukseklik/kenar/radius/odak halkasi.
 const FIELD_CLS =
@@ -152,7 +182,14 @@ export default function Auth({
     const render = (): boolean => {
       const g = (window as unknown as { google?: any }).google
       if (!g?.accounts?.id || !googleBtnRef.current || cancelled) return false
-      g.accounts.id.initialize({ client_id: api.GOOGLE_CLIENT_ID, callback: handleCredential })
+      gsiCredentialHandler = handleCredential
+      if (!gsiInitialized) {
+        g.accounts.id.initialize({
+          client_id: api.GOOGLE_CLIENT_ID,
+          callback: (resp: { credential: string }) => gsiCredentialHandler?.(resp),
+        })
+        gsiInitialized = true
+      }
       googleBtnRef.current.innerHTML = ''
       // Notr 'outline' tema: sitenin sicak kiremit/krem paletiyle uyumlu (parlak mavi pill
       // paleti bozuyordu). Beyaz zemin + ince kenar, kremsi kartta temiz durur.
@@ -166,14 +203,10 @@ export default function Auth({
       return true
     }
     if (render()) return
-    const s = document.createElement('script')
-    s.src = 'https://accounts.google.com/gsi/client'
-    s.async = true
-    s.defer = true
-    s.onload = () => render()
-    document.body.appendChild(s)
+    loadGsiScript().then(() => render()).catch(() => {})
     return () => {
       cancelled = true
+      if (gsiCredentialHandler === handleCredential) gsiCredentialHandler = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editing])
