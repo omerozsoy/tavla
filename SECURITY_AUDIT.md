@@ -8,7 +8,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 |---|---:|
 | CRITICAL | 0 |
 | HIGH | 3 |
-| MEDIUM | 3 |
+| MEDIUM | 2 |
 | LOW | 0 |
 | UNKNOWN | 1 |
 
@@ -98,20 +98,6 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Recommended fix:** Tüm frontend/panel link üretimini POST exchange’e taşı; deprecation süresinden sonra GET’i kaldır; one-time nonce kullanımını koru.
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
-
-### SEC-WEB-002 — API wildcard CORS header’ı
-
-**Severity:** MEDIUM
-**Category:** CORS / browser security
-**Affected file(s):** `backend/config/cors.php`, reverse proxy header configuration
-**Affected endpoint/event:** API yanıtları
-**Description:** Production API smoke yanıtında `Access-Control-Allow-Origin: *` görüldü. CORS allowlist düzeltmesi `CORS_ALLOWED_ORIGINS` env değişkenine taşındı; production deploy ve header doğrulaması bekleniyor.
-**Attack scenario:** Kötü niyetli bir origin API yanıtlarını cross-origin çağırmayı deneyebilir; ileride credential policy değişirse kimlikli erişim riski oluşur.
-**Root cause:** CORS allowlist production origin’leriyle daraltılmamış.
-**Potential impact:** Cross-origin bilgi ifşası ve yanlış yapılandırma halinde kimlikli API erişimi.
-**Recommended fix:** Production `.env` içine yalnız `https://www.tavlatv.com` yaz, `config:cache` çalıştır ve izinli/izinsiz origin preflight testini uygula; `supports_credentials=false` kararını koru.
-**Database protection required?:** Hayır.
-**Regression test required?:** Evet; izinli ve izinsiz origin ile.
 
 ## SIRALI KALAN FIX PLANI
 
