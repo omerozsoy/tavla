@@ -198,36 +198,10 @@ class AuthController extends Controller
     {
         // Kullanici kendi hesabini silebilir (KVKK/GDPR: veri silme hakki).
         // Endpoint auth:sanctum altinda; her zaman istegi yapan kullaniciya isler.
-        $user = $request->user();
-        \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
-            // Kullanici bir kulubun SAHIBIYSE: clubs.owner_id cascadeOnDelete oldugu icin
-            // hesap silinince tum kulup (ve cascade ile tum uyeleri) yok olurdu -> masum
-            // uyeler kulubunu kaybederdi. leave() ile ayni nazik devir: en eski DIGER uyeye
-            // sahipligi ver, baska uye yoksa kulubu kapat.
-            $myMem = \App\Models\ClubMember::where('user_id', $user->id)->first();
-            foreach (\App\Models\Club::where('owner_id', $user->id)->get() as $club) {
-                $next = \App\Models\ClubMember::where('club_id', $club->id)
-                    ->where('user_id', '!=', $user->id)
-                    ->orderBy('created_at')
-                    ->first();
-                if ($next) {
-                    $next->update(['role' => 'owner']);
-                    $club->update(['owner_id' => $next->user_id]);
-                } else {
-                    $club->delete(); // baska uye yok -> kulup kapanir
-                }
-            }
-            // Uye oldugu kulup hala duruyorsa uye sayisini dusur (uyeligi cascade silinecek)
-            if ($myMem && \App\Models\Club::whereKey($myMem->club_id)->exists()) {
-                \App\Models\Club::whereKey($myMem->club_id)->decrement('members_count');
-            }
+        // Silme sozlesmesi (kulup nazik devir + notifications/tokens + cascade) TEK kaynaktan:
+        // UserEraser (PurgeTestAccounts CLI ve admin coklu-silme ile ayni).
+        \App\Support\UserEraser::erase($request->user());
 
-            // Not: blunders/match_results/clubs/club_members/friendships/payments FK'lari
-            // cascadeOnDelete -> otomatik silinir. FK'siz notifications elle temizlenir.
-            \App\Models\Notification::where('user_id', $user->id)->delete();
-            $user->tokens()->delete(); // tum oturum token'lari
-            $user->delete();
-        });
         return $this->ok();
     }
 

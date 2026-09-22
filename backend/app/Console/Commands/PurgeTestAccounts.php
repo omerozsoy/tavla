@@ -66,34 +66,14 @@ class PurgeTestAccounts extends Command
 
         $deleted = 0;
         foreach ($users as $u) {
-            DB::transaction(function () use ($u, &$deleted) {
-                $user = \App\Models\User::find($u->id);
-                if (! $user) {
-                    return;
-                }
-                // Kulup sahipligi nazik devir (deleteAccount ile ayni) — masum uyeler kulubunu kaybetmesin.
-                foreach (\App\Models\Club::where('owner_id', $user->id)->get() as $club) {
-                    $next = \App\Models\ClubMember::where('club_id', $club->id)
-                        ->where('user_id', '!=', $user->id)
-                        ->orderBy('created_at')
-                        ->first();
-                    if ($next) {
-                        $next->update(['role' => 'owner']);
-                        $club->update(['owner_id' => $next->user_id]);
-                    } else {
-                        $club->delete();
-                    }
-                }
-                $myMem = \App\Models\ClubMember::where('user_id', $user->id)->first();
-                if ($myMem && \App\Models\Club::whereKey($myMem->club_id)->exists()) {
-                    \App\Models\Club::whereKey($myMem->club_id)->decrement('members_count');
-                }
-                // FK'siz notifications elle; tokens; sonra kullanici (match_results/blunders cascade).
-                \App\Models\Notification::where('user_id', $user->id)->delete();
-                $user->tokens()->delete();
-                $user->delete();
-                $deleted++;
-            });
+            $user = \App\Models\User::find($u->id);
+            if (! $user) {
+                continue;
+            }
+            // Silme sozlesmesi (kulup nazik devir + notifications/tokens + cascade) TEK kaynaktan:
+            // UserEraser (deleteAccount ve admin coklu-silme ile ayni).
+            \App\Support\UserEraser::erase($user);
+            $deleted++;
         }
 
         $this->info("Silindi: {$deleted} test hesabi (iliskili mac/blunder kayitlari FK-cascade ile).");
