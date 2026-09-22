@@ -45,6 +45,7 @@ class AdminPanelProvider extends PanelProvider
             // İşler burada). Listelenmeyen grup varsa sona eklenir.
             ->navigationGroups([
                 'Güvenlik',
+                'İletişim', // turnuva organizasyonu / iletişim formu talepleri (İletişim Talepleri)
                 'Oyun',
                 'Finans',
                 'Mağaza',
