@@ -96,6 +96,41 @@
   color: var(--muted);
 }
 
+/* Turnuva organizasyonu servis sayfalari + /iletisim: STANDART sayfa formati.
+   Sola dayali (merkezli SEO hero DEGIL), title en tepede, KAPATMA (X) YOK.
+   .page-host scope'u specificity'yi .info-card/.register-card'in ustune cikarir. */
+.page-host .service-landing {
+  width: 100%;
+  max-width: 900px;
+  margin: 0; /* margin:auto YOK -> sola dayali */
+  padding: 22px clamp(16px, 3vw, 40px) 48px;
+}
+.service-landing .service-landing-head {
+  margin: 0 0 clamp(16px, 2.5vw, 24px);
+  padding: 0 0 clamp(14px, 2vw, 20px);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.service-landing .service-landing-title.info-title {
+  margin: 0 0 8px;
+  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+.service-landing .service-landing-sub {
+  margin: 0;
+  max-width: 640px;
+  font-size: clamp(1rem, 2vw, 1.1rem);
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--text, currentColor) 72%, transparent);
+}
+/* Govde: SEO landing'in merkezleme (max-width:760px; margin:auto) kuralini geri al */
+.service-landing .seo-landing-body-wrap .info-rich.rich {
+  max-width: none;
+  margin: 0;
+}
+
 /* /iletisim ust bilgi kartlari: e-posta / GSM / Instagram / YouTube */
 .contact-channels {
   display: grid;
