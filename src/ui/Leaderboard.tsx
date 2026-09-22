@@ -130,6 +130,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
         <span className="lb-name">
           <PlayerIdentity
+            userId={r.id}
             name={r.name}
             rating={r.rating}
             avatar={r.avatar}
@@ -343,7 +344,7 @@ export default function Leaderboard({ currentName, onClose }: Props) {
                       >
                         <span className="lb-rank">{medal(r.rank) || r.rank}</span>
                         <span className="lb-name">
-                          <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
+                          <PlayerIdentity userId={r.id} name={r.name} avatar={r.avatar} frame={r.frame} size={26} rankSize="sm" premium={r.premium} animated />
                         </span>
                         <span className="lb-flag">
                           <CountryFlag code={r.country} size={16} rounded={false} />

@@ -693,10 +693,12 @@ class RoomController extends Controller
 
         $list = $rooms->map(fn ($r) => [
             'code' => $r->code,
+            'p1_id' => $r->p1_user_id !== null ? (int) $r->p1_user_id : null, // top-3 rozeti için
             'p1_name' => $r->p1_name,
             'p1_rating' => $r->p1_rating,
             'p1_avatar' => $r->p1_avatar,
             'p1_premium' => $premiumMap[$r->p1_user_id] ?? false,
+            'p2_id' => $r->p2_user_id !== null ? (int) $r->p2_user_id : null,
             'p2_name' => $r->p2_name,
             'p2_rating' => $r->p2_rating,
             'p2_avatar' => $r->p2_avatar,

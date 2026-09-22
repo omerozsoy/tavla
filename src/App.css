@@ -14443,6 +14443,36 @@ button.acct-row-logout:hover:not(:disabled) {
 .player-id-name-flag {
   flex: 0 0 auto;
 }
+
+/* ---- Site geneli top-3 rozetleri (PR madalya + Rating kupa) ------------------
+   İsmin yanında; 1.=altın, 2.=gümüş, 3.=bronz. Renk yalnız ikonda (accent),
+   ada karışmaz. İkisi de top-3 ise yan yana. */
+.top-rank-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex: 0 0 auto;
+}
+.top-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  cursor: default;
+}
+/* Sıra rengi: altın/gümüş/bronz. currentColor -> Icon fill ikonu bunu alır. */
+.top-rank-badge[data-rank='1'] {
+  color: #e8b923;
+}
+.top-rank-badge[data-rank='2'] {
+  color: #9aa7b2;
+}
+.top-rank-badge[data-rank='3'] {
+  color: #b9772f;
+}
+/* Okunabilirlik: koyu temada madalya/kupa kenarına ince hâle. */
+.top-rank-badge > svg {
+  filter: drop-shadow(0 0 0.5px rgba(0, 0, 0, 0.35));
+}
 /* Altbaslik rutbe rozeti: kucuk + ince/kibar; renk yalniz hafif ikon/kod aksani */
 .player-id .rank-badge {
   gap: 4px;

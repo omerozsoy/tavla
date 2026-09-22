@@ -91,6 +91,7 @@ export default function Friends({ onInvite, onMessage, onClose, onTab }: Props) 
       aria-label={t('menu.viewProfile')}
     >
       <PlayerIdentity
+        userId={f.id}
         name={f.name}
         rating={f.rating}
         avatar={f.avatar}
