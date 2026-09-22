@@ -24,7 +24,7 @@ class AuthController extends Controller
             'province'   => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
-            'nickname'   => ['required', 'string', 'max:40', 'unique:users,nickname'],
+            'nickname'   => ['required', 'string', 'max:15', 'unique:users,nickname'],
             'email'      => ['required', 'email', 'max:120', 'unique:users,email'],
             'password'   => ['required', 'string', 'min:6', 'max:100'],
         ]);
@@ -133,12 +133,13 @@ class AuthController extends Controller
             if ($base === '') {
                 $base = 'oyuncu';
             }
-            $base = substr($base, 0, 30);
+            $base = substr($base, 0, 15); // takma ad sınırı = 15 (form + backend ile hizalı)
             $nick = $base;
             $i = 0;
             while (User::where('nickname', $nick)->exists()) {
                 $i++;
-                $nick = substr($base, 0, 26).$i;
+                // Çakışma eki eklenince de 15'i AŞMA: tabanı ek uzunluğu kadar kısalt.
+                $nick = substr($base, 0, max(1, 15 - strlen((string) $i))).$i;
             }
             // Ad/soyad: once given/family, yoksa tam adi bol
             $first = $p['given_name'] ?? '';
@@ -251,7 +252,7 @@ class AuthController extends Controller
             'province'   => ['nullable', 'string', 'max:80'],
             'avatar'     => ['nullable', 'string', 'max:300000'],
             'birth_date' => ['nullable', 'date'],
-            'nickname'   => ['required', 'string', 'max:40', Rule::unique('users', 'nickname')->ignore($user->id)],
+            'nickname'   => ['required', 'string', 'max:15', Rule::unique('users', 'nickname')->ignore($user->id)],
             'email'      => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
         // province kolonu (migration) henuz uygulanmamissa guncelleme patlamasin: atla.
