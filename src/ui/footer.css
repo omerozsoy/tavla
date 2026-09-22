@@ -74,9 +74,11 @@ a.foot-partner:hover {
 }
 .foot-cols {
   display: grid;
-  grid-template-columns: repeat(4, minmax(120px, 1fr));
-  gap: 24px;
-  flex: 2 1 560px;
+  /* 7 kolon TEK SATIRDA yan yana. flex-basis:100% -> foot-inner'da marka ÜSTTE,
+     kolonlar altında tam genişlikte tek sıra. minmax(0,1fr) dar kolonda taşmayı önler. */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 18px;
+  flex: 1 1 100%;
 }
 .foot-col-title {
   font-weight: 700;
@@ -114,12 +116,19 @@ a.foot-partner:hover {
   font-size: 0.82rem;
 }
 
+/* 7 kolon tek satır yalnız geniş ekranda; daralınca kademeli sar. */
+@media (max-width: 1024px) {
+  .foot-cols {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
 @media (max-width: 640px) {
   .foot-inner {
     gap: 24px;
   }
   .foot-cols {
-    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 20px;
     flex-basis: 100%;
   }
