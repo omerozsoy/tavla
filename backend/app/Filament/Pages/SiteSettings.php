@@ -43,8 +43,8 @@ class SiteSettings extends Page implements HasForms
             'reward_normal' => Setting::int('reward_normal', 25),
             'reward_premium' => Setting::int('reward_premium', 50),
             'commission_pct' => Setting::int('commission_pct', 5),
-            'pr_min_matches' => Setting::int('pr_min_matches', 10),
-            'pr_min_decisions' => Setting::int('pr_min_decisions', 200),
+            'pr_min_matches' => Setting::int('pr_min_matches', 5),
+            'pr_min_decisions' => Setting::int('pr_min_decisions', 100),
         ]);
     }
 

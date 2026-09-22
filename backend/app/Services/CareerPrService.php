@@ -109,11 +109,11 @@ class CareerPrService
     /** PR Sıralamasi minimum esikleri (admin: Site Ayarlari). */
     public static function minMatches(): int
     {
-        return Setting::int('pr_min_matches', 10);
+        return Setting::int('pr_min_matches', 5);
     }
 
     public static function minDecisions(): int
     {
-        return Setting::int('pr_min_decisions', 200);
+        return Setting::int('pr_min_decisions', 100);
     }
 }
