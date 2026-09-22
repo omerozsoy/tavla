@@ -319,8 +319,8 @@ const CHANNELS: { icon: IconName; label: string; value: string; href: string; ex
   {
     icon: 'youtube',
     label: 'YouTube',
-    value: 'youtube.com/tavlatv',
-    href: 'https://youtube.com/tavlatv',
+    value: 'youtube.com/@TavlaTV',
+    href: 'https://www.youtube.com/@TavlaTV',
     ext: true,
   },
 ]
