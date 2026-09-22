@@ -1600,6 +1600,22 @@ class RoomController extends Controller
         $room->clock = $clock;
     }
 
+    /**
+     * BOT REVEAL GRACE: bot turu sürüldükten SONRA çağrılır. Sıra/saat insana (p1) döndüyse ve saat
+     * çalışıyorsa, yeni segmentin started_at'ını MatchClock::BOT_REVEAL_GRACE kadar İLERİ iter.
+     * Böylece istemcinin botun hamlesini reveal/animasyonla gösterdiği (sonra oto-roll ettiği) süre
+     * insanın bankasından İŞLEMEZ ("sıra botta ama benim sürem azalıyor" kök fix). İnsan roll/karar
+     * verince started_at zaten gerçek now'a sıfırlanır -> sömürüye kapalı; kayıp bitmişse dokunmaz.
+     */
+    private function graceHumanAfterBot(Room $room): void
+    {
+        $clock = is_array($room->clock) ? $room->clock : [];
+        if (($clock['turn_slot'] ?? null) === 'p1' && empty($clock['end']) && ! empty($clock['running'])) {
+            $clock['started_at'] = (float) ($clock['started_at'] ?? microtime(true)) + MatchClock::BOT_REVEAL_GRACE;
+            $room->clock = $clock;
+        }
+    }
+
     // Istemciye donen canli saat goruntusu (beyaz/siyah/delay/aktif/AFK/kayip) veya null.
     private function clockView(Room $room): ?array
     {
@@ -2985,6 +3001,7 @@ class RoomController extends Controller
                         $room->server_version = (int) $room->server_version + 1;
                         // SAAT: bot küp teklif etti -> take/drop karar sırası (ve saat) insana geçsin.
                         $this->driveAuthoritativeClock($room, 'p2', microtime(true));
+                        $this->graceHumanAfterBot($room); // reveal süresini insana yazma
                         $room->save();
                         $turns[] = [
                             'rollState' => $state, // zar YOK -> applyBotTurn hamle reconstruct etmez
@@ -3042,6 +3059,7 @@ class RoomController extends Controller
                 // tahtada sıra insandayken BOT'un saati erirdi ("sıra bende ama bottan süre düşüyor").
                 // İnsan roll/move/cube'da olduğu gibi bot turu da saati sürmeli (simetri).
                 $this->driveAuthoritativeClock($room, 'p2', microtime(true));
+                $this->graceHumanAfterBot($room); // reveal süresini insana yazma (mobil "sürem azaldı" fix)
                 $room->save();
 
                 $turns[] = [
