@@ -155,6 +155,7 @@ import ContentView from './ui/ContentView'
 import QuizPlay from './ui/QuizPlay'
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
+import SeoContent from './ui/SeoContent'
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
@@ -178,6 +179,8 @@ const SITE_ORIGIN = 'https://www.tavlatv.com'
 const DEFAULT_DESC =
   'Ücretsiz online tavla oyna! Bedava tavla, arkadaşlarınla online tavla, yapay zekaya karşı güçlü tavla botu, sıralama (rating) ve maç modları. Kayıt gerektirmeden hemen bedava tavla oyna.'
 const SEO_TITLES: Record<string, string> = {
+  'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
+  'tavla-oyna': 'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
   'tek-oyun': 'Tek Oyun Tavla | TavlaTv',
   'yeni-oyun': 'Online Tavla Maçı Oyna | TavlaTv',
   'yz-ile-oyna': 'Yapay Zekâya Karşı Tavla Oyna | TavlaTv',
@@ -208,6 +211,10 @@ const SEO_TITLES: Record<string, string> = {
 // Rota bazli meta aciklamasi (og/twitter + <meta name=description>). Her sayfa BENZERSIZ
 // aciklama alir — soft-duplicate meta sorununu (tum sayfalar ayni description) kapatir.
 const SEO_DESCS: Record<string, string> = {
+  'online-tavla':
+    'Ücretsiz online tavla oyna! Gerçek rakiplere karşı canlı maçlar, güçlü yapay zekâ botu, turnuvalar ve maç analizi (PR). Kayıt gerektirmez, tarayıcıda hemen başla.',
+  'tavla-oyna':
+    'Bedava tavla oyna! Ücretsiz, kayıtsız ve tarayıcıda anında açılan tavla oyunu. Yapay zekâya karşı pratik yap, arkadaşınla veya gerçek rakiplerle online tavla oyna.',
   'tek-oyun':
     'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',
   'yeni-oyun':
@@ -742,6 +749,8 @@ export default function App() {
   // Ayar PROFİLDEN yapılır; burada yalnız okunur (Board'a geçilir).
   const [swapStones] = useSwapStones()
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
+  const [onlineTavlaOpen, setOnlineTavlaOpen] = useState(false) // SEO landing: /online-tavla
+  const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
@@ -970,6 +979,10 @@ export default function App() {
                                         ? 'basarimlar'
                                       : friendSetupOpen
                                         ? 'arkadasinla-oyna'
+                                      : onlineTavlaOpen
+                                        ? 'online-tavla'
+                                      : tavlaOynaOpen
+                                        ? 'tavla-oyna'
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
@@ -1239,6 +1252,12 @@ export default function App() {
           break
         case 'yeni-oyun':
           setSetup('online')
+          break
+        case 'online-tavla': // SEO landing sayfasi (taranabilir icerik)
+          setOnlineTavlaOpen(true)
+          break
+        case 'tavla-oyna': // SEO landing sayfasi (taranabilir icerik)
+          setTavlaOynaOpen(true)
           break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
@@ -7216,6 +7235,8 @@ export default function App() {
     setInfoOpen(false)
     setAchOpen(false)
     setFriendSetupOpen(false)
+    setOnlineTavlaOpen(false)
+    setTavlaOynaOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -8350,6 +8371,51 @@ export default function App() {
     )
   }
 
+  // SEO landing sayfalari (/online-tavla, /tavla-oyna): diger menu sayfalari gibi sol menu
+  // gorunur kalir, taranabilir icerik page-host icinde akis icinde acilir. Kapatinca home'a doner.
+  if (onlineTavlaOpen || tavlaOynaOpen) {
+    return (
+      <>
+        {mobileNav}
+        <div className="app lobby">
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            groupSig={groupCollapseSig}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            badges={{ messages: dmUnread }}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <SeoContent
+                variant={onlineTavlaOpen ? 'online-tavla' : 'tavla-oyna'}
+                onClose={() => {
+                  setOnlineTavlaOpen(false)
+                  setTavlaOynaOpen(false)
+                  setHome(true)
+                }}
+              />
+            </div>
+          </main>
+          <Footer columns={footerColumns} />
+        </div>
+        {menuPages}
+        {authModal}
+        {menuOverlays}
+        {bugReport}
+      </>
+    )
+  }
+
   // Pozisyon analiz modulu (tam ekran)
   // Lobi (ana menu): solda Yeni Oyun, ortasi bos. Akis burdan baslar.
   if (home) {
@@ -8532,6 +8598,8 @@ export default function App() {
               </div>
             </div>
             <AdStrip slot="bottom" />
+            {/* Taranabilir SEO icerik blogu (ana sayfa alti) — "online tavla"/"tavla oyna" */}
+            <SeoContent variant="home" />
             </>
             )}
           </main>

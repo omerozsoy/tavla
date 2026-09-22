@@ -113,6 +113,7 @@ Route::fallback(function (Request $request) {
 
     // Gecerli SPA ilk-segmentleri (src/App.tsx applyFromPath switch'i ile senkron tutulmali).
     static $valid = [
+        'online-tavla', 'tavla-oyna',
         'tek-oyun', 'yeni-oyun', 'yz-ile-oyna', 'yapay-zeka', 'arkadasinla-oyna',
         'online-turnuvalar', 'turnuvalar', 'lider-tablosu', 'rutbeler', 'arkadaslar', 'mesajlar',
         'sans-carki', 'zar-slotu', 'bahane-makinesi',
