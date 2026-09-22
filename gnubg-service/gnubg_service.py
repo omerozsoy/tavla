@@ -925,7 +925,10 @@ def _review_decision(pos_points, bar, off, turn, dice, played_steps, match_len, 
         return entry
     best_eq = cand[0].get("equity") or 0.0
     cands = []
-    for c in cand[:8]:
+    # TÜM legal hamleleri göster (eskiden [:8] ile kesiliyordu -> oynanan hamle blunder olup
+    # ilk 8'e girmeyince ranked listede HİÇ görünmüyordu). gnubg.hint() legal hamleleri
+    # sıralı döndürür; hepsini alalım ki oynanan hamle gerçek sırasında listelensin.
+    for c in cand:
         mv = c.get("move") or ""
         cands.append({
             "notation": mv,

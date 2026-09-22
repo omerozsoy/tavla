@@ -25384,6 +25384,11 @@ select:-webkit-autofill {
   font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
+/* Tüm hamleler listelenince (eski 8-limit kalktı) liste uzayabilir -> panel içinde kaydır. */
+.mrv-cands {
+  overflow-y: auto;
+  max-height: min(46vh, 460px);
+}
 .mrv-cands-head,
 .mrv-cand {
   display: grid;
