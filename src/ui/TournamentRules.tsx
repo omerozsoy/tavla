@@ -1,7 +1,7 @@
 /**
  * TournamentRules — WBF Uluslararası Turnuva Kuralları referans sayfası (/turnuva-kurallari).
  * emil-design-eng: referans-doküman düzeni — hero + içindekiler (anchor nav) + numaralı bölümler
- * + "Yorumlar" callout'ları + edisyon altbilgisi + CTA. SeoContent (.seo-*) tasarım diline uyumlu,
+ * + edisyon altbilgisi + CTA. SeoContent (.seo-*) tasarım diline uyumlu,
  * taranabilir (gerçek H2/H3/p). İç içindekiler smooth-scroll (.app.lobby scroller; reduced-motion guard).
  */
 import { Icon } from './Icon'
