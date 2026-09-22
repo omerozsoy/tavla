@@ -43,7 +43,9 @@ class MatchBackstop
         }
 
         $written = 0;
-        $ranked = $room->mode !== 'friendly';
+        // PUANLI KAPSAM: bot yukarida haric tutuldu; kalan TUM online insan-insan maclari
+        // (eslesme + arkadas daveti/kilic + turnuva) puanlidir. reportRating ile AYNI kural.
+        $ranked = true;
         $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0)
             ? StatsConfig::MATCH_TYPE_COIN
             : StatsConfig::MATCH_TYPE_MATCH;
