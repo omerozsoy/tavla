@@ -412,6 +412,22 @@ export default function MatReview({
                 </button>
               )
             })}
+            {/* OYNANAN HAMLE top-8'de değilse (blunder), listenin ALTINA ayrı satır olarak ekle ki
+                sağ panelde de "ne oynandı + ne kadar kaybettirdi" görünsün. Tıklayınca board'da o
+                hamlenin okları (candIdx=-1 -> playedSteps). */}
+            {playedIdx < 0 && cur?.notation && !cur?.cube && (cur?.cands?.length ?? 0) > 0 && (
+              <button
+                className={`mrv-cand played mrv-cand-extra ${candIdx < 0 ? 'sel' : ''}`}
+                onClick={() => setCandIdx(-1)}
+              >
+                <span className="mrv-c-no">–</span>
+                <span className="mrv-c-move">
+                  {cur.notation}
+                  <span className="mrv-c-you">{t('mrv.playedMove')}</span>
+                </span>
+                <span className="mrv-c-eq">({(-(cur.loss ?? 0)).toFixed(3)})</span>
+              </button>
+            )}
             {(!cur?.cands || cur.cands.length === 0) && cur?.pos && (
               <div className="mrv-empty">{t('mrv.noCands')}</div>
             )}

@@ -3646,6 +3646,27 @@ button[aria-disabled='true'],
 .event-body.rich p {
   margin: 0 0 0.6em;
 }
+/* SEO icerik: ana sayfa alt blogu (taranabilir tanitim + ic linkler). */
+.seo-content-home {
+  margin: 18px auto 4px;
+  max-width: 980px;
+  width: 100%;
+}
+.seo-content-home .info-rich.rich h2 {
+  margin-top: 1.1em;
+}
+/* SEO landing: page-host icinde kart (info-card ile ayni gorunum). H1 = info-title. */
+.seo-landing-card .info-title {
+  margin-bottom: 0.4em;
+}
+.seo-cta {
+  margin: 1.4em 0 0.4em;
+}
+.seo-cta-btn {
+  height: 46px;
+  padding: 0 22px;
+  font-size: 1.02rem;
+}
 /* Dar ekran: harita sutunu alta insin, tam genislik. */
 @media (max-width: 860px) {
   .event-map-col {
@@ -25398,6 +25419,12 @@ select:-webkit-autofill {
 /* Oynanan hamle satiri: secili degilken bile hafif vurgu (hangi hamleyi oynadigin belli olsun) */
 .mrv-cand.played:not(.sel) {
   background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+/* Oynanan hamle top-8 aday listesinde YOKKEN (blunder) listenin altina eklenen ayri satir:
+   ince ust ayirici -> "adaylarin altinda, senin oynadigin" oldugu net anlasilsin. */
+.mrv-cand-extra {
+  margin-top: 4px;
+  border-top: 1px solid color-mix(in srgb, var(--fg, currentColor) 12%, transparent);
 }
 /* Notasyon + "Senin hamlen" rozeti tek satirda */
 .mrv-c-move {
