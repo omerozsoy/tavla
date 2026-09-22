@@ -6,6 +6,7 @@
  */
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
 import { TOURNAMENT_RULES, RULE_EDITION } from '../data/tournamentRules'
 
@@ -17,6 +18,41 @@ const groupId = (num: string) => 'kural-' + num.replace('.', '-') // '1.0' -> 'k
 
 export default function TournamentRules({ onClose }: Props) {
   useEscape(onClose)
+  // DB body varsa hero'yu koru ama TOC + numarali bolumleri ATLA; duz body + CTA render et.
+  // (TOC yapiya-ozel anchor'lara dayanir; duz admin metninde gerekmez.)
+  const dbBody = useInfoPageBody('turnuva-kurallari')
+
+  if (dbBody) {
+    return (
+      <div className="register-card info-card seo-landing-card doc-card" onClick={(e) => e.stopPropagation()}>
+        {onClose && (
+          <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label="Kapat">
+            <Icon name="x" size={16} />
+          </Button>
+        )}
+        <header className="seo-hero">
+          <span className="seo-eyebrow">WBF Resmî Kuralları</span>
+          <h1 className="info-title seo-hero-title">Tavla Turnuva Kuralları</h1>
+          <p className="seo-hero-sub">
+            Dünya Tavla Federasyonu (WBF) Uluslararası Turnuva Kural ve Prosedürleri — turnuva formatı,
+            süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü.
+          </p>
+        </header>
+        <div className="info-rich rich doc-body" dangerouslySetInnerHTML={{ __html: dbBody }} />
+        <div className="seo-cta">
+          <Button asChild className="seo-cta-btn">
+            <a href="/yeni-oyun">
+              <Icon name="play" size={18} /> Hemen Tavla Oyna
+            </a>
+          </Button>
+          <p className="doc-cta-sub">
+            Kuralları öğrenmek için <a href="/nasil-oynanir">tavla nasıl oynanır</a> rehberine ve{' '}
+            <a href="/tavla-rehberi">Tavla Rehberi</a> yazılarına göz atabilirsin.
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id)

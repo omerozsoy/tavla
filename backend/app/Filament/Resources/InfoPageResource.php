@@ -22,7 +22,7 @@ class InfoPageResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->whereIn('slug', array_merge(InfoPage::INFO_TAB_SLUGS, InfoPage::LEGAL_SLUGS));
+            ->whereIn('slug', array_merge(InfoPage::INFO_TAB_SLUGS, InfoPage::LEGAL_SLUGS, InfoPage::SEO_SLUGS));
     }
 
     protected static ?string $slug = 'bilgi-sayfalari';
@@ -118,8 +118,9 @@ class InfoPageResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('title')->label('Başlık')->searchable(),
                 Tables\Columns\TextColumn::make('slug')->label('Adres')
-                    ->formatStateUsing(fn ($state) => in_array($state, InfoPage::LEGAL_SLUGS, true)
-                        ? '/'.$state // hukuki sayfa kendi rotasinda (/bilgi ONEKI YOK)
+                    ->formatStateUsing(fn ($state) => (in_array($state, InfoPage::LEGAL_SLUGS, true)
+                        || in_array($state, InfoPage::SEO_SLUGS, true))
+                        ? '/'.$state // hukuki + SEO sayfalar kendi rotalarinda (/bilgi ONEKI YOK)
                         : '/bilgi/'.self::urlSlug($state))
                     ->badge(),
                 Tables\Columns\TextColumn::make('sort')->label('Sıra')->sortable(),

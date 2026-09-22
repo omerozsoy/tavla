@@ -12,6 +12,7 @@
 
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
 import { GUIDES, findGuide } from '../data/guides'
 
@@ -69,20 +70,26 @@ function GuideHub({ onOpen }: { onOpen?: (slug: string) => void }) {
 // Tek yazı gövdesi.
 function GuideArticle({ slug, onOpen }: { slug: string; onOpen?: (slug: string) => void }) {
   const guide = findGuide(slug)
+  // DB'de (admin-duzenlenebilir) body varsa onu render et; yoksa hardcoded guide (fallback).
+  const dbBody = useInfoPageBody(guide ? 'tavla-rehberi/' + slug : null)
   if (!guide) {
     // Bulunamadı -> hub göster (yönlendirme yerine güvenli fallback).
     return <GuideHub onOpen={onOpen} />
   }
   return (
     <div className="info-rich rich seo-landing-body">
-      {guide.sections.map((s, i) => (
-        <section key={i}>
-          <h2>{s.h}</h2>
-          {s.body.map((para, j) => (
-            <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
-          ))}
-        </section>
-      ))}
+      {dbBody ? (
+        <div dangerouslySetInnerHTML={{ __html: dbBody }} />
+      ) : (
+        guide.sections.map((s, i) => (
+          <section key={i}>
+            <h2>{s.h}</h2>
+            {s.body.map((para, j) => (
+              <p key={j} dangerouslySetInnerHTML={{ __html: para }} />
+            ))}
+          </section>
+        ))
+      )}
 
       <div className="seo-cta">
         <Button asChild className="seo-cta-btn">

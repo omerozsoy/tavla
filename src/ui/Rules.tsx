@@ -1,5 +1,6 @@
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
+import { useInfoPageBody } from './useInfoPage'
 import { useT } from '../i18n'
 import { Button } from '@/components/ui/button'
 
@@ -468,6 +469,9 @@ export default function Rules({ onClose }: Props) {
   const { lang, t } = useT()
   useEscape(onClose)
   const c = CONTENT[lang] ?? CONTENT.en
+  // DB'de (admin-duzenlenebilir) TR body varsa onu render et; yoksa hardcoded (fallback).
+  // Icerik yalniz Turkce oldugundan DB body'yi sadece TR dilinde uygula; diger diller hardcoded.
+  const dbBody = useInfoPageBody(lang === 'tr' ? 'nasil-oynanir' : null)
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -478,15 +482,21 @@ export default function Rules({ onClose }: Props) {
         <h2>
           <Icon name="book" size={20} /> {c.title}
         </h2>
-        <p className="rules-intro">{c.intro}</p>
-        {c.sections.map((s, i) => (
-          <section key={i} className="rules-section">
-            <h3>{s.h}</h3>
-            {s.p.map((para, j) => (
-              <p key={j}>{para}</p>
+        {dbBody ? (
+          <div className="info-rich rich" dangerouslySetInnerHTML={{ __html: dbBody }} />
+        ) : (
+          <>
+            <p className="rules-intro">{c.intro}</p>
+            {c.sections.map((s, i) => (
+              <section key={i} className="rules-section">
+                <h3>{s.h}</h3>
+                {s.p.map((para, j) => (
+                  <p key={j}>{para}</p>
+                ))}
+              </section>
             ))}
-          </section>
-        ))}
+          </>
+        )}
       </div>
     </div>
   )
