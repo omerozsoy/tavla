@@ -20,7 +20,7 @@ Laravel Toolkit → Artisan → `migrate`  (veya SSH: `php artisan migrate`)
 ### 3) Worker systemd servisi
 ```
 # vhost kullanıcısını bul:
-stat -c '%U' /var/www/vhosts/tavlai.com/httpdocs
+stat -c '%U' /var/www/vhosts/tavlatv.com/httpdocs
 
 # unit'i kopyala, User= satırını o kullanıcıyla düzenle:
 cp deploy/tavla-queue.service /etc/systemd/system/tavla-queue.service
