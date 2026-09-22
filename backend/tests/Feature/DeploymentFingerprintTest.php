@@ -16,6 +16,9 @@ class DeploymentFingerprintTest extends TestCase
             ->expectsOutputToContain('db_transaction_isolation=')
             ->expectsOutputToContain('queue_connection=')
             ->expectsOutputToContain('failed_jobs_table=')
+            ->expectsOutputToContain('queue_pending_jobs=')
+            ->expectsOutputToContain('queue_heartbeat_age_seconds=')
+            ->expectsOutputToContain('cron_heartbeat_age_seconds=')
             ->assertExitCode(0);
     }
 }
