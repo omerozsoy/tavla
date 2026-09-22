@@ -202,10 +202,14 @@ export default function MatchReport({
   const diceFaces = (cur?.dice ?? []).slice(0, 4).map((v) => ({ value: v, used: false }))
   const diceRow =
     boardState && cur?.player && diceFaces.length ? <DiceRow faces={diceFaces} owner={cur.player} /> : null
-  // Tahta DÖNMEZ (hep beyaz altta = senin görüşün); rakip (siyah) hamlesinde YALNIZ nokta
-  // numaraları rakibin kendi 1-24'üne geçer (numberFrom) -> notasyon ("14/10"), etiket ve ok
-  // aynı noktayı gösterir. Kullanıcı isteği: "tahta dönmesin, sadece rakamlar değişsin."
-  const whiteBottom = cur?.player === 'white' // beyaz altta (flip yok)
+  // İNSAN PERSPEKTİFİ (kullanıcı isteği): analiz tahtası insanı (effHuman) HEP ALTTA gösterir —
+  // oyun-içi flipBoard ile aynı his. Böylece kullanıcı o maçta SİYAH oynamış olsa bile (p2) kendini
+  // hep altta/kendi tarafında görür. flipBoard maç boyunca SABİT (effHuman değişmez) -> tahta her
+  // hamlede DÖNMEZ; yalnız nokta numaraları hamle sahibinin 1-24'üne geçer (numberFrom) -> notasyon,
+  // etiket ve ok aynı noktayı gösterir. (effHuman yoksa -> beyaz altta, eski davranış.)
+  const flipBoard = effHuman === 'black'
+  // Zar hamle sahibinin ev tarafında dursun; flip'te sağ/sol görsel olarak yer değiştirir (XOR).
+  const diceOnRight = (cur?.player === 'white') !== flipBoard
 
   function selectMove(i: number) {
     setSel(i)
@@ -458,12 +462,12 @@ export default function MatchReport({
                         pipTop={pipCount(boardState!, 'black')}
                         pipBottom={pipCount(boardState!, 'white')}
                         cube={cubeForBoard}
-                        flip={false}
+                        flip={flipBoard}
                         numberFrom={cur?.player ?? 'white'}
                         mirror={boardDir === 'left'}
                         swapStones={swapStones}
-                        centerLeft={whiteBottom ? null : diceRow}
-                        centerRight={whiteBottom ? diceRow : null}
+                        centerLeft={diceOnRight ? null : diceRow}
+                        centerRight={diceOnRight ? diceRow : null}
                       />
                       <MoveArrows
                         steps={viewSteps}
