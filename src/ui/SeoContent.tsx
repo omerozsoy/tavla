@@ -404,6 +404,10 @@ export default function SeoContent({ variant, onClose }: Props) {
 
   const isOnline = variant === 'online-tavla'
   const h1 = isOnline ? 'Online Tavla Oyna' : 'Tavla Oyna'
+  const heroSub = isOnline
+    ? 'Gerçek rakiplere karşı canlı maçlar, güçlü yapay zekâ ve turnuvalar — hepsi tarayıcında, ücretsiz.'
+    : 'Bedava, kayıtsız ve anında açılan tavla. Yeni başla ya da puanlı maçlarda ustalaş.'
+  const heroCta = isOnline ? 'Hemen Online Tavla Oyna' : 'Hemen Tavla Oyna'
 
   return (
     <div className="register-card info-card seo-landing-card" onClick={(e) => e.stopPropagation()}>
@@ -412,8 +416,19 @@ export default function SeoContent({ variant, onClose }: Props) {
           <Icon name="x" size={16} />
         </Button>
       )}
-      <h1 className="info-title">{h1}</h1>
-      <div className="info-tab-pane">
+      <header className="seo-hero">
+        <span className="seo-eyebrow">Ücretsiz · Kayıtsız · Tarayıcıda</span>
+        <h1 className="info-title seo-hero-title">{h1}</h1>
+        <p className="seo-hero-sub">{heroSub}</p>
+        <div className="seo-hero-cta">
+          <Button asChild className="seo-cta-btn">
+            <a href="/yeni-oyun">
+              <Icon name="play" size={18} /> {heroCta}
+            </a>
+          </Button>
+        </div>
+      </header>
+      <div className="info-tab-pane seo-landing-body-wrap">
         {isOnline ? <OnlineTavlaContent /> : <TavlaOynaContent />}
       </div>
     </div>
