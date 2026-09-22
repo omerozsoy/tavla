@@ -11,7 +11,14 @@ Type=simple
 User=CHANGE_ME_VHOST_USER
 WorkingDirectory=/var/www/vhosts/tavlai.com/httpdocs/backend
 # database kuyruğunu işle. timeout=600 (uzun maç ~60 gnubg çağrısı). tries=1 (gnubg down->sessiz).
-ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --sleep=3 --tries=1 --timeout=600
+#
+# KALICI ÇÖZÜM "worker eski kodu tutuyor" (deploy sonrası her seferinde elle restart derdi):
+#   --max-time=3600  -> worker 1 saatte bir KENDİNİ sonlandırır, Restart=always onu TAZE kodla
+#                       geri getirir. Böylece deploy'daki restart bir kez kaçsa bile stale kod
+#                       en fazla ~1 saat yaşar, sonra OTOMATİK düzelir. Elle müdahale GEREKMEZ.
+#   --max-jobs=500   -> uzun-ömürlü PHP bellek sızıntısına karşı periyodik geri dönüşüm.
+# Not: bu bayraklar Laravel'in "graceful" çıkışıdır; çalışan job'ı KESMEZ, aradaki boşlukta çıkar.
+ExecStart=/opt/plesk/php/8.2/bin/php artisan queue:work database --sleep=3 --tries=1 --timeout=600 --max-time=3600 --max-jobs=500
 Restart=always
 RestartSec=5
 

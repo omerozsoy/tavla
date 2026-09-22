@@ -40,11 +40,23 @@ Bir maç oyna → birkaç saniye sonra:
 ```
 
 ## Deploy sonrası
-Backend kodu değişince worker ESKİ kodu çalıştırmaya devam eder → her deploy'da yenile:
+Backend kodu değişince worker ESKİ kodu çalıştırmaya devam eder → `deploy.sh` bunu otomatik
+`systemctl restart tavla-queue` (sudo yetkisi varsa) veya `queue:restart` ile yeniler.
+
+**KALICI EMNİYET (unit'e `--max-time=3600` eklendi):** deploy restart'ı bir kez kaçsa bile worker
+saatte bir KENDİNİ sonlandırır ve `Restart=always` onu TAZE kodla geri getirir → stale kod en fazla
+~1 saat yaşar, sonra otomatik düzelir. **Bu değişikliği bir kez canlıya almak için:**
 ```
-systemctl restart tavla-queue     # veya: php artisan queue:restart
+cp deploy/tavla-queue.service /etc/systemd/system/tavla-queue.service
+nano /etc/systemd/system/tavla-queue.service   # User= satırını KORU (gerçek vhost kullanıcısı)
+systemctl daemon-reload
+systemctl restart tavla-queue
+systemctl status tavla-queue --no-pager        # ExecStart'ta --max-time=3600 görünmeli
 ```
 
 ## Notlar
 - Worker düşerse `Restart=always` kaldırır. İzleme istersen validator:watch benzeri eklenebilir.
+- **Şans (luck) işi artık asla `failed_jobs`'a düşmez:** `AnalyzeMatchLuckJob` her hatayı yutup
+  satırı `TAVLAI_LUCK_UNAVAILABLE` işaretler (luck kritik değil). "Başarısız İşler" alarmı bir daha
+  luck yüzünden çalmaz; gerçekten önemli olan PR işi (`AnalyzeMatchPrJob`, tries=3) ayrı kalır.
 - `authoritative` moduna geçmeden shadow'da client vs gnubg PR farkını gözlemle (log/kolon).
