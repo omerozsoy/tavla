@@ -7481,13 +7481,18 @@ export default function App() {
   }))
   // SEO Rehber kolonu: içerik/landing sayfalarına iç link (tarama + keşif). goPage ile lobi
   // bağlamında açılır (info/legal kolonlarıyla aynı desen). Bkz [[seo-online-tavla-tavla-oyna-landing]].
+  const openGuide = (slug: string | null) => goPage(() => { setGuideOpen(true); setGuideSlug(slug) })
   footerColumns.push({
     titleKey: 'foot.guide',
     items: [
       { key: 'seo-online-tavla', labelKey: '', label: 'Online Tavla Oyna', onClick: () => goPage(() => setOnlineTavlaOpen(true)) },
       { key: 'seo-tavla-oyna', labelKey: '', label: 'Tavla Oyna', onClick: () => goPage(() => setTavlaOynaOpen(true)) },
       { key: 'seo-nasil-oynanir', labelKey: '', label: 'Nasıl Oynanır', onClick: () => goPage(() => setRulesOpen(true)) },
-      { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', onClick: () => goPage(() => { setGuideOpen(true); setGuideSlug(null) }) },
+      { key: 'seo-tavla-rehberi', labelKey: '', label: 'Tavla Rehberi', onClick: () => openGuide(null) },
+      { key: 'seo-g-acilis', labelKey: '', label: 'Açılış Stratejileri', onClick: () => openGuide('tavla-acilis-stratejileri') },
+      { key: 'seo-g-kup', labelKey: '', label: 'Küp (Doubling Cube)', onClick: () => openGuide('tavla-kupu-doubling-cube') },
+      { key: 'seo-g-kazanma', labelKey: '', label: 'Kazanma Taktikleri', onClick: () => openGuide('tavla-kazanma-taktikleri') },
+      { key: 'seo-g-mars', labelKey: '', label: 'Mars ve Backgammon', onClick: () => openGuide('mars-gammon-backgammon-nedir') },
       { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
     ],
   })
