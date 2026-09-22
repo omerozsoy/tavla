@@ -2,6 +2,7 @@ import AvatarFrame from './AvatarFrame'
 import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
+import TopRankBadge from './TopRankBadge'
 
 /**
  * PlayerIdentity — site geneli tek oyuncu kimlik blogu: avatar + isim (ustte) +
@@ -11,6 +12,7 @@ import { DivisionChip } from './Badges'
  */
 export default function PlayerIdentity({
   name,
+  userId,
   rating,
   avatar,
   frame,
@@ -24,6 +26,8 @@ export default function PlayerIdentity({
   className,
 }: {
   name: string
+  /** Oyuncu id — verilirse isim yanında site geneli top-3 rozeti (PR madalya / Rating kupa). */
+  userId?: number | null
   rating?: number | null
   avatar?: string | null
   frame?: string | null
@@ -47,6 +51,8 @@ export default function PlayerIdentity({
           <span className="player-id-name-text">{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={lg ? 17 : 14} style={{ marginLeft: 4 }} />}
+          {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}
+          {userId != null && <TopRankBadge userId={userId} size={lg ? 17 : 14} />}
           {flagInline && country && (
             <CountryFlag
               code={country}

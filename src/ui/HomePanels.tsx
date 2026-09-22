@@ -6,6 +6,7 @@ import { Icon, type IconName } from './Icon'
 import { Coins } from './Coins'
 import { liveMatches, leaderboard, prLeaderboard, onlinePlayers, listContents, type LiveMatch, type LeaderRow, type PrLeaderRow, type OnlinePlayer, type PresenceStatus, type Tournament, type Content } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import TopRankBadge from './TopRankBadge'
 import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { Countdown } from './Countdown'
@@ -252,9 +253,11 @@ export function LiveMatchesPanel({
                 <Avatar url={m.p1_avatar} name={m.p1_name} />
                 <span className="lm-name">{m.p1_name}</span>
                 {m.p1_premium && <PremiumCrown />}
+                <TopRankBadge userId={m.p1_id} />
               </span>
               <span className="lm-vs">vs</span>
               <span className="lm-side lm-p2">
+                <TopRankBadge userId={m.p2_id} />
                 {m.p2_premium && <PremiumCrown />}
                 <span className="lm-name">{m.p2_name}</span>
                 <Avatar url={m.p2_avatar} name={m.p2_name} />
@@ -431,7 +434,7 @@ export function OnlinePlayersPanel({
                     title={t(STATUS_KEY[p.status ?? 'available'])}
                   />
                   <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
-                    <PlayerIdentity name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated />
+                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated />
                   </button>
                   <span className="rank-flag">
                     <CountryFlag code={p.country} size={16} rounded={false} />
@@ -546,7 +549,7 @@ export function RankingPanel({
               >
                 <span className={`rank-no${r.rank <= 3 ? ' rank-medal rank-medal-' + r.rank : ''}`}>{r.rank}</span>
                 <span className="rank-name">
-                  <PlayerIdentity name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
+                  <PlayerIdentity userId={r.id} name={r.name} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
                 </span>
                 <span className="rank-flag">
                   <CountryFlag code={r.country} size={16} rounded={false} />
@@ -575,7 +578,7 @@ export function RankingPanel({
                 {r.rank}
               </span>
               <span className="rank-name">
-                <PlayerIdentity name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
+                <PlayerIdentity userId={r.id} name={r.name} rating={r.rating} avatar={r.avatar} frame={r.frame} size={30} rankSize="md" premium={r.premium} animated />
               </span>
               <span className="rank-flag">
                 <CountryFlag code={r.country} size={16} rounded={false} />

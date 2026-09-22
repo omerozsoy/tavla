@@ -51,6 +51,7 @@ export default function PublicProfile({
             <div className="pp-head">
               <PlayerIdentity
                 lg
+                userId={p.id}
                 name={p.name}
                 rating={p.rating}
                 avatar={p.avatar}
