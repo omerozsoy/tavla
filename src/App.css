@@ -3619,12 +3619,16 @@ button[aria-disabled='true'],
 .news-detail-body.rich li {
   margin: 0.2em 0;
 }
+/* Ic linkler: TEK alt cizgi (border-bottom). text-decoration:underline + border-bottom
+   birlikte "cift alt cizgi" yapiyordu (biri taban cizgisinde, digeri harf altinda) ->
+   underline KALDIRILDI, site genelinde tek ince border-bottom kalir. */
 .event-info-body.rich a,
 .service-body.rich a,
 .info-rich.rich a,
 .news-detail-body.rich a {
   color: var(--accent);
-  text-decoration: underline;
+  text-decoration: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
 .event-info-body.rich blockquote,
 .service-body.rich blockquote,
@@ -3828,12 +3832,16 @@ button[aria-disabled='true'],
   }
 }
 
-/* ---- Listeler = kart benzeri satirlar ---- */
+/* ---- Listeler = kart benzeri satirlar ----
+   auto-fit + minmax: genis ekranda tum kutular TEK SIRADA (5 madde de sigar), dar
+   ekranda zarifce sarar. auto-fit bos parcalari toplar -> 3'lu listeler tam genislik
+   yayilir (4+1 gibi yetim kutu kalmaz). */
 .seo-landing-body-wrap .info-rich.rich ul {
   list-style: none;
   padding: 0;
   margin: 0.6em 0 0.4em;
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(228px, 1fr));
   gap: 10px;
 }
 .seo-landing-body-wrap .info-rich.rich ul li {
