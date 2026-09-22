@@ -13,11 +13,12 @@ return [
         // bunu script-src'ta 'wasm-unsafe-eval' (veya daha geniş 'unsafe-eval') olmadan İHLAL sayar
         // (Report-Only'de konsol hatası; CSP zorunlu olursa motor HİÇ yüklenmez). 'wasm-unsafe-eval'
         // yalnız WebAssembly derlemeye izin verir, JS eval()'a DEĞİL -> WASM için güvenli seçim.
-        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com",
+        "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com",
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob: https:",
-        "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com",
-        "frame-src 'self'",
+        "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com",
+        // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
+        "frame-src 'self' https://accounts.google.com",
     ]),
 ];
