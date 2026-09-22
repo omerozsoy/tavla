@@ -25716,29 +25716,40 @@ select:-webkit-autofill {
 .mrv-c-loss {
   color: color-mix(in srgb, #d9534f 78%, var(--muted));
 }
-/* ---- XG-tarzı MAÇ ÖZETİ (ÜST BAR): oyuncular satır, metrikler sütun -> geniş + alçak ---- */
+/* ---- XG-tarzı MAÇ ÖZETİ (ÜST BAR): oyuncular satır, metrikler sütun -> geniş + alçak.
+   Emil Kowalski: sütunlar birbirine yakın, ZEBRA sütun bantları (alternatif ince tint) ile
+   göz kolayca aşağı-yukarı ve yatay tarar. Sayılar tabular + sağa yaslı hizalı. ---- */
 .mrv-xgbar {
   flex: 1 1 auto;
   min-width: 0;
   display: grid;
-  grid-template-columns: minmax(84px, max-content) repeat(5, minmax(0, 1fr));
+  grid-template-columns: minmax(80px, max-content) repeat(5, minmax(0, 1fr));
   align-items: baseline;
-  gap: 1px 18px;
+  gap: 0; /* sütunlar bitişik -> zebra bantları kesintisiz; boşluğu hücre padding'i verir */
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
-  padding-right: 18px;
+  border-radius: 8px;
   overflow: hidden;
+  max-width: 780px;
 }
-/* Değer/başlık hücreleri sağa yaslı; isim (ilk sütun) sola. */
+/* Değer/başlık hücreleri sağa yaslı; isim sola. Yakın ama nefes alan padding. */
 .mrv-xgbar > span {
   text-align: right;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  padding: 2px 9px;
+}
+/* ZEBRA: alternatif metrik sütunları (2,4,6) ince tint -> kesintisiz dikey bant. */
+.mrv-xgbar > span:nth-child(6n + 2),
+.mrv-xgbar > span:nth-child(6n + 4),
+.mrv-xgbar > span:nth-child(6n) {
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
 }
 .mrv-xgb-h {
   font-size: 0.68rem;
   color: var(--muted);
+  padding-bottom: 3px;
 }
 .mrv-xgb-name {
   text-align: left !important;
