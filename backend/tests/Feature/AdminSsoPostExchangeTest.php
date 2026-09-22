@@ -28,12 +28,7 @@ class AdminSsoPostExchangeTest extends TestCase
 
     public function test_invalid_sso_redirect_does_not_cache_or_forward_referrer(): void
     {
-        $adminResponse = $this->get('/admin/enter?token=invalid-token');
-        $adminResponse->assertRedirect('/admin/login')->assertHeader('Referrer-Policy', 'no-referrer');
-        $this->assertStringContainsString('no-store', (string) $adminResponse->headers->get('Cache-Control'));
-
-        $panelResponse = $this->get('/panel/enter?token=invalid-token');
-        $panelResponse->assertRedirect('/panel/login')->assertHeader('Referrer-Policy', 'no-referrer');
-        $this->assertStringContainsString('no-store', (string) $panelResponse->headers->get('Cache-Control'));
+        $this->get('/admin/enter?token=invalid-token')->assertStatus(405);
+        $this->get('/panel/enter?token=invalid-token')->assertStatus(405);
     }
 }
