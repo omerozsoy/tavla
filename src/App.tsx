@@ -428,6 +428,7 @@ import {
   setAutoRenew as apiSetAutoRenew,
   toProfile,
   getMenuConfig,
+  getFooterConfig,
   buyMembership,
   cartCoinOrder,
   newCommandId,
@@ -443,6 +444,7 @@ import {
   type GnuMove,
   type MenuOverride,
   type MenuGroupCfg,
+  type FooterColumnCfg,
   type ServerUser,
 } from './api'
 
@@ -665,6 +667,8 @@ export default function App() {
   const [menuOverrides, setMenuOverrides] = useState<Record<string, MenuOverride>>({})
   // Grup basligi override'lari (admin "Menü Grupları"). Grup anahtari -> config.
   const [menuGroupCfg, setMenuGroupCfg] = useState<Record<string, MenuGroupCfg>>({})
+  // Footer kolon override'lari (admin "Footer Kolonları": sira/gorunurluk/baslik). key -> config.
+  const [footerCfg, setFooterCfg] = useState<Record<string, FooterColumnCfg>>({})
   const [guestProfile, setGuestProfile] = useState<Profile | null>(() => loadProfile())
   const [authChecked, setAuthChecked] = useState(false)
   const [editProfile, setEditProfile] = useState(false)
@@ -1059,6 +1063,10 @@ export default function App() {
       if (!alive) return
       setMenuOverrides(Object.fromEntries(items.map((it) => [it.key, it])))
       setMenuGroupCfg(Object.fromEntries(groups.map((g) => [g.key, g])))
+    })
+    // Footer kolon yapilandirmasi (admin panel): sira/gorunurluk/baslik. Hata/bos -> sabit sira.
+    getFooterConfig().then((cols) => {
+      if (alive) setFooterCfg(Object.fromEntries(cols.map((c) => [c.key, c])))
     })
     return () => {
       alive = false
@@ -7506,10 +7514,11 @@ export default function App() {
 
   // Footer kolonlari — merkezi kayittan (pages.ts). Handler/gate menu ile ayni mantik.
   const footerColumns = [
-    { titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
-    { titleKey: 'foot.community', keys: ['tournaments', 'leaderboard', 'friends', 'calendar', 'clubs'] },
-    { titleKey: 'foot.content', keys: ['news', 'magazine'] },
+    { key: 'game', titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
+    { key: 'community', titleKey: 'foot.community', keys: ['tournaments', 'leaderboard', 'friends', 'calendar', 'clubs'] },
+    { key: 'content', titleKey: 'foot.content', keys: ['news', 'magazine'] },
   ].map((col) => ({
+    key: col.key,
     titleKey: col.titleKey,
     items: col.keys
       .map((k) => PAGE_BY_KEY[k])
@@ -7525,6 +7534,7 @@ export default function App() {
   // bağlamında açılır (info/legal kolonlarıyla aynı desen). Bkz [[seo-online-tavla-tavla-oyna-landing]].
   const openGuide = (slug: string | null) => goPage(() => { setGuideOpen(true); setGuideSlug(slug) })
   footerColumns.push({
+    key: 'guide',
     titleKey: 'foot.guide',
     items: [
       { key: 'seo-online-tavla', labelKey: '', label: 'Online Tavla Oyna', onClick: () => goPage(() => setOnlineTavlaOpen(true)) },
@@ -7543,6 +7553,7 @@ export default function App() {
   // (InfoPage SEO_SLUGS) icerik yonetilir. Bkz [[seo-online-tavla-tavla-oyna-landing]].
   const openService = (slug: string) => goPage(() => setServicePage(slug))
   footerColumns.push({
+    key: 'organization',
     titleKey: 'foot.organization',
     items: [
       { key: 'org-hub', labelKey: '', label: 'Tavla Turnuvası Organizasyonu', onClick: () => openService('tavla-turnuvasi-organizasyonu') },
@@ -7554,6 +7565,7 @@ export default function App() {
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
   // İletişim de bu grupta (ServiceLanding /iletisim; openService yukarida tanimli).
   footerColumns.push({
+    key: 'info',
     titleKey: 'menu.info',
     items: [
       { key: 'info-about', labelKey: 'info.tab.about', onClick: () => openInfoTab('about') },
@@ -7568,6 +7580,7 @@ export default function App() {
   // 5. kolon: "Yasal" — hukuki sayfalar (DB'den) + Cerez Tercihleri (banner/modal).
   const openLegalPage = (slug: string) => goPage(() => setLegalSlug(slug))
   footerColumns.push({
+    key: 'legal',
     titleKey: 'foot.legal',
     items: [
       { key: 'legal-kvkk', labelKey: '', label: 'KVKK Aydınlatma Metni', onClick: () => openLegalPage('kvkk') },
@@ -7578,6 +7591,15 @@ export default function App() {
       { key: 'legal-cerez-tercih', labelKey: '', label: 'Çerez Tercihleri', onClick: () => window.dispatchEvent(new Event(OPEN_COOKIE_PREFS)) },
     ],
   })
+  // Admin "Footer Kolonları" yapilandirmasi: SIRA + GORUNURLUK + BASLIK override uygula. Config
+  // bossa (uc yok/hata) sabit varsayilan sira kullanilir. labels[lang] bossa Footer i18n titleKey'e
+  // duser. items bos kolon Footer icinde zaten gizlenir. (key -> footerCfg eslesmesi.)
+  const footerColsFinal = Object.keys(footerCfg).length
+    ? footerColumns
+        .filter((c) => footerCfg[c.key]?.visible !== false)
+        .map((c) => ({ ...c, title: footerCfg[c.key]?.labels?.[lang], _s: footerCfg[c.key]?.sort ?? 999 }))
+        .sort((a, b) => a._s - b._s)
+    : footerColumns
 
   // Sol menu: item SIRASI/GORUNURLUGU/ADI + GRUP admin panelinden yonetilir. Her item bir
   // gruba aittir (admin override menuOverrides.group, yoksa pages.ts group). Item'lar grup
@@ -8529,7 +8551,7 @@ export default function App() {
               </Suspense>
             </div>
           </main>
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {menuPages}
         {authModal}
@@ -8574,7 +8596,7 @@ export default function App() {
               />
             </div>
           </main>
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {menuPages}
         {authModal}
@@ -8622,7 +8644,7 @@ export default function App() {
               </Suspense>
             </div>
           </main>
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {menuPages}
         {authModal}
@@ -8666,7 +8688,7 @@ export default function App() {
               </Suspense>
             </div>
           </main>
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {menuPages}
         {authModal}
@@ -8868,7 +8890,7 @@ export default function App() {
           {/* Footer TUM lobi sayfalarinda (home + menu sayfalari). .app.lobby kaydirma
               konteyneri (100dvh) oldugu icin ICINDE kalir; CSS ile iki kolonu birden
               kapsar (grid-column: 1/-1) -> TAM GENISLIK, en altta. */}
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
             (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
@@ -8936,7 +8958,7 @@ export default function App() {
               onLeave={handleLeaveRoom}
             />
           </main>
-          <Footer columns={footerColumns} />
+          <Footer columns={footerColsFinal} />
         </div>
         {authModal}
         {menuOverlays}

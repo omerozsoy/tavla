@@ -16,7 +16,8 @@
 
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
-import { useInfoPageBody } from './useInfoPage'
+import { useInfoPage } from './useInfoPage'
+import { InfoPane } from './Info'
 import ContactForm from './ContactForm'
 
 interface Props {
@@ -396,7 +397,8 @@ function fallbackBody(slug: string) {
 
 export default function ServiceLanding({ slug, onClose }: Props) {
   useEscape(onClose)
-  const dbBody = useInfoPageBody(slug)
+  const page = useInfoPage(slug)
+  const dbBody = (page?.body ?? '').trim()
   const meta = META[slug] ?? META.iletisim
 
   return (
@@ -416,7 +418,9 @@ export default function ServiceLanding({ slug, onClose }: Props) {
       <div className="info-tab-pane seo-landing-body-wrap">
         {slug === 'iletisim' && <ContactChannels />}
         <div className="info-rich rich seo-landing-body">
-          {dbBody ? <div dangerouslySetInnerHTML={{ __html: dbBody }} /> : fallbackBody(slug)}
+          {/* DB gövdesi galeri-farkında render edilir (<resimgalerisi>/<ad> token'ları
+              gerçek galeriye çevrilir — InfoPane; aksi halde token düz metin kalırdı). */}
+          {dbBody ? <InfoPane page={page ?? undefined} /> : fallbackBody(slug)}
 
           <div className="service-form-anchor">
             <ContactForm
