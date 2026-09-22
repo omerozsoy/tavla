@@ -22,9 +22,19 @@ class AnalyzeMatchPrJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 1;      // tekrar deneme yok (gnubg down ise sessiz geç)
+    // GEÇİCİ hatalarda (gnubg zaman aşımı / DB deadlock) 3 KEZ dene. gnubg servis hataları zaten
+    // handle() içinde yakalanıp sessiz geçiliyor (return = başarı) -> yalnız YAKALANMAYAN geçici
+    // hatalar (timeout, deadlock, beklenmedik) retry'lanır. Aksi halde tek deneme başarısızsa iş
+    // kalıcı olarak failed_jobs'a düşüp PR boş kalıyordu.
+    public int $tries = 3;
 
     public int $timeout = 600;  // 60+ gnubg çağrısı olabilir
+
+    /** Denemeler arası artan bekleme (sn): geçici yoğunluk/deadlock geçsin. */
+    public function backoff(): array
+    {
+        return [15, 45];
+    }
 
     public function __construct(public int $matchResultId) {}
 
