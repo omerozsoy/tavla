@@ -25653,6 +25653,11 @@ select:-webkit-autofill {
 }
 .mrv-cand.played .mrv-c-move {
   color: var(--accent);
+  /* Oynanan hamlede notasyon uzun olunca rozet üstüne biniyordu -> DİKEY yığ: rozet ÜSTTE,
+     notasyon altta (çakışma yok). */
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
 }
 /* Oynanan hamle satiri: secili degilken bile hafif vurgu (hangi hamleyi oynadigin belli olsun) */
 .mrv-cand.played:not(.sel) {

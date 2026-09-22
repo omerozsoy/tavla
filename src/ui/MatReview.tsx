@@ -403,9 +403,9 @@ export default function MatReview({
                 >
                   <span className="mrv-c-no">{ci + 1}</span>
                   <span className="mrv-c-move">
-                    {c.notation}
-                    {/* Oynanan hamle: "senin/rakibin" ayrımı YOK — ikisi de "Oynanan Hamle". */}
+                    {/* Oynanan hamle rozeti notasyonun ÜSTÜNDE (çakışmasın); ikisi de "Oynanan Hamle". */}
                     {isPlayed && <span className="mrv-c-you">{t('mrv.playedMove')}</span>}
+                    {c.notation}
                   </span>
                   {/* İki sütun: MUTLAK equity (her satır) + KAYIP (en iyiye göre; #1 = —) */}
                   <span className="mrv-c-eq">{`${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`}</span>
@@ -423,8 +423,8 @@ export default function MatReview({
               >
                 <span className="mrv-c-no">–</span>
                 <span className="mrv-c-move">
-                  {cur.notation}
                   <span className="mrv-c-you">{t('mrv.playedMove')}</span>
+                  {cur.notation}
                 </span>
                 <span className="mrv-c-eq">
                   {(() => { const eq = (cur.cands?.[0]?.equity ?? 0) - (cur.loss ?? 0); return `${eq >= 0 ? '+' : ''}${eq.toFixed(3)}` })()}
