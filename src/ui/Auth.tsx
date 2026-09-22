@@ -187,6 +187,13 @@ export default function Auth({
         g.accounts.id.initialize({
           client_id: api.GOOGLE_CLIENT_ID,
           callback: (resp: { credential: string }) => gsiCredentialHandler?.(resp),
+          // FedCM: popup+postMessage yerine tarayici-yerel hesap secici kullanir. Boylece
+          // Google'in accounts.google.com popup'inin KENDI COOP'undan dogan "Cross-Origin-Opener-Policy
+          // would block the window.postMessage call" konsol uyarisi HIC olusmaz (bu uyari bizim HTTP
+          // basliklarimizla giderilemez; kaynagi Google popup'i). FedCM desteklemeyen tarayicida GSI
+          // otomatik eski popup akisina duser -> guvenli degrade.
+          use_fedcm_for_prompt: true,
+          use_fedcm_for_button: true,
         })
         gsiInitialized = true
       }
