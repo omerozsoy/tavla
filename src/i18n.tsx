@@ -332,7 +332,7 @@ const TR: Dict = {
   'resume.you': 'Sen',
   'resume.point': '{n} puanlık',
   'pr.good': 'iyi hamle',
-  'pr.estimate': 'anlık tahmin',
+  'pr.estimate': 'Tahmini Anlık',
   'pr.estimateHint': 'Oyun-içi tahmin — kesin PR maç sonu TavlaTV Motoru ile hesaplanır',
   'pr.bad': 'hata',
   'mh.title': 'Maç Analizleri',
