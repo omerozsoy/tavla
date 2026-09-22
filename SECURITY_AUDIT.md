@@ -8,7 +8,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 |---|---:|
 | CRITICAL | 0 |
 | HIGH | 3 |
-| MEDIUM | 2 |
+| MEDIUM | 1 |
 | LOW | 0 |
 | UNKNOWN | 1 |
 
@@ -70,20 +70,6 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Recommended fix:** Settlement state machine, unique business reference, idempotent claim, reconciliation alarmı ve güvenli queue retry testi uygula.
 **Database protection required?:** Evet.
 **Regression test required?:** Evet.
-
-### SEC-WEB-001 — Enforcing CSP için kaynak envanteri eksik
-
-**Severity:** MEDIUM
-**Category:** Browser security / XSS defense-in-depth
-**Affected file(s):** frontend build, web/Plesk/Nginx headers, CMS-rendered HTML
-**Affected endpoint/event:** tüm web sayfaları ve admin içerik render’ı
-**Description:** CSP policy kaynakları sınıflandırıldı ve `CSP_ENFORCE` opt-in bayrağı eklendi; production’da enforcing smoke/regresyon geçişi henüz yapılmadı. Politika inline style/script, Google Fonts, analytics, `data:`/`blob:` medya ve API bağlantılarını kapsıyor.
-**Attack scenario:** Stored veya reflected XSS açığı bulunursa CSP enforcing olmadığı için etki alanı genişler.
-**Root cause:** Report-Only gözleminden enforcing politikaya geçiş tamamlanmadı.
-**Potential impact:** XSS etkisinin büyümesi, token/oturum kötüye kullanımı.
-**Recommended fix:** Production’da önce `CSP_ENFORCE=true` ile config cache yenile, ana akışları Playwright/smoke ile doğrula; ihlal yoksa enforcing’i kalıcılaştır. Uzun vadede inline kaynakları nonce/hash’e taşı.
-**Database protection required?:** Hayır.
-**Regression test required?:** Evet; Playwright ile ana akışlar ve admin içerik render’ı.
 
 ### SEC-SSO-001 — Admin SSO tokeni URL query string’de taşınıyor
 
