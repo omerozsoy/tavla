@@ -18,7 +18,8 @@ export interface FooterItem {
 }
 
 interface Props {
-  columns: { titleKey: string; items: FooterItem[] }[]
+  // title: admin "Footer Kolonları" başlık override'ı (varsa i18n titleKey'i ezer).
+  columns: { key?: string; titleKey: string; title?: string; items: FooterItem[] }[]
 }
 
 // Ana sayfa footer'i — kolonlar MERKEZI SAYFA KAYDINDAN (pages.ts) turetilir; App
@@ -85,7 +86,7 @@ export default function Footer({ columns }: Props) {
             .filter((c) => c.items.length > 0)
             .map((col) => (
               <div className="foot-col" key={col.titleKey}>
-                <div className="foot-col-title">{t(col.titleKey)}</div>
+                <div className="foot-col-title">{col.title ?? t(col.titleKey)}</div>
                 <ul>
                   {col.items.map((it) => (
                     <li key={it.key}>
