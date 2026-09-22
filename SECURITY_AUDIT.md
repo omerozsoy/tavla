@@ -19,7 +19,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | MariaDB 10.3.39 / REPEATABLE-READ ve unique claim index production’da doğrulandı; gerçek paralel admission testi hâlâ bekliyor. |
 | Aynı match iki kez settle edilemez | PARTIAL | Production snapshot’ta terminal/duplicate settlement sorunu yok; gerçek queue retry ve DB isolation testi bekliyor. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
-| Client wallet balance değiştiremez | PARTIAL | Referanssız ekonomik hareketler için ortak idempotency protokolünü tamamla. |
+| Client wallet balance değiştiremez | PARTIAL | Spin ve mağaza akışları için idempotency/receipt kanıtını tamamla. |
 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zincirini production’da doğrula. |
 | WebSocket event'i state değiştiremez | UNKNOWN | Production’da harici socket/broadcast servisi kullanılıp kullanılmadığını doğrula. |
@@ -45,15 +45,15 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 **Severity:** HIGH
 **Category:** Wallet / accounting
-**Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, payment, tournament, spin, achievement ve admin controller/service yolları
+**Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, spin ve mağaza controller/service yolları
 **Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
 **Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor.
 Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-references` komutu mevcut satırları değiştirmeden eksik referansları tür bazında sayar; production çıktısı henüz alınmadı.
 Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `daily_reward=16`, `lucky_wheel_spin=11`, `dice_slot_payout=12`, `shop_purchase=2`. Bu tarihsel satırlar değiştirilmedi.
-**Attack scenario:** `daily_reward`, `shop_purchase`, `tournament_entry/refund`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
+**Attack scenario:** `shop_purchase`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
 **Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
 **Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt. Production’daki 116 satır referanssızlığı tek başına çift ödeme kanıtı değildir; mevcut akışların cooldown/ownership kontrolleri ayrı bir savunma katmanıdır.
-**Recommended fix:** Ledger’a nullable unique `idempotency_key` altyapısı eklendi (`2026_09_22_030000_add_idempotency_key_to_wallet_transactions.php`); `WalletService` aynı anahtarı ikinci kez uygulamıyor, referanslı çağrılar için deterministik anahtar türetiyor ve günlük ödül cooldown penceresi anahtar kullanıyor. Production’da günlük ödül commit’i henüz yayınlanmadı; spin controller’larının command receipt entegrasyonu tamamlanmadı. Her ekonomik komuta benzersiz business reference/command id ekle; spin’ler için spin receipt, mağaza için order/ownership referansı kullan; duplicate-request/job testleri uygula. Tarihsel satırları otomatik yeniden yazma; yalnız reconciliation/forensics için ayrı backfill planla.
+**Recommended fix:** Spin işlemleri için kalıcı receipt ve command key ekle; mağaza satın alımını order/ownership referansına bağla; duplicate-request/job testlerini uygula. Tarihsel satırları otomatik yeniden yazma; yalnız reconciliation/forensics için ayrı backfill planla.
 **Database protection required?:** Evet.
 **Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
@@ -127,7 +127,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ### PHASE 2 — Wallet/settlement
 
-1. Referanssız ekonomik hareketlere command/business id ekle.
+1. Spin receipt ve mağaza order/ownership referanslarını command/business id ile bağla.
 2. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
 3. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
 
