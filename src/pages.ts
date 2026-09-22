@@ -65,9 +65,10 @@ export const PAGES: PageDef[] = [
   // --- HESAP ---
   { key: 'membership', slug: 'uyelik', labelKey: 'mem.menu', icon: 'star', group: 'account' },
   // Mağaza: coin + fiziksel ürünler + tahta/çerçeve tek sayfada (Shop bileşeni, Ürünler sekmesi).
-  // Sol menüde HESAP grubunda GÖRÜNÜR (Mesajlar gibi ÇİFT yerleşim: sağ üst storefront ikonu da kalır);
+  // Sol menüde HESAP grubunda HERKESE GÖRÜNÜR (misafir dahil; gate YOK — mağazayı gezmek serbest,
+  // satın alma tıklanınca giriş istenir). ÇİFT yerleşim: sağ üst storefront ikonu da kalır.
   // /magaza tam sayfa (deep-link + SEO başlığı + Shop overlay). Admin "Sol Menü"den gizlenebilir.
-  { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account', gate: 'user' },
+  { key: 'shop', slug: 'magaza', labelKey: 'shop.title', icon: 'shop', group: 'account' },
   // Pul Tasarımları: ücretli dijital checker materyalleri (coin ile). Sol menüde GIZLI (inMenu:false);
   // PROFIL sekmesi olarak açılır (/profil/pul-tasarimlari). Standalone /pul-tasarimlari URL'i de çalışır.
   { key: 'checkers', slug: 'pul-tasarimlari', labelKey: 'menu.checkers', icon: 'palette', group: 'account', gate: 'user', inMenu: false },
