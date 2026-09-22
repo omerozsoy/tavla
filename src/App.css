@@ -25300,9 +25300,11 @@ select:-webkit-autofill {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 14px;
+  gap: 12px;
+  padding: 8px 4px 10px;
   border-bottom: 1px solid var(--border);
   flex: 0 0 auto;
+  width: 100%; /* orta sütun (board) genişliğini kapla */
 }
 .mrv-title {
   display: inline-flex;
@@ -25476,11 +25478,11 @@ select:-webkit-autofill {
 /* GERÇEK site tahtası: --board-h'yi inceleme merkez alanına göre ayarla (türev
    --checker/--dice-size/--tri-h otomatik ölçeklenir; zarlar da gerçek boyutta). */
 .mrv-board {
-  --board-h: max(300px, min(calc(100vh - 190px), calc((100vw - 720px) / 1.32)));
+  --board-h: max(280px, min(calc(100vh - 250px), calc((100vw - 720px) / 1.32)));
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   padding: 10px clamp(8px, 2vw, 24px);
   min-width: 0;

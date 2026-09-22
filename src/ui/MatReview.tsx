@@ -229,33 +229,6 @@ export default function MatReview({
   // body'ye portal ile taşı (bkz fixed-portal-transform-tuzagi). Hesap barını da kaplar.
   return createPortal(
     <div className="mrv-overlay">
-      <div className="mrv-top">
-        {xgP && xgP.length >= 2 ? (
-          <div className="mrv-xgbar" title={t('mrv.title') + (matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : '')}>
-            <span className="mrv-xgb-h" />
-            <span className="mrv-xgb-h">{t('mrv.miniErr')}</span>
-            <span className="mrv-xgb-h">{t('mrv.miniEq')}</span>
-            <span className="mrv-xgb-h">{t('mrv.miniLuck')}</span>
-            <span className="mrv-xgb-h">{t('mrv.xr')}</span>
-            <span className="mrv-xgb-h">{t('mrv.miniClass')}</span>
-            {xgRow(xgP[0], luck?.p0, nameW)}
-            {xgRow(xgP[1], luck?.p1, nameB)}
-          </div>
-        ) : (
-          <span className="mrv-title">
-            <Icon name="analyze" size={18} /> {t('mrv.title')}
-            {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
-          </span>
-        )}
-        <div className="mrv-top-actions">
-          <Button variant="outline" className="mrv-summary-btn" onClick={() => setSummaryOpen(true)}>
-            <Icon name="chart" size={15} /> {t('ms.btn')}
-          </Button>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')}>
-            <Icon name="x" size={18} />
-          </Button>
-        </div>
-      </div>
       {summaryOpen && (
         <MatchSummary
           log={log}
@@ -337,6 +310,34 @@ export default function MatReview({
 
         {/* ---- ORTA: GERÇEK site tahtası (tema + gerçek zarlar) ---- */}
         <main className="mrv-board">
+          {/* Üst bar ORTA sütunda: XG özeti + Maç Özeti + kapat. Sol/sağ listeler en tepeden başlar. */}
+          <div className="mrv-top">
+            {xgP && xgP.length >= 2 ? (
+              <div className="mrv-xgbar" title={t('mrv.title') + (matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : '')}>
+                <span className="mrv-xgb-h" />
+                <span className="mrv-xgb-h">{t('mrv.miniErr')}</span>
+                <span className="mrv-xgb-h">{t('mrv.miniEq')}</span>
+                <span className="mrv-xgb-h">{t('mrv.miniLuck')}</span>
+                <span className="mrv-xgb-h">{t('mrv.xr')}</span>
+                <span className="mrv-xgb-h">{t('mrv.miniClass')}</span>
+                {xgRow(xgP[0], luck?.p0, nameW)}
+                {xgRow(xgP[1], luck?.p1, nameB)}
+              </div>
+            ) : (
+              <span className="mrv-title">
+                <Icon name="analyze" size={18} /> {t('mrv.title')}
+                {matchLength ? ` · ${t('ma.pointMatch', { n: matchLength })}` : ''}
+              </span>
+            )}
+            <div className="mrv-top-actions">
+              <Button variant="outline" className="mrv-summary-btn" onClick={() => setSummaryOpen(true)}>
+                <Icon name="chart" size={15} /> {t('ms.btn')}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('common.close')}>
+                <Icon name="x" size={18} />
+              </Button>
+            </div>
+          </div>
           <div className="mrv-player mrv-player-top">
             <span className="mrv-score">{matchLength ? `0/${matchLength}` : ''}</span>
             <span className={`mrv-pname ${cur?.player === 'black' ? 'turn' : ''}`}>
