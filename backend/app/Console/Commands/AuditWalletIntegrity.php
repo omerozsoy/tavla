@@ -23,8 +23,8 @@ class AuditWalletIntegrity extends Command
 
         $this->line('wallet_transactions_table=present');
         $this->line('balance_math_check='.$this->constraintPresence('wallet_balance_math_chk'));
-        $this->line('append_only_update_triggers='.$this->triggerCount('UPDATE'));
-        $this->line('append_only_delete_triggers='.$this->triggerCount('DELETE'));
+        $this->line('mutation_audit_update_triggers='.$this->triggerCount('UPDATE'));
+        $this->line('mutation_audit_delete_triggers='.$this->triggerCount('DELETE'));
         $this->line('transaction_id_unique='.$this->indexPresence('transaction_id'));
         $this->line('mutation_audit_table='.(Schema::hasTable('wallet_transaction_mutations') ? 'present' : 'missing'));
         $this->line('wallet_integrity_result='.$this->result());
