@@ -76,5 +76,14 @@ Schedule::call(function () {
     \Illuminate\Support\Facades\Cache::put('ops:cron:heartbeat', time(), now()->addHours(6));
 })->everyMinute()->name('ops-cron-heartbeat');
 
+// SINIRLI + ALARMLI otomatik yeniden deneme (failed_jobs). Kör "queue:retry all" cron'u kalıcı
+// bozuk işi sonsuza döndürür; bu komut imza başına en fazla N kez dener (varsayılan 3), sınırı
+// aşanı DENEMEZ + bir kez admin'e alarm verir + panelde bırakır (gerçek bug gizlenmez, döngü yok).
+// Geçici hatalar (gnubg kısa süre down, DB blip) böylece sessizce düzelir. 15 dk'da bir yeterli.
+Schedule::command('jobs:auto-retry')
+    ->everyFifteenMinutes()
+    ->name('auto-retry-failed-jobs')
+    ->withoutOverlapping();
+
 // Wallet reconciliation is intentionally read-only; run manually or schedule after the
 // wallet ledger migration is deployed. It never repairs balances automatically.
