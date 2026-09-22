@@ -1,7 +1,8 @@
 <?php
 
 return [
-    // Report-only is intentionally opt-in until the deployed source inventory is reviewed.
+    // Enforcing is opt-in until the deployed source inventory is reviewed.
+    'csp_enforce' => (bool) env('CSP_ENFORCE', false),
     'csp_report_only' => (bool) env('CSP_REPORT_ONLY', false),
     'csp_report_only_policy' => implode('; ', [
         "default-src 'self'",

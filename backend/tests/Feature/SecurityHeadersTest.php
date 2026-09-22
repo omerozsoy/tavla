@@ -19,4 +19,13 @@ class SecurityHeadersTest extends TestCase
         $this->get('/up')
             ->assertHeader('Content-Security-Policy-Report-Only');
     }
+
+    public function test_csp_enforcing_is_opt_in(): void
+    {
+        config()->set('security.csp_enforce', true);
+
+        $this->get('/up')
+            ->assertHeader('Content-Security-Policy')
+            ->assertHeaderMissing('Content-Security-Policy-Report-Only');
+    }
 }

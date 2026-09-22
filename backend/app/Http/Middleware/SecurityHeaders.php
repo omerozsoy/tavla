@@ -13,11 +13,11 @@ class SecurityHeaders
         $response = $next($request);
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
 
-        if (config('security.csp_report_only', false)) {
-            $response->headers->set(
-                'Content-Security-Policy-Report-Only',
-                (string) config('security.csp_report_only_policy')
-            );
+        $policy = (string) config('security.csp_report_only_policy');
+        if (config('security.csp_enforce', false)) {
+            $response->headers->set('Content-Security-Policy', $policy);
+        } elseif (config('security.csp_report_only', false)) {
+            $response->headers->set('Content-Security-Policy-Report-Only', $policy);
         }
 
         return $response;
