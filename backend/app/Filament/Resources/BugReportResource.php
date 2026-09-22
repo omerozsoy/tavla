@@ -62,9 +62,10 @@ class BugReportResource extends Resource
             Forms\Components\Placeholder::make('email')->label('E-posta')
                 ->content(fn (?BugReport $record) => $record?->email ?: '—'),
 
-            // Ne zaman bildirilmiş: tarih + SAAT:DAKİKA (liste kolonuyla aynı format).
+            // Ne zaman bildirilmiş: tarih + SAAT:DAKİKA, TÜRKİYE saati (+3 / Europe/Istanbul).
+            // created_at UTC saklanır -> gösterimde çevrilir.
             Forms\Components\Placeholder::make('created_at')->label('Bildirilme zamanı')
-                ->content(fn (?BugReport $record) => $record?->created_at?->format('d.m.Y H:i') ?? '—'),
+                ->content(fn (?BugReport $record) => $record?->created_at?->timezone('Europe/Istanbul')->format('d.m.Y H:i') ?? '—'),
 
             Forms\Components\Placeholder::make('user_agent')->label('Tarayıcı')
                 ->content(fn (?BugReport $record) => $record?->user_agent ?: '—')
@@ -109,7 +110,7 @@ class BugReportResource extends Resource
             ->defaultSort('created_at', 'desc')
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')->label('Tarih')
-                    ->dateTime('d.m.Y H:i')->sortable(),
+                    ->dateTime('d.m.Y H:i')->timezone('Europe/Istanbul')->sortable(),
                 Tables\Columns\ImageColumn::make('screenshot')->label('Görsel')
                     ->disk('uploads')->height(40)->square()
                     ->defaultImageUrl(null)->placeholder('—'),
