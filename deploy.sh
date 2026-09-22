@@ -7,6 +7,12 @@ set -e
 PHP=/opt/plesk/php/8.2/bin/php
 cd "$(dirname "$0")/backend"
 
+# YENİ Filament kaynakları (ör. "İletişim Talepleri") cache yüzünden panelde GÖRÜNMESİN
+# diye component cache'ini deploy'un EN BAŞINDA KOŞULSUZ temizle. set -e ile ilerideki bir
+# adım (composer/migrate) patlasa bile bu çalışmış olur; ayrıca dosyayı fiziksel sil ki
+# optimize-clear herhangi bir sebeple no-op olsa dahi bayat liste kalmasın.
+rm -rf bootstrap/cache/filament 2>/dev/null || true
+
 # ÖNEMLI: vendor/ git'e dahil DEGIL. Filament (ve diger paketler) sunucuda composer
 # install ile kurulmali. Bu adim basarisiz olursa (composer PATH'te yoksa) Plesk
 # "Composer" sekmesinden ELLE Install calistir; aksi halde uygulama Filament siniflarini
