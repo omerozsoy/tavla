@@ -117,7 +117,10 @@ class MatSerializer
                 if ($dialect === 'xg' && $gi < $gameCount) {
                     $msg = "MAT export durduruldu: Game $gi sonuçsuz (previousGame.result=null); "
                         .'bir sonraki oyun başlıyor. Bitiren hamle/otoriter sonuç eksik.';
-                    Log::error($msg, ['dialect' => $dialect, 'gameCount' => $gameCount]);
+                    // BEKLENEN veri durumu (sunucu HATASI DEĞİL): her iki çağıran da bu istisnayı
+                    // YAKALAR — kullanıcı .mat indirmesi 422, luck job markUnavailable. Bu yüzden
+                    // Log::error DEĞİL warning (aksi halde cli/queue'da sahte "🔴 500" alarmı üretir).
+                    Log::warning($msg, ['dialect' => $dialect, 'gameCount' => $gameCount]);
                     throw new RuntimeException($msg);
                 }
 

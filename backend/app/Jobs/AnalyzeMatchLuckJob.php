@@ -229,8 +229,13 @@ class AnalyzeMatchLuckJob implements ShouldQueue
         }
         $matchLen = max(1, (int) ($mr->match_length ?? 1));
         try {
+            // KÖK FIX (cli/queue 500 "MAT export durduruldu ... sonuçsuz"): bu yol GNUBG-NATIVE luck
+            // (Tavlai Luck V1) kaynağıdır -> 'gnubg' lehçesi kullanılmalı. 'xg' (varsayılan) sonuçsuz
+            // ARA oyunda LOUD fail eder (yalnız XG indirme sözleşmesi için); gnubg lehçesi bunu TOLERE
+            // eder (bitiren-hamle analiz logunda atlanmış olabilir) VE gnubg'nin beklediği native formattır.
             $mat = MatFromLog::buildFromEvents($p1, $p2, [
                 'whiteName' => 'White', 'blackName' => 'Black', 'matchLength' => $matchLen,
+                'dialect' => 'gnubg',
             ]);
         } catch (\RuntimeException $e) {
             $this->markUnavailable($mr, 'game_logs');
