@@ -18,8 +18,9 @@
   align-items: flex-start;
 }
 .foot-brand {
-  flex: 1 1 200px;
-  min-width: 180px;
+  /* Marka+3 logo SOL'da kompakt kalır (BÜYÜMEZ) -> 7 kolon yanındaki boşluğu doldurur. */
+  flex: 0 1 210px;
+  min-width: 170px;
 }
 /* Logo + slogan kilidi: genisligi LOGO'ya buzulur (fit-content). Slogan width:0
    ile bu genisligi buyutmez, min-width:100% ile TAM logo genisliginde sarar. */
@@ -74,11 +75,12 @@ a.foot-partner:hover {
 }
 .foot-cols {
   display: grid;
-  /* 7 kolon TEK SATIRDA yan yana. flex-basis:100% -> foot-inner'da marka ÜSTTE,
-     kolonlar altında tam genişlikte tek sıra. minmax(0,1fr) dar kolonda taşmayı önler. */
+  /* 7 kolon, MARKANIN YANINDA (aynı satırda) sağdaki boşluğu doldurur. flex:1 1 auto
+     -> marka kompakt solda, kolonlar kalan genişliğe yayılır. minmax(0,1fr) taşmayı önler. */
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 18px;
-  flex: 1 1 100%;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .foot-col-title {
   font-weight: 700;
