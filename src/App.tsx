@@ -156,6 +156,7 @@ import QuizPlay from './ui/QuizPlay'
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
+const ServiceLanding = lazy(() => import('./ui/ServiceLanding'))
 const GuideView = lazy(() => import('./ui/GuideView'))
 const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 import Info, { type InfoTab } from './ui/Info'
@@ -183,6 +184,11 @@ const DEFAULT_DESC =
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
   'tavla-oyna': 'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
+  'tavla-turnuvasi-organizasyonu': 'Tavla Turnuvası Organizasyonu | Kurumsal, Belediye, AVM | TavlaTv',
+  'kurumsal-tavla-turnuvasi': 'Kurumsal Tavla Turnuvası Organizasyonu | TavlaTv',
+  'belediye-tavla-turnuvasi': 'Belediye Tavla Turnuvası Organizasyonu | TavlaTv',
+  'avm-tavla-turnuvasi': 'AVM Tavla Turnuvası Organizasyonu | TavlaTv',
+  'iletisim': 'İletişim | TavlaTv',
   'tek-oyun': 'Tek Oyun Tavla | TavlaTv',
   'yeni-oyun': 'Online Tavla Maçı Oyna | TavlaTv',
   'yz-ile-oyna': 'Yapay Zekâya Karşı Tavla Oyna | TavlaTv',
@@ -223,6 +229,16 @@ const SEO_DESCS: Record<string, string> = {
     'Ücretsiz online tavla oyna! Gerçek rakiplere karşı canlı maçlar, güçlü yapay zekâ botu, turnuvalar ve maç analizi (PR). Kayıt gerektirmez, tarayıcıda hemen başla.',
   'tavla-oyna':
     'Bedava tavla oyna! Ücretsiz, kayıtsız ve tarayıcıda anında açılan tavla oyunu. Yapay zekâya karşı pratik yap, arkadaşınla veya gerçek rakiplerle online tavla oyna.',
+  'tavla-turnuvasi-organizasyonu':
+    'Kurumlar, belediyeler ve AVM’ler için anahtar teslim tavla turnuvası organizasyonu. Format kurgusu, hakemlik, dijital eşleşme tabloları ve ödül töreni dahil. Teklif alın.',
+  'kurumsal-tavla-turnuvasi':
+    'Şirketiniz için kurumsal tavla turnuvası organizasyonu: takım ruhu ve çalışan bağlılığı için anahtar teslim etkinlik. Ofiste, otelde veya hibrit online. Teklif alın.',
+  'belediye-tavla-turnuvasi':
+    'Belediyeler için kitlesel katılımlı tavla turnuvası organizasyonu: festival, Ramazan ve kültür etkinlikleri. Dijital kayıt, hakemlik ve ödül töreni dahil. Teklif alın.',
+  'avm-tavla-turnuvasi':
+    'AVM’ler için ziyaretçi çeken tavla turnuvası organizasyonu: sahne kurulumu, sponsorluk ve canlı skor ekranları. Marka etkileşimi yaratan etkinlik. Teklif alın.',
+  'iletisim':
+    'TavlaTV ile iletişime geçin: turnuva organizasyonu, sponsorluk, iş birliği ve sorularınız için bize yazın. En kısa sürede size dönüş yapalım.',
   'tek-oyun':
     'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',
   'yeni-oyun':
@@ -771,6 +787,9 @@ export default function App() {
   const [setup, setSetup] = useState<null | SetupMode>(null) // mac kurulum modali (baslangic modu)
   const [onlineTavlaOpen, setOnlineTavlaOpen] = useState(false) // SEO landing: /online-tavla
   const [tavlaOynaOpen, setTavlaOynaOpen] = useState(false) // SEO landing: /tavla-oyna
+  // Turnuva organizasyonu SEO servis sayfalari + /iletisim (slug tutar): hub + kurumsal/
+  // belediye/avm + iletisim. Tek state -> hepsi ServiceLanding ile render edilir.
+  const [servicePage, setServicePage] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false) // Tavla Rehberi blog: /tavla-rehberi
   const [guideSlug, setGuideSlug] = useState<string | null>(null) // /tavla-rehberi/<slug> -> yazı
   const [tournRulesOpen, setTournRulesOpen] = useState(false) // WBF turnuva kuralları: /turnuva-kurallari
@@ -1002,6 +1021,8 @@ export default function App() {
                                         ? 'basarimlar'
                                       : friendSetupOpen
                                         ? 'arkadasinla-oyna'
+                                      : servicePage
+                                        ? servicePage
                                       : onlineTavlaOpen
                                         ? 'online-tavla'
                                       : tavlaOynaOpen
@@ -1285,6 +1306,13 @@ export default function App() {
           break
         case 'tavla-oyna': // SEO landing sayfasi (taranabilir icerik)
           setTavlaOynaOpen(true)
+          break
+        case 'tavla-turnuvasi-organizasyonu': // Turnuva organizasyonu SEO servis sayfalari + iletisim
+        case 'kurumsal-tavla-turnuvasi':
+        case 'belediye-tavla-turnuvasi':
+        case 'avm-tavla-turnuvasi':
+        case 'iletisim':
+          setServicePage(seg[0])
           break
         case 'tavla-rehberi': // Tavla Rehberi blog: hub (/tavla-rehberi) veya yazi (/tavla-rehberi/<slug>)
           setGuideOpen(true)
@@ -7283,6 +7311,7 @@ export default function App() {
     setFriendSetupOpen(false)
     setOnlineTavlaOpen(false)
     setTavlaOynaOpen(false)
+    setServicePage(null)
     setGuideOpen(false)
     setGuideSlug(null)
     setTournRulesOpen(false)
@@ -7508,6 +7537,20 @@ export default function App() {
       { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
     ],
   })
+  // Organizasyon kolonu: turnuva organizasyonu SEO servis sayfalari + İletişim. Hepsi
+  // ServiceLanding ile page-host'ta acilir (goPage lobi baglamina doner). Bilgi Sayfaları'ndan
+  // (InfoPage SEO_SLUGS) icerik yonetilir. Bkz [[seo-online-tavla-tavla-oyna-landing]].
+  const openService = (slug: string) => goPage(() => setServicePage(slug))
+  footerColumns.push({
+    titleKey: 'foot.organization',
+    items: [
+      { key: 'org-hub', labelKey: '', label: 'Tavla Turnuvası Organizasyonu', onClick: () => openService('tavla-turnuvasi-organizasyonu') },
+      { key: 'org-kurumsal', labelKey: '', label: 'Kurumsal Tavla Turnuvası', onClick: () => openService('kurumsal-tavla-turnuvasi') },
+      { key: 'org-belediye', labelKey: '', label: 'Belediye Tavla Turnuvası', onClick: () => openService('belediye-tavla-turnuvasi') },
+      { key: 'org-avm', labelKey: '', label: 'AVM Tavla Turnuvası', onClick: () => openService('avm-tavla-turnuvasi') },
+      { key: 'org-iletisim', labelKey: '', label: 'İletişim', onClick: () => openService('iletisim') },
+    ],
+  })
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
   footerColumns.push({
     titleKey: 'menu.info',
@@ -7708,6 +7751,7 @@ export default function App() {
     achOpen ||
     friendSetupOpen ||
     editProfile ||
+    !!servicePage || // turnuva organizasyonu servis sayfalari + /iletisim (page-host'ta acilir)
     !!legalSlug || // hukuki sayfalar (KVKK/gizlilik/...) normal sayfa olarak page-host'ta acilir
     // Giris/Kayit (/giris) ve Sifremi Unuttum (/sifremi-unuttum): auth sayfasi da diger menu
     // sayfalari gibi page-host icinde acilsin -> ust hesap bari (header) gorunur kalir (aksi
@@ -8428,6 +8472,53 @@ export default function App() {
               />
             </div>
           </main>
+        </div>
+        {menuPages}
+        {authModal}
+        {menuOverlays}
+        {bugReport}
+      </>
+    )
+  }
+
+  // Turnuva organizasyonu SEO servis sayfalari + /iletisim (hub + kurumsal/belediye/avm +
+  // iletisim): SEO landing deseniyle ayni page-host akisi; ServiceLanding icinde iletisim
+  // formu render edilir. Kapatinca home'a doner.
+  if (servicePage) {
+    return (
+      <>
+        {mobileNav}
+        <div className="app lobby">
+          <div className="topbar-stack">
+            {accountBar}
+            {betaBanner}
+          </div>
+          <SideMenu
+            inGame={false}
+            hasActiveGame={hasActiveGame}
+            groups={menuGroups}
+            groupSig={groupCollapseSig}
+            onResume={menuProps.onResume}
+            active={activeKey}
+            badges={{ messages: dmUnread }}
+            mobileOpen={menuOpen}
+            onCloseMobile={() => setMenuOpen(false)}
+            onHome={menuProps.onHome}
+          />
+          <main className="main lobby-main has-page">
+            <div className="page-host">
+              <Suspense fallback={null}>
+                <ServiceLanding
+                  slug={servicePage}
+                  onClose={() => {
+                    setServicePage(null)
+                    setHome(true)
+                  }}
+                />
+              </Suspense>
+            </div>
+          </main>
+          <Footer columns={footerColumns} />
         </div>
         {menuPages}
         {authModal}

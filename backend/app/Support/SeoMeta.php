@@ -44,6 +44,31 @@ final class SeoMeta
             'Bedava tavla oyna! Ücretsiz, kayıtsız ve tarayıcıda anında açılan tavla oyunu. Yapay zekâya karşı pratik yap, arkadaşınla veya gerçek rakiplerle online tavla oyna.',
             'Tavla Oyna',
         ],
+        'tavla-turnuvasi-organizasyonu' => [
+            'Tavla Turnuvası Organizasyonu | Kurumsal, Belediye, AVM | TavlaTv',
+            'Kurumlar, belediyeler ve AVM’ler için anahtar teslim tavla turnuvası organizasyonu. Format kurgusu, hakemlik, dijital eşleşme tabloları ve ödül töreni dahil. Teklif alın.',
+            'Tavla Turnuvası Organizasyonu',
+        ],
+        'kurumsal-tavla-turnuvasi' => [
+            'Kurumsal Tavla Turnuvası Organizasyonu | TavlaTv',
+            'Şirketiniz için kurumsal tavla turnuvası organizasyonu: takım ruhu ve çalışan bağlılığı için anahtar teslim etkinlik. Ofiste, otelde veya hibrit online. Teklif alın.',
+            'Kurumsal Tavla Turnuvası',
+        ],
+        'belediye-tavla-turnuvasi' => [
+            'Belediye Tavla Turnuvası Organizasyonu | TavlaTv',
+            'Belediyeler için kitlesel katılımlı tavla turnuvası organizasyonu: festival, Ramazan ve kültür etkinlikleri. Dijital kayıt, hakemlik ve ödül töreni dahil. Teklif alın.',
+            'Belediye Tavla Turnuvası',
+        ],
+        'avm-tavla-turnuvasi' => [
+            'AVM Tavla Turnuvası Organizasyonu | TavlaTv',
+            'AVM’ler için ziyaretçi çeken tavla turnuvası organizasyonu: sahne kurulumu, sponsorluk ve canlı skor ekranları. Marka etkileşimi yaratan etkinlik. Teklif alın.',
+            'AVM Tavla Turnuvası',
+        ],
+        'iletisim' => [
+            'İletişim | TavlaTv',
+            'TavlaTV ile iletişime geçin: turnuva organizasyonu, sponsorluk, iş birliği ve sorularınız için bize yazın. En kısa sürede size dönüş yapalım.',
+            'İletişim',
+        ],
         'tek-oyun' => [
             'Tek Oyun Tavla | TavlaTv',
             'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',

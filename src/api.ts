@@ -1160,6 +1160,28 @@ export async function listInfoPages(): Promise<InfoPage[]> {
   const d = await req<{ pages: InfoPage[] }>('/info-pages')
   return d.pages
 }
+
+// İletişim / turnuva organizasyonu talebi. Footer "İletişim" sayfasindaki ve turnuva
+// organizasyonu landing'lerindeki formdan gonderilir. Misafir de gonderebilir.
+export interface ContactInput {
+  name: string
+  org?: string | null
+  email?: string | null
+  phone?: string | null
+  subject?: string | null // kurumsal | belediye | avm | online | genel
+  city?: string | null
+  event_date?: string | null
+  participants?: number | null
+  message: string
+  source_page?: string | null
+  url?: string | null
+}
+export async function sendContact(input: ContactInput): Promise<{ ok: boolean; id: number }> {
+  return req<{ ok: boolean; id: number }>('/contact', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
 export async function adminListContents(type?: ContentType): Promise<Content[]> {
   const q = type ? `?type=${encodeURIComponent(type)}` : ''
   const d = await req<{ items: Content[] }>(`/admin/contents${q}`)

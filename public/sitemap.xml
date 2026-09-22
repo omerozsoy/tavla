@@ -22,6 +22,38 @@
     <priority>0.9</priority>
   </url>
 
+  <!-- Turnuva organizasyonu (hizmet) + iletisim -->
+  <url>
+    <loc>https://www.tavlatv.com/tavla-turnuvasi-organizasyonu</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/kurumsal-tavla-turnuvasi</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/belediye-tavla-turnuvasi</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/avm-tavla-turnuvasi</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/iletisim</loc>
+    <lastmod>2026-09-23</lastmod>
+    <changefreq>yearly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
   <!-- Oyun modlari (giris gerektirmeden oynanabilir) -->
   <url>
     <loc>https://www.tavlatv.com/yz-ile-oyna</loc>

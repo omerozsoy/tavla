@@ -50,6 +50,10 @@ Route::get('/products', [\App\Http\Controllers\ProductController::class, 'index'
 // (misafir de bildirebilir); giris yapmissa BugReportController Bearer token'dan kullaniciyi
 // iliskilendirir. Spam/flood korumasi icin IP basi 6/dk (ekran goruntusu 8 MB'a kadar).
 Route::middleware('throttle:6,1,bug-report')->post('/bug-report', [\App\Http\Controllers\BugReportController::class, 'store']);
+// İletişim / turnuva organizasyonu talebi: footer "İletişim" + turnuva organizasyonu
+// landing'lerindeki formdan gonderilir. HALKA ACIK (misafir de gonderebilir); giris
+// yapmissa ContactController Bearer token'dan kullaniciyi iliskilendirir. IP basi 5/dk.
+Route::middleware('throttle:5,1,contact')->post('/contact', [\App\Http\Controllers\ContactController::class, 'store']);
 Route::get('/pay/bank-transfer', [\App\Http\Controllers\PaymentController::class, 'bankInfo']); // havale/EFT bilgisi (acik; kapaliysa enabled:false)
 Route::get('/tournaments/{tournament}', [TournamentController::class, 'show']);
 Route::get('/clubs', [ClubController::class, 'index']);

@@ -42,5 +42,12 @@ class InfoPage extends Model
         'tavla-rehberi/tavla-kupu-doubling-cube',
         'tavla-rehberi/tavla-kazanma-taktikleri',
         'tavla-rehberi/mars-gammon-backgammon-nedir',
+        // Turnuva organizasyonu SEO servis sayfalari + iletisim (footer "Organizasyon" kolonu).
+        // Frontend ServiceLanding hardcoded fallback icerik gosterir; body doldurulursa onu render eder.
+        'tavla-turnuvasi-organizasyonu',
+        'kurumsal-tavla-turnuvasi',
+        'belediye-tavla-turnuvasi',
+        'avm-tavla-turnuvasi',
+        'iletisim',
     ];
 }
