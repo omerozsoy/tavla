@@ -361,6 +361,23 @@ export async function getMenuConfig(): Promise<{ items: MenuOverride[]; groups: 
   }
 }
 
+// Footer kolon override'i (admin "Footer Kolonları"): sira + gorunurluk + baslik (labels[lang]).
+export interface FooterColumnCfg {
+  key: string
+  sort: number
+  visible: boolean
+  labels: Record<string, string> // dil kodu -> ozel baslik (bos ise i18n foot.* varsayilani)
+}
+// Halka acik; hata/bos -> App.tsx sabit varsayilan footer sirasini kullanir.
+export async function getFooterConfig(): Promise<FooterColumnCfg[]> {
+  try {
+    const d = await req<{ columns?: FooterColumnCfg[] }>('/footer-config')
+    return d.columns || []
+  } catch {
+    return []
+  }
+}
+
 // ---- Kulupler & Lig ----
 export interface ClubSummary {
   id: number
