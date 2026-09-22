@@ -18,9 +18,10 @@
   align-items: flex-start;
 }
 .foot-brand {
-  /* Marka+3 logo SOL'da kompakt kalır (BÜYÜMEZ) -> 7 kolon yanındaki boşluğu doldurur. */
-  flex: 0 1 210px;
-  min-width: 170px;
+  /* Marka+3 logo SOL'da kompakt kalır (BÜYÜMEZ) -> 7 kolon yanındaki boşluğu doldurur.
+     min-width 3 logonun (yan yana) sığacağı kadar (~72px×3 + boşluklar). */
+  flex: 0 1 240px;
+  min-width: 240px;
 }
 /* Logo + slogan kilidi: genisligi LOGO'ya buzulur (fit-content). Slogan width:0
    ile bu genisligi buyutmez, min-width:100% ile TAM logo genisliginde sarar. */
@@ -52,7 +53,7 @@
 /* Ilk 3 kurum logosu: markanin altinda beyaz yuvarlak cipler (koyu footer'da okunur). */
 .foot-partners {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap; /* 3 logo DAİMA yan yana (alt satıra sarmasın) */
   gap: 10px;
   margin-top: 20px;
 }
@@ -61,6 +62,7 @@
   align-items: center;
   justify-content: center;
   height: 72px;
+  flex: 0 0 auto; /* logolar küçülmesin/sarmasın */
   transition: transform 0.15s ease;
 }
 a.foot-partner:hover {
