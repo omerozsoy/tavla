@@ -105,11 +105,11 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Category:** Operations / verification
 **Affected file(s):** deployment environment, DB, queue, reverse proxy
 **Affected endpoint/event:** tüm money-game ve validator yolları
-**Description:** Genişletilmiş production fingerprint alındı: `production`, `app_debug=false`, PHP `8.3.33`, Laravel `12.67.0`, MariaDB `10.3.39`, `REPEATABLE-READ`, database queue, failed-jobs, validator primary/backup, wallet/claim tabloları ve migration batch `100` mevcut; config/routes cache etkin. `release_sha_present=false`; queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
+**Description:** Genişletilmiş production fingerprint alındı: `production`, `app_debug=false`, PHP `8.3.33`, Laravel `12.67.0`, MariaDB `10.3.39`, `REPEATABLE-READ`, database queue, failed-jobs, validator primary/backup, wallet/claim tabloları, migration batch `100`, config/routes cache ve release SHA mevcut. Queue worker sürümü ve reverse-proxy route’larının tamamı düzenli fingerprint olarak kayıtlı değil.
 **Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.
 **Root cause:** Production doğrulama zinciri standardize edilmedi.
 **Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.
-**Recommended fix:** Release SHA, DB isolation, queue worker ve reverse-proxy route kanıtını ayrıca kaydet; yalnız güvenli smoke test çalıştır.
+**Recommended fix:** Queue worker sürümü ve reverse-proxy route kanıtını ayrıca kaydet; yalnız güvenli smoke test çalıştır.
 **Database protection required?:** Evet, yalnız kontrollü rollout ile.
 **Regression test required?:** Evet.
 
