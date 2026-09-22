@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 /** Read-only production fingerprint; never prints secrets or user balances. */
@@ -26,6 +27,10 @@ class DeploymentFingerprint extends Command
         $this->line('db_transaction_isolation='.$this->transactionIsolation());
         $this->line('queue_connection='.config('queue.default'));
         $this->line('failed_jobs_table='.(Schema::hasTable('failed_jobs') ? 'present' : 'missing'));
+        $this->line('queue_pending_jobs='.$this->tableCount('jobs'));
+        $this->line('queue_failed_jobs='.$this->tableCount('failed_jobs'));
+        $this->line('queue_heartbeat_age_seconds='.$this->heartbeatAge('queue:worker:heartbeat'));
+        $this->line('cron_heartbeat_age_seconds='.$this->heartbeatAge('ops:cron:heartbeat'));
         $this->line('release_sha_present='.(($this->releaseSha() !== null) ? 'true' : 'false'));
         $this->line('validator_url_configured='.(config('validator.url') ? 'true' : 'false'));
         $this->line('validator_backup_configured='.(config('validator.url_backup') ? 'true' : 'false'));
@@ -81,5 +86,26 @@ class DeploymentFingerprint extends Command
             }
         }
         return null;
+    }
+
+    private function tableCount(string $table): string
+    {
+        if (! Schema::hasTable($table)) {
+            return 'unavailable';
+        }
+        try {
+            return (string) DB::table($table)->count();
+        } catch (\Throwable) {
+            return 'unavailable';
+        }
+    }
+
+    private function heartbeatAge(string $key): string
+    {
+        $value = Cache::get($key);
+        if (! is_numeric($value) || (int) $value <= 0) {
+            return 'unknown';
+        }
+        return (string) max(0, time() - (int) $value);
     }
 }
