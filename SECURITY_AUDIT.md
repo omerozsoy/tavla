@@ -14,17 +14,11 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
 
-| # | Kalan iş | Durum | Eksik kanıt |
-|---:|---|---|---|
-| 1 | Immutable wallet ledger | PARTIAL | DB seviyesinde UPDATE/DELETE koruması veya değişiklik trigger/audit kanıtı eklenmeli. |
+Tüm kritik server-authoritative invariant'lar production kanıtıyla tamamlandı.
 
 ## KALAN BULGULAR
 
 ## SIRALI KALAN FIX PLANI
-
-### PHASE 1 — Remaining invariant evidence
-
-1. Immutable ledger için DB koruması ve reconciliation alarmını ekle.
 
 ### PHASE 2 — Web hardening
 
