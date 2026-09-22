@@ -1,15 +1,16 @@
 /**
- * TopThreeShowcase — ana sayfa "Top List" öne çıkan İlk-3 podyumu (tam sayfa genişliği).
- * İki kolon: Puan (rating) ilk 3; PR ilk 3. Sıra 1/2/3 madalya rengiyle (altın/gümüş/bronz).
+ * TopThreeShowcase — ana sayfa "Top List" öne çıkan İlk-3 podyumu.
+ * İki kolon: Puan (rating) ilk 3; PR ilk 3. Sıra 1/2/3 madalya rozetiyle (altın/gümüş/bronz).
  * Satıra tıklayınca profil açılır. leaderboard()/prLeaderboard() ile veri gelir; ikisi de
  * boşsa bileşen HİÇ render edilmez (misafir/az-veri durumunda ana sayfayı kirletmez).
  *
- * Tasarım (Emil Kowalski craft): rafine easing, subtle hover, :active scale geri bildirimi,
- * satırlarda stagger giriş (yalnız transform/opacity), reduced-motion saygısı. Bkz topRank.css.
+ * Tasarım: sitenin panel dili (.home-panel + .rank-row/.rank-medal/.rank-val) BİREBİR
+ * kullanılır — diğer ana sayfa panelleriyle (Çevrimiçi Oyuncular / Canlı Maçlar / Sıralama)
+ * görsel tutarlılık. Yalnız iki kolon düzeni topRank.css'te (.tts-cols). Bkz HomePanels.tsx.
  */
-import { useEffect, useState, type CSSProperties } from 'react'
+import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
-import { Icon } from './Icon'
+import { Icon, type IconName } from './Icon'
 import { leaderboard, prLeaderboard, type LeaderRow, type PrLeaderRow } from '../api'
 import PlayerIdentity from './PlayerIdentity'
 import './topRank.css'
@@ -60,37 +61,34 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
 
   if (ratingRows.length === 0 && prRows.length === 0) return null
 
-  const renderCol = (headKey: string, icon: 'ranking' | 'medal', rows: RowData[]) => (
+  const renderCol = (headKey: string, icon: IconName, rows: RowData[]) => (
     <div className="tts-col">
       <div className="tts-col-head">
         <Icon name={icon} size={14} weight="fill" /> {t(headKey)}
       </div>
-      <div className="tts-list">
+      <div className="rank-list">
         {rows.map((r, i) => (
           <button
             key={r.id ?? i}
             type="button"
-            className="tts-row"
-            data-rank={i + 1}
-            style={{ '--i': i } as CSSProperties}
+            className="rank-row"
             disabled={!r.id}
             onClick={() => r.id && onProfile(r.id)}
           >
-            <span className="tts-rank" data-rank={i + 1} aria-hidden="true">
-              {i + 1}
-            </span>
-            <span className="tts-name">
+            <span className={`rank-no rank-medal rank-medal-${i + 1}`}>{i + 1}</span>
+            <span className="rank-name">
               <PlayerIdentity
                 userId={r.id}
                 name={r.name}
                 avatar={r.avatar}
                 frame={r.frame}
-                size={28}
-                rankSize="sm"
+                size={30}
+                rankSize="md"
                 premium={r.premium}
+                animated
               />
             </span>
-            <span className="tts-val">{r.value}</span>
+            <span className="rank-val">{r.value}</span>
           </button>
         ))}
       </div>
@@ -98,12 +96,10 @@ export default function TopThreeShowcase({ onProfile }: { onProfile: (id: number
   )
 
   return (
-    <section className="top-three-showcase" aria-label={t('toprank.showcaseTitle')}>
-      <header className="tts-head">
-        <span className="tts-title">
-          <Icon name="crown" size={16} weight="fill" /> {t('toprank.showcaseTitle')}
-        </span>
-      </header>
+    <section className="home-panel tts-panel" aria-label={t('toprank.showcaseTitle')}>
+      <div className="home-panel-head">
+        <Icon name="crown" size={18} weight="fill" /> {t('toprank.showcaseTitle')}
+      </div>
       <div className="tts-cols">
         {ratingRows.length > 0 && renderCol('toprank.ratingTop', 'ranking', ratingRows)}
         {prRows.length > 0 && renderCol('toprank.prTop', 'medal', prRows)}
