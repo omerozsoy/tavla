@@ -15845,6 +15845,18 @@ button.acct-row-logout:hover:not(:disabled) {
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
 }
+/* İSTİSNA: galeri küçük resimleri (.service-gallery-thumb) .info-rich.rich İÇİNDE de
+   (ServiceLanding gövdesi InfoPane ile burada render edilir) doğru boyutlanmalı. Aksi halde
+   yukarıdaki genel kural full-width + height:auto ile ezer -> 144px thumb'ı taşırıp yalnız
+   üst şerit (beyaz) görünür ("resimleri göremiyorum"). Yüksek özgüllük geri kazandırır. */
+.info-rich.rich .service-gallery-thumb img {
+  height: 100%;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
 
 /* Bilgi sayfasi */
 .info-card .info-body {
