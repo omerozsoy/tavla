@@ -43,6 +43,7 @@ return [
 
         // --- HESAP ---
         ['key' => 'membership', 'group' => 'account', 'label' => 'Üyelik'],
+        ['key' => 'shop', 'group' => 'account', 'label' => 'Mağaza'],
 
         // --- BİLGİ: tek tek alt sayfalar (tek "Bilgi" ogesi yerine) ---
         ['key' => 'info-about', 'group' => 'info', 'label' => 'Hakkımızda'],
