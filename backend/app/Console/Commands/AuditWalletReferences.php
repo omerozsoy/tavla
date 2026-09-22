@@ -50,6 +50,15 @@ class AuditWalletReferences extends Command
             foreach ($missingKeyTypes as $row) {
                 $this->line('missing_idempotency_type='.$row->type.' count='.(int) $row->total);
             }
+            $recentMissingKeyTypes = (clone $missingKeyQuery)
+                ->where('created_at', '>=', now()->subDay())
+                ->select('type', DB::raw('COUNT(*) as total'))
+                ->groupBy('type')
+                ->orderBy('type')
+                ->get();
+            foreach ($recentMissingKeyTypes as $row) {
+                $this->line('missing_idempotency_type_last_24h='.$row->type.' count='.(int) $row->total);
+            }
         }
         foreach ($rows as $row) {
             $this->line('missing_reference_type='.$row->type.' count='.(int) $row->total);
