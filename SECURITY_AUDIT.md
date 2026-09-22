@@ -47,13 +47,13 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 **Category:** Wallet / accounting
 **Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, spin ve mağaza controller/service yolları
 **Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
-**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor. Zar slotu ve Lucky Wheel için kalıcı receipt/`Idempotency-Key` desteği eklendi; production migration/deploy ve tekrar denetimi bekleniyor.
+**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor. Zar slotu, Lucky Wheel ve legacy mağaza satın alımı için receipt/idempotency desteği eklendi; production migration/deploy ve tekrar denetimi bekleniyor.
 Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-references` komutu mevcut satırları değiştirmeden eksik referansları tür bazında sayar; production çıktısı henüz alınmadı.
 Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `daily_reward=16`, `lucky_wheel_spin=11`, `dice_slot_payout=12`, `shop_purchase=2`. Bu tarihsel satırlar değiştirilmedi.
 **Attack scenario:** `shop_purchase`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
 **Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
 **Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt. Production’daki 116 satır referanssızlığı tek başına çift ödeme kanıtı değildir; mevcut akışların cooldown/ownership kontrolleri ayrı bir savunma katmanıdır.
-**Recommended fix:** Spin işlemleri için kalıcı receipt ve command key ekle; mağaza satın alımını order/ownership referansına bağla; duplicate-request/job testlerini uygula. Tarihsel satırları otomatik yeniden yazma; yalnız reconciliation/forensics için ayrı backfill planla.
+**Recommended fix:** Production migration/deploy sonrası `security:wallet-references` ve duplicate-request testlerini çalıştır; kalan tarihsel satırları otomatik yeniden yazma, yalnız reconciliation/forensics için ayrı backfill planla.
 **Database protection required?:** Evet.
 **Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
