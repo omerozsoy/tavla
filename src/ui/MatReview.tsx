@@ -389,6 +389,7 @@ export default function MatReview({
             <span className="mrv-ch-no">#</span>
             <span className="mrv-ch-move">{t('mrv.move')}</span>
             <span className="mrv-ch-eq">{t('mrv.equity')}</span>
+            <span className="mrv-ch-loss">{t('mrv.loss')}</span>
           </div>
           <div className="mrv-cands">
             {(cur?.cands ?? []).map((c, ci) => {
@@ -406,9 +407,9 @@ export default function MatReview({
                     {/* Oynanan hamle: "senin/rakibin" ayrımı YOK — ikisi de "Oynanan Hamle". */}
                     {isPlayed && <span className="mrv-c-you">{t('mrv.playedMove')}</span>}
                   </span>
-                  <span className="mrv-c-eq">
-                    {ci === 0 ? `${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}` : `(${diff.toFixed(3)})`}
-                  </span>
+                  {/* İki sütun: MUTLAK equity (her satır) + KAYIP (en iyiye göre; #1 = —) */}
+                  <span className="mrv-c-eq">{`${c.equity >= 0 ? '+' : ''}${c.equity.toFixed(3)}`}</span>
+                  <span className="mrv-c-loss">{ci === 0 ? '—' : `−${(-diff).toFixed(3)}`}</span>
                 </button>
               )
             })}
@@ -425,7 +426,10 @@ export default function MatReview({
                   {cur.notation}
                   <span className="mrv-c-you">{t('mrv.playedMove')}</span>
                 </span>
-                <span className="mrv-c-eq">({(-(cur.loss ?? 0)).toFixed(3)})</span>
+                <span className="mrv-c-eq">
+                  {(() => { const eq = (cur.cands?.[0]?.equity ?? 0) - (cur.loss ?? 0); return `${eq >= 0 ? '+' : ''}${eq.toFixed(3)}` })()}
+                </span>
+                <span className="mrv-c-loss">−{(cur.loss ?? 0).toFixed(3)}</span>
               </button>
             )}
             {(!cur?.cands || cur.cands.length === 0) && cur?.pos && (

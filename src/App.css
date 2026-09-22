@@ -3795,17 +3795,18 @@ button[aria-disabled='true'],
   color: var(--seo-accent);
   font-weight: 700;
 }
-/* Ic linkler */
-.seo-landing-body-wrap a,
-.seo-content-home a {
+/* Ic linkler — YALNIZ satir-ici metin linkleri (CTA butonu HARIC: asChild ile <a>
+   'seo-cta-btn' class'ini tasir; aksi halde buton metni kiremit-uzeri-kiremit = GORUNMEZ). */
+.seo-landing-body-wrap a:not(.seo-cta-btn),
+.seo-content-home a:not(.seo-cta-btn) {
   color: var(--seo-accent);
   text-decoration: none;
   border-bottom: 1px solid color-mix(in srgb, var(--seo-accent) 35%, transparent);
   transition: border-color 150ms var(--seo-ease), color 150ms var(--seo-ease);
 }
 @media (hover: hover) and (pointer: fine) {
-  .seo-landing-body-wrap a:hover,
-  .seo-content-home a:hover {
+  .seo-landing-body-wrap a:not(.seo-cta-btn):hover,
+  .seo-content-home a:not(.seo-cta-btn):hover {
     border-bottom-color: var(--seo-accent);
   }
 }
@@ -25611,7 +25612,8 @@ select:-webkit-autofill {
 .mrv-cands-head,
 .mrv-cand {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  /* #, hamle, equity (mutlak), kayıp (en iyiye göre) — iki sağ sütun */
+  grid-template-columns: 24px 1fr auto auto;
   align-items: center;
   gap: 8px;
 }
@@ -25681,9 +25683,21 @@ select:-webkit-autofill {
 .mrv-c-eq {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
+  text-align: right;
+  min-width: 3.6em;
 }
 .mrv-cand.sel .mrv-c-eq {
   color: var(--text);
+}
+/* Kayıp sütunu: en iyiye göre ne kadar geride (kırmızımsı; #1 için "—" nötr). */
+.mrv-ch-loss,
+.mrv-c-loss {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 3.6em;
+}
+.mrv-c-loss {
+  color: color-mix(in srgb, #d9534f 78%, var(--muted));
 }
 /* ---- Küp analizi paneli (sağ sütun, küp kararında) ---- */
 .mrv-cube {
