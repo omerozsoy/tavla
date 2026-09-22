@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\Process\Process;
 
 /** Self-cleaning concurrent settlement/retry proof; no production account is used. */
@@ -98,7 +99,7 @@ class SettlementRetryTest extends Command
             if ($room) {
                 DB::table('wallet_transactions')->where('reference_type', Room::class)->where('reference_id', $room->id)->delete();
                 DB::table('commissions')->where('room_code', $room->code)->delete();
-                if (\Illuminate\Schema\Schema::hasTable('active_money_match_claims')) {
+                if (Schema::hasTable('active_money_match_claims')) {
                     DB::table('active_money_match_claims')->where('room_id', $room->id)->delete();
                 }
                 $room->delete();
