@@ -34,6 +34,16 @@ final class SeoMeta
      * h1:    <noscript> <h1> (JS'siz tarayıcıların gördüğü başlık)
      */
     private const META = [
+        'online-tavla' => [
+            'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
+            'Ücretsiz online tavla oyna! Gerçek rakiplere karşı canlı maçlar, güçlü yapay zekâ botu, turnuvalar ve maç analizi (PR). Kayıt gerektirmez, tarayıcıda hemen başla.',
+            'Online Tavla Oyna',
+        ],
+        'tavla-oyna' => [
+            'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
+            'Bedava tavla oyna! Ücretsiz, kayıtsız ve tarayıcıda anında açılan tavla oyunu. Yapay zekâya karşı pratik yap, arkadaşınla veya gerçek rakiplerle online tavla oyna.',
+            'Tavla Oyna',
+        ],
         'tek-oyun' => [
             'Tek Oyun Tavla | TavlaTv',
             'Tek başına tavla oyna: yapay zekâya karşı pratik yap, açılışları ve hamleleri dene. Ücretsiz ve kayıt gerektirmez.',
