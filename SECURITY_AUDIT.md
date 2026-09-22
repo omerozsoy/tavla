@@ -8,7 +8,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 |---|---:|
 | CRITICAL | 0 |
 | HIGH | 3 |
-| MEDIUM | 2 |
+| MEDIUM | 3 |
 | LOW | 0 |
 | UNKNOWN | 1 |
 
@@ -99,26 +99,25 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 **Database protection required?:** Tercihen nonce unique/revocation kaydı.
 **Regression test required?:** Evet; expiry, replay, concurrent exchange ve referrer/history senaryoları.
 
-### SEC-OPS-001 — Production concurrency ve deployment state kanıtı eksik
+### SEC-WEB-002 — API wildcard CORS header’ı
 
-**Severity:** UNKNOWN
-**Category:** Operations / verification
-**Affected file(s):** deployment environment, DB, queue, reverse proxy
-**Affected endpoint/event:** tüm money-game ve validator yolları
-**Description:** Production fingerprint tamamen temiz: `production`, `app_debug=false`, PHP `8.3.33`, Laravel `12.67.0`, MariaDB `10.3.39`, `REPEATABLE-READ`, database queue, queue pending/failed `0`, worker heartbeat `1s`, cron heartbeat `33s`, wallet/claim tabloları, migration batch `100`, config/routes cache, release SHA ve validator primary/backup mevcut. `https://www.tavlatv.com` smoke testi `200 OK` ve beklenen güvenlik header’larıyla geçti; API ve validator route’ları ayrıca doğrulanmayı bekliyor.
-**Attack scenario:** Sunucuda eski build/config çalışıyor olabilir veya deployment ile repository ayrışabilir.
-**Root cause:** Production doğrulama zinciri standardize edilmedi.
-**Potential impact:** Yerel test sonuçları production garantisine dönüşmeyebilir.
-**Recommended fix:** `curl -I` ile public web, API ve validator endpoint’lerinin beklenen host/HTTPS/header yönlendirmelerini kaydet.
-**Database protection required?:** Evet, yalnız kontrollü rollout ile.
-**Regression test required?:** Evet.
+**Severity:** MEDIUM
+**Category:** CORS / browser security
+**Affected file(s):** `backend/config/cors.php`, reverse proxy header configuration
+**Affected endpoint/event:** API yanıtları
+**Description:** Production API smoke yanıtında `Access-Control-Allow-Origin: *` görüldü. Sanctum credentials kapalı olsa da wildcard allowlist API’nin yanlışlıkla public cross-origin tüketilmesine ve ileride credentials açılırsa güvenlik sınırının bozulmasına neden olabilir.
+**Attack scenario:** Kötü niyetli bir origin API yanıtlarını cross-origin çağırmayı deneyebilir; ileride credential policy değişirse kimlikli erişim riski oluşur.
+**Root cause:** CORS allowlist production origin’leriyle daraltılmamış.
+**Potential impact:** Cross-origin bilgi ifşası ve yanlış yapılandırma halinde kimlikli API erişimi.
+**Recommended fix:** `allowed_origins` değerini yalnızca gerekli TavlaTV origin’leriyle sınırla; `supports_credentials=false` kararını koru; preflight regresyon testi ekle.
+**Database protection required?:** Hayır.
+**Regression test required?:** Evet; izinli ve izinsiz origin ile.
 
 ## SIRALI KALAN FIX PLANI
 
 ### PHASE 0 — Deployment doğrulaması
 
-1. `security:deployment-fingerprint` ile release/config/DB/queue/validator ve route fingerprint’lerini kaydet.
-2. SSO GET kullanımını access-log/referrer politikasıyla izle ve POST migration’ını tamamla.
+1. SSO GET kullanımını access-log/referrer politikasıyla izle ve POST migration’ını tamamla.
 
 ### PHASE 1 — DB concurrency
 
@@ -127,9 +126,8 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ### PHASE 2 — Wallet/settlement
 
-1. Spin receipt ve mağaza order/ownership referanslarını command/business id ile bağla.
-2. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
-3. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
+1. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
+2. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
 
 ### PHASE 3 — Web hardening
 
@@ -138,8 +136,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ### PHASE 4 — Monitoring
 
-1. Production release/config/DB/queue fingerprint’lerini periyodik kaydet.
-2. WebSocket/broadcast altyapısının command-only state değişimi yaptığını doğrula.
+1. WebSocket/broadcast altyapısının command-only state değişimi yaptığını doğrula.
 
 ## KAPSAM VE KISITLAR
 
