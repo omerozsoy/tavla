@@ -10,7 +10,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | HIGH | 3 |
 | MEDIUM | 0 |
 | LOW | 0 |
-| UNKNOWN | 1 |
+| UNKNOWN | 0 |
 
 ## KALAN SERVER-AUTHORITATIVE CHECKLIST
 
@@ -22,7 +22,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Client wallet balance değiştiremez | PARTIAL | Spin ve mağaza akışları için idempotency/receipt kanıtını tamamla. |
 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zincirini production’da doğrula. |
-| WebSocket event'i state değiştiremez | UNKNOWN | Production’da harici socket/broadcast servisi kullanılıp kullanılmadığını doğrula. |
+| WebSocket event'i state değiştiremez | PASS | Repo’da broadcasting channel/event, Reverb/Pusher/Echo veya socket state handler bulunmadı; state API command/polling akışından geçiyor. |
 | Immutable wallet ledger | PARTIAL | Tüm ekonomik yazarlar ve production ledger şeması için deployment kanıtı topla. |
 
 ## KALAN BULGULAR
@@ -85,12 +85,9 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ### PHASE 3 — Web hardening
 
+
 1. CSP Report-Only ihlal envanterini tamamla.
 2. CSP enforcing geçişini Playwright regresyonlarıyla doğrula.
-
-### PHASE 4 — Monitoring
-
-1. WebSocket/broadcast altyapısının command-only state değişimi yaptığını doğrula.
 
 ## KAPSAM VE KISITLAR
 
