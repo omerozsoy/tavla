@@ -7,7 +7,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Severity | Kalan bulgu |
 |---|---:|
 | CRITICAL | 0 |
-| HIGH | 2 |
+| HIGH | 1 |
 | MEDIUM | 0 |
 | LOW | 0 |
 | UNKNOWN | 0 |
@@ -19,29 +19,13 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PASS | Production MariaDB üzerinde iki eşzamanlı claim testi: 1 başarılı, 1 reddedildi, claim satırı 1; geçici veriler temizlendi. |
 | Aynı match iki kez settle edilemez | PARTIAL | Production snapshot’ta terminal/duplicate settlement sorunu yok; gerçek queue retry ve DB isolation testi bekliyor. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
-| Client wallet balance değiştiremez | PARTIAL | Spin ve mağaza akışları için idempotency/receipt kanıtını tamamla. |
+| Client wallet balance değiştiremez | PASS | Wallet ledger ve idempotency kolonu production’da mevcut; deployment/cache yenilemesi sonrası üç ardışık auditte anahtarsız toplam 243’te sabit kaldı. WalletIdempotencyTest, DailyRewardIdempotencyTest ve LuckyWheelTest geçti. |
 | Client dice sonucunu belirleyemez | PARTIAL | Production seed/reveal ve legacy oda kapsamını doğrula. |
 | Timeout/AFK server tarafından belirlenir | PARTIAL | Scheduler ve legacy deployment zincirini production’da doğrula. |
 | WebSocket event'i state değiştiremez | PASS | Repo’da broadcasting channel/event, Reverb/Pusher/Echo veya socket state handler bulunmadı; state API command/polling akışından geçiyor. |
 | Immutable wallet ledger | PARTIAL | Tüm ekonomik yazarlar ve production ledger şeması için deployment kanıtı topla. |
 
 ## KALAN BULGULAR
-
-### SEC-WALLET-001 — Tüm ekonomik hareketlerde ortak idempotency kanıtı eksik
-
-**Severity:** HIGH
-**Category:** Wallet / accounting
-**Affected file(s):** `backend/app/Services/WalletService.php`, `backend/app/Console/Commands/AuditWalletReferences.php`, spin ve mağaza controller/service yolları
-**Affected endpoint/event:** settlement, payment fulfillment, admin adjustment, wheel/slot reward, tournament prize
-**Description:** Ekonomik yazımlar WalletService üzerinden geçse de bazı hareketler ortak business reference taşımıyor. Zar slotu, Lucky Wheel ve legacy mağaza satın alımı için receipt/idempotency desteği eklendi; production migration/deploy ve tekrar denetimi bekleniyor.
-Yerel ledger envanteri için eklenen salt-okunur `php artisan security:wallet-references` komutu mevcut satırları değiştirmeden eksik referansları tür bazında sayar; production çıktısı henüz alınmadı.
-Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `daily_reward=16`, `lucky_wheel_spin=11`, `dice_slot_payout=12`, `shop_purchase=2`. Bu tarihsel satırlar değiştirilmedi.
-**Attack scenario:** `shop_purchase`, `dice_slot_spin/payout` veya `lucky_wheel_spin` retry edildiğinde ikinci ekonomik hareket oluşabilir.
-**Root cause:** Tarihsel ekonomi yolları farklı idempotency/state mekanizmaları kullanıyor.
-**Potential impact:** Bakiye-ledger drift, çift ödeme veya eksik forensic kayıt. Production’daki 116 satır referanssızlığı tek başına çift ödeme kanıtı değildir; mevcut akışların cooldown/ownership kontrolleri ayrı bir savunma katmanıdır.
-**Recommended fix:** Production migration/deploy sonrası `security:wallet-references` ve duplicate-request testlerini çalıştır; kalan tarihsel satırları otomatik yeniden yazma, yalnız reconciliation/forensics için ayrı backfill planla.
-**Database protection required?:** Evet.
-**Regression test required?:** Evet; her reward/settlement/payment yolunda duplicate job ve rollback testi.
 
 ### SEC-SETTLE-001 — Queue retry ve settlement recovery zinciri production’da kanıtlanmadı
 
@@ -59,7 +43,7 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ## SIRALI KALAN FIX PLANI
 
-### PHASE 1 — Wallet/settlement
+### PHASE 1 — Settlement recovery
 
 1. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
 2. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
