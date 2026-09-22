@@ -21,8 +21,8 @@ class Setting extends Model
         'reward_normal' => 25,
         'reward_premium' => 50,
         'commission_pct' => 5,
-        'pr_min_matches' => 10,    // PR Sıralaması: minimum analiz edilmiş maç
-        'pr_min_decisions' => 200, // PR Sıralaması: minimum analiz edilmiş karar
+        'pr_min_matches' => 5,     // PR Sıralaması: minimum analiz edilmiş maç
+        'pr_min_decisions' => 100, // PR Sıralaması: minimum analiz edilmiş karar
         // Havale/EFT ödemesi (admin panel: Ayarlar > Havale/EFT). Kapalıyken checkout'ta gösterilmez.
         'bank_transfer_enabled' => 0,
         'bank_transfer_iban' => '',
