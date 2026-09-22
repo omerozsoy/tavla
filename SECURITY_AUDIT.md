@@ -7,7 +7,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Severity | Kalan bulgu |
 |---|---:|
 | CRITICAL | 0 |
-| HIGH | 3 |
+| HIGH | 2 |
 | MEDIUM | 0 |
 | LOW | 0 |
 | UNKNOWN | 0 |
@@ -16,7 +16,7 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 
 | İnvariant | Durum | Kalan iş |
 |---|---|---|
-| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PARTIAL | MariaDB 10.3.39 / REPEATABLE-READ ve unique claim index production’da doğrulandı; gerçek paralel admission testi hâlâ bekliyor. |
+| Aynı kullanıcı aynı anda birden fazla aktif money match'te oynayamaz | PASS | Production MariaDB üzerinde iki eşzamanlı claim testi: 1 başarılı, 1 reddedildi, claim satırı 1; geçici veriler temizlendi. |
 | Aynı match iki kez settle edilemez | PARTIAL | Production snapshot’ta terminal/duplicate settlement sorunu yok; gerçek queue retry ve DB isolation testi bekliyor. |
 | Client game result belirleyemez | PARTIAL | Tarihsel/offline projeksiyonlar ve harici tüketiciler için canonical zinciri doğrula. |
 | Client wallet balance değiştiremez | PARTIAL | Spin ve mağaza akışları için idempotency/receipt kanıtını tamamla. |
@@ -26,20 +26,6 @@ Bu dosyada yalnızca henüz tamamlanmamış veya production’da kanıtlanmamı�
 | Immutable wallet ledger | PARTIAL | Tüm ekonomik yazarlar ve production ledger şeması için deployment kanıtı topla. |
 
 ## KALAN BULGULAR
-
-### SEC-DB-001 — Money-match admission için gerçek DB yarış kanıtı eksik
-
-**Severity:** HIGH
-**Category:** Concurrency / database invariant
-**Affected file(s):** `backend/app/Http/Controllers/RoomController.php`, `backend/app/Models/Room.php`, room migrations
-**Affected endpoint/event:** matchmaking, room join/enter/rematch
-**Description:** Production read-only claim snapshot’ı temiz ve unique user claim index’i mevcut; kullanıcı başına claim mekanizmasının gerçek paralel admission yarış davranışı henüz kanıtlanmadı.
-**Attack scenario:** Aynı user ile paralel admission istekleri iki aktif money match oluşturmaya çalışabilir.
-**Root cause:** SQLite testleri gerçek MariaDB isolation ve lock davranışını temsil etmez; aktif maç yokken paralel admission gözlemi yapılamadı.
-**Potential impact:** Aynı bakiye iki maçta rezerve edilebilir, settlement ve AFK sonuçları çakışabilir.
-**Recommended fix:** Kontrollü test kullanıcılarıyla 10–50 paralel MySQL join/enter isteği çalıştır; production kullanıcı/coin verisine dokunmadan unique claim sonucunu doğrula.
-**Database protection required?:** Evet.
-**Regression test required?:** Evet; gerçek MySQL/InnoDB üzerinde.
 
 ### SEC-WALLET-001 — Tüm ekonomik hareketlerde ortak idempotency kanıtı eksik
 
@@ -73,17 +59,12 @@ Production kanıtı alındı: toplam 116 eksik referans; `dice_slot_spin=75`, `d
 
 ## SIRALI KALAN FIX PLANI
 
-### PHASE 1 — DB concurrency
-
-1. Eski aktif odaları claim tablosuyla read-only karşılaştır.
-2. Gerçek MySQL paralel admission testini çalıştır.
-
-### PHASE 2 — Wallet/settlement
+### PHASE 1 — Wallet/settlement
 
 1. Unique ledger referanslarını ve queue retry rollback’ini doğrula.
 2. Reconciliation alarmı ve güvenli worker retry smoke testi ekle.
 
-### PHASE 3 — Web hardening
+### PHASE 2 — Web hardening
 
 
 1. CSP Report-Only ihlal envanterini tamamla.
