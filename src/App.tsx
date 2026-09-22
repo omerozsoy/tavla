@@ -7548,10 +7548,10 @@ export default function App() {
       { key: 'org-kurumsal', labelKey: '', label: 'Kurumsal Tavla Turnuvası', onClick: () => openService('kurumsal-tavla-turnuvasi') },
       { key: 'org-belediye', labelKey: '', label: 'Belediye Tavla Turnuvası', onClick: () => openService('belediye-tavla-turnuvasi') },
       { key: 'org-avm', labelKey: '', label: 'AVM Tavla Turnuvası', onClick: () => openService('avm-tavla-turnuvasi') },
-      { key: 'org-iletisim', labelKey: '', label: 'İletişim', onClick: () => openService('iletisim') },
     ],
   })
   // 4. kolon: "Bilgi" sayfasinin sekmeleri -> Info'yu ilgili sekmede acar (openInfoTab yukarida).
+  // İletişim de bu grupta (ServiceLanding /iletisim; openService yukarida tanimli).
   footerColumns.push({
     titleKey: 'menu.info',
     items: [
@@ -7561,6 +7561,7 @@ export default function App() {
       { key: 'info-scoring', labelKey: 'info.tab.scoring', onClick: () => openInfoTab('scoring') },
       { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
       { key: 'info-fair', labelKey: 'fair.title', onClick: () => openInfoTab('fair') },
+      { key: 'org-iletisim', labelKey: '', label: 'İletişim', onClick: () => openService('iletisim') },
     ],
   })
   // 5. kolon: "Yasal" — hukuki sayfalar (DB'den) + Cerez Tercihleri (banner/modal).
@@ -7913,13 +7914,20 @@ export default function App() {
           <Lessons onClose={() => setLessonsOpen(false)} />
         </Suspense>
       )}
-      {shopOpen && user && (
+      {shopOpen && (
         <Shop
-          coins={user.coins ?? 0}
+          // Misafir de mağazayı gezebilir (gate yok): cüzdan 0 görünür, satın alma girişe yönlendirir.
+          coins={user?.coins ?? 0}
           rewardReady={rewardReady}
           rewardSecs={rewardSecs}
           onDaily={handleDaily}
           onBuyCoins={(pkgId) => {
+            // Misafir: sepet/ödeme giriş ister -> mağazayı kapat, giriş ekranını aç.
+            if (!user) {
+              setShopOpen(false)
+              setShowAuth(true)
+              return
+            }
             // Coin paketini sepete ekle (varsa adedini arttir) -> sepete yonlendir.
             // Uyelik ogesi coin ile karismaz: coin eklenince sepetten cikarilir (tek-tip sepet).
             setCartItems((prev) => {
@@ -7941,7 +7949,7 @@ export default function App() {
             setShopOpen(false)
             setMemOpen(true)
           }}
-          onAddToCart={addProductToCart}
+          onAddToCart={user ? addProductToCart : () => { setShopOpen(false); setShowAuth(true) }}
           tab={shopTab}
           onTabChange={(slug) => {
             setShopTab(slug)
@@ -7954,15 +7962,17 @@ export default function App() {
           boardThemes={boardThemeList}
           onBuyItem={handleBuy}
           framesSlot={
-            <FrameShop
-              coins={user.coins ?? 0}
-              unlocks={user.unlocks ?? []}
-              currentFrame={user.avatar_frame ?? null}
-              avatar={profile.avatar ?? null}
-              name={profile.nickname}
-              onBuy={handleBuy}
-              onEquip={handleEquipFrame}
-            />
+            user ? (
+              <FrameShop
+                coins={user.coins ?? 0}
+                unlocks={user.unlocks ?? []}
+                currentFrame={user.avatar_frame ?? null}
+                avatar={profile.avatar ?? null}
+                name={profile.nickname}
+                onBuy={handleBuy}
+                onEquip={handleEquipFrame}
+              />
+            ) : undefined
           }
           onClose={() => {
             setShopOpen(false)
