@@ -9,6 +9,7 @@ import {
   type DiceStats, type DicePhase,
 } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import TopRankMedals from './TopRankMedals'
 import { LineChart, BarChart } from './Charts'
 import { DiceFace } from './DiceFace'
 import { Skeleton } from './Skeleton'
@@ -166,6 +167,8 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                     <div className="stats-coins"><Coins amount={u?.coins ?? 0} size={14} /></div>
                   </div>
                 </div>
+                {/* Top-3 madalyaları (PR/Puan ilk 3) — kendi profilinde de belirgin göster. */}
+                <TopRankMedals userId={u?.id} />
                 <div className="stats-rank">{t('stats.rank', { r: data.rank, n: data.total })}</div>
               </>
             )}

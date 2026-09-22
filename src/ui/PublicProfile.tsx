@@ -4,6 +4,7 @@ import { useEscape } from './useEscape'
 import { useT } from '../i18n'
 import { userProfile, type PublicProfile as Profile } from '../api'
 import PlayerIdentity from './PlayerIdentity'
+import TopRankMedals from './TopRankMedals'
 import { Button } from '@/components/ui/button'
 import { Icon, type IconName } from './Icon'
 
@@ -88,6 +89,8 @@ export default function PublicProfile({
                 )}
               </div>
             </div>
+            {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
+            <TopRankMedals userId={p.id} />
             <div className="pp-rank">
               {t('stats.rank', { r: p.rank, n: '' }).replace('/ ', '')}
               <span className={`pp-status ${p.online ? 'on' : 'off'}`}>
