@@ -62,6 +62,10 @@ class BugReportResource extends Resource
             Forms\Components\Placeholder::make('email')->label('E-posta')
                 ->content(fn (?BugReport $record) => $record?->email ?: '—'),
 
+            // Ne zaman bildirilmiş: tarih + SAAT:DAKİKA (liste kolonuyla aynı format).
+            Forms\Components\Placeholder::make('created_at')->label('Bildirilme zamanı')
+                ->content(fn (?BugReport $record) => $record?->created_at?->format('d.m.Y H:i') ?? '—'),
+
             Forms\Components\Placeholder::make('user_agent')->label('Tarayıcı')
                 ->content(fn (?BugReport $record) => $record?->user_agent ?: '—')
                 ->columnSpanFull(),
