@@ -39,7 +39,7 @@ class UserResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Kimlik')->columns(2)->schema([
-                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required(),
+                Forms\Components\TextInput::make('nickname')->label('Takma ad')->required()->maxLength(15),
                 Forms\Components\TextInput::make('email')->label('E-posta')->email()->required(),
                 Forms\Components\TextInput::make('first_name')->label('Ad'),
                 Forms\Components\TextInput::make('last_name')->label('Soyad'),
@@ -201,6 +201,42 @@ class UserResource extends Resource
                         }
                         $record->save();
                     }),
+            ])
+            ->bulkActions([
+                // ÇOKLU-SEÇİM SİLME: satır seçip toplu sil. Filament'in hazır DeleteBulkAction'ı
+                // düz $user->delete() çağırır -> kulüp SAHİBİ bir üye silinince clubs cascadeOnDelete
+                // TÜM kulübü (+ masum üyeleri) uçururdu. Bu yüzden UserEraser (deleteAccount/CLI ile
+                // AYNI nazik sözleşme: kulüp devri + notifications/tokens + cascade) kullanılır.
+                // GÜVENLİK: yönetici (is_admin) hesaplar ATLANIR (kazara/kötü-niyetli admin silme yok).
+                Tables\Actions\BulkAction::make('deleteUsers')
+                    ->label('Seçilenleri Sil')
+                    ->icon('heroicon-m-trash')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Seçili üyeleri sil')
+                    ->modalDescription('Seçilen üyeler ve maç/istatistik/coin kayıtları KALICI silinir '
+                        .'(sahip oldukları kulüpler en eski üyeye devredilir). Yönetici hesaplar atlanır. '
+                        .'Bu işlem GERİ ALINAMAZ.')
+                    ->modalSubmitActionLabel('Evet, sil')
+                    ->action(function (\Illuminate\Support\Collection $records) {
+                        $deleted = 0;
+                        $skipped = 0;
+                        foreach ($records as $record) {
+                            if ($record->is_admin) {
+                                $skipped++;
+
+                                continue; // yönetici asla silinmez
+                            }
+                            \App\Support\UserEraser::erase($record);
+                            $deleted++;
+                        }
+                        \Filament\Notifications\Notification::make()
+                            ->title('Silme tamamlandı')
+                            ->body("{$deleted} üye silindi".($skipped > 0 ? ", {$skipped} yönetici atlandı." : '.'))
+                            ->success()
+                            ->send();
+                    })
+                    ->deselectRecordsAfterCompletion(),
             ]);
     }
 
