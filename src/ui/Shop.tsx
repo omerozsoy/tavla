@@ -27,7 +27,7 @@ interface Props {
   framesSlot?: ReactNode
   onAddToCart?: (line: CartAddLine) => void // ürün -> sepete ekle
   initialTab?: string
-  /** URL-otoriter secili sekme (App shopTab): 'coin' | kategori-slug. Verilirse ic state yerine bu kullanilir. */
+  /** URL-otoriter secili sekme (App shopTab): 'coin' (vitrin) | kategori-slug. Verilirse ic state yerine bu kullanilir. */
   tab?: string
   /** Sekme degisince App'e bildir -> URL /magaza veya /magaza/<kategori> guncellenir. */
   onTabChange?: (slug: string) => void
@@ -38,12 +38,13 @@ interface Props {
   onClose: () => void
 }
 
-// 'coin' (ve eski 'coins') = rezerve coin-paketi sayfasi; kategori DEGIL.
-const isCoinSlug = (s: string) => s === 'coin' || s === 'coins'
+// 'coin' (ve eski 'coins') = VITRIN (storefront landing): kategori kartlari + jeton paketleri.
+// Kategori DEGIL; URL'de /magaza koku. Bir kategori secilince /magaza/<kategori> sayfasi acilir.
+const isLanding = (s: string) => s === 'coin' || s === 'coins'
 
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
 
-// Ürün kategorisi slug -> ikon
+// Ürün kategorisi slug -> ikon (vitrin kartlari + kategori basligi)
 const CAT_ICON: Record<string, IconName> = {
   tavla: 'dice',
   zar: 'dice',
@@ -52,7 +53,10 @@ const CAT_ICON: Record<string, IconName> = {
   diger: 'package',
 }
 
-// Magaza: Coin (jeton) satin alma + fiziksel ürünler (kategori sekmeleri: Tavla, Zar, Kitap…).
+// Magaza — GERCEK sayfa (page-host icinde, modal degil). Uc gorunum, URL-otoriter:
+//   /magaza                     -> Vitrin (kategori kartlari + jeton paketleri)
+//   /magaza/<kategori>          -> Kategori urun izgarasi (ProductsInner)
+//   /magaza/<kategori>/<urun>   -> Urun detayi (ProductsInner -> ProductDetail)
 export default function Shop({
   coins,
   onBuyCoins,
@@ -76,12 +80,16 @@ export default function Shop({
     setTabInner(slug)
     onTabChange?.(slug)
   }
+  const goStorefront = () => {
+    onSelectProduct?.(null)
+    setTab('coin')
+  }
 
-  // Ürünleri bir kez çek; kategori sekmelerini bundan türet (ProductsInner'a da bu liste
+  // Ürünleri bir kez çek; kategori kartlarini bundan türet (ProductsInner'a da bu liste
   // geçilir -> çift fetch olmaz).
   const [products, setProducts] = useState<Product[] | null>(null)
   const [cats, setCats] = useState<{ slug: string; name: string }[]>([])
-  // Coin sekmesi etiketi: admin panelde 'coin' kategorisine verilen ad (yoksa varsayilan).
+  // Jeton bölümü başlığı: admin panelde 'coin' kategorisine verilen ad (yoksa varsayilan).
   const [coinLabel, setCoinLabel] = useState<string>('')
   useEffect(() => {
     let alive = true
@@ -89,23 +97,21 @@ export default function Shop({
       .then(({ products: list, categories }) => {
         if (!alive) return
         setProducts(list)
-        // Sekmeler: yayindaki TUM kategoriler (admin sirasiyla), coin haric (rezerve).
-        // Boylece urunu olmayan (yeni) kategoriler de sayfa olarak gorunur.
-        const fromCats = categories.filter((c) => !isCoinSlug(c.slug))
+        // Kategoriler: yayindaki TUM kategoriler (admin sirasiyla), coin haric (rezerve).
+        const fromCats = categories.filter((c) => !isLanding(c.slug))
         if (fromCats.length) {
           setCats(fromCats)
         } else {
           // Eski backend (kategori listesi donmuyor) -> urunlerden turet (fallback).
           const seen: { slug: string; name: string }[] = []
           for (const p of list) {
-            if (p.category && !isCoinSlug(p.category) && !seen.some((c) => c.slug === p.category)) {
+            if (p.category && !isLanding(p.category) && !seen.some((c) => c.slug === p.category)) {
               seen.push({ slug: p.category, name: p.category_name || p.category })
             }
           }
           setCats(seen)
         }
-        // Rezerve coin kategorisinin admin adini bul (urunu olmasa da /products'tan gelir).
-        const coinCat = categories.find((c) => isCoinSlug(c.slug))
+        const coinCat = categories.find((c) => isLanding(c.slug))
         setCoinLabel(coinCat?.name ?? '')
       })
       .catch(() => setProducts([]))
@@ -114,24 +120,42 @@ export default function Shop({
     }
   }, [])
 
+  const landing = isLanding(tab)
+  const activeCat = landing ? null : cats.find((c) => c.slug === tab) ?? { slug: tab, name: tab }
+  const countFor = (slug: string) => (products ?? []).filter((p) => p.category === slug).length
+
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
       <div className="register-card shop-card" onClick={(e) => e.stopPropagation()}>
+        {/* Mobilde sayfayi kapatma (X); masaustu page-host'ta gizli (menuden gezilir). */}
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        {/* Editoryal baslik + cuzdan */}
+
+        {/* Editoryal baslik (vitrin) VEYA geri + kategori basligi (kategori sayfasi) + cuzdan/sepet */}
         <header className="shop-head">
           <div className="shop-head-text">
-            <h2>
-              <Icon name="shop" size={20} /> {t('shop.title')}
-            </h2>
-            <p className="shop-sub">{t('shop.subtitle')}</p>
+            {landing ? (
+              <>
+                <h2 className="shop-title">{t('shop.title')}</h2>
+                <p className="shop-sub">{t('shop.subtitle')}</p>
+              </>
+            ) : (
+              <>
+                <button type="button" className="shop-back" onClick={goStorefront}>
+                  <Icon name="caret-left" size={15} /> {t('shop.backToShop')}
+                </button>
+                <h2 className="shop-title shop-title-cat">
+                  <Icon name={CAT_ICON[activeCat!.slug] ?? 'package'} size={24} /> {activeCat!.name}
+                </h2>
+              </>
+            )}
           </div>
           <div className="shop-head-actions">
             {onOpenCart && cartCount > 0 && (
               <Button variant="outline" className="shop-cart-btn" onClick={onOpenCart} title={t('shop.cart')}>
-                <Icon name="cart" size={16} /> {t('shop.cart')} <span className="shop-cart-count tnum">{cartCount}</span>
+                <Icon name="cart" size={16} /> <span className="shop-cart-lbl">{t('shop.cart')}</span>
+                <span className="shop-cart-count tnum">{cartCount}</span>
               </Button>
             )}
             <div className="shop-wallet" title={t('shop.balance')}>
@@ -143,85 +167,88 @@ export default function Shop({
           </div>
         </header>
 
-        {/* Sekmeler: Coin Satın Al + ürün kategorileri (Tavla · Zar · Kitap…) */}
-        <div className="prof-tabs bs-tabs shop-tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={isCoinSlug(tab)}
-            className={`prof-tab ${isCoinSlug(tab) ? 'active' : ''}`}
-            onClick={() => setTab('coin')}
-          >
-            <Icon name="coin" size={16} /> {coinLabel || t('shop.buyCoins')}
-          </button>
-          {onAddToCart &&
-            cats.map((c) => (
-              <button
-                key={c.slug}
-                type="button"
-                role="tab"
-                aria-selected={tab === c.slug}
-                className={`prof-tab ${tab === c.slug ? 'active' : ''}`}
-                onClick={() => setTab(c.slug)}
-              >
-                <Icon name={CAT_ICON[c.slug] ?? 'package'} size={16} /> {c.name}
-              </button>
-            ))}
-        </div>
-
-        {/* Coin satın al (rezerve 'coin' sayfasi) — paketler o kategorinin urunleri gibi listelenir */}
-        {isCoinSlug(tab) && (
-          <section className="coin-store" aria-label={t('shop.buyCoins')}>
-            <div className="coin-grid">
-              {COIN_PACKAGES.map((p) => {
-                const per = (p.price / p.gc).toLocaleString('tr-TR', {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2,
-                })
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    className="coin-card"
-                    data-popular={p.popular || undefined}
-                    onClick={() => onBuyCoins?.(p.id)}
-                  >
-                    {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
-                    <span className="coin-card-name">{p.name}</span>
-                    <span className="coin-card-amount">
-                      <Coins amount={p.gc} size={20} suffix="coin" />
-                    </span>
-                    <span className="coin-card-price">{fmtTL(p.price)}</span>
-                    <span className="coin-card-meta">
-                      <span className="coin-card-per">
-                        {t('shop.perCoin')} {per} ₺
-                      </span>
-                      {p.discount > 0 && (
-                        <span className="coin-card-save">
-                          %{p.discount} {t('shop.advantage')}
+        {landing ? (
+          <>
+            {/* --- Kategoriler: gercek sayfalara goturen kartlar --- */}
+            {onAddToCart && cats.length > 0 && (
+              <section className="shop-section" aria-label={t('shop.categories')}>
+                <h3 className="shop-section-t">{t('shop.categories')}</h3>
+                <div className="shop-cats">
+                  {cats.map((c) => {
+                    const n = countFor(c.slug)
+                    return (
+                      <button key={c.slug} type="button" className="shop-cat-card" onClick={() => setTab(c.slug)}>
+                        <span className="shop-cat-ic">
+                          <Icon name={CAT_ICON[c.slug] ?? 'package'} size={26} />
                         </span>
-                      )}
-                    </span>
-                    <span className="coin-card-cta">
-                      {t('shop.buy')} <Icon name="arrow-right" size={14} />
-                    </span>
-                  </button>
-                )
-              })}
-            </div>
-          </section>
-        )}
+                        <span className="shop-cat-body">
+                          <span className="shop-cat-name">{c.name}</span>
+                          <span className="shop-cat-count">{n > 0 ? t('shop.catCount', { n }) : t('shop.catBrowse')}</span>
+                        </span>
+                        <span className="shop-cat-go" aria-hidden="true">
+                          <Icon name="arrow-right" size={16} />
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
 
-        {/* Ürün kategorisi sekmesi -> o kategorinin ürünleri (çipler gizli, sekmeler yukarıda) */}
-        {!isCoinSlug(tab) && onAddToCart && (
-          <ProductsInner
-            products={products}
-            category={tab}
-            onAddToCart={onAddToCart}
-            onGoCart={() => onOpenCart?.()}
-            selectedSlug={productSlug ?? null}
-            onSelect={onSelectProduct}
-          />
+            {/* --- Jeton paketleri: vitrinde akista (kart tiklaninca sepete) --- */}
+            <section className="shop-section coin-store" aria-label={coinLabel || t('shop.buyCoins')}>
+              <h3 className="shop-section-t">{coinLabel || t('shop.buyCoins')}</h3>
+              <div className="coin-grid">
+                {COIN_PACKAGES.map((p) => {
+                  const per = (p.price / p.gc).toLocaleString('tr-TR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      className="coin-card"
+                      data-popular={p.popular || undefined}
+                      onClick={() => onBuyCoins?.(p.id)}
+                    >
+                      {p.popular && <span className="coin-card-badge">{t('shop.popular')}</span>}
+                      <span className="coin-card-name">{p.name}</span>
+                      <span className="coin-card-amount">
+                        <Coins amount={p.gc} size={20} suffix="coin" />
+                      </span>
+                      <span className="coin-card-price">{fmtTL(p.price)}</span>
+                      <span className="coin-card-meta">
+                        <span className="coin-card-per">
+                          {t('shop.perCoin')} {per} ₺
+                        </span>
+                        {p.discount > 0 && (
+                          <span className="coin-card-save">
+                            %{p.discount} {t('shop.advantage')}
+                          </span>
+                        )}
+                      </span>
+                      <span className="coin-card-cta">
+                        {t('shop.buy')} <Icon name="arrow-right" size={14} />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          </>
+        ) : (
+          /* --- Kategori sayfasi: o kategorinin urunleri (izgara) + urun detayi --- */
+          onAddToCart && (
+            <ProductsInner
+              products={products}
+              category={tab}
+              onAddToCart={onAddToCart}
+              onGoCart={() => onOpenCart?.()}
+              selectedSlug={productSlug ?? null}
+              onSelect={onSelectProduct}
+            />
+          )
         )}
       </div>
     </div>

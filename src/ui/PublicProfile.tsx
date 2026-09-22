@@ -92,7 +92,6 @@ export default function PublicProfile({
             {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
             <TopRankMedals userId={p.id} />
             <div className="pp-rank">
-              {t('stats.rank', { r: p.rank, n: '' }).replace('/ ', '')}
               <span className={`pp-status ${p.online ? 'on' : 'off'}`}>
                 <span className="pp-status-dot" aria-hidden="true" />
                 {p.online ? t('online.statusOn') : t('online.statusOff')}

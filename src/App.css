@@ -16255,8 +16255,8 @@ button.acct-row-logout:hover:not(:disabled) {
 
 /* Herkese acik profil karti */
 .pp-card {
-  max-width: 468px;
-  padding: 26px 28px 24px;
+  max-width: 528px;
+  padding: 30px 34px 28px;
   gap: 4px;
   /* Merkezli modal -> Emil istisnasi: transform-origin center; hafif scale+opacity
      ile "hicten belirme" hissi olmadan yumusak giris (200ms, guclu ease-out). */
@@ -16399,8 +16399,14 @@ button.acct-row-logout:hover:not(:disabled) {
   flex: 1;
   min-width: 0;
 }
+/* Avatar (resim) ile isim arasina biraz nefes (kullanici istegi). */
+.pp-head .player-id {
+  gap: 16px;
+}
+/* Yalniz cevrimici/cevrimdisi durumu tasir (rutbe metni kaldirildi) -> madalyalarin
+   altinda ferah dursun. */
 .pp-rank {
-  margin: -8px 0 14px;
+  margin: 12px 0 18px;
 }
 .pp-name {
   font-size: 1.25rem;
@@ -17841,12 +17847,56 @@ button.acct-row-logout:hover:not(:disabled) {
 .shop-head-text h2 {
   margin: 0;
 }
+/* Editoryal sayfa basligi (page-host'ta diger menu sayfalariyla ayni olcek/agirlik). */
+.shop-title {
+  margin: 0;
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+  color: var(--text);
+}
+.shop-title-cat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.shop-title-cat > svg {
+  flex: none;
+  color: var(--accent);
+}
+/* Vitrine geri don (kategori sayfasi ust-sol). Ince, muted -> hover'da accent. */
+.shop-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 0 0 8px -4px;
+  padding: 2px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-radius: var(--radius-sm, 6px);
+  transition: color 150ms ease, transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.shop-back > svg {
+  transition: transform 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .shop-back:hover {
+    color: var(--accent);
+  }
+  .shop-back:hover > svg {
+    transform: translateX(-2px);
+  }
+}
 .shop-sub {
   margin: 5px 0 0;
   font-size: 0.85rem;
   line-height: 1.45;
   color: var(--muted);
-  max-width: 40ch;
+  max-width: 44ch;
   text-wrap: pretty;
 }
 .shop-head-actions {
@@ -17893,6 +17943,112 @@ button.acct-row-logout:hover:not(:disabled) {
   .shop-head-actions {
     width: 100%;
     justify-content: space-between;
+  }
+}
+
+/* ===== Vitrin (storefront): bolumler + kategori kartlari (Emil: ferah + yumusak) ===== */
+.shop-section {
+  margin: 0 0 36px;
+}
+.shop-section:last-child {
+  margin-bottom: 8px;
+}
+/* Bolum basligi: sessiz eyebrow (buyuk-harf, muted) -> icerik one cikar. */
+.shop-section-t {
+  margin: 0 0 14px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.shop-cats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+/* Kategori karti: ikon + ad/adet + ok. Tiklayinca /magaza/<kategori> sayfasi. */
+.shop-cat-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 16px 16px 15px;
+  text-align: left;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  cursor: pointer;
+  color: inherit;
+  /* Yalniz transform/opacity/border/shadow -> GPU; giris/press hissi guclu ease-out. */
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), border-color 200ms ease, box-shadow 200ms ease;
+}
+.shop-cat-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: var(--radius-md, 11px);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  transition: background 200ms ease;
+}
+.shop-cat-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.shop-cat-name {
+  font-size: 1.02rem;
+  color: var(--text);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shop-cat-count {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.shop-cat-go {
+  margin-left: auto;
+  display: inline-flex;
+  color: color-mix(in srgb, var(--muted) 80%, transparent);
+  transition: transform 200ms cubic-bezier(0.23, 1, 0.32, 1), color 200ms ease;
+}
+.shop-cat-card:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  outline-offset: 2px;
+}
+.shop-cat-card:active {
+  transform: scale(0.985);
+}
+@media (hover: hover) and (pointer: fine) {
+  .shop-cat-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    box-shadow: 0 8px 22px -14px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .shop-cat-card:hover .shop-cat-ic {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  .shop-cat-card:hover .shop-cat-go {
+    color: var(--accent);
+    transform: translateX(3px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shop-cat-card,
+  .shop-cat-card:active,
+  .shop-cat-card:hover {
+    transform: none;
+  }
+}
+/* Sepet butonu etiketi dar ekranda gizli (ikon + sayi yeter). */
+@media (max-width: 480px) {
+  .shop-cart-lbl {
+    display: none;
   }
 }
 /* Coin + gunluk odul: ikisi de solda, net kontrastli chip'ler (geri sayim dahil) */
