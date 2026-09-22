@@ -7,7 +7,7 @@
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
-import { TOURNAMENT_RULES, RULE_COMMENTS, RULE_EDITION } from '../data/tournamentRules'
+import { TOURNAMENT_RULES, RULE_EDITION } from '../data/tournamentRules'
 
 interface Props {
   onClose?: () => void
@@ -84,20 +84,6 @@ export default function TournamentRules({ onClose }: Props) {
             ))}
           </section>
         ))}
-
-        {/* Yorumlar */}
-        <section className="doc-group" id="kural-yorumlar">
-          <h2 className="doc-group-head">
-            <span className="doc-group-num">✦</span>
-            Yorumlar
-          </h2>
-          {RULE_COMMENTS.map((c) => (
-            <aside key={c.ref} className="doc-note">
-              <span className="doc-note-ref">{c.ref}</span>
-              <p>{c.text}</p>
-            </aside>
-          ))}
-        </section>
 
         <p className="doc-edition">{RULE_EDITION}</p>
       </div>
