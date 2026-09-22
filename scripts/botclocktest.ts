@@ -41,12 +41,21 @@ async function req(method: string, path: string, opts: { bearer?: string; body?:
 const asGS = (s: any): GameState => ({ points: s.points.slice(), bar: { ...s.bar }, off: { ...s.off }, turn: s.turn, dice: (s.dice ?? []).slice(), diceUsed: (s.diceUsed ?? []).slice() })
 const show = async (code: string, b: string) => (await req('GET', `/rooms/${code}`, { bearer: b })).json?.room
 
+// SELF-CLEANUP: test bittiğinde (başarı VEYA hata) throwaway hesabı DELETE /account ile sil ->
+// canlıda test hesabı birikmez (bot maçı/kayıtlar FK-cascade ile gider). Bearer yoksa atla.
+async function cleanup(bearer: string | null) {
+  if (!bearer) return
+  const del = await req('DELETE', '/account', { bearer })
+  console.log(`\n   🧹 test hesabı silindi (DELETE /account -> ${del.status}).`)
+}
+
 async function main() {
   console.log(`\n=== BOT SAAT ATFETME TEŞHİSİ — ${BASE} ===\n`)
   const reg = await req('POST', '/register', { body: { first_name: 'B', last_name: 'CLK', nickname: `bclk_${rnd()}`, email: `bclk_${rnd()}@example.com`, password: 'test123456' } })
   if (reg.status !== 201) throw new Error(`register -> ${reg.status} ${reg.text.slice(0, 160)}  (yerel sunucu ayakta mı? BASE=${BASE})`)
   const bearer = reg.json.token as string
   const rt = 'rt-' + rnd()
+  try {
 
   // normal mod: delay=10sn, per-point 60sn -> banka=60sn. target=1.
   const created = await req('POST', '/bot/rooms', { bearer, body: { token: rt, name: 'BCLK', level: 10, target: 1, time_control: 'normal' } })
@@ -119,6 +128,10 @@ async function main() {
   } else {
     console.log(`   ❌ KALDI: 'delay' t0'dan ~${onset.toFixed(1)}sn sonra düşmeye başladı (grace yok). Bot turu penceresi hâlâ insana yazılıyor.`)
     console.log(`      -> Sunucu fix'i deploy edilmemiş olabilir (php artisan serve yeniden başlat) ya da graceHumanAfterBot çağrılmıyor.`)
+  }
+  } finally {
+    // Başarı VEYA hata: throwaway hesabı temizle (canlıda test hesabı birikmesin).
+    await cleanup(bearer)
   }
 }
 main().catch((e) => { console.error('HATA:', e?.message || e); process.exit(1) })
