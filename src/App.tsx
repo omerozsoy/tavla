@@ -180,7 +180,7 @@ const LEGAL_SLUGS = new Set([
 const SITE_ORIGIN = 'https://www.tavlatv.com'
 // Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
 const DEFAULT_DESC =
-  'Ücretsiz online tavla oyna! Bedava tavla, arkadaşlarınla online tavla, yapay zekaya karşı güçlü tavla botu, sıralama (rating) ve maç modları. Kayıt gerektirmeden hemen bedava tavla oyna.'
+  'Ücretsiz online tavla oyna; arkadaşlarınla maç yap, yapay zekâya karşı yarış, turnuvalara katıl ve maçlarını analiz et. Kayıt gerektirmez.'
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
   'tavla-oyna': 'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
