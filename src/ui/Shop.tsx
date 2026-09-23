@@ -43,6 +43,9 @@ interface Props {
 const isLanding = (s: string) => s === 'coin' || s === 'coins'
 
 const fmtTL = (n: number) => `${n.toLocaleString('tr-TR')} ₺`
+const fmtTLk = (kurus: number) =>
+  `${(kurus / 100).toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ₺`
+const imgUrl = (img: string) => (/^(https?:|\/)/.test(img) ? img : '/uploads/' + img)
 
 // Ürün kategorisi slug -> ikon (vitrin kartlari + kategori basligi)
 const CAT_ICON: Record<string, IconName> = {
@@ -123,6 +126,18 @@ export default function Shop({
   const landing = isLanding(tab)
   const activeCat = landing ? null : cats.find((c) => c.slug === tab) ?? { slug: tab, name: tab }
   const countFor = (slug: string) => (products ?? []).filter((p) => p.category === slug).length
+  // Kategori kapak görseli: o kategorideki ilk görselli ürün (kategorilerin kendi görseli yok).
+  const catCover = (slug: string) => {
+    const p = (products ?? []).find((x) => x.category === slug && x.images?.[0])
+    return p ? imgUrl(p.images[0]) : null
+  }
+  // Vitrin "Öne Çıkan Ürünler": görselli ürünlerden ilkleri (kategori karışık).
+  const featured = (products ?? []).filter((p) => p.images?.[0]).slice(0, 8)
+  // Bir ürünü aç: kategori sekmesine geç + slug seç -> /magaza/<kat>/<slug> detay.
+  const openProduct = (p: Product) => {
+    setTab(p.category ?? 'diger')
+    onSelectProduct?.(p.slug)
+  }
 
   return (
     <div className="register-overlay modal page" role="dialog" aria-modal="true">
@@ -176,17 +191,67 @@ export default function Shop({
                 <div className="shop-cats">
                   {cats.map((c) => {
                     const n = countFor(c.slug)
+                    const cover = catCover(c.slug)
                     return (
-                      <button key={c.slug} type="button" className="shop-cat-card" onClick={() => setTab(c.slug)}>
-                        <span className="shop-cat-ic">
-                          <Icon name={CAT_ICON[c.slug] ?? 'package'} size={26} />
+                      <button
+                        key={c.slug}
+                        type="button"
+                        className={`shop-cat-card${cover ? ' has-cover' : ''}`}
+                        onClick={() => setTab(c.slug)}
+                      >
+                        <span className="shop-cat-media">
+                          {cover ? (
+                            <img src={cover} alt="" loading="lazy" />
+                          ) : (
+                            <Icon name={CAT_ICON[c.slug] ?? 'package'} size={30} />
+                          )}
                         </span>
                         <span className="shop-cat-body">
                           <span className="shop-cat-name">{c.name}</span>
-                          <span className="shop-cat-count">{n > 0 ? t('shop.catCount', { n }) : t('shop.catBrowse')}</span>
+                          <span className="shop-cat-count">
+                            {n > 0 ? t('shop.catCount', { n }) : t('shop.catBrowse')}
+                          </span>
                         </span>
                         <span className="shop-cat-go" aria-hidden="true">
                           <Icon name="arrow-right" size={16} />
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            )}
+
+            {/* --- Öne çıkan ürünler: gerçek ürün görselleriyle vitrin (kart -> detay) --- */}
+            {onAddToCart && featured.length > 0 && (
+              <section className="shop-section" aria-label="Öne Çıkan Ürünler">
+                <h3 className="shop-section-t">Öne Çıkan Ürünler</h3>
+                <div className="shop-feat-grid">
+                  {featured.map((p) => {
+                    const out = p.stock <= 0
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        className="shop-feat-card"
+                        onClick={() => openProduct(p)}
+                        disabled={out}
+                      >
+                        <span className="shop-feat-media">
+                          <img src={imgUrl(p.images[0])} alt={p.name} loading="lazy" />
+                          {out && <span className="shop-feat-out">{t('products.soldOut')}</span>}
+                        </span>
+                        <span className="shop-feat-info">
+                          {p.category_name && <span className="shop-feat-cat">{p.category_name}</span>}
+                          <span className="shop-feat-name">{p.name}</span>
+                          <span className="shop-feat-price">
+                            {p.money_price != null && <span>{fmtTLk(p.money_price)}</span>}
+                            {p.coin_price != null && (
+                              <span className="shop-feat-coin">
+                                <Coins amount={p.coin_price} size={15} />
+                              </span>
+                            )}
+                          </span>
                         </span>
                       </button>
                     )
