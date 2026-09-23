@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class SeoMetaTest extends TestCase
 {
@@ -30,5 +32,35 @@ class SeoMetaTest extends TestCase
         $this->get('/haberler/olmayan-seo-yazisi-12345')
             ->assertNotFound()
             ->assertSee('name="robots" content="noindex, follow"', false);
+    }
+
+    public function test_published_news_gets_article_structured_data(): void
+    {
+        if (! Schema::hasTable('contents')) {
+            Schema::create('contents', function ($table): void {
+                $table->id();
+                $table->string('type')->nullable();
+                $table->string('title')->nullable();
+                $table->text('body')->nullable();
+                $table->string('image')->nullable();
+                $table->boolean('published')->default(true);
+            });
+        }
+
+        DB::table('contents')->insert([
+            'type' => 'news',
+            'title' => 'SEO Haber Denemesi',
+            'body' => 'Yayınlanmış haber açıklaması.',
+            'published' => true,
+        ]);
+
+        try {
+            $this->get('/haberler/seo-haber-denemesi')
+                ->assertOk()
+                ->assertSee('"@type":"Article"', false)
+                ->assertSee('SEO Haber Denemesi', false);
+        } finally {
+            Schema::dropIfExists('contents');
+        }
     }
 }

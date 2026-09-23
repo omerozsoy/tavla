@@ -33,7 +33,8 @@ Bu dosya SEO çalışmasının tek takip listesidir. Kod değişikliği yapılma
 
 - [ ] Yayındaki haber slug’ları sitemap ile otomatik eşleştirilmeli.
 - [ ] Silinen veya taslak haberler sitemap’ten otomatik çıkarılmalı.
-- [ ] Haber detaylarında `Article`/`NewsArticle` JSON-LD; başlık, görsel, yazar ve yayın tarihiyle tamamlanmalı.
+- [x] Yayındaki haber detaylarına gerçek başlık, açıklama, varsa görsel, yazar ve publisher ile `Article` JSON-LD eklendi.
+- [ ] Haber detaylarında gerçek yayın tarihi alanı doğrulanıp `datePublished`/`dateModified` eklenmeli.
 - [ ] Haber görseli olmayan içerikler için güvenli fallback OG görseli kullanılmalı.
 
 ### P1 — Teknik indeksleme doğrulaması
