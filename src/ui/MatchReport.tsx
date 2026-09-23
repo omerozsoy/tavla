@@ -124,6 +124,9 @@ export default function MatchReport({
   // Tahtada gosterilen aday: acilis + secimde OYNANAN hamle (senin oynadigin). Adaylardan
   // (1-5) tiklayarak diger olasiliklarin oklarini gorursun.
   const [candIdx, setCandIdx] = useState(() => playedCandIdx(log[firstMistake]))
+  // Aday hamle listesi: varsayilan En Iyi 30; "Tumunu goster" ile hepsi acilir.
+  const CAND_LIMIT = 30
+  const [showAllCands, setShowAllCands] = useState(false)
   const [boardDir] = useBoardDir()
   const [swapStones] = useSwapStones()
 
@@ -488,8 +491,13 @@ export default function MatchReport({
                         </span>
                       </div>
                     )}
+                    <div className="an-cands-title">
+                      {t('rep.bestN', {
+                        n: Math.min(CAND_LIMIT, (cur.cands ?? []).length),
+                      })}
+                    </div>
                     <div className="an-cands">
-                      {(cur.cands ?? []).map((c, ci) => {
+                      {(showAllCands ? (cur.cands ?? []) : (cur.cands ?? []).slice(0, CAND_LIMIT)).map((c, ci) => {
                         const diff = c.equity - (cur.cands![0]?.equity ?? c.equity)
                         const isPlayed = ci === playedIdx
                         return (
@@ -532,6 +540,18 @@ export default function MatchReport({
                           <span className="an-tags">
                             <span className="an-you-tag">{playedLabel}</span>
                           </span>
+                        </button>
+                      )}
+                      {/* 30'dan fazla aday varsa: en altta tumunu goster / daha az goster */}
+                      {(cur.cands?.length ?? 0) > CAND_LIMIT && (
+                        <button
+                          type="button"
+                          className="an-cands-more"
+                          onClick={() => setShowAllCands((v) => !v)}
+                        >
+                          {showAllCands
+                            ? t('rep.showLess')
+                            : t('rep.showAll', { n: cur.cands!.length })}
                         </button>
                       )}
                     </div>
