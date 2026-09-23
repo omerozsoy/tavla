@@ -7855,6 +7855,8 @@ export default function App() {
       {editProfilePage}
       {friendsOpen && user && (
         <Friends
+          currentId={user?.id}
+          onAddFriend={(id) => handleAddFriend(id)}
           onInvite={handleInviteFriend}
           onTab={(tab) => {
             // Sekme tıklaması: Mesajlar'a geç (karşılıklı-dışlar; URL de /mesajlar olur).
@@ -7905,7 +7907,18 @@ export default function App() {
         />
       )}
       {leaderboardOpen && (
-        <Leaderboard currentName={profile.nickname} onClose={() => setLeaderboardOpen(false)} />
+        <Leaderboard
+          currentName={profile.nickname}
+          currentId={user?.id}
+          onClose={() => setLeaderboardOpen(false)}
+          onAddFriend={(id) => handleAddFriend(id)}
+          onMessage={(id) => {
+            // Site geneliyle ayni: liderligi kapat, o oyuncuyla sohbeti ac (arkadas degilse istek olarak duser).
+            setLeaderboardOpen(false)
+            setMessagesFocusId(id)
+            setMessagesOpen(true)
+          }}
+        />
       )}
       {achOpen && <Achievements loggedIn={!!user} onClose={() => setAchOpen(false)} />}
       {infoOpen && (
@@ -8253,7 +8266,16 @@ export default function App() {
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
       {clubsOpen && user && (
         <Suspense fallback={null}>
-          <Clubs onClose={() => setClubsOpen(false)} />
+          <Clubs
+            onClose={() => setClubsOpen(false)}
+            currentId={user?.id}
+            onAddFriend={(id) => handleAddFriend(id)}
+            onMessage={(id) => {
+              setClubsOpen(false)
+              setMessagesFocusId(id)
+              setMessagesOpen(true)
+            }}
+          />
         </Suspense>
       )}
       {rulesOpen && (

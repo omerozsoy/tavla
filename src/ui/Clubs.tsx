@@ -20,9 +20,12 @@ import { Button } from '@/components/ui/button'
 
 interface Props {
   onClose: () => void
+  currentId?: number // giris yapan kullanici -> profil kartinda "kendini ekleme" gizlensin
+  onAddFriend?: (id: number) => void // arkadaslik istegi (site geneliyle ayni kart)
+  onMessage?: (id: number) => void // oyuncuya mesaj (arkadas olmasa da istek olarak duser)
 }
 
-export default function Clubs({ onClose }: Props) {
+export default function Clubs({ onClose, currentId, onAddFriend, onMessage }: Props) {
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
@@ -320,7 +323,22 @@ export default function Clubs({ onClose }: Props) {
       )}
 
       {profileId !== null && (
-        <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+        <PublicProfile
+          id={profileId}
+          onClose={() => setProfileId(null)}
+          onAddFriend={
+            onAddFriend && currentId != null && currentId !== profileId ? () => onAddFriend(profileId) : undefined
+          }
+          onMessage={
+            onMessage && currentId != null && currentId !== profileId
+              ? () => {
+                  const uid = profileId
+                  setProfileId(null)
+                  onMessage(uid)
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   )
