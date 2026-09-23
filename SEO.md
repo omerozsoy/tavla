@@ -5,6 +5,8 @@ Başlangıç tahmini puan: **66/100**
 
 Bu dosya SEO çalışmasının tek takip listesidir. Kod değişikliği yapılmadan önce ilgili madde seçilir; değişiklikten sonra test ve canlı URL kontrolü eklenir.
 
+Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KEYWORDS.md) kullanılır.
+
 ## Tamamlananlar
 
 - [x] `robots.txt` ve `sitemap.xml` canlıda 200 dönüyor.
