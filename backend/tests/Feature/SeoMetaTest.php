@@ -20,4 +20,11 @@ class SeoMetaTest extends TestCase
             ->assertSee('name="robots" content="index, follow"', false)
             ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false);
     }
+
+    public function test_unknown_content_slug_is_a_noindex_404(): void
+    {
+        $this->get('/haberler/olmayan-seo-yazisi-12345')
+            ->assertNotFound()
+            ->assertSee('name="robots" content="noindex, follow"', false);
+    }
 }

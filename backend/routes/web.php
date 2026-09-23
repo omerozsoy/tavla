@@ -134,7 +134,8 @@ Route::fallback(function (Request $request) {
         // backend eslesen rotalar (normalde fallback'e dusmez; guvenlik icin allowlist'te)
         'admin', 'panel', 'pay', 'email',
     ];
-    $known = $first === '' || in_array($first, $valid, true);
+    $known = ($first === '' || in_array($first, $valid, true))
+        && SeoMeta::knownDynamicPath($path);
 
     $index = public_path('index.html');
     if (file_exists($index)) {
