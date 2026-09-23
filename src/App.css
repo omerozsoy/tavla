@@ -23567,22 +23567,23 @@ button.acct-row-logout:hover:not(:disabled) {
 .level-chip {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 9px 11px;
+  gap: 3px;
+  padding: 11px 13px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   text-align: left;
 }
 .level-chip-name {
   font-weight: 500;
+  font-size: 1.08rem;
 }
-/* Seviye altindaki tahmini beklenen PR araligi: muted (sonmuk), kucuk */
+/* Seviye altindaki tahmini beklenen PR araligi: muted (sonmuk) */
 .level-chip-pr {
-  font-size: 0.7rem;
+  font-size: 0.86rem;
   color: var(--muted);
 }
 .level-chip.active {
