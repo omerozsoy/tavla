@@ -1,4 +1,4 @@
-﻿:root {
+:root {
   /* ===== TERRACOTTA (KREM/KIREMIT) â€” merkezi renk sistemi =====
      Sicak + zamansiz + editoryal. Kullanici paletine SADIK:
        Krem #f4efe6 Â· Krem-deep #efeae1 Â· Kiremit(brick) #c9563f/#a83a2b
@@ -2816,13 +2816,14 @@ button[aria-disabled='true'],
   }
 }
 /* ============ MAKALELER — editoryal "kütüphane / almanak" düzen ============
-   Haberden AYRI karakter: serif başlıklar (Playfair display + Spectral gövde)
-   + mono index/meta (IBM Plex Mono), sıcak terracotta detaylar, numaralı
-   (01, 02…) kartlar. Eğitici, zamansız (evergreen) tavla içeriği için. */
+   TEK font: Outfit (site fontu). Karakter font ailesinden DEĞİL; ağırlık kontrastı
+   (uppercase tracked etiketler + kalın sıkı display + rahat gövde), sıcak terracotta
+   detaylar ve numaralı (01, 02…) kartlarla kuruluyor. Evergreen tavla içeriği için.
+   NOT: --art-* değişkenleri geriye-uyum için duruyor ama hepsi Outfit'e bağlı. */
 .articles {
-  --art-serif: 'Spectral', Georgia, 'Times New Roman', serif;
-  --art-display: 'Playfair Display', Georgia, serif;
-  --art-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --art-serif: var(--tv-font-ui);
+  --art-display: var(--tv-font-ui);
+  --art-mono: var(--tv-font-ui);
   display: flex;
   flex-direction: column;
   gap: clamp(30px, 4vw, 52px);
@@ -2951,10 +2952,10 @@ button[aria-disabled='true'],
 .article-lead-title {
   margin: 0;
   font-family: var(--art-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: clamp(1.7rem, 1rem + 2.4vw, 2.9rem);
   line-height: 1.08;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.022em;
   text-wrap: balance;
   color: var(--text);
   transition: color 0.18s ease;
@@ -3157,13 +3158,13 @@ button[aria-disabled='true'],
   margin: 0;
 }
 /* ============ MAKALE DETAY — editoryal okuma sayfası ============
-   Serif başlık (Playfair) + mono meta + terracotta offset hero çerçeve; gövde
-   Spectral okuma serif'i, ilk paragrafta drop-cap. Tahta şemaları GERÇEK Board
-   ile (ArticleBoard) çizilir (aşağıdaki .article-board). */
+   TEK font: Outfit. Kalın sıkı display başlık + uppercase tracked meta + rahat
+   gövde + ilk paragraf drop-cap; terracotta offset hero. Tahta şemaları GERÇEK
+   Board ile (ArticleBoard) çizilir (aşağıdaki .article-board). */
 .article-detail {
-  --art-serif: 'Spectral', Georgia, 'Times New Roman', serif;
-  --art-display: 'Playfair Display', Georgia, serif;
-  --art-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  --art-serif: var(--tv-font-ui);
+  --art-display: var(--tv-font-ui);
+  --art-mono: var(--tv-font-ui);
   max-width: 760px;
   margin: 0 auto;
 }
@@ -3188,10 +3189,10 @@ button[aria-disabled='true'],
 .article-detail-title {
   margin: 0;
   font-family: var(--art-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: clamp(1.9rem, 1.1rem + 2.6vw, 3rem);
   line-height: 1.08;
-  letter-spacing: -0.012em;
+  letter-spacing: -0.022em;
   text-wrap: balance;
   color: var(--text);
 }
@@ -3233,7 +3234,7 @@ button[aria-disabled='true'],
 .article-prose-lead > p:first-of-type::first-letter {
   float: left;
   font-family: var(--art-display);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 3.4em;
   line-height: 0.82;
   padding: 6px 12px 0 0;
@@ -3242,9 +3243,9 @@ button[aria-disabled='true'],
 .article-prose h2,
 .article-prose h3 {
   font-family: var(--art-display);
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   margin: 36px 0 12px;
   color: var(--text);
 }
@@ -3339,9 +3340,15 @@ button[aria-disabled='true'],
   --bearoff-w: var(--tray-w);
   --cube-size: clamp(16px, calc(var(--bar-w) * 0.62), 40px);
 }
-/* Hane numaraları + pip: board'a (--checker) göre ölçekle (sabit rem'ler küçük board'da devleşir) */
+/* Hane numaraları + pip: board'a (--checker) göre ölçekle (sabit rem'ler küçük board'da devleşir).
+   ÖNEMLI: global .pt-numbers rengi (rgba beyazımsı) KOYU oyun tahtası içindir; makale açık
+   krem kart üstünde OKUNMAZ -> koyu okunur mürekkebe çevir + kalınlaştır (kapı numaraları net). */
 .article-board-stage .pt-numbers {
-  font-size: calc(var(--checker) * 0.5);
+  font-size: calc(var(--checker) * 0.52);
+  color: var(--muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
 }
 .article-board-stage .pip {
   font-size: calc(var(--checker) * 0.66);
@@ -23545,19 +23552,22 @@ button.acct-row-logout:hover:not(:disabled) {
 .level-chip {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  padding: 6px 8px;
+  gap: 2px;
+  padding: 9px 11px;
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   text-align: left;
 }
-/* Seviye altindaki hedef PR araligi: muted (sonmuk), kucuk */
+.level-chip-name {
+  font-weight: 500;
+}
+/* Seviye altindaki tahmini beklenen PR araligi: muted (sonmuk), kucuk */
 .level-chip-pr {
-  font-size: 0.68rem;
+  font-size: 0.7rem;
   color: var(--muted);
 }
 .level-chip.active {
