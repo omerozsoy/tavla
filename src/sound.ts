@@ -2,14 +2,29 @@
 // Kullanici etkilesiminden sonra AudioContext olusturulur (tarayici kurali).
 
 let ctx: AudioContext | null = null
-// Ses site genelinde KALDIRILDI -> her zaman sessiz. ac() null döner, tüm efektler no-op.
-const muted = true
+// Ses kullanıcı tercihi (kalıcı): VARSAYILAN KAPALI. Oyun Menüsü > Ses ile aç/kapa.
+// localStorage 'tavla.soundoff'='0' -> AÇIK; değer yoksa/başka -> sessiz (kapalı).
+// muted true iken ac() null döner, tüm efektler no-op.
+let muted = (() => {
+  try {
+    return localStorage.getItem('tavla.soundoff') !== '0'
+  } catch {
+    return true
+  }
+})()
 
 export function isMuted(): boolean {
-  return true
+  return muted
 }
-export function setMuted(_v: boolean): void {
-  /* ses kaldirildi; aç/kapa yok */
+export function setMuted(v: boolean): void {
+  muted = v
+  try {
+    localStorage.setItem('tavla.soundoff', v ? '1' : '0')
+  } catch {
+    /* yok */
+  }
+  // Açılışta AudioContext'i (kullanıcı jesti içinde) hazırla -> ilk efekt gecikmesiz çalsın.
+  if (!v) ac()
 }
 
 function ac(): AudioContext | null {
