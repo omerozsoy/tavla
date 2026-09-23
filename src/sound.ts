@@ -119,13 +119,13 @@ function play(url: string, gain = 0.7) {
 
 export const Sound = {
   dice() {
-    play(diceUrl, 0.85)
+    play(diceUrl, 0.5)
   },
   move() {
-    play(moveUrl, 0.6)
+    play(moveUrl, 0.32)
   },
   hit() {
-    play(hitUrl, 0.85)
+    play(hitUrl, 0.5)
   },
   win() {
     tone(523, 0, 0.16, 'sine', 0.2)
