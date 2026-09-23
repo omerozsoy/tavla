@@ -18,7 +18,6 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 
 ### P2 — Structured data ve içerik zenginliği
 
-- [ ] Rehber yazıları için gerçek yayın/güncelleme tarihi kaynağı oluşturulup `datePublished`/`dateModified` eklenmeli.
 - [ ] `FAQPage` yalnızca gerçekten soru-cevap içeren sayfalarda kullanılmalı.
 - [ ] Google Rich Results Test ve Schema Markup Validator ile canlı doğrulama yapılmalı.
 

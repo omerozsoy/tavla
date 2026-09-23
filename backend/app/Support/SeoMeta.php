@@ -334,6 +334,14 @@ final class SeoMeta
         ],
     ];
 
+    /** Tarihler içerik dosyasının Git geçmişindeki ilk yayın commit'inden alınmıştır. */
+    private const GUIDE_DATES = [
+        'tavla-acilis-stratejileri' => ['2026-09-22T18:24:48+03:00', '2026-09-22T18:24:48+03:00'],
+        'tavla-kupu-doubling-cube' => ['2026-09-22T18:24:48+03:00', '2026-09-22T18:24:48+03:00'],
+        'tavla-kazanma-taktikleri' => ['2026-09-22T18:24:48+03:00', '2026-09-22T18:24:48+03:00'],
+        'mars-gammon-backgammon-nedir' => ['2026-09-22T18:24:48+03:00', '2026-09-22T18:24:48+03:00'],
+    ];
+
     /**
      * index.html içeriğini, istenen yola göre per-route SEO etiketleriyle döndür.
      * Slug ne statik META'da ne de dinamik haber olarak eşleşirse içerik DEĞİŞMEDEN
@@ -373,7 +381,8 @@ final class SeoMeta
             $url = self::BASE . $slug;
             $html = self::apply($html, $title, $desc, $h1, $url, null, 'article');
 
-            $html = self::injectJsonLd($html, $h1, $desc, $url);
+            [$datePublished, $dateModified] = self::GUIDE_DATES[$parts[1]];
+            $html = self::injectJsonLd($html, $h1, $desc, $url, $datePublished, $dateModified);
 
             return self::injectBreadcrumbJsonLd($html, $h1, $url);
         }
@@ -533,7 +542,14 @@ final class SeoMeta
      * Yalnız kesin/doğru alanlar kullanılır (headline, description, url, inLanguage, author,
      * publisher, mainEntityOfPage). Tarih uydurulmaz. </head> yoksa HTML dokunulmaz döner.
      */
-    private static function injectJsonLd(string $html, string $h1, string $desc, string $url): string
+    private static function injectJsonLd(
+        string $html,
+        string $h1,
+        string $desc,
+        string $url,
+        ?string $datePublished = null,
+        ?string $dateModified = null,
+    ): string
     {
         $data = [
             '@context' => 'https://schema.org',
@@ -551,6 +567,12 @@ final class SeoMeta
                 'logo' => ['@type' => 'ImageObject', 'url' => self::BASE . 'icon-512.png'],
             ],
         ];
+        if ($datePublished !== null) {
+            $data['datePublished'] = $datePublished;
+        }
+        if ($dateModified !== null) {
+            $data['dateModified'] = $dateModified;
+        }
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
             return $html;
