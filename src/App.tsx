@@ -163,11 +163,11 @@ const TournamentRules = lazy(() => import('./ui/TournamentRules'))
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
-  about: 'hakkinda', services: 'hizmetler', ranks: 'rutbeler',
+  about: 'hakkinda', services: 'hizmetler', glossary: 'sozluk', ranks: 'rutbeler',
   scoring: 'puanlama', badges: 'basarilarim', fair: 'adil-zar',
 }
 const INFO_URL_TAB: Record<string, InfoTab> = {
-  hakkinda: 'about', hizmetler: 'services', rutbeler: 'ranks',
+  hakkinda: 'about', hizmetler: 'services', sozluk: 'glossary', rutbeler: 'ranks',
   puanlama: 'scoring', basarilarim: 'badges', 'adil-zar': 'fair',
 }
 
@@ -233,6 +233,7 @@ const SEO_TITLES: Record<string, string> = {
   'bahane-makinesi': 'Tavla Bahane Makinesi | TavlaTv',
   'bilgi/hakkinda': 'Hakkımızda | TavlaTv',
   'bilgi/hizmetler': 'Hizmetler | TavlaTv',
+  'bilgi/sozluk': 'Tavla Sözlüğü — Terimler | TavlaTv',
   'bilgi/rutbeler': 'Tavla Rütbeleri | TavlaTv',
   'bilgi/puanlama': 'Puanlama ve PR (Performans) | TavlaTv',
   'bilgi/basarilarim': 'Rozetler ve Başarımlar | TavlaTv',
@@ -312,6 +313,7 @@ const SEO_DESCS: Record<string, string> = {
     'Bahane Makinesi: tavla kaybettiğinde işine yarayacak 100 hazır bahane. Salt eğlence.',
   'bilgi/hakkinda': 'TavlaTv hakkında: misyonumuz, adil oyun ilkelerimiz ve tavla topluluğu.',
   'bilgi/hizmetler': 'TavlaTv hizmetleri: online tavla, turnuvalar, analiz araçları ve daha fazlası.',
+  'bilgi/sozluk': 'Tavla sözlüğü: tavla terimleri ve anlamları — mars, gammon, backgammon, küp, pip ve daha fazlası.',
   'bilgi/rutbeler':
     'Tavla rütbeleri ve seviye sistemi: rating aralıkları ve rütbe rozetleri nasıl kazanılır.',
   'bilgi/puanlama':
@@ -7625,6 +7627,7 @@ export default function App() {
     // "Bilgi" basligi altindaki tek tek sayfalar (Info'yu ilgili sekmede acar)
     'info-about': () => openInfoTab('about'),
     'info-services': () => openInfoTab('services'),
+    'info-glossary': () => openInfoTab('glossary'),
     'info-ranks': () => openInfoTab('ranks'),
     'info-scoring': () => openInfoTab('scoring'),
     'info-badges': () => openInfoTab('badges'),
@@ -7693,6 +7696,7 @@ export default function App() {
     items: [
       { key: 'info-about', labelKey: 'info.tab.about', onClick: () => openInfoTab('about') },
       { key: 'info-services', labelKey: 'menu.services', onClick: () => openInfoTab('services') },
+      { key: 'info-glossary', labelKey: 'info.tab.glossary', onClick: () => openInfoTab('glossary') },
       { key: 'info-ranks', labelKey: 'menu.ranks', onClick: () => openInfoTab('ranks') },
       { key: 'info-scoring', labelKey: 'info.tab.scoring', onClick: () => openInfoTab('scoring') },
       { key: 'info-badges', labelKey: 'ach.title', onClick: () => openInfoTab('badges') },
