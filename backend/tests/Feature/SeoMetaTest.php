@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use Tests\TestCase;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -86,6 +87,35 @@ class SeoMetaTest extends TestCase
             $response->assertOk();
             $response->assertSee('name="robots" content="index, follow"', false);
             $response->assertSee('rel="canonical" href="' . $url . '"', false);
+        }
+    }
+
+    public function test_sitemap_command_includes_only_published_news(): void
+    {
+        if (! Schema::hasTable('contents')) {
+            Schema::create('contents', function ($table): void {
+                $table->id();
+                $table->string('type')->nullable();
+                $table->string('title')->nullable();
+                $table->text('body')->nullable();
+                $table->string('image')->nullable();
+                $table->boolean('published')->default(true);
+                $table->timestamps();
+            });
+        }
+
+        DB::table('contents')->insert([
+            ['type' => 'news', 'title' => 'Yayınlanan Turnuva Haberi', 'published' => true],
+            ['type' => 'news', 'title' => 'Taslak Turnuva Haberi', 'published' => false],
+        ]);
+
+        try {
+            $this->artisan('seo:sitemap', ['--dry-run' => true])
+                ->expectsOutputToContain('/haberler/yayinlanan-turnuva-haberi')
+                ->doesntExpectOutputToContain('/haberler/taslak-turnuva-haberi')
+                ->assertExitCode(0);
+        } finally {
+            Schema::dropIfExists('contents');
         }
     }
 }

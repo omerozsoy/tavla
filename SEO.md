@@ -18,14 +18,12 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 
 ### P1 — Dinamik içerik SEO kontrolü
 
-- [ ] Yayındaki haber slug’ları sitemap ile otomatik eşleştirilmeli.
-- [ ] Silinen veya taslak haberler sitemap’ten otomatik çıkarılmalı.
 - [ ] Haber detaylarında gerçek yayın tarihi alanı doğrulanıp `datePublished`/`dateModified` eklenmeli.
 - [ ] Haber görseli olmayan içerikler için güvenli fallback OG görseli kullanılmalı.
 
 ### P1 — Teknik indeksleme doğrulaması
 
-- [ ] Canonical URL’nin HTTPS + `www` standardıyla aynı kaldığı tüm rotalarda doğrulanmalı.
+- [ ] Canonical URL’nin HTTPS + `www` standardıyla canlı tüm rotalarda ayrıca doğrulanmalı.
 
 ### P2 — Structured data ve içerik zenginliği
 
