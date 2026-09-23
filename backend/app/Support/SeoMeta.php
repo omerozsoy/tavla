@@ -221,6 +221,29 @@ final class SeoMeta
      * Kaynak (tek doğru): src/data/guides.ts — değerler birebir SENKRON tutulmalıdır.
      * /tavla-rehberi/<slug> yolu için per-article meta + BlogPosting JSON-LD enjekte edilir.
      */
+    private const LANDING = [
+        'online-tavla' => [
+            'Online tavla nasıl oynanır?',
+            'TavlaTV, tarayıcıdan ücretsiz online tavla oynamanızı sağlar. Gerçek rakiplerle canlı maçlara katılabilir, yapay zekâya karşı pratik yapabilir ve maç performansınızı analiz edebilirsiniz.',
+            ['Ücretsiz online tavla maçına katılın.', 'Arkadaşınızla veya yapay zekâ botuyla oynayın.', 'PR, rating ve maç analizleriyle gelişiminizi takip edin.'],
+        ],
+        'tavla-oyna' => [
+            'Ücretsiz tavla oyunu seçenekleri',
+            'Kayıt gerektirmeden tarayıcıda tavla oynamaya başlayın. Tek oyun, arkadaşınızla oyun ve canlı rakip seçenekleriyle kendi oyun tarzınıza uygun maçı seçin.',
+            ['Tek başınıza yapay zekâya karşı oynayın.', 'Arkadaşınızı davet ederek özel maç oluşturun.', 'Online tavla turnuvalarını ve lider tablosunu keşfedin.'],
+        ],
+        'nasil-oynanir' => [
+            'Tavla kuralları ve başlangıç rehberi',
+            'TavlaTV rehberinde zar kullanımı, pul hareketleri, kırık pul ve toplama kurallarını adım adım öğrenin.',
+            ['Tahtanın başlangıç dizilimini öğrenin.', 'Zar ve pul hareketlerinin temel kurallarını inceleyin.', 'Mars ve backgammon puanlamasını öğrenin.'],
+        ],
+        'tavla-rehberi' => [
+            'Tavla strateji rehberi',
+            'Açılış hamleleri, kapı ve prime kurma, pip sayımı, doubling cube ve kazanma taktikleri hakkında anlaşılır tavla yazılarını okuyun.',
+            ['Tavla açılış stratejilerini inceleyin.', 'Doubling cube kullanımını öğrenin.', 'Mars ve backgammon farklarını keşfedin.'],
+        ],
+    ];
+
     private const GUIDES = [
         'tavla-acilis-stratejileri' => [
             'Tavla Açılış Stratejileri: En İyi İlk Hamleler | TavlaTv',
@@ -264,7 +287,7 @@ final class SeoMeta
         if (isset(self::META[$slug])) {
             [$title, $desc, $h1] = self::META[$slug];
 
-            $html = self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website');
+            $html = self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website', self::LANDING[$slug] ?? null);
 
             return self::injectBreadcrumbJsonLd($html, $h1, self::BASE . $slug);
         }
@@ -367,6 +390,7 @@ final class SeoMeta
         string $url,
         ?string $image,
         string $type,
+        ?array $landing = null,
     ): string {
         $tTitle = htmlspecialchars($title, ENT_QUOTES, 'UTF-8');
         $tDesc  = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
@@ -386,7 +410,7 @@ final class SeoMeta
             '~<meta\s+name="twitter:title"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:title\" content=\"{$tTitle}\" />",
             '~<meta\s+name="twitter:description"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:description\" content=\"{$tDesc}\" />",
             // JS'siz tarayıcıların gördüğü H1 + açıklama: per-route yap.
-            '~<noscript>.*?</noscript>~s' => "<noscript><main><h1>{$tH1}</h1><p>{$tDesc}</p><nav aria-label=\"TavlaTV bağlantıları\"><a href=\"/online-tavla\">Online Tavla Oyna</a> · <a href=\"/tavla-rehberi\">Tavla Rehberi</a> · <a href=\"/nasil-oynanir\">Tavla Kuralları</a> · <a href=\"/haberler\">Tavla Haberleri</a></nav></main></noscript>",
+            '~<noscript>.*?</noscript>~s' => self::renderNoscript($tH1, $tDesc, $landing),
         ];
 
         if ($image) {
@@ -404,6 +428,24 @@ final class SeoMeta
         }
 
         return $html;
+    }
+
+    /** JS kapalı crawler için başlık, açıklama ve landing içeriği üretir. */
+    private static function renderNoscript(string $h1, string $desc, ?array $landing): string
+    {
+        $body = '';
+        if ($landing !== null) {
+            [$heading, $paragraph, $items] = $landing;
+            $heading = htmlspecialchars($heading, ENT_QUOTES, 'UTF-8');
+            $paragraph = htmlspecialchars($paragraph, ENT_QUOTES, 'UTF-8');
+            $list = '';
+            foreach ($items as $item) {
+                $list .= '<li>' . htmlspecialchars($item, ENT_QUOTES, 'UTF-8') . '</li>';
+            }
+            $body = "<section><h2>{$heading}</h2><p>{$paragraph}</p><ul>{$list}</ul></section>";
+        }
+
+        return "<noscript><main><h1>{$h1}</h1><p>{$desc}</p>{$body}<nav aria-label=\"TavlaTV bağlantıları\"><a href=\"/online-tavla\">Online Tavla Oyna</a> · <a href=\"/tavla-rehberi\">Tavla Rehberi</a> · <a href=\"/nasil-oynanir\">Tavla Kuralları</a> · <a href=\"/haberler\">Tavla Haberleri</a></nav></main></noscript>";
     }
 
     /**
