@@ -3630,6 +3630,15 @@ button[aria-disabled='true'],
   text-decoration: none;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
 }
+/* RichEditor bazen link metnini <strong style="text-decoration:underline"> veya <u> ile
+   sarar -> link'in border-bottom'i ile CIFT alt cizgi olusur. Link ICINDEKI ogelerin kendi
+   alt cizgisini kaldir (inline style'i ezmek icin !important sart) -> tek border-bottom kalir. */
+.event-info-body.rich a *,
+.service-body.rich a *,
+.info-rich.rich a *,
+.news-detail-body.rich a * {
+  text-decoration: none !important;
+}
 .event-info-body.rich blockquote,
 .service-body.rich blockquote,
 .info-rich.rich blockquote,
