@@ -83,7 +83,13 @@ export default function PublicProfile({
                 mobilde sıkışma/taşma olmaz, masaüstünde ferah. */}
             {(onAddFriend || onMessage) && (
               <div className="pp-actions">
-                {onAddFriend && (
+                {/* SİTE GENELİ: bakan kişiyle ZATEN arkadaşsa (p.is_friend) "Arkadaş ol"u gizle;
+                    yerine küçük "Arkadaşınız" göstergesi. Nereden açılırsa açılsın geçerli. */}
+                {onAddFriend && (p.is_friend ? (
+                  <span className="pp-isfriend">
+                    <Icon name="check" size={14} /> {t('online.alreadyFriend')}
+                  </span>
+                ) : (
                   <Button
                     variant="default"
                     className="pp-addfriend"
@@ -96,7 +102,7 @@ export default function PublicProfile({
                     <Icon name={friendSent ? 'check' : 'user-plus'} size={14} />{' '}
                     {friendSent ? t('online.friendSent') : t('online.addFriend')}
                   </Button>
-                )}
+                ))}
                 {onMessage && (
                   <Button variant="outline" className="pp-message" onClick={onMessage}>
                     <Icon name="chat" size={14} /> {t('dm.message')}

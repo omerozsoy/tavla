@@ -1294,8 +1294,27 @@ class AuthController extends Controller
         $form = $recent->map(fn ($m) => (bool) $m->won)->all(); // en yeni once
         $rank = User::where('rating', '>', $user->rating ?? 1500)->count() + 1;
 
+        // Bakan kişi (bearer -> sanctum guard; rota public ama token varsa çözülür) bu oyuncuyla
+        // ZATEN arkadaş mı? -> profil kartı "Arkadaş ol"u site GENELİNDE gizler (Kulüpler/Liderlik/
+        // Canlı Maçlar dahil; yalnız Arkadaşlar paneli değil). friendships: accepted + çift yön.
+        $me = $request->user('sanctum');
+        $isFriend = false;
+        if ($me && $me->id !== $user->id && \Illuminate\Support\Facades\Schema::hasTable('friendships')) {
+            $isFriend = \Illuminate\Support\Facades\DB::table('friendships')
+                ->where('status', 'accepted')
+                ->where(function ($q) use ($me, $user) {
+                    $q->where(function ($w) use ($me, $user) {
+                        $w->where('user_id', $me->id)->where('friend_id', $user->id);
+                    })->orWhere(function ($w) use ($me, $user) {
+                        $w->where('user_id', $user->id)->where('friend_id', $me->id);
+                    });
+                })
+                ->exists();
+        }
+
         return response()->json([
             'id' => $user->id,
+            'is_friend' => $isFriend, // frontend: PublicProfile "Arkadaş ol"u gizler
             'name' => $user->nickname ?: $user->first_name ?: 'Oyuncu',
             'avatar' => $user->avatar,
             'frame' => $user->avatar_frame,
