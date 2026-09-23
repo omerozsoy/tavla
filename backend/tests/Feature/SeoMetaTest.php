@@ -126,4 +126,17 @@ class SeoMetaTest extends TestCase
             Schema::dropIfExists('contents');
         }
     }
+
+    public function test_homepage_and_public_route_have_game_structured_data(): void
+    {
+        $homepage = file_get_contents(public_path('index.html'));
+        $this->assertNotFalse($homepage);
+        $this->assertStringContainsString('"@type": "VideoGame"', (string) $homepage);
+        $this->assertStringContainsString('"applicationCategory": "Game"', (string) $homepage);
+
+        $this->get('/online-tavla')
+            ->assertOk()
+            ->assertSee('"@type":"WebPage"', false)
+            ->assertSee('"isPartOf":{"@type":"WebSite"', false);
+    }
 }
