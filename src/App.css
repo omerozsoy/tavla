@@ -12714,10 +12714,36 @@ button.acct-row-logout:hover:not(:disabled) {
   font-weight: 400;
   color: var(--text);
 }
+.an-cands-title {
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
 .an-cands {
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+/* "Tumunu goster / Daha az goster" — liste altinda ince metin buton */
+.an-cands-more {
+  margin-top: 4px;
+  padding: 8px 10px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 500;
+  text-align: center;
+}
+.an-cands-more:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .an-cand {
   display: grid;
