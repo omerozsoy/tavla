@@ -4912,12 +4912,32 @@ export default function App() {
     }
   }
 
-  // Ses: her tas oynandiginda (played uzayinca)
+  // Ses: her tas oynandiginda (played uzayinca) tas oynama; vurus varsa tas kirma
   const prevPlayedLenRef = useRef(0)
   useEffect(() => {
-    if (played.length > prevPlayedLenRef.current) Sound.move()
+    const prev = prevPlayedLenRef.current
+    if (played.length > prev) {
+      Sound.move()
+      // Yeni step'lerde vurus (hit) var mi? -> hedef nokta uygulanmadan ONCE
+      // tek rakip tasi tasiyorsa vurustur (tas kirma sesi).
+      try {
+        const mover = turnStart.turn
+        for (let i = prev; i < played.length; i++) {
+          const st = played[i]
+          if (st.to === 'off') continue
+          const before = applyPlayed(turnStart, played.slice(0, i))
+          const v = before.points[st.to as number]
+          if (mover === 'white' ? v === -1 : v === 1) {
+            Sound.hit()
+            break
+          }
+        }
+      } catch {
+        /* yok */
+      }
+    }
     prevPlayedLenRef.current = played.length
-  }, [played.length])
+  }, [played.length, turnStart, played])
   // Ses: oyun bitince kazanma/kaybetme
   const soundedEndRef = useRef(false)
   useEffect(() => {

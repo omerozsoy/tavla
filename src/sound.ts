@@ -1,5 +1,8 @@
-// Basit ses efektleri (Web Audio ile sentez, harici dosya yok).
+// Ses efektleri: zar/tas/kirma gercek kayit (sample), kazanma/kaybetme sentez.
 // Kullanici etkilesiminden sonra AudioContext olusturulur (tarayici kurali).
+import diceUrl from './assets/dice-roll.wav' // zar atma (gercek kayit)
+import moveUrl from './assets/checker-move.mp3' // tas oynama (her hamlede)
+import hitUrl from './assets/checker-hit.ogg' // tas kirma (vurus)
 
 let ctx: AudioContext | null = null
 // Ses kullanıcı tercihi (kalıcı): VARSAYILAN KAPALI. Oyun Menüsü > Ses ile aç/kapa.
@@ -24,7 +27,13 @@ export function setMuted(v: boolean): void {
     /* yok */
   }
   // Açılışta AudioContext'i (kullanıcı jesti içinde) hazırla -> ilk efekt gecikmesiz çalsın.
-  if (!v) ac()
+  if (!v) {
+    ac()
+    // Örnekleri önceden çöz: ilk zar/hamle/vuruş anında gecikme olmasın.
+    void loadSample(diceUrl)
+    void loadSample(moveUrl)
+    void loadSample(hitUrl)
+  }
 }
 
 function ac(): AudioContext | null {
@@ -57,37 +66,66 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   osc.stop(t0 + dur + 0.02)
 }
 
-// Kisa gurultu patlamasi (zar/tas sesi)
-function noise(start: number, dur: number, gain = 0.15, hp = 1200) {
+// --- Gercek kayit (sample) calar: lazy fetch + decode, buffer cache, muted'a saygili ---
+const buffers = new Map<string, AudioBuffer>()
+const loading = new Map<string, Promise<AudioBuffer | null>>()
+
+function loadSample(url: string): Promise<AudioBuffer | null> {
+  const cached = buffers.get(url)
+  if (cached) return Promise.resolve(cached)
+  const inflight = loading.get(url)
+  if (inflight) return inflight
   const c = ac()
-  if (!c) return
-  const t0 = c.currentTime + start
-  const n = Math.floor(c.sampleRate * dur)
-  const buf = c.createBuffer(1, n, c.sampleRate)
-  const data = buf.getChannelData(0)
-  for (let i = 0; i < n; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / n)
+  if (!c) return Promise.resolve(null) // muted iken indirme yok
+  const p = fetch(url)
+    .then((r) => r.arrayBuffer())
+    .then((ab) => c.decodeAudioData(ab))
+    .then((buf) => {
+      buffers.set(url, buf)
+      loading.delete(url)
+      return buf
+    })
+    .catch(() => {
+      loading.delete(url)
+      return null
+    })
+  loading.set(url, p)
+  return p
+}
+
+function playBuffer(c: AudioContext, buf: AudioBuffer, gain: number) {
   const src = c.createBufferSource()
   src.buffer = buf
-  const filt = c.createBiquadFilter()
-  filt.type = 'highpass'
-  filt.frequency.value = hp
   const g = c.createGain()
   g.gain.value = gain
-  src.connect(filt).connect(g).connect(c.destination)
-  src.start(t0)
+  src.connect(g).connect(c.destination)
+  src.start()
+}
+
+function play(url: string, gain = 0.7) {
+  const c = ac()
+  if (!c) return
+  const buf = buffers.get(url)
+  if (buf) {
+    playBuffer(c, buf, gain)
+    return
+  }
+  // Henuz yuklenmedi -> yukle ve hazir olunca bir kez cal (ilk sefer kucuk gecikme).
+  void loadSample(url).then((b) => {
+    const cc = ac()
+    if (b && cc) playBuffer(cc, b, gain)
+  })
 }
 
 export const Sound = {
   dice() {
-    noise(0, 0.09, 0.18, 900)
-    noise(0.11, 0.08, 0.15, 1100)
+    play(diceUrl, 0.85)
   },
   move() {
-    tone(320, 0, 0.08, 'triangle', 0.18)
+    play(moveUrl, 0.6)
   },
   hit() {
-    tone(160, 0, 0.14, 'square', 0.22)
-    noise(0, 0.06, 0.14, 600)
+    play(hitUrl, 0.85)
   },
   win() {
     tone(523, 0, 0.16, 'sine', 0.2)
