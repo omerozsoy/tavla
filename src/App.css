@@ -7026,6 +7026,12 @@ html[data-board='yilbasi'] .checker.black {
   max-height: min(60vh, 520px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  /* "En iyi hamleler" başlığı üstteki kazanma-şansı/equity satırına yapışmasın (kullanıcı: sıkışık). */
+  margin-top: 13px;
+}
+.analyzer-results .move-list .move-list-head {
+  margin-bottom: 7px;
+  padding-bottom: 6px;
 }
 .move-row {
   display: grid;
@@ -14253,7 +14259,7 @@ button.acct-row-logout:hover:not(:disabled) {
   gap: 6px;
   font-size: 0.95rem;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 7px;
 }
 .pa-win b {
   color: var(--success-fg);
@@ -14265,6 +14271,8 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .pa-result .prob-sub {
   font-variant-numeric: tabular-nums;
+  line-height: 1.55;
+  margin-top: 3px;
 }
 /* Orta ekran: tahta ustte tam genislik, altinda kontrol | sonuc yan yana */
 /* 3-sutun (board|kontrol|sonuc) yalniz GENIS ekranda; daha darda board USTTE
