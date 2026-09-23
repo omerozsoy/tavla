@@ -70,20 +70,26 @@ class RoomLivePreviewTest extends TestCase
         ])->assertStatus(403);
     }
 
-    public function test_friendly_room_state_is_private_to_participants(): void
+    // Direktif: BOT hariç tüm maçlar izlenebilir. Davet (friendly) maçı katılımcı olmayanca
+    // da görüntülenir; BOT maçı izleyiciye kapalıdır.
+    public function test_non_bot_room_state_is_viewable_bot_is_private(): void
     {
         $room = $this->room();
         $room->mode = 'friendly';
         $room->save();
+        // Davet maçı: katılımcı olmayan izleyici de okuyabilir.
+        $this->getJson("/api/rooms/{$room->code}")->assertOk();
 
-        $this->getJson("/api/rooms/{$room->code}")->assertForbidden();
-        $this->acting('p1');
-        $this->getJson("/api/rooms/{$room->code}?token=p1")->assertOk();
+        // Bot maçı: slot yoksa (izleyici) 403.
+        $bot = Room::create([
+            'code' => 'BOTX', 'p1_token' => 'bp1', 'p1_name' => 'Human',
+            'p2_token' => 'bp2', 'p2_name' => 'Bot', 'status' => 'playing', 'bot' => true,
+        ]);
+        $this->getJson("/api/rooms/{$bot->code}")->assertForbidden();
     }
 
-    public function test_friendly_rooms_are_not_exposed_by_live_matches_listing(): void
+    public function test_live_matches_lists_non_bot_including_friendly_and_excludes_bot(): void
     {
-        $this->room();
         Room::create([
             'code' => 'FRIENDY',
             'p1_token' => 'friend-p1', 'p1_name' => 'Private A',
@@ -97,28 +103,39 @@ class RoomLivePreviewTest extends TestCase
             'p2_token' => 'ranked-p2', 'p2_name' => 'Public B',
             'status' => 'playing', 'state' => ['turn' => 'white'],
         ]);
+        Room::create([
+            'code' => 'BOTMATCH',
+            'p1_token' => 'bot-p1', 'p1_name' => 'Human',
+            'p2_token' => 'bot-p2', 'p2_name' => 'Bot',
+            'status' => 'playing', 'bot' => true, 'state' => ['turn' => 'white'],
+        ]);
 
         $codes = collect($this->getJson('/api/live-matches')->assertOk()->json('matches'))
             ->pluck('code')->all();
 
-        $this->assertNotContains('FRIENDY', $codes);
+        $this->assertContains('FRIENDY', $codes);     // davet maçı artık listelenir
         $this->assertContains('RANKEDY', $codes);
+        $this->assertNotContains('BOTMATCH', $codes);  // bot hariç
     }
 
-    public function test_friendly_room_watch_is_private_to_participants(): void
+    public function test_non_bot_watch_is_public_bot_watch_is_private(): void
     {
         $room = $this->room();
         $room->mode = 'friendly';
         $room->save();
-
+        // Davet maçı: katılımcı olmayan izleyici presence upsert edebilir.
         $this->postJson("/api/rooms/{$room->code}/watch", [
             'token' => 'spectator-token',
-        ])->assertForbidden();
-
-        $this->acting('p1');
-        $this->postJson("/api/rooms/{$room->code}/watch", [
-            'token' => 'p1',
         ])->assertOk();
+
+        // Bot maçı: izleyiciye kapalı.
+        $bot = Room::create([
+            'code' => 'BOTW', 'p1_token' => 'bp1', 'p1_name' => 'Human',
+            'p2_token' => 'bp2', 'p2_name' => 'Bot', 'status' => 'playing', 'bot' => true,
+        ]);
+        $this->postJson("/api/rooms/{$bot->code}/watch", [
+            'token' => 'spectator-token',
+        ])->assertForbidden();
     }
     public function test_live_empty_steps_clears_preview(): void
     {

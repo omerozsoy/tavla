@@ -115,12 +115,12 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(1, MatchResult::where('room_code', 'FL2')->where('user_id', $a->id)->count());
     }
 
-    // Arkadaslik (friendly) odasi GIZLIDIR: katilimci-olmayan/oturumsuz poll odayi goremez (403)
-    // -> disaridan forfeit sonucu URETILEMEZ. (NOT: friendly artik PUANLI; ama sonucu ancak
-    // katilimcinin otoriter poll'u yazar. Legacy otorite-siz oda ayrica fail-closed.)
-    public function test_friendly_forfeit_requires_participant_authority(): void
+    // Direktif: davet (friendly) maçları artık herkese açık (BOT hariç tüm maçlar izlenebilir) ->
+    // ranked gibi davranır: poll geldiğinde forfeit SUNUCUDA yazılır (eski "friendly gizli, fail
+    // closed" davranışı KALKTI; artık gizlilik filtresi yok).
+    public function test_friendly_forfeit_is_recorded_like_ranked(): void
     {
-        $a = $this->user('a');
+        $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
         $b = $this->user('b');
         $room = $this->rankedRoom('FL3', $a, $b);
         $room->mode = 'friendly';
@@ -131,13 +131,12 @@ class ForfeitLossTest extends TestCase
         $clock['started_at'] = microtime(true) - 40;
         $room->clock = $clock;
         $room->save();
-        // Legacy friendly room has no server-authoritative state; fail closed and do not
-        // manufacture a timeout result from client-controlled state.
-        $this->getJson('/api/rooms/FL3')->assertStatus(403);
+        // Tokensiz (izleyici) poll: oda GÖRÜNÜR + forfeit finalize edilir (ranked ile aynı).
+        $this->getJson('/api/rooms/FL3')->assertOk();
 
         $a->refresh();
-        $this->assertSame(1500, (int) $a->rating);
-        $this->assertSame(0, (int) $a->losses);
-        $this->assertNull(MatchResult::where('room_code', 'FL3')->first());
+        $this->assertLessThan(1500, $a->rating);          // rating düştü
+        $this->assertSame(1, (int) $a->losses);           // mağlubiyet +1
+        $this->assertNotNull(MatchResult::where('room_code', 'FL3')->where('user_id', $a->id)->first());
     }
 }
