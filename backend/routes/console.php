@@ -35,6 +35,12 @@ Schedule::command('gamelogs:prune --days=90')
     ->name('prune-game-logs')
     ->withoutOverlapping();
 
+// Yayındaki haber URL'lerini sitemap'e günlük ekle; taslak/silinmiş haberler otomatik çıkar.
+Schedule::command('seo:sitemap')
+    ->dailyAt('02:15')
+    ->name('seo-sitemap')
+    ->withoutOverlapping();
+
 // SUNUCU-OTORİTER YEDEK: tamamlanmış online maçlarda istemcisi raporlayamamış (sekme kapandı/
 // ağ/başka cihaz) oyuncuların match_results satırını sunucuda tamamla -> maç HER İKİ oyuncunun
 // "Maç Analizleri" listesinde çıksın. 2 dk grace (canlı istemcinin zengin satırı önce yazsın).
