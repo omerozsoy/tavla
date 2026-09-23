@@ -1159,6 +1159,7 @@ export interface Content {
   id: number
   type: ContentType
   title: string
+  slug?: string | null // kısa/SEO URL slug'ı (makale); boşsa slugify(title) kullanılır
   body?: string | null
   organizer?: string | null
   place?: string | null

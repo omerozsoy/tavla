@@ -85,6 +85,7 @@ class ContentController extends Controller
         return $request->validate([
             'type' => ['required', 'string', 'in:'.implode(',', self::TYPES)],
             'title' => ['required', 'string', 'max:200'],
+            'slug' => ['nullable', 'string', 'max:200'],
             'body' => ['nullable', 'string', 'max:20000'],
             'organizer' => ['nullable', 'string', 'max:200'],
             'place' => ['nullable', 'string', 'max:300'],

@@ -111,6 +111,9 @@ export function slugify(s: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
+// Detay URL slug'ı: kısa (SEO) slug varsa onu, yoksa başlıktan türet (haber/blog geriye dönük).
+const detailSlug = (c: { slug?: string | null; title: string }) => c.slug || slugify(c.title)
+
 // Cep telefonunu WhatsApp (wa.me) baglantisina cevir. TR varsayilan (+90).
 // Metinden rakamlari ayiklar: "0537 389 19 07" -> https://wa.me/905373891907.
 // Rakam yoksa null (link verilmez). Gecerli bir cep numarasi yoksa da null.
@@ -178,7 +181,7 @@ export default function ContentView({
   const [openId, setOpenId] = useState<number | null>(null)
   // Haber detayi acik mi (slug bir habere denk geliyorsa)
   const newsItem =
-    (type === 'news' || type === 'makale') && slug ? (items.find((i) => slugify(i.title) === slug) ?? null) : null
+    (type === 'news' || type === 'makale') && slug ? (items.find((i) => detailSlug(i) === slug) ?? null) : null
   // Detaydaki tum gorseller (kapak + galeri) - lightbox bunlar arasinda gezer
   const detailImgs = newsItem
     ? [newsItem.image, ...(newsItem.gallery ?? [])]
@@ -419,8 +422,8 @@ export default function ContentView({
                     className="news-lead"
                     role="button"
                     tabIndex={0}
-                    onClick={() => onOpenDetail?.(slugify(lead.title))}
-                    onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(slugify(lead.title))}
+                    onClick={() => onOpenDetail?.(detailSlug(lead))}
+                    onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(detailSlug(lead))}
                   >
                     {lead.image && (
                       <span className="news-lead-media">
@@ -448,8 +451,8 @@ export default function ContentView({
                             style={{ ['--i']: i } as CSSProperties}
                             role="button"
                             tabIndex={0}
-                            onClick={() => onOpenDetail?.(slugify(p.title))}
-                            onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(slugify(p.title))}
+                            onClick={() => onOpenDetail?.(detailSlug(p))}
+                            onKeyDown={(e) => e.key === 'Enter' && onOpenDetail?.(detailSlug(p))}
                           >
                             {p.image ? (
                               <span className="news-item-media">
@@ -748,7 +751,7 @@ function ArticlesList({
 }) {
   const { t } = useT()
   const [lead, ...rest] = items
-  const open = (it: Content) => onOpenDetail?.(slugify(it.title))
+  const open = (it: Content) => onOpenDetail?.(detailSlug(it))
   const leadExcerpt = isHtml(lead.body) ? stripHtml(lead.body) : paras(lead.body)[0]
   return (
     <section className="articles">
