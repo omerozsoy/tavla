@@ -16,10 +16,6 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 - [ ] React oyun akışına dokunmadan yalnızca SEO landing içerikleri server HTML’e alınmalı.
 - [ ] Googlebot mobile ve JS kapalı crawler ile before/after kontrolü yapılmalı.
 
-### P1 — Teknik indeksleme doğrulaması
-
-- [ ] Canonical URL’nin HTTPS + `www` standardıyla canlı tüm rotalarda ayrıca doğrulanmalı.
-
 ### P2 — Structured data ve içerik zenginliği
 
 - [ ] Rehber yazılarına yayın tarihi, güncelleme tarihi, görsel ve publisher logo alanları eklenmeli.
