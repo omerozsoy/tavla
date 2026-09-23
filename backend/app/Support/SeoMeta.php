@@ -242,6 +242,43 @@ final class SeoMeta
             'Açılış hamleleri, kapı ve prime kurma, pip sayımı, doubling cube ve kazanma taktikleri hakkında anlaşılır tavla yazılarını okuyun.',
             ['Tavla açılış stratejilerini inceleyin.', 'Doubling cube kullanımını öğrenin.', 'Mars ve backgammon farklarını keşfedin.'],
         ],
+        // --- Uygulama/araç sayfaları: benzersiz META vardı ama gövde inceydi (Google "taranan
+        // ama indekslenmeyen"). Her birine özgün, taranabilir bir içerik bölümü eklenir. ---
+        'tek-oyun' => [
+            'Tek kişilik tavla nasıl oynanır?',
+            'Tek Oyun modunda rakip beklemeden, kendi hızında tavla oynarsın. Tarayıcıda anında açılır; zar atışları kanıtlanabilir biçimde adildir ve dilediğin an yeni oyuna başlayabilirsin.',
+            ['Rakip beklemeden hemen tek başına tavla oyna.', 'Kanıtlanabilir adil zar ve sade arayüz.', 'Yeni öğreniyorsan tavla nasıl oynanır rehberiyle başla.'],
+        ],
+        'yeni-oyun' => [
+            'Online tavla maçı oluştur',
+            'Yeni Oyun ile gerçek rakiplere karşı puanlı online tavla maçı başlatırsın. Maç uzunluğunu ve süre kontrolünü seçer, eşleşmeni bulur ve canlı oynarsın; maç sonunda performans reytingini (PR) görürsün.',
+            ['Maç uzunluğu ve süre kontrolünü seç.', 'Gerçek rakiplerle puanlı, canlı maç yap.', 'Maç sonunda PR ve rating değişimini gör.'],
+        ],
+        'yz-ile-oyna' => [
+            'Yapay zekâya karşı tavla oyna',
+            'Sinir ağı tabanlı güçlü tavla botuna karşı oyna, seviyeni seç ve pratik yap. Bot tamamen tarayıcında çalışır; internet rakibi beklemeden istediğin an antrenman yapabilirsin.',
+            ['Zorluk seviyesini kendine göre ayarla.', 'Güçlü sinir ağı botuyla pratik yap.', 'Hamlelerini analiz ederek gelişimini hızlandır.'],
+        ],
+        'arkadasinla-oyna' => [
+            'Arkadaşınla özel tavla maçı',
+            'Arkadaşını davet ederek özel bir tavla maçı kurarsın. Maç türünü, uzunluğunu ve süreyi birlikte belirler, davetle rakibini çağırır ve baş başa keyifli bir karşılaşma yaparsınız.',
+            ['Arkadaşını davet linki ile çağır.', 'Maç türü, uzunluk ve süreyi birlikte seç.', 'Baş başa puanlı ya da dostluk maçı yap.'],
+        ],
+        'pozisyon-analizi' => [
+            'Tavla pozisyon analizi',
+            'Bir tavla pozisyonunu tahtaya dizip en iyi hamleyi ve kazanma olasılığını görürsün. Motor olası hamleleri değerlendirir; küp kararlarını ve equity farklarını inceleyerek oyununu geliştirirsin.',
+            ['Pozisyonu tahtaya diz, en iyi hamleyi gör.', 'Kazanma olasılığı ve equity farklarını incele.', 'Küp (double/take/drop) kararlarını değerlendir.'],
+        ],
+        'mat-analiz' => [
+            'MAT dosyası ile tavla maç analizi',
+            'Elindeki .mat maç kaydını yükleyerek hamle hamle analiz edersin. Her kararın performans reytingini (PR), hatalı hamleleri ve daha iyi alternatifleri görür, oyununun zayıf noktalarını tespit edersin.',
+            ['.mat maç dosyanı yükle, hamle hamle incele.', 'Her kararın PR ve hata payını gör.', 'Daha iyi alternatif hamleleri öğren.'],
+        ],
+        'uyelik' => [
+            'TavlaTV üyeliği ve premium',
+            'Ücretsiz üyelikle rating, maç geçmişi ve turnuvalara erişirsin; premium üyelik ise gelişmiş analiz, ekstra kozmetikler ve öncelikli özellikler sunar. Dilediğin zaman yükseltebilir veya iptal edebilirsin.',
+            ['Ücretsiz üyelikle rating ve turnuvalara katıl.', 'Premium ile gelişmiş maç analizi ve kozmetikler.', 'Güvenli ödeme; istediğin zaman iptal et.'],
+        ],
     ];
 
     private const GUIDES = [
