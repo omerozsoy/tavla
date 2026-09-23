@@ -429,12 +429,13 @@ export function OnlinePlayersPanel({
               const self = (currentId != null && p.id === currentId) || (!!currentName && p.name === currentName)
               return (
                 <div key={p.id} className={`rank-row online-row ${self ? 'mine' : ''}`}>
-                  <span
-                    className={`online-pdot status-dot--${p.status ?? 'available'}`}
+                  <button
+                    type="button"
+                    className="online-id"
+                    onClick={() => onProfile(p.id)}
                     title={t(STATUS_KEY[p.status ?? 'available'])}
-                  />
-                  <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
-                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated hidePresence />
+                  >
+                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated statusDot={p.status ?? 'available'} />
                   </button>
                   <span className="rank-flag">
                     <CountryFlag code={p.country} size={16} rounded={false} />

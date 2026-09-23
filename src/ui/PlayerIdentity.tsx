@@ -25,6 +25,7 @@ export default function PlayerIdentity({
   lg = false,
   premium = false,
   hidePresence = false,
+  statusDot,
   className,
 }: {
   name: string
@@ -43,10 +44,12 @@ export default function PlayerIdentity({
   lg?: boolean
   /** true: premium uye -> avatar ustunde altin tac. */
   premium?: boolean
-  /** true: isim onundeki cevrimici/cevrimdisi presence noktasini CIZME. Cevrimici
-   *  oyuncular panelinde satir-basi durum noktasi (online-pdot) zaten var; tekrarli
-   *  ikinci yesil isik olusmasin diye. */
+  /** true: isim onundeki cevrimici/cevrimdisi presence noktasini CIZME. */
   hidePresence?: boolean
+  /** Verilirse: isim BASINDA (presence noktasi yerine) DURUM rengi nokta cizilir
+   *  (available yesil / ready mavi / busy sari). Cevrimici oyuncular panelinde
+   *  durum noktasini ismin onune tasimak icin. */
+  statusDot?: 'available' | 'ready' | 'busy' | 'offline' | null
   className?: string
 }) {
   // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
@@ -57,13 +60,20 @@ export default function PlayerIdentity({
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
       <span className="player-id-col">
         <span className="player-id-name">
-          {userId != null && known && !hidePresence && (
-            <span
-              className={`presence-dot ${online ? 'is-online' : 'is-offline'}`}
-              role="img"
-              aria-label={online ? 'Çevrimiçi' : 'Çevrimdışı'}
-              title={online ? 'Çevrimiçi' : 'Çevrimdışı'}
-            />
+          {/* Durum noktasi verildiyse (Cevrimici panel): isim basinda DURUM rengi nokta. */}
+          {statusDot ? (
+            <span className={`presence-dot status-dot--${statusDot}`} role="img" aria-hidden="true" />
+          ) : (
+            userId != null &&
+            known &&
+            !hidePresence && (
+              <span
+                className={`presence-dot ${online ? 'is-online' : 'is-offline'}`}
+                role="img"
+                aria-label={online ? 'Çevrimiçi' : 'Çevrimdışı'}
+                title={online ? 'Çevrimiçi' : 'Çevrimdışı'}
+              />
+            )
           )}
           <span className="player-id-name-text">{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
