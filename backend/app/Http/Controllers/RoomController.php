@@ -157,6 +157,20 @@ class RoomController extends Controller
                 ->where('settled', true)
                 ->where('updated_at', '<', now()->subDay())
                 ->delete();
+            // ÖLÜ ODALI bekleyen davetleri temizle: odası artık 'waiting' değil (silinmiş/
+            // başlamış/bitmiş) -> banner zaten göstermez (ping rooms-join) + respond joinable=false.
+            // DB'de birikmesinler (ping 2dk penceresi ile cleanup 10dk arasındaki 'pending' cruft'ı
+            // kapat). >2dk gate: davet-gönder anı "oda henüz kurulmadı" yarış penceresini KORU.
+            \Illuminate\Support\Facades\DB::table('game_invites')
+                ->where('status', 'pending')
+                ->where('created_at', '<', now()->subMinutes(2))
+                ->whereNotExists(function ($q) {
+                    $q->from('rooms')
+                        ->whereColumn('rooms.code', 'game_invites.room_code')
+                        ->where('rooms.status', 'waiting');
+                })
+                ->update(['status' => 'expired', 'updated_at' => now()]);
+            // Çok eski (>10dk) TÜM davetleri sil (hygiene backstop).
             \Illuminate\Support\Facades\DB::table('game_invites')
                 ->where('created_at', '<', now()->subMinutes(10))
                 ->delete();
@@ -1059,22 +1073,37 @@ class RoomController extends Controller
             if ($this->userInAnyPlaying($enterUserId, $room->id)) {
                 return $this->fail('Zaten devam eden bir maçın var. Önce onu bitir.', 409);
             }
-            $room->p2_token = $data['token'];
-            $room->p2_user_id = $enterUserId;
-            $room->p2_name = $data['name'];
-            $room->p2_rating = $data['rating'] ?? null;
-            $room->p2_avatar = $data['avatar'] ?? null;
-            $room->status = 'playing';
             // Faz 2: kod-tabanlı oda (arkadaş/turnuva) da global otorite açıkken sunucu-otoriter
             // olsun — matchmake ile AYNI. İki oyuncu da belli olduğundan shouldAuthoritative karar
             // verir; staked=false (bu odalar stake=0) ama global SERVER_AUTHORITATIVE açıksa
             // authoritative=true. Böylece arkadaş + turnuva maçlarında da zar/hamle/skor sunucuda.
+            $upd = [
+                'p2_token' => $data['token'],
+                'p2_user_id' => $enterUserId,
+                'p2_name' => $data['name'],
+                'p2_rating' => $data['rating'] ?? null,
+                'p2_avatar' => $data['avatar'] ?? null,
+                'status' => 'playing',
+            ];
             if (Schema::hasColumn('rooms', 'authoritative')
-                && $this->shouldAuthoritative($room->p1_user_id, $room->p2_user_id, false)) {
-                $room->authoritative = true;
-                $room->dice_authority = false;
+                && $this->shouldAuthoritative($room->p1_user_id, $enterUserId, false)) {
+                $upd['authoritative'] = true;
+                $upd['dice_authority'] = false;
             }
-            $room->save();
+            // ATOMİK p2 KLAKANI (çift-kabul/çift-tık yarışı): p2 slotunu YALNIZ hâlâ boş + oda
+            // 'waiting' iken kap. İki eşzamanlı enter -> yalnız biri satır günceller; diğeri
+            // 0 satır -> "Oda dolu" 409. lockForUpdate YOK (room_commands deadlock'u [[eszamanli-roll-deadlock]]
+            // gibi kilit tuzağına düşmesin) -> koşullu UPDATE yeterli.
+            $claimed = Room::where('id', $room->id)
+                ->where('status', 'waiting')
+                ->where(function ($q) {
+                    $q->whereNull('p2_token')->orWhere('p2_token', '');
+                })
+                ->update($upd);
+            if ($claimed === 0) {
+                return $this->fail('Oda dolu.', 409);
+            }
+            $room->refresh();
             $slot = 'p2';
         }
 
