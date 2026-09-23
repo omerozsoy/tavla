@@ -769,7 +769,7 @@ function NewsDetail({
               onClick={() => onOpenImage(i + 1)}
               aria-label={t('content.image', { n: i + 2 })}
             >
-              <img src={mediaSrc(g)} alt="" loading="lazy" />
+              <img src={mediaSrc(g)} alt={`${item.title} görseli ${i + 2}`} loading="lazy" />
             </button>
           ))}
         </div>
@@ -819,7 +819,7 @@ function ServiceCard({ s }: { s: Content }) {
               onClick={() => setLightbox(i)}
               aria-label={t('content.image', { n: i + 1 })}
             >
-              <img src={g} alt="" loading="lazy" />
+              <img src={g} alt={`${s.title} görseli ${i + 1}`} loading="lazy" />
             </button>
           ))}
         </div>
