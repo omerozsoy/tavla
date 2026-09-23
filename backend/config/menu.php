@@ -48,6 +48,7 @@ return [
         // --- BİLGİ: tek tek alt sayfalar (tek "Bilgi" ogesi yerine) ---
         ['key' => 'info-about', 'group' => 'info', 'label' => 'Hakkımızda'],
         ['key' => 'info-services', 'group' => 'info', 'label' => 'Hizmetler'],
+        ['key' => 'info-glossary', 'group' => 'info', 'label' => 'Sözlük'],
         ['key' => 'info-ranks', 'group' => 'info', 'label' => 'Rütbeler'],
         ['key' => 'info-scoring', 'group' => 'info', 'label' => 'Puanlama'],
         ['key' => 'info-badges', 'group' => 'info', 'label' => 'Rozetler'],
