@@ -76,6 +76,29 @@ class OfficialMessengerTest extends TestCase
         $this->assertFalse($ids->contains(OfficialMessenger::account()->id));
     }
 
+    public function test_official_hidden_from_top_ranks_even_with_high_rating(): void
+    {
+        $official = OfficialMessenger::account();
+        // Yapay yüksek rating/wins ver: filtre olmasaydı #1 olurdu.
+        User::whereKey($official->id)->update(['rating' => 3000, 'wins' => 999]);
+        $player = $this->makeUser('p');
+        User::whereKey($player->id)->update(['rating' => 1500, 'wins' => 5]);
+
+        $ids = collect($this->getJson('/api/top-ranks')->assertOk()->json('rating'))->pluck('id');
+        $this->assertFalse($ids->contains($official->id), 'Resmi hesap top-3 ratingde çıkmamalı');
+        $this->assertTrue($ids->contains($player->id));
+    }
+
+    public function test_official_hidden_from_online_players_even_when_seen(): void
+    {
+        $official = OfficialMessenger::account();
+        // Yapay son-görülme ver: filtre yine de gizlemeli.
+        User::whereKey($official->id)->update(['last_seen' => now()]);
+
+        $ids = collect($this->getJson('/api/online-players')->assertOk()->json('players'))->pluck('id');
+        $this->assertFalse($ids->contains($official->id));
+    }
+
     public function test_player_can_reply_without_request_gate(): void
     {
         $player = $this->makeUser('pl');

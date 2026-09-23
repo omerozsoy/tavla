@@ -1207,6 +1207,7 @@ class AuthController extends Controller
         $minD = \App\Services\CareerPrService::minDecisions();
 
         $users = User::whereNotNull('career_pr')
+            ->where('is_system', false) // resmi/sistem hesabı ("Tavla TV Yönetim") listede görünmesin
             ->where('career_pr_matches', '>=', $minM)
             ->where('career_pr_decisions', '>=', $minD)
             ->orderBy('career_pr', 'asc')                 // dusuk PR = iyi -> 1. sira
@@ -1240,7 +1241,8 @@ class AuthController extends Controller
     {
         $data = \Illuminate\Support\Facades\Cache::remember('top_ranks_v1', 120, function () {
             // Rating: leaderboard ile ayni sira (rating DESC, wins DESC), ilk 3.
-            $rating = User::orderByDesc('rating')
+            $rating = User::where('is_system', false) // resmi/sistem hesabı rozetlerde çıkmasın
+                ->orderByDesc('rating')
                 ->orderByDesc('wins')
                 ->limit(3)
                 ->pluck('id')
@@ -1252,6 +1254,7 @@ class AuthController extends Controller
             $pr = [];
             if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'career_pr')) {
                 $pr = User::whereNotNull('career_pr')
+                    ->where('is_system', false) // resmi/sistem hesabı rozetlerde çıkmasın
                     ->where('career_pr_matches', '>=', \App\Services\CareerPrService::minMatches())
                     ->where('career_pr_decisions', '>=', \App\Services\CareerPrService::minDecisions())
                     ->orderBy('career_pr', 'asc')
