@@ -3,6 +3,7 @@ import PremiumCrown from './PremiumCrown'
 import { CountryFlag } from './Flag'
 import { DivisionChip } from './Badges'
 import TopRankBadge from './TopRankBadge'
+import { useOnline } from '../presence'
 
 /**
  * PlayerIdentity — site geneli tek oyuncu kimlik blogu: avatar + isim (ustte) +
@@ -43,11 +44,22 @@ export default function PlayerIdentity({
   premium?: boolean
   className?: string
 }) {
+  // Site geneli çevrimiçi durumu: userId verilirse isim BAŞINA yeşil (online, yanıp sönen)
+  // veya kırmızı (offline) nokta. İlk fetch tamamlanana kadar (known=false) çizilmez.
+  const { online, known } = useOnline(userId)
   return (
     <span className={`player-id${lg ? ' lg' : ''}${className ? ' ' + className : ''}`}>
       <AvatarFrame src={avatar} frame={frame} size={size} name={name} animated={animated} />
       <span className="player-id-col">
         <span className="player-id-name">
+          {userId != null && known && (
+            <span
+              className={`presence-dot ${online ? 'is-online' : 'is-offline'}`}
+              role="img"
+              aria-label={online ? 'Çevrimiçi' : 'Çevrimdışı'}
+              title={online ? 'Çevrimiçi' : 'Çevrimdışı'}
+            />
+          )}
           <span className="player-id-name-text">{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
           {premium && <PremiumCrown size={lg ? 17 : 14} style={{ marginLeft: 4 }} />}

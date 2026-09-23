@@ -8,6 +8,7 @@ import { LangProvider } from './i18n.tsx'
 import { ErrorBoundary } from './ui/ErrorBoundary.tsx'
 import { ToastProvider } from './ui/Toast.tsx'
 import { TopRanksProvider } from './topRanks.tsx'
+import { PresenceProvider } from './presence.tsx'
 import GatePrompt from './ui/GatePrompt.tsx'
 import PullToRefresh from './ui/PullToRefresh.tsx'
 import { installAutoUpdate } from './autoUpdate.ts'
@@ -18,11 +19,13 @@ createRoot(document.getElementById('root')!).render(
       <LangProvider>
         <ToastProvider>
           <TopRanksProvider>
-            <App />
-            {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
-            <GatePrompt />
-            {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
-            <PullToRefresh />
+            <PresenceProvider>
+              <App />
+              {/* Kapali test sifre kapisi: normalde gorunmez, /api 401 {gate} gelince acilir */}
+              <GatePrompt />
+              {/* Mobil "aşağı çek-yenile" (native PTR sabit-kabukta çalışmaz) */}
+              <PullToRefresh />
+            </PresenceProvider>
           </TopRanksProvider>
         </ToastProvider>
       </LangProvider>

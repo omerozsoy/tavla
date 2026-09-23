@@ -77,6 +77,7 @@ Route::middleware([\App\Http\Middleware\EnsureActiveAccount::class, 'throttle:60
     Route::post('/matchmaking/cancel', [RoomController::class, 'matchmakingCancel'])->middleware('auth:sanctum');
     Route::get('/live-matches', [RoomController::class, 'liveMatches']); // canli maclar (izleme)
     Route::get('/online-players', [RoomController::class, 'onlinePlayers']); // cevrimici oyuncular
+    Route::get('/online-ids', [RoomController::class, 'onlineIds']); // site geneli online durum noktasi (id listesi)
     Route::post('/rooms', [RoomController::class, 'create']);
     // SUNUCU-OTORİTER BOT (PvB): bot maçını sunucuda başlat (state/zar/bot hamlesi sunucuda).
     Route::post('/bot/rooms', [RoomController::class, 'createBotRoom']);

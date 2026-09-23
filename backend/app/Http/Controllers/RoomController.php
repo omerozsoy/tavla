@@ -13,6 +13,7 @@ use App\Support\Backgammon;
 use App\Support\RoomAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 
 class RoomController extends Controller
@@ -752,6 +753,29 @@ class RoomController extends Controller
         ]);
 
         return response()->json(['players' => $list, 'count' => $list->count()]);
+    }
+
+    // Site geneli ONLINE DURUM NOKTASI icin: cevrimici (last_seen < 70sn + 'offline' DEGIL,
+    // sistem hesaplari HARIC) TUM kullanici id'leri. Frontend PresenceProvider bunu ceker,
+    // PlayerIdentity isim basindaki yesil/kirmizi noktayi buna gore cizer. Kisa cache (10sn):
+    // cok istemci sik cekse de DB'yi yormaz; durum noktasi icin ~gercek-zamanli yeterli.
+    public function onlineIds()
+    {
+        $ids = Cache::remember('online_ids_v1', 10, function () {
+            $hasStatus = Schema::hasColumn('users', 'presence_status');
+            $q = User::whereNotNull('last_seen')
+                ->where('is_system', false)
+                ->where('last_seen', '>', now()->subSeconds(70));
+            if ($hasStatus) {
+                $q->where(function ($x) {
+                    $x->whereNull('presence_status')->orWhere('presence_status', '!=', 'offline');
+                });
+            }
+
+            return $q->pluck('id')->map(fn ($id) => (int) $id)->values()->all();
+        });
+
+        return response()->json(['ids' => $ids]);
     }
 
     // Giris yapan kullanicinin DEVAM EDEN (playing) online maclari -> geri donebilsin.
