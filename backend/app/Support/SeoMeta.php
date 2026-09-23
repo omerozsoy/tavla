@@ -393,7 +393,15 @@ final class SeoMeta
                     'article',
                 );
 
-                $html = self::injectArticleJsonLd($html, (string) $article->title, $desc, self::BASE . $slug, self::absImg($article->image));
+                $html = self::injectArticleJsonLd(
+                    $html,
+                    (string) $article->title,
+                    $desc,
+                    self::BASE . $slug,
+                    self::absImg($article->image),
+                    $article->event_at,
+                    $article->updated_at,
+                );
 
                 return self::injectBreadcrumbJsonLd($html, (string) $article->title, self::BASE . $slug);
             }
@@ -552,6 +560,8 @@ final class SeoMeta
         string $description,
         string $url,
         ?string $image,
+        mixed $publishedAt = null,
+        mixed $modifiedAt = null,
     ): string {
         $data = [
             '@context' => 'https://schema.org',
@@ -572,6 +582,12 @@ final class SeoMeta
         if ($image !== null) {
             $data['image'] = [$image];
         }
+        if ($publishedAt !== null) {
+            $data['datePublished'] = self::schemaDate($publishedAt);
+        }
+        if ($modifiedAt !== null) {
+            $data['dateModified'] = self::schemaDate($modifiedAt);
+        }
 
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
@@ -581,6 +597,15 @@ final class SeoMeta
         $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
 
         return $out ?? $html;
+    }
+
+    private static function schemaDate(mixed $value): string
+    {
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format(DATE_ATOM);
+        }
+
+        return (string) $value;
     }
 
     /** Public sayfalarda arama motoruna Home > sayfa hiyerarşisini bildirir. */
@@ -624,7 +649,7 @@ final class SeoMeta
         $rows = Content::query()
             ->where('type', 'news')
             ->where('published', true)
-            ->get(['id', 'title', 'body', 'image']);
+            ->get(['id', 'title', 'body', 'image', 'event_at', 'updated_at']);
 
         foreach ($rows as $row) {
             if (self::slugify((string) $row->title) === $slug) {
