@@ -4949,22 +4949,29 @@ export default function App() {
     }
     prevPlayedLenRef.current = played.length
   }, [played.length, turnStart, played])
-  // Ses: oyun bitince kazanma/kaybetme
-  const soundedEndRef = useRef(false)
+  // Ses: oyun bitince kazanma/kaybetme.
+  // ÇİFT ÇALMA FIX: eski guard yalnız `!gameEnd`'de sıfırlanıyordu; otoriter/online akışta oyun
+  // biterken gameEnd bir an null olup TEKRAR kuruluyor (applyServerBoard new-game↔terminal titremesi
+  // + poll), guard sıfırlanıp ses 2 kez çalıyordu. Artık ses SADECE null→dolu GEÇİŞİNDE çalar
+  // (gameEnd dolu kalırken poll/room güncellemesi tekrar tetiklemez) + kısa debounce titremenin ikinci
+  // geçişini yutar (gerçek sonraki oyun her zaman >2sn sonra olduğundan etkilenmez).
+  const endSoundPrevRef = useRef(false)
+  const lastEndSoundRef = useRef(0)
   useEffect(() => {
-    if (!gameEnd) {
-      soundedEndRef.current = false
-      return
-    }
-    if (soundedEndRef.current) return
-    soundedEndRef.current = true
+    const has = gameEnd != null
+    const wasNull = !endSoundPrevRef.current
+    endSoundPrevRef.current = has
+    if (!has || !wasNull) return // yalnız null->dolu geçişinde çal (dolu kalırken tekrar etme)
+    const now = performance.now()
+    if (now - lastEndSoundRef.current < 2000) return // titreme (null->dolu->null->dolu) ikinci geçişini yut
+    lastEndSoundRef.current = now
     const humanColor: Player = mode === 'online' && room?.slot === 'p2' ? 'black' : 'white'
-    if (gameEnd.winner === humanColor) {
+    if (gameEnd!.winner === humanColor) {
       Sound.win()
       // Basarim: bu oyunu insan mars/katmerli marsla mi kazandi (kup drop'u haric).
-      if (!gameEnd.dropped) {
-        if (gameEnd.mult === 3) achBgRef.current += 1
-        else if (gameEnd.mult === 2) achGammonRef.current += 1
+      if (!gameEnd!.dropped) {
+        if (gameEnd!.mult === 3) achBgRef.current += 1
+        else if (gameEnd!.mult === 2) achGammonRef.current += 1
       }
     } else Sound.lose()
   }, [gameEnd, mode, room])
