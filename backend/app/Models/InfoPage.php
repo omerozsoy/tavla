@@ -27,7 +27,7 @@ class InfoPage extends Model
     ];
 
     // "Bilgi" modal sekmesi olan (duzenlenebilir metin) slug'lar — hukuki sayfalar HARIC.
-    public const INFO_TAB_SLUGS = ['about', 'services'];
+    public const INFO_TAB_SLUGS = ['about', 'services', 'glossary'];
 
     // SEO icerik sayfalari: landing'ler + nasil-oynanir + turnuva kurallari + rehber yazilari.
     // Bu slug'lar admin panelden (Bilgi Sayfalari) RichEditor ile duzenlenebilir hale gelir.

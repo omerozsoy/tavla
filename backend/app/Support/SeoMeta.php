@@ -199,6 +199,11 @@ final class SeoMeta
             'TavlaTv hizmetleri: online tavla, turnuvalar, analiz araçları ve daha fazlası.',
             'Hizmetlerimiz',
         ],
+        'bilgi/sozluk' => [
+            'Tavla Sözlüğü — Terimler | TavlaTv',
+            'Tavla sözlüğü: tavla terimleri ve anlamları — mars, gammon, backgammon, küp, pip ve daha fazlası.',
+            'Tavla Sözlüğü',
+        ],
         'bilgi/rutbeler' => [
             'Tavla Rütbeleri | TavlaTv',
             'TavlaTv rütbe sistemi: rating aralıklarına göre tavla ünvanları ve nasıl yükselirsin.',

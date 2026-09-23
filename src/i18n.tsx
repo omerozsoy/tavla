@@ -170,6 +170,7 @@ const TR: Dict = {
   'menu.info': 'Bilgi',
   'info.title': 'Bilgi',
   'info.tab.about': 'Hakkında',
+  'info.tab.glossary': 'Sözlük',
   'info.intro':
     'TavlaTV, tarayıcıda oynanan modern bir tavla platformudur. Yapay zekaya karşı antrenman yapabilir, gerçek rakiplerle eşleşebilir, turnuvalara katılabilir ve her maçının analizini görebilirsin.',
   'info.featuresTitle': 'Öne çıkanlar',
@@ -1771,6 +1772,7 @@ const EN: Dict = {
   'menu.info': 'Info',
   'info.title': 'Info',
   'info.tab.about': 'About',
+  'info.tab.glossary': 'Glossary',
   'info.intro':
     'TavlaTV is a modern browser-based backgammon platform. Train against AI, get matched with real opponents, join tournaments, and review the analysis of every match.',
   'info.featuresTitle': 'Highlights',
@@ -6294,6 +6296,7 @@ const EL: Dict = {
   'menu.info': 'Πληροφορίες',
   'info.title': 'Πληροφορίες',
   'info.tab.about': 'Σχετικά',
+  'info.tab.glossary': 'Γλωσσάρι',
   'info.intro':
     'Το TavlaTV είναι μια σύγχρονη πλατφόρμα τάβλι βασισμένη στον περιηγητή. Εξασκήσου εναντίον AI, βρες πραγματικούς αντιπάλους, συμμετάσχε σε τουρνουά και μελέτησε την ανάλυση κάθε αγώνα.',
   'info.featuresTitle': 'Κυριότερα Σημεία',
@@ -7539,6 +7542,7 @@ const RU: Dict = {
   'menu.info': 'Инфо',
   'info.title': 'Инфо',
   'info.tab.about': 'О нас',
+  'info.tab.glossary': 'Словарь',
   'info.intro':
     'TavlaTV — современная платформа для игры в нарды в браузере. Тренируйтесь против ИИ, находите настоящих соперников, участвуйте в турнирах и разбирайте анализ каждого матча.',
   'info.featuresTitle': 'Основные возможности',
@@ -8784,6 +8788,7 @@ const FA: Dict = {
   'menu.info': 'اطلاعات',
   'info.title': 'اطلاعات',
   'info.tab.about': 'درباره',
+  'info.tab.glossary': 'واژه‌نامه',
   'info.intro':
     'TavlaTV یک پلتفرم مدرن تخته‌نرد مبتنی بر مرورگر است. مقابل هوش مصنوعی تمرین کنید، با حریفان واقعی جفت شوید، در مسابقات شرکت کنید و تحلیل هر مسابقه را مرور کنید.',
   'info.featuresTitle': 'ویژگی‌های برجسته',

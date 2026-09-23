@@ -137,6 +137,7 @@ class InfoPageResource extends Resource
         return [
             'about' => 'hakkinda',
             'services' => 'hizmetler',
+            'glossary' => 'sozluk',
             'ranks' => 'rutbeler',
             'scoring' => 'puanlama',
             'badges' => 'basarilarim',

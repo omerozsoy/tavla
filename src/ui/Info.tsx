@@ -26,6 +26,7 @@ export type InfoTab = InfoPageSlug
 const TABS: { slug: InfoTab; labelKey: string }[] = [
   { slug: 'about', labelKey: 'info.tab.about' },
   { slug: 'services', labelKey: 'menu.services' },
+  { slug: 'glossary', labelKey: 'info.tab.glossary' },
   { slug: 'ranks', labelKey: 'menu.ranks' },
   { slug: 'scoring', labelKey: 'info.tab.scoring' },
   { slug: 'badges', labelKey: 'ach.title' },
@@ -33,7 +34,7 @@ const TABS: { slug: InfoTab; labelKey: string }[] = [
 ]
 
 // Admin panelden düzenlenen (info_pages) rich-text sekmeler. Diğerleri canlı bileşen.
-const EDITABLE: InfoTab[] = ['about', 'services']
+const EDITABLE: InfoTab[] = ['about', 'services', 'glossary']
 
 interface Props {
   onClose: () => void
