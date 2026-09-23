@@ -18,7 +18,8 @@ class SeoMetaTest extends TestCase
         $this->get('/online-tavla')
             ->assertOk()
             ->assertSee('name="robots" content="index, follow"', false)
-            ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false);
+            ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
+            ->assertSee('href="/tavla-rehberi"', false);
     }
 
     public function test_unknown_content_slug_is_a_noindex_404(): void
