@@ -3156,10 +3156,224 @@ button[aria-disabled='true'],
   max-width: 860px;
   margin: 0;
 }
-/* Makale detay: tarih yanında okuma-süresi ayracı (nokta) */
-.news-detail-dot {
+/* ============ MAKALE DETAY — editoryal okuma sayfası ============
+   Serif başlık (Playfair) + mono meta + terracotta offset hero çerçeve; gövde
+   Spectral okuma serif'i, ilk paragrafta drop-cap. Tahta şemaları GERÇEK Board
+   ile (ArticleBoard) çizilir (aşağıdaki .article-board). */
+.article-detail {
+  --art-serif: 'Spectral', Georgia, 'Times New Roman', serif;
+  --art-display: 'Playfair Display', Georgia, serif;
+  --art-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', monospace;
+  max-width: 760px;
+  margin: 0 auto;
+}
+.article-detail .news-back {
+  margin-bottom: 26px;
+}
+.article-detail-head {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  padding-bottom: 24px;
+  margin-bottom: 30px;
+  border-bottom: 1px solid var(--border);
+}
+.article-detail-kicker {
+  font-family: var(--art-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
   color: var(--accent);
-  margin: 0 3px;
+}
+.article-detail-title {
+  margin: 0;
+  font-family: var(--art-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 1.1rem + 2.6vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+  color: var(--text);
+}
+.article-detail-meta {
+  margin: 0;
+}
+.article-detail-hero {
+  margin: 0 0 36px;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: zoom-in;
+  box-shadow: 16px 16px 0 0 color-mix(in srgb, var(--accent) 15%, transparent);
+  transition: box-shadow 0.3s var(--ease-out, ease);
+}
+.article-detail-hero:hover {
+  box-shadow: 12px 12px 0 0 color-mix(in srgb, var(--accent) 24%, transparent);
+}
+.article-detail-hero img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.6s var(--ease-out, ease);
+}
+.article-detail-hero:hover img {
+  transform: scale(1.02);
+}
+
+/* Gövde: Spectral okuma serif'i, ferah satır aralığı */
+.article-detail-body {
+  font-family: var(--art-serif);
+  font-size: 1.14rem;
+  line-height: 1.8;
+  color: color-mix(in srgb, var(--text) 92%, var(--muted));
+}
+.article-prose p {
+  margin: 0 0 20px;
+}
+/* İlk paragrafa editoryal drop-cap (ilk harf büyük, terracotta) */
+.article-prose-lead > p:first-of-type::first-letter {
+  float: left;
+  font-family: var(--art-display);
+  font-weight: 600;
+  font-size: 3.4em;
+  line-height: 0.82;
+  padding: 6px 12px 0 0;
+  color: var(--accent);
+}
+.article-prose h2,
+.article-prose h3 {
+  font-family: var(--art-display);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  margin: 36px 0 12px;
+  color: var(--text);
+}
+.article-prose h2 {
+  font-size: 1.6rem;
+}
+.article-prose h3 {
+  font-size: 1.3rem;
+}
+.article-prose ul,
+.article-prose ol {
+  margin: 0 0 20px;
+  padding-left: 1.4em;
+}
+.article-prose li {
+  margin: 0 0 8px;
+}
+.article-prose a {
+  color: var(--accent);
+  text-underline-offset: 2px;
+}
+.article-prose strong {
+  color: var(--text);
+}
+.article-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 20px 0 26px;
+  font-family: var(--tv-font-ui);
+  font-size: 0.95rem;
+}
+.article-prose th,
+.article-prose td {
+  min-width: 160px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.article-prose th {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.article-prose hr {
+  margin: 34px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+/* Ayrıştırma başarısızsa kalan eski SVG şeması (geriye dönük güvenli) */
+.article-prose .board-figure {
+  margin: 24px 0 30px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  overflow: hidden;
+}
+.article-prose .board-figure svg {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto;
+}
+
+/* --- Canlı tahta şeması (ArticleBoard): GERÇEK Board + hamle okları --- */
+.article-board {
+  margin: 30px auto 34px;
+  max-width: 600px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card-bg));
+  /* Board --board-h global (viewport) olduğu için dar kolonda taşardı -> kolona (cqw)
+     göre küçült (analysis-detail ile aynı sistem). */
+  container-type: inline-size;
+}
+.article-board-stage {
+  position: relative;
+  width: 100%;
+  /* Kolona göre board yüksekliği + TÜM türev geometri yeniden türetilir (line 179-189
+     oranları) — yalnız --board-h override edilirse tahta dev+basık görünür. */
+  --board-h: max(150px, min(calc((100cqw - 12px) / 1.52), calc(100vh - 220px)));
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.14);
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 1.4);
+  --tri-h: calc(var(--board-h) * 0.35);
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.76);
+  --tray-w: calc(var(--checker) * 1.5);
+  --bearoff-w: var(--tray-w);
+  --cube-size: clamp(16px, calc(var(--bar-w) * 0.62), 40px);
+}
+/* Hane numaraları + pip: board'a (--checker) göre ölçekle (sabit rem'ler küçük board'da devleşir) */
+.article-board-stage .pt-numbers {
+  font-size: calc(var(--checker) * 0.5);
+}
+.article-board-stage .pip {
+  font-size: calc(var(--checker) * 0.66);
+}
+.article-board-caption {
+  margin: 12px 2px 0;
+  font-family: var(--art-serif, inherit);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: var(--muted);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .article-detail-hero {
+    box-shadow: 9px 9px 0 0 color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  .article-detail-body {
+    font-size: 1.06rem;
+  }
+  .article-prose-lead > p:first-of-type::first-letter {
+    font-size: 3em;
+  }
+  .article-board {
+    padding: 10px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .article-detail-hero,
+  .article-detail-hero img {
+    transition: none;
+  }
 }
 .news-back {
   margin-bottom: 18px;
@@ -5514,6 +5728,13 @@ button[aria-disabled='true'],
 .main.game-scene .player-sub,
 .main.game-scene .player-rating {
   color: rgba(220, 230, 255, 0.6);
+  /* Oyun ekraninda rating 2 kat buyuk (kullanici istegi): metin + yildiz ikonu. */
+  font-size: 1.6rem;
+  gap: 6px;
+}
+.main.game-scene .player-rating > svg {
+  width: 30px;
+  height: 30px;
 }
 /* Bot seviye alt satiri: hafif kiremit vurgu -> "seviye" oldugu net okunur */
 .main.game-scene .pc-bot-lvl {

@@ -5,6 +5,7 @@ import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
+import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
 import { TavlaTvLogo } from './TavlaTvLogo'
@@ -391,13 +392,21 @@ export default function ContentView({
           </div>
         ) : type === 'news' || type === 'makale' ? (
           newsItem ? (
-            <NewsDetail
-              item={newsItem}
-              onBack={onCloseDetail ?? onClose}
-              backLabel={headTitle}
-              onOpenImage={setLightbox}
-              readingTime={type === 'makale'}
-            />
+            type === 'makale' ? (
+              <ArticleDetail
+                item={newsItem}
+                onBack={onCloseDetail ?? onClose}
+                backLabel={headTitle}
+                onOpenImage={setLightbox}
+              />
+            ) : (
+              <NewsDetail
+                item={newsItem}
+                onBack={onCloseDetail ?? onClose}
+                backLabel={headTitle}
+                onOpenImage={setLightbox}
+              />
+            )
           ) : type === 'makale' ? (
             <ArticlesList items={items} onOpenDetail={onOpenDetail} />
           ) : (
@@ -829,19 +838,120 @@ function ArticlesList({
   )
 }
 
+// Makale gövdesi parçası: düz HTML (prose) veya canlı tahta (board-figure'dan çözülen).
+type ArtSegment = { kind: 'html'; html: string } | { kind: 'board'; board: ParsedBoard }
+
+// Makale detay: editoryal düzen (serif başlık + mono meta + terracotta hero çerçeve).
+// Gövde, prose (HTML) + tahta şemalarına bölünür; şemalar statik SVG yerine GERÇEK Board
+// bileşeniyle (ArticleBoard — Pozisyon Analizi'ndeki tahta) render edilir.
+function ArticleDetail({
+  item,
+  onBack,
+  backLabel,
+  onOpenImage,
+}: {
+  item: Content
+  onBack: () => void
+  backLabel: string
+  onOpenImage: (index: number) => void
+}) {
+  const { t } = useT()
+  const gallery = (item.gallery ?? []).filter(Boolean)
+
+  // Gövdeyi prose + tahta parçalarına ayır (board-figure -> ArticleBoard). Ayrıştırma
+  // başarısız olursa (taş bulunamazsa) orijinal HTML korunur (geriye dönük güvenli).
+  const segments = useMemo<ArtSegment[]>(() => {
+    if (!isHtml(item.body)) {
+      const ps = paras(item.body)
+      return ps.length ? [{ kind: 'html', html: ps.map((p) => `<p>${p}</p>`).join('') }] : []
+    }
+    const doc = new DOMParser().parseFromString(item.body ?? '', 'text/html')
+    const out: ArtSegment[] = []
+    let buf = ''
+    const flush = () => {
+      if (buf.trim()) out.push({ kind: 'html', html: linksBlank(buf) })
+      buf = ''
+    }
+    for (const node of Array.from(doc.body.childNodes)) {
+      const el = node.nodeType === 1 ? (node as Element) : null
+      if (el && el.classList.contains('board-figure')) {
+        const parsed = parseBoardFigure(el)
+        if (parsed) {
+          flush()
+          out.push({ kind: 'board', board: parsed })
+          continue
+        }
+      }
+      buf += el ? el.outerHTML : (node.textContent ?? '')
+    }
+    flush()
+    return out
+  }, [item.body])
+
+  return (
+    <article className="article-detail">
+      <Button variant="secondary" className="news-back" onClick={onBack}>
+        <span className="news-back-chev">
+          <Icon name="chevron" size={16} />
+        </span>{' '}
+        {backLabel}
+      </Button>
+      <header className="article-detail-head">
+        <span className="article-detail-kicker">{t('makale.kicker')}</span>
+        <h3 className="article-detail-title">{item.title}</h3>
+        <div className="article-meta article-detail-meta">
+          <time>{fmtDate(item.event_at ?? item.created_at ?? null)}</time>
+          <span className="article-meta-dot" aria-hidden="true">·</span>
+          <span>{t('makale.readtime', { n: readingMinutes(item.body) })}</span>
+        </div>
+      </header>
+      {item.image && (
+        <figure className="article-detail-hero" onClick={() => onOpenImage(0)}>
+          <img src={mediaSrc(item.image)} alt={item.title} />
+        </figure>
+      )}
+      <div className="article-detail-body">
+        {segments.map((seg, i) =>
+          seg.kind === 'board' ? (
+            <ArticleBoard key={i} {...seg.board} />
+          ) : (
+            <div
+              key={i}
+              className={`article-prose rich${i === 0 ? ' article-prose-lead' : ''}`}
+              dangerouslySetInnerHTML={{ __html: seg.html }}
+            />
+          ),
+        )}
+      </div>
+      {gallery.length > 0 && (
+        <div className="news-gallery">
+          {gallery.map((g, i) => (
+            <button
+              key={i}
+              className="news-gallery-thumb"
+              onClick={() => onOpenImage(i + 1)}
+              aria-label={t('content.image', { n: i + 2 })}
+            >
+              <img src={mediaSrc(g)} alt={`${item.title} görseli ${i + 2}`} loading="lazy" />
+            </button>
+          ))}
+        </div>
+      )}
+    </article>
+  )
+}
+
 // Haber detay sayfasi: kapak + tam metin + galeri gorselleri
 function NewsDetail({
   item,
   onBack,
   backLabel,
   onOpenImage,
-  readingTime = false,
 }: {
   item: Content
   onBack: () => void
   backLabel: string
   onOpenImage: (index: number) => void
-  readingTime?: boolean // makale: tarih yaninda okuma suresi rozeti goster
 }) {
   const { t } = useT()
   const gallery = (item.gallery ?? []).filter(Boolean)
@@ -855,13 +965,7 @@ function NewsDetail({
       </Button>
       <h3 className="news-detail-title">{item.title}</h3>
       <div className="news-detail-date">
-        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? item.created_at ?? null)}
-        {readingTime && (
-          <>
-            <span className="news-detail-dot" aria-hidden="true">·</span>
-            <Icon name="book" size={13} /> {t('makale.readtime', { n: readingMinutes(item.body) })}
-          </>
-        )}
+        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
       </div>
       {item.image && (
         <img
