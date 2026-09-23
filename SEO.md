@@ -7,25 +7,10 @@ Bu dosya SEO çalışmasının tek takip listesidir. Kod değişikliği yapılma
 
 Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KEYWORDS.md) kullanılır.
 
-## Tamamlananlar
-
-- [x] `robots.txt` ve `sitemap.xml` canlıda 200 dönüyor.
-- [x] Sitemap’teki 37 URL’nin tamamı canlıda 200 dönüyor.
-- [x] Public rotalarda route-specific title, description ve canonical uygulanıyor.
-- [x] Hesap/uygulama rotaları `noindex, follow` oldu.
-- [x] Bulunmayan haber ve rehber slug’ları 404 + noindex dönüyor.
-- [x] Ana sayfa description yaklaşık 211 karakterden yaklaşık 140 karaktere indirildi.
-- [x] JS kapalı crawler’lar için noscript içeriğine public iç bağlantılar eklendi.
-- [x] Var olmayan İngilizce URL sinyalleri kaldırıldı; JSON-LD dili Türkçe olarak düzeltildi.
-- [x] Public SEO sayfalarına `BreadcrumbList` JSON-LD eklendi.
-- [x] `SeoMetaTest`: 3 test, 9 assertion geçti.
-- [x] Frontend production build başarılı.
-
 ## Kalan işler — öncelik sırasıyla
 
 ### P0 — Public içeriklerin ilk HTML’de sunulması
 
-- [x] Public landing rotalarının JS kapalı HTML’inde route-specific H1/H2, açıklama, madde listesi ve iç bağlantılar sunuluyor.
 - [ ] `/`, `/online-tavla`, `/tavla-oyna`, `/nasil-oynanir`, `/tavla-rehberi` gibi public sayfalar için SSR veya güvenli prerender planı hazırlanmalı.
 - [ ] İlk HTML içinde gerçek başlık, açıklayıcı içerik, H1/H2 ve ana iç bağlantılar bulunmalı.
 - [ ] React oyun akışına dokunmadan yalnızca SEO landing içerikleri server HTML’e alınmalı.
@@ -35,14 +20,11 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 
 - [ ] Yayındaki haber slug’ları sitemap ile otomatik eşleştirilmeli.
 - [ ] Silinen veya taslak haberler sitemap’ten otomatik çıkarılmalı.
-- [x] Yayındaki haber detaylarına gerçek başlık, açıklama, varsa görsel, yazar ve publisher ile `Article` JSON-LD eklendi.
 - [ ] Haber detaylarında gerçek yayın tarihi alanı doğrulanıp `datePublished`/`dateModified` eklenmeli.
 - [ ] Haber görseli olmayan içerikler için güvenli fallback OG görseli kullanılmalı.
 
 ### P1 — Teknik indeksleme doğrulaması
 
-- [x] Sitemap URL’leri için 200, canonical ve `index, follow` regresyon testi eklendi.
-- [x] Hukuki/noindex sayfalar sitemap’ten çıkarıldı; testte tekrar giriş yapmaları yakalanıyor.
 - [ ] Canonical URL’nin HTTPS + `www` standardıyla aynı kaldığı tüm rotalarda doğrulanmalı.
 
 ### P2 — Structured data ve içerik zenginliği

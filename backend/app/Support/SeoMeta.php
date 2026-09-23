@@ -242,6 +242,36 @@ final class SeoMeta
             'Açılış hamleleri, kapı ve prime kurma, pip sayımı, doubling cube ve kazanma taktikleri hakkında anlaşılır tavla yazılarını okuyun.',
             ['Tavla açılış stratejilerini inceleyin.', 'Doubling cube kullanımını öğrenin.', 'Mars ve backgammon farklarını keşfedin.'],
         ],
+        'online-turnuvalar' => [
+            'Online tavla turnuvalarına katılın',
+            'TavlaTV online tavla turnuvalarında kayıt, eşleşme, fikstür ve sonuçları tek ekrandan takip edin. Açık turnuvaları ve yaklaşan maçları keşfedin.',
+            ['Açık online tavla turnuvalarını inceleyin.', 'Kayıt ve katılım şartlarını kontrol edin.', 'Eşleşmeleri ve turnuva sonuçlarını takip edin.'],
+        ],
+        'turnuva-takvimi' => [
+            'Yaklaşan tavla turnuvaları ve takvim',
+            'Tavla turnuvası tarihleri, online ve canlı etkinlikler, kayıt dönemleri ve sonuçları güncel turnuva takviminden takip edin.',
+            ['Yaklaşan tavla turnuvalarını tarihe göre bulun.', 'Online ve canlı turnuvaları karşılaştırın.', 'Kayıt tarihlerini ve ödülleri kontrol edin.'],
+        ],
+        'tavla-turnuvasi-organizasyonu' => [
+            'Anahtar teslim tavla turnuvası organizasyonu',
+            'TavlaTV; kurum, belediye ve AVM’ler için tavla turnuvası düzenleme, dijital eşleşme, hakemlik ve canlı sonuç yönetimi sunar.',
+            ['Format, fikstür ve katılım planını oluşturun.', 'Hakemlik, skor ve eşleşme yönetimini planlayın.', 'Kurumsal etkinlik için teklif alın.'],
+        ],
+        'kurumsal-tavla-turnuvasi' => [
+            'Kurumsal tavla turnuvası organizasyonu',
+            'Şirket içi veya şirketler arası tavla turnuvasını çalışan katılımı, takım ruhu ve ölçülebilir sonuçlarla planlayın.',
+            ['Ofis, otel veya hibrit etkinlik formatını seçin.', 'Çalışan kayıtlarını ve eşleşmeleri yönetin.', 'Final ve ödül sürecini planlayın.'],
+        ],
+        'belediye-tavla-turnuvasi' => [
+            'Belediye tavla turnuvası organizasyonu',
+            'Belediyeler için geniş katılımlı tavla etkinliği: kayıt, fikstür, hakemlik, canlı skor ve ödül töreni süreçlerini tek planla yönetin.',
+            ['Mahalle ve ilçe katılımını organize edin.', 'Turnuva kurallarını ve eşleşmeleri duyurun.', 'Sonuçları ve ödülleri şeffaf biçimde yayınlayın.'],
+        ],
+        'avm-tavla-turnuvasi' => [
+            'AVM tavla turnuvası organizasyonu',
+            'AVM ziyaretçileri için görünür, eğlenceli ve ölçülebilir tavla turnuvası düzenleyin; sahne, sponsorluk, canlı skor ve final akışını planlayın.',
+            ['Ziyaretçi katılımını artıran kayıt akışı kurun.', 'Canlı skor ve eşleşme ekranlarını kullanın.', 'Sponsorluk ve ödül görünürlüğünü planlayın.'],
+        ],
         // --- Uygulama/araç sayfaları: benzersiz META vardı ama gövde inceydi (Google "taranan
         // ama indekslenmeyen"). Her birine özgün, taranabilir bir içerik bölümü eklenir. ---
         'tek-oyun' => [
