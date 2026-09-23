@@ -219,7 +219,10 @@ export default function Friends({ onInvite, onMessage, onClose, currentId, onAdd
         id={profileId}
         onClose={() => setProfileId(null)}
         onAddFriend={
-          onAddFriend && currentId != null && currentId !== profileId ? () => onAddFriend(profileId) : undefined
+          // Zaten (kabul edilmiş) arkadaşsa "Arkadaş ol"u gizle; gelen isteklerde açık kalır (tıklayınca kabul eder).
+          onAddFriend && currentId != null && currentId !== profileId && !friends.some((f) => f.id === profileId)
+            ? () => onAddFriend(profileId)
+            : undefined
         }
         onMessage={
           onMessage && currentId != null && currentId !== profileId
