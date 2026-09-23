@@ -44,7 +44,7 @@ interface Props {
   fair: { commitment: string; clientSeed: string; serverSeed?: string; rolls: number }
 }
 
-export default function Info({ onClose, tab, onTab, currentRating, loggedIn = false }: Props) {
+export default function Info({ onClose, tab, currentRating, loggedIn = false }: Props) {
   const { t } = useT()
   const [pages, setPages] = useState<Record<string, InfoPage>>({})
   useEscape(onClose)
@@ -69,22 +69,8 @@ export default function Info({ onClose, tab, onTab, currentRating, loggedIn = fa
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        {/* Sekmeler ÜSTTE (başlıktan önce); başlık altında gösterilir. */}
-        <div className="prof-ov-tabs" role="tablist">
-          {TABS.map(({ slug, labelKey }) => (
-            <button
-              key={slug}
-              type="button"
-              role="tab"
-              aria-selected={tab === slug}
-              className={tab === slug ? 'active' : ''}
-              onClick={() => onTab(slug)}
-            >
-              {(EDITABLE.includes(slug) && pages[slug]?.title) || t(labelKey)}
-            </button>
-          ))}
-        </div>
-
+        {/* Sekme şeridi kaldırıldı: her bilgi sayfası kendi URL'sine sahip bağımsız sayfadır
+            (/bilgi/hakkinda, /bilgi/hizmetler, …); menüden tek tek açılır. */}
         <h2 className="info-title">{activeTitle}</h2>
 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}

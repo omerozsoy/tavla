@@ -159,6 +159,11 @@ final class SeoMeta
             'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.',
             'Tavla Haberleri',
         ],
+        'makaleler' => [
+            'Tavla Makaleleri | TavlaTv',
+            'Tavla stratejileri, taktikleri ve analiz yazıları. Tavlayı daha iyi oynamak için okuyup öğren.',
+            'Tavla Makaleleri',
+        ],
         'tavla-magazin' => [
             'Tavla Magazin | TavlaTv',
             'Tavla magazin: turnuva röportajları, maç öyküleri ve tavla camiasından haberler.',
@@ -331,6 +336,11 @@ final class SeoMeta
             'Mars (Gammon) ve Backgammon Nedir? | TavlaTv',
             'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
             'Mars (Gammon) ve Backgammon Nedir?',
+        ],
+        'tavlada-hamle-secme-rehberi' => [
+            'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış | TavlaTV',
+            'Tavlada hangi taşı oynayacağınıza karar veremiyor musunuz? Kapı almak, rakip taşı kırmak ve gerideki taşları çıkarmak için pratik hamle rehberi.',
+            'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış',
         ],
     ];
 

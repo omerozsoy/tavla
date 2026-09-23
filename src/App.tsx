@@ -206,6 +206,7 @@ const SEO_TITLES: Record<string, string> = {
   'turnuva-takvimi': 'Tavla Turnuva Takvimi | TavlaTv',
   'kulupler': 'Tavla Kulüpleri | TavlaTv',
   'haberler': 'Tavla Haberleri | TavlaTv',
+  'makaleler': 'Tavla Makaleleri | TavlaTv',
   'tavla-magazin': 'Tavla Magazin | TavlaTv',
   'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
   'tavla-rehberi': 'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
@@ -214,6 +215,7 @@ const SEO_TITLES: Record<string, string> = {
   'tavla-rehberi/tavla-kupu-doubling-cube': 'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
   'tavla-rehberi/tavla-kazanma-taktikleri': 'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
   'tavla-rehberi/mars-gammon-backgammon-nedir': 'Mars (Gammon) ve Backgammon Nedir? | TavlaTv',
+  'tavla-rehberi/tavlada-hamle-secme-rehberi': 'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış | TavlaTV',
   'pozisyon-analizi': 'Tavla Pozisyon Analizi | TavlaTv',
   'mat-analiz': 'Tavla Maç Analizi (.mat) | TavlaTv',
   'mac-analizleri': 'Maç Analizlerim | TavlaTv',
@@ -281,6 +283,8 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla kazanma taktikleri: blot bırakmama, kilit ve prime kurma, pip sayımı, yarış ve tutma oyunu ile küp kullanımı. Oyununu geliştirecek pratik ipuçları.',
   'tavla-rehberi/mars-gammon-backgammon-nedir':
     'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
+  'tavla-rehberi/tavlada-hamle-secme-rehberi':
+    'Tavlada hangi taşı oynayacağınıza karar veremiyor musunuz? Kapı almak, rakip taşı kırmak ve gerideki taşları çıkarmak için pratik hamle rehberi.',
   'pozisyon-analizi':
     'Tavla pozisyonunu analiz et: TavlaTV Motoru ve sinir ağı ile en iyi hamle, kazanma yüzdesi ve equity.',
   'mat-analiz':
@@ -852,6 +856,7 @@ export default function App() {
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
+  const [blogSlug, setBlogSlug] = useState<string | null>(null) // acik blog yazisi - /blog/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
   const [rulesOpen, setRulesOpen] = useState(false) // nasil oynanir rehberi
@@ -1009,11 +1014,17 @@ export default function App() {
                       : contentView === 'service'
                         ? 'hizmetler'
                         : contentView === 'blog'
-                          ? 'blog'
+                          ? blogSlug
+                            ? 'blog/' + blogSlug
+                            : 'blog'
                           : contentView === 'news'
                             ? newsSlug
                               ? 'haberler/' + newsSlug
                               : 'haberler'
+                          : contentView === 'makale'
+                            ? newsSlug
+                              ? 'makaleler/' + newsSlug
+                              : 'makaleler'
                           : contentView === 'magazine'
                             ? 'tavla-magazin'
                             : contentView === 'club'
@@ -1268,10 +1279,15 @@ export default function App() {
           break
         case 'blog':
           setContentView('blog')
+          setBlogSlug(seg[1] ?? null)
           break
         case 'haberler':
           setContentView('news')
           setNewsSlug(seg[1] ?? null) // /haberler/<slug> -> detay
+          break
+        case 'makaleler':
+          setContentView('makale')
+          setNewsSlug(seg[1] ?? null) // /makaleler/<slug> -> detay (newsSlug paylaşılır)
           break
         case 'tavla-magazin':
           setContentView('magazine')
@@ -7376,6 +7392,7 @@ export default function App() {
     setMyOrdersOpen(false)
     setContentView(null)
     setNewsSlug(null)
+    setBlogSlug(null)
     setQuizOpen(false)
     setClubsOpen(false)
     setRulesOpen(false)
@@ -7485,6 +7502,7 @@ export default function App() {
     onNews: () => goPage(() => setContentView('news')),
     // Belirli bir haberin detayini ac (/haberler/<slug>): liste yerine dogrudan detay.
     onOpenNews: (slug: string) => goPage(() => { setContentView('news'); setNewsSlug(slug) }),
+    onMakale: () => goPage(() => setContentView('makale')), // Makaleler (haber düzeninde liste+detay)
     onMagazine: () => goPage(() => setContentView('magazine')),
     onProducts: () => goPage(() => setProductsOpen(true)),
     onMyOrders: () => (user ? goPage(() => setMyOrdersOpen(true)) : setShowAuth(true)),
@@ -7516,6 +7534,7 @@ export default function App() {
     membership: menuProps.onMembership,
     calendar: menuProps.onCalendar,
     clubs: menuProps.onClubs,
+    makale: menuProps.onMakale,
     news: menuProps.onNews,
     magazine: menuProps.onMagazine,
     products: menuProps.onProducts,
@@ -8273,14 +8292,14 @@ export default function App() {
           // KURAL: sayfa basligi = menu etiketi. Menude admin yeniden adlandirmissa
           // (override) baslik da onu alsin; override yoksa ContentView i18n'e duser.
           titleOverride={menuLabel(
-            ({ event: 'calendar', news: 'news', magazine: 'magazine', club: 'clubs' } as Record<string, string>)[
+            ({ event: 'calendar', news: 'news', magazine: 'magazine', club: 'clubs', makale: 'makale' } as Record<string, string>)[
               contentView
             ] ?? '',
           )}
           onClose={() => setContentView(null)}
-          slug={newsSlug}
-          onOpenDetail={(s) => setNewsSlug(s)}
-          onCloseDetail={() => setNewsSlug(null)}
+          slug={contentView === 'blog' ? blogSlug : newsSlug}
+          onOpenDetail={(s) => contentView === 'blog' ? setBlogSlug(s) : setNewsSlug(s)}
+          onCloseDetail={() => contentView === 'blog' ? setBlogSlug(null) : setNewsSlug(null)}
         />
       )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
