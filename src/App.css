@@ -10736,8 +10736,14 @@ button.acct-row-logout:hover:not(:disabled) {
 /* .rank-row.online-row: ozgulluk .rank-row'dan yuksek olmali; yoksa kaynakta sonra
    gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
 .rank-row.online-row {
-  /* oyuncu (sabit; durum noktasi isim basinda) | bayrak (hizali) | rating | aksiyonlar */
-  grid-template-columns: minmax(56px, 148px) 1fr auto auto;
+  /* oyuncu (isim KESILMESIN: max-content) | bayrak (hizali) | rating | aksiyonlar */
+  grid-template-columns: minmax(56px, max-content) 1fr auto auto;
+}
+/* Cevrimici panelde isim kolonu icerige gore buyudugunden ellipsis'e gerek yok;
+   ad tam gorunsun (kullanici adlari en fazla 15 karakter). */
+.online-row .player-id-name-text {
+  overflow: visible;
+  text-overflow: clip;
 }
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
 .online-id {
