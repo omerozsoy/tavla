@@ -380,7 +380,7 @@ final class SeoMeta
             '~<meta\s+name="twitter:title"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:title\" content=\"{$tTitle}\" />",
             '~<meta\s+name="twitter:description"\s+content="[^"]*"\s*/?>~s' => "<meta name=\"twitter:description\" content=\"{$tDesc}\" />",
             // JS'siz tarayıcıların gördüğü H1 + açıklama: per-route yap.
-            '~<noscript>.*?</noscript>~s' => "<noscript><h1>{$tH1}</h1><p>{$tDesc}</p></noscript>",
+            '~<noscript>.*?</noscript>~s' => "<noscript><main><h1>{$tH1}</h1><p>{$tDesc}</p><nav aria-label=\"TavlaTV bağlantıları\"><a href=\"/online-tavla\">Online Tavla Oyna</a> · <a href=\"/tavla-rehberi\">Tavla Rehberi</a> · <a href=\"/nasil-oynanir\">Tavla Kuralları</a> · <a href=\"/haberler\">Tavla Haberleri</a></nav></main></noscript>",
         ];
 
         if ($image) {
