@@ -31,7 +31,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
-import { Sound, isMuted, setMuted } from './sound'
+import { Sound, isMuted, setMuted, getVolume, setVolume } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -2084,9 +2084,20 @@ export default function App() {
   }, [home])
 
   const working = useMemo(() => applyPlayed(turnStart, played), [turnStart, played])
+  const resultShowingRef = useRef(false)
+  // Zar sesini SADECE oyun-içi atışta çal; sonuç/maç-sonu ekranı açıkken bastır (aşağıdaki mirror).
+  const playDice = () => {
+    if (resultShowingRef.current) return
+    Sound.dice()
+  }
   const gameWon = winner(working) !== null
   const mWinner = matchWinner(match)
   const matchOver = mWinner !== null
+  // Sonuç/maç-sonu ekranı açıkken OTOMATİK zar sesi ÇALMASIN. Bot maçı sunucu-otoriter olduğundan
+  // oyun bittikten sonra gelen bayat bir poll/nudge yanıtı bot turu içerince applyBotTurn koşulsuz
+  // playDice() çalıyordu -> kullanıcı raporu "oyun bitince zar sesi geliyor". playDice() bu kapıya
+  // bakar; gerçek oyun-içi atışlarda (gameEnd/gameWon henüz false) normal çalar.
+  resultShowingRef.current = gameEnd != null || matchOver || gameWon
   const diceRolled = turnStart.dice.length > 0
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
   const online = mode === 'online' && room !== null
@@ -2899,7 +2910,7 @@ export default function App() {
         const s = freshBoard(starter)
         s.dice = r.dice
         s.diceUsed = [false, false]
-        Sound.dice()
+        playDice()
         setStarter(starter)
         setTurnStart(s)
         setPlayed([])
@@ -2944,7 +2955,7 @@ export default function App() {
       appliedServerRoomRef.current = code
       // Sunucu zari kanonik: 2 zar ise buyuk-once goster; cift ise 4 hane oldugu gibi.
       const dice = r.dice.length === 2 ? orderDice(r.dice) : r.dice
-      Sound.dice()
+      playDice()
       const rolled = newTurn(turnStart, dice)
       setTurnStart(rolled)
       setPlayed([])
@@ -3006,7 +3017,7 @@ export default function App() {
     // kacirdiysa equity kaybi sayilir). Kup danismani (pvb) olsun olmasin kaydedilir.
     recordNoDoubleIfEligible()
     const dice = orderDice(fairRef.current.next()) // varsayilan: buyuk zar once (tikla-degistir mevcut)
-    Sound.dice()
+    playDice()
     const rolled = newTurn(turnStart, dice)
     setTurnStart(rolled)
     setPlayed([])
@@ -3414,7 +3425,7 @@ export default function App() {
 
   function doRollFor(base: GameState) {
     const dice = orderDice(fairRef.current.next()) // buyuk zar once (gorunum)
-    Sound.dice()
+    playDice()
     setTurnStart(newTurn(base, dice))
     setMessage(t('msg.botPlaying', { dice: dice.join(', ') }))
   }
@@ -4509,7 +4520,7 @@ export default function App() {
       srvTurnStartRef.current = bt.rollState as GameState // reconstruct için prev (bot dice dolu)
       appliedServerVersionRef.current = bt.version
       if (room?.code) appliedServerRoomRef.current = room.code
-      if (steps.length > 0) Sound.dice()
+      if (steps.length > 0) playDice()
       applyServerBoard(bt.state as GameState, (bt.match as ServerMatch) ?? null)
       return
     }
@@ -4520,7 +4531,7 @@ export default function App() {
     srvTurnStartRef.current = bt.rollState as GameState
     appliedServerVersionRef.current = bt.version
     if (room?.code) appliedServerRoomRef.current = room.code
-    Sound.dice()
+    playDice()
     setTurnStart(bt.rollState as GameState)
     setPlayed([])
     setBotAnim({
@@ -5149,10 +5160,30 @@ export default function App() {
   // OYUN SESİ (zar/pul/kazan-kaybet) — kalıcı kullanıcı tercihi (sound.ts muted state'i).
   // Efekt çağrıları (Sound.dice/move/win…) zaten oyun akışına bağlı; bu bayrak yalnız susturur.
   const [soundOn, setSoundOn] = useState<boolean>(() => !isMuted())
+  // Ses seviyesi 0..100 (sound.ts 0..1 saklar). Slider (Oyun Menüsü) ile ayarlanır.
+  const [soundVol, setSoundVolState] = useState<number>(() => Math.round(getVolume() * 100))
   const toggleSound = () => {
     const next = !soundOn
     setSoundOn(next)
     setMuted(!next) // localStorage + AudioContext hazırlığı sound.ts içinde
+    // Sesi açarken seviye 0'da kalmışsa duyulur bir değere çek.
+    if (next && soundVol === 0) {
+      setVolume(0.7)
+      setSoundVolState(70)
+    }
+  }
+  // Slider: seviye 0 = kapat, >0 = aç (mute toggle ile senkron).
+  const setSoundVol = (v: number) => {
+    const clamped = Math.min(100, Math.max(0, Math.round(v)))
+    setSoundVolState(clamped)
+    setVolume(clamped / 100)
+    if (clamped > 0 && !soundOn) {
+      setSoundOn(true)
+      setMuted(false)
+    } else if (clamped === 0 && soundOn) {
+      setSoundOn(false)
+      setMuted(true)
+    }
   }
   // Tas hareket animasyonu stili (kapali/kayma/yay/kaldir-birak) — kullanici secer
   // Tas hareket stili: Ayarlar'dan secici KALDIRILDI; mevcut localStorage degeri (varsa)
@@ -9193,6 +9224,8 @@ export default function App() {
         toggleAnim={() => setAnimOn((v) => !v)}
         soundOn={soundOn}
         toggleSound={toggleSound}
+        soundVol={soundVol}
+        setSoundVol={setSoundVol}
         canAnalyze={botMatch}
         canResign={!matchOver}
         loggedIn={!!user}
