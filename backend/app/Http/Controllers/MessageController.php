@@ -49,6 +49,13 @@ class MessageController extends Controller
         if ($this->areFriends($me, $other)) {
             return true;
         }
+        // Resmi/sistem hesabı ("Tavla TV Yönetim") ile konuşma DAİMA açıktır (istek kutusuna
+        // düşmez): panelden gelen duyurular oyuncunun normal gelen kutusunda görünür, oyuncu
+        // doğrudan cevap yazabilir.
+        if (Schema::hasColumn('users', 'is_system')
+            && User::whereIn('id', [$me, $other])->where('is_system', true)->exists()) {
+            return true;
+        }
         $out = $this->reqRow($me, $other);
         $in = $this->reqRow($other, $me);
 
@@ -125,6 +132,7 @@ class MessageController extends Controller
             $friends = $this->areFriends($me, $pid);
             $outRow = $out[$pid] ?? null;
             $open = $friends
+                || ($u->is_system ?? false) // resmi/sistem hesabı: konuşma daima açık
                 || ($outRow && $outRow->status === 'accepted')
                 || ($inRow && $inRow->status === 'accepted');
             // Onayimi bekleyen gelen istek mi?

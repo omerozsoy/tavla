@@ -99,6 +99,8 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'plan_since' => 'datetime',
             'trial_used' => 'boolean',
             'auto_renew' => 'boolean',
+            'is_system' => 'boolean', // "Tavla TV Yönetim" gibi resmi/sistem hesabı işareti
+
             'birth_date' => 'date:Y-m-d',
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
