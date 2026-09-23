@@ -13764,6 +13764,21 @@ button.acct-row-logout:hover:not(:disabled) {
 @keyframes mr-spin {
   to { transform: rotate(360deg); }
 }
+/* PR hesaplanıyor bilgi satırı: tam genişlik, ince muted açıklama (spinner + metin). */
+.mr-pr-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+  color: color-mix(in srgb, var(--accent) 40%, #cbd3e6);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.mr-pr-note .mr-pr-loader {
+  width: 13px;
+  height: 13px;
+}
 @media (prefers-reduced-motion: reduce) {
   .mr-pr-loader { animation-duration: 1.6s; }
 }
