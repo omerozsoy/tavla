@@ -2876,6 +2876,53 @@ button[aria-disabled='true'],
 .news-detail-body p {
   margin: 0 0 16px;
 }
+/* Makale gövdesindeki özgün tahta şemaları: genişlik küçülür, oran korunur. */
+.news-detail-body .board-figure {
+  margin: 22px 0 30px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--card-bg) 78%, transparent);
+  overflow: hidden;
+}
+.news-detail-body .board-figure svg {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto;
+}
+.news-detail-body .board-figure figcaption {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.news-detail-body table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 18px 0 24px;
+}
+.news-detail-body th,
+.news-detail-body td {
+  min-width: 180px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+.news-detail-body th {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.news-detail-body hr {
+  margin: 32px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+.news-detail-body a {
+  color: var(--accent);
+}
 .news-gallery {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
