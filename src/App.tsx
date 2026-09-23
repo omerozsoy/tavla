@@ -181,6 +181,11 @@ const SITE_ORIGIN = 'https://www.tavlatv.com'
 // Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
 const DEFAULT_DESC =
   'Ücretsiz online tavla oyna; arkadaşlarınla maç yap, yapay zekâya karşı yarış, turnuvalara katıl ve maçlarını analiz et. Kayıt gerektirmez.'
+// Logo sürüm rozeti: TEK KAYNAK package.json (BetaBanner ile aynı __APP_VERSION__).
+// "3.0.0" -> "BETA 3.0" (sondaki .0 kırpılır). Elle "BETA 2.2" yazıp sürümle çelişmesin.
+declare const __APP_VERSION__: string
+const BETA_LABEL = `BETA ${__APP_VERSION__.replace(/\.0$/, '')}`
+
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
   'tavla-oyna': 'Tavla Oyna - Ücretsiz Bedava Tavla Oyunu | TavlaTv',
@@ -6861,7 +6866,7 @@ export default function App() {
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
             {/* Surum etiketi: logonun bittigi yerin sag ustunde tema-renkli kucuk yazi. */}
-            <span className="ab-beta" aria-hidden="true">BETA 2.2</span>
+            <span className="ab-beta" aria-hidden="true">{BETA_LABEL}</span>
             {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
                 bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
             <span className="ab-tag">{t('foot.tag')}</span>
