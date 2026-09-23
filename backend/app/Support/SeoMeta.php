@@ -542,9 +542,14 @@ final class SeoMeta
             'description' => $desc,
             'url' => $url,
             'inLanguage' => 'tr',
+            'image' => [self::BASE . 'og-image.png'],
             'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
             'author' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
-            'publisher' => ['@type' => 'Organization', 'name' => 'TavlaTv'],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'TavlaTv',
+                'logo' => ['@type' => 'ImageObject', 'url' => self::BASE . 'icon-512.png'],
+            ],
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {
