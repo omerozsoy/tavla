@@ -555,10 +555,25 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
     }
     const measure = () => {
       const sr = stage.getBoundingClientRect()
-      const centerOf = (el: Element | null): { x: number; y: number } | null => {
+      // Taş yarıçapı (MiniBoard oranı: kolon genişliği * 0.43) — ok kalınlığı + hayalet pul.
+      const p0 = board.querySelector('[data-point="0"]') as HTMLElement | null
+      const colW = p0 ? p0.getBoundingClientRect().width : 24
+      const rad = Math.max(5, colW * 0.43)
+      // Tahtanın dikey ortası: bir hanenin ÜST mü ALT mı olduğunu belirler.
+      const brc = board.getBoundingClientRect()
+      const boardMidY = brc.top + brc.height / 2 - sr.top
+      // Okun GERÇEK çıkış/varış noktası: hane (üçgen) içinde pullar DIŞ kenardan dizilir.
+      // Kolon MERKEZİNİ kullanınca ok havadan çıkıyordu; onun yerine üst hanede üst-kenar+r,
+      // alt hanede alt-kenar−r noktasına (ilk pulun oturduğu yer) sabitle. Bar/off ORTADA
+      // kalır (oralarda pullar zaten ortada dizilir).
+      const anchorOf = (el: Element | null, p: number | 'bar' | 'off'): { x: number; y: number } | null => {
         if (!el) return null
         const rc = el.getBoundingClientRect()
-        return { x: rc.left + rc.width / 2 - sr.left, y: rc.top + rc.height / 2 - sr.top }
+        const x = rc.left + rc.width / 2 - sr.left
+        const cy = rc.top + rc.height / 2 - sr.top
+        if (p === 'bar' || p === 'off') return { x, y: cy }
+        const y = cy < boardMidY ? rc.top - sr.top + rad : rc.bottom - sr.top - rad
+        return { x, y }
       }
       const elFor = (p: number | 'bar' | 'off', fromY: number | null): Element | null => {
         if (p === 'bar') return board.querySelector('[data-slot="bar"]')
@@ -582,17 +597,13 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
         }
         return board.querySelector(`[data-point="${p}"]`)
       }
-      // MiniBoard oranı: R = kolon genişliği * 0.43 (ölçülen nokta genişliğinden).
-      const p0 = board.querySelector('[data-point="0"]') as HTMLElement | null
-      const colW = p0 ? p0.getBoundingClientRect().width : 24
-      const rad = Math.max(5, colW * 0.43)
       // "Hamle Analizi" gibi: adımları SIRAYLA numaralandır (birleştirme yok; çift hamlede
       // aynı yere iki numaralı ok — MiniBoard ile aynı davranış).
       const out: ArrowSeg[] = []
       steps.forEach((s) => {
-        const a = centerOf(elFor(s.from, null))
+        const a = anchorOf(elFor(s.from, null), s.from)
         if (!a) return
-        const b = centerOf(elFor(s.to, a.y))
+        const b = anchorOf(elFor(s.to, a.y), s.to)
         if (!b) return
         out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, lane: 0 })
       })
