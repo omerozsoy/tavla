@@ -9,6 +9,10 @@ return [
         "base-uri 'self'",
         "object-src 'none'",
         "frame-ancestors 'self'",
+        // Filament FileUpload (FilePond) resim önizlemesini blob web worker ile üretir;
+        // worker-src yoksa default-src 'self'e düşer, blob: worker bloklanır -> panelde galeri
+        // görselleri gri kutu kalır. onnxruntime-web thread worker'ı için de gerekli.
+        "worker-src 'self' blob:",
         // 'wasm-unsafe-eval': wildbg sinir ağı (onnxruntime-web) WebAssembly derler; Firefox/Chrome
         // bunu script-src'ta 'wasm-unsafe-eval' (veya daha geniş 'unsafe-eval') olmadan İHLAL sayar
         // (Report-Only'de konsol hatası; CSP zorunlu olursa motor HİÇ yüklenmez). 'wasm-unsafe-eval'
