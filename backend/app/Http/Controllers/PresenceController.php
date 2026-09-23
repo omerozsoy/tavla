@@ -17,8 +17,14 @@ class PresenceController extends Controller
         $me->last_seen = now();
         $me->save();
 
+        // BAYAT DAVET KALKANI: davet YALNIZCA davet edenin odası HÂLÂ 'waiting' iken canlıdır.
+        // Oda silinmiş/başlamış/bitmiş (davet eden iptal etti, ayrıldı ya da başka maça geçti) ise
+        // rooms join'i düşer -> davet o an banner'dan kalkar (açık iptal beklemeden). +status pending
+        // +2dk pencere backstop. Böylece "kabul ettim saçma sayfaya gitti" (ölü oda) tekrarlanmaz.
         $invites = DB::table('game_invites')
             ->join('users', 'users.id', '=', 'game_invites.from_user_id')
+            ->join('rooms', 'rooms.code', '=', 'game_invites.room_code')
+            ->where('rooms.status', 'waiting')
             ->where('game_invites.to_user_id', $me->id)
             ->where('game_invites.status', 'pending')
             ->where('game_invites.created_at', '>', now()->subMinutes(2))
