@@ -27,6 +27,15 @@ class SeoMetaTest extends TestCase
             ->assertSee('"@type":"BreadcrumbList"', false);
     }
 
+    public function test_tournament_landing_contains_keyword_relevant_content(): void
+    {
+        $this->get('/turnuva-takvimi')
+            ->assertOk()
+            ->assertSee('<h2>Yaklaşan tavla turnuvaları ve takvim</h2>', false)
+            ->assertSee('Tavla turnuvası tarihleri', false)
+            ->assertSee('name="robots" content="index, follow"', false);
+    }
+
     public function test_unknown_content_slug_is_a_noindex_404(): void
     {
         $this->get('/haberler/olmayan-seo-yazisi-12345')
