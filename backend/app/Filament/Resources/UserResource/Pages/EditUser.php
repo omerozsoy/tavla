@@ -41,7 +41,7 @@ class EditUser extends EditRecord
             if (array_key_exists('coins', $data)) {
                 $coins = (int) $data['coins'];
                 unset($data['coins']);
-                app(\App\Services\WalletService::class)->setBalance($locked, $coins);
+                app(\App\Services\WalletService::class)->setBalance($locked, $coins, 'admin_adjustment', auth()->id());
             }
             $locked->forceFill($data)->save();
 

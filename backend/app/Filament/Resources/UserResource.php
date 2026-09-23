@@ -287,6 +287,15 @@ class UserResource extends Resource
                         ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
                 ])->columns(3),
 
+                ITabs\Tab::make('Cüzdan')->icon('heroicon-o-banknotes')
+                    ->badge(fn (User $r) => self::walletData($r)['recon']['clean'] ?? true ? null : '⚠')
+                    ->badgeColor('danger')
+                    ->schema([
+                        ViewEntry::make('wallet')->hiddenLabel()
+                            ->state(fn (User $r) => self::walletData($r))
+                            ->view('filament.user.wallet'),
+                    ]),
+
                 ITabs\Tab::make('Boardlar')->icon('heroicon-o-squares-2x2')
                     ->badge(fn (User $r) => count(self::ownedBoards($r)) ?: null)
                     ->schema([
@@ -347,6 +356,14 @@ class UserResource extends Resource
         }
 
         return $rows;
+    }
+
+    /** "Cüzdan" sekmesi: coin kaynak dökümü + reconciliation. İstek başına tek hesaplanır (badge+state). */
+    protected static array $walletCache = [];
+
+    public static function walletData(User $u): array
+    {
+        return self::$walletCache[$u->id] ??= \App\Support\WalletBreakdown::for($u);
     }
 
     /** unlocks'tan sahip olunan board id'leri (önek soyulmuş). */

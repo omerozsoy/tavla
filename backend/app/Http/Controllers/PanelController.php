@@ -134,13 +134,13 @@ class PanelController extends Controller
 
         if ($action === 'coins') {
             $beforeCoins = (int) ($user->coins ?? 0);
-            DB::transaction(function () use ($user, $request) {
+            DB::transaction(function () use ($user, $request, $me) {
                 $locked = User::lockForUpdate()->findOrFail($user->id);
                 $coins = max(0, (int) $request->input('coins', 0));
                 if ($coins < (int) ($locked->coins_reserved ?? 0)) {
                     abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
                 }
-                app(\App\Services\WalletService::class)->setBalance($locked, $coins);
+                app(\App\Services\WalletService::class)->setBalance($locked, $coins, 'admin_adjustment', $me?->id);
             });
             $afterCoins = (int) User::whereKey($user->id)->value('coins');
             \App\Support\Shield::audit(

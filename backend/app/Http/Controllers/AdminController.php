@@ -66,14 +66,14 @@ class AdminController extends Controller
         }
 
         $beforeCoins = (int) ($user->coins ?? 0);
-        $user = DB::transaction(function () use ($data, $user) {
+        $user = DB::transaction(function () use ($data, $user, $me) {
             $locked = User::lockForUpdate()->findOrFail($user->id);
             if (array_key_exists('coins', $data)) {
                 $reserved = (int) ($locked->coins_reserved ?? 0);
                 if ((int) $data['coins'] < $reserved) {
                     abort(422, 'Bakiye ayrılmış coin miktarının altına indirilemez.');
                 }
-                app(\App\Services\WalletService::class)->setBalance($locked, (int) $data['coins']);
+                app(\App\Services\WalletService::class)->setBalance($locked, (int) $data['coins'], 'admin_adjustment', $me->id);
             }
             if (array_key_exists('is_admin', $data)) {
                 $locked->is_admin = $data['is_admin'];
