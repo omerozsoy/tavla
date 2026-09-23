@@ -62,7 +62,7 @@ export default function PlayerIdentity({
           )}
           <span className="player-id-name-text">{name}</span>
           {/* Premium: ismin SONUNDA altın taç (pill yerine). */}
-          {premium && <PremiumCrown size={lg ? 17 : 14} style={{ marginLeft: 4 }} />}
+          {premium && <PremiumCrown size={20} style={{ marginLeft: 4 }} />}
           {/* Site geneli top-3 rozeti: PR sıralaması (madalya) + Rating sıralaması (kupa). */}
           {userId != null && <TopRankBadge userId={userId} size={20} />}
           {flagInline && country && (
