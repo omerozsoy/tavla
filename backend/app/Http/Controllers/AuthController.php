@@ -1167,6 +1167,8 @@ class AuthController extends Controller
         $by = $request->query('by');
         $sortCol = $by === 'coins' ? 'coins' : ($by === 'wxp' ? 'total_wxp' : 'rating');
         $users = User::orderByDesc($sortCol)
+            // Resmi/sistem hesabı ("Tavla TV Yönetim") liderlik tablosunda görünmesin.
+            ->when(Schema::hasColumn('users', 'is_system'), fn ($q) => $q->where('is_system', false))
             ->orderByDesc('wins')
             ->limit($limit)
             // plan + plan_until -> plan_active accessor (premium rozeti/taç için).
