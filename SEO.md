@@ -39,8 +39,8 @@ Bu dosya SEO çalışmasının tek takip listesidir. Kod değişikliği yapılma
 
 ### P1 — Teknik indeksleme doğrulaması
 
-- [ ] Tüm sitemap URL’leri CI/deploy sırasında otomatik olarak 200, canonical ve indexable kontrolünden geçmeli.
-- [ ] `noindex` rotalarının sitemap’e yanlışlıkla girmesini engelleyen test eklenmeli.
+- [x] Sitemap URL’leri için 200, canonical ve `index, follow` regresyon testi eklendi.
+- [x] Hukuki/noindex sayfalar sitemap’ten çıkarıldı; testte tekrar giriş yapmaları yakalanıyor.
 - [ ] Canonical URL’nin HTTPS + `www` standardıyla aynı kaldığı tüm rotalarda doğrulanmalı.
 
 ### P2 — Structured data ve içerik zenginliği

@@ -63,4 +63,20 @@ class SeoMetaTest extends TestCase
             Schema::dropIfExists('contents');
         }
     }
+
+    public function test_sitemap_urls_are_indexable_and_canonical(): void
+    {
+        $sitemap = file_get_contents(public_path('sitemap.xml'));
+        $this->assertNotFalse($sitemap);
+        preg_match_all('~<loc>(https://www\\.tavlatv\\.com/[^<]*)</loc>~', (string) $sitemap, $matches);
+        $this->assertNotEmpty($matches[1]);
+
+        foreach ($matches[1] as $url) {
+            $path = parse_url($url, PHP_URL_PATH) ?: '/';
+            $response = $this->get($path);
+            $response->assertOk();
+            $response->assertSee('name="robots" content="index, follow"', false);
+            $response->assertSee('rel="canonical" href="' . $url . '"', false);
+        }
+    }
 }

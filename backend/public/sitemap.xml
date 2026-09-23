@@ -242,37 +242,4 @@
     <lastmod>2026-09-19</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
-  </url>
-
-  <!-- Hukuki sayfalar -->
-  <url>
-    <loc>https://www.tavlatv.com/kvkk</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://www.tavlatv.com/gizlilik-politikasi</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://www.tavlatv.com/cerez-politikasi</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://www.tavlatv.com/kullanim-kosullari</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-  <url>
-    <loc>https://www.tavlatv.com/uyelik-sozlesmesi</loc>
-    <lastmod>2026-09-19</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.3</priority>
-  </url>
-</urlset>
+  </url></urlset>
