@@ -256,6 +256,13 @@ export default function MatchResult({
             <span className="mr-label">{t('mr.cubePr')}</span>
             <span className="mr-b">{bAnalyzing ? dots() : fmtPr(loserCubePr ?? null)}</span>
           </div>
+          {/* PR hesaplanırken (gnubg async) kullanıcıya açıklayıcı not: "…" spinner'ları tek başına
+              anlaşılmıyordu -> tam genişlik bilgi satırı. */}
+          {(aAnalyzing || bAnalyzing) && (
+            <div className="mr-pr-note" role="status">
+              <span className="mr-pr-loader" aria-hidden="true" /> {t('mr.prCalculating')}
+            </div>
+          )}
           <div className="mr-row">
             <span className="mr-a">{ratingText(true)}</span>
             <span className="mr-label">{t('mr.rating')}</span>
