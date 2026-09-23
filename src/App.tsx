@@ -267,6 +267,8 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla kulüplerini keşfet: kulüp profilleri, üyeler ve etkinlikler. Kendi tavla topluluğunu bul.',
   'haberler':
     'Tavla dünyasından güncel haberler, turnuva sonuçları ve duyurular. En yeni tavla haberleri TavlaTv’de.',
+  'makaleler':
+    'Tavla makaleleri: stratejiler, taktikler ve analiz yazıları. Tavlayı daha iyi oynamak için okuyup öğren.',
   'tavla-magazin':
     'Tavla magazin: röportajlar, analizler ve tavla kültüründen içerikler.',
   'nasil-oynanir':
