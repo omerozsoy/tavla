@@ -149,7 +149,7 @@ class PaymentController extends Controller
         $discountCode = null;
         if (! empty($data['code'])) {
             $reason = null;
-            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason, $request->user()?->id);
             if (! $promo) {
                 return $this->fail($this->promoReason($reason), 422);
             }
@@ -287,10 +287,11 @@ class PaymentController extends Controller
     private function promoReason(?string $reason): string
     {
         return match ($reason) {
-            'expired'    => 'İndirim kodunun süresi dolmuş.',
-            'exhausted'  => 'İndirim kodu kullanım limitine ulaştı.',
-            'min_amount' => 'İndirim kodu için sepet tutarı yetersiz.',
-            default      => 'İndirim kodu geçersiz.',
+            'expired'      => 'İndirim kodunun süresi dolmuş.',
+            'exhausted'    => 'İndirim kodu kullanım limitine ulaştı.',
+            'min_amount'   => 'İndirim kodu için sepet tutarı yetersiz.',
+            'already_used' => 'Bu indirim kodunu zaten kullandın.',
+            default        => 'İndirim kodu geçersiz.',
         };
     }
 
@@ -308,7 +309,7 @@ class PaymentController extends Controller
             return $this->fail($err ?: 'Sepet tutarı geçersiz.', 422);
         }
         $reason = null;
-        $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+        $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason, $request->user()?->id);
         if (! $promo) {
             return $this->fail($this->promoReason($reason), 422);
         }
@@ -494,7 +495,7 @@ class PaymentController extends Controller
         if ($payment->kind === 'coins') {
             app(\App\Services\WalletService::class)->credit($u, (int) $payment->coins, 'payment', Payment::class, $payment->id);
             if (! empty($payment->discount_code)) {
-                \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+                \App\Models\PromoCode::bumpUse($payment->discount_code); // atomik + limit-güvenli
             }
         } elseif ($payment->kind === 'product') {
             $this->fulfillProductOrder($payment);
@@ -526,7 +527,7 @@ class PaymentController extends Controller
             app(\App\Services\WalletService::class)->credit($u, (int) $payment->coins, 'payment_cart', Payment::class, $payment->id);
         }
         if (! empty($payment->discount_code)) {
-            \App\Models\PromoCode::where('code', $payment->discount_code)->increment('used_count');
+            \App\Models\PromoCode::bumpUse($payment->discount_code); // atomik + limit-güvenli
         }
         foreach ((array) ($payment->product_order_ids ?? []) as $oid) {
             $order = \App\Models\ProductOrder::where('id', $oid)->where('status', 'pending')->first();
@@ -645,7 +646,7 @@ class PaymentController extends Controller
         $discountCode = null;
         if (! empty($data['code'])) {
             $reason = null;
-            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason);
+            $promo = \App\Models\PromoCode::usable($data['code'], $totalKurus, $reason, $request->user()?->id);
             if (! $promo) {
                 return $this->fail($this->promoReason($reason), 422);
             }

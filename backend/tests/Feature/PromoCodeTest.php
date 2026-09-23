@@ -125,4 +125,44 @@ class PromoCodeTest extends TestCase
         PromoCode::create(['code' => 'KAPALI', 'type' => 'percent', 'value' => 10, 'active' => false]);
         $this->postJson('/api/shop/promo/validate', self::CART + ['code' => 'KAPALI'])->assertStatus(422);
     }
+
+    public function test_already_used_by_same_user_rejected(): void
+    {
+        // KULLANICI-BASI TEK KULLANIM: kod aktif+limit dolmamis olsa bile, bu kullanicinin
+        // ZATEN tamamlanmis (paid) bir odemesinde kullanilmissa tekrar reddedilir (sirali suistimal).
+        $u = $this->user();
+        PromoCode::create(['code' => 'TEKSEFER', 'type' => 'percent', 'value' => 20, 'active' => true, 'max_uses' => 100]);
+        Payment::create([
+            'user_id' => $u->id, 'kind' => 'coins', 'order_id' => 'ORD-TEKSEFER-1', 'amount' => 8000, 'coins' => 100,
+            'currency' => 'TRY', 'status' => 'paid', 'discount_code' => 'TEKSEFER', 'discount_kurus' => 2000,
+        ]);
+
+        // Hem preview hem satin alma reddeder.
+        $this->postJson('/api/shop/promo/validate', self::CART + ['code' => 'teksefer'])->assertStatus(422);
+        $this->postJson('/api/shop/coins', self::CART + ['code' => 'teksefer'])->assertStatus(422);
+
+        // Farkli kullanici ayni kodu kullanabilir (kullanici-basi, global degil).
+        $other = User::create([
+            'first_name' => 'Baska', 'last_name' => 'T', 'country' => '',
+            'nickname' => 'baska', 'email' => 'baska@e.com', 'password' => bcrypt('secret123'),
+        ]);
+        Sanctum::actingAs($other);
+        $this->postJson('/api/shop/promo/validate', self::CART + ['code' => 'teksefer'])->assertOk();
+    }
+
+    public function test_bump_use_never_exceeds_max_uses(): void
+    {
+        // ATOMIK SAYAC: bumpUse yalnizca limit dolmamissa artirir. Eszamanli fulfill'ler bile
+        // used_count'u max_uses'in uzerine cikaramaz (yaris-guvenli increment).
+        PromoCode::create(['code' => 'LIMIT1', 'type' => 'percent', 'value' => 10, 'active' => true, 'max_uses' => 1, 'used_count' => 0]);
+
+        $this->assertSame(1, PromoCode::bumpUse('limit1'));          // 0 -> 1 (artti)
+        $this->assertSame(0, PromoCode::bumpUse('LIMIT1'));          // dolu -> 0 satir (artmadi)
+        $this->assertSame(1, (int) PromoCode::where('code', 'LIMIT1')->value('used_count'));
+
+        // Limitsiz kod (max_uses null) her zaman artar.
+        PromoCode::create(['code' => 'SINIRSIZ', 'type' => 'percent', 'value' => 10, 'active' => true, 'used_count' => 5]);
+        $this->assertSame(1, PromoCode::bumpUse('SINIRSIZ'));
+        $this->assertSame(6, (int) PromoCode::where('code', 'SINIRSIZ')->value('used_count'));
+    }
 }
