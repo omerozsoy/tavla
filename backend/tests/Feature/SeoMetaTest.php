@@ -45,7 +45,9 @@ class SeoMetaTest extends TestCase
             ->assertOk()
             ->assertSee('"@type":"BlogPosting"', false)
             ->assertSee('https://www.tavlatv.com/og-image.png', false)
-            ->assertSee('https://www.tavlatv.com/icon-512.png', false);
+            ->assertSee('https://www.tavlatv.com/icon-512.png', false)
+            ->assertSee('"datePublished":"2026-09-22T18:24:48+03:00"', false)
+            ->assertSee('"dateModified":"2026-09-22T18:24:48+03:00"', false);
     }
 
     public function test_unknown_content_slug_is_a_noindex_404(): void
