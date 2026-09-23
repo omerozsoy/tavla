@@ -326,6 +326,8 @@ final class SeoMeta
                     'article',
                 );
 
+                $html = self::injectArticleJsonLd($html, (string) $article->title, $desc, self::BASE . $slug, self::absImg($article->image));
+
                 return self::injectBreadcrumbJsonLd($html, (string) $article->title, self::BASE . $slug);
             }
 
@@ -472,6 +474,44 @@ final class SeoMeta
         }
         $script = '<script type="application/ld+json">' . $json . '</script>';
         $out = preg_replace_callback('~</head>~i', fn () => $script . '</head>', $html, 1);
+
+        return $out ?? $html;
+    }
+
+    /** Yayındaki haberler için yalnız veritabanındaki gerçek alanlardan Article JSON-LD üretir. */
+    private static function injectArticleJsonLd(
+        string $html,
+        string $headline,
+        string $description,
+        string $url,
+        ?string $image,
+    ): string {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Article',
+            'headline' => $headline,
+            'description' => $description,
+            'url' => $url,
+            'inLanguage' => 'tr',
+            'articleSection' => 'Tavla Haberleri',
+            'author' => ['@type' => 'Organization', 'name' => 'TavlaTV'],
+            'publisher' => [
+                '@type' => 'Organization',
+                'name' => 'TavlaTV',
+                'logo' => ['@type' => 'ImageObject', 'url' => self::BASE . 'icon-512.png'],
+            ],
+            'mainEntityOfPage' => ['@type' => 'WebPage', '@id' => $url],
+        ];
+        if ($image !== null) {
+            $data['image'] = [$image];
+        }
+
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $html;
+        }
+        $script = '<script type="application/ld+json">' . $json . '</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
 
         return $out ?? $html;
     }
