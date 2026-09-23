@@ -25965,6 +25965,19 @@ select:-webkit-autofill {
    --checker/--dice-size/--tri-h otomatik ölçeklenir; zarlar da gerçek boyutta). */
 .mrv-board {
   --board-h: max(280px, min(calc(100vh - 250px), calc((100vw - 720px) / 1.32)));
+  /* Türev geometri (--checker/--col/--tri-h...) :root'ta GLOBAL --board-h (oyun sahnesi,
+     ~808px) ile hesaplanıp DONAR. Burada salt --board-h'yi (~700px) override etmek yetmez:
+     donmuş büyük --checker ile 5'li yığın (5×--checker) mrv quadrant'ından (--board-h/2)
+     TAŞAR ve .board-inner overflow:hidden alttaki pulu KESER. Bu yüzden :root oranlarını
+     (satır 180-191) kendi --board-h'imden yeniden türet (bkz .analysis-detail .an-board-stage). */
+  --checker: calc(var(--board-h) / 11);
+  --col: calc(var(--checker) * 1.14);
+  --point-w: var(--col);
+  --bar-w: calc(var(--checker) * 1.4);
+  --tri-h: calc(var(--board-h) * 0.35);
+  --point-h: var(--tri-h);
+  --dice-size: calc(var(--checker) * 0.76);
+  --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px);
   display: flex;
   flex-direction: column;
   align-items: center;
