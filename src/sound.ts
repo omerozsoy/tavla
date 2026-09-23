@@ -3,6 +3,7 @@
 import diceUrl from './assets/dice-roll.wav' // zar atma (gercek kayit)
 import moveUrl from './assets/checker-move.mp3' // tas oynama (her hamlede)
 import hitUrl from './assets/checker-hit.ogg' // tas kirma (vurus)
+import winUrl from './assets/win.wav' // kazanma marsi (gercek kayit, fade-out)
 
 let ctx: AudioContext | null = null
 // Ses kullanıcı tercihi (kalıcı): VARSAYILAN KAPALI. Oyun Menüsü > Ses ile aç/kapa.
@@ -33,6 +34,7 @@ export function setMuted(v: boolean): void {
     void loadSample(diceUrl)
     void loadSample(moveUrl)
     void loadSample(hitUrl)
+    void loadSample(winUrl)
   }
 }
 
@@ -128,9 +130,7 @@ export const Sound = {
     play(hitUrl, 0.5)
   },
   win() {
-    tone(523, 0, 0.16, 'sine', 0.2)
-    tone(659, 0.12, 0.16, 'sine', 0.2)
-    tone(784, 0.24, 0.28, 'sine', 0.22)
+    play(winUrl, 0.75)
   },
   lose() {
     tone(392, 0, 0.2, 'sine', 0.18)
