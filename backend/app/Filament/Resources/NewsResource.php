@@ -87,13 +87,16 @@ class NewsResource extends Resource
             ]);
     }
 
-    // Ciplak yol -> /uploads/ ; tam URL veya /... oldugu gibi
+    // ImageColumn için TAM URL üret (Filament kök-göreli yolu geçerli URL saymaz, disk'e düşüp kırar).
     private static function img(?string $v): ?string
     {
         if (! $v) {
             return null;
         }
-        return preg_match('#^(https?:|/)#', $v) ? $v : '/uploads/'.$v;
+        if (preg_match('#^(https?://|data:)#', $v)) {
+            return $v;
+        }
+        return url(str_starts_with($v, '/') ? $v : '/uploads/'.$v);
     }
 
     public static function getPages(): array

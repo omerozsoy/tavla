@@ -87,14 +87,20 @@ class MakaleResource extends Resource
             ]);
     }
 
-    // Çıplak yol -> /uploads/ ; tam URL veya /... olduğu gibi.
+    // ImageColumn için TAM URL üret. Filament kök-göreli yolu (/uploads/…) geçerli URL saymaz;
+    // disk vermeyince varsayılan 'public' diskine düşüp storage/app/public altında arar ve null döner
+    // (resim kırık görünür). url() ile tam URL dönünce filter_var(FILTER_VALIDATE_URL) geçer, doğrudan kullanılır.
     private static function img(?string $v): ?string
     {
         if (! $v) {
             return null;
         }
 
-        return preg_match('#^(https?:|/)#', $v) ? $v : '/uploads/'.$v;
+        if (preg_match('#^(https?://|data:)#', $v)) {
+            return $v;
+        }
+
+        return url(str_starts_with($v, '/') ? $v : '/uploads/'.$v);
     }
 
     public static function getPages(): array
