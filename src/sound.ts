@@ -17,6 +17,29 @@ let muted = (() => {
   }
 })()
 
+// Ses seviyesi (0..1), kalıcı: 'tavla.soundvol'. Tüm efekt gain'leri bununla ölçeklenir.
+// Varsayılan 0.7. Slider (Oyun Menüsü) ile ayarlanır.
+let volume = (() => {
+  try {
+    const v = parseFloat(localStorage.getItem('tavla.soundvol') ?? '')
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.7
+  } catch {
+    return 0.7
+  }
+})()
+
+export function getVolume(): number {
+  return volume
+}
+export function setVolume(v: number): void {
+  volume = Math.min(1, Math.max(0, v))
+  try {
+    localStorage.setItem('tavla.soundvol', String(volume))
+  } catch {
+    /* yok */
+  }
+}
+
 export function isMuted(): boolean {
   return muted
 }
@@ -61,7 +84,7 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   osc.type = type
   osc.frequency.value = freq
   g.gain.setValueAtTime(0, t0)
-  g.gain.linearRampToValueAtTime(gain, t0 + 0.008)
+  g.gain.linearRampToValueAtTime(Math.max(0.0001, gain * volume), t0 + 0.008)
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
   osc.connect(g).connect(c.destination)
   osc.start(t0)
@@ -99,7 +122,7 @@ function playBuffer(c: AudioContext, buf: AudioBuffer, gain: number) {
   const src = c.createBufferSource()
   src.buffer = buf
   const g = c.createGain()
-  g.gain.value = gain
+  g.gain.value = gain * volume
   src.connect(g).connect(c.destination)
   src.start()
 }

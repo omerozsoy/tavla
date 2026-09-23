@@ -27,6 +27,9 @@ interface Props {
   /** Oyun sesleri (zar/pul/uyarı) açık mı — kalıcı kullanıcı tercihi. */
   soundOn: boolean
   toggleSound: () => void
+  /** Ses seviyesi 0..100 (kalıcı). Slider ile ayarlanır; 0 = kapalı. */
+  soundVol: number
+  setSoundVol: (v: number) => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -83,6 +86,23 @@ export default function GameMenu(p: Props) {
               )}
             </button>
           ))}
+          {/* Ses seviyesi kaydırıcısı: hoparlör + slider + yüzde. 0 = kapalı. */}
+          <div className="gm-row gm-volrow">
+            <span className="gm-vol-ic" aria-hidden="true">
+              <Icon name="volume" size={18} />
+            </span>
+            <input
+              type="range"
+              className="gm-vol-slider"
+              min={0}
+              max={100}
+              step={1}
+              value={p.soundVol}
+              onChange={(e) => p.setSoundVol(Number(e.target.value))}
+              aria-label={t('gm.sound')}
+            />
+            <span className="gm-vol-val">{p.soundVol}</span>
+          </div>
         </div>
         {/* Turnuvalar/Arkadaşlar/Mağaza KALDIRILDI — oyun sırasında navigasyon yok */}
         <div className="gm-actions">

@@ -9115,6 +9115,63 @@ html.fs-active .account-bar {
 .gm-switch.on .gm-knob {
   left: 21px;
 }
+/* Ses seviyesi kaydırıcısı satırı (site stili: koyu track + aksan dolgu/thumb). */
+.gm-volrow {
+  cursor: default;
+  gap: 10px;
+}
+.gm-volrow:hover {
+  /* Slider satırı buton değil -> hover vurgusu yok, sabit kalsın. */
+  background: rgba(255, 255, 255, 0.045);
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.gm-vol-ic {
+  flex: none;
+  display: inline-flex;
+  color: color-mix(in srgb, var(--accent) 55%, #eef2ff);
+}
+.gm-vol-slider {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  border-radius: 999px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: rgba(255, 255, 255, 0.14);
+  outline: none;
+  cursor: pointer;
+}
+/* Dolu kısmı aksan renginde göstermek için accent-color (Firefox + modern) + özel thumb (WebKit). */
+.gm-vol-slider {
+  accent-color: var(--accent);
+}
+.gm-vol-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+.gm-vol-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+.gm-vol-val {
+  flex: none;
+  min-width: 2.6ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--accent) 45%, #ffffff);
+}
 /* Değer satırı (Oyun Yönü gibi): aksan chip */
 .gm-chip {
   flex: none;
