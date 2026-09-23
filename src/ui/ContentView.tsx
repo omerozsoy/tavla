@@ -8,7 +8,6 @@ import { listContents, type Content, type ContentType } from '../api'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
 import { TavlaTvLogo } from './TavlaTvLogo'
-import { BLOG_ARTICLES, findBlogArticle } from '../data/blogs'
 
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
@@ -173,7 +172,6 @@ export default function ContentView({
   // Haber detayi acik mi (slug bir habere denk geliyorsa)
   const newsItem =
     (type === 'news' || type === 'makale') && slug ? (items.find((i) => slugify(i.title) === slug) ?? null) : null
-  const blogArticle = type === 'blog' && slug ? findBlogArticle(slug) : null
   // Detaydaki tum gorseller (kapak + galeri) - lightbox bunlar arasinda gezer
   const detailImgs = newsItem
     ? [newsItem.image, ...(newsItem.gallery ?? [])]
@@ -490,18 +488,7 @@ export default function ContentView({
             ))}
           </div>
         ) : type === 'blog' ? (
-          blogArticle ? (
-            <BlogArticleDetail article={blogArticle} onBack={onCloseDetail ?? onClose} backLabel={headTitle} />
-          ) : (
           <div className="content-posts">
-            {BLOG_ARTICLES.map((article) => (
-              <article key={article.slug} className="content-post">
-                <a className="content-post-head content-post-link" href={`/blog/${article.slug}`} onClick={(e) => { e.preventDefault(); onOpenDetail?.(article.slug) }}>
-                  <span className="cp-title">{article.title}</span>
-                  <span className="cp-readmore">Devamını oku →</span>
-                </a>
-              </article>
-            ))}
             {items.map((p) => {
               const open = openId === p.id
               return (
@@ -522,7 +509,6 @@ export default function ContentView({
               )
             })}
           </div>
-          )
         ) : type === 'event' && eventGroups ? (
           <div className="content-events">
             {eventGroups.byMonth.length === 0 && (
@@ -709,29 +695,6 @@ export default function ContentView({
       )}
       {playVideo && <VideoPlayer videoId={playVideo} onClose={() => setPlayVideo(null)} />}
     </>
-  )
-}
-
-function BlogArticleDetail({
-  article,
-  onBack,
-  backLabel,
-}: {
-  article: (typeof BLOG_ARTICLES)[number]
-  onBack: () => void
-  backLabel: string
-}) {
-  return (
-    <article className="blog-article-detail">
-      <Button variant="secondary" className="news-back" onClick={onBack}>
-        <span className="news-back-chev"><Icon name="chevron" size={16} /></span> {backLabel}
-      </Button>
-      <header className="blog-article-heading">
-        <span className="news-kicker">TAVLA BLOG</span>
-        <h3 className="news-detail-title">{article.title}</h3>
-      </header>
-      <div className="news-detail-body rich blog-article-body" dangerouslySetInnerHTML={{ __html: article.bodyHtml }} />
-    </article>
   )
 }
 

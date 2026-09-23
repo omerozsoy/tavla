@@ -31,7 +31,7 @@ import { NeuralBot, type RankedMove } from './engine/neuralBot'
 import { moveNotation } from './engine/notation'
 import { explainMove, type Reason } from './engine/explain'
 import { divisionOfPR } from './badges'
-import { Sound } from './sound'
+import { Sound, isMuted, setMuted } from './sound'
 import { evaluatePosition, pipCount } from './engine/evaluate'
 import {
   canDouble,
@@ -207,6 +207,15 @@ const SEO_TITLES: Record<string, string> = {
   'kulupler': 'Tavla Kulüpleri | TavlaTv',
   'haberler': 'Tavla Haberleri | TavlaTv',
   'makaleler': 'Tavla Makaleleri | TavlaTv',
+  'makaleler/tavla-hamle-secme-stratejileri': 'Tavlada Hamle Seçerken Nelere Bakılır? 3 Temel Strateji | TavlaTV',
+  'makaleler/tavla-nedir': 'Tavla Nedir? Oyunun Mantığı ve Temel Terimler | TavlaTV',
+  'makaleler/tavla-nasil-oynanir': 'Tavla Nasıl Oynanır? Taş Dizilişi, Zar ve Toplama | TavlaTV',
+  'makaleler/tavla-acilis-zarlari-31-42-61-53-65': 'Tavlada Açılış Zarları: 3–1, 4–2, 6–1, 5–3 ve 6–5 | TavlaTV',
+  'makaleler/tavla-acilis-zarlari-62-63-64': 'Tavlada 6–2, 6–3 ve 6–4 Açılışları Nasıl Oynanır? | TavlaTV',
+  'makaleler/ilk-tavla-turnuvasina-katilim': 'İlk Tavla Turnuvana Nasıl Katılırsın? Hazırlık Rehberi | TavlaTV',
+  'makaleler/tavla-turnuvasinda-ilk-gun': 'Tavla Turnuvasında İlk Gün: Kayıttan Sonuca Adım Adım | TavlaTV',
+  'makaleler/evde-tavla-oynama-rehberi': 'Evde Tavla Oynamak: Ekipman, Format ve Öğrenme Planı | TavlaTV',
+  'makaleler/tavlaya-yeni-baslayanlar-rehberi': 'Tavlaya Yeni Başlayanlar İçin Öğrenme Rehberi | TavlaTV',
   'tavla-magazin': 'Tavla Magazin | TavlaTv',
   'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
   'tavla-rehberi': 'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
@@ -215,7 +224,6 @@ const SEO_TITLES: Record<string, string> = {
   'tavla-rehberi/tavla-kupu-doubling-cube': 'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
   'tavla-rehberi/tavla-kazanma-taktikleri': 'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
   'tavla-rehberi/mars-gammon-backgammon-nedir': 'Mars (Gammon) ve Backgammon Nedir? | TavlaTv',
-  'tavla-rehberi/tavlada-hamle-secme-rehberi': 'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış | TavlaTV',
   'pozisyon-analizi': 'Tavla Pozisyon Analizi | TavlaTv',
   'mat-analiz': 'Tavla Maç Analizi (.mat) | TavlaTv',
   'mac-analizleri': 'Maç Analizlerim | TavlaTv',
@@ -269,6 +277,15 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla dünyasından güncel haberler, turnuva sonuçları ve duyurular. En yeni tavla haberleri TavlaTv’de.',
   'makaleler':
     'Tavla makaleleri: stratejiler, taktikler ve analiz yazıları. Tavlayı daha iyi oynamak için okuyup öğren.',
+  'makaleler/tavla-hamle-secme-stratejileri': 'Tavlada kapı almak, taş kırmak ve gerideki taşları çıkarmak için hamle rehberi.',
+  'makaleler/tavla-nedir': 'Tavla nedir, nasıl kazanılır ve hangi temel terimleri bilmelisiniz? Oyuna yeni başlayanlar için kısa ve anlaşılır bir giriş.',
+  'makaleler/tavla-nasil-oynanir': 'Tavla kurallarını adım adım öğrenin: 15 taşın dizilişi, zarlarla hareket, taş kırma, bar ve taş toplama.',
+  'makaleler/tavla-acilis-zarlari-31-42-61-53-65': 'Tavlada 3–1, 4–2, 6–1, 5–3 ve 6–5 açılış zarları nasıl oynanır? Başlangıç konumunda örnek hamleler ve nedenleri.',
+  'makaleler/tavla-acilis-zarlari-62-63-64': '6–2, 6–3 ve 6–4 açılışlarında gerideki taşı çıkarma, kurucu taş getirme ve riskleri değerlendirme rehberi.',
+  'makaleler/ilk-tavla-turnuvasina-katilim': 'İlk tavla turnuvasına katılmadan önce kayıt, kurallar, maç formatı ve oyun günü için pratik hazırlık listesi.',
+  'makaleler/tavla-turnuvasinda-ilk-gun': 'Tavla turnuvasında kayıt, eşleşme, maç başlangıcı ve sonuç bildirimi nasıl ilerler? İlk gün için anlaşılır akış.',
+  'makaleler/evde-tavla-oynama-rehberi': 'Evde tavla kurmak için gerekenler, maç formatı seçimi ve yeni başlayanların birlikte gelişmesi için öneriler.',
+  'makaleler/tavlaya-yeni-baslayanlar-rehberi': 'Tavlaya sıfırdan başlamak için kurallar, ilk stratejiler, sık hatalar ve pratik çalışma sırası.',
   'tavla-magazin':
     'Tavla magazin: röportajlar, analizler ve tavla kültüründen içerikler.',
   'nasil-oynanir':
@@ -285,8 +302,6 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla kazanma taktikleri: blot bırakmama, kilit ve prime kurma, pip sayımı, yarış ve tutma oyunu ile küp kullanımı. Oyununu geliştirecek pratik ipuçları.',
   'tavla-rehberi/mars-gammon-backgammon-nedir':
     'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
-  'tavla-rehberi/tavlada-hamle-secme-rehberi':
-    'Tavlada hangi taşı oynayacağınıza karar veremiyor musunuz? Kapı almak, rakip taşı kırmak ve gerideki taşları çıkarmak için pratik hamle rehberi.',
   'pozisyon-analizi':
     'Tavla pozisyonunu analiz et: TavlaTV Motoru ve sinir ağı ile en iyi hamle, kazanma yüzdesi ve equity.',
   'mat-analiz':
@@ -858,7 +873,6 @@ export default function App() {
   const [gamePreviewOpen, setGamePreviewOpen] = useState(false) // oyun ekrani layout onizleme
   const [contentView, setContentView] = useState<ContentType | null>(null) // acik icerik sayfasi
   const [newsSlug, setNewsSlug] = useState<string | null>(null) // acik haber detayi (slug) - /haberler/<slug>
-  const [blogSlug, setBlogSlug] = useState<string | null>(null) // acik blog yazisi - /blog/<slug>
   const [quizOpen, setQuizOpen] = useState(false) // quiz oynanis
   const [clubsOpen, setClubsOpen] = useState(false) // kulupler + lig
   const [rulesOpen, setRulesOpen] = useState(false) // nasil oynanir rehberi
@@ -1016,9 +1030,7 @@ export default function App() {
                       : contentView === 'service'
                         ? 'hizmetler'
                         : contentView === 'blog'
-                          ? blogSlug
-                            ? 'blog/' + blogSlug
-                            : 'blog'
+                          ? 'blog'
                           : contentView === 'news'
                             ? newsSlug
                               ? 'haberler/' + newsSlug
@@ -1281,7 +1293,6 @@ export default function App() {
           break
         case 'blog':
           setContentView('blog')
-          setBlogSlug(seg[1] ?? null)
           break
         case 'haberler':
           setContentView('news')
@@ -5115,6 +5126,14 @@ export default function App() {
       /* yok */
     }
   }, [animOn])
+  // OYUN SESİ (zar/pul/kazan-kaybet) — kalıcı kullanıcı tercihi (sound.ts muted state'i).
+  // Efekt çağrıları (Sound.dice/move/win…) zaten oyun akışına bağlı; bu bayrak yalnız susturur.
+  const [soundOn, setSoundOn] = useState<boolean>(() => !isMuted())
+  const toggleSound = () => {
+    const next = !soundOn
+    setSoundOn(next)
+    setMuted(!next) // localStorage + AudioContext hazırlığı sound.ts içinde
+  }
   // Tas hareket animasyonu stili (kapali/kayma/yay/kaldir-birak) — kullanici secer
   // Tas hareket stili: Ayarlar'dan secici KALDIRILDI; mevcut localStorage degeri (varsa)
   // korunur, yoksa 'slide'. Artik degismedigi icin setter yok.
@@ -7394,7 +7413,6 @@ export default function App() {
     setMyOrdersOpen(false)
     setContentView(null)
     setNewsSlug(null)
-    setBlogSlug(null)
     setQuizOpen(false)
     setClubsOpen(false)
     setRulesOpen(false)
@@ -8299,9 +8317,9 @@ export default function App() {
             ] ?? '',
           )}
           onClose={() => setContentView(null)}
-          slug={contentView === 'blog' ? blogSlug : newsSlug}
-          onOpenDetail={(s) => contentView === 'blog' ? setBlogSlug(s) : setNewsSlug(s)}
-          onCloseDetail={() => contentView === 'blog' ? setBlogSlug(null) : setNewsSlug(null)}
+          slug={newsSlug}
+          onOpenDetail={(s) => setNewsSlug(s)}
+          onCloseDetail={() => setNewsSlug(null)}
         />
       )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
@@ -9153,6 +9171,8 @@ export default function App() {
         setShowLivePr={setShowLivePr}
         animOn={animOn}
         toggleAnim={() => setAnimOn((v) => !v)}
+        soundOn={soundOn}
+        toggleSound={toggleSound}
         canAnalyze={botMatch}
         canResign={!matchOver}
         loggedIn={!!user}

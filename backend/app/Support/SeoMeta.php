@@ -337,11 +337,18 @@ final class SeoMeta
             'Mars (gammon) ve backgammon nedir? Tekli, mars ve backgammon galibiyetlerinin puan değerleri, küp çarpanı ve bu büyük galibiyetleri kazanma/önleme taktikleri.',
             'Mars (Gammon) ve Backgammon Nedir?',
         ],
-        'tavlada-hamle-secme-rehberi' => [
-            'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış | TavlaTV',
-            'Tavlada hangi taşı oynayacağınıza karar veremiyor musunuz? Kapı almak, rakip taşı kırmak ve gerideki taşları çıkarmak için pratik hamle rehberi.',
-            'Tavlada Hamle Seçme Rehberi: Kapı, Kırma ve Kaçış',
-        ],
+    ];
+
+    private const MAKALE_META = [
+        'tavla-hamle-secme-stratejileri' => ['Tavlada Hamle Seçerken Nelere Bakılır? 3 Temel Strateji | TavlaTV', 'Tavlada kapı almak, taş kırmak ve gerideki taşları çıkarmak için hamle rehberi.'],
+        'tavla-nedir' => ['Tavla Nedir? Oyunun Mantığı ve Temel Terimler | TavlaTV', 'Tavla nedir, nasıl kazanılır ve hangi temel terimleri bilmelisiniz? Oyuna yeni başlayanlar için kısa ve anlaşılır bir giriş.'],
+        'tavla-nasil-oynanir' => ['Tavla Nasıl Oynanır? Taş Dizilişi, Zar ve Toplama | TavlaTV', 'Tavla kurallarını adım adım öğrenin: 15 taşın dizilişi, zarlarla hareket, taş kırma, bar ve taş toplama.'],
+        'tavla-acilis-zarlari-31-42-61-53-65' => ['Tavlada Açılış Zarları: 3–1, 4–2, 6–1, 5–3 ve 6–5 | TavlaTV', 'Tavlada 3–1, 4–2, 6–1, 5–3 ve 6–5 açılış zarları nasıl oynanır? Başlangıç konumunda örnek hamleler ve nedenleri.'],
+        'tavla-acilis-zarlari-62-63-64' => ['Tavlada 6–2, 6–3 ve 6–4 Açılışları Nasıl Oynanır? | TavlaTV', '6–2, 6–3 ve 6–4 açılışlarında gerideki taşı çıkarma, kurucu taş getirme ve riskleri değerlendirme rehberi.'],
+        'ilk-tavla-turnuvasina-katilim' => ['İlk Tavla Turnuvana Nasıl Katılırsın? Hazırlık Rehberi | TavlaTV', 'İlk tavla turnuvasına katılmadan önce kayıt, kurallar, maç formatı ve oyun günü için pratik hazırlık listesi.'],
+        'tavla-turnuvasinda-ilk-gun' => ['Tavla Turnuvasında İlk Gün: Kayıttan Sonuca Adım Adım | TavlaTV', 'Tavla turnuvasında kayıt, eşleşme, maç başlangıcı ve sonuç bildirimi nasıl ilerler? İlk gün için anlaşılır akış.'],
+        'evde-tavla-oynama-rehberi' => ['Evde Tavla Oynamak: Ekipman, Format ve Öğrenme Planı | TavlaTV', 'Evde tavla kurmak için gerekenler, maç formatı seçimi ve yeni başlayanların birlikte gelişmesi için öneriler.'],
+        'tavlaya-yeni-baslayanlar-rehberi' => ['Tavlaya Yeni Başlayanlar İçin Öğrenme Rehberi | TavlaTV', 'Tavlaya sıfırdan başlamak için kurallar, ilk stratejiler, sık hatalar ve pratik çalışma sırası.'],
     ];
 
     /** Tarihler içerik dosyasının Git geçmişindeki ilk yayın commit'inden alınmıştır. */
@@ -395,6 +402,32 @@ final class SeoMeta
             $html = self::injectJsonLd($html, $h1, $desc, $url, $datePublished, $dateModified);
 
             return self::injectBreadcrumbJsonLd($html, $h1, $url);
+        }
+
+        // 2c) Makale: /makaleler/<slug>. İçerik Content(type=makale)'den gelir.
+        if (count($parts) === 2 && $parts[0] === 'makaleler') {
+            $article = self::findMakale($parts[1]);
+            if ($article) {
+                [$title, $desc] = self::MAKALE_META[$parts[1]]
+                    ?? [(string) $article->title . ' | TavlaTv', self::excerpt($article->body) ?: 'Tavla stratejileri, taktikleri ve analiz yazıları.'];
+                $image = self::absImg($article->image) ?: self::BASE . 'og-image.png';
+                $url = self::BASE . $slug;
+
+                $html = self::apply($html, $title, $desc, (string) $article->title, $url, $image, 'article');
+                $html = self::injectArticleJsonLd(
+                    $html,
+                    (string) $article->title,
+                    $desc,
+                    $url,
+                    $image,
+                    $article->event_at,
+                    $article->updated_at,
+                );
+
+                return self::injectBreadcrumbJsonLd($html, (string) $article->title, $url);
+            }
+
+            return self::applyNoIndex($html);
         }
 
         if (count($parts) === 2 && $parts[0] === 'haberler') {
@@ -451,6 +484,9 @@ final class SeoMeta
         }
         if ($parts[0] === 'haberler') {
             return self::findNews($parts[1]) !== null;
+        }
+        if ($parts[0] === 'makaleler') {
+            return self::findMakale($parts[1]) !== null;
         }
 
         return true;
@@ -710,6 +746,27 @@ final class SeoMeta
 
         $rows = Content::query()
             ->where('type', 'news')
+            ->where('published', true)
+            ->get(['id', 'title', 'body', 'image', 'event_at', 'updated_at']);
+
+        foreach ($rows as $row) {
+            if (self::slugify((string) $row->title) === $slug) {
+                return $row;
+            }
+        }
+
+        return null;
+    }
+
+    /** Yayındaki makaleler içinde frontend slugify() ile eşleşeni bul. */
+    private static function findMakale(string $slug): ?Content
+    {
+        if (! Schema::hasTable('contents')) {
+            return null;
+        }
+
+        $rows = Content::query()
+            ->where('type', 'makale')
             ->where('published', true)
             ->get(['id', 'title', 'body', 'image', 'event_at', 'updated_at']);
 

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Tavlada hamle seçme rehberi</title>
+  <desc id="desc">Ahşap tavla tahtası üzerinde kapı, kırma ve kaçış hamlelerini simgeleyen üç altın ok.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#201713"/><stop offset="1" stop-color="#5a3023"/></linearGradient>
+    <linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#d9b979"/><stop offset="1" stop-color="#a86e43"/></linearGradient>
+    <filter id="shadow"><feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#120d0a" flood-opacity=".45"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1320" cy="120" r="250" fill="#c88b4a" opacity=".12"/>
+  <rect x="180" y="150" width="1240" height="600" rx="34" fill="#4b2a1e" filter="url(#shadow)"/>
+  <rect x="210" y="180" width="1180" height="540" rx="16" fill="url(#wood)"/>
+  <rect x="785" y="180" width="30" height="540" fill="#4b2a1e"/>
+  <g fill="#713e2c" opacity=".92">
+    <path d="M240 200h74l-37 236zM340 200h74l-37 236zM440 200h74l-37 236zM540 200h74l-37 236zM640 200h74l-37 236zM840 200h74l-37 236zM940 200h74l-37 236zM1040 200h74l-37 236zM1140 200h74l-37 236zM1240 200h74l-37 236z"/>
+    <path d="M240 700h74l-37-236zM340 700h74l-37-236zM440 700h74l-37-236zM540 700h74l-37-236zM640 700h74l-37-236zM840 700h74l-37-236zM940 700h74l-37-236zM1040 700h74l-37-236zM1140 700h74l-37-236zM1240 700h74l-37-236z"/>
+  </g>
+  <g fill="#f4e5bd" stroke="#4a3429" stroke-width="5">
+    <circle cx="375" cy="620" r="31"/><circle cx="375" cy="560" r="31"/><circle cx="475" cy="620" r="31"/><circle cx="475" cy="560" r="31"/>
+    <circle cx="1110" cy="280" r="31"/><circle cx="1110" cy="340" r="31"/><circle cx="1210" cy="280" r="31"/><circle cx="1210" cy="340" r="31"/>
+  </g>
+  <g fill="none" stroke="#f2bd42" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M410 550 Q640 380 930 270"/><path d="M930 270l-36 8m36-8-12 35"/>
+    <path d="M1180 350 Q1040 470 850 520"/><path d="M850 520l33-23m-33 23 38 5"/>
+    <path d="M1200 290 Q1330 430 1190 590"/><path d="M1190 590l4-42m-4 42-30-29"/>
+  </g>
+  <text x="800" y="95" text-anchor="middle" fill="#f7ead1" font-family="Georgia,serif" font-size="52" font-weight="700">Hamle seçerken üç soru</text>
+  <text x="800" y="840" text-anchor="middle" fill="#e8c991" font-family="Arial,sans-serif" font-size="25" letter-spacing="5">KAPI  ·  KIRMA  ·  KAÇIŞ</text>
+</svg>
