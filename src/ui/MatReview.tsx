@@ -559,51 +559,79 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
       const p0 = board.querySelector('[data-point="0"]') as HTMLElement | null
       const colW = p0 ? p0.getBoundingClientRect().width : 24
       const rad = Math.max(5, colW * 0.43)
-      // Tahtanın dikey ortası: bir hanenin ÜST mü ALT mı olduğunu belirler.
-      const brc = board.getBoundingClientRect()
-      const boardMidY = brc.top + brc.height / 2 - sr.top
-      // Okun GERÇEK çıkış/varış noktası: hane (üçgen) içinde pullar DIŞ kenardan dizilir.
-      // Kolon MERKEZİNİ kullanınca ok havadan çıkıyordu; onun yerine üst hanede üst-kenar+r,
-      // alt hanede alt-kenar−r noktasına (ilk pulun oturduğu yer) sabitle. Bar/off ORTADA
-      // kalır (oralarda pullar zaten ortada dizilir).
-      const anchorOf = (el: Element | null, p: number | 'bar' | 'off'): { x: number; y: number } | null => {
-        if (!el) return null
+      // Hamleyi yapan oyuncunun rengi: bardaki KIRIK TASI ve yigin yonunu dogru secmek icin.
+      // Nokta-kaynakli bir adimin ust tasindan (mover'in tasi) rengi oku (tahta hamleden ONCEKI
+      // konumu gosterir; kaynak hanenin tepesindeki tas = oynatilacak tas).
+      let moverColor: 'white' | 'black' | null = null
+      for (const s of steps) {
+        if (typeof s.from === 'number') {
+          const pe = board.querySelector(`[data-point="${s.from}"]`)
+          const ck = pe?.querySelector('.checker.white, .checker.black') as HTMLElement | null
+          if (ck) {
+            moverColor = ck.classList.contains('white') ? 'white' : 'black'
+            break
+          }
+        }
+      }
+      const rectXY = (rc: DOMRect) => ({ x: rc.left + rc.width / 2 - sr.left, y: rc.top + rc.height / 2 - sr.top })
+      // Bir hanenin (nokta) GERCEK ok konumu: pullar DIS kenardan ice dogru dizilir.
+      //  - Dolu hane -> yigin TEPESINDEKI (son cocuk) pulun merkezi. Kaynakta bu, oynatilan
+      //    tasin ta kendisi; hedefte ise tasin konacagi ust nokta ("doluysa en uste isaret et").
+      //  - Bos hane (yalniz hedef) -> DIS kenar/taban ("bossa en alta"): ust hanede ust-kenar+r,
+      //    alt hanede alt-kenar-r (ilk pulun oturacagi yer). Boylece ok havadan cikmaz.
+      const anchorPoint = (el: Element): { x: number; y: number } => {
+        const checkers = el.querySelectorAll('.checker')
+        if (checkers.length) {
+          const inner = checkers[checkers.length - 1] as HTMLElement // yigin tepesi = son cocuk
+          return rectXY(inner.getBoundingClientRect())
+        }
         const rc = el.getBoundingClientRect()
         const x = rc.left + rc.width / 2 - sr.left
-        const cy = rc.top + rc.height / 2 - sr.top
-        if (p === 'bar' || p === 'off') return { x, y: cy }
-        const y = cy < boardMidY ? rc.top - sr.top + rad : rc.bottom - sr.top - rad
+        const isTop = (el as HTMLElement).classList.contains('top')
+        const y = isTop ? rc.top - sr.top + rad : rc.bottom - sr.top - rad
         return { x, y }
       }
-      const elFor = (p: number | 'bar' | 'off', fromY: number | null): Element | null => {
-        if (p === 'bar') return board.querySelector('[data-slot="bar"]')
-        if (p === 'off') {
-          const trays = Array.from(board.querySelectorAll('.bearoff'))
-          if (trays.length <= 1) return trays[0] ?? null
-          if (fromY == null) return trays[0]
-          // Bearing off -> kaynağa en yakın tepsi (ev tahtası tarafı).
-          let best = trays[0]
+      // Bardaki KIRIK TAS: bar-slotu ORTASI degil, hamleyi yapan rengin gercek bar tasinin merkezi.
+      const barAnchor = (): { x: number; y: number } | null => {
+        let ck: HTMLElement | null = moverColor
+          ? (board.querySelector(`.bar-checkers .checker.${moverColor}`) as HTMLElement | null)
+          : null
+        if (!ck) ck = board.querySelector('.bar-checkers .checker') as HTMLElement | null
+        if (ck) return rectXY(ck.getBoundingClientRect())
+        const bar = board.querySelector('[data-slot="bar"]')
+        return bar ? rectXY(bar.getBoundingClientRect()) : null
+      }
+      const offAnchor = (fromY: number | null): { x: number; y: number } | null => {
+        const trays = Array.from(board.querySelectorAll('.bearoff'))
+        let tray: Element | null = trays[0] ?? null
+        if (trays.length > 1 && fromY != null) {
+          // Bearing off -> kaynaga en yakin tepsi (ev tahtasi tarafi).
           let bd = Infinity
-          for (const tray of trays) {
-            const rc = tray.getBoundingClientRect()
+          for (const tr of trays) {
+            const rc = tr.getBoundingClientRect()
             const cy = rc.top + rc.height / 2 - sr.top
             const d = Math.abs(cy - fromY)
             if (d < bd) {
               bd = d
-              best = tray
+              tray = tr
             }
           }
-          return best
         }
-        return board.querySelector(`[data-point="${p}"]`)
+        return tray ? rectXY(tray.getBoundingClientRect()) : null
+      }
+      const anchorFor = (p: number | 'bar' | 'off', fromY: number | null): { x: number; y: number } | null => {
+        if (p === 'bar') return barAnchor()
+        if (p === 'off') return offAnchor(fromY)
+        const el = board.querySelector(`[data-point="${p}"]`)
+        return el ? anchorPoint(el) : null
       }
       // "Hamle Analizi" gibi: adımları SIRAYLA numaralandır (birleştirme yok; çift hamlede
       // aynı yere iki numaralı ok — MiniBoard ile aynı davranış).
       const out: ArrowSeg[] = []
       steps.forEach((s) => {
-        const a = anchorOf(elFor(s.from, null), s.from)
+        const a = anchorFor(s.from, null)
         if (!a) return
-        const b = anchorOf(elFor(s.to, a.y), s.to)
+        const b = anchorFor(s.to, a.y)
         if (!b) return
         out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, lane: 0 })
       })

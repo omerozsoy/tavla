@@ -45,11 +45,30 @@ function colX(col: number): number {
   return col < 6 ? COL_W * (col + 0.5) : HALF_W + BAR_W + COL_W * (col - 6 + 0.5)
 }
 
-function anchor(p: number | 'bar' | 'off', L: Record<number, Cell>): { x: number; y: number } {
-  if (p === 'bar') return { x: HALF_W + BAR_W / 2, y: H / 2 }
+// Okun GERCEK cikis/varis noktasi (tahta hamleden ONCEKI konumu gosterir):
+//  - bar -> hamleyi yapan RENGIN bardaki kirik tasinin konumu (bar ORTASI degil),
+//  - dolu hane -> yigin TEPESI (son gorunur tas): kaynakta oynatilan tas, hedefte ustune
+//    konacak tas ("doluysa en uste"),
+//  - bos hane -> taban/dis kenar ("bossa en alta"). Boylece ok havadan cikmaz.
+function anchor(
+  p: number | 'bar' | 'off',
+  L: Record<number, Cell>,
+  state: GameState,
+  player: Player,
+  flip: boolean,
+): { x: number; y: number } {
+  if (p === 'bar') {
+    const whiteBarY = flip ? H / 2 - (R + 3) : H / 2 + R + 3
+    const blackBarY = flip ? H / 2 + R + 3 : H / 2 - (R + 3)
+    return { x: HALF_W + BAR_W / 2, y: player === 'white' ? whiteBarY : blackBarY }
+  }
   if (p === 'off') return { x: USABLE_W + OFF_W / 2, y: H / 2 }
   const l = L[p]
-  return { x: colX(l.col), y: l.row === 'top' ? TOP_Y : BOT_Y }
+  const baseY = l.row === 'top' ? TOP_Y : BOT_Y
+  const dir = l.row === 'top' ? 1 : -1
+  const n = Math.min(Math.abs(state.points[p] || 0), 5) // gorunur tas sayisi (MAX=5)
+  const y = n > 0 ? baseY + dir * (n - 1) * STEP : baseY
+  return { x: colX(l.col), y }
 }
 
 export default function MiniBoard({
@@ -145,8 +164,8 @@ export default function MiniBoard({
 
   // Oklar (hamle adimlari)
   const arrows = steps.map((st, i) => {
-    const from = anchor(st.from, L)
-    const to = anchor(st.to, L)
+    const from = anchor(st.from, L, state, player, flip)
+    const to = anchor(st.to, L, state, player, flip)
     return (
       <g key={`a${i}`}>
         {/* koyu casing (govde kenarligi) */}
