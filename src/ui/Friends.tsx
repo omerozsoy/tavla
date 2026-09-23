@@ -20,11 +20,13 @@ interface Props {
   onInvite: (p: { id: number; name: string; avatar?: string | null }) => void
   onMessage?: (userId: number) => void
   onClose: () => void
+  currentId?: number // giris yapan kullanici -> profil kartinda "kendini ekleme" gizlensin
+  onAddFriend?: (id: number) => void // arkadaslik istegi (site geneliyle ayni kart)
   // Verilirse başlık yerine Arkadaşlar/Mesajlar sekme çubuğu gösterilir (birleşik sayfa).
   onTab?: (t: SocialTab) => void
 }
 
-export default function Friends({ onInvite, onMessage, onClose, onTab }: Props) {
+export default function Friends({ onInvite, onMessage, onClose, currentId, onAddFriend, onTab }: Props) {
   const { t } = useT()
   const notify = useToast()
   useEscape(onClose)
@@ -213,7 +215,22 @@ export default function Friends({ onInvite, onMessage, onClose, onTab }: Props) 
       </div>
     </div>
     {profileId !== null && (
-      <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+      <PublicProfile
+        id={profileId}
+        onClose={() => setProfileId(null)}
+        onAddFriend={
+          onAddFriend && currentId != null && currentId !== profileId ? () => onAddFriend(profileId) : undefined
+        }
+        onMessage={
+          onMessage && currentId != null && currentId !== profileId
+            ? () => {
+                const uid = profileId
+                setProfileId(null)
+                onMessage(uid)
+              }
+            : undefined
+        }
+      />
     )}
     {pendingRemove && (
       <div className="register-overlay modal" role="dialog" aria-modal="true">

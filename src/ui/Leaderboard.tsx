@@ -11,10 +11,13 @@ import { Skeleton } from './Skeleton'
 
 interface Props {
   currentName?: string
+  currentId?: number // giris yapan kullanici -> profil kartinda "kendini ekleme" gizlensin
   onClose: () => void
+  onAddFriend?: (id: number) => void // arkadaslik istegi (App wire'lar; site geneliyle ayni)
+  onMessage?: (id: number) => void // oyuncuya mesaj (arkadas olmasa da istek olarak duser)
 }
 
-export default function Leaderboard({ currentName, onClose }: Props) {
+export default function Leaderboard({ currentName, currentId, onClose, onAddFriend, onMessage }: Props) {
   const { t } = useT()
   useEscape(onClose)
   const [rows, setRows] = useState<LeaderRow[] | null>(null)
@@ -366,7 +369,22 @@ export default function Leaderboard({ currentName, onClose }: Props) {
         )}
       </div>
       {profileId !== null && (
-        <PublicProfile id={profileId} onClose={() => setProfileId(null)} />
+        <PublicProfile
+          id={profileId}
+          onClose={() => setProfileId(null)}
+          onAddFriend={
+            onAddFriend && currentId != null && currentId !== profileId ? () => onAddFriend(profileId) : undefined
+          }
+          onMessage={
+            onMessage && currentId != null && currentId !== profileId
+              ? () => {
+                  const uid = profileId
+                  setProfileId(null)
+                  onMessage(uid)
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   )
