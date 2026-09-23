@@ -16352,6 +16352,26 @@ button.acct-row-logout:hover:not(:disabled) {
   width: 14px;
   height: 14px;
 }
+/* "Arkadaşınız" göstergesi (zaten arkadaşsa "Arkadaş ol" yerine): buton değil, sakin chip. */
+.pp-isfriend {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  height: 34px;
+  padding: 0 12px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  border-radius: var(--radius-md, 10px);
+  color: var(--color-success, #1a7f37);
+  background: color-mix(in srgb, var(--color-success, #1a7f37) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success, #1a7f37) 30%, transparent);
+}
+.pp-isfriend svg {
+  width: 14px;
+  height: 14px;
+}
 /* Mobil (dar kart): alt alta tam genislik -> uzun etiket bile tek satira sigar. */
 @media (max-width: 560px) {
   .pp-actions {

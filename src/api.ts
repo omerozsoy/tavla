@@ -776,6 +776,7 @@ export interface PublicProfile {
   featured?: FeaturedBadge[] // oyuncunun ÖNE ÇIKARDIĞI (seçtiği) başarımlar (max 3); seçmediyse boş
   online?: boolean // cevrimici mi (last_seen son 2 dk)
   premium?: boolean // süresi geçerli ücretli plan -> avatar üstünde taç
+  is_friend?: boolean // bakan kişiyle ZATEN arkadaş mı -> "Arkadaş ol" gizlenir (site geneli)
 }
 export async function userProfile(id: number): Promise<PublicProfile> {
   return req<PublicProfile>(`/users/${id}/profile`)
