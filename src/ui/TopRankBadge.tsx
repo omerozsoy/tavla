@@ -13,7 +13,7 @@ import { useTopRank, type UserTopRank } from '../topRanks'
 export default function TopRankBadge({
   userId,
   rank,
-  size = 14,
+  size = 20,
   className,
 }: {
   /** Oyuncu id — rozet durumu context'ten okunur. */
