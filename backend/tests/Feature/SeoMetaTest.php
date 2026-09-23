@@ -53,7 +53,9 @@ class SeoMetaTest extends TestCase
                 $table->string('title')->nullable();
                 $table->text('body')->nullable();
                 $table->string('image')->nullable();
+                $table->timestamp('event_at')->nullable();
                 $table->boolean('published')->default(true);
+                $table->timestamps();
             });
         }
 
@@ -62,12 +64,14 @@ class SeoMetaTest extends TestCase
             'title' => 'SEO Haber Denemesi',
             'body' => 'Yayınlanmış haber açıklaması.',
             'published' => true,
+            'event_at' => '2026-09-20 12:00:00',
         ]);
 
         try {
             $this->get('/haberler/seo-haber-denemesi')
                 ->assertOk()
                 ->assertSee('"@type":"Article"', false)
+                ->assertSee('"datePublished":"2026-09-20T12:00:00+00:00"', false)
                 ->assertSee('SEO Haber Denemesi', false);
         } finally {
             Schema::dropIfExists('contents');
@@ -99,6 +103,7 @@ class SeoMetaTest extends TestCase
                 $table->string('title')->nullable();
                 $table->text('body')->nullable();
                 $table->string('image')->nullable();
+                $table->timestamp('event_at')->nullable();
                 $table->boolean('published')->default(true);
                 $table->timestamps();
             });

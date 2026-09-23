@@ -18,7 +18,6 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 
 ### P1 — Dinamik içerik SEO kontrolü
 
-- [ ] Haber detaylarında gerçek yayın tarihi alanı doğrulanıp `datePublished`/`dateModified` eklenmeli.
 - [ ] Haber görseli olmayan içerikler için güvenli fallback OG görseli kullanılmalı.
 
 ### P1 — Teknik indeksleme doğrulaması
