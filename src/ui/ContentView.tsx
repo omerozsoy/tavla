@@ -38,9 +38,12 @@ const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 const stripHtml = (s?: string | null) =>
   (s ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
-// Gövdedeki H1'leri at: sayfa başlığı (item.title) zaten ayrı gösterildiği için makale
-// gövdesinin baştaki <h1> başlığı tekrar olur; hem özette hem detayda kaldırılır.
-const stripH1 = (s?: string | null) => (s ?? '').replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, '')
+// Gövdedeki H1'leri at (sayfa başlığı zaten ayrı gösterilir -> tekrar olmasın) + baştaki
+// serseri "+"/boşluk artefaktını temizle (bazı seed gövdeleri "+<h1>…" ile başlıyor).
+const stripH1 = (s?: string | null) =>
+  (s ?? '')
+    .replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, '')
+    .replace(/^(?:\s|\+|<br\s*\/?>)+/i, '')
 
 // Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
 // target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
