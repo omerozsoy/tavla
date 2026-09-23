@@ -39,6 +39,15 @@ class SeoMetaTest extends TestCase
             ->assertSee('name="robots" content="index, follow"', false);
     }
 
+    public function test_guide_structured_data_has_image_and_publisher_logo(): void
+    {
+        $this->get('/tavla-rehberi/tavla-acilis-stratejileri')
+            ->assertOk()
+            ->assertSee('"@type":"BlogPosting"', false)
+            ->assertSee('https://www.tavlatv.com/og-image.png', false)
+            ->assertSee('https://www.tavlatv.com/icon-512.png', false);
+    }
+
     public function test_unknown_content_slug_is_a_noindex_404(): void
     {
         $this->get('/haberler/olmayan-seo-yazisi-12345')
