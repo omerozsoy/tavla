@@ -38,6 +38,10 @@ const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 const stripHtml = (s?: string | null) =>
   (s ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
+// Gövdedeki H1'leri at: sayfa başlığı (item.title) zaten ayrı gösterildiği için makale
+// gövdesinin baştaki <h1> başlığı tekrar olur; hem özette hem detayda kaldırılır.
+const stripH1 = (s?: string | null) => (s ?? '').replace(/<h1\b[^>]*>[\s\S]*?<\/h1>/gi, '')
+
 // Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
 // target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
 const linksBlank = (html?: string | null): string =>
@@ -398,7 +402,7 @@ export default function ContentView({
           ) : (
             (() => {
               const [lead, ...rest] = items
-              const excerpt = isHtml(lead.body) ? stripHtml(lead.body) : paras(lead.body)[0]
+              const excerpt = isHtml(lead.body) ? stripHtml(stripH1(lead.body)) : paras(lead.body)[0]
               return (
                 <section className="news-editorial">
                   <article
@@ -734,7 +738,7 @@ function splitBody(body?: string | null): ArtSegment[] {
     const ps = paras(body)
     return ps.length ? [{ kind: 'html', html: ps.map((p) => `<p>${p}</p>`).join('') }] : []
   }
-  const doc = new DOMParser().parseFromString(body ?? '', 'text/html')
+  const doc = new DOMParser().parseFromString(stripH1(body), 'text/html')
   const out: ArtSegment[] = []
   let buf = ''
   const flush = () => {
