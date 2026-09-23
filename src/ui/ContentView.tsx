@@ -38,12 +38,6 @@ const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 const stripHtml = (s?: string | null) =>
   (s ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
-// Yazi (makale) okuma suresi tahmini: govde metnini (HTML etiketsiz) ~200 kelime/dk.
-const readingMinutes = (body?: string | null) => {
-  const words = stripHtml(body).split(/\s+/).filter(Boolean).length
-  return Math.max(1, Math.round(words / 200))
-}
-
 // Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
 // target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
 const linksBlank = (html?: string | null): string =>
@@ -395,23 +389,12 @@ export default function ContentView({
           </div>
         ) : type === 'news' || type === 'makale' ? (
           newsItem ? (
-            type === 'makale' ? (
-              <ArticleDetail
-                item={newsItem}
-                onBack={onCloseDetail ?? onClose}
-                backLabel={headTitle}
-                onOpenImage={setLightbox}
-              />
-            ) : (
-              <NewsDetail
-                item={newsItem}
-                onBack={onCloseDetail ?? onClose}
-                backLabel={headTitle}
-                onOpenImage={setLightbox}
-              />
-            )
-          ) : type === 'makale' ? (
-            <ArticlesList items={items} onOpenDetail={onOpenDetail} />
+            <NewsDetail
+              item={newsItem}
+              onBack={onCloseDetail ?? onClose}
+              backLabel={headTitle}
+              onOpenImage={setLightbox}
+            />
           ) : (
             (() => {
               const [lead, ...rest] = items
@@ -431,18 +414,18 @@ export default function ContentView({
                       </span>
                     )}
                     <div className="news-lead-body">
-                      <span className="news-kicker">{t('news.featured')}</span>
+                      <span className="news-kicker">{t(type === 'makale' ? 'makale.featured' : 'news.featured')}</span>
                       <h3 className="news-lead-title">{lead.title}</h3>
                       {excerpt && <p className="news-lead-excerpt">{excerpt}</p>}
                       <span className="news-meta">
-                        <time>{fmtDate(lead.event_at ?? null)}</time>
-                        <span className="news-readmore">{t('news.read')}</span>
+                        <time>{fmtDate(lead.event_at ?? lead.created_at ?? null)}</time>
+                        <span className="news-readmore">{t(type === 'makale' ? 'makale.read' : 'news.read')}</span>
                       </span>
                     </div>
                   </article>
                   {rest.length > 0 && (
                     <>
-                      <div className="news-sec-label">{t('news.more')}</div>
+                      <div className="news-sec-label">{t(type === 'makale' ? 'makale.all' : 'news.more')}</div>
                       <div className="news-grid">
                         {rest.map((p, i) => (
                           <article
@@ -466,7 +449,7 @@ export default function ContentView({
                             <div className="news-item-body">
                               <h4 className="news-item-title">{p.title}</h4>
                               <span className="news-meta">
-                                <time>{fmtDate(p.event_at ?? null)}</time>
+                                <time>{fmtDate(p.event_at ?? p.created_at ?? null)}</time>
                               </span>
                             </div>
                           </article>
@@ -739,212 +722,43 @@ function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => voi
   )
 }
 
-// Makaleler (yazi) listesi: haberden AYRI editoryal "kutuphane/almanak" duzeni.
-// One cikan buyuk yazi + numarali (01, 02…) kart izgarasi; serif basliklar +
-// mono index/okuma-suresi. Egitici, zamansiz (evergreen) icerik icin tasarlandi.
-function ArticlesList({
-  items,
-  onOpenDetail,
-}: {
-  items: Content[]
-  onOpenDetail?: (slug: string) => void
-}) {
-  const { t } = useT()
-  const [lead, ...rest] = items
-  const open = (it: Content) => onOpenDetail?.(detailSlug(it))
-  const leadExcerpt = isHtml(lead.body) ? stripHtml(lead.body) : paras(lead.body)[0]
-  return (
-    <section className="articles">
-      <header className="articles-head">
-        <span className="articles-kicker">{t('makale.kicker')}</span>
-        <p className="articles-intro">{t('makale.intro')}</p>
-        <span className="articles-count">{t('makale.count', { n: items.length })}</span>
-      </header>
-
-      {/* Öne çıkan yazı — büyük asimetrik kart (01) */}
-      <article
-        className="article-lead"
-        role="button"
-        tabIndex={0}
-        onClick={() => open(lead)}
-        onKeyDown={(e) => e.key === 'Enter' && open(lead)}
-      >
-        <span className="article-lead-media">
-          {lead.image ? (
-            <img src={mediaSrc(lead.image)} alt={lead.title} loading="lazy" />
-          ) : (
-            <span className="article-lead-ph" aria-hidden="true">
-              <Icon name="book" size={44} />
-            </span>
-          )}
-          <span className="article-lead-tag">{t('makale.featured')}</span>
-        </span>
-        <div className="article-lead-body">
-          <span className="article-lead-index" aria-hidden="true">01</span>
-          <h3 className="article-lead-title">{lead.title}</h3>
-          {leadExcerpt && <p className="article-lead-excerpt">{leadExcerpt}</p>}
-          <div className="article-meta">
-            <time>{fmtDate(lead.event_at ?? lead.created_at ?? null)}</time>
-            <span className="article-meta-dot" aria-hidden="true">·</span>
-            <span>{t('makale.readtime', { n: readingMinutes(lead.body) })}</span>
-          </div>
-          <span className="article-lead-cta">{t('makale.read')}</span>
-        </div>
-      </article>
-
-      {rest.length > 0 && (
-        <>
-          <div className="articles-divider">
-            <span>{t('makale.all')}</span>
-          </div>
-          <div className="articles-grid">
-            {rest.map((p, i) => {
-              const excerpt = isHtml(p.body) ? stripHtml(p.body) : paras(p.body)[0]
-              return (
-                <article
-                  key={p.id}
-                  className="article-card"
-                  style={{ ['--i']: i } as CSSProperties}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => open(p)}
-                  onKeyDown={(e) => e.key === 'Enter' && open(p)}
-                >
-                  <span className="article-card-media">
-                    {p.image ? (
-                      <img src={mediaSrc(p.image)} alt={p.title} loading="lazy" />
-                    ) : (
-                      <span className="article-card-ph" aria-hidden="true">
-                        <Icon name="book" size={26} />
-                      </span>
-                    )}
-                    <span className="article-card-index" aria-hidden="true">
-                      {String(i + 2).padStart(2, '0')}
-                    </span>
-                  </span>
-                  <div className="article-card-body">
-                    <h4 className="article-card-title">{p.title}</h4>
-                    {excerpt && <p className="article-card-excerpt">{excerpt}</p>}
-                    <div className="article-meta">
-                      <time>{fmtDate(p.event_at ?? p.created_at ?? null)}</time>
-                      <span className="article-meta-dot" aria-hidden="true">·</span>
-                      <span>{t('makale.readtime', { n: readingMinutes(p.body) })}</span>
-                    </div>
-                  </div>
-                </article>
-              )
-            })}
-          </div>
-        </>
-      )}
-    </section>
-  )
-}
-
-// Makale gövdesi parçası: düz HTML (prose) veya canlı tahta (board-figure'dan çözülen).
+// İçerik gövdesi parçası: düz HTML (prose) veya canlı tahta (board-figure'dan çözülen).
 type ArtSegment = { kind: 'html'; html: string } | { kind: 'board'; board: ParsedBoard }
 
-// Makale detay: editoryal düzen (serif başlık + mono meta + terracotta hero çerçeve).
-// Gövde, prose (HTML) + tahta şemalarına bölünür; şemalar statik SVG yerine GERÇEK Board
-// bileşeniyle (ArticleBoard — Pozisyon Analizi'ndeki tahta) render edilir.
-function ArticleDetail({
-  item,
-  onBack,
-  backLabel,
-  onOpenImage,
-}: {
-  item: Content
-  onBack: () => void
-  backLabel: string
-  onOpenImage: (index: number) => void
-}) {
-  const { t } = useT()
-  const gallery = (item.gallery ?? []).filter(Boolean)
-
-  // Gövdeyi prose + tahta parçalarına ayır (board-figure -> ArticleBoard). Ayrıştırma
-  // başarısız olursa (taş bulunamazsa) orijinal HTML korunur (geriye dönük güvenli).
-  const segments = useMemo<ArtSegment[]>(() => {
-    if (!isHtml(item.body)) {
-      const ps = paras(item.body)
-      return ps.length ? [{ kind: 'html', html: ps.map((p) => `<p>${p}</p>`).join('') }] : []
-    }
-    const doc = new DOMParser().parseFromString(item.body ?? '', 'text/html')
-    const out: ArtSegment[] = []
-    let buf = ''
-    const flush = () => {
-      if (buf.trim()) out.push({ kind: 'html', html: linksBlank(buf) })
-      buf = ''
-    }
-    for (const node of Array.from(doc.body.childNodes)) {
-      const el = node.nodeType === 1 ? (node as Element) : null
-      if (el && el.classList.contains('board-figure')) {
-        const parsed = parseBoardFigure(el)
-        if (parsed) {
-          flush()
-          out.push({ kind: 'board', board: parsed })
-          continue
-        }
+// Gövdeyi prose + tahta (board-figure) parçalarına ayır. board-figure'lar statik SVG yerine
+// GERÇEK Board (ArticleBoard — Pozisyon Analizi tahtası) ile çizilir; ayrıştırma başarısızsa
+// orijinal HTML korunur. Haber gövdelerinde board-figure yoktur -> tek prose parçası (davranış
+// değişmez), makale gövdelerinde tahta şemaları canlı Board olur.
+function splitBody(body?: string | null): ArtSegment[] {
+  if (!isHtml(body)) {
+    const ps = paras(body)
+    return ps.length ? [{ kind: 'html', html: ps.map((p) => `<p>${p}</p>`).join('') }] : []
+  }
+  const doc = new DOMParser().parseFromString(body ?? '', 'text/html')
+  const out: ArtSegment[] = []
+  let buf = ''
+  const flush = () => {
+    if (buf.trim()) out.push({ kind: 'html', html: linksBlank(buf) })
+    buf = ''
+  }
+  for (const node of Array.from(doc.body.childNodes)) {
+    const el = node.nodeType === 1 ? (node as Element) : null
+    if (el && el.classList.contains('board-figure')) {
+      const parsed = parseBoardFigure(el)
+      if (parsed) {
+        flush()
+        out.push({ kind: 'board', board: parsed })
+        continue
       }
-      buf += el ? el.outerHTML : (node.textContent ?? '')
     }
-    flush()
-    return out
-  }, [item.body])
-
-  return (
-    <article className="article-detail">
-      <Button variant="secondary" className="news-back" onClick={onBack}>
-        <span className="news-back-chev">
-          <Icon name="chevron" size={16} />
-        </span>{' '}
-        {backLabel}
-      </Button>
-      <header className="article-detail-head">
-        <span className="article-detail-kicker">{t('makale.kicker')}</span>
-        <h3 className="article-detail-title">{item.title}</h3>
-        <div className="article-meta article-detail-meta">
-          <time>{fmtDate(item.event_at ?? item.created_at ?? null)}</time>
-          <span className="article-meta-dot" aria-hidden="true">·</span>
-          <span>{t('makale.readtime', { n: readingMinutes(item.body) })}</span>
-        </div>
-      </header>
-      {item.image && (
-        <figure className="article-detail-hero" onClick={() => onOpenImage(0)}>
-          <img src={mediaSrc(item.image)} alt={item.title} />
-        </figure>
-      )}
-      <div className="article-detail-body">
-        {segments.map((seg, i) =>
-          seg.kind === 'board' ? (
-            <ArticleBoard key={i} {...seg.board} />
-          ) : (
-            <div
-              key={i}
-              className={`article-prose rich${i === 0 ? ' article-prose-lead' : ''}`}
-              dangerouslySetInnerHTML={{ __html: seg.html }}
-            />
-          ),
-        )}
-      </div>
-      {gallery.length > 0 && (
-        <div className="news-gallery">
-          {gallery.map((g, i) => (
-            <button
-              key={i}
-              className="news-gallery-thumb"
-              onClick={() => onOpenImage(i + 1)}
-              aria-label={t('content.image', { n: i + 2 })}
-            >
-              <img src={mediaSrc(g)} alt={`${item.title} görseli ${i + 2}`} loading="lazy" />
-            </button>
-          ))}
-        </div>
-      )}
-    </article>
-  )
+    buf += el ? el.outerHTML : (node.textContent ?? '')
+  }
+  flush()
+  return out
 }
 
-// Haber detay sayfasi: kapak + tam metin + galeri gorselleri
+// Haber/makale detay sayfasi: standart düzen (başlık + tarih + kapak + gövde + galeri).
+// Makale gövdesindeki tahta şemaları (board-figure) GERÇEK Board ile çizilir.
 function NewsDetail({
   item,
   onBack,
@@ -958,6 +772,9 @@ function NewsDetail({
 }) {
   const { t } = useT()
   const gallery = (item.gallery ?? []).filter(Boolean)
+  // Gövdeyi prose + tahta parçalarına ayır (makale board-figure'ları GERÇEK Board olur;
+  // haberde board-figure yok -> tek prose parçası, eski davranışla aynı).
+  const segments = useMemo(() => splitBody(item.body), [item.body])
   return (
     <article className="news-detail">
       <Button variant="secondary" className="news-back" onClick={onBack}>
@@ -968,7 +785,7 @@ function NewsDetail({
       </Button>
       <h3 className="news-detail-title">{item.title}</h3>
       <div className="news-detail-date">
-        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
+        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? item.created_at ?? null)}
       </div>
       {item.image && (
         <img
@@ -978,14 +795,12 @@ function NewsDetail({
           onClick={() => onOpenImage(0)}
         />
       )}
-      {isHtml(item.body) ? (
-        <div className="news-detail-body rich" dangerouslySetInnerHTML={{ __html: linksBlank(item.body) }} />
-      ) : (
-        <div className="news-detail-body">
-          {paras(item.body).map((x, i) => (
-            <p key={i}>{x}</p>
-          ))}
-        </div>
+      {segments.map((seg, i) =>
+        seg.kind === 'board' ? (
+          <ArticleBoard key={i} {...seg.board} />
+        ) : (
+          <div key={i} className="news-detail-body rich" dangerouslySetInnerHTML={{ __html: seg.html }} />
+        ),
       )}
       {gallery.length > 0 && (
         <div className="news-gallery">
