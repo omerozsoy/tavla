@@ -10737,7 +10737,7 @@ button.acct-row-logout:hover:not(:disabled) {
    gelen .rank-row'un 4-sutunlu grid'i kazanip aksiyonlari alt satira dusurur. */
 .rank-row.online-row {
   /* nokta | oyuncu (sabit) | bayrak (hizali) | rating | aksiyonlar */
-  grid-template-columns: 14px minmax(56px, 148px) 1fr auto auto;
+  grid-template-columns: 24px minmax(56px, 148px) 1fr auto auto;
 }
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
 .online-id {

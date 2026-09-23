@@ -51,6 +51,12 @@ class ProductCategoryResource extends Resource
                 ->unique(ignoreRecord: true)
                 ->dehydrateStateUsing(fn ($state) => Str::slug((string) $state))
                 ->helperText('Boş bırakırsan addan üretilir.'),
+            Forms\Components\FileUpload::make('image')
+                ->label('Kapak görseli')
+                ->image()
+                ->disk('uploads')->directory('kategori')->visibility('public')
+                ->maxSize(4096)
+                ->helperText('Mağaza vitrinindeki kategori kartında gösterilir. Yatay/kare görsel önerilir. Boş bırakırsan o kategorinin ilk ürününün görseli kullanılır.'),
             Forms\Components\TextInput::make('sort')
                 ->label('Sıra')
                 ->numeric()
@@ -68,6 +74,7 @@ class ProductCategoryResource extends Resource
             ->reorderable('sort')
             ->defaultSort('sort')
             ->columns([
+                Tables\Columns\ImageColumn::make('image')->label('Kapak')->disk('uploads')->height(40),
                 Tables\Columns\TextColumn::make('name')->label('Kategori')->searchable()->weight('medium'),
                 Tables\Columns\TextColumn::make('slug')->label('Slug')->color('gray')->toggleable(),
                 Tables\Columns\TextColumn::make('products_count')->label('Ürün')->counts('products')->badge(),

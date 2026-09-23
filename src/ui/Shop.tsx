@@ -91,7 +91,7 @@ export default function Shop({
   // Ürünleri bir kez çek; kategori kartlarini bundan türet (ProductsInner'a da bu liste
   // geçilir -> çift fetch olmaz).
   const [products, setProducts] = useState<Product[] | null>(null)
-  const [cats, setCats] = useState<{ slug: string; name: string }[]>([])
+  const [cats, setCats] = useState<{ slug: string; name: string; image?: string | null }[]>([])
   // Jeton bölümü başlığı: admin panelde 'coin' kategorisine verilen ad (yoksa varsayilan).
   const [coinLabel, setCoinLabel] = useState<string>('')
   useEffect(() => {
@@ -126,8 +126,11 @@ export default function Shop({
   const landing = isLanding(tab)
   const activeCat = landing ? null : cats.find((c) => c.slug === tab) ?? { slug: tab, name: tab }
   const countFor = (slug: string) => (products ?? []).filter((p) => p.category === slug).length
-  // Kategori kapak görseli: o kategorideki ilk görselli ürün (kategorilerin kendi görseli yok).
+  // Kategori kapak görseli: önce admin'de yüklenen kategori görseli, yoksa o kategorideki
+  // ilk görselli ürünün görseli (o da yoksa ikon).
   const catCover = (slug: string) => {
+    const cat = cats.find((c) => c.slug === slug)
+    if (cat?.image) return imgUrl(cat.image)
     const p = (products ?? []).find((x) => x.category === slug && x.images?.[0])
     return p ? imgUrl(p.images[0]) : null
   }
@@ -224,8 +227,8 @@ export default function Shop({
 
             {/* --- Öne çıkan ürünler: gerçek ürün görselleriyle vitrin (kart -> detay) --- */}
             {onAddToCart && featured.length > 0 && (
-              <section className="shop-section" aria-label="Öne Çıkan Ürünler">
-                <h3 className="shop-section-t">Öne Çıkan Ürünler</h3>
+              <section className="shop-section" aria-label={t('shop.featured')}>
+                <h3 className="shop-section-t">{t('shop.featured')}</h3>
                 <div className="shop-feat-grid">
                   {featured.map((p) => {
                     const out = p.stock <= 0

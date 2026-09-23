@@ -26,8 +26,10 @@ class PromoCode extends Model
         return strtoupper(trim($code));
     }
 
-    // Kullanilabilir mi? Degilse null + $reason doldurulur (mesaj icin).
-    public static function usable(string $code, int $subtotalKurus, ?string &$reason = null): ?self
+    // Kullanilabilir mi? Degilse null + $reason doldurulur (mesaj icin). $userId verilirse
+    // KULLANICI-BASI TEK KULLANIM: ayni hesap ayni kodu tekrar (tamamlanmis 'paid' odeme ile)
+    // kullanamaz -> sirali suistimali (kodu tekrar tekrar uygula) engeller.
+    public static function usable(string $code, int $subtotalKurus, ?string &$reason = null, ?int $userId = null): ?self
     {
         $reason = null;
         $norm = self::normalize($code);
@@ -52,8 +54,29 @@ class PromoCode extends Model
             $reason = 'min_amount';
             return null;
         }
+        // KULLANICI-BASI: bu kullanici bu kodu ZATEN kullanmis (paid) -> tekrar YOK.
+        if ($userId !== null
+            && \App\Models\Payment::where('user_id', $userId)
+                ->where('discount_code', $norm)
+                ->where('status', 'paid')
+                ->exists()) {
+            $reason = 'already_used';
+            return null;
+        }
 
         return $promo;
+    }
+
+    // Fulfillment'ta (odeme 'paid' olurken) ATOMIK + yaris-guvenli sayac artir: yalnizca limit
+    // dolmamissa (max_uses null VEYA used_count < max_uses). used_count max_uses'i ASLA gecmez.
+    // Eszamanli fulfill'ler tek-kullanimlik kodun sayacini sisiremez. Etkilenen satir sayisini doner.
+    public static function bumpUse(string $code): int
+    {
+        return self::where('code', self::normalize($code))
+            ->where(function ($q) {
+                $q->whereNull('max_uses')->orWhereColumn('used_count', '<', 'max_uses');
+            })
+            ->increment('used_count');
     }
 
     // Bu koda gore indirim (kurus). Asla sepetten buyuk olmaz (negatif tahsilat yok).

@@ -434,7 +434,7 @@ export function OnlinePlayersPanel({
                     title={t(STATUS_KEY[p.status ?? 'available'])}
                   />
                   <button type="button" className="online-id" onClick={() => onProfile(p.id)}>
-                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated />
+                    <PlayerIdentity userId={p.id} name={p.name} rating={p.rating} avatar={p.avatar} frame={p.frame} size={30} rankSize="md" premium={p.premium} animated hidePresence />
                   </button>
                   <span className="rank-flag">
                     <CountryFlag code={p.country} size={16} rounded={false} />

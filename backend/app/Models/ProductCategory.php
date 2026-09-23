@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 // Panelden yonetilen urun kategorisi. slug = URL/anahtar; sort = mağaza/menu sirasi.
 class ProductCategory extends Model
 {
-    protected $fillable = ['name', 'slug', 'sort', 'published'];
+    protected $fillable = ['name', 'slug', 'image', 'sort', 'published'];
 
     protected $casts = [
         'published' => 'boolean',
