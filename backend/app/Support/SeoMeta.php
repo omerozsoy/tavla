@@ -768,10 +768,12 @@ final class SeoMeta
         $rows = Content::query()
             ->where('type', 'makale')
             ->where('published', true)
-            ->get(['id', 'title', 'body', 'image', 'event_at', 'updated_at']);
+            ->get(['id', 'title', 'slug', 'body', 'image', 'event_at', 'updated_at']);
 
         foreach ($rows as $row) {
-            if (self::slugify((string) $row->title) === $slug) {
+            // Kısa (SEO) slug otoritif; boşsa başlıktan türet (geriye dönük).
+            $rowSlug = $row->slug ? (string) $row->slug : self::slugify((string) $row->title);
+            if ($rowSlug === $slug) {
                 return $row;
             }
         }

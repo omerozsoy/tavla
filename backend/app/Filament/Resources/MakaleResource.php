@@ -40,6 +40,9 @@ class MakaleResource extends Resource
         return $form->schema([
             Forms\Components\Hidden::make('type')->default('makale'),
             Forms\Components\TextInput::make('title')->label('Başlık')->required()->columnSpanFull(),
+            Forms\Components\TextInput::make('slug')->label('URL adresi (slug)')
+                ->helperText('SEO adresi: /makaleler/<slug>. Kısa ve anahtar-kelimeli olsun (ör. tavla-nasil-oynanir). Boş bırakılırsa başlıktan üretilir.')
+                ->maxLength(200)->columnSpanFull(),
             Forms\Components\DateTimePicker::make('event_at')->label('Yayın tarihi'),
             Forms\Components\RichEditor::make('body')->label('İçerik')
                 ->toolbarButtons([
