@@ -24,7 +24,7 @@ Anahtar kelime kümeleri ve hedef sayfa eşlemesi için [SEO_KEYWORDS.md](SEO_KE
 
 - [ ] Rehber yazılarına yayın tarihi, güncelleme tarihi, görsel ve publisher logo alanları eklenmeli.
 - [ ] `FAQPage` yalnızca gerçekten soru-cevap içeren sayfalarda kullanılmalı.
-- [ ] Gerekli sayfalara `WebPage`, `SoftwareApplication` veya `VideoGame` alanları doğrulanmalı.
+- [ ] Gerekli sayfalara `SoftwareApplication` veya `VideoGame` alanları doğrulanmalı.
 - [ ] Google Rich Results Test ve Schema Markup Validator ile canlı doğrulama yapılmalı.
 
 ### P2 — Core Web Vitals ve mobil SEO

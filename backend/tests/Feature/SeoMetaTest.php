@@ -24,6 +24,8 @@ class SeoMetaTest extends TestCase
             ->assertSee('Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv', false)
             ->assertSee('<h2>Online tavla nasıl oynanır?</h2>', false)
             ->assertSee('Gerçek rakiplerle canlı maçlara katılabilir', false)
+            ->assertSee('"@type":"WebPage"', false)
+            ->assertSee('"url":"https://www.tavlatv.com/online-tavla"', false)
             ->assertSee('href="/tavla-rehberi"', false)
             ->assertSee('"@type":"BreadcrumbList"', false);
     }
