@@ -23,6 +23,7 @@ Bu dosya SEO çalışmasının tek takip listesidir. Kod değişikliği yapılma
 
 ### P0 — Public içeriklerin ilk HTML’de sunulması
 
+- [x] Public landing rotalarının JS kapalı HTML’inde route-specific H1/H2, açıklama, madde listesi ve iç bağlantılar sunuluyor.
 - [ ] `/`, `/online-tavla`, `/tavla-oyna`, `/nasil-oynanir`, `/tavla-rehberi` gibi public sayfalar için SSR veya güvenli prerender planı hazırlanmalı.
 - [ ] İlk HTML içinde gerçek başlık, açıklayıcı içerik, H1/H2 ve ana iç bağlantılar bulunmalı.
 - [ ] React oyun akışına dokunmadan yalnızca SEO landing içerikleri server HTML’e alınmalı.
