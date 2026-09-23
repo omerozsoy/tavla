@@ -37,6 +37,12 @@ const isHtml = (s?: string | null) => !!s && /<\/?[a-z][\s\S]*>/i.test(s)
 const stripHtml = (s?: string | null) =>
   (s ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
 
+// Yazi (makale) okuma suresi tahmini: govde metnini (HTML etiketsiz) ~200 kelime/dk.
+const readingMinutes = (body?: string | null) => {
+  const words = stripHtml(body).split(/\s+/).filter(Boolean).length
+  return Math.max(1, Math.round(words / 200))
+}
+
 // Zengin-metin (turnuva/etkinlik açıklaması) içindeki tüm <a> linkleri YENİ SEKMEDE açılsın:
 // target'ı olmayan <a> etiketlerine target="_blank" + güvenli rel ekle (çift-ekleme yapmaz).
 const linksBlank = (html?: string | null): string =>
@@ -390,7 +396,10 @@ export default function ContentView({
               onBack={onCloseDetail ?? onClose}
               backLabel={headTitle}
               onOpenImage={setLightbox}
+              readingTime={type === 'makale'}
             />
+          ) : type === 'makale' ? (
+            <ArticlesList items={items} onOpenDetail={onOpenDetail} />
           ) : (
             (() => {
               const [lead, ...rest] = items
@@ -718,17 +727,121 @@ function VideoPlayer({ videoId, onClose }: { videoId: string; onClose: () => voi
   )
 }
 
+// Makaleler (yazi) listesi: haberden AYRI editoryal "kutuphane/almanak" duzeni.
+// One cikan buyuk yazi + numarali (01, 02…) kart izgarasi; serif basliklar +
+// mono index/okuma-suresi. Egitici, zamansiz (evergreen) icerik icin tasarlandi.
+function ArticlesList({
+  items,
+  onOpenDetail,
+}: {
+  items: Content[]
+  onOpenDetail?: (slug: string) => void
+}) {
+  const { t } = useT()
+  const [lead, ...rest] = items
+  const open = (it: Content) => onOpenDetail?.(slugify(it.title))
+  const leadExcerpt = isHtml(lead.body) ? stripHtml(lead.body) : paras(lead.body)[0]
+  return (
+    <section className="articles">
+      <header className="articles-head">
+        <span className="articles-kicker">{t('makale.kicker')}</span>
+        <p className="articles-intro">{t('makale.intro')}</p>
+        <span className="articles-count">{t('makale.count', { n: items.length })}</span>
+      </header>
+
+      {/* Öne çıkan yazı — büyük asimetrik kart (01) */}
+      <article
+        className="article-lead"
+        role="button"
+        tabIndex={0}
+        onClick={() => open(lead)}
+        onKeyDown={(e) => e.key === 'Enter' && open(lead)}
+      >
+        <span className="article-lead-media">
+          {lead.image ? (
+            <img src={mediaSrc(lead.image)} alt={lead.title} loading="lazy" />
+          ) : (
+            <span className="article-lead-ph" aria-hidden="true">
+              <Icon name="book" size={44} />
+            </span>
+          )}
+          <span className="article-lead-tag">{t('makale.featured')}</span>
+        </span>
+        <div className="article-lead-body">
+          <span className="article-lead-index" aria-hidden="true">01</span>
+          <h3 className="article-lead-title">{lead.title}</h3>
+          {leadExcerpt && <p className="article-lead-excerpt">{leadExcerpt}</p>}
+          <div className="article-meta">
+            <time>{fmtDate(lead.event_at ?? lead.created_at ?? null)}</time>
+            <span className="article-meta-dot" aria-hidden="true">·</span>
+            <span>{t('makale.readtime', { n: readingMinutes(lead.body) })}</span>
+          </div>
+          <span className="article-lead-cta">{t('makale.read')}</span>
+        </div>
+      </article>
+
+      {rest.length > 0 && (
+        <>
+          <div className="articles-divider">
+            <span>{t('makale.all')}</span>
+          </div>
+          <div className="articles-grid">
+            {rest.map((p, i) => {
+              const excerpt = isHtml(p.body) ? stripHtml(p.body) : paras(p.body)[0]
+              return (
+                <article
+                  key={p.id}
+                  className="article-card"
+                  style={{ ['--i']: i } as CSSProperties}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => open(p)}
+                  onKeyDown={(e) => e.key === 'Enter' && open(p)}
+                >
+                  <span className="article-card-media">
+                    {p.image ? (
+                      <img src={mediaSrc(p.image)} alt={p.title} loading="lazy" />
+                    ) : (
+                      <span className="article-card-ph" aria-hidden="true">
+                        <Icon name="book" size={26} />
+                      </span>
+                    )}
+                    <span className="article-card-index" aria-hidden="true">
+                      {String(i + 2).padStart(2, '0')}
+                    </span>
+                  </span>
+                  <div className="article-card-body">
+                    <h4 className="article-card-title">{p.title}</h4>
+                    {excerpt && <p className="article-card-excerpt">{excerpt}</p>}
+                    <div className="article-meta">
+                      <time>{fmtDate(p.event_at ?? p.created_at ?? null)}</time>
+                      <span className="article-meta-dot" aria-hidden="true">·</span>
+                      <span>{t('makale.readtime', { n: readingMinutes(p.body) })}</span>
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
+
 // Haber detay sayfasi: kapak + tam metin + galeri gorselleri
 function NewsDetail({
   item,
   onBack,
   backLabel,
   onOpenImage,
+  readingTime = false,
 }: {
   item: Content
   onBack: () => void
   backLabel: string
   onOpenImage: (index: number) => void
+  readingTime?: boolean // makale: tarih yaninda okuma suresi rozeti goster
 }) {
   const { t } = useT()
   const gallery = (item.gallery ?? []).filter(Boolean)
@@ -742,7 +855,13 @@ function NewsDetail({
       </Button>
       <h3 className="news-detail-title">{item.title}</h3>
       <div className="news-detail-date">
-        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? null)}
+        <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? item.created_at ?? null)}
+        {readingTime && (
+          <>
+            <span className="news-detail-dot" aria-hidden="true">·</span>
+            <Icon name="book" size={13} /> {t('makale.readtime', { n: readingMinutes(item.body) })}
+          </>
+        )}
       </div>
       {item.image && (
         <img
