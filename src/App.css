@@ -10745,6 +10745,19 @@ button.acct-row-logout:hover:not(:disabled) {
   overflow: visible;
   text-overflow: clip;
 }
+/* Mobil (dar panel): max-content isim panele sigmayip kirpilmasin -> isim kolonu
+   esnek (1fr) + gerekince alt satira SARSIN (kesme yerine). Bayrak/rating/aksiyon
+   icerik genisligini alir (auto). */
+@media (max-width: 720px) {
+  .rank-row.online-row {
+    grid-template-columns: minmax(56px, 1fr) auto auto auto;
+  }
+  .online-row .player-id-name,
+  .online-row .player-id-name-text {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
 /* Satirin tiklanabilir kimlik alani (profil ac): sade, satir zeminini bozmaz. */
 .online-id {
   display: flex;
