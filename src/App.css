@@ -14530,6 +14530,8 @@ button.acct-row-logout:hover:not(:disabled) {
   height: 9px;
   border-radius: 50%;
   align-self: center;
+  /* Nokta avatara/isme bitismesin: saginda-solunda ufak nefes (renk halkasi da sigsin). */
+  margin-inline: 3px;
 }
 .presence-dot.is-online {
   background: #22c55e;
