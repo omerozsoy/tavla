@@ -4965,7 +4965,9 @@ export default function App() {
         .catch(() => {})
     }
     beat()
-    const id = window.setInterval(beat, 20000)
+    // 10sn: gelen davetler + iptal edilen/bayat davetler hızlı düşsün (eskiden 20sn -> davet
+    // iptalinden sonra banner ~20sn asılı kalıyordu). Presence/bildirim/ödül de daha taze olur.
+    const id = window.setInterval(beat, 10000)
     return () => {
       cancelled = true
       window.clearInterval(id)
@@ -5705,6 +5707,11 @@ export default function App() {
       setGameEnd(null)
       setBotAnim(null)
       setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
+      // AÇIK menü sayfası/overlay KAPAT (Arkadaşlar/Liderlik/Mesajlar/Mağaza…): davet banner'ı her
+      // ekranda üstte olduğundan bir sayfa açıkken oyuna girilebiliyordu; kapatmazsak oyun
+      // görünümünde eski sayfa ARKA ZEMİNDE asılı kalıyordu ("saçma sapan sayfa" bug'ı). Diğer
+      // oyuna-giriş yolları (onResume/onNewGame/resume) zaten closeAllPages çağırır.
+      closeAllPages()
       setHome(false)
       setMode('online')
       setRoom({
@@ -5770,6 +5777,11 @@ export default function App() {
       setGameEnd(null)
       setBotAnim(null)
       setOpening('roll') // otomatik acilis zari -> kimin baslayacagi belirlenir
+      // AÇIK menü sayfası/overlay KAPAT (Arkadaşlar/Liderlik/Mesajlar/Mağaza…): davet banner'ı her
+      // ekranda üstte olduğundan bir sayfa açıkken oyuna girilebiliyordu; kapatmazsak oyun
+      // görünümünde eski sayfa ARKA ZEMİNDE asılı kalıyordu ("saçma sapan sayfa" bug'ı). Diğer
+      // oyuna-giriş yolları (onResume/onNewGame/resume) zaten closeAllPages çağırır.
+      closeAllPages()
       setHome(false)
       setMode('online')
       setRoom({
