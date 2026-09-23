@@ -24,6 +24,9 @@ interface Props {
   setShowLivePr: (v: boolean) => void
   animOn: boolean
   toggleAnim: () => void
+  /** Oyun sesleri (zar/pul/uyarı) açık mı — kalıcı kullanıcı tercihi. */
+  soundOn: boolean
+  toggleSound: () => void
   /** Analiz + Öğrenme Modu SADECE yapay zekaya karşı (pvb) oyunda gösterilir.
       Tek Oyun/Maç Oyunu (online) ve yerel pvp'de gizli — hile önlemi. */
   canAnalyze?: boolean
@@ -50,6 +53,7 @@ export default function GameMenu(p: Props) {
         ]
       : []),
     { label: t('gm.anim'), on: p.animOn, toggle: p.toggleAnim },
+    { label: t('gm.sound'), on: p.soundOn, toggle: p.toggleSound },
     // NOT: "Oyun yönü" (Sağa/Sola) ve "Pul renkleri" (Siyah/Beyaz) buradan KALDIRILDI —
     // artık PROFİL > Tavla Tasarımları kartından ayarlanır (kalıcı, canlı önizlemeli).
   ]
