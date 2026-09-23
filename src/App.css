@@ -18853,6 +18853,13 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.78rem;
   color: var(--muted-foreground, #888);
 }
+/* Sepet cila: özet paneline hafif aksan gölgesi + toplam biraz daha belirgin. */
+.cart2-summary {
+  box-shadow: 0 18px 40px -30px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.cart2-row-total {
+  font-size: 1.18rem;
+}
 
 /* Ödeme yöntemi seçici (Kart / Havale) — sepet özeti + üyelik modalı ortak */
 .cart2-paymethod,
@@ -25629,6 +25636,41 @@ select:-webkit-autofill {
     position: static;
     padding: 18px;
   }
+}
+
+/* ---- PDP premium cila: yuvarlak köşe (mağaza kartlarıyla tutarlı) + fiyat vurgusu +
+   panel derinliği. Buton reset'ini (flat sharp-corner) yenmek için !important. ---- */
+.pdp-main {
+  border-radius: var(--radius-lg, 14px);
+  background: color-mix(in srgb, var(--accent) 6%, var(--card-bg));
+}
+.pdp-panel {
+  border-radius: var(--radius-lg, 14px);
+  box-shadow: 0 20px 44px -30px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.pdp-flag {
+  border-radius: 999px;
+  font-weight: 600;
+}
+.pdp-thumbs .pdp-thumb {
+  border-radius: 10px !important;
+}
+.pdp-price .pdp-price-money {
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.pdp-buy .pdp-qty {
+  border-radius: 12px !important;
+  overflow: hidden;
+}
+.pdp-pay button {
+  border-radius: 12px !important;
+}
+.pdp-actions .pdp-add {
+  border-radius: 12px !important;
+  height: 48px;
+  font-size: 1rem;
 }
 /* ================= /PDP ================= */
 
