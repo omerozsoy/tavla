@@ -40,7 +40,7 @@ return new class extends Migration
                 ['type' => 'makale', 'title' => $title],
                 [
                     'body' => $body,
-                    'image' => '/makale-covers/'.$image,
+                    'image' => '/uploads/makale/'.$image,
                     'published' => true,
                     'sort' => $sort,
                     'event_at' => '2026-09-23 12:00:00',
