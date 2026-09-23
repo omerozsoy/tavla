@@ -1,72 +1,118 @@
-/* Ana sayfa footer'i — izole; site token'lari (koyu chrome). Kolonlar registry'den. */
-/* Zemin SABIT koyu navy; bu yuzden metin renkleri de SABIT acik (--text/--muted
-   cevre baglama gore koyu cozulup okunmaz oluyordu). */
+/* Ana sayfa footer'i — izole; premium "koyu ahsap + bordo + sicak altin" tavla teması.
+   Kolonlar registry'den (pages.ts); bilesen salt-render. Component YAPISI degismedi —
+   burasi yalniz gorsel katman. Zemin SABIT koyu ahsap; metin renkleri SABIT acik
+   (cevre tema koyu cozulunce okunmaz oluyordu). */
+
 .site-footer {
+  /* Footer-yerel palet — sitenin token'larindan turetilmis, tavla tonlari */
+  --foot-wood-hi: #2b2420; /* ceviz — ust (isikli) */
+  --foot-wood-mid: #221d19; /* ceviz — orta */
+  --foot-wood-lo: #191512; /* ceviz — dip (koyu) */
+  --foot-bordo: #7c2533; /* bordo (sicak sarap kirmizisi) */
+  --foot-bordo-deep: #571823; /* bordo — koyu */
+  --foot-gold: #e6b422; /* sicak altin (coin-gold) */
+  --foot-amber: #d98b3a; /* amber vurgu */
+  --foot-cream: #f4efe6; /* krem metin */
+  --foot-cream-soft: rgba(244, 239, 230, 0.66); /* ikincil metin */
+  --foot-cream-faint: rgba(244, 239, 230, 0.44); /* ucuncul metin */
+
+  position: relative;
+  isolation: isolate;
   margin-top: 40px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: #201d1a;
-  color: #f4efe6;
+  color: var(--foot-cream);
+  /* Katmanli ahsap: sicak altin ust-sol isik parlamasi + dikey ahsap degrade +
+     ince damar cizgileri (repeating). Hepsi dusuk kontrast -> "premium doku". */
+  background:
+    radial-gradient(90% 120% at 12% -10%, rgba(230, 180, 80, 0.07), transparent 58%),
+    radial-gradient(80% 120% at 100% 0%, rgba(124, 37, 51, 0.14), transparent 60%),
+    linear-gradient(180deg, var(--foot-wood-hi) 0%, var(--foot-wood-mid) 46%, var(--foot-wood-lo) 100%),
+    repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.05) 0 1px, transparent 1px 7px);
 }
+/* Ust kenar: bordo tabana oturan ince altin hairline (tavla tahtasi kenar seridi).
+   2 katman -> once bordo govde, uzerine ortadan disa sonen altin ince cizgi. */
+.site-footer::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background:
+    linear-gradient(90deg, transparent, var(--foot-bordo) 12%, var(--foot-bordo) 88%, transparent),
+    linear-gradient(90deg, transparent 30%, var(--foot-gold) 50%, transparent 70%);
+  background-size: 100% 3px, 100% 1px;
+  background-position: 0 0, 0 0;
+  background-repeat: no-repeat;
+  z-index: 1;
+}
+
 .foot-inner {
-  /* Tam sayfa genişliği: içerik 1200px ile sınırlanmaz, kenardan kenara yayılır. */
+  /* Tam sayfa genisligi: icerik 1200px ile sinirlanmaz, kenardan kenara yayilir. */
+  position: relative;
+  z-index: 1;
   max-width: none;
   margin: 0;
-  padding: 34px clamp(16px, 4vw, 48px) 24px;
+  padding: 38px clamp(16px, 4vw, 56px) 26px;
   display: flex;
-  gap: 40px;
+  gap: 44px;
   flex-wrap: wrap;
   align-items: flex-start;
 }
+
+/* ---- Marka blogu (sol) ---- */
 .foot-brand {
-  /* Marka+3 logo SOL'da kompakt kalır (BÜYÜMEZ) -> 7 kolon yanındaki boşluğu doldurur.
-     min-width 3 logonun (yan yana) sığacağı kadar (~72px×3 + boşluklar). */
-  flex: 0 1 240px;
-  min-width: 240px;
+  /* Marka+3 logo SOL'da kompakt kalir (BUYUMEZ) -> 7 kolon yanindaki bosluğu doldurur. */
+  flex: 0 1 244px;
+  min-width: 244px;
 }
-/* Logo + slogan kilidi: genisligi LOGO'ya buzulur (fit-content). Slogan width:0
-   ile bu genisligi buyutmez, min-width:100% ile TAM logo genisliginde sarar. */
 .foot-brandlock {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
 }
-/* Logo artik <TavlaTvLogo> bileseni (wordmark + kiremit ucgen); metin stilleri
-   bilesenin kendi inline stillerinden gelir, burada yalniz dikey hizalama. */
 .foot-logo {
   display: inline-flex;
 }
-/* Slogan artik SVG: width:0 + min-width:100% ile kilidi (=logo) buyutmeden onun
-   genisligini alir; <text> textLength=100% ile TEK SATIR halinde tam yaslanir. */
+/* Slogan: logo genisliginde tek satir, ORTALI; sicak krem — altin ipucu icin hafif isik. */
 .foot-tag {
   display: block;
-  margin: 9px 0 0;
-  /* Logo genisligi kadar kutu (fit-content ebeveyn), metin ORTALI + biraz buyuk. */
+  margin: 10px 0 0;
   width: 100%;
   text-align: center;
   font-family: 'Outfit', system-ui, sans-serif;
   font-size: 13px;
   font-weight: 400;
-  letter-spacing: 0.02em;
-  color: rgba(244, 239, 230, 0.62);
+  letter-spacing: 0.03em;
+  color: var(--foot-cream-soft);
+}
+/* Slogan altinda ince altin -> saydam kısa ayrac (premium detay). */
+.foot-brandlock::after {
+  content: '';
+  align-self: center;
+  width: 46px;
+  height: 2px;
+  margin-top: 14px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--foot-gold), var(--foot-amber), transparent);
+  opacity: 0.85;
 }
 /* Ilk 3 kurum logosu: markanin altinda beyaz yuvarlak cipler (koyu footer'da okunur). */
 .foot-partners {
   display: flex;
-  flex-wrap: nowrap; /* 3 logo DAİMA yan yana (alt satıra sarmasın) */
+  flex-wrap: nowrap; /* 3 logo DAİMA yan yana */
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 22px;
 }
 .foot-partner {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   height: 72px;
-  flex: 0 0 auto; /* logolar küçülmesin/sarmasın */
-  transition: transform 0.15s ease;
+  flex: 0 0 auto;
+  transition: transform 0.16s ease, filter 0.16s ease;
 }
 a.foot-partner:hover {
   transform: translateY(-2px);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
 }
 .foot-partner-logo {
   display: block;
@@ -75,20 +121,36 @@ a.foot-partner:hover {
   max-width: 150px;
   object-fit: contain;
 }
+
+/* ---- Baglanti kolonlari (sag) ---- */
 .foot-cols {
   display: grid;
-  /* 7 kolon, MARKANIN YANINDA (aynı satırda) sağdaki boşluğu doldurur. flex:1 1 auto
-     -> marka kompakt solda, kolonlar kalan genişliğe yayılır. minmax(0,1fr) taşmayı önler. */
+  /* 7 kolon markanin yaninda kalan genisliğe yayilir; minmax(0,1fr) tasmayi onler. */
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 18px;
+  gap: 20px 18px;
   flex: 1 1 auto;
   min-width: 0;
 }
 .foot-col-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 700;
-  font-size: 0.95rem;
-  color: #f4efe6;
-  margin-bottom: 12px;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  color: var(--foot-cream);
+  margin-bottom: 13px;
+}
+/* Baslik onunde kucuk altin "tavla ucu" (yukari ucgen) — board point nişanesi. */
+.foot-col-title::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 7px solid var(--foot-gold);
+  filter: drop-shadow(0 1px 0 var(--foot-bordo-deep));
 }
 .foot-col ul {
   list-style: none;
@@ -96,44 +158,77 @@ a.foot-partner:hover {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 9px;
 }
 .foot-link {
+  position: relative;
   background: none;
   border: 0;
   padding: 0;
   cursor: pointer;
-  color: rgba(244, 239, 230, 0.68);
+  color: var(--foot-cream-soft);
   font-size: 0.9rem;
   text-align: left;
-  transition: color 0.15s ease;
+  transition: color 0.15s ease, transform 0.15s ease;
   font-family: inherit;
 }
 .foot-link:hover {
-  color: #fff;
+  color: var(--foot-gold);
+  transform: translateX(2px);
 }
-.foot-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 14px clamp(16px, 4vw, 48px);
-  text-align: center;
-  color: rgba(244, 239, 230, 0.5);
-  font-size: 0.82rem;
+.foot-link:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--foot-gold) 70%, transparent);
+  outline-offset: 3px;
+  border-radius: 3px;
 }
 
-/* 7 kolon tek satır yalnız geniş ekranda; daralınca kademeli sar. */
+/* ---- Alt bar (telif) ---- */
+.foot-bottom {
+  position: relative;
+  z-index: 1;
+  border-top: 1px solid color-mix(in srgb, var(--foot-bordo) 55%, rgba(255, 255, 255, 0.06));
+  padding: 15px clamp(16px, 4vw, 56px);
+  text-align: center;
+  color: var(--foot-cream-faint);
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+/* Telifin iki yaninda kucuk altin nokta ayrac (ince premium detay). */
+.foot-bottom::before,
+.foot-bottom::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin: 0 12px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--foot-gold);
+  opacity: 0.7;
+}
+
+/* ---- Responsive: 7 kolon tek satir yalniz genis ekranda; daralinca kademeli sar ---- */
 @media (max-width: 1024px) {
   .foot-cols {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px;
+    gap: 22px 20px;
   }
 }
 @media (max-width: 640px) {
+  .site-footer {
+    margin-top: 28px;
+  }
   .foot-inner {
-    gap: 24px;
+    gap: 26px;
+    padding: 30px clamp(16px, 5vw, 32px) 22px;
+  }
+  .foot-brand {
+    flex-basis: 100%;
+    min-width: 0;
   }
   .foot-cols {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 20px;
+    gap: 22px 18px;
     flex-basis: 100%;
   }
 }
