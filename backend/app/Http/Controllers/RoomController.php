@@ -1616,6 +1616,9 @@ class RoomController extends Controller
         }
         $room->version = $room->version + 1;
         $room->save();
+        // ESCROW: sonuçsuz bayat oda -> rezerve edilen stake'i iki oyuncuya geri bırak (aksi halde
+        // coins_reserved kilitli kalırdı). Idempotent + yalnız escrowed odalarda etkili.
+        $this->releaseEscrow($room);
 
         return true;
     }
@@ -1737,6 +1740,10 @@ class RoomController extends Controller
         // isaretle ki hayalet "Devam Eden Maç" + izleyici donmasi bitsin. version'i ARTIR ki
         // izleyicinin surum-kapili poll'u 'finished'i yakalasin.
         if ($winnerSlot === null) {
+            // ESCROW: sonuç yok (kimse kazanmadı) -> rezerve edilen stake'i İKİ oyuncuya da geri
+            // bırak. settle() yalnız KAZANANLI maçta rezervi bırakıyordu; no-contest'te coins_reserved
+            // sonsuza kilitli kalıp kullanılabilir bakiyeyi düşürüyordu. Idempotent + yalnız escrowed'da.
+            $this->releaseEscrow($room);
             $room->status = 'finished';
             if ($room->end_reason === null) {
                 $room->end_reason = $reason ?? 'ABANDON';

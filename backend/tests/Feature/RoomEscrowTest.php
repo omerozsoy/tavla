@@ -144,6 +144,40 @@ class RoomEscrowTest extends TestCase
         $this->assertSame(100, (int) \App\Models\Commission::first()->stake);
     }
 
+    public function test_no_contest_finalize_releases_escrow(): void
+    {
+        // NO-CONTEST (iki taraf da terk): escrowed maç 'finished' olurken rezerv İKİ oyuncuya da
+        // bırakılmalı. Eskiden yalnız settle (kazananlı) rezervi bırakıyordu -> no-contest'te
+        // coins_reserved sonsuza kilitliydi. (Regresyon: releaseEscrow no-contest yollarında.)
+        $p1 = $this->user('ncA', 100);
+        $p2 = $this->user('ncB', 100);
+        User::where('id', $p1->id)->update(['coins_reserved' => 50]);
+        User::where('id', $p2->id)->update(['coins_reserved' => 50]);
+        $now = microtime(true);
+        $clock = \App\Services\MatchClock::init('casual', 1, $now);
+        $clock['started_at'] = $now - 5;   // timeout değil
+        $clock['running'] = true;
+        $clock['p1_seen'] = $now - 70;     // ikisi de terk (>60+3) -> no-contest
+        $clock['p2_seen'] = $now - 80;
+        Room::create([
+            'code' => 'NOCO', 'p1_token' => 't1', 'p1_user_id' => $p1->id, 'p1_name' => 'ncA',
+            'p2_token' => 't2', 'p2_user_id' => $p2->id, 'p2_name' => 'ncB',
+            'status' => 'playing', 'stake' => 50, 'bet_pct' => 0, 'version' => 1, 'settled' => false,
+            'escrowed' => true, 'authoritative' => true, 'clock' => $clock,
+        ]);
+
+        // Poll (izleyici, token yok) -> tickClock -> applyClockEnd no-contest -> releaseEscrow.
+        $this->getJson('/api/rooms/NOCO')->assertOk();
+
+        $room = Room::where('code', 'NOCO')->first();
+        $this->assertSame('finished', $room->status);
+        $this->assertFalse((bool) $room->escrowed, 'escrowed bırakıldı');
+        $this->assertSame(0, (int) $p1->fresh()->coins_reserved, 'rezerv bırakıldı (p1)');
+        $this->assertSame(0, (int) $p2->fresh()->coins_reserved, 'rezerv bırakıldı (p2)');
+        $this->assertSame(100, (int) $p1->fresh()->coins, 'no-contest: coin değişmez');
+        $this->assertSame(100, (int) $p2->fresh()->coins);
+    }
+
     public function test_cleanup_releases_stranded_escrow_no_coin_loss(): void
     {
         // Terk edilmiş escrowed oda (>1 gün) silinirken rezerv BIRAKILIR -> coin kaybı YOK.
