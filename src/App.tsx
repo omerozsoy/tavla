@@ -156,6 +156,7 @@ import QuizPlay from './ui/QuizPlay'
 const Clubs = lazy(() => import('./ui/Clubs'))
 const Rules = lazy(() => import('./ui/Rules'))
 import SeoContent from './ui/SeoContent'
+import SeoAppSection from './ui/SeoAppSection'
 const ServiceLanding = lazy(() => import('./ui/ServiceLanding'))
 const GuideView = lazy(() => import('./ui/GuideView'))
 const TournamentRules = lazy(() => import('./ui/TournamentRules'))
@@ -8442,6 +8443,9 @@ export default function App() {
                   if (mode === 'online' && !room) setHome(true)
                 }}
               />
+              {/* Kurulum altına taranabilir SEO içeriği (ince sayfa -> "taranan ama indekslenmiyor"
+                  düzeltmesi). online=yeni-oyun, pvb=yz-ile-oyna. */}
+              <SeoAppSection page={setup === 'online' ? 'yeni-oyun' : 'yz-ile-oyna'} />
             </div>
           </main>
         </div>
@@ -8508,6 +8512,8 @@ export default function App() {
                   handleJoinRoom(code)
                 }}
               />
+              {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). */}
+              <SeoAppSection page="arkadasinla-oyna" />
             </div>
           </main>
         </div>
