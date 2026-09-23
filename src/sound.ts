@@ -158,7 +158,7 @@ export const Sound = {
     play(winUrl, 0.75)
   },
   lose() {
-    play(loseUrl, 0.8)
+    play(loseUrl, 0.55)
   },
   double() {
     tone(440, 0, 0.1, 'square', 0.18)
