@@ -32,11 +32,16 @@ class ProductController extends Controller
 
         // Yayindaki TUM kategoriler (urunu olmayan 'coin' gibi rezerve kategoriler dahil).
         // Magaza coin sekmesi admin'de verilen kategori adini bundan alir.
+        $hasCatImg = \Illuminate\Support\Facades\Schema::hasColumn('product_categories', 'image');
         $categories = \App\Models\ProductCategory::where('published', true)
             ->orderBy('sort')
             ->orderBy('name')
-            ->get(['slug', 'name'])
-            ->map(fn ($c) => ['slug' => $c->slug, 'name' => $c->name])
+            ->get($hasCatImg ? ['slug', 'name', 'image'] : ['slug', 'name'])
+            ->map(fn ($c) => [
+                'slug' => $c->slug,
+                'name' => $c->name,
+                'image' => $hasCatImg ? ($c->image ?? null) : null, // ham yol; frontend /uploads/ ekler
+            ])
             ->values();
 
         return response()->json(['products' => $products, 'categories' => $categories]);

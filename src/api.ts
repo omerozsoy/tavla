@@ -675,6 +675,7 @@ export async function getProducts(): Promise<Product[]> {
 export interface ShopCategory {
   slug: string
   name: string
+  image?: string | null // kapak görseli (ham yol; /uploads/ ile öneklenir)
 }
 // Katalog + TÜM yayın kategorileri (tek fetch). Coin sekmesi adı buradan alınır.
 export async function getShopCatalog(): Promise<{ products: Product[]; categories: ShopCategory[] }> {
