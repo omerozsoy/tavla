@@ -27,6 +27,15 @@ final class SeoMeta
     /** Kanonik kök (apex -> www 301). Slug bununla birleşir: BASE . 'haberler'. */
     private const BASE = 'https://www.tavlatv.com/';
 
+    /** Uygulama/hesap ekranları arama sonuçlarına girmemeli. */
+    private const NOINDEX = [
+        'giris', 'sifremi-unuttum', 'sifre-sifirla',
+        'profil', 'profil-duzenle', 'ayarlar', 'tahta-ayarlari',
+        'istatistiklerim', 'mac-analizleri', 'hata-gunlugu', 'basarimlar',
+        'arkadaslar', 'mesajlar', 'magaza', 'siparislerim', 'sepet', 'odeme',
+        'pul-tasarimlari', 'cerceveler', 'oyun-onizleme',
+    ];
+
     /**
      * slug => [title, desc, h1]
      * title: <title> + og:title + twitter:title
@@ -246,6 +255,10 @@ final class SeoMeta
             return $html;
         }
 
+        if (in_array($slug, self::NOINDEX, true)) {
+            return self::applyNoIndex($html);
+        }
+
         // 1) Statik rota META tablosu.
         if (isset(self::META[$slug])) {
             [$title, $desc, $h1] = self::META[$slug];
@@ -288,6 +301,25 @@ final class SeoMeta
         }
 
         return $html;
+    }
+
+    /** Authenticated/app-only screens remain crawlable routes for the SPA but not indexable. */
+    private static function applyNoIndex(string $html): string
+    {
+        $replacement = '<meta name="robots" content="noindex, follow" />';
+        $out = preg_replace_callback(
+            '~<meta\s+name="robots"\s+content="[^"]*"\s*/?>~i',
+            static fn () => $replacement,
+            $html,
+            1,
+        );
+        if ($out !== null && $out !== $html) {
+            return $out;
+        }
+
+        $out = preg_replace_callback('~</head>~i', static fn () => $replacement . '</head>', $html, 1);
+
+        return $out ?? $html;
     }
 
     /**
