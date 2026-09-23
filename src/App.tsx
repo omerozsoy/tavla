@@ -5847,7 +5847,15 @@ export default function App() {
     setMatch(newMatch(opts.target))
     try {
       const { code } = await inviteFriend(tgt.id, { target: opts.target, timeControl: opts.timeControl })
-      await enterOnlineByCode(code, opts.target, opts.timeControl)
+      const ok = await enterOnlineByCode(code, opts.target, opts.timeControl)
+      if (!ok) {
+        // Davet GÖNDERİLDİ ama davet edenin odası kurulamadı (enterOnlineByCode false) -> gönderilen
+        // daveti GERİ ÇEK (rakipte odası olmayan dangling davet banner'ı kalmasın; rooms-join zaten
+        // göstermez ama DB'de 'pending' bırakma) + lobiye temiz dön. (enterOnlineByCode toast'ı gösterdi.)
+        cancelInvite(code).catch(() => {})
+        setInviteWaitName(null)
+        setHome(true)
+      }
     } catch (e) {
       // "Oyun Kabul Etmiyor" (409) gibi durumlarda sunucu mesajini dostça göster.
       if (e instanceof ApiErr && e.status === 409) notify.info(e.message || t('online.busyBlocked'))
