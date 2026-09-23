@@ -137,6 +137,18 @@ Route::fallback(function (Request $request) {
     $known = ($first === '' || in_array($first, $valid, true))
         && SeoMeta::knownDynamicPath($path);
 
+    // BILINMEYEN yol -> SPA kabugu (ana sayfa meta'si) yerine MARKALI 404 sayfasi.
+    // Eskiden 404 statusuyle index.html donuyordu; govde ana sayfa meta'siydi (robots
+    // index,follow + canonical '/') = soft-404 sinyali + kullanici bos/yanlis sayfa
+    // goruyordu. Artik gercek 404 + noindex + geri baglantili markali sayfa (errors/404).
+    if (! $known) {
+        return response()->view('errors.404', [], 404)->withHeaders([
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
     $index = public_path('index.html');
     if (file_exists($index)) {
         // Per-route SEO: SPA statik kabugu her rotada AYNI canonical/title/description +
@@ -150,7 +162,7 @@ Route::fallback(function (Request $request) {
         // eskileri silinir. Tarayici bayat index.html tutarsa silinmis chunk'lara istek
         // atar -> ChunkLoadError -> "sayfa acilmiyor/refresh edilemiyor". Hash'li /assets
         // ise icerik-adresli oldugundan uzun cache'te kalir (web sunucusu/htaccess).
-        return response($html, $known ? 200 : 404, [
+        return response($html, 200, [
             'Content-Type' => 'text/html; charset=UTF-8',
             'Cache-Control' => 'no-cache, no-store, must-revalidate',
             'Pragma' => 'no-cache',
@@ -159,6 +171,6 @@ Route::fallback(function (Request $request) {
     }
     return response(
         'Frontend build not found. Build React and copy dist/* into backend/public/.',
-        $known ? 200 : 404
+        200
     );
 });
