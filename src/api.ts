@@ -335,6 +335,12 @@ export async function topRanks(): Promise<TopRanks> {
   return req<TopRanks>('/top-ranks')
 }
 
+// Site geneli online durum noktası: çevrimiçi (son 70sn görülmüş, 'offline' değil) kullanıcı id'leri.
+export async function onlineIds(): Promise<number[]> {
+  const d = await req<{ ids: number[] }>('/online-ids')
+  return d.ids ?? []
+}
+
 // ---- Sol menu yapilandirmasi (admin panelden: sira/ad/gorunurluk/grup) ----
 export interface MenuOverride {
   key: string
