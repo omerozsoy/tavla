@@ -7019,6 +7019,14 @@ html[data-board='yilbasi'] .checker.black {
   border-bottom: 1px solid var(--border);
   padding-bottom: 4px;
 }
+/* Pozisyon Analizi: En iyi hamleler artik OYNANABILIR tum hamleleri listeler (5 sinir yok).
+   Cok aday olabildiginden (or. cift zar) sagdaki kolonu tasitmadan tut: yumusak yukseklik +
+   kaydirma. Baslik (move-list-head) yerinde kalir; yalniz satirlar kayar. */
+.analyzer-results .move-list {
+  max-height: min(60vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
 .move-row {
   display: grid;
   grid-template-columns: 24px 1fr 64px 64px;
@@ -13616,14 +13624,14 @@ button.acct-row-logout:hover:not(:disabled) {
    kolonuna sigacak sekilde --board-h ile boyutlandirilir (konteyner-capli hesap). */
 .analyzer-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px 320px;
-  grid-template-areas: 'board controls results';
+  grid-template-columns: 300px minmax(0, 1fr) 320px;
+  grid-template-areas: 'controls board results';
   gap: 18px;
   align-items: start;
 }
 .analyzer-board {
   grid-area: board;
-  justify-self: start;
+  justify-self: center;
   min-width: 0;
   position: relative; /* 15 tas limiti toast'i icin */
   /* Kup: ana board ile ayni büyütülmüş oran (desktop net + dokunulabilir). */
