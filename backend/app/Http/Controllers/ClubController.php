@@ -138,6 +138,7 @@ class ClubController extends Controller
             ->limit(200)
             ->get();
         $users = User::whereIn('id', $rows->pluck('user_id'))
+            ->where('is_system', false) // resmi/sistem hesabı kulüp üye listesinde çıkmasın
             ->get()
             ->keyBy('id');
         $table = $rows->map(function ($m) use ($users) {
