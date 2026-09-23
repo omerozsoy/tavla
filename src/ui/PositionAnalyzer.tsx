@@ -946,7 +946,7 @@ export default function PositionAnalyzer({
               </div>
               <div className="move-list">
                 <div className="move-list-head">{t('an.bestMoves')}</div>
-                {moveRows.slice(0, 5).map((r, i) => (
+                {moveRows.map((r, i) => (
                   <button
                     type="button"
                     key={`${i}-${r.label}`}
