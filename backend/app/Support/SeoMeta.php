@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Content;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Rota-başına SEO <head> enjeksiyonu (SPA statik index.html kabuğu düzeltmesi).
@@ -298,9 +299,33 @@ final class SeoMeta
                     'article',
                 );
             }
+
+            // Bilinmeyen/özel haber slug'ı SPA kabuğu olarak dönse bile indekslenmesin.
+            return self::applyNoIndex($html);
+        }
+
+        if (count($parts) === 2 && $parts[0] === 'tavla-rehberi') {
+            return self::applyNoIndex($html);
         }
 
         return $html;
+    }
+
+    /** Fallback route'unun dinamik içerik için 404 status seçmesine yardımcı olur. */
+    public static function knownDynamicPath(string $path): bool
+    {
+        $parts = explode('/', trim($path, '/'));
+        if (count($parts) !== 2) {
+            return true;
+        }
+        if ($parts[0] === 'tavla-rehberi') {
+            return isset(self::GUIDES[$parts[1]]);
+        }
+        if ($parts[0] === 'haberler') {
+            return self::findNews($parts[1]) !== null;
+        }
+
+        return true;
     }
 
     /** Authenticated/app-only screens remain crawlable routes for the SPA but not indexable. */
@@ -406,6 +431,10 @@ final class SeoMeta
     /** Yayındaki haberler içinde slug'ı frontend slugify(title) ile eşleşeni bul. */
     private static function findNews(string $slug): ?Content
     {
+        if (! Schema::hasTable('contents')) {
+            return null;
+        }
+
         $rows = Content::query()
             ->where('type', 'news')
             ->where('published', true)
