@@ -658,9 +658,8 @@ class RoomController extends Controller
         $me = $request->user('sanctum');
 
         $rooms = Room::where('status', 'playing')
-            ->where(function ($q) {
-                $q->whereNull('mode')->orWhere('mode', '!=', 'friendly');
-            })
+            // Kullanıcı direktifi: BOT hariç TÜM maçlar izlenebilir. Davet (friendly) maçları da
+            // Canlı Maçlar'da listelenir (eski gizlilik filtresi kaldırıldı).
             ->where('bot', false) // BOT maçları özel: Canlı Maçlar'da listelenmez/izlenmez
             ->whereNotNull('p1_name')
             ->whereNotNull('p2_name')
@@ -1069,10 +1068,10 @@ class RoomController extends Controller
         // (state degismeden; kayip olursa applyClockEnd version'i artirir.)
         $token = (string) $request->header('X-Room-Token', $request->query('token', ''));
         $slot = $this->slotOf($room, $token, $request);
-        // Davet/arkadaş odaları herkese açık seyir alanı değildir. Oda kodu sızsa bile
-        // katılımcı olmayan kişi tahta, sohbet ve canlı önizlemeyi okuyamasın.
-        if ($room->mode === 'friendly' && $slot === null) {
-            return $this->fail('Bu özel maçı görüntüleme yetkiniz yok.', 403);
+        // Kullanıcı direktifi: BOT hariç tüm maçlar izlenebilir. Bot maçları özel akıştır
+        // (izleyiciye açık değil); diğer tüm maçlar (davet dahil) katılımcı olmayanlarca izlenebilir.
+        if ($room->bot && $slot === null) {
+            return $this->fail('Bot maçları izlenemez.', 403);
         }
         $this->tickClock($room, $slot);
 
@@ -1840,8 +1839,9 @@ class RoomController extends Controller
         if (! $room) {
             return $this->fail('Oda bulunamadı.', 404);
         }
-        if ($room->mode === 'friendly' && $this->slotOf($room, $data['token'], $request) === null) {
-            return $this->fail('Bu odayi izleme yetkin yok.', 403);
+        // BOT hariç tüm maçlar izlenebilir (bot maçları izleyiciye kapalı).
+        if ($room->bot && $this->slotOf($room, $data['token'], $request) === null) {
+            return $this->fail('Bot maçları izlenemez.', 403);
         }
         // Migration henüz koşmadıysa (tablo yok) sessizce boş dön -> istemci kırılmaz.
         if (! Schema::hasTable('room_viewers')) {
@@ -1856,7 +1856,7 @@ class RoomController extends Controller
         } elseif ($this->slotOf($room, $data['token'], $request) === null) {
             // Oyuncu değil -> izleyici olarak kaydet/tazele (upsert).
             $user = $request->user('sanctum');
-            $name = $user?->nickname ?: ($user?->first_name ?: ($data['name'] ?: 'Misafir'));
+            $name = $user?->nickname ?: ($user?->first_name ?: (($data['name'] ?? '') ?: 'Misafir'));
             DB::table('room_viewers')->updateOrInsert(
                 ['room_code' => $codeU, 'token' => $data['token']],
                 ['user_id' => $user?->id, 'name' => mb_substr((string) $name, 0, 60), 'last_seen' => $now, 'updated_at' => now()],
