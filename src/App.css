@@ -3927,7 +3927,8 @@ button[aria-disabled='true'],
    Buton foreground'unu (cream) zorla; alt-cizgi/underline yok. Specificity 0,2,1 +
    dosyada SONRA geldigi icin temel .info-rich.rich a (0,2,1) kuralini yener. */
 .seo-landing-body-wrap a.seo-cta-btn,
-.seo-content-home a.seo-cta-btn {
+.seo-content-home a.seo-cta-btn,
+.seo-landing-card a.seo-cta-btn {
   color: #f8f1e7;
   text-decoration: none;
   border-bottom: none;
