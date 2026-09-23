@@ -16320,33 +16320,35 @@ button.acct-row-logout:hover:not(:disabled) {
     animation: none;
   }
 }
-/* Arkadaslik butonu: header sag sutununda (rating/coin altinda) KUCUK & kompakt.
-   Global 42px standardini bu baglamda bilincli olarak ezeriz. */
-.pp-addfriend {
-  height: 32px;
-  min-height: 32px;
-  padding: 0 12px;
-  gap: 6px;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  margin-top: 10px;
+/* Aksiyon cubugu (Arkadas ol / Mesaj): baslik altinda tam-genislik satir. Masaustunde
+   butonlar esit genislikte yan yana; mobilde alt alta (uzun "istek gonderildi" etiketi
+   dar sag sutunda tasardigi icin head'ten buraya tasindi). */
+.pp-actions {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 16px;
 }
-.pp-addfriend svg {
-  width: 14px;
-  height: 14px;
-}
+/* Arkadaslik/mesaj butonu: KUCUK & kompakt (global 42px standardini bilincli ezeriz). */
+.pp-addfriend,
 .pp-message {
-  height: 32px;
-  min-height: 32px;
+  height: 34px;
+  min-height: 34px;
+  flex: 1; /* kart genisligini esit paylas */
   padding: 0 12px;
   gap: 6px;
   font-size: 0.8rem;
   white-space: nowrap;
-  margin-top: 8px;
 }
+.pp-addfriend svg,
 .pp-message svg {
   width: 14px;
   height: 14px;
+}
+/* Mobil (dar kart): alt alta tam genislik -> uzun etiket bile tek satira sigar. */
+@media (max-width: 560px) {
+  .pp-actions {
+    flex-direction: column;
+  }
 }
 
 /* Kapali test sifre kapisi (GatePrompt) — tum ekrani kaplar, en ustte */

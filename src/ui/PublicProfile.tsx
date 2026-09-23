@@ -68,6 +68,21 @@ export default function PublicProfile({
                 <div className="pp-coins">
                   <Coins amount={p.coins} size={14} />
                 </div>
+              </div>
+            </div>
+            {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
+            <TopRankMedals userId={p.id} />
+            <div className="pp-rank">
+              <span className={`pp-status ${p.online ? 'on' : 'off'}`}>
+                <span className="pp-status-dot" aria-hidden="true" />
+                {p.online ? t('online.statusOn') : t('online.statusOff')}
+              </span>
+            </div>
+
+            {/* Aksiyonlar (Arkadaş ol / Mesaj): başlık sağ sütunu yerine tam-genişlik çubuk ->
+                mobilde sıkışma/taşma olmaz, masaüstünde ferah. */}
+            {(onAddFriend || onMessage) && (
+              <div className="pp-actions">
                 {onAddFriend && (
                   <Button
                     variant="default"
@@ -88,15 +103,7 @@ export default function PublicProfile({
                   </Button>
                 )}
               </div>
-            </div>
-            {/* Top-3 madalyaları (PR/Puan ilk 3): belirgin etiketli blok (isim-yani rozetin buyugu). */}
-            <TopRankMedals userId={p.id} />
-            <div className="pp-rank">
-              <span className={`pp-status ${p.online ? 'on' : 'off'}`}>
-                <span className="pp-status-dot" aria-hidden="true" />
-                {p.online ? t('online.statusOn') : t('online.statusOff')}
-              </span>
-            </div>
+            )}
 
             <div className="pp-grid">
               <div className="pp-box">
