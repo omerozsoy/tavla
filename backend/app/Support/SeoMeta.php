@@ -264,7 +264,9 @@ final class SeoMeta
         if (isset(self::META[$slug])) {
             [$title, $desc, $h1] = self::META[$slug];
 
-            return self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website');
+            $html = self::apply($html, $title, $desc, $h1, self::BASE . $slug, null, 'website');
+
+            return self::injectBreadcrumbJsonLd($html, $h1, self::BASE . $slug);
         }
 
         // 2) Dinamik haber makalesi: /haberler/<slug>. Paylaşımda (WhatsApp/Twitter vb.)
@@ -279,7 +281,9 @@ final class SeoMeta
             $url = self::BASE . $slug;
             $html = self::apply($html, $title, $desc, $h1, $url, null, 'article');
 
-            return self::injectJsonLd($html, $h1, $desc, $url);
+            $html = self::injectJsonLd($html, $h1, $desc, $url);
+
+            return self::injectBreadcrumbJsonLd($html, $h1, $url);
         }
 
         if (count($parts) === 2 && $parts[0] === 'haberler') {
@@ -289,7 +293,7 @@ final class SeoMeta
                 $desc  = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
 
-                return self::apply(
+                $html = self::apply(
                     $html,
                     $title,
                     $desc,
@@ -298,6 +302,8 @@ final class SeoMeta
                     self::absImg($article->image),
                     'article',
                 );
+
+                return self::injectBreadcrumbJsonLd($html, (string) $article->title, self::BASE . $slug);
             }
 
             // Bilinmeyen/özel haber slug'ı SPA kabuğu olarak dönse bile indekslenmesin.
@@ -424,6 +430,37 @@ final class SeoMeta
         }
         $script = '<script type="application/ld+json">' . $json . '</script>';
         $out = preg_replace_callback('~</head>~i', fn () => $script . '</head>', $html, 1);
+
+        return $out ?? $html;
+    }
+
+    /** Public sayfalarda arama motoruna Home > sayfa hiyerarşisini bildirir. */
+    private static function injectBreadcrumbJsonLd(string $html, string $label, string $url): string
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                [
+                    '@type' => 'ListItem',
+                    'position' => 1,
+                    'name' => 'Ana Sayfa',
+                    'item' => self::BASE,
+                ],
+                [
+                    '@type' => 'ListItem',
+                    'position' => 2,
+                    'name' => $label,
+                    'item' => $url,
+                ],
+            ],
+        ];
+        $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($json === false) {
+            return $html;
+        }
+        $script = '<script type="application/ld+json">' . $json . '</script>';
+        $out = preg_replace_callback('~</head>~i', static fn () => $script . '</head>', $html, 1);
 
         return $out ?? $html;
     }
