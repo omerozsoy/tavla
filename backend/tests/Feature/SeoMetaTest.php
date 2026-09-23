@@ -72,6 +72,7 @@ class SeoMetaTest extends TestCase
                 ->assertOk()
                 ->assertSee('"@type":"Article"', false)
                 ->assertSee('"datePublished":"2026-09-20T12:00:00+00:00"', false)
+                ->assertSee('https://www.tavlatv.com/og-image.png', false)
                 ->assertSee('SEO Haber Denemesi', false);
         } finally {
             Schema::dropIfExists('contents');

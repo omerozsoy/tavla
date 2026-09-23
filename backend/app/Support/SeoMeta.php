@@ -382,6 +382,7 @@ final class SeoMeta
                 $title = $article->title . ' | TavlaTv';
                 $desc  = self::excerpt($article->body)
                     ?: 'Tavla dünyasından son haberler, turnuva sonuçları ve TavlaTv duyuruları.';
+                $image = self::absImg($article->image) ?: self::BASE . 'og-image.png';
 
                 $html = self::apply(
                     $html,
@@ -389,7 +390,7 @@ final class SeoMeta
                     $desc,
                     (string) $article->title,
                     self::BASE . $slug,
-                    self::absImg($article->image),
+                    $image,
                     'article',
                 );
 
@@ -398,7 +399,7 @@ final class SeoMeta
                     (string) $article->title,
                     $desc,
                     self::BASE . $slug,
-                    self::absImg($article->image),
+                    $image,
                     $article->event_at,
                     $article->updated_at,
                 );
