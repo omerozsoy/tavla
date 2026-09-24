@@ -97,8 +97,8 @@ class SiteSettings extends Page implements HasForms
                             ->helperText('Kapalıyken (veya ID boşken) site hiçbir Google ölçüm script’i yüklemez.'),
                         TextInput::make('gtag_id')->label('Etiket kimliği (ID)')
                             ->placeholder('AW-XXXXXXXXXX veya G-XXXXXXXXXX')
-                            ->maxLength(40)
-                            ->helperText('Google Ads dönüşümü için AW-…, GA4 için G-… biçiminde.'),
+                            ->maxLength(120)
+                            ->helperText('Google Ads için AW-…, GA4 için G-…. Birden fazla etiketi VİRGÜLLE ayır (örn. AW-123,G-XYZ).'),
                     ])->columns(2),
             ])
             ->statePath('data');
