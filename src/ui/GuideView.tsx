@@ -15,6 +15,8 @@ import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
 import { Button } from '@/components/ui/button'
 import { GUIDES, findGuide } from '../data/guides'
+import { useT } from '../i18n'
+import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 
 interface Props {
   slug: string | null
@@ -108,10 +110,15 @@ function GuideArticle({ slug, onOpen }: { slug: string; onOpen?: (slug: string) 
 }
 
 export default function GuideView({ slug, onClose, onOpen }: Props) {
+  const { t } = useT()
   useEscape(onClose)
 
   const guide = slug ? findGuide(slug) : null
   const h1 = guide ? guide.h1 : 'Tavla Rehberi'
+  // İçerik yolu: hub -> Ana Sayfa › Tavla Rehberi; yazı -> Ana Sayfa › Tavla Rehberi › <başlık>
+  const crumbs: Crumb[] = guide
+    ? [homeCrumb(t), { name: t('breadcrumb.guide'), href: '/tavla-rehberi' }, { name: guide.h1 }]
+    : [homeCrumb(t), { name: t('breadcrumb.guide') }]
   const eyebrow = 'TAVLA REHBERİ'
   const heroSub = guide
     ? 'TavlaTv rehber yazısı — özgün, pratik ve doğrudan uygulanabilir.'
@@ -124,6 +131,7 @@ export default function GuideView({ slug, onClose, onOpen }: Props) {
           <Icon name="x" size={16} />
         </Button>
       )}
+      <Breadcrumb items={crumbs} />
       <header className="seo-hero">
         <span className="seo-eyebrow">{eyebrow}</span>
         <h1 className="info-title seo-hero-title">{h1}</h1>

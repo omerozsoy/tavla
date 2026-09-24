@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useT } from '../i18n'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Icon } from './Icon'
 import { Coins } from './Coins'
 import { useEscape } from './useEscape'
@@ -158,6 +159,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
           >
             <Icon name="caret-left" size={16} /> {t('tourn.back')}
           </Button>
+          <Breadcrumb items={[homeCrumb(t), { name: t('menu.tournaments'), href: '/online-turnuvalar' }, { name: active.name }]} />
           <h2><Icon name="trophy" size={20} /> {active.name}</h2>
 
           {/* Editoryal alt-satir: durum rozeti + duzenleyen/mekan (tek satirda toplandi) */}
@@ -544,6 +546,7 @@ export default function Tournaments({ myId, onPlayMatch, onClose, detailId, onOp
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
+        <Breadcrumb items={[homeCrumb(t), { name: t('tourn.title') }]} />
         <h2><Icon name="trophy" size={20} /> {t('tourn.title')}</h2>
 
         {loading ? (

@@ -5,6 +5,7 @@ import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
 import { listContents, type Content, type ContentType } from '../api'
+import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
@@ -282,6 +283,25 @@ export default function ContentView({
   // KURAL: sayfa basligi = menu etiketi (varsa admin override); yoksa varsayilan i18n.
   const headTitle = titleOverride ?? t(head.titleKey)
 
+  // İçerik yolu (breadcrumb): yalnız indekslenebilir içerik türleri için (embed/bilgi sekmesi
+  // gömülü değilken). Detay sayfasında bölüm=link, makale başlığı=mevcut; liste=mevcut.
+  const BC_SECTION: Partial<Record<ContentType, { labelKey: string; href: string }>> = {
+    makale: { labelKey: 'menu.makale', href: '/makaleler' },
+    news: { labelKey: 'menu.news', href: '/haberler' },
+    blog: { labelKey: 'menu.blog', href: '/blog' },
+    magazine: { labelKey: 'menu.magazine', href: '/tavla-magazin' },
+    club: { labelKey: 'menu.clubs', href: '/kulup-rehberi' },
+    event: { labelKey: 'menu.calendar', href: '/turnuva-takvimi' },
+  }
+  const bcSection = BC_SECTION[type]
+  let crumbs: Crumb[] = []
+  if (!embed && bcSection) {
+    const sectionName = titleOverride ?? t(bcSection.labelKey)
+    crumbs = newsItem
+      ? [homeCrumb(t), { name: sectionName, href: bcSection.href }, { name: newsItem.title }]
+      : [homeCrumb(t), { name: sectionName }]
+  }
+
   // Etkinlik: yaklasan / gecmis ayrimi + aya gore grupla
   const eventGroups = useMemo(() => {
     if (type !== 'event') return null
@@ -373,6 +393,7 @@ export default function ContentView({
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
+        <Breadcrumb items={crumbs} />
         <h2>
           <Icon name={head.icon} size={20} /> {headTitle}
         </h2>

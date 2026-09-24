@@ -388,7 +388,8 @@ final class SeoMeta
 
             $html = self::injectWebPageJsonLd($html, $h1, $desc, self::BASE . $slug);
 
-            return self::injectBreadcrumbJsonLd($html, $h1, self::BASE . $slug);
+            // Statik landing/bilgi sayfaları: Ana Sayfa › <sayfa> (2 seviye).
+            return self::injectBreadcrumbJsonLd($html, [[$h1, self::BASE . $slug]]);
         }
 
         // 2) Dinamik haber makalesi: /haberler/<slug>. Paylaşımda (WhatsApp/Twitter vb.)
@@ -406,7 +407,11 @@ final class SeoMeta
             [$datePublished, $dateModified] = self::GUIDE_DATES[$parts[1]];
             $html = self::injectJsonLd($html, $h1, $desc, $url, $datePublished, $dateModified);
 
-            return self::injectBreadcrumbJsonLd($html, $h1, $url);
+            // Ana Sayfa › Tavla Rehberi › <yazı> (görünür Breadcrumb ile aynı).
+            return self::injectBreadcrumbJsonLd($html, [
+                ['Tavla Rehberi', self::BASE . 'tavla-rehberi'],
+                [$h1, $url],
+            ]);
         }
 
         // 2c) Makale: /makaleler/<slug>. İçerik Content(type=makale)'den gelir.
@@ -429,7 +434,11 @@ final class SeoMeta
                     $article->updated_at,
                 );
 
-                return self::injectBreadcrumbJsonLd($html, (string) $article->title, $url);
+                // Ana Sayfa › Makaleler › <başlık> (görünür Breadcrumb ile aynı).
+                return self::injectBreadcrumbJsonLd($html, [
+                    ['Makaleler', self::BASE . 'makaleler'],
+                    [(string) $article->title, $url],
+                ]);
             }
 
             return self::applyNoIndex($html);
@@ -463,7 +472,11 @@ final class SeoMeta
                     $article->updated_at,
                 );
 
-                return self::injectBreadcrumbJsonLd($html, (string) $article->title, self::BASE . $slug);
+                // Ana Sayfa › Haberler › <başlık> (görünür Breadcrumb ile aynı).
+                return self::injectBreadcrumbJsonLd($html, [
+                    ['Haberler', self::BASE . 'haberler'],
+                    [(string) $article->title, self::BASE . $slug],
+                ]);
             }
 
             // Bilinmeyen/özel haber slug'ı SPA kabuğu olarak dönse bile indekslenmesin.
@@ -711,26 +724,34 @@ final class SeoMeta
         return $out ?? $html;
     }
 
-    /** Public sayfalarda arama motoruna Home > sayfa hiyerarşisini bildirir. */
-    private static function injectBreadcrumbJsonLd(string $html, string $label, string $url): string
+    /**
+     * BreadcrumbList JSON-LD. GÖRÜNÜR breadcrumb (frontend src/ui/Breadcrumb.tsx) ile AYNI
+     * hiyerarşi — tek şema, çakışma yok. Ana Sayfa OTOMATİK ilk basamak olarak eklenir; $trail
+     * yalnız ARADAKI + mevcut basamakları içerir: [[ad, mutlakUrl], ...] (son = mevcut sayfa).
+     * Örn. makale: [['Makaleler', BASE.'makaleler'], [başlık, url]] -> Ana Sayfa › Makaleler › Başlık.
+     *
+     * @param array<int, array{0:string,1:string}> $trail
+     */
+    private static function injectBreadcrumbJsonLd(string $html, array $trail): string
     {
+        $items = [[
+            '@type' => 'ListItem',
+            'position' => 1,
+            'name' => 'Ana Sayfa',
+            'item' => self::BASE,
+        ]];
+        foreach ($trail as $i => [$name, $url]) {
+            $items[] = [
+                '@type' => 'ListItem',
+                'position' => $i + 2,
+                'name' => $name,
+                'item' => $url,
+            ];
+        }
         $data = [
             '@context' => 'https://schema.org',
             '@type' => 'BreadcrumbList',
-            'itemListElement' => [
-                [
-                    '@type' => 'ListItem',
-                    'position' => 1,
-                    'name' => 'Ana Sayfa',
-                    'item' => self::BASE,
-                ],
-                [
-                    '@type' => 'ListItem',
-                    'position' => 2,
-                    'name' => $label,
-                    'item' => $url,
-                ],
-            ],
+            'itemListElement' => $items,
         ];
         $json = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         if ($json === false) {

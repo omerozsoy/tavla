@@ -7,6 +7,8 @@
 import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
+import { useT } from '../i18n'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Button } from '@/components/ui/button'
 import { TOURNAMENT_RULES, RULE_EDITION } from '../data/tournamentRules'
 
@@ -17,7 +19,9 @@ interface Props {
 const groupId = (num: string) => 'kural-' + num.replace('.', '-') // '1.0' -> 'kural-1-0'
 
 export default function TournamentRules({ onClose }: Props) {
+  const { t } = useT()
   useEscape(onClose)
+  const crumbs = [homeCrumb(t), { name: 'Tavla Turnuva Kuralları' }]
   // DB body varsa hero'yu koru ama TOC + numarali bolumleri ATLA; duz body + CTA render et.
   // (TOC yapiya-ozel anchor'lara dayanir; duz admin metninde gerekmez.)
   const dbBody = useInfoPageBody('turnuva-kurallari')
@@ -30,6 +34,7 @@ export default function TournamentRules({ onClose }: Props) {
             <Icon name="x" size={16} />
           </Button>
         )}
+        <Breadcrumb items={crumbs} />
         <header className="seo-hero">
           <span className="seo-eyebrow">WBF Resmî Kuralları</span>
           <h1 className="info-title seo-hero-title">Tavla Turnuva Kuralları</h1>
@@ -69,6 +74,7 @@ export default function TournamentRules({ onClose }: Props) {
         </Button>
       )}
 
+      <Breadcrumb items={crumbs} />
       <header className="seo-hero">
         <span className="seo-eyebrow">WBF Resmî Kuralları</span>
         <h1 className="info-title seo-hero-title">Tavla Turnuva Kuralları</h1>
