@@ -1475,11 +1475,19 @@ export default function App() {
     upsertMeta('name', 'twitter:description', desc)
   }, [currentSlug])
 
-  // Sayfa acilinca EN USTE kaydir: footer'dan (asagidan) bir linke tiklayinca sayfa ustte
-  // acilir ama scroll asagida (footer'da) kaliyordu -> kullanici acilan sayfayi gormuyordu.
-  // Scroll container'i kesin bilmedigimiz icin olasi tum kaplari (+ pencere) tepeye al.
+  // Sayfa (slug) DEGISINCE EN USTE kaydir: footer'dan (asagidan) bir linke tiklayinca sayfa
+  // ustte acilir ama scroll asagida (footer'da) kaliyordu -> kullanici acilan sayfayi gormuyordu.
+  // KRITIK: HOME'a donuste de (slug BOS) kaydir. Onceki `if(!currentSlug)return` home'u atliyordu
+  // -> /turnuva-kurallari gibi bir sayfanin EN ALTINDA logoya tiklayinca icerik home'a degisiyor
+  // AMA viewport altta kaliyor; home'un alti da AYNI footer oldugu icin "hicbir sey olmadi" hissi
+  // (Playwright repro: scroll 384'te takili kaldi). Ilk mount'u atla (tarayici scroll geri-yukleme
+  // / deep-link'e karisma); sonraki HER gecelte (home dahil) olasi tum scroll kaplarini tepeye al.
+  const scrolledFirstRef = useRef(false)
   useEffect(() => {
-    if (!currentSlug) return
+    if (!scrolledFirstRef.current) {
+      scrolledFirstRef.current = true
+      return
+    }
     for (const sel of ['.app.lobby', '.lobby-main', '.page-host', '.main', '.register-card']) {
       const el = document.querySelector(sel) as HTMLElement | null
       if (el) el.scrollTop = 0
@@ -8408,6 +8416,8 @@ export default function App() {
           slug={newsSlug}
           onOpenDetail={(s) => setNewsSlug(s)}
           onCloseDetail={() => setNewsSlug(null)}
+          currentUser={user ? { id: user.id, name: user.nickname || user.first_name } : null}
+          onRequireLogin={() => setShowAuth(true)}
         />
       )}
       {quizOpen && <QuizPlay onClose={() => setQuizOpen(false)} />}
