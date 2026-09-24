@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useT } from '../i18n'
 import { Icon } from './Icon'
@@ -13,7 +13,27 @@ import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer }
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
 import { applyStep } from '../engine/moves'
+import { liveMoveDelta } from '../online/liveMoves'
+import { boardSig, validLivePrefix } from '../online/spectateAnim'
+import { sourceRect, destEl, flyChecker, type MoveStyle } from './moveAnim'
 import type { GameState, Player, Step } from '../engine/types'
+
+// İzleyicinin taş/animasyon tercihi (oyuncununkiyle aynı localStorage anahtarları).
+const specMoveStyle = (): MoveStyle => {
+  try {
+    const v = localStorage.getItem('tavla.move')
+    return v === 'off' || v === 'slide' || v === 'arc' || v === 'lift' ? v : 'slide'
+  } catch {
+    return 'slide'
+  }
+}
+const specAnimOn = (): boolean => {
+  try {
+    return localStorage.getItem('tavla.animoff') !== '1'
+  } catch {
+    return true
+  }
+}
 
 // Legacy (istemci-state) oda snapshot'i: PUT edilen state nesnesi.
 interface LegacySnap {
@@ -76,7 +96,8 @@ export default function Spectate({
       }
     }
     poll()
-    const id = window.setInterval(poll, 2000)
+    // Oynarken gibi adım adım izleme için daha sık yokla (oyuncunun poll'üyle aynı tempo).
+    const id = window.setInterval(poll, 1200)
     return () => {
       alive = false
       window.clearInterval(id)
@@ -130,6 +151,99 @@ export default function Spectate({
       : null
   const sm: ServerMatch | null = authoritative ? (eff?.server_match ?? null) : null
 
+  // ---- CANLI adım-adım izleme (oynarken gibi) ----
+  // Otoriter tahta (board = server_state) TUR BAŞIdır; oynanan adımlar `rv.live`'da gelir
+  // (version bump'sız; saat akarken poll döndürür). Adımları YASAL-önekle doğrulayıp adım adım
+  // (flyChecker) oynatırız; tur bitince server_state zaten sonucu içerir -> pürüzsüz, ghost yok.
+  const moveStyle = useRef(specMoveStyle()).current
+  const canAnim = useRef(
+    specAnimOn() && specMoveStyle() !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  ).current
+  const [shown, setShown] = useState<Step[]>([])
+  const shownRef = useRef<Step[]>([])
+  const flightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
+  const timersRef = useRef<number[]>([])
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => window.clearTimeout(id))
+    timersRef.current = []
+  }
+  // Canlı adımlar: EN TAZE poll'den (rv.live — delta poll'de server_state null olsa da live dolu gelir),
+  // renk sıradaki oyuncuyla eşleşmeli. GEÇERLİ önek: her adım o anki tahtada yasal (bayat live'ı ele).
+  const liveRaw = (rv?.live ?? eff?.live) as { steps?: Step[]; turn?: Player | null } | null | undefined
+  const liveSteps: Step[] =
+    board && liveRaw && Array.isArray(liveRaw.steps) && (!liveRaw.turn || liveRaw.turn === board.turn)
+      ? (liveRaw.steps as Step[])
+      : []
+  const baseKey = board ? boardSig(board) : ''
+  const validLive = useMemo(
+    () => (board ? validLivePrefix(board, liveSteps) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [baseKey, JSON.stringify(liveSteps)],
+  )
+  const liveKey = validLive.map((s) => `${s.from}>${s.to}`).join(',')
+
+  // Yeni tur başı / zar (baseKey değişti) -> önizlemeyi sıfırla (server_state zaten güncel).
+  useEffect(() => {
+    shownRef.current = []
+    setShown([])
+    clearTimers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseKey])
+
+  // validLive büyüdükçe yeni adımları adım adım oynat (liveMoveDelta: geri-alma/farklı diziyi ele alır).
+  useEffect(() => {
+    if (!board) return
+    const delta = liveMoveDelta(shownRef.current, validLive)
+    if (delta.reset) {
+      clearTimers()
+      shownRef.current = validLive.slice()
+      setShown(validLive.slice())
+      return
+    }
+    if (delta.animate.length === 0) return
+    if (!canAnim) {
+      shownRef.current = validLive.slice()
+      setShown(validLive.slice())
+      return
+    }
+    const base = shownRef.current.slice()
+    delta.animate.forEach((st, i) => {
+      timersRef.current.push(
+        window.setTimeout(() => {
+          if (moveStyle !== 'off') {
+            const r = sourceRect(st.from)
+            if (r) flightRef.current = { to: st.to, srcRect: r }
+          }
+          base.push(st)
+          shownRef.current = base.slice()
+          setShown(base.slice())
+        }, i * 500),
+      )
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveKey])
+
+  // Adım eklendikten sonra hedef taşı kaynaktan uçur (oyuncu tarafındaki FLIP'in eşi).
+  useLayoutEffect(() => {
+    const f = flightRef.current
+    if (!f || moveStyle === 'off') {
+      flightRef.current = null
+      return
+    }
+    flightRef.current = null
+    const el = destEl(f.to)
+    if (el) flyChecker(el, f.srcRect, moveStyle as Exclude<MoveStyle, 'off'>)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shown])
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimers(), [])
+
+  // Ekranda gösterilen tahta = tur başı (board) + o ana dek oynatılan (shown) adımlar.
+  const displayBoard: GameState | null = board ? applyPlayed(board, shown) : null
+  // Zar grileşmesi için: otoriterde shown, legacy'de committed played.
+  const usedSteps: Step[] = shown.length ? shown : legacyPlayed
+
   const score: Record<Player, number> = sm?.score ??
     legacy?.match?.score ?? { white: 0, black: 0 }
   const target = eff?.target ?? sm?.target ?? legacy?.match?.target ?? 1
@@ -165,8 +279,8 @@ export default function Spectate({
       name,
       avatar: (name || '?').slice(0, 1).toUpperCase(),
       sub: '',
-      off: board?.off[color] ?? 0,
-      active: board?.turn === color,
+      off: displayBoard?.off[color] ?? 0,
+      active: displayBoard?.turn === color,
       color,
       score: score[color] ?? 0,
       target,
@@ -181,14 +295,14 @@ export default function Spectate({
   // Zar yüzleri: GERÇEK oyunla AYNI mantık (çift zarda 2 göster; oynanan adımlara göre 'kullanıldı'
   // grileşir). Kaynak: turnStart.dice (=board.dice; applyStep dice'ı değiştirmez) + oynanan adımlar.
   const diceFaces: { value: number; used: boolean }[] = (() => {
-    const d = board?.dice ?? []
+    const d = displayBoard?.dice ?? []
     if (d.length === 0) return []
     if (d.length === 4) {
-      const faded = Math.floor(legacyPlayed.length / 2) // çift: her zar 2 hamle
+      const faded = Math.floor(usedSteps.length / 2) // çift: her zar 2 hamle
       return [{ value: d[0], used: faded >= 1 }, { value: d[0], used: faded >= 2 }]
     }
     const used = [false, false]
-    for (const st of legacyPlayed) {
+    for (const st of usedSteps) {
       for (let i = 0; i < d.length; i++) {
         if (!used[i] && d[i] === st.die) { used[i] = true; break }
       }
@@ -197,8 +311,9 @@ export default function Spectate({
   })()
   // Aktif oyuncu ALTTA mı? (beyaz=alt, flip=false). Zarlar gerçek oyundaki gibi onun TARAFINDA:
   // alt oyuncu -> sağ (centerRight), üst oyuncu -> sol (centerLeft). centerMain (orta) DEĞİL.
-  const activeBottom = board?.turn === 'white'
-  const diceRow = board && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={board.turn} /> : null
+  const activeBottom = displayBoard?.turn === 'white'
+  const diceRow =
+    displayBoard && diceFaces.length > 0 ? <DiceRow faces={diceFaces} owner={displayBoard.turn} /> : null
 
   // TAM EKRAN "normal sayfa": transform'lu bir ata altında render edildiğinde position:fixed
   // KIRPILIP modal gibi kutuya sıkışıyordu (bkz fixed-portal-transform tuzağı). document.body'ye
@@ -223,7 +338,7 @@ export default function Spectate({
 
       <main className="main game-scene">
         <div className="game-area">
-          {board ? (
+          {displayBoard ? (
             <>
               {/* p1 = beyaz (altta): 1. oyuncunun gördüğü perspektif. flip=false. */}
               <Sidebar top={mkInfo('black')} bottom={mkInfo('white')} length={target} crawford={crawford} />
@@ -240,15 +355,15 @@ export default function Spectate({
                 />
               )}
               <Board
-                state={board}
+                state={displayBoard}
                 selectableFroms={new Set()}
                 targets={new Set()}
                 selectedFrom={null}
                 onSelectFrom={() => {}}
                 onSelectTarget={() => {}}
                 onDragFrom={() => {}}
-                pipTop={pipCount(board, 'black')}
-                pipBottom={pipCount(board, 'white')}
+                pipTop={pipCount(displayBoard, 'black')}
+                pipBottom={pipCount(displayBoard, 'white')}
                 cube={{ value: cubeVal, owner: cubeOwner }}
                 crawford={crawford}
                 flip={false}
