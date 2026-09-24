@@ -38,6 +38,10 @@ $PHP artisan migrate --force
 #  - stats:backfill-wxp      -> gecmis maclardan WXP toplamlari
 $PHP artisan error-journal:backfill || echo "UYARI: error-journal:backfill atlandi."
 $PHP artisan stats:backfill-wxp || echo "UYARI: stats:backfill-wxp atlandi."
+# Career PR (PR Sıralaması) aggregate ÖNBELLEĞİ users tablosunda tutulur; maç satırları
+# silinince (ör. tavla:purge-old-matches) bayat kalıp "N maç analiz edildi"/PR'ı olduğundan
+# YÜKSEK gösterir. Her deploy'da yeniden kur -> match_results ile tutarlı (chunk'li, ucuz).
+$PHP artisan careerpr:rebuild || echo "UYARI: careerpr:rebuild atlandi."
 
 $PHP artisan optimize:clear
 # Filament component/panel cache'ini de temizle: aksi halde YENİ Filament sayfaları (ör. Başarısız
