@@ -2632,6 +2632,23 @@ button[aria-disabled='true'],
   line-height: 1.65;
   color: var(--muted);
 }
+/* ── İÇERİK ALT SAYFALARI: BİRLEŞİK OKUMA TİPOGRAFİSİ ──────────────────────────────
+   Denetim: gövde satır-yüksekliği 1.6–1.75 dağınıktı, .content-post-body metni soluk
+   (muted) idi ve okuma metninde satır-uzunluğu sınırı yoktu (geniş kartta 100+ karakter).
+   Tek blokta birleştir: tutarlı satır-yüksekliği (1.72), TAM metin rengi ve ideal ölçü
+   (~68ch). Görsel/tahta/galeri (p değil) ETKİLENMEZ. Başlıklar (sayfa kimliği) korunur.
+   Lead (info-rich ilk paragraf) daha spesifik kuralla muted+büyük kalır. */
+.news-detail-body p,
+.info-rich.rich p,
+.doc-body p,
+.rules-section p,
+.content-post-body p,
+.event-info-body p {
+  line-height: 1.72;
+  color: var(--text);
+  opacity: 1;
+  max-width: min(68ch, 100%);
+}
 .content-img {
   display: block;
   max-width: 100%;
