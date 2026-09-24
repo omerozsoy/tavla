@@ -17,6 +17,7 @@ import {
 } from '../api'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
+import AvatarFrame from './AvatarFrame'
 import TurkeyMap, { normProvince } from './TurkeyMap'
 import { CountryFlag } from './Flag'
 import { TavlaTvLogo } from './TavlaTvLogo'
@@ -1006,12 +1007,10 @@ function CommentSection({
         <ul className="news-comment-list">
           {comments.map((c) => (
             <li key={c.id} className="news-comment">
-              <div className="news-comment-avatar">
-                {c.avatar ? (
-                  <img src={mediaSrc(c.avatar)} alt="" loading="lazy" />
-                ) : (
-                  <span className="news-comment-avatar-ph">{(c.author || '?').charAt(0).toLocaleUpperCase('tr-TR')}</span>
-                )}
+              {/* Avatar: uygulama geneli AvatarFrame (data: URI + çerçeve + isim-baş-harfi
+                  fallback'ini yönetir; mediaSrc data: URI'yi bozuyordu). */}
+              <div className="news-comment-avatar-wrap">
+                <AvatarFrame src={c.avatar} frame={c.frame} size={38} name={c.author} animated={false} />
               </div>
               <div className="news-comment-main">
                 <div className="news-comment-head">

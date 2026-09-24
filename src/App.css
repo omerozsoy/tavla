@@ -3419,30 +3419,9 @@ button[aria-disabled='true'],
   display: flex;
   gap: 12px;
 }
-.news-comment-avatar {
+.news-comment-avatar-wrap {
   flex: 0 0 auto;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: var(--panel);
-  border: 1px solid var(--border);
-}
-.news-comment-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-.news-comment-avatar-ph {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-weight: 600;
-  color: var(--accent);
-  font-size: 1rem;
+  line-height: 0;
 }
 .news-comment-main {
   flex: 1 1 auto;
