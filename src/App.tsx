@@ -4683,7 +4683,12 @@ export default function App() {
         const appliedVersion = isAuthoritative
           ? appliedServerVersionRef.current
           : appliedVersionRef.current
-        const rv = await showRoom(room.code, appliedVersion >= 0 ? appliedVersion : undefined)
+        // RÖVANŞ BEKLERKEN since GÖNDERME: rematch_code oda server_version'ını BUMP ETMEZ; maç bitince
+        // (saat durunca) show 204 döner ve YENİ oda kodu poll ile HİÇ gelmezdi -> bekleyen taraf
+        // (kabul edip rakibini bekleyen) maça yönlenmiyordu. Beklerken tam gövde al -> rematch.code gelsin.
+        const rematchWaiting = rematchSentRef.current === 'yes' && rematchEnteredRef.current == null
+        const since = rematchWaiting ? undefined : appliedVersion >= 0 ? appliedVersion : undefined
+        const rv = await showRoom(room.code, since)
         if (cancelled || !rv) return
         setRoom((r) =>
           r
@@ -5910,6 +5915,18 @@ export default function App() {
     } finally {
       setRoomBusy(false)
     }
+  }
+
+  // Rövanş kodu (rematchRoom POST yanıtı VEYA poll) ile yeni odaya gir. Çift-giriş kalkanı
+  // (rematchEntering/Entered) poll ile POST yanıtının yarışını dedupe eder. Rövanş = AYNI ayarlar
+  // olduğundan mevcut ref'ler (onlineTarget/friendly/stake/betPct) korunur.
+  async function enterRematchByCode(code: string) {
+    if (!code || rematchEnteredRef.current === code || rematchEnteringRef.current === code) return
+    rematchEnteringRef.current = code
+    matchTargetSyncedRef.current = true
+    const ok = await enterOnlineByCode(code, onlineTargetRef.current)
+    rematchEnteringRef.current = null
+    if (ok) rematchEnteredRef.current = code
   }
 
   // Okunmamis mesaj rozetini aninda tazele (ping'i beklemeden; or. konusma acilinca)
@@ -9438,13 +9455,20 @@ export default function App() {
               if (!room) return
               rematchSentRef.current = 'yes'
               setRematch((r) => ({ ...r, mine: 'yes' }))
-              rematchRoom(room.code, true).catch((err) => {
-                // Hatayi YUTMA: teklif gitmediyse buton "hicbir sey yapmiyor" gorunuyordu
-                // (or. migration kosmadiysa sunucu 503 "Rövanş bu sunucuda kapalı." doner).
-                rematchSentRef.current = null
-                setRematch((r) => ({ ...r, mine: null }))
-                notify.error((err as { message?: string })?.message || t('mp.connError'))
-              })
+              rematchRoom(room.code, true)
+                .then((res) => {
+                  // İki taraf da kabul ettiyse sunucu YENİ oda kodunu POST yanıtında döner ->
+                  // ANINDA gir. Poll'a GÜVENME: maç bitince (saat durunca) show 204 döndüğü için
+                  // kod poll ile hiç gelmiyordu -> kabul eden maça yönlenmiyordu (bug).
+                  if (res?.rematch?.code) void enterRematchByCode(res.rematch.code)
+                })
+                .catch((err) => {
+                  // Hatayi YUTMA: teklif gitmediyse buton "hicbir sey yapmiyor" gorunuyordu
+                  // (or. migration kosmadiysa sunucu 503 "Rövanş bu sunucuda kapalı." doner).
+                  rematchSentRef.current = null
+                  setRematch((r) => ({ ...r, mine: null }))
+                  notify.error((err as { message?: string })?.message || t('mp.connError'))
+                })
             } else {
               handleNewMatch(match.target, mode)
             }
