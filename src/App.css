@@ -2671,16 +2671,17 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  font-size: 0.8rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
+  font-weight: 500;
 }
-/* Okunma rozeti (göz + sayı): tarih ile aynı sessiz ton, ikon hafif hizalı. */
+/* Okunma rozeti (göz + sayı): tarih ile aynı tema rengi (accent), ikon hafif hizalı. */
 .news-views {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  color: var(--muted);
+  color: var(--accent);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -3223,8 +3224,9 @@ button[aria-disabled='true'],
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.82rem;
-  color: var(--muted);
+  font-size: 0.94rem;
+  color: var(--accent);
+  font-weight: 500;
   margin-bottom: 18px;
 }
 .news-detail-hero {
