@@ -28,6 +28,8 @@ class ForfeitLoss
      * @param  int|null  $matchLength  mac uzunlugu (puan)
      * @param  string  $matchType   'coin' | 'match'
      * @param  string|null  $winnerName  rakip (kazanan) adi -> gecmiste gorunsun
+     * @param  bool  $ranked  false ise CASUAL (arkadas/kilic): rating+istatistik DEGISMEZ,
+     *                        yalniz gecmis satiri delta=0 ile yazilir (haksiz puan kaybi olmaz).
      */
     public static function record(
         string $roomCode,
@@ -36,6 +38,7 @@ class ForfeitLoss
         ?int $matchLength,
         string $matchType,
         ?string $winnerName,
+        bool $ranked = true,
     ): void {
         if ($loserId <= 0) {
             return; // misafir / hesapsiz -> kaydedecek sicil yok
@@ -45,7 +48,7 @@ class ForfeitLoss
             return;
         }
 
-        DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName) {
+        DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return;
@@ -57,13 +60,17 @@ class ForfeitLoss
 
             $ra = (int) ($loser->rating ?? 1500);
             $rb = $oppRating > 0 ? $oppRating : 1500;
-            $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
-            $newRating = max(100, (int) round($ra + 32 * (0 - $expected))); // skor=0 (kayip)
-
-            $loser->rating = $newRating;
-            $loser->losses = (int) ($loser->losses ?? 0) + 1;
-            $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
-            $loser->save();
+            if ($ranked) {
+                $expected = 1 / (1 + pow(10, ($rb - $ra) / 400));
+                $newRating = max(100, (int) round($ra + 32 * (0 - $expected))); // skor=0 (kayip)
+                $loser->rating = $newRating;
+                $loser->losses = (int) ($loser->losses ?? 0) + 1;
+                $loser->games_played = (int) ($loser->games_played ?? 0) + 1;
+                $loser->save();
+            } else {
+                // CASUAL (arkadas/kilic): rating+istatistik DEGISMEZ, delta=0 (satir yine yazilir).
+                $newRating = $ra;
+            }
 
             $row = [
                 'user_id' => $loserId,

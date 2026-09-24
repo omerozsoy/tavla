@@ -115,10 +115,10 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(1, MatchResult::where('room_code', 'FL2')->where('user_id', $a->id)->count());
     }
 
-    // Direktif: davet (friendly) maçları artık herkese açık (BOT hariç tüm maçlar izlenebilir) ->
-    // ranked gibi davranır: poll geldiğinde forfeit SUNUCUDA yazılır (eski "friendly gizli, fail
-    // closed" davranışı KALKTI; artık gizlilik filtresi yok).
-    public function test_friendly_forfeit_is_recorded_like_ranked(): void
+    // Direktif (kullanıcı): davet (friendly/kılıç) maçları CASUAL (puansız) -> terk edilse bile
+    // KAYBEDEN puan/mağlubiyet KAYBETMEZ; yalnız geçmiş satırı delta=0 ile yazılır. Oda hâlâ
+    // görünür (izlenebilir) + forfeit finalize edilir, sadece rating/istatistik DEĞİŞMEZ.
+    public function test_friendly_forfeit_is_casual_no_rating_loss(): void
     {
         $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
         $b = $this->user('b');
@@ -131,12 +131,14 @@ class ForfeitLossTest extends TestCase
         $clock['started_at'] = microtime(true) - 40;
         $room->clock = $clock;
         $room->save();
-        // Tokensiz (izleyici) poll: oda GÖRÜNÜR + forfeit finalize edilir (ranked ile aynı).
+        // Tokensiz (izleyici) poll: oda GÖRÜNÜR + forfeit finalize edilir (satır yazılır).
         $this->getJson('/api/rooms/FL3')->assertOk();
 
         $a->refresh();
-        $this->assertLessThan(1500, $a->rating);          // rating düştü
-        $this->assertSame(1, (int) $a->losses);           // mağlubiyet +1
-        $this->assertNotNull(MatchResult::where('room_code', 'FL3')->where('user_id', $a->id)->first());
+        $this->assertSame(1500, (int) $a->rating);        // CASUAL: rating DEĞİŞMEDİ
+        $this->assertSame(0, (int) $a->losses);           // CASUAL: mağlubiyet artmadı
+        $row = MatchResult::where('room_code', 'FL3')->where('user_id', $a->id)->first();
+        $this->assertNotNull($row);                       // maç yine geçmişe yazıldı
+        $this->assertSame(0, (int) $row->delta);          // delta=0 (puan hareketi yok)
     }
 }

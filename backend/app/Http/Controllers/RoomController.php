@@ -1816,10 +1816,11 @@ class RoomController extends Controller
             $room->end_reason = $reason;
         }
 
-        // TERK EDEN KAYBEDER (sunucu-otoriter kayit): kaybedenin rating + maglubiyet +
-        // match_results satirini SUNUCUDA yaz -> istemci raporlamasa (sekme kapali) bile
-        // sicile yansisin. Yalniz bot (PvB) maci haric -> insan sekmeyi kapatinca HAKSIZ
-        // rating kaybi olmaz. Arkadas/turnuva dahil TUM online insan maclari puanli. Idempotent.
+        // TERK EDEN KAYBEDER (sunucu-otoriter kayit): kaybedenin match_results satirini SUNUCUDA
+        // yaz -> istemci raporlamasa (sekme kapali) bile sicile yansisin. Yalniz bot (PvB) maci
+        // haric -> insan sekmeyi kapatinca HAKSIZ rating kaybi olmaz. PUANLI: eslesme + turnuva.
+        // CASUAL (arkadas daveti/kilic, mode='friendly'): satir yazilir ama rating/istatistik
+        // DEGISMEZ (puan kaybi yok) -> $ranked=false. Idempotent.
         if (! $room->bot) {
             $loserSlot = $winnerSlot === 'p1' ? 'p2' : 'p1';
             $loserId = (int) ($loserSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id);
@@ -1828,6 +1829,7 @@ class RoomController extends Controller
             $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match';
             \App\Support\ForfeitLoss::record(
                 $room->code, $loserId, $oppRating, (int) $room->target, $matchType, $winnerName,
+                $room->mode !== 'friendly',
             );
         }
     }
