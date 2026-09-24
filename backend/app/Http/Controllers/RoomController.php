@@ -1198,6 +1198,10 @@ class RoomController extends Controller
         }
 
         $room->{'rematch_'.$slot} = $data['accept'] ? 'yes' : 'no';
+        // RÖVANŞ CEVABI = oda değişikliği: server_version'ı BUMP et. Aksi halde maç bitince (saat
+        // durunca) show() 204 döner ve karşı taraf rövanş isteğini/cevabını POLL ile HİÇ görmezdi.
+        $room->server_version = (int) $room->server_version + 1;
+        $room->version = (int) $room->version + 1;
         $room->save();
         $room = $room->fresh();
 
@@ -1210,6 +1214,8 @@ class RoomController extends Controller
                 && (Room::userHasActiveMoneyMatch((int) $room->p1_user_id, (int) $room->id)
                     || Room::userHasActiveMoneyMatch((int) $room->p2_user_id, (int) $room->id))) {
                 $room->{'rematch_'.$slot} = null;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->version = (int) $room->version + 1;
                 $room->save();
 
                 return $this->fail('Devam eden bahisli maçın var.', 409);
@@ -1220,6 +1226,8 @@ class RoomController extends Controller
                 // Bahis karsilanamiyor -> teklifi geri al ki taraflar "bekliyor"da asili kalmasin.
                 $room->rematch_p1 = null;
                 $room->rematch_p2 = null;
+                $room->server_version = (int) $room->server_version + 1;
+                $room->version = (int) $room->version + 1;
                 $room->save();
 
                 return $this->fail($e->getMessage(), 422);
@@ -1372,6 +1380,10 @@ class RoomController extends Controller
             // Eski oda kapanir: rovans YENI odada oynanir (Canli Maclar'da olu oda gorunmesin,
             // C1 bahis guardi eski odayi 'oynaniyor' saymasin).
             $locked->status = 'finished';
+            // RÖVANŞ KODU yazıldı: server_version'ı BUMP et ki İKİ tarafın poll'u da (204'e
+            // takılmadan) yeni oda kodunu alıp maça girsin.
+            $locked->server_version = (int) $locked->server_version + 1;
+            $locked->version = (int) $locked->version + 1;
             $locked->save();
 
             return $fields['code'];
