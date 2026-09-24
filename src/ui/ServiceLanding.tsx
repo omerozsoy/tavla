@@ -19,6 +19,8 @@ import { useEscape } from './useEscape'
 import { useInfoPage } from './useInfoPage'
 import { InfoPane } from './Info'
 import ContactForm from './ContactForm'
+import { useT } from '../i18n'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 
 interface Props {
   slug: string
@@ -396,6 +398,7 @@ function fallbackBody(slug: string) {
 }
 
 export default function ServiceLanding({ slug, onClose }: Props) {
+  const { t } = useT()
   useEscape(onClose)
   const page = useInfoPage(slug)
   const dbBody = (page?.body ?? '').trim()
@@ -411,6 +414,7 @@ export default function ServiceLanding({ slug, onClose }: Props) {
           <Icon name="x" size={16} />
         </button>
       )}
+      <Breadcrumb items={[homeCrumb(t), { name: meta.h1 }]} />
       <header className="service-landing-head">
         <h1 className="info-title service-landing-title">{meta.h1}</h1>
         <p className="service-landing-sub">{meta.heroSub}</p>

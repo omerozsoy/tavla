@@ -2,6 +2,7 @@ import { Icon } from './Icon'
 import { useEscape } from './useEscape'
 import { useInfoPageBody } from './useInfoPage'
 import { useT } from '../i18n'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 import { Button } from '@/components/ui/button'
 
 interface Props {
@@ -479,6 +480,7 @@ export default function Rules({ onClose }: Props) {
         <Button variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
+        <Breadcrumb items={[homeCrumb(t), { name: c.title }]} />
         <h2>
           <Icon name="book" size={20} /> {c.title}
         </h2>

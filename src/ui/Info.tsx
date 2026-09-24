@@ -19,6 +19,8 @@ import { RankProgression } from './RankProgression'
 import FairDiceInfo from './FairDiceInfo'
 import Achievements from './Achievements'
 import Scoring from './Scoring'
+import GlossaryView from './GlossaryView'
+import Breadcrumb, { homeCrumb } from './Breadcrumb'
 
 export type InfoTab = InfoPageSlug
 
@@ -34,7 +36,7 @@ const TABS: { slug: InfoTab; labelKey: string }[] = [
 ]
 
 // Admin panelden düzenlenen (info_pages) rich-text sekmeler. Diğerleri canlı bileşen.
-const EDITABLE: InfoTab[] = ['about', 'services', 'glossary']
+const EDITABLE: InfoTab[] = ['about', 'services']
 
 interface Props {
   onClose: () => void
@@ -72,6 +74,7 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
         </Button>
         {/* Sekme şeridi kaldırıldı: her bilgi sayfası kendi URL'sine sahip bağımsız sayfadır
             (/bilgi/hakkinda, /bilgi/hizmetler, …); menüden tek tek açılır. */}
+        <Breadcrumb items={[homeCrumb(t), { name: activeTitle }]} />
         <h2 className="info-title">{activeTitle}</h2>
 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
@@ -80,6 +83,8 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
             <InfoPane page={pages[tab]} />
           </div>
         )}
+
+        {tab === 'glossary' && <GlossaryView />}
 
         {tab === 'ranks' && (
           <div className="info-tab-pane">
