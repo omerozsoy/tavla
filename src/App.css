@@ -22261,10 +22261,13 @@ button.acct-row-logout:hover:not(:disabled) {
 }
 .invite-stack {
   position: fixed;
-  top: 70px;
+  /* Üst yığının (account-bar var(--header-h) + varsa beta bandı --beta-h) TAM ALTINA konumlan;
+     aksi halde beta bandı davetin başını (kimin davet ettiği) örtüyordu. --beta-h BetaBanner'dan
+     dinamik gelir (kapatılınca 0). z-index üst yığından (105) yüksek -> asla altında kalmaz. */
+  top: calc(var(--header-h) + var(--beta-h, 0px) + 6px);
   left: 50%;
   transform: translateX(-50%);
-  z-index: 80;
+  z-index: 110;
   display: flex;
   flex-direction: column;
   gap: 8px;

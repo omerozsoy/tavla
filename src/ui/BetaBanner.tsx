@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './betaBanner.css'
 
 // Surum TEK KAYNAK: vite.config define'i package.json'dan okur (elle yazilmaz).
@@ -48,6 +48,15 @@ export default function BetaBanner() {
       return false
     }
   })
+  const ref = useRef<HTMLDivElement>(null)
+  // Bandın GERÇEK yüksekliğini bir CSS değişkeni olarak yayınla (--beta-h). Davet banner'ı
+  // (.invite-stack) bunu kullanıp üst yığının (account-bar + beta bandı) TAM ALTINDA konumlanır;
+  // aksi halde bant davetin başını (kimin davet ettiği) örtüyordu. Kapatılınca 0 -> davet yukarı kayar.
+  useEffect(() => {
+    const h = ref.current?.offsetHeight ?? 0
+    document.documentElement.style.setProperty('--beta-h', h ? `${h}px` : '0px')
+    return () => document.documentElement.style.setProperty('--beta-h', '0px')
+  }, [dismissed])
   if (dismissed) return null
 
   const close = () => {
@@ -60,7 +69,7 @@ export default function BetaBanner() {
   }
 
   return (
-    <div className="beta-banner" role="region" aria-label="Beta duyurusu">
+    <div className="beta-banner" role="region" aria-label="Beta duyurusu" ref={ref}>
       <div className="bb-badge">
         <span className="bb-dot" aria-hidden="true" />
         BETA
