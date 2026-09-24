@@ -1,6 +1,10 @@
 [Unit]
 Description=GNU Backgammon analiz servisi (tavlai — ana motor)
 After=network.target
+# Kısır döngüde (art arda çökme) systemd varsayılan olarak 10sn'de 5 denemeden sonra PES EDER ve
+# birimi 'failed' bırakır -> elle "systemctl restart" gerekir. 0 = sınırı KALDIR: her çökmede
+# RestartSec sonra TEKRAR başlat (kalıcı self-heal; elle müdahale gerekmez).
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple

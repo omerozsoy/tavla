@@ -26,6 +26,22 @@ class GnuBgClient
     }
 
     /**
+     * /health JSON'u (ölçüm için): ['ok','service','version','inflight','peak_inflight'] veya null.
+     * peak_inflight = gözlemlenen en çok eşzamanlı analiz — çok-süreçli gnubg havuzu gerekli mi
+     * kararı için (hep 1 -> gereksiz; sık 2+ -> darboğaz). Admin Servis Durumu paneli gösterir.
+     */
+    public function healthInfo(): ?array
+    {
+        try {
+            $resp = Http::timeout(5)->get($this->url('/health'));
+
+            return $resp->ok() ? $resp->json() : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
      * Yapisal konumu analiz et. Doner: ['gnubgid'=>..., 'result'=>gnubg.hint()] veya null.
      * gnubg.hint().hint[] = adaylar: {move, equity(cubeful/EMG), eqdiff(kayip), details.probs}.
      */

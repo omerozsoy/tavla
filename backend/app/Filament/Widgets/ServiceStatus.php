@@ -100,9 +100,20 @@ class ServiceStatus extends Widget
             return $this->svc('gnubg', 'TavlaTV Analiz Servisi', false, null, 'GNUBG_URL boş');
         }
         try {
-            $up = app(GnuBgClient::class)->health();
+            $info = app(GnuBgClient::class)->healthInfo(); // {ok,version,inflight,peak_inflight} veya null
+            $up = $info !== null && ($info['ok'] ?? false) === true;
             // KIRMIZIYSA nedenini teşhis et (bugünkü symlink/dosya sorunu gibi) -> SSH'a girmeden anla.
             $detail = $up ? $url : $url.' — '.$this->gnubgDownReason();
+            // ÖLÇÜM: en çok eşzamanlı analiz (çok-süreçli havuz gerekli mi?). peak>=2 ise analizler
+            // kilitte kuyruğa giriyor -> çok-süreçli gnubg hız kazandırır; hep 1 ise gereksiz.
+            if ($up && isset($info['peak_inflight'])) {
+                $peak = (int) $info['peak_inflight'];
+                $now = (int) ($info['inflight'] ?? 0);
+                $detail .= " · eşzamanlı analiz: şu an {$now}, tepe {$peak}";
+                if ($peak >= 2) {
+                    $detail .= ' (üst üste biniyor — çok-süreçli havuz düşünülebilir)';
+                }
+            }
 
             return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, $up, $detail, true);
         } catch (\Throwable $e) {
