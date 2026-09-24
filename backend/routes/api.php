@@ -41,6 +41,7 @@ Route::get('/contents/{content}/comments', [ContentCommentController::class, 'in
 Route::get('/info-pages', [\App\Http\Controllers\InfoPageController::class, 'index']); // /bilgi/<slug> sekmeleri (acik)
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/footer-config', [\App\Http\Controllers\FooterController::class, 'index']); // footer kolon sira/baslik/gorunurluk (acik)
+Route::get('/site-tags', [\App\Http\Controllers\SiteTagController::class, 'index']); // Google Etiketi (gtag) yapilandirmasi (acik)
 Route::get('/tournaments', [TournamentController::class, 'index']);
 Route::get('/tournament-ads', [TournamentAdController::class, 'index']); // ana sayfa reklam serisi
 Route::get('/ad-slots', [\App\Http\Controllers\AdSlotController::class, 'index']); // paneller arasi reklam seritleri

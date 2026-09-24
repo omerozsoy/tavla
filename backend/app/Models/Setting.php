@@ -29,6 +29,10 @@ class Setting extends Model
         'bank_transfer_name' => '',  // hesap sahibi / ünvan
         'bank_transfer_bank' => '',  // banka adı
         'bank_transfer_note' => '',  // müşteriye açıklama/talimat
+        // Google Etiketi (gtag.js / Google Ads dönüşüm). Admin panel: Ayarlar > Site Ayarları.
+        // Kapalıyken (veya id boşken) SPA hiçbir Google script'i yüklemez. id örn. 'AW-...' / 'G-...'.
+        'gtag_enabled' => 0,
+        'gtag_id' => '',
     ];
 
     /** Tüm ayarları cache'li key=>value dizi döndür (tablo yoksa boş). */

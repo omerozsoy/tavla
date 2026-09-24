@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Setting;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
@@ -45,6 +46,8 @@ class SiteSettings extends Page implements HasForms
             'commission_pct' => Setting::int('commission_pct', 5),
             'pr_min_matches' => Setting::int('pr_min_matches', 5),
             'pr_min_decisions' => Setting::int('pr_min_decisions', 100),
+            'gtag_enabled' => Setting::bool('gtag_enabled', false),
+            'gtag_id' => Setting::get('gtag_id', ''),
         ]);
     }
 
@@ -87,6 +90,16 @@ class SiteSettings extends Page implements HasForms
                             ->numeric()->required()->minValue(1)->maxValue(100000)
                             ->helperText('Varsayılan 200. Yeterli karar örneklemi olmadan sıralamaya girilmez.'),
                     ])->columns(2),
+                Section::make('Google Etiketi (gtag.js / Reklam Dönüşümü)')
+                    ->description('Google Ads / Analytics ölçüm etiketi. Açıkken tüm sayfalarda gtag.js yüklenir. Kapatınca hiçbir Google script’i yüklenmez.')
+                    ->schema([
+                        Toggle::make('gtag_enabled')->label('Etiket aktif')
+                            ->helperText('Kapalıyken (veya ID boşken) site hiçbir Google ölçüm script’i yüklemez.'),
+                        TextInput::make('gtag_id')->label('Etiket kimliği (ID)')
+                            ->placeholder('AW-XXXXXXXXXX veya G-XXXXXXXXXX')
+                            ->maxLength(40)
+                            ->helperText('Google Ads dönüşümü için AW-…, GA4 için G-… biçiminde.'),
+                    ])->columns(2),
             ])
             ->statePath('data');
     }
@@ -98,6 +111,13 @@ class SiteSettings extends Page implements HasForms
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }
+        }
+        // Google Etiketi (string id + bool aktif) — int değil.
+        if (array_key_exists('gtag_id', $data)) {
+            Setting::put('gtag_id', trim((string) $data['gtag_id']));
+        }
+        if (array_key_exists('gtag_enabled', $data)) {
+            Setting::put('gtag_enabled', $data['gtag_enabled'] ? '1' : '0');
         }
         Notification::make()->title('Site ayarları kaydedildi')->success()->send();
     }
