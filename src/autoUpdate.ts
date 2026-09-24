@@ -8,16 +8,21 @@
 //  - Periyodik + sekmeye dönünce + odakta /index.html'i no-store çeker, oradaki giriş hash'iyle
 //    kıyaslar. Deploy additive olduğu için index.html her deploy'da YENİ hash'e döner -> fark =
 //    yeni sürüm.
-//  - Yeni sürüm varsa: GÜVENLİ an gelince (aktif maç EKRANINDA DEĞİL + ödeme/sepet rotasında
-//    DEĞİL) location.reload(). sessionStorage kalkanı reload döngüsünü önler.
+//  - Yeni sürüm varsa GÜVENLİ + ŞAŞIRTMAYAN anda location.reload(): (a) sekme ARKA PLANDAyken
+//    (kullanıcı görmez) VEYA (b) sekme önde ama IDLE_MS boyunca ETKİLEŞİMSİZKEN ("gerçekten
+//    boşta"). Sekmeye DÖNÜŞ yenilemez (dönüş = aktivite kabul edilir, boşta sayacı sıfırlanır)
+//    -> "başka sekmede gezip geri dönünce sayfa yenileniyor" şikâyetinin kökü budur. Aktif maç
+//    ekranı / ödeme rotası her hâlükârda hariç. sessionStorage kalkanı reload döngüsünü önler.
 //
-// TASARIM İLKESİ: aktif maçı ASLA bölme (oyun kaybı/desync olmasın). Yalnız lobi/gezinme
-// sırasında yenile. "Maçtayım" tespiti DOM'dan (.app.game-view) yapılır -> React state'e
-// bağımlılık yok, App.tsx'e dokunulmaz.
+// TASARIM İLKESİ: aktif maçı ASLA bölme (oyun kaybı/desync olmasın) + kullanıcıyı gözünün önünde
+// ŞAŞIRTMA. Yalnız lobi/gezinme + arka plan / boşta anlarda yenile. "Maçtayım" tespiti DOM'dan
+// (.app.game-view) yapılır -> React state'e bağımlılık yok, App.tsx'e dokunulmaz.
 
 const RELOAD_KEY = 'tavla:autoupdate:target'
 // Reload'ın kesinlikle YAPILMAYACAĞI hassas rotalar (form/ödeme akışı yarıda kalmasın).
 const SENSITIVE = ['/sepet', '/odeme', '/checkout', '/cart', '/uyelik', '/payment', '/magaza']
+// Sekme ÖNDEyken "gerçekten boşta" eşiği: bu kadar süre hiç etkileşim olmazsa yenilemeye izin ver.
+const IDLE_MS = 3 * 60 * 1000
 
 function entryOf(text: string): string | null {
   const m = text.match(/index-[A-Za-z0-9_-]+\.js/)
@@ -59,9 +64,17 @@ export function installAutoUpdate() {
   if (!mine) return // giriş hash'i saptanamadı -> güvenli taraf: hiçbir şey yapma
 
   let target: string | null = null
+  // Son ETKİLEŞİM anı. Sekmeye dönüş de "etkileşim" sayılır (bump) -> dönüşte anında yenilenmez.
+  let lastActivity = Date.now()
+  const bump = () => { lastActivity = Date.now() }
+  const idle = () => Date.now() - lastActivity >= IDLE_MS
 
   const tryReload = () => {
     if (!target || unsafeToReload()) return
+    // ŞAŞIRTMA: sekme ÖNDE ve kullanıcı YAKIN ZAMANDA etkileşimdeyse yenileme. İzin verilen anlar:
+    //  - sekme ARKA PLANDA (hidden) -> reload görünmez, kullanıcı flash görmez;
+    //  - sekme önde ama IDLE_MS'tir dokunulmamış ("gerçekten boşta").
+    if (document.visibilityState === 'visible' && !idle()) return
     try {
       if (sessionStorage.getItem(RELOAD_KEY) === target) return // bu sürüme zaten reload denendi
       sessionStorage.setItem(RELOAD_KEY, target)
@@ -77,9 +90,21 @@ export function installAutoUpdate() {
     tryReload()
   }
 
+  // Etkileşim izleme: her biri "boşta" sayacını sıfırlar (pasif -> scroll perf'i etkilenmez).
+  for (const ev of ['pointerdown', 'keydown', 'scroll', 'touchstart', 'mousemove', 'wheel']) {
+    window.addEventListener(ev, bump, { passive: true })
+  }
+
   check()
   window.setInterval(check, 5 * 60 * 1000) // 5 dk: yeni deploy tara
-  window.setInterval(tryReload, 4000) // güvenli an (lobiye dönüş vb.) gelince hemen uygula
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check() })
-  window.addEventListener('focus', check)
+  window.setInterval(tryReload, 15000) // periyodik: boşta/arka plan koşulu sağlanınca uygula
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      bump() // DÖNÜŞ = aktivite: boşta sayacını sıfırla -> dönüşte anında reload YOK
+      check() // yeni sürüm var mı diye taze bak (reload'u tryReload boşta/arka plan kuralına bırakır)
+    } else {
+      tryReload() // arka plana geçti -> güvenliyse hemen (görünmez) yenile
+    }
+  })
+  window.addEventListener('focus', () => { bump(); check() })
 }
