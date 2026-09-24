@@ -17,7 +17,9 @@ import json
 import os
 import random as _random
 import re  # modül düzeyi regex derlemeleri (luck parse) için — eskiden yalnız fonksiyon-içiydi
+import threading
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
 
 try:
     import gnubg  # gnubg'nin gömülü Python modülü (yalnız `gnubg -p` içinde vardır)
@@ -26,6 +28,44 @@ except ImportError:  # düz python ile çalıştırılırsa anlamlı hata
 
 PORT = int(os.environ.get("GNUBG_PORT", "8092"))
 SECRET = os.environ.get("GNUBG_SECRET", "")
+
+# gnubg'nin geçerli konumu GLOBAL durumdur (setgnubgid onu değiştirir) -> gnubg'ye dokunan HER
+# istek bu kilidi TUTARAK sırayla işlenmeli (yarış yok). Sunucu artık thread'li (ThreadingMixIn):
+# uzun bir analiz (/reviewmatch 600s, /analyzematch, /matchluck...) tek thread'i bloklamaz; bu
+# sırada /health AYRI bir thread'te ANINDA cevaplanır. Böylece "meşgul" olan servis "düştü" gibi
+# görünüp gereksiz yere restart edilmez (bkz services:watch 5sn /health probe'u vs 600sn analiz).
+_GNUBG_LOCK = threading.Lock()
+# /health'i gnubg'siz cevaplamak için sürüm başlangıçta BİR KEZ okunur (health hızlı + kilit-siz).
+_VERSION = "gnubg"
+
+# EŞZAMANLILIK ÖLÇÜMÜ ("önce ölç, sonra çok-süreçliye geç" kararı için): gnubg kilidini bekleyen+tutan
+# istek sayısı. `_INFLIGHT` anlık, `_PEAK_INFLIGHT` gözlemlenen tepe. /health bunları döner:
+#   peak hep 1 -> analizler HİÇ üst üste binmiyor -> çok-süreçli havuz FAYDASIZ.
+#   peak sık 2+ -> istekler kilitte kuyruğa giriyor -> çok-süreçli gnubg gerçek hız kazandırır.
+_COUNT_LOCK = threading.Lock()
+_INFLIGHT = 0
+_PEAK_INFLIGHT = 0
+
+
+class _GnubgSession:
+    """gnubg global-state kilidi + eşzamanlılık ölçer. `with _GnubgSession():` — kilidi TUTARKEN
+    gnubg çağır (yarış yok); giriş/çıkışta contention sayacını güncelle (ölçüm)."""
+
+    def __enter__(self):
+        global _INFLIGHT, _PEAK_INFLIGHT
+        with _COUNT_LOCK:
+            _INFLIGHT += 1
+            if _INFLIGHT > _PEAK_INFLIGHT:
+                _PEAK_INFLIGHT = _INFLIGHT  # kilidi ALMADAN önce artır -> bekleyenler de sayılır
+        _GNUBG_LOCK.acquire()
+        return self
+
+    def __exit__(self, *exc):
+        global _INFLIGHT
+        _GNUBG_LOCK.release()
+        with _COUNT_LOCK:
+            _INFLIGHT -= 1
+        return False
 
 # =====================================================================================
 # GNU Backgammon PositionID / MatchID ENCODER (kilit taşı) — bizim yapısal konumumuzu
@@ -1495,12 +1535,20 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        # /health gnubg'ye DOKUNMAZ + kilit BEKLEMEZ -> uzun bir analiz sürerken bile ANINDA cevap
+        # (izleyicinin 5sn timeout'lu probe'u sahte "düştü" görmesin). Sürüm başta cache'lendi.
         if self.path == "/health":
-            return self._send(200, {"ok": True, "service": "gnubg", "version": _gnubg_version()})
+            # inflight/peak: eşzamanlı analiz ölçümü (çok-süreçli havuz kararı için). GIL altında
+            # int okuması atomik -> teşhis için kilit-siz oku (health asla bloklanmasın).
+            return self._send(200, {"ok": True, "service": "gnubg", "version": _VERSION,
+                                    "inflight": _INFLIGHT, "peak_inflight": _PEAK_INFLIGHT})
+        # gnubg'ye dokunan teşhis uçları -> global kilit (analiz istekleriyle SIRAYLA).
         if self.path == "/selftest":
-            return self._send(200, _selftest())
+            with _GnubgSession():
+                return self._send(200, _selftest())
         if self.path == "/maptest":
-            return self._send(200, _maptest())
+            with _GnubgSession():
+                return self._send(200, _maptest())
         self._send(404, {"error": "not-found"})
 
     def do_POST(self):
@@ -1514,6 +1562,12 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.rfile.read(n) or b"{}") if n else {}
         except Exception as e:
             return self._send(400, {"error": "bad-json", "detail": str(e)})
+        # TÜM POST uçları gnubg'ye dokunur -> global kilit (tek-thread yarış-yok garantisi korunur;
+        # kilit-siz /health thread'li sunucuda paralel cevaplanır). _GnubgSession contention'ı ölçer.
+        with _GnubgSession():
+            return self._dispatch_post(data)
+
+    def _dispatch_post(self, data):
         try:
             if self.path == "/hint":
                 gid = data.get("gnubgid")
@@ -1572,9 +1626,24 @@ def _gnubg_version():
         return "gnubg"
 
 
+class _ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
+    # Her bağlantı ayrı thread'te -> uzun analiz /health'i ve diğer bağlantıları bloklamaz.
+    # gnubg'ye erişim _GNUBG_LOCK ile serileşir (yarış yok). daemon_threads: kapanışta askıda
+    # kalan thread süreç çıkışını engellemesin. (ThreadingHTTPServer eski Python'da yok -> mixin.)
+    daemon_threads = True
+
+
 def main():
-    srv = HTTPServer(("127.0.0.1", PORT), Handler)
-    # gnubg -p bu çağrıda BLOKLAR -> gnubg açık kalır, istekleri sırayla işler.
+    global _VERSION
+    # Sürümü BİR KEZ, serve_forever ÖNCESİ (tek-thread) oku -> /health artık gnubg'ye dokunmaz.
+    try:
+        _VERSION = _gnubg_version()
+    except Exception:
+        _VERSION = "gnubg"
+    # Yavaş/yarı-açık bir istemci tek bir thread'i sonsuza kilitlemesin (kendi bağlantısıyla sınırlı).
+    Handler.timeout = 30
+    srv = _ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
+    # gnubg -p bu çağrıda BLOKLAR -> gnubg açık kalır; istekler thread'lerde, gnubg işi sırayla.
     srv.serve_forever()
 
 

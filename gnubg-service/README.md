@@ -47,6 +47,30 @@ curl -s -X POST http://127.0.0.1:8092/hint \
 Orkestratör (deep analiz) hem validator (wildbg) hem bu servisi (gnubg) çağırır; disagreement +
 selective rollout mantığı orada. PR **final otoriter** sonuçtan hesaplanır (bkz `src/analysis/pr.ts`).
 
+## Güncelleme (kod değişince canlıya alma)
+`gnubg_service.py` VEYA `.service` değişince canlıda TEK SEFER:
+```
+cp gnubg-service/gnubg_service.py /opt/gnubg-service/gnubg_service.py
+cp gnubg-service/gnubg-analysis.service /etc/systemd/system/gnubg-analysis.service  # .service değiştiyse
+systemctl daemon-reload   # yalnız .service değiştiyse
+systemctl restart gnubg-analysis
+curl -s http://127.0.0.1:8092/health   # {ok:true} beklenir
+```
+Plesk `deploy.sh` bunu OTOMATİK yapmaz (repo'daki dosya ≠ /opt'taki çalışan dosya) — elle kopyala.
+
+## "gnubg DÜŞTÜ" alarmı hâlâ geliyorsa (teşhis)
+Servis çoğu zaman ÇÖKMÜYOR; **meşgul** olduğu için tek-thread'de /health'e cevap veremiyordu ve
+izleyici (services:watch, 5sn /health probe) bunu "düştü" sanıp gereksiz restart ediyordu. FIX
+(2026-09-25): HTTP sunucusu thread'li (ThreadingMixIn) + gnubg erişimi `_GNUBG_LOCK` ile serileşir
++ /health gnubg'siz/kilitsiz anında cevaplar. Böylece uzun analiz (/reviewmatch 600s) sürerken bile
+/health yeşil. Ayrıca `.service`'te `StartLimitIntervalSec=0` (kısır döngüde systemd pes etmez).
+- Gerçekten düştüyse: `journalctl -u gnubg-analysis -n 100 --no-pager` (çökme sebebi: OOM? symlink?).
+- `services:watch`'ın OTOMATİK restart'ı için PHP kullanıcısına sudo gerekir (yoksa yalnız alarm
+  gelir, restart edemez). Drop-in: `/etc/sudoers.d/tavla`:
+  `plesk-php-user ALL=(root) NOPASSWD: /usr/bin/systemctl restart gnubg-analysis, /usr/bin/systemctl restart tavla-queue`
+  (systemd `Restart=always` ZATEN sudosuz çalışır — sudo yalnız wedge/meşgul durumunu kırmak içindi;
+  thread fix'i o durumu kökten çözdüğü için sudo artık kritik değil.)
+
 ## Notlar
 - **gnubgid üretimi:** backend `GameState` → gnubg `posID:matchID` çevirir (adapter işi). Test için
   gnubg'den okunmuş hazır id kullanılır.
