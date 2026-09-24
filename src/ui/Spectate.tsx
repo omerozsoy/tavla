@@ -162,6 +162,7 @@ export default function Spectate({
   ).current
   const [shown, setShown] = useState<Step[]>([])
   const shownRef = useRef<Step[]>([])
+  const shownBaseRef = useRef('') // `shown` hangi baseKey'e ait (tur değişince stale'i atmak için)
   const flightRef = useRef<{ to: number | 'off'; srcRect: DOMRect } | null>(null)
   const timersRef = useRef<number[]>([])
   const clearTimers = () => {
@@ -183,10 +184,18 @@ export default function Spectate({
   )
   const liveKey = validLive.map((s) => `${s.from}>${s.to}`).join(',')
 
-  // Yeni tur başı / zar (baseKey değişti) -> önizlemeyi sıfırla (server_state zaten güncel).
-  useEffect(() => {
+  // Yeni tur başı / zar (baseKey değişti) -> önizleme adımlarını RENDER SIRASINDA sıfırla.
+  // NEDEN render'da (useEffect değil): useEffect boyamadan SONRA çalışır; o ana dek bir kare
+  // için ESKİ turun adımları YENİ tahtaya uygulanıp (applyPlayed) yanlış taşları oynatır ->
+  // hamle bitiminde "kırpışma". React'in "key değişince türetilmiş state'i sıfırla" kalıbı
+  // ara kareyi boyamadan yeniden render eder (server_state zaten güncel pozisyonu içerir).
+  if (shownBaseRef.current !== baseKey) {
+    shownBaseRef.current = baseKey
     shownRef.current = []
     setShown([])
+  }
+  // Uçuştaki animasyon timer'larını tur değişince iptal et (state sıfırlama yukarıda render'da).
+  useEffect(() => {
     clearTimers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baseKey])
