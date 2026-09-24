@@ -567,178 +567,18 @@ button[aria-disabled='true'],
 }
 
 /* ===== Ozel tarih secici (Turkce takvim, Pazartesi baslar) ===== */
-.datepicker {
-  position: relative;
-}
-.dp-input {
-  display: flex;
-  align-items: center;
+/* Dogum tarihi: Gun / Ay / Yil uc acilir liste. Selectler mevcut form
+   select stillerini (chevron, odak halkasi) miras alir; burada yalniz duzen. */
+.dp-selects3 {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1.15fr;
   gap: 8px;
   width: 100%;
-  padding: 10px 12px;
-  border: 1px solid var(--btn-border);
-  border-radius: var(--radius-md);
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 16px;
-  text-align: left;
 }
-.dp-input:focus-within {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 22%, transparent);
-}
-.dp-cal {
-  display: inline-flex;
-  align-items: center;
-  border: none;
-  background: transparent;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 0;
-  flex: none;
-}
-.dp-field {
-  flex: 1;
+.dp-selects3 select {
+  width: 100%;
   min-width: 0;
-  border: none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  padding: 0;
-  outline: none;
-}
-/* Global form odak agi (:where) ic ciplak alana halka cizmesin;
-   odak halkasini dis kabuk (.dp-input:focus-within) verir. */
-.dp-field:focus {
-  box-shadow: none;
-}
-.dp-field::placeholder {
-  color: var(--tv-ink-faint);
-}
-.dp-selects {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.dp-selects select {
-  padding: 5px 6px;
-  border: 1px solid var(--btn-border);
-  border-radius: var(--radius-sm);
-  background: var(--input-bg);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  cursor: pointer;
   text-transform: capitalize;
-}
-.dp-pop {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: var(--z-modal);
-  width: 288px;
-  max-width: 92vw;
-  padding: 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-}
-.dp-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.dp-title {
-  font-weight: var(--fw-bold);
-  color: var(--text);
-  text-transform: capitalize;
-}
-.dp-nav:not([data-slot]) {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--btn-border);
-  border-radius: var(--radius-md);
-  background: var(--btn-bg);
-  color: var(--text);
-  font-size: 1.2rem;
-  line-height: 1;
-  cursor: pointer;
-}
-.dp-nav:not([data-slot]):hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.dp-weekdays,
-.dp-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
-}
-.dp-weekdays {
-  margin-bottom: 4px;
-}
-.dp-weekdays span {
-  text-align: center;
-  font-size: var(--fs-2xs);
-  font-weight: var(--fw-bold);
-  color: var(--tv-ink-faint);
-  text-transform: capitalize;
-  padding: 4px 0;
-}
-.dp-day {
-  aspect-ratio: 1;
-  min-height: 34px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-md);
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-variant-numeric: tabular-nums;
-  cursor: pointer;
-}
-.dp-day:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-.dp-day.other {
-  color: var(--tv-ink-faint);
-  opacity: 0.55;
-}
-.dp-day.today {
-  border-color: var(--accent);
-}
-.dp-day.selected {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
-  font-weight: var(--fw-bold);
-}
-.dp-day:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-.dp-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-}
-.dp-link:not([data-slot]) {
-  background: none;
-  border: none;
-  color: var(--accent);
-  font: inherit;
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  padding: 4px 6px;
-  border-radius: var(--radius-sm);
-}
-.dp-link:not([data-slot]):hover {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 /* Lobi asagi-cek-yenile gostergesi (native jest calismadigindan kendi implementasyonumuz) */
@@ -3204,6 +3044,76 @@ button[aria-disabled='true'],
     padding: 10px;
   }
 }
+/* Sıkça sorulan sorular: editoryal yardım sayfası, sözlük ve rehber kabuğuyla
+   aynı renk değişkenlerini kullanır; soru kartları taramayı kolaylaştırır. */
+.faq-page {
+  position: relative;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px clamp(16px, 3vw, 42px) 58px;
+  color: var(--text);
+}
+.faq-close { position: absolute; top: 16px; right: 18px; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border: 1px solid var(--border); border-radius: var(--radius-md); background: transparent; color: var(--muted); cursor: pointer; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
+.faq-close:hover, .faq-close:focus-visible { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.faq-hero { display: grid; grid-template-columns: minmax(0, 1fr) 170px; gap: 32px; align-items: end; margin: 22px 0 24px; padding: clamp(26px, 4vw, 48px); border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border)); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--card-bg) 87%, var(--accent)); }
+.faq-eyebrow { color: var(--accent); font-size: .7rem; letter-spacing: .15em; line-height: 1.2; }
+.faq-hero h1 { max-width: 760px; margin: 12px 0 14px; font-family: var(--tv-font-display, inherit); font-size: clamp(2rem, 4.3vw, 3.7rem); font-weight: 500; letter-spacing: -.045em; line-height: .98; text-wrap: balance; }
+.faq-hero p { max-width: 650px; margin: 0; color: var(--muted); font-size: 1rem; line-height: 1.7; }
+.faq-hero-count { display: grid; gap: 5px; padding: 12px 0 2px 20px; border-left: 2px solid var(--accent); color: var(--muted); }
+.faq-hero-count span { color: var(--text); font-size: 2.3rem; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.faq-hero-count small { font-size: .76rem; }
+.faq-tools { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin: 0 0 12px; }
+.faq-search { display: flex; align-items: center; gap: 10px; width: min(100%, 570px); min-height: 46px; padding: 0 14px; border: 1px solid var(--border); border-radius: 999px; background: color-mix(in srgb, var(--card-bg) 94%, var(--text)); color: var(--muted); }
+.faq-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent); }
+.faq-search input { flex: 1; min-width: 0; padding: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; }
+.faq-search input::placeholder { color: var(--muted); opacity: 1; }
+.faq-search button { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--muted); cursor: pointer; }
+.faq-search button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.faq-result-count { color: var(--muted); font-size: .82rem; font-variant-numeric: tabular-nums; }
+.faq-topics { position: sticky; top: 0; z-index: 3; display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 42px; padding: 10px 0; background: color-mix(in srgb, var(--card-bg) 94%, transparent); }
+.faq-topics a { display: inline-flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text); font-size: .8rem; text-decoration: none; transition: border-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.faq-topics a span { color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+.faq-topics a:hover, .faq-topics a:focus-visible { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.faq-section { scroll-margin-top: 64px; }
+.faq-section + .faq-section { margin-top: 54px; }
+.faq-section-heading { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 14px; align-items: start; margin-bottom: 16px; }
+.faq-section-index { color: var(--accent); font-size: 1.4rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.faq-section-heading h2 { margin: 0 0 5px; font-size: 1.35rem; font-weight: 500; letter-spacing: -.02em; }
+.faq-section-heading p { max-width: 700px; margin: 0; color: var(--muted); font-size: .86rem; line-height: 1.55; }
+.faq-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.faq-item { scroll-margin-top: 78px; min-width: 0; padding: 18px 20px 20px; border: 1px solid color-mix(in srgb, var(--border) 84%, transparent); border-radius: var(--radius-md); background: color-mix(in srgb, var(--card-bg) 96%, var(--accent)); transition: border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+.faq-item:hover { border-color: color-mix(in srgb, var(--accent) 42%, var(--border)); transform: translateY(-1px); box-shadow: 0 8px 24px -18px color-mix(in srgb, var(--accent) 60%, transparent); }
+.faq-item:target { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+.faq-item-heading { display: flex; align-items: start; justify-content: space-between; gap: 12px; }
+.faq-item h3 { margin: 0; color: var(--text); font-size: 1rem; font-weight: 500; line-height: 1.35; }
+.faq-item p { max-width: 68ch; margin: 11px 0 0; color: var(--muted); font-size: .9rem; line-height: 1.68; }
+.faq-share { display: inline-flex; flex: none; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--muted); cursor: pointer; transition: color 160ms ease, border-color 160ms ease, background 160ms ease; }
+.faq-share:hover, .faq-share:focus-visible { border-color: var(--accent); color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.faq-empty { margin: 42px auto; padding: 36px 24px; border: 1px dashed var(--border); border-radius: var(--radius-lg); text-align: center; color: var(--muted); }
+.faq-empty h2 { margin: 12px 0 5px; color: var(--text); font-size: 1.1rem; }
+.faq-empty p { margin: 0; font-size: .9rem; }
+.faq-next-steps { margin-top: 54px; padding: 28px clamp(20px, 4vw, 42px); border-radius: var(--radius-lg); background: color-mix(in srgb, var(--accent) 11%, var(--card-bg)); }
+.faq-next-steps h2 { margin: 9px 0 6px; font-size: 1.35rem; font-weight: 500; }
+.faq-next-steps p { max-width: 620px; margin: 0; color: var(--muted); line-height: 1.6; }
+.faq-next-steps > div { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.faq-next-steps a { padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--border)); border-radius: var(--radius-md); color: var(--accent); font-size: .82rem; text-decoration: none; }
+.faq-next-steps a:hover { background: var(--accent); color: var(--accent-contrast, #fff); }
+.faq-source { margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: .78rem; line-height: 1.6; }
+.faq-source a { color: var(--accent); }
+@media (max-width: 700px) {
+  .faq-page { padding: 14px 14px 40px; }
+  .faq-hero { grid-template-columns: 1fr; gap: 20px; margin-top: 14px; padding: 24px 20px; }
+  .faq-hero h1 { font-size: clamp(2rem, 10vw, 2.8rem); }
+  .faq-hero-count { grid-template-columns: auto 1fr; align-items: end; column-gap: 10px; padding: 12px 0 0; border-top: 1px solid var(--border); border-left: 0; }
+  .faq-hero-count small { padding-bottom: 3px; }
+  .faq-tools { align-items: stretch; flex-direction: column; }
+  .faq-search { width: 100%; }
+  .faq-topics { margin-right: -14px; margin-bottom: 30px; margin-left: -14px; padding: 10px 14px; overflow-x: auto; flex-wrap: nowrap; }
+  .faq-topics a { flex: none; }
+  .faq-list { grid-template-columns: 1fr; }
+  .faq-section-heading { grid-template-columns: 38px minmax(0, 1fr); gap: 10px; }
+}
+
 .news-back {
   margin-bottom: 18px;
 }
@@ -8128,8 +8038,7 @@ button.move-row:focus-visible {
 }
 /* Input olculeri: ~42px, sade (60px'lik dev inputlardan kacin) */
 .profile-form input,
-.profile-form select,
-.profile-form .dp-input {
+.profile-form select {
   font-size: 15px;
   padding: 10px 12px;
 }
