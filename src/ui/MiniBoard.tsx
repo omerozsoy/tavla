@@ -50,12 +50,16 @@ function colX(col: number): number {
 //  - dolu hane -> yigin TEPESI (son gorunur tas): kaynakta oynatilan tas, hedefte ustune
 //    konacak tas ("doluysa en uste"),
 //  - bos hane -> taban/dis kenar ("bossa en alta"). Boylece ok havadan cikmaz.
+// isDest: hedef mi (varış) yoksa kaynak mı. stackIdx: aynı hamlede aynı haneden KAÇINCI taş
+// çıkıyor/giriyor (0 tabanlı) — çift/üçlü hamlede oklar aynı taşı göstermesin diye.
 function anchor(
   p: number | 'bar' | 'off',
   L: Record<number, Cell>,
   state: GameState,
   player: Player,
   flip: boolean,
+  isDest: boolean,
+  stackIdx: number,
 ): { x: number; y: number } {
   if (p === 'bar') {
     const whiteBarY = flip ? H / 2 - (R + 3) : H / 2 + R + 3
@@ -66,8 +70,22 @@ function anchor(
   const l = L[p]
   const baseY = l.row === 'top' ? TOP_Y : BOT_Y
   const dir = l.row === 'top' ? 1 : -1
-  const n = Math.min(Math.abs(state.points[p] || 0), 5) // gorunur tas sayisi (MAX=5)
-  const y = n > 0 ? baseY + dir * (n - 1) * STEP : baseY
+  const v = state.points[p] || 0
+  const count = Math.abs(v)
+  const nVis = Math.min(count, 5) // gorunur tas sayisi (MAX=5)
+  let idx: number
+  if (!isDest) {
+    // KAYNAK: taslar tepeden alinir; k. hamle tepeden k. tastan cikar (hepsi ayni ust tastan degil)
+    idx = Math.max(0, nVis - 1 - stackIdx)
+  } else {
+    // HEDEF: oynatilan tas mevcut yiginin UZERINE oturur (tepedeki tasin ortasini kapatmaz).
+    // Rakip blotu ise (tek karsit tas) VURUS: ilk tas o blotun yerine gecer, sonrakiler ustune.
+    const own = v !== 0 && (v > 0) === (player === 'white')
+    const isHit = count === 1 && !own
+    const nBase = isHit ? 0 : nVis
+    idx = nBase + stackIdx
+  }
+  const y = baseY + dir * idx * STEP
   return { x: colX(l.col), y }
 }
 
@@ -162,10 +180,17 @@ export default function MiniBoard({
       <circle key="bb" cx={HALF_W + BAR_W / 2} cy={blackBarY} r={R * 0.9} fill="var(--navy)" stroke="#0007" />,
     )
 
-  // Oklar (hamle adimlari)
+  // Oklar (hamle adimlari). Ayni haneden cikan/ayni haneye giren taslari say: her ok AYRI
+  // kaynak tastan baslar, AYRI hedef siraya oturur (6/4 6/3, 8/5(3), 7/1*(2)... binmesin).
+  const srcSeen = new Map<number, number>()
+  const dstSeen = new Map<number, number>()
   const arrows = steps.map((st, i) => {
-    const from = anchor(st.from, L, state, player, flip)
-    const to = anchor(st.to, L, state, player, flip)
+    const sIdx = typeof st.from === 'number' ? srcSeen.get(st.from) ?? 0 : 0
+    if (typeof st.from === 'number') srcSeen.set(st.from, sIdx + 1)
+    const from = anchor(st.from, L, state, player, flip, false, sIdx)
+    const dIdx = typeof st.to === 'number' ? dstSeen.get(st.to) ?? 0 : 0
+    if (typeof st.to === 'number') dstSeen.set(st.to, dIdx + 1)
+    const to = anchor(st.to, L, state, player, flip, true, dIdx)
     return (
       <g key={`a${i}`}>
         {/* koyu casing (govde kenarligi) */}
