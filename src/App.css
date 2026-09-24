@@ -2977,17 +2977,49 @@ button[aria-disabled='true'],
   align-items: center;
   gap: 10px;
   width: min(100%, 520px);
-  min-height: 44px;
-  padding: 0 12px;
+  min-height: 46px;
+  padding: 0 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--card-bg) 88%, var(--text));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card-bg) 92%, var(--text));
   color: var(--muted);
+  transition: border-color 160ms ease, box-shadow 160ms ease;
 }
-.glossary-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
-.glossary-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; }
-.glossary-search input::placeholder { color: var(--muted); }
-.glossary-search button { border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 1.3rem; line-height: 1; }
+.glossary-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent); }
+.glossary-search > svg { flex: none; color: var(--muted); }
+/* KRİTİK: .register-card input:not([type=…]) çok yüksek specificity ile input'a beyaz kutu +
+   kenarlık dayatıyordu (arama kutusu bozuk görünüyordu). !important ile sıfırla — şeffaf, satır-içi. */
+.glossary-search input {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--text) !important;
+  font: inherit !important;
+}
+.glossary-search input::placeholder { color: var(--muted); opacity: 1; }
+.glossary-search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.glossary-search-clear:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
 .glossary-result-count { margin: 0; color: var(--muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
 .glossary-alphabet {
   display: flex;
@@ -3017,43 +3049,97 @@ button[aria-disabled='true'],
 .glossary-group-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; color: var(--accent); }
 .glossary-group-heading span { font-size: 1.2rem; font-weight: 700; }
 .glossary-group-heading i { height: 1px; flex: 1; background: var(--border); }
-.glossary-entries { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.glossary-entries { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .glossary-entry {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(150px, 36%);
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
-  padding: 18px;
+  padding: 18px 20px;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--card-bg) 94%, var(--accent));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--card-bg) 96%, var(--accent));
+  scroll-margin-top: 24px;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
-.glossary-entry-copy { min-width: 0; }
-.glossary-entry h2 { margin: 0; color: var(--glossary-ink); font-size: 1.06rem; line-height: 1.25; }
-.glossary-english { margin: 3px 0 11px; color: var(--accent); font-size: 0.78rem; font-style: italic; }
+.glossary-entry:hover {
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  box-shadow: 0 8px 24px -16px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
+}
+.glossary-entry.is-highlight {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+  animation: glossaryPulse 1.8s ease;
+}
+@keyframes glossaryPulse {
+  0% { background: color-mix(in srgb, var(--accent) 18%, var(--card-bg)); }
+  100% { background: color-mix(in srgb, var(--card-bg) 96%, var(--accent)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glossary-entry, .glossary-entry:hover { transition: none; transform: none; }
+  .glossary-entry.is-highlight { animation: none; }
+}
+.glossary-entry h2 { margin: 0; color: var(--glossary-ink); font-size: 1.08rem; line-height: 1.25; }
+.glossary-english { margin: 3px 0 10px; color: var(--accent); font-size: 0.78rem; font-style: italic; }
 .glossary-definition { margin: 0; color: var(--glossary-soft); font-size: 0.92rem; line-height: 1.6; }
 .glossary-aliases { margin: 12px 0 0; color: var(--muted); font-size: 0.77rem; line-height: 1.45; }
 .glossary-aliases span, .glossary-related > span { color: var(--text); font-weight: 600; }
-.glossary-related { display: flex; flex-wrap: wrap; gap: 5px 9px; margin-top: 10px; color: var(--muted); font-size: 0.77rem; }
-.glossary-related a { color: var(--accent); text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent); text-underline-offset: 3px; }
-.glossary-entry .article-board { align-self: center; width: 100%; margin: 0; padding: 7px; border-radius: 10px; }
-.glossary-entry .article-board-caption { margin-top: 7px; font-size: 0.72rem; line-height: 1.35; }
-.glossary-empty { max-width: 520px; margin: 50px auto; padding: 30px; border: 1px dashed var(--border); text-align: center; color: var(--muted); }
+.glossary-related {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 7px 8px;
+  margin: 12px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  color: var(--muted);
+  font-size: 0.77rem;
+}
+.glossary-related-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+.glossary-related-link {
+  padding: 3px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.glossary-related-link:hover, .glossary-related-link:focus-visible {
+  background: var(--accent);
+  color: var(--accent-contrast, #fff);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.glossary-empty { max-width: 520px; margin: 50px auto; padding: 34px 30px; border: 1px dashed var(--border); border-radius: 14px; text-align: center; color: var(--muted); }
 .glossary-empty h2 { margin: 12px 0 6px; color: var(--text); font-size: 1.1rem; }
 .glossary-empty p { margin: 0; font-size: 0.9rem; }
+.glossary-empty-reset {
+  margin-top: 16px;
+  padding: 8px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+.glossary-empty-reset:hover { background: var(--accent); color: var(--accent-contrast, #fff); }
 .glossary-source { max-width: 1060px; margin: 38px auto 0; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
 .glossary-source a { color: var(--accent); }
 @media (max-width: 800px) {
   .glossary-hero { align-items: start; flex-direction: column; }
   .glossary-stat { flex-basis: auto; width: 100%; padding: 10px 0 0; border-top: 1px solid var(--border); border-left: 0; }
-  .glossary-entries { grid-template-columns: 1fr; }
 }
 @media (max-width: 520px) {
   .glossary-view { padding: 20px 12px 30px; }
-  .glossary-toolbar { align-items: start; flex-direction: column; }
+  .glossary-toolbar { align-items: stretch; flex-direction: column; }
   .glossary-search { width: 100%; }
-  .glossary-entry { grid-template-columns: 1fr; padding: 15px; }
-  .glossary-entry .article-board { max-width: 300px; justify-self: center; }
+  .glossary-entries { grid-template-columns: 1fr; }
+  .glossary-entry { padding: 15px 16px; }
 }
 
 @media (max-width: 640px) {

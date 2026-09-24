@@ -1,6 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
-import ArticleBoard from './ArticleBoard'
 import { GLOSSARY, GLOSSARY_BY_SLUG, GLOSSARY_SOURCE, type GlossaryEntry } from '../data/glossary'
 
 const ALPHABET = ['A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'H', 'I', 'İ', 'J', 'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z']
@@ -9,7 +8,7 @@ function fold(value: string) {
   return value
     .toLocaleLowerCase('tr-TR')
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/ı/g, 'i')
 }
 
@@ -35,6 +34,11 @@ function relatedEntries(entry: GlossaryEntry) {
 export default function GlossaryView() {
   const [query, setQuery] = useState('')
   const [letter, setLetter] = useState<string | null>(null)
+  const [highlight, setHighlight] = useState<string | null>(null)
+  // "İlgili" tıklamasında hedefe kaydır. n sayacı aynı slug'a tekrar tıklamayı da tetikler.
+  const [scrollTarget, setScrollTarget] = useState<{ slug: string; n: number } | null>(null)
+  const nRef = useRef(0)
+  const rootRef = useRef<HTMLDivElement>(null)
 
   const groups = useMemo(() => {
     const q = fold(query.trim())
@@ -53,11 +57,36 @@ export default function GlossaryView() {
   }, [letter, query])
 
   const available = useMemo(() => new Set(GLOSSARY.map((entry) => firstLetter(entry.title))), [])
+  const total = useMemo(() => Array.from(groups.values()).reduce((n, g) => n + g.length, 0), [groups])
+
+  // "İlgili" bir terime git: filtreleri temizle (hedef gizliyse görünür olsun) + kaydır + vurgula.
+  function goToTerm(slug: string) {
+    setLetter(null)
+    setQuery('')
+    nRef.current += 1
+    setScrollTarget({ slug, n: nRef.current })
+  }
+
+  useEffect(() => {
+    if (!scrollTarget) return
+    // Filtre temizliği sonrası DOM güncellensin diye bir frame bekle.
+    const raf = requestAnimationFrame(() => {
+      const el = rootRef.current?.querySelector<HTMLElement>(`#terim-${CSS.escape(scrollTarget.slug)}`)
+      if (!el) return
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setHighlight(scrollTarget.slug)
+    })
+    const clear = window.setTimeout(() => setHighlight(null), 1800)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearTimeout(clear)
+    }
+  }, [scrollTarget])
 
   return (
-    <div className="glossary-view">
+    <div className="glossary-view" ref={rootRef}>
       <header className="glossary-hero">
-        <div>
+        <div className="glossary-hero-text">
           <span className="seo-eyebrow">TAVLA SÖZLÜĞÜ</span>
           <h1 className="glossary-title">Tavla terimleri, açık ve anlaşılır</h1>
           <p className="glossary-lede">
@@ -72,19 +101,25 @@ export default function GlossaryView() {
       </header>
 
       <div className="glossary-toolbar">
-        <label className="glossary-search">
+        <div className="glossary-search">
           <Icon name="search" size={18} />
-          <span className="sr-only">Türkçe veya İngilizce terim ara</span>
           <input
-            type="search"
+            type="text"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Terim ara: çapa, anchor, pip..."
+            placeholder="Terim ara: çapa, anchor, pip…"
             autoComplete="off"
+            aria-label="Türkçe veya İngilizce terim ara"
           />
-          {query && <button type="button" onClick={() => setQuery('')} aria-label="Aramayı temizle">×</button>}
-        </label>
-        <p className="glossary-result-count">{Array.from(groups.values()).flat().length} terim gösteriliyor</p>
+          {query && (
+            <button type="button" className="glossary-search-clear" onClick={() => setQuery('')} aria-label="Aramayı temizle">
+              <Icon name="x" size={15} />
+            </button>
+          )}
+        </div>
+        <p className="glossary-result-count">
+          <strong>{total}</strong> terim gösteriliyor
+        </p>
       </div>
 
       <nav className="glossary-alphabet" aria-label="Türkçe alfabede gezinme">
@@ -105,9 +140,14 @@ export default function GlossaryView() {
 
       {groups.size === 0 ? (
         <div className="glossary-empty">
-          <Icon name="search" size={24} />
+          <Icon name="search" size={26} />
           <h2>Aramana uygun terim bulunamadı</h2>
           <p>Türkçe veya İngilizce yazımı kontrol edip yeniden dene.</p>
+          {(query || letter) && (
+            <button type="button" className="glossary-empty-reset" onClick={() => { setQuery(''); setLetter(null) }}>
+              Filtreleri temizle
+            </button>
+          )}
         </div>
       ) : (
         <div className="glossary-groups">
@@ -118,23 +158,33 @@ export default function GlossaryView() {
                 {entries.map((entry) => {
                   const related = relatedEntries(entry)
                   return (
-                    <article className="glossary-entry" id={`terim-${entry.slug}`} key={entry.slug}>
-                      <div className="glossary-entry-copy">
-                        <h2>{entry.title}</h2>
-                        <p className="glossary-english">{entry.english}</p>
-                        <p className="glossary-definition">{entry.definition}</p>
-                        {entry.aliases && entry.aliases.length > 0 && (
-                          <p className="glossary-aliases"><span>Diğer yazımlar:</span> {entry.aliases.join(', ')}</p>
-                        )}
-                        {related.length > 0 && (
-                          <div className="glossary-related">
-                            <span>İlgili:</span>
-                            {related.map((item) => <a key={item.slug} href={`#terim-${item.slug}`}>{item.title}</a>)}
-                          </div>
-                        )}
-                      </div>
-                      {entry.board && (
-                        <ArticleBoard state={entry.board} steps={[]} caption={entry.boardCaption ?? null} />
+                    <article
+                      className={`glossary-entry${highlight === entry.slug ? ' is-highlight' : ''}`}
+                      id={`terim-${entry.slug}`}
+                      key={entry.slug}
+                    >
+                      <h2>{entry.title}</h2>
+                      <p className="glossary-english">{entry.english}</p>
+                      <p className="glossary-definition">{entry.definition}</p>
+                      {entry.aliases && entry.aliases.length > 0 && (
+                        <p className="glossary-aliases"><span>Diğer yazımlar:</span> {entry.aliases.join(', ')}</p>
+                      )}
+                      {related.length > 0 && (
+                        <div className="glossary-related">
+                          <span>İlgili:</span>
+                          <span className="glossary-related-chips">
+                            {related.map((item) => (
+                              <button
+                                type="button"
+                                key={item.slug}
+                                className="glossary-related-link"
+                                onClick={() => goToTerm(item.slug)}
+                              >
+                                {item.title}
+                              </button>
+                            ))}
+                          </span>
+                        </div>
                       )}
                     </article>
                   )
