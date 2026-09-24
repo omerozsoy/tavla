@@ -4,7 +4,17 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
-import { listContents, bumpContentView, type Content, type ContentType } from '../api'
+import {
+  listContents,
+  bumpContentView,
+  listComments,
+  postComment,
+  getToken,
+  ApiError,
+  type Content,
+  type ContentType,
+  type ContentComment,
+} from '../api'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
 import TurkeyMap, { normProvince } from './TurkeyMap'
@@ -179,6 +189,8 @@ export default function ContentView({
   onCloseDetail,
   embed = false,
   titleOverride,
+  currentUser = null,
+  onRequireLogin,
 }: {
   type: ContentType
   onClose: () => void
@@ -189,6 +201,9 @@ export default function ContentView({
   // KURAL: sayfa basligi = menu etiketi. Admin menude yeniden adlandirinca (override)
   // baslik da otomatik onu alsin diye App cozulmus menu etiketini gecer.
   titleOverride?: string
+  // Haber yorumu: giris yapmis kullanici (yoksa "yorum icin giris yap"). Yalniz ad gerekir.
+  currentUser?: { id: number; name?: string | null } | null
+  onRequireLogin?: () => void
 }) {
   const { t } = useT()
   const [items, setItems] = useState<Content[]>([])
@@ -433,9 +448,12 @@ export default function ContentView({
           newsItem ? (
             <NewsDetail
               item={newsItem}
+              type={type}
               onBack={onCloseDetail ?? onClose}
               backLabel={headTitle}
               onOpenImage={setLightbox}
+              currentUser={currentUser}
+              onRequireLogin={onRequireLogin}
             />
           ) : (
             (() => {
@@ -805,14 +823,20 @@ function splitBody(body?: string | null): ArtSegment[] {
 // Makale gövdesindeki tahta şemaları (board-figure) GERÇEK Board ile çizilir.
 function NewsDetail({
   item,
+  type,
   onBack,
   backLabel,
   onOpenImage,
+  currentUser,
+  onRequireLogin,
 }: {
   item: Content
+  type: ContentType
   onBack: () => void
   backLabel: string
   onOpenImage: (index: number) => void
+  currentUser?: { id: number; name?: string | null } | null
+  onRequireLogin?: () => void
 }) {
   const { t } = useT()
   const gallery = (item.gallery ?? []).filter(Boolean)
@@ -878,7 +902,129 @@ function NewsDetail({
           ))}
         </div>
       )}
+      {/* Yorumlar: YALNIZ haber (news) altinda. Kayitli kullanici yorum birakir -> onay bekler. */}
+      {type === 'news' && (
+        <CommentSection contentId={item.id} currentUser={currentUser} onRequireLogin={onRequireLogin} />
+      )}
     </article>
+  )
+}
+
+// Haber alti yorum bolumu: onaylanmis yorumlari listeler + (giris varsa) yorum formu.
+// Yorum gonderilince "onay bekliyor" bilgilendirmesi gosterilir (pending -> henuz gorunmez).
+function CommentSection({
+  contentId,
+  currentUser,
+  onRequireLogin,
+}: {
+  contentId: number
+  currentUser?: { id: number; name?: string | null } | null
+  onRequireLogin?: () => void
+}) {
+  const { t } = useT()
+  const loggedIn = !!currentUser && !!getToken()
+  const [comments, setComments] = useState<ContentComment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [body, setBody] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false) // yorum onaya gonderildi mi
+  const [err, setErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    setLoading(true)
+    listComments(contentId)
+      .then((c) => alive && setComments(c))
+      .catch(() => alive && setComments([]))
+      .finally(() => alive && setLoading(false))
+    return () => {
+      alive = false
+    }
+  }, [contentId])
+
+  const submit = async () => {
+    const text = body.trim()
+    if (text.length < 2 || sending) return
+    setSending(true)
+    setErr(null)
+    try {
+      await postComment(contentId, text)
+      setBody('')
+      setSent(true)
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : t('comments.error'))
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <section className="news-comments">
+      <h4 className="news-comments-title">
+        <Icon name="chat" size={16} /> {t('comments.title')}
+        {comments.length > 0 && <span className="news-comments-count">{comments.length}</span>}
+      </h4>
+
+      {/* Yorum formu / giris cagrisi */}
+      {sent ? (
+        <div className="news-comment-notice">
+          <Icon name="check" size={15} /> {t('comments.pending')}
+        </div>
+      ) : loggedIn ? (
+        <div className="news-comment-form">
+          <textarea
+            className="news-comment-input"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder={t('comments.placeholder')}
+            maxLength={2000}
+            rows={3}
+          />
+          {err && <div className="news-comment-err">{err}</div>}
+          <div className="news-comment-actions">
+            <span className="news-comment-as">{t('comments.as', { name: currentUser?.name || '' })}</span>
+            <Button onClick={submit} disabled={sending || body.trim().length < 2}>
+              {sending ? t('comments.sending') : t('comments.submit')}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="news-comment-login">
+          <span>{t('comments.loginPrompt')}</span>
+          <Button variant="outline" onClick={() => onRequireLogin?.()}>
+            {t('comments.login')}
+          </Button>
+        </div>
+      )}
+
+      {/* Onaylanmis yorumlar */}
+      {loading ? (
+        <div className="news-comments-empty">{t('admin.loading')}</div>
+      ) : comments.length === 0 ? (
+        <div className="news-comments-empty">{t('comments.empty')}</div>
+      ) : (
+        <ul className="news-comment-list">
+          {comments.map((c) => (
+            <li key={c.id} className="news-comment">
+              <div className="news-comment-avatar">
+                {c.avatar ? (
+                  <img src={mediaSrc(c.avatar)} alt="" loading="lazy" />
+                ) : (
+                  <span className="news-comment-avatar-ph">{(c.author || '?').charAt(0).toLocaleUpperCase('tr-TR')}</span>
+                )}
+              </div>
+              <div className="news-comment-main">
+                <div className="news-comment-head">
+                  <span className="news-comment-author">{c.author}</span>
+                  {c.created_at && <time className="news-comment-date">{fmtDate(c.created_at)}</time>}
+                </div>
+                <p className="news-comment-body">{c.body}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
 

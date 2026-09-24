@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BlunderController;
 use App\Http\Controllers\ClubController;
+use App\Http\Controllers\ContentCommentController;
 use App\Http\Controllers\ContentController;
 use App\Http\Controllers\ErrorJournalController;
 use App\Http\Controllers\FriendController;
@@ -36,6 +37,7 @@ Route::get('/achievements', [\App\Http\Controllers\AchievementController::class,
 Route::get('/users/{user}/profile', [AuthController::class, 'publicProfile']); // herkese acik profil
 Route::get('/contents', [ContentController::class, 'index']); // hizmet/blog/haber/etkinlik/kulup (acik)
 Route::post('/contents/{content}/view', [ContentController::class, 'view']); // makale/haber okunma sayaci +1 (acik)
+Route::get('/contents/{content}/comments', [ContentCommentController::class, 'index']); // haber ONAYLI yorumlari (acik)
 Route::get('/info-pages', [\App\Http\Controllers\InfoPageController::class, 'index']); // /bilgi/<slug> sekmeleri (acik)
 Route::get('/menu-config', [\App\Http\Controllers\MenuController::class, 'index']); // sol menu sira/ad/gorunurluk (acik)
 Route::get('/footer-config', [\App\Http\Controllers\FooterController::class, 'index']); // footer kolon sira/baslik/gorunurluk (acik)
@@ -161,6 +163,10 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit.
     Route::middleware('throttle:30,1,review-mat')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
+
+    // Haber yorumu birak (kayitli kullanici) -> ONAY BEKLER. Spam korumasi: kullanici basi 5/dk.
+    Route::post('/contents/{content}/comments', [ContentCommentController::class, 'store'])
+        ->middleware('throttle:5,1,comment-post');
 
     // reportRating: online macta (room_code) galibiyet/maglubiyet SUNUCU-OTORITER —
     // odanin paylasilan mac skorundan belirlenir, istemci 'won' beyani gecersizse
