@@ -122,10 +122,10 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(0, MatchResult::where('room_code', 'BS3')->count());
     }
 
-    // Arkadaslik (friendly) ARTIK PUANLI: bot HARIC her online insan maci Elo uretir. Satir yazilir
-    // VE rating/istatistik ranked ile AYNI degisir (kazanan +16, esit rating). mode='friendly' yalniz
-    // gizlilik icindir; puani belirlemez. (Turnuva mode=NULL de ayni yoldan puanlidir.)
-    public function test_backstop_friendly_is_ranked_and_changes_rating(): void
+    // Arkadaslik (friendly/kilic) CASUAL (puansiz) — kullanici direktifi: davet maci Elo URETMEZ.
+    // Satir yine yazilir (gecmiste gorunsun) AMA delta=0 + rating/istatistik DEGISMEZ. Eslesme
+    // (mode='ranked') + turnuva (mode=NULL) puanli kalir. mode='friendly' hem gizlilik hem casual.
+    public function test_backstop_friendly_is_casual_no_rating_change(): void
     {
         $a = $this->user('a');
         $b = $this->user('b');
@@ -134,12 +134,12 @@ class MatchBackstopTest extends TestCase
         Artisan::call('matches:backstop-finished');
 
         $rowA = MatchResult::where('room_code', 'BS4')->where('user_id', $a->id)->first();
-        $this->assertNotNull($rowA);
-        $this->assertSame(16, (int) $rowA->delta);       // puanli: kazanan +16
+        $this->assertNotNull($rowA);                     // maç yine geçmişe yazıldı
+        $this->assertSame(0, (int) $rowA->delta);        // CASUAL: delta=0 (puan hareketi yok)
         $a->refresh();
-        $this->assertSame(1516, (int) $a->rating);       // rating degisti
-        $this->assertSame(1, (int) $a->wins);            // istatistik degisti
-        $this->assertSame(1, (int) $a->games_played);
+        $this->assertSame(1500, (int) $a->rating);       // rating DEĞİŞMEDİ
+        $this->assertSame(0, (int) $a->wins);            // istatistik DEĞİŞMEDİ
+        $this->assertSame(0, (int) $a->games_played);
     }
 
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).

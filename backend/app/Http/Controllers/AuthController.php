@@ -297,11 +297,11 @@ class AuthController extends Controller
         }
 
         // Mod, uzunluk ve rakip bilgisi istemciden degil odadan gelir.
-        // PUANLI KAPSAM: bot HARIC her online insan-insan maci puanli (Elo). Eslesme (mode='ranked'),
-        // arkadas daveti/kilic (mode='friendly') ve turnuva (mode=NULL) hepsi rating uretir. Yalniz
-        // bot (PvB) maci casual kalir (pratik amacli). NOT: mode='friendly' yalniz GIZLILIK icindir
-        // (katilimci-olmayan seyredemez); artik rating'i belirlemez.
-        $ranked = ! $room->bot;
+        // PUANLI KAPSAM: yalniz eslesme (mode='ranked') ve turnuva (mode=NULL) puanlidir (Elo).
+        // CASUAL (puansiz): bot (PvB) VE arkadas daveti/kilic (mode='friendly'). Kullanici direktifi:
+        // kilic/arkadas daveti maci rating URETMEZ (puan kazanilmaz/kaybedilmez) — mac yine gecmise
+        // delta=0 ile yazilir. mode='friendly' hem GIZLILIK (katilimci-olmayan seyredemez) hem CASUAL.
+        $ranked = ! $room->bot && $room->mode !== 'friendly';
         $opponentSlot = (int) $room->p1_user_id === (int) $user->id ? 'p2' : 'p1';
         $ra = $user->rating ?? 1500;
         $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
