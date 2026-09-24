@@ -29,6 +29,8 @@ class MenuController extends Controller
                 'visible' => (bool) $m->visible,
                 'group' => $m->group, // admin grup atamasi (null -> pages.ts varsayilani)
                 'labels' => (object) $labels, // JSON'da her zaman nesne
+                'custom' => (bool) $m->custom, // admin-eklemeli özel öğe mi
+                'href' => $m->custom ? ($m->href ?: null) : null, // özel öğe hedefi (/rota veya https://...)
             ];
         });
 

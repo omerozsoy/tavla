@@ -7672,6 +7672,22 @@ export default function App() {
   const menuVisible = (key: string): boolean => menuOverrides[key]?.visible !== false
   const menuSort = (key: string, fallback: number): number => menuOverrides[key]?.sort ?? fallback
 
+  // Özel (admin-eklemeli) menü öğesi tıklaması: dış link (http) yeni sekmede; iç rota (/…)
+  // SPA navigasyonu (pushState + popstate -> applyFromPath açar, closeAllPages orada yapılır).
+  const openCustomMenuHref = (href: string) => {
+    if (/^https?:\/\//i.test(href)) {
+      window.open(href, '_blank', 'noopener,noreferrer')
+      return
+    }
+    try {
+      const path = href.startsWith('/') ? href : '/' + href
+      window.history.pushState(null, '', path)
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    } catch {
+      window.location.href = href
+    }
+  }
+
   // Footer kolonlari — merkezi kayittan (pages.ts). Handler/gate menu ile ayni mantik.
   const footerColumns = [
     { key: 'game', titleKey: 'foot.game', keys: ['solo', 'match', 'aiGame', 'playFriend'] },
@@ -7798,23 +7814,47 @@ export default function App() {
   // Item'lari gruplara topla (item sirasi korunur), sonra gruplari sirala + basligi cozumle.
   const bucket = new Map<string, NavItem[]>()
   const groupOrder: string[] = []
-  for (const { pg } of orderedPages) {
-    const gkey = itemGroupKey(pg)
-    // "Menüde göster" kapalıysa (visible=false) grubun BAŞLIĞI + ÖĞELERİ tamamen gizlenir
-    // (öncesi: yalnız başlık kalkıp öğeler başlıksız kalıyordu). Grup öğesiz kalınca render edilmez.
-    if (menuGroupCfg[gkey]?.visible === false) continue
-    if (!bucket.has(gkey)) {
-      bucket.set(gkey, [])
-      groupOrder.push(gkey)
-    }
-    bucket.get(gkey)!.push({
-      key: pg.key,
-      labelKey: pg.labelKey,
-      label: menuLabel(pg.key),
-      icon: pg.icon,
-      onClick: pageHandlers[pg.key]!,
-      hideInGame: pg.hideInGame,
+  // Katalog (pages.ts) + ÖZEL (admin-eklemeli) öğeleri ortak sort ile birleştir; grup içinde
+  // sürükle-bırak sırası (sort) korunur. Özel öğeler pages.ts'te YOK -> menuOverrides'tan gelir.
+  const navEntries: { group: string; sort: number; item: NavItem }[] = []
+  for (const { pg, i } of orderedPages) {
+    navEntries.push({
+      group: itemGroupKey(pg),
+      sort: menuSort(pg.key, i),
+      item: {
+        key: pg.key,
+        labelKey: pg.labelKey,
+        label: menuLabel(pg.key),
+        icon: pg.icon,
+        onClick: pageHandlers[pg.key]!,
+        hideInGame: pg.hideInGame,
+      },
     })
+  }
+  for (const o of Object.values(menuOverrides)) {
+    if (!o.custom || !o.href || o.visible === false) continue
+    navEntries.push({
+      group: o.group || 'account',
+      sort: o.sort ?? 999,
+      item: {
+        key: o.key,
+        labelKey: '',
+        label: o.labels?.[lang] || o.labels?.tr || o.href,
+        icon: 'arrow-right',
+        onClick: () => openCustomMenuHref(o.href!),
+        hideInGame: true,
+      },
+    })
+  }
+  navEntries.sort((a, b) => a.sort - b.sort)
+  for (const e of navEntries) {
+    // "Menüde göster" kapalıysa (grup visible=false) grubun BAŞLIĞI + ÖĞELERİ tamamen gizlenir.
+    if (menuGroupCfg[e.group]?.visible === false) continue
+    if (!bucket.has(e.group)) {
+      bucket.set(e.group, [])
+      groupOrder.push(e.group)
+    }
+    bucket.get(e.group)!.push(e.item)
   }
   const menuGroups: { group: string; label: string | null; defaultCollapsed: boolean; items: NavItem[] }[] = groupOrder
     .sort((a, b) => groupSort(a) - groupSort(b))
