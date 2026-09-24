@@ -12564,6 +12564,14 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.85rem;
 }
 /* Tam-boy canli izleme (Spectate = .app.game-view): sol ust izleme rozeti + bos durum */
+/* Overlay KÖKÜ opak game-scene arka planı: document.body'ye portal edilen tam-ekran izleme
+   katmanının kendi arka planı olmalı; yoksa ALTTAKİ lobi menüsü (sol nav) kenarlardan sızar
+   ("maç izlerken sol menü gözüküyor"). .app'in kendi bg'si yok -> burada açıkça ver. */
+.spectate-view {
+  background:
+    radial-gradient(ellipse 120% 82% at 50% 30%, var(--game-scene-glow, #0b1230) 0%, transparent 62%),
+    var(--game-scene, #06090f);
+}
 .spectate-badge {
   position: fixed;
   top: 10px;
