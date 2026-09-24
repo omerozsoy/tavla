@@ -384,6 +384,12 @@ export async function getFooterConfig(): Promise<FooterColumnCfg[]> {
   }
 }
 
+// Google Etiketi (gtag.js) yapilandirmasi — admin panelden (Ayarlar > Site Ayarlari) yonetilir.
+// enabled=false / id=null ise hicbir Google script'i yuklenmez (bkz analytics.ts).
+export async function getSiteTags(): Promise<{ gtag: { enabled: boolean; id: string | null } }> {
+  return req<{ gtag: { enabled: boolean; id: string | null } }>('/site-tags')
+}
+
 // ---- Kulupler & Lig ----
 export interface ClubSummary {
   id: number

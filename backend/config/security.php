@@ -21,8 +21,11 @@ return [
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://accounts.google.com",
         "font-src 'self' https://fonts.gstatic.com data:",
         "img-src 'self' data: blob: https:",
-        "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com",
+        // Google Etiketi (gtag/Ads dönüşüm) beacon/collect uçları -> connect-src'e eklendi (aksi halde
+        // CSP enforce iken dönüşüm ölçümü bloklanır). .htaccess CSP ile senkron.
+        "connect-src 'self' https://www.tavlatv.com https://validator.tavlatv.com https://accounts.google.com https://www.googletagmanager.com https://www.google-analytics.com https://region1.google-analytics.com https://googleads.g.doubleclick.net https://www.google.com",
         // Google Sign-In (GSI) One Tap/buton iframe'i accounts.google.com'dan yüklenir -> frame-src şart.
-        "frame-src 'self' https://accounts.google.com",
+        // td.doubleclick.net = Google Ads dönüşüm linker gizli iframe'i.
+        "frame-src 'self' https://accounts.google.com https://td.doubleclick.net",
     ]),
 ];
