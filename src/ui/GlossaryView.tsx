@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from './Icon'
+import ArticleBoard from './ArticleBoard'
 import { GLOSSARY, GLOSSARY_BY_SLUG, GLOSSARY_SOURCE, type GlossaryEntry } from '../data/glossary'
 
 const ALPHABET = ['A', 'B', 'C', 'Ç', 'D', 'E', 'F', 'G', 'H', 'I', 'İ', 'J', 'K', 'L', 'M', 'N', 'O', 'Ö', 'P', 'R', 'S', 'Ş', 'T', 'U', 'Ü', 'V', 'Y', 'Z']
@@ -168,6 +169,11 @@ export default function GlossaryView() {
                       <p className="glossary-definition">{entry.definition}</p>
                       {entry.aliases && entry.aliases.length > 0 && (
                         <p className="glossary-aliases"><span>Diğer yazımlar:</span> {entry.aliases.join(', ')}</p>
+                      )}
+                      {entry.board && (
+                        <div className="glossary-board">
+                          <ArticleBoard state={entry.board} steps={[]} caption={entry.boardCaption ?? null} />
+                        </div>
                       )}
                       {related.length > 0 && (
                         <div className="glossary-related">
