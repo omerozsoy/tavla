@@ -23,6 +23,9 @@ class ListMenuItems extends ListRecords
     protected function getHeaderActions(): array
     {
         return [
+            Actions\CreateAction::make()
+                ->label('Özel Menü Öğesi Ekle')
+                ->icon('heroicon-m-plus'),
             Actions\Action::make('sync')
                 ->label('Menüyü Yenile')
                 ->icon('heroicon-o-arrow-path')

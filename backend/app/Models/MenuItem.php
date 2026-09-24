@@ -13,11 +13,12 @@ use Illuminate\Database\Eloquent\Model;
 class MenuItem extends Model
 {
     protected $fillable = [
-        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group',
+        'key', 'label_tr', 'label_en', 'label_es', 'label_de', 'label_fr', 'sort', 'visible', 'group', 'href', 'custom',
     ];
 
     protected $casts = [
         'visible' => 'boolean',
+        'custom' => 'boolean',
         'sort' => 'integer',
     ];
 
@@ -45,6 +46,10 @@ class MenuItem extends Model
     /** Config'teki Turkce varsayilan ad (admin tablosunda sayfayi tanimak icin). */
     public function defaultLabel(): string
     {
+        // Özel (admin-eklemeli) öğe: kataloğda yok -> girilen ad, yoksa hedef.
+        if ($this->custom) {
+            return $this->label_tr ?: ($this->href ?: $this->key);
+        }
         foreach (config('menu.items', []) as $item) {
             if (($item['key'] ?? null) === $this->key) {
                 return $item['label'] ?? $this->key;
