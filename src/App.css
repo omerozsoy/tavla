@@ -2675,6 +2675,22 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
+/* Okunma rozeti (göz + sayı): tarih ile aynı sessiz ton, ikon hafif hizalı. */
+.news-views {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.news-views svg {
+  opacity: 0.75;
+  transform: translateY(0.5px);
+}
+.news-detail-date .news-views {
+  font-size: inherit;
+}
 .news-readmore {
   color: var(--accent);
   transition: gap 0.16s ease;

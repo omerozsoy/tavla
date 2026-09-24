@@ -37,6 +37,18 @@ class ContentController extends Controller
         return response()->json(['items' => $q->limit(500)->get()]);
     }
 
+    // Herkese acik: bir makale/haber detayi acildiginda okunma sayacini 1 artir + yeni degeri don.
+    // Yalniz yayindaki makale/haber sayilir (digerlerinde okunma gosterilmez -> no-op).
+    public function view(Content $content)
+    {
+        if (! $content->published || ! in_array($content->type, ['makale', 'news'], true)) {
+            return response()->json(['views' => (int) $content->views]);
+        }
+        $content->increment('views'); // atomik (yaris guvenli)
+
+        return response()->json(['views' => (int) $content->fresh()->views]);
+    }
+
     // Yonetici: tur fark etmeksizin tum kayitlar (yayinsizlar dahil)
     public function adminIndex(Request $request)
     {

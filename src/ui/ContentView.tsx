@@ -4,7 +4,7 @@ import { useT } from '../i18n'
 import { Icon, type IconName } from './Icon'
 import { useEscape } from './useEscape'
 import { Button } from '@/components/ui/button'
-import { listContents, type Content, type ContentType } from '../api'
+import { listContents, bumpContentView, type Content, type ContentType } from '../api'
 import Breadcrumb, { homeCrumb, type Crumb } from './Breadcrumb'
 import ArticleBoard, { parseBoardFigure, type ParsedBoard } from './ArticleBoard'
 import TurkeyMap, { normProvince } from './TurkeyMap'
@@ -115,6 +115,20 @@ export function slugify(s: string): string {
 
 // Detay URL slug'ı: kısa (SEO) slug varsa onu, yoksa başlıktan türet (haber/blog geriye dönük).
 const detailSlug = (c: { slug?: string | null; title: string }) => c.slug || slugify(c.title)
+
+// Okunma sayısını yerelleştirilmiş biçimde göster (1.234 -> tr binlik ayraç). Küçük göz rozeti.
+function fmtViews(n: number): string {
+  return new Intl.NumberFormat('tr-TR').format(Math.max(0, Math.round(n)))
+}
+function ViewsBadge({ n }: { n?: number | null }) {
+  const { t } = useT()
+  if (n == null) return null
+  return (
+    <span className="news-views" title={t('content.views', { n: fmtViews(n) })}>
+      <Icon name="eye" size={13} /> {fmtViews(n)}
+    </span>
+  )
+}
 
 // Cep telefonunu WhatsApp (wa.me) baglantisina cevir. TR varsayilan (+90).
 // Metinden rakamlari ayiklar: "0537 389 19 07" -> https://wa.me/905373891907.
@@ -447,6 +461,7 @@ export default function ContentView({
                       {excerpt && <p className="news-lead-excerpt">{excerpt}</p>}
                       <span className="news-meta">
                         <time>{fmtDate(lead.event_at ?? lead.created_at ?? null)}</time>
+                        <ViewsBadge n={lead.views} />
                         <span className="news-readmore">{t(type === 'makale' ? 'makale.read' : 'news.read')}</span>
                       </span>
                     </div>
@@ -478,6 +493,7 @@ export default function ContentView({
                               <h4 className="news-item-title">{p.title}</h4>
                               <span className="news-meta">
                                 <time>{fmtDate(p.event_at ?? p.created_at ?? null)}</time>
+                                <ViewsBadge n={p.views} />
                               </span>
                             </div>
                           </article>
@@ -803,6 +819,18 @@ function NewsDetail({
   // Gövdeyi prose + tahta parçalarına ayır (makale board-figure'ları GERÇEK Board olur;
   // haberde board-figure yok -> tek prose parçası, eski davranışla aynı).
   const segments = useMemo(() => splitBody(item.body), [item.body])
+  // Okunma sayacı: detay açılınca sunucuda +1; dönen taze değeri göster. Hata olursa optimistik +1.
+  const [views, setViews] = useState<number | null>(item.views ?? null)
+  useEffect(() => {
+    setViews(item.views ?? null)
+    let alive = true
+    bumpContentView(item.id)
+      .then((v) => alive && setViews(v))
+      .catch(() => alive && setViews((prev) => (prev == null ? null : prev + 1)))
+    return () => {
+      alive = false
+    }
+  }, [item.id, item.views])
   return (
     <article className="news-detail">
       <Button variant="secondary" className="news-back" onClick={onBack}>
@@ -814,6 +842,12 @@ function NewsDetail({
       <h3 className="news-detail-title">{item.title}</h3>
       <div className="news-detail-date">
         <Icon name="calendar" size={13} /> {fmtDate(item.event_at ?? item.created_at ?? null)}
+        {views != null && (
+          <>
+            {' · '}
+            <ViewsBadge n={views} />
+          </>
+        )}
       </div>
       {item.image && (
         <img

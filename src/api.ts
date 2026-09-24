@@ -1178,10 +1178,18 @@ export interface Content {
   sort: number
   published: boolean
   show_tavlatv?: boolean | null // admin: takvim kartinda TavlaTV yayin bayragi goster (varsayilan kapali)
+  views?: number | null // makale/haber okunma sayisi (yeni yazi 40-150 arasi rastgele baslar)
 }
 export async function listContents(type: ContentType): Promise<Content[]> {
   const d = await req<{ items: Content[] }>(`/contents?type=${encodeURIComponent(type)}`)
   return d.items
+}
+
+// Makale/haber detayi acilinca okunma sayacini +1 yap; sunucunun dondurdugu yeni degeri don.
+// Sessiz best-effort: hata olursa cagiran optimistik yerel sayiyi korur.
+export async function bumpContentView(id: number): Promise<number> {
+  const d = await req<{ views: number }>(`/contents/${id}/view`, { method: 'POST' })
+  return d.views
 }
 
 // ---- Bilgi sayfalari (/bilgi/<slug> sekmeleri; admin panelden RichEditor ile duzenlenir) ----
