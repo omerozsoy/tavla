@@ -957,6 +957,8 @@ export default function App() {
   // --- URL yonlendirme (hash tabanli) ---
   // Acik sayfa URL'de gorunur; tarayici geri/ileri tuslari ve dogrudan link/yer imi calisir.
   // NOT: Hook'lar erken return'lerden ONCE, tum sayfa state'leri tanimlandiktan sonra durmali.
+  const initialPathRef = useRef(window.location.pathname.replace(/^\/+|\/+$/g, ''))
+  const initialPathHydratedRef = useRef(false)
   const currentSlug = legalSlug // hukuki sayfa (slug == URL: kvkk, gizlilik-politikasi, ...)
     ? legalSlug
     : showAuth
@@ -1433,6 +1435,12 @@ export default function App() {
   // state -> URL yolu: menuden sayfa acildikca temiz path guncellenir
   useEffect(() => {
     const pathSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
+    // Doğrudan bilgi URL'sinde önce path -> state efekti çalışmalı; ilk render'da
+    // başlangıç state'i boşken adresi ana sayfaya geri yazma.
+    if (!initialPathHydratedRef.current && initialPathRef.current.startsWith('bilgi/')) {
+      initialPathHydratedRef.current = true
+      return
+    }
     if (pathSlug === currentSlug) return // zaten senkron (path'ten uygulandi)
     const search = window.location.search
     if (currentSlug) {

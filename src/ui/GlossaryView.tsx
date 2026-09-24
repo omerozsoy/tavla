@@ -96,7 +96,7 @@ export default function GlossaryView() {
           </p>
         </div>
         <div className="glossary-stat" aria-label={`${GLOSSARY.length} terim`}>
-          <strong>{GLOSSARY.length}</strong>
+          <span className="glossary-stat-value">{GLOSSARY.length}</span>
           <span>özgün açıklama</span>
         </div>
       </header>
@@ -119,7 +119,7 @@ export default function GlossaryView() {
           )}
         </div>
         <p className="glossary-result-count">
-          <strong>{total}</strong> terim gösteriliyor
+          <span className="glossary-result-value">{total}</span> terim gösteriliyor
         </p>
       </div>
 
