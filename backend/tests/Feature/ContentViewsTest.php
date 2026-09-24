@@ -64,4 +64,28 @@ class ContentViewsTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['items' => [['id', 'title', 'views']]]);
     }
+
+    public function test_bump_command_grows_published_makale_over_time(): void
+    {
+        $c = Content::create(['type' => 'makale', 'title' => 'Taze', 'body' => 'x', 'sort' => 0, 'published' => true]);
+        $c->update(['views' => 100]); // sabit taban -> büyüme net ölçülsün
+
+        // Taze yazı (yaş 0) her koşuda 0-3 alır; 25 koşuda hepsinin 0 gelme ihtimali (1/4)^25 ≈ 0.
+        for ($i = 0; $i < 25; $i++) {
+            $this->artisan('contents:bump-views')->assertSuccessful();
+        }
+        $this->assertGreaterThan(100, (int) $c->fresh()->views); // organik olarak arttı
+    }
+
+    public function test_bump_command_skips_unpublished_and_other_types(): void
+    {
+        $draft = Content::create(['type' => 'makale', 'title' => 'Taslak', 'body' => 'x', 'sort' => 0, 'published' => false, 'views' => 100]);
+        $service = Content::create(['type' => 'service', 'title' => 'Hizmet', 'body' => 'x', 'sort' => 0, 'published' => true, 'views' => 100]);
+
+        for ($i = 0; $i < 20; $i++) {
+            $this->artisan('contents:bump-views')->assertSuccessful();
+        }
+        $this->assertSame(100, (int) $draft->fresh()->views);   // yayınsız: dokunulmadı
+        $this->assertSame(100, (int) $service->fresh()->views); // makale/haber değil: dokunulmadı
+    }
 }

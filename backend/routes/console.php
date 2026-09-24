@@ -41,6 +41,14 @@ Schedule::command('seo:sitemap')
     ->name('seo-sitemap')
     ->withoutOverlapping();
 
+// MAKALE/HABER OKUNMASI ORGANİK ARTIŞ: yayındaki makale+haber okunma sayaçları zamanla
+// kendiliğinden büyüsün (yalnız gerçek detay-açılışına bağlı kalmasın). Saatte bir, yaşa göre
+// azalan küçük rastgele adımlar (taze yazı hızlı, eskiler yavaş plato). Kullanıcı direktifi.
+Schedule::command('contents:bump-views')
+    ->hourly()
+    ->name('bump-content-views')
+    ->withoutOverlapping();
+
 // SUNUCU-OTORİTER YEDEK: tamamlanmış online maçlarda istemcisi raporlayamamış (sekme kapandı/
 // ağ/başka cihaz) oyuncuların match_results satırını sunucuda tamamla -> maç HER İKİ oyuncunun
 // "Maç Analizleri" listesinde çıksın. 2 dk grace (canlı istemcinin zengin satırı önce yazsın).
