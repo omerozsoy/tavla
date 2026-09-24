@@ -579,16 +579,47 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
       //    tasin ta kendisi; hedefte ise tasin konacagi ust nokta ("doluysa en uste isaret et").
       //  - Bos hane (yalniz hedef) -> DIS kenar/taban ("bossa en alta"): ust hanede ust-kenar+r,
       //    alt hanede alt-kenar-r (ilk pulun oturacagi yer). Boylece ok havadan cikmaz.
-      const anchorPoint = (el: Element): { x: number; y: number } => {
+      // stackIdx: aynı hamlede aynı haneden KAÇINCI taş çıkıyor/giriyor (0 tabanlı). Çift/üçlü
+      // hamlede (6/4 6/3, 8/5(3)...) okların aynı taşı göstermemesi için kullanılır.
+      const anchorPoint = (el: Element, isDest: boolean, stackIdx: number): { x: number; y: number } => {
         const checkers = el.querySelectorAll('.checker')
+        const isTop = (el as HTMLElement).classList.contains('top')
         if (checkers.length) {
-          const inner = checkers[checkers.length - 1] as HTMLElement // yigin tepesi = son cocuk
-          return rectXY(inner.getBoundingClientRect())
+          if (!isDest) {
+            // KAYNAK: taşlar tepeden alınır. k. hamle, tepeden k. taştan çıkar (hepsi AYNI üst
+            // taştan değil) — böylece 6/4 6/3 gibi çift hamlede iki ok iki AYRI taştan başlar.
+            const idx = Math.max(0, checkers.length - 1 - stackIdx)
+            return rectXY((checkers[idx] as HTMLElement).getBoundingClientRect())
+          }
+          // HEDEF: oynatılan taş mevcut yığının ÜZERİNE oturur. Okun/hayaletin son taşın ortasını
+          // kapatması yerine taşın GERÇEKTEN konacağı sırayı göstermesi için yığın-adımı kadar içe
+          // kaydır. stackIdx ile ard arda gelen taşlar üst üste dizilir.
+          const inner = checkers[checkers.length - 1] as HTMLElement // yığın tepesi
+          const c = rectXY(inner.getBoundingClientRect())
+          let step: number
+          if (checkers.length >= 2) {
+            // gerçek dizilim adımı + yönü (üst hanede +y, alt hanede -y; binen yığında daralır)
+            const prev = rectXY((checkers[checkers.length - 2] as HTMLElement).getBoundingClientRect())
+            step = c.y - prev.y
+          } else {
+            step = (isTop ? 1 : -1) * inner.getBoundingClientRect().height
+          }
+          const isOwn = !!moverColor && inner.classList.contains(moverColor)
+          if (checkers.length === 1 && !isOwn) {
+            // RAKİP blotu = VURUŞ: ilk gelen taş o taşın yerine geçer (blot bara gider) -> ilk
+            // taşta kaydırma YOK; sonrakiler üstüne dizilir.
+            c.y += step * stackIdx
+          } else {
+            // Kendi yığını: en üste otur; ard arda gelen taşlar bir adım daha yukarı.
+            c.y += step * (stackIdx + 1)
+          }
+          return c
         }
+        // BOŞ hane (yalnız hedef olabilir): dış kenar/taban; ard arda gelen taşlar içe dizilir.
         const rc = el.getBoundingClientRect()
         const x = rc.left + rc.width / 2 - sr.left
-        const isTop = (el as HTMLElement).classList.contains('top')
-        const y = isTop ? rc.top - sr.top + rad : rc.bottom - sr.top - rad
+        const baseY = isTop ? rc.top - sr.top + rad : rc.bottom - sr.top - rad
+        const y = baseY + (isTop ? 1 : -1) * rad * 2 * stackIdx
         return { x, y }
       }
       // Bardaki KIRIK TAS: bar-slotu ORTASI degil, hamleyi yapan rengin gercek bar tasinin merkezi.
@@ -619,19 +650,32 @@ export function MoveArrows({ steps, dep }: { steps: Step[]; dep: string }) {
         }
         return tray ? rectXY(tray.getBoundingClientRect()) : null
       }
-      const anchorFor = (p: number | 'bar' | 'off', fromY: number | null): { x: number; y: number } | null => {
+      const anchorFor = (
+        p: number | 'bar' | 'off',
+        fromY: number | null,
+        isDest: boolean,
+        stackIdx: number,
+      ): { x: number; y: number } | null => {
         if (p === 'bar') return barAnchor()
         if (p === 'off') return offAnchor(fromY)
         const el = board.querySelector(`[data-point="${p}"]`)
-        return el ? anchorPoint(el) : null
+        return el ? anchorPoint(el, isDest, stackIdx) : null
       }
       // "Hamle Analizi" gibi: adımları SIRAYLA numaralandır (birleştirme yok; çift hamlede
-      // aynı yere iki numaralı ok — MiniBoard ile aynı davranış).
+      // aynı yere iki numaralı ok — MiniBoard ile aynı davranış). Aynı haneden çıkan/aynı haneye
+      // giren taşları saymak için sayaçlar: her ok AYRI kaynak taştan başlar, AYRI hedef sıraya
+      // oturur (6/4 6/3, 8/5(3), 7/1*(2)... okları üst üste binmesin).
+      const srcSeen = new Map<number, number>()
+      const dstSeen = new Map<number, number>()
       const out: ArrowSeg[] = []
       steps.forEach((s) => {
-        const a = anchorFor(s.from, null)
+        const sIdx = typeof s.from === 'number' ? srcSeen.get(s.from) ?? 0 : 0
+        if (typeof s.from === 'number') srcSeen.set(s.from, sIdx + 1)
+        const a = anchorFor(s.from, null, false, sIdx)
         if (!a) return
-        const b = anchorFor(s.to, a.y)
+        const dIdx = typeof s.to === 'number' ? dstSeen.get(s.to) ?? 0 : 0
+        if (typeof s.to === 'number') dstSeen.set(s.to, dIdx + 1)
+        const b = anchorFor(s.to, a.y, true, dIdx)
         if (!b) return
         out.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, lane: 0 })
       })
