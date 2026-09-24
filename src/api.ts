@@ -1192,6 +1192,28 @@ export async function bumpContentView(id: number): Promise<number> {
   return d.views
 }
 
+// ---- Haber yorumlari (kayitli kullanici birakir -> onay bekler -> admin onaylayinca yayinda) ----
+export interface ContentComment {
+  id: number
+  body: string
+  author: string // takma ad (yoksa ilk ad)
+  avatar?: string | null
+  frame?: string | null
+  created_at?: string | null
+}
+// Bir haberin ONAYLANMIS yorumlari (en yeni once). Herkese acik.
+export async function listComments(contentId: number): Promise<ContentComment[]> {
+  const d = await req<{ comments: ContentComment[] }>(`/contents/${contentId}/comments`)
+  return d.comments
+}
+// Yorum birak (giris gerekir). Onay bekler -> 'pending' doner (henuz yayinda gorunmez).
+export async function postComment(contentId: number, body: string): Promise<{ status: string; id: number }> {
+  return req<{ status: string; id: number }>(`/contents/${contentId}/comments`, {
+    method: 'POST',
+    body: JSON.stringify({ body }),
+  })
+}
+
 // ---- Bilgi sayfalari (/bilgi/<slug> sekmeleri; admin panelden RichEditor ile duzenlenir) ----
 // NOT: /api/info-pages artik SEO icerik sayfalarini da (online-tavla, nasil-oynanir,
 // tavla-rehberi/<yazi>, turnuva-kurallari) dondurur -> slug tipi string'e genisletildi.
