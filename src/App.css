@@ -2958,59 +2958,34 @@ button[aria-disabled='true'],
 .glossary-view {
   --glossary-ink: var(--text);
   --glossary-soft: color-mix(in srgb, var(--text) 72%, transparent);
+  /* Editoryal hero/eyebrow (seo-*) glossary içinde de SİTE accent'iyle çalışsın. */
+  --seo-accent: var(--accent);
   padding: clamp(18px, 3vw, 42px) clamp(16px, 3vw, 38px) 42px;
   background: color-mix(in srgb, var(--card-bg) 82%, var(--accent));
 }
-.glossary-view .seo-eyebrow,
-.glossary-view .glossary-title,
-.glossary-view .glossary-stat-value,
-.glossary-view .glossary-stat span,
-.glossary-view .glossary-result-value,
+/* Editoryal ton: liste etiketleri/başlıkları ince (400) — site landing dili. */
 .glossary-view .glossary-alphabet button,
-.glossary-view .glossary-group-heading span,
+.glossary-view .glossary-group-letter,
 .glossary-view .glossary-entry h2,
 .glossary-view .glossary-english,
-.glossary-view .glossary-aliases span,
-.glossary-view .glossary-related > span {
+.glossary-view .glossary-aliases span {
   font-weight: 400;
 }
+/* Hero: SİTE seo-hero desenini kullanır (eyebrow + başlık + alt metin); yalnız
+   okuma genişliğine ortalanır. Kenarlık/padding/hiza seo-hero'dan gelir. */
 .glossary-hero {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 28px;
   max-width: 1060px;
-  margin: 0 auto 28px;
-  padding-bottom: 26px;
-  border-bottom: 1px solid var(--border);
+  margin: 0 auto clamp(18px, 3vw, 28px);
 }
-.glossary-title {
-  max-width: 700px;
-  margin: 8px 0 12px;
-  color: var(--glossary-ink);
-  font-family: var(--tv-font-display, inherit);
-  font-size: clamp(2rem, 4vw, 3.6rem);
-  font-weight: 400;
-  letter-spacing: -0.02em; /* birleşik başlık sesi (diğer sayfa başlıklarıyla aynı) */
-  line-height: 0.98;
-  text-wrap: balance;
+.glossary-hero .seo-hero-title {
+  max-width: 760px;
 }
-.glossary-lede {
-  max-width: 650px;
-  margin: 0;
-  color: var(--glossary-soft);
-  font-size: 1rem;
-  line-height: 1.7;
+.glossary-eyebrow-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
-.glossary-stat {
-  display: grid;
-  flex: 0 0 150px;
-  gap: 2px;
-  padding: 16px 0 2px 20px;
-  border-left: 2px solid var(--accent);
-}
-.glossary-stat-value { display: block; font-size: 2.25rem; font-variant-numeric: tabular-nums; line-height: 1; letter-spacing: -0.04em; }
-.glossary-stat span { color: var(--glossary-soft); font-size: 0.78rem; }
 .glossary-toolbar {
   display: flex;
   align-items: center;
@@ -3067,8 +3042,17 @@ button[aria-disabled='true'],
   transition: background 140ms ease, color 140ms ease;
 }
 .glossary-search-clear:hover { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
-.glossary-result-count { margin: 0; color: var(--muted); font-size: 0.82rem; font-variant-numeric: tabular-nums; }
-.glossary-result-value { color: var(--text); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.glossary-count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.glossary-count strong { color: var(--accent); font-size: 1.15rem; font-weight: 600; }
 .glossary-alphabet {
   display: flex;
   flex-wrap: wrap;
@@ -3099,9 +3083,24 @@ button[aria-disabled='true'],
 .glossary-groups { max-width: 1060px; margin: 0 auto; }
 .glossary-group { scroll-margin-top: 24px; }
 .glossary-group + .glossary-group { margin-top: 36px; }
-.glossary-group-heading { display: flex; align-items: center; gap: 13px; margin-bottom: 10px; color: var(--accent); }
-.glossary-group-heading span { font-size: 1.2rem; font-weight: 400; }
-.glossary-group-heading i { height: 1px; flex: 1; background: var(--border); }
+.glossary-group-heading { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; color: var(--accent); }
+.glossary-group-letter { font-size: 1.5rem; letter-spacing: -0.02em; line-height: 1; }
+.glossary-group-rule { height: 1px; flex: 1; background: var(--border); }
+.glossary-group-count {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
 .glossary-entries { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; align-items: start; }
 .glossary-entry {
   display: flex;
@@ -3132,11 +3131,13 @@ button[aria-disabled='true'],
   .glossary-entry, .glossary-entry:hover { transition: none; transform: none; }
   .glossary-entry.is-highlight { animation: none; }
 }
-.glossary-entry h2 { margin: 0; color: var(--glossary-ink); font-size: 0.98rem; line-height: 1.3; letter-spacing: -0.01em; }
-.glossary-english { margin: 4px 0 12px; color: var(--accent); font-size: 1.04rem; line-height: 1.3; letter-spacing: 0.01em; }
+.glossary-entry-head { margin-bottom: 10px; }
+.glossary-entry h2 { margin: 0; color: var(--glossary-ink); font-size: 1.12rem; line-height: 1.25; letter-spacing: -0.01em; }
+/* İngilizce karşılık: küçük, italik, accent alt-etiket (başlıktan KÜÇÜK -> doğru hiyerarşi). */
+.glossary-english { margin: 2px 0 0; color: var(--accent); font-size: 0.8rem; font-style: italic; line-height: 1.3; letter-spacing: 0.01em; }
 .glossary-definition { margin: 0; color: var(--glossary-soft); font-size: 0.94rem; line-height: 1.65; }
 .glossary-aliases { margin: 12px 0 0; color: var(--muted); font-size: 0.77rem; line-height: 1.45; }
-.glossary-aliases span, .glossary-related > span { color: var(--text); font-weight: 400; }
+.glossary-aliases span { color: var(--text); font-weight: 500; }
 /* Terim pozisyonu (mini tahta): tek-sütun kartta TAM sığar (ArticleBoard container-query
    ile 100cqw'e göre ölçeklenir). max-width kartı taşırmaz; ortalanır. */
 .glossary-board { margin-top: 14px; }
@@ -3153,6 +3154,7 @@ button[aria-disabled='true'],
   color: var(--muted);
   font-size: 0.77rem;
 }
+.glossary-related-label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.68rem; font-weight: 600; color: var(--muted); }
 .glossary-related-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .glossary-related-link {
   padding: 3px 10px;
@@ -3188,10 +3190,6 @@ button[aria-disabled='true'],
 .glossary-empty-reset:hover { background: var(--accent); color: var(--accent-contrast, #fff); }
 .glossary-source { max-width: 1060px; margin: 38px auto 0; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
 .glossary-source a { color: var(--accent); }
-@media (max-width: 800px) {
-  .glossary-hero { align-items: start; flex-direction: column; }
-  .glossary-stat { flex-basis: auto; width: 100%; padding: 10px 0 0; border-top: 1px solid var(--border); border-left: 0; }
-}
 @media (max-width: 520px) {
   .glossary-view { padding: 20px 12px 30px; }
   .glossary-alphabet { margin-right: -12px; margin-left: -12px; padding: 10px 12px; }
@@ -3316,6 +3314,167 @@ button[aria-disabled='true'],
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   margin-top: 24px;
+}
+
+/* ---- Haber alti yorumlar ---- */
+.news-comments {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+.news-comments-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  color: var(--ink);
+}
+.news-comments-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 11px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+/* Yorum formu */
+.news-comment-form {
+  margin-bottom: 20px;
+}
+.news-comment-input {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  min-height: 74px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+.news-comment-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.news-comment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+.news-comment-as {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.news-comment-err {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: #c0392b;
+}
+/* Onaya gonderildi / giris cagrisi bildirimleri */
+.news-comment-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.news-comment-login {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+/* Yorum listesi */
+.news-comment-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.news-comment {
+  display: flex;
+  gap: 12px;
+}
+.news-comment-avatar {
+  flex: 0 0 auto;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+.news-comment-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.news-comment-avatar-ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 1rem;
+}
+.news-comment-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.news-comment-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 3px;
+}
+.news-comment-author {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.9rem;
+}
+.news-comment-date {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.news-comment-body {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.news-comments-empty {
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 6px 0;
 }
 /* Hizmet galerisi: aciklamanin HEMEN altinda minik minik kareler; tiklayinca lightbox. */
 .service-gallery {

@@ -59,6 +59,7 @@ export default function GlossaryView() {
 
   const available = useMemo(() => new Set(GLOSSARY.map((entry) => firstLetter(entry.title))), [])
   const total = useMemo(() => Array.from(groups.values()).reduce((n, g) => n + g.length, 0), [groups])
+  const filtering = query.trim().length > 0 || letter !== null
 
   // "İlgili" bir terime git: filtreleri temizle (hedef gizliyse görünür olsun) + kaydır + vurgula.
   function goToTerm(slug: string) {
@@ -70,7 +71,6 @@ export default function GlossaryView() {
 
   useEffect(() => {
     if (!scrollTarget) return
-    // Filtre temizliği sonrası DOM güncellensin diye bir frame bekle.
     const raf = requestAnimationFrame(() => {
       const el = rootRef.current?.querySelector<HTMLElement>(`#terim-${CSS.escape(scrollTarget.slug)}`)
       if (!el) return
@@ -86,19 +86,17 @@ export default function GlossaryView() {
 
   return (
     <div className="glossary-view" ref={rootRef}>
-      <header className="glossary-hero">
-        <div className="glossary-hero-text">
-          <span className="seo-eyebrow">TAVLA SÖZLÜĞÜ</span>
-          <h1 className="glossary-title">Tavla terimleri, açık ve anlaşılır</h1>
-          <p className="glossary-lede">
-            Hamle, pozisyon, küp ve turnuva dilini Türkçe karşılığıyla öğren. İngilizce terimleri de
-            birlikte görerek analizleri ve kaynakları daha rahat takip et.
-          </p>
-        </div>
-        <div className="glossary-stat" aria-label={`${GLOSSARY.length} terim`}>
-          <span className="glossary-stat-value">{GLOSSARY.length}</span>
-          <span>özgün açıklama</span>
-        </div>
+      {/* Site editoryal hero deseni (seo-hero: eyebrow + başlık + alt metin) — rehber/landing
+          sayfalarıyla aynı dil. --seo-accent glossary-view kapsamında --accent'e bağlanır. */}
+      <header className="seo-hero glossary-hero">
+        <span className="seo-eyebrow">
+          <span className="glossary-eyebrow-dot" aria-hidden="true" /> Tavla Sözlüğü
+        </span>
+        <h1 className="seo-hero-title info-title">Tavla terimleri, açık ve anlaşılır</h1>
+        <p className="seo-hero-sub">
+          Hamle, pozisyon, küp ve turnuva dilini Türkçe karşılığıyla öğren. İngilizce terimlerini de
+          birlikte görerek analizleri ve kaynakları daha rahat takip et.
+        </p>
       </header>
 
       <div className="glossary-toolbar">
@@ -118,8 +116,9 @@ export default function GlossaryView() {
             </button>
           )}
         </div>
-        <p className="glossary-result-count">
-          <span className="glossary-result-value">{total}</span> terim gösteriliyor
+        <p className="glossary-count">
+          <strong>{total}</strong>
+          <span>{filtering ? `/ ${GLOSSARY.length} terim` : 'terim'}</span>
         </p>
       </div>
 
@@ -144,7 +143,7 @@ export default function GlossaryView() {
           <Icon name="search" size={26} />
           <h2>Aramana uygun terim bulunamadı</h2>
           <p>Türkçe veya İngilizce yazımı kontrol edip yeniden dene.</p>
-          {(query || letter) && (
+          {filtering && (
             <button type="button" className="glossary-empty-reset" onClick={() => { setQuery(''); setLetter(null) }}>
               Filtreleri temizle
             </button>
@@ -154,7 +153,11 @@ export default function GlossaryView() {
         <div className="glossary-groups">
           {Array.from(groups.entries()).map(([group, entries]) => (
             <section key={group} className="glossary-group" id={`harf-${group.toLocaleLowerCase('tr-TR')}`}>
-              <div className="glossary-group-heading"><span>{group}</span><i /></div>
+              <div className="glossary-group-heading">
+                <span className="glossary-group-letter">{group}</span>
+                <span className="glossary-group-rule" aria-hidden="true" />
+                <span className="glossary-group-count">{entries.length}</span>
+              </div>
               <div className="glossary-entries">
                 {entries.map((entry) => {
                   const related = relatedEntries(entry)
@@ -164,8 +167,10 @@ export default function GlossaryView() {
                       id={`terim-${entry.slug}`}
                       key={entry.slug}
                     >
-                      <h2>{entry.title}</h2>
-                      <p className="glossary-english">{entry.english}</p>
+                      <div className="glossary-entry-head">
+                        <h2>{entry.title}</h2>
+                        <p className="glossary-english">{entry.english}</p>
+                      </div>
                       <p className="glossary-definition">{entry.definition}</p>
                       {entry.aliases && entry.aliases.length > 0 && (
                         <p className="glossary-aliases"><span>Diğer yazımlar:</span> {entry.aliases.join(', ')}</p>
@@ -177,7 +182,7 @@ export default function GlossaryView() {
                       )}
                       {related.length > 0 && (
                         <div className="glossary-related">
-                          <span>İlgili:</span>
+                          <span className="glossary-related-label">İlgili</span>
                           <span className="glossary-related-chips">
                             {related.map((item) => (
                               <button
