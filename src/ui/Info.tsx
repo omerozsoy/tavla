@@ -75,7 +75,9 @@ export default function Info({ onClose, tab, currentRating, loggedIn = false }: 
         {/* Sekme şeridi kaldırıldı: her bilgi sayfası kendi URL'sine sahip bağımsız sayfadır
             (/bilgi/hakkinda, /bilgi/hizmetler, …); menüden tek tek açılır. */}
         <Breadcrumb items={[homeCrumb(t), { name: activeTitle }]} />
-        <h2 className="info-title">{activeTitle}</h2>
+        {/* Sözlük kendi editoryal hero'sunu (seo-hero: eyebrow + başlık + alt metin) çizer;
+            burada info-title'ı çizmeyip ÇİFT başlığı önle. Diğer sekmeler info-title kullanır. */}
+        {tab !== 'glossary' && <h2 className="info-title">{activeTitle}</h2>}
 
         {/* Hakkında / Hizmetler: admin panelden düzenlenen içerik (info_pages) */}
         {EDITABLE.includes(tab) && (
