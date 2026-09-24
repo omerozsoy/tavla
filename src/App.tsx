@@ -131,6 +131,7 @@ const PositionAnalyzer = lazy(() => import('./ui/PositionAnalyzer'))
 import MatAnalyzer from './ui/MatAnalyzer'
 import SideMenu, { type NavItem } from './ui/SideMenu'
 import Footer, { type FooterItem } from './ui/Footer'
+import LobbyLayout from './ui/LobbyLayout'
 import { PAGES, PAGE_BY_KEY, MENU_GROUP_ORDER, MENU_GROUP_LABELS, type MenuGroup } from './pages'
 import { Icon } from './ui/Icon'
 import { burstConfettiAt } from './ui/confetti'
@@ -8570,60 +8571,70 @@ export default function App() {
   // OYUN görünümünde (game-view return'ü) RENDER ETMEYİZ -> oyun sırasında üstte kalmaz.
   const bugReport = <BugReport currentPage={activeKey ? menuLabel(activeKey) : undefined} loggedIn={!!user} />
 
+  // LOBİ İSKELETİ (TEK KAYNAK): tüm "app lobby" sayfaları LobbyLayout kullanır -> footer + kabuk
+  // tek yerden gelir (footer'sız sayfa kök sebebi kapandı). chrome closure'lu bileşenleri bir kez
+  // kurar; sayfa dalı yalnız içerik + mainClassName + trailing verir.
+  const lobbyChrome = {
+    mobileNav,
+    topbar: (
+      <div className="topbar-stack">
+        {accountBar}
+        {betaBanner}
+      </div>
+    ),
+    sideMenu: (
+      <SideMenu
+        inGame={false}
+        hasActiveGame={hasActiveGame}
+        groups={menuGroups}
+        groupSig={groupCollapseSig}
+        onResume={menuProps.onResume}
+        active={activeKey}
+        badges={{ messages: dmUnread }}
+        mobileOpen={menuOpen}
+        onCloseMobile={() => setMenuOpen(false)}
+        onHome={menuProps.onHome}
+      />
+    ),
+    footer: <Footer columns={footerColsFinal} />,
+  }
+  // İçerik sayfası dallarının ortak trailing katmanı (overlay/modal). Home + online lobi farklı verir.
+  const lobbyTrailing = (
+    <>
+      {menuPages}
+      {authModal}
+      {menuOverlays}
+      {bugReport}
+    </>
+  )
+
   // Mac kurulum ekrani (mod + zorluk + sure + puan + pip + analiz).
   // Diger menu sayfalari gibi: sol menu gorunur kalir, kurulum icerik alaninda acilir.
   if (setup) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <MatchSetup
+            mode={setup}
+            targets={TARGETS}
+            coins={user?.coins ?? 0}
+            initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
+            board={(() => {
+              const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
+            })()}
+            onChangeBoard={() => setBoardPickerOpen(true)}
+            onConfirm={applyMatchSetup}
+            onCancel={() => {
+              setSetup(null)
+              if (mode === 'online' && !room) setHome(true)
+            }}
           />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <MatchSetup
-                mode={setup}
-                targets={TARGETS}
-                coins={user?.coins ?? 0}
-                initial={{ target: match.target, showPip, showAnalysis, timeControl, difficulty, ranked: rankedMatch }}
-                board={(() => {
-                  const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-                  return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
-                })()}
-                onChangeBoard={() => setBoardPickerOpen(true)}
-                onConfirm={applyMatchSetup}
-                onCancel={() => {
-                  setSetup(null)
-                  if (mode === 'online' && !room) setHome(true)
-                }}
-              />
-              {/* Kurulum altına taranabilir SEO içeriği (ince sayfa -> "taranan ama indekslenmiyor"
-                  düzeltmesi). online=yeni-oyun, pvb=yz-ile-oyna. */}
-              <SeoAppSection page={setup === 'online' ? 'yeni-oyun' : 'yz-ile-oyna'} />
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
+          {/* Kurulum altına taranabilir SEO içeriği (ince sayfa -> "taranan ama indekslenmiyor"
+              düzeltmesi). online=yeni-oyun, pvb=yz-ile-oyna. */}
+          <SeoAppSection page={setup === 'online' ? 'yeni-oyun' : 'yz-ile-oyna'} />
         </div>
-        {/* Kurulumda "Tahtayi Degistir" -> BoardPickerModal (menuOverlays); "Daha fazla" Magaza'yi acar */}
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -8631,67 +8642,41 @@ export default function App() {
   // sol menu gorunur, kurulum (setup-split + board onizleme) icerik alaninda acilir.
   if (friendSetupOpen) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <FriendGameSetup
+            board={(() => {
+              const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
+              return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
+            })()}
+            onChangeBoard={() => setBoardPickerOpen(true)}
+            invitee={inviteTarget}
+            onInvite={handleSendInvite}
+            onCancel={() => {
+              setFriendSetupOpen(false)
+              setInviteTarget(null)
+            }}
+            onCreate={({ target, timeControl }) => {
+              setFriendSetupOpen(false)
+              setTimeControl(timeControl)
+              clockRef.current = CLOCK_PRESETS[timeControl]
+              onlineTargetRef.current = target
+              targetsRef.current = [target]
+              setMode('online')
+              setHome(false)
+              handleCreateRoom(target, timeControl)
+            }}
+            onJoin={(code) => {
+              // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom
+              // online'a gecirir; gecersizse (404) kurulum ekraninda kalip toast ile
+              // "boyle bir oda yok" der (eskiden bogus bir maca dusuyordu).
+              handleJoinRoom(code)
+            }}
           />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <FriendGameSetup
-                board={(() => {
-                  const bt = ALL_THEMES.find((x) => x.id === boardTheme) ?? BOARD_THEMES[0]
-                  return { id: bt.id, panel: bt.panel ?? bt.b, a: bt.a, b: bt.b, checker: bt.checker, light: bt.light, pointStyle: bt.pointStyle, surface: bt.surface }
-                })()}
-                onChangeBoard={() => setBoardPickerOpen(true)}
-                invitee={inviteTarget}
-                onInvite={handleSendInvite}
-                onCancel={() => {
-                  setFriendSetupOpen(false)
-                  setInviteTarget(null)
-                }}
-                onCreate={({ target, timeControl }) => {
-                  setFriendSetupOpen(false)
-                  setTimeControl(timeControl)
-                  clockRef.current = CLOCK_PRESETS[timeControl]
-                  onlineTargetRef.current = target
-                  targetsRef.current = [target]
-                  setMode('online')
-                  setHome(false)
-                  handleCreateRoom(target, timeControl)
-                }}
-                onJoin={(code) => {
-                  // Arkadasin kodu: navigasyonu ERKEN yapma. Kod gecerliyse handleJoinRoom
-                  // online'a gecirir; gecersizse (404) kurulum ekraninda kalip toast ile
-                  // "boyle bir oda yok" der (eskiden bogus bir maca dusuyordu).
-                  handleJoinRoom(code)
-                }}
-              />
-              {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). */}
-              <SeoAppSection page="arkadasinla-oyna" />
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
+          {/* Kurulum altına taranabilir SEO içeriği (ince sayfa düzeltmesi). */}
+          <SeoAppSection page="arkadasinla-oyna" />
         </div>
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -8700,45 +8685,19 @@ export default function App() {
   // formu render edilir. Kapatinca home'a doner.
   if (servicePage) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
-          />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <Suspense fallback={null}>
-                <ServiceLanding
-                  slug={servicePage}
-                  onClose={() => {
-                    setServicePage(null)
-                    setHome(true)
-                  }}
-                />
-              </Suspense>
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <Suspense fallback={null}>
+            <ServiceLanding
+              slug={servicePage}
+              onClose={() => {
+                setServicePage(null)
+                setHome(true)
+              }}
+            />
+          </Suspense>
         </div>
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -8746,44 +8705,18 @@ export default function App() {
   // gorunur kalir, taranabilir icerik page-host icinde akis icinde acilir. Kapatinca home'a doner.
   if (onlineTavlaOpen || tavlaOynaOpen) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <SeoContent
+            variant={onlineTavlaOpen ? 'online-tavla' : 'tavla-oyna'}
+            onClose={() => {
+              setOnlineTavlaOpen(false)
+              setTavlaOynaOpen(false)
+              setHome(true)
+            }}
           />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <SeoContent
-                variant={onlineTavlaOpen ? 'online-tavla' : 'tavla-oyna'}
-                onClose={() => {
-                  setOnlineTavlaOpen(false)
-                  setTavlaOynaOpen(false)
-                  setHome(true)
-                }}
-              />
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
         </div>
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -8791,91 +8724,39 @@ export default function App() {
   // page-host akisi; sol menu gorunur kalir. Kapatinca home'a doner. (haberler'den bagimsiz.)
   if (guideOpen) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
-          />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <Suspense fallback={null}>
-                <GuideView
-                  slug={guideSlug}
-                  onClose={() => {
-                    setGuideOpen(false)
-                    setGuideSlug(null)
-                    setHome(true)
-                  }}
-                  onOpen={(s) => setGuideSlug(s)}
-                />
-              </Suspense>
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <Suspense fallback={null}>
+            <GuideView
+              slug={guideSlug}
+              onClose={() => {
+                setGuideOpen(false)
+                setGuideSlug(null)
+                setHome(true)
+              }}
+              onOpen={(s) => setGuideSlug(s)}
+            />
+          </Suspense>
         </div>
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
   // WBF Turnuva Kuralları referans/SEO sayfası (/turnuva-kurallari): guideOpen ile ayni page-host akisi.
   if (tournRulesOpen) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
-          />
-          <main className="main lobby-main has-page">
-            <div className="page-host">
-              <Suspense fallback={null}>
-                <TournamentRules
-                  onClose={() => {
-                    setTournRulesOpen(false)
-                    setHome(true)
-                  }}
-                />
-              </Suspense>
-            </div>
-          </main>
-          <Footer columns={footerColsFinal} />
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <Suspense fallback={null}>
+            <TournamentRules
+              onClose={() => {
+                setTournRulesOpen(false)
+                setHome(true)
+              }}
+            />
+          </Suspense>
         </div>
-        {menuPages}
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -8883,26 +8764,23 @@ export default function App() {
   // Lobi (ana menu): solda Yeni Oyun, ortasi bos. Akis burdan baslar.
   if (home) {
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
-          />
-          <main className={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}>
+      <LobbyLayout
+        {...lobbyChrome}
+        mainClassName={`main lobby-main ${anyPageOpen ? 'has-page' : ''}`}
+        trailing={
+          <>
+            {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
+                (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
+            {menuOverlays}
+            {bugReport}
+            {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
+            <EntryPopupModal loggedIn={!!user} />
+            {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
+            <CookieConsent />
+            {/* Hukuki sayfalar artik NORMAL sayfa: menuPages (page-host) icinde render edilir. */}
+          </>
+        }
+      >
             {anyPageOpen ? (
               <div className="page-host">
                 {/* showAuth iken YALNIZ auth goster -> baska sayfa (Tek Oyun vb.) acikken auth
@@ -9067,22 +8945,7 @@ export default function App() {
             <SeoContent variant="home" />
             </>
             )}
-          </main>
-          {/* Footer TUM lobi sayfalarinda (home + menu sayfalari). .app.lobby kaydirma
-              konteyneri (100dvh) oldugu icin ICINDE kalir; CSS ile iki kolonu birden
-              kapsar (grid-column: 1/-1) -> TAM GENISLIK, en altta. */}
-          <Footer columns={footerColsFinal} />
-        </div>
-        {/* authModal artik page-host icinde (yukarida) -> burada standalone render YOK
-            (aksi halde cift render + header'i orten fixed overlay geri gelirdi). */}
-        {menuOverlays}
-        {bugReport}
-        {/* Siteye ilk giriste KARE reklam pop-up'i (panelden yonetilir; sikligi/kitlesi admin). */}
-        <EntryPopupModal loggedIn={!!user} />
-        {/* Cerez onay banner'i + tercih modali (consent teknik olarak uygulanir; bkz consent.ts) */}
-        <CookieConsent />
-        {/* Hukuki sayfalar artik NORMAL sayfa: menuPages (page-host) icinde render edilir. */}
-      </>
+      </LobbyLayout>
     )
   }
 
@@ -9105,46 +8968,31 @@ export default function App() {
     // Oda olustur/bekle/arama: FIXED tam-ekran overlay YERINE lobi kabugu (logo + sol
     // menu) icinde GOMULU goster -> menu/logo/sayfa kaybolmaz (kullanici geri bildirimi).
     return (
-      <>
-        {mobileNav}
-        <div className="app lobby">
-          <div className="topbar-stack">
-            {accountBar}
-            {betaBanner}
-          </div>
-          <SideMenu
-            inGame={false}
-            hasActiveGame={hasActiveGame}
-            groups={menuGroups}
-            groupSig={groupCollapseSig}
-            onResume={menuProps.onResume}
-            active={activeKey}
-            badges={{ messages: dmUnread }}
-            mobileOpen={menuOpen}
-            onCloseMobile={() => setMenuOpen(false)}
-            onHome={menuProps.onHome}
-          />
-          <main className="main lobby-main">
-            <Lobby
-              embedded
-              room={room}
-              busy={roomBusy}
-              error={roomError}
-              inviteWaitName={inviteWaitName}
-              myAvatar={profile.avatar}
-              onCreate={() => handleCreateRoom(onlineTargetRef.current)}
-              onJoin={handleJoinRoom}
-              onMatchmake={handleMatchmake}
-              onCancelMatch={handleCancelMatch}
-              onLeave={handleLeaveRoom}
-            />
-          </main>
-          <Footer columns={footerColsFinal} />
-        </div>
-        {authModal}
-        {menuOverlays}
-        {bugReport}
-      </>
+      <LobbyLayout
+        {...lobbyChrome}
+        mainClassName="main lobby-main"
+        trailing={
+          <>
+            {authModal}
+            {menuOverlays}
+            {bugReport}
+          </>
+        }
+      >
+        <Lobby
+          embedded
+          room={room}
+          busy={roomBusy}
+          error={roomError}
+          inviteWaitName={inviteWaitName}
+          myAvatar={profile.avatar}
+          onCreate={() => handleCreateRoom(onlineTargetRef.current)}
+          onJoin={handleJoinRoom}
+          onMatchmake={handleMatchmake}
+          onCancelMatch={handleCancelMatch}
+          onLeave={handleLeaveRoom}
+        />
+      </LobbyLayout>
     )
   }
 
