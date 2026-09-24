@@ -17,10 +17,14 @@ rm -rf bootstrap/cache/filament 2>/dev/null || true
 # install ile kurulmali. Bu adim basarisiz olursa (composer PATH'te yoksa) Plesk
 # "Composer" sekmesinden ELLE Install calistir; aksi halde uygulama Filament siniflarini
 # bulamaz ve site acilmaz.
+# NOT: `|| echo` ile TOLERANSLI -> composer install patlasa bile `set -e` scripti
+# BURADA DURDURMASIN; asagidaki `migrate --force` HER ZAMAN calissin. (vendor/ sunucuda
+# kalicidir; gecici bir composer hatasi DB semasinin kod ile ayrisip 500'lere -"table/column
+# not found"- yol acmasindan cok daha az zararlidir.)
 if command -v composer >/dev/null 2>&1; then
-  composer install --no-dev --optimize-autoloader --no-interaction
+  composer install --no-dev --optimize-autoloader --no-interaction || echo "UYARI: composer install patladi -> deploy migrate ile devam ediyor; gerekirse Plesk 'Composer' > Install."
 elif [ -f composer.phar ]; then
-  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction
+  $PHP composer.phar install --no-dev --optimize-autoloader --no-interaction || echo "UYARI: composer.phar install patladi -> deploy migrate ile devam ediyor."
 else
   echo "UYARI: composer bulunamadi -> Plesk 'Composer' sekmesinden Install calistir!"
 fi

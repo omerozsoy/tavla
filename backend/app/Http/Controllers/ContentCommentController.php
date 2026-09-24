@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Content;
 use App\Models\ContentComment;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Haber yorumlari. Public: bir haberin ONAYLI yorumlarini listeler. Kayitli kullanici:
@@ -15,6 +16,13 @@ class ContentCommentController extends Controller
     // Herkese acik: bir haberin onaylanmis yorumlari (en yeni once).
     public function index(Content $content)
     {
+        // Yorumlar OPSIYONEL bir ozelliktir: migration (content_comments) canlida henuz
+        // uygulanmadiysa haber sayfasini 500 ile KIRMA -> bos liste don. Tablo geldiginde
+        // (migrate --force) endpoint kendiliginden calismaya devam eder.
+        if (! Schema::hasTable('content_comments')) {
+            return response()->json(['comments' => []]);
+        }
+
         $comments = ContentComment::where('content_id', $content->id)
             ->where('status', 'approved')
             ->with('user:id,nickname,first_name,avatar,avatar_frame')
