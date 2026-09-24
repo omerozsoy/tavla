@@ -108,7 +108,7 @@
 .service-landing .service-landing-title.info-title {
   margin: 0 0 8px;
   font-size: clamp(1.7rem, 3.4vw, 2.3rem);
-  font-weight: 700;
+  font-weight: 400; /* birleşik başlık sesi: diğer sayfa başlıkları gibi 400 (700 aykırıydı) */
   line-height: 1.12;
   letter-spacing: -0.02em;
 }

@@ -2991,7 +2991,7 @@ button[aria-disabled='true'],
   font-family: var(--tv-font-display, inherit);
   font-size: clamp(2rem, 4vw, 3.6rem);
   font-weight: 400;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.02em; /* birleşik başlık sesi (diğer sayfa başlıklarıyla aynı) */
   line-height: 0.98;
   text-wrap: balance;
 }
@@ -3236,6 +3236,7 @@ button[aria-disabled='true'],
   font-size: 1.7rem;
   line-height: 1.25;
   font-weight: 400;
+  letter-spacing: -0.02em; /* birleşik başlık sesi */
 }
 .news-detail-date {
   display: inline-flex;
@@ -4028,13 +4029,15 @@ button[aria-disabled='true'],
 .service-body.rich h2,
 .info-rich.rich h2,
 .news-detail-body.rich h2 {
-  font-size: 1.1rem;
+  font-size: 1.2rem; /* birleşik başlık ölçeği: makale-içi h2 */
+  letter-spacing: -0.01em;
 }
 .event-info-body.rich h3,
 .service-body.rich h3,
 .info-rich.rich h3,
 .news-detail-body.rich h3 {
-  font-size: 1rem;
+  font-size: 1.05rem; /* birleşik başlık ölçeği: makale-içi h3 */
+  letter-spacing: -0.01em;
 }
 .event-info-body.rich ul,
 .event-info-body.rich ol,
@@ -16450,7 +16453,8 @@ button.acct-row-logout:hover:not(:disabled) {
   position: relative;
   margin: 1.7em 0 0.75em;
   padding-left: 13px;
-  font-size: 1.16rem;
+  /* font-size KALDIRILDI -> birleşik makale ölçeğinden gelir (h2 1.2rem / h3 1.05rem);
+     accent bar + kenar boşluğu bu info-page editoryal stilinde korunur. */
   line-height: 1.3;
   letter-spacing: -0.01em;
 }
