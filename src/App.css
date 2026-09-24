@@ -3084,6 +3084,11 @@ button[aria-disabled='true'],
 .glossary-definition { margin: 0; color: var(--glossary-soft); font-size: 0.92rem; line-height: 1.6; }
 .glossary-aliases { margin: 12px 0 0; color: var(--muted); font-size: 0.77rem; line-height: 1.45; }
 .glossary-aliases span, .glossary-related > span { color: var(--text); font-weight: 600; }
+/* Terim pozisyonu (mini tahta): tek-sütun kartta TAM sığar (ArticleBoard container-query
+   ile 100cqw'e göre ölçeklenir). max-width kartı taşırmaz; ortalanır. */
+.glossary-board { margin-top: 14px; }
+.glossary-board .article-board { width: 100%; max-width: 288px; margin: 0 auto; padding: 8px; border-radius: 10px; }
+.glossary-board .article-board-caption { margin-top: 7px; font-size: 0.72rem; line-height: 1.35; text-align: center; }
 .glossary-related {
   display: flex;
   flex-wrap: wrap;
