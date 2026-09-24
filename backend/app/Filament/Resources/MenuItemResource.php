@@ -10,6 +10,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Illuminate\Support\Str;
 
 /**
  * SOL MENU DUZENLEME. Satirlari SURUKLE-BIRAK ile sirala (sort), "Görünen ad" alanina
@@ -50,13 +51,25 @@ class MenuItemResource extends Resource
                 ->label('Menü adı (Türkçe)')
                 ->required()
                 ->maxLength(60)
-                ->helperText('Diğer diller otomatik çevrilir.'),
+                ->live(onBlur: true) // ad girilince/blur -> hedefi otomatik türet
+                ->afterStateUpdated(function (Forms\Set $set, Forms\Get $get, ?string $state): void {
+                    // Hedefi addan OTOMATİK üret: "/türkçe-ad" -> "/turkce-ad". Yalnız hedef BOŞ ise
+                    // ya da otomatik değerin AYNISIysa güncelle -> admin elle bir dış URL/rota
+                    // yazdıysa (href otomatikten farklıysa) DOKUNMA (ezmeyelim).
+                    $current = trim((string) $get('href'));
+                    $auto = $state ? '/'.Str::slug($state) : '';
+                    if ($current === '' || $current === $get('_href_auto')) {
+                        $set('href', $auto);
+                        $set('_href_auto', $auto); // en son otomatik değeri hatırla (elle değişikliği ayırt et)
+                    }
+                }),
+            Forms\Components\Hidden::make('_href_auto')->dehydrated(false), // yalnız otomatik-üretim izleme (kaydedilmez)
             Forms\Components\TextInput::make('href')
                 ->label('Hedef (URL veya rota)')
                 ->required()
                 ->maxLength(300)
                 ->placeholder('/turnuvalar  veya  https://ornek.com')
-                ->helperText('İç sayfa için "/" ile başlayan rota (ör. /turnuva-takvimi); dış site için https:// (yeni sekmede açılır).'),
+                ->helperText('Menü adından otomatik üretilir; istersen değiştir. İç sayfa için "/" ile başlayan rota (ör. /turnuva-takvimi); dış site için https:// (yeni sekmede açılır).'),
             Forms\Components\Select::make('group')
                 ->label('Grup')
                 ->options($groupOptions)
