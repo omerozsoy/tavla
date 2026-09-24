@@ -69,6 +69,8 @@ class MakaleResource extends Resource
                 ->maxSize(4096)->panelLayout('grid')
                 ->helperText('Birden fazla fotoğraf ekleyebilirsin. Makale detayında galeri olarak gösterilir.')
                 ->columnSpanFull(),
+            Forms\Components\TextInput::make('views')->label('Okunma sayısı')->numeric()->minValue(0)
+                ->helperText('Boş bırakılırsa yeni yazı 40-150 arası rastgele başlar.'),
             Forms\Components\Toggle::make('published')->label('Yayında')->default(true),
         ]);
     }
@@ -82,6 +84,7 @@ class MakaleResource extends Resource
                     ->getStateUsing(fn ($record) => self::img($record->image)),
                 Tables\Columns\TextColumn::make('title')->label('Başlık')->searchable()->limit(60),
                 Tables\Columns\TextColumn::make('event_at')->label('Tarih')->dateTime('d.m.Y')->sortable(),
+                Tables\Columns\TextColumn::make('views')->label('Okunma')->badge()->color('gray')->sortable(),
                 Tables\Columns\IconColumn::make('published')->label('Yayında')->boolean(),
             ])
             ->actions([
