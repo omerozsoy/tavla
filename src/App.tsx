@@ -8616,6 +8616,7 @@ export default function App() {
               <SeoAppSection page={setup === 'online' ? 'yeni-oyun' : 'yz-ile-oyna'} />
             </div>
           </main>
+          <Footer columns={footerColsFinal} />
         </div>
         {/* Kurulumda "Tahtayi Degistir" -> BoardPickerModal (menuOverlays); "Daha fazla" Magaza'yi acar */}
         {menuPages}
@@ -8684,6 +8685,7 @@ export default function App() {
               <SeoAppSection page="arkadasinla-oyna" />
             </div>
           </main>
+          <Footer columns={footerColsFinal} />
         </div>
         {menuPages}
         {authModal}

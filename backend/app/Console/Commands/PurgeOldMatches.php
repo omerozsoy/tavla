@@ -99,6 +99,13 @@ class PurgeOldMatches extends Command
 
         $this->info("Bitti. Toplam {$deleted} kayıt silindi. Son {$days} gün korundu.");
 
+        // Maç satırları silindi -> users.career_pr* aggregate ÖNBELLEĞİ artık bayat
+        // (silinen maçları hâlâ sayar). Yeniden kur ki "N maç analiz edildi" + PR
+        // Sıralaması kalan gerçek maçlara göre dogru olsun.
+        $this->line('Career PR önbelleği yeniden hesaplanıyor…');
+        $n = app(\App\Services\CareerPrService::class)->recalcAll();
+        $this->info("Career PR önbelleği {$n} oyuncu için yeniden hesaplandı.");
+
         return self::SUCCESS;
     }
 }
