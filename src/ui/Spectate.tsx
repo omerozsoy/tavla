@@ -10,6 +10,7 @@ import ViewersBadge from './ViewersBadge'
 import ClockStack from './ClockStack'
 import DiceRow from './Dice'
 import { showRoom, watchRoom, type RoomView, type ServerMatch, type RoomViewer } from '../api'
+import { Sound, isMuted, setMuted, getVolume, setVolume } from '../sound'
 import { pipCount } from '../engine/evaluate'
 import { cloneState } from '../engine/board'
 import { applyStep } from '../engine/moves'
@@ -214,6 +215,16 @@ export default function Spectate({
             const r = sourceRect(st.from)
             if (r) flightRef.current = { to: st.to, srcRect: r }
           }
+          // Ses: vuruş (rakip blot) mu normal hamle mi? (pre = bu adımdan önceki tahta)
+          const pre = applyPlayed(board, base)
+          const mySign = board.turn === 'white' ? 1 : -1
+          const hit =
+            typeof st.to === 'number' &&
+            pre.points[st.to] !== 0 &&
+            Math.sign(pre.points[st.to]) !== mySign &&
+            Math.abs(pre.points[st.to]) === 1
+          if (hit) Sound.hit()
+          else Sound.move()
           base.push(st)
           shownRef.current = base.slice()
           setShown(base.slice())
@@ -244,6 +255,49 @@ export default function Spectate({
   // Zar grileşmesi için: otoriterde shown, legacy'de committed played.
   const usedSteps: Step[] = shown.length ? shown : legacyPlayed
 
+  // Ses: yeni zar atışında dice sesi (baseKey değişince, board.dice yeni ve dolu ise).
+  const prevDiceKeyRef = useRef('')
+  const firstDiceRef = useRef(true)
+  useEffect(() => {
+    if (!board || !board.dice || board.dice.length === 0) {
+      prevDiceKeyRef.current = ''
+      return
+    }
+    const key = `${board.turn}|${board.dice.join(',')}`
+    if (key !== prevDiceKeyRef.current) {
+      prevDiceKeyRef.current = key
+      if (firstDiceRef.current) firstDiceRef.current = false // izleme açılışında ilk zarı ÇALMA
+      else Sound.dice()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baseKey])
+
+  // İzleme ses kontrolü (hoparlör + kaydırıcı): oyuncununkiyle AYNI kalıcı ayar (sound.ts).
+  // Varsayılan AÇIK; misafirler dahil herkes buradan kısıp kapatabilir.
+  const [muted, setMutedUi] = useState(() => isMuted())
+  const [vol, setVolUi] = useState(() => Math.round(getVolume() * 100))
+  const toggleMute = () => {
+    const m = !muted
+    setMutedUi(m)
+    setMuted(m)
+    if (!m && vol === 0) {
+      setVolume(0.7)
+      setVolUi(70)
+    }
+  }
+  const onVol = (v: number) => {
+    const c = Math.min(100, Math.max(0, Math.round(v)))
+    setVolUi(c)
+    setVolume(c / 100)
+    if (c > 0 && muted) {
+      setMutedUi(false)
+      setMuted(false)
+    } else if (c === 0 && !muted) {
+      setMutedUi(true)
+      setMuted(true)
+    }
+  }
+
   const score: Record<Player, number> = sm?.score ??
     legacy?.match?.score ?? { white: 0, black: 0 }
   const target = eff?.target ?? sm?.target ?? legacy?.match?.target ?? 1
@@ -271,6 +325,15 @@ export default function Spectate({
             ? 'black'
             : null
   const winnerName = winnerColor === 'white' ? p1Name : winnerColor === 'black' ? p2Name : null
+
+  // Maç bitince tek sefer kısa bitiş sesi (izleyici tarafsız).
+  const endedRef = useRef(false)
+  useEffect(() => {
+    if (matchDone && !endedRef.current) {
+      endedRef.current = true
+      Sound.win()
+    }
+  }, [matchDone])
 
   const mkInfo = (color: Player): Parameters<typeof Sidebar>[0]['top'] => {
     const isP1 = color === 'white'
@@ -323,6 +386,27 @@ export default function Spectate({
       {/* İzleme rozeti (sol üst) */}
       <div className="spectate-badge">
         <span className="live-dot" /> <Icon name="eye" size={14} /> {t('live.watching')}
+      </div>
+      {/* Ses kontrolü (misafirler dahil herkes): hoparlör aç/kapat + seviye kaydırıcısı */}
+      <div className="spectate-vol">
+        <button
+          type="button"
+          className="spectate-vol-btn"
+          onClick={toggleMute}
+          aria-label={t('gm.sound')}
+          title={t('gm.sound')}
+        >
+          <Icon name={muted ? 'mute' : 'volume'} size={18} />
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={100}
+          value={vol}
+          onChange={(e) => onVol(Number(e.target.value))}
+          className="spectate-vol-slider"
+          aria-label={t('gm.sound')}
+        />
       </div>
       <Button
         variant="ghost"

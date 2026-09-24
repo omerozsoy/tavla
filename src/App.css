@@ -12580,6 +12580,51 @@ button.acct-row-logout:hover:not(:disabled) {
   font-size: 0.82rem;
   letter-spacing: 0.02em;
 }
+/* İzleme ses kontrolü: sağ üstte kapat (×) düğmesinin hemen altında koyu hap
+   (hoparlör + seviye kaydırıcısı). Sol üstte TavlaTV logosuyla çakışmasın diye sağa alındı. */
+.spectate-vol {
+  position: fixed;
+  top: 58px;
+  right: 14px;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--game-scene, #06090f) 62%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tv-cream, #f4efe6) 20%, transparent);
+  backdrop-filter: blur(4px);
+}
+.spectate-vol-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: color-mix(in srgb, var(--tv-cream, #f4efe6) 90%, transparent);
+  transition: color 0.15s ease;
+}
+.spectate-vol-btn:hover {
+  color: var(--tv-cream, #f4efe6);
+}
+.spectate-vol-slider {
+  width: 84px;
+  height: 4px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .spectate-vol {
+    top: 52px;
+    right: 12px;
+  }
+  .spectate-vol-slider {
+    width: 62px;
+  }
+}
 .spectate-status {
   align-self: center;
   margin: auto;
