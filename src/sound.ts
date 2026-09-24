@@ -7,14 +7,15 @@ import winUrl from './assets/win.wav' // kazanma marsi (gercek kayit, fade-out)
 import loseUrl from './assets/lose.wav' // kaybetme (womp-womp, gercek kayit, fade-out)
 
 let ctx: AudioContext | null = null
-// Ses kullanıcı tercihi (kalıcı): VARSAYILAN KAPALI. Oyun Menüsü > Ses ile aç/kapa.
-// localStorage 'tavla.soundoff'='0' -> AÇIK; değer yoksa/başka -> sessiz (kapalı).
+// Ses kullanıcı tercihi (kalıcı): VARSAYILAN AÇIK (misafirlere de standart açık gelir).
+// Oyun Menüsü > Ses (hoparlör + kaydırıcı) ile kısılıp kapatılabilir.
+// localStorage 'tavla.soundoff'='1' -> KULLANICI KAPATTI (sessiz); değer yoksa/'0' -> AÇIK.
 // muted true iken ac() null döner, tüm efektler no-op.
 let muted = (() => {
   try {
-    return localStorage.getItem('tavla.soundoff') !== '0'
+    return localStorage.getItem('tavla.soundoff') === '1'
   } catch {
-    return true
+    return false
   }
 })()
 
