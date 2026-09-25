@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Setting;
+use Filament\Actions\Action;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -11,6 +12,7 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Facades\Artisan;
 
 /**
  * Site Ayarları (Ekonomi) — yönetim panelinden düzenlenir. Değerler settings tablosunda tutulur;
@@ -34,6 +36,50 @@ class SiteSettings extends Page implements HasForms
     protected static string $view = 'filament.pages.site-settings';
 
     public ?array $data = [];
+
+    /**
+     * Sayfa başlığındaki eylemler. "Sitemap Güncelle": public/sitemap.xml'i yayındaki haberlerle
+     * senkronlar (seo:sitemap komutu). Yeni haber yayınlayınca arama motorlarının güncel URL
+     * listesini görmesi için elle tetiklenir (deploy'da da koşar ama aradaki yayınlar için pratik).
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('regenerateSitemap')
+                ->label('Sitemap Güncelle')
+                ->icon('heroicon-o-map')
+                ->color('gray')
+                ->requiresConfirmation()
+                ->modalHeading('Sitemap güncellensin mi?')
+                ->modalDescription('Yayındaki haberler public/sitemap.xml ile senkronlanır. Statik sayfa URL’leri zaten sitemap’te; bu işlem yalnız haber URL’lerini günceller.')
+                ->modalSubmitActionLabel('Güncelle')
+                ->action(function (): void {
+                    try {
+                        $code = Artisan::call('seo:sitemap');
+                        $out = trim(Artisan::output());
+                        if ($code === 0) {
+                            Notification::make()
+                                ->title('Sitemap güncellendi')
+                                ->body($out !== '' ? $out : 'public/sitemap.xml yayındaki haberlerle senkronlandı.')
+                                ->success()
+                                ->send();
+                        } else {
+                            Notification::make()
+                                ->title('Sitemap güncellenemedi')
+                                ->body($out !== '' ? $out : 'seo:sitemap komutu hata döndürdü.')
+                                ->danger()
+                                ->send();
+                        }
+                    } catch (\Throwable $e) {
+                        Notification::make()
+                            ->title('Sitemap güncellenemedi')
+                            ->body($e->getMessage())
+                            ->danger()
+                            ->send();
+                    }
+                }),
+        ];
+    }
 
     public function mount(): void
     {
