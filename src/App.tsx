@@ -6770,14 +6770,10 @@ export default function App() {
     )
   }
 
-  // Ana slot (sirasi gelenin): Onayla / Roll / zarlar
-  const primary = centerMain ? null : botThinking ? (
-    // Bot maçı: insan Onayla/Kabul dedi -> buton ANINDA "düşünüyor"a döner (sıra botta). gnubg
-    // hamlesi arkada gelince applyBotTurns tahtayı oynatır. Buton "1.5sn takılıp kaybolma" biter.
-    <Button variant="default" disabled>
-      {t('msg.neuralThinking')}
-    </Button>
-  ) : turnComplete ? (
+  // Ana slot (sirasi gelenin): Onayla / Roll / zarlar. botThinking iken (bot maçı, insan Onayla/
+  // Kabul dedi) ana buton ANINDA kaybolur ve HİÇBİR ŞEY yazılmaz — bot henüz zar atmadı, "düşünüyor"
+  // yanıltıcı olur. Kullanıcı 1-2sn sessizce bekler, sonra botun zarı/hamlesi gelir (applyBotTurns).
+  const primary = centerMain || botThinking ? null : turnComplete ? (
     <Button variant="default" onClick={handleConfirm}>
       {t('btn.confirm')}
     </Button>
