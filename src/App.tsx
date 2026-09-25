@@ -2181,6 +2181,9 @@ export default function App() {
   })
   const myTurn = online ? turnStart.turn === myColor : !isBotTurn
   const interactive =
+    !home && // LOBİDE tahta etkileşimi YOK: aksi halde AI maçından çıkıp ana sayfaya dönünce taze
+    // pvb tahtası (myTurn + zarsız + turns=0) auto-roll effect'ini tetikleyip FANTOM zar atıyordu
+    // (kullanıcı raporu: "yapay zeka ile maçtan çıkıp ana sayfaya tıklayınca zar sesi geliyor").
     onlineReady &&
     myTurn &&
     !gameWon &&
