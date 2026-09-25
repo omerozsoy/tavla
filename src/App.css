@@ -15883,6 +15883,11 @@ button.acct-row-logout:hover:not(:disabled) {
     grid-template-columns: 1fr;
   }
 }
+/* Premium uye (uzatma) tek plan gorur -> 720px'e yayilmasin, ortalanmis dar kart. */
+.mem-grid--single {
+  grid-template-columns: minmax(240px, 340px);
+  justify-content: center;
+}
 .mem-plan {
   position: relative;
   border: 1px solid var(--border);
