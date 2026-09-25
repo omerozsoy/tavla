@@ -2,13 +2,12 @@
 // KIZ TAVLASI — İKİ FAZLI, YALNIZ YZ'ye karşı. GERÇEK tavla tahtası (klasik Board) üzerinde.
 // Kural motoru klasik tavladan AYRIDIR (src/kiz/engine, iki fazlı: açma/indirme -> toplama).
 //
-// Board eşlemesi (beyaz alttadır, flip=false):
-//   beyaz KAPALI 1..6 -> tahta index 0..5   (sağ-alt EV; nokta 1..6)     değer +
-//   beyaz AÇIK  1..6 -> tahta index 6..11   (sol-alt alan; "indirilmiş")  değer +
-//   siyah KAPALI 1..6 -> tahta index 18..23 (sağ-üst EV; nokta 19..24)    değer -
-//   siyah AÇIK  1..6 -> tahta index 12..17  (sol-üst alan; "indirilmiş")   değer -
-//   toplanan (off) -> bear-off tepsisi.
-// Açma fazında pullar EV(sağ)'dan ALAN(sol)'a "iner"; toplama fazında ALAN'dan tepsiye toplanır.
+// Board eşlemesi — pullar AYNI HANEDE kalır (taşıma YOK):
+//   beyaz 1..6 hane -> tahta index 0..5   (sağ-alt EV; nokta 1..6)     değer +
+//   siyah 1..6 hane -> tahta index 18..23 (sağ-üst EV; nokta 19..24)   değer -
+//   Her hanede KAPALI + AÇIK pullar ÜST ÜSTE aynı üçgende durur; "açık" (indirilmiş) pullar
+//   üstte HALKA ile işaretlenir (Board openMark). Açma: kapalı->açık (aynı yer). Toplama:
+//   üstteki açık pul tepsiye kalkar (off). Toplanan (off) -> bear-off tepsisi.
 // Kurallar: bkz docs/kiz-tavlasi-kurallari.md + "Nasıl Oynanır?" (birebir aynı).
 // ============================================================================
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -37,21 +36,18 @@ import {
 import { aiNextSlot } from '../kiz/ai'
 import './KizTavlasi.css'
 
-// laneNo (1..6) -> tahta index (kapalı/açık, oyuncu).
+// laneNo (1..6) -> tahta üçgen index'i (her oyuncunun kendi EV hanesi; kapalı+açık AYNI yerde).
 const idx = {
-  wClosed: (d: number) => d - 1, // 0..5
-  wOpen: (d: number) => d + 5, // 6..11
-  bClosed: (d: number) => d + 17, // 18..23
-  bOpen: (d: number) => d + 11, // 12..17
+  white: (d: number) => d - 1, // 0..5  (sağ-alt ev)
+  black: (d: number) => d + 17, // 18..23 (sağ-üst ev)
 }
 
 function kizToBoard(s: KizState): GameState {
   const points = new Array(24).fill(0)
   for (let d = 1; d <= 6; d++) {
-    points[idx.wClosed(d)] += s.closed.white[d - 1]
-    points[idx.wOpen(d)] += s.open.white[d - 1]
-    points[idx.bClosed(d)] -= s.closed.black[d - 1]
-    points[idx.bOpen(d)] -= s.open.black[d - 1]
+    // Kapalı + açık pullar aynı üçgende üst üste (taşıma yok); açık olanlar openMark ile işaretlenir.
+    points[idx.white(d)] += s.closed.white[d - 1] + s.open.white[d - 1]
+    points[idx.black(d)] -= s.closed.black[d - 1] + s.open.black[d - 1]
   }
   return {
     points,
@@ -151,25 +147,27 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
 
   const nameFor = (p: KizPlayer) => (p === 'white' ? 'Sen' : 'Bilgisayar')
 
-  // Board tıklama: insan (beyaz) sırasında, aktif faza göre kapalı(ev) veya açık(alan) hanesini oyna.
+  // Board tıklama: insan (beyaz) sırasında oynanabilir haneyi (aynı üçgen) oyna — açma da toplama da
+  // aynı yerde olduğundan tek eşleme yeter (playSlot fazı kendisi belirler).
   const selectableFroms = new Set<number>()
   if (humanTurn && state.rolled) {
-    const ph = phaseOf(state, 'white')
-    for (const d of playableLanes(state)) selectableFroms.add(ph === 'acma' ? idx.wClosed(d) : idx.wOpen(d))
+    for (const d of playableLanes(state)) selectableFroms.add(idx.white(d))
   }
   const onSelectFrom = (from: number | 'bar') => {
     if (typeof from !== 'number' || !humanTurn || !state.rolled) return
-    const ph = phaseOf(state, 'white')
-    let d = -1
-    if (ph === 'acma' && from >= 0 && from <= 5) d = from + 1
-    else if (ph === 'toplama' && from >= 6 && from <= 11) d = from - 5
-    if (d >= 1 && d <= 6) playLane(d)
+    if (from >= 0 && from <= 5) playLane(from + 1)
   }
 
   const faces = state.rolled
     ? state.dice.map((v, i) => ({ value: v, used: state.isDouble ? state.diceUsed[0] : state.diceUsed[i] }))
     : []
   const board = kizToBoard(state)
+  // Her hanedeki "açık" (indirilmiş) pul sayısı -> Board o hanenin üst N pulunu halka ile işaretler.
+  const openMark = new Map<number, number>()
+  for (let d = 1; d <= 6; d++) {
+    if (state.open.white[d - 1] > 0) openMark.set(idx.white(d), state.open.white[d - 1])
+    if (state.open.black[d - 1] > 0) openMark.set(idx.black(d), state.open.black[d - 1])
+  }
   const activeBottom = state.turn === 'white'
   const diceRow = faces.length > 0 ? <DiceRow faces={faces} owner={state.turn as Player} /> : null
 
@@ -227,6 +225,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
             cube={{ value: 1, owner: null }}
             flip={false}
             showPip={false}
+            openMark={openMark}
             centerLeft={activeBottom ? null : diceRow}
             centerRight={activeBottom ? diceRow : null}
           />
@@ -238,10 +237,10 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
           <div className="kiz-howto-card" onClick={(e) => e.stopPropagation()}>
             <h3>Kız Tavlası — Nasıl Oynanır?</h3>
             <ul>
-              <li>Her oyuncunun kendi 6 hanesi vardır. Başlangıç: 6, 5, 4 hanelerinde <b>üçer</b>; 3, 2, 1 hanelerinde <b>ikişer</b> pul (toplam 15). Pullar başta <b>kapalı</b> (kendi evinde, sağda).</li>
-              <li>İki oyuncunun pulları karışmaz: <b>kırma, bar, hane kapatma yoktur</b>. Pullar tahtayı dolaşmaz.</li>
-              <li><b>1. Aşama — İndirme (Açma):</b> Zar atarsın; gelen zar hangi haneyse o haneden <b>bir pul indirirsin</b> (kapalıdan açığa, sola geçer). <b>Çift</b> gelirse o hanenin <b>tüm pulları</b> iner. Zarın hanesinde kapalı pul yoksa o zar oynanmaz.</li>
-              <li><b>2. Aşama — Toplama:</b> <b>Tüm pulların indikten sonra</b> toplama aşamasına geçilir. Aynı zar kuralıyla, gelen zarın hanesindeki <b>açık pulu toplarsın</b> (tahtadan kalkar). Çift o hanenin tüm açıklarını toplar.</li>
+              <li>Her oyuncunun kendi 6 hanesi vardır. Başlangıç: 6, 5, 4 hanelerinde <b>üçer</b>; 3, 2, 1 hanelerinde <b>ikişer</b> pul (toplam 15). Pullar başta <b>kapalı</b>, kendi hanesinde <b>üst üste</b> dizili.</li>
+              <li>İki oyuncunun pulları karışmaz: <b>kırma, bar, hane kapatma yoktur</b>. Pullar tahtayı dolaşmaz — <b>hep kendi hanesinde kalır</b>.</li>
+              <li><b>1. Aşama — İndirme (Açma):</b> Zar atarsın; gelen zar hangi haneyse o haneden <b>bir pul indirirsin</b> (aynı hanede kalır, <b>halka</b> ile "açık" işaretlenir). <b>Çift</b> gelirse o hanenin <b>tüm pulları</b> iner. Zarın hanesinde kapalı pul yoksa o zar oynanmaz.</li>
+              <li><b>2. Aşama — Toplama:</b> <b>Tüm pulların indikten sonra</b> toplama aşamasına geçilir. Aynı zar kuralıyla, gelen zarın hanesindeki <b>açık pulu toplarsın</b> (aynı yerden tepsiye kalkar). Çift o hanenin tüm açıklarını toplar.</li>
               <li>İki zar da oynanamıyorsa sıra rakibe geçer.</li>
               <li>Pullarını (15) <b>önce toplayan kazanır</b>. Rakip henüz hiç pul toplamadıysa <b>mars</b> (iki kat).</li>
             </ul>
