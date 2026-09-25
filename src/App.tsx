@@ -1604,6 +1604,10 @@ export default function App() {
   const botNudgeTimerRef = useRef<number | null>(null)
   const rollInFlightRef = useRef(false) // serverRoll uçuşta -> üst üste/döngüsel çağrıyı engelle
   const moveInFlightRef = useRef(false) // serverMove uçuşta -> mükerrer commit engelle
+  // Bot maçı akıcılığı: insan Onayla/Kabul der demez (SUNUCU yanıtını BEKLEMEDEN) buton ANINDA
+  // kapanır ve "sıra botta, düşünüyor" gösterilir; gnubg hamlesi arkada hesaplanır. Yoksa buton
+  // ~1.5sn ekranda takılı kalıp yanıt gelince kaybolur (kullanıcı "donuyor/akıcı değil" dedi).
+  const [botThinking, setBotThinking] = useState(false)
   // API GERİ-ÇEKİLME (429 "Too Many Attempts"): bir istek rate-limit yerse bu zaman damgasına
   // kadar YENİ istek ATMA (roll + poll). Aksi halde takılı auto-roll/poll döngüsü kotayı doldurup
   // tüm hesabı kilitliyor (bir maçın spam'i diğer maçı da bloke ediyordu). Date.now() > ref -> serbest.
@@ -2577,6 +2581,9 @@ export default function App() {
         return
       }
       moveInFlightRef.current = true
+      // ANINDA geri bildirim: bot maçında Onayla'ya basılır basılmaz butonu kapat + "düşünüyor"
+      // göster (sunucu/gnubg yanıtı beklenmeden). Sıra botta -> onun düşünmesi doğaldır.
+      if (botMatch) setBotThinking(true)
       setSelectedFrom(null)
       setRanked(null)
       setCurrentProbs(null)
@@ -2642,6 +2649,9 @@ export default function App() {
         })
         .finally(() => {
           moveInFlightRef.current = false
+          // Yanıt geldi (state + bot[] uygulandı / hata resync): "düşünüyor"u kaldır. Bot hamlesi
+          // varsa applyBotTurns .then'de zaten animasyona başladı (tahtada görsel hareket sürer).
+          setBotThinking(false)
         })
       return
     }
@@ -3216,6 +3226,9 @@ export default function App() {
     if (online && authoritativeRef.current) {
       if (room?.code && !cubeBusyRef.current) {
         cubeBusyRef.current = true
+        // ANINDA: küpü kabul der demez kutuyu kapat + "düşünüyor" göster (sıra botta, zar atıp
+        // oynayacak). gnubg hamlesi arkada gelir. Yoksa "Kabul/Pas" kutusu 2-3sn asılı kalır.
+        if (botMatch) setBotThinking(true)
         const srvTaker = opponent(cubePending) // karar anındaki alan taraf (= ben)
         const code = room.code
         void serverCubeRespond(code, 'take', room.server_version ?? 0)
@@ -3241,6 +3254,7 @@ export default function App() {
           })
           .finally(() => {
             cubeBusyRef.current = false
+            setBotThinking(false)
           })
       }
       return
@@ -3278,6 +3292,7 @@ export default function App() {
           })
           .finally(() => {
             cubeBusyRef.current = false
+            setBotThinking(false)
           })
       }
       return
@@ -6543,6 +6558,7 @@ export default function App() {
     showRoll && turnsPlayed > 0 && canDouble(match, turnStart.turn, false)
   // Kup teklifine yanit: pvp (ayni ekran), bota karsi, veya online'da rakip teklif ettiyse
   const humanRespond =
+    !botThinking && // kabul edilir edilmez kutu kapansın -> "düşünüyor" görünsün (2-3sn asılı kalmasın)
     cubePending !== null &&
     (mode === 'pvp' ||
       (mode === 'pvb' && cubePending === BOT_PLAYER) ||
@@ -6755,7 +6771,13 @@ export default function App() {
   }
 
   // Ana slot (sirasi gelenin): Onayla / Roll / zarlar
-  const primary = centerMain ? null : turnComplete ? (
+  const primary = centerMain ? null : botThinking ? (
+    // Bot maçı: insan Onayla/Kabul dedi -> buton ANINDA "düşünüyor"a döner (sıra botta). gnubg
+    // hamlesi arkada gelince applyBotTurns tahtayı oynatır. Buton "1.5sn takılıp kaybolma" biter.
+    <Button variant="default" disabled>
+      {t('msg.neuralThinking')}
+    </Button>
+  ) : turnComplete ? (
     <Button variant="default" onClick={handleConfirm}>
       {t('btn.confirm')}
     </Button>
@@ -6774,7 +6796,7 @@ export default function App() {
 
   // Yan slot: Double / Geri
   const secondary =
-    centerMain || !interactive
+    centerMain || !interactive || botThinking
       ? null
       : humanCanDouble
         ? (
