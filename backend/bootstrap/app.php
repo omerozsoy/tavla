@@ -43,6 +43,13 @@ return Application::configure(basePath: dirname(__DIR__))
                 && $e->getStatusCode() < 500) {
                 return;
             }
+            // BEKLENEN + kendiliğinden düzelen analiz (gnubg PR) hataları: AnalyzeMatchPrJob, gnubg
+            // geçici erişilemez/degrade iken SAHTE 0.0 yazmamak için BİLEREK fırlatır -> $tries/backoff
+            // retry + heal cron temiz rerun'da gerçek PR'ı yazar. Bu SUNUCU HATASI DEĞİL: loglanır ama
+            // "cli/queue" 🔴 500 alarmı GÖNDERİLMEZ (deadlock ile aynı mantık). Gerçek 500'ler etkilenmez.
+            if ($e instanceof \App\Exceptions\TransientAnalysisException) {
+                return;
+            }
             // GEÇİCİ DB kilit hataları (InnoDB deadlock 1213 / lock-wait timeout 1205 / SQLSTATE 40001):
             // database queue sürücüsünde worker'ın `SELECT ... FOR UPDATE` yoklaması ile eşzamanlı
             // job INSERT'i arasında BEKLENEN + kendiliğinden düzelen çakışmadır (kaybeden işlem geri
