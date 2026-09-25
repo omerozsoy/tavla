@@ -138,10 +138,12 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::delete('/account', [AuthController::class, 'deleteAccount']);
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/me/matches', [AuthController::class, 'myMatches']);
-    Route::get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
+    // Maç Analizleri (derin/gnubg) PREMIUM-only. NOT: sonuç ekranı bu uca çağrı yapıp 403'te
+    // sessizce YEREL (yüzeysel) analize düşer -> free kullanıcı yüzeysel, premium derin görür.
+    Route::middleware(\App\Http\Middleware\EnsurePremium::class)->get('/me/matches/{match}/log', [AuthController::class, 'matchLog']); // tam mac analizi
     Route::middleware('throttle:30,1,match-mat')->get('/me/matches/{match}/mat', [AuthController::class, 'matchMat']); // kanonik .mat (Dışa aktar)
-    // Maçın hamle-hamle analizini TavlaTV Motoru ile üret (MatReview log'u). Ağır.
-    Route::middleware('throttle:30,1,tavlatv-review')->get('/me/matches/{match}/tavlatv-review', [AuthController::class, 'matchGnubgReview']);
+    // Maçın hamle-hamle analizini TavlaTV Motoru ile üret (MatReview log'u). Ağır. PREMIUM-only.
+    Route::middleware(['throttle:30,1,tavlatv-review', \App\Http\Middleware\EnsurePremium::class])->get('/me/matches/{match}/tavlatv-review', [AuthController::class, 'matchGnubgReview']);
     Route::get('/me/active-rooms', [RoomController::class, 'myActiveRooms']); // devam eden online maclar
     Route::get('/me/analytics', [AuthController::class, 'analytics']);
     Route::get('/me/performance-stats', [AuthController::class, 'performanceStats']); // Medyan Hata Orani + WXP
@@ -157,12 +159,13 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     // TÜM throttled route'lar arasinda PAYLASILIR (rota anahtara girmez). Prefix olmadan; oyun-logu,
     // çark/slot, rating gibi diger aktiviteler ortak sayaci sisirir ve DÜŞÜK limitli bu agir uçlar
     // ilk istekte bile "Too Many Attempts" verir. Prefix her uca KENDI kovasini verir.
-    Route::middleware('throttle:30,1,analyze-position')->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
+    // Pozisyon Analizi PREMIUM-only (derin gnubg konum analizi).
+    Route::middleware(['throttle:30,1,analyze-position', \App\Http\Middleware\EnsurePremium::class])->post('/analyze-position', [\App\Http\Controllers\AnalysisController::class, 'position']);
     // Mat Analiz sayfasi: yuklenen .mat maci gnubg ile TAM analiz edilir (import mat + analyse match).
-    // analyse match agir; yine de test/kullanim icin makul limit.
-    Route::middleware('throttle:30,1,analyze-mat')->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
-    // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit.
-    Route::middleware('throttle:30,1,review-mat')->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
+    // analyse match agir; yine de test/kullanim icin makul limit. PREMIUM-only.
+    Route::middleware(['throttle:30,1,analyze-mat', \App\Http\Middleware\EnsurePremium::class])->post('/analyze-mat', [\App\Http\Controllers\AnalysisController::class, 'matchAnalysis']);
+    // Mat Analiz FAZ 2: hamle-hamle gorüntüleyici (her hamle icin analiz) -> agir ama makul limit. PREMIUM-only.
+    Route::middleware(['throttle:30,1,review-mat', \App\Http\Middleware\EnsurePremium::class])->post('/review-mat', [\App\Http\Controllers\AnalysisController::class, 'matchReview']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
 
     // Haber yorumu birak (kayitli kullanici) -> ONAY BEKLER. Spam korumasi: kullanici basi 5/dk.
@@ -225,7 +228,8 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/clubs/leave', [ClubController::class, 'leave']);
 
     Route::post('/tournaments', [TournamentController::class, 'create']);
-    Route::post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
+    // Online Turnuvalara KATILIM PREMIUM-only (liste/teaser herkese acik kalir).
+    Route::middleware(\App\Http\Middleware\EnsurePremium::class)->post('/tournaments/{tournament}/join', [TournamentController::class, 'join']);
     Route::post('/tournaments/{tournament}/leave', [TournamentController::class, 'leave']);
     Route::post('/tournaments/{tournament}/report', [TournamentController::class, 'report']);
     Route::post('/tournaments/{tournament}/no-show', [TournamentController::class, 'noShow']); // rakip gelmedi -> hukmen
@@ -288,11 +292,13 @@ Route::middleware(['auth:sanctum', \App\Http\Middleware\EnsureActiveAccount::cla
     Route::post('/shop/cart-checkout', [\App\Http\Controllers\PaymentController::class, 'cartCheckout'])
         ->middleware('throttle:10,1,payment-checkout');
 
-    Route::get('/blunders', [BlunderController::class, 'index']);
+    // Hata Günlüğü GÖRÜNTÜLEME PREMIUM-only. store (POST) açık kalır: free kullanıcının
+    // hataları toplanmaya devam eder -> premiuma yükseltince geçmiş hazır olur.
+    Route::middleware(\App\Http\Middleware\EnsurePremium::class)->get('/blunders', [BlunderController::class, 'index']);
     Route::post('/blunders', [BlunderController::class, 'store']);
 
-    // Hata Gunlugu: gunun/donemin ozeti + kategori kirilimi + son hatalar (decision_analyses'ten).
-    Route::get('/me/error-journal', [ErrorJournalController::class, 'index']);
+    // Hata Gunlugu: gunun/donemin ozeti + kategori kirilimi + son hatalar (decision_analyses'ten). PREMIUM-only.
+    Route::middleware(\App\Http\Middleware\EnsurePremium::class)->get('/me/error-journal', [ErrorJournalController::class, 'index']);
 
     // Basarimlar (achievements): katalog+progress, sergilenen rozet, gorulmemis unlock'lar.
     Route::get('/me/achievements', [\App\Http\Controllers\AchievementController::class, 'index']);

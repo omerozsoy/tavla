@@ -136,6 +136,9 @@ class ErrorJournalTest extends TestCase
     public function test_endpoint_returns_summary_and_entries(): void
     {
         $u = $this->user();
+        $u->plan = 'star'; // Hata Gunlugu PREMIUM-only (plan/plan_until fillable degil)
+        $u->plan_until = now()->addYear();
+        $u->save();
         app(ErrorJournalService::class)->analyzeMatch($this->match($u));
         Sanctum::actingAs($u);
 
@@ -151,6 +154,20 @@ class ErrorJournalTest extends TestCase
         $this->assertArrayHasKey('position', $entries[0]);
         $this->assertNotNull($entries[0]['position']);
         $this->assertSame([6, 3], $entries[0]['dice']); // en yuksek loss ilk (blunder 0.084, dice 6-3)
+    }
+
+    public function test_endpoint_is_premium_only(): void
+    {
+        $u = $this->user(); // free plan
+        app(ErrorJournalService::class)->analyzeMatch($this->match($u));
+        Sanctum::actingAs($u);
+
+        $this->getJson('/api/me/error-journal?period=all')
+            ->assertStatus(403)
+            ->assertJsonPath('code', 'premium_required');
+
+        // /blunders goruntuleme de PREMIUM-only
+        $this->getJson('/api/blunders')->assertStatus(403);
     }
 
     public function test_backfill_command(): void
