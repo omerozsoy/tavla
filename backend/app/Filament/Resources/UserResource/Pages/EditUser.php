@@ -45,7 +45,9 @@ class EditUser extends EditRecord
             }
             $locked->forceFill($data)->save();
 
-            if ($coinsChanged) {
+            // Denetim/uyarı YALNIZ bakiye gerçekten değiştiyse yazılsın. Coins alanı formda
+            // gelip de değer aynı kaldığında (no-op kaydet) tehlike-alarmı üretmeyelim.
+            if ($coinsChanged && (int) $locked->coins !== $beforeCoins) {
                 \App\Support\Shield::audit(
                     auth()->id(),
                     'filament_wallet_adjustment',
