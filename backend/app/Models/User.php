@@ -97,6 +97,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'featured_badges' => 'array',
             'plan_until' => 'datetime',
             'plan_since' => 'datetime',
+            'plan_source_at' => 'datetime',
             'trial_used' => 'boolean',
             'auto_renew' => 'boolean',
             'is_system' => 'boolean', // "Tavla TV Yönetim" gibi resmi/sistem hesabı işareti
@@ -105,6 +106,26 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
             'banned_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Premium (plan) KAYNAĞINI damgala: nereden geldi ('payment'|'wheel'|'welcome'|'admin') +
+     * (admin ise) hangi admin ($by) + ne zaman. Kolon yoksa sessiz geçer. Modeli KAYDETMEZ ->
+     * çağıran save() eder (mevcut plan yazımıyla aynı akışta). plan_source_* fillable DEĞİL;
+     * doğrudan attribute set edilir (forceFill deseni).
+     */
+    public function stampPlanSource(string $source, ?int $by = null): void
+    {
+        if (! \Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source')) {
+            return;
+        }
+        $this->plan_source = $source;
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source_by')) {
+            $this->plan_source_by = $by;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users', 'plan_source_at')) {
+            $this->plan_source_at = now();
+        }
     }
 
     // Ayricalik yalniz explicit DB grant'inden gelir; email kullanici tarafindan degistirilebilir.

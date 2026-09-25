@@ -259,6 +259,7 @@ class PaymentController extends Controller
             $u->plan_since = now();
         }
         $u->auto_renew = true;
+        $u->stampPlanSource('payment'); // premium KAYNAĞI = ödeme (panel Cüzdan/Üyelik sekmesi)
         $u->save();
     }
 

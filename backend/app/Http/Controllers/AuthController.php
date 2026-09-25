@@ -1841,6 +1841,11 @@ class AuthController extends Controller
         if (Schema::hasColumn('users', 'plan_since')) {
             $update['plan_since'] = $now;
         }
+        // premium KAYNAĞI = hoşgeldin (e-posta doğrulama) — panel Cüzdan/Üyelik sekmesinde görünür.
+        if (Schema::hasColumn('users', 'plan_source')) {
+            $update['plan_source'] = 'welcome';
+            $update['plan_source_at'] = $now;
+        }
         // trial_used=false AND (plan free VEYA süresi geçmiş) -> yeni üyeye ver. Atomik: WHERE ile yarış yok.
         User::where('id', $userId)
             ->where('trial_used', false)
