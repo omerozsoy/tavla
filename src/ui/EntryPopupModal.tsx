@@ -101,7 +101,15 @@ export function EntryPopupModal({ loggedIn }: { loggedIn: boolean }) {
           ×
         </button>
         {popup.link ? (
-          <a href={popup.link} target="_blank" rel="noopener noreferrer sponsored" onClick={close}>
+          // Dis URL (http(s):// veya //) YENI sekmede; site-ici yol (/...) AYNI pencerede acilir
+          // (kullaniciyi siteden koparmaz). rel="sponsored" her durumda (promosyon/reklam isareti).
+          <a
+            href={popup.link}
+            {...(/^(https?:)?\/\//i.test(popup.link.trim())
+              ? { target: '_blank', rel: 'noopener noreferrer sponsored' }
+              : { rel: 'sponsored' })}
+            onClick={close}
+          >
             {img}
           </a>
         ) : (
