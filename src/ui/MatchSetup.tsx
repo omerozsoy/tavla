@@ -55,8 +55,8 @@ const AI_LEVELS = [
 // Level 11/12: daha derin analiz -> düşünme süresi uzayabilir. Kullanıcıyı bilgilendir (garanti
 // süre VERME; "genellikle birkaç saniye" gibi yumuşak dil). Level 10 ve altı hızlı kalır.
 const DEEP_LEVEL_NOTE: Record<number, string> = {
-  11: 'Grandmaster — daha derin (3-ply) analiz yapar. Hamleleri genellikle birkaç saniye sürebilir.',
-  12: 'Ultimate — en güçlü seviye. Kritik pozisyonlarda daha uzun (birkaç saniye) düşünebilir.',
+  11: 'Bu bot acele etmez! Güçlü hamle için bazı pozisyonlarda biraz düşünebilir.',
+  12: 'Bu bot acele etmez! Güçlü hamle için bazı pozisyonlarda biraz düşünebilir.',
 }
 
 // Her seviye butonunun altinda TAHMINI beklenen PR araligi gosterilir ("~PR 35–50").
