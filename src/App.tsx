@@ -7888,6 +7888,10 @@ export default function App() {
   }
   for (const o of Object.values(menuOverrides)) {
     if (!o.custom || !o.href || o.visible === false) continue
+    // Özel öğe SPA rotasıysa (or. /kiz-tavlasi) pages.ts'teki ikonu kullan; harici/eşleşmeyen
+    // href -> genel 'arrow-right'. (MenuOverride'da ikon alanı yok; slug'tan türetiyoruz.)
+    const hrefSlug = o.href.replace(/^\/+/, '').split(/[?#]/)[0]
+    const matchedPage = /^https?:\/\//i.test(o.href) ? undefined : PAGES.find((p) => p.slug === hrefSlug)
     navEntries.push({
       group: o.group || 'account',
       sort: o.sort ?? 999,
@@ -7895,7 +7899,7 @@ export default function App() {
         key: o.key,
         labelKey: '',
         label: o.labels?.[lang] || o.labels?.tr || o.href,
-        icon: 'arrow-right',
+        icon: matchedPage?.icon || 'arrow-right',
         onClick: () => openCustomMenuHref(o.href!),
         hideInGame: true,
       },
