@@ -49,14 +49,21 @@ class ServicesWatch extends Command
             ];
         }
 
-        // 2) gnubg analiz servisi (PR + native luck) — URL ayarlıysa.
-        if ((string) config('gnubg.url', '') !== '') {
+        // 2) gnubg analiz instance'ları (PR + native luck) — birincil + yedek(ler) AYRI izlenir. Her biri
+        //    düşerse KENDİ systemd birimiyle restart + ayrı alarm. Böylece 4 instance'ın herhangi biri
+        //    düşse anında kurtarılır -> failover havuzu erimez -> PR asla boş kalmaz.
+        $bases = $gnubg->analyzeBases();
+        $units = $gnubg->unitNames();
+        foreach ($bases as $i => $base) {
+            $unit = $units[$i] ?? null;
+            $label = $i === 0 ? 'gnubg analiz (birincil)' : 'gnubg analiz (yedek #'.$i.')';
             $services[] = [
-                'key' => 'gnubg', 'name' => 'gnubg analiz servisi',
-                'probe' => fn () => $gnubg->health(),
-                'recover' => fn () => $this->systemctlRestart('gnubg-analysis'),
-                'down' => "🔴 gnubg ANALİZ SERVİSİ DÜŞTÜ — PR + Şans (luck) hesaplanamıyor. `systemctl restart gnubg-analysis`.",
-                'up' => "🟢 gnubg analiz servisi tekrar ÇALIŞIYOR.",
+                'key' => 'gnubg'.($i === 0 ? '' : '-'.$i), 'name' => $label,
+                'probe' => fn () => $gnubg->probeBase($base),
+                'recover' => $unit ? fn () => $this->systemctlRestart($unit) : null,
+                'down' => "🔴 {$label} DÜŞTÜ ({$base}) — ".($unit ? "`systemctl restart {$unit}`." : 'systemd birimi tanımsız (GNUBG_UNITS).')
+                    .' Diğer instance\'lar ayaktaysa PR failover ile çalışmaya devam eder.',
+                'up' => "🟢 {$label} tekrar ÇALIŞIYOR ({$base}).",
             ];
         }
 

@@ -337,4 +337,35 @@ class PrGnubgAuthoritativeTest extends TestCase
 
         $this->assertTrue($this->app->make(GnuBgClient::class)->analyzeHealthy(), 'yedek ayaktaysa analyzeHealthy true olmali');
     }
+
+    /** Admin Servis Durumu: 4 gnubg instance AYRI satır (lamba) + doğru up/down. */
+    public function test_service_status_shows_each_gnubg_instance_separately(): void
+    {
+        config([
+            'gnubg.url' => 'http://127.0.0.1:8092',
+            'gnubg.url_backup' => 'http://127.0.0.1:8093,http://127.0.0.1:8094,http://127.0.0.1:8095',
+            'gnubg.units' => 'gnubg-analysis,gnubg-analysis-heavy,gnubg-analysis-3,gnubg-analysis-4',
+        ]);
+        \Illuminate\Support\Facades\Cache::flush();
+        \Illuminate\Support\Facades\Http::fake([
+            '127.0.0.1:8092/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+            '127.0.0.1:8093/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+            '127.0.0.1:8094/health' => \Illuminate\Support\Facades\Http::response('down', 500), // yedek #2 down
+            '127.0.0.1:8095/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+        ]);
+
+        $status = (new \App\Filament\Widgets\ServiceStatus)->status();
+        $gnubgRows = collect($status['services'])
+            ->filter(fn ($r) => $r['key'] === 'gnubg' || str_starts_with($r['key'], 'gnubg-'))
+            ->values();
+
+        $this->assertCount(4, $gnubgRows, '4 gnubg instance AYRI satir olmali');
+        $this->assertTrue($gnubgRows[0]['up'], 'birincil (8092) yesil');
+        $this->assertTrue($gnubgRows[1]['up'], 'yedek #1 (8093) yesil');
+        $this->assertFalse($gnubgRows[2]['up'], 'yedek #2 (8094) kirmizi');
+        $this->assertTrue($gnubgRows[3]['up'], 'yedek #3 (8095) yesil');
+        // 1 instance down olsa da bot oynatilabilir (en az bir gnubg + validator... validator yok -> bot down);
+        // en azindan gnubg tarafinin "en az biri up" mantigi calisiyor: 3/4 yesil.
+        $this->assertSame('gnubg-3', $gnubgRows[3]['key'], 'yedek #3 anahtari gnubg-3 olmali (restart eslemesi)');
+    }
 }
