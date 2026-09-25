@@ -1,9 +1,10 @@
-/* KIZ TAVLASI — tam-ekran oyun sayfası. TavlaTV görsel diline yakın koyu keçe + ahşap çerçeve. */
+/* KIZ TAVLASI — gerçek Board üzerinde oynanır. Bu dosya yalnız SAYFA CHROME'unu biçimler
+   (topbar, skor şeridi, zar-at çubuğu, howto/sonuç kartları). Tahtanın kendisi Board.tsx +
+   global App.css (.game-scene/.game-area) ile boyutlanır. */
 .kiz-view {
   display: flex;
   flex-direction: column;
-  background:
-    radial-gradient(120% 90% at 50% 0%, #14321f 0%, #0c2417 55%, #071811 100%);
+  background: radial-gradient(120% 90% at 50% 0%, #14321f 0%, #0c2417 55%, #071811 100%);
   color: #f3ede1;
   overflow-y: auto;
 }
@@ -16,13 +17,7 @@
   flex-wrap: wrap;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-.kiz-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 1.15rem;
-}
-.kiz-title b { letter-spacing: 0.3px; }
+.kiz-title { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; }
 .kiz-modes { display: flex; gap: 6px; }
 .kiz-modes button {
   padding: 6px 12px;
@@ -33,12 +28,7 @@
   font-size: 0.85rem;
   cursor: pointer;
 }
-.kiz-modes button.on {
-  background: #d8b25a;
-  border-color: #d8b25a;
-  color: #23180a;
-  font-weight: 700;
-}
+.kiz-modes button.on { background: #d8b25a; border-color: #d8b25a; color: #23180a; font-weight: 700; }
 .kiz-howto-btn {
   display: inline-flex;
   align-items: center;
@@ -53,123 +43,50 @@
 }
 .kiz-close { margin-left: auto; color: #f3ede1 !important; }
 
-.kiz-board {
-  flex: 1;
+/* Skor şeridi (tahtanın üstünde): iki oyuncunun topladığı + sıra mesajı */
+.kiz-scorebar {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 18px clamp(10px, 4vw, 40px);
+  align-items: center;
+  gap: 10px;
+  padding: 8px clamp(10px, 4vw, 32px);
   max-width: 900px;
   width: 100%;
   margin: 0 auto;
-  justify-content: center;
 }
-
-.kiz-rack {
-  background: linear-gradient(180deg, #0f2a1a, #0a2013);
-  border: 1px solid rgba(216, 178, 90, 0.25);
-  border-radius: 14px;
-  padding: 10px 12px 12px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  transition: border-color 0.2s, box-shadow 0.2s;
-}
-.kiz-rack.active {
-  border-color: #d8b25a;
-  box-shadow: 0 0 0 1px rgba(216, 178, 90, 0.4), 0 6px 22px rgba(0, 0, 0, 0.35);
-}
-.kiz-rack-head {
-  display: flex;
+.kiz-side {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-  font-size: 0.95rem;
+  gap: 6px;
+  font-size: 0.9rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  color: #d7cfc0;
 }
+.kiz-side b { color: #ffe9a8; }
+.kiz-side.active { border-color: #d8b25a; background: rgba(216, 178, 90, 0.12); }
+.kiz-turnmsg { flex: 1; text-align: center; font-size: 0.92rem; color: #ffe9a8; min-height: 18px; }
 .kiz-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
 .kiz-dot.white { background: #f3ede1; border: 1px solid #b9ad95; }
 .kiz-dot.black { background: #2a2a2a; border: 1px solid #000; }
-.kiz-off { margin-left: auto; font-size: 0.82rem; color: #cbbf9f; }
 
-.kiz-lanes {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 6px;
-}
-.kiz-lane {
-  position: relative;
-  min-height: 92px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
-  padding: 8px 2px 4px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: repeating-linear-gradient(180deg, rgba(255,255,255,0.02) 0 8px, transparent 8px 16px), #0b1e13;
-  cursor: default;
-}
-.kiz-lane.empty { opacity: 0.5; }
-.kiz-lane.hot {
-  cursor: pointer;
-  border-color: #ffd873;
-  box-shadow: 0 0 0 2px rgba(255, 216, 115, 0.5), 0 0 16px rgba(255, 216, 115, 0.3);
-  background: #123722;
-}
-.kiz-lane.hot:hover { transform: translateY(-2px); }
-.kiz-stack {
-  display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
-  gap: 3px;
+/* Tahta alanı: kalan yüksekliği kapla, ortala. Board kendi en-boy oranıyla sığar. */
+.kiz-view .game-scene {
   flex: 1;
-  justify-content: flex-start;
-}
-.kiz-checker {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  box-shadow: inset 0 2px 3px rgba(255, 255, 255, 0.35), inset 0 -3px 5px rgba(0, 0, 0, 0.4);
-}
-.kiz-checker.white { background: radial-gradient(circle at 35% 30%, #fffef8, #ded3ba); border: 1px solid #b3a687; }
-.kiz-checker.black { background: radial-gradient(circle at 35% 30%, #4a4a4a, #161616); border: 1px solid #000; }
-.kiz-lane-no {
-  font-size: 0.78rem;
-  color: #cbbf9f;
-  font-weight: 700;
-}
-.kiz-lane.hot .kiz-lane-no { color: #ffe9a8; }
-
-.kiz-center {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
+  justify-content: center;
+  padding: 6px clamp(6px, 3vw, 28px) 10px;
+  min-height: 0;
 }
-.kiz-dice {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  min-height: 48px;
-}
-.kiz-dice .die-face {
-  width: 46px;
-  height: 46px;
-  border-radius: 9px;
-}
-.kiz-dice-empty { font-size: 2rem; opacity: 0.5; }
-.kiz-msg {
-  min-height: 20px;
-  font-size: 0.95rem;
-  color: #ffe9a8;
-  text-align: center;
-}
-.kiz-roll {
-  font-size: 1rem;
-  padding: 10px 28px;
-}
+.kiz-view .game-area { width: 100%; max-width: 900px; }
+/* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
+.kiz-view .cube { display: none !important; }
 
-/* Nasıl Oynanır + Sonuç kartları */
+.kiz-rollbar { display: flex; justify-content: center; padding: 8px 0 16px; }
+.kiz-roll { font-size: 1rem; padding: 10px 30px; }
+
+/* Nasıl Oynanır + Sonuç */
 .kiz-howto, .kiz-result {
   position: fixed;
   inset: 0;
@@ -194,7 +111,6 @@
 .kiz-howto-card ul { margin: 0 0 16px; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
 .kiz-howto-card li { font-size: 0.92rem; line-height: 1.45; }
 .kiz-result-card { text-align: center; }
-.kiz-result-card > :global(svg) { color: #ffd873; }
 .kiz-mars {
   display: inline-block;
   margin: 6px 0;
@@ -211,7 +127,5 @@
 @media (max-width: 560px) {
   .kiz-topbar { gap: 8px; padding: 10px 12px; }
   .kiz-howto-btn { order: 3; }
-  .kiz-lane { min-height: 78px; }
-  .kiz-checker { width: 22px; height: 22px; }
-  .kiz-dice .die-face { width: 40px; height: 40px; }
+  .kiz-scorebar { gap: 6px; padding: 6px 10px; font-size: 0.85rem; }
 }
