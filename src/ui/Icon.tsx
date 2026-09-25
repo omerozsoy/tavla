@@ -348,10 +348,10 @@ export type IconWeight = 'thin' | 'light' | 'regular' | 'bold' | 'fill' | 'duoto
 const STROKE: Record<IconWeight, number> = {
   thin: 1,
   light: 1.5,
-  regular: 2,
+  regular: 1.5,
   bold: 2.6,
-  fill: 2,
-  duotone: 2,
+  fill: 1.5,
+  duotone: 1.5,
 }
 
 export function Icon({
