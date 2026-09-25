@@ -169,7 +169,7 @@ export function RankProgression({ currentRating, compact = false, className }: R
                     {...(isCur ? { 'aria-current': 'true' } : {})}
                   >
                     <span className="rank-prog__marker" aria-hidden="true">
-                      <RIcon size={compact ? 15 : 18} weight={r.weight} />
+                      <RIcon size={compact ? 15 : 18} stroke={r.stroke} />
                     </span>
                     <div className="rank-prog__card">
                       <div className="rank-prog__card-line">

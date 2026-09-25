@@ -4,40 +4,39 @@
  * 20 kademe, 6 aile. Rating eşikleri `badges.ts` DIVISIONS'tan gelir (tek gerçek
  * kaynak; burada tekrar hard-code EDİLMEZ). Bu dosya her kademeye tasarım
  * meta'sını bağlar: aile, alt-seviye kodu (I3/A1/M2/G0/S1), aile içi güç (tier),
- * Phosphor ikonu + weight. Renkler CSS token'larındadır (--rank-*), bileşen
- * yalnızca `data-family/-tier/-special/-apex` yazar.
+ * Tabler ikonu + çizgi kalınlığı (stroke). Renkler CSS token'larındadır (--rank-*),
+ * bileşen yalnızca `data-family/-tier/-special/-apex` yazar.
  *
- * İKON SETİ: SADECE @phosphor-icons/react. Weight (regular→bold→duotone→fill)
- * bilinçli olarak rütbeyle birlikte artar; bu yüzden ikonlar Icon.tsx sarmalayıcı
- * (sabit weight="regular") yerine doğrudan buradan import edilir.
+ * İKON SETİ: SADECE @tabler/icons-react. Rütbe yükseldikçe görsel ağırlık artar:
+ * taban tier'lar OUTLINE (stroke 2→2.4), en güçlü/elit tier'lar DOLU (Filled)
+ * varyant. İkonlar Icon.tsx sarmalayıcı (sabit görünüm) yerine doğrudan buradan
+ * import edilir (rütbeye özel stroke/dolu ayarı için).
  *
- * NOT — LaurelWreath: brief'te Grandmaster G0 için istenen `LaurelWreath` ikonu
- * @phosphor-icons/react pakedinde YOKTUR. En yakın semantik karşılık olarak
- * `Certificate` (tevcih edilmiş onur/paye; Trophy ile Crown aileleri arasında
- * görsel olarak ayrık) kullanıldı.
+ * NOT — duotone→Filled: Phosphor'daki iki-tonlu (duotone) kademeler Tabler'da
+ * DOLU (Filled) varyanta çevrildi; G0 `Certificate` (LaurelWreath paket'te yok).
  */
 
 import {
-  UserCircle,
-  Leaf,
-  Plant,
-  TrendUp,
-  Shield,
-  ShieldChevron,
-  ShieldStar,
-  Medal,
-  MedalMilitary,
-  SealCheck,
-  Star,
-  StarFour,
-  Seal,
-  Trophy,
-  Certificate, // LaurelWreath yerine (paket'te LaurelWreath yok)
-  CrownSimple,
-  Crown,
-  type Icon as PhosphorIcon,
-  type IconWeight,
-} from '@phosphor-icons/react'
+  IconUserCircle,
+  IconLeaf,
+  IconPlant2,
+  IconTrendingUp,
+  IconShield,
+  IconShieldChevron,
+  IconShieldFilled,
+  IconMedal,
+  IconMedal2,
+  IconRosetteDiscountCheckFilled,
+  IconStar,
+  IconSparkles,
+  IconRosetteFilled,
+  IconTrophy,
+  IconTrophyFilled,
+  IconCertificate,
+  IconCrown,
+  IconCrownFilled,
+  type Icon as TablerIcon,
+} from '@tabler/icons-react'
 import { DIVISIONS } from './badges'
 
 export type RankFamily =
@@ -60,9 +59,9 @@ export interface RankTier {
   special: boolean // Grandmaster G0: ailenin elit tier'ı
   apex: boolean // Super Grandmaster S1: sistemin mutlak zirvesi
   min: number // rating alt eşiği (DIVISIONS'tan)
-  Icon: PhosphorIcon
-  iconName: string // kodda açık: kullanılan gerçek Phosphor export adı
-  weight: IconWeight // Phosphor weight (rütbeyle birlikte kontrollü artar)
+  Icon: TablerIcon
+  iconName: string // kodda açık: kullanılan gerçek Tabler export adı
+  stroke: number // Tabler çizgi kalınlığı (rütbeyle artar; Filled ikonlarda yok sayılır)
 }
 
 // divKey → (family, code, tier, special/apex, icon, weight).
@@ -71,36 +70,36 @@ type Meta = Omit<RankTier, 'min' | 'divKey' | 'familyKey'> & { familyKey: string
 
 const META: Record<string, Meta> = {
   // ---- Taban rütbeler (alt-seviye yok) — sade, nötr, growth metaforu ----
-  'div.rookie':     { family: 'rookie',     familyKey: 'div.rookie',     code: null, tier: 1, special: false, apex: false, Icon: UserCircle, iconName: 'UserCircle', weight: 'regular' },
-  'div.novice':     { family: 'novice',     familyKey: 'div.novice',     code: null, tier: 1, special: false, apex: false, Icon: Leaf,       iconName: 'Leaf',       weight: 'regular' },
-  'div.beginner':   { family: 'beginner',   familyKey: 'div.beginner',   code: null, tier: 1, special: false, apex: false, Icon: Plant,      iconName: 'Plant',      weight: 'regular' },
-  'div.developing': { family: 'developing', familyKey: 'div.developing', code: null, tier: 1, special: false, apex: false, Icon: TrendUp,    iconName: 'TrendUp',    weight: 'regular' },
+  'div.rookie':     { family: 'rookie',     familyKey: 'div.rookie',     code: null, tier: 1, special: false, apex: false, Icon: IconUserCircle, iconName: 'IconUserCircle', stroke: 2 },
+  'div.novice':     { family: 'novice',     familyKey: 'div.novice',     code: null, tier: 1, special: false, apex: false, Icon: IconLeaf,       iconName: 'IconLeaf',       stroke: 2 },
+  'div.beginner':   { family: 'beginner',   familyKey: 'div.beginner',   code: null, tier: 1, special: false, apex: false, Icon: IconPlant2,     iconName: 'IconPlant2',     stroke: 2 },
+  'div.developing': { family: 'developing', familyKey: 'div.developing', code: null, tier: 1, special: false, apex: false, Icon: IconTrendingUp, iconName: 'IconTrendingUp', stroke: 2 },
 
   // ---- Intermediate (Shield ailesi) — soğuk çelik ----
-  'div.i3': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I3', tier: 3, special: false, apex: false, Icon: Shield,        iconName: 'Shield',        weight: 'regular' },
-  'div.i2': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I2', tier: 2, special: false, apex: false, Icon: ShieldChevron, iconName: 'ShieldChevron', weight: 'bold' },
-  'div.i1': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I1', tier: 1, special: false, apex: false, Icon: ShieldStar,    iconName: 'ShieldStar',    weight: 'duotone' },
+  'div.i3': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I3', tier: 3, special: false, apex: false, Icon: IconShield,        iconName: 'IconShield',        stroke: 2 },
+  'div.i2': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I2', tier: 2, special: false, apex: false, Icon: IconShieldChevron, iconName: 'IconShieldChevron', stroke: 2.4 },
+  'div.i1': { family: 'intermediate', familyKey: 'div.intermediate', code: 'I1', tier: 1, special: false, apex: false, Icon: IconShieldFilled,  iconName: 'IconShieldFilled',  stroke: 2 },
 
   // ---- Advanced (Medal/Seal ailesi) — royal blue ----
-  'div.a3': { family: 'advanced', familyKey: 'div.advanced', code: 'A3', tier: 3, special: false, apex: false, Icon: Medal,         iconName: 'Medal',         weight: 'regular' },
-  'div.a2': { family: 'advanced', familyKey: 'div.advanced', code: 'A2', tier: 2, special: false, apex: false, Icon: MedalMilitary, iconName: 'MedalMilitary', weight: 'bold' },
-  'div.a1': { family: 'advanced', familyKey: 'div.advanced', code: 'A1', tier: 1, special: false, apex: false, Icon: SealCheck,     iconName: 'SealCheck',     weight: 'duotone' },
+  'div.a3': { family: 'advanced', familyKey: 'div.advanced', code: 'A3', tier: 3, special: false, apex: false, Icon: IconMedal,                       iconName: 'IconMedal',                       stroke: 2 },
+  'div.a2': { family: 'advanced', familyKey: 'div.advanced', code: 'A2', tier: 2, special: false, apex: false, Icon: IconMedal2,                      iconName: 'IconMedal2',                      stroke: 2.4 },
+  'div.a1': { family: 'advanced', familyKey: 'div.advanced', code: 'A1', tier: 1, special: false, apex: false, Icon: IconRosetteDiscountCheckFilled, iconName: 'IconRosetteDiscountCheckFilled', stroke: 2 },
 
   // ---- Master (Star/Seal ailesi) — violet ----
-  'div.m3': { family: 'master', familyKey: 'div.master', code: 'M3', tier: 3, special: false, apex: false, Icon: Star,     iconName: 'Star',     weight: 'bold' },
-  'div.m2': { family: 'master', familyKey: 'div.master', code: 'M2', tier: 2, special: false, apex: false, Icon: StarFour, iconName: 'StarFour', weight: 'bold' },
-  'div.m1': { family: 'master', familyKey: 'div.master', code: 'M1', tier: 1, special: false, apex: false, Icon: Seal,     iconName: 'Seal',     weight: 'duotone' },
+  'div.m3': { family: 'master', familyKey: 'div.master', code: 'M3', tier: 3, special: false, apex: false, Icon: IconStar,          iconName: 'IconStar',          stroke: 2.4 },
+  'div.m2': { family: 'master', familyKey: 'div.master', code: 'M2', tier: 2, special: false, apex: false, Icon: IconSparkles,      iconName: 'IconSparkles',      stroke: 2.4 },
+  'div.m1': { family: 'master', familyKey: 'div.master', code: 'M1', tier: 1, special: false, apex: false, Icon: IconRosetteFilled, iconName: 'IconRosetteFilled', stroke: 2 },
 
   // ---- Grandmaster (Trophy ailesi) — muted premium gold; G0 elit ----
-  'div.g3': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G3', tier: 3, special: false, apex: false, Icon: Trophy,      iconName: 'Trophy',      weight: 'bold' },
-  'div.g2': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G2', tier: 2, special: false, apex: false, Icon: Trophy,      iconName: 'Trophy',      weight: 'duotone' },
-  'div.g1': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G1', tier: 1, special: false, apex: false, Icon: Trophy,      iconName: 'Trophy',      weight: 'duotone' },
-  'div.g0': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G0', tier: 1, special: true,  apex: false, Icon: Certificate, iconName: 'Certificate', weight: 'fill' },
+  'div.g3': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G3', tier: 3, special: false, apex: false, Icon: IconTrophy,       iconName: 'IconTrophy',       stroke: 2.4 },
+  'div.g2': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G2', tier: 2, special: false, apex: false, Icon: IconTrophyFilled, iconName: 'IconTrophyFilled', stroke: 2 },
+  'div.g1': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G1', tier: 1, special: false, apex: false, Icon: IconTrophyFilled, iconName: 'IconTrophyFilled', stroke: 2 },
+  'div.g0': { family: 'grandmaster', familyKey: 'div.grandmaster', code: 'G0', tier: 1, special: true,  apex: false, Icon: IconCertificate,  iconName: 'IconCertificate',  stroke: 2.2 },
 
   // ---- Super Grandmaster (Crown ailesi) — deep crimson + gold accent; S1 zirve ----
-  'div.sgm3': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S3', tier: 3, special: false, apex: false, Icon: CrownSimple, iconName: 'CrownSimple', weight: 'duotone' },
-  'div.sgm2': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S2', tier: 2, special: false, apex: false, Icon: Crown,       iconName: 'Crown',       weight: 'duotone' },
-  'div.sgm1': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S1', tier: 1, special: false, apex: true,  Icon: Crown,       iconName: 'Crown',       weight: 'fill' },
+  'div.sgm3': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S3', tier: 3, special: false, apex: false, Icon: IconCrown,       iconName: 'IconCrown',       stroke: 2.4 },
+  'div.sgm2': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S2', tier: 2, special: false, apex: false, Icon: IconCrownFilled, iconName: 'IconCrownFilled', stroke: 2 },
+  'div.sgm1': { family: 'superGrandmaster', familyKey: 'div.superGrandmaster', code: 'S1', tier: 1, special: false, apex: true,  Icon: IconCrownFilled, iconName: 'IconCrownFilled', stroke: 2 },
 }
 
 // 20 kademe, düşükten yükseğe. Eşik (min) DIVISIONS'tan; meta META'dan.

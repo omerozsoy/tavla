@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Check } from "@phosphor-icons/react"
+import { IconCheck } from "@tabler/icons-react"
 import { Checkbox as CheckboxPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
@@ -21,7 +21,7 @@ function Checkbox({
         data-slot="checkbox-indicator"
         className="grid place-content-center text-current transition-none"
       >
-        <Check weight="bold" className="size-3.5" />
+        <IconCheck stroke={2.5} className="size-3.5" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   )
