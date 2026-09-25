@@ -60,10 +60,15 @@ class AdSlotResource extends Resource
                 ->helperText('Opsiyonel. Önerilen: 720×300 px (2×: 1440×600). Boşsa mobilde masaüstü görseli küçültülerek gösterilir. En fazla 4 MB.')
                 ->columnSpanFull(),
 
-            Forms\Components\TextInput::make('link')->label('Hedef link (URL)')
-                ->url()->maxLength(500)
-                ->placeholder('https://ornek.com')
-                ->helperText('Opsiyonel. Reklama tıklayınca bu adres yeni sekmede açılır. Boşsa reklam tıklanamaz.')
+            // ->url() KULLANMA: HTML5 type="url" + Laravel url kuralı site-içi göreli yolu (/yz-ile-oyna)
+            // reddeder ("Please enter a URL"). Site içi yol AYNI sekmede, dış adres yeni sekmede açılır
+            // (bkz AdStrip.tsx). Tam URL VEYA / ile başlayan yol kabul; diğerini regex ile ele.
+            Forms\Components\TextInput::make('link')->label('Hedef link (opsiyonel)')
+                ->maxLength(500)
+                ->placeholder('ör. /yz-ile-oyna  veya  https://ornek.com')
+                ->rule('regex:/^(https?:\/\/.+|\/.*)?$/')
+                ->validationMessages(['regex' => 'Tam adres (https://…) VEYA site içi yol (/ ile başlar) girin.'])
+                ->helperText('Opsiyonel. Site içi yol (/ ile başlar) AYNI sekmede, dış adres (https://) yeni sekmede açılır. Boşsa reklam tıklanamaz.')
                 ->columnSpanFull(),
 
             Forms\Components\TextInput::make('sort')->label('Sıra')->numeric()->default(0)
