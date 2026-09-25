@@ -84,7 +84,7 @@ import {
   IconBuildingBank,
   IconNews,
   IconBriefcase,
-  IconDeviceTv,
+  IconArticle,
   IconPalette,
   IconInfoCircle,
   IconShieldCheck,
@@ -188,6 +188,7 @@ export type IconName =
   | 'newspaper'
   | 'briefcase'
   | 'monitor-play'
+  | 'article'
   | 'palette'
   | 'warning-circle'
   | 'chart-line'
@@ -290,7 +291,8 @@ const MAP: Record<IconName, TablerIcon> = {
   'building-office': IconBuilding,
   newspaper: IconNews,
   briefcase: IconBriefcase,
-  'monitor-play': IconDeviceTv,
+  'monitor-play': IconBrandYoutube,
+  article: IconArticle,
   palette: IconPalette,
   'warning-circle': IconAlertCircle,
   'chart-line': IconChartLine,

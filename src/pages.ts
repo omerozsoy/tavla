@@ -51,7 +51,7 @@ export const PAGES: PageDef[] = [
   { key: 'kiz', slug: 'kiz-tavlasi', labelKey: 'kiz.menu', icon: 'dice', group: 'fun', hideInGame: true, inMenu: false },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
-  { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'book', group: 'content', hideInGame: true },
+  { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
   { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },

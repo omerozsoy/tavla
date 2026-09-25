@@ -25,7 +25,7 @@ import { TavlaTvLogo } from './TavlaTvLogo'
 const HEAD: Record<ContentType, { icon: IconName; titleKey: string }> = {
   service: { icon: 'star', titleKey: 'menu.services' },
   blog: { icon: 'book', titleKey: 'menu.blog' },
-  makale: { icon: 'book', titleKey: 'menu.makale' }, // Makaleler — haber (editoryal liste+detay) düzeninde
+  makale: { icon: 'article', titleKey: 'menu.makale' }, // Makaleler — haber (editoryal liste+detay) düzeninde
   news: { icon: 'chat', titleKey: 'menu.news' },
   event: { icon: 'calendar', titleKey: 'menu.calendar' },
   club: { icon: 'pin', titleKey: 'menu.clubs' },
