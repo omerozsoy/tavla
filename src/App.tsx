@@ -187,10 +187,10 @@ const SITE_ORIGIN = 'https://www.tavlatv.com'
 // Ana sayfa (bos slug) meta aciklamasi — index.html'deki description ile ayni.
 const DEFAULT_DESC =
   'Ücretsiz online tavla oyna; arkadaşlarınla maç yap, yapay zekâya karşı yarış, turnuvalara katıl ve maçlarını analiz et. Kayıt gerektirmez.'
-// Logo sürüm rozeti: TEK KAYNAK package.json (BetaBanner ile aynı __APP_VERSION__).
-// "3.0.0" -> "BETA 3.0" (sondaki .0 kırpılır). Elle "BETA 2.2" yazıp sürümle çelişmesin.
+// Logo sürüm rozeti: TEK KAYNAK package.json. "3.1.0" -> "3.1" (sondaki .0 kırpılır).
+// (Beta aşaması bitti: artık "BETA" öneki yok; yalnız sürüm numarası gösterilir.)
 declare const __APP_VERSION__: string
-const BETA_LABEL = `BETA ${__APP_VERSION__.replace(/\.0$/, '')}`
+const VERSION_LABEL = __APP_VERSION__.replace(/\.0$/, '')
 
 const SEO_TITLES: Record<string, string> = {
   'online-tavla': 'Online Tavla Oyna - Ücretsiz Canlı Tavla | TavlaTv',
@@ -428,7 +428,6 @@ import PremiumCrown from './ui/PremiumCrown'
 import { Flag } from './ui/Flag'
 import MatchResult from './ui/MatchResult'
 import ScrollTop from './ui/ScrollTop'
-import BetaBanner from './ui/BetaBanner'
 import MatchReport, { type LogEntry } from './ui/MatchReport'
 import type { GameResultInput } from './matExport'
 import { LiveMatchesPanel, OnlinePlayersPanel, RankingPanel, HomeFeatures, HomeDashboard, TournamentsPanel, CalendarPanel, NewsPanel, StatusPicker } from './ui/HomePanels'
@@ -7064,8 +7063,6 @@ export default function App() {
 
   // Sag ust hesap bari (lobi + oyun ekraninda ortak)
   // Oyun ekraninda mi (cekilme butonu bunun icin)
-  // BETA duyuru bandi (account bar'in ALTINDA gosterilir; yalniz lobide, oyun ekraninda degil).
-  const betaBanner = <BetaBanner />
   const accountBar = (
     <div className="account-bar">
       {/* Sol: TavlaTV logosu (ana sayfaya doner). Sag: hesap kontrolleri. */}
@@ -7082,7 +7079,7 @@ export default function App() {
           <span className="ab-brandlock">
             <TavlaTvLogo size={38} className="ab-wordmark" />
             {/* Surum etiketi: logonun bittigi yerin sag ustunde tema-renkli kucuk yazi. */}
-            <span className="ab-beta" aria-hidden="true">{BETA_LABEL}</span>
+            <span className="ab-beta" aria-hidden="true">{VERSION_LABEL}</span>
             {/* Slogan: duz HTML metin (SVG textLength=%100 hack'i Firefox'ta stretch/
                 bozulma yapiyordu — fit-content ebeveyn icinde %100 min-width dairesel). */}
             <span className="ab-tag">{t('foot.tag')}</span>
@@ -8711,7 +8708,6 @@ export default function App() {
     topbar: (
       <div className="topbar-stack">
         {accountBar}
-        {betaBanner}
       </div>
     ),
     sideMenu: (
