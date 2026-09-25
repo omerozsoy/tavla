@@ -494,7 +494,7 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                             {m.pr != null && (
                               <span className="psm-pr">
                                 PR {m.pr.toFixed(1)}
-                                {m.opponent_pr != null ? ` · ${m.opponent_pr.toFixed(1)}` : ''}
+                                {m.opponent_pr != null && m.opponent_pr !== 0 ? ` · ${m.opponent_pr.toFixed(1)}` : ''}
                               </span>
                             )}
                           </span>

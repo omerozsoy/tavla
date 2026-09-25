@@ -307,7 +307,9 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                           <span className="mh-nm">{oppName}</span>
                           {oppFull && <span className="mh-full">{oppFull}</span>}
                           <span className="mh-tags">
-                            {m.opponent_pr != null && (
+                            {/* SAHTE-0 KALKANI: rakip genel PR'ı tam 0 => "hesaplanamadı" sentinel'i
+                                (eski satırlar); gösterme (yoksa 0.0 + üst seviye rozeti yanlış çıkardı). */}
+                            {m.opponent_pr != null && m.opponent_pr !== 0 && (
                               <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
                             )}
                             {oppLuck && (
