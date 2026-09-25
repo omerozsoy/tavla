@@ -71,6 +71,32 @@ izleyici (services:watch, 5sn /health probe) bunu "düştü" sanıp gereksiz res
   (systemd `Restart=always` ZATEN sudosuz çalışır — sudo yalnız wedge/meşgul durumunu kırmak içindi;
   thread fix'i o durumu kökten çözdüğü için sudo artık kritik değil.)
 
+## AĞIR analiz instance'ı (Level 11/12 concurrency — CANLI botu bloklamamak için)
+
+gnubg TEK process + global kilit ile çalışır: uzun bir analiz (Mat Analiz `/reviewmatch` 600s,
+`/analyzematch`, `/matchluck`) kilidi tutarken **canlı bot `/analyze` çağrıları kuyrukta bekler**.
+Level 11/12 (3-ply/4-ply) daha uzun sürdüğü için bu darboğaz büyür. Çözüm: **iki ayrı instance**.
+
+```
+# 1) Canlı bot instance (mevcut) — port 8092
+systemctl status gnubg-analysis        # ExecStart ... GNUBG_PORT=8092
+
+# 2) Ağır analiz instance — port 8093 (AYNI kod, AYNI secret)
+cp gnubg-service/gnubg-analysis-heavy.service /etc/systemd/system/gnubg-analysis-heavy.service
+nano /etc/systemd/system/gnubg-analysis-heavy.service   # GNUBG_SECRET'i canlı ile AYNI yap
+systemctl daemon-reload
+systemctl enable --now gnubg-analysis-heavy
+curl -s http://127.0.0.1:8093/health   # {ok:true}
+
+# 3) backend/.env: ağır uçları 8093'e yönlendir (canlı bot 8092'de kalır)
+GNUBG_HEAVY_URL=http://127.0.0.1:8093
+# (config/gnubg.php `heavy_url` bunu okur; boşsa tek instance = geriye dönük uyum.)
+```
+Backend `heavy_url` boşken TEK instance kullanılır (davranış değişmez). 8093 açıldığında
+reviewmatch/analyzematch/matchluck/selfplay oraya, canlı bot `/analyze` 8092'de kalır → uzun analiz
+canlı oyunu kilitleyemez. `/health` `peak_inflight`'ı izleyerek çok-süreçli havuz gerekip gerekmediği
+ölçülebilir (GnuBgClient::healthInfo → admin "Servis Durumu").
+
 ## Notlar
 - **gnubgid üretimi:** backend `GameState` → gnubg `posID:matchID` çevirir (adapter işi). Test için
   gnubg'den okunmuş hazır id kullanılır.

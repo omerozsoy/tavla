@@ -10,6 +10,8 @@ import {
   serverMatchToLocal,
   shouldApplyServerState,
   serverSyncRoomChanged,
+  isDuplicateSubmit,
+  nextSubmittedKey,
   type SyncLocal,
 } from './authSync'
 
@@ -778,5 +780,48 @@ describe('REGRESYON: ucusta kalmis eski poll yaniti onaylanan hamleyi geri almaz
     white.poll(true, inFlight)
     expect(white.turn).toBe('white')
     expect(white.played).toBe(1) // oynadiklarim silinmedi
+  })
+})
+
+// ---- REGRESYON: "Onayla düğmesi takılıyor" (mükerrer-hamle kilidi 409 sonrası tuzağa dönüyor) ----
+// CANLI BUG (kullanıcı bildirimi): "maç esnasında hamlelerini yapıp Onayla'ya basacağı sırada
+// Onayla düğmesi takılıyor" (hiçbir şey olmuyor).
+//
+// Zincir: Onayla -> commitTurn serverMove yollar + moveKey=code:V:steps'i lastSubmittedMoveRef'e
+// yazar. Sunucu geçici 409 döner ("Sıra sende değil." / "Önce zar at."). 409 = komut UYGULANMADI,
+// server_version ARTMAZ (RoomController: yalnız başarıda +1). Resync AYNI versiyona döner ve
+// setPlayed([]) ile oynanan taşlar silinir. Kullanıcı AYNI taşları tekrar oynayıp Onayla'ya basar:
+// moveKey birebir aynı -> isDuplicateSubmit true -> gönderim sessizce yutulur (kalıcı kilit).
+describe('REGRESYON: reddedilen hamle sonrası aynı hamle yeniden onaylanabilmeli', () => {
+  const V = 7
+  const moveKey = `RM42:${V}:[{"from":6,"to":1,"die":5}]`
+
+  it('HATA (eski davranış): 409 kilidi temizlemezse aynı moveKey yutulur', () => {
+    let last: string | null = null
+    // 1) İlk onay: gönderilir, kilit yazılır.
+    expect(isDuplicateSubmit(last, moveKey)).toBe(false)
+    last = nextSubmittedKey(last, { type: 'submit', moveKey })
+    // 2) 409 geldi ama (eski hatalı politika) kilit TEMİZLENMEDİ -> last hâlâ moveKey.
+    // 3) Aynı hamle yeniden -> DUPLICATE sanılır -> yutulur (yaşanan bug).
+    expect(isDuplicateSubmit(last, moveKey)).toBe(true)
+  })
+
+  it('DÜZELTME: 409/hata kilidi temizler -> aynı hamle yeniden gönderilebilir', () => {
+    let last: string | null = null
+    // 1) İlk onay.
+    expect(isDuplicateSubmit(last, moveKey)).toBe(false)
+    last = nextSubmittedKey(last, { type: 'submit', moveKey })
+    // 2) Sunucu reddetti (uygulanmadı) -> kilit temizlenir.
+    last = nextSubmittedKey(last, { type: 'rejected' })
+    expect(last).toBeNull()
+    // 3) Kullanıcı aynı taşları tekrar oynayıp Onayla'ya basar -> ARTIK gönderilebilir.
+    expect(isDuplicateSubmit(last, moveKey)).toBe(false)
+  })
+
+  it('Eşzamanlı çift-submit (aynı versiyon, kilit uçuşta) hâlâ engellenir', () => {
+    // moveInFlightRef zaten senkron engeller; dedup ikinci savunma: kilit yazılıyken aynı anahtar tekrar.
+    let last: string | null = null
+    last = nextSubmittedKey(last, { type: 'submit', moveKey })
+    expect(isDuplicateSubmit(last, moveKey)).toBe(true) // ikinci özdeş submit yutulur
   })
 })

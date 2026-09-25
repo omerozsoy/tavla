@@ -125,6 +125,7 @@ class BotMoveService
             'gnubg_ply' => $diag['plies_used'] ?? null,
             'gnubg_cube_ply' => $this->levelEval($level)['cubePlies'],
             'gnubg_response_ms' => $diag['response_ms'] ?? null,
+            'gnubg_queue_ms' => $diag['queue_ms'] ?? null,
             'gnubg_top_gap' => $diag['top_gap'] ?? null,
             'gnubg_escalated_to_4ply' => $diag['escalated'] ?? false,
             'gnubg_selected_equity' => $cands[0]['equity'] ?? null,

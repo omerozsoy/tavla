@@ -20,9 +20,10 @@ return [
     'pr_mode' => env('GNUBG_PR_MODE', 'off'),
 
     // AĞIR ANALİZ (reviewmatch/analyzematch/matchluck/selfplay) için AYRI gnubg instance URL'i.
-    // Boş/aynı ise TEK instance kullanılır (geriye dönük uyum). Level 11/12 uzun sürebildiği için
-    // canlı bot (8092) ile ağır analizi (8093) AYIRMAK, ağır işin canlı botu bloklamasını önler.
-    'heavy_url' => env('GNUBG_HEAVY_URL', env('GNUBG_URL', 'http://127.0.0.1:8092')),
+    // BOŞSA (varsayılan) GnuBgClient runtime'da `url`e düşer -> TEK instance (geriye dönük uyum;
+    // testler de gnubg.url override'ına uyar). GNUBG_HEAVY_URL=http://127.0.0.1:8093 verilince ağır
+    // işler AYRI instance'a gider -> canlı bot (8092) bloklanmaz. Bkz gnubg-service/README.md.
+    'heavy_url' => env('GNUBG_HEAVY_URL'),
 
     // --- BOT SEVİYE SİSTEMİ (feature flag'ler; deploy'suz kapatma) ------------------------------
     // Level 11 (TavlaTV Grandmaster, 3-ply) ve Level 12 (TavlaTV Ultimate, adaptive 3->4-ply).

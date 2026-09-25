@@ -107,6 +107,12 @@ if [ -f ../gnubg-service/gnubg_service.py ]; then
   else
     echo "UYARI: gnubg-analysis restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis.service"
   fi
+  # AGIR analiz instance'i (varsa; Level 11/12 concurrency ayrimi) — kurulu degilse SESSIZCE gec.
+  if systemctl list-unit-files 2>/dev/null | grep -q '^gnubg-analysis-heavy\.service'; then
+    sudo -n systemctl restart gnubg-analysis-heavy.service 2>/dev/null \
+      && echo "gnubg: gnubg-analysis-heavy (agir analiz) yeniden baslatildi." \
+      || echo "UYARI: gnubg-analysis-heavy restart edilemedi -> ELLE: sudo systemctl restart gnubg-analysis-heavy.service"
+  fi
 fi
 # Queue worker (gnubg PR shadow) eski kodu calistirir -> her deploy'da yenile (bkz deploy/README).
 if sudo -n systemctl restart tavla-queue 2>/dev/null; then

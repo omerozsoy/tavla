@@ -2603,13 +2603,13 @@ export default function App() {
           // appliedServerVersionRef=-1 zaten poll'u tetikler -> otoriter durum (doğru sıra+zar) geri
           // gelir (kendi kendini onarır). doRollAuthoritative da 409'u sessiz geçer — aynı desen.
           const err = e as { status?: number }
-          // KILIT FIX: reddedilen hamle (409 dahil) SUNUCUDA UYGULANMADI -> aynı hamlenin yeniden
-          // gönderilebilmesi için mükerrer-kilidi (moveKey) HER hatada temizle. Aksi halde 409 sonrası
-          // sunucu server_version'ı ARTIRMADIĞI için (rejected=no bump) resync aynı versiyona döner,
-          // kullanıcı aynı taşları tekrar oynayıp Onayla'ya basınca moveKey BİREBİR AYNI çıkar ve
-          // yukarıdaki dedup guard (lastSubmittedMoveRef===moveKey) onu SESSİZCE yutar -> "Onayla
-          // takılıyor" (kalıcı). Eşzamanlı çift-submit'i zaten moveInFlightRef (senkron) engeller.
-          lastSubmittedMoveRef.current = null
+          // KILIT FIX ("Onayla takılıyor"): reddedilen hamle (409 dahil) SUNUCUDA UYGULANMADI ->
+          // aynı hamlenin yeniden gönderilebilmesi için mükerrer-kilidini HER hatada temizle. Aksi
+          // halde 409 sonrası sunucu server_version'ı ARTIRMADIĞI için (rejected=no bump) resync aynı
+          // versiyona döner, kullanıcı aynı taşları tekrar oynayıp Onayla'ya basınca moveKey birebir
+          // aynı çıkar ve dedup guard onu SESSİZCE yutar (kalıcı kilit). Eşzamanlı çift-submit'i zaten
+          // moveInFlightRef (senkron) engeller. Bkz. authSync nextSubmittedKey + regresyon testi.
+          lastSubmittedMoveRef.current = nextSubmittedKey(lastSubmittedMoveRef.current, { type: 'rejected' })
           if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
           // Poll aralığını beklemeden tek seferlik doğrudan senkronizasyon yap.

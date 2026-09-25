@@ -1,0 +1,21 @@
+[Unit]
+Description=GNU Backgammon AĞIR analiz servisi (reviewmatch/analyzematch/matchluck — CANLI bottan ayrı)
+After=network.target
+# CANLI bot (gnubg-analysis, :8092) ile AYNI kod, AYRI instance (:8093). Amaç: uzun analiz işleri
+# (Mat Analiz, maç incelemesi, luck) canlı botun gnubg process'ini BLOKLAMASIN. backend
+# config/gnubg.php `heavy_url` bu porta (8093) ayarlanır; `url` 8092'de kalır.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+# GNUBG_SECRET canlı instance + backend .env ile AYNI olmalı (backend her iki instance'a da aynı
+# secret'ı gönderir). SADECE port farklı.
+Environment=GNUBG_PORT=8093
+Environment=GNUBG_SECRET=CHANGE_ME_UZUN_RASTGELE
+WorkingDirectory=/opt/gnubg-service
+ExecStart=/usr/local/bin/gnubg -t -q -p /opt/gnubg-service/gnubg_service.py
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
