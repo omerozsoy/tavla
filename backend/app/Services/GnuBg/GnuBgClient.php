@@ -119,6 +119,14 @@ class GnuBgClient
         // da hamle üretmeye devam eder (ikisi de analyze() kullanır). HEPSİ düşükse null -> AnalyzeMatchPrJob
         // fırlatır (retry) + heal cron gnubg dönünce yeniden dener. Tek instance -> eski davranış.
         $bases = $this->analyzeBases();
+        // YÜK DENGELEME: her çağrı RASTGELE bir instance'tan başlasın. Aksi halde tüm çağrılar (PR heal +
+        // canlı bot) hep birincil (8092) listede ilk olduğu için oraya yığılır -> gnubg tek kilitle
+        // serileştirdiğinden üst üste biner (panel "peak 3"), yedekler boş durur. Karıştırınca yük 4
+        // instance'a yayılır -> her biri ~1 eşzamanlı -> kuyruk/gecikme yok. Failover KORUNUR (seçilen
+        // instance düşükse sıradakine geçilir; hepsi denenir). Tek instance -> etkisiz.
+        if (count($bases) > 1) {
+            shuffle($bases);
+        }
         $last = count($bases) - 1;
         foreach ($bases as $i => $base) {
             try {
