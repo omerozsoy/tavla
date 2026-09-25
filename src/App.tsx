@@ -7776,6 +7776,7 @@ export default function App() {
       { key: 'seo-g-kazanma', labelKey: '', label: 'Kazanma Taktikleri', onClick: () => openGuide('tavla-kazanma-taktikleri') },
       { key: 'seo-g-mars', labelKey: '', label: 'Mars ve Backgammon', onClick: () => openGuide('mars-gammon-backgammon-nedir') },
       { key: 'seo-turnuva-kurallari', labelKey: '', label: 'Turnuva Kuralları', onClick: () => goPage(() => setTournRulesOpen(true)) },
+      { key: 'seo-sikca-sorulan', labelKey: '', label: 'Sıkça Sorulan Sorular', onClick: () => goPage(() => setFaqOpen(true)) },
     ],
   })
   // Organizasyon kolonu: turnuva organizasyonu SEO servis sayfalari + İletişim. Hepsi

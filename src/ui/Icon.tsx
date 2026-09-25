@@ -72,6 +72,7 @@ import {
   IconTarget,
   IconWorld,
   IconRobot,
+  IconRobotFace,
   IconTrash,
   IconLock,
   IconLockAccess,
@@ -180,6 +181,7 @@ export type IconName =
   | 'target'
   | 'globe'
   | 'robot'
+  | 'robot-face'
   | 'trash'
   | 'lock'
   | 'camera'
@@ -286,6 +288,7 @@ const MAP: Record<IconName, TablerIcon> = {
   target: IconTarget,
   globe: IconWorld,
   robot: IconRobot,
+  'robot-face': IconRobotFace,
   trash: IconTrash,
   lock: IconLock,
   camera: IconCamera,
