@@ -5042,7 +5042,11 @@ export default function App() {
   useEffect(() => {
     const has = gameEnd != null
     const wasNull = !endSoundPrevRef.current
-    endSoundPrevRef.current = has
+    endSoundPrevRef.current = has // prevRef'i home'dan ÖNCE güncelle (bir sonraki gerçek oyun-sonu sesi kaçmasın)
+    // LOBİDE BASTIR (kullanıcı raporu "oyunda değilim maç kaybetme sesi geliyor"): maçtan çıktıktan
+    // sonra uçuştaki bir poll/serverMove yanıtı applyServerBoard ile gameEnd'i (sm.done+winner)
+    // yeniden kurup null->dolu geçişi tetikleyebilir -> home iken win/lose sesi ÇALMASIN.
+    if (home) return
     if (!has || !wasNull) return // yalnız null->dolu geçişinde çal (dolu kalırken tekrar etme)
     const now = performance.now()
     if (now - lastEndSoundRef.current < 2000) return // titreme (null->dolu->null->dolu) ikinci geçişini yut
@@ -5056,7 +5060,7 @@ export default function App() {
         else if (gameEnd!.mult === 2) achGammonRef.current += 1
       }
     } else Sound.lose()
-  }, [gameEnd, mode, room])
+  }, [gameEnd, mode, room, home])
   // Ses: kup teklifi
   useEffect(() => {
     if (cubePending) Sound.double()
