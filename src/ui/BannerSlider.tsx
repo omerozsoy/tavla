@@ -142,9 +142,23 @@ export default function BannerSlider({ onOpen }: Props) {
     return { transform: `translateX(${x}%)`, transition }
   }
 
+  // Banner tiklandiginda nereye gidilecek: once serbest link (varsa), yoksa bagli turnuva.
+  // Dis URL (http/https) yeni sekmede; site-ici yol (/ ile baslar) ayni sekmede acilir.
+  const openBanner = (b: TournamentAd) => {
+    const link = b.link?.trim()
+    if (link) {
+      if (/^https?:\/\//i.test(link)) window.open(link, '_blank', 'noopener,noreferrer')
+      else window.location.assign(link)
+      return
+    }
+    if (b.tournament_id != null) onOpen(b.tournament_id)
+  }
+
   // Tek bir slaytin ic yapisi (sol panel + sag gorsel). role -> konum stili.
   const renderSlide = (b: TournamentAd, role: 'current' | 'incoming') => {
     const hasText = !!(b.logo || b.kicker || b.title || b.subtitle || b.meta || b.cta)
+    // Tiklanabilir mi: serbest link VEYA bagli turnuva varsa.
+    const hasTarget = !!b.link?.trim() || b.tournament_id != null
     return (
       <button
         key={`${role}-${b.id}`}
@@ -156,9 +170,9 @@ export default function BannerSlider({ onOpen }: Props) {
             draggedRef.current = false
             return // surukleme oldu -> tiklamayi yut
           }
-          if (!animating && b.tournament_id != null) onOpen(b.tournament_id)
+          if (!animating) openBanner(b)
         }}
-        disabled={b.tournament_id == null}
+        disabled={!hasTarget}
         aria-label={b.title || b.tournament_name || 'Banner'}
         aria-hidden={role === 'incoming' ? true : undefined}
       >

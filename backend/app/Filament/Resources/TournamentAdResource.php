@@ -12,7 +12,8 @@ use Filament\Tables\Table;
 
 /**
  * Ana sayfanin en ustunde SLIDER (carousel) olarak donen banner gorselleri.
- * Her banner bir turnuvaya baglanir; ziyaretci tiklayinca o turnuvanin detayina gider.
+ * Her banner opsiyonel olarak bir turnuvaya baglanir VEYA serbest bir hedef link tutar;
+ * ziyaretci tiklayinca link (oncelikli) ya da bagli turnuva detayina gider.
  * Tablo 'sort' ile surukle-birak siralanir; yayindaki bannerlar sirayla doner.
  */
 class TournamentAdResource extends Resource
@@ -55,8 +56,14 @@ class TournamentAdResource extends Resource
                 ->relationship('tournament', 'name')
                 ->searchable()
                 ->preload()
-                ->helperText('Banner’a tıklayınca bu turnuvanın detay sayfası açılır.')
-                ->required(),
+                ->helperText('Opsiyonel. Banner’a tıklayınca bu turnuvanın detay sayfası açılır. Aşağıya link girersen link önceliklidir.'),
+            // Serbest hedef link: doluysa banner tıklanınca turnuva yerine buraya gider.
+            // Dış URL (http…/https…) yeni sekmede, iç yol (ör. /turnuvalar) aynı sekmede açılır.
+            Forms\Components\TextInput::make('link')
+                ->label('Hedef link (opsiyonel)')
+                ->maxLength(500)
+                ->placeholder('ör. https://ornek-turnuva.com  veya  /turnuvalar')
+                ->helperText('Doluysa banner’a tıklayınca (bağlı turnuva yerine) buraya gider. Dış adres yeni sekmede, sitedeki yol (/ ile başlar) aynı sekmede açılır.'),
 
             // Christie's tarzı split hero: SOL panelde bu yazılar, SAĞDA görsel gösterilir.
             // Tümü boş bırakılırsa panel çıkmaz, görsel tam genişlikte çıplak gösterilir.
