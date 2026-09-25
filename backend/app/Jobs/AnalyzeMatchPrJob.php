@@ -61,8 +61,8 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // fırlat -> $tries/backoff retry + tavla:gnubg-pr-heal cron gnubg dönünce yeniden dener.
         // $gnubg YALNIZ container çağrısında dolu (testler handle($orch) ile çağırır -> null -> precheck
         // atlanır; o yolda aşağıdaki mid-run guard mock'lanabilir skipReasons ile devrededir).
-        if ($gnubg !== null && ! $gnubg->health()) {
-            throw new \RuntimeException('gnubg servisi erisilemez (health=false) -> PR analizi ertelendi (retry)');
+        if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
+            throw new \RuntimeException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
         }
         $decoded = json_decode($mr->log, true);
         if (! is_array($decoded) || empty($decoded['log'])) {
