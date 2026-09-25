@@ -391,7 +391,7 @@ def _set_plies(plies):
         pass
 
 
-# Move-filter presetleri (gnubg: set evaluation chequer movefilter <ply> <level> <accept> <extra>
+# Move-filter presetleri (gnubg: set evaluation movefilter <ply> <level> <accept> <extra>
 # <threshold>). 'normal' = World Class varsayilani (mevcut davranis); 'large' = Grandmaster/derin
 # icin GENIS filtre (daha cok aday derinlemesine degerlendirilir -> daha guclu, daha yuksek CPU).
 # DIKKAT: production'da `show evaluation` ile satirlari DOGRULA; gnubg surumune gore ince ayar
@@ -422,7 +422,7 @@ def _apply_eval(chequer_plies=None, cube_plies=None, movefilter=None):
         if rows:
             for (ply, lvl, acc, extra, thr) in rows:
                 try:
-                    gnubg.command("set evaluation chequer movefilter %d %d %d %d %.3f"
+                    gnubg.command("set evaluation movefilter %d %d %d %d %.3f"
                                   % (ply, lvl, acc, extra, thr))
                 except Exception:
                     pass
@@ -1317,9 +1317,9 @@ def _reviewmatch(mat_text, plies=2):
         # kesin sıralı liste). gnubg move-filter'ını GENİŞLET (accept=40 ~ hepsi, eşik yok). gnubg
         # TEKİL/kalıcı süreç -> finally'de Normal'e geri döndür ki bot maçları yavaşlamasın.
         try:
-            gnubg.command("set evaluation chequer movefilter 2 0 40 0 0")
-            gnubg.command("set evaluation chequer movefilter 3 0 40 0 0")
-            gnubg.command("set evaluation chequer movefilter 4 0 40 0 0")
+            gnubg.command("set evaluation movefilter 2 0 40 0 0")
+            gnubg.command("set evaluation movefilter 3 0 40 0 0")
+            gnubg.command("set evaluation movefilter 4 0 40 0 0")
         except Exception:
             pass
         log = []
@@ -1402,9 +1402,9 @@ def _reviewmatch(mat_text, plies=2):
         # Move-filter'ı Normal'e geri döndür (gnubg kalıcı süreç -> bot maçları/diğer analizler
         # geniş filtreyle yavaşlamasın). Normal preset: accept 0 + extra 8 + eşik 0.16.
         try:
-            gnubg.command("set evaluation chequer movefilter 2 0 0 8 0.160")
-            gnubg.command("set evaluation chequer movefilter 3 0 0 8 0.160")
-            gnubg.command("set evaluation chequer movefilter 4 0 0 8 0.160")
+            gnubg.command("set evaluation movefilter 2 0 0 8 0.160")
+            gnubg.command("set evaluation movefilter 3 0 0 8 0.160")
+            gnubg.command("set evaluation movefilter 4 0 0 8 0.160")
         except Exception:
             pass
     return out
