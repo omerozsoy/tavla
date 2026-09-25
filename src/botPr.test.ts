@@ -32,6 +32,7 @@ describe('randomBotPr — seviye araligi', () => {
     expect(PR_TARGET_LABELS).toEqual([
       '35–50', '25–35', '18–25', '12–18', '8–12',
       '5–8', '3–5', '1.5–3', '0.5–1.5', '0–0.5',
+      '0–0.3', '0–0.2',
     ])
   })
 })

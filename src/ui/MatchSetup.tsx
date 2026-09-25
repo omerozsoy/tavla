@@ -46,8 +46,17 @@ const AI_LEVELS = [
   'Grandmaster',
   'Elite',
   'Legend',
-  'Neural AI',
+  'World Class', // 10: gnubg 2-ply (hızlı + çok güçlü)
+  'Grandmaster', // 11: TavlaTV Grandmaster — gnubg 3-ply
+  'Ultimate', // 12: TavlaTV Ultimate — adaptive 3→4-ply
 ]
+
+// Level 11/12: daha derin analiz -> düşünme süresi uzayabilir. Kullanıcıyı bilgilendir (garanti
+// süre VERME; "genellikle birkaç saniye" gibi yumuşak dil). Level 10 ve altı hızlı kalır.
+const DEEP_LEVEL_NOTE: Record<number, string> = {
+  11: 'Grandmaster — daha derin (3-ply) analiz yapar. Hamleleri genellikle birkaç saniye sürebilir.',
+  12: 'Ultimate — en güçlü seviye. Kritik pozisyonlarda daha uzun (birkaç saniye) düşünebilir.',
+}
 
 // Her seviye butonunun altinda TAHMINI beklenen PR araligi gosterilir ("~PR 35–50").
 // Kaynak: botPr.ts PR_TARGET_LABELS (tek dogruluk kaynagi). Gercek olculen bot PR'i
@@ -121,17 +130,17 @@ export default function MatchSetup({
           )}
         </h2>
 
-        {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - 10 kademe */}
+        {/* Zorluk seviyesi (yalnizca yapay zekaya karsi) - AI_LEVELS.length kademe (1-12) */}
         {mode === 'pvb' && (
           <div className="setup-row">
             <div className="setup-label">
-              {t('setup.difficulty')}: <b>{AI_LEVELS[difficulty - 1]}</b> ({difficulty}/10)
+              {t('setup.difficulty')}: <b>{AI_LEVELS[difficulty - 1]}</b> ({difficulty}/{AI_LEVELS.length})
             </div>
             <input
               type="range"
               className="level-slider"
               min={1}
-              max={10}
+              max={AI_LEVELS.length}
               step={1}
               value={difficulty}
               onChange={(e) => setDifficulty(Number(e.target.value))}
@@ -139,15 +148,18 @@ export default function MatchSetup({
             <div className="level-grid">
               {AI_LEVELS.map((name, i) => (
                 <button
-                  key={name}
+                  key={`${i}-${name}`}
                   className={`level-chip ${difficulty === i + 1 ? 'active' : ''}`}
                   onClick={() => setDifficulty(i + 1)}
                 >
                   <span className="level-chip-name">{i + 1}. {name}</span>
-                  <span className="level-chip-pr">~PR {PR_TARGET_LABELS[i]}</span>
+                  <span className="level-chip-pr">~PR {PR_TARGET_LABELS[i] ?? '0–0.3'}</span>
                 </button>
               ))}
             </div>
+            {DEEP_LEVEL_NOTE[difficulty] && (
+              <div className="pa-depth-note">{DEEP_LEVEL_NOTE[difficulty]}</div>
+            )}
           </div>
         )}
 

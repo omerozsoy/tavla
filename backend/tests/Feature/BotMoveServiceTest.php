@@ -187,4 +187,133 @@ class BotMoveServiceTest extends TestCase
             return isset($body['bar']) && (int) ($body['bar']['black'] ?? 0) === 1;
         });
     }
+
+    private function fakeTwoMoves(): void
+    {
+        Http::fake([
+            'validator.test/legal-moves' => Http::response(['moves' => [
+                ['steps' => $this->moveA, 'resultKey' => 'A'],
+                ['steps' => $this->moveB, 'resultKey' => 'B'],
+            ]]),
+            'gnubg.test/analyze' => Http::response(['result' => ['hint' => [
+                ['move' => '24/20 20/19', 'steps' => $this->gnubgSteps($this->moveB)],
+                ['move' => '13/10 6/5', 'steps' => $this->gnubgSteps($this->moveA)],
+            ]]]),
+        ]);
+    }
+
+    /** Level 10 (World Class): chequer 2-ply + cube 2-ply + Normal filtre gnubg'ye gönderilir. */
+    public function test_level_10_sends_2ply_normal_filter(): void
+    {
+        $this->fakeTwoMoves();
+        $this->service()->chooseSteps($this->state(), ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 10);
+
+        Http::assertSent(function (\Illuminate\Http\Client\Request $req) {
+            if (! str_contains($req->url(), 'gnubg.test/analyze')) {
+                return false;
+            }
+            $b = $req->data();
+
+            return (int) ($b['plies'] ?? 0) === 2 && (int) ($b['cubePlies'] ?? 0) === 2
+                && ($b['movefilter'] ?? '') === 'normal' && empty($b['adaptive']);
+        });
+    }
+
+    /** Level 11 (TavlaTV Grandmaster): chequer 3-ply + cube 3-ply + geniş filtre; adaptive KAPALI. */
+    public function test_level_11_sends_3ply_large_filter(): void
+    {
+        $this->fakeTwoMoves();
+        $this->service()->chooseSteps($this->state(), ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 11);
+
+        Http::assertSent(function (\Illuminate\Http\Client\Request $req) {
+            if (! str_contains($req->url(), 'gnubg.test/analyze')) {
+                return false;
+            }
+            $b = $req->data();
+
+            return (int) ($b['plies'] ?? 0) === 3 && (int) ($b['cubePlies'] ?? 0) === 3
+                && ($b['movefilter'] ?? '') === 'large' && empty($b['adaptive']);
+        });
+    }
+
+    /** Level 12 (TavlaTV Ultimate): 3-ply taban + adaptive bayrağı + escalate/eşik/süre iletilir. */
+    public function test_level_12_sends_adaptive_flags(): void
+    {
+        $this->fakeTwoMoves();
+        $this->service()->chooseSteps($this->state(), ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 12);
+
+        Http::assertSent(function (\Illuminate\Http\Client\Request $req) {
+            if (! str_contains($req->url(), 'gnubg.test/analyze')) {
+                return false;
+            }
+            $b = $req->data();
+
+            return (int) ($b['plies'] ?? 0) === 3 && ($b['adaptive'] ?? false) === true
+                && (int) ($b['escalatePlies'] ?? 0) === 4 && isset($b['topGap'], $b['maxSeconds']);
+        });
+    }
+
+    /** Crawford: server_match['crawford'] gnubg konumuna İLETİLİR (A/B hatası düzeltmesi). */
+    public function test_crawford_forwarded_to_gnubg(): void
+    {
+        $this->fakeTwoMoves();
+        $this->service()->chooseSteps($this->state(),
+            ['target' => 3, 'score' => ['white' => 2, 'black' => 0], 'crawford' => true], 10);
+
+        Http::assertSent(function (\Illuminate\Http\Client\Request $req) {
+            if (! str_contains($req->url(), 'gnubg.test/analyze')) {
+                return false;
+            }
+
+            return ($req->data()['crawford'] ?? null) === true;
+        });
+    }
+
+    /**
+     * legal[0] KALDIRILDI: gnubg adayları yasal hamlelere eşleşmezse (no-match) bot körlemesine ilk
+     * yasalı OYNAMAZ; her yasalı gnubg /evaluate ile skorlayıp en iyisini seçer. Burada moveB daha
+     * düşük rakip-equity'li -> B seçilmeli (ilk yasal A değil).
+     */
+    public function test_no_match_recovers_best_legal_via_evaluate(): void
+    {
+        Http::fake([
+            'validator.test/legal-moves' => Http::response(['moves' => [
+                ['steps' => $this->moveA, 'resultKey' => 'A'],
+                ['steps' => $this->moveB, 'resultKey' => 'B'],
+            ]]),
+            'gnubg.test/analyze' => function (\Illuminate\Http\Client\Request $req) {
+                $b = $req->data();
+                if (! empty($b['dice'])) {
+                    // İlk hint: hiçbir yasal hamleyle eşleşmeyen aday (no-op board -> ranked boş).
+                    return Http::response(['result' => ['hint' => [
+                        ['move' => 'x', 'steps' => [['from' => 0, 'to' => 0, 'die' => 0]]],
+                    ]]]);
+                }
+                // Per-legal evaluate: moveB oynanınca 19 dolu -> rakip için DÜŞÜK equity (bot için iyi).
+                $isB = ((int) (($b['points'] ?? [])[19] ?? 0)) === 1;
+
+                return Http::response(['evaluate' => $isB ? [0.30, 0, 0, 0, 0] : [0.60, 0, 0, 0, 0]]);
+            },
+        ]);
+
+        $chosen = $this->service()->chooseSteps($this->state(), ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 10);
+        $this->assertSame($this->moveB, $chosen); // ilk yasal (A) DEĞİL -> gnubg-skorlu en iyi (B)
+    }
+
+    /** no-match + skorlama da başarısız (evaluate yok) -> BotUnavailable (asla körlemesine legal[0]). */
+    public function test_no_match_unrecoverable_throws(): void
+    {
+        Http::fake([
+            'validator.test/legal-moves' => Http::response(['moves' => [
+                ['steps' => $this->moveA, 'resultKey' => 'A'],
+                ['steps' => $this->moveB, 'resultKey' => 'B'],
+            ]]),
+            'gnubg.test/analyze' => Http::response(['result' => ['hint' => [
+                ['move' => 'x', 'steps' => [['from' => 0, 'to' => 0, 'die' => 0]]], // eşleşmez + evaluate yok
+            ]]]),
+        ]);
+
+        $this->expectException(BotUnavailableException::class);
+        $this->service()->chooseSteps($this->state(), ['target' => 1, 'score' => ['white' => 0, 'black' => 0]], 10);
+    }
 }
