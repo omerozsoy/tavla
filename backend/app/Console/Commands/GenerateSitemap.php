@@ -31,16 +31,26 @@ class GenerateSitemap extends Command
             return self::FAILURE;
         }
 
-        $block = $this->newsBlock();
-        $xml = preg_replace(
-            '~\s*<!-- TavlaTV dynamic news:start -->.*?<!-- TavlaTV dynamic news:end -->~s',
-            '',
-            $xml,
-        ) ?? $xml;
-        $xml = str_replace('</urlset>', $block."\n</urlset>", $xml);
+        // Önceki çalışmaların YÖNETİLEN bloklarını soy -> temiz statik taban (curated URL'ler) kalır.
+        $xml = $this->stripBlock($xml, 'seo pages');
+        $xml = $this->stripBlock($xml, 'dynamic news');
+
+        // Statik tabanda ZATEN olan loc'lar -> tekrar ekleme (elle konmuş curated önceliği korunur).
+        preg_match_all('~<loc>\s*([^<]+?)\s*</loc>~', $xml, $mm);
+        $existing = [];
+        foreach ($mm[1] as $loc) {
+            $existing[html_entity_decode($loc, ENT_QUOTES | ENT_XML1, 'UTF-8')] = true;
+        }
+
+        [$seoBlock, $seoCount] = $this->seoPagesBlock($existing);
+        [$newsBlock, $newsCount] = $this->newsBlock();
+
+        $insert = ($seoBlock !== '' ? $seoBlock."\n" : '').$newsBlock;
+        $xml = str_replace('</urlset>', $insert."\n</urlset>", $xml);
 
         if ($this->option('dry-run')) {
             $this->line($xml);
+            $this->info("Özet (dry-run): eksik SEO sayfası +{$seoCount}, yayındaki haber {$newsCount}.");
 
             return self::SUCCESS;
         }
@@ -53,12 +63,47 @@ class GenerateSitemap extends Command
             return self::FAILURE;
         }
 
-        $this->info('Sitemap güncellendi: '.$path);
+        $this->info("Sitemap güncellendi: {$newsCount} haber URL'si senkronlandı; eksik SEO sayfası eklendi: {$seoCount}.");
 
         return self::SUCCESS;
     }
 
-    private function newsBlock(): string
+    /** Yönetilen bir bloğu (<!-- TavlaTV {name}:start --> … :end -->) XML'den çıkarır (idempotent re-run). */
+    private function stripBlock(string $xml, string $name): string
+    {
+        $q = preg_quote($name, '~');
+        $pattern = '~\s*<!-- TavlaTV '.$q.':start -->.*?<!-- TavlaTV '.$q.':end -->~s';
+
+        return preg_replace($pattern, '', $xml) ?? $xml;
+    }
+
+    /**
+     * SEO META'sı tanımlı (indekslenmesi istenen) ama sitemap'te OLMAYAN sayfaları üretir. Yeni bir
+     * sayfa (ör. Sıkça Sorulan Sorular / Sözlük) eklenip sitemap elle güncellenmese bile buradan
+     * otomatik dolar -> "sayfa ekledim sitemap'te yok" sorunu tekrar etmez. Tek kaynak: SeoMeta.
+     *
+     * @param  array<string,bool>  $existing  Statik tabanda zaten bulunan mutlak URL'ler
+     * @return array{0:string,1:int}
+     */
+    private function seoPagesBlock(array $existing): array
+    {
+        $urls = [];
+        foreach (\App\Support\SeoMeta::indexableUrls() as $url) {
+            if (isset($existing[$url])) {
+                continue; // curated girişi ez -> önceliği/lastmod'u koru
+            }
+            $urls[] = "  <url>\n    <loc>".htmlspecialchars($url, ENT_XML1, 'UTF-8')."</loc>\n    <changefreq>monthly</changefreq>\n    <priority>0.5</priority>\n  </url>";
+        }
+
+        if ($urls === []) {
+            return ['', 0];
+        }
+
+        return ["  <!-- TavlaTV seo pages:start -->\n".implode("\n", $urls)."\n  <!-- TavlaTV seo pages:end -->", count($urls)];
+    }
+
+    /** @return array{0:string,1:int} */
+    private function newsBlock(): array
     {
         $seen = [];
         $rows = Content::query()
@@ -80,10 +125,10 @@ class GenerateSitemap extends Command
         }
 
         if ($urls === []) {
-            return '  <!-- TavlaTV dynamic news:start -->\n  <!-- No published news -->\n  <!-- TavlaTV dynamic news:end -->';
+            return ["  <!-- TavlaTV dynamic news:start -->\n  <!-- No published news -->\n  <!-- TavlaTV dynamic news:end -->", 0];
         }
 
-        return "  <!-- TavlaTV dynamic news:start -->\n".implode("\n", $urls)."\n  <!-- TavlaTV dynamic news:end -->";
+        return ["  <!-- TavlaTV dynamic news:start -->\n".implode("\n", $urls)."\n  <!-- TavlaTV dynamic news:end -->", count($urls)];
     }
 
     private function slugify(string $value): string

@@ -370,6 +370,31 @@ final class SeoMeta
     ];
 
     /**
+     * Arama motorlarına AÇIK (indekslenmesi istenen) tüm statik rotaların MUTLAK URL listesi.
+     * Tek kaynak: SEO META'sı tanımlı rotalar (NOINDEX hariç) + Tavla Rehberi kılavuzları.
+     * seo:sitemap komutu bunu sitemap.xml ile karşılaştırıp EKSİK olanları otomatik ekler
+     * (yeni sayfa eklenince sitemap'in elle güncellenmesi UNUTULSA bile kapanır). NOINDEX
+     * (giriş/profil/sepet/ödeme… hesap ekranları) DIŞARIDA bırakılır.
+     *
+     * @return list<string>
+     */
+    public static function indexableUrls(): array
+    {
+        $urls = [];
+        foreach (array_keys(self::META) as $slug) {
+            if (in_array($slug, self::NOINDEX, true)) {
+                continue;
+            }
+            $urls[] = self::BASE.$slug;
+        }
+        foreach (array_keys(self::GUIDES) as $slug) {
+            $urls[] = self::BASE.'tavla-rehberi/'.$slug;
+        }
+
+        return array_values(array_unique($urls));
+    }
+
+    /**
      * index.html içeriğini, istenen yola göre per-route SEO etiketleriyle döndür.
      * Slug ne statik META'da ne de dinamik haber olarak eşleşirse içerik DEĞİŞMEDEN
      * döner (homepage/bilinmeyen = mevcut davranış).
