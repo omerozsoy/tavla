@@ -125,6 +125,19 @@
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
+/* "Açık" (indirilmiş) pul: kapalıyla AYNI hanede durur, üstüne altın halka işareti konur.
+   Yalnız .kiz-view içinde etkin -> klasik oyun taşları etkilenmez. */
+.kiz-view .checker.open { position: relative; }
+.kiz-view .checker.open::after {
+  content: '';
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  border: 2px solid #d8b25a;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.4), 0 0 6px rgba(216, 178, 90, 0.55);
+  pointer-events: none;
+}
+
 /* "Zar At" akıştan ÇIKARILDI (yoksa yokken alt bant kalıyordu): board üstüne yüzen buton. */
 .kiz-rollbar {
   position: absolute;

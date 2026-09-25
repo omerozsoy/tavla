@@ -105,6 +105,9 @@ interface BoardProps {
   watermark?: string // kulup temalarinda board ortasindaki cok soluk takim adi
   showLogo?: boolean // false: TavlaTV wordmark'i gizle (ulke boardlari yalniz ulke adini gosterir)
   checkerSkin?: CheckerSkinDef | null // secili dijital pul materyali (yoksa CSS gradyani)
+  // Kız Tavlası: nokta index -> o hanenin UST kac tasinin "acik/indirilmis" (halka) gosterilecegi.
+  // Verilmezse hicbir tasa dokunulmaz (klasik oyun davranisi degismez).
+  openMark?: Map<number, number>
 }
 
 function checkersOf(state: GameState, index: number): { player: Player; count: number } | null {
@@ -122,6 +125,7 @@ function Checker({
   label,
   lifted,
   skin,
+  open,
 }: {
   player: Player
   draggable?: boolean
@@ -129,10 +133,11 @@ function Checker({
   label?: number // 5'ten fazla tasta ustteki tasa toplam sayi yazilir
   lifted?: boolean // surukleme sirasinda kaynaktaki ust tas gizlenir (tek tas hissi)
   skin?: CheckerSkinDef | null // secili dijital pul materyali (yoksa CSS gradyani)
+  open?: boolean // Kız Tavlası: bu tas "acik/indirilmis" -> halka ile isaretlenir (ayni hane icinde)
 }) {
   return (
     <div
-      className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}${skin ? ' skinned' : ''}`}
+      className={`checker ${player} ${draggable ? 'draggable' : ''} ${lifted ? 'lifted' : ''}${skin ? ' skinned' : ''}${open ? ' open' : ''}`}
       draggable={false}
       onPointerDown={onPointerDown}
     >
@@ -157,6 +162,7 @@ function Point({
   onSelectTarget,
   onCheckerDown,
   checkerSkin,
+  openCount = 0,
 }: {
   index: number
   top: boolean
@@ -169,6 +175,7 @@ function Point({
   onSelectTarget: (to: number) => void
   onCheckerDown?: (e: ReactPointerEvent, from: number, player: Player, label?: number) => void
   checkerSkin?: CheckerSkinDef | null
+  openCount?: number // Kız Tavlası: bu hanedeki UST 'openCount' tas "acik/indirilmis" gosterilir
 }) {
   const stack = checkersOf(state, index)
   const shade = index % 2 === 0 ? 'a' : 'b'
@@ -195,6 +202,8 @@ function Point({
         {Array.from({ length: visible }).map((_, i) => {
           const isTop = i === visible - 1 // sourceRect() ile ayni: ust/secilebilir tas = son cocuk
           const label = stack!.count > 5 && isTop ? stack!.count : undefined
+          // Kız Tavlası: hanenin UST 'openCount' tasi acik (indirilmis) -> halka isareti.
+          const isOpen = openCount > 0 && i >= visible - openCount
           return (
             <Checker
               key={i}
@@ -208,6 +217,7 @@ function Point({
               }
               label={label}
               skin={checkerSkin}
+              open={isOpen}
             />
           )
         })}
@@ -240,6 +250,7 @@ function Board({
   watermark,
   showLogo = true,
   checkerSkin = null,
+  openMark,
 }: BoardProps) {
   const { t } = useT()
   const L: Layout = mirror
@@ -564,6 +575,7 @@ function Board({
       onSelectTarget={onSelectTarget}
       onCheckerDown={dragEnabled ? startDrag : undefined}
       checkerSkin={checkerSkin}
+      openCount={openMark?.get(index) ?? 0}
     />
   )
 
