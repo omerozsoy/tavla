@@ -45,6 +45,10 @@ export const PAGES: PageDef[] = [
   // Bahane Makinesi: salt eğlence (coin/ödül yok, giriş gerekmez). Sol menüde GÖRÜNÜR
   // (bu sayede "EĞLENCE" grup başlığı çizilir); /bahane-makinesi derin-link + tam-ekran modal.
   { key: 'excuses', slug: 'bahane-makinesi', labelKey: 'exc.menu', icon: 'megaphone', group: 'fun', hideInGame: true },
+  // Kız Tavlası: klasik tavladan AYRI kural motorlu oyun sayfası (yerel: iki kişi + YZ).
+  // inMenu:false -> sol menüde admin'in eklediği ÖZEL öğe (Hedef: /kiz-tavlasi) gösterir;
+  // burada yalnız route + deep-link + aktif-vurgu tanımlı (menüde ÇİFT görünmesin).
+  { key: 'kiz', slug: 'kiz-tavlasi', labelKey: 'kiz.menu', icon: 'dice', group: 'fun', hideInGame: true, inMenu: false },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'book', group: 'content', hideInGame: true },

@@ -161,6 +161,7 @@ import SeoAppSection from './ui/SeoAppSection'
 const ServiceLanding = lazy(() => import('./ui/ServiceLanding'))
 const GuideView = lazy(() => import('./ui/GuideView'))
 const TournamentRules = lazy(() => import('./ui/TournamentRules'))
+const FaqView = lazy(() => import('./ui/FaqView'))
 import Info, { type InfoTab } from './ui/Info'
 // Bilgi sekmesi <-> URL slug haritasi: /bilgi/hakkinda, /bilgi/hizmetler ...
 const INFO_TAB_URL: Record<InfoTab, string> = {
@@ -221,6 +222,7 @@ const SEO_TITLES: Record<string, string> = {
   'nasil-oynanir': 'Tavla Nasıl Oynanır? Kurallar ve Rehber | TavlaTv',
   'tavla-rehberi': 'Tavla Rehberi — Stratejiler ve İpuçları | TavlaTv',
   'turnuva-kurallari': 'Tavla Turnuva Kuralları (WBF) — Resmî Kurallar | TavlaTv',
+  'sikca-sorulan-sorular': 'Tavla Hakkında Sıkça Sorulan Sorular | TavlaTv',
   'tavla-rehberi/tavla-acilis-stratejileri': 'Tavla Açılış Stratejileri: En İyi İlk Hamleler | TavlaTv',
   'tavla-rehberi/tavla-kupu-doubling-cube': 'Tavla Küpü (Doubling Cube) Nedir, Nasıl Kullanılır? | TavlaTv',
   'tavla-rehberi/tavla-kazanma-taktikleri': 'Tavla Kazanma Taktikleri ve İpuçları | TavlaTv',
@@ -232,6 +234,7 @@ const SEO_TITLES: Record<string, string> = {
   'sans-carki': 'Şans Çarkı | TavlaTv',
   'zar-slotu': 'Zar Slotu | TavlaTv',
   'bahane-makinesi': 'Tavla Bahane Makinesi | TavlaTv',
+  'kiz-tavlasi': 'Kız Tavlası — Online Oyna | TavlaTv',
   'bilgi/hakkinda': 'Hakkımızda | TavlaTv',
   'bilgi/hizmetler': 'Hizmetler | TavlaTv',
   'bilgi/sozluk': 'Tavla Sözlüğü — Terimler | TavlaTv',
@@ -296,6 +299,8 @@ const SEO_DESCS: Record<string, string> = {
     'Tavla rehberi: açılış stratejileri, küp (doubling cube) kullanımı, kazanma taktikleri, mars ve backgammon puanlaması. Oyununu geliştirecek özgün yazılar.',
   'turnuva-kurallari':
     'WBF (Dünya Tavla Federasyonu) Uluslararası Tavla Turnuva Kuralları: format, süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü. Resmî ve eksiksiz Türkçe kural metni.',
+  'sikca-sorulan-sorular':
+    'Tavla kuralları, katlama küpü, maç oyunu, farklı tavla türleri ve TavlaTV rating sistemi hakkında anlaşılır soru-cevaplar.',
   'tavla-rehberi/tavla-acilis-stratejileri':
     'Tavla açılış stratejileri: her zar atışı için en iyi ilk hamleler, 5-nokta ve bar-nokta yapma, blot bırakma riskleri ve yeni başlayanlar için pratik ipuçları.',
   'tavla-rehberi/tavla-kupu-doubling-cube':
@@ -312,6 +317,8 @@ const SEO_DESCS: Record<string, string> = {
   'zar-slotu': 'Zar Slotu: tavla temalı slot oyunu, artan jackpot ve eğlenceli ödüller.',
   'bahane-makinesi':
     'Bahane Makinesi: tavla kaybettiğinde işine yarayacak 100 hazır bahane. Salt eğlence.',
+  'kiz-tavlasi':
+    'Kız Tavlası: pulları önce toplayan kazanır. İki kişi veya bilgisayara karşı ücretsiz oyna.',
   'bilgi/hakkinda': 'TavlaTv hakkında: misyonumuz, adil oyun ilkelerimiz ve tavla topluluğu.',
   'bilgi/hizmetler': 'TavlaTv hizmetleri: online tavla, turnuvalar, analiz araçları ve daha fazlası.',
   'bilgi/sozluk': 'Tavla sözlüğü: tavla terimleri ve anlamları — mars, gammon, backgammon, küp, pip ve daha fazlası.',
@@ -401,6 +408,7 @@ import Shop from './ui/Shop'
 import LuckyWheel from './ui/LuckyWheel'
 import DiceSlot from './ui/DiceSlot'
 import ExcuseMachine from './ui/ExcuseMachine'
+import KizTavlasi from './ui/KizTavlasi'
 import CheckerShop from './ui/CheckerShop'
 import { CHECKER_BY_ID } from './checkers'
 import Products, { type CartAddLine } from './ui/Products'
@@ -828,6 +836,7 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(false) // Tavla Rehberi blog: /tavla-rehberi
   const [guideSlug, setGuideSlug] = useState<string | null>(null) // /tavla-rehberi/<slug> -> yazı
   const [tournRulesOpen, setTournRulesOpen] = useState(false) // WBF turnuva kuralları: /turnuva-kurallari
+  const [faqOpen, setFaqOpen] = useState(false) // Sıkça Sorulan Sorular: /sikca-sorulan-sorular
   const [resignOpen, setResignOpen] = useState(false) // pes et menusu acik mi
   const [boardPickerOpen, setBoardPickerOpen] = useState(false) // kurulumda hizli tahta secim modali
   const [shopTab, setShopTab] = useState<string>('coin') // Magaza secili sekme: 'coin' (paketler) | kategori-slug (URL-otoriter)
@@ -895,6 +904,7 @@ export default function App() {
   const [luckyWheelOpen, setLuckyWheelOpen] = useState(false) // Şans Çarkı modali
   const [diceSlotOpen, setDiceSlotOpen] = useState(false) // Zar Slotu modali
   const [excusesOpen, setExcusesOpen] = useState(false) // Bahane Makinesi modali (salt eğlence)
+  const [kizOpen, setKizOpen] = useState(false) // Kız Tavlası oyun sayfasi (ayri kural motoru)
   const [checkerShopOpen, setCheckerShopOpen] = useState(false) // Pul Tasarimlari (checker) sayfasi
   const [cartOpen, setCartOpen] = useState(false) // sepet (coin paketleri) modali
   // Uygulama-ici odeme sayfasi (kredi karti). buyCoins'ten donen imzali submitUrl + tutar.
@@ -1006,6 +1016,8 @@ export default function App() {
           ? 'zar-slotu'
         : excusesOpen
           ? 'bahane-makinesi'
+        : kizOpen
+          ? 'kiz-tavlasi'
         : checkerShopOpen
           ? 'pul-tasarimlari'
         : frameGalleryOpen
@@ -1072,6 +1084,8 @@ export default function App() {
                                         ? (guideSlug ? 'tavla-rehberi/' + guideSlug : 'tavla-rehberi')
                                       : tournRulesOpen
                                         ? 'turnuva-kurallari'
+                                      : faqOpen
+                                        ? 'sikca-sorulan-sorular'
                                       : setup === 'online'
                                         ? 'yeni-oyun'
                                       : setup === 'pvb'
@@ -1227,6 +1241,9 @@ export default function App() {
         case 'bahane-makinesi':
           setExcusesOpen(true)
           break
+        case 'kiz-tavlasi':
+          setKizOpen(true)
+          break
         case 'pul-tasarimlari':
           setCheckerShopOpen(true)
           break
@@ -1370,6 +1387,9 @@ export default function App() {
         case 'turnuva-kurallari': // WBF turnuva kuralları referans sayfası
           setTournRulesOpen(true)
           break
+        case 'sikca-sorulan-sorular':
+          setFaqOpen(true)
+          break
         case 'yz-ile-oyna':
         case 'yapay-zeka': // eski slug -> geriye donuk uyum
           setSetup('pvb')
@@ -1438,7 +1458,7 @@ export default function App() {
     const pathSlug = decodeURIComponent(window.location.pathname.replace(/^\/+|\/+$/g, '')).trim()
     // Doğrudan bilgi URL'sinde önce path -> state efekti çalışmalı; ilk render'da
     // başlangıç state'i boşken adresi ana sayfaya geri yazma.
-    if (!initialPathHydratedRef.current && initialPathRef.current.startsWith('bilgi/')) {
+    if (!initialPathHydratedRef.current && (initialPathRef.current.startsWith('bilgi/') || initialPathRef.current === 'sikca-sorulan-sorular')) {
       initialPathHydratedRef.current = true
       return
     }
@@ -7481,6 +7501,7 @@ export default function App() {
     setGuideOpen(false)
     setGuideSlug(null)
     setTournRulesOpen(false)
+    setFaqOpen(false)
     setTournOpen(false)
     setTournDetailId(null)
     setTournDetailSlug(null)
@@ -7488,6 +7509,7 @@ export default function App() {
     setLuckyWheelOpen(false)
     setDiceSlotOpen(false)
     setExcusesOpen(false)
+    setKizOpen(false)
     setCheckerShopOpen(false)
     setCartOpen(false)
     setCheckoutOpen(false)
@@ -7587,6 +7609,7 @@ export default function App() {
     onLuckyWheel: () => goPage(() => setLuckyWheelOpen(true)),
     onDiceSlot: () => goPage(() => setDiceSlotOpen(true)),
     onExcuses: () => goPage(() => setExcusesOpen(true)),
+    onKiz: () => goPage(() => setKizOpen(true)),
     onCheckers: () => goPage(() => setCheckerShopOpen(true)),
     // Zaten premium isem menude "Uyelik" gosterme (undefined -> SideMenu gizler);
     // uyelik bilgisi profil sayfasinda gosterilir. Free/misafir icin upsell ekrani acilir.
@@ -7641,6 +7664,7 @@ export default function App() {
     luckywheel: menuProps.onLuckyWheel,
     diceslot: menuProps.onDiceSlot,
     excuses: menuProps.onExcuses,
+    kiz: menuProps.onKiz,
     checkers: menuProps.onCheckers,
     shop: menuProps.onShop,
     friends: menuProps.onFriends,
@@ -7952,6 +7976,7 @@ export default function App() {
     luckyWheelOpen ||
     diceSlotOpen ||
     excusesOpen ||
+    kizOpen ||
     productsOpen ||
     myOrdersOpen ||
     cartOpen ||
@@ -7977,6 +8002,7 @@ export default function App() {
     friendSetupOpen ||
     editProfile ||
     !!servicePage || // turnuva organizasyonu servis sayfalari + /iletisim (page-host'ta acilir)
+    faqOpen ||
     !!legalSlug || // hukuki sayfalar (KVKK/gizlilik/...) normal sayfa olarak page-host'ta acilir
     // Giris/Kayit (/giris) ve Sifremi Unuttum (/sifremi-unuttum): auth sayfasi da diger menu
     // sayfalari gibi page-host icinde acilsin -> ust hesap bari (header) gorunur kalir (aksi
@@ -8381,6 +8407,7 @@ export default function App() {
         />
       )}
       {excusesOpen && <ExcuseMachine onClose={() => setExcusesOpen(false)} />}
+      {kizOpen && <KizTavlasi onClose={() => setKizOpen(false)} />}
       {checkerShopOpen && user && (
         <CheckerShop
           unlocks={user.unlocks ?? []}
@@ -8801,6 +8828,25 @@ export default function App() {
             <TournamentRules
               onClose={() => {
                 setTournRulesOpen(false)
+                setHome(true)
+              }}
+            />
+          </Suspense>
+        </div>
+      </LobbyLayout>
+    )
+  }
+
+  // Tavla hakkında sıkça sorulan sorular: kaynak FAQ envanterinin özgün Türkçe
+  // soru-cevap karşılıkları, konu bağlantıları ve paylaşılabilir madde linkleri.
+  if (faqOpen) {
+    return (
+      <LobbyLayout {...lobbyChrome} trailing={lobbyTrailing}>
+        <div className="page-host">
+          <Suspense fallback={null}>
+            <FaqView
+              onClose={() => {
+                setFaqOpen(false)
                 setHome(true)
               }}
             />
