@@ -42,8 +42,8 @@ class GnubgPrHeal extends Command
         }
         // gnubg down iken yeniden kuyruğa almak anlamsız (job yine null alır / fırlatır). Servis dönene
         // kadar bekle -> boşa iş + failed_jobs birikmesi yok. Bir sonraki cron nabzında tekrar dener.
-        if (! $gnubg->health()) {
-            $this->warn('gnubg servisi erisilemez -> heal ertelendi (servis donunce calisir).');
+        if (! $gnubg->analyzeHealthy()) {
+            $this->warn('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> heal ertelendi.');
 
             return self::SUCCESS;
         }

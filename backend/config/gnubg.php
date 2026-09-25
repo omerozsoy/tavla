@@ -7,6 +7,13 @@ return [
     'secret' => env('GNUBG_SECRET', ''),
     'timeout' => (int) env('GNUBG_TIMEOUT', 20),
 
+    // FAILOVER (kalıcı "—" kalkanı): /analyze için YEDEK instance listesi (virgülle ayrılmış). PR
+    // (AnalysisOrchestrator) + canlı bot (BotMoveService) analyze()'ı buradan yedekli çağırır: birincil
+    // (url) down/yavaş/restart ise SIRAYLA yedeğe düşer -> PR bir daha boş kalmaz. İKİNCİ gnubg
+    // instance'ı (or. :8093 heavy unit) çalıştırıp GNUBG_URL_BACKUP=http://127.0.0.1:8093 ver -> "iki
+    // PR sistemi". Boşsa TEK instance (geriye dönük uyum). MoveValidatorService.url_backup ile aynı desen.
+    'url_backup' => env('GNUBG_URL_BACKUP', ''),
+
     // Servis dosyası (systemd birimi bunu çalıştırır). Admin "Servis Durumu" paneli gnubg KIRMIZI
     // iken bunu inceleyip "symlink kırık / dosya yok" teşhisi verir (bugün yaşanan tavlai->tavlatv
     // symlink sorunu gibi). www-data /opt'u okuyabilir (drwxr-xr-x). Yol farklıysa env ile ayarla.

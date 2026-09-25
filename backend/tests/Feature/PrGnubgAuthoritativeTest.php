@@ -263,7 +263,7 @@ class PrGnubgAuthoritativeTest extends TestCase
         // gnubg health=true mock (gerçek HTTP yok) -> heal komutu ilerlesin.
         $this->app->instance(GnuBgClient::class, new class extends GnuBgClient
         {
-            public function health(): bool
+            public function analyzeHealthy(): bool
             {
                 return true;
             }
@@ -289,7 +289,7 @@ class PrGnubgAuthoritativeTest extends TestCase
         config(['gnubg.pr_mode' => 'authoritative']);
         $this->app->instance(GnuBgClient::class, new class extends GnuBgClient
         {
-            public function health(): bool
+            public function analyzeHealthy(): bool
             {
                 return false;
             }
@@ -301,5 +301,40 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->artisan('tavla:gnubg-pr-heal')->assertExitCode(0);
 
         \Illuminate\Support\Facades\Queue::assertNothingPushed();
+    }
+
+    /** FAILOVER: birincil analyze instance düşükse (5xx/erişilemez) yedek instance devreye girer. */
+    public function test_analyze_fails_over_to_backup_instance(): void
+    {
+        config([
+            'gnubg.url' => 'http://127.0.0.1:8092',
+            'gnubg.url_backup' => 'http://127.0.0.1:8093',
+        ]);
+        \Illuminate\Support\Facades\Http::fake([
+            '127.0.0.1:8092/analyze' => \Illuminate\Support\Facades\Http::response('down', 500),
+            '127.0.0.1:8093/analyze' => \Illuminate\Support\Facades\Http::response(
+                ['result' => ['hint' => []], 'played' => ['loss' => 0.12]], 200
+            ),
+        ]);
+
+        $res = $this->app->make(GnuBgClient::class)->analyze(['points' => array_fill(0, 24, 0)]);
+
+        $this->assertNotNull($res, 'birincil 5xx -> yedek instance yaniti donmeli (failover)');
+        $this->assertEqualsWithDelta(0.12, (float) $res['played']['loss'], 1e-9);
+    }
+
+    /** analyzeHealthy: birincil down olsa da YEDEK ayaktaysa true (PR hesaplanabilir -> job ertelenmez). */
+    public function test_analyze_healthy_true_when_only_backup_up(): void
+    {
+        config([
+            'gnubg.url' => 'http://127.0.0.1:8092',
+            'gnubg.url_backup' => 'http://127.0.0.1:8093',
+        ]);
+        \Illuminate\Support\Facades\Http::fake([
+            '127.0.0.1:8092/health' => \Illuminate\Support\Facades\Http::response('down', 500),
+            '127.0.0.1:8093/health' => \Illuminate\Support\Facades\Http::response(['ok' => true], 200),
+        ]);
+
+        $this->assertTrue($this->app->make(GnuBgClient::class)->analyzeHealthy(), 'yedek ayaktaysa analyzeHealthy true olmali');
     }
 }
