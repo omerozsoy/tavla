@@ -120,7 +120,9 @@ class UserResource extends Resource
 
                 // Kayıtlı üyede diske ANINDA yaz
                 if ($record) {
-                    $record->forceFill(['plan_until' => $new, 'plan' => $plan])->save();
+                    $record->forceFill(['plan_until' => $new, 'plan' => $plan]);
+                    $record->stampPlanSource('admin', auth()->id()); // KAYNAK = admin + hangi admin
+                    $record->save();
                     \Filament\Notifications\Notification::make()
                         ->title('Süre eklendi')
                         ->body('Yeni bitiş: '.$new->format('d.m.Y H:i'))
@@ -285,6 +287,30 @@ class UserResource extends Resource
                         ->badge()->color(fn (User $r) => $r->plan_active === 'free' ? 'gray' : 'success'),
                     TextEntry::make('coins')->label('Coin bakiyesi')
                         ->formatStateUsing(fn ($state) => number_format((int) $state, 0, ',', '.')),
+                    // Premium NEREDEN geldi (admin ise HANGİ admin + ne zaman). Eski kayıtlarda null -> "—".
+                    TextEntry::make('plan_source')->label('Premium kaynağı')->placeholder('—')
+                        ->badge()
+                        ->color(fn ($state) => match ($state) {
+                            'payment' => 'success', 'admin' => 'warning', 'wheel' => 'info', default => 'gray',
+                        })
+                        ->formatStateUsing(function ($state, User $r) {
+                            $label = match ($state) {
+                                'payment' => 'Ödeme',
+                                'wheel' => 'Şans Çarkı',
+                                'welcome' => 'Hoşgeldin (e-posta doğrulama)',
+                                'admin' => 'Admin',
+                                default => 'Bilinmiyor',
+                            };
+                            if ($state === 'admin' && $r->plan_source_by) {
+                                $admin = \App\Models\User::find($r->plan_source_by);
+                                $label .= ' — '.($admin?->nickname ?? ('#'.$r->plan_source_by));
+                            }
+                            if ($r->plan_source_at) {
+                                $label .= ' · '.$r->plan_source_at->format('d.m.Y H:i');
+                            }
+
+                            return $label;
+                        })->columnSpanFull(),
                 ])->columns(3),
 
                 ITabs\Tab::make('Cüzdan')->icon('heroicon-o-banknotes')

@@ -43,7 +43,15 @@ class EditUser extends EditRecord
                 unset($data['coins']);
                 app(\App\Services\WalletService::class)->setBalance($locked, $coins, 'admin_adjustment', auth()->id());
             }
-            $locked->forceFill($data)->save();
+            // Premium KAYNAĞI izi: admin plan'ı bir premium değere ÇEVİRİRSE 'admin' + hangi admin
+            // damgala (panel Cüzdan/Üyelik sekmesinde "admin yaptı" görünür).
+            $beforePlan = $locked->plan ?? 'free';
+            $locked->forceFill($data);
+            $afterPlan = $locked->plan ?? 'free';
+            if ($afterPlan !== $beforePlan && $afterPlan !== 'free') {
+                $locked->stampPlanSource('admin', auth()->id());
+            }
+            $locked->save();
 
             // Denetim/uyarı YALNIZ bakiye gerçekten değiştiyse yazılsın. Coins alanı formda
             // gelip de değer aynı kaldığında (no-op kaydet) tehlike-alarmı üretmeyelim.

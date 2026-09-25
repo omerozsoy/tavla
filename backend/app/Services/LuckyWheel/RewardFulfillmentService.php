@@ -162,6 +162,7 @@ class RewardFulfillmentService
         if (! $u->plan_since) {
             $u->plan_since = now();
         }
+        $u->stampPlanSource('wheel'); // premium KAYNAĞI = Şans Çarkı (panel Cüzdan/Üyelik sekmesi)
         $u->save();
 
         return true;
