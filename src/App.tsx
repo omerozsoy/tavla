@@ -2140,9 +2140,14 @@ export default function App() {
 
   const working = useMemo(() => applyPlayed(turnStart, played), [turnStart, played])
   const resultShowingRef = useRef(false)
-  // Zar sesini SADECE oyun-içi atışta çal; sonuç/maç-sonu ekranı açıkken bastır (aşağıdaki mirror).
+  // Lobide/menüde miyiz (home). Uçuştaki bir serverMove/serverRoll/botNudge yanıtı, kullanıcı
+  // maçtan ÇIKTIKTAN sonra resolve olup applyBotTurn -> playDice çağırabilir (kullanıcı raporu:
+  // "maçtan çıkınca zar atma sesi geliyor"). O yanıt eski render'ın stale closure'ını taşıdığından
+  // playDice içinde `home`'u DOĞRUDAN okumak güvenilmez -> ref'e aynala (resultShowingRef deseni).
+  const inLobbyRef = useRef(false)
+  // Zar sesini SADECE oyun-içi atışta çal; sonuç/maç-sonu ekranı açıkken VEYA lobide isek bastır.
   const playDice = () => {
-    if (resultShowingRef.current) return
+    if (resultShowingRef.current || inLobbyRef.current) return
     Sound.dice()
   }
   const gameWon = winner(working) !== null
@@ -2153,6 +2158,7 @@ export default function App() {
   // playDice() çalıyordu -> kullanıcı raporu "oyun bitince zar sesi geliyor". playDice() bu kapıya
   // bakar; gerçek oyun-içi atışlarda (gameEnd/gameWon henüz false) normal çalar.
   resultShowingRef.current = gameEnd != null || matchOver || gameWon
+  inLobbyRef.current = home // maçtan çıkınca uçuştaki yanıtın zar sesini çalmasını engelle
   const diceRolled = turnStart.dice.length > 0
   const isBotTurn = mode === 'pvb' && turnStart.turn === BOT_PLAYER
   const online = mode === 'online' && room !== null
@@ -2612,21 +2618,24 @@ export default function App() {
           lastSubmittedMoveRef.current = nextSubmittedKey(lastSubmittedMoveRef.current, { type: 'rejected' })
           if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
-          // Poll aralığını beklemeden tek seferlik doğrudan senkronizasyon yap.
-          // Özellikle "Önce zar at" yarışında eski yerel tahta bir sonraki hamle
-          // denemesini tetikleyip aynı 409'un sonsuza kadar tekrarlanmasını önler.
-          if (err?.status === 409) {
-            void showRoom(code)
-              .then((rv) => {
-                if (!rv?.server_state) return
-                applyServerBoard(rv.server_state, rv.server_match ?? null)
-                appliedServerVersionRef.current = rv.server_version ?? 0
-                appliedServerRoomRef.current = code
-              })
-              .catch(() => {
-                // Normal polling bir sonraki turda yeniden deneyecek.
-              })
-          }
+          // KÖK FIX (canlı "onaylaya bastıkça Geçersiz hamle" kilidi): reddedilen hamle (409/422/…)
+          // SUNUCUDA UYGULANMADI ama istemci HÂLÂ mid-move'da (sıra bende + zar atılmış/step oynanmış).
+          // Poll'un mid-move kalkanı (shouldApplyServerState) bu durumda otoriter durumu EZMEZ ->
+          // yalnız appliedServerVersion=-1 bırakırsak yerel desync tahta KALICI kalır: kullanıcı aynı
+          // (sunucuya göre yasadışı) hamleyi tekrar oynayıp Onayla'ya bastıkça sonsuza kadar 422 alır.
+          // Bu yüzden HER r redde poll'u beklemeden tek seferlik DOĞRUDAN senkron yap (showRoom ->
+          // applyServerBoard mid-move kalkanını atlar, turnStart+played'i otoriter tahtaya sıfırlar).
+          // Önceden yalnız 409'da yapılıyordu; 422 ("Geçersiz hamle") dışarıda kalıp kilide yol açtı.
+          void showRoom(code)
+            .then((rv) => {
+              if (!rv?.server_state) return
+              applyServerBoard(rv.server_state, rv.server_match ?? null)
+              appliedServerVersionRef.current = rv.server_version ?? 0
+              appliedServerRoomRef.current = code
+            })
+            .catch(() => {
+              // Normal polling bir sonraki turda yeniden deneyecek.
+            })
         })
         .finally(() => {
           moveInFlightRef.current = false
