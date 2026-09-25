@@ -48,10 +48,14 @@ class EntryPopupResource extends Resource
                 ->helperText('Opsiyonel. Boşsa mobilde kare görsel küçültülerek gösterilir. En fazla 4 MB.')
                 ->columnSpanFull(),
 
-            Forms\Components\TextInput::make('link')->label('Hedef link (URL)')
-                ->url()->maxLength(500)
-                ->placeholder('https://ornek.com')
-                ->helperText('Opsiyonel. Banner’a tıklayınca bu adres yeni sekmede açılır. Boşsa tıklanamaz.')
+            // ->url() KULLANMA: site-içi göreli yolu (/uyelik) reddeder ("Please enter a URL"). Site içi
+            // yol AYNI sekmede, dış adres yeni sekmede açılır (bkz EntryPopupModal.tsx).
+            Forms\Components\TextInput::make('link')->label('Hedef link (opsiyonel)')
+                ->maxLength(500)
+                ->placeholder('ör. /uyelik  veya  https://ornek.com')
+                ->rule('regex:/^(https?:\/\/.+|\/.*)?$/')
+                ->validationMessages(['regex' => 'Tam adres (https://…) VEYA site içi yol (/ ile başlar) girin.'])
+                ->helperText('Opsiyonel. Site içi yol (/ ile başlar) AYNI sekmede, dış adres (https://) yeni sekmede açılır. Boşsa tıklanamaz.')
                 ->columnSpanFull(),
 
             Forms\Components\Select::make('frequency')->label('Gösterim sıklığı')
