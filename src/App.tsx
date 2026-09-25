@@ -51,6 +51,8 @@ import {
   serverMatchToLocal,
   shouldApplyServerState,
   serverSyncRoomChanged,
+  isDuplicateSubmit,
+  nextSubmittedKey,
 } from './online/authSync'
 import { liveMoveDelta } from './online/liveMoves'
 import Board from './ui/Board'
@@ -558,7 +560,9 @@ const AI_LEVELS = [
   'Grandmaster',
   'Elite',
   'Legend',
-  'Neural AI',
+  'World Class', // 10: gnubg 2-ply, gürültüsüz (hızlı + çok güçlü)
+  'Grandmaster', // 11: TavlaTV Grandmaster — gnubg 3-ply (birkaç saniye düşünebilir)
+  'Ultimate', // 12: TavlaTV Ultimate — adaptive 3→4-ply (kritik pozisyonda daha uzun)
 ]
 // ---- Maç kaydı (hamle+zar logu) yardımcıları ----
 // Offline (pvb/pvp) maçlar için kısa, okunur maç kimliği üretir (regex [A-Za-z0-9]).
@@ -575,11 +579,11 @@ function turnNotation(steps: Step[], player: Player): string {
   return moveNotation({ steps, resultKey: '' }, player)
 }
 
-// Eski kayit ('neural'/'heuristic') veya sayi -> 1..10
+// Eski kayit ('neural'/'heuristic') veya sayi -> 1..12
 function normDifficulty(d: unknown): number {
-  if (typeof d === 'number' && d >= 1 && d <= 10) return Math.round(d)
+  if (typeof d === 'number' && d >= 1 && d <= 12) return Math.round(d)
   if (d === 'heuristic') return 3
-  return 10 // 'neural' veya bilinmeyen -> en yuksek
+  return 10 // 'neural' veya bilinmeyen -> World Class (varsayilan en yuksek "hizli" seviye)
 }
 
 interface RoomState {
@@ -2576,11 +2580,11 @@ export default function App() {
       const moveKey = `${code}:${expectedServerVersion}:${JSON.stringify(finalPlayed)}`
       // Aynı render yarışında aynı tur iki kez gönderilirse ilk istek zarları
       // tüketir; ikinci istek gereksiz "Önce zar at" 409'u üretir.
-      if (lastSubmittedMoveRef.current === moveKey) {
+      if (isDuplicateSubmit(lastSubmittedMoveRef.current, moveKey)) {
         moveInFlightRef.current = false
         return
       }
-      lastSubmittedMoveRef.current = moveKey
+      lastSubmittedMoveRef.current = nextSubmittedKey(lastSubmittedMoveRef.current, { type: 'submit', moveKey })
       serverMove(code, finalPlayed, expectedServerVersion)
         .then((r) => {
           if (r?.state) {
@@ -2599,7 +2603,13 @@ export default function App() {
           // appliedServerVersionRef=-1 zaten poll'u tetikler -> otoriter durum (doğru sıra+zar) geri
           // gelir (kendi kendini onarır). doRollAuthoritative da 409'u sessiz geçer — aynı desen.
           const err = e as { status?: number }
-          if (err?.status !== 409) lastSubmittedMoveRef.current = null
+          // KILIT FIX: reddedilen hamle (409 dahil) SUNUCUDA UYGULANMADI -> aynı hamlenin yeniden
+          // gönderilebilmesi için mükerrer-kilidi (moveKey) HER hatada temizle. Aksi halde 409 sonrası
+          // sunucu server_version'ı ARTIRMADIĞI için (rejected=no bump) resync aynı versiyona döner,
+          // kullanıcı aynı taşları tekrar oynayıp Onayla'ya basınca moveKey BİREBİR AYNI çıkar ve
+          // yukarıdaki dedup guard (lastSubmittedMoveRef===moveKey) onu SESSİZCE yutar -> "Onayla
+          // takılıyor" (kalıcı). Eşzamanlı çift-submit'i zaten moveInFlightRef (senkron) engeller.
+          lastSubmittedMoveRef.current = null
           if (err?.status !== 409) notify.error(srvErr(e))
           appliedServerVersionRef.current = -1 // reddedildi -> poll otoriter durumu geri yükler
           // Poll aralığını beklemeden tek seferlik doğrudan senkronizasyon yap.

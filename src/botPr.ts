@@ -1,7 +1,8 @@
 // Bot (YZ) seviyelerinin hedef PR araliklari — dusuk = daha iyi oyun.
 // Index = difficulty-1; MatchSetup'taki AI_LEVELS/PR_TARGETS siralamasiyla BIREBIR ayni.
 //   1 Beginner 35–50 · 2 Rookie 25–35 · 3 Casual 18–25 · 4 Skilled 12–18 · 5 Expert 8–12
-//   6 Master 5–8 · 7 Grandmaster 3–5 · 8 Elite 1.5–3 · 9 Legend 0.5–1.5 · 10 Neural AI 0–0.5
+//   6 Master 5–8 · 7 Grandmaster 3–5 · 8 Elite 1.5–3 · 9 Legend 0.5–1.5 · 10 World Class 0–0.5
+//   11 TavlaTV Grandmaster 0–0.3 (gnubg 3-ply) · 12 TavlaTV Ultimate 0–0.2 (adaptive 3→4-ply)
 //
 // NeuralBot pratikte neredeyse-optimal oynadigi icin OLCULEN bot PR'i ~0.0 cikar; sonuc
 // ekraninda/mac analizinde "0.0" gormek itici. Bunun yerine seviyeye uygun sabit-rastgele
@@ -17,6 +18,8 @@ export const BOT_PR_RANGES: readonly (readonly [number, number])[] = [
   [1.5, 3],
   [0.5, 1.5],
   [0, 0.5],
+  [0, 0.3], // 11 TavlaTV Grandmaster (gnubg 3-ply)
+  [0, 0.2], // 12 TavlaTV Ultimate (adaptive 3→4-ply)
 ]
 
 // Seviye butonlari altinda gosterilen etiketler ("Hedef PR 35–50"). Aralik dizisinden turer.

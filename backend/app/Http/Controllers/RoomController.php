@@ -2897,12 +2897,21 @@ class RoomController extends Controller
             'avatar' => ['nullable', 'string', 'max:300000'],
             'time_control' => ['nullable', 'string', 'in:casual,normal,speed'],
             'target' => ['nullable', 'integer', 'min:1', 'max:25'],
-            'level' => ['required', 'integer', 'min:1', 'max:10'],
+            // Level 1-10 mevcut; 11 (Grandmaster/3-ply) + 12 (Ultimate/adaptive 3->4). 11/12 feature
+            // flag'lerle kapatılabilir -> kapalıysa aşağıda 10'a kırpılır (bot yine oynar).
+            'level' => ['required', 'integer', 'min:1', 'max:12'],
             'client_seed' => ['nullable', 'string', 'max:40'],
         ]);
 
         $code = $this->generateCode();
         $level = (int) $data['level'];
+        // FEATURE FLAG kırpması: istenen derin seviye kapalıysa en yüksek AÇIK seviyeye düşür.
+        if ($level >= 12 && ! config('gnubg.level12_enabled', true)) {
+            $level = config('gnubg.level11_enabled', true) ? 11 : 10;
+        }
+        if ($level >= 11 && ! config('gnubg.level11_enabled', true)) {
+            $level = 10;
+        }
         $room = Room::create([
             'code' => $code,
             'p1_token' => $data['token'],
