@@ -1036,6 +1036,8 @@ export interface TournamentAd {
   panel_color?: string | null
   tournament_id: number | null
   tournament_name: string | null
+  /** Serbest hedef link. Doluysa tıklanınca turnuva yerine buraya gidilir (dış URL yeni sekme, iç yol aynı sekme). */
+  link?: string | null
 }
 export async function listTournamentAds(): Promise<TournamentAd[]> {
   const d = await req<{ ads: TournamentAd[] }>('/tournament-ads')

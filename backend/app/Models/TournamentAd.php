@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class TournamentAd extends Model
 {
     protected $fillable = [
-        'tournament_id', 'organizer_id', 'image', 'logo', 'kicker', 'title', 'subtitle', 'meta', 'cta',
+        'tournament_id', 'link', 'organizer_id', 'image', 'logo', 'kicker', 'title', 'subtitle', 'meta', 'cta',
         'panel_color', 'palette', 'sort', 'published',
     ];
 

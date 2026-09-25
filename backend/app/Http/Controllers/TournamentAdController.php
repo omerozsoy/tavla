@@ -30,6 +30,8 @@ class TournamentAdController extends Controller
                 'panel_color' => $ad->panel_color,
                 'tournament_id' => $ad->tournament_id,
                 'tournament_name' => $ad->tournament?->name,
+                // Serbest hedef link (doluysa turnuva yerine buraya gidilir).
+                'link' => $ad->link,
             ]);
 
         return response()->json(['ads' => $ads]);
