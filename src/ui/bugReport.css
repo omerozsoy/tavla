@@ -55,6 +55,14 @@
   }
 }
 
+/* 320px'te üst bardaki hata bayrağı gizlenir; geri bildirim aynı erişilebilir
+   44px hedefle sabit FAB olarak kalır. */
+@media (max-width: 360px) {
+  .bug-fab-guest {
+    display: flex;
+  }
+}
+
 /* --- Form --- */
 .bug-card {
   max-width: 440px;

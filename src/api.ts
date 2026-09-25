@@ -5,7 +5,9 @@ import { normalizeCountry } from './countries'
 
 const API_URL =
   (import.meta.env.VITE_API_URL as string | undefined) ||
-  (import.meta.env.DEV ? 'http://localhost:8000/api' : '/api')
+  // Dev'de Vite proxy'si kullanılır; böylece localhost/127.0.0.1 ile açılan
+  // tarayıcı sayfası farklı origin'e CORS isteği göndermeden aynı hostta kalır.
+  '/api'
 
 const TOKEN_KEY = 'tavla.token'
 const GATE_KEY = 'tavla.gate' // "kapali test" site sifresi (X-Site-Gate basligi)

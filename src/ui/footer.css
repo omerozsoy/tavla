@@ -165,9 +165,12 @@ a.foot-partner:hover {
 }
 .foot-link {
   position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
   background: none;
   border: 0;
-  padding: 0;
+  padding: 6px 0;
   cursor: pointer;
   color: var(--foot-cream-soft);
   font-size: 0.82rem;
@@ -214,8 +217,8 @@ a.foot-partner:hover {
 /* ---- Responsive: 7 kolon TEK SIRA laptop/tablette de korunur (font/gap daha küçük) ---- */
 @media (max-width: 1024px) {
   .foot-cols {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 14px 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px 16px;
   }
   .foot-col-title { font-size: 0.76rem; gap: 5px; margin-bottom: 10px; }
   .foot-link { font-size: 0.76rem; }
@@ -241,5 +244,9 @@ a.foot-partner:hover {
     flex-basis: 100%;
   }
   .foot-col-title { font-size: 0.8rem; }
-  .foot-link { font-size: 0.8rem; }
+  .foot-link {
+    min-height: 44px;
+    padding-block: 10px;
+    font-size: 0.8rem;
+  }
 }
