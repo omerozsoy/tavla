@@ -6,7 +6,23 @@
   flex-direction: column;
   background: radial-gradient(120% 90% at 50% 0%, #14321f 0%, #0c2417 55%, #071811 100%);
   color: #f3ede1;
-  overflow-y: auto;
+  overflow: hidden;
+  /* Board'ın --board-h'i tam-oyun düzeni için (sidebar/oyuncu barı çıkararak) hesaplanır;
+     bu overlay'de yanlış boyutlanıp taşıyor / dev boş bantlar bırakıyordu. Kendi düzenime
+     (topbar + skor şeridi ~112px) göre override et: hem GENİŞLİĞE hem YÜKSEKLİĞE sığdır. */
+  /* Board geometri zinciri: --board-h VE ondan türeyen tüm ölçüler (:root'ta hesaplanıp
+     inheritance ile "donduğu" için) BURADA yeniden tanımlanmalı, yoksa yalnız yükseklik
+     değişip genişlik/pul eski kalır. !important: App.css'in çok sayıda responsive --board-h
+     tanımını (sidebar'lı düzen için) özgüllük yarışına girmeden ez. */
+  --board-h: max(220px, min(calc((100vw - 36px) / 1.55), calc((100dvh - 158px) / 1.12))) !important;
+  --checker: calc(var(--board-h) / 11) !important;
+  --col: calc(var(--checker) * 1.14) !important;
+  --point-w: var(--col) !important;
+  --bar-w: calc(var(--checker) * 1.4) !important;
+  --tri-h: calc(var(--board-h) * 0.35) !important;
+  --point-h: var(--tri-h) !important;
+  --dice-size: calc(var(--checker) * 0.76) !important;
+  --cube-size: clamp(38px, calc(var(--bar-w) * 0.82), 66px) !important;
 }
 
 .kiz-topbar {
@@ -70,21 +86,37 @@
 .kiz-dot.white { background: #f3ede1; border: 1px solid #b9ad95; }
 .kiz-dot.black { background: #2a2a2a; border: 1px solid #000; }
 
-/* Tahta alanı: kalan yüksekliği kapla, ortala. Board kendi en-boy oranıyla sığar. */
+/* Tahta alanı: kalan yüksekliği kapla, ortala. Arka plan ŞEFFAF (klasik lacivert
+   .game-scene arka planı bantlar olarak görünüyordu) -> kiz-view yeşili tekdüze görünür. */
 .kiz-view .game-scene {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px clamp(6px, 3vw, 28px) 10px;
+  flex-direction: column; /* dikey hizayı justify-content belirlesin */
+  align-items: center; /* yatay ortala */
+  justify-content: flex-start; /* dikey: yukarı yasla (geniş tahta dar ekranda kısa kalır -> üstte boşluk olmasın) */
+  padding: 4px 8px 8px;
   min-height: 0;
+  background: transparent;
 }
-.kiz-view .game-area { width: 100%; max-width: 900px; }
+@media (min-width: 900px) {
+  .kiz-view .game-scene { justify-content: center; } /* masaüstünde tahta yüksekliği neredeyse dolu -> ortala */
+}
+.kiz-view .game-area { width: auto; max-width: 100%; }
 /* Kız Tavlası'nda küp YOK -> Board'ın çift-zar küpünü ("64") gizle. */
 .kiz-view .cube { display: none !important; }
 
-.kiz-rollbar { display: flex; justify-content: center; padding: 8px 0 16px; }
-.kiz-roll { font-size: 1rem; padding: 10px 30px; }
+/* "Zar At" akıştan ÇIKARILDI (yoksa yokken alt bant kalıyordu): board üstüne yüzen buton. */
+.kiz-rollbar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+.kiz-roll { font-size: 1rem; padding: 10px 30px; pointer-events: auto; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); }
 
 /* Nasıl Oynanır + Sonuç */
 .kiz-howto, .kiz-result {
