@@ -53,7 +53,7 @@ export const PAGES: PageDef[] = [
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },
   { key: 'calendar', slug: 'turnuva-takvimi', labelKey: 'menu.calendar', icon: 'calendar-dots', group: 'content', hideInGame: true },
-  { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-office', group: 'content', hideInGame: true },
+  { key: 'clubs', slug: 'kulupler', labelKey: 'menu.clubs', icon: 'building-community', group: 'content', hideInGame: true },
   { key: 'news', slug: 'haberler', labelKey: 'menu.news', icon: 'newspaper', group: 'content', hideInGame: true },
   { key: 'magazine', slug: 'tavla-magazin', labelKey: 'menu.magazine', icon: 'monitor-play', group: 'content', hideInGame: true },
   // Ürünler sol menüde DEĞİL (Mağaza'nın "Ürünler" sekmesine taşındı); /urunler derin-link çalışır.
