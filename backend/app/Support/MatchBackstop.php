@@ -43,10 +43,8 @@ class MatchBackstop
         }
 
         $written = 0;
-        // PUANLI KAPSAM: bot yukarida haric tutuldu. Kalan online insan-insan maclarindan yalniz
-        // eslesme (mode='ranked') + turnuva (mode=NULL) puanlidir. Arkadas daveti/kilic (mode='friendly')
-        // CASUAL: satir yazilir ama rating/istatistik degismez (delta=0). reportRating ile AYNI kural.
-        $ranked = $room->mode !== 'friendly';
+        // PUANLI KAPSAM ARTIK PER-OYUNCU (RatingPolicy): bot puansız; eşleşme/turnuva limitsiz puanlı;
+        // arkadaş/kılıç (friendly) puanlı ama aynı-rakiple 24h limiti -> reportRating ile AYNI kural.
         $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0)
             ? StatsConfig::MATCH_TYPE_COIN
             : StatsConfig::MATCH_TYPE_MATCH;
@@ -66,8 +64,10 @@ class MatchBackstop
             }
             $oppRating = (int) ($room->{$oppSlot.'_rating'} ?? 0);
             $oppName = $room->{$oppSlot.'_name'} ?? null;
+            $oppId = (int) ($room->{$oppSlot.'_user_id'} ?? 0);
+            $ranked = RatingPolicy::isRanked($room, $uid, $oppId); // per-oyuncu (friendly 24h limiti)
             $matchLength = $room->target !== null ? (int) $room->target : null;
-            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked)) {
+            if (self::writeRow($uid, $res['won'], $oppRating, $res['self'], $res['opp'], $matchLength, $matchType, $oppName, $room->code, $ranked, $oppId)) {
                 $written++;
             }
         }
@@ -89,9 +89,10 @@ class MatchBackstop
         ?string $oppName,
         string $roomCode,
         bool $ranked,
+        int $opponentUserId = 0,
     ): bool {
         try {
-            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked) {
+            return (bool) DB::transaction(function () use ($userId, $won, $oppRating, $selfScore, $oppScore, $matchLength, $matchType, $oppName, $roomCode, $ranked, $opponentUserId) {
                 $u = User::lockForUpdate()->find($userId);
                 if (! $u) {
                     return false;
@@ -138,6 +139,12 @@ class MatchBackstop
                 if (Schema::hasColumn('match_results', 'score_self')) {
                     $row['score_self'] = $selfScore;
                     $row['score_opp'] = $oppScore;
+                }
+                if (Schema::hasColumn('match_results', 'opponent_user_id')) {
+                    $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
+                }
+                if (Schema::hasColumn('match_results', 'rated')) {
+                    $row['rated'] = $ranked;
                 }
 
                 MatchResult::create($row); // yarış -> UniqueConstraintViolation -> tx rollback (Elo geri alınır)

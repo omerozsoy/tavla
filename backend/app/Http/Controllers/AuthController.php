@@ -301,8 +301,14 @@ class AuthController extends Controller
         // CASUAL (puansiz): bot (PvB) VE arkadas daveti/kilic (mode='friendly'). Kullanici direktifi:
         // kilic/arkadas daveti maci rating URETMEZ (puan kazanilmaz/kaybedilmez) — mac yine gecmise
         // delta=0 ile yazilir. mode='friendly' hem GIZLILIK (katilimci-olmayan seyredemez) hem CASUAL.
-        $ranked = ! $room->bot && $room->mode !== 'friendly';
         $opponentSlot = (int) $room->p1_user_id === (int) $user->id ? 'p2' : 'p1';
+        $opponentId = (int) ($room->{$opponentSlot.'_user_id'} ?? 0);
+        // PUANLI MI? TEK kaynak RatingPolicy: bot puansız; eşleşme(ranked)/turnuva(NULL) limitsiz
+        // puanlı; arkadaş/kılıç (friendly) PUANLI ama aynı-rakiple 24h limiti (Site Ayarları,
+        // varsayılan 3) — sonrası casual. (Eski kural mode!=='friendly' idi; friendly artık puanlı.)
+        $ranked = \App\Support\RatingPolicy::isRanked($room, (int) $user->id, $opponentId);
+        // Friendly + 24h limit AŞILDI -> casual: rating YOK + PR/istatistik KREDİLENMEZ (analiz job'ı atlanır).
+        $friendlyOverCap = ! $room->bot && $room->mode === 'friendly' && ! $ranked;
         $ra = $user->rating ?? 1500;
         $rb = (int) ($room->{$opponentSlot.'_rating'} ?? $ra);
         if ($rb <= 0) {
@@ -547,6 +553,13 @@ class AuthController extends Controller
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')) {
             $mr['room_code'] = $data['room_code'] ?? null;
         }
+        // Aynı-rakip 24h limiti için: rakip hesap id + bu satır puanlı mı (rated).
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_user_id')) {
+            $mr['opponent_user_id'] = $opponentId > 0 ? $opponentId : null;
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'rated')) {
+            $mr['rated'] = $ranked;
+        }
         if (\Illuminate\Support\Facades\Schema::hasColumn('match_results', 'log')) {
             $mr['log'] = $data['log'] ?? null;
         }
@@ -584,7 +597,7 @@ class AuthController extends Controller
         // yaz + client PR ile logla. Gösterilen/otoriter PR'a DOKUNMAZ. Yalnız pr_mode!=off + log varsa.
         // onConnection('database') -> global QUEUE_CONNECTION'a dokunmadan queue worker'a düşer.
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log'])) {
+            && ! empty($mr['log']) && ! $friendlyOverCap) { // friendly 24h limiti aşıldıysa PR KREDİLENMEZ
             try {
                 \App\Jobs\AnalyzeMatchPrJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
@@ -598,7 +611,7 @@ class AuthController extends Controller
         // döndürür (hazır olunca); istemci ONNX fallback kalır. pr_mode gate.
         // ADIM 4: online (room_code -> iki-log birleştir) VEYA pvb (tek-log iki renk -> job pvb dalı).
         if (in_array((string) config('gnubg.pr_mode', 'off'), ['shadow', 'authoritative'], true)
-            && ! empty($mr['log'])) {
+            && ! empty($mr['log']) && ! $friendlyOverCap) { // over-cap friendly -> casual (luck de kredilenmez)
             try {
                 \App\Jobs\AnalyzeMatchLuckJob::dispatch($result->id)->onConnection('database');
             } catch (\Throwable $e) {
