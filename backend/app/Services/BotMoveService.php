@@ -73,7 +73,7 @@ class BotMoveService
 
         // 2) gnubg konumu analiz eder, adayları equity-azalan sıralar. Her adayda notasyondan
         //    türetilmiş `steps` (from/to; die=0) bulunur (python /analyze eki).
-        $analysis = $this->gnubg->analyze($this->positionFor($state, $sm));
+        $analysis = $this->gnubg->analyze($this->positionFor($state, $sm, $level));
         $cands = is_array($analysis) ? ($analysis['result']['hint'] ?? null) : null;
         if (! is_array($cands) || count($cands) === 0) {
             // gnubg yok/boş -> KARAR YOK. Direktif: gnubg tek otorite -> duraklat (zayıf fallback YOK).
@@ -93,28 +93,146 @@ class BotMoveService
                 unset($byBoard[$key]); // aynı sonuç-tahtasını iki kez ekleme (equity-en-iyi olan kalır)
             }
         }
+
+        $fallbackUsed = false;
         if (count($ranked) === 0) {
-            // KÖK FIX (bot bar'da TAKILMASI): gnubg adayları yasal hamlelere from/to ile EŞLENEMEDİ
-            // (ör. bar-giriş "bar/X" notasyonu validator'ın sayısal nokta temsiliyle uyuşmuyor).
-            // ESKİDEN throw -> BotUnavailableException -> bot bar'da bekleyip KALIYORDU (validator +
-            // gnubg YEŞİL olsa bile "bot oynamıyor" bug'ı buydu). gnubg AYAKTA ve YASAL hamle VAR ->
-            // bot ASLA takılmamalı: gnubg sıralamasını eşleyemediğimiz nadir durumda YASAL bir hamle
-            // oyna (ilk yasal). Gösterilen PR ayrı gnubg-authoritative yolla hesaplanır (bu bozmaz).
-            // (gnubg gerçekten DÜŞÜKSE yukarıda gnubg-unavailable ile duraklar/retry eder — o korunur.)
-            \Illuminate\Support\Facades\Log::warning('bot.gnubg-no-match-fallback', [
+            // gnubg adayları yasal hamlelere sonuç-tahtası ile EŞLENEMEDİ (nadir: notasyon parse
+            // edge-case'i). GÜVENLİ ÇÖZÜM (kullanıcı direktifi): ASLA körlemesine ilk yasalı oynama.
+            // Son çare -> her YASAL hamleyi gnubg ile skorla, EN İYİ yasalı seç (hâlâ gnubg-otoriter).
+            // O da başarısızsa -> BotUnavailable (maç duraklar; çağıran 503 + retry). legal[0] KALDIRILDI.
+            $best = $this->bestLegalByGnubg($state, $sm, $level, $legal);
+            \Illuminate\Support\Facades\Log::warning('bot.gnubg-no-match', [
                 'legal' => count($legal),
                 'cands' => count($cands),
                 'turn' => $state['turn'] ?? '?',
                 'dice' => array_slice(array_values(array_filter(array_map('intval', $state['dice'] ?? []))), 0, 2),
+                'recovered' => $best !== null,
             ]);
+            if ($best === null) {
+                throw new BotUnavailableException('gnubg-no-legal-match');
+            }
 
-            return $this->stepsOf($legal[0]);
+            return $best; // en iyi yasal (gnubg skorlu) — körlemesine değil
         }
 
         // 4) Seviye gürültüsü ile sıralı yasal hamleler arasından seç.
         $idx = $this->pickIndexByLevel(count($ranked), $level);
 
+        // Teşhis/izleme (Level 11/12 concurrency + escalation gözlemi için).
+        $diag = is_array($analysis) ? ($analysis['diag'] ?? []) : [];
+        \Illuminate\Support\Facades\Log::info('bot.gnubg', [
+            'gnubg_level' => $level,
+            'gnubg_ply' => $diag['plies_used'] ?? null,
+            'gnubg_cube_ply' => $this->levelEval($level)['cubePlies'],
+            'gnubg_response_ms' => $diag['response_ms'] ?? null,
+            'gnubg_top_gap' => $diag['top_gap'] ?? null,
+            'gnubg_escalated_to_4ply' => $diag['escalated'] ?? false,
+            'gnubg_selected_equity' => $cands[0]['equity'] ?? null,
+            'gnubg_selected_index' => $idx,
+            'gnubg_fallback_used' => $fallbackUsed,
+        ]);
+
         return $ranked[$idx];
+    }
+
+    /**
+     * legal[0] fallback'in GÜVENLİ yerine geçeni: her yasal tam-tur hamlesini gnubg ile skorla,
+     * en iyi equity'liyi seç. Konum eşleşmesi başarısız olduğunda (nadir) körlemesine ilk yasalı
+     * oynamak yerine gnubg-otoriter bir seçim yapar. Skorlanamazsa null (çağıran -> BotUnavailable).
+     *
+     * Yaklaşım: her yasal hamlenin SONUÇ pozisyonunu (rakip sırada) gnubg /analyze ile değerlendir;
+     * rakip için en DÜŞÜK equity = bizim için en iyi hamle (sıfır-toplam). Zar yoksa (imkânsız burada)
+     * atlanır. N genelde < 20 -> sınırlı sayıda hızlı analiz.
+     */
+    private function bestLegalByGnubg(array $state, array $sm, int $level, array $legal): ?array
+    {
+        $turn = ($state['turn'] ?? 'white') === 'black' ? 'black' : 'white';
+        $opp = $turn === 'white' ? 'black' : 'white';
+        $bestSteps = null;
+        $bestOppEq = null; // rakip için en düşük equity'yi ara (bizim için en iyi)
+        foreach ($legal as $m) {
+            $steps = $this->stepsOf($m);
+            if (count($steps) === 0) {
+                continue;
+            }
+            $after = $this->applyStepsToState($state, $steps);
+            $after['turn'] = $opp;      // hamleden sonra rakip sırada
+            $after['dice'] = [];        // zarsız -> pozisyon değerlendirmesi (cube result + evaluate)
+            $res = $this->gnubg->analyze($this->cubePositionFor($after, $sm, $level));
+            $eq = $this->equityFromEvaluate($res);
+            if ($eq === null) {
+                continue;
+            }
+            if ($bestOppEq === null || $eq < $bestOppEq) {
+                $bestOppEq = $eq;
+                $bestSteps = $steps;
+            }
+        }
+
+        return $bestSteps;
+    }
+
+    /** gnubg /analyze (zarsız) sonucundan rakip-perspektifi cubeless equity türet (evaluate probs). */
+    private function equityFromEvaluate(mixed $res): ?float
+    {
+        if (! is_array($res)) {
+            return null;
+        }
+        $ev = $res['evaluate'] ?? null;
+        // gnubg.evaluate() -> [win, winG, winBG, loseG, loseBG] (kümülatif). cubeless money equity:
+        //   eq = 2*win - 1 + (winG - loseG) + (winBG - loseBG). Sıralama için yeterli (mutlak değer değil).
+        if (is_array($ev) && count($ev) >= 5) {
+            $win = (float) $ev[0];
+            $wg = (float) $ev[1];
+            $wbg = (float) $ev[2];
+            $lg = (float) $ev[3];
+            $lbg = (float) $ev[4];
+
+            return 2.0 * $win - 1.0 + ($wg - $lg) + ($wbg - $lbg);
+        }
+
+        return null;
+    }
+
+    /** Step[]'i state'e uygula -> yeni state (points/bar/off). boardAfter ile aynı mantık, tam state döner. */
+    private function applyStepsToState(array $state, array $steps): array
+    {
+        $pts = array_map('intval', array_values($state['points'] ?? []));
+        $bar = [
+            'white' => (int) ($state['bar']['white'] ?? 0),
+            'black' => (int) ($state['bar']['black'] ?? 0),
+        ];
+        $off = [
+            'white' => (int) ($state['off']['white'] ?? 0),
+            'black' => (int) ($state['off']['black'] ?? 0),
+        ];
+        $turn = ($state['turn'] ?? 'white') === 'black' ? 'black' : 'white';
+        $opp = $turn === 'white' ? 'black' : 'white';
+        $sign = $turn === 'white' ? 1 : -1;
+        foreach ($steps as $s) {
+            if (! is_array($s)) {
+                continue;
+            }
+            $from = $s['from'] ?? null;
+            $to = $s['to'] ?? null;
+            if ($from === 'bar') {
+                $bar[$turn]--;
+            } elseif (is_numeric($from)) {
+                $pts[(int) $from] -= $sign;
+            }
+            if ($to === 'off') {
+                $off[$turn]++;
+            } elseif (is_numeric($to)) {
+                $t = (int) $to;
+                if (($pts[$t] ?? 0) === -$sign) {
+                    $pts[$t] = 0;
+                    $bar[$opp]++;
+                }
+                $pts[$t] = ($pts[$t] ?? 0) + $sign;
+            }
+        }
+
+        return ['points' => $pts, 'bar' => $bar, 'off' => $off, 'turn' => $turn];
     }
 
     /**
@@ -123,11 +241,11 @@ class BotMoveService
      * 'proper' önerisini kullanır; yoksa equity fallback. gnubg erişilemezse GÜVENLİ varsayılan
      * (respond->take: asla takılmaz/puan hediye etmez; offer->no-double: gereksiz katlamaz).
      */
-    public function chooseCube(array $state, array $sm, string $mode): string
+    public function chooseCube(array $state, array $sm, string $mode, int $level = 10): string
     {
         $fallback = $mode === 'respond' ? 'take' : 'no-double';
         try {
-            $res = $this->gnubg->analyze($this->cubePositionFor($state, $sm));
+            $res = $this->gnubg->analyze($this->cubePositionFor($state, $sm, $level));
         } catch (\Throwable $e) {
             return $fallback;
         }
@@ -169,9 +287,9 @@ class BotMoveService
     }
 
     /** Küp kararı için konum: ZAR YOK -> gnubg /analyze küp analizi (cube result) döndürür. */
-    private function cubePositionFor(array $state, array $sm): array
+    private function cubePositionFor(array $state, array $sm, int $level = 10): array
     {
-        return [
+        return $this->applyEval([
             'points' => array_map('intval', $state['points'] ?? []),
             // bar'ı gönder (positionFor ile aynı gerekçe): eksikse gnubg yanlış pozisyon analiz eder.
             'bar' => [
@@ -181,7 +299,7 @@ class BotMoveService
             'turn' => $state['turn'] ?? 'white',
             'dice' => [], // zar yok -> küp kararı
             'matchLength' => (int) ($sm['target'] ?? 1),
-            'plies' => 2,
+            'crawford' => (bool) ($sm['crawford'] ?? false),
             'score' => [
                 'white' => (int) ($sm['score']['white'] ?? 0),
                 'black' => (int) ($sm['score']['black'] ?? 0),
@@ -190,7 +308,7 @@ class BotMoveService
                 'value' => (int) ($sm['cube']['value'] ?? 1),
                 'owner' => $sm['cube']['owner'] ?? null,
             ],
-        ];
+        ], $level);
     }
 
     /** Aday nesnesinden (validator {steps,resultKey} | gnubg {move,steps}) adımları çıkar. */
@@ -270,18 +388,73 @@ class BotMoveService
         return random_int(1, $k);
     }
 
+    /**
+     * SEVİYE -> gnubg eval konfigürasyonu (TEK KAYNAK). 1-10: mevcut güçlü/hızlı bot (2-ply,
+     * cube 2-ply, Normal filtre) — DEĞİŞMEDİ. 11 (Grandmaster): 3-ply + cube 3-ply + geniş filtre.
+     * 12 (Ultimate): 3-ply taban + kritik pozisyonda 4-ply'a ADAPTIVE yükseliş + geniş filtre.
+     *
+     * NOT: 1-9 seviyelerinin İNSAN-BENZERİ hatası pickIndexByLevel'de; buradaki eval (motor gücü)
+     * 1-10 için AYNI kalır -> yalnız aday SEÇİMİ seviyeyle bozulur (mevcut davranış korunur).
+     */
+    private function levelEval(int $level): array
+    {
+        $deepFilter = (string) config('gnubg.deep_movefilter', 'large');
+        if ($level >= 12) {
+            return [
+                'chequerPlies' => 3,
+                'cubePlies' => 3,
+                'movefilter' => $deepFilter,
+                'adaptive' => true,
+                'escalatePlies' => (int) config('gnubg.level12_escalate_plies', 4),
+                'topGap' => (float) config('gnubg.level12_4ply_threshold', 0.040),
+                'maxSeconds' => (float) config('gnubg.level12_max_seconds', 10),
+            ];
+        }
+        if ($level === 11) {
+            return [
+                'chequerPlies' => 3,
+                'cubePlies' => 3,
+                'movefilter' => $deepFilter,
+                'adaptive' => false,
+            ];
+        }
+
+        // 1-10: mevcut davranış (2-ply). cube ply artık AÇIKÇA 2 (eskiden set edilmiyordu -> A hatası).
+        return [
+            'chequerPlies' => 2,
+            'cubePlies' => 2,
+            'movefilter' => 'normal',
+            'adaptive' => false,
+        ];
+    }
+
+    /** eval konfigürasyonunu gnubg /analyze konum sözlüğüne uygula (self-contained request). */
+    private function applyEval(array $pos, int $level): array
+    {
+        $e = $this->levelEval($level);
+        $pos['plies'] = $e['chequerPlies'];
+        $pos['cubePlies'] = $e['cubePlies'];
+        $pos['movefilter'] = $e['movefilter'];
+        if ($e['adaptive']) {
+            $pos['adaptive'] = true;
+            $pos['escalatePlies'] = $e['escalatePlies'];
+            $pos['topGap'] = $e['topGap'];
+            $pos['maxSeconds'] = $e['maxSeconds'];
+        }
+
+        return $pos;
+    }
+
     /** server_state + server_match -> gnubg /analyze konum sözlüğü. */
-    private function positionFor(array $state, array $sm): array
+    private function positionFor(array $state, array $sm, int $level = 10): array
     {
         $dice = array_values(array_filter(array_map('intval', $state['dice'] ?? [])));
 
-        return [
+        return $this->applyEval([
             'points' => array_map('intval', $state['points'] ?? []),
             // KRİTİK: bar'ı GÖNDER. Eksikse gnubg botun bardaki taşını GÖRMEZ (hatta 15-toplam'dan
             // hayalet bir "toplanmış" taş sanır) -> YANLIŞ pozisyon analiz eder -> önerdiği adaylar
-            // bar-girişi İÇERMEZ -> gerçek yasal hamlelere (hepsi bar-girişi) eşleşmez -> reconcile
-            // BOŞ -> legal[0] (ilk yasal = çoğu zaman EN KÖTÜ) fallback'i devreye girer. "Seviye 10
-            // bot barda saçmalıyor" bug'ının kök nedeni buydu (bar-giriş turlarında en kötü hamle).
+            // bar-girişi İÇERMEZ -> gerçek yasal hamlelere (hepsi bar-girişi) eşleşmez.
             'bar' => [
                 'white' => (int) ($state['bar']['white'] ?? 0),
                 'black' => (int) ($state['bar']['black'] ?? 0),
@@ -290,7 +463,9 @@ class BotMoveService
             // gnubg 2 zar bekler; çift [d,d,d,d] -> [d,d].
             'dice' => array_slice($dice, 0, 2),
             'matchLength' => (int) ($sm['target'] ?? 1),
-            'plies' => 2,
+            // CRAWFORD: server_match'ten gnubg'ye İLET (eskiden hiç gönderilmiyordu -> encoder
+            // crawford=0 yazıyordu -> Crawford oyununda yanlış MET/küp bağlamı). Bkz structured_to_gnubgid.
+            'crawford' => (bool) ($sm['crawford'] ?? false),
             'score' => [
                 'white' => (int) ($sm['score']['white'] ?? 0),
                 'black' => (int) ($sm['score']['black'] ?? 0),
@@ -299,6 +474,6 @@ class BotMoveService
                 'value' => (int) ($sm['cube']['value'] ?? 1),
                 'owner' => $sm['cube']['owner'] ?? null,
             ],
-        ];
+        ], $level);
     }
 }

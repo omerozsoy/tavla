@@ -2663,7 +2663,8 @@ class RoomController extends Controller
                 $decision = 'take';
                 try {
                     $decision = app(BotMoveService::class)->chooseCube(
-                        is_array($room->server_state) ? $room->server_state : [], $sm, 'respond'
+                        is_array($room->server_state) ? $room->server_state : [], $sm, 'respond',
+                        (int) ($room->bot_level ?? 10)
                     );
                 } catch (\Throwable $e) {
                     $decision = 'take';
@@ -3072,7 +3073,7 @@ class RoomController extends Controller
                 if (empty($state['dice']) && $this->cubeAvailability($room, 'black')['allowed']) {
                     $cubeDecision = 'no-double';
                     try {
-                        $cubeDecision = $bot->chooseCube($state, $sm, 'offer');
+                        $cubeDecision = $bot->chooseCube($state, $sm, 'offer', (int) ($room->bot_level ?? 10));
                     } catch (\Throwable $e) {
                         $cubeDecision = 'no-double';
                     }
