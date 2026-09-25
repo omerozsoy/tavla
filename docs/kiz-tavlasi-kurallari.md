@@ -1,47 +1,54 @@
-# TavlaTV — Kız Tavlası Kesin Kural Seti (v1)
+# TavlaTV — Kız Tavlası Kesin Kural Seti (v2, İKİ FAZLI)
 
 Bu belge, TavlaTV içinde uygulanan Kız Tavlası'nın **tek ve bağlayıcı** kural setidir.
 Oyun içindeki "Nasıl Oynanır?" metni ve `src/kiz/engine.ts` bu kurallarla **birebir** aynıdır.
-Kaynaklarda farklı sürümler olduğundan (bkz. aşağıda) tutarlılık için tek bir sürüm seçilmiştir;
-eksik kurallar klasik tavladan **otomatik devralınmamıştır**.
+
+Sürüm: yalnız **bilgisayara (YZ) karşı**, **iki fazlı** (önce indirme/açma, sonra toplama).
+Kaynak: gokhanbagci/KizTavlasiAlgoritma (iki-fazlı sürüm). Eksik ayrıntılar (boş hane, mars)
+için net kurallar TavlaTV için seçildi; klasik tavladan otomatik devralma **yoktur**.
 
 ## Tahta ve başlangıç
-- İki oyuncu, oyuncu başına **15 pul**, iki zar.
-- Her oyuncunun **kendi 6 hanesi** vardır (1–6). Başlangıç dizilişi:
-  - 6, 5 ve 4 hanelerinde **üçer** pul,
-  - 3, 2 ve 1 hanelerinde **ikişer** pul (toplam 3+3+3+2+2+2 = 15).
-- İki oyuncunun haneleri **bağımsızdır**: kırma, bar, rakip hanesini kapatma **yoktur**.
-- Pullar klasik tavladaki gibi tahtayı **dolaşmaz**.
+- İki oyuncu (sen + bilgisayar), oyuncu başına **15 pul**, iki zar.
+- Her oyuncunun **kendi 6 hanesi** vardır (1–6). Başlangıç: 6, 5, 4 hanelerinde **üçer**;
+  3, 2, 1 hanelerinde **ikişer** pul. Tüm pullar başta **KAPALI** (kendi hanesinde dizili).
+- İki oyuncunun haneleri **bağımsızdır**: kırma, bar, hane kapatma **yoktur**. Pullar tahtayı
+  **dolaşmaz**.
 
-## Sıra ve zar
-- Sırası gelen oyuncu iki zar atar.
-- Her zar değeri *d* bir haneyi gösterir: gelen zar hangi haneyse **o haneden bir pul toplanır**
-  (tahtadan kaldırılır). İki zar iki ayrı hane içindir; oyuncu hangisini önce oynayacağını seçebilir.
-- **Çift** (örn. 5-5): o hanedeki (5. hane) **tüm pullar** birden toplanır.
-- **Boş hane:** zarın gösterdiği hane boşsa **o zar oynanmaz** (klasik "yüksek zar / overflow"
-  kuralı Kız Tavlası'na **taşınmaz** — bilinçli tercih).
-- **Hamlesiz tur:** iki zarın da gösterdiği haneler boşsa, sıra rakibe geçer.
+## 1. Aşama — İndirme / Açma
+- Oyuncunun **kapalı pulu olduğu sürece** bu fazdadır.
+- Sıradaki oyuncu iki zar atar. Her zar değeri *d*, **d hanesinden bir pulu indirir**
+  (kapalı → açık). İki zar iki ayrı hane içindir.
+- **Çift** (d,d): d hanesindeki **tüm kapalı pullar** birden indirilir.
+- Zarın gösterdiği hanede **kapalı pul yoksa o zar oynanmaz.**
 
-## Kazanma ve mars
-- Pullarını (15) **önce toplayan** oyuncu oyunu kazanır.
-- **Mars:** Kazanan pullarını bitirdiğinde rakip **henüz hiç pul toplamamışsa** (0), oyun **mars**
-  sayılır (iki kat). Aksi halde normal (tek) galibiyet.
+## 2. Aşama — Toplama
+- Oyuncunun **tüm pulları indirildikten sonra** (kapalı = 0) bu faza geçilir. (Faz oyuncu bazında;
+  iki oyuncu bağımsız ilerler.)
+- Aynı zar kuralı geçerlidir: zar *d*, **d hanesindeki bir açık pulu toplar** (açık → tahtadan
+  kalkar / off). **Çift** (d,d): o hanenin **tüm açık pulları** toplanır.
+- Zarın gösterdiği hanede **açık pul yoksa o zar oynanmaz.**
+- Bir turda son kapalı pul indirilirse, **ikinci zar aynı turda toplama fazında** oynanabilir.
+
+## Hamlesiz tur, galibiyet, mars
+- İki zar da (aktif faza göre) oynanamıyorsa **sıra rakibe geçer.**
+- Pullarını (15) **önce toplayan** kazanır.
+- **Mars:** Kazanan bitirdiğinde rakip **henüz hiç pul toplamamışsa** (off = 0) → mars (iki kat).
 
 ## Bu sürümde bilinçli olarak OLMAYANLAR
-- Ayrı bir "indirme" fazı yoktur: "açma" ve "toplama" aynı eylemdir (zarın gösterdiği haneden pul
-  kaldırma). Oyun tek mekanikle akar.
 - Kırma / bar / kapatma / pul dolaştırma yoktur.
-- Boş haneye gelen zar için overflow (en yüksek haneden toplama) yoktur.
+- Boş haneye gelen zar için "en yüksek/alt haneden alma" (overflow) yoktur — o zar oynanmaz.
+- Çevrimiçi (arkadaşa/eşleşmeye) mod ve sunucu doğrulaması bu sürümde yoktur (yalnız YZ'ye karşı).
+
+## Tahtada gösterim (gerçek Board üzerinde)
+- **Kapalı** pullar oyuncunun **ev bölgesinde** (sağ). **Açık** (indirilmiş) pullar **karşı bölgede**
+  (sol) gösterilir; açma fazında pullar sağdan sola "iner". Toplama fazında açık pullar
+  **bear-off tepsisine** toplanır. Skor şeridinde her oyuncunun **fazı** (Açma/Toplama) ve
+  ilerlemesi yazılır.
 
 ## Uygulama haritası
-- Kural motoru (saf, test edilebilir): `src/kiz/engine.ts`
-- Yapay zekâ (yalnız yasal hamle seçer): `src/kiz/ai.ts`
-- Testler (pul korunumu, çift, boş hane, hamlesiz tur, galibiyet, mars, 100 rastgele oyun): `src/kiz/engine.test.ts`
-- Oyun sayfası (yerel: iki kişi + YZ): `src/ui/KizTavlasi.tsx` (+ `KizTavlasi.css`)
+- Kural motoru (saf, iki fazlı): `src/kiz/engine.ts`
+- YZ (yalnız yasal hamle seçer): `src/kiz/ai.ts`
+- Testler: `src/kiz/engine.test.ts` (indirme, çift, boş hane, faz geçişi, toplama, hamlesiz tur,
+  galibiyet, mars, 100 rastgele tam oyun + pul korunumu)
+- Oyun sayfası: `src/ui/KizTavlasi.tsx` (+ `KizTavlasi.css`) — yalnız YZ'ye karşı.
 - Rota/menü: `src/pages.ts` (`kiz` / `/kiz-tavlasi`, `inMenu:false`) + `src/App.tsx` bağlama.
-
-## Kaynak karşılaştırması
-Başlangıç dizilişi, hareket yönü ("zarın gösterdiği hane açılır") ve çift kuralı ("o kapının tüm
-pulları alınır") için birincil kaynak: tavlaplus.net/kiz-tavlasi. Kaynak; boş hane, bear-off
-ayrıntısı ve mars konusunda **belirsizdi** → bu noktalarda yukarıdaki net kurallar TavlaTV için
-seçildi. Kaynaklardaki kod/metin/görsel kopyalanmadı; uygulama özgündür.

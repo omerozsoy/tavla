@@ -34,6 +34,26 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .kiz-title { display: flex; align-items: center; gap: 8px; font-size: 1.15rem; }
+.kiz-vs {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #23180a;
+  background: #d8b25a;
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+.kiz-phase {
+  font-style: normal;
+  font-size: 0.7rem;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: #23180a;
+  background: #cbbf9f;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.kiz-side.active .kiz-phase { background: #ffd873; }
 .kiz-modes { display: flex; gap: 6px; }
 .kiz-modes button {
   padding: 6px 12px;
@@ -159,5 +179,9 @@
 @media (max-width: 560px) {
   .kiz-topbar { gap: 8px; padding: 10px 12px; }
   .kiz-howto-btn { order: 3; }
-  .kiz-scorebar { gap: 6px; padding: 6px 10px; font-size: 0.85rem; }
+  /* Dar ekranda skor şeridi taşmasın: oyuncu çipleri üst satırda (sol/sağ), sıra mesajı alt satırda. */
+  .kiz-scorebar { gap: 6px 8px; padding: 6px 10px; font-size: 0.82rem; flex-wrap: wrap; justify-content: space-between; }
+  .kiz-turnmsg { order: 3; flex-basis: 100%; }
+  .kiz-side { padding: 3px 8px; }
+  .kiz-phase { font-size: 0.62rem; padding: 2px 5px; }
 }
