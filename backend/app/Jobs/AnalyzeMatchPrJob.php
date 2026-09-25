@@ -101,25 +101,38 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // -> bu bir SERVİS sorunudur (log değil). Fırlat -> retry (backoff) + heal cron gnubg dönünce
         // yeniden dener. no_content-only skip (opp reconstructed / gerçekten boş log) NORMAL'dir ve
         // aşağıda mezar taşıyla işaretlenir; onu fırlatma (sonsuz retry olmasın).
+        $chkDec = (int) ($chk['decisions'] ?? 0);
+        $cubeDec = (int) ($cube['decisions'] ?? 0);
         $selfGnubgNull = (int) ($chk['skipReasons']['gnubg_null'] ?? 0);
         if ($totEval === 0 && $selfGnubgNull > 0) {
             throw new \RuntimeException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
         }
-        // Genel PR: sayılan karar varsa havuzdan; yoksa (hepsi obvious ama yine de skorlandıysa) loose
-        // fallback; hiç değerlendirme yoksa NULL (yazma).
-        $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : ($totEval > 0 ? ($chk['pr'] ?: $cube['pr']) : null);
+        // KÖK FIX (2026-09-25 #4D5Z7 "sahte 0.00 PR"): gnubg maçı skorladı ama 0 SAYILAN karar
+        // (decisions=0) buldu. Eski kod bu durumda loose fallback'i ($chk['pr']=allLoss/evaluated ≈ 0)
+        // gnubg_pr'a 0.00 yazıp mezar taşı koyuyordu -> maç KALICI "—"/0.00 ("Super GM"). OYSA konsol
+        // (tavla:gnubg-pr AYNI log) 25/25 karar + PR 6.56 üretti: 0-karar bir SERVİS DEGRADE işaretidir
+        // (PR job maç biter bitmez ~3sn sonra çalışır; gnubg contention'da tek-aday/"forced" ya da
+        // ~0-loss hint döndürür). Fake 0 ASLA yazma:
+        //  - deneme hakkı varken FIRLAT -> retry/backoff + heal -> temiz rerun GERÇEK PR'ı yazar.
+        //  - son denemede (nadir: gerçekten kısa/forced maç) tombstone (gnubg_pr null = dürüst "—").
+        if ($totDec === 0 && $totEval > 0 && $this->job !== null && $this->attempts() < $this->tries) {
+            throw new \RuntimeException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
+        }
+        // PR = Σloss / SAYILAN karar. decisions=0 -> PR TANIMSIZ (null/"—"); ASLA 0 sentinel yazma.
+        $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : null;
 
         $upd = [];
-        // Her kova YALNIZ kendi değerlendirmesi varsa yazılır (kübü hiç olmayan maçta gnubg_cube_pr
-        // sahte 0.00 yerine NULL -> "—"). Genel PR yalnız en az bir pozisyon skorlandıysa.
-        if ($totEval > 0 && $overall !== null && Schema::hasColumn('match_results', 'gnubg_pr')) {
-            $upd['gnubg_pr'] = round((float) $overall, 2);
+        // Her kova SAYILAN kararına göre: decisions>0 -> gerçek değer; yoksa NULL (varsa eski sentinel
+        // 0'ı da TEMİZLER -> ekran dürüst "—"). Eskiden evaluated>0 ile yazılıyordu; bu, 0-karar degrade
+        // run'da sahte 0.00 sızdırıyordu (bu maçın kök nedeni).
+        if (Schema::hasColumn('match_results', 'gnubg_pr')) {
+            $upd['gnubg_pr'] = $totDec > 0 ? round((float) $overall, 2) : null;
         }
-        if ($chkEval > 0 && Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
-            $upd['gnubg_checker_pr'] = round((float) $chk['pr'], 2);
+        if (Schema::hasColumn('match_results', 'gnubg_checker_pr')) {
+            $upd['gnubg_checker_pr'] = $chkDec > 0 ? round((float) $chk['pr'], 2) : null;
         }
-        if ($cubeEval > 0 && Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
-            $upd['gnubg_cube_pr'] = round((float) $cube['pr'], 2);
+        if (Schema::hasColumn('match_results', 'gnubg_cube_pr')) {
+            $upd['gnubg_cube_pr'] = $cubeDec > 0 ? round((float) $cube['pr'], 2) : null;
         }
         if ($totEval > 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
@@ -149,31 +162,28 @@ class AnalyzeMatchPrJob implements ShouldQueue
                 $oCube = $orch->cubePr($log, $opp, $ml);
                 $oTotLoss = $oChk['loss'] + $oCube['loss'];
                 $oTotDec = $oChk['decisions'] + $oCube['decisions'];
-                $oChkEval = (int) ($oChk['evaluated'] ?? 0);
-                $oCubeEval = (int) ($oCube['evaluated'] ?? 0);
-                $oTotEval = $oChkEval + $oCubeEval;
-                $oOverall = $oTotDec > 0 ? ($oTotLoss / $oTotDec) * 500 : ($oTotEval > 0 ? ($oChk['pr'] ?: $oCube['pr']) : null);
-                // KÖK FIX: rakibin hamleleri bu log'dan gnubg ile skorlanamıyorsa ($oTotEval==0 — kazananın
-                // log'undaki reconstructed rakip girdileri pos/dice/playedSteps taşımıyor) checkerPr 0.0
-                // fallback döner. Bu SAHTE 0.0'ı gnubg_opponent_pr'a YAZMA: ekranda kaybeden "0.00 + Super
-                // Grandmaster" görünüyordu. Değerlendirme yoksa NULL bırak -> ekran "—" gösterir ve rakibin
-                // KENDİ satırının gerçek gnubg PR'ı (matchPr senkronu) otoriter kaynak olur.
-                if ($oChkEval > 0 && Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr')) {
-                    $upd['gnubg_opponent_checker_pr'] = round((float) $oChk['pr'], 2);
+                $oChkDec = (int) ($oChk['decisions'] ?? 0);
+                $oCubeDec = (int) ($oCube['decisions'] ?? 0);
+                // decisions bazlı (self ile AYNI kural): SAYILAN karar yoksa PR yok -> NULL (sahte 0
+                // yazma; varsa eski sentinel'i temizle). Reconstructed rakip skorlanamazsa (oTotDec=0)
+                // ekran dürüst "—"; rakip GERÇEKTEN raporlarsa kendi satırının PR'ı otoriter olur.
+                $oOverall = $oTotDec > 0 ? ($oTotLoss / $oTotDec) * 500 : null;
+                if (Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr')) {
+                    $upd['gnubg_opponent_checker_pr'] = $oChkDec > 0 ? round((float) $oChk['pr'], 2) : null;
                 }
-                if ($oCubeEval > 0 && Schema::hasColumn('match_results', 'gnubg_opponent_cube_pr')) {
-                    $upd['gnubg_opponent_cube_pr'] = round((float) $oCube['pr'], 2);
+                if (Schema::hasColumn('match_results', 'gnubg_opponent_cube_pr')) {
+                    $upd['gnubg_opponent_cube_pr'] = $oCubeDec > 0 ? round((float) $oCube['pr'], 2) : null;
                 }
-                if ($oTotEval > 0 && $oOverall !== null && Schema::hasColumn('match_results', 'gnubg_opponent_pr')) {
-                    $upd['gnubg_opponent_pr'] = round((float) $oOverall, 2);
+                if (Schema::hasColumn('match_results', 'gnubg_opponent_pr')) {
+                    $upd['gnubg_opponent_pr'] = $oTotDec > 0 ? round((float) $oOverall, 2) : null;
                 }
                 // ONLINE + rakip HİÇ raporlamadı (opponent_pr hâlâ null): "Maç Analizleri" listesi +
                 // MatchReport rakip PR'ı opponent_pr KOLONUNDAN okur (gnubg_opponent_pr'dan DEĞİL). Bu
                 // yüzden tarihsel görünümün de "—" kalmaması için fallback'i opponent_pr'a da yaz.
-                // YALNIZ null iken + rakibin hamleleri GERÇEKTEN skorlandıysa ($oTotEval>0) -> rakip
+                // YALNIZ null iken + rakibin hamleleri GERÇEKTEN skorlandıysa ($oTotDec>0) -> rakip
                 // GERÇEKTEN raporlarsa KENDİ otoriter gnubg PR'ı (reportRating senkronu / rakibin bu
                 // job'unun opponent_pr update'i) bunu EZER (o daha doğru).
-                if ($oTotEval > 0 && $oOverall !== null
+                if ($oTotDec > 0 && $oOverall !== null
                     && ! empty($mr->room_code)
                     && ($mr->match_type ?? null) !== \App\Support\StatsConfig::MATCH_TYPE_AI
                     && $mr->opponent_pr === null
