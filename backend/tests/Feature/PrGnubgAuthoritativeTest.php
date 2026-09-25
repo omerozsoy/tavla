@@ -338,6 +338,30 @@ class PrGnubgAuthoritativeTest extends TestCase
         $this->assertTrue($this->app->make(GnuBgClient::class)->analyzeHealthy(), 'yedek ayaktaysa analyzeHealthy true olmali');
     }
 
+    /** İZOLASYON: canlı bot (analyze) ÖN plan havuzunu, PR/heal (analyzeBackground) ARKA plan havuzunu kullanır. */
+    public function test_foreground_and_background_pools_are_isolated(): void
+    {
+        config([
+            'gnubg.url' => 'http://127.0.0.1:8092',
+            'gnubg.url_backup' => 'http://127.0.0.1:8093',                                 // ön plan (canlı bot)
+            'gnubg.analysis_urls' => 'http://127.0.0.1:8094,http://127.0.0.1:8095',        // arka plan (PR/heal)
+        ]);
+        // Ön plan loss=9.9, arka plan loss=0.2 -> hangi havuzun kullanıldığını dönen değerden anlarız.
+        \Illuminate\Support\Facades\Http::fake([
+            '127.0.0.1:8092/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
+            '127.0.0.1:8093/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 9.9]], 200),
+            '127.0.0.1:8094/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
+            '127.0.0.1:8095/analyze' => \Illuminate\Support\Facades\Http::response(['result' => ['hint' => []], 'played' => ['loss' => 0.2]], 200),
+        ]);
+        $client = $this->app->make(GnuBgClient::class);
+
+        $fg = $client->analyze(['points' => array_fill(0, 24, 0)]);
+        $bg = $client->analyzeBackground(['points' => array_fill(0, 24, 0)]);
+
+        $this->assertEqualsWithDelta(9.9, (float) $fg['played']['loss'], 1e-9, 'canli bot ON plan havuzunu kullanmali');
+        $this->assertEqualsWithDelta(0.2, (float) $bg['played']['loss'], 1e-9, 'PR/heal ARKA plan havuzunu kullanmali (canli oyunu mesgul etmez)');
+    }
+
     /** Admin Servis Durumu: 4 gnubg instance AYRI satır (lamba) + doğru up/down. */
     public function test_service_status_shows_each_gnubg_instance_separately(): void
     {

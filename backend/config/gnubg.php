@@ -21,6 +21,13 @@ return [
     // Boşsa yalnız birincil 'gnubg-analysis' bilinir (yedekler için restart SSH komutu gösterilir).
     'units' => env('GNUBG_UNITS', 'gnubg-analysis'),
 
+    // ARKA PLAN (PR/heal) analiz havuzu — CANLI oyundan İZOLASYON. Maç sırasında botun hamlesi ön plan
+    // havuzundan (url + url_backup) hesaplanır; PR/heal (AnalyzeMatchPrJob -> AnalysisOrchestrator) ise
+    // BU havuzdan -> ağır PR analizi canlı botu MEŞGUL ETMEZ ("onayla" takılmaz). Örn 8092/8093 canlı,
+    // 8094/8095 PR/heal: GNUBG_ANALYSIS_URLS=http://127.0.0.1:8094,http://127.0.0.1:8095
+    // Boşsa izolasyon yok (PR ön planı kullanır = geriye dönük). Her havuz diğerine failover yapar.
+    'analysis_urls' => env('GNUBG_ANALYSIS_URLS', ''),
+
     // Servis dosyası (systemd birimi bunu çalıştırır). Admin "Servis Durumu" paneli gnubg KIRMIZI
     // iken bunu inceleyip "symlink kırık / dosya yok" teşhisi verir (bugün yaşanan tavlai->tavlatv
     // symlink sorunu gibi). www-data /opt'u okuyabilir (drwxr-xr-x). Yol farklıysa env ile ayarla.
