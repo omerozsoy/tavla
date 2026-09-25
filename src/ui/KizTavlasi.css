@@ -130,11 +130,16 @@
 .kiz-view .checker.open { position: relative; }
 .kiz-view .checker.open::after {
   content: '';
+  display: block; /* temel .checker::after display:none'unu ez (yoksa halka hiç çizilmez) */
   position: absolute;
-  inset: 16%;
+  inset: 22%;
   border-radius: 50%;
-  border: 2px solid #d8b25a;
-  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.4), 0 0 6px rgba(216, 178, 90, 0.55);
+  border: 3px solid #f0c645; /* parlak altın halka */
+  /* Koyu kontur (iki yanda) -> cream pulda da koyu pulda da net; + altın hâle. */
+  box-shadow:
+    0 0 0 1.5px rgba(0, 0, 0, 0.55),
+    inset 0 0 0 1.5px rgba(0, 0, 0, 0.35),
+    0 0 8px rgba(240, 198, 69, 0.75);
   pointer-events: none;
 }
 
