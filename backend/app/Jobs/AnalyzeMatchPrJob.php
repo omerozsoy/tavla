@@ -62,7 +62,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         // $gnubg YALNIZ container çağrısında dolu (testler handle($orch) ile çağırır -> null -> precheck
         // atlanır; o yolda aşağıdaki mid-run guard mock'lanabilir skipReasons ile devrededir).
         if ($gnubg !== null && ! $gnubg->analyzeHealthy()) {
-            throw new \RuntimeException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
+            throw new \App\Exceptions\TransientAnalysisException('gnubg servisi erisilemez (hicbir analyze instance ayakta degil) -> PR analizi ertelendi (retry)');
         }
         $decoded = json_decode($mr->log, true);
         if (! is_array($decoded) || empty($decoded['log'])) {
@@ -105,7 +105,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         $cubeDec = (int) ($cube['decisions'] ?? 0);
         $selfGnubgNull = (int) ($chk['skipReasons']['gnubg_null'] ?? 0);
         if ($totEval === 0 && $selfGnubgNull > 0) {
-            throw new \RuntimeException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
+            throw new \App\Exceptions\TransientAnalysisException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
         }
         // KÖK FIX (2026-09-25 #4D5Z7 "sahte 0.00 PR"): gnubg maçı skorladı ama 0 SAYILAN karar
         // (decisions=0) buldu. Eski kod bu durumda loose fallback'i ($chk['pr']=allLoss/evaluated ≈ 0)
@@ -116,7 +116,7 @@ class AnalyzeMatchPrJob implements ShouldQueue
         //  - deneme hakkı varken FIRLAT -> retry/backoff + heal -> temiz rerun GERÇEK PR'ı yazar.
         //  - son denemede (nadir: gerçekten kısa/forced maç) tombstone (gnubg_pr null = dürüst "—").
         if ($totDec === 0 && $totEval > 0 && $this->job !== null && $this->attempts() < $this->tries) {
-            throw new \RuntimeException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
+            throw new \App\Exceptions\TransientAnalysisException('gnubg PR: 0 sayilan karar (eval='.$totEval.') = degrade run -> retry (temiz rerun gercek PR yazar)');
         }
         // PR = Σloss / SAYILAN karar. decisions=0 -> PR TANIMSIZ (null/"—"); ASLA 0 sentinel yazma.
         $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : null;
