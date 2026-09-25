@@ -9579,6 +9579,12 @@ export default function App() {
             white: { mwc: luckPctOf('white'), cost: luckEmgOf('white'), jokers: jokersOf('white') },
             black: { mwc: luckPctOf('black'), cost: luckEmgOf('black'), jokers: jokersOf('black') },
           }}
+          authPr={{
+            // TEK-KAYNAK PR: Maç Özeti Performans/Pul/Küp'ü sunucu-otoriter (gnubg) serverPr'dan göster
+            // (log'dan yeniden hesaplama sapması olmasın) -> sonuç kartı/analiz/istatistik AYNI değer.
+            white: { pr: prShown('white'), checker: prCheckerShown('white'), cube: prCubeShown('white') },
+            black: { pr: prShown('black'), checker: prCheckerShown('black'), cube: prCubeShown('black') },
+          }}
           onClose={() => setResultView(null)}
         />
       )}

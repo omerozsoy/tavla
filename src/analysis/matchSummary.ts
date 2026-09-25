@@ -77,6 +77,15 @@ export interface LuckInfo {
   jokers?: number | null // joker sayısı (very lucky + very unlucky)
 }
 
+// TEK-KAYNAK PR: sunucu-otoriter (gnubg) PR değerleri (per oyuncu). Verilirse Maç Özeti'ndeki
+// Performans/Pul Oyunu/Küp Oyunu PR bu değerlerle GÖSTERİLİR (log'dan yeniden hesaplanmaz) ->
+// sonuç kartı + analiz + istatistik HER YERDE aynı tek doğru PR görünür. null alanlar hesaplanana düşer.
+export interface AuthPr {
+  pr?: number | null // overall (gnubg_pr)
+  checker?: number | null // gnubg_checker_pr
+  cube?: number | null // gnubg_cube_pr
+}
+
 const sum = (arr: LogEntry[], f: (e: LogEntry) => number): number => arr.reduce((s, e) => s + f(e), 0)
 // Elo lojistiğinde 0/1 olasılık ±sonsuz Elo verir -> [0.02, 0.98] aralığına kırp (±~680 Elo tavan).
 const clamp01 = (p: number): number => Math.min(0.98, Math.max(0.02, p))
@@ -93,6 +102,7 @@ function perPlayer(
   color: 'white' | 'black',
   name: string,
   luckInfo: LuckInfo | null,
+  authPr: AuthPr | null = null,
 ): PlayerMatchSummary {
   const luckPct = luckInfo?.mwc != null && Number.isFinite(luckInfo.mwc) ? luckInfo.mwc : null
   const luckCost = luckInfo?.cost != null && Number.isFinite(luckInfo.cost) ? luckInfo.cost : null
@@ -140,10 +150,16 @@ function perPlayer(
   const cubeCostTotal = doubleEquityCost + takeEquityCost
   const cubeCount = cubeDecisions + takeDecisions
 
-  // ---- PR: pr.ts havuzlama (Σloss/Σkarar × 500); karar yoksa null (asla 0) ----
-  const checkerPlay = prValue(checkerEquityCost, checkerDecisions)
-  const cubePlay = prValue(cubeCostTotal, cubeCount)
-  const performanceRating = prValue(checkerEquityCost + cubeCostTotal, checkerDecisions + cubeCount)
+  // ---- PR: TEK-KAYNAK. Sunucu-otoriter (gnubg) değer verilmişse ONU göster; yoksa pr.ts havuzlama
+  // (Σloss/Σkarar × 500; karar yoksa null, asla 0). Böylece istatistik paneli sonuç kartı/analizle
+  // AYNI tek doğru PR'ı gösterir (log'dan yeniden-hesap sapması ortadan kalkar). ----
+  const authFin = (n: number | null | undefined): n is number => n != null && Number.isFinite(n)
+  const checkerCalc = prValue(checkerEquityCost, checkerDecisions)
+  const cubeCalc = prValue(cubeCostTotal, cubeCount)
+  const overallCalc = prValue(checkerEquityCost + cubeCostTotal, checkerDecisions + cubeCount)
+  const checkerPlay = authFin(authPr?.checker) ? authPr!.checker! : checkerCalc
+  const cubePlay = authFin(authPr?.cube) ? authPr!.cube! : cubeCalc
+  const performanceRating = authFin(authPr?.pr) ? authPr!.pr! : overallCalc
 
   const totalEquityCost = checkerEquityCost + cubeCostTotal
   const totalErrors = checkerErrors + doubles + takes
@@ -208,11 +224,12 @@ export function computeMatchSummary(
   names: string[] | null,
   luck?: { white: LuckInfo | null; black: LuckInfo | null },
   matchLength: number | null = null,
+  authPr?: { white: AuthPr | null; black: AuthPr | null },
 ): MatchSummaryData {
   const safe = Array.isArray(log) ? log : []
   return {
-    white: perPlayer(safe, 'white', names?.[0] || 'White', luck?.white ?? null),
-    black: perPlayer(safe, 'black', names?.[1] || 'Black', luck?.black ?? null),
+    white: perPlayer(safe, 'white', names?.[0] || 'White', luck?.white ?? null, authPr?.white ?? null),
+    black: perPlayer(safe, 'black', names?.[1] || 'Black', luck?.black ?? null, authPr?.black ?? null),
     matchLength,
   }
 }

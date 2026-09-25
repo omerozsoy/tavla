@@ -94,6 +94,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       id: number; log: LogEntry[]; hc: Player; pr: number | null; matchLength?: number; whiteName?: string; blackName?: string
       matchResult?: { winner: Player; score: { white: number; black: number } }
       luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null }
+      authPr?: { white: import('../analysis/matchSummary').AuthPr | null; black: import('../analysis/matchSummary').AuthPr | null }
     } | null
   >(null)
   const [reportBusy, setReportBusy] = useState(false)
@@ -139,7 +140,13 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
       const luckSelf = { mwc: m.luck_mwc ?? null, cost: m.luck_emg ?? null, jokers: m.luck_jokers ?? null }
       const luckOpp = { mwc: m.opponent_luck_mwc ?? null, cost: m.opponent_luck_emg ?? null, jokers: m.opponent_luck_jokers ?? null }
       const luck = hc === 'white' ? { white: luckSelf, black: luckOpp } : { white: luckOpp, black: luckSelf }
-      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck })
+      // TEK-KAYNAK PR: self kendi satırının gnubg_*'ı, rakip karşı satırın gnubg_*'ı (backend verir).
+      // renge (hc) eşle -> Maç Özeti Performans/Pul/Küp sonuç kartıyla AYNI otoriter değeri gösterir.
+      const prNz = (n: number | null | undefined): number | null => (n != null && n !== 0 ? n : null)
+      const authSelf = { pr: prNz(m.gnubg_pr ?? m.pr), checker: prNz(m.gnubg_checker_pr), cube: m.gnubg_cube_pr ?? null }
+      const authOpp = { pr: prNz(m.opponent_gnubg_pr), checker: prNz(m.opponent_gnubg_checker_pr), cube: m.opponent_gnubg_cube_pr ?? null }
+      const authPr = hc === 'white' ? { white: authSelf, black: authOpp } : { white: authOpp, black: authSelf }
+      setReport({ id: m.id, log, hc, pr: m.pr ?? null, matchLength, whiteName, blackName, matchResult, luck, authPr })
     } catch {
       /* yoksay */
     } finally {
@@ -307,11 +314,15 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
                           <span className="mh-nm">{oppName}</span>
                           {oppFull && <span className="mh-full">{oppFull}</span>}
                           <span className="mh-tags">
-                            {/* SAHTE-0 KALKANI: rakip genel PR'ı tam 0 => "hesaplanamadı" sentinel'i
-                                (eski satırlar); gösterme (yoksa 0.0 + üst seviye rozeti yanlış çıkardı). */}
-                            {m.opponent_pr != null && m.opponent_pr !== 0 && (
-                              <span className={`mh-prc ${prCls(m.opponent_pr)}`}>PR {m.opponent_pr.toFixed(1)}</span>
-                            )}
+                            {/* TEK-KAYNAK PR: rakip PR'ı rakibin KENDİ satırındaki otoriter gnubg değeri
+                                (opponent_gnubg_pr); yoksa eski opponent_pr fallback. SAHTE-0 KALKANI:
+                                tam 0 => "hesaplanamadı" sentinel'i -> gösterme. */}
+                            {(() => {
+                              const oppPr = m.opponent_gnubg_pr ?? m.opponent_pr
+                              return oppPr != null && oppPr !== 0 ? (
+                                <span className={`mh-prc ${prCls(oppPr)}`}>PR {oppPr.toFixed(1)}</span>
+                              ) : null
+                            })()}
                             {oppLuck && (
                               <span className={`mh-luck ${oppLuck.pos ? 'good' : 'bad'}`} title={t('mh.dLuck')}>
                                 <Icon name="dice" size={13} /> {oppLuck.text}
@@ -437,6 +448,7 @@ export default function MatchAnalytics({ onClose, myName, myAvatar, initialMatch
           matchResult={report.matchResult}
           matchDbId={report.id}
           luck={report.luck}
+          authPr={report.authPr}
           onClose={() => setReport(null)}
         />
       )}

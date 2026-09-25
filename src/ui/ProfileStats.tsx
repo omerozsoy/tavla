@@ -494,7 +494,11 @@ export default function ProfileStats({ avatar, frame, name, onClose, embed, onOp
                             {m.pr != null && (
                               <span className="psm-pr">
                                 PR {m.pr.toFixed(1)}
-                                {m.opponent_pr != null && m.opponent_pr !== 0 ? ` · ${m.opponent_pr.toFixed(1)}` : ''}
+                                {/* TEK-KAYNAK: rakip PR = rakibin otoriter gnubg değeri (yoksa eski kolon) */}
+                                {(() => {
+                                  const o = m.opponent_gnubg_pr ?? m.opponent_pr
+                                  return o != null && o !== 0 ? ` · ${o.toFixed(1)}` : ''
+                                })()}
                               </span>
                             )}
                           </span>
