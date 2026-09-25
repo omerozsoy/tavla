@@ -22,9 +22,10 @@ class Shield
 
     private const WINDOW = 60;        // istek/dk penceresi (sn)
 
-    // İstek/dk eşikleri (kullanıcı+IP başına).
-    private const RATE_WARN = 120;
-    private const RATE_DANGER = 240;
+    // İstek/dk eşikleri (kullanıcı+IP başına). Salt-okunur kazıma gürültüsünü elemek için
+    // yükseltildi; başarılı GET patlamaları ayrıca e-posta uyarısı üretmez (bkz. event çağrısı).
+    private const RATE_WARN = 200;
+    private const RATE_DANGER = 400;
 
     // Oturum başına hata (4xx/5xx) eşikleri.
     private const ERR_WARN = 15;
@@ -35,6 +36,8 @@ class Shield
     private const SPIN_DANGER = 150;
 
     private static ?bool $ready = null;
+
+    private static ?bool $hasPage = null;
 
     /** İstek işlenip yanıt üretildikten sonra çağrılır. Asla exception fırlatmaz. */
     public static function record(Request $request, int $status): void
@@ -56,6 +59,9 @@ class Shield
             $ip = (string) $request->ip();
             $subject = $userId ? "u:{$userId}" : "ip:{$ip}";
             $ua = mb_substr((string) $request->userAgent(), 0, 255);
+            // SPA'nın o an gösterdiği sayfa yolu (istemci X-Page başlığıyla bildirir; ör: "/uyelik").
+            // API yolundan farklıdır: "kim hangi sayfada" için gerçek rota budur.
+            $page = mb_substr(ltrim((string) $request->headers->get('X-Page', ''), '/'), 0, 191);
             $now = now();
             $nowTs = $now->getTimestamp();
 
@@ -146,6 +152,11 @@ class Shield
                 'updated_at' => $now,
             ];
 
+            // last_page kolonu (deploy migrate'inden sonra) varsa doldur; boşsa mevcut değeri koru.
+            if (self::hasPageColumn() && $page !== '') {
+                $payload['last_page'] = $page;
+            }
+
             if ($prev) {
                 DB::table('shield_presence')->where('subject', $subject)->update($payload);
             } else {
@@ -157,8 +168,11 @@ class Shield
 
             // --- Olaylar ---
             if ($rateEventTier !== null) {
+                // Başarılı salt-okunur GET patlaması = zararsız kazıma/tarayıcı gürültüsü:
+                // olay yine kaydedilir (panelde "tümü" görünümünde görünür) ama e-posta atılmaz.
+                $benignRead = $method === 'GET' && $status < 400 && ! $isSusp;
                 self::event($userId, $ip, 'rate_burst', $rateEventTier + 1, $path, $method, $status,
-                    "≈{$winCount}/dk istek");
+                    "≈{$winCount}/dk istek", email: ! $benignRead);
             }
             if ($errEventTier !== null) {
                 self::event($userId, $ip, 'error_burst', $errEventTier + 1, $path, $method, $status,
@@ -220,6 +234,19 @@ class Shield
         return self::$ready;
     }
 
+    /** shield_presence.last_page kolonu deploy sonrası eklendi mi? (tek seferlik, önbellekli) */
+    private static function hasPageColumn(): bool
+    {
+        if (self::$hasPage === null) {
+            try {
+                self::$hasPage = Schema::hasColumn('shield_presence', 'last_page');
+            } catch (\Throwable $e) {
+                self::$hasPage = false;
+            }
+        }
+        return self::$hasPage;
+    }
+
     /** Aynı özne+tür için kısa süre içinde tek olay (spam engelle). */
     private static function guard(string $subject, string $type, int $seconds): bool
     {
@@ -231,7 +258,7 @@ class Shield
     }
 
     private static function event(?int $userId, ?string $ip, string $type, int $severity,
-        string $path, string $method, int $status, string $detail): void
+        string $path, string $method, int $status, string $detail, bool $email = true): void
     {
         DB::table('shield_events')->insert([
             'user_id' => $userId,
@@ -246,7 +273,8 @@ class Shield
         ]);
 
         // Ciddi (tehlike) olaylarda admin'e uyarı — özne başına 30 dk spam-limitli.
-        if ($severity >= 3 && ! app()->environment('testing')) {
+        // $email=false ise (ör. zararsız salt-okunur GET patlaması) olay kaydedilir ama mail atılmaz.
+        if ($email && $severity >= 3 && ! app()->environment('testing')) {
             $who = $userId ? "üye #{$userId}" : "IP {$ip}";
             $key = 'shield:alert:'.($userId ? "u:{$userId}" : "ip:{$ip}");
             try {

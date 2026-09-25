@@ -119,6 +119,8 @@ async function req<T>(path: string, options: RequestInit = {}): Promise<T> {
       'Content-Type': 'application/json',
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(gate ? { 'X-Site-Gate': gate } : {}),
+      // Güvenlik Kalkanı "kim hangi sayfada" için o anki SPA rotasını bildir (yalnız yol, gizli veri yok).
+      ...(typeof location !== 'undefined' ? { 'X-Page': location.pathname } : {}),
       ...(options.headers || {}),
     },
   })
