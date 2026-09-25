@@ -25,6 +25,10 @@ export default function Membership({
   const [err, setErr] = useState('')
   const [bankEnabled, setBankEnabled] = useState(false)
   const [method, setMethod] = useState<PayMethod>('card')
+  // Zaten premium olan uyeye "Üyeliği Yükselt" + Ücretsiz plan kiyaslamasi saçma; bu ekran
+  // onlar icin "Üyeliğini Uzat" (yalniz mevcut plan + uzatma). Ucretsiz/misafir icin degismez.
+  const premium = current === 'star'
+  const plans = premium ? PLANS.filter((p) => p.id !== 'free') : PLANS
 
   useEffect(() => {
     let alive = true
@@ -61,7 +65,7 @@ export default function Membership({
         <Button type="button" variant="ghost" size="icon" className="modal-close" onClick={onClose} aria-label={t('common.close')}>
           <Icon name="x" size={16} />
         </Button>
-        <h2 className="mem-title">{t('mem.title')}</h2>
+        <h2 className="mem-title">{premium ? t('mem.status.renew') : t('mem.title')}</h2>
 
         {err && <div className="register-error mem-err">{err}</div>}
 
@@ -92,8 +96,8 @@ export default function Membership({
           </div>
         )}
 
-        <div className="mem-grid">
-          {PLANS.map((p) => {
+        <div className={`mem-grid ${premium ? 'mem-grid--single' : ''}`}>
+          {plans.map((p) => {
             const isCurrent = current === p.id
             const price = p.yearly
             return (
