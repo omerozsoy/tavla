@@ -139,11 +139,8 @@ function Name({ p }: { p: PlayerInfo }) {
 
 function Rating({ p }: { p: PlayerInfo }) {
   if (p.rating == null) return null
-  return (
-    <div className="player-rating">
-      <Icon name="star" size={15} /> {p.rating}
-    </div>
-  )
+  // Yildiz kaldirildi: sadece rating sayisi gosterilir (premium taci isim yaninda).
+  return <div className="player-rating">{p.rating}</div>
 }
 
 // Ust oyuncu: isim -> avatar -> rating. Alt oyuncu: rating -> avatar -> isim (aynasal).
