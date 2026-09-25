@@ -125,7 +125,11 @@ class PrWhy extends Command
         // 5) HÜKÜM
         $this->line('');
         $this->line('=== HÜKÜM ===');
-        $allHaveGnubg = $has('gnubg_pr') && $rows->every(fn ($m) => $m->gnubg_pr !== null);
+        // SENTINEL-ZERO: gnubg_pr TAM 0.00 = gnubg maçı skorladı AMA 0 karar saydı (decisions=0) ->
+        // "PR asla null olmasın" fallback'i sahte 0 döndürdü. Bir insan tam maçta 0.00 PR yapamaz
+        // (bkz tavla:purge-sentinel-zero-pr). Bu "dolu" DEĞİL; kök = 0 sayılan karar (matching/threshold).
+        $sentinelZero = $has('gnubg_pr') && $rows->contains(fn ($m) => $m->gnubg_pr !== null && abs((float) $m->gnubg_pr) < 0.005);
+        $allHaveGnubg = $has('gnubg_pr') && $rows->every(fn ($m) => $m->gnubg_pr !== null && abs((float) $m->gnubg_pr) >= 0.005);
         $allTombstoned = $has('gnubg_pr_at') && $rows->every(fn ($m) => $m->gnubg_pr_at !== null && $m->gnubg_pr === null);
         $noLog = $rows->every(fn ($m) => empty($m->log));
 
@@ -133,6 +137,11 @@ class PrWhy extends Command
             $this->error('KÖK SEBEP: GNUBG_PR_MODE='.$prMode.' (KAPALI). gnubg PR hiç hesaplanmıyor. .env -> GNUBG_PR_MODE=authoritative + config:clear + FPM restart.');
         } elseif ($noLog) {
             $this->error('KÖK SEBEP: log YOK. İstemci maç logunu göndermemiş -> PR matematiksel olarak imkansız. (Yeni maçta tekrar dene; log gitmiyorsa istemci tarafı sorunu.)');
+        } elseif ($sentinelZero) {
+            $this->error('KÖK SEBEP: SAHTE 0.00 (sentinel). gnubg maçı skorladı ama 0 KARAR saydı -> "—"/0.00 görünür.');
+            $this->line('  Neden 0 karar? Ya hamleler gnubg pozisyonuyla EŞLEŞMİYOR (skip) ya da hepsi "obvious/forced" sayıldı.');
+            $this->line('  KESİN teşhis (karar-karar dökümü): <info>php artisan tavla:gnubg-pr '.$rows->first()->id.' --player=white --full</info>');
+            $this->line('  "Toplam değerlendirilen" küçükse -> hamle-eşleşme bug’ı; büyük ama Sayılan=0 -> obvious eşiği.');
         } elseif ($allHaveGnubg) {
             $this->info('PR ZATEN DOLU (gnubg_pr yazılmış). Ekran "—" gösteriyorsa istemci bayat bundle/cache -> Ctrl+F5 (sonuç ekranı matchGnubgPr’ı yeniden çeksin).');
         } elseif ($allTombstoned) {
