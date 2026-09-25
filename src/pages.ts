@@ -48,7 +48,7 @@ export const PAGES: PageDef[] = [
   // Kız Tavlası: klasik tavladan AYRI kural motorlu oyun sayfası (yerel: iki kişi + YZ).
   // inMenu:false -> sol menüde admin'in eklediği ÖZEL öğe (Hedef: /kiz-tavlasi) gösterir;
   // burada yalnız route + deep-link + aktif-vurgu tanımlı (menüde ÇİFT görünmesin).
-  { key: 'kiz', slug: 'kiz-tavlasi', labelKey: 'kiz.menu', icon: 'dice', group: 'fun', hideInGame: true, inMenu: false },
+  { key: 'kiz', slug: 'kiz-tavlasi', labelKey: 'kiz.menu', icon: 'heart', group: 'fun', hideInGame: true, inMenu: false },
 
   // --- KESFET: bilgi / icerik (herkese acik) ---
   { key: 'makale', slug: 'makaleler', labelKey: 'menu.makale', icon: 'article', group: 'content', hideInGame: true },

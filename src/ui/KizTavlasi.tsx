@@ -187,7 +187,7 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
     <div className="app game-view kiz-view" style={{ position: 'fixed', inset: 0, zIndex: 5000 }}>
       <div className="kiz-topbar">
         <div className="kiz-title">
-          <Icon name="dice" size={20} /> <b>Kız Tavlası</b>
+          <Icon name="heart" size={20} weight="fill" /> <b>Kız Tavlası</b>
           <span className="kiz-vs">Bilgisayara Karşı</span>
         </div>
         <button type="button" className="kiz-howto-btn" onClick={() => setHowto((v) => !v)}>

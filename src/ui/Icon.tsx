@@ -120,6 +120,8 @@ import {
   IconSend,
   IconSpeakerphone,
   IconSword,
+  IconHeart,
+  IconHeartFilled,
 } from '@tabler/icons-react'
 
 export type IconName =
@@ -228,6 +230,7 @@ export type IconName =
   | 'smiley-sad'
   | 'megaphone'
   | 'sword'
+  | 'heart'
 
 // Isim -> Tabler outline bileseni (currentColor + stroke; weight -> stroke'a cevrilir).
 const MAP: Record<IconName, TablerIcon> = {
@@ -336,6 +339,7 @@ const MAP: Record<IconName, TablerIcon> = {
   'paper-plane-right': IconSend,
   megaphone: IconSpeakerphone,
   sword: IconSword,
+  heart: IconHeart,
 }
 
 // weight="fill" istenince DOLU varyant (yalniz karsiligi olan + dolu kullanilan ikonlar).
@@ -351,6 +355,7 @@ const FILLED: Partial<Record<IconName, TablerIcon>> = {
   'die-4': IconDice4Filled,
   'die-5': IconDice5Filled,
   'die-6': IconDice6Filled,
+  heart: IconHeartFilled,
 }
 
 // Tum ikon isimleri (showcase galerisi kullanir)
