@@ -56,6 +56,30 @@ export function shouldApplyServerState(local: SyncLocal, rv: ServerSyncView, myC
 }
 
 /**
+ * commitTurn MÜKERRER-HAMLE KİLİDİ (moveKey dedup) — SAF karar + geçiş.
+ *
+ * `moveKey = code:expectedServerVersion:JSON(steps)`. Amaç: aynı render yarışında ya da bir
+ * auto-confirm timer'ıyla el-tıklamanın üst üste binmesinde AYNI turun iki kez gönderilip ikinci
+ * isteğin gereksiz 409 üretmesini önlemek.
+ *
+ * KRİTİK KURAL (canlı "Onayla takılıyor" kilidi): sunucu bir hamleyi REDDEDERSE (409/422/…),
+ * o komut UYGULANMAZ ve `server_version` ARTMAZ. Bu yüzden reddedilen anahtar KİLİTTE KALIRSA,
+ * resync aynı versiyona döndüğünde kullanıcı aynı taşları tekrar oynayıp Onayla'ya bastığında
+ * moveKey birebir aynı çıkar -> `isDuplicateSubmit` true -> gönderim SESSİZCE yutulur (kalıcı).
+ * Çözüm: reddedilen hamlede kilidi TEMİZLE ('rejected' -> null); böylece aynı hamle yeniden
+ * denenebilir. Eşzamanlı çift-submit'i zaten (senkron) moveInFlight bayrağı engeller.
+ */
+export function isDuplicateSubmit(lastKey: string | null, moveKey: string): boolean {
+  return lastKey !== null && lastKey === moveKey
+}
+export type MoveDedupEvent = { type: 'submit'; moveKey: string } | { type: 'rejected' }
+export function nextSubmittedKey(current: string | null, ev: MoveDedupEvent): string | null {
+  if (ev.type === 'submit') return ev.moveKey
+  if (ev.type === 'rejected') return null // reddedilen hamle SUNUCUDA uygulanmadı -> tekrar denenebilmeli
+  return current
+}
+
+/**
  * Zar (serverRoll) yanıtını yerel tahtaya optimistik uygulamalı mıyız, yoksa poll'a mı bırakmalı?
  *  - opening: sunucu adil açılışı yaptı (starter + iki zar) -> UYGULA (taze tahta kur).
  *  - reused: sunucuda zaten verilmiş el -> UYGULAMA (poll doğru turn+zar+opened getirir; reused

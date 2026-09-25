@@ -46,6 +46,9 @@ _VERSION = "gnubg"
 _COUNT_LOCK = threading.Lock()
 _INFLIGHT = 0
 _PEAK_INFLIGHT = 0
+# Son isteğin kilit-bekleme süresi (ms). Kilit SERILEŞTIRDIGI icin bir sonraki request bu degeri
+# _analyze icinde okur (queue_ms teshisi: Level 11/12 cok-oda kuyrugu darbogazi gozlemi).
+_LAST_WAIT_MS = 0
 
 
 class _GnubgSession:
@@ -53,12 +56,14 @@ class _GnubgSession:
     gnubg çağır (yarış yok); giriş/çıkışta contention sayacını güncelle (ölçüm)."""
 
     def __enter__(self):
-        global _INFLIGHT, _PEAK_INFLIGHT
+        global _INFLIGHT, _PEAK_INFLIGHT, _LAST_WAIT_MS
         with _COUNT_LOCK:
             _INFLIGHT += 1
             if _INFLIGHT > _PEAK_INFLIGHT:
                 _PEAK_INFLIGHT = _INFLIGHT  # kilidi ALMADAN önce artır -> bekleyenler de sayılır
+        _wait0 = time.monotonic()
         _GNUBG_LOCK.acquire()
+        _LAST_WAIT_MS = int((time.monotonic() - _wait0) * 1000)  # bu isteğin kuyrukta bekleme süresi
         return self
 
     def __exit__(self, *exc):
@@ -564,7 +569,7 @@ def _analyze(pos):
                 pass
     out = {"gnubgid": gid, "result": hint,
            "diag": {"plies_used": plies_used, "escalated": escalated, "top_gap": top_gap,
-                    "response_ms": int((time.monotonic() - t0) * 1000)}}
+                    "response_ms": int((time.monotonic() - t0) * 1000), "queue_ms": _LAST_WAIT_MS}}
 
     # SUNUCU-OTORİTER BOT: her adaya notasyondan türetilmiş from/to adımlarını ekle (die=0; backend
     # BotMoveService bunu validator'ın DOĞRU-die'li yasal hamlesiyle from/to üzerinden eşler). PR

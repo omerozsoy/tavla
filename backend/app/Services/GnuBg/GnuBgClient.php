@@ -76,7 +76,7 @@ class GnuBgClient
             $resp = Http::timeout(180) // self-play ~60 hint -> uzun timeout
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/selfplay'), $params);
+                ->post($this->heavyUrl('/selfplay'), $params);
             if (! $resp->ok()) {
                 Log::warning('gnubg selfplay non-ok', ['status' => $resp->status()]);
 
@@ -98,7 +98,7 @@ class GnuBgClient
             $resp = Http::timeout((int) config('gnubg.timeout', 20))
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/cubetest'), $position);
+                ->post($this->heavyUrl('/cubetest'), $position);
 
             return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -113,7 +113,7 @@ class GnuBgClient
             $resp = Http::timeout(120) // rollout yavaş
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/rollouttest'), $position);
+                ->post($this->heavyUrl('/rollouttest'), $position);
 
             return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -128,7 +128,7 @@ class GnuBgClient
             $resp = Http::timeout(180) // oto-maç + analiz -> uzun
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/lucktest'), ['points_match' => $pointsMatch]);
+                ->post($this->heavyUrl('/lucktest'), ['points_match' => $pointsMatch]);
 
             return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -147,7 +147,7 @@ class GnuBgClient
             $resp = Http::timeout(180) // import + analyse match
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/matchluck'), ['mat' => $mat, 'selftest' => $selftest]);
+                ->post($this->heavyUrl('/matchluck'), ['mat' => $mat, 'selftest' => $selftest]);
 
             return $resp->ok() ? $resp->json() : ['http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -166,7 +166,7 @@ class GnuBgClient
             $resp = Http::timeout(240) // import + analyse match (uzun sürebilir)
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/analyzematch'), ['mat' => $mat, 'plies' => $plies]);
+                ->post($this->heavyUrl('/analyzematch'), ['mat' => $mat, 'plies' => $plies]);
 
             return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -184,7 +184,7 @@ class GnuBgClient
             $resp = Http::timeout(600) // hamle-hamle hint çok uzun sürebilir (maç boyu × oyuncu)
                 ->withHeaders(['x-gnubg-secret' => (string) config('gnubg.secret')])
                 ->acceptJson()
-                ->post($this->url('/reviewmatch'), ['mat' => $mat, 'plies' => $plies]);
+                ->post($this->heavyUrl('/reviewmatch'), ['mat' => $mat, 'plies' => $plies]);
 
             return $resp->ok() ? $resp->json() : ['ok' => false, 'http_status' => $resp->status(), 'body' => $resp->body()];
         } catch (\Throwable $e) {
@@ -195,5 +195,17 @@ class GnuBgClient
     private function url(string $path): string
     {
         return rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/').$path;
+    }
+
+    /**
+     * AĞIR analiz uçları (reviewmatch/analyzematch/matchluck/selfplay/rollout) için URL. heavy_url
+     * ayrı bir gnubg instance'ına (or. :8093) ayarlıysa CANLI botu (8092 /analyze) BLOKLAMAZ — uzun
+     * analiz kilidi tutarken bot hamleleri kuyrukta beklemez. Ayarlı değilse url ile AYNI (tek instance).
+     */
+    private function heavyUrl(string $path): string
+    {
+        $base = (string) config('gnubg.heavy_url') ?: (string) config('gnubg.url', 'http://127.0.0.1:8092');
+
+        return rtrim($base, '/').$path;
     }
 }
