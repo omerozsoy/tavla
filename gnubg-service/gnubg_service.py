@@ -18,6 +18,7 @@ import os
 import random as _random
 import re  # modül düzeyi regex derlemeleri (luck parse) için — eskiden yalnız fonksiyon-içiydi
 import threading
+import time  # adaptive ply süre-duvarı + response_ms ölçümü
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 
@@ -385,6 +386,43 @@ def _set_plies(plies):
         pass
 
 
+# Move-filter presetleri (gnubg: set evaluation chequer movefilter <ply> <level> <accept> <extra>
+# <threshold>). 'normal' = World Class varsayilani (mevcut davranis); 'large' = Grandmaster/derin
+# icin GENIS filtre (daha cok aday derinlemesine degerlendirilir -> daha guclu, daha yuksek CPU).
+# DIKKAT: production'da `show evaluation` ile satirlari DOGRULA; gnubg surumune gore ince ayar
+# gerekebilir (Level 11/12 planinda "mevcut kurulumdan dogrula" maddesi).
+_MOVEFILTERS = {
+    "normal": [(2, 0, 0, 8, 0.160), (3, 0, 0, 8, 0.160), (4, 0, 0, 8, 0.160)],
+    "large":  [(2, 0, 0, 16, 0.320), (3, 0, 0, 16, 0.320), (4, 0, 0, 16, 0.320)],
+}
+
+
+def _apply_eval(chequer_plies=None, cube_plies=None, movefilter=None):
+    """SELF-CONTAINED eval baglami: request'e ozgu chequer ply + CUBE ply + move-filter'i ACIKCA
+    kur. Baska endpoint'in ( or. reviewmatch) biraktigi global gnubg state'ine GUVENME (kilit
+    icinde cagrilir -> yaris yok, ama kalici durum da guvenli). Cube ply eskiden hic set edilmiyordu
+    -> gnubg default'una dusuyordu; artik chequer ile HIZALI."""
+    if chequer_plies is not None:
+        try:
+            gnubg.command("set evaluation chequer evaluation plies %d" % int(chequer_plies))
+        except Exception:
+            pass
+    if cube_plies is not None:
+        try:
+            gnubg.command("set evaluation cubedecision evaluation plies %d" % int(cube_plies))
+        except Exception:
+            pass
+    if movefilter:
+        rows = _MOVEFILTERS.get(str(movefilter).lower())
+        if rows:
+            for (ply, lvl, acc, extra, thr) in rows:
+                try:
+                    gnubg.command("set evaluation chequer movefilter %d %d %d %d %.3f"
+                                  % (ply, lvl, acc, extra, thr))
+                except Exception:
+                    pass
+
+
 _SIGN = {"white": 1, "black": -1}
 
 
@@ -487,14 +525,46 @@ def _analyze(pos):
     """Yapisal konum -> gnubgid -> setgnubgid -> (ply) -> hint. Ham hint + gnubgid doner.
     playedSteps verilirse oynanan adayi (sonuc-TAHTASI eslestirmesiyle) bulur ve equity kaybini
     ekler (PR icin: loss = best_eq - played_eq, EMG). Normalizasyon backend GnuBgAdapter'da."""
+    t0 = time.monotonic()
     gid = structured_to_gnubgid(pos)
     gnubg.setgnubgid(gid)
+    # SELF-CONTAINED: chequer ply + CUBE ply + move-filter'i her request'te ACIKCA kur (global
+    # state'e guvenme). cube ply eskiden hic set edilmiyordu -> gnubg default'una dusuyordu.
+    _apply_eval(pos.get("plies"), pos.get("cubePlies"), pos.get("movefilter"))
     # Zar yoksa -> KÜP kararı (gnubg.hint() küp desteklemiyor; 'hint' metnini parse et).
     if len([d for d in (pos.get("dice", []) or []) if d]) < 2:
         return _cube_result(gid)
-    _set_plies(pos.get("plies"))
     hint = gnubg.hint()
-    out = {"gnubgid": gid, "result": hint}
+    plies_used = pos.get("plies")
+    # ADAPTIVE (Level 12): yakin adaylarda daha derin ply'a yuksel. `adaptive` bayragi + esik +
+    # sure-duvari request'ten gelir; escalate TEK ek hint (kesilemez) -> sure yetmezse ATLA.
+    escalated = False
+    top_gap = None
+    _c = hint.get("hint") if isinstance(hint, dict) else None
+    if isinstance(_c, list) and len(_c) >= 2:
+        top_gap = abs((_c[0].get("equity") or 0.0) - (_c[1].get("equity") or 0.0))
+    if pos.get("adaptive") and isinstance(_c, list) and len(_c) >= 2:
+        esc = int(pos.get("escalatePlies", 4))
+        thr = float(pos.get("topGap", 0.040))
+        max_s = float(pos.get("maxSeconds", 10))
+        # Sure-duvari: escalate ~2x+ base surer; ancak butcenin yarisindan azini harcadiysak dene
+        # (gnubg hint kesilemez -> once-bak). Sure dolarsa 3-ply sonucu kullanilir (oyun bozulmaz).
+        if top_gap is not None and top_gap < thr and (time.monotonic() - t0) < max_s * 0.5:
+            try:
+                _apply_eval(esc, pos.get("cubePlies"), pos.get("movefilter"))
+                hint2 = gnubg.hint()
+                if isinstance(hint2, dict) and isinstance(hint2.get("hint"), list) and hint2["hint"]:
+                    hint = hint2
+                    plies_used = esc
+                    escalated = True
+                    _c = hint2["hint"]
+                    if len(_c) >= 2:
+                        top_gap = abs((_c[0].get("equity") or 0.0) - (_c[1].get("equity") or 0.0))
+            except Exception:
+                pass
+    out = {"gnubgid": gid, "result": hint,
+           "diag": {"plies_used": plies_used, "escalated": escalated, "top_gap": top_gap,
+                    "response_ms": int((time.monotonic() - t0) * 1000)}}
 
     # SUNUCU-OTORİTER BOT: her adaya notasyondan türetilmiş from/to adımlarını ekle (die=0; backend
     # BotMoveService bunu validator'ın DOĞRU-die'li yasal hamlesiyle from/to üzerinden eşler). PR
