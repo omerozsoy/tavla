@@ -46,8 +46,13 @@ class RewardFulfillmentService
 
             case LuckyWheelReward::TYPE_PREMIUM_DAY:
                 if ($amount > 0) {
-                    $this->extendPremium($u, $amount);
-                    $body = "+{$amount} gün premium";
+                    if ($this->extendPremium($u, $amount)) {
+                        $body = "+{$amount} gün premium";
+                    } else {
+                        // POLİTİKA (b): e-posta doğrulanmadan ÜCRETSİZ premium verilmez.
+                        // Kullanıcıyı doğrulamaya yönlendir (ödül yanınca gövdede görünür).
+                        $body = 'Premium ödülün için e-postanı doğrula';
+                    }
                 }
                 break;
 
@@ -132,9 +137,20 @@ class RewardFulfillmentService
         return $candidates[random_int(0, count($candidates) - 1)];
     }
 
-    /** plan_until'ı $days gün uzat (PaymentController::activateMembership mantığının gün versiyonu). */
-    private function extendPremium(User $u, int $days): void
+    /**
+     * plan_until'ı $days gün uzat (PaymentController::activateMembership mantığının gün versiyonu).
+     *
+     * POLİTİKA (b): ÜCRETSİZ premium (Şans Çarkı) YALNIZ e-posta DOĞRULANMIŞSA verilir.
+     * Sahte/doğrulanmamış e-postayla bedava premium farmını engeller. ÖDEME yolu
+     * (PaymentController::activateMembership) bu kontrolü YAPMAZ -> parayı yatıran her zaman alır.
+     *
+     * @return bool premium gerçekten verildi mi (false = e-posta doğrulanmamış -> verilmedi)
+     */
+    private function extendPremium(User $u, int $days): bool
     {
+        if (! $u->hasVerifiedEmail()) {
+            return false;
+        }
         $future = $u->plan_until && Carbon::parse($u->plan_until)->isFuture();
         $base = $future ? Carbon::parse($u->plan_until) : now();
         // free/boş plan -> en düşük premium 'star'; mevcut star korunur.
@@ -147,6 +163,8 @@ class RewardFulfillmentService
             $u->plan_since = now();
         }
         $u->save();
+
+        return true;
     }
 
     /** unlocks JSON dizisine (yoksa) ekle (ShopController deseni). */
