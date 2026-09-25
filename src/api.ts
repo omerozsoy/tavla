@@ -479,6 +479,14 @@ export interface MyMatch {
   opponent_luck_jokers?: number | null
   score_self?: number | null
   score_opp?: number | null
+  // TEK-KAYNAK PR (otoriter=gnubg): self kendi satırından, rakip karşı satırdan (online) / pvb kolonu.
+  // İstatistik/Maç Özeti bunlarla sonuç kartıyla AYNI tek doğru PR'ı gösterir.
+  gnubg_pr?: number | null
+  gnubg_checker_pr?: number | null
+  gnubg_cube_pr?: number | null
+  opponent_gnubg_pr?: number | null
+  opponent_gnubg_checker_pr?: number | null
+  opponent_gnubg_cube_pr?: number | null
   created_at?: string | null
 }
 // Sayfalama + filtre: offset/limit (30'ar yükle), q (rakip adı arama), from (tarih >= ISO)

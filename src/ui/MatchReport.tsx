@@ -59,6 +59,9 @@ interface Props {
   matchUid?: string // maçın kanonik kimliği (game_logs uid); sunucudan tek-kaynak .mat için
   matchDbId?: number // Maç Analizleri: DB maç id'si -> /me/matches/{id}/mat kanonik .mat (game_logs uid yoksa)
   luck?: { white: import('../analysis/matchSummary').LuckInfo | null; black: import('../analysis/matchSummary').LuckInfo | null } // Maç Özeti şansı (mwc/cost/jokers)
+  // TEK-KAYNAK PR: sunucu-otoriter (gnubg) PR — verilirse Maç Özeti Performans/Pul/Küp bu değerlerle
+  // gösterilir (log'dan yeniden hesaplanmaz) -> sonuç kartı/analiz/istatistik AYNI tek doğru PR.
+  authPr?: { white: import('../analysis/matchSummary').AuthPr | null; black: import('../analysis/matchSummary').AuthPr | null }
   onClose: () => void
 }
 
@@ -88,6 +91,7 @@ export default function MatchReport({
   matchUid,
   matchDbId,
   luck,
+  authPr,
   onClose,
 }: Props) {
   const { t } = useT()
@@ -577,6 +581,7 @@ export default function MatchReport({
           names={[whiteName, blackName]}
           matchLength={matchLength}
           luck={luck}
+          authPr={authPr}
           onClose={() => setSummaryOpen(false)}
         />
       )}

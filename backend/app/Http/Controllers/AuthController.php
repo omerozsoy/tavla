@@ -706,10 +706,19 @@ class AuthController extends Controller
                     ->latest('id')
                     ->first();
                 if ($oppRow) {
-                    $opponentPr = $oppRow->pr;
-                    $oppSplit = $this->prSplitFromLog($oppRow->log ?? null);
-                    $opponentCheckerPr = $oppSplit['checker'];
-                    $opponentCubePr = $oppSplit['cube'];
+                    // TEK-KAYNAK PR: authoritative modda rakip PR + kırılımı rakibin KENDİ gnubg
+                    // kolonlarından (hazır değilse null -> istemci /me/match-pr'den poll eder). wildbg
+                    // prSplitFromLog ARTIK GÖSTERİLMEZ (çapraz-istemci sapma + bayat tahmin kaynağıydı).
+                    $auth = (string) config('gnubg.pr_mode', 'off') === 'authoritative';
+                    $opponentPr = $auth ? $oppRow->gnubg_pr : $oppRow->pr;
+                    if ($auth) {
+                        $opponentCheckerPr = $oppRow->gnubg_checker_pr;
+                        $opponentCubePr = $oppRow->gnubg_cube_pr;
+                    } else {
+                        $oppSplit = $this->prSplitFromLog($oppRow->log ?? null);
+                        $opponentCheckerPr = $oppSplit['checker'];
+                        $opponentCubePr = $oppSplit['cube'];
+                    }
                     $opponentLuck = $oppRow->luck;
                     $opponentLuckMwc = $oppRow->luck_mwc ?? null;
                     $opponentLuckEmg = $oppRow->luck_emg ?? null;
@@ -784,24 +793,36 @@ class AuthController extends Controller
         // BOT (pvb) gnubg PR: aynı job self ile birlikte doldurur -> $ready (self hazır) iken bot da hazır.
         $hasOppPr = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_pr');
 
+        // TEK-KAYNAK PR: bu satırın gnubg_opponent_* kolonları RECONSTRUCTED'dır (rakip hamleleri
+        // BU oyuncunun log'undan kurulur) -> yalnız rakibin KENDİ otoriter satırı YOKSA meşrudur
+        // (pvb bot ya da rakip hiç raporlamadan terk etti). Online'da rakip satırı varsa reconstructed
+        // DEĞER GÖSTERİLMEZ (null döndür); istemci rakip PR'ını /me/match-pr'den rakibin KENDİ
+        // gnubg satırından okur. Böylece iki istemci de AYNI tek otoriter değeri görür (5.93 sızıntısı biter).
+        $oppRowExists = ! empty($match->room_code)
+            && \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'room_code')
+            && \App\Models\MatchResult::where('room_code', $match->room_code)
+                ->where('user_id', '!=', $match->user_id)->exists();
+        $oppRecon = $ready && $hasOppPr && ! $oppRowExists; // reconstructed rakip PR'ı yalnız burada ver
+        $oppReconLuck = $luckReady && ! $oppRowExists;
+
         return response()->json([
             'ready' => $ready,
             'pr' => $ready ? $num($match->gnubg_pr) : null,
             'checker_pr' => $ready ? $num($match->gnubg_checker_pr) : null,
             'cube_pr' => $ready ? $num($match->gnubg_cube_pr) : null,
-            // Rakip gnubg PR — pvb'de dolu; online'da normalde rakip PR'ı KENDİ satırından okunur, ANCAK
-            // rakip hiç raporlamazsa (terk/kopma) AnalyzeMatchPrJob bunu kazananın log'undan fallback doldurur.
-            'opponent_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_pr) : null,
-            'opponent_checker_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_checker_pr) : null,
-            'opponent_cube_pr' => ($ready && $hasOppPr) ? $num($match->gnubg_opponent_cube_pr) : null,
+            // Rakip gnubg PR — YALNIZ pvb/terk (rakip satırı yok) iken reconstructed değeri ver; online'da
+            // null -> istemci rakibin KENDİ satırındaki otoriter PR'ı /me/match-pr'den okur (tek kaynak).
+            'opponent_pr' => $oppRecon ? $num($match->gnubg_opponent_pr) : null,
+            'opponent_checker_pr' => $oppRecon ? $num($match->gnubg_opponent_checker_pr) : null,
+            'opponent_cube_pr' => $oppRecon ? $num($match->gnubg_opponent_cube_pr) : null,
             'luck_ready' => $luckReady,
             'luck_mwc' => $luckReady ? $num($match->luck_mwc) : null, // insan (satır sahibi)
-            'opponent_luck_mwc' => ($luckReady && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot
+            'opponent_luck_mwc' => ($oppReconLuck && $hasOppMwc) ? $num($match->opponent_luck_mwc) : null, // bot/terk
             // Maç Özeti: Luck (Equity=emg) + Joker sayısı — kolon/veri varsa (yoksa null -> '—')
             'luck_emg' => $luckReady ? $num($match->luck_emg) : null,
             'luck_jokers' => $luckReady ? $match->luck_jokers : null,
-            'opponent_luck_emg' => $luckReady ? $num($match->opponent_luck_emg) : null,
-            'opponent_luck_jokers' => $luckReady ? $match->opponent_luck_jokers : null,
+            'opponent_luck_emg' => $oppReconLuck ? $num($match->opponent_luck_emg) : null,
+            'opponent_luck_jokers' => $oppReconLuck ? $match->opponent_luck_jokers : null,
         ]);
     }
 
@@ -1092,14 +1113,22 @@ class AuthController extends Controller
         // değeri korur (wildbg sayısı KULLANICIYA gösterilmez — direktif).
         $has = fn (string $c): bool => \Illuminate\Support\Facades\Schema::hasColumn('match_results', $c);
         $col = fn ($m, string $c) => ($m && $has($c) && $m->$c !== null) ? (float) $m->$c : null;
+        $auth = (string) config('gnubg.pr_mode', 'off') === 'authoritative';
+        // TEK-KAYNAK PR (otoriter=gnubg). self/opponent = her oyuncunun KENDİ satırındaki gnubg_pr.
+        // Rakibin KENDİ satırı yoksa (pvb/terk) benim satırımın gnubg_opponent_pr fallback'i (aynı maç
+        // -> aynı gnubg değeri). gnubg hazır değilse null -> istemci loader gösterir, wildbg ASLA sızmaz.
+        // (authoritative KAPALI eski deploy'larda pr kolonuna düş ki tümden boş kalmasın.)
+        $selfPr = $col($mine, 'gnubg_pr') ?? ($auth ? null : ($mine?->pr !== null ? (float) $mine->pr : null));
+        $oppPr = $col($opp, 'gnubg_pr') ?? $col($mine, 'gnubg_opponent_pr')
+            ?? ($auth ? null : ($opp?->pr !== null ? (float) $opp->pr : null));
         // opp kırılımı: rakibin KENDİ satırının gnubg self'i (otoriter); yoksa benim satırımın
-        // gnubg_opponent_* fallback'i (aynı maç -> aynı gnubg değeri, rakip hiç raporlamasa bile).
+        // gnubg_opponent_* fallback'i (yalnız rakip satırı yoksa = pvb/terk).
         $checkerOpp = $col($opp, 'gnubg_checker_pr') ?? $col($mine, 'gnubg_opponent_checker_pr');
         $cubeOpp = $col($opp, 'gnubg_cube_pr') ?? $col($mine, 'gnubg_opponent_cube_pr');
 
         return response()->json([
-            'self' => $mine?->pr,
-            'opponent' => $opp?->pr,
+            'self' => $selfPr,
+            'opponent' => $oppPr,
             // XG kirilimi (sonuc ekrani "Pul Oyunu PR" / "Kup PR") — GNUBG-otoriter (yukarı bkz).
             'checker_self' => $col($mine, 'gnubg_checker_pr'),
             'cube_self' => $col($mine, 'gnubg_cube_pr'),
@@ -1382,8 +1411,26 @@ class AuthController extends Controller
         $hasJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'luck_jokers');
         $hasOppEmg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_emg');
         $hasOppJokers = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'opponent_luck_jokers');
+        // TEK-KAYNAK PR: otoriter gnubg kırılımı (self + pvb rakip). Maç Analizleri İstatistik'i de
+        // sonuç kartı/analizle AYNI değeri göstersin diye listeye eklenir (varsa).
+        $hasGnubg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_pr');
+        $hasGnubgSplit = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_checker_pr');
+        $hasOppGnubg = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_pr');
+        $hasOppGnubgSplit = \Illuminate\Support\Facades\Schema::hasColumn('match_results', 'gnubg_opponent_checker_pr');
         // Listede LOG'un kendisini CEKME (buyuk); yalnizca var mi diye bak (has_log).
         $cols = ['id', 'won', 'opponent_rating', 'rating_before', 'rating_after', 'delta', 'match_length', 'pr', 'coins_after', 'created_at'];
+        if ($hasGnubg) {
+            $cols[] = 'gnubg_pr';
+        }
+        if ($hasGnubgSplit) {
+            $cols = array_merge($cols, ['gnubg_checker_pr', 'gnubg_cube_pr']);
+        }
+        if ($hasOppGnubg) {
+            $cols[] = 'gnubg_opponent_pr'; // pvb rakip (bot) otoriter PR + terk fallback
+        }
+        if ($hasOppGnubgSplit) {
+            $cols = array_merge($cols, ['gnubg_opponent_checker_pr', 'gnubg_opponent_cube_pr']);
+        }
         if ($hasNew) {
             $cols = array_merge($cols, ['luck', 'score_self', 'score_opp']);
         }
@@ -1447,6 +1494,7 @@ class AuthController extends Controller
         $oppLuckMwcByRoom = [];
         $oppLuckEmgByRoom = [];
         $oppLuckJokersByRoom = [];
+        $oppPrByRoom = [];        // TEK-KAYNAK: rakibin KENDİ satırındaki otoriter gnubg_pr/checker/cube
         if ($hasRoom && $hasNew) {
             $codes = $rows->pluck('room_code')->filter()->unique()->values()->all();
             if (! empty($codes)) {
@@ -1460,10 +1508,16 @@ class AuthController extends Controller
                 if ($hasJokers) {
                     $oppCols[] = 'luck_jokers';
                 }
+                if ($hasGnubg) {
+                    $oppCols[] = 'gnubg_pr';
+                }
+                if ($hasGnubgSplit) {
+                    $oppCols = array_merge($oppCols, ['gnubg_checker_pr', 'gnubg_cube_pr']);
+                }
                 \App\Models\MatchResult::whereIn('room_code', $codes)
                     ->where('user_id', '!=', $me->id)
                     ->get($oppCols)
-                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, $hasMwc, $hasEmg, $hasJokers) {
+                    ->each(function ($r) use (&$oppLuckByRoom, &$oppLuckMwcByRoom, &$oppLuckEmgByRoom, &$oppLuckJokersByRoom, &$oppPrByRoom, $hasMwc, $hasEmg, $hasJokers, $hasGnubg, $hasGnubgSplit) {
                         $oppLuckByRoom[$r->room_code] = $r->luck;
                         if ($hasMwc) {
                             $oppLuckMwcByRoom[$r->room_code] = $r->luck_mwc;
@@ -1473,6 +1527,13 @@ class AuthController extends Controller
                         }
                         if ($hasJokers) {
                             $oppLuckJokersByRoom[$r->room_code] = $r->luck_jokers;
+                        }
+                        if ($hasGnubg) {
+                            $oppPrByRoom[$r->room_code] = [
+                                'pr' => $r->gnubg_pr,
+                                'checker' => $hasGnubgSplit ? $r->gnubg_checker_pr : null,
+                                'cube' => $hasGnubgSplit ? $r->gnubg_cube_pr : null,
+                            ];
                         }
                     });
             }
@@ -1532,6 +1593,21 @@ class AuthController extends Controller
                     : (($hasRoom && $hasJokers && $m->room_code) ? ($oppLuckJokersByRoom[$m->room_code] ?? null) : null),
                 'score_self' => $hasNew ? $m->score_self : null,
                 'score_opp' => $hasNew ? $m->score_opp : null,
+                // TEK-KAYNAK PR (otoriter=gnubg): self kendi satırından; rakip online'da karşı satırdan
+                // (oda-eşleşmesi), pvb/terk'te self satırının gnubg_opponent_* kolonundan. İstatistik
+                // paneli bunlarla sonuç kartıyla AYNI tek doğru PR'ı gösterir.
+                'gnubg_pr' => $hasGnubg ? $m->gnubg_pr : null,
+                'gnubg_checker_pr' => $hasGnubgSplit ? $m->gnubg_checker_pr : null,
+                'gnubg_cube_pr' => $hasGnubgSplit ? $m->gnubg_cube_pr : null,
+                'opponent_gnubg_pr' => ($hasRoom && $m->room_code && isset($oppPrByRoom[$m->room_code]))
+                    ? $oppPrByRoom[$m->room_code]['pr']
+                    : ($hasOppGnubg ? $m->gnubg_opponent_pr : null),
+                'opponent_gnubg_checker_pr' => ($hasRoom && $m->room_code && isset($oppPrByRoom[$m->room_code]))
+                    ? $oppPrByRoom[$m->room_code]['checker']
+                    : ($hasOppGnubgSplit ? $m->gnubg_opponent_checker_pr : null),
+                'opponent_gnubg_cube_pr' => ($hasRoom && $m->room_code && isset($oppPrByRoom[$m->room_code]))
+                    ? $oppPrByRoom[$m->room_code]['cube']
+                    : ($hasOppGnubgSplit ? $m->gnubg_opponent_cube_pr : null),
                 'has_log' => $hasLog ? (bool) $m->has_log : false,
                 'created_at' => optional($m->created_at)->toIso8601String(),
             ]);
