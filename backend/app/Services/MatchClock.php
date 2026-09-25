@@ -32,7 +32,12 @@ class MatchClock
     public const AFK_IDLE = 45;      // uyari esigi (sn) = AFK_TOTAL - AFK_COUNTDOWN
     public const AFK_COUNTDOWN = 15; // son gorunur geri sayim (sn)
     public const AFK_TOTAL = 60;     // toplam hareketsizlik -> kayip (sn)
-    public const GRACE = 3;          // network latency toleransi: kayip ilanini geciktir (sn)
+    // KALDIRILDI (2026-09-25, oyuncu itirazi): eskiden 3sn'lik ag-latency toleransi vardi;
+    // sure bitince (TIMEOUT), 60sn hareketsizlikte (AFK) ve terk esiginde kayip ilanini 3sn
+    // geciktiriyordu -> "sure bitti ama rakip 3sn daha oynadi" sikayeti. Artik 0: kayip
+    // deadline dolar dolmaz ANINDA ilan edilir. Sabit korunuyor (yerler kod olarak degismedi;
+    // gerekirse tekrar >0 yapilabilir), ama etkisi tamamen kapali.
+    public const GRACE = 0;          // network latency toleransi KALDIRILDI (0 = grace yok)
     // BOT REVEAL GRACE: bot maçında bot hamlesi SUNUCUDA anında oynanır ve sıra/saat aynı anda
     // insana (p1) döner; ama insanın İSTEMCİSİ botun hamlesini REVEAL/animasyonla gösterip (zar
     // ~0.85sn + adımlar + tur-devri ~0.5sn) sonra oto-roll (~0.5sn) eder — bu wall-clock süre
@@ -44,7 +49,7 @@ class MatchClock
     public const BOT_REVEAL_GRACE = 4.5;
     // VARLIK (presence): oyuncu bu kadar sn poll/update gondermezse "terk etmis" sayilir.
     // Terk eden kaybeder; hazir bekleyen (present) sira sahibi haksiz AFK'dan KORUNUR.
-    // 45sn: terk edilen/olu oda ~48sn'de (45 + GRACE) kapanir. Daha dusuk deger (30) mobilde
+    // 45sn: terk edilen/olu oda ~45sn'de (45 + GRACE, GRACE=0) kapanir. Daha dusuk deger (30) mobilde
     // sekme arka plana atilinca / kisa ag kesintisinde haksiz "terk" (false-forfeit) riskini artirir.
     public const PRESENCE_TIMEOUT = 45;
 

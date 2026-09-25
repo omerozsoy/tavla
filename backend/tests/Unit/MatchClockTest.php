@@ -86,8 +86,8 @@ class MatchClockTest extends TestCase
     {
         $c = $this->started('speed', 1); // banka 24, delay 8 -> timeout t0+32
         $c = MatchClock::seen($c, 'p1', self::T0); // p1 tahtayi YUKLEDI (present) -> timeout gecerli
-        $this->assertEmpty(MatchClock::tick($c, self::T0 + 33)['end'] ?? null); // 33 < 32+grace(3)
-        $end = MatchClock::tick($c, self::T0 + 35)['end']; // 35 >= 32+3
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 31)['end'] ?? null); // 31 < 32 (grace KALDIRILDI)
+        $end = MatchClock::tick($c, self::T0 + 32)['end']; // 32 >= 32 -> ANINDA timeout
         $this->assertSame('TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']); // beyaz(p1) suresi bitti -> siyah(p2) kazandi
     }
@@ -96,8 +96,8 @@ class MatchClockTest extends TestCase
     public function test_afk_timeout_when_idle(): void
     {
         $c = $this->movedClock('casual', 5); // ilk hamle yapildi -> afk t0+60 gecerli
-        $this->assertEmpty(MatchClock::tick($c, self::T0 + 62)['end'] ?? null); // 62 < 60+3
-        $end = MatchClock::tick($c, self::T0 + 63)['end']; // 63 >= 60+3
+        $this->assertEmpty(MatchClock::tick($c, self::T0 + 59)['end'] ?? null); // 59 < 60 (grace KALDIRILDI)
+        $end = MatchClock::tick($c, self::T0 + 60)['end']; // 60 >= 60 -> ANINDA AFK
         $this->assertSame('AFK_TIMEOUT', $end['reason']);
         $this->assertSame('p2', $end['winner']);
     }
