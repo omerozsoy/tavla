@@ -23570,7 +23570,7 @@ button.acct-row-logout:hover:not(:disabled) {
   color: var(--on-accent);
   opacity: 0.72;
 }
-/* YZ karakteri olan seviyeler (11 Oklavalı Naciye / 12 Şeşbeş Şevket): avatar + tier alt satiri */
+/* YZ karakteri olan seviyeler (11 Oklavalı Teyze / 12 Kahvedeki Dayı): avatar + tier alt satiri */
 .level-chip.has-persona {
   align-items: center;
   text-align: center;

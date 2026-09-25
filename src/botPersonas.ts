@@ -15,10 +15,10 @@ export interface BotPersona {
   avatar: string // bundle'lanmış avatar görseli (import URL)
 }
 
-// Level 11 = Grandmaster -> Oklavalı Naciye; Level 12 = Ultimate -> Şeşbeş Şevket.
+// Level 11 = Grandmaster -> Oklavalı Teyze; Level 12 = Ultimate -> Kahvedeki Dayı.
 export const BOT_PERSONAS: Record<number, BotPersona> = {
-  11: { name: 'Oklavalı Naciye', avatar: oklavaliNaciye },
-  12: { name: 'Şeşbeş Şevket', avatar: sesbesSevket },
+  11: { name: 'Oklavalı Teyze', avatar: oklavaliNaciye },
+  12: { name: 'Kahvedeki Dayı', avatar: sesbesSevket },
 }
 
 export function botPersona(difficulty: number | undefined | null): BotPersona | undefined {
