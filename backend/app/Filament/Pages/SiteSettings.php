@@ -46,6 +46,7 @@ class SiteSettings extends Page implements HasForms
             'commission_pct' => Setting::int('commission_pct', 5),
             'pr_min_matches' => Setting::int('pr_min_matches', 5),
             'pr_min_decisions' => Setting::int('pr_min_decisions', 100),
+            'friendly_rating_daily_limit' => Setting::int('friendly_rating_daily_limit', \App\Support\RatingPolicy::DEFAULT_LIMIT),
             'gtag_enabled' => Setting::bool('gtag_enabled', false),
             'gtag_id' => Setting::get('gtag_id', ''),
         ]);
@@ -80,6 +81,13 @@ class SiteSettings extends Page implements HasForms
                             ->numeric()->required()->minValue(0)->maxValue(90)->suffix('%')
                             ->helperText('Kazanan stake × (1 − oran) alır; fark platforma (Komisyonlar ledger). 0 = kapalı.'),
                     ]),
+                Section::make('Arkadaş / Kılıç Maçı Puan Limiti')
+                    ->description('Arkadaşınla oyna (özel oda) ve Kılıç meydan okuma maçları PUANLIDIR; ancak farm’ı önlemek için AYNI rakiple 24 saat içinde en fazla bu kadar kez rating/PR kazanılır. Sonraki maçlar puansız (casual) olur. Eşleşme ve turnuva bu limite tabi DEĞİLDİR. 0 = arkadaş/kılıç hiç puanlanmaz.')
+                    ->schema([
+                        TextInput::make('friendly_rating_daily_limit')->label('Aynı rakiple 24 saatte puanlı maç')
+                            ->numeric()->required()->minValue(0)->maxValue(50)
+                            ->helperText('Varsayılan 3.'),
+                    ]),
                 Section::make('PR Sıralaması (Career PR)')
                     ->description('Bir oyuncunun PR Sıralaması leaderboard’una girebilmesi için gereken asgari koşullar. İKİ şart da sağlanmalı.')
                     ->schema([
@@ -107,7 +115,7 @@ class SiteSettings extends Page implements HasForms
     public function save(): void
     {
         $data = $this->form->getState();
-        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'pr_min_matches', 'pr_min_decisions'] as $k) {
+        foreach (['starting_rating', 'welcome_coins', 'welcome_premium_months', 'reward_normal', 'reward_premium', 'commission_pct', 'pr_min_matches', 'pr_min_decisions', 'friendly_rating_daily_limit'] as $k) {
             if (array_key_exists($k, $data)) {
                 Setting::put($k, (int) $data[$k]);
             }

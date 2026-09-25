@@ -1824,12 +1824,15 @@ class RoomController extends Controller
         if (! $room->bot) {
             $loserSlot = $winnerSlot === 'p1' ? 'p2' : 'p1';
             $loserId = (int) ($loserSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id);
+            $winnerId = (int) ($winnerSlot === 'p1' ? $room->p1_user_id : $room->p2_user_id);
             $oppRating = (int) ($winnerSlot === 'p1' ? $room->p1_rating : $room->p2_rating);
             $winnerName = $winnerSlot === 'p1' ? $room->p1_name : $room->p2_name;
             $matchType = ((int) $room->stake > 0 || (int) $room->bet_pct > 0) ? 'coin' : 'match';
+            // PUANLI mı: TEK kaynak RatingPolicy (friendly artık puanlı; aynı-rakiple 24h limiti kaybeden için de).
+            $ranked = \App\Support\RatingPolicy::isRanked($room, $loserId, $winnerId);
             \App\Support\ForfeitLoss::record(
                 $room->code, $loserId, $oppRating, (int) $room->target, $matchType, $winnerName,
-                $room->mode !== 'friendly',
+                $ranked, $winnerId,
             );
         }
     }

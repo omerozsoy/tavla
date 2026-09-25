@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class MatchResult extends Model
 {
     protected $fillable = [
-        'user_id', 'won', 'opponent_rating', 'opponent_name', 'opponent_pr', 'opponent_luck', 'room_code', 'rating_before', 'rating_after', 'delta',
+        'user_id', 'won', 'opponent_rating', 'opponent_name', 'opponent_user_id', 'opponent_pr', 'opponent_luck', 'room_code', 'rating_before', 'rating_after', 'delta', 'rated',
         'match_length', 'match_type', 'pr', 'coins_after', 'luck', 'score_self', 'score_opp', 'log',
         'analyzed_at', 'analysis_version',
         // XG-style havuzlama totalleri (§13): dogru lifetime PR icin ham toplamlar.
@@ -19,6 +19,7 @@ class MatchResult extends Model
 
     protected $casts = [
         'won' => 'boolean',
+        'rated' => 'boolean', // bu satır rating/PR kazandırdı mı (friendly 24h limiti için sayım anahtarı)
         'analyzed_at' => 'datetime',
         'pr_equity_lost' => 'float',
         'pr_decisions' => 'integer',

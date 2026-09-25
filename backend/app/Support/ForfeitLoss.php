@@ -39,6 +39,7 @@ class ForfeitLoss
         string $matchType,
         ?string $winnerName,
         bool $ranked = true,
+        int $opponentUserId = 0,
     ): void {
         if ($loserId <= 0) {
             return; // misafir / hesapsiz -> kaydedecek sicil yok
@@ -48,7 +49,7 @@ class ForfeitLoss
             return;
         }
 
-        DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked) {
+        DB::transaction(function () use ($roomCode, $loserId, $oppRating, $matchLength, $matchType, $winnerName, $ranked, $opponentUserId) {
             $loser = User::lockForUpdate()->find($loserId);
             if (! $loser) {
                 return;
@@ -88,6 +89,12 @@ class ForfeitLoss
             }
             if (Schema::hasColumn('match_results', 'match_type')) {
                 $row['match_type'] = $matchType;
+            }
+            if (Schema::hasColumn('match_results', 'opponent_user_id')) {
+                $row['opponent_user_id'] = $opponentUserId > 0 ? $opponentUserId : null;
+            }
+            if (Schema::hasColumn('match_results', 'rated')) {
+                $row['rated'] = $ranked;
             }
             MatchResult::create($row);
         });

@@ -122,10 +122,9 @@ class MatchBackstopTest extends TestCase
         $this->assertSame(0, MatchResult::where('room_code', 'BS3')->count());
     }
 
-    // Arkadaslik (friendly/kilic) CASUAL (puansiz) — kullanici direktifi: davet maci Elo URETMEZ.
-    // Satir yine yazilir (gecmiste gorunsun) AMA delta=0 + rating/istatistik DEGISMEZ. Eslesme
-    // (mode='ranked') + turnuva (mode=NULL) puanli kalir. mode='friendly' hem gizlilik hem casual.
-    public function test_backstop_friendly_is_casual_no_rating_change(): void
+    // GÜNCEL kural: arkadaş/kılıç (friendly) maçları PUANLIDIR (aynı-rakip 24h limiti altında).
+    // Backstop yedeği de rating uygular (ilk maç -> limit altı). Eşleşme/turnuva zaten puanlı.
+    public function test_backstop_friendly_within_cap_is_rated(): void
     {
         $a = $this->user('a');
         $b = $this->user('b');
@@ -134,12 +133,12 @@ class MatchBackstopTest extends TestCase
         Artisan::call('matches:backstop-finished');
 
         $rowA = MatchResult::where('room_code', 'BS4')->where('user_id', $a->id)->first();
-        $this->assertNotNull($rowA);                     // maç yine geçmişe yazıldı
-        $this->assertSame(0, (int) $rowA->delta);        // CASUAL: delta=0 (puan hareketi yok)
+        $this->assertNotNull($rowA);
+        $this->assertNotSame(0, (int) $rowA->delta);     // PUANLI: rating hareket etti
+        $this->assertTrue((bool) $rowA->rated);          // rated=true (limit altı)
         $a->refresh();
-        $this->assertSame(1500, (int) $a->rating);       // rating DEĞİŞMEDİ
-        $this->assertSame(0, (int) $a->wins);            // istatistik DEĞİŞMEDİ
-        $this->assertSame(0, (int) $a->games_played);
+        $this->assertNotSame(1500, (int) $a->rating);    // rating DEĞİŞTİ
+        $this->assertSame(1, (int) $a->games_played);    // istatistik işlendi
     }
 
     // GEC gelen istemci raporu: bare yedek satiri log/PR ile ZENGINLESTIRIR (rating'e dokunmadan).

@@ -115,10 +115,9 @@ class ForfeitLossTest extends TestCase
         $this->assertSame(1, MatchResult::where('room_code', 'FL2')->where('user_id', $a->id)->count());
     }
 
-    // Direktif (kullanıcı): davet (friendly/kılıç) maçları CASUAL (puansız) -> terk edilse bile
-    // KAYBEDEN puan/mağlubiyet KAYBETMEZ; yalnız geçmiş satırı delta=0 ile yazılır. Oda hâlâ
-    // görünür (izlenebilir) + forfeit finalize edilir, sadece rating/istatistik DEĞİŞMEZ.
-    public function test_friendly_forfeit_is_casual_no_rating_loss(): void
+    // GÜNCEL kural (kullanıcı direktifi): davet (friendly/kılıç) maçları PUANLIDIR (aynı-rakip 24h
+    // limiti altında). Terk edilince KAYBEDEN puan/mağlubiyet KAYBEDER (ilk maç -> limit altı).
+    public function test_friendly_forfeit_within_cap_is_rated(): void
     {
         $a = $this->user('a'); // sıra sahibi (beyaz/p1) -> süresi bitince kaybeder
         $b = $this->user('b');
@@ -135,10 +134,11 @@ class ForfeitLossTest extends TestCase
         $this->getJson('/api/rooms/FL3')->assertOk();
 
         $a->refresh();
-        $this->assertSame(1500, (int) $a->rating);        // CASUAL: rating DEĞİŞMEDİ
-        $this->assertSame(0, (int) $a->losses);           // CASUAL: mağlubiyet artmadı
+        $this->assertLessThan(1500, (int) $a->rating);    // PUANLI: kaybeden rating düştü
+        $this->assertSame(1, (int) $a->losses);           // mağlubiyet arttı
         $row = MatchResult::where('room_code', 'FL3')->where('user_id', $a->id)->first();
-        $this->assertNotNull($row);                       // maç yine geçmişe yazıldı
-        $this->assertSame(0, (int) $row->delta);          // delta=0 (puan hareketi yok)
+        $this->assertNotNull($row);
+        $this->assertLessThan(0, (int) $row->delta);      // delta<0 (puan kaybı)
+        $this->assertTrue((bool) $row->rated);            // rated=true (limit altı)
     }
 }
