@@ -310,7 +310,7 @@ export default function FaqView({ onClose }: { onClose?: () => void }) {
       <header className="faq-hero">
         <div>
           <span className="faq-eyebrow"><Icon name="zoom-question" size={15} /> TAVLATV DESTEK MASASI</span>
-          <h1>Tavla hakkında sıkça sorulan sorular</h1>
+          <h1><Icon name="zoom-question" size={28} /> Tavla hakkında sıkça sorulan sorular</h1>
           <p>Kurallardan maç skoruna, katlama küpünden rating sistemine kadar tavlayla ilgili en çok merak edilenleri kısa ve anlaşılır cevaplarla derledik.</p>
         </div>
         <div className="faq-hero-count"><span>{ALL_FAQ_ITEMS.length}</span><small>özgün cevap</small></div>
