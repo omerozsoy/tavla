@@ -109,6 +109,11 @@ final class SeoMeta
             'WBF (Dünya Tavla Federasyonu) Uluslararası Tavla Turnuva Kuralları: format, süre, zar ve küp kuralları, kural dışı hareketler ve anlaşmazlıkların çözümü. Resmî ve eksiksiz Türkçe kural metni.',
             'Tavla Turnuva Kuralları',
         ],
+        'sikca-sorulan-sorular' => [
+            'Tavla Hakkında Sıkça Sorulan Sorular | TavlaTv',
+            'Tavla kuralları, katlama küpü, maç oyunu, farklı tavla türleri ve TavlaTV rating sistemi hakkında anlaşılır soru-cevaplar.',
+            'Tavla Hakkında Sıkça Sorulan Sorular',
+        ],
         'sans-carki' => [
             'Şans Çarkı | TavlaTv',
             'Şans Çarkını çevir, ödüller kazan. TavlaTv eğlence oyunlarından Şans Çarkı.',

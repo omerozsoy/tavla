@@ -4133,10 +4133,13 @@ export default function App() {
         let oppLuckDone = r.luck_opp != null
         let mwcDone = r.luck_mwc_self != null && r.luck_mwc_opp != null
         if ((oppPr == null || !oppLuckDone || !mwcDone) && code) {
-          for (let i = 0; i < 12 && (oppPr == null || !oppLuckDone || !mwcDone); i++) {
+          // Rakip PR'ı (kaybedenin KENDİ gnubg satırı) otoriter kaynaktır; gnubg tek-thread/kuyrukta
+          // yavaş olabildiğinden ~90sn poll et (eski 18sn penceresi kısa kalıp "—"da bırakıyordu).
+          // 0'ı "henüz gelmedi" say (gerçek genel PR asla tam 0 değildir; bkz prNz).
+          for (let i = 0; i < 60 && (oppPr == null || !oppLuckDone || !mwcDone); i++) {
             await new Promise((res) => setTimeout(res, 1500))
             const pair = await matchPr(code)
-            if (pair.opponent != null) {
+            if (pair.opponent != null && pair.opponent !== 0) {
               oppPr = pair.opponent
               // Rakip raporunu YENI tamamladiysa kirilim da o an gelir; gelmeyen ONCEKI kalir.
               setServerPr((prev) => ({
@@ -6504,10 +6507,15 @@ export default function App() {
   // sunucu ilk değeri saklar, gnubg job'ı authoritative'de EZER. Ekranda ise yalnız gnubg görünür.
   const prBand = (p: number | null): string => (p == null ? '' : divisionOfPR(p).key)
   const prHumanColor: Player = online ? myColor : 'white'
+  // SAHTE-0 KALKANI: gnubg genel/pul PR'ı GERÇEK bir logmuş maçta ASLA tam 0.00 olmaz. 0 => "hesaplanamadı"
+  // sentinel'idir (ör. eski satırlarda gnubg_opponent_pr=0 kalmış; rakip hamleleri log'dan skorlanamamış).
+  // 0'ı null'a çevir -> ekran "—" gösterir ve divisionOfPR(0)=Super Grandmaster YANLIŞ etiketi (kaybeden
+  // usta gibi görünüyordu) oluşmaz. NOT: Küp PR'da 0 MEŞRU (kübü kusursuz oynamak) -> ona dokunma.
+  const prNz = (p: number | null): number | null => (p != null && p !== 0 ? p : null)
   const prShown = (c: Player): number | null =>
-    serverPr ? ((c === prHumanColor ? serverPr.self : serverPr.opp) ?? null) : null
+    serverPr ? prNz((c === prHumanColor ? serverPr.self : serverPr.opp) ?? null) : null
   const prCheckerShown = (c: Player): number | null =>
-    serverPr ? ((c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) ?? null) : null
+    serverPr ? prNz((c === prHumanColor ? serverPr.checkerSelf : serverPr.checkerOpp) ?? null) : null
   const prCubeShown = (c: Player): number | null =>
     serverPr ? ((c === prHumanColor ? serverPr.cubeSelf : serverPr.cubeOpp) ?? null) : null
   const prValue = prShown(prHumanColor)
