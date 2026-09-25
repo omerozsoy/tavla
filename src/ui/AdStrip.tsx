@@ -38,6 +38,12 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
   const ad = ads.find((a) => a.slot === slot && a.image)
   if (!ad) return null
 
+  // Dis URL (http(s):// veya protokol-siz //) YENI sekmede; site-ici yol (/... ) AYNI pencerede
+  // acilir (BannerSlider ile ayni konvansiyon). Boylece dahili reklam linki kullaniciyi siteden
+  // koparmaz. rel="sponsored" her iki durumda kalir (reklam isareti); noopener/noreferrer yalniz
+  // yeni sekmede anlamli.
+  const isExternal = ad.link ? /^(https?:)?\/\//i.test(ad.link.trim()) : false
+
   // CLS: gorsel boyutlari SABIT (masaustu 1120x180, mobil 720x300). width/height ver ->
   // tarayici bytes inmeden dogru yuksekligi rezerve eder, gec yuklenen reklam alttaki
   // panelleri ITMEZ. (width:100%/height:auto CSS oranı korur; distortion yok.)
@@ -53,7 +59,13 @@ export function AdStrip({ slot }: { slot: AdSlotPos }) {
   return (
     <div className={`ad-strip ad-strip-${slot}`}>
       {ad.link ? (
-        <a href={ad.link} target="_blank" rel="noopener noreferrer sponsored" aria-label="Reklam">
+        <a
+          href={ad.link}
+          {...(isExternal
+            ? { target: '_blank', rel: 'noopener noreferrer sponsored' }
+            : { rel: 'sponsored' })}
+          aria-label="Reklam"
+        >
           {img}
         </a>
       ) : (
