@@ -10094,6 +10094,29 @@ button.acct-row-logout:hover:not(:disabled) {
     padding-right: 10px;
     font-size: 0.82rem;
   }
+  /* iPhone SE / 320px: marka + giriş + tema + dil aynı hatta sığmalı.
+     Geri bildirim FAB'a taşınır; üst bar kritik gezinme kontrollerini korur. */
+  .account-bar .ab-bug-flag {
+    display: none !important;
+  }
+  .account-bar > button:not(.ab-brand):not(.ab-bug-flag) {
+    height: 34px !important;
+    min-height: 34px !important;
+    width: 34px;
+    min-width: 34px !important;
+    padding-inline: 5px !important;
+  }
+  .account-bar > .ab-login {
+    width: auto;
+    min-width: 0 !important;
+    padding-inline: 7px !important;
+    font-size: 0.78rem;
+  }
+  .account-bar .lang-menu button {
+    width: 34px;
+    min-width: 34px !important;
+    height: 34px !important;
+  }
 }
 .account-name {
   display: inline-flex;
@@ -23546,6 +23569,29 @@ button.acct-row-logout:hover:not(:disabled) {
 .level-chip.active .level-chip-pr {
   color: var(--on-accent);
   opacity: 0.72;
+}
+/* YZ karakteri olan seviyeler (11 Oklavalı Naciye / 12 Şeşbeş Şevket): avatar + tier alt satiri */
+.level-chip.has-persona {
+  align-items: center;
+  text-align: center;
+  gap: 3px;
+}
+.level-chip-ava {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  margin-bottom: 2px;
+}
+.level-chip.active .level-chip-ava {
+  border-color: var(--on-accent);
+}
+.level-chip-tier {
+  font-size: 0.68rem;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .setup-row {
   margin: 6px 0 14px;
