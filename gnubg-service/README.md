@@ -97,6 +97,35 @@ reviewmatch/analyzematch/matchluck/selfplay oraya, canlı bot `/analyze` 8092'de
 canlı oyunu kilitleyemez. `/health` `peak_inflight`'ı izleyerek çok-süreçli havuz gerekip gerekmediği
 ölçülebilir (GnuBgClient::healthInfo → admin "Servis Durumu").
 
+## PR/bot FAILOVER — 4 instance ("bir daha boş PR yok")
+
+`/analyze`'ı HEM PR (AnalysisOrchestrator) HEM canlı bot (BotMoveService) kullanır. `GnuBgClient::analyze()`
+artık **failover**: `GNUBG_URL` + `GNUBG_URL_BACKUP` tabanlarını SIRAYLA dener, ilk 2xx'i döndürür.
+Bir instance down/yavaş/restart olsa diğeri devreye girer → PR asla "—" kalmaz. Admin "Servis Durumu"
+her instance'ı AYRI lamba gösterir + `services:watch` her birini ayrı izleyip **kendi birimiyle**
+otomatik restart eder.
+
+```
+# 8092 (canlı bot) + 8093 (heavy) zaten var. 3. ve 4. instance'ı ekle:
+cp gnubg-service/gnubg-analysis-3.service /etc/systemd/system/gnubg-analysis-3.service   # :8094
+cp gnubg-service/gnubg-analysis-4.service /etc/systemd/system/gnubg-analysis-4.service   # :8095
+nano /etc/systemd/system/gnubg-analysis-3.service   # GNUBG_SECRET'i diğerleriyle AYNI yap
+nano /etc/systemd/system/gnubg-analysis-4.service   # GNUBG_SECRET'i diğerleriyle AYNI yap
+systemctl daemon-reload
+systemctl enable --now gnubg-analysis-3 gnubg-analysis-4
+curl -s http://127.0.0.1:8094/health && curl -s http://127.0.0.1:8095/health   # {ok:true}
+
+# backend/.env: PR/bot failover havuzu = 4 instance + panel/watch birim adları (SIRAYLA hizalı)
+GNUBG_URL=http://127.0.0.1:8092
+GNUBG_URL_BACKUP=http://127.0.0.1:8093,http://127.0.0.1:8094,http://127.0.0.1:8095
+GNUBG_UNITS=gnubg-analysis,gnubg-analysis-heavy,gnubg-analysis-3,gnubg-analysis-4
+# sonra: php artisan config:cache && systemctl reload php-fpm* && systemctl restart tavla-queue
+```
+
+`GNUBG_URL_BACKUP` boşsa TEK instance (eski davranış). `GNUBG_UNITS` bases sırasıyla hizalı olmalı
+(panel "Yeniden Başlat" + services:watch doğru birimi hedeflesin). 4 instance → aynı anda 3'ü düşse
+bile PR hesaplanır; watchdog + `Restart=always` düşeni saniyeler içinde ayağa kaldırır.
+
 ## Notlar
 - **gnubgid üretimi:** backend `GameState` → gnubg `posID:matchID` çevirir (adapter işi). Test için
   gnubg'den okunmuş hazır id kullanılır.

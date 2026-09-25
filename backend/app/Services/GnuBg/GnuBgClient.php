@@ -28,8 +28,9 @@ class GnuBgClient
     /**
      * /analyze FAILOVER tabanları (birincil + yedek[ler]), sırayla. url_backup virgülle ayrılmış olabilir.
      * Boşları eler, sondaki '/'i kırpar. Tek eleman -> eski tek-instance davranışı (geriye dönük uyum).
+     * PUBLIC: admin "Servis Durumu" paneli + services:watch her instance'ı ayrı gösterir/izler.
      */
-    private function analyzeBases(): array
+    public function analyzeBases(): array
     {
         $primary = rtrim((string) config('gnubg.url', 'http://127.0.0.1:8092'), '/');
         $backups = array_map(
@@ -38,6 +39,37 @@ class GnuBgClient
         );
 
         return array_values(array_filter(array_merge([$primary], $backups), fn ($u) => $u !== ''));
+    }
+
+    /** Instance→systemd birim adları (bases ile hizalı). config('gnubg.units') virgüllü. */
+    public function unitNames(): array
+    {
+        return array_values(array_filter(array_map(
+            fn ($u) => trim((string) $u),
+            explode(',', (string) config('gnubg.units', 'gnubg-analysis')),
+        ), fn ($u) => $u !== ''));
+    }
+
+    /** TEK bir tabanı DOĞRUDAN yokla (failover'sız): panelde her instance'ın ayrı lambası için. */
+    public function probeBase(string $base): bool
+    {
+        try {
+            return Http::timeout(5)->get(rtrim($base, '/').'/health')->ok();
+        } catch (\Throwable $e) {
+            return false;
+        }
+    }
+
+    /** Belirli bir tabanın /health JSON'u (inflight/peak ölçümü için) veya null. */
+    public function healthInfoAt(string $base): ?array
+    {
+        try {
+            $resp = Http::timeout(5)->get(rtrim($base, '/').'/health');
+
+            return $resp->ok() ? $resp->json() : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**

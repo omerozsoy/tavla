@@ -14,6 +14,13 @@ return [
     // PR sistemi". Boşsa TEK instance (geriye dönük uyum). MoveValidatorService.url_backup ile aynı desen.
     'url_backup' => env('GNUBG_URL_BACKUP', ''),
 
+    // Instance→systemd birim adları (bases SIRASIYLA hizalı: birincil + yedekler). Admin "Servis
+    // Durumu" paneli her instance'ı AYRI lamba gösterir + "Yeniden Başlat" doğru birimi hedefler;
+    // services:watch her instance'ı ayrı izleyip düşeni kendi birimiyle restart eder. Örn 4 instance:
+    // GNUBG_UNITS=gnubg-analysis,gnubg-analysis-heavy,gnubg-analysis-3,gnubg-analysis-4
+    // Boşsa yalnız birincil 'gnubg-analysis' bilinir (yedekler için restart SSH komutu gösterilir).
+    'units' => env('GNUBG_UNITS', 'gnubg-analysis'),
+
     // Servis dosyası (systemd birimi bunu çalıştırır). Admin "Servis Durumu" paneli gnubg KIRMIZI
     // iken bunu inceleyip "symlink kırık / dosya yok" teşhisi verir (bugün yaşanan tavlai->tavlatv
     // symlink sorunu gibi). www-data /opt'u okuyabilir (drwxr-xr-x). Yol farklıysa env ile ayarla.

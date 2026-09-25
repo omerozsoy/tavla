@@ -31,14 +31,15 @@ class ServiceStatus extends Widget
     {
         $data = Cache::remember('admin:services-status', now()->addSeconds(10), function () {
             $vres = $this->checkValidators();
-            $gnubg = $this->checkGnubg();
+            $gnubgRows = $this->checkGnubgInstances();
+            $gnubgAnyUp = collect($gnubgRows)->contains(fn ($r) => ($r['up'] ?? null) === true);
 
             return [
                 'services' => [
                     ...$vres['rows'], // birincil + yedek validator(lar) AYRI lamba
-                    $gnubg,
-                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (gnubg + EN AZ BİR validator).
-                    $this->checkBot($vres['up'], $gnubg),
+                    ...$gnubgRows,    // birincil + yedek gnubg instance'ları AYRI lamba
+                    // Türetilmiş: sunucu-otoriter bot maçı oynatılabilir mi (EN AZ BİR gnubg + EN AZ BİR validator).
+                    $this->checkBot($vres['up'], $gnubgAnyUp),
                     $this->checkDatabase(),
                     $this->checkQueue(),
                     // İzleyiciyi izler: cron durursa TÜM izleme/alarm ölür -> bunu görünür kıl.
@@ -92,18 +93,32 @@ class ServiceStatus extends Widget
         return ['rows' => $rows, 'up' => $anyUp];
     }
 
-    /** gnubg analiz servisi (PR + native luck kaynağı): /health. */
-    private function checkGnubg(): array
+    /**
+     * gnubg analiz instance'ları (PR + native luck kaynağı) — birincil + yedek(ler) AYRI lamba. Her
+     * tabanı DOĞRUDAN /health ile yoklar ki panelde "birincil düştü, yedek ayakta" NET görünsün. PR +
+     * canlı bot analyze()'ı failover ile bu instance'lardan çağırır -> EN AZ BİR yeşil = PR asla boş.
+     */
+    private function checkGnubgInstances(): array
     {
-        $url = (string) config('gnubg.url', '');
-        if ($url === '') {
-            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', false, null, 'GNUBG_URL boş');
+        $client = app(GnuBgClient::class);
+        $bases = $client->analyzeBases();
+        if ($bases === []) {
+            return [$this->svc('gnubg', 'TavlaTV Analiz Servisi', false, null, 'GNUBG_URL boş')];
         }
-        try {
-            $info = app(GnuBgClient::class)->healthInfo(); // {ok,version,inflight,peak_inflight} veya null
-            $up = $info !== null && ($info['ok'] ?? false) === true;
-            // KIRMIZIYSA nedenini teşhis et (bugünkü symlink/dosya sorunu gibi) -> SSH'a girmeden anla.
-            $detail = $up ? $url : $url.' — '.$this->gnubgDownReason();
+        $units = $client->unitNames();
+        $rows = [];
+        foreach ($bases as $i => $base) {
+            try {
+                $info = $client->healthInfoAt($base); // {ok,version,inflight,peak_inflight} veya null
+                $up = $info !== null && ($info['ok'] ?? false) === true;
+            } catch (\Throwable $e) {
+                $info = null;
+                $up = false;
+            }
+            $label = $i === 0
+                ? 'TavlaTV Analiz Servisi — Birincil'
+                : 'TavlaTV Analiz Servisi — Yedek #'.$i;
+            $detail = $up ? $base : $base.' — '.$this->gnubgDownReason($units[$i] ?? null);
             // ÖLÇÜM: en çok eşzamanlı analiz (çok-süreçli havuz gerekli mi?). peak>=2 ise analizler
             // kilitte kuyruğa giriyor -> çok-süreçli gnubg hız kazandırır; hep 1 ise gereksiz.
             if ($up && isset($info['peak_inflight'])) {
@@ -114,15 +129,16 @@ class ServiceStatus extends Widget
                     $detail .= ' (üst üste biniyor — çok-süreçli havuz düşünülebilir)';
                 }
             }
-
-            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, $up, $detail, true);
-        } catch (\Throwable $e) {
-            return $this->svc('gnubg', 'TavlaTV Analiz Servisi', true, false, 'İstisna: '.$e->getMessage(), true);
+            // Restart butonu: bu instance için systemd birimi biliniyorsa (config gnubg.units) aktif.
+            $hasUnit = isset($units[$i]) && $units[$i] !== '';
+            $rows[] = $this->svc('gnubg'.($i === 0 ? '' : '-'.$i), $label, true, $up, $detail, $hasUnit);
         }
+
+        return $rows;
     }
 
     /** gnubg KIRMIZIyken nedenini teşhis et: symlink kırık / dosya yok / servis kapalı. */
-    private function gnubgDownReason(): string
+    private function gnubgDownReason(?string $unit = 'gnubg-analysis'): string
     {
         $file = (string) config('gnubg.service_file', '');
         if ($file !== '') {
@@ -137,7 +153,9 @@ class ServiceStatus extends Widget
             }
         }
 
-        return 'servis kapalı — SSH: systemctl restart gnubg-analysis (durum: systemctl status gnubg-analysis)';
+        $u = $unit ?: 'gnubg-analysis';
+
+        return 'servis kapalı — SSH: systemctl restart '.$u.' (durum: systemctl status '.$u.')';
     }
 
     /** Veritabanı: basit "select 1". */
@@ -196,10 +214,9 @@ class ServiceStatus extends Widget
         }
     }
 
-    /** Bot (PvB) hazır mı: sunucu-otoriter bot maçı gnubg + validator gerektirir (ikisi de UP). */
-    private function checkBot(bool $vUp, array $gnubg): array
+    /** Bot (PvB) hazır mı: sunucu-otoriter bot maçı gnubg + validator gerektirir (EN AZ BİRER UP). */
+    private function checkBot(bool $vUp, bool $gUp): array
     {
-        $gUp = ($gnubg['up'] ?? null) === true;
         $up = $vUp && $gUp;
         $need = [];
         if (! $gUp) {
@@ -293,7 +310,22 @@ class ServiceStatus extends Widget
             return;
         }
 
-        $unit = $key === 'gnubg' ? 'gnubg-analysis' : ($key === 'queue' ? 'tavla-queue' : null);
+        // gnubg / gnubg-1 / gnubg-2 ... -> config('gnubg.units') içinden hizalı systemd birimi.
+        $unit = null;
+        if ($key === 'gnubg' || str_starts_with($key, 'gnubg-')) {
+            $idx = $key === 'gnubg' ? 0 : (int) substr($key, strlen('gnubg-'));
+            $units = app(GnuBgClient::class)->unitNames();
+            $unit = $units[$idx] ?? null;
+            if (! $unit) {
+                Notification::make()->title('Bu instance için birim adı tanımlı değil')
+                    ->body('GNUBG_UNITS env\'ine bu instance\'ın systemd birim adını ekle (bases sırasıyla). SSH: systemctl restart <birim>.')
+                    ->warning()->persistent()->send();
+
+                return;
+            }
+        } elseif ($key === 'queue') {
+            $unit = 'tavla-queue';
+        }
         if (! $unit) {
             Notification::make()->title('Bilinmeyen servis')->danger()->send();
 
