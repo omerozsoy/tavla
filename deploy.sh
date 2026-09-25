@@ -92,6 +92,10 @@ $PHP artisan news:import --file=database/data/news.json || echo "UYARI: news:imp
 $PHP artisan magazine:import --file=database/data/magazine.json || echo "UYARI: magazine:import atlandi."
 # SEO icerik sayfalarini seed et (firstOrCreate; var olani ezmez -> admin duzenlemeleri korunur).
 $PHP artisan seo-pages:import --file=database/data/seo-pages.json || echo "UYARI: seo-pages:import atlandi."
+# Sitemap'i senkronla: yayindaki haberler + SeoMeta'daki indekslenecek sayfalar (kendini-onaran).
+# news:import'tan SONRA kossun ki haber slug'lari guncel olsun. Panel > Site Ayarlari > "Sitemap
+# Guncelle" butonu ayni komutu elle tetikler; burada her deploy'da otomatik calisir.
+$PHP artisan seo:sitemap || echo "UYARI: seo:sitemap atlandi."
 
 # --- gnubg analiz motoru + queue worker: kod degisince YENIDEN BASLAT --------------
 # SORUN: gnubg motoru /opt/gnubg-service/gnubg_service.py'yi (ayri kopya) uzun-omurlu
