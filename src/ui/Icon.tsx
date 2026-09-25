@@ -84,6 +84,7 @@ import {
   IconAlertTriangle,
   IconAlertCircle,
   IconBuilding,
+  IconBuildingCommunity,
   IconBuildingBank,
   IconNews,
   IconBriefcase,
@@ -191,6 +192,7 @@ export type IconName =
   | 'alert'
   | 'calendar-dots'
   | 'building-office'
+  | 'building-community'
   | 'newspaper'
   | 'briefcase'
   | 'monitor-play'
@@ -298,6 +300,7 @@ const MAP: Record<IconName, TablerIcon> = {
   alert: IconAlertTriangle,
   'calendar-dots': IconCalendarEvent,
   'building-office': IconBuilding,
+  'building-community': IconBuildingCommunity,
   newspaper: IconNews,
   briefcase: IconBriefcase,
   'monitor-play': IconBrandYoutube,
