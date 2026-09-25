@@ -105,7 +105,7 @@ Schedule::command('jobs:auto-retry')
 // ama-boş'ta gnubg_pr_at mezar taşı koyar; bu komut gnubg'ye HİÇ ulaşılamamış (gnubg_pr_at NULL) son
 // maçları gnubg dönünce yeniden kuyruğa alır -> PR dolar. gnubg down iken kendini erteler (boşa iş yok).
 Schedule::command('tavla:gnubg-pr-heal')
-    ->everyFifteenMinutes()
+    ->everyFiveMinutes()
     ->name('gnubg-pr-heal')
     ->withoutOverlapping();
 
