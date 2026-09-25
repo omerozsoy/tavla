@@ -100,8 +100,9 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
     if (timerRef.current) { window.clearTimeout(timerRef.current); timerRef.current = null }
     if (state.winner) return
     if (!state.rolled) {
-      setMsg(state.turn === 'black' ? 'Rakip düşünüyor…' : 'Sıra sende — zar at.')
-      if (state.turn === 'black') timerRef.current = window.setTimeout(doRoll, 850)
+      // Zar OTOMATİK atılır (hem insan hem YZ) — "Zar At" butonu yok.
+      setMsg(state.turn === 'black' ? 'Rakip düşünüyor…' : 'Sıra sende — zar atılıyor…')
+      timerRef.current = window.setTimeout(doRoll, state.turn === 'black' ? 850 : 500)
       return
     }
     const slots = playableSlots(state)
@@ -231,12 +232,6 @@ export default function KizTavlasi({ onClose }: { onClose: () => void }) {
           />
         </div>
       </main>
-
-      {humanTurn && !state.rolled && (
-        <div className="kiz-rollbar">
-          <Button className="kiz-roll" onClick={doRoll}>🎲 Zar At</Button>
-        </div>
-      )}
 
       {howto && (
         <div className="kiz-howto" role="dialog" aria-modal="true" onClick={() => setHowto(false)}>
