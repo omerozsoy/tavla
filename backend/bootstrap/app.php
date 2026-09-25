@@ -22,8 +22,26 @@ return Application::configure(basePath: dirname(__DIR__))
         // Guvenlik Kalkani izleyicisi: TUM /api isteklerini yanit-sonrasi kaydeder (kim, nerede,
         // kac istek, hata/spin/tarama, risk). Sona eklenir ki auth cozulmus + durum kodu belli olsun.
         $middleware->appendToGroup('api', \App\Http\Middleware\ShieldTracker::class);
+        // KÖK FIX ("Route [login] not defined" 500'leri — 1/2): Laravel 11 VARSAYILAN olarak
+        // redirectGuestsTo(fn () => route('login')) kurar. Bu backend SPA/mobil API'dir; 'login' ADLI
+        // web rotası YOKTUR. auth:sanctum'a takılan kimliksiz + JSON-beklemeyen istek (crawler / adres
+        // çubuğuna yapıştırma / link önizleme botu) Authenticate middleware'inde redirectTo->route('login')
+        // çağırıp RouteNotFoundException (GERÇEK 500 + "🔴 Sunucu HATASI" spam) fırlatır. api/* için
+        // redirect'i İPTAL et (null) -> middleware düz 401'lik AuthenticationException fırlatır; aşağıdaki
+        // shouldRenderJsonWhen (2/2) bunu 401 JSON'a çevirir. Web/Filament kendi guard'ını kullanır.
+        $middleware->redirectGuestsTo(
+            fn ($request) => $request->is('api/*') ? null : route('login')
+        );
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // KÖK FIX ("Route [login] not defined" 500'leri — 2/2): /api/* (ya da JSON bekleyen) her istekte
+        // hata yanıtı DAİMA JSON render edilsin. Böylece kimliksiz api isteği `Accept: text/html` yollasa
+        // bile (crawler / adres çubuğu / link önizleme botu) Handler->unauthenticated() redirect()->guest(
+        // route('login')) yoluna GİRMEZ -> RouteNotFoundException (500) yerine 401 JSON döner. Filament
+        // /admin kendi guard'ını (filament.admin.auth.login) kullanır -> etkilenmez.
+        $exceptions->shouldRenderJsonWhen(
+            fn ($request, \Throwable $e) => $request->is('api/*') || $request->expectsJson()
+        );
         // AKSAMA UYARISI: canlı bir istek SUNUCU HATASI (500) ile patlarsa admin'e e-posta +
         // WhatsApp. Beklenen/istemci hataları (validation 422, auth 401/403, 404, throttle 429)
         // ATLANIR -> yalnız gerçek 500'ler uyarır. 15 dk spam-limit. Test'te + normal loglama bozulmaz.
