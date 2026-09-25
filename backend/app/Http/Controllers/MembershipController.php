@@ -10,7 +10,7 @@ class MembershipController extends Controller
     public function startTrial(Request $request)
     {
         $data = $request->validate([
-            'plan' => ['required', 'in:star,starpro'],
+            'plan' => ['required', 'in:star'],
         ]);
         $u = $request->user();
 

@@ -67,7 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail, FilamentUser, Has
     // is_admin (explicit DB grant) + plan_active (suresi gecerli plan) JSON'a eklenir
     protected $appends = ['is_admin', 'plan_active'];
 
-    // Suresi gecerli aktif plan: 'free' | 'star' | 'starpro'
+    // Suresi gecerli aktif plan: 'free' | 'star'
     public function getPlanActiveAttribute(): string
     {
         $plan = $this->attributes['plan'] ?? 'free';

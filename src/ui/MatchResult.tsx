@@ -46,6 +46,9 @@ interface Props {
   // Rakip rating değişimi (online puanlı maçta). Elo sıfır-toplamlı -> = -(kendi delta). null ->
   // gösterme (pvb/AI kalıcı rating yok, veya puansız). Her iki ekranda TUTARLI (deterministik).
   oppRatingDelta?: number | null
+  // Puansız maç açıklaması: neden rating/PR değişmedi. null -> puanlı (not gösterilmez).
+  ratingReason?: 'bot' | 'friendly_cap' | 'friendly' | 'casual' | null
+  friendlyLimit?: number | null // 'friendly_cap' metninde "limit (N)" göstermek için
   onNewMatch: () => void
   onRematch: () => void
   // ROVANS (yalniz online): iki tarafin cevabi. null -> offline, dogrudan yeniden baslar.
@@ -97,6 +100,8 @@ export default function MatchResult({
   ratingIsWinner,
   oppRating,
   oppRatingDelta,
+  ratingReason,
+  friendlyLimit,
   onNewMatch,
   onRematch,
   rematchState,
@@ -268,6 +273,16 @@ export default function MatchResult({
             <span className="mr-label">{t('mr.rating')}</span>
             <span className="mr-b">{ratingText(false)}</span>
           </div>
+          {/* PUANSIZ MAÇ notu: kullanıcı kılıç/casual maçta rating değişmeyince "bozuk mu?" diyordu ->
+              tam genişlik açıklayıcı satır. Puanlı maçta ratingReason null -> gösterilmez. */}
+          {ratingReason && (
+            <div className="mr-pr-note" role="note">
+              <Icon name="info" size={14} aria-hidden="true" />{' '}
+              {ratingReason === 'friendly_cap'
+                ? t('mr.unratedCap', { n: friendlyLimit ?? 3 })
+                : t('mr.unratedFriendly')}
+            </div>
+          )}
           {(coinAmount != null || asymCoin) && (
             <div className="mr-row">
               <span className="mr-a mr-pos">{fmtCoins(true)}</span>
