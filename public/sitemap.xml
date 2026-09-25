@@ -131,6 +131,12 @@
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
+  <url>
+    <loc>https://www.tavlatv.com/sikca-sorulan-sorular</loc>
+    <lastmod>2026-09-25</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 
   <!-- Tavla Rehberi blog -->
   <url>
@@ -246,6 +252,12 @@
   <url>
     <loc>https://www.tavlatv.com/bilgi/adil-zar</loc>
     <lastmod>2026-09-19</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://www.tavlatv.com/bilgi/sozluk</loc>
+    <lastmod>2026-09-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url></urlset>
