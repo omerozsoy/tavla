@@ -48,11 +48,21 @@ class AnalyzeMatchPrJob implements ShouldQueue
         ];
     }
 
-    public function handle(AnalysisOrchestrator $orch): void
+    public function handle(AnalysisOrchestrator $orch, ?\App\Services\GnuBg\GnuBgClient $gnubg = null): void
     {
         $mr = MatchResult::find($this->matchResultId);
         if (! $mr || empty($mr->log)) {
             return;
+        }
+        // KÖK FIX (2026-09-25 — kalıcı "—" sorunu): gnubg servisi analiz ANINDA down/yavaş/restart
+        // ise GnuBgClient::analyze() HER çağrıda null döner (fırlatmaz) -> evaluated=0 -> hiçbir kolon
+        // yazılmaz -> job SESSİZCE "başarılı" biter -> $tries retry HİÇ tetiklenmez -> maç KALICI "—"
+        // ile yaralanır (self-healing yok). Servis ayakta değilse 60+ futile analyze() yapmadan HEMEN
+        // fırlat -> $tries/backoff retry + tavla:gnubg-pr-heal cron gnubg dönünce yeniden dener.
+        // $gnubg YALNIZ container çağrısında dolu (testler handle($orch) ile çağırır -> null -> precheck
+        // atlanır; o yolda aşağıdaki mid-run guard mock'lanabilir skipReasons ile devrededir).
+        if ($gnubg !== null && ! $gnubg->health()) {
+            throw new \RuntimeException('gnubg servisi erisilemez (health=false) -> PR analizi ertelendi (retry)');
         }
         $decoded = json_decode($mr->log, true);
         if (! is_array($decoded) || empty($decoded['log'])) {
@@ -84,6 +94,17 @@ class AnalyzeMatchPrJob implements ShouldQueue
         $chkEval = (int) ($chk['evaluated'] ?? 0);
         $cubeEval = (int) ($cube['evaluated'] ?? 0);
         $totEval = $chkEval + $cubeEval;
+
+        // KÖK FIX (2026-09-25): gnubg mid-run DÜŞTÜ/erişilemez (health geçti ama analiz sırasında
+        // watchdog restart / timeout / non-200). SELF kararların gnubg'ye gitti (self girdileri
+        // pos+dice+playedSteps taşır) ama HİÇBİRİ skorlanamadı (gnubg_null>0) ve toplam evaluated=0
+        // -> bu bir SERVİS sorunudur (log değil). Fırlat -> retry (backoff) + heal cron gnubg dönünce
+        // yeniden dener. no_content-only skip (opp reconstructed / gerçekten boş log) NORMAL'dir ve
+        // aşağıda mezar taşıyla işaretlenir; onu fırlatma (sonsuz retry olmasın).
+        $selfGnubgNull = (int) ($chk['skipReasons']['gnubg_null'] ?? 0);
+        if ($totEval === 0 && $selfGnubgNull > 0) {
+            throw new \RuntimeException('gnubg PR: self kararlar skorlanamadi (gnubg_null='.$selfGnubgNull.', eval=0) -> retry');
+        }
         // Genel PR: sayılan karar varsa havuzdan; yoksa (hepsi obvious ama yine de skorlandıysa) loose
         // fallback; hiç değerlendirme yoksa NULL (yazma).
         $overall = $totDec > 0 ? ($totLoss / $totDec) * 500 : ($totEval > 0 ? ($chk['pr'] ?: $cube['pr']) : null);
@@ -101,6 +122,13 @@ class AnalyzeMatchPrJob implements ShouldQueue
             $upd['gnubg_cube_pr'] = round((float) $cube['pr'], 2);
         }
         if ($totEval > 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
+            $upd['gnubg_pr_at'] = now();
+        }
+        // MEZAR TAŞI (heal döngüsü kalkanı): buraya gelindiyse gnubg ERİŞİLEBİLİRDİ (down olsa yukarıda
+        // fırlatırdı). totEval=0 ise log gerçekten analiz-dışı (boş/kısa/reconstructed) -> gnubg_pr null
+        // kalır (ekran doğru "—") AMA gnubg_pr_at'i işaretle ki tavla:gnubg-pr-heal bu maçı SONSUZA dek
+        // yeniden denemesin. (gnubg_pr_at NULL = "gnubg'ye hiç ulaşılamadı" = heal hedefi.)
+        if ($totEval === 0 && Schema::hasColumn('match_results', 'gnubg_pr_at')) {
             $upd['gnubg_pr_at'] = now();
         }
 
